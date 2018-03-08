@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.7-c499c8f
+ * @license Angular v6.0.0-beta.7-73c203f
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -604,7 +604,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('6.0.0-beta.7-c499c8f');
+const VERSION = new Version('6.0.0-beta.7-73c203f');
 
 /**
  * @fileoverview added by tsickle
@@ -1343,7 +1343,7 @@ const HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
  * @param {?} name
  * @return {?}
  */
-function _sanitizeIdentifier(name) {
+function sanitizeIdentifier(name) {
     return name.replace(/\W/g, '_');
 }
 let _anonymousTypeIndex = 0;
@@ -1369,7 +1369,7 @@ function identifierName(compileIdentifier) {
         ref['__anonymousType'] = identifier;
     }
     else {
-        identifier = _sanitizeIdentifier(identifier);
+        identifier = sanitizeIdentifier(identifier);
     }
     return identifier;
 }
@@ -1457,7 +1457,7 @@ CompileSummaryKind[CompileSummaryKind.Injectable] = "Injectable";
  * @return {?}
  */
 function tokenName(token) {
-    return token.value != null ? _sanitizeIdentifier(token.value) : identifierName(token.identifier);
+    return token.value != null ? sanitizeIdentifier(token.value) : identifierName(token.identifier);
 }
 /**
  * @param {?} token
@@ -20178,11 +20178,10 @@ class BindingParser {
     getUsedPipes() { return Array.from(this._usedPipes.values()); }
     /**
      * @param {?} dirMeta
-     * @param {?} elementSelector
      * @param {?} sourceSpan
      * @return {?}
      */
-    createDirectiveHostPropertyAsts(dirMeta, elementSelector, sourceSpan) {
+    createBoundHostProperties(dirMeta, sourceSpan) {
         if (dirMeta.hostProperties) {
             const /** @type {?} */ boundProps = [];
             Object.keys(dirMeta.hostProperties).forEach(propName => {
@@ -20194,9 +20193,20 @@ class BindingParser {
                     this._reportError(`Value of the host property binding "${propName}" needs to be a string representing an expression but got "${expression}" (${typeof expression})`, sourceSpan);
                 }
             });
-            return boundProps.map((prop) => this.createElementPropertyAst(elementSelector, prop));
+            return boundProps;
         }
         return null;
+    }
+    /**
+     * @param {?} dirMeta
+     * @param {?} elementSelector
+     * @param {?} sourceSpan
+     * @return {?}
+     */
+    createDirectiveHostPropertyAsts(dirMeta, elementSelector, sourceSpan) {
+        const /** @type {?} */ boundProps = this.createBoundHostProperties(dirMeta, sourceSpan);
+        return boundProps &&
+            boundProps.map((prop) => this.createElementPropertyAst(elementSelector, prop));
     }
     /**
      * @param {?} dirMeta
@@ -20727,6 +20737,10 @@ class TemplateParser {
         this.transforms = transforms;
     }
     /**
+     * @return {?}
+     */
+    get expressionParser() { return this._exprParser; }
+    /**
      * @param {?} component
      * @param {?} template
      * @param {?} directives
@@ -21045,6 +21059,7 @@ class TemplateParseVisitor {
         const /** @type {?} */ srcSpan = attr.sourceSpan;
         const /** @type {?} */ bindParts = name.match(BIND_NAME_REGEXP);
         let /** @type {?} */ hasBinding = false;
+        const /** @type {?} */ boundEvents = [];
         if (bindParts !== null) {
             hasBinding = true;
             if (bindParts[KW_BIND_IDX] != null) {
@@ -21468,7 +21483,7 @@ class ElementOrDirectiveRef {
     }
 }
 /**
- * Splits a raw, potentially comma-delimted `exportAs` value into an array of names.
+ * Splits a raw, potentially comma-delimited `exportAs` value into an array of names.
  * @param {?} exportAs
  * @return {?}
  */
@@ -24588,6 +24603,7 @@ Identifiers$1.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
 Identifiers$1.query = { name: 'ɵQ', moduleName: CORE$1 };
 Identifiers$1.queryRefresh = { name: 'ɵqR', moduleName: CORE$1 };
 Identifiers$1.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
+Identifiers$1.listener = { name: 'ɵL', moduleName: CORE$1 };
 
 /**
  * @fileoverview added by tsickle
@@ -24624,19 +24640,26 @@ const IMPLICIT_REFERENCE = '$implicit';
  * @param {?} outputCtx
  * @param {?} directive
  * @param {?} reflector
+ * @param {?} bindingParser
  * @return {?}
  */
-function compileDirective(outputCtx, directive, reflector) {
+function compileDirective(outputCtx, directive, reflector, bindingParser) {
     const /** @type {?} */ definitionMapValues = [];
+    const /** @type {?} */ field = (key, value) => {
+        if (value) {
+            definitionMapValues.push({ key, value, quoted: false });
+        }
+    };
     // e.g. 'type: MyDirective`
-    definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(directive.type.reference), quoted: false });
+    field('type', outputCtx.importExpr(directive.type.reference));
     // e.g. `factory: () => new MyApp(injectElementRef())`
-    const /** @type {?} */ templateFactory = createFactory(directive.type, outputCtx, reflector, directive.queries);
-    definitionMapValues.push({ key: 'factory', value: templateFactory, quoted: false });
+    field('factory', createFactory(directive.type, outputCtx, reflector, directive.queries));
+    // e.g. `hostBindings: (dirIndex, elIndex) => { ... }
+    field('hostBindings', createHostBindingsFunction(directive, outputCtx, bindingParser));
+    // e.g. `attributes: ['role', 'listbox']`
+    field('attributes', createHostAttributesArray(directive, outputCtx));
     // e.g 'inputs: {a: 'a'}`
-    if (Object.getOwnPropertyNames(directive.inputs).length > 0) {
-        definitionMapValues.push({ key: 'inputs', quoted: false, value: mapToExpression(directive.inputs) });
-    }
+    field('inputs', createInputsObject(directive, outputCtx));
     const /** @type {?} */ className = /** @type {?} */ ((identifierName(directive.type)));
     className || error(`Cannot resolver the name of ${directive.type}`);
     // Create the partial class to be merged with the actual class.
@@ -24648,57 +24671,53 @@ function compileDirective(outputCtx, directive, reflector) {
  * @param {?} pipes
  * @param {?} template
  * @param {?} reflector
+ * @param {?} bindingParser
  * @return {?}
  */
-function compileComponent(outputCtx, component, pipes, template, reflector) {
+function compileComponent(outputCtx, component, pipes, template, reflector, bindingParser) {
     const /** @type {?} */ definitionMapValues = [];
+    const /** @type {?} */ field = (key, value) => {
+        if (value) {
+            definitionMapValues.push({ key, value, quoted: false });
+        }
+    };
     // e.g. `type: MyApp`
-    definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(component.type.reference), quoted: false });
+    field('type', outputCtx.importExpr(component.type.reference));
     // e.g. `tag: 'my-app'`
     // This is optional and only included if the first selector of a component has element.
     const /** @type {?} */ selector = component.selector && CssSelector.parse(component.selector);
     const /** @type {?} */ firstSelector = selector && selector[0];
     if (firstSelector && firstSelector.hasElementSelector()) {
-        definitionMapValues.push({ key: 'tag', value: literal(firstSelector.element), quoted: false });
+        field('tag', literal(firstSelector.element));
     }
     // e.g. `attr: ["class", ".my.app"]
     // This is optional an only included if the first selector of a component specifies attributes.
     if (firstSelector) {
         const /** @type {?} */ selectorAttributes = firstSelector.getAttrs();
         if (selectorAttributes.length) {
-            definitionMapValues.push({
-                key: 'attrs',
-                value: outputCtx.constantPool.getConstLiteral(literalArr(selectorAttributes.map(value => value != null ? literal(value) : literal(undefined))), /* forceShared */ true),
-                quoted: false
-            });
+            field('attrs', outputCtx.constantPool.getConstLiteral(literalArr(selectorAttributes.map(value => value != null ? literal(value) : literal(undefined))), /* forceShared */ true));
         }
     }
     // e.g. `factory: function MyApp_Factory() { return new MyApp(injectElementRef()); }`
-    const /** @type {?} */ templateFactory = createFactory(component.type, outputCtx, reflector, component.queries);
-    definitionMapValues.push({ key: 'factory', value: templateFactory, quoted: false });
+    field('factory', createFactory(component.type, outputCtx, reflector, component.queries));
     // e.g `hostBindings: function MyApp_HostBindings { ... }
-    const /** @type {?} */ hostBindings = createHostBindingsFunction(component.type, outputCtx, component.queries);
-    if (hostBindings) {
-        definitionMapValues.push({ key: 'hostBindings', value: hostBindings, quoted: false });
-    }
+    field('hostBindings', createHostBindingsFunction(component, outputCtx, bindingParser));
     // e.g. `template: function MyComponent_Template(_ctx, _cm) {...}`
     const /** @type {?} */ templateTypeName = component.type.reference.name;
     const /** @type {?} */ templateName = templateTypeName ? `${templateTypeName}_Template` : null;
     const /** @type {?} */ pipeMap = new Map(pipes.map(pipe => [pipe.name, pipe]));
     const /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, ROOT_SCOPE.nestedScope(), 0, /** @type {?} */ ((component.template)).ngContentSelectors, templateTypeName, templateName, pipeMap, component.viewQueries)
         .buildTemplateFunction(template, []);
-    definitionMapValues.push({ key: 'template', value: templateFunctionExpression, quoted: false });
+    field('template', templateFunctionExpression);
     // e.g `inputs: {a: 'a'}`
-    if (Object.getOwnPropertyNames(component.inputs).length > 0) {
-        definitionMapValues.push({ key: 'inputs', quoted: false, value: mapToExpression(component.inputs) });
-    }
+    field('inputs', createInputsObject(component, outputCtx));
     // e.g. `features: [NgOnChangesFeature(MyComponent)]`
     const /** @type {?} */ features = [];
     if (component.type.lifecycleHooks.some(lifecycle => lifecycle == LifecycleHooks.OnChanges)) {
         features.push(importExpr(Identifiers$1.NgOnChangesFeature, null, null).callFn([outputCtx.importExpr(component.type.reference)]));
     }
     if (features.length) {
-        definitionMapValues.push({ key: 'features', quoted: false, value: literalArr(features) });
+        field('features', literalArr(features));
     }
     const /** @type {?} */ className = /** @type {?} */ ((identifierName(component.type)));
     className || error(`Cannot resolver the name of ${component.type}`);
@@ -25327,12 +25346,29 @@ function createFactory(type, outputCtx, reflector, queries) {
     return fn([], [new ReturnStatement(result)], INFERRED_TYPE, null, type.reference.name ? `${type.reference.name}_Factory` : null);
 }
 /**
- * @param {?} type
+ * @param {?} directiveMetadata
  * @param {?} outputCtx
- * @param {?} queries
  * @return {?}
  */
-function createHostBindingsFunction(type, outputCtx, queries) {
+function createHostAttributesArray(directiveMetadata, outputCtx) {
+    const /** @type {?} */ values = [];
+    const /** @type {?} */ attributes = directiveMetadata.hostAttributes;
+    for (let /** @type {?} */ key of Object.getOwnPropertyNames(attributes)) {
+        const /** @type {?} */ value = attributes[key];
+        values.push(literal(key), literal(value));
+    }
+    if (values.length > 0) {
+        return outputCtx.constantPool.getConstLiteral(literalArr(values));
+    }
+    return null;
+}
+/**
+ * @param {?} directiveMetadata
+ * @param {?} outputCtx
+ * @param {?} bindingParser
+ * @return {?}
+ */
+function createHostBindingsFunction(directiveMetadata, outputCtx, bindingParser) {
     const /** @type {?} */ statements = [];
     const /** @type {?} */ temporary = function () {
         let /** @type {?} */ declared = false;
@@ -25344,8 +25380,10 @@ function createHostBindingsFunction(type, outputCtx, queries) {
             return variable(TEMPORARY_NAME);
         };
     }();
-    for (let /** @type {?} */ index = 0; index < queries.length; index++) {
-        const /** @type {?} */ query = queries[index];
+    const /** @type {?} */ hostBindingSourceSpan = typeSourceSpan(directiveMetadata.isComponent ? 'Component' : 'Directive', directiveMetadata.type);
+    // Calculate the queries
+    for (let /** @type {?} */ index = 0; index < directiveMetadata.queries.length; index++) {
+        const /** @type {?} */ query = directiveMetadata.queries[index];
         // e.g. r3.qR(tmp = r3.ld(dirIndex)[1]) && (r3.ld(dirIndex)[0].someDir = tmp);
         const /** @type {?} */ getDirectiveMemory = importExpr(Identifiers$1.load).callFn([variable('dirIndex')]);
         // The query list is at the query index + 1 because the directive itself is in slot 0.
@@ -25354,12 +25392,52 @@ function createHostBindingsFunction(type, outputCtx, queries) {
         const /** @type {?} */ callQueryRefresh = importExpr(Identifiers$1.queryRefresh).callFn([assignToTemporary]);
         const /** @type {?} */ updateDirective = getDirectiveMemory.key(literal(0, INFERRED_TYPE))
             .prop(query.propertyName)
-            .set(query.first ? temporary().key(literal(0)) : temporary());
+            .set(query.first ? temporary().prop('first') : temporary());
         const /** @type {?} */ andExpression = callQueryRefresh.and(updateDirective);
         statements.push(andExpression.toStmt());
     }
+    const /** @type {?} */ directiveSummary = directiveMetadata.toSummary();
+    // Calculate the host property bindings
+    const /** @type {?} */ bindings = bindingParser.createBoundHostProperties(directiveSummary, hostBindingSourceSpan);
+    const /** @type {?} */ bindingContext = importExpr(Identifiers$1.load).callFn([variable('dirIndex')]);
+    if (bindings) {
+        for (const /** @type {?} */ binding of bindings) {
+            const /** @type {?} */ bindingExpr = convertPropertyBinding(null, bindingContext, binding.expression, 'b', BindingForm.TrySimple, () => error('Unexpected interpolation'));
+            statements.push(...bindingExpr.stmts);
+            statements.push(importExpr(Identifiers$1.elementProperty)
+                .callFn([
+                variable('elIndex'), literal(binding.name),
+                importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr])
+            ])
+                .toStmt());
+        }
+    }
+    // Calculate host event bindings
+    const /** @type {?} */ eventBindings = bindingParser.createDirectiveHostEventAsts(directiveSummary, hostBindingSourceSpan);
+    if (eventBindings) {
+        for (const /** @type {?} */ binding of eventBindings) {
+            const /** @type {?} */ bindingExpr = convertActionBinding(null, bindingContext, binding.handler, 'b', () => error('Unexpected interpolation'));
+            const /** @type {?} */ bindingName = binding.name && sanitizeIdentifier(binding.name);
+            const /** @type {?} */ typeName = identifierName(directiveMetadata.type);
+            const /** @type {?} */ functionName = typeName && bindingName ? `${typeName}_${bindingName}_HostBindingHandler` : null;
+            const /** @type {?} */ handler = fn([new FnParam('event', DYNAMIC_TYPE)], [...bindingExpr.stmts, new ReturnStatement(bindingExpr.allowDefault)], INFERRED_TYPE, null, functionName);
+            statements.push(importExpr(Identifiers$1.listener).callFn([literal(binding.name), handler]).toStmt());
+        }
+    }
     if (statements.length > 0) {
-        return fn([new FnParam('dirIndex', NUMBER_TYPE), new FnParam('elIndex', NUMBER_TYPE)], statements, INFERRED_TYPE, null, type.reference.name ? `${type.reference.name}_HostBindings` : null);
+        const /** @type {?} */ typeName = directiveMetadata.type.reference.name;
+        return fn([new FnParam('dirIndex', NUMBER_TYPE), new FnParam('elIndex', NUMBER_TYPE)], statements, INFERRED_TYPE, null, typeName ? `${typeName}_HostBindings` : null);
+    }
+    return null;
+}
+/**
+ * @param {?} directive
+ * @param {?} outputCtx
+ * @return {?}
+ */
+function createInputsObject(directive, outputCtx) {
+    if (Object.getOwnPropertyNames(directive.inputs).length > 0) {
+        return outputCtx.constantPool.getConstLiteral(mapToExpression(directive.inputs));
     }
     return null;
 }
@@ -27139,7 +27217,9 @@ class AotCompiler {
      */
     _emitPartialModule(fileName, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables) {
         const /** @type {?} */ classes = [];
+        const /** @type {?} */ errors = [];
         const /** @type {?} */ context = this._createOutputContext(fileName);
+        const /** @type {?} */ hostBindingParser = new BindingParser(this._templateParser.expressionParser, DEFAULT_INTERPOLATION_CONFIG, /** @type {?} */ ((null)), [], errors);
         // Process all components and directives
         directives.forEach(directiveType => {
             const /** @type {?} */ directiveMetadata = this._metadataResolver.getDirectiveMetadata(directiveType);
@@ -27148,10 +27228,10 @@ class AotCompiler {
                 module ||
                     error(`Cannot determine the module for component '${identifierName(directiveMetadata.type)}'`);
                 const { template: parsedTemplate, pipes: parsedPipes } = this._parseTemplate(directiveMetadata, module, module.transitiveModule.directives);
-                compileComponent(context, directiveMetadata, parsedPipes, parsedTemplate, this._reflector);
+                compileComponent(context, directiveMetadata, parsedPipes, parsedTemplate, this._reflector, hostBindingParser);
             }
             else {
-                compileDirective(context, directiveMetadata, this._reflector);
+                compileDirective(context, directiveMetadata, this._reflector, hostBindingParser);
             }
         });
         pipes.forEach(pipeType => {
@@ -31015,5 +31095,5 @@ class Extractor {
 // replaces this file with production index.ts when it rewrites private symbol
 // names.
 
-export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, ExpressionStatement, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
+export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, ExpressionStatement, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
 //# sourceMappingURL=compiler.js.map

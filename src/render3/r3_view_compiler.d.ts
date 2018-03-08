@@ -8,9 +8,9 @@
 import { CompileDirectiveMetadata, CompilePipeSummary, CompileQueryMetadata, CompileTypeMetadata } from '../compile_metadata';
 import { CompileReflector } from '../compile_reflector';
 import * as o from '../output/output_ast';
+import { BindingParser } from '../template_parser/binding_parser';
 import { TemplateAst } from '../template_parser/template_ast';
 import { OutputContext } from '../util';
-export declare function compileDirective(outputCtx: OutputContext, directive: CompileDirectiveMetadata, reflector: CompileReflector): void;
-export declare function compileComponent(outputCtx: OutputContext, component: CompileDirectiveMetadata, pipes: CompilePipeSummary[], template: TemplateAst[], reflector: CompileReflector): void;
+export declare function compileDirective(outputCtx: OutputContext, directive: CompileDirectiveMetadata, reflector: CompileReflector, bindingParser: BindingParser): void;
+export declare function compileComponent(outputCtx: OutputContext, component: CompileDirectiveMetadata, pipes: CompilePipeSummary[], template: TemplateAst[], reflector: CompileReflector, bindingParser: BindingParser): void;
 export declare function createFactory(type: CompileTypeMetadata, outputCtx: OutputContext, reflector: CompileReflector, queries: CompileQueryMetadata[]): o.Expression;
-export declare function createHostBindingsFunction(type: CompileTypeMetadata, outputCtx: OutputContext, queries: CompileQueryMetadata[]): o.Expression | null;

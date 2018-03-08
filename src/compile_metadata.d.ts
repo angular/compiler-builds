@@ -9,6 +9,7 @@ import { StaticSymbol } from './aot/static_symbol';
 import { ChangeDetectionStrategy, SchemaMetadata, Type, ViewEncapsulation } from './core';
 import { LifecycleHooks } from './lifecycle_reflector';
 import { ParseTreeResult as HtmlParseTreeResult } from './ml_parser/parser';
+export declare function sanitizeIdentifier(name: string): string;
 export declare function identifierName(compileIdentifier: CompileIdentifierMetadata | null | undefined): string | null;
 export declare function identifierModuleUrl(compileIdentifier: CompileIdentifierMetadata): string;
 export declare function viewClassName(compType: any, embeddedTemplateIndex: number): string;

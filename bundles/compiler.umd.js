@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.7-c499c8f
+ * @license Angular v6.0.0-beta.7-73c203f
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v6.0.0-beta.7-c499c8f
+ * @license Angular v6.0.0-beta.7-73c203f
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -702,7 +702,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('6.0.0-beta.7-c499c8f');
+var VERSION = new Version('6.0.0-beta.7-73c203f');
 
 /**
  * @fileoverview added by tsickle
@@ -1523,7 +1523,7 @@ var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
  * @param {?} name
  * @return {?}
  */
-function _sanitizeIdentifier(name) {
+function sanitizeIdentifier(name) {
     return name.replace(/\W/g, '_');
 }
 var _anonymousTypeIndex = 0;
@@ -1549,7 +1549,7 @@ function identifierName(compileIdentifier) {
         ref['__anonymousType'] = identifier;
     }
     else {
-        identifier = _sanitizeIdentifier(identifier);
+        identifier = sanitizeIdentifier(identifier);
     }
     return identifier;
 }
@@ -1637,7 +1637,7 @@ CompileSummaryKind[CompileSummaryKind.Injectable] = "Injectable";
  * @return {?}
  */
 function tokenName(token) {
-    return token.value != null ? _sanitizeIdentifier(token.value) : identifierName(token.identifier);
+    return token.value != null ? sanitizeIdentifier(token.value) : identifierName(token.identifier);
 }
 /**
  * @param {?} token
@@ -24756,17 +24756,15 @@ var BindingParser = /** @class */ (function () {
     function () { return Array.from(this._usedPipes.values()); };
     /**
      * @param {?} dirMeta
-     * @param {?} elementSelector
      * @param {?} sourceSpan
      * @return {?}
      */
-    BindingParser.prototype.createDirectiveHostPropertyAsts = /**
+    BindingParser.prototype.createBoundHostProperties = /**
      * @param {?} dirMeta
-     * @param {?} elementSelector
      * @param {?} sourceSpan
      * @return {?}
      */
-    function (dirMeta, elementSelector, sourceSpan) {
+    function (dirMeta, sourceSpan) {
         var _this = this;
         if (dirMeta.hostProperties) {
             var /** @type {?} */ boundProps_1 = [];
@@ -24779,9 +24777,27 @@ var BindingParser = /** @class */ (function () {
                     _this._reportError("Value of the host property binding \"" + propName + "\" needs to be a string representing an expression but got \"" + expression + "\" (" + typeof expression + ")", sourceSpan);
                 }
             });
-            return boundProps_1.map(function (prop) { return _this.createElementPropertyAst(elementSelector, prop); });
+            return boundProps_1;
         }
         return null;
+    };
+    /**
+     * @param {?} dirMeta
+     * @param {?} elementSelector
+     * @param {?} sourceSpan
+     * @return {?}
+     */
+    BindingParser.prototype.createDirectiveHostPropertyAsts = /**
+     * @param {?} dirMeta
+     * @param {?} elementSelector
+     * @param {?} sourceSpan
+     * @return {?}
+     */
+    function (dirMeta, elementSelector, sourceSpan) {
+        var _this = this;
+        var /** @type {?} */ boundProps = this.createBoundHostProperties(dirMeta, sourceSpan);
+        return boundProps &&
+            boundProps.map(function (prop) { return _this.createElementPropertyAst(elementSelector, prop); });
     };
     /**
      * @param {?} dirMeta
@@ -25436,6 +25452,14 @@ var TemplateParser = /** @class */ (function () {
         this._console = _console;
         this.transforms = transforms;
     }
+    Object.defineProperty(TemplateParser.prototype, "expressionParser", {
+        get: /**
+         * @return {?}
+         */
+        function () { return this._exprParser; },
+        enumerable: true,
+        configurable: true
+    });
     /**
      * @param {?} component
      * @param {?} template
@@ -25835,6 +25859,7 @@ var TemplateParseVisitor = /** @class */ (function () {
         var /** @type {?} */ srcSpan = attr.sourceSpan;
         var /** @type {?} */ bindParts = name.match(BIND_NAME_REGEXP);
         var /** @type {?} */ hasBinding = false;
+        var /** @type {?} */ boundEvents = [];
         if (bindParts !== null) {
             hasBinding = true;
             if (bindParts[KW_BIND_IDX] != null) {
@@ -26402,7 +26427,7 @@ var ElementOrDirectiveRef = /** @class */ (function () {
     return ElementOrDirectiveRef;
 }());
 /**
- * Splits a raw, potentially comma-delimted `exportAs` value into an array of names.
+ * Splits a raw, potentially comma-delimited `exportAs` value into an array of names.
  * @param {?} exportAs
  * @return {?}
  */
@@ -30173,6 +30198,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.query = { name: 'ɵQ', moduleName: CORE$1 };
     Identifiers.queryRefresh = { name: 'ɵqR', moduleName: CORE$1 };
     Identifiers.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
+    Identifiers.listener = { name: 'ɵL', moduleName: CORE$1 };
     return Identifiers;
 }());
 
@@ -30211,19 +30237,26 @@ var IMPLICIT_REFERENCE = '$implicit';
  * @param {?} outputCtx
  * @param {?} directive
  * @param {?} reflector
+ * @param {?} bindingParser
  * @return {?}
  */
-function compileDirective(outputCtx, directive, reflector) {
+function compileDirective(outputCtx, directive, reflector, bindingParser) {
     var /** @type {?} */ definitionMapValues = [];
+    var /** @type {?} */ field = function (key, value) {
+        if (value) {
+            definitionMapValues.push({ key: key, value: value, quoted: false });
+        }
+    };
     // e.g. 'type: MyDirective`
-    definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(directive.type.reference), quoted: false });
+    field('type', outputCtx.importExpr(directive.type.reference));
     // e.g. `factory: () => new MyApp(injectElementRef())`
-    var /** @type {?} */ templateFactory = createFactory(directive.type, outputCtx, reflector, directive.queries);
-    definitionMapValues.push({ key: 'factory', value: templateFactory, quoted: false });
+    field('factory', createFactory(directive.type, outputCtx, reflector, directive.queries));
+    // e.g. `hostBindings: (dirIndex, elIndex) => { ... }
+    field('hostBindings', createHostBindingsFunction(directive, outputCtx, bindingParser));
+    // e.g. `attributes: ['role', 'listbox']`
+    field('attributes', createHostAttributesArray(directive, outputCtx));
     // e.g 'inputs: {a: 'a'}`
-    if (Object.getOwnPropertyNames(directive.inputs).length > 0) {
-        definitionMapValues.push({ key: 'inputs', quoted: false, value: mapToExpression(directive.inputs) });
-    }
+    field('inputs', createInputsObject(directive, outputCtx));
     var /** @type {?} */ className = /** @type {?} */ ((identifierName(directive.type)));
     className || error("Cannot resolver the name of " + directive.type);
     // Create the partial class to be merged with the actual class.
@@ -30235,57 +30268,53 @@ function compileDirective(outputCtx, directive, reflector) {
  * @param {?} pipes
  * @param {?} template
  * @param {?} reflector
+ * @param {?} bindingParser
  * @return {?}
  */
-function compileComponent(outputCtx, component, pipes, template, reflector) {
+function compileComponent(outputCtx, component, pipes, template, reflector, bindingParser) {
     var /** @type {?} */ definitionMapValues = [];
+    var /** @type {?} */ field = function (key, value) {
+        if (value) {
+            definitionMapValues.push({ key: key, value: value, quoted: false });
+        }
+    };
     // e.g. `type: MyApp`
-    definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(component.type.reference), quoted: false });
+    field('type', outputCtx.importExpr(component.type.reference));
     // e.g. `tag: 'my-app'`
     // This is optional and only included if the first selector of a component has element.
     var /** @type {?} */ selector = component.selector && CssSelector.parse(component.selector);
     var /** @type {?} */ firstSelector = selector && selector[0];
     if (firstSelector && firstSelector.hasElementSelector()) {
-        definitionMapValues.push({ key: 'tag', value: literal(firstSelector.element), quoted: false });
+        field('tag', literal(firstSelector.element));
     }
     // e.g. `attr: ["class", ".my.app"]
     // This is optional an only included if the first selector of a component specifies attributes.
     if (firstSelector) {
         var /** @type {?} */ selectorAttributes = firstSelector.getAttrs();
         if (selectorAttributes.length) {
-            definitionMapValues.push({
-                key: 'attrs',
-                value: outputCtx.constantPool.getConstLiteral(literalArr(selectorAttributes.map(function (value) { return value != null ? literal(value) : literal(undefined); })), /* forceShared */ true),
-                quoted: false
-            });
+            field('attrs', outputCtx.constantPool.getConstLiteral(literalArr(selectorAttributes.map(function (value) { return value != null ? literal(value) : literal(undefined); })), /* forceShared */ true));
         }
     }
     // e.g. `factory: function MyApp_Factory() { return new MyApp(injectElementRef()); }`
-    var /** @type {?} */ templateFactory = createFactory(component.type, outputCtx, reflector, component.queries);
-    definitionMapValues.push({ key: 'factory', value: templateFactory, quoted: false });
+    field('factory', createFactory(component.type, outputCtx, reflector, component.queries));
     // e.g `hostBindings: function MyApp_HostBindings { ... }
-    var /** @type {?} */ hostBindings = createHostBindingsFunction(component.type, outputCtx, component.queries);
-    if (hostBindings) {
-        definitionMapValues.push({ key: 'hostBindings', value: hostBindings, quoted: false });
-    }
+    field('hostBindings', createHostBindingsFunction(component, outputCtx, bindingParser));
     // e.g. `template: function MyComponent_Template(_ctx, _cm) {...}`
     var /** @type {?} */ templateTypeName = component.type.reference.name;
     var /** @type {?} */ templateName = templateTypeName ? templateTypeName + "_Template" : null;
     var /** @type {?} */ pipeMap = new Map(pipes.map(function (pipe) { return [pipe.name, pipe]; }));
     var /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, ROOT_SCOPE.nestedScope(), 0, /** @type {?} */ ((component.template)).ngContentSelectors, templateTypeName, templateName, pipeMap, component.viewQueries)
         .buildTemplateFunction(template, []);
-    definitionMapValues.push({ key: 'template', value: templateFunctionExpression, quoted: false });
+    field('template', templateFunctionExpression);
     // e.g `inputs: {a: 'a'}`
-    if (Object.getOwnPropertyNames(component.inputs).length > 0) {
-        definitionMapValues.push({ key: 'inputs', quoted: false, value: mapToExpression(component.inputs) });
-    }
+    field('inputs', createInputsObject(component, outputCtx));
     // e.g. `features: [NgOnChangesFeature(MyComponent)]`
     var /** @type {?} */ features = [];
     if (component.type.lifecycleHooks.some(function (lifecycle) { return lifecycle == LifecycleHooks.OnChanges; })) {
         features.push(importExpr(Identifiers$1.NgOnChangesFeature, null, null).callFn([outputCtx.importExpr(component.type.reference)]));
     }
     if (features.length) {
-        definitionMapValues.push({ key: 'features', quoted: false, value: literalArr(features) });
+        field('features', literalArr(features));
     }
     var /** @type {?} */ className = /** @type {?} */ ((identifierName(component.type)));
     className || error("Cannot resolver the name of " + component.type);
@@ -31005,12 +31034,30 @@ function createFactory(type, outputCtx, reflector, queries) {
     return fn([], [new ReturnStatement(result)], INFERRED_TYPE, null, type.reference.name ? type.reference.name + "_Factory" : null);
 }
 /**
- * @param {?} type
+ * @param {?} directiveMetadata
  * @param {?} outputCtx
- * @param {?} queries
  * @return {?}
  */
-function createHostBindingsFunction(type, outputCtx, queries) {
+function createHostAttributesArray(directiveMetadata, outputCtx) {
+    var /** @type {?} */ values = [];
+    var /** @type {?} */ attributes = directiveMetadata.hostAttributes;
+    for (var _i = 0, _a = Object.getOwnPropertyNames(attributes); _i < _a.length; _i++) {
+        var key = _a[_i];
+        var /** @type {?} */ value = attributes[key];
+        values.push(literal(key), literal(value));
+    }
+    if (values.length > 0) {
+        return outputCtx.constantPool.getConstLiteral(literalArr(values));
+    }
+    return null;
+}
+/**
+ * @param {?} directiveMetadata
+ * @param {?} outputCtx
+ * @param {?} bindingParser
+ * @return {?}
+ */
+function createHostBindingsFunction(directiveMetadata, outputCtx, bindingParser) {
     var /** @type {?} */ statements = [];
     var /** @type {?} */ temporary = function () {
         var /** @type {?} */ declared = false;
@@ -31022,8 +31069,10 @@ function createHostBindingsFunction(type, outputCtx, queries) {
             return variable(TEMPORARY_NAME);
         };
     }();
-    for (var /** @type {?} */ index = 0; index < queries.length; index++) {
-        var /** @type {?} */ query = queries[index];
+    var /** @type {?} */ hostBindingSourceSpan = typeSourceSpan(directiveMetadata.isComponent ? 'Component' : 'Directive', directiveMetadata.type);
+    // Calculate the queries
+    for (var /** @type {?} */ index = 0; index < directiveMetadata.queries.length; index++) {
+        var /** @type {?} */ query = directiveMetadata.queries[index];
         // e.g. r3.qR(tmp = r3.ld(dirIndex)[1]) && (r3.ld(dirIndex)[0].someDir = tmp);
         var /** @type {?} */ getDirectiveMemory = importExpr(Identifiers$1.load).callFn([variable('dirIndex')]);
         // The query list is at the query index + 1 because the directive itself is in slot 0.
@@ -31032,12 +31081,54 @@ function createHostBindingsFunction(type, outputCtx, queries) {
         var /** @type {?} */ callQueryRefresh = importExpr(Identifiers$1.queryRefresh).callFn([assignToTemporary]);
         var /** @type {?} */ updateDirective = getDirectiveMemory.key(literal(0, INFERRED_TYPE))
             .prop(query.propertyName)
-            .set(query.first ? temporary().key(literal(0)) : temporary());
+            .set(query.first ? temporary().prop('first') : temporary());
         var /** @type {?} */ andExpression = callQueryRefresh.and(updateDirective);
         statements.push(andExpression.toStmt());
     }
+    var /** @type {?} */ directiveSummary = directiveMetadata.toSummary();
+    // Calculate the host property bindings
+    var /** @type {?} */ bindings = bindingParser.createBoundHostProperties(directiveSummary, hostBindingSourceSpan);
+    var /** @type {?} */ bindingContext = importExpr(Identifiers$1.load).callFn([variable('dirIndex')]);
+    if (bindings) {
+        for (var _i = 0, bindings_1 = bindings; _i < bindings_1.length; _i++) {
+            var binding = bindings_1[_i];
+            var /** @type {?} */ bindingExpr = convertPropertyBinding(null, bindingContext, binding.expression, 'b', BindingForm.TrySimple, function () { return error('Unexpected interpolation'); });
+            statements.push.apply(statements, bindingExpr.stmts);
+            statements.push(importExpr(Identifiers$1.elementProperty)
+                .callFn([
+                variable('elIndex'), literal(binding.name),
+                importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr])
+            ])
+                .toStmt());
+        }
+    }
+    // Calculate host event bindings
+    var /** @type {?} */ eventBindings = bindingParser.createDirectiveHostEventAsts(directiveSummary, hostBindingSourceSpan);
+    if (eventBindings) {
+        for (var _a = 0, eventBindings_1 = eventBindings; _a < eventBindings_1.length; _a++) {
+            var binding = eventBindings_1[_a];
+            var /** @type {?} */ bindingExpr = convertActionBinding(null, bindingContext, binding.handler, 'b', function () { return error('Unexpected interpolation'); });
+            var /** @type {?} */ bindingName = binding.name && sanitizeIdentifier(binding.name);
+            var /** @type {?} */ typeName = identifierName(directiveMetadata.type);
+            var /** @type {?} */ functionName = typeName && bindingName ? typeName + "_" + bindingName + "_HostBindingHandler" : null;
+            var /** @type {?} */ handler = fn([new FnParam('event', DYNAMIC_TYPE)], bindingExpr.stmts.concat([new ReturnStatement(bindingExpr.allowDefault)]), INFERRED_TYPE, null, functionName);
+            statements.push(importExpr(Identifiers$1.listener).callFn([literal(binding.name), handler]).toStmt());
+        }
+    }
     if (statements.length > 0) {
-        return fn([new FnParam('dirIndex', NUMBER_TYPE), new FnParam('elIndex', NUMBER_TYPE)], statements, INFERRED_TYPE, null, type.reference.name ? type.reference.name + "_HostBindings" : null);
+        var /** @type {?} */ typeName = directiveMetadata.type.reference.name;
+        return fn([new FnParam('dirIndex', NUMBER_TYPE), new FnParam('elIndex', NUMBER_TYPE)], statements, INFERRED_TYPE, null, typeName ? typeName + "_HostBindings" : null);
+    }
+    return null;
+}
+/**
+ * @param {?} directive
+ * @param {?} outputCtx
+ * @return {?}
+ */
+function createInputsObject(directive, outputCtx) {
+    if (Object.getOwnPropertyNames(directive.inputs).length > 0) {
+        return outputCtx.constantPool.getConstLiteral(mapToExpression(directive.inputs));
     }
     return null;
 }
@@ -33196,7 +33287,9 @@ var AotCompiler = /** @class */ (function () {
     function (fileName, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables) {
         var _this = this;
         var /** @type {?} */ classes = [];
+        var /** @type {?} */ errors = [];
         var /** @type {?} */ context = this._createOutputContext(fileName);
+        var /** @type {?} */ hostBindingParser = new BindingParser(this._templateParser.expressionParser, DEFAULT_INTERPOLATION_CONFIG, /** @type {?} */ ((null)), [], errors);
         // Process all components and directives
         directives.forEach(function (directiveType) {
             var /** @type {?} */ directiveMetadata = _this._metadataResolver.getDirectiveMetadata(directiveType);
@@ -33205,10 +33298,10 @@ var AotCompiler = /** @class */ (function () {
                 module ||
                     error("Cannot determine the module for component '" + identifierName(directiveMetadata.type) + "'");
                 var _a = _this._parseTemplate(directiveMetadata, module, module.transitiveModule.directives), parsedTemplate = _a.template, parsedPipes = _a.pipes;
-                compileComponent(context, directiveMetadata, parsedPipes, parsedTemplate, _this._reflector);
+                compileComponent(context, directiveMetadata, parsedPipes, parsedTemplate, _this._reflector, hostBindingParser);
             }
             else {
-                compileDirective(context, directiveMetadata, _this._reflector);
+                compileDirective(context, directiveMetadata, _this._reflector, hostBindingParser);
             }
         });
         pipes.forEach(function (pipeType) {
@@ -37838,6 +37931,7 @@ exports.PropertyBindingType = PropertyBindingType;
 exports.NullTemplateVisitor = NullTemplateVisitor;
 exports.RecursiveTemplateAstVisitor = RecursiveTemplateAstVisitor;
 exports.templateVisitAll = templateVisitAll;
+exports.sanitizeIdentifier = sanitizeIdentifier;
 exports.identifierName = identifierName;
 exports.identifierModuleUrl = identifierModuleUrl;
 exports.viewClassName = viewClassName;
