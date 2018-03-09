@@ -6,15 +6,11 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import * as o from '../output/output_ast';
-export declare const enum LifeCycleGuard {
-    ON_INIT = 1,
-    ON_DESTROY = 2,
-    ON_CHANGES = 4,
-}
 export declare class Identifiers {
     static NEW_METHOD: string;
     static HOST_BINDING_METHOD: string;
     static TRANSFORM_METHOD: string;
+    static PATCH_DEPS: string;
     static createElement: o.ExternalReference;
     static elementEnd: o.ExternalReference;
     static elementProperty: o.ExternalReference;

@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.7-5412e10
+ * @license Angular v6.0.0-beta.7-b0b9ca3
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -659,7 +659,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('6.0.0-beta.7-5412e10');
+var VERSION = new Version('6.0.0-beta.7-b0b9ca3');
 
 /**
  * @fileoverview added by tsickle
@@ -30096,6 +30096,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.NEW_METHOD = 'n';
     Identifiers.HOST_BINDING_METHOD = 'h';
     Identifiers.TRANSFORM_METHOD = 'transform';
+    Identifiers.PATCH_DEPS = 'patchedDeps';
     /* Instructions */
     Identifiers.createElement = { name: 'ɵE', moduleName: CORE$1 };
     Identifiers.elementEnd = { name: 'ɵe', moduleName: CORE$1 };
@@ -30170,6 +30171,26 @@ var Identifiers$1 = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/** @enum {number} */
+/**
+ * Comment to insert above back-patch
+ */
+var BUILD_OPTIMIZER_COLOCATE = '@__BUILD_OPTIMIZER_COLOCATE__';
+/**
+ * Comment to mark removable expressions
+ */
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * Name of the context parameter passed into a template function
  */
@@ -30195,9 +30216,10 @@ var IMPLICIT_REFERENCE = '$implicit';
  * @param {?} directive
  * @param {?} reflector
  * @param {?} bindingParser
+ * @param {?} mode
  * @return {?}
  */
-function compileDirective(outputCtx, directive, reflector, bindingParser) {
+function compileDirective(outputCtx, directive, reflector, bindingParser, mode) {
     var /** @type {?} */ definitionMapValues = [];
     var /** @type {?} */ field = function (key, value) {
         if (value) {
@@ -30216,8 +30238,19 @@ function compileDirective(outputCtx, directive, reflector, bindingParser) {
     field('inputs', createInputsObject(directive, outputCtx));
     var /** @type {?} */ className = /** @type {?} */ ((identifierName(directive.type)));
     className || error("Cannot resolver the name of " + directive.type);
-    // Create the partial class to be merged with the actual class.
-    outputCtx.statements.push(new ClassStmt(className, null, /* fields */ [new ClassField(/* name */ outputCtx.constantPool.propertyNameOf(1 /* Directive */), /* type */ INFERRED_TYPE, /* modifiers */ [StmtModifier.Static], /* initializer */ importExpr(Identifiers$1.defineDirective).callFn([literalMap(definitionMapValues)]))], /* getters */ [], /* constructorMethod */ new ClassMethod(null, [], []), /* methods */ []));
+    var /** @type {?} */ definitionField = outputCtx.constantPool.propertyNameOf(1 /* Directive */);
+    var /** @type {?} */ definitionFunction = importExpr(Identifiers$1.defineDirective).callFn([literalMap(definitionMapValues)]);
+    if (mode === 0 /* PartialClass */) {
+        // Create the partial class to be merged with the actual class.
+        outputCtx.statements.push(new ClassStmt(className, null, /* fields */ [new ClassField(definitionField, /* type */ INFERRED_TYPE, /* modifiers */ [StmtModifier.Static], definitionFunction)], /* getters */ [], /* constructorMethod */ new ClassMethod(null, [], []), /* methods */ []));
+    }
+    else {
+        // Create back-patch definition.
+        var /** @type {?} */ classReference = outputCtx.importExpr(directive.type.reference);
+        // Create the back-patch statement
+        outputCtx.statements.push(new CommentStmt(BUILD_OPTIMIZER_COLOCATE));
+        outputCtx.statements.push(classReference.prop(definitionField).set(definitionFunction).toStmt());
+    }
 }
 /**
  * @param {?} outputCtx
@@ -30226,9 +30259,10 @@ function compileDirective(outputCtx, directive, reflector, bindingParser) {
  * @param {?} template
  * @param {?} reflector
  * @param {?} bindingParser
+ * @param {?} mode
  * @return {?}
  */
-function compileComponent(outputCtx, component, pipes, template, reflector, bindingParser) {
+function compileComponent(outputCtx, component, pipes, template, reflector, bindingParser, mode) {
     var /** @type {?} */ definitionMapValues = [];
     var /** @type {?} */ field = function (key, value) {
         if (value) {
@@ -30273,10 +30307,19 @@ function compileComponent(outputCtx, component, pipes, template, reflector, bind
     if (features.length) {
         field('features', literalArr(features));
     }
-    var /** @type {?} */ className = /** @type {?} */ ((identifierName(component.type)));
-    className || error("Cannot resolver the name of " + component.type);
-    // Create the partial class to be merged with the actual class.
-    outputCtx.statements.push(new ClassStmt(className, null, /* fields */ [new ClassField(/* name */ outputCtx.constantPool.propertyNameOf(2 /* Component */), /* type */ INFERRED_TYPE, /* modifiers */ [StmtModifier.Static], /* initializer */ importExpr(Identifiers$1.defineComponent).callFn([literalMap(definitionMapValues)]))], /* getters */ [], /* constructorMethod */ new ClassMethod(null, [], []), /* methods */ []));
+    var /** @type {?} */ definitionField = outputCtx.constantPool.propertyNameOf(2 /* Component */);
+    var /** @type {?} */ definitionFunction = importExpr(Identifiers$1.defineComponent).callFn([literalMap(definitionMapValues)]);
+    if (mode === 0 /* PartialClass */) {
+        var /** @type {?} */ className = /** @type {?} */ ((identifierName(component.type)));
+        className || error("Cannot resolver the name of " + component.type);
+        // Create the partial class to be merged with the actual class.
+        outputCtx.statements.push(new ClassStmt(className, null, /* fields */ [new ClassField(definitionField, /* type */ INFERRED_TYPE, /* modifiers */ [StmtModifier.Static], definitionFunction)], /* getters */ [], /* constructorMethod */ new ClassMethod(null, [], []), /* methods */ []));
+    }
+    else {
+        var /** @type {?} */ classReference = outputCtx.importExpr(component.type.reference);
+        // Create the back-patch statement
+        outputCtx.statements.push(new CommentStmt(BUILD_OPTIMIZER_COLOCATE), classReference.prop(definitionField).set(definitionFunction).toStmt());
+    }
 }
 /**
  * @param {?} feature
@@ -31283,12 +31326,14 @@ var _a;
  * found in the LICENSE file at https://angular.io/license
  */
 /**
+ * Write a pipe definition to the output context.
  * @param {?} outputCtx
  * @param {?} pipe
  * @param {?} reflector
+ * @param {?} mode
  * @return {?}
  */
-function compilePipe(outputCtx, pipe, reflector) {
+function compilePipe(outputCtx, pipe, reflector, mode) {
     var /** @type {?} */ definitionMapValues = [];
     // e.g. 'type: MyPipe`
     definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(pipe.type.reference), quoted: false });
@@ -31301,7 +31346,17 @@ function compilePipe(outputCtx, pipe, reflector) {
     }
     var /** @type {?} */ className = /** @type {?} */ ((identifierName(pipe.type)));
     className || error("Cannot resolve the name of " + pipe.type);
-    outputCtx.statements.push(new ClassStmt(className, null, /* fields */ [new ClassField(/* name */ outputCtx.constantPool.propertyNameOf(3 /* Pipe */), /* type */ INFERRED_TYPE, /* modifiers */ [StmtModifier.Static], /* initializer */ importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]))], /* getters */ [], /* constructorMethod */ new ClassMethod(null, [], []), /* methods */ []));
+    var /** @type {?} */ definitionField = outputCtx.constantPool.propertyNameOf(3 /* Pipe */);
+    var /** @type {?} */ definitionFunction = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]);
+    if (mode === 0 /* PartialClass */) {
+        outputCtx.statements.push(new ClassStmt(className, null, /* fields */ [new ClassField(definitionField, /* type */ INFERRED_TYPE, /* modifiers */ [StmtModifier.Static], definitionFunction)], /* getters */ [], /* constructorMethod */ new ClassMethod(null, [], []), /* methods */ []));
+    }
+    else {
+        // Create back-patch definition.
+        var /** @type {?} */ classReference = outputCtx.importExpr(pipe.type.reference);
+        // Create the back-patch statement
+        outputCtx.statements.push(new CommentStmt(BUILD_OPTIMIZER_COLOCATE), classReference.prop(definitionField).set(definitionFunction).toStmt());
+    }
 }
 
 /**
@@ -32998,7 +33053,7 @@ var AotCompiler = /** @class */ (function () {
             _createEmptyStub(outputCtx);
         }
         // Note: for the stubs, we don't need a property srcFileUrl,
-        // as lateron in emitAllImpls we will create the proper GeneratedFiles with the
+        // as later on in emitAllImpls we will create the proper GeneratedFiles with the
         // correct srcFileUrl.
         // This is good as e.g. for .ngstyle.ts files we can't derive
         // the url of components based on the genFileUrl.
@@ -33092,10 +33147,10 @@ var AotCompiler = /** @class */ (function () {
         var /** @type {?} */ componentId = 0;
         file.ngModules.forEach(function (ngModuleMeta, ngModuleIndex) {
             // Note: the code below needs to executed for StubEmitFlags.Basic and StubEmitFlags.TypeCheck,
-            // so we don't change the .ngfactory file too much when adding the typecheck block.
+            // so we don't change the .ngfactory file too much when adding the type-check block.
             // create exports that user code can reference
             // Note: the code below needs to executed for StubEmitFlags.Basic and StubEmitFlags.TypeCheck,
-            // so we don't change the .ngfactory file too much when adding the typecheck block.
+            // so we don't change the .ngfactory file too much when adding the type-check block.
             // create exports that user code can reference
             _this._ngModuleCompiler.createStub(outputCtx, ngModuleMeta.type.reference);
             // add references to the symbols from the metadata.
@@ -33113,7 +33168,7 @@ var AotCompiler = /** @class */ (function () {
                     .toDeclStmt(expressionType(outputCtx.importExpr(reference, /* typeParams */ null, /* useSummaries */ /* useSummaries */ false))));
             });
             if (emitFlags & StubEmitFlags.TypeCheck) {
-                // add the typecheck block for all components of the NgModule
+                // add the type-check block for all components of the NgModule
                 ngModuleMeta.declaredDirectives.forEach(function (dirId) {
                     var /** @type {?} */ compMeta = _this._metadataResolver.getDirectiveMetadata(dirId.reference);
                     if (!compMeta.isComponent) {
@@ -33255,16 +33310,16 @@ var AotCompiler = /** @class */ (function () {
                 module ||
                     error("Cannot determine the module for component '" + identifierName(directiveMetadata.type) + "'");
                 var _a = _this._parseTemplate(directiveMetadata, module, module.transitiveModule.directives), parsedTemplate = _a.template, parsedPipes = _a.pipes;
-                compileComponent(context, directiveMetadata, parsedPipes, parsedTemplate, _this._reflector, hostBindingParser);
+                compileComponent(context, directiveMetadata, parsedPipes, parsedTemplate, _this._reflector, hostBindingParser, 0 /* PartialClass */);
             }
             else {
-                compileDirective(context, directiveMetadata, _this._reflector, hostBindingParser);
+                compileDirective(context, directiveMetadata, _this._reflector, hostBindingParser, 0 /* PartialClass */);
             }
         });
         pipes.forEach(function (pipeType) {
             var /** @type {?} */ pipeMetadata = _this._metadataResolver.getPipeMetadata(pipeType);
             if (pipeMetadata) {
-                compilePipe(context, pipeMetadata, _this._reflector);
+                compilePipe(context, pipeMetadata, _this._reflector, 0 /* PartialClass */);
             }
         });
         injectables.forEach(function (injectable) { return _this._injectableCompiler.compile(injectable, context); });
