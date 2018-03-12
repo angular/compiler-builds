@@ -22,10 +22,10 @@ export declare class TemplateParseError extends ParseError {
     constructor(message: string, span: ParseSourceSpan, level: ParseErrorLevel);
 }
 export declare class TemplateParseResult {
-    templateAst: TemplateAst[];
-    usedPipes: CompilePipeSummary[];
-    errors: ParseError[];
-    constructor(templateAst?: TemplateAst[], usedPipes?: CompilePipeSummary[], errors?: ParseError[]);
+    templateAst: TemplateAst[] | undefined;
+    usedPipes: CompilePipeSummary[] | undefined;
+    errors: ParseError[] | undefined;
+    constructor(templateAst?: TemplateAst[] | undefined, usedPipes?: CompilePipeSummary[] | undefined, errors?: ParseError[] | undefined);
 }
 export declare class TemplateParser {
     private _config;
@@ -36,11 +36,12 @@ export declare class TemplateParser {
     private _console;
     transforms: TemplateAstVisitor[];
     constructor(_config: CompilerConfig, _reflector: CompileReflector, _exprParser: Parser, _schemaRegistry: ElementSchemaRegistry, _htmlParser: I18NHtmlParser, _console: Console, transforms: TemplateAstVisitor[]);
-    parse(component: CompileDirectiveMetadata, template: string, directives: CompileDirectiveSummary[], pipes: CompilePipeSummary[], schemas: SchemaMetadata[], templateUrl: string, preserveWhitespaces: boolean): {
+    readonly expressionParser: Parser;
+    parse(component: CompileDirectiveMetadata, template: string | ParseTreeResult, directives: CompileDirectiveSummary[], pipes: CompilePipeSummary[], schemas: SchemaMetadata[], templateUrl: string, preserveWhitespaces: boolean): {
         template: TemplateAst[];
         pipes: CompilePipeSummary[];
     };
-    tryParse(component: CompileDirectiveMetadata, template: string, directives: CompileDirectiveSummary[], pipes: CompilePipeSummary[], schemas: SchemaMetadata[], templateUrl: string, preserveWhitespaces: boolean): TemplateParseResult;
+    tryParse(component: CompileDirectiveMetadata, template: string | ParseTreeResult, directives: CompileDirectiveSummary[], pipes: CompilePipeSummary[], schemas: SchemaMetadata[], templateUrl: string, preserveWhitespaces: boolean): TemplateParseResult;
     tryParseHtml(htmlAstWithErrors: ParseTreeResult, component: CompileDirectiveMetadata, directives: CompileDirectiveSummary[], pipes: CompilePipeSummary[], schemas: SchemaMetadata[]): TemplateParseResult;
     expandHtml(htmlAstWithErrors: ParseTreeResult, forced?: boolean): ParseTreeResult;
     getInterpolationConfig(component: CompileDirectiveMetadata): InterpolationConfig | undefined;

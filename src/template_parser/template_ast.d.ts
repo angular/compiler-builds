@@ -65,9 +65,9 @@ export declare class BoundElementPropertyAst implements TemplateAst {
     value: AST;
     unit: string | null;
     sourceSpan: ParseSourceSpan;
+    readonly isAnimation: boolean;
     constructor(name: string, type: PropertyBindingType, securityContext: SecurityContext, value: AST, unit: string | null, sourceSpan: ParseSourceSpan);
     visit(visitor: TemplateAstVisitor, context: any): any;
-    readonly isAnimation: boolean;
 }
 /**
  * A binding for an element event (e.g. `(event)="handler()"`) or an animation trigger event (e.g.
@@ -80,10 +80,10 @@ export declare class BoundEventAst implements TemplateAst {
     handler: AST;
     sourceSpan: ParseSourceSpan;
     static calcFullName(name: string, target: string | null, phase: string | null): string;
-    constructor(name: string, target: string | null, phase: string | null, handler: AST, sourceSpan: ParseSourceSpan);
-    visit(visitor: TemplateAstVisitor, context: any): any;
     readonly fullName: string;
     readonly isAnimation: boolean;
+    constructor(name: string, target: string | null, phase: string | null, handler: AST, sourceSpan: ParseSourceSpan);
+    visit(visitor: TemplateAstVisitor, context: any): any;
 }
 /**
  * A reference declaration on an element (e.g. `let someName="expression"`).
@@ -91,8 +91,9 @@ export declare class BoundEventAst implements TemplateAst {
 export declare class ReferenceAst implements TemplateAst {
     name: string;
     value: CompileTokenMetadata;
+    originalValue: string;
     sourceSpan: ParseSourceSpan;
-    constructor(name: string, value: CompileTokenMetadata, sourceSpan: ParseSourceSpan);
+    constructor(name: string, value: CompileTokenMetadata, originalValue: string, sourceSpan: ParseSourceSpan);
     visit(visitor: TemplateAstVisitor, context: any): any;
 }
 /**
@@ -178,7 +179,8 @@ export declare class ProviderAst implements TemplateAst {
     providerType: ProviderAstType;
     lifecycleHooks: LifecycleHooks[];
     sourceSpan: ParseSourceSpan;
-    constructor(token: CompileTokenMetadata, multiProvider: boolean, eager: boolean, providers: CompileProviderMetadata[], providerType: ProviderAstType, lifecycleHooks: LifecycleHooks[], sourceSpan: ParseSourceSpan);
+    readonly isModule: boolean;
+    constructor(token: CompileTokenMetadata, multiProvider: boolean, eager: boolean, providers: CompileProviderMetadata[], providerType: ProviderAstType, lifecycleHooks: LifecycleHooks[], sourceSpan: ParseSourceSpan, isModule: boolean);
     visit(visitor: TemplateAstVisitor, context: any): any;
 }
 export declare enum ProviderAstType {

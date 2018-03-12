@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { CompileAnimationEntryMetadata, CompileDirectiveMetadata, CompileStylesheetMetadata, CompileTemplateMetadata } from './compile_metadata';
+import { CompileDirectiveMetadata, CompileTemplateMetadata } from './compile_metadata';
 import { CompilerConfig } from './config';
 import { ViewEncapsulation } from './core';
 import { HtmlParser } from './ml_parser/html_parser';
@@ -22,7 +22,7 @@ export interface PrenormalizedTemplateMetadata {
     styleUrls: string[];
     interpolation: [string, string] | null;
     encapsulation: ViewEncapsulation | null;
-    animations: CompileAnimationEntryMetadata[];
+    animations: any[];
     preserveWhitespaces: boolean | null;
 }
 export declare class DirectiveNormalizer {
@@ -36,9 +36,11 @@ export declare class DirectiveNormalizer {
     clearCacheFor(normalizedDirective: CompileDirectiveMetadata): void;
     private _fetch(url);
     normalizeTemplate(prenormData: PrenormalizedTemplateMetadata): SyncAsync<CompileTemplateMetadata>;
-    normalizeTemplateOnly(prenomData: PrenormalizedTemplateMetadata): SyncAsync<CompileTemplateMetadata>;
-    normalizeLoadedTemplate(prenormData: PrenormalizedTemplateMetadata, template: string, templateAbsUrl: string): CompileTemplateMetadata;
-    normalizeExternalStylesheets(templateMeta: CompileTemplateMetadata): SyncAsync<CompileTemplateMetadata>;
+    private _preParseTemplate(prenomData);
+    private _preparseLoadedTemplate(prenormData, template, templateAbsUrl);
+    private _normalizeTemplateMetadata(prenormData, preparsedTemplate);
+    private _normalizeLoadedTemplateMetadata(prenormData, preparsedTemplate, stylesheets);
+    private _inlineStyles(styleUrls, stylesheets, targetStyles);
     private _loadMissingExternalStylesheets(styleUrls, loadedStylesheets?);
-    normalizeStylesheet(stylesheet: CompileStylesheetMetadata): CompileStylesheetMetadata;
+    private _normalizeStylesheet(stylesheet);
 }
