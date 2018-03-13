@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.7-21e44c6
+ * @license Angular v6.0.0-beta.7-db56836
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -604,7 +604,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('6.0.0-beta.7-21e44c6');
+const VERSION = new Version('6.0.0-beta.7-db56836');
 
 /**
  * @fileoverview added by tsickle
@@ -14270,10 +14270,19 @@ class InjectableCompiler {
      * @return {?}
      */
     injectableDef(injectable, ctx) {
+        let /** @type {?} */ providedIn = NULL_EXPR;
+        if (injectable.providedIn) {
+            if (typeof injectable.providedIn === 'string') {
+                providedIn = literal(injectable.providedIn);
+            }
+            else {
+                providedIn = ctx.importExpr(injectable.providedIn);
+            }
+        }
         const /** @type {?} */ def = [
             mapEntry('factory', this.factoryFor(injectable, ctx)),
             mapEntry('token', ctx.importExpr(injectable.type.reference)),
-            mapEntry('scope', ctx.importExpr(/** @type {?} */ ((injectable.module)))),
+            mapEntry('providedIn', providedIn),
         ];
         return importExpr(Identifiers.defineInjectable).callFn([literalMap(def)]);
     }
@@ -14283,7 +14292,7 @@ class InjectableCompiler {
      * @return {?}
      */
     compile(injectable, ctx) {
-        if (injectable.module) {
+        if (injectable.providedIn) {
             const /** @type {?} */ className = /** @type {?} */ ((identifierName(injectable.type)));
             const /** @type {?} */ clazz = new ClassStmt(className, null, [
                 new ClassField('ngInjectableDef', INFERRED_TYPE, [StmtModifier.Static], this.injectableDef(injectable, ctx)),
@@ -15721,7 +15730,7 @@ class CompileMetadataResolver {
         return {
             symbol: type,
             type: typeMetadata,
-            module: meta.scope || undefined,
+            providedIn: meta.providedIn,
             useValue: meta.useValue,
             useClass: meta.useClass,
             useExisting: meta.useExisting,
