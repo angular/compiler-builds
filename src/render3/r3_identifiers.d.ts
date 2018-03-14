@@ -15,8 +15,8 @@ export declare class Identifiers {
     static elementEnd: o.ExternalReference;
     static elementProperty: o.ExternalReference;
     static elementAttribute: o.ExternalReference;
-    static elementClass: o.ExternalReference;
-    static elementStyle: o.ExternalReference;
+    static elementClassNamed: o.ExternalReference;
+    static elementStyleNamed: o.ExternalReference;
     static containerCreate: o.ExternalReference;
     static containerEnd: o.ExternalReference;
     static containerRefreshStart: o.ExternalReference;

@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.7-f5a98f4
+ * @license Angular v6.0.0-beta.7-112431d
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -659,7 +659,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('6.0.0-beta.7-f5a98f4');
+var VERSION = new Version('6.0.0-beta.7-112431d');
 
 /**
  * @fileoverview added by tsickle
@@ -30111,8 +30111,8 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.elementEnd = { name: 'ɵe', moduleName: CORE$1 };
     Identifiers.elementProperty = { name: 'ɵp', moduleName: CORE$1 };
     Identifiers.elementAttribute = { name: 'ɵa', moduleName: CORE$1 };
-    Identifiers.elementClass = { name: 'ɵk', moduleName: CORE$1 };
-    Identifiers.elementStyle = { name: 'ɵs', moduleName: CORE$1 };
+    Identifiers.elementClassNamed = { name: 'ɵkn', moduleName: CORE$1 };
+    Identifiers.elementStyleNamed = { name: 'ɵsn', moduleName: CORE$1 };
     Identifiers.containerCreate = { name: 'ɵC', moduleName: CORE$1 };
     Identifiers.containerEnd = { name: 'ɵc', moduleName: CORE$1 };
     Identifiers.containerRefreshStart = { name: 'ɵcR', moduleName: CORE$1 };
@@ -30343,8 +30343,8 @@ function unsupported(feature) {
 var BINDING_INSTRUCTION_MAP = (_a = {},
     _a[PropertyBindingType.Property] = Identifiers$1.elementProperty,
     _a[PropertyBindingType.Attribute] = Identifiers$1.elementAttribute,
-    _a[PropertyBindingType.Class] = Identifiers$1.elementClass,
-    _a[PropertyBindingType.Style] = Identifiers$1.elementStyle,
+    _a[PropertyBindingType.Class] = Identifiers$1.elementClassNamed,
+    _a[PropertyBindingType.Style] = Identifiers$1.elementStyleNamed,
     _a);
 /**
  * @param {?} args
