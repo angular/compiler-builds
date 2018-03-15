@@ -11,7 +11,6 @@ export interface AotCompilerOptions {
     i18nFormat?: string;
     translations?: string;
     missingTranslation?: MissingTranslationStrategy;
-    enableLegacyTemplate?: boolean;
     enableSummariesForJit?: boolean;
     preserveWhitespaces?: boolean;
     fullTemplateTypeCheck?: boolean;
