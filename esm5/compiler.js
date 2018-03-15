@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.7-02e6ac2
+ * @license Angular v6.0.0-beta.7-4e6ac18
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -660,7 +660,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('6.0.0-beta.7-02e6ac2');
+var VERSION = new Version('6.0.0-beta.7-4e6ac18');
 
 /**
  * @fileoverview added by tsickle
@@ -16118,9 +16118,11 @@ var IfStmt = /** @class */ (function (_super) {
 }(Statement));
 var CommentStmt = /** @class */ (function (_super) {
     __extends(CommentStmt, _super);
-    function CommentStmt(comment, sourceSpan) {
+    function CommentStmt(comment, multiline, sourceSpan) {
+        if (multiline === void 0) { multiline = false; }
         var _this = _super.call(this, null, sourceSpan) || this;
         _this.comment = comment;
+        _this.multiline = multiline;
         return _this;
     }
     /**
@@ -16146,6 +16148,47 @@ var CommentStmt = /** @class */ (function (_super) {
         return visitor.visitCommentStmt(this, context);
     };
     return CommentStmt;
+}(Statement));
+var JSDocCommentStmt = /** @class */ (function (_super) {
+    __extends(JSDocCommentStmt, _super);
+    function JSDocCommentStmt(tags, sourceSpan) {
+        if (tags === void 0) { tags = []; }
+        var _this = _super.call(this, null, sourceSpan) || this;
+        _this.tags = tags;
+        return _this;
+    }
+    /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    JSDocCommentStmt.prototype.isEquivalent = /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    function (stmt) {
+        return stmt instanceof JSDocCommentStmt && this.toString() === stmt.toString();
+    };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    JSDocCommentStmt.prototype.visitStatement = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitJSDocCommentStmt(this, context);
+    };
+    /**
+     * @return {?}
+     */
+    JSDocCommentStmt.prototype.toString = /**
+     * @return {?}
+     */
+    function () { return serializeTags(this.tags); };
+    return JSDocCommentStmt;
 }(Statement));
 var TryCatchStmt = /** @class */ (function (_super) {
     __extends(TryCatchStmt, _super);
@@ -16641,6 +16684,19 @@ var AstTransformer$1 = /** @class */ (function () {
      * @return {?}
      */
     AstTransformer.prototype.visitCommentStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        return this.transformStmt(stmt, context);
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitJSDocCommentStmt = /**
      * @param {?} stmt
      * @param {?} context
      * @return {?}
@@ -17188,6 +17244,17 @@ var RecursiveAstVisitor$1 = /** @class */ (function () {
      */
     function (stmt, context) { return stmt; };
     /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitJSDocCommentStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) { return stmt; };
+    /**
      * @param {?} stmts
      * @param {?} context
      * @return {?}
@@ -17480,6 +17547,41 @@ function ifStmt(condition, thenClause, elseClause) {
  */
 function literal(value, type, sourceSpan) {
     return new LiteralExpr(value, type, sourceSpan);
+}
+/**
+ * @param {?} tag
+ * @return {?}
+ */
+function tagToString(tag) {
+    var /** @type {?} */ out = '';
+    if (tag.tagName) {
+        out += " @" + tag.tagName;
+    }
+    if (tag.text) {
+        if (tag.text.match(/\/\*|\*\//)) {
+            throw new Error('JSDoc text cannot contain "/*" and "*/"');
+        }
+        out += ' ' + tag.text.replace(/@/g, '\\@');
+    }
+    return out;
+}
+/**
+ * @param {?} tags
+ * @return {?}
+ */
+function serializeTags(tags) {
+    if (tags.length === 0)
+        return '';
+    var /** @type {?} */ out = '*\n';
+    for (var _i = 0, tags_1 = tags; _i < tags_1.length; _i++) {
+        var tag = tags_1[_i];
+        out += ' *';
+        // If the tagToString is multi-line, insert " * " prefixes on subsequent lines.
+        out += tagToString(tag).replace(/\n/g, '\n * ');
+        out += '\n';
+    }
+    out += ' ';
+    return out;
 }
 
 /**
@@ -21595,8 +21697,26 @@ var AbstractEmitterVisitor = /** @class */ (function () {
      * @return {?}
      */
     function (stmt, ctx) {
-        var /** @type {?} */ lines = stmt.comment.split('\n');
-        lines.forEach(function (line) { ctx.println(stmt, "// " + line); });
+        if (stmt.multiline) {
+            ctx.println(stmt, "/* " + stmt.comment + " */");
+        }
+        else {
+            stmt.comment.split('\n').forEach(function (line) { ctx.println(stmt, "// " + line); });
+        }
+        return null;
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} ctx
+     * @return {?}
+     */
+    AbstractEmitterVisitor.prototype.visitJSDocCommentStmt = /**
+     * @param {?} stmt
+     * @param {?} ctx
+     * @return {?}
+     */
+    function (stmt, ctx) {
+        ctx.println(stmt, "/*" + stmt.toString() + "*/");
         return null;
     };
     /**
@@ -36116,6 +36236,17 @@ var StatementInterpreter = /** @class */ (function () {
      */
     function (stmt, context) { return null; };
     /**
+     * @param {?} stmt
+     * @param {?=} context
+     * @return {?}
+     */
+    StatementInterpreter.prototype.visitJSDocCommentStmt = /**
+     * @param {?} stmt
+     * @param {?=} context
+     * @return {?}
+     */
+    function (stmt, context) { return null; };
+    /**
      * @param {?} ast
      * @param {?} ctx
      * @return {?}
@@ -37941,5 +38072,5 @@ var Extractor = /** @class */ (function () {
 // replaces this file with production index.ts when it rewrites private symbol
 // names.
 
-export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, ExpressionStatement, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
+export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, ExpressionStatement, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
 //# sourceMappingURL=compiler.js.map

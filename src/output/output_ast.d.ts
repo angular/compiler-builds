@@ -436,9 +436,17 @@ export declare class IfStmt extends Statement {
 }
 export declare class CommentStmt extends Statement {
     comment: string;
-    constructor(comment: string, sourceSpan?: ParseSourceSpan | null);
+    multiline: boolean;
+    constructor(comment: string, multiline?: boolean, sourceSpan?: ParseSourceSpan | null);
     isEquivalent(stmt: Statement): boolean;
     visitStatement(visitor: StatementVisitor, context: any): any;
+}
+export declare class JSDocCommentStmt extends Statement {
+    tags: JSDocTag[];
+    constructor(tags?: JSDocTag[], sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(stmt: Statement): boolean;
+    visitStatement(visitor: StatementVisitor, context: any): any;
+    toString(): string;
 }
 export declare class TryCatchStmt extends Statement {
     bodyStmts: Statement[];
@@ -463,6 +471,7 @@ export interface StatementVisitor {
     visitTryCatchStmt(stmt: TryCatchStmt, context: any): any;
     visitThrowStmt(stmt: ThrowStmt, context: any): any;
     visitCommentStmt(stmt: CommentStmt, context: any): any;
+    visitJSDocCommentStmt(stmt: JSDocCommentStmt, context: any): any;
 }
 export declare class AstTransformer implements StatementVisitor, ExpressionVisitor {
     transformExpr(expr: Expression, context: any): Expression;
@@ -497,6 +506,7 @@ export declare class AstTransformer implements StatementVisitor, ExpressionVisit
     visitTryCatchStmt(stmt: TryCatchStmt, context: any): any;
     visitThrowStmt(stmt: ThrowStmt, context: any): any;
     visitCommentStmt(stmt: CommentStmt, context: any): any;
+    visitJSDocCommentStmt(stmt: JSDocCommentStmt, context: any): any;
     visitAllStatements(stmts: Statement[], context: any): Statement[];
 }
 export declare class RecursiveAstVisitor implements StatementVisitor, ExpressionVisitor {
@@ -536,6 +546,7 @@ export declare class RecursiveAstVisitor implements StatementVisitor, Expression
     visitTryCatchStmt(stmt: TryCatchStmt, context: any): any;
     visitThrowStmt(stmt: ThrowStmt, context: any): any;
     visitCommentStmt(stmt: CommentStmt, context: any): any;
+    visitJSDocCommentStmt(stmt: JSDocCommentStmt, context: any): any;
     visitAllStatements(stmts: Statement[], context: any): void;
 }
 export declare function findReadVarNames(stmts: Statement[]): Set<string>;
@@ -557,3 +568,15 @@ export declare function assertNotNull(expr: Expression, sourceSpan?: ParseSource
 export declare function fn(params: FnParam[], body: Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null, name?: string | null): FunctionExpr;
 export declare function ifStmt(condition: Expression, thenClause: Statement[], elseClause?: Statement[]): IfStmt;
 export declare function literal(value: any, type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralExpr;
+export declare const enum JSDocTagName {
+    Desc = "desc",
+    Id = "id",
+    Meaning = "meaning",
+}
+export declare type JSDocTag = {
+    tagName: JSDocTagName | string;
+    text?: string;
+} | {
+    tagName?: undefined;
+    text: string;
+};

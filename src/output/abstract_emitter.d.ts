@@ -52,6 +52,7 @@ export declare abstract class AbstractEmitterVisitor implements o.StatementVisit
     abstract visitTryCatchStmt(stmt: o.TryCatchStmt, ctx: EmitterVisitorContext): any;
     visitThrowStmt(stmt: o.ThrowStmt, ctx: EmitterVisitorContext): any;
     visitCommentStmt(stmt: o.CommentStmt, ctx: EmitterVisitorContext): any;
+    visitJSDocCommentStmt(stmt: o.JSDocCommentStmt, ctx: EmitterVisitorContext): null;
     abstract visitDeclareVarStmt(stmt: o.DeclareVarStmt, ctx: EmitterVisitorContext): any;
     visitWriteVarExpr(expr: o.WriteVarExpr, ctx: EmitterVisitorContext): any;
     visitWriteKeyExpr(expr: o.WriteKeyExpr, ctx: EmitterVisitorContext): any;
