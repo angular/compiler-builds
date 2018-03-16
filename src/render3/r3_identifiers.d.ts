@@ -62,6 +62,7 @@ export declare class Identifiers {
     static inject: o.ExternalReference;
     static defineComponent: o.ExternalReference;
     static defineDirective: o.ExternalReference;
+    static defineInjector: o.ExternalReference;
     static definePipe: o.ExternalReference;
     static query: o.ExternalReference;
     static queryRefresh: o.ExternalReference;

@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { CompileInjectableMetadata, CompileNgModuleMetadata } from '../compile_metadata';
+import { CompileInjectableMetadata, CompileNgModuleMetadata, CompileShallowModuleMetadata } from '../compile_metadata';
 import { CompilerConfig } from '../config';
 import { MessageBundle } from '../i18n/message_bundle';
 import { InjectableCompiler } from '../injectable_compiler';
@@ -29,7 +29,7 @@ export declare class AotCompiler {
     private _config;
     private _options;
     private _host;
-    private _reflector;
+    readonly reflector: StaticReflector;
     private _metadataResolver;
     private _templateParser;
     private _styleCompiler;
@@ -43,7 +43,7 @@ export declare class AotCompiler {
     private _templateAstCache;
     private _analyzedFiles;
     private _analyzedFilesForInjectables;
-    constructor(_config: CompilerConfig, _options: AotCompilerOptions, _host: AotCompilerHost, _reflector: StaticReflector, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _typeCheckCompiler: TypeCheckCompiler, _ngModuleCompiler: NgModuleCompiler, _injectableCompiler: InjectableCompiler, _outputEmitter: OutputEmitter, _summaryResolver: SummaryResolver<StaticSymbol>, _symbolResolver: StaticSymbolResolver);
+    constructor(_config: CompilerConfig, _options: AotCompilerOptions, _host: AotCompilerHost, reflector: StaticReflector, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _typeCheckCompiler: TypeCheckCompiler, _ngModuleCompiler: NgModuleCompiler, _injectableCompiler: InjectableCompiler, _outputEmitter: OutputEmitter, _summaryResolver: SummaryResolver<StaticSymbol>, _symbolResolver: StaticSymbolResolver);
     clearCache(): void;
     analyzeModulesSync(rootFiles: string[]): NgAnalyzedModules;
     analyzeModulesAsync(rootFiles: string[]): Promise<NgAnalyzedModules>;
@@ -64,8 +64,9 @@ export declare class AotCompiler {
     private _externalIdentifierReferences(references);
     private _createTypeCheckBlock(ctx, componentId, moduleMeta, compMeta, directives, externalReferenceVars);
     emitMessageBundle(analyzeResult: NgAnalyzedModules, locale: string | null): MessageBundle;
-    emitAllPartialModules({ngModuleByPipeOrDirective, files}: NgAnalyzedModules): PartialModule[];
-    private _emitPartialModule(fileName, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables);
+    emitAllPartialModules({ngModuleByPipeOrDirective, files}: NgAnalyzedModules, r3Files: NgAnalyzedFileWithInjectables[]): PartialModule[];
+    private _compileShallowModules(fileName, shallowModules, context);
+    private _compilePartialModule(fileName, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables, context);
     emitAllPartialModules2(files: NgAnalyzedFileWithInjectables[]): PartialModule[];
     private _emitPartialModule2(fileName, injectables);
     emitAllImpls(analyzeResult: NgAnalyzedModules): GeneratedFile[];
@@ -90,6 +91,7 @@ export interface NgAnalyzedModules {
 export interface NgAnalyzedFileWithInjectables {
     fileName: string;
     injectables: CompileInjectableMetadata[];
+    shallowModules: CompileShallowModuleMetadata[];
 }
 export interface NgAnalyzedFile {
     fileName: string;

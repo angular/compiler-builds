@@ -39,6 +39,7 @@ export declare class CompileMetadataResolver {
     private _pipeCache;
     private _ngModuleCache;
     private _ngModuleOfTypes;
+    private _shallowModuleCache;
     constructor(_config: CompilerConfig, _htmlParser: HtmlParser, _ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _summaryResolver: SummaryResolver<any>, _schemaRegistry: ElementSchemaRegistry, _directiveNormalizer: DirectiveNormalizer, _console: Console, _staticSymbolCache: StaticSymbolCache, _reflector: CompileReflector, _errorCollector?: ErrorCollector | undefined);
     getReflector(): CompileReflector;
     clearCacheFor(type: Type): void;
@@ -72,6 +73,7 @@ export declare class CompileMetadataResolver {
      * Loads the declared directives and pipes of an NgModule.
      */
     loadNgModuleDirectiveAndPipeMetadata(moduleType: any, isSync: boolean, throwIfNotFound?: boolean): Promise<any>;
+    getShallowModuleMetadata(moduleType: any): cpl.CompileShallowModuleMetadata | null;
     getNgModuleMetadata(moduleType: any, throwIfNotFound?: boolean, alreadyCollecting?: Set<any> | null): cpl.CompileNgModuleMetadata | null;
     private _checkSelfImport(moduleType, importedModuleType);
     private _getTypeDescriptor(type);

@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.7-688096b
+ * @license Angular v6.0.0-beta.7-6ef9f22
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -605,7 +605,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('6.0.0-beta.7-688096b');
+const VERSION = new Version('6.0.0-beta.7-6ef9f22');
 
 /**
  * @fileoverview added by tsickle
@@ -1698,6 +1698,8 @@ class CompilePipeMetadata {
  * @record
  */
 
+class CompileShallowModuleMetadata {
+}
 /**
  * Metadata regarding compilation of a module.
  */
@@ -11628,6 +11630,7 @@ Identifiers.RegisterModuleFactoryFn = {
     moduleName: CORE,
 };
 Identifiers.inject = { name: 'inject', moduleName: CORE };
+Identifiers.INJECTOR = { name: 'INJECTOR', moduleName: CORE };
 Identifiers.Injector = { name: 'Injector', moduleName: CORE };
 Identifiers.defineInjectable = { name: 'defineInjectable', moduleName: CORE };
 Identifiers.ViewEncapsulation = {
@@ -14268,9 +14271,12 @@ function mapEntry(key, value) {
 class InjectableCompiler {
     /**
      * @param {?} reflector
+     * @param {?} alwaysGenerateDef
      */
-    constructor(reflector) {
+    constructor(reflector, alwaysGenerateDef) {
         this.reflector = reflector;
+        this.alwaysGenerateDef = alwaysGenerateDef;
+        this.tokenInjector = reflector.resolveExternalReference(Identifiers.Injector);
     }
     /**
      * @param {?} deps
@@ -14305,7 +14311,16 @@ class InjectableCompiler {
                     }
                 }
             }
-            const /** @type {?} */ tokenExpr = typeof token === 'string' ? literal(token) : ctx.importExpr(token);
+            let /** @type {?} */ tokenExpr;
+            if (typeof token === 'string') {
+                tokenExpr = literal(token);
+            }
+            else if (token === this.tokenInjector && this.alwaysGenerateDef) {
+                tokenExpr = importExpr(Identifiers.INJECTOR);
+            }
+            else {
+                tokenExpr = ctx.importExpr(token);
+            }
             if (flags !== 0 /* Default */ || defaultValue !== undefined) {
                 args = [tokenExpr, literal(defaultValue), literal(flags)];
             }
@@ -14351,8 +14366,11 @@ class InjectableCompiler {
      */
     injectableDef(injectable, ctx) {
         let /** @type {?} */ providedIn = NULL_EXPR;
-        if (injectable.providedIn) {
-            if (typeof injectable.providedIn === 'string') {
+        if (injectable.providedIn !== undefined) {
+            if (injectable.providedIn === null) {
+                providedIn = NULL_EXPR;
+            }
+            else if (typeof injectable.providedIn === 'string') {
                 providedIn = literal(injectable.providedIn);
             }
             else {
@@ -14372,7 +14390,7 @@ class InjectableCompiler {
      * @return {?}
      */
     compile(injectable, ctx) {
-        if (injectable.providedIn) {
+        if (this.alwaysGenerateDef || injectable.providedIn !== undefined) {
             const /** @type {?} */ className = /** @type {?} */ ((identifierName(injectable.type)));
             const /** @type {?} */ clazz = new ClassStmt(className, null, [
                 new ClassField('ngInjectableDef', INFERRED_TYPE, [StmtModifier.Static], this.injectableDef(injectable, ctx)),
@@ -15040,6 +15058,7 @@ class CompileMetadataResolver {
         this._pipeCache = new Map();
         this._ngModuleCache = new Map();
         this._ngModuleOfTypes = new Map();
+        this._shallowModuleCache = new Map();
     }
     /**
      * @return {?}
@@ -15505,6 +15524,25 @@ class CompileMetadataResolver {
             ngModule.declaredPipes.forEach((id) => this._loadPipeMetadata(id.reference));
         }
         return Promise.all(loading);
+    }
+    /**
+     * @param {?} moduleType
+     * @return {?}
+     */
+    getShallowModuleMetadata(moduleType) {
+        let /** @type {?} */ compileMeta = this._shallowModuleCache.get(moduleType);
+        if (compileMeta) {
+            return compileMeta;
+        }
+        const /** @type {?} */ ngModuleMeta = findLast(this._reflector.shallowAnnotations(moduleType), createNgModule.isTypeOf);
+        compileMeta = {
+            type: this._getTypeMetadata(moduleType),
+            rawExports: ngModuleMeta.exports,
+            rawImports: ngModuleMeta.imports,
+            rawProviders: ngModuleMeta.providers,
+        };
+        this._shallowModuleCache.set(moduleType, compileMeta);
+        return compileMeta;
     }
     /**
      * @param {?} moduleType
@@ -24596,6 +24634,35 @@ class MapPlaceholderNames extends CloneVisitor {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/**
+ * @param {?} key
+ * @param {?} value
+ * @return {?}
+ */
+
+/**
+ * @param {?} obj
+ * @return {?}
+ */
+function mapLiteral(obj) {
+    return literalMap(Object.keys(obj).map(key => ({
+        key,
+        quoted: false,
+        value: obj[key],
+    })));
+}
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 const CORE$1 = '@angular/core';
 class Identifiers$1 {
 }
@@ -24659,11 +24726,65 @@ Identifiers$1.defineDirective = {
     name: 'ɵdefineDirective',
     moduleName: CORE$1,
 };
+Identifiers$1.defineInjector = {
+    name: 'defineInjector',
+    moduleName: CORE$1,
+};
 Identifiers$1.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
 Identifiers$1.query = { name: 'ɵQ', moduleName: CORE$1 };
 Identifiers$1.queryRefresh = { name: 'ɵqR', moduleName: CORE$1 };
 Identifiers$1.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
 Identifiers$1.listener = { name: 'ɵL', moduleName: CORE$1 };
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const EMPTY_ARRAY = literalArr([]);
+/**
+ * @param {?} meta
+ * @param {?} ctx
+ * @return {?}
+ */
+function convertMetaToOutput(meta, ctx) {
+    if (Array.isArray(meta)) {
+        return literalArr(meta.map(entry => convertMetaToOutput(entry, ctx)));
+    }
+    else if (meta instanceof StaticSymbol) {
+        return ctx.importExpr(meta);
+    }
+    else if (meta == null) {
+        return literal(meta);
+    }
+    else {
+        throw new Error(`Internal error: Unsupported or unknown metadata: ${meta}`);
+    }
+}
+/**
+ * @param {?} ctx
+ * @param {?} ngModule
+ * @param {?} injectableCompiler
+ * @return {?}
+ */
+function compileNgModule(ctx, ngModule, injectableCompiler) {
+    const /** @type {?} */ className = /** @type {?} */ ((identifierName(ngModule.type)));
+    const /** @type {?} */ rawImports = ngModule.rawImports ? [ngModule.rawImports] : [];
+    const /** @type {?} */ rawExports = ngModule.rawExports ? [ngModule.rawExports] : [];
+    const /** @type {?} */ injectorDefArg = mapLiteral({
+        'factory': injectableCompiler.factoryFor({ type: ngModule.type, symbol: ngModule.type.reference }, ctx),
+        'providers': convertMetaToOutput(ngModule.rawProviders, ctx),
+        'imports': convertMetaToOutput([...rawImports, ...rawExports], ctx),
+    });
+    const /** @type {?} */ injectorDef = importExpr(Identifiers$1.defineInjector).callFn([injectorDefArg]);
+    ctx.statements.push(new ClassStmt(className, null, /* fields */ [new ClassField('ngInjectorDef', /* type */ INFERRED_TYPE, /* modifiers */ [StmtModifier.Static], injectorDef)], /* getters */ [], /* constructorMethod */ new ClassMethod(null, [], []), /* methods */ []));
+}
 
 /**
  * @fileoverview added by tsickle
@@ -27000,7 +27121,7 @@ class AotCompiler {
      * @param {?} _config
      * @param {?} _options
      * @param {?} _host
-     * @param {?} _reflector
+     * @param {?} reflector
      * @param {?} _metadataResolver
      * @param {?} _templateParser
      * @param {?} _styleCompiler
@@ -27012,11 +27133,11 @@ class AotCompiler {
      * @param {?} _summaryResolver
      * @param {?} _symbolResolver
      */
-    constructor(_config, _options, _host, _reflector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _typeCheckCompiler, _ngModuleCompiler, _injectableCompiler, _outputEmitter, _summaryResolver, _symbolResolver) {
+    constructor(_config, _options, _host, reflector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _typeCheckCompiler, _ngModuleCompiler, _injectableCompiler, _outputEmitter, _summaryResolver, _symbolResolver) {
         this._config = _config;
         this._options = _options;
         this._host = _host;
-        this._reflector = _reflector;
+        this.reflector = reflector;
         this._metadataResolver = _metadataResolver;
         this._templateParser = _templateParser;
         this._styleCompiler = _styleCompiler;
@@ -27260,7 +27381,7 @@ class AotCompiler {
     _externalIdentifierReferences(references) {
         const /** @type {?} */ result = [];
         for (let /** @type {?} */ reference of references) {
-            const /** @type {?} */ token = createTokenForExternalReference(this._reflector, reference);
+            const /** @type {?} */ token = createTokenForExternalReference(this.reflector, reference);
             if (token.identifier) {
                 result.push(token.identifier.reference);
             }
@@ -27311,14 +27432,33 @@ class AotCompiler {
     }
     /**
      * @param {?} __0
+     * @param {?} r3Files
      * @return {?}
      */
-    emitAllPartialModules({ ngModuleByPipeOrDirective, files }) {
-        // Using reduce like this is a select many pattern (where map is a select pattern)
-        return files.reduce((r, file) => {
-            r.push(...this._emitPartialModule(file.fileName, ngModuleByPipeOrDirective, file.directives, file.pipes, file.ngModules, file.injectables));
-            return r;
-        }, []);
+    emitAllPartialModules({ ngModuleByPipeOrDirective, files }, r3Files) {
+        const /** @type {?} */ contextMap = new Map();
+        const /** @type {?} */ getContext = (fileName) => {
+            if (!contextMap.has(fileName)) {
+                contextMap.set(fileName, this._createOutputContext(fileName));
+            }
+            return /** @type {?} */ ((contextMap.get(fileName)));
+        };
+        files.forEach(file => this._compilePartialModule(file.fileName, ngModuleByPipeOrDirective, file.directives, file.pipes, file.ngModules, file.injectables, getContext(file.fileName)));
+        r3Files.forEach(file => this._compileShallowModules(file.fileName, file.shallowModules, getContext(file.fileName)));
+        return Array.from(contextMap.values())
+            .map(context => ({
+            fileName: context.genFilePath,
+            statements: [...context.constantPool.statements, ...context.statements],
+        }));
+    }
+    /**
+     * @param {?} fileName
+     * @param {?} shallowModules
+     * @param {?} context
+     * @return {?}
+     */
+    _compileShallowModules(fileName, shallowModules, context) {
+        shallowModules.forEach(module => compileNgModule(context, module, this._injectableCompiler));
     }
     /**
      * @param {?} fileName
@@ -27327,12 +27467,12 @@ class AotCompiler {
      * @param {?} pipes
      * @param {?} ngModules
      * @param {?} injectables
+     * @param {?} context
      * @return {?}
      */
-    _emitPartialModule(fileName, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables) {
+    _compilePartialModule(fileName, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables, context) {
         const /** @type {?} */ classes = [];
         const /** @type {?} */ errors = [];
-        const /** @type {?} */ context = this._createOutputContext(fileName);
         const /** @type {?} */ hostBindingParser = new BindingParser(this._templateParser.expressionParser, DEFAULT_INTERPOLATION_CONFIG, /** @type {?} */ ((null)), [], errors);
         // Process all components and directives
         directives.forEach(directiveType => {
@@ -27342,23 +27482,19 @@ class AotCompiler {
                 module ||
                     error(`Cannot determine the module for component '${identifierName(directiveMetadata.type)}'`);
                 const { template: parsedTemplate, pipes: parsedPipes } = this._parseTemplate(directiveMetadata, module, module.transitiveModule.directives);
-                compileComponent(context, directiveMetadata, parsedPipes, parsedTemplate, this._reflector, hostBindingParser, 0 /* PartialClass */);
+                compileComponent(context, directiveMetadata, parsedPipes, parsedTemplate, this.reflector, hostBindingParser, 0 /* PartialClass */);
             }
             else {
-                compileDirective(context, directiveMetadata, this._reflector, hostBindingParser, 0 /* PartialClass */);
+                compileDirective(context, directiveMetadata, this.reflector, hostBindingParser, 0 /* PartialClass */);
             }
         });
         pipes.forEach(pipeType => {
             const /** @type {?} */ pipeMetadata = this._metadataResolver.getPipeMetadata(pipeType);
             if (pipeMetadata) {
-                compilePipe(context, pipeMetadata, this._reflector, 0 /* PartialClass */);
+                compilePipe(context, pipeMetadata, this.reflector, 0 /* PartialClass */);
             }
         });
         injectables.forEach(injectable => this._injectableCompiler.compile(injectable, context));
-        if (context.statements && context.statements.length > 0) {
-            return [{ fileName, statements: [...context.constantPool.statements, ...context.statements] }];
-        }
-        return [];
     }
     /**
      * @param {?} files
@@ -27498,13 +27634,13 @@ class AotCompiler {
         if (this._options.locale) {
             const /** @type {?} */ normalizedLocale = this._options.locale.replace(/_/g, '-');
             providers.push({
-                token: createTokenForExternalReference(this._reflector, Identifiers.LOCALE_ID),
+                token: createTokenForExternalReference(this.reflector, Identifiers.LOCALE_ID),
                 useValue: normalizedLocale,
             });
         }
         if (this._options.i18nFormat) {
             providers.push({
-                token: createTokenForExternalReference(this._reflector, Identifiers.TRANSLATIONS_FORMAT),
+                token: createTokenForExternalReference(this.reflector, Identifiers.TRANSLATIONS_FORMAT),
                 useValue: this._options.i18nFormat
             });
         }
@@ -27648,13 +27784,13 @@ class AotCompiler {
     listLazyRoutes(entryRoute, analyzedModules) {
         const /** @type {?} */ self = this;
         if (entryRoute) {
-            const /** @type {?} */ symbol = parseLazyRoute(entryRoute, this._reflector).referencedModule;
+            const /** @type {?} */ symbol = parseLazyRoute(entryRoute, this.reflector).referencedModule;
             return visitLazyRoute(symbol);
         }
         else if (analyzedModules) {
             const /** @type {?} */ allLazyRoutes = [];
             for (const /** @type {?} */ ngModule of analyzedModules.ngModules) {
-                const /** @type {?} */ lazyRoutes = listLazyRoutes(ngModule, this._reflector);
+                const /** @type {?} */ lazyRoutes = listLazyRoutes(ngModule, this.reflector);
                 for (const /** @type {?} */ lazyRoute of lazyRoutes) {
                     allLazyRoutes.push(lazyRoute);
                 }
@@ -27677,7 +27813,7 @@ class AotCompiler {
                 return allLazyRoutes;
             }
             seenRoutes.add(symbol);
-            const /** @type {?} */ lazyRoutes = listLazyRoutes(/** @type {?} */ ((self._metadataResolver.getNgModuleMetadata(symbol, true))), self._reflector);
+            const /** @type {?} */ lazyRoutes = listLazyRoutes(/** @type {?} */ ((self._metadataResolver.getNgModuleMetadata(symbol, true))), self.reflector);
             for (const /** @type {?} */ lazyRoute of lazyRoutes) {
                 allLazyRoutes.push(lazyRoute);
                 visitLazyRoute(lazyRoute.referencedModule, seenRoutes, allLazyRoutes);
@@ -27859,6 +27995,7 @@ function analyzeFile(host, staticSymbolResolver, metadataResolver, fileName) {
  */
 function analyzeFileForInjectables(host, staticSymbolResolver, metadataResolver, fileName) {
     const /** @type {?} */ injectables = [];
+    const /** @type {?} */ shallowModules = [];
     if (staticSymbolResolver.hasDecorators(fileName)) {
         staticSymbolResolver.getSymbolsOf(fileName).forEach((symbol) => {
             const /** @type {?} */ resolvedSymbol = staticSymbolResolver.resolveSymbol(symbol);
@@ -27875,10 +28012,17 @@ function analyzeFileForInjectables(host, staticSymbolResolver, metadataResolver,
                         injectables.push(injectable);
                     }
                 }
+                else if (metadataResolver.isNgModule(symbol)) {
+                    isNgSymbol = true;
+                    const /** @type {?} */ module = metadataResolver.getShallowModuleMetadata(symbol);
+                    if (module) {
+                        shallowModules.push(module);
+                    }
+                }
             }
         });
     }
-    return { fileName, injectables };
+    return { fileName, injectables, shallowModules };
 }
 /**
  * @param {?} host
@@ -28074,6 +28218,7 @@ class StaticReflector {
         this.symbolResolver = symbolResolver;
         this.errorRecorder = errorRecorder;
         this.annotationCache = new Map();
+        this.shallowAnnotationCache = new Map();
         this.propertyCache = new Map();
         this.parameterCache = new Map();
         this.methodCache = new Map();
@@ -28133,10 +28278,11 @@ class StaticReflector {
     /**
      * @param {?} moduleUrl
      * @param {?} name
+     * @param {?=} containingFile
      * @return {?}
      */
-    tryFindDeclaration(moduleUrl, name) {
-        return this.symbolResolver.ignoreErrorsFor(() => this.findDeclaration(moduleUrl, name));
+    tryFindDeclaration(moduleUrl, name, containingFile) {
+        return this.symbolResolver.ignoreErrorsFor(() => this.findDeclaration(moduleUrl, name, containingFile));
     }
     /**
      * @param {?} symbol
@@ -28174,7 +28320,23 @@ class StaticReflector {
      * @return {?}
      */
     annotations(type) {
-        let /** @type {?} */ annotations = this.annotationCache.get(type);
+        return this._annotations(type, (type, decorators) => this.simplify(type, decorators), this.annotationCache);
+    }
+    /**
+     * @param {?} type
+     * @return {?}
+     */
+    shallowAnnotations(type) {
+        return this._annotations(type, (type, decorators) => this.simplify(type, decorators, true), this.shallowAnnotationCache);
+    }
+    /**
+     * @param {?} type
+     * @param {?} simplify
+     * @param {?} annotationCache
+     * @return {?}
+     */
+    _annotations(type, simplify, annotationCache) {
+        let /** @type {?} */ annotations = annotationCache.get(type);
         if (!annotations) {
             annotations = [];
             const /** @type {?} */ classMetadata = this.getTypeMetadata(type);
@@ -28185,7 +28347,7 @@ class StaticReflector {
             }
             let /** @type {?} */ ownAnnotations = [];
             if (classMetadata['decorators']) {
-                ownAnnotations = this.simplify(type, classMetadata['decorators']);
+                ownAnnotations = simplify(type, classMetadata['decorators']);
                 annotations.push(...ownAnnotations);
             }
             if (parentType && !this.summaryResolver.isLibraryFile(type.filePath) &&
@@ -28199,7 +28361,7 @@ class StaticReflector {
                     }
                 }
             }
-            this.annotationCache.set(type, annotations.filter(ann => !!ann));
+            annotationCache.set(type, annotations.filter(ann => !!ann));
         }
         return annotations;
     }
@@ -28459,9 +28621,10 @@ class StaticReflector {
      * \@internal
      * @param {?} context
      * @param {?} value
+     * @param {?=} lazy
      * @return {?}
      */
-    simplify(context, value) {
+    simplify(context, value, lazy = false) {
         const /** @type {?} */ self = this;
         let /** @type {?} */ scope = BindingScope$1.empty;
         const /** @type {?} */ calling = new Map();
@@ -28849,7 +29012,7 @@ class StaticReflector {
         }
         let /** @type {?} */ result;
         try {
-            result = simplifyInContext(context, value, 0, 0);
+            result = simplifyInContext(context, value, 0, lazy ? 1 : 0);
         }
         catch (/** @type {?} */ e) {
             if (this.errorRecorder) {
@@ -29324,7 +29487,7 @@ function createAotCompiler(compilerHost, options, errorCollector) {
     // TODO(vicb): do not pass options.i18nFormat here
     const /** @type {?} */ viewCompiler = new ViewCompiler(staticReflector);
     const /** @type {?} */ typeCheckCompiler = new TypeCheckCompiler(options, staticReflector);
-    const /** @type {?} */ compiler = new AotCompiler(config, options, compilerHost, staticReflector, resolver, tmplParser, new StyleCompiler(urlResolver), viewCompiler, typeCheckCompiler, new NgModuleCompiler(staticReflector), new InjectableCompiler(staticReflector), new TypeScriptEmitter(), summaryResolver, symbolResolver);
+    const /** @type {?} */ compiler = new AotCompiler(config, options, compilerHost, staticReflector, resolver, tmplParser, new StyleCompiler(urlResolver), viewCompiler, typeCheckCompiler, new NgModuleCompiler(staticReflector), new InjectableCompiler(staticReflector, !!options.enableIvy), new TypeScriptEmitter(), summaryResolver, symbolResolver);
     return { compiler, reflector: staticReflector };
 }
 
@@ -31216,5 +31379,5 @@ class Extractor {
 // replaces this file with production index.ts when it rewrites private symbol
 // names.
 
-export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, ExpressionStatement, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
+export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, ExpressionStatement, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
 //# sourceMappingURL=compiler.js.map
