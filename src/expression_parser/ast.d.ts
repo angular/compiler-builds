@@ -275,4 +275,27 @@ export declare class AstTransformer implements AstVisitor {
     visitChain(ast: Chain, context: any): AST;
     visitQuote(ast: Quote, context: any): AST;
 }
+export declare class AstMemoryEfficientTransformer implements AstVisitor {
+    visitImplicitReceiver(ast: ImplicitReceiver, context: any): AST;
+    visitInterpolation(ast: Interpolation, context: any): Interpolation;
+    visitLiteralPrimitive(ast: LiteralPrimitive, context: any): AST;
+    visitPropertyRead(ast: PropertyRead, context: any): AST;
+    visitPropertyWrite(ast: PropertyWrite, context: any): AST;
+    visitSafePropertyRead(ast: SafePropertyRead, context: any): AST;
+    visitMethodCall(ast: MethodCall, context: any): AST;
+    visitSafeMethodCall(ast: SafeMethodCall, context: any): AST;
+    visitFunctionCall(ast: FunctionCall, context: any): AST;
+    visitLiteralArray(ast: LiteralArray, context: any): AST;
+    visitLiteralMap(ast: LiteralMap, context: any): AST;
+    visitBinary(ast: Binary, context: any): AST;
+    visitPrefixNot(ast: PrefixNot, context: any): AST;
+    visitNonNullAssert(ast: NonNullAssert, context: any): AST;
+    visitConditional(ast: Conditional, context: any): AST;
+    visitPipe(ast: BindingPipe, context: any): AST;
+    visitKeyedRead(ast: KeyedRead, context: any): AST;
+    visitKeyedWrite(ast: KeyedWrite, context: any): AST;
+    visitAll(asts: any[]): any[];
+    visitChain(ast: Chain, context: any): AST;
+    visitQuote(ast: Quote, context: any): AST;
+}
 export declare function visitAstChildren(ast: AST, visitor: AstVisitor, context?: any): void;

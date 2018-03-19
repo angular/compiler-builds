@@ -18,11 +18,12 @@ export declare class ConvertActionBindingResult {
     allowDefault: o.ReadVarExpr;
     constructor(stmts: o.Statement[], allowDefault: o.ReadVarExpr);
 }
+export declare type InterpolationFunction = (args: o.Expression[]) => o.Expression;
 /**
  * Converts the given expression AST into an executable output AST, assuming the expression is
  * used in an action binding (e.g. an event handler).
  */
-export declare function convertActionBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, action: cdAst.AST, bindingId: string): ConvertActionBindingResult;
+export declare function convertActionBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, action: cdAst.AST, bindingId: string, interpolationFunction?: InterpolationFunction): ConvertActionBindingResult;
 export interface BuiltinConverter {
     (args: o.Expression[]): o.Expression;
 }
@@ -40,10 +41,19 @@ export declare class ConvertPropertyBindingResult {
     currValExpr: o.Expression;
     constructor(stmts: o.Statement[], currValExpr: o.Expression);
 }
+export declare enum BindingForm {
+    General = 0,
+    TrySimple = 1,
+}
 /**
  * Converts the given expression AST into an executable output AST, assuming the expression
  * is used in property binding. The expression has to be preprocessed via
  * `convertPropertyBindingBuiltins`.
  */
-export declare function convertPropertyBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, expressionWithoutBuiltins: cdAst.AST, bindingId: string): ConvertPropertyBindingResult;
+export declare function convertPropertyBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, expressionWithoutBuiltins: cdAst.AST, bindingId: string, form: BindingForm, interpolationFunction?: InterpolationFunction): ConvertPropertyBindingResult;
 export declare function temporaryDeclaration(bindingId: string, temporaryNumber: number): o.Statement;
+export declare class BuiltinFunctionCall extends cdAst.FunctionCall {
+    args: cdAst.AST[];
+    converter: BuiltinConverter;
+    constructor(span: cdAst.ParseSpan, args: cdAst.AST[], converter: BuiltinConverter);
+}

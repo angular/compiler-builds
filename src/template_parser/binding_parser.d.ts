@@ -26,9 +26,9 @@ export declare class BoundProperty {
     expression: ASTWithSource;
     type: BoundPropertyType;
     sourceSpan: ParseSourceSpan;
-    constructor(name: string, expression: ASTWithSource, type: BoundPropertyType, sourceSpan: ParseSourceSpan);
     readonly isLiteral: boolean;
     readonly isAnimation: boolean;
+    constructor(name: string, expression: ASTWithSource, type: BoundPropertyType, sourceSpan: ParseSourceSpan);
 }
 /**
  * Parses bindings in templates and in the directive host area.
@@ -42,6 +42,7 @@ export declare class BindingParser {
     private _usedPipes;
     constructor(_exprParser: Parser, _interpolationConfig: InterpolationConfig, _schemaRegistry: ElementSchemaRegistry, pipes: CompilePipeSummary[], _targetErrors: ParseError[]);
     getUsedPipes(): CompilePipeSummary[];
+    createBoundHostProperties(dirMeta: CompileDirectiveSummary, sourceSpan: ParseSourceSpan): BoundProperty[] | null;
     createDirectiveHostPropertyAsts(dirMeta: CompileDirectiveSummary, elementSelector: string, sourceSpan: ParseSourceSpan): BoundElementPropertyAst[] | null;
     createDirectiveHostEventAsts(dirMeta: CompileDirectiveSummary, sourceSpan: ParseSourceSpan): BoundEventAst[] | null;
     parseInterpolation(value: string, sourceSpan: ParseSourceSpan): ASTWithSource;

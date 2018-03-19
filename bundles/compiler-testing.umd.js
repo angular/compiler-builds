@@ -1,11 +1,11 @@
 /**
- * @license Angular v5.0.0-beta.6-3f585ba
- * (c) 2010-2017 Google, Inc. https://angular.io/
+ * @license Angular v6.0.0-beta.7-a7d6efe
+ * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@angular/compiler')) :
-	typeof define === 'function' && define.amd ? define(['exports', '@angular/compiler'], factory) :
+	typeof define === 'function' && define.amd ? define('@angular/compiler/testing', ['exports', '@angular/compiler'], factory) :
 	(factory((global.ng = global.ng || {}, global.ng.compiler = global.ng.compiler || {}, global.ng.compiler.testing = {}),global.ng.compiler));
 }(this, (function (exports,_angular_compiler) { 'use strict';
 
@@ -36,8 +36,8 @@ function __extends(d, b) {
 }
 
 /**
- * @license Angular v5.0.0-beta.6-3f585ba
- * (c) 2010-2017 Google, Inc. https://angular.io/
+ * @license Angular v6.0.0-beta.7-a7d6efe
+ * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 /**
@@ -55,7 +55,7 @@ function __extends(d, b) {
  * A mock implementation of {\@link ResourceLoader} that allows outgoing requests to be mocked
  * and responded to within a single test, without going to the network.
  */
-var MockResourceLoader = (function (_super) {
+var MockResourceLoader = /** @class */ (function (_super) {
     __extends(MockResourceLoader, _super);
     function MockResourceLoader() {
         var _this = _super !== null && _super.apply(this, arguments) || this;
@@ -211,7 +211,7 @@ var MockResourceLoader = (function (_super) {
     };
     return MockResourceLoader;
 }(_angular_compiler.ResourceLoader));
-var _PendingRequest = (function () {
+var _PendingRequest = /** @class */ (function () {
     function _PendingRequest(url) {
         var _this = this;
         this.url = url;
@@ -245,7 +245,7 @@ var _PendingRequest = (function () {
     function () { return this.promise; };
     return _PendingRequest;
 }());
-var _Expectation = (function () {
+var _Expectation = /** @class */ (function () {
     function _Expectation(url, response) {
         this.url = url;
         this.response = response;
@@ -276,7 +276,7 @@ function remove(list, el) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var MockSchemaRegistry = (function () {
+var MockSchemaRegistry = /** @class */ (function () {
     function MockSchemaRegistry(existingProperties, attrPropMapping, existingElements, invalidProperties, invalidAttributes) {
         this.existingProperties = existingProperties;
         this.attrPropMapping = attrPropMapping;
@@ -419,17 +419,10 @@ var MockSchemaRegistry = (function () {
  * @suppress {checkTypes} checked by tsc
  */
 /**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * An implementation of {\@link DirectiveResolver} that allows overriding
  * various properties of directives.
  */
-var MockDirectiveResolver = (function (_super) {
+var MockDirectiveResolver = /** @class */ (function (_super) {
     __extends(MockDirectiveResolver, _super);
     function MockDirectiveResolver(reflector) {
         var _this = _super.call(this, reflector) || this;
@@ -482,7 +475,7 @@ var MockDirectiveResolver = (function (_super) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var MockNgModuleResolver = (function (_super) {
+var MockNgModuleResolver = /** @class */ (function (_super) {
     __extends(MockNgModuleResolver, _super);
     function MockNgModuleResolver(reflector) {
         var _this = _super.call(this, reflector) || this;
@@ -549,7 +542,7 @@ var MockNgModuleResolver = (function (_super) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var MockPipeResolver = (function (_super) {
+var MockPipeResolver = /** @class */ (function (_super) {
     __extends(MockPipeResolver, _super);
     function MockPipeResolver(refector) {
         var _this = _super.call(this, refector) || this;
