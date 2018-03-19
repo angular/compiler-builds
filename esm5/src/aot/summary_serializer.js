@@ -257,6 +257,43 @@ var ToJsonSerializer = /** @class */ (function (_super) {
         }
     };
     /**
+     * Strip line and character numbers from ngsummaries.
+     * Emitting them causes white spaces changes to retrigger upstream
+     * recompilations in bazel.
+     * TODO: find out a way to have line and character numbers in errors without
+     * excessive recompilation in bazel.
+     */
+    /**
+     * Strip line and character numbers from ngsummaries.
+     * Emitting them causes white spaces changes to retrigger upstream
+     * recompilations in bazel.
+     * TODO: find out a way to have line and character numbers in errors without
+     * excessive recompilation in bazel.
+     * @param {?} map
+     * @param {?} context
+     * @return {?}
+     */
+    ToJsonSerializer.prototype.visitStringMap = /**
+     * Strip line and character numbers from ngsummaries.
+     * Emitting them causes white spaces changes to retrigger upstream
+     * recompilations in bazel.
+     * TODO: find out a way to have line and character numbers in errors without
+     * excessive recompilation in bazel.
+     * @param {?} map
+     * @param {?} context
+     * @return {?}
+     */
+    function (map, context) {
+        if (map['__symbolic'] === 'resolved') {
+            return visitValue(map["symbol"], this, context);
+        }
+        if (map['__symbolic'] === 'error') {
+            delete map['line'];
+            delete map['character'];
+        }
+        return _super.prototype.visitStringMap.call(this, map, context);
+    };
+    /**
      * Returns null if the options.resolveValue is true, and the summary for the symbol
      * resolved to a type or could not be resolved.
      * @param {?} baseSymbol

@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.7-fc50c77
+ * @license Angular v6.0.0-beta.7-5c387a7
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -605,7 +605,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('6.0.0-beta.7-fc50c77');
+const VERSION = new Version('6.0.0-beta.7-5c387a7');
 
 /**
  * @fileoverview added by tsickle
@@ -26811,6 +26811,26 @@ class ToJsonSerializer extends ValueTransformer {
             const /** @type {?} */ index = this.visitStaticSymbol(baseSymbol, context);
             return { __symbol: index, members: value.members };
         }
+    }
+    /**
+     * Strip line and character numbers from ngsummaries.
+     * Emitting them causes white spaces changes to retrigger upstream
+     * recompilations in bazel.
+     * TODO: find out a way to have line and character numbers in errors without
+     * excessive recompilation in bazel.
+     * @param {?} map
+     * @param {?} context
+     * @return {?}
+     */
+    visitStringMap(map, context) {
+        if (map['__symbolic'] === 'resolved') {
+            return visitValue(map["symbol"], this, context);
+        }
+        if (map['__symbolic'] === 'error') {
+            delete map['line'];
+            delete map['character'];
+        }
+        return super.visitStringMap(map, context);
     }
     /**
      * Returns null if the options.resolveValue is true, and the summary for the symbol
