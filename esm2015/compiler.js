@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.2.9-7d9de17
+ * @license Angular v5.2.9-aca4735
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -217,6 +217,7 @@ MissingTranslationStrategy[MissingTranslationStrategy.Warning] = "Warning";
 MissingTranslationStrategy[MissingTranslationStrategy.Ignore] = "Ignore";
 /**
  * @record
+ * @template T
  */
 function MetadataFactory() { }
 /**
@@ -581,7 +582,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.2.9-7d9de17');
+const VERSION = new Version('5.2.9-aca4735');
 
 /**
  * @fileoverview added by tsickle
@@ -1908,6 +1909,7 @@ function templateJitUrl(ngModuleType, compMeta) {
  * The path to the node at offset 9 would be `['+' at 1-10, '+' at 7-10,
  * 'c' at 9-10]` and the path the node at offset 1 would be
  * `['+' at 1-10, 'a' at 1-2]`.
+ * @template T
  */
 class AstPath {
     /**
@@ -27048,10 +27050,12 @@ function createAotCompiler(compilerHost, options, errorCollector) {
  */
 /**
  * @record
+ * @template T
  */
 
 /**
  * @abstract
+ * @template T
  */
 class SummaryResolver {
 }
