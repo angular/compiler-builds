@@ -15,8 +15,8 @@ export declare class Identifiers {
     static elementEnd: o.ExternalReference;
     static elementProperty: o.ExternalReference;
     static elementAttribute: o.ExternalReference;
-    static elementClass: o.ExternalReference;
-    static elementStyle: o.ExternalReference;
+    static elementClassNamed: o.ExternalReference;
+    static elementStyleNamed: o.ExternalReference;
     static containerCreate: o.ExternalReference;
     static containerEnd: o.ExternalReference;
     static containerRefreshStart: o.ExternalReference;
@@ -62,6 +62,7 @@ export declare class Identifiers {
     static inject: o.ExternalReference;
     static defineComponent: o.ExternalReference;
     static defineDirective: o.ExternalReference;
+    static defineInjector: o.ExternalReference;
     static definePipe: o.ExternalReference;
     static query: o.ExternalReference;
     static queryRefresh: o.ExternalReference;

@@ -104,7 +104,7 @@ export interface ModuleWithProviders {
     providers?: Provider[];
 }
 export interface Injectable {
-    scope?: Type | any;
+    providedIn?: Type | 'root' | any;
     useClass?: Type | any;
     useExisting?: Type | any;
     useValue?: any;

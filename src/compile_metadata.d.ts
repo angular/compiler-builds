@@ -69,7 +69,7 @@ export interface CompileTokenMetadata {
 export interface CompileInjectableMetadata {
     symbol: StaticSymbol;
     type: CompileTypeMetadata;
-    module?: StaticSymbol;
+    providedIn?: StaticSymbol;
     useValue?: any;
     useClass?: StaticSymbol;
     useExisting?: StaticSymbol;
@@ -306,6 +306,12 @@ export interface CompileNgModuleSummary extends CompileTypeSummary {
         module: CompileIdentifierMetadata;
     }[];
     modules: CompileTypeMetadata[];
+}
+export declare class CompileShallowModuleMetadata {
+    type: CompileTypeMetadata;
+    rawExports: any;
+    rawImports: any;
+    rawProviders: any;
 }
 /**
  * Metadata regarding compilation of a module.
