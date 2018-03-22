@@ -10,7 +10,8 @@ import { CompileReflector } from '../compile_reflector';
 import { CompilerConfig } from '../config';
 import { SchemaMetadata } from '../core';
 import { Parser } from '../expression_parser/parser';
-import { HtmlParser, ParseTreeResult } from '../ml_parser/html_parser';
+import { I18NHtmlParser } from '../i18n/i18n_html_parser';
+import { ParseTreeResult } from '../ml_parser/html_parser';
 import { InterpolationConfig } from '../ml_parser/interpolation_config';
 import { ParseError, ParseErrorLevel, ParseSourceSpan } from '../parse_util';
 import { ElementSchemaRegistry } from '../schema/element_schema_registry';
@@ -34,7 +35,7 @@ export declare class TemplateParser {
     private _htmlParser;
     private _console;
     transforms: TemplateAstVisitor[];
-    constructor(_config: CompilerConfig, _reflector: CompileReflector, _exprParser: Parser, _schemaRegistry: ElementSchemaRegistry, _htmlParser: HtmlParser, _console: Console, transforms: TemplateAstVisitor[]);
+    constructor(_config: CompilerConfig, _reflector: CompileReflector, _exprParser: Parser, _schemaRegistry: ElementSchemaRegistry, _htmlParser: I18NHtmlParser, _console: Console, transforms: TemplateAstVisitor[]);
     readonly expressionParser: Parser;
     parse(component: CompileDirectiveMetadata, template: string | ParseTreeResult, directives: CompileDirectiveSummary[], pipes: CompilePipeSummary[], schemas: SchemaMetadata[], templateUrl: string, preserveWhitespaces: boolean): {
         template: TemplateAst[];

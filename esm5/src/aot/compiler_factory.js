@@ -63,14 +63,7 @@ export function createAotCompiler(compilerHost, options, errorCollector) {
     var /** @type {?} */ summaryResolver = new AotSummaryResolver(compilerHost, symbolCache);
     var /** @type {?} */ symbolResolver = new StaticSymbolResolver(compilerHost, symbolCache, summaryResolver);
     var /** @type {?} */ staticReflector = new StaticReflector(summaryResolver, symbolResolver, [], [], errorCollector);
-    var /** @type {?} */ htmlParser;
-    if (!!options.enableIvy) {
-        // Ivy handles i18n at the compiler level so we must use a regular parser
-        htmlParser = /** @type {?} */ (new HtmlParser());
-    }
-    else {
-        htmlParser = new I18NHtmlParser(new HtmlParser(), translations, options.i18nFormat, options.missingTranslation, console);
-    }
+    var /** @type {?} */ htmlParser = new I18NHtmlParser(new HtmlParser(), translations, options.i18nFormat, options.missingTranslation, console);
     var /** @type {?} */ config = new CompilerConfig({
         defaultEncapsulation: ViewEncapsulation.Emulated,
         useJit: false,

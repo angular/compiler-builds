@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.0-99711b1
+ * @license Angular v6.0.0-rc.0-e5e1b0d
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -605,7 +605,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('6.0.0-rc.0-99711b1');
+const VERSION = new Version('6.0.0-rc.0-e5e1b0d');
 
 /**
  * @fileoverview added by tsickle
@@ -12127,7 +12127,7 @@ class ReadVarExpr extends Expression {
         }
         else {
             this.name = null;
-            this.builtin = name;
+            this.builtin = /** @type {?} */ (name);
         }
     }
     /**
@@ -24436,6 +24436,7 @@ class ConstantPool {
 }
 class KeyVisitor {
     constructor() {
+        this.visitReadVarExpr = invalid;
         this.visitWriteVarExpr = invalid;
         this.visitWriteKeyExpr = invalid;
         this.visitWritePropExpr = invalid;
@@ -24484,16 +24485,6 @@ class KeyVisitor {
         return ast.value.moduleName ? `EX:${ast.value.moduleName}:${ast.value.name}` :
             `EX:${ast.value.runtime.name}`;
     }
-    /**
-     * @param {?} ast
-     * @return {?}
-     */
-    visitReadVarExpr(ast) {
-        if (!ast.name) {
-            invalid(ast);
-        }
-        return /** @type {?} */ (ast.name);
-    }
 }
 /**
  * @template T
@@ -24501,7 +24492,7 @@ class KeyVisitor {
  * @return {?}
  */
 function invalid(arg) {
-    throw new Error(`Invalid state: Visitor ${this.constructor.name} doesn't handle ${arg.constructor.name}`);
+    throw new Error(`Invalid state: Visitor ${this.constructor.name} doesn't handle ${undefined}`);
 }
 /**
  * @param {?} e
@@ -24847,20 +24838,6 @@ const REFERENCE_PREFIX = '_r';
  */
 const IMPLICIT_REFERENCE = '$implicit';
 /**
- * Name of the i18n attributes *
- */
-const I18N_ATTR = 'i18n';
-const I18N_ATTR_PREFIX = 'i18n-';
-/**
- * I18n separators for metadata *
- */
-const MEANING_SEPARATOR$1 = '|';
-const ID_SEPARATOR$1 = '@@';
-/**
- * Closure functions *
- */
-const GOOG_GET_MSG = 'goog.getMsg';
-/**
  * @param {?} outputCtx
  * @param {?} directive
  * @param {?} reflector
@@ -25099,15 +25076,7 @@ class BindingScope {
         // Find the top scope as it maintains the global reference count
         while (current.parent)
             current = current.parent;
-        const /** @type {?} */ ref = `${REFERENCE_PREFIX}${current.referenceNameIndex++}`;
-        return ref;
-    }
-    /**
-     * @return {?}
-     */
-    freshI18nName() {
-        const /** @type {?} */ name = this.freshReferenceName();
-        return `MSG_${name}`.toUpperCase();
+        return `${REFERENCE_PREFIX}${current.referenceNameIndex++}`;
     }
 }
 const ROOT_SCOPE = new BindingScope(null).set('$event', variable('$event'));
@@ -25150,9 +25119,6 @@ class TemplateDefinitionBuilder {
         this._projectionDefinitionIndex = 0;
         this.unsupported = unsupported;
         this.invalid = invalid$1;
-        this._inI18nSection = false;
-        this._i18nSectionIndex = -1;
-        this._phToNodeIdxes = [{}];
         // These should be handled in the template or element directly.
         this.visitReference = invalid$1;
         this.visitVariable = invalid$1;
@@ -25240,17 +25206,6 @@ class TemplateDefinitionBuilder {
         const /** @type {?} */ creationMode = this._creationMode.length > 0 ?
             [ifStmt(variable(CREATION_MODE_FLAG), this._creationMode)] :
             [];
-        // Generate maps of placeholder name to node indexes
-        // TODO(vicb): This is a WIP, not fully supported yet
-        for (const /** @type {?} */ phToNodeIdx of this._phToNodeIdxes) {
-            if (Object.keys(phToNodeIdx).length > 0) {
-                const /** @type {?} */ scopedName = this.bindingScope.freshReferenceName();
-                const /** @type {?} */ phMap = variable(scopedName)
-                    .set(mapToExpression(phToNodeIdx, true))
-                    .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]);
-                this._prefix.push(phMap);
-            }
-        }
         return fn([
             new FnParam(this.contextParameter, null), new FnParam(CREATION_MODE_FLAG, BOOL_TYPE)
         ], [
@@ -25305,48 +25260,16 @@ class TemplateDefinitionBuilder {
         };
     }
     /**
-     * @param {?} element
+     * @param {?} ast
      * @return {?}
      */
-    visitElement(element) {
+    visitElement(ast) {
+        let /** @type {?} */ bindingCount = 0;
         const /** @type {?} */ elementIndex = this.allocateDataSlot();
         let /** @type {?} */ componentIndex = undefined;
         const /** @type {?} */ referenceDataSlots = new Map();
-        const /** @type {?} */ wasInI18nSection = this._inI18nSection;
-        const /** @type {?} */ outputAttrs = {};
-        const /** @type {?} */ attrI18nMetas = {};
-        let /** @type {?} */ i18nMeta = '';
-        // Elements inside i18n sections are replaced with placeholders
-        // TODO(vicb): nested elements are a WIP in this phase
-        if (this._inI18nSection) {
-            const /** @type {?} */ phName = element.name.toLowerCase();
-            if (!this._phToNodeIdxes[this._i18nSectionIndex][phName]) {
-                this._phToNodeIdxes[this._i18nSectionIndex][phName] = [];
-            }
-            this._phToNodeIdxes[this._i18nSectionIndex][phName].push(elementIndex);
-        }
-        // Handle i18n attributes
-        for (const /** @type {?} */ attr of element.attrs) {
-            const /** @type {?} */ name = attr.name;
-            const /** @type {?} */ value = attr.value;
-            if (name === I18N_ATTR) {
-                if (this._inI18nSection) {
-                    throw new Error(`Could not mark an element as translatable inside of a translatable section`);
-                }
-                this._inI18nSection = true;
-                this._i18nSectionIndex++;
-                this._phToNodeIdxes[this._i18nSectionIndex] = {};
-                i18nMeta = value;
-            }
-            else if (name.startsWith(I18N_ATTR_PREFIX)) {
-                attrI18nMetas[name.slice(I18N_ATTR_PREFIX.length)] = value;
-            }
-            else {
-                outputAttrs[name] = value;
-            }
-        }
         // Element creation mode
-        const /** @type {?} */ component = findComponent(element.directives);
+        const /** @type {?} */ component = findComponent(ast.directives);
         const /** @type {?} */ nullNode = literal(null, INFERRED_TYPE);
         const /** @type {?} */ parameters = [literal(elementIndex)];
         // Add component type or element tag
@@ -25355,40 +25278,26 @@ class TemplateDefinitionBuilder {
             componentIndex = this.allocateDataSlot();
         }
         else {
-            parameters.push(literal(element.name));
+            parameters.push(literal(ast.name));
         }
-        // Add the attributes
-        const /** @type {?} */ i18nMessages = [];
+        // Add attributes array
         const /** @type {?} */ attributes = [];
-        let /** @type {?} */ hasI18nAttr = false;
-        Object.getOwnPropertyNames(outputAttrs).forEach(name => {
-            const /** @type {?} */ value = outputAttrs[name];
-            attributes.push(literal(name));
-            if (attrI18nMetas.hasOwnProperty(name)) {
-                hasI18nAttr = true;
-                const { statements, variable: variable$$1 } = this.genI18nMessageStmts(value, attrI18nMetas[name]);
-                i18nMessages.push(...statements);
-                attributes.push(variable$$1);
-            }
-            else {
-                attributes.push(literal(value));
-            }
-        });
-        let /** @type {?} */ attrArg = nullNode;
-        if (attributes.length > 0) {
-            attrArg = hasI18nAttr ? getLiteralFactory(this.outputCtx, literalArr(attributes)) :
-                this.constantPool.getConstLiteral(literalArr(attributes), true);
+        for (let /** @type {?} */ attr of ast.attrs) {
+            attributes.push(literal(attr.name), literal(attr.value));
         }
-        parameters.push(attrArg);
+        parameters.push(attributes.length > 0 ?
+            this.constantPool.getConstLiteral(literalArr(attributes), /* forceShared */ /* forceShared */ true) :
+            nullNode);
         // Add directives array
-        const { directivesArray, directiveIndexMap } = this._computeDirectivesArray(element.directives);
+        const { directivesArray, directiveIndexMap } = this._computeDirectivesArray(ast.directives);
         parameters.push(directiveIndexMap.size > 0 ? directivesArray : nullNode);
         if (component && componentIndex != null) {
             // Record the data slot for the component
             directiveIndexMap.set(component.directive.type.reference, componentIndex);
         }
-        if (element.references && element.references.length > 0) {
-            const /** @type {?} */ references = flatten(element.references.map(reference => {
+        // Add references array
+        if (ast.references && ast.references.length > 0) {
+            const /** @type {?} */ references = flatten(ast.references.map(reference => {
                 const /** @type {?} */ slot = this.allocateDataSlot();
                 referenceDataSlots.set(reference.name, slot);
                 // Generate the update temporary.
@@ -25409,17 +25318,15 @@ class TemplateDefinitionBuilder {
             parameters.pop();
         }
         // Generate the instruction create element instruction
-        if (i18nMessages.length > 0) {
-            this._creationMode.push(...i18nMessages);
-        }
-        this.instruction(this._creationMode, element.sourceSpan, Identifiers$1.createElement, ...parameters);
+        this.instruction(this._creationMode, ast.sourceSpan, Identifiers$1.createElement, ...parameters);
         const /** @type {?} */ implicit = variable(this.contextParameter);
         // Generate element input bindings
-        for (let /** @type {?} */ input of element.inputs) {
+        for (let /** @type {?} */ input of ast.inputs) {
             if (input.isAnimation) {
                 this.unsupported('animations');
             }
             const /** @type {?} */ convertedBinding = this.convertPropertyBinding(implicit, input.value);
+            const /** @type {?} */ parameters = [literal(elementIndex), literal(input.name), convertedBinding];
             const /** @type {?} */ instruction = BINDING_INSTRUCTION_MAP[input.type];
             if (instruction) {
                 // TODO(chuckj): runtime: security context?
@@ -25430,20 +25337,11 @@ class TemplateDefinitionBuilder {
             }
         }
         // Generate directives input bindings
-        this._visitDirectives(element.directives, implicit, elementIndex, directiveIndexMap);
+        this._visitDirectives(ast.directives, implicit, elementIndex, directiveIndexMap);
         // Traverse element child nodes
-        if (this._inI18nSection && element.children.length == 1 &&
-            element.children[0] instanceof TextAst) {
-            const /** @type {?} */ text = /** @type {?} */ (element.children[0]);
-            this.visitSingleI18nTextChild(text, i18nMeta);
-        }
-        else {
-            templateVisitAll(this, element.children);
-        }
+        templateVisitAll(this, ast.children);
         // Finish element construction mode.
-        this.instruction(this._creationMode, element.endSourceSpan || element.sourceSpan, Identifiers$1.elementEnd);
-        // Restore the state before exiting this node
-        this._inI18nSection = wasInI18nSection;
+        this.instruction(this._creationMode, ast.endSourceSpan || ast.sourceSpan, Identifiers$1.elementEnd);
     }
     /**
      * @param {?} directives
@@ -25522,16 +25420,6 @@ class TemplateDefinitionBuilder {
         this.instruction(this._creationMode, ast.sourceSpan, Identifiers$1.text, literal(this.allocateDataSlot()), literal(ast.value));
     }
     /**
-     * @param {?} text
-     * @param {?} i18nMeta
-     * @return {?}
-     */
-    visitSingleI18nTextChild(text, i18nMeta) {
-        const { statements, variable: variable$$1 } = this.genI18nMessageStmts(text.value, i18nMeta);
-        this._creationMode.push(...statements);
-        this.instruction(this._creationMode, text.sourceSpan, Identifiers$1.text, literal(this.allocateDataSlot()), variable$$1);
-    }
-    /**
      * @return {?}
      */
     allocateDataSlot() { return this._dataIndex++; }
@@ -25591,25 +25479,6 @@ class TemplateDefinitionBuilder {
      */
     bind(implicit, value, sourceSpan) {
         return this.convertPropertyBinding(implicit, value);
-    }
-    /**
-     * @param {?} msg
-     * @param {?} meta
-     * @return {?}
-     */
-    genI18nMessageStmts(msg, meta) {
-        const /** @type {?} */ statements = [];
-        const /** @type {?} */ m = parseI18nMeta(meta);
-        const /** @type {?} */ docStmt = i18nMetaToDocStmt(m);
-        if (docStmt) {
-            statements.push(docStmt);
-        }
-        // Call closure to get the translation
-        const /** @type {?} */ variable$$1 = variable(this.bindingScope.freshI18nName());
-        const /** @type {?} */ fnCall = variable(GOOG_GET_MSG).callFn([literal(msg)]);
-        const /** @type {?} */ msgStmt = variable$$1.set(fnCall).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]);
-        statements.push(msgStmt);
-        return { statements, variable: variable$$1 };
     }
 }
 /**
@@ -25835,7 +25704,7 @@ class ValueConverter extends AstMemoryEfficientTransformer {
      */
     visitLiteralArray(ast, context) {
         return new BuiltinFunctionCall(ast.span, this.visitAll(ast.expressions), values => {
-            // If the literal has calculated (non-literal) elements transform it into
+            // If the literal has calculated (non-literal) elements  transform it into
             // calls to literal factories that compose the literal and will cache intermediate
             // values. Otherwise, just return an literal array that contains the values.
             const /** @type {?} */ literal$$1 = literalArr(values);
@@ -25951,46 +25820,10 @@ function asLiteral(value) {
 }
 /**
  * @param {?} map
- * @param {?=} quoted
  * @return {?}
  */
-function mapToExpression(map, quoted = false) {
-    return literalMap(Object.getOwnPropertyNames(map).map(key => ({ key, quoted, value: asLiteral(map[key]) })));
-}
-/**
- * @param {?=} i18n
- * @return {?}
- */
-function parseI18nMeta(i18n) {
-    let /** @type {?} */ meaning;
-    let /** @type {?} */ description;
-    let /** @type {?} */ id;
-    if (i18n) {
-        // TODO(vicb): figure out how to force a message ID with closure ?
-        const /** @type {?} */ idIndex = i18n.indexOf(ID_SEPARATOR$1);
-        const /** @type {?} */ descIndex = i18n.indexOf(MEANING_SEPARATOR$1);
-        let /** @type {?} */ meaningAndDesc;
-        [meaningAndDesc, id] =
-            (idIndex > -1) ? [i18n.slice(0, idIndex), i18n.slice(idIndex + 2)] : [i18n, ''];
-        [meaning, description] = (descIndex > -1) ?
-            [meaningAndDesc.slice(0, descIndex), meaningAndDesc.slice(descIndex + 1)] :
-            ['', meaningAndDesc];
-    }
-    return { description, id, meaning };
-}
-/**
- * @param {?} meta
- * @return {?}
- */
-function i18nMetaToDocStmt(meta) {
-    const /** @type {?} */ tags = [];
-    if (meta.description) {
-        tags.push({ tagName: "desc" /* Desc */, text: meta.description });
-    }
-    if (meta.meaning) {
-        tags.push({ tagName: "meaning" /* Meaning */, text: meta.meaning });
-    }
-    return tags.length == 0 ? null : new JSDocCommentStmt(tags);
+function mapToExpression(map) {
+    return literalMap(Object.getOwnPropertyNames(map).map(key => ({ key, quoted: false, value: literal(map[key]) })));
 }
 
 /**
@@ -29658,14 +29491,7 @@ function createAotCompiler(compilerHost, options, errorCollector) {
     const /** @type {?} */ summaryResolver = new AotSummaryResolver(compilerHost, symbolCache);
     const /** @type {?} */ symbolResolver = new StaticSymbolResolver(compilerHost, symbolCache, summaryResolver);
     const /** @type {?} */ staticReflector = new StaticReflector(summaryResolver, symbolResolver, [], [], errorCollector);
-    let /** @type {?} */ htmlParser;
-    if (!!options.enableIvy) {
-        // Ivy handles i18n at the compiler level so we must use a regular parser
-        htmlParser = /** @type {?} */ (new HtmlParser());
-    }
-    else {
-        htmlParser = new I18NHtmlParser(new HtmlParser(), translations, options.i18nFormat, options.missingTranslation, console);
-    }
+    const /** @type {?} */ htmlParser = new I18NHtmlParser(new HtmlParser(), translations, options.i18nFormat, options.missingTranslation, console);
     const /** @type {?} */ config = new CompilerConfig({
         defaultEncapsulation: ViewEncapsulation.Emulated,
         useJit: false,

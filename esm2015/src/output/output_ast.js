@@ -493,7 +493,7 @@ export class ReadVarExpr extends Expression {
         }
         else {
             this.name = null;
-            this.builtin = name;
+            this.builtin = /** @type {?} */ (name);
         }
     }
     /**
@@ -2848,11 +2848,7 @@ export function literal(value, type, sourceSpan) {
     return new LiteralExpr(value, type, sourceSpan);
 }
 /** @enum {string} */
-const JSDocTagName = {
-    Desc: 'desc',
-    Id: 'id',
-    Meaning: 'meaning',
-};
+const JSDocTagName = { Desc: 'desc', Id: 'id', Meaning: 'meaning', };
 export { JSDocTagName };
 /**
  * @param {?} tag

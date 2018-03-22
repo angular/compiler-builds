@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.0-99711b1
+ * @license Angular v6.0.0-rc.0-e5e1b0d
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v6.0.0-rc.0-99711b1
+ * @license Angular v6.0.0-rc.0-e5e1b0d
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -703,7 +703,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('6.0.0-rc.0-99711b1');
+var VERSION = new Version('6.0.0-rc.0-e5e1b0d');
 
 /**
  * @fileoverview added by tsickle
@@ -14862,7 +14862,7 @@ var ReadVarExpr = /** @class */ (function (_super) {
         }
         else {
             _this.name = null;
-            _this.builtin = name;
+            _this.builtin = /** @type {?} */ (name);
         }
         return _this;
     }
@@ -30001,6 +30001,7 @@ var ConstantPool = /** @class */ (function () {
 }());
 var KeyVisitor = /** @class */ (function () {
     function KeyVisitor() {
+        this.visitReadVarExpr = invalid;
         this.visitWriteVarExpr = invalid;
         this.visitWriteKeyExpr = invalid;
         this.visitWritePropExpr = invalid;
@@ -30071,20 +30072,6 @@ var KeyVisitor = /** @class */ (function () {
         return ast.value.moduleName ? "EX:" + ast.value.moduleName + ":" + ast.value.name :
             "EX:" + ast.value.runtime.name;
     };
-    /**
-     * @param {?} ast
-     * @return {?}
-     */
-    KeyVisitor.prototype.visitReadVarExpr = /**
-     * @param {?} ast
-     * @return {?}
-     */
-    function (ast) {
-        if (!ast.name) {
-            invalid(ast);
-        }
-        return /** @type {?} */ (ast.name);
-    };
     return KeyVisitor;
 }());
 /**
@@ -30093,7 +30080,7 @@ var KeyVisitor = /** @class */ (function () {
  * @return {?}
  */
 function invalid(arg) {
-    throw new Error("Invalid state: Visitor " + this.constructor.name + " doesn't handle " + arg.constructor.name);
+    throw new Error("Invalid state: Visitor " + this.constructor.name + " doesn't handle " + undefined);
 }
 /**
  * @param {?} e
@@ -30485,20 +30472,6 @@ var REFERENCE_PREFIX = '_r';
  */
 var IMPLICIT_REFERENCE = '$implicit';
 /**
- * Name of the i18n attributes *
- */
-var I18N_ATTR = 'i18n';
-var I18N_ATTR_PREFIX = 'i18n-';
-/**
- * I18n separators for metadata *
- */
-var MEANING_SEPARATOR$1 = '|';
-var ID_SEPARATOR$1 = '@@';
-/**
- * Closure functions *
- */
-var GOOG_GET_MSG = 'goog.getMsg';
-/**
  * @param {?} outputCtx
  * @param {?} directive
  * @param {?} reflector
@@ -30749,19 +30722,7 @@ var BindingScope = /** @class */ (function () {
         // Find the top scope as it maintains the global reference count
         while (current.parent)
             current = current.parent;
-        var /** @type {?} */ ref = "" + REFERENCE_PREFIX + current.referenceNameIndex++;
-        return ref;
-    };
-    // closure variables holding i18n messages are name `MSG_[A-Z0-9]+`
-    /**
-     * @return {?}
-     */
-    BindingScope.prototype.freshI18nName = /**
-     * @return {?}
-     */
-    function () {
-        var /** @type {?} */ name = this.freshReferenceName();
-        return ("MSG_" + name).toUpperCase();
+        return "" + REFERENCE_PREFIX + current.referenceNameIndex++;
     };
     return BindingScope;
 }());
@@ -30794,9 +30755,6 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this._projectionDefinitionIndex = 0;
         this.unsupported = unsupported;
         this.invalid = invalid$1;
-        this._inI18nSection = false;
-        this._i18nSectionIndex = -1;
-        this._phToNodeIdxes = [{}];
         // These should be handled in the template or element directly.
         this.visitReference = invalid$1;
         this.visitVariable = invalid$1;
@@ -30891,18 +30849,6 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var /** @type {?} */ creationMode = this._creationMode.length > 0 ?
             [ifStmt(variable(CREATION_MODE_FLAG), this._creationMode)] :
             [];
-        // Generate maps of placeholder name to node indexes
-        // TODO(vicb): This is a WIP, not fully supported yet
-        for (var _c = 0, _d = this._phToNodeIdxes; _c < _d.length; _c++) {
-            var phToNodeIdx = _d[_c];
-            if (Object.keys(phToNodeIdx).length > 0) {
-                var /** @type {?} */ scopedName = this.bindingScope.freshReferenceName();
-                var /** @type {?} */ phMap = variable(scopedName)
-                    .set(mapToExpression(phToNodeIdx, true))
-                    .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]);
-                this._prefix.push(phMap);
-            }
-        }
         return fn([
             new FnParam(this.contextParameter, null), new FnParam(CREATION_MODE_FLAG, BOOL_TYPE)
         ], this._prefix.concat(creationMode, this._bindingMode, this._hostMode, this._refreshMode, this._postfix), INFERRED_TYPE, null, this.templateName);
@@ -30960,54 +30906,21 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     };
     // TemplateAstVisitor
     /**
-     * @param {?} element
+     * @param {?} ast
      * @return {?}
      */
     TemplateDefinitionBuilder.prototype.visitElement = /**
-     * @param {?} element
+     * @param {?} ast
      * @return {?}
      */
-    function (element) {
+    function (ast) {
         var _this = this;
+        var /** @type {?} */ bindingCount = 0;
         var /** @type {?} */ elementIndex = this.allocateDataSlot();
         var /** @type {?} */ componentIndex = undefined;
         var /** @type {?} */ referenceDataSlots = new Map();
-        var /** @type {?} */ wasInI18nSection = this._inI18nSection;
-        var /** @type {?} */ outputAttrs = {};
-        var /** @type {?} */ attrI18nMetas = {};
-        var /** @type {?} */ i18nMeta = '';
-        // Elements inside i18n sections are replaced with placeholders
-        // TODO(vicb): nested elements are a WIP in this phase
-        if (this._inI18nSection) {
-            var /** @type {?} */ phName = element.name.toLowerCase();
-            if (!this._phToNodeIdxes[this._i18nSectionIndex][phName]) {
-                this._phToNodeIdxes[this._i18nSectionIndex][phName] = [];
-            }
-            this._phToNodeIdxes[this._i18nSectionIndex][phName].push(elementIndex);
-        }
-        // Handle i18n attributes
-        for (var _i = 0, _a = element.attrs; _i < _a.length; _i++) {
-            var attr = _a[_i];
-            var /** @type {?} */ name_1 = attr.name;
-            var /** @type {?} */ value = attr.value;
-            if (name_1 === I18N_ATTR) {
-                if (this._inI18nSection) {
-                    throw new Error("Could not mark an element as translatable inside of a translatable section");
-                }
-                this._inI18nSection = true;
-                this._i18nSectionIndex++;
-                this._phToNodeIdxes[this._i18nSectionIndex] = {};
-                i18nMeta = value;
-            }
-            else if (name_1.startsWith(I18N_ATTR_PREFIX)) {
-                attrI18nMetas[name_1.slice(I18N_ATTR_PREFIX.length)] = value;
-            }
-            else {
-                outputAttrs[name_1] = value;
-            }
-        }
         // Element creation mode
-        var /** @type {?} */ component = findComponent(element.directives);
+        var /** @type {?} */ component = findComponent(ast.directives);
         var /** @type {?} */ nullNode = literal(null, INFERRED_TYPE);
         var /** @type {?} */ parameters = [literal(elementIndex)];
         // Add component type or element tag
@@ -31016,40 +30929,27 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             componentIndex = this.allocateDataSlot();
         }
         else {
-            parameters.push(literal(element.name));
+            parameters.push(literal(ast.name));
         }
-        // Add the attributes
-        var /** @type {?} */ i18nMessages = [];
+        // Add attributes array
         var /** @type {?} */ attributes = [];
-        var /** @type {?} */ hasI18nAttr = false;
-        Object.getOwnPropertyNames(outputAttrs).forEach(function (name) {
-            var /** @type {?} */ value = outputAttrs[name];
-            attributes.push(literal(name));
-            if (attrI18nMetas.hasOwnProperty(name)) {
-                hasI18nAttr = true;
-                var _a = _this.genI18nMessageStmts(value, attrI18nMetas[name]), statements = _a.statements, variable$$1 = _a.variable;
-                i18nMessages.push.apply(i18nMessages, statements);
-                attributes.push(variable$$1);
-            }
-            else {
-                attributes.push(literal(value));
-            }
-        });
-        var /** @type {?} */ attrArg = nullNode;
-        if (attributes.length > 0) {
-            attrArg = hasI18nAttr ? getLiteralFactory(this.outputCtx, literalArr(attributes)) :
-                this.constantPool.getConstLiteral(literalArr(attributes), true);
+        for (var _i = 0, _a = ast.attrs; _i < _a.length; _i++) {
+            var attr = _a[_i];
+            attributes.push(literal(attr.name), literal(attr.value));
         }
-        parameters.push(attrArg);
+        parameters.push(attributes.length > 0 ?
+            this.constantPool.getConstLiteral(literalArr(attributes), /* forceShared */ /* forceShared */ true) :
+            nullNode);
         // Add directives array
-        var _b = this._computeDirectivesArray(element.directives), directivesArray = _b.directivesArray, directiveIndexMap = _b.directiveIndexMap;
+        var _b = this._computeDirectivesArray(ast.directives), directivesArray = _b.directivesArray, directiveIndexMap = _b.directiveIndexMap;
         parameters.push(directiveIndexMap.size > 0 ? directivesArray : nullNode);
         if (component && componentIndex != null) {
             // Record the data slot for the component
             directiveIndexMap.set(component.directive.type.reference, componentIndex);
         }
-        if (element.references && element.references.length > 0) {
-            var /** @type {?} */ references = flatten(element.references.map(function (reference) {
+        // Add references array
+        if (ast.references && ast.references.length > 0) {
+            var /** @type {?} */ references = flatten(ast.references.map(function (reference) {
                 var /** @type {?} */ slot = _this.allocateDataSlot();
                 referenceDataSlots.set(reference.name, slot);
                 // Generate the update temporary.
@@ -31070,18 +30970,16 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             parameters.pop();
         }
         // Generate the instruction create element instruction
-        if (i18nMessages.length > 0) {
-            (_c = this._creationMode).push.apply(_c, i18nMessages);
-        }
-        this.instruction.apply(this, [this._creationMode, element.sourceSpan, Identifiers$1.createElement].concat(parameters));
+        this.instruction.apply(this, [this._creationMode, ast.sourceSpan, Identifiers$1.createElement].concat(parameters));
         var /** @type {?} */ implicit = variable(this.contextParameter);
         // Generate element input bindings
-        for (var _d = 0, _e = element.inputs; _d < _e.length; _d++) {
-            var input = _e[_d];
+        for (var _c = 0, _d = ast.inputs; _c < _d.length; _c++) {
+            var input = _d[_c];
             if (input.isAnimation) {
                 this.unsupported('animations');
             }
             var /** @type {?} */ convertedBinding = this.convertPropertyBinding(implicit, input.value);
+            var /** @type {?} */ parameters_1 = [literal(elementIndex), literal(input.name), convertedBinding];
             var /** @type {?} */ instruction = BINDING_INSTRUCTION_MAP[input.type];
             if (instruction) {
                 // TODO(chuckj): runtime: security context?
@@ -31092,21 +30990,11 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             }
         }
         // Generate directives input bindings
-        this._visitDirectives(element.directives, implicit, elementIndex, directiveIndexMap);
+        this._visitDirectives(ast.directives, implicit, elementIndex, directiveIndexMap);
         // Traverse element child nodes
-        if (this._inI18nSection && element.children.length == 1 &&
-            element.children[0] instanceof TextAst) {
-            var /** @type {?} */ text = /** @type {?} */ (element.children[0]);
-            this.visitSingleI18nTextChild(text, i18nMeta);
-        }
-        else {
-            templateVisitAll(this, element.children);
-        }
+        templateVisitAll(this, ast.children);
         // Finish element construction mode.
-        this.instruction(this._creationMode, element.endSourceSpan || element.sourceSpan, Identifiers$1.elementEnd);
-        // Restore the state before exiting this node
-        this._inI18nSection = wasInI18nSection;
-        var _c;
+        this.instruction(this._creationMode, ast.endSourceSpan || ast.sourceSpan, Identifiers$1.elementEnd);
     };
     /**
      * @param {?} directives
@@ -31212,34 +31100,6 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // Text is defined in creation mode only.
         this.instruction(this._creationMode, ast.sourceSpan, Identifiers$1.text, literal(this.allocateDataSlot()), literal(ast.value));
     };
-    // When the content of the element is a single text node the translation can be inlined:
-    //
-    // `<p i18n="desc|mean">some content</p>`
-    // compiles to
-    // ```
-    // /**
-    // * @desc desc
-    // * @meaning mean
-    // */
-    // const MSG_XYZ = goog.getMsg('some content');
-    // i0.ɵT(1, MSG_XYZ);
-    // ```
-    /**
-     * @param {?} text
-     * @param {?} i18nMeta
-     * @return {?}
-     */
-    TemplateDefinitionBuilder.prototype.visitSingleI18nTextChild = /**
-     * @param {?} text
-     * @param {?} i18nMeta
-     * @return {?}
-     */
-    function (text, i18nMeta) {
-        var _a = this.genI18nMessageStmts(text.value, i18nMeta), statements = _a.statements, variable$$1 = _a.variable;
-        (_b = this._creationMode).push.apply(_b, statements);
-        this.instruction(this._creationMode, text.sourceSpan, Identifiers$1.text, literal(this.allocateDataSlot()), variable$$1);
-        var _b;
-    };
     /**
      * @return {?}
      */
@@ -31341,30 +31201,6 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
      */
     function (implicit, value, sourceSpan) {
         return this.convertPropertyBinding(implicit, value);
-    };
-    /**
-     * @param {?} msg
-     * @param {?} meta
-     * @return {?}
-     */
-    TemplateDefinitionBuilder.prototype.genI18nMessageStmts = /**
-     * @param {?} msg
-     * @param {?} meta
-     * @return {?}
-     */
-    function (msg, meta) {
-        var /** @type {?} */ statements = [];
-        var /** @type {?} */ m = parseI18nMeta(meta);
-        var /** @type {?} */ docStmt = i18nMetaToDocStmt(m);
-        if (docStmt) {
-            statements.push(docStmt);
-        }
-        // Call closure to get the translation
-        var /** @type {?} */ variable$$1 = variable(this.bindingScope.freshI18nName());
-        var /** @type {?} */ fnCall = variable(GOOG_GET_MSG).callFn([literal(msg)]);
-        var /** @type {?} */ msgStmt = variable$$1.set(fnCall).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]);
-        statements.push(msgStmt);
-        return { statements: statements, variable: variable$$1 };
     };
     return TemplateDefinitionBuilder;
 }());
@@ -31605,7 +31441,7 @@ var ValueConverter = /** @class */ (function (_super) {
     function (ast, context) {
         var _this = this;
         return new BuiltinFunctionCall(ast.span, this.visitAll(ast.expressions), function (values) {
-            // If the literal has calculated (non-literal) elements transform it into
+            // If the literal has calculated (non-literal) elements  transform it into
             // calls to literal factories that compose the literal and will cache intermediate
             // values. Otherwise, just return an literal array that contains the values.
             var /** @type {?} */ literal$$1 = literalArr(values);
@@ -31731,47 +31567,10 @@ function asLiteral(value) {
 }
 /**
  * @param {?} map
- * @param {?=} quoted
  * @return {?}
  */
-function mapToExpression(map, quoted) {
-    if (quoted === void 0) { quoted = false; }
-    return literalMap(Object.getOwnPropertyNames(map).map(function (key) { return ({ key: key, quoted: quoted, value: asLiteral(map[key]) }); }));
-}
-/**
- * @param {?=} i18n
- * @return {?}
- */
-function parseI18nMeta(i18n) {
-    var /** @type {?} */ meaning;
-    var /** @type {?} */ description;
-    var /** @type {?} */ id;
-    if (i18n) {
-        // TODO(vicb): figure out how to force a message ID with closure ?
-        var /** @type {?} */ idIndex = i18n.indexOf(ID_SEPARATOR$1);
-        var /** @type {?} */ descIndex = i18n.indexOf(MEANING_SEPARATOR$1);
-        var /** @type {?} */ meaningAndDesc = void 0;
-        _a = (idIndex > -1) ? [i18n.slice(0, idIndex), i18n.slice(idIndex + 2)] : [i18n, ''], meaningAndDesc = _a[0], id = _a[1];
-        _b = (descIndex > -1) ?
-            [meaningAndDesc.slice(0, descIndex), meaningAndDesc.slice(descIndex + 1)] :
-            ['', meaningAndDesc], meaning = _b[0], description = _b[1];
-    }
-    return { description: description, id: id, meaning: meaning };
-    var _a, _b;
-}
-/**
- * @param {?} meta
- * @return {?}
- */
-function i18nMetaToDocStmt(meta) {
-    var /** @type {?} */ tags = [];
-    if (meta.description) {
-        tags.push({ tagName: "desc" /* Desc */, text: meta.description });
-    }
-    if (meta.meaning) {
-        tags.push({ tagName: "meaning" /* Meaning */, text: meta.meaning });
-    }
-    return tags.length == 0 ? null : new JSDocCommentStmt(tags);
+function mapToExpression(map) {
+    return literalMap(Object.getOwnPropertyNames(map).map(function (key) { return ({ key: key, quoted: false, value: literal(map[key]) }); }));
 }
 var _a;
 
@@ -36155,14 +35954,7 @@ function createAotCompiler(compilerHost, options, errorCollector) {
     var /** @type {?} */ summaryResolver = new AotSummaryResolver(compilerHost, symbolCache);
     var /** @type {?} */ symbolResolver = new StaticSymbolResolver(compilerHost, symbolCache, summaryResolver);
     var /** @type {?} */ staticReflector = new StaticReflector(summaryResolver, symbolResolver, [], [], errorCollector);
-    var /** @type {?} */ htmlParser;
-    if (!!options.enableIvy) {
-        // Ivy handles i18n at the compiler level so we must use a regular parser
-        htmlParser = /** @type {?} */ (new HtmlParser());
-    }
-    else {
-        htmlParser = new I18NHtmlParser(new HtmlParser(), translations, options.i18nFormat, options.missingTranslation, console);
-    }
+    var /** @type {?} */ htmlParser = new I18NHtmlParser(new HtmlParser(), translations, options.i18nFormat, options.missingTranslation, console);
     var /** @type {?} */ config = new CompilerConfig({
         defaultEncapsulation: ViewEncapsulation.Emulated,
         useJit: false,
