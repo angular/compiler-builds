@@ -650,7 +650,7 @@ var ReadVarExpr = /** @class */ (function (_super) {
         }
         else {
             _this.name = null;
-            _this.builtin = /** @type {?} */ (name);
+            _this.builtin = name;
         }
         return _this;
     }
@@ -3768,7 +3768,11 @@ export function literal(value, type, sourceSpan) {
     return new LiteralExpr(value, type, sourceSpan);
 }
 /** @enum {string} */
-var JSDocTagName = { Desc: 'desc', Id: 'id', Meaning: 'meaning', };
+var JSDocTagName = {
+    Desc: 'desc',
+    Id: 'id',
+    Meaning: 'meaning',
+};
 export { JSDocTagName };
 /**
  * @param {?} tag
