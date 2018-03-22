@@ -274,7 +274,6 @@ function ConstantPool_tsickle_Closure_declarations() {
 }
 class KeyVisitor {
     constructor() {
-        this.visitReadVarExpr = invalid;
         this.visitWriteVarExpr = invalid;
         this.visitWriteKeyExpr = invalid;
         this.visitWritePropExpr = invalid;
@@ -323,10 +322,18 @@ class KeyVisitor {
         return ast.value.moduleName ? `EX:${ast.value.moduleName}:${ast.value.name}` :
             `EX:${ast.value.runtime.name}`;
     }
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    visitReadVarExpr(ast) {
+        if (!ast.name) {
+            invalid(ast);
+        }
+        return /** @type {?} */ (ast.name);
+    }
 }
 function KeyVisitor_tsickle_Closure_declarations() {
-    /** @type {?} */
-    KeyVisitor.prototype.visitReadVarExpr;
     /** @type {?} */
     KeyVisitor.prototype.visitWriteVarExpr;
     /** @type {?} */
@@ -364,7 +371,7 @@ function KeyVisitor_tsickle_Closure_declarations() {
  * @return {?}
  */
 function invalid(arg) {
-    throw new Error(`Invalid state: Visitor ${this.constructor.name} doesn't handle ${o.constructor.name}`);
+    throw new Error(`Invalid state: Visitor ${this.constructor.name} doesn't handle ${arg.constructor.name}`);
 }
 /**
  * @param {?} e
