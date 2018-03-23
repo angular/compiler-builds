@@ -20,6 +20,7 @@ export declare const enum DefinitionKind {
  */
 export declare class ConstantPool {
     statements: o.Statement[];
+    private translations;
     private literals;
     private literalFactories;
     private injectorDefinitions;
@@ -28,6 +29,10 @@ export declare class ConstantPool {
     private pipeDefinitions;
     private nextNameIndex;
     getConstLiteral(literal: o.Expression, forceShared?: boolean): o.Expression;
+    getTranslation(message: string, meta: {
+        description?: string;
+        meaning?: string;
+    }): o.Expression;
     getDefinition(type: any, kind: DefinitionKind, ctx: OutputContext, forceShared?: boolean): o.Expression;
     getLiteralFactory(literal: o.LiteralArrayExpr | o.LiteralMapExpr): {
         literalFactory: o.Expression;
@@ -45,5 +50,6 @@ export declare class ConstantPool {
     private definitionsOf(kind);
     propertyNameOf(kind: DefinitionKind): string;
     private freshName();
+    private freshTranslationName();
     private keyOf(expression);
 }

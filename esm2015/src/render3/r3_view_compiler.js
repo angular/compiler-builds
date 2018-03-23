@@ -52,10 +52,6 @@ const /** @type {?} */ I18N_ATTR_PREFIX = 'i18n-';
 const /** @type {?} */ MEANING_SEPARATOR = '|';
 const /** @type {?} */ ID_SEPARATOR = '@@';
 /**
- * Closure functions *
- */
-const /** @type {?} */ GOOG_GET_MSG = 'goog.getMsg';
-/**
  * @param {?} outputCtx
  * @param {?} directive
  * @param {?} reflector
@@ -304,13 +300,6 @@ class BindingScope {
             current = current.parent;
         const /** @type {?} */ ref = `${REFERENCE_PREFIX}${current.referenceNameIndex++}`;
         return ref;
-    }
-    /**
-     * @return {?}
-     */
-    freshI18nName() {
-        const /** @type {?} */ name = this.freshReferenceName();
-        return `MSG_${name}`.toUpperCase();
     }
 }
 function BindingScope_tsickle_Closure_declarations() {
@@ -577,8 +566,8 @@ class TemplateDefinitionBuilder {
             attributes.push(o.literal(name));
             if (attrI18nMetas.hasOwnProperty(name)) {
                 hasI18nAttr = true;
-                const { statements, variable } = this.genI18nMessageStmts(value, attrI18nMetas[name]);
-                i18nMessages.push(...statements);
+                const /** @type {?} */ meta = parseI18nMeta(attrI18nMetas[name]);
+                const /** @type {?} */ variable = this.constantPool.getTranslation(value, meta);
                 attributes.push(variable);
             }
             else {
@@ -738,8 +727,8 @@ class TemplateDefinitionBuilder {
      * @return {?}
      */
     visitSingleI18nTextChild(text, i18nMeta) {
-        const { statements, variable } = this.genI18nMessageStmts(text.value, i18nMeta);
-        this._creationMode.push(...statements);
+        const /** @type {?} */ meta = parseI18nMeta(i18nMeta);
+        const /** @type {?} */ variable = this.constantPool.getTranslation(text.value, meta);
         this.instruction(this._creationMode, text.sourceSpan, R3.text, o.literal(this.allocateDataSlot()), variable);
     }
     /**
@@ -802,25 +791,6 @@ class TemplateDefinitionBuilder {
      */
     bind(implicit, value, sourceSpan) {
         return this.convertPropertyBinding(implicit, value);
-    }
-    /**
-     * @param {?} msg
-     * @param {?} meta
-     * @return {?}
-     */
-    genI18nMessageStmts(msg, meta) {
-        const /** @type {?} */ statements = [];
-        const /** @type {?} */ m = parseI18nMeta(meta);
-        const /** @type {?} */ docStmt = i18nMetaToDocStmt(m);
-        if (docStmt) {
-            statements.push(docStmt);
-        }
-        // Call closure to get the translation
-        const /** @type {?} */ variable = o.variable(this.bindingScope.freshI18nName());
-        const /** @type {?} */ fnCall = o.variable(GOOG_GET_MSG).callFn([o.literal(msg)]);
-        const /** @type {?} */ msgStmt = variable.set(fnCall).toDeclStmt(o.INFERRED_TYPE, [o.StmtModifier.Final]);
-        statements.push(msgStmt);
-        return { statements, variable };
     }
 }
 function TemplateDefinitionBuilder_tsickle_Closure_declarations() {
@@ -1290,19 +1260,5 @@ function parseI18nMeta(i18n) {
             ['', meaningAndDesc];
     }
     return { description, id, meaning };
-}
-/**
- * @param {?} meta
- * @return {?}
- */
-function i18nMetaToDocStmt(meta) {
-    const /** @type {?} */ tags = [];
-    if (meta.description) {
-        tags.push({ tagName: "desc" /* Desc */, text: meta.description });
-    }
-    if (meta.meaning) {
-        tags.push({ tagName: "meaning" /* Meaning */, text: meta.meaning });
-    }
-    return tags.length == 0 ? null : new o.JSDocCommentStmt(tags);
 }
 //# sourceMappingURL=r3_view_compiler.js.map
