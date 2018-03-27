@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.0-2aabbc5
+ * @license Angular v6.0.0-rc.0-910a16a
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v6.0.0-rc.0-2aabbc5
+ * @license Angular v6.0.0-rc.0-910a16a
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -703,7 +703,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('6.0.0-rc.0-2aabbc5');
+var VERSION = new Version('6.0.0-rc.0-910a16a');
 
 /**
  * @fileoverview added by tsickle
@@ -30576,6 +30576,8 @@ function compileDirective(outputCtx, directive, reflector, bindingParser, mode) 
     };
     // e.g. 'type: MyDirective`
     field('type', outputCtx.importExpr(directive.type.reference));
+    // e.g. `selector: [[[null, 'someDir', ''], null]]`
+    field('selector', createDirectiveSelector(/** @type {?} */ ((directive.selector))));
     // e.g. `factory: () => new MyApp(injectElementRef())`
     field('factory', createFactory(directive.type, outputCtx, reflector, directive.queries));
     // e.g. `hostBindings: (dirIndex, elIndex) => { ... }
@@ -30619,13 +30621,10 @@ function compileComponent(outputCtx, component, pipes, template, reflector, bind
     };
     // e.g. `type: MyApp`
     field('type', outputCtx.importExpr(component.type.reference));
-    // e.g. `tag: 'my-app'`
-    // This is optional and only included if the first selector of a component has element.
+    // e.g. `selector: [[['my-app'], null]]`
+    field('selector', createDirectiveSelector(/** @type {?} */ ((component.selector))));
     var /** @type {?} */ selector = component.selector && CssSelector.parse(component.selector);
     var /** @type {?} */ firstSelector = selector && selector[0];
-    if (firstSelector && firstSelector.hasElementSelector()) {
-        field('tag', literal(firstSelector.element));
-    }
     // e.g. `attr: ["class", ".my.app"]
     // This is optional an only included if the first selector of a component specifies attributes.
     if (firstSelector) {
@@ -31481,6 +31480,13 @@ function createFactory(type, outputCtx, reflector, queries) {
     var /** @type {?} */ result = queryDefinitions.length > 0 ? literalArr([createInstance].concat(queryDefinitions)) :
         createInstance;
     return fn([], [new ReturnStatement(result)], INFERRED_TYPE, null, type.reference.name ? type.reference.name + "_Factory" : null);
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function createDirectiveSelector(selector) {
+    return asLiteral(parseSelectorsToR3Selector(CssSelector.parse(selector)));
 }
 /**
  * @param {?} directiveMetadata

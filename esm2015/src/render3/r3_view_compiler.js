@@ -68,6 +68,8 @@ export function compileDirective(outputCtx, directive, reflector, bindingParser,
     };
     // e.g. 'type: MyDirective`
     field('type', outputCtx.importExpr(directive.type.reference));
+    // e.g. `selector: [[[null, 'someDir', ''], null]]`
+    field('selector', createDirectiveSelector(/** @type {?} */ ((directive.selector))));
     // e.g. `factory: () => new MyApp(injectElementRef())`
     field('factory', createFactory(directive.type, outputCtx, reflector, directive.queries));
     // e.g. `hostBindings: (dirIndex, elIndex) => { ... }
@@ -111,13 +113,10 @@ export function compileComponent(outputCtx, component, pipes, template, reflecto
     };
     // e.g. `type: MyApp`
     field('type', outputCtx.importExpr(component.type.reference));
-    // e.g. `tag: 'my-app'`
-    // This is optional and only included if the first selector of a component has element.
+    // e.g. `selector: [[['my-app'], null]]`
+    field('selector', createDirectiveSelector(/** @type {?} */ ((component.selector))));
     const /** @type {?} */ selector = component.selector && CssSelector.parse(component.selector);
     const /** @type {?} */ firstSelector = selector && selector[0];
-    if (firstSelector && firstSelector.hasElementSelector()) {
-        field('tag', o.literal(firstSelector.element));
-    }
     // e.g. `attr: ["class", ".my.app"]
     // This is optional an only included if the first selector of a component specifies attributes.
     if (firstSelector) {
@@ -953,6 +952,13 @@ export function createFactory(type, outputCtx, reflector, queries) {
     const /** @type {?} */ result = queryDefinitions.length > 0 ? o.literalArr([createInstance, ...queryDefinitions]) :
         createInstance;
     return o.fn([], [new o.ReturnStatement(result)], o.INFERRED_TYPE, null, type.reference.name ? `${type.reference.name}_Factory` : null);
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function createDirectiveSelector(selector) {
+    return asLiteral(parseSelectorsToR3Selector(CssSelector.parse(selector)));
 }
 /**
  * @param {?} directiveMetadata
