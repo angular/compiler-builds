@@ -1001,14 +1001,14 @@ var _ParseAST = /** @class */ (function () {
         return /** @type {?} */ (positionals);
     };
     /**
-     * An identifier, a keyword, a string with an optional `-` inbetween.
+     * An identifier, a keyword, a string with an optional `-` in between.
      */
     /**
-     * An identifier, a keyword, a string with an optional `-` inbetween.
+     * An identifier, a keyword, a string with an optional `-` in between.
      * @return {?}
      */
     _ParseAST.prototype.expectTemplateBindingKey = /**
-     * An identifier, a keyword, a string with an optional `-` inbetween.
+     * An identifier, a keyword, a string with an optional `-` in between.
      * @return {?}
      */
     function () {

@@ -178,11 +178,11 @@ export class DirectiveNormalizer {
     _normalizeLoadedTemplateMetadata(prenormData, preparsedTemplate, stylesheets) {
         // Algorithm:
         // - produce exactly 1 entry per original styleUrl in
-        // CompileTemplateMetadata.externalStylesheets whith all styles inlined
+        // CompileTemplateMetadata.externalStylesheets with all styles inlined
         // - inline all styles that are referenced by the template into CompileTemplateMetadata.styles.
         // Reason: be able to determine how many stylesheets there are even without loading
         // the template nor the stylesheets, so we can create a stub for TypeScript always synchronously
-        // (as resouce loading may be async)
+        // (as resource loading may be async)
         const /** @type {?} */ styles = [...preparsedTemplate.styles];
         this._inlineStyles(preparsedTemplate.inlineStyleUrls, stylesheets, styles);
         const /** @type {?} */ styleUrls = preparsedTemplate.styleUrls;

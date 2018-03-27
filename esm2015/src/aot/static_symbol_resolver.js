@@ -289,7 +289,7 @@ export class StaticSymbolResolver {
         return this.staticSymbolCache.get(declarationFile, name, members);
     }
     /**
-     * hasDecorators checks a file's metadata for the presense of decorators without evalutating the
+     * hasDecorators checks a file's metadata for the presence of decorators without evaluating the
      * metadata.
      *
      * @param {?} filePath the absolute path to examine for decorators.

@@ -831,7 +831,7 @@ export class _ParseAST {
         return /** @type {?} */ (positionals);
     }
     /**
-     * An identifier, a keyword, a string with an optional `-` inbetween.
+     * An identifier, a keyword, a string with an optional `-` in between.
      * @return {?}
      */
     expectTemplateBindingKey() {
