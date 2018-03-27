@@ -106,7 +106,7 @@ export declare class StaticSymbolResolver {
      */
     getStaticSymbol(declarationFile: string, name: string, members?: string[]): StaticSymbol;
     /**
-     * hasDecorators checks a file's metadata for the presense of decorators without evalutating the
+     * hasDecorators checks a file's metadata for the presence of decorators without evaluating the
      * metadata.
      *
      * @param filePath the absolute path to examine for decorators.
