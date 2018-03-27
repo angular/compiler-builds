@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.0-0ebdb3d
+ * @license Angular v6.0.0-rc.0-f739f75
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -660,7 +660,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('6.0.0-rc.0-0ebdb3d');
+var VERSION = new Version('6.0.0-rc.0-f739f75');
 
 /**
  * @fileoverview added by tsickle
@@ -2110,7 +2110,7 @@ function templateJitUrl(ngModuleType, compMeta) {
  * particular offset in a source file. The head of the list is the top
  * most node. The tail is the node that contains the offset directly.
  *
- * For example, the expression `a + b + c` might have an ast that looks
+ * For example, the expresion `a + b + c` might have an ast that looks
  * like:
  *     +
  *    / \
@@ -3305,11 +3305,11 @@ var DirectiveNormalizer = /** @class */ (function () {
         var _this = this;
         // Algorithm:
         // - produce exactly 1 entry per original styleUrl in
-        // CompileTemplateMetadata.externalStylesheets with all styles inlined
+        // CompileTemplateMetadata.externalStylesheets whith all styles inlined
         // - inline all styles that are referenced by the template into CompileTemplateMetadata.styles.
         // Reason: be able to determine how many stylesheets there are even without loading
         // the template nor the stylesheets, so we can create a stub for TypeScript always synchronously
-        // (as resource loading may be async)
+        // (as resouce loading may be async)
         var /** @type {?} */ styles = preparsedTemplate.styles.slice();
         this._inlineStyles(preparsedTemplate.inlineStyleUrls, stylesheets, styles);
         var /** @type {?} */ styleUrls = preparsedTemplate.styleUrls;
@@ -7380,14 +7380,14 @@ var _ParseAST = /** @class */ (function () {
         return /** @type {?} */ (positionals);
     };
     /**
-     * An identifier, a keyword, a string with an optional `-` in between.
+     * An identifier, a keyword, a string with an optional `-` inbetween.
      */
     /**
-     * An identifier, a keyword, a string with an optional `-` in between.
+     * An identifier, a keyword, a string with an optional `-` inbetween.
      * @return {?}
      */
     _ParseAST.prototype.expectTemplateBindingKey = /**
-     * An identifier, a keyword, a string with an optional `-` in between.
+     * An identifier, a keyword, a string with an optional `-` inbetween.
      * @return {?}
      */
     function () {
@@ -32278,21 +32278,21 @@ var StaticSymbolResolver = /** @class */ (function () {
         return this.staticSymbolCache.get(declarationFile, name, members);
     };
     /**
-     * hasDecorators checks a file's metadata for the presence of decorators without evaluating the
+     * hasDecorators checks a file's metadata for the presense of decorators without evalutating the
      * metadata.
      *
      * @param filePath the absolute path to examine for decorators.
      * @returns true if any class in the file has a decorator.
      */
     /**
-     * hasDecorators checks a file's metadata for the presence of decorators without evaluating the
+     * hasDecorators checks a file's metadata for the presense of decorators without evalutating the
      * metadata.
      *
      * @param {?} filePath the absolute path to examine for decorators.
      * @return {?} true if any class in the file has a decorator.
      */
     StaticSymbolResolver.prototype.hasDecorators = /**
-     * hasDecorators checks a file's metadata for the presence of decorators without evaluating the
+     * hasDecorators checks a file's metadata for the presense of decorators without evalutating the
      * metadata.
      *
      * @param {?} filePath the absolute path to examine for decorators.
