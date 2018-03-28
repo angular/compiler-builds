@@ -70,7 +70,7 @@ var InjectableCompiler = /** @class */ (function () {
             if (typeof token === 'string') {
                 tokenExpr = o.literal(token);
             }
-            else if (token === _this.tokenInjector && _this.alwaysGenerateDef) {
+            else if (token === _this.tokenInjector) {
                 tokenExpr = o.importExpr(Identifiers.INJECTOR);
             }
             else {

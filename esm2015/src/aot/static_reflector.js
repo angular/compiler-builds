@@ -22,7 +22,7 @@ const /** @type {?} */ IGNORE = {
 };
 const /** @type {?} */ USE_VALUE = 'useValue';
 const /** @type {?} */ PROVIDE = 'provide';
-const /** @type {?} */ REFERENCE_SET = new Set([USE_VALUE, 'useFactory', 'data']);
+const /** @type {?} */ REFERENCE_SET = new Set([USE_VALUE, 'useFactory', 'data', 'id']);
 const /** @type {?} */ TYPEGUARD_POSTFIX = 'TypeGuard';
 const /** @type {?} */ USE_IF = 'UseIf';
 /**

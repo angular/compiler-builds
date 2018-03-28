@@ -65,8 +65,10 @@ var NgModuleCompiler = /** @class */ (function () {
             ngModuleDefFactory
         ]));
         if (ngModuleMeta.id) {
+            var /** @type {?} */ id = typeof ngModuleMeta.id === 'string' ? o.literal(ngModuleMeta.id) :
+                ctx.importExpr(ngModuleMeta.id);
             var /** @type {?} */ registerFactoryStmt = o.importExpr(Identifiers.RegisterModuleFactoryFn)
-                .callFn([o.literal(ngModuleMeta.id), o.variable(ngModuleFactoryVar)])
+                .callFn([id, o.variable(ngModuleFactoryVar)])
                 .toStmt();
             ctx.statements.push(registerFactoryStmt);
         }

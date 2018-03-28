@@ -68,7 +68,7 @@ export class InjectableCompiler {
             if (typeof token === 'string') {
                 tokenExpr = o.literal(token);
             }
-            else if (token === this.tokenInjector && this.alwaysGenerateDef) {
+            else if (token === this.tokenInjector) {
                 tokenExpr = o.importExpr(Identifiers.INJECTOR);
             }
             else {

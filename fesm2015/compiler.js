@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.0-0b348c8
+ * @license Angular v6.0.0-rc.0-bd024c0
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -605,7 +605,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('6.0.0-rc.0-0b348c8');
+const VERSION = new Version('6.0.0-rc.0-bd024c0');
 
 /**
  * @fileoverview added by tsickle
@@ -14315,7 +14315,7 @@ class InjectableCompiler {
             if (typeof token === 'string') {
                 tokenExpr = literal(token);
             }
-            else if (token === this.tokenInjector && this.alwaysGenerateDef) {
+            else if (token === this.tokenInjector) {
                 tokenExpr = importExpr(Identifiers.INJECTOR);
             }
             else {
@@ -17172,8 +17172,10 @@ class NgModuleCompiler {
             ngModuleDefFactory
         ]));
         if (ngModuleMeta.id) {
+            const /** @type {?} */ id = typeof ngModuleMeta.id === 'string' ? literal(ngModuleMeta.id) :
+                ctx.importExpr(ngModuleMeta.id);
             const /** @type {?} */ registerFactoryStmt = importExpr(Identifiers.RegisterModuleFactoryFn)
-                .callFn([literal(ngModuleMeta.id), variable(ngModuleFactoryVar)])
+                .callFn([id, variable(ngModuleFactoryVar)])
                 .toStmt();
             ctx.statements.push(registerFactoryStmt);
         }
@@ -28392,7 +28394,7 @@ const IGNORE = {
 };
 const USE_VALUE = 'useValue';
 const PROVIDE = 'provide';
-const REFERENCE_SET = new Set([USE_VALUE, 'useFactory', 'data']);
+const REFERENCE_SET = new Set([USE_VALUE, 'useFactory', 'data', 'id']);
 const TYPEGUARD_POSTFIX = 'TypeGuard';
 const USE_IF = 'UseIf';
 /**
