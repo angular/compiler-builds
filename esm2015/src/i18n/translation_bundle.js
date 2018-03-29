@@ -12,6 +12,7 @@
 import { MissingTranslationStrategy } from '../core';
 import { HtmlParser } from '../ml_parser/html_parser';
 import { I18nError } from './parse_util';
+import { escapeXml } from './serializers/xml_helper';
 /**
  * A container for translated messages
  */
@@ -112,7 +113,11 @@ class I18nToHtmlVisitor {
      * @param {?=} context
      * @return {?}
      */
-    visitText(text, context) { return text.value; }
+    visitText(text, context) {
+        // `convert()` uses an `HtmlParser` to return `html.Node`s
+        // we should then make sure that any special characters are escaped
+        return escapeXml(text.value);
+    }
     /**
      * @param {?} container
      * @param {?=} context

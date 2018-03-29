@@ -110,7 +110,7 @@ var Declaration = /** @class */ (function () {
         var _this = this;
         this.attrs = {};
         Object.keys(unescapedAttrs).forEach(function (k) {
-            _this.attrs[k] = _escapeXml(unescapedAttrs[k]);
+            _this.attrs[k] = escapeXml(unescapedAttrs[k]);
         });
     }
     /**
@@ -161,7 +161,7 @@ var Tag = /** @class */ (function () {
         this.children = children;
         this.attrs = {};
         Object.keys(unescapedAttrs).forEach(function (k) {
-            _this.attrs[k] = _escapeXml(unescapedAttrs[k]);
+            _this.attrs[k] = escapeXml(unescapedAttrs[k]);
         });
     }
     /**
@@ -186,7 +186,7 @@ function Tag_tsickle_Closure_declarations() {
 }
 var Text = /** @class */ (function () {
     function Text(unescapedValue) {
-        this.value = _escapeXml(unescapedValue);
+        this.value = escapeXml(unescapedValue);
     }
     /**
      * @param {?} visitor
@@ -224,7 +224,7 @@ var /** @type {?} */ _ESCAPED_CHARS = [
  * @param {?} text
  * @return {?}
  */
-function _escapeXml(text) {
+export function escapeXml(text) {
     return _ESCAPED_CHARS.reduce(function (text, entry) { return text.replace(entry[0], entry[1]); }, text);
 }
 //# sourceMappingURL=xml_helper.js.map

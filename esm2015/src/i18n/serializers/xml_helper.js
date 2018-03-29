@@ -87,7 +87,7 @@ export class Declaration {
     constructor(unescapedAttrs) {
         this.attrs = {};
         Object.keys(unescapedAttrs).forEach((k) => {
-            this.attrs[k] = _escapeXml(unescapedAttrs[k]);
+            this.attrs[k] = escapeXml(unescapedAttrs[k]);
         });
     }
     /**
@@ -132,7 +132,7 @@ export class Tag {
         this.children = children;
         this.attrs = {};
         Object.keys(unescapedAttrs).forEach((k) => {
-            this.attrs[k] = _escapeXml(unescapedAttrs[k]);
+            this.attrs[k] = escapeXml(unescapedAttrs[k]);
         });
     }
     /**
@@ -153,7 +153,7 @@ export class Text {
     /**
      * @param {?} unescapedValue
      */
-    constructor(unescapedValue) { this.value = _escapeXml(unescapedValue); }
+    constructor(unescapedValue) { this.value = escapeXml(unescapedValue); }
     /**
      * @param {?} visitor
      * @return {?}
@@ -181,7 +181,7 @@ const /** @type {?} */ _ESCAPED_CHARS = [
  * @param {?} text
  * @return {?}
  */
-function _escapeXml(text) {
+export function escapeXml(text) {
     return _ESCAPED_CHARS.reduce((text, entry) => text.replace(entry[0], entry[1]), text);
 }
 //# sourceMappingURL=xml_helper.js.map
