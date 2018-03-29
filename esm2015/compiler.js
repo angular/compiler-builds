@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.2.9-0d4fe38
+ * @license Angular v5.2.9-4f7c369
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -582,7 +582,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.2.9-0d4fe38');
+const VERSION = new Version('5.2.9-4f7c369');
 
 /**
  * @fileoverview added by tsickle
@@ -9617,7 +9617,7 @@ class Declaration {
     constructor(unescapedAttrs) {
         this.attrs = {};
         Object.keys(unescapedAttrs).forEach((k) => {
-            this.attrs[k] = _escapeXml(unescapedAttrs[k]);
+            this.attrs[k] = escapeXml(unescapedAttrs[k]);
         });
     }
     /**
@@ -9652,7 +9652,7 @@ class Tag {
         this.children = children;
         this.attrs = {};
         Object.keys(unescapedAttrs).forEach((k) => {
-            this.attrs[k] = _escapeXml(unescapedAttrs[k]);
+            this.attrs[k] = escapeXml(unescapedAttrs[k]);
         });
     }
     /**
@@ -9665,7 +9665,7 @@ class Text$2 {
     /**
      * @param {?} unescapedValue
      */
-    constructor(unescapedValue) { this.value = _escapeXml(unescapedValue); }
+    constructor(unescapedValue) { this.value = escapeXml(unescapedValue); }
     /**
      * @param {?} visitor
      * @return {?}
@@ -9689,7 +9689,7 @@ const _ESCAPED_CHARS = [
  * @param {?} text
  * @return {?}
  */
-function _escapeXml(text) {
+function escapeXml(text) {
     return _ESCAPED_CHARS.reduce((text, entry) => text.replace(entry[0], entry[1]), text);
 }
 
@@ -11113,7 +11113,11 @@ class I18nToHtmlVisitor {
      * @param {?=} context
      * @return {?}
      */
-    visitText(text, context) { return text.value; }
+    visitText(text, context) {
+        // `convert()` uses an `HtmlParser` to return `html.Node`s
+        // we should then make sure that any special characters are escaped
+        return escapeXml(text.value);
+    }
     /**
      * @param {?} container
      * @param {?=} context
