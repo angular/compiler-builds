@@ -69,8 +69,8 @@ export function compileDirective(outputCtx, directive, reflector, bindingParser,
     };
     // e.g. 'type: MyDirective`
     field('type', outputCtx.importExpr(directive.type.reference));
-    // e.g. `selector: [[[null, 'someDir', ''], null]]`
-    field('selector', createDirectiveSelector(/** @type {?} */ ((directive.selector))));
+    // e.g. `selectors: [['', 'someDir', '']]`
+    field('selectors', createDirectiveSelector(/** @type {?} */ ((directive.selector))));
     // e.g. `factory: () => new MyApp(injectElementRef())`
     field('factory', createFactory(directive.type, outputCtx, reflector, directive.queries));
     // e.g. `hostBindings: (dirIndex, elIndex) => { ... }
@@ -114,8 +114,8 @@ export function compileComponent(outputCtx, component, pipes, template, reflecto
     };
     // e.g. `type: MyApp`
     field('type', outputCtx.importExpr(component.type.reference));
-    // e.g. `selector: [[['my-app'], null]]`
-    field('selector', createDirectiveSelector(/** @type {?} */ ((component.selector))));
+    // e.g. `selectors: [['my-app']]`
+    field('selectors', createDirectiveSelector(/** @type {?} */ ((component.selector))));
     var /** @type {?} */ selector = component.selector && CssSelector.parse(component.selector);
     var /** @type {?} */ firstSelector = selector && selector[0];
     // e.g. `attr: ["class", ".my.app"]
@@ -1336,13 +1336,46 @@ function getContentProjection(asts, ngContentSelectors) {
     templateVisitAll(visitor, asts);
     return projectIndexMap;
 }
+/** @enum {number} */
+var SelectorFlags = {
+    /** Indicates this is the beginning of a new negative selector */
+    NOT: 1,
+    /** Mode for matching attributes */
+    ATTRIBUTE: 2,
+    /** Mode for matching tag names */
+    ELEMENT: 4,
+    /** Mode for matching class names */
+    CLASS: 8,
+};
 /**
  * @param {?} selector
  * @return {?}
  */
 function parserSelectorToSimpleSelector(selector) {
-    var /** @type {?} */ classes = selector.classNames && selector.classNames.length ? ['class'].concat(selector.classNames) : [];
-    return [selector.element].concat(selector.attrs, classes);
+    var /** @type {?} */ classes = selector.classNames && selector.classNames.length ? [8 /* CLASS */].concat(selector.classNames) :
+        [];
+    var /** @type {?} */ elementName = selector.element && selector.element !== '*' ? selector.element : '';
+    return [elementName].concat(selector.attrs, classes);
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function parserSelectorToNegativeSelector(selector) {
+    var /** @type {?} */ classes = selector.classNames && selector.classNames.length ? [8 /* CLASS */].concat(selector.classNames) :
+        [];
+    if (selector.element) {
+        return [
+            1 /* NOT */ | 4 /* ELEMENT */, selector.element
+        ].concat(selector.attrs, classes);
+    }
+    else if (selector.attrs.length) {
+        return [1 /* NOT */ | 2 /* ATTRIBUTE */].concat(selector.attrs, classes);
+    }
+    else {
+        return selector.classNames && selector.classNames.length ? [1 /* NOT */ | 8 /* CLASS */].concat(selector.classNames) :
+            [];
+    }
 }
 /**
  * @param {?} selector
@@ -1350,9 +1383,10 @@ function parserSelectorToSimpleSelector(selector) {
  */
 function parserSelectorToR3Selector(selector) {
     var /** @type {?} */ positive = parserSelectorToSimpleSelector(selector);
-    var /** @type {?} */ negative = selector.notSelectors && selector.notSelectors.length &&
-        parserSelectorToSimpleSelector(selector.notSelectors[0]);
-    return negative ? [positive, negative] : [positive, null];
+    var /** @type {?} */ negative = selector.notSelectors && selector.notSelectors.length ?
+        selector.notSelectors.map(function (notSelector) { return parserSelectorToNegativeSelector(notSelector); }) :
+        [];
+    return positive.concat.apply(positive, negative);
 }
 /**
  * @param {?} selectors

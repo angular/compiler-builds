@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.1-6cb1adf
+ * @license Angular v6.0.0-rc.1-9cd4465
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -605,7 +605,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('6.0.0-rc.1-6cb1adf');
+const VERSION = new Version('6.0.0-rc.1-9cd4465');
 
 /**
  * @fileoverview added by tsickle
@@ -24931,8 +24931,8 @@ function compileDirective(outputCtx, directive, reflector, bindingParser, mode) 
     };
     // e.g. 'type: MyDirective`
     field('type', outputCtx.importExpr(directive.type.reference));
-    // e.g. `selector: [[[null, 'someDir', ''], null]]`
-    field('selector', createDirectiveSelector(/** @type {?} */ ((directive.selector))));
+    // e.g. `selectors: [['', 'someDir', '']]`
+    field('selectors', createDirectiveSelector(/** @type {?} */ ((directive.selector))));
     // e.g. `factory: () => new MyApp(injectElementRef())`
     field('factory', createFactory(directive.type, outputCtx, reflector, directive.queries));
     // e.g. `hostBindings: (dirIndex, elIndex) => { ... }
@@ -24976,8 +24976,8 @@ function compileComponent(outputCtx, component, pipes, template, reflector, bind
     };
     // e.g. `type: MyApp`
     field('type', outputCtx.importExpr(component.type.reference));
-    // e.g. `selector: [[['my-app'], null]]`
-    field('selector', createDirectiveSelector(/** @type {?} */ ((component.selector))));
+    // e.g. `selectors: [['my-app']]`
+    field('selectors', createDirectiveSelector(/** @type {?} */ ((component.selector))));
     const /** @type {?} */ selector = component.selector && CssSelector.parse(component.selector);
     const /** @type {?} */ firstSelector = selector && selector[0];
     // e.g. `attr: ["class", ".my.app"]
@@ -25953,8 +25953,33 @@ function getContentProjection(asts, ngContentSelectors) {
  * @return {?}
  */
 function parserSelectorToSimpleSelector(selector) {
-    const /** @type {?} */ classes = selector.classNames && selector.classNames.length ? ['class', ...selector.classNames] : [];
-    return [selector.element, ...selector.attrs, ...classes];
+    const /** @type {?} */ classes = selector.classNames && selector.classNames.length ?
+        [8 /* CLASS */, ...selector.classNames] :
+        [];
+    const /** @type {?} */ elementName = selector.element && selector.element !== '*' ? selector.element : '';
+    return [elementName, ...selector.attrs, ...classes];
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function parserSelectorToNegativeSelector(selector) {
+    const /** @type {?} */ classes = selector.classNames && selector.classNames.length ?
+        [8 /* CLASS */, ...selector.classNames] :
+        [];
+    if (selector.element) {
+        return [
+            1 /* NOT */ | 4 /* ELEMENT */, selector.element, ...selector.attrs, ...classes
+        ];
+    }
+    else if (selector.attrs.length) {
+        return [1 /* NOT */ | 2 /* ATTRIBUTE */, ...selector.attrs, ...classes];
+    }
+    else {
+        return selector.classNames && selector.classNames.length ?
+            [1 /* NOT */ | 8 /* CLASS */, ...selector.classNames] :
+            [];
+    }
 }
 /**
  * @param {?} selector
@@ -25962,9 +25987,10 @@ function parserSelectorToSimpleSelector(selector) {
  */
 function parserSelectorToR3Selector(selector) {
     const /** @type {?} */ positive = parserSelectorToSimpleSelector(selector);
-    const /** @type {?} */ negative = selector.notSelectors && selector.notSelectors.length &&
-        parserSelectorToSimpleSelector(selector.notSelectors[0]);
-    return negative ? [positive, negative] : [positive, null];
+    const /** @type {?} */ negative = selector.notSelectors && selector.notSelectors.length ?
+        selector.notSelectors.map(notSelector => parserSelectorToNegativeSelector(notSelector)) :
+        [];
+    return positive.concat(...negative);
 }
 /**
  * @param {?} selectors
