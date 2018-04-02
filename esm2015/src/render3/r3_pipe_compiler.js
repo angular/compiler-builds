@@ -25,7 +25,9 @@ import { createFactory } from './r3_view_compiler';
  */
 export function compilePipe(outputCtx, pipe, reflector, mode) {
     const /** @type {?} */ definitionMapValues = [];
-    // e.g. 'type: MyPipe`
+    // e.g. `name: 'myPipe'`
+    definitionMapValues.push({ key: 'name', value: o.literal(pipe.name), quoted: false });
+    // e.g. `type: MyPipe`
     definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(pipe.type.reference), quoted: false });
     // e.g. factory: function MyPipe_Factory() { return new MyPipe(); },
     const /** @type {?} */ templateFactory = createFactory(pipe.type, outputCtx, reflector, []);

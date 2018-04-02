@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.1-43d6202
+ * @license Angular v6.0.0-rc.1-7a1c437
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v6.0.0-rc.1-43d6202
+ * @license Angular v6.0.0-rc.1-7a1c437
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -703,7 +703,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('6.0.0-rc.1-43d6202');
+var VERSION = new Version('6.0.0-rc.1-7a1c437');
 
 /**
  * @fileoverview added by tsickle
@@ -30620,6 +30620,17 @@ function compileDirective(outputCtx, directive, reflector, bindingParser, mode) 
  */
 function compileComponent(outputCtx, component, pipes, template, reflector, bindingParser, mode) {
     var /** @type {?} */ definitionMapValues = [];
+    // Set of pipe names for pipe exps that have already been stored in pipes[] (to avoid dupes)
+    var /** @type {?} */ pipeSet = new Set();
+    // Pipe expressions for pipes[] field in component def
+    var /** @type {?} */ pipeExps = [];
+    /**
+     * @param {?} summary
+     * @return {?}
+     */
+    function addPipeDependency(summary) {
+        addDependencyToComponent(outputCtx, summary, pipeSet, pipeExps);
+    }
     var /** @type {?} */ field = function (key, value) {
         if (value) {
             definitionMapValues.push({ key: key, value: value, quoted: false });
@@ -30647,9 +30658,13 @@ function compileComponent(outputCtx, component, pipes, template, reflector, bind
     var /** @type {?} */ templateTypeName = component.type.reference.name;
     var /** @type {?} */ templateName = templateTypeName ? templateTypeName + "_Template" : null;
     var /** @type {?} */ pipeMap = new Map(pipes.map(function (pipe) { return [pipe.name, pipe]; }));
-    var /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, ROOT_SCOPE.nestedScope(), 0, /** @type {?} */ ((component.template)).ngContentSelectors, templateTypeName, templateName, pipeMap, component.viewQueries)
+    var /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, ROOT_SCOPE.nestedScope(), 0, /** @type {?} */ ((component.template)).ngContentSelectors, templateTypeName, templateName, pipeMap, component.viewQueries, addPipeDependency)
         .buildTemplateFunction(template, []);
     field('template', templateFunctionExpression);
+    // e.g. `pipes: [MyPipe]`
+    if (pipeExps.length) {
+        field('pipes', literalArr(pipeExps));
+    }
     // e.g `inputs: {a: 'a'}`
     field('inputs', createInputsObject(component, outputCtx));
     // e.g. `features: [NgOnChangesFeature(MyComponent)]`
@@ -30672,6 +30687,21 @@ function compileComponent(outputCtx, component, pipes, template, reflector, bind
         var /** @type {?} */ classReference = outputCtx.importExpr(component.type.reference);
         // Create the back-patch statement
         outputCtx.statements.push(new CommentStmt(BUILD_OPTIMIZER_COLOCATE), classReference.prop(definitionField).set(definitionFunction).toStmt());
+    }
+}
+/**
+ * @param {?} outputCtx
+ * @param {?} summary
+ * @param {?} set
+ * @param {?} exps
+ * @return {?}
+ */
+function addDependencyToComponent(outputCtx, summary, set, exps) {
+    var /** @type {?} */ importExpr$$1 = /** @type {?} */ (outputCtx.importExpr(summary.type.reference));
+    var /** @type {?} */ uniqueKey = importExpr$$1.value.moduleName + ':' + importExpr$$1.value.name;
+    if (!set.has(uniqueKey)) {
+        set.add(uniqueKey);
+        exps.push(importExpr$$1);
     }
 }
 /**
@@ -30822,7 +30852,7 @@ var BindingScope = /** @class */ (function () {
 }());
 var ROOT_SCOPE = new BindingScope(null).set('$event', variable('$event'));
 var TemplateDefinitionBuilder = /** @class */ (function () {
-    function TemplateDefinitionBuilder(outputCtx, constantPool, reflector, contextParameter, bindingScope, level, ngContentSelectors, contextName, templateName, pipes, viewQueries) {
+    function TemplateDefinitionBuilder(outputCtx, constantPool, reflector, contextParameter, bindingScope, level, ngContentSelectors, contextName, templateName, pipes, viewQueries, addPipeDependency) {
         if (level === void 0) { level = 0; }
         var _this = this;
         this.outputCtx = outputCtx;
@@ -30836,6 +30866,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this.templateName = templateName;
         this.pipes = pipes;
         this.viewQueries = viewQueries;
+        this.addPipeDependency = addPipeDependency;
         this._dataIndex = 0;
         this._bindingContext = 0;
         this._referenceIndex = 0;
@@ -30865,12 +30896,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             bindingScope.set(localName, value);
             var /** @type {?} */ pipe = /** @type {?} */ ((pipes.get(name)));
             pipe || error("Could not find pipe " + name);
-            var /** @type {?} */ pipeDefinition = constantPool.getDefinition(pipe.type.reference, 3 /* Pipe */, outputCtx, /* forceShared */ /* forceShared */ true);
-            _this._creationMode.push(importExpr(Identifiers$1.pipe)
-                .callFn([
-                literal(slot), pipeDefinition, pipeDefinition.callMethod(Identifiers$1.NEW_METHOD, [])
-            ])
-                .toStmt());
+            _this.addPipeDependency(pipe);
+            _this._creationMode.push(importExpr(Identifiers$1.pipe).callFn([literal(slot), literal(name)]).toStmt());
         });
     }
     /**
@@ -31234,7 +31261,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // e.g. cr();
         this.instruction(this._refreshMode, ast.sourceSpan, Identifiers$1.containerRefreshEnd);
         // Create the template function
-        var /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this.bindingScope.nestedScope(), this.level + 1, this.ngContentSelectors, contextName, templateName, this.pipes, []);
+        var /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this.bindingScope.nestedScope(), this.level + 1, this.ngContentSelectors, contextName, templateName, this.pipes, [], this.addPipeDependency);
         var /** @type {?} */ templateFunctionExpr = templateVisitor.buildTemplateFunction(ast.children, ast.variables);
         this._postfix.push(templateFunctionExpr.toDeclStmt(templateName, null));
     };
@@ -31616,11 +31643,7 @@ var ValueConverter = /** @class */ (function (_super) {
      */
     function (ast, context) {
         // Allocate a slot to create the pipe
-        var /** @type {?} */ slot = this.pipeSlots.get(ast.name);
-        if (slot == null) {
-            slot = this.allocateSlot();
-            this.pipeSlots.set(ast.name, slot);
-        }
+        var /** @type {?} */ slot = this.allocateSlot();
         var /** @type {?} */ slotPseudoLocal = "PIPE:" + slot;
         var /** @type {?} */ target = new PropertyRead(ast.span, new ImplicitReceiver(ast.span), slotPseudoLocal);
         var /** @type {?} */ bindingId = pipeBinding(ast.args);
@@ -31842,7 +31865,9 @@ var _a;
  */
 function compilePipe(outputCtx, pipe, reflector, mode) {
     var /** @type {?} */ definitionMapValues = [];
-    // e.g. 'type: MyPipe`
+    // e.g. `name: 'myPipe'`
+    definitionMapValues.push({ key: 'name', value: literal(pipe.name), quoted: false });
+    // e.g. `type: MyPipe`
     definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(pipe.type.reference), quoted: false });
     // e.g. factory: function MyPipe_Factory() { return new MyPipe(); },
     var /** @type {?} */ templateFactory = createFactory(pipe.type, outputCtx, reflector, []);
