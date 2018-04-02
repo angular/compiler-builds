@@ -8,7 +8,6 @@
 import * as o from '../output/output_ast';
 export declare class Identifiers {
     static NEW_METHOD: string;
-    static HOST_BINDING_METHOD: string;
     static TRANSFORM_METHOD: string;
     static PATCH_DEPS: string;
     static createElement: o.ExternalReference;
@@ -19,8 +18,6 @@ export declare class Identifiers {
     static elementStyleNamed: o.ExternalReference;
     static containerCreate: o.ExternalReference;
     static containerEnd: o.ExternalReference;
-    static containerRefreshStart: o.ExternalReference;
-    static containerRefreshEnd: o.ExternalReference;
     static directiveCreate: o.ExternalReference;
     static text: o.ExternalReference;
     static directiveInput: o.ExternalReference;

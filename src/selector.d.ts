@@ -6,6 +6,17 @@
 export declare class CssSelector {
     element: string | null;
     classNames: string[];
+    /**
+     * The selectors are encoded in pairs where:
+     * - even locations are attribute names
+     * - odd locations are attribute values.
+     *
+     * Example:
+     * Selector: `[key1=value1][key2]` would parse to:
+     * ```
+     * ['key1', 'value1', 'key2', '']
+     * ```
+     */
     attrs: string[];
     notSelectors: CssSelector[];
     static parse(selector: string): CssSelector[];

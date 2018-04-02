@@ -26,6 +26,17 @@ export class CssSelector {
     constructor() {
         this.element = null;
         this.classNames = [];
+        /**
+         * The selectors are encoded in pairs where:
+         * - even locations are attribute names
+         * - odd locations are attribute values.
+         *
+         * Example:
+         * Selector: `[key1=value1][key2]` would parse to:
+         * ```
+         * ['key1', 'value1', 'key2', '']
+         * ```
+         */
         this.attrs = [];
         this.notSelectors = [];
     }
@@ -159,7 +170,18 @@ function CssSelector_tsickle_Closure_declarations() {
     CssSelector.prototype.element;
     /** @type {?} */
     CssSelector.prototype.classNames;
-    /** @type {?} */
+    /**
+     * The selectors are encoded in pairs where:
+     * - even locations are attribute names
+     * - odd locations are attribute values.
+     *
+     * Example:
+     * Selector: `[key1=value1][key2]` would parse to:
+     * ```
+     * ['key1', 'value1', 'key2', '']
+     * ```
+     * @type {?}
+     */
     CssSelector.prototype.attrs;
     /** @type {?} */
     CssSelector.prototype.notSelectors;

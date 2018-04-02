@@ -117,6 +117,23 @@ export function compileComponent(outputCtx, component, pipes, template, reflecto
     function addPipeDependency(summary) {
         addDependencyToComponent(outputCtx, summary, pipeSet, pipeExps);
     }
+    const /** @type {?} */ directiveExps = [];
+    const /** @type {?} */ directiveMap = new Set();
+    /**
+     * This function gets called every time a directive dependency needs to be added to the template.
+     * Its job is to remove duplicates from the list. (Only have single dependency no matter how many
+     * times the dependency is used.)
+     * @param {?} ast
+     * @return {?}
+     */
+    function addDirectiveDependency(ast) {
+        const /** @type {?} */ importExpr = /** @type {?} */ (outputCtx.importExpr(ast.directive.type.reference));
+        const /** @type {?} */ uniqueKey = importExpr.value.moduleName + ':' + importExpr.value.name;
+        if (!directiveMap.has(uniqueKey)) {
+            directiveMap.add(uniqueKey);
+            directiveExps.push(importExpr);
+        }
+    }
     const /** @type {?} */ field = (key, value) => {
         if (value) {
             definitionMapValues.push({ key, value, quoted: false });
@@ -144,9 +161,12 @@ export function compileComponent(outputCtx, component, pipes, template, reflecto
     const /** @type {?} */ templateTypeName = component.type.reference.name;
     const /** @type {?} */ templateName = templateTypeName ? `${templateTypeName}_Template` : null;
     const /** @type {?} */ pipeMap = new Map(pipes.map(pipe => [pipe.name, pipe]));
-    const /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, ROOT_SCOPE.nestedScope(), 0, /** @type {?} */ ((component.template)).ngContentSelectors, templateTypeName, templateName, pipeMap, component.viewQueries, addPipeDependency)
+    const /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, ROOT_SCOPE.nestedScope(), 0, /** @type {?} */ ((component.template)).ngContentSelectors, templateTypeName, templateName, pipeMap, component.viewQueries, addDirectiveDependency, addPipeDependency)
         .buildTemplateFunction(template, []);
     field('template', templateFunctionExpression);
+    if (directiveExps.length) {
+        field('directives', o.literalArr(directiveExps));
+    }
     // e.g. `pipes: [MyPipe]`
     if (pipeExps.length) {
         field('pipes', o.literalArr(pipeExps));
@@ -353,9 +373,10 @@ class TemplateDefinitionBuilder {
      * @param {?=} templateName
      * @param {?=} pipes
      * @param {?=} viewQueries
+     * @param {?=} addDirectiveDependency
      * @param {?=} addPipeDependency
      */
-    constructor(outputCtx, constantPool, reflector, contextParameter, bindingScope, level = 0, ngContentSelectors, contextName, templateName, pipes, viewQueries, addPipeDependency) {
+    constructor(outputCtx, constantPool, reflector, contextParameter, bindingScope, level = 0, ngContentSelectors, contextName, templateName, pipes, viewQueries, addDirectiveDependency, addPipeDependency) {
         this.outputCtx = outputCtx;
         this.constantPool = constantPool;
         this.reflector = reflector;
@@ -367,6 +388,7 @@ class TemplateDefinitionBuilder {
         this.templateName = templateName;
         this.pipes = pipes;
         this.viewQueries = viewQueries;
+        this.addDirectiveDependency = addDirectiveDependency;
         this.addPipeDependency = addPipeDependency;
         this._dataIndex = 0;
         this._bindingContext = 0;
@@ -375,7 +397,6 @@ class TemplateDefinitionBuilder {
         this._prefix = [];
         this._creationMode = [];
         this._bindingMode = [];
-        this._hostMode = [];
         this._refreshMode = [];
         this._postfix = [];
         this._projectionDefinitionIndex = 0;
@@ -487,8 +508,6 @@ class TemplateDefinitionBuilder {
             ...creationMode,
             // Binding mode (i.e. ɵp(...))
             ...this._bindingMode,
-            // Host mode (i.e. Comp.h(...))
-            ...this._hostMode,
             // Refresh mode (i.e. Comp.r(...))
             ...this._refreshMode,
             // Nested templates (i.e. function CompTemplate() {})
@@ -515,29 +534,11 @@ class TemplateDefinitionBuilder {
         this.instruction(this._creationMode, ast.sourceSpan, R3.projection, ...parameters);
     }
     /**
-     * @param {?} directives
-     * @return {?}
-     */
-    _computeDirectivesArray(directives) {
-        const /** @type {?} */ directiveIndexMap = new Map();
-        const /** @type {?} */ directiveExpressions = directives.filter(directive => !directive.directive.isComponent).map(directive => {
-            directiveIndexMap.set(directive.directive.type.reference, this.allocateDataSlot());
-            return this.typeReference(directive.directive.type.reference);
-        });
-        return {
-            directivesArray: directiveExpressions.length ?
-                this.constantPool.getConstLiteral(o.literalArr(directiveExpressions), /* forceShared */ /* forceShared */ true) :
-                o.literal(null),
-            directiveIndexMap
-        };
-    }
-    /**
      * @param {?} element
      * @return {?}
      */
     visitElement(element) {
         const /** @type {?} */ elementIndex = this.allocateDataSlot();
-        let /** @type {?} */ componentIndex = undefined;
         const /** @type {?} */ referenceDataSlots = new Map();
         const /** @type {?} */ wasInI18nSection = this._inI18nSection;
         const /** @type {?} */ outputAttrs = {};
@@ -576,14 +577,11 @@ class TemplateDefinitionBuilder {
         const /** @type {?} */ component = findComponent(element.directives);
         const /** @type {?} */ nullNode = o.literal(null, o.INFERRED_TYPE);
         const /** @type {?} */ parameters = [o.literal(elementIndex)];
-        // Add component type or element tag
         if (component) {
-            parameters.push(this.typeReference(component.directive.type.reference));
-            componentIndex = this.allocateDataSlot();
+            this.addDirectiveDependency(component);
         }
-        else {
-            parameters.push(o.literal(element.name));
-        }
+        element.directives.forEach(this.addDirectiveDependency);
+        parameters.push(o.literal(element.name));
         // Add the attributes
         const /** @type {?} */ i18nMessages = [];
         const /** @type {?} */ attributes = [];
@@ -607,13 +605,6 @@ class TemplateDefinitionBuilder {
                 this.constantPool.getConstLiteral(o.literalArr(attributes), true);
         }
         parameters.push(attrArg);
-        // Add directives array
-        const { directivesArray, directiveIndexMap } = this._computeDirectivesArray(element.directives);
-        parameters.push(directiveIndexMap.size > 0 ? directivesArray : nullNode);
-        if (component && componentIndex != null) {
-            // Record the data slot for the component
-            directiveIndexMap.set(component.directive.type.reference, componentIndex);
-        }
         if (element.references && element.references.length > 0) {
             const /** @type {?} */ references = flatten(element.references.map(reference => {
                 const /** @type {?} */ slot = this.allocateDataSlot();
@@ -631,16 +622,19 @@ class TemplateDefinitionBuilder {
         else {
             parameters.push(nullNode);
         }
-        // Remove trailing null nodes as they are implied.
-        while (parameters[parameters.length - 1] === nullNode) {
-            parameters.pop();
-        }
         // Generate the instruction create element instruction
         if (i18nMessages.length > 0) {
             this._creationMode.push(...i18nMessages);
         }
-        this.instruction(this._creationMode, element.sourceSpan, R3.createElement, ...parameters);
+        this.instruction(this._creationMode, element.sourceSpan, R3.createElement, ...trimTrailingNulls(parameters));
         const /** @type {?} */ implicit = o.variable(this.contextParameter);
+        // Generate Listeners (outputs)
+        element.outputs.forEach((outputAst) => {
+            const /** @type {?} */ functionName = `${this.templateName}_${element.name}_${outputAst.name}_listener`;
+            const /** @type {?} */ bindingExpr = convertActionBinding(this, implicit, outputAst.handler, 'b', () => error('Unexpected interpolation'));
+            const /** @type {?} */ handler = o.fn([new o.FnParam('$event', o.DYNAMIC_TYPE)], [...bindingExpr.stmts, new o.ReturnStatement(bindingExpr.allowDefault)], o.INFERRED_TYPE, null, functionName);
+            this.instruction(this._creationMode, outputAst.sourceSpan, R3.listener, o.literal(outputAst.name), handler);
+        });
         // Generate element input bindings
         for (let /** @type {?} */ input of element.inputs) {
             if (input.isAnimation) {
@@ -657,7 +651,7 @@ class TemplateDefinitionBuilder {
             }
         }
         // Generate directives input bindings
-        this._visitDirectives(element.directives, implicit, elementIndex, directiveIndexMap);
+        this._visitDirectives(element.directives, implicit, elementIndex);
         // Traverse element child nodes
         if (this._inI18nSection && element.children.length == 1 &&
             element.children[0] instanceof TextAst) {
@@ -676,12 +670,10 @@ class TemplateDefinitionBuilder {
      * @param {?} directives
      * @param {?} implicit
      * @param {?} nodeIndex
-     * @param {?} directiveIndexMap
      * @return {?}
      */
-    _visitDirectives(directives, implicit, nodeIndex, directiveIndexMap) {
+    _visitDirectives(directives, implicit, nodeIndex) {
         for (let /** @type {?} */ directive of directives) {
-            const /** @type {?} */ directiveIndex = directiveIndexMap.get(directive.directive.type.reference);
             // Creation mode
             // e.g. D(0, TodoComponentDef.n(), TodoComponentDef);
             const /** @type {?} */ directiveType = directive.directive.type.reference;
@@ -694,12 +686,6 @@ class TemplateDefinitionBuilder {
                 const /** @type {?} */ convertedBinding = this.convertPropertyBinding(implicit, input.value);
                 this.instruction(this._bindingMode, directive.sourceSpan, R3.elementProperty, o.literal(nodeIndex), o.literal(input.templateName), o.importExpr(R3.bind).callFn([convertedBinding]));
             }
-            // e.g. MyDirective.ngDirectiveDef.h(0, 0);
-            this._hostMode.push(this.definitionOf(directiveType, kind)
-                .callMethod(R3.HOST_BINDING_METHOD, [o.literal(directiveIndex), o.literal(nodeIndex)])
-                .toStmt());
-            // e.g. r(0, 0);
-            this.instruction(this._refreshMode, directive.sourceSpan, R3.refreshComponent, o.literal(directiveIndex), o.literal(nodeIndex));
         }
     }
     /**
@@ -715,17 +701,31 @@ class TemplateDefinitionBuilder {
             null;
         const /** @type {?} */ templateName = contextName ? `${contextName}_Template_${templateIndex}` : `Template_${templateIndex}`;
         const /** @type {?} */ templateContext = `ctx${this.level}`;
-        const { directivesArray, directiveIndexMap } = this._computeDirectivesArray(ast.directives);
+        const /** @type {?} */ parameters = [o.variable(templateName), o.literal(null, o.INFERRED_TYPE)];
+        const /** @type {?} */ attributeNames = [];
+        ast.directives.forEach((directiveAst) => {
+            this.addDirectiveDependency(directiveAst);
+            CssSelector.parse(/** @type {?} */ ((directiveAst.directive.selector))).forEach(selector => {
+                selector.attrs.forEach((value) => {
+                    // Convert '' (falsy) strings into `null`. This is needed because we want
+                    // to communicate to runtime that these attributes are present for
+                    // selector matching, but should not actually be added to the DOM.
+                    // attributeNames.push(o.literal(value ? value : null));
+                    // TODO(misko): make the above comment true, for now just write to DOM because
+                    // the runtime selectors have not been updated.
+                    attributeNames.push(o.literal(value));
+                });
+            });
+        });
+        if (attributeNames.length) {
+            parameters.push(this.constantPool.getConstLiteral(o.literalArr(attributeNames), /* forcedShared */ /* forcedShared */ true));
+        }
         // e.g. C(1, C1Template)
-        this.instruction(this._creationMode, ast.sourceSpan, R3.containerCreate, o.literal(templateIndex), directivesArray, o.variable(templateName));
-        // e.g. Cr(1)
-        this.instruction(this._refreshMode, ast.sourceSpan, R3.containerRefreshStart, o.literal(templateIndex));
+        this.instruction(this._creationMode, ast.sourceSpan, R3.containerCreate, o.literal(templateIndex), ...trimTrailingNulls(parameters));
         // Generate directives
-        this._visitDirectives(ast.directives, o.variable(this.contextParameter), templateIndex, directiveIndexMap);
-        // e.g. cr();
-        this.instruction(this._refreshMode, ast.sourceSpan, R3.containerRefreshEnd);
+        this._visitDirectives(ast.directives, o.variable(this.contextParameter), templateIndex);
         // Create the template function
-        const /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this.bindingScope.nestedScope(), this.level + 1, this.ngContentSelectors, contextName, templateName, this.pipes, [], this.addPipeDependency);
+        const /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this.bindingScope.nestedScope(), this.level + 1, this.ngContentSelectors, contextName, templateName, this.pipes, [], this.addDirectiveDependency, this.addPipeDependency);
         const /** @type {?} */ templateFunctionExpr = templateVisitor.buildTemplateFunction(ast.children, ast.variables);
         this._postfix.push(templateFunctionExpr.toDeclStmt(templateName, null));
     }
@@ -776,11 +776,6 @@ class TemplateDefinitionBuilder {
     instruction(statements, span, reference, ...params) {
         statements.push(o.importExpr(reference, null, span).callFn(params, span).toStmt());
     }
-    /**
-     * @param {?} type
-     * @return {?}
-     */
-    typeReference(type) { return this.outputCtx.importExpr(type); }
     /**
      * @param {?} type
      * @param {?} kind
@@ -835,8 +830,6 @@ function TemplateDefinitionBuilder_tsickle_Closure_declarations() {
     TemplateDefinitionBuilder.prototype._creationMode;
     /** @type {?} */
     TemplateDefinitionBuilder.prototype._bindingMode;
-    /** @type {?} */
-    TemplateDefinitionBuilder.prototype._hostMode;
     /** @type {?} */
     TemplateDefinitionBuilder.prototype._refreshMode;
     /** @type {?} */
@@ -893,6 +886,8 @@ function TemplateDefinitionBuilder_tsickle_Closure_declarations() {
     TemplateDefinitionBuilder.prototype.pipes;
     /** @type {?} */
     TemplateDefinitionBuilder.prototype.viewQueries;
+    /** @type {?} */
+    TemplateDefinitionBuilder.prototype.addDirectiveDependency;
     /** @type {?} */
     TemplateDefinitionBuilder.prototype.addPipeDependency;
 }
@@ -984,6 +979,17 @@ export function createFactory(type, outputCtx, reflector, queries) {
     return o.fn([], [new o.ReturnStatement(result)], o.INFERRED_TYPE, null, type.reference.name ? `${type.reference.name}_Factory` : null);
 }
 /**
+ *  Remove trailing null nodes as they are implied.
+ * @param {?} parameters
+ * @return {?}
+ */
+function trimTrailingNulls(parameters) {
+    while (o.isNull(parameters[parameters.length - 1])) {
+        parameters.pop();
+    }
+    return parameters;
+}
+/**
  * @param {?} selector
  * @return {?}
  */
@@ -1065,7 +1071,7 @@ function createHostBindingsFunction(directiveMetadata, outputCtx, bindingParser)
             const /** @type {?} */ bindingName = binding.name && sanitizeIdentifier(binding.name);
             const /** @type {?} */ typeName = identifierName(directiveMetadata.type);
             const /** @type {?} */ functionName = typeName && bindingName ? `${typeName}_${bindingName}_HostBindingHandler` : null;
-            const /** @type {?} */ handler = o.fn([new o.FnParam('event', o.DYNAMIC_TYPE)], [...bindingExpr.stmts, new o.ReturnStatement(bindingExpr.allowDefault)], o.INFERRED_TYPE, null, functionName);
+            const /** @type {?} */ handler = o.fn([new o.FnParam('$event', o.DYNAMIC_TYPE)], [...bindingExpr.stmts, new o.ReturnStatement(bindingExpr.allowDefault)], o.INFERRED_TYPE, null, functionName);
             statements.push(o.importExpr(R3.listener).callFn([o.literal(binding.name), handler]).toStmt());
         }
     }

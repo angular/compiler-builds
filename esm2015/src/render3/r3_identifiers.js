@@ -13,8 +13,7 @@ const /** @type {?} */ CORE = '@angular/core';
 export class Identifiers {
 }
 /* Methods */
-Identifiers.NEW_METHOD = 'n';
-Identifiers.HOST_BINDING_METHOD = 'h';
+Identifiers.NEW_METHOD = 'factory';
 Identifiers.TRANSFORM_METHOD = 'transform';
 Identifiers.PATCH_DEPS = 'patchedDeps';
 /* Instructions */
@@ -26,8 +25,6 @@ Identifiers.elementClassNamed = { name: 'ɵkn', moduleName: CORE };
 Identifiers.elementStyleNamed = { name: 'ɵsn', moduleName: CORE };
 Identifiers.containerCreate = { name: 'ɵC', moduleName: CORE };
 Identifiers.containerEnd = { name: 'ɵc', moduleName: CORE };
-Identifiers.containerRefreshStart = { name: 'ɵcR', moduleName: CORE };
-Identifiers.containerRefreshEnd = { name: 'ɵcr', moduleName: CORE };
 Identifiers.directiveCreate = { name: 'ɵD', moduleName: CORE };
 Identifiers.text = { name: 'ɵT', moduleName: CORE };
 Identifiers.directiveInput = { name: 'ɵi', moduleName: CORE };
@@ -85,8 +82,6 @@ function Identifiers_tsickle_Closure_declarations() {
     /** @type {?} */
     Identifiers.NEW_METHOD;
     /** @type {?} */
-    Identifiers.HOST_BINDING_METHOD;
-    /** @type {?} */
     Identifiers.TRANSFORM_METHOD;
     /** @type {?} */
     Identifiers.PATCH_DEPS;
@@ -106,10 +101,6 @@ function Identifiers_tsickle_Closure_declarations() {
     Identifiers.containerCreate;
     /** @type {?} */
     Identifiers.containerEnd;
-    /** @type {?} */
-    Identifiers.containerRefreshStart;
-    /** @type {?} */
-    Identifiers.containerRefreshEnd;
     /** @type {?} */
     Identifiers.directiveCreate;
     /** @type {?} */

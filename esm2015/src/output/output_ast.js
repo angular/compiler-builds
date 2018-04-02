@@ -2847,6 +2847,13 @@ export function ifStmt(condition, thenClause, elseClause) {
 export function literal(value, type, sourceSpan) {
     return new LiteralExpr(value, type, sourceSpan);
 }
+/**
+ * @param {?} exp
+ * @return {?}
+ */
+export function isNull(exp) {
+    return exp instanceof LiteralExpr && exp.value === null;
+}
 /** @enum {string} */
 const JSDocTagName = {
     Desc: 'desc',
