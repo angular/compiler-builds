@@ -13,5 +13,5 @@ import { Version } from './util';
 /**
  * \@stable
  */
-export const /** @type {?} */ VERSION = new Version('6.0.0-rc.1-f99cb5c');
+export const /** @type {?} */ VERSION = new Version('6.0.0-rc.1-f48e215');
 //# sourceMappingURL=version.js.map
