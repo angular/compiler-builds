@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.1-4506230
+ * @license Angular v6.0.0-rc.1-550433a
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v6.0.0-rc.1-4506230
+ * @license Angular v6.0.0-rc.1-550433a
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -703,7 +703,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('6.0.0-rc.1-4506230');
+var VERSION = new Version('6.0.0-rc.1-550433a');
 
 /**
  * @fileoverview added by tsickle
@@ -34770,7 +34770,7 @@ var IGNORE = {
 };
 var USE_VALUE = 'useValue';
 var PROVIDE = 'provide';
-var REFERENCE_SET = new Set([USE_VALUE, 'useFactory', 'data', 'id']);
+var REFERENCE_SET = new Set([USE_VALUE, 'useFactory', 'data', 'id', 'loadChildren']);
 var TYPEGUARD_POSTFIX = 'TypeGuard';
 var USE_IF = 'UseIf';
 /**

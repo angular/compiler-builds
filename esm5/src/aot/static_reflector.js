@@ -23,7 +23,7 @@ var /** @type {?} */ IGNORE = {
 };
 var /** @type {?} */ USE_VALUE = 'useValue';
 var /** @type {?} */ PROVIDE = 'provide';
-var /** @type {?} */ REFERENCE_SET = new Set([USE_VALUE, 'useFactory', 'data', 'id']);
+var /** @type {?} */ REFERENCE_SET = new Set([USE_VALUE, 'useFactory', 'data', 'id', 'loadChildren']);
 var /** @type {?} */ TYPEGUARD_POSTFIX = 'TypeGuard';
 var /** @type {?} */ USE_IF = 'UseIf';
 /**

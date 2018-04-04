@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.1-4506230
+ * @license Angular v6.0.0-rc.1-550433a
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -605,7 +605,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('6.0.0-rc.1-4506230');
+const VERSION = new Version('6.0.0-rc.1-550433a');
 
 /**
  * @fileoverview added by tsickle
@@ -28471,7 +28471,7 @@ const IGNORE = {
 };
 const USE_VALUE = 'useValue';
 const PROVIDE = 'provide';
-const REFERENCE_SET = new Set([USE_VALUE, 'useFactory', 'data', 'id']);
+const REFERENCE_SET = new Set([USE_VALUE, 'useFactory', 'data', 'id', 'loadChildren']);
 const TYPEGUARD_POSTFIX = 'TypeGuard';
 const USE_IF = 'UseIf';
 /**
