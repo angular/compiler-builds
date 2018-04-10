@@ -9,6 +9,7 @@ import { StaticSymbol } from './aot/static_symbol';
 import { ChangeDetectionStrategy, SchemaMetadata, Type, ViewEncapsulation } from './core';
 import { LifecycleHooks } from './lifecycle_reflector';
 import { ParseTreeResult as HtmlParseTreeResult } from './ml_parser/parser';
+export declare function sanitizeIdentifier(name: string): string;
 export declare function identifierName(compileIdentifier: CompileIdentifierMetadata | null | undefined): string | null;
 export declare function identifierModuleUrl(compileIdentifier: CompileIdentifierMetadata): string;
 export declare function viewClassName(compType: any, embeddedTemplateIndex: number): string;
@@ -64,6 +65,16 @@ export declare function tokenReference(token: CompileTokenMetadata): any;
 export interface CompileTokenMetadata {
     value?: any;
     identifier?: CompileIdentifierMetadata | CompileTypeMetadata;
+}
+export interface CompileInjectableMetadata {
+    symbol: StaticSymbol;
+    type: CompileTypeMetadata;
+    providedIn?: StaticSymbol;
+    useValue?: any;
+    useClass?: StaticSymbol;
+    useExisting?: StaticSymbol;
+    useFactory?: StaticSymbol;
+    deps?: any[];
 }
 /**
  * Metadata regarding compilation of a type.
@@ -159,6 +170,9 @@ export interface CompileDirectiveSummary extends CompileTypeSummary {
     providers: CompileProviderMetadata[];
     viewProviders: CompileProviderMetadata[];
     queries: CompileQueryMetadata[];
+    guards: {
+        [key: string]: any;
+    };
     viewQueries: CompileQueryMetadata[];
     entryComponents: CompileEntryComponentMetadata[];
     changeDetection: ChangeDetectionStrategy | null;
@@ -171,7 +185,7 @@ export interface CompileDirectiveSummary extends CompileTypeSummary {
  * Metadata regarding compilation of a directive.
  */
 export declare class CompileDirectiveMetadata {
-    static create({isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, providers, viewProviders, queries, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory}: {
+    static create({isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, providers, viewProviders, queries, guards, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory}: {
         isHost: boolean;
         type: CompileTypeMetadata;
         isComponent: boolean;
@@ -186,6 +200,9 @@ export declare class CompileDirectiveMetadata {
         providers: CompileProviderMetadata[];
         viewProviders: CompileProviderMetadata[];
         queries: CompileQueryMetadata[];
+        guards: {
+            [key: string]: any;
+        };
         viewQueries: CompileQueryMetadata[];
         entryComponents: CompileEntryComponentMetadata[];
         template: CompileTemplateMetadata;
@@ -217,13 +234,16 @@ export declare class CompileDirectiveMetadata {
     providers: CompileProviderMetadata[];
     viewProviders: CompileProviderMetadata[];
     queries: CompileQueryMetadata[];
+    guards: {
+        [key: string]: any;
+    };
     viewQueries: CompileQueryMetadata[];
     entryComponents: CompileEntryComponentMetadata[];
     template: CompileTemplateMetadata | null;
     componentViewType: StaticSymbol | ProxyClass | null;
     rendererType: StaticSymbol | object | null;
     componentFactory: StaticSymbol | object | null;
-    constructor({isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory}: {
+    constructor({isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, guards, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory}: {
         isHost: boolean;
         type: CompileTypeMetadata;
         isComponent: boolean;
@@ -248,6 +268,9 @@ export declare class CompileDirectiveMetadata {
         providers: CompileProviderMetadata[];
         viewProviders: CompileProviderMetadata[];
         queries: CompileQueryMetadata[];
+        guards: {
+            [key: string]: any;
+        };
         viewQueries: CompileQueryMetadata[];
         entryComponents: CompileEntryComponentMetadata[];
         template: CompileTemplateMetadata | null;
@@ -283,6 +306,12 @@ export interface CompileNgModuleSummary extends CompileTypeSummary {
         module: CompileIdentifierMetadata;
     }[];
     modules: CompileTypeMetadata[];
+}
+export declare class CompileShallowModuleMetadata {
+    type: CompileTypeMetadata;
+    rawExports: any;
+    rawImports: any;
+    rawProviders: any;
 }
 /**
  * Metadata regarding compilation of a module.

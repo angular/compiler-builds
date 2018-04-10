@@ -1,6 +1,6 @@
 /**
- * @license Angular v5.1.0-5a0076f
- * (c) 2010-2017 Google, Inc. https://angular.io/
+ * @license Angular v6.0.0-rc.3-5992fe6
+ * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 (function (global, factory) {
@@ -44,8 +44,8 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v5.1.0-5a0076f
- * (c) 2010-2017 Google, Inc. https://angular.io/
+ * @license Angular v6.0.0-rc.3-5992fe6
+ * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 /**
@@ -69,7 +69,7 @@ var __assign = Object.assign || function __assign(t) {
  */
 function Inject() { }
 var createInject = makeMetadataFactory('Inject', function (token) { return ({ token: token }); });
-var createInjectionToken = makeMetadataFactory('InjectionToken', function (desc) { return ({ _desc: desc }); });
+var createInjectionToken = makeMetadataFactory('InjectionToken', function (desc) { return ({ _desc: desc, ngInjectableDef: undefined }); });
 /**
  * @record
  */
@@ -163,6 +163,14 @@ function ModuleWithProviders() { }
 /**
  * @record
  */
+function Injectable() { }
+var createInjectable = makeMetadataFactory('Injectable', function (injectable) {
+    if (injectable === void 0) { injectable = {}; }
+    return injectable;
+});
+/**
+ * @record
+ */
 function SchemaMetadata() { }
 var CUSTOM_ELEMENTS_SCHEMA = {
     name: 'custom-elements'
@@ -171,7 +179,6 @@ var NO_ERRORS_SCHEMA = {
     name: 'no-errors-schema'
 };
 var createOptional = makeMetadataFactory('Optional');
-var createInjectable = makeMetadataFactory('Injectable');
 var createSelf = makeMetadataFactory('Self');
 var createSkipSelf = makeMetadataFactory('SkipSelf');
 var createHost = makeMetadataFactory('Host');
@@ -228,6 +235,7 @@ var NodeFlags = {
     TypeViewQuery: 134217728,
     StaticQuery: 268435456,
     DynamicQuery: 536870912,
+    TypeModuleProvider: 1073741824,
     CatQuery: 201326592,
     // mutually exclusive values...
     Types: 201347067,
@@ -237,7 +245,16 @@ var DepFlags = {
     None: 0,
     SkipSelf: 1,
     Optional: 2,
+    Self: 4,
     Value: 8,
+};
+/** @enum {number} */
+var InjectFlags = {
+    Default: 0,
+    /** Skip the node that is requesting injection. */
+    SkipSelf: 1,
+    /** Don't descend into ancestors of the node requesting injection. */
+    Self: 2,
 };
 /** @enum {number} */
 var ArgumentType = { Inline: 0, Dynamic: 1, };
@@ -279,6 +296,7 @@ MissingTranslationStrategy[MissingTranslationStrategy.Warning] = "Warning";
 MissingTranslationStrategy[MissingTranslationStrategy.Ignore] = "Ignore";
 /**
  * @record
+ * @template T
  */
 function MetadataFactory() { }
 /**
@@ -337,11 +355,12 @@ var core = Object.freeze({
 	NgModule: NgModule,
 	createNgModule: createNgModule,
 	ModuleWithProviders: ModuleWithProviders,
+	Injectable: Injectable,
+	createInjectable: createInjectable,
 	SchemaMetadata: SchemaMetadata,
 	CUSTOM_ELEMENTS_SCHEMA: CUSTOM_ELEMENTS_SCHEMA,
 	NO_ERRORS_SCHEMA: NO_ERRORS_SCHEMA,
 	createOptional: createOptional,
-	createInjectable: createInjectable,
 	createSelf: createSelf,
 	createSkipSelf: createSkipSelf,
 	createHost: createHost,
@@ -349,6 +368,7 @@ var core = Object.freeze({
 	SecurityContext: SecurityContext,
 	NodeFlags: NodeFlags,
 	DepFlags: DepFlags,
+	InjectFlags: InjectFlags,
 	ArgumentType: ArgumentType,
 	BindingFlags: BindingFlags,
 	QueryBindingType: QueryBindingType,
@@ -521,6 +541,13 @@ var SyncAsync = {
 };
 /**
  * @param {?} msg
+ * @return {?}
+ */
+function error(msg) {
+    throw new Error("Internal Error: " + msg);
+}
+/**
+ * @param {?} msg
  * @param {?=} parseErrors
  * @return {?}
  */
@@ -674,14 +701,9 @@ var Version = /** @class */ (function () {
  * found in the LICENSE file at https://angular.io/license
  */
 /**
- * @module
- * @description
- * Entry point for all public APIs of the common package.
- */
-/**
  * \@stable
  */
-var VERSION = new Version('5.1.0-5a0076f');
+var VERSION = new Version('6.0.0-rc.3-5992fe6');
 
 /**
  * @fileoverview added by tsickle
@@ -852,9 +874,10 @@ var BoundEventAst = /** @class */ (function () {
  * A reference declaration on an element (e.g. `let someName="expression"`).
  */
 var ReferenceAst = /** @class */ (function () {
-    function ReferenceAst(name, value, sourceSpan) {
+    function ReferenceAst(name, value, originalValue, sourceSpan) {
         this.name = name;
         this.value = value;
+        this.originalValue = originalValue;
         this.sourceSpan = sourceSpan;
     }
     /**
@@ -1018,7 +1041,7 @@ var DirectiveAst = /** @class */ (function () {
  * A provider declared on an element
  */
 var ProviderAst = /** @class */ (function () {
-    function ProviderAst(token, multiProvider, eager, providers, providerType, lifecycleHooks, sourceSpan) {
+    function ProviderAst(token, multiProvider, eager, providers, providerType, lifecycleHooks, sourceSpan, isModule) {
         this.token = token;
         this.multiProvider = multiProvider;
         this.eager = eager;
@@ -1026,6 +1049,7 @@ var ProviderAst = /** @class */ (function () {
         this.providerType = providerType;
         this.lifecycleHooks = lifecycleHooks;
         this.sourceSpan = sourceSpan;
+        this.isModule = isModule;
     }
     /**
      * @param {?} visitor
@@ -1390,12 +1414,11 @@ function templateVisitAll(visitor, asts, context) {
  */
 var CompilerConfig = /** @class */ (function () {
     function CompilerConfig(_a) {
-        var _b = _a === void 0 ? {} : _a, _c = _b.defaultEncapsulation, defaultEncapsulation = _c === void 0 ? ViewEncapsulation.Emulated : _c, _d = _b.useJit, useJit = _d === void 0 ? true : _d, _e = _b.jitDevMode, jitDevMode = _e === void 0 ? false : _e, _f = _b.missingTranslation, missingTranslation = _f === void 0 ? null : _f, enableLegacyTemplate = _b.enableLegacyTemplate, preserveWhitespaces = _b.preserveWhitespaces, strictInjectionParameters = _b.strictInjectionParameters;
+        var _b = _a === void 0 ? {} : _a, _c = _b.defaultEncapsulation, defaultEncapsulation = _c === void 0 ? ViewEncapsulation.Emulated : _c, _d = _b.useJit, useJit = _d === void 0 ? true : _d, _e = _b.jitDevMode, jitDevMode = _e === void 0 ? false : _e, _f = _b.missingTranslation, missingTranslation = _f === void 0 ? null : _f, preserveWhitespaces = _b.preserveWhitespaces, strictInjectionParameters = _b.strictInjectionParameters;
         this.defaultEncapsulation = defaultEncapsulation;
         this.useJit = !!useJit;
         this.jitDevMode = !!jitDevMode;
         this.missingTranslation = missingTranslation;
-        this.enableLegacyTemplate = enableLegacyTemplate === true;
         this.preserveWhitespaces = preserveWhitespacesDefault(noUndefined(preserveWhitespaces));
         this.strictInjectionParameters = strictInjectionParameters === true;
     }
@@ -1407,7 +1430,7 @@ var CompilerConfig = /** @class */ (function () {
  * @return {?}
  */
 function preserveWhitespacesDefault(preserveWhitespacesOption, defaultSetting) {
-    if (defaultSetting === void 0) { defaultSetting = true; }
+    if (defaultSetting === void 0) { defaultSetting = false; }
     return preserveWhitespacesOption === null ? defaultSetting : preserveWhitespacesOption;
 }
 
@@ -1500,7 +1523,7 @@ var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
  * @param {?} name
  * @return {?}
  */
-function _sanitizeIdentifier(name) {
+function sanitizeIdentifier(name) {
     return name.replace(/\W/g, '_');
 }
 var _anonymousTypeIndex = 0;
@@ -1526,7 +1549,7 @@ function identifierName(compileIdentifier) {
         ref['__anonymousType'] = identifier;
     }
     else {
-        identifier = _sanitizeIdentifier(identifier);
+        identifier = sanitizeIdentifier(identifier);
     }
     return identifier;
 }
@@ -1614,7 +1637,7 @@ CompileSummaryKind[CompileSummaryKind.Injectable] = "Injectable";
  * @return {?}
  */
 function tokenName(token) {
-    return token.value != null ? _sanitizeIdentifier(token.value) : identifierName(token.identifier);
+    return token.value != null ? sanitizeIdentifier(token.value) : identifierName(token.identifier);
 }
 /**
  * @param {?} token
@@ -1628,6 +1651,10 @@ function tokenReference(token) {
         return token.value;
     }
 }
+/**
+ * @record
+ */
+
 /**
  * @record
  */
@@ -1707,7 +1734,7 @@ var CompileTemplateMetadata = /** @class */ (function () {
  */
 var CompileDirectiveMetadata = /** @class */ (function () {
     function CompileDirectiveMetadata(_a) {
-        var isHost = _a.isHost, type = _a.type, isComponent = _a.isComponent, selector = _a.selector, exportAs = _a.exportAs, changeDetection = _a.changeDetection, inputs = _a.inputs, outputs = _a.outputs, hostListeners = _a.hostListeners, hostProperties = _a.hostProperties, hostAttributes = _a.hostAttributes, providers = _a.providers, viewProviders = _a.viewProviders, queries = _a.queries, viewQueries = _a.viewQueries, entryComponents = _a.entryComponents, template = _a.template, componentViewType = _a.componentViewType, rendererType = _a.rendererType, componentFactory = _a.componentFactory;
+        var isHost = _a.isHost, type = _a.type, isComponent = _a.isComponent, selector = _a.selector, exportAs = _a.exportAs, changeDetection = _a.changeDetection, inputs = _a.inputs, outputs = _a.outputs, hostListeners = _a.hostListeners, hostProperties = _a.hostProperties, hostAttributes = _a.hostAttributes, providers = _a.providers, viewProviders = _a.viewProviders, queries = _a.queries, guards = _a.guards, viewQueries = _a.viewQueries, entryComponents = _a.entryComponents, template = _a.template, componentViewType = _a.componentViewType, rendererType = _a.rendererType, componentFactory = _a.componentFactory;
         this.isHost = !!isHost;
         this.type = type;
         this.isComponent = isComponent;
@@ -1722,6 +1749,7 @@ var CompileDirectiveMetadata = /** @class */ (function () {
         this.providers = _normalizeArray(providers);
         this.viewProviders = _normalizeArray(viewProviders);
         this.queries = _normalizeArray(queries);
+        this.guards = guards;
         this.viewQueries = _normalizeArray(viewQueries);
         this.entryComponents = _normalizeArray(entryComponents);
         this.template = template;
@@ -1738,7 +1766,7 @@ var CompileDirectiveMetadata = /** @class */ (function () {
      * @return {?}
      */
     function (_a) {
-        var isHost = _a.isHost, type = _a.type, isComponent = _a.isComponent, selector = _a.selector, exportAs = _a.exportAs, changeDetection = _a.changeDetection, inputs = _a.inputs, outputs = _a.outputs, host = _a.host, providers = _a.providers, viewProviders = _a.viewProviders, queries = _a.queries, viewQueries = _a.viewQueries, entryComponents = _a.entryComponents, template = _a.template, componentViewType = _a.componentViewType, rendererType = _a.rendererType, componentFactory = _a.componentFactory;
+        var isHost = _a.isHost, type = _a.type, isComponent = _a.isComponent, selector = _a.selector, exportAs = _a.exportAs, changeDetection = _a.changeDetection, inputs = _a.inputs, outputs = _a.outputs, host = _a.host, providers = _a.providers, viewProviders = _a.viewProviders, queries = _a.queries, guards = _a.guards, viewQueries = _a.viewQueries, entryComponents = _a.entryComponents, template = _a.template, componentViewType = _a.componentViewType, rendererType = _a.rendererType, componentFactory = _a.componentFactory;
         var /** @type {?} */ hostListeners = {};
         var /** @type {?} */ hostProperties = {};
         var /** @type {?} */ hostAttributes = {};
@@ -1787,6 +1815,7 @@ var CompileDirectiveMetadata = /** @class */ (function () {
             providers: providers,
             viewProviders: viewProviders,
             queries: queries,
+            guards: guards,
             viewQueries: viewQueries,
             entryComponents: entryComponents,
             template: template,
@@ -1816,6 +1845,7 @@ var CompileDirectiveMetadata = /** @class */ (function () {
             providers: this.providers,
             viewProviders: this.viewProviders,
             queries: this.queries,
+            guards: this.guards,
             viewQueries: this.viewQueries,
             entryComponents: this.entryComponents,
             changeDetection: this.changeDetection,
@@ -1858,6 +1888,11 @@ var CompilePipeMetadata = /** @class */ (function () {
  * @record
  */
 
+var CompileShallowModuleMetadata = /** @class */ (function () {
+    function CompileShallowModuleMetadata() {
+    }
+    return CompileShallowModuleMetadata;
+}());
 /**
  * Metadata regarding compilation of a module.
  */
@@ -2118,7 +2153,7 @@ function templateJitUrl(ngModuleType, compMeta) {
  * particular offset in a source file. The head of the list is the top
  * most node. The tail is the node that contains the offset directly.
  *
- * For example, the expresion `a + b + c` might have an ast that looks
+ * For example, the expression `a + b + c` might have an ast that looks
  * like:
  *     +
  *    / \
@@ -2129,6 +2164,7 @@ function templateJitUrl(ngModuleType, compMeta) {
  * The path to the node at offset 9 would be `['+' at 1-10, '+' at 7-10,
  * 'c' at 9-10]` and the path the node at offset 1 would be
  * `['+' at 1-10, 'a' at 1-2]`.
+ * @template T
  */
 var AstPath = /** @class */ (function () {
     function AstPath(path, position) {
@@ -3312,11 +3348,11 @@ var DirectiveNormalizer = /** @class */ (function () {
         var _this = this;
         // Algorithm:
         // - produce exactly 1 entry per original styleUrl in
-        // CompileTemplateMetadata.externalStylesheets whith all styles inlined
+        // CompileTemplateMetadata.externalStylesheets with all styles inlined
         // - inline all styles that are referenced by the template into CompileTemplateMetadata.styles.
         // Reason: be able to determine how many stylesheets there are even without loading
         // the template nor the stylesheets, so we can create a stub for TypeScript always synchronously
-        // (as resouce loading may be async)
+        // (as resource loading may be async)
         var /** @type {?} */ styles = preparsedTemplate.styles.slice();
         this._inlineStyles(preparsedTemplate.inlineStyleUrls, stylesheets, styles);
         var /** @type {?} */ styleUrls = preparsedTemplate.styleUrls;
@@ -3569,7 +3605,8 @@ var DirectiveResolver = /** @class */ (function () {
             var /** @type {?} */ metadata = findLast(typeMetadata, isDirectiveMetadata);
             if (metadata) {
                 var /** @type {?} */ propertyMetadata = this._reflector.propMetadata(type);
-                return this._mergeWithPropertyMetadata(metadata, propertyMetadata, type);
+                var /** @type {?} */ guards = this._reflector.guards(type);
+                return this._mergeWithPropertyMetadata(metadata, propertyMetadata, guards, type);
             }
         }
         if (throwIfNotFound) {
@@ -3580,16 +3617,18 @@ var DirectiveResolver = /** @class */ (function () {
     /**
      * @param {?} dm
      * @param {?} propertyMetadata
+     * @param {?} guards
      * @param {?} directiveType
      * @return {?}
      */
     DirectiveResolver.prototype._mergeWithPropertyMetadata = /**
      * @param {?} dm
      * @param {?} propertyMetadata
+     * @param {?} guards
      * @param {?} directiveType
      * @return {?}
      */
-    function (dm, propertyMetadata, directiveType) {
+    function (dm, propertyMetadata, guards, directiveType) {
         var /** @type {?} */ inputs = [];
         var /** @type {?} */ outputs = [];
         var /** @type {?} */ host = {};
@@ -3639,7 +3678,7 @@ var DirectiveResolver = /** @class */ (function () {
                 queries[propName] = query;
             }
         });
-        return this._merge(dm, inputs, outputs, host, queries, directiveType);
+        return this._merge(dm, inputs, outputs, host, queries, guards, directiveType);
     };
     /**
      * @param {?} def
@@ -3660,11 +3699,13 @@ var DirectiveResolver = /** @class */ (function () {
      */
     function (bindings) {
         var /** @type {?} */ names = new Set();
+        var /** @type {?} */ publicNames = new Set();
         var /** @type {?} */ reversedResult = [];
         // go last to first to allow later entries to overwrite previous entries
         for (var /** @type {?} */ i = bindings.length - 1; i >= 0; i--) {
             var /** @type {?} */ binding = bindings[i];
             var /** @type {?} */ name_1 = this._extractPublicName(binding);
+            publicNames.add(name_1);
             if (!names.has(name_1)) {
                 names.add(name_1);
                 reversedResult.push(binding);
@@ -3678,6 +3719,7 @@ var DirectiveResolver = /** @class */ (function () {
      * @param {?} outputs
      * @param {?} host
      * @param {?} queries
+     * @param {?} guards
      * @param {?} directiveType
      * @return {?}
      */
@@ -3687,10 +3729,11 @@ var DirectiveResolver = /** @class */ (function () {
      * @param {?} outputs
      * @param {?} host
      * @param {?} queries
+     * @param {?} guards
      * @param {?} directiveType
      * @return {?}
      */
-    function (directive, inputs, outputs, host, queries, directiveType) {
+    function (directive, inputs, outputs, host, queries, guards, directiveType) {
         var /** @type {?} */ mergedInputs = this._dedupeBindings(directive.inputs ? directive.inputs.concat(inputs) : inputs);
         var /** @type {?} */ mergedOutputs = this._dedupeBindings(directive.outputs ? directive.outputs.concat(outputs) : outputs);
         var /** @type {?} */ mergedHost = directive.host ? __assign({}, directive.host, host) : host;
@@ -3727,7 +3770,7 @@ var DirectiveResolver = /** @class */ (function () {
                 host: mergedHost,
                 exportAs: directive.exportAs,
                 queries: mergedQueries,
-                providers: directive.providers
+                providers: directive.providers, guards: guards
             });
         }
     };
@@ -5897,6 +5940,361 @@ var AstTransformer = /** @class */ (function () {
     };
     return AstTransformer;
 }());
+var AstMemoryEfficientTransformer = /** @class */ (function () {
+    function AstMemoryEfficientTransformer() {
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitImplicitReceiver = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) { return ast; };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitInterpolation = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ expressions = this.visitAll(ast.expressions);
+        if (expressions !== ast.expressions)
+            return new Interpolation(ast.span, ast.strings, expressions);
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitLiteralPrimitive = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) { return ast; };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitPropertyRead = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ receiver = ast.receiver.visit(this);
+        if (receiver !== ast.receiver) {
+            return new PropertyRead(ast.span, receiver, ast.name);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitPropertyWrite = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ receiver = ast.receiver.visit(this);
+        var /** @type {?} */ value = ast.value.visit(this);
+        if (receiver !== ast.receiver || value !== ast.value) {
+            return new PropertyWrite(ast.span, receiver, ast.name, value);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitSafePropertyRead = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ receiver = ast.receiver.visit(this);
+        if (receiver !== ast.receiver) {
+            return new SafePropertyRead(ast.span, receiver, ast.name);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitMethodCall = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ receiver = ast.receiver.visit(this);
+        if (receiver !== ast.receiver) {
+            return new MethodCall(ast.span, receiver, ast.name, this.visitAll(ast.args));
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitSafeMethodCall = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ receiver = ast.receiver.visit(this);
+        var /** @type {?} */ args = this.visitAll(ast.args);
+        if (receiver !== ast.receiver || args !== ast.args) {
+            return new SafeMethodCall(ast.span, receiver, ast.name, args);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitFunctionCall = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ target = ast.target && ast.target.visit(this);
+        var /** @type {?} */ args = this.visitAll(ast.args);
+        if (target !== ast.target || args !== ast.args) {
+            return new FunctionCall(ast.span, target, args);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitLiteralArray = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ expressions = this.visitAll(ast.expressions);
+        if (expressions !== ast.expressions) {
+            return new LiteralArray(ast.span, expressions);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitLiteralMap = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ values = this.visitAll(ast.values);
+        if (values !== ast.values) {
+            return new LiteralMap(ast.span, ast.keys, values);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitBinary = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ left = ast.left.visit(this);
+        var /** @type {?} */ right = ast.right.visit(this);
+        if (left !== ast.left || right !== ast.right) {
+            return new Binary(ast.span, ast.operation, left, right);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitPrefixNot = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ expression = ast.expression.visit(this);
+        if (expression !== ast.expression) {
+            return new PrefixNot(ast.span, expression);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitNonNullAssert = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ expression = ast.expression.visit(this);
+        if (expression !== ast.expression) {
+            return new NonNullAssert(ast.span, expression);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitConditional = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ condition = ast.condition.visit(this);
+        var /** @type {?} */ trueExp = ast.trueExp.visit(this);
+        var /** @type {?} */ falseExp = ast.falseExp.visit(this);
+        if (condition !== ast.condition || trueExp !== ast.trueExp || falseExp !== falseExp) {
+            return new Conditional(ast.span, condition, trueExp, falseExp);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitPipe = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ exp = ast.exp.visit(this);
+        var /** @type {?} */ args = this.visitAll(ast.args);
+        if (exp !== ast.exp || args !== ast.args) {
+            return new BindingPipe(ast.span, exp, ast.name, args);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitKeyedRead = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ obj = ast.obj.visit(this);
+        var /** @type {?} */ key = ast.key.visit(this);
+        if (obj !== ast.obj || key !== ast.key) {
+            return new KeyedRead(ast.span, obj, key);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitKeyedWrite = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ obj = ast.obj.visit(this);
+        var /** @type {?} */ key = ast.key.visit(this);
+        var /** @type {?} */ value = ast.value.visit(this);
+        if (obj !== ast.obj || key !== ast.key || value !== ast.value) {
+            return new KeyedWrite(ast.span, obj, key, value);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} asts
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitAll = /**
+     * @param {?} asts
+     * @return {?}
+     */
+    function (asts) {
+        var /** @type {?} */ res = new Array(asts.length);
+        var /** @type {?} */ modified = false;
+        for (var /** @type {?} */ i = 0; i < asts.length; ++i) {
+            var /** @type {?} */ original = asts[i];
+            var /** @type {?} */ value = original.visit(this);
+            res[i] = value;
+            modified = modified || value !== original;
+        }
+        return modified ? res : asts;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitChain = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ expressions = this.visitAll(ast.expressions);
+        if (expressions !== ast.expressions) {
+            return new Chain(ast.span, expressions);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitQuote = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) { return ast; };
+    return AstMemoryEfficientTransformer;
+}());
 /**
  * @param {?} ast
  * @param {?} visitor
@@ -6795,7 +7193,8 @@ var _ParseAST = /** @class */ (function () {
             switch (operator) {
                 case '+':
                     this.advance();
-                    return this.parsePrefix();
+                    result = this.parsePrefix();
+                    return new Binary(this.span(start), '-', result, new LiteralPrimitive(new ParseSpan(start, start), 0));
                 case '-':
                     this.advance();
                     result = this.parsePrefix();
@@ -7024,14 +7423,14 @@ var _ParseAST = /** @class */ (function () {
         return /** @type {?} */ (positionals);
     };
     /**
-     * An identifier, a keyword, a string with an optional `-` inbetween.
+     * An identifier, a keyword, a string with an optional `-` in between.
      */
     /**
-     * An identifier, a keyword, a string with an optional `-` inbetween.
+     * An identifier, a keyword, a string with an optional `-` in between.
      * @return {?}
      */
     _ParseAST.prototype.expectTemplateBindingKey = /**
-     * An identifier, a keyword, a string with an optional `-` inbetween.
+     * An identifier, a keyword, a string with an optional `-` in between.
      * @return {?}
      */
     function () {
@@ -7415,13 +7814,6 @@ var SimpleExpressionChecker = /** @class */ (function () {
 /**
  * @fileoverview added by tsickle
  * @suppress {checkTypes} checked by tsc
- */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
  */
 var ParseLocation = /** @class */ (function () {
     function ParseLocation(file, offset, line, col) {
@@ -11540,7 +11932,7 @@ var Declaration = /** @class */ (function () {
         var _this = this;
         this.attrs = {};
         Object.keys(unescapedAttrs).forEach(function (k) {
-            _this.attrs[k] = _escapeXml(unescapedAttrs[k]);
+            _this.attrs[k] = escapeXml(unescapedAttrs[k]);
         });
     }
     /**
@@ -11579,7 +11971,7 @@ var Tag = /** @class */ (function () {
         this.children = children;
         this.attrs = {};
         Object.keys(unescapedAttrs).forEach(function (k) {
-            _this.attrs[k] = _escapeXml(unescapedAttrs[k]);
+            _this.attrs[k] = escapeXml(unescapedAttrs[k]);
         });
     }
     /**
@@ -11595,7 +11987,7 @@ var Tag = /** @class */ (function () {
 }());
 var Text$2 = /** @class */ (function () {
     function Text(unescapedValue) {
-        this.value = _escapeXml(unescapedValue);
+        this.value = escapeXml(unescapedValue);
     }
     /**
      * @param {?} visitor
@@ -11627,7 +12019,7 @@ var _ESCAPED_CHARS = [
  * @param {?} text
  * @return {?}
  */
-function _escapeXml(text) {
+function escapeXml(text) {
     return _ESCAPED_CHARS.reduce(function (text, entry) { return text.replace(entry[0], entry[1]); }, text);
 }
 
@@ -11647,8 +12039,10 @@ var _XMLNS = 'urn:oasis:names:tc:xliff:document:1.2';
 // TODO(vicb): make this a param (s/_/-/)
 var _DEFAULT_SOURCE_LANG = 'en';
 var _PLACEHOLDER_TAG = 'x';
+var _MARKER_TAG = 'mrk';
 var _FILE_TAG = 'file';
 var _SOURCE_TAG = 'source';
+var _SEGMENT_SOURCE_TAG = 'seg-source';
 var _TARGET_TAG = 'target';
 var _UNIT_TAG = 'trans-unit';
 var _CONTEXT_GROUP_TAG = 'context-group';
@@ -11909,8 +12303,9 @@ var XliffParser = /** @class */ (function () {
                     }
                 }
                 break;
+            // ignore those tags
             case _SOURCE_TAG:
-                // ignore source message
+            case _SEGMENT_SOURCE_TAG:
                 break;
             case _TARGET_TAG:
                 var /** @type {?} */ innerTextStart = /** @type {?} */ ((element.startSourceSpan)).end.offset;
@@ -12019,8 +12414,7 @@ var XmlToI18n = /** @class */ (function () {
         var /** @type {?} */ xmlIcu = new XmlParser().parse(message, url, true);
         this._errors = xmlIcu.errors;
         var /** @type {?} */ i18nNodes = this._errors.length > 0 || xmlIcu.rootNodes.length == 0 ?
-            [] :
-            visitAll(this, xmlIcu.rootNodes);
+            [] : [].concat.apply([], visitAll(this, xmlIcu.rootNodes));
         return {
             i18nNodes: i18nNodes,
             errors: this._errors,
@@ -12054,10 +12448,12 @@ var XmlToI18n = /** @class */ (function () {
                 return new Placeholder('', nameAttr.value, /** @type {?} */ ((el.sourceSpan)));
             }
             this._addError(el, "<" + _PLACEHOLDER_TAG + "> misses the \"id\" attribute");
+            return null;
         }
-        else {
-            this._addError(el, "Unexpected tag");
+        if (el.name === _MARKER_TAG) {
+            return [].concat.apply([], visitAll(this, el.children));
         }
+        this._addError(el, "Unexpected tag");
         return null;
     };
     /**
@@ -12162,6 +12558,7 @@ var _XMLNS$1 = 'urn:oasis:names:tc:xliff:document:2.0';
 var _DEFAULT_SOURCE_LANG$1 = 'en';
 var _PLACEHOLDER_TAG$1 = 'ph';
 var _PLACEHOLDER_SPANNING_TAG = 'pc';
+var _MARKER_TAG$1 = 'mrk';
 var _XLIFF_TAG = 'xliff';
 var _SOURCE_TAG$1 = 'source';
 var _TARGET_TAG$1 = 'target';
@@ -12617,6 +13014,8 @@ var XmlToI18n$1 = /** @class */ (function () {
                     return nodes.concat.apply(nodes, [new Placeholder('', startId, el.sourceSpan)].concat(el.children.map(function (node) { return node.visit(_this, null); }), [new Placeholder('', endId, el.sourceSpan)]));
                 }
                 break;
+            case _MARKER_TAG$1:
+                return [].concat.apply([], visitAll(this, el.children));
             default:
                 this._addError(el, "Unexpected tag");
         }
@@ -13535,7 +13934,11 @@ var I18nToHtmlVisitor = /** @class */ (function () {
      * @param {?=} context
      * @return {?}
      */
-    function (text, context) { return text.value; };
+    function (text, context) {
+        // `convert()` uses an `HtmlParser` to return `html.Node`s
+        // we should then make sure that any special characters are escaped
+        return escapeXml(text.value);
+    };
     /**
      * @param {?} container
      * @param {?=} context
@@ -13781,116 +14184,6 @@ function createSerializer(format) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var STRIP_SRC_FILE_SUFFIXES = /(\.ts|\.d\.ts|\.js|\.jsx|\.tsx)$/;
-var GENERATED_FILE = /\.ngfactory\.|\.ngsummary\./;
-var JIT_SUMMARY_FILE = /\.ngsummary\./;
-var JIT_SUMMARY_NAME = /NgSummary$/;
-/**
- * @param {?} filePath
- * @param {?=} forceSourceFile
- * @return {?}
- */
-function ngfactoryFilePath(filePath, forceSourceFile) {
-    if (forceSourceFile === void 0) { forceSourceFile = false; }
-    var /** @type {?} */ urlWithSuffix = splitTypescriptSuffix(filePath, forceSourceFile);
-    return urlWithSuffix[0] + ".ngfactory" + urlWithSuffix[1];
-}
-/**
- * @param {?} filePath
- * @return {?}
- */
-function stripGeneratedFileSuffix(filePath) {
-    return filePath.replace(GENERATED_FILE, '.');
-}
-/**
- * @param {?} filePath
- * @return {?}
- */
-function isGeneratedFile(filePath) {
-    return GENERATED_FILE.test(filePath);
-}
-/**
- * @param {?} path
- * @param {?=} forceSourceFile
- * @return {?}
- */
-function splitTypescriptSuffix(path, forceSourceFile) {
-    if (forceSourceFile === void 0) { forceSourceFile = false; }
-    if (path.endsWith('.d.ts')) {
-        return [path.slice(0, -5), forceSourceFile ? '.ts' : '.d.ts'];
-    }
-    var /** @type {?} */ lastDot = path.lastIndexOf('.');
-    if (lastDot !== -1) {
-        return [path.substring(0, lastDot), path.substring(lastDot)];
-    }
-    return [path, ''];
-}
-/**
- * @param {?} fileName
- * @return {?}
- */
-function summaryFileName(fileName) {
-    var /** @type {?} */ fileNameWithoutSuffix = fileName.replace(STRIP_SRC_FILE_SUFFIXES, '');
-    return fileNameWithoutSuffix + ".ngsummary.json";
-}
-/**
- * @param {?} fileName
- * @param {?=} forceSourceFile
- * @return {?}
- */
-function summaryForJitFileName(fileName, forceSourceFile) {
-    if (forceSourceFile === void 0) { forceSourceFile = false; }
-    var /** @type {?} */ urlWithSuffix = splitTypescriptSuffix(stripGeneratedFileSuffix(fileName), forceSourceFile);
-    return urlWithSuffix[0] + ".ngsummary" + urlWithSuffix[1];
-}
-/**
- * @param {?} filePath
- * @return {?}
- */
-function stripSummaryForJitFileSuffix(filePath) {
-    return filePath.replace(JIT_SUMMARY_FILE, '.');
-}
-/**
- * @param {?} symbolName
- * @return {?}
- */
-function summaryForJitName(symbolName) {
-    return symbolName + "NgSummary";
-}
-/**
- * @param {?} symbolName
- * @return {?}
- */
-function stripSummaryForJitNameSuffix(symbolName) {
-    return symbolName.replace(JIT_SUMMARY_NAME, '');
-}
-var LOWERED_SYMBOL = /\u0275\d+/;
-/**
- * @param {?} name
- * @return {?}
- */
-function isLoweredSymbol(name) {
-    return LOWERED_SYMBOL.test(name);
-}
-/**
- * @param {?} id
- * @return {?}
- */
-function createLoweredSymbol(id) {
-    return "\u0275" + id;
-}
-
-/**
- * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
- */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 var CORE = '@angular/core';
 var Identifiers = /** @class */ (function () {
     function Identifiers() {
@@ -13935,7 +14228,10 @@ var Identifiers = /** @class */ (function () {
         name: 'ɵregisterModuleFactory',
         moduleName: CORE,
     };
+    Identifiers.inject = { name: 'inject', moduleName: CORE };
+    Identifiers.INJECTOR = { name: 'INJECTOR', moduleName: CORE };
     Identifiers.Injector = { name: 'Injector', moduleName: CORE };
+    Identifiers.defineInjectable = { name: 'defineInjectable', moduleName: CORE };
     Identifiers.ViewEncapsulation = {
         name: 'ViewEncapsulation',
         moduleName: CORE,
@@ -14017,2086 +14313,6 @@ function createTokenForExternalReference(reflector, reference) {
  * found in the LICENSE file at https://angular.io/license
  */
 /** @enum {number} */
-var LifecycleHooks = {
-    OnInit: 0,
-    OnDestroy: 1,
-    DoCheck: 2,
-    OnChanges: 3,
-    AfterContentInit: 4,
-    AfterContentChecked: 5,
-    AfterViewInit: 6,
-    AfterViewChecked: 7,
-};
-LifecycleHooks[LifecycleHooks.OnInit] = "OnInit";
-LifecycleHooks[LifecycleHooks.OnDestroy] = "OnDestroy";
-LifecycleHooks[LifecycleHooks.DoCheck] = "DoCheck";
-LifecycleHooks[LifecycleHooks.OnChanges] = "OnChanges";
-LifecycleHooks[LifecycleHooks.AfterContentInit] = "AfterContentInit";
-LifecycleHooks[LifecycleHooks.AfterContentChecked] = "AfterContentChecked";
-LifecycleHooks[LifecycleHooks.AfterViewInit] = "AfterViewInit";
-LifecycleHooks[LifecycleHooks.AfterViewChecked] = "AfterViewChecked";
-var LIFECYCLE_HOOKS_VALUES = [
-    LifecycleHooks.OnInit, LifecycleHooks.OnDestroy, LifecycleHooks.DoCheck, LifecycleHooks.OnChanges,
-    LifecycleHooks.AfterContentInit, LifecycleHooks.AfterContentChecked, LifecycleHooks.AfterViewInit,
-    LifecycleHooks.AfterViewChecked
-];
-/**
- * @param {?} reflector
- * @param {?} hook
- * @param {?} token
- * @return {?}
- */
-function hasLifecycleHook(reflector, hook, token) {
-    return reflector.hasLifecycleHook(token, getHookName(hook));
-}
-/**
- * @param {?} reflector
- * @param {?} token
- * @return {?}
- */
-function getAllLifecycleHooks(reflector, token) {
-    return LIFECYCLE_HOOKS_VALUES.filter(function (hook) { return hasLifecycleHook(reflector, hook, token); });
-}
-/**
- * @param {?} hook
- * @return {?}
- */
-function getHookName(hook) {
-    switch (hook) {
-        case LifecycleHooks.OnInit:
-            return 'ngOnInit';
-        case LifecycleHooks.OnDestroy:
-            return 'ngOnDestroy';
-        case LifecycleHooks.DoCheck:
-            return 'ngDoCheck';
-        case LifecycleHooks.OnChanges:
-            return 'ngOnChanges';
-        case LifecycleHooks.AfterContentInit:
-            return 'ngAfterContentInit';
-        case LifecycleHooks.AfterContentChecked:
-            return 'ngAfterContentChecked';
-        case LifecycleHooks.AfterViewInit:
-            return 'ngAfterViewInit';
-        case LifecycleHooks.AfterViewChecked:
-            return 'ngAfterViewChecked';
-    }
-}
-
-/**
- * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
- */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-var _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' + //":not("
-    '([-\\w]+)|' + // "tag"
-    '(?:\\.([-\\w]+))|' + // ".class"
-    '(?:\\[([-.\\w*]+)(?:=([\"\']?)([^\\]\"\']*)\\5)?\\])|' + // "[name]", "[name=value]",
-    '(\\))|' + // ")"
-    '(\\s*,\\s*)', // ","
-'g');
-/**
- * A css selector contains an element name,
- * css classes and attribute/value pairs with the purpose
- * of selecting subsets out of them.
- */
-var CssSelector = /** @class */ (function () {
-    function CssSelector() {
-        this.element = null;
-        this.classNames = [];
-        this.attrs = [];
-        this.notSelectors = [];
-    }
-    /**
-     * @param {?} selector
-     * @return {?}
-     */
-    CssSelector.parse = /**
-     * @param {?} selector
-     * @return {?}
-     */
-    function (selector) {
-        var /** @type {?} */ results = [];
-        var /** @type {?} */ _addResult = function (res, cssSel) {
-            if (cssSel.notSelectors.length > 0 && !cssSel.element && cssSel.classNames.length == 0 &&
-                cssSel.attrs.length == 0) {
-                cssSel.element = '*';
-            }
-            res.push(cssSel);
-        };
-        var /** @type {?} */ cssSelector = new CssSelector();
-        var /** @type {?} */ match;
-        var /** @type {?} */ current = cssSelector;
-        var /** @type {?} */ inNot = false;
-        _SELECTOR_REGEXP.lastIndex = 0;
-        while (match = _SELECTOR_REGEXP.exec(selector)) {
-            if (match[1]) {
-                if (inNot) {
-                    throw new Error('Nesting :not is not allowed in a selector');
-                }
-                inNot = true;
-                current = new CssSelector();
-                cssSelector.notSelectors.push(current);
-            }
-            if (match[2]) {
-                current.setElement(match[2]);
-            }
-            if (match[3]) {
-                current.addClassName(match[3]);
-            }
-            if (match[4]) {
-                current.addAttribute(match[4], match[6]);
-            }
-            if (match[7]) {
-                inNot = false;
-                current = cssSelector;
-            }
-            if (match[8]) {
-                if (inNot) {
-                    throw new Error('Multiple selectors in :not are not supported');
-                }
-                _addResult(results, cssSelector);
-                cssSelector = current = new CssSelector();
-            }
-        }
-        _addResult(results, cssSelector);
-        return results;
-    };
-    /**
-     * @return {?}
-     */
-    CssSelector.prototype.isElementSelector = /**
-     * @return {?}
-     */
-    function () {
-        return this.hasElementSelector() && this.classNames.length == 0 && this.attrs.length == 0 &&
-            this.notSelectors.length === 0;
-    };
-    /**
-     * @return {?}
-     */
-    CssSelector.prototype.hasElementSelector = /**
-     * @return {?}
-     */
-    function () { return !!this.element; };
-    /**
-     * @param {?=} element
-     * @return {?}
-     */
-    CssSelector.prototype.setElement = /**
-     * @param {?=} element
-     * @return {?}
-     */
-    function (element) {
-        if (element === void 0) { element = null; }
-        this.element = element;
-    };
-    /** Gets a template string for an element that matches the selector. */
-    /**
-     * Gets a template string for an element that matches the selector.
-     * @return {?}
-     */
-    CssSelector.prototype.getMatchingElementTemplate = /**
-     * Gets a template string for an element that matches the selector.
-     * @return {?}
-     */
-    function () {
-        var /** @type {?} */ tagName = this.element || 'div';
-        var /** @type {?} */ classAttr = this.classNames.length > 0 ? " class=\"" + this.classNames.join(' ') + "\"" : '';
-        var /** @type {?} */ attrs = '';
-        for (var /** @type {?} */ i = 0; i < this.attrs.length; i += 2) {
-            var /** @type {?} */ attrName = this.attrs[i];
-            var /** @type {?} */ attrValue = this.attrs[i + 1] !== '' ? "=\"" + this.attrs[i + 1] + "\"" : '';
-            attrs += " " + attrName + attrValue;
-        }
-        return getHtmlTagDefinition(tagName).isVoid ? "<" + tagName + classAttr + attrs + "/>" :
-            "<" + tagName + classAttr + attrs + "></" + tagName + ">";
-    };
-    /**
-     * @param {?} name
-     * @param {?=} value
-     * @return {?}
-     */
-    CssSelector.prototype.addAttribute = /**
-     * @param {?} name
-     * @param {?=} value
-     * @return {?}
-     */
-    function (name, value) {
-        if (value === void 0) { value = ''; }
-        this.attrs.push(name, value && value.toLowerCase() || '');
-    };
-    /**
-     * @param {?} name
-     * @return {?}
-     */
-    CssSelector.prototype.addClassName = /**
-     * @param {?} name
-     * @return {?}
-     */
-    function (name) { this.classNames.push(name.toLowerCase()); };
-    /**
-     * @return {?}
-     */
-    CssSelector.prototype.toString = /**
-     * @return {?}
-     */
-    function () {
-        var /** @type {?} */ res = this.element || '';
-        if (this.classNames) {
-            this.classNames.forEach(function (klass) { return res += "." + klass; });
-        }
-        if (this.attrs) {
-            for (var /** @type {?} */ i = 0; i < this.attrs.length; i += 2) {
-                var /** @type {?} */ name_1 = this.attrs[i];
-                var /** @type {?} */ value = this.attrs[i + 1];
-                res += "[" + name_1 + (value ? '=' + value : '') + "]";
-            }
-        }
-        this.notSelectors.forEach(function (notSelector) { return res += ":not(" + notSelector + ")"; });
-        return res;
-    };
-    return CssSelector;
-}());
-/**
- * Reads a list of CssSelectors and allows to calculate which ones
- * are contained in a given CssSelector.
- */
-var SelectorMatcher = /** @class */ (function () {
-    function SelectorMatcher() {
-        this._elementMap = new Map();
-        this._elementPartialMap = new Map();
-        this._classMap = new Map();
-        this._classPartialMap = new Map();
-        this._attrValueMap = new Map();
-        this._attrValuePartialMap = new Map();
-        this._listContexts = [];
-    }
-    /**
-     * @param {?} notSelectors
-     * @return {?}
-     */
-    SelectorMatcher.createNotMatcher = /**
-     * @param {?} notSelectors
-     * @return {?}
-     */
-    function (notSelectors) {
-        var /** @type {?} */ notMatcher = new SelectorMatcher();
-        notMatcher.addSelectables(notSelectors, null);
-        return notMatcher;
-    };
-    /**
-     * @param {?} cssSelectors
-     * @param {?=} callbackCtxt
-     * @return {?}
-     */
-    SelectorMatcher.prototype.addSelectables = /**
-     * @param {?} cssSelectors
-     * @param {?=} callbackCtxt
-     * @return {?}
-     */
-    function (cssSelectors, callbackCtxt) {
-        var /** @type {?} */ listContext = /** @type {?} */ ((null));
-        if (cssSelectors.length > 1) {
-            listContext = new SelectorListContext(cssSelectors);
-            this._listContexts.push(listContext);
-        }
-        for (var /** @type {?} */ i = 0; i < cssSelectors.length; i++) {
-            this._addSelectable(cssSelectors[i], callbackCtxt, listContext);
-        }
-    };
-    /**
-     * Add an object that can be found later on by calling `match`.
-     * @param {?} cssSelector A css selector
-     * @param {?} callbackCtxt An opaque object that will be given to the callback of the `match` function
-     * @param {?} listContext
-     * @return {?}
-     */
-    SelectorMatcher.prototype._addSelectable = /**
-     * Add an object that can be found later on by calling `match`.
-     * @param {?} cssSelector A css selector
-     * @param {?} callbackCtxt An opaque object that will be given to the callback of the `match` function
-     * @param {?} listContext
-     * @return {?}
-     */
-    function (cssSelector, callbackCtxt, listContext) {
-        var /** @type {?} */ matcher = this;
-        var /** @type {?} */ element = cssSelector.element;
-        var /** @type {?} */ classNames = cssSelector.classNames;
-        var /** @type {?} */ attrs = cssSelector.attrs;
-        var /** @type {?} */ selectable = new SelectorContext(cssSelector, callbackCtxt, listContext);
-        if (element) {
-            var /** @type {?} */ isTerminal = attrs.length === 0 && classNames.length === 0;
-            if (isTerminal) {
-                this._addTerminal(matcher._elementMap, element, selectable);
-            }
-            else {
-                matcher = this._addPartial(matcher._elementPartialMap, element);
-            }
-        }
-        if (classNames) {
-            for (var /** @type {?} */ i = 0; i < classNames.length; i++) {
-                var /** @type {?} */ isTerminal = attrs.length === 0 && i === classNames.length - 1;
-                var /** @type {?} */ className = classNames[i];
-                if (isTerminal) {
-                    this._addTerminal(matcher._classMap, className, selectable);
-                }
-                else {
-                    matcher = this._addPartial(matcher._classPartialMap, className);
-                }
-            }
-        }
-        if (attrs) {
-            for (var /** @type {?} */ i = 0; i < attrs.length; i += 2) {
-                var /** @type {?} */ isTerminal = i === attrs.length - 2;
-                var /** @type {?} */ name_2 = attrs[i];
-                var /** @type {?} */ value = attrs[i + 1];
-                if (isTerminal) {
-                    var /** @type {?} */ terminalMap = matcher._attrValueMap;
-                    var /** @type {?} */ terminalValuesMap = terminalMap.get(name_2);
-                    if (!terminalValuesMap) {
-                        terminalValuesMap = new Map();
-                        terminalMap.set(name_2, terminalValuesMap);
-                    }
-                    this._addTerminal(terminalValuesMap, value, selectable);
-                }
-                else {
-                    var /** @type {?} */ partialMap = matcher._attrValuePartialMap;
-                    var /** @type {?} */ partialValuesMap = partialMap.get(name_2);
-                    if (!partialValuesMap) {
-                        partialValuesMap = new Map();
-                        partialMap.set(name_2, partialValuesMap);
-                    }
-                    matcher = this._addPartial(partialValuesMap, value);
-                }
-            }
-        }
-    };
-    /**
-     * @param {?} map
-     * @param {?} name
-     * @param {?} selectable
-     * @return {?}
-     */
-    SelectorMatcher.prototype._addTerminal = /**
-     * @param {?} map
-     * @param {?} name
-     * @param {?} selectable
-     * @return {?}
-     */
-    function (map, name, selectable) {
-        var /** @type {?} */ terminalList = map.get(name);
-        if (!terminalList) {
-            terminalList = [];
-            map.set(name, terminalList);
-        }
-        terminalList.push(selectable);
-    };
-    /**
-     * @param {?} map
-     * @param {?} name
-     * @return {?}
-     */
-    SelectorMatcher.prototype._addPartial = /**
-     * @param {?} map
-     * @param {?} name
-     * @return {?}
-     */
-    function (map, name) {
-        var /** @type {?} */ matcher = map.get(name);
-        if (!matcher) {
-            matcher = new SelectorMatcher();
-            map.set(name, matcher);
-        }
-        return matcher;
-    };
-    /**
-     * Find the objects that have been added via `addSelectable`
-     * whose css selector is contained in the given css selector.
-     * @param cssSelector A css selector
-     * @param matchedCallback This callback will be called with the object handed into `addSelectable`
-     * @return boolean true if a match was found
-    */
-    /**
-     * Find the objects that have been added via `addSelectable`
-     * whose css selector is contained in the given css selector.
-     * @param {?} cssSelector A css selector
-     * @param {?} matchedCallback This callback will be called with the object handed into `addSelectable`
-     * @return {?} boolean true if a match was found
-     */
-    SelectorMatcher.prototype.match = /**
-     * Find the objects that have been added via `addSelectable`
-     * whose css selector is contained in the given css selector.
-     * @param {?} cssSelector A css selector
-     * @param {?} matchedCallback This callback will be called with the object handed into `addSelectable`
-     * @return {?} boolean true if a match was found
-     */
-    function (cssSelector, matchedCallback) {
-        var /** @type {?} */ result = false;
-        var /** @type {?} */ element = /** @type {?} */ ((cssSelector.element));
-        var /** @type {?} */ classNames = cssSelector.classNames;
-        var /** @type {?} */ attrs = cssSelector.attrs;
-        for (var /** @type {?} */ i = 0; i < this._listContexts.length; i++) {
-            this._listContexts[i].alreadyMatched = false;
-        }
-        result = this._matchTerminal(this._elementMap, element, cssSelector, matchedCallback) || result;
-        result = this._matchPartial(this._elementPartialMap, element, cssSelector, matchedCallback) ||
-            result;
-        if (classNames) {
-            for (var /** @type {?} */ i = 0; i < classNames.length; i++) {
-                var /** @type {?} */ className = classNames[i];
-                result =
-                    this._matchTerminal(this._classMap, className, cssSelector, matchedCallback) || result;
-                result =
-                    this._matchPartial(this._classPartialMap, className, cssSelector, matchedCallback) ||
-                        result;
-            }
-        }
-        if (attrs) {
-            for (var /** @type {?} */ i = 0; i < attrs.length; i += 2) {
-                var /** @type {?} */ name_3 = attrs[i];
-                var /** @type {?} */ value = attrs[i + 1];
-                var /** @type {?} */ terminalValuesMap = /** @type {?} */ ((this._attrValueMap.get(name_3)));
-                if (value) {
-                    result =
-                        this._matchTerminal(terminalValuesMap, '', cssSelector, matchedCallback) || result;
-                }
-                result =
-                    this._matchTerminal(terminalValuesMap, value, cssSelector, matchedCallback) || result;
-                var /** @type {?} */ partialValuesMap = /** @type {?} */ ((this._attrValuePartialMap.get(name_3)));
-                if (value) {
-                    result = this._matchPartial(partialValuesMap, '', cssSelector, matchedCallback) || result;
-                }
-                result =
-                    this._matchPartial(partialValuesMap, value, cssSelector, matchedCallback) || result;
-            }
-        }
-        return result;
-    };
-    /** @internal */
-    /**
-     * \@internal
-     * @param {?} map
-     * @param {?} name
-     * @param {?} cssSelector
-     * @param {?} matchedCallback
-     * @return {?}
-     */
-    SelectorMatcher.prototype._matchTerminal = /**
-     * \@internal
-     * @param {?} map
-     * @param {?} name
-     * @param {?} cssSelector
-     * @param {?} matchedCallback
-     * @return {?}
-     */
-    function (map, name, cssSelector, matchedCallback) {
-        if (!map || typeof name !== 'string') {
-            return false;
-        }
-        var /** @type {?} */ selectables = map.get(name) || [];
-        var /** @type {?} */ starSelectables = /** @type {?} */ ((map.get('*')));
-        if (starSelectables) {
-            selectables = selectables.concat(starSelectables);
-        }
-        if (selectables.length === 0) {
-            return false;
-        }
-        var /** @type {?} */ selectable;
-        var /** @type {?} */ result = false;
-        for (var /** @type {?} */ i = 0; i < selectables.length; i++) {
-            selectable = selectables[i];
-            result = selectable.finalize(cssSelector, matchedCallback) || result;
-        }
-        return result;
-    };
-    /** @internal */
-    /**
-     * \@internal
-     * @param {?} map
-     * @param {?} name
-     * @param {?} cssSelector
-     * @param {?} matchedCallback
-     * @return {?}
-     */
-    SelectorMatcher.prototype._matchPartial = /**
-     * \@internal
-     * @param {?} map
-     * @param {?} name
-     * @param {?} cssSelector
-     * @param {?} matchedCallback
-     * @return {?}
-     */
-    function (map, name, cssSelector, matchedCallback) {
-        if (!map || typeof name !== 'string') {
-            return false;
-        }
-        var /** @type {?} */ nestedSelector = map.get(name);
-        if (!nestedSelector) {
-            return false;
-        }
-        // TODO(perf): get rid of recursion and measure again
-        // TODO(perf): don't pass the whole selector into the recursion,
-        // but only the not processed parts
-        return nestedSelector.match(cssSelector, matchedCallback);
-    };
-    return SelectorMatcher;
-}());
-var SelectorListContext = /** @class */ (function () {
-    function SelectorListContext(selectors) {
-        this.selectors = selectors;
-        this.alreadyMatched = false;
-    }
-    return SelectorListContext;
-}());
-var SelectorContext = /** @class */ (function () {
-    function SelectorContext(selector, cbContext, listContext) {
-        this.selector = selector;
-        this.cbContext = cbContext;
-        this.listContext = listContext;
-        this.notSelectors = selector.notSelectors;
-    }
-    /**
-     * @param {?} cssSelector
-     * @param {?} callback
-     * @return {?}
-     */
-    SelectorContext.prototype.finalize = /**
-     * @param {?} cssSelector
-     * @param {?} callback
-     * @return {?}
-     */
-    function (cssSelector, callback) {
-        var /** @type {?} */ result = true;
-        if (this.notSelectors.length > 0 && (!this.listContext || !this.listContext.alreadyMatched)) {
-            var /** @type {?} */ notMatcher = SelectorMatcher.createNotMatcher(this.notSelectors);
-            result = !notMatcher.match(cssSelector, null);
-        }
-        if (result && callback && (!this.listContext || !this.listContext.alreadyMatched)) {
-            if (this.listContext) {
-                this.listContext.alreadyMatched = true;
-            }
-            callback(this.selector, this.cbContext);
-        }
-        return result;
-    };
-    return SelectorContext;
-}());
-
-/**
- * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
- */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-var ERROR_COMPONENT_TYPE = 'ngComponentType';
-var CompileMetadataResolver = /** @class */ (function () {
-    function CompileMetadataResolver(_config, _htmlParser, _ngModuleResolver, _directiveResolver, _pipeResolver, _summaryResolver, _schemaRegistry, _directiveNormalizer, _console, _staticSymbolCache, _reflector, _errorCollector) {
-        this._config = _config;
-        this._htmlParser = _htmlParser;
-        this._ngModuleResolver = _ngModuleResolver;
-        this._directiveResolver = _directiveResolver;
-        this._pipeResolver = _pipeResolver;
-        this._summaryResolver = _summaryResolver;
-        this._schemaRegistry = _schemaRegistry;
-        this._directiveNormalizer = _directiveNormalizer;
-        this._console = _console;
-        this._staticSymbolCache = _staticSymbolCache;
-        this._reflector = _reflector;
-        this._errorCollector = _errorCollector;
-        this._nonNormalizedDirectiveCache = new Map();
-        this._directiveCache = new Map();
-        this._summaryCache = new Map();
-        this._pipeCache = new Map();
-        this._ngModuleCache = new Map();
-        this._ngModuleOfTypes = new Map();
-    }
-    /**
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getReflector = /**
-     * @return {?}
-     */
-    function () { return this._reflector; };
-    /**
-     * @param {?} type
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.clearCacheFor = /**
-     * @param {?} type
-     * @return {?}
-     */
-    function (type) {
-        var /** @type {?} */ dirMeta = this._directiveCache.get(type);
-        this._directiveCache.delete(type);
-        this._nonNormalizedDirectiveCache.delete(type);
-        this._summaryCache.delete(type);
-        this._pipeCache.delete(type);
-        this._ngModuleOfTypes.delete(type);
-        // Clear all of the NgModule as they contain transitive information!
-        this._ngModuleCache.clear();
-        if (dirMeta) {
-            this._directiveNormalizer.clearCacheFor(dirMeta);
-        }
-    };
-    /**
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.clearCache = /**
-     * @return {?}
-     */
-    function () {
-        this._directiveCache.clear();
-        this._nonNormalizedDirectiveCache.clear();
-        this._summaryCache.clear();
-        this._pipeCache.clear();
-        this._ngModuleCache.clear();
-        this._ngModuleOfTypes.clear();
-        this._directiveNormalizer.clearCache();
-    };
-    /**
-     * @param {?} baseType
-     * @param {?} name
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._createProxyClass = /**
-     * @param {?} baseType
-     * @param {?} name
-     * @return {?}
-     */
-    function (baseType, name) {
-        var /** @type {?} */ delegate = null;
-        var /** @type {?} */ proxyClass = /** @type {?} */ (function () {
-            if (!delegate) {
-                throw new Error("Illegal state: Class " + name + " for type " + stringify(baseType) + " is not compiled yet!");
-            }
-            return delegate.apply(this, arguments);
-        });
-        proxyClass.setDelegate = function (d) {
-            delegate = d;
-            (/** @type {?} */ (proxyClass)).prototype = d.prototype;
-        };
-        // Make stringify work correctly
-        (/** @type {?} */ (proxyClass)).overriddenName = name;
-        return proxyClass;
-    };
-    /**
-     * @param {?} dirType
-     * @param {?} name
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getGeneratedClass = /**
-     * @param {?} dirType
-     * @param {?} name
-     * @return {?}
-     */
-    function (dirType, name) {
-        if (dirType instanceof StaticSymbol) {
-            return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath), name);
-        }
-        else {
-            return this._createProxyClass(dirType, name);
-        }
-    };
-    /**
-     * @param {?} dirType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getComponentViewClass = /**
-     * @param {?} dirType
-     * @return {?}
-     */
-    function (dirType) {
-        return this.getGeneratedClass(dirType, viewClassName(dirType, 0));
-    };
-    /**
-     * @param {?} dirType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getHostComponentViewClass = /**
-     * @param {?} dirType
-     * @return {?}
-     */
-    function (dirType) {
-        return this.getGeneratedClass(dirType, hostViewClassName(dirType));
-    };
-    /**
-     * @param {?} dirType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getHostComponentType = /**
-     * @param {?} dirType
-     * @return {?}
-     */
-    function (dirType) {
-        var /** @type {?} */ name = identifierName({ reference: dirType }) + "_Host";
-        if (dirType instanceof StaticSymbol) {
-            return this._staticSymbolCache.get(dirType.filePath, name);
-        }
-        else {
-            var /** @type {?} */ HostClass = /** @type {?} */ (function HostClass() { });
-            HostClass.overriddenName = name;
-            return HostClass;
-        }
-    };
-    /**
-     * @param {?} dirType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getRendererType = /**
-     * @param {?} dirType
-     * @return {?}
-     */
-    function (dirType) {
-        if (dirType instanceof StaticSymbol) {
-            return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath), rendererTypeName(dirType));
-        }
-        else {
-            // returning an object as proxy,
-            // that we fill later during runtime compilation.
-            return /** @type {?} */ ({});
-        }
-    };
-    /**
-     * @param {?} selector
-     * @param {?} dirType
-     * @param {?} inputs
-     * @param {?} outputs
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getComponentFactory = /**
-     * @param {?} selector
-     * @param {?} dirType
-     * @param {?} inputs
-     * @param {?} outputs
-     * @return {?}
-     */
-    function (selector, dirType, inputs, outputs) {
-        if (dirType instanceof StaticSymbol) {
-            return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath), componentFactoryName(dirType));
-        }
-        else {
-            var /** @type {?} */ hostView = this.getHostComponentViewClass(dirType);
-            // Note: ngContentSelectors will be filled later once the template is
-            // loaded.
-            var /** @type {?} */ createComponentFactory = this._reflector.resolveExternalReference(Identifiers.createComponentFactory);
-            return createComponentFactory(selector, dirType, /** @type {?} */ (hostView), inputs, outputs, []);
-        }
-    };
-    /**
-     * @param {?} factory
-     * @param {?} ngContentSelectors
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.initComponentFactory = /**
-     * @param {?} factory
-     * @param {?} ngContentSelectors
-     * @return {?}
-     */
-    function (factory, ngContentSelectors) {
-        if (!(factory instanceof StaticSymbol)) {
-            (_a = (/** @type {?} */ (factory)).ngContentSelectors).push.apply(_a, ngContentSelectors);
-        }
-        var _a;
-    };
-    /**
-     * @param {?} type
-     * @param {?} kind
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._loadSummary = /**
-     * @param {?} type
-     * @param {?} kind
-     * @return {?}
-     */
-    function (type, kind) {
-        var /** @type {?} */ typeSummary = this._summaryCache.get(type);
-        if (!typeSummary) {
-            var /** @type {?} */ summary = this._summaryResolver.resolveSummary(type);
-            typeSummary = summary ? summary.type : null;
-            this._summaryCache.set(type, typeSummary || null);
-        }
-        return typeSummary && typeSummary.summaryKind === kind ? typeSummary : null;
-    };
-    /**
-     * @param {?} compMeta
-     * @param {?=} hostViewType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getHostComponentMetadata = /**
-     * @param {?} compMeta
-     * @param {?=} hostViewType
-     * @return {?}
-     */
-    function (compMeta, hostViewType) {
-        var /** @type {?} */ hostType = this.getHostComponentType(compMeta.type.reference);
-        if (!hostViewType) {
-            hostViewType = this.getHostComponentViewClass(hostType);
-        }
-        // Note: ! is ok here as this method should only be called with normalized directive
-        // metadata, which always fills in the selector.
-        var /** @type {?} */ template = CssSelector.parse(/** @type {?} */ ((compMeta.selector)))[0].getMatchingElementTemplate();
-        var /** @type {?} */ templateUrl = '';
-        var /** @type {?} */ htmlAst = this._htmlParser.parse(template, templateUrl);
-        return CompileDirectiveMetadata.create({
-            isHost: true,
-            type: { reference: hostType, diDeps: [], lifecycleHooks: [] },
-            template: new CompileTemplateMetadata({
-                encapsulation: ViewEncapsulation.None,
-                template: template,
-                templateUrl: templateUrl,
-                htmlAst: htmlAst,
-                styles: [],
-                styleUrls: [],
-                ngContentSelectors: [],
-                animations: [],
-                isInline: true,
-                externalStylesheets: [],
-                interpolation: null,
-                preserveWhitespaces: false,
-            }),
-            exportAs: null,
-            changeDetection: ChangeDetectionStrategy.Default,
-            inputs: [],
-            outputs: [],
-            host: {},
-            isComponent: true,
-            selector: '*',
-            providers: [],
-            viewProviders: [],
-            queries: [],
-            viewQueries: [],
-            componentViewType: hostViewType,
-            rendererType: /** @type {?} */ ({ id: '__Host__', encapsulation: ViewEncapsulation.None, styles: [], data: {} }),
-            entryComponents: [],
-            componentFactory: null
-        });
-    };
-    /**
-     * @param {?} ngModuleType
-     * @param {?} directiveType
-     * @param {?} isSync
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.loadDirectiveMetadata = /**
-     * @param {?} ngModuleType
-     * @param {?} directiveType
-     * @param {?} isSync
-     * @return {?}
-     */
-    function (ngModuleType, directiveType, isSync) {
-        var _this = this;
-        if (this._directiveCache.has(directiveType)) {
-            return null;
-        }
-        directiveType = resolveForwardRef(directiveType);
-        var _a = /** @type {?} */ ((this.getNonNormalizedDirectiveMetadata(directiveType))), annotation = _a.annotation, metadata = _a.metadata;
-        var /** @type {?} */ createDirectiveMetadata = function (templateMetadata) {
-            var /** @type {?} */ normalizedDirMeta = new CompileDirectiveMetadata({
-                isHost: false,
-                type: metadata.type,
-                isComponent: metadata.isComponent,
-                selector: metadata.selector,
-                exportAs: metadata.exportAs,
-                changeDetection: metadata.changeDetection,
-                inputs: metadata.inputs,
-                outputs: metadata.outputs,
-                hostListeners: metadata.hostListeners,
-                hostProperties: metadata.hostProperties,
-                hostAttributes: metadata.hostAttributes,
-                providers: metadata.providers,
-                viewProviders: metadata.viewProviders,
-                queries: metadata.queries,
-                viewQueries: metadata.viewQueries,
-                entryComponents: metadata.entryComponents,
-                componentViewType: metadata.componentViewType,
-                rendererType: metadata.rendererType,
-                componentFactory: metadata.componentFactory,
-                template: templateMetadata
-            });
-            if (templateMetadata) {
-                _this.initComponentFactory(/** @type {?} */ ((metadata.componentFactory)), templateMetadata.ngContentSelectors);
-            }
-            _this._directiveCache.set(directiveType, normalizedDirMeta);
-            _this._summaryCache.set(directiveType, normalizedDirMeta.toSummary());
-            return null;
-        };
-        if (metadata.isComponent) {
-            var /** @type {?} */ template = /** @type {?} */ ((metadata.template));
-            var /** @type {?} */ templateMeta = this._directiveNormalizer.normalizeTemplate({
-                ngModuleType: ngModuleType,
-                componentType: directiveType,
-                moduleUrl: this._reflector.componentModuleUrl(directiveType, annotation),
-                encapsulation: template.encapsulation,
-                template: template.template,
-                templateUrl: template.templateUrl,
-                styles: template.styles,
-                styleUrls: template.styleUrls,
-                animations: template.animations,
-                interpolation: template.interpolation,
-                preserveWhitespaces: template.preserveWhitespaces
-            });
-            if (isPromise(templateMeta) && isSync) {
-                this._reportError(componentStillLoadingError(directiveType), directiveType);
-                return null;
-            }
-            return SyncAsync.then(templateMeta, createDirectiveMetadata);
-        }
-        else {
-            // directive
-            createDirectiveMetadata(null);
-            return null;
-        }
-    };
-    /**
-     * @param {?} directiveType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getNonNormalizedDirectiveMetadata = /**
-     * @param {?} directiveType
-     * @return {?}
-     */
-    function (directiveType) {
-        var _this = this;
-        directiveType = resolveForwardRef(directiveType);
-        if (!directiveType) {
-            return null;
-        }
-        var /** @type {?} */ cacheEntry = this._nonNormalizedDirectiveCache.get(directiveType);
-        if (cacheEntry) {
-            return cacheEntry;
-        }
-        var /** @type {?} */ dirMeta = this._directiveResolver.resolve(directiveType, false);
-        if (!dirMeta) {
-            return null;
-        }
-        var /** @type {?} */ nonNormalizedTemplateMetadata = /** @type {?} */ ((undefined));
-        if (createComponent.isTypeOf(dirMeta)) {
-            // component
-            var /** @type {?} */ compMeta = /** @type {?} */ (dirMeta);
-            assertArrayOfStrings('styles', compMeta.styles);
-            assertArrayOfStrings('styleUrls', compMeta.styleUrls);
-            assertInterpolationSymbols('interpolation', compMeta.interpolation);
-            var /** @type {?} */ animations = compMeta.animations;
-            nonNormalizedTemplateMetadata = new CompileTemplateMetadata({
-                encapsulation: noUndefined(compMeta.encapsulation),
-                template: noUndefined(compMeta.template),
-                templateUrl: noUndefined(compMeta.templateUrl),
-                htmlAst: null,
-                styles: compMeta.styles || [],
-                styleUrls: compMeta.styleUrls || [],
-                animations: animations || [],
-                interpolation: noUndefined(compMeta.interpolation),
-                isInline: !!compMeta.template,
-                externalStylesheets: [],
-                ngContentSelectors: [],
-                preserveWhitespaces: noUndefined(dirMeta.preserveWhitespaces),
-            });
-        }
-        var /** @type {?} */ changeDetectionStrategy = /** @type {?} */ ((null));
-        var /** @type {?} */ viewProviders = [];
-        var /** @type {?} */ entryComponentMetadata = [];
-        var /** @type {?} */ selector = dirMeta.selector;
-        if (createComponent.isTypeOf(dirMeta)) {
-            // Component
-            var /** @type {?} */ compMeta = /** @type {?} */ (dirMeta);
-            changeDetectionStrategy = /** @type {?} */ ((compMeta.changeDetection));
-            if (compMeta.viewProviders) {
-                viewProviders = this._getProvidersMetadata(compMeta.viewProviders, entryComponentMetadata, "viewProviders for \"" + stringifyType(directiveType) + "\"", [], directiveType);
-            }
-            if (compMeta.entryComponents) {
-                entryComponentMetadata = flattenAndDedupeArray(compMeta.entryComponents)
-                    .map(function (type) { return ((_this._getEntryComponentMetadata(type))); })
-                    .concat(entryComponentMetadata);
-            }
-            if (!selector) {
-                selector = this._schemaRegistry.getDefaultComponentElementName();
-            }
-        }
-        else {
-            // Directive
-            if (!selector) {
-                this._reportError(syntaxError("Directive " + stringifyType(directiveType) + " has no selector, please add it!"), directiveType);
-                selector = 'error';
-            }
-        }
-        var /** @type {?} */ providers = [];
-        if (dirMeta.providers != null) {
-            providers = this._getProvidersMetadata(dirMeta.providers, entryComponentMetadata, "providers for \"" + stringifyType(directiveType) + "\"", [], directiveType);
-        }
-        var /** @type {?} */ queries = [];
-        var /** @type {?} */ viewQueries = [];
-        if (dirMeta.queries != null) {
-            queries = this._getQueriesMetadata(dirMeta.queries, false, directiveType);
-            viewQueries = this._getQueriesMetadata(dirMeta.queries, true, directiveType);
-        }
-        var /** @type {?} */ metadata = CompileDirectiveMetadata.create({
-            isHost: false,
-            selector: selector,
-            exportAs: noUndefined(dirMeta.exportAs),
-            isComponent: !!nonNormalizedTemplateMetadata,
-            type: this._getTypeMetadata(directiveType),
-            template: nonNormalizedTemplateMetadata,
-            changeDetection: changeDetectionStrategy,
-            inputs: dirMeta.inputs || [],
-            outputs: dirMeta.outputs || [],
-            host: dirMeta.host || {},
-            providers: providers || [],
-            viewProviders: viewProviders || [],
-            queries: queries || [],
-            viewQueries: viewQueries || [],
-            entryComponents: entryComponentMetadata,
-            componentViewType: nonNormalizedTemplateMetadata ? this.getComponentViewClass(directiveType) :
-                null,
-            rendererType: nonNormalizedTemplateMetadata ? this.getRendererType(directiveType) : null,
-            componentFactory: null
-        });
-        if (nonNormalizedTemplateMetadata) {
-            metadata.componentFactory =
-                this.getComponentFactory(selector, directiveType, metadata.inputs, metadata.outputs);
-        }
-        cacheEntry = { metadata: metadata, annotation: dirMeta };
-        this._nonNormalizedDirectiveCache.set(directiveType, cacheEntry);
-        return cacheEntry;
-    };
-    /**
-     * Gets the metadata for the given directive.
-     * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
-     */
-    /**
-     * Gets the metadata for the given directive.
-     * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
-     * @param {?} directiveType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getDirectiveMetadata = /**
-     * Gets the metadata for the given directive.
-     * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
-     * @param {?} directiveType
-     * @return {?}
-     */
-    function (directiveType) {
-        var /** @type {?} */ dirMeta = /** @type {?} */ ((this._directiveCache.get(directiveType)));
-        if (!dirMeta) {
-            this._reportError(syntaxError("Illegal state: getDirectiveMetadata can only be called after loadNgModuleDirectiveAndPipeMetadata for a module that declares it. Directive " + stringifyType(directiveType) + "."), directiveType);
-        }
-        return dirMeta;
-    };
-    /**
-     * @param {?} dirType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getDirectiveSummary = /**
-     * @param {?} dirType
-     * @return {?}
-     */
-    function (dirType) {
-        var /** @type {?} */ dirSummary = /** @type {?} */ (this._loadSummary(dirType, CompileSummaryKind.Directive));
-        if (!dirSummary) {
-            this._reportError(syntaxError("Illegal state: Could not load the summary for directive " + stringifyType(dirType) + "."), dirType);
-        }
-        return dirSummary;
-    };
-    /**
-     * @param {?} type
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.isDirective = /**
-     * @param {?} type
-     * @return {?}
-     */
-    function (type) {
-        return !!this._loadSummary(type, CompileSummaryKind.Directive) ||
-            this._directiveResolver.isDirective(type);
-    };
-    /**
-     * @param {?} type
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.isPipe = /**
-     * @param {?} type
-     * @return {?}
-     */
-    function (type) {
-        return !!this._loadSummary(type, CompileSummaryKind.Pipe) ||
-            this._pipeResolver.isPipe(type);
-    };
-    /**
-     * @param {?} type
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.isNgModule = /**
-     * @param {?} type
-     * @return {?}
-     */
-    function (type) {
-        return !!this._loadSummary(type, CompileSummaryKind.NgModule) ||
-            this._ngModuleResolver.isNgModule(type);
-    };
-    /**
-     * @param {?} moduleType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getNgModuleSummary = /**
-     * @param {?} moduleType
-     * @return {?}
-     */
-    function (moduleType) {
-        var /** @type {?} */ moduleSummary = /** @type {?} */ (this._loadSummary(moduleType, CompileSummaryKind.NgModule));
-        if (!moduleSummary) {
-            var /** @type {?} */ moduleMeta = this.getNgModuleMetadata(moduleType, false);
-            moduleSummary = moduleMeta ? moduleMeta.toSummary() : null;
-            if (moduleSummary) {
-                this._summaryCache.set(moduleType, moduleSummary);
-            }
-        }
-        return moduleSummary;
-    };
-    /**
-     * Loads the declared directives and pipes of an NgModule.
-     */
-    /**
-     * Loads the declared directives and pipes of an NgModule.
-     * @param {?} moduleType
-     * @param {?} isSync
-     * @param {?=} throwIfNotFound
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.loadNgModuleDirectiveAndPipeMetadata = /**
-     * Loads the declared directives and pipes of an NgModule.
-     * @param {?} moduleType
-     * @param {?} isSync
-     * @param {?=} throwIfNotFound
-     * @return {?}
-     */
-    function (moduleType, isSync, throwIfNotFound) {
-        var _this = this;
-        if (throwIfNotFound === void 0) { throwIfNotFound = true; }
-        var /** @type {?} */ ngModule = this.getNgModuleMetadata(moduleType, throwIfNotFound);
-        var /** @type {?} */ loading = [];
-        if (ngModule) {
-            ngModule.declaredDirectives.forEach(function (id) {
-                var /** @type {?} */ promise = _this.loadDirectiveMetadata(moduleType, id.reference, isSync);
-                if (promise) {
-                    loading.push(promise);
-                }
-            });
-            ngModule.declaredPipes.forEach(function (id) { return _this._loadPipeMetadata(id.reference); });
-        }
-        return Promise.all(loading);
-    };
-    /**
-     * @param {?} moduleType
-     * @param {?=} throwIfNotFound
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getNgModuleMetadata = /**
-     * @param {?} moduleType
-     * @param {?=} throwIfNotFound
-     * @return {?}
-     */
-    function (moduleType, throwIfNotFound) {
-        var _this = this;
-        if (throwIfNotFound === void 0) { throwIfNotFound = true; }
-        moduleType = resolveForwardRef(moduleType);
-        var /** @type {?} */ compileMeta = this._ngModuleCache.get(moduleType);
-        if (compileMeta) {
-            return compileMeta;
-        }
-        var /** @type {?} */ meta = this._ngModuleResolver.resolve(moduleType, throwIfNotFound);
-        if (!meta) {
-            return null;
-        }
-        var /** @type {?} */ declaredDirectives = [];
-        var /** @type {?} */ exportedNonModuleIdentifiers = [];
-        var /** @type {?} */ declaredPipes = [];
-        var /** @type {?} */ importedModules = [];
-        var /** @type {?} */ exportedModules = [];
-        var /** @type {?} */ providers = [];
-        var /** @type {?} */ entryComponents = [];
-        var /** @type {?} */ bootstrapComponents = [];
-        var /** @type {?} */ schemas = [];
-        if (meta.imports) {
-            flattenAndDedupeArray(meta.imports).forEach(function (importedType) {
-                var /** @type {?} */ importedModuleType = /** @type {?} */ ((undefined));
-                if (isValidType(importedType)) {
-                    importedModuleType = importedType;
-                }
-                else if (importedType && importedType.ngModule) {
-                    var /** @type {?} */ moduleWithProviders = importedType;
-                    importedModuleType = moduleWithProviders.ngModule;
-                    if (moduleWithProviders.providers) {
-                        providers.push.apply(providers, _this._getProvidersMetadata(moduleWithProviders.providers, entryComponents, "provider for the NgModule '" + stringifyType(importedModuleType) + "'", [], importedType));
-                    }
-                }
-                if (importedModuleType) {
-                    if (_this._checkSelfImport(moduleType, importedModuleType))
-                        return;
-                    var /** @type {?} */ importedModuleSummary = _this.getNgModuleSummary(importedModuleType);
-                    if (!importedModuleSummary) {
-                        _this._reportError(syntaxError("Unexpected " + _this._getTypeDescriptor(importedType) + " '" + stringifyType(importedType) + "' imported by the module '" + stringifyType(moduleType) + "'. Please add a @NgModule annotation."), moduleType);
-                        return;
-                    }
-                    importedModules.push(importedModuleSummary);
-                }
-                else {
-                    _this._reportError(syntaxError("Unexpected value '" + stringifyType(importedType) + "' imported by the module '" + stringifyType(moduleType) + "'"), moduleType);
-                    return;
-                }
-            });
-        }
-        if (meta.exports) {
-            flattenAndDedupeArray(meta.exports).forEach(function (exportedType) {
-                if (!isValidType(exportedType)) {
-                    _this._reportError(syntaxError("Unexpected value '" + stringifyType(exportedType) + "' exported by the module '" + stringifyType(moduleType) + "'"), moduleType);
-                    return;
-                }
-                var /** @type {?} */ exportedModuleSummary = _this.getNgModuleSummary(exportedType);
-                if (exportedModuleSummary) {
-                    exportedModules.push(exportedModuleSummary);
-                }
-                else {
-                    exportedNonModuleIdentifiers.push(_this._getIdentifierMetadata(exportedType));
-                }
-            });
-        }
-        // Note: This will be modified later, so we rely on
-        // getting a new instance every time!
-        var /** @type {?} */ transitiveModule = this._getTransitiveNgModuleMetadata(importedModules, exportedModules);
-        if (meta.declarations) {
-            flattenAndDedupeArray(meta.declarations).forEach(function (declaredType) {
-                if (!isValidType(declaredType)) {
-                    _this._reportError(syntaxError("Unexpected value '" + stringifyType(declaredType) + "' declared by the module '" + stringifyType(moduleType) + "'"), moduleType);
-                    return;
-                }
-                var /** @type {?} */ declaredIdentifier = _this._getIdentifierMetadata(declaredType);
-                if (_this.isDirective(declaredType)) {
-                    transitiveModule.addDirective(declaredIdentifier);
-                    declaredDirectives.push(declaredIdentifier);
-                    _this._addTypeToModule(declaredType, moduleType);
-                }
-                else if (_this.isPipe(declaredType)) {
-                    transitiveModule.addPipe(declaredIdentifier);
-                    transitiveModule.pipes.push(declaredIdentifier);
-                    declaredPipes.push(declaredIdentifier);
-                    _this._addTypeToModule(declaredType, moduleType);
-                }
-                else {
-                    _this._reportError(syntaxError("Unexpected " + _this._getTypeDescriptor(declaredType) + " '" + stringifyType(declaredType) + "' declared by the module '" + stringifyType(moduleType) + "'. Please add a @Pipe/@Directive/@Component annotation."), moduleType);
-                    return;
-                }
-            });
-        }
-        var /** @type {?} */ exportedDirectives = [];
-        var /** @type {?} */ exportedPipes = [];
-        exportedNonModuleIdentifiers.forEach(function (exportedId) {
-            if (transitiveModule.directivesSet.has(exportedId.reference)) {
-                exportedDirectives.push(exportedId);
-                transitiveModule.addExportedDirective(exportedId);
-            }
-            else if (transitiveModule.pipesSet.has(exportedId.reference)) {
-                exportedPipes.push(exportedId);
-                transitiveModule.addExportedPipe(exportedId);
-            }
-            else {
-                _this._reportError(syntaxError("Can't export " + _this._getTypeDescriptor(exportedId.reference) + " " + stringifyType(exportedId.reference) + " from " + stringifyType(moduleType) + " as it was neither declared nor imported!"), moduleType);
-                return;
-            }
-        });
-        // The providers of the module have to go last
-        // so that they overwrite any other provider we already added.
-        if (meta.providers) {
-            providers.push.apply(providers, this._getProvidersMetadata(meta.providers, entryComponents, "provider for the NgModule '" + stringifyType(moduleType) + "'", [], moduleType));
-        }
-        if (meta.entryComponents) {
-            entryComponents.push.apply(entryComponents, flattenAndDedupeArray(meta.entryComponents)
-                .map(function (type) { return ((_this._getEntryComponentMetadata(type))); }));
-        }
-        if (meta.bootstrap) {
-            flattenAndDedupeArray(meta.bootstrap).forEach(function (type) {
-                if (!isValidType(type)) {
-                    _this._reportError(syntaxError("Unexpected value '" + stringifyType(type) + "' used in the bootstrap property of module '" + stringifyType(moduleType) + "'"), moduleType);
-                    return;
-                }
-                bootstrapComponents.push(_this._getIdentifierMetadata(type));
-            });
-        }
-        entryComponents.push.apply(entryComponents, bootstrapComponents.map(function (type) { return ((_this._getEntryComponentMetadata(type.reference))); }));
-        if (meta.schemas) {
-            schemas.push.apply(schemas, flattenAndDedupeArray(meta.schemas));
-        }
-        compileMeta = new CompileNgModuleMetadata({
-            type: this._getTypeMetadata(moduleType),
-            providers: providers,
-            entryComponents: entryComponents,
-            bootstrapComponents: bootstrapComponents,
-            schemas: schemas,
-            declaredDirectives: declaredDirectives,
-            exportedDirectives: exportedDirectives,
-            declaredPipes: declaredPipes,
-            exportedPipes: exportedPipes,
-            importedModules: importedModules,
-            exportedModules: exportedModules,
-            transitiveModule: transitiveModule,
-            id: meta.id || null,
-        });
-        entryComponents.forEach(function (id) { return transitiveModule.addEntryComponent(id); });
-        providers.forEach(function (provider) { return transitiveModule.addProvider(provider, /** @type {?} */ ((compileMeta)).type); });
-        transitiveModule.addModule(compileMeta.type);
-        this._ngModuleCache.set(moduleType, compileMeta);
-        return compileMeta;
-    };
-    /**
-     * @param {?} moduleType
-     * @param {?} importedModuleType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._checkSelfImport = /**
-     * @param {?} moduleType
-     * @param {?} importedModuleType
-     * @return {?}
-     */
-    function (moduleType, importedModuleType) {
-        if (moduleType === importedModuleType) {
-            this._reportError(syntaxError("'" + stringifyType(moduleType) + "' module can't import itself"), moduleType);
-            return true;
-        }
-        return false;
-    };
-    /**
-     * @param {?} type
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._getTypeDescriptor = /**
-     * @param {?} type
-     * @return {?}
-     */
-    function (type) {
-        if (isValidType(type)) {
-            if (this.isDirective(type)) {
-                return 'directive';
-            }
-            if (this.isPipe(type)) {
-                return 'pipe';
-            }
-            if (this.isNgModule(type)) {
-                return 'module';
-            }
-        }
-        if ((/** @type {?} */ (type)).provide) {
-            return 'provider';
-        }
-        return 'value';
-    };
-    /**
-     * @param {?} type
-     * @param {?} moduleType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._addTypeToModule = /**
-     * @param {?} type
-     * @param {?} moduleType
-     * @return {?}
-     */
-    function (type, moduleType) {
-        var /** @type {?} */ oldModule = this._ngModuleOfTypes.get(type);
-        if (oldModule && oldModule !== moduleType) {
-            this._reportError(syntaxError("Type " + stringifyType(type) + " is part of the declarations of 2 modules: " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + "! " +
-                ("Please consider moving " + stringifyType(type) + " to a higher module that imports " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + ". ") +
-                ("You can also create a new NgModule that exports and includes " + stringifyType(type) + " then import that NgModule in " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + ".")), moduleType);
-            return;
-        }
-        this._ngModuleOfTypes.set(type, moduleType);
-    };
-    /**
-     * @param {?} importedModules
-     * @param {?} exportedModules
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._getTransitiveNgModuleMetadata = /**
-     * @param {?} importedModules
-     * @param {?} exportedModules
-     * @return {?}
-     */
-    function (importedModules, exportedModules) {
-        // collect `providers` / `entryComponents` from all imported and all exported modules
-        var /** @type {?} */ result = new TransitiveCompileNgModuleMetadata();
-        var /** @type {?} */ modulesByToken = new Map();
-        importedModules.concat(exportedModules).forEach(function (modSummary) {
-            modSummary.modules.forEach(function (mod) { return result.addModule(mod); });
-            modSummary.entryComponents.forEach(function (comp) { return result.addEntryComponent(comp); });
-            var /** @type {?} */ addedTokens = new Set();
-            modSummary.providers.forEach(function (entry) {
-                var /** @type {?} */ tokenRef = tokenReference(entry.provider.token);
-                var /** @type {?} */ prevModules = modulesByToken.get(tokenRef);
-                if (!prevModules) {
-                    prevModules = new Set();
-                    modulesByToken.set(tokenRef, prevModules);
-                }
-                var /** @type {?} */ moduleRef = entry.module.reference;
-                // Note: the providers of one module may still contain multiple providers
-                // per token (e.g. for multi providers), and we need to preserve these.
-                if (addedTokens.has(tokenRef) || !prevModules.has(moduleRef)) {
-                    prevModules.add(moduleRef);
-                    addedTokens.add(tokenRef);
-                    result.addProvider(entry.provider, entry.module);
-                }
-            });
-        });
-        exportedModules.forEach(function (modSummary) {
-            modSummary.exportedDirectives.forEach(function (id) { return result.addExportedDirective(id); });
-            modSummary.exportedPipes.forEach(function (id) { return result.addExportedPipe(id); });
-        });
-        importedModules.forEach(function (modSummary) {
-            modSummary.exportedDirectives.forEach(function (id) { return result.addDirective(id); });
-            modSummary.exportedPipes.forEach(function (id) { return result.addPipe(id); });
-        });
-        return result;
-    };
-    /**
-     * @param {?} type
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._getIdentifierMetadata = /**
-     * @param {?} type
-     * @return {?}
-     */
-    function (type) {
-        type = resolveForwardRef(type);
-        return { reference: type };
-    };
-    /**
-     * @param {?} type
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.isInjectable = /**
-     * @param {?} type
-     * @return {?}
-     */
-    function (type) {
-        var /** @type {?} */ annotations = this._reflector.annotations(type);
-        return annotations.some(function (ann) { return createInjectable.isTypeOf(ann); });
-    };
-    /**
-     * @param {?} type
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getInjectableSummary = /**
-     * @param {?} type
-     * @return {?}
-     */
-    function (type) {
-        return {
-            summaryKind: CompileSummaryKind.Injectable,
-            type: this._getTypeMetadata(type, null, false)
-        };
-    };
-    /**
-     * @param {?} type
-     * @param {?=} dependencies
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._getInjectableMetadata = /**
-     * @param {?} type
-     * @param {?=} dependencies
-     * @return {?}
-     */
-    function (type, dependencies) {
-        if (dependencies === void 0) { dependencies = null; }
-        var /** @type {?} */ typeSummary = this._loadSummary(type, CompileSummaryKind.Injectable);
-        if (typeSummary) {
-            return typeSummary.type;
-        }
-        return this._getTypeMetadata(type, dependencies);
-    };
-    /**
-     * @param {?} type
-     * @param {?=} dependencies
-     * @param {?=} throwOnUnknownDeps
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._getTypeMetadata = /**
-     * @param {?} type
-     * @param {?=} dependencies
-     * @param {?=} throwOnUnknownDeps
-     * @return {?}
-     */
-    function (type, dependencies, throwOnUnknownDeps) {
-        if (dependencies === void 0) { dependencies = null; }
-        if (throwOnUnknownDeps === void 0) { throwOnUnknownDeps = true; }
-        var /** @type {?} */ identifier = this._getIdentifierMetadata(type);
-        return {
-            reference: identifier.reference,
-            diDeps: this._getDependenciesMetadata(identifier.reference, dependencies, throwOnUnknownDeps),
-            lifecycleHooks: getAllLifecycleHooks(this._reflector, identifier.reference),
-        };
-    };
-    /**
-     * @param {?} factory
-     * @param {?=} dependencies
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._getFactoryMetadata = /**
-     * @param {?} factory
-     * @param {?=} dependencies
-     * @return {?}
-     */
-    function (factory, dependencies) {
-        if (dependencies === void 0) { dependencies = null; }
-        factory = resolveForwardRef(factory);
-        return { reference: factory, diDeps: this._getDependenciesMetadata(factory, dependencies) };
-    };
-    /**
-     * Gets the metadata for the given pipe.
-     * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
-     */
-    /**
-     * Gets the metadata for the given pipe.
-     * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
-     * @param {?} pipeType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getPipeMetadata = /**
-     * Gets the metadata for the given pipe.
-     * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
-     * @param {?} pipeType
-     * @return {?}
-     */
-    function (pipeType) {
-        var /** @type {?} */ pipeMeta = this._pipeCache.get(pipeType);
-        if (!pipeMeta) {
-            this._reportError(syntaxError("Illegal state: getPipeMetadata can only be called after loadNgModuleDirectiveAndPipeMetadata for a module that declares it. Pipe " + stringifyType(pipeType) + "."), pipeType);
-        }
-        return pipeMeta || null;
-    };
-    /**
-     * @param {?} pipeType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getPipeSummary = /**
-     * @param {?} pipeType
-     * @return {?}
-     */
-    function (pipeType) {
-        var /** @type {?} */ pipeSummary = /** @type {?} */ (this._loadSummary(pipeType, CompileSummaryKind.Pipe));
-        if (!pipeSummary) {
-            this._reportError(syntaxError("Illegal state: Could not load the summary for pipe " + stringifyType(pipeType) + "."), pipeType);
-        }
-        return pipeSummary;
-    };
-    /**
-     * @param {?} pipeType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getOrLoadPipeMetadata = /**
-     * @param {?} pipeType
-     * @return {?}
-     */
-    function (pipeType) {
-        var /** @type {?} */ pipeMeta = this._pipeCache.get(pipeType);
-        if (!pipeMeta) {
-            pipeMeta = this._loadPipeMetadata(pipeType);
-        }
-        return pipeMeta;
-    };
-    /**
-     * @param {?} pipeType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._loadPipeMetadata = /**
-     * @param {?} pipeType
-     * @return {?}
-     */
-    function (pipeType) {
-        pipeType = resolveForwardRef(pipeType);
-        var /** @type {?} */ pipeAnnotation = /** @type {?} */ ((this._pipeResolver.resolve(pipeType)));
-        var /** @type {?} */ pipeMeta = new CompilePipeMetadata({
-            type: this._getTypeMetadata(pipeType),
-            name: pipeAnnotation.name,
-            pure: !!pipeAnnotation.pure
-        });
-        this._pipeCache.set(pipeType, pipeMeta);
-        this._summaryCache.set(pipeType, pipeMeta.toSummary());
-        return pipeMeta;
-    };
-    /**
-     * @param {?} typeOrFunc
-     * @param {?} dependencies
-     * @param {?=} throwOnUnknownDeps
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._getDependenciesMetadata = /**
-     * @param {?} typeOrFunc
-     * @param {?} dependencies
-     * @param {?=} throwOnUnknownDeps
-     * @return {?}
-     */
-    function (typeOrFunc, dependencies, throwOnUnknownDeps) {
-        var _this = this;
-        if (throwOnUnknownDeps === void 0) { throwOnUnknownDeps = true; }
-        var /** @type {?} */ hasUnknownDeps = false;
-        var /** @type {?} */ params = dependencies || this._reflector.parameters(typeOrFunc) || [];
-        var /** @type {?} */ dependenciesMetadata = params.map(function (param) {
-            var /** @type {?} */ isAttribute = false;
-            var /** @type {?} */ isHost = false;
-            var /** @type {?} */ isSelf = false;
-            var /** @type {?} */ isSkipSelf = false;
-            var /** @type {?} */ isOptional = false;
-            var /** @type {?} */ token = null;
-            if (Array.isArray(param)) {
-                param.forEach(function (paramEntry) {
-                    if (createHost.isTypeOf(paramEntry)) {
-                        isHost = true;
-                    }
-                    else if (createSelf.isTypeOf(paramEntry)) {
-                        isSelf = true;
-                    }
-                    else if (createSkipSelf.isTypeOf(paramEntry)) {
-                        isSkipSelf = true;
-                    }
-                    else if (createOptional.isTypeOf(paramEntry)) {
-                        isOptional = true;
-                    }
-                    else if (createAttribute.isTypeOf(paramEntry)) {
-                        isAttribute = true;
-                        token = paramEntry.attributeName;
-                    }
-                    else if (createInject.isTypeOf(paramEntry)) {
-                        token = paramEntry.token;
-                    }
-                    else if (createInjectionToken.isTypeOf(paramEntry) || paramEntry instanceof StaticSymbol) {
-                        token = paramEntry;
-                    }
-                    else if (isValidType(paramEntry) && token == null) {
-                        token = paramEntry;
-                    }
-                });
-            }
-            else {
-                token = param;
-            }
-            if (token == null) {
-                hasUnknownDeps = true;
-                return /** @type {?} */ ((null));
-            }
-            return {
-                isAttribute: isAttribute,
-                isHost: isHost,
-                isSelf: isSelf,
-                isSkipSelf: isSkipSelf,
-                isOptional: isOptional,
-                token: _this._getTokenMetadata(token)
-            };
-        });
-        if (hasUnknownDeps) {
-            var /** @type {?} */ depsTokens = dependenciesMetadata.map(function (dep) { return dep ? stringifyType(dep.token) : '?'; }).join(', ');
-            var /** @type {?} */ message = "Can't resolve all parameters for " + stringifyType(typeOrFunc) + ": (" + depsTokens + ").";
-            if (throwOnUnknownDeps || this._config.strictInjectionParameters) {
-                this._reportError(syntaxError(message), typeOrFunc);
-            }
-            else {
-                this._console.warn("Warning: " + message + " This will become an error in Angular v6.x");
-            }
-        }
-        return dependenciesMetadata;
-    };
-    /**
-     * @param {?} token
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._getTokenMetadata = /**
-     * @param {?} token
-     * @return {?}
-     */
-    function (token) {
-        token = resolveForwardRef(token);
-        var /** @type {?} */ compileToken;
-        if (typeof token === 'string') {
-            compileToken = { value: token };
-        }
-        else {
-            compileToken = { identifier: { reference: token } };
-        }
-        return compileToken;
-    };
-    /**
-     * @param {?} providers
-     * @param {?} targetEntryComponents
-     * @param {?=} debugInfo
-     * @param {?=} compileProviders
-     * @param {?=} type
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._getProvidersMetadata = /**
-     * @param {?} providers
-     * @param {?} targetEntryComponents
-     * @param {?=} debugInfo
-     * @param {?=} compileProviders
-     * @param {?=} type
-     * @return {?}
-     */
-    function (providers, targetEntryComponents, debugInfo, compileProviders, type) {
-        var _this = this;
-        if (compileProviders === void 0) { compileProviders = []; }
-        providers.forEach(function (provider, providerIdx) {
-            if (Array.isArray(provider)) {
-                _this._getProvidersMetadata(provider, targetEntryComponents, debugInfo, compileProviders);
-            }
-            else {
-                provider = resolveForwardRef(provider);
-                var /** @type {?} */ providerMeta = /** @type {?} */ ((undefined));
-                if (provider && typeof provider === 'object' && provider.hasOwnProperty('provide')) {
-                    _this._validateProvider(provider);
-                    providerMeta = new ProviderMeta(provider.provide, provider);
-                }
-                else if (isValidType(provider)) {
-                    providerMeta = new ProviderMeta(provider, { useClass: provider });
-                }
-                else if (provider === void 0) {
-                    _this._reportError(syntaxError("Encountered undefined provider! Usually this means you have a circular dependencies (might be caused by using 'barrel' index.ts files."));
-                    return;
-                }
-                else {
-                    var /** @type {?} */ providersInfo = (/** @type {?} */ (providers.reduce(function (soFar, seenProvider, seenProviderIdx) {
-                        if (seenProviderIdx < providerIdx) {
-                            soFar.push("" + stringifyType(seenProvider));
-                        }
-                        else if (seenProviderIdx == providerIdx) {
-                            soFar.push("?" + stringifyType(seenProvider) + "?");
-                        }
-                        else if (seenProviderIdx == providerIdx + 1) {
-                            soFar.push('...');
-                        }
-                        return soFar;
-                    }, [])))
-                        .join(', ');
-                    _this._reportError(syntaxError("Invalid " + (debugInfo ? debugInfo : 'provider') + " - only instances of Provider and Type are allowed, got: [" + providersInfo + "]"), type);
-                    return;
-                }
-                if (providerMeta.token ===
-                    _this._reflector.resolveExternalReference(Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS)) {
-                    targetEntryComponents.push.apply(targetEntryComponents, _this._getEntryComponentsFromProvider(providerMeta, type));
-                }
-                else {
-                    compileProviders.push(_this.getProviderMetadata(providerMeta));
-                }
-            }
-        });
-        return compileProviders;
-    };
-    /**
-     * @param {?} provider
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._validateProvider = /**
-     * @param {?} provider
-     * @return {?}
-     */
-    function (provider) {
-        if (provider.hasOwnProperty('useClass') && provider.useClass == null) {
-            this._reportError(syntaxError("Invalid provider for " + stringifyType(provider.provide) + ". useClass cannot be " + provider.useClass + ".\n           Usually it happens when:\n           1. There's a circular dependency (might be caused by using index.ts (barrel) files).\n           2. Class was used before it was declared. Use forwardRef in this case."));
-        }
-    };
-    /**
-     * @param {?} provider
-     * @param {?=} type
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._getEntryComponentsFromProvider = /**
-     * @param {?} provider
-     * @param {?=} type
-     * @return {?}
-     */
-    function (provider, type) {
-        var _this = this;
-        var /** @type {?} */ components = [];
-        var /** @type {?} */ collectedIdentifiers = [];
-        if (provider.useFactory || provider.useExisting || provider.useClass) {
-            this._reportError(syntaxError("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports useValue!"), type);
-            return [];
-        }
-        if (!provider.multi) {
-            this._reportError(syntaxError("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports 'multi = true'!"), type);
-            return [];
-        }
-        extractIdentifiers(provider.useValue, collectedIdentifiers);
-        collectedIdentifiers.forEach(function (identifier) {
-            var /** @type {?} */ entry = _this._getEntryComponentMetadata(identifier.reference, false);
-            if (entry) {
-                components.push(entry);
-            }
-        });
-        return components;
-    };
-    /**
-     * @param {?} dirType
-     * @param {?=} throwIfNotFound
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._getEntryComponentMetadata = /**
-     * @param {?} dirType
-     * @param {?=} throwIfNotFound
-     * @return {?}
-     */
-    function (dirType, throwIfNotFound) {
-        if (throwIfNotFound === void 0) { throwIfNotFound = true; }
-        var /** @type {?} */ dirMeta = this.getNonNormalizedDirectiveMetadata(dirType);
-        if (dirMeta && dirMeta.metadata.isComponent) {
-            return { componentType: dirType, componentFactory: /** @type {?} */ ((dirMeta.metadata.componentFactory)) };
-        }
-        var /** @type {?} */ dirSummary = /** @type {?} */ (this._loadSummary(dirType, CompileSummaryKind.Directive));
-        if (dirSummary && dirSummary.isComponent) {
-            return { componentType: dirType, componentFactory: /** @type {?} */ ((dirSummary.componentFactory)) };
-        }
-        if (throwIfNotFound) {
-            throw syntaxError(dirType.name + " cannot be used as an entry component.");
-        }
-        return null;
-    };
-    /**
-     * @param {?} provider
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getProviderMetadata = /**
-     * @param {?} provider
-     * @return {?}
-     */
-    function (provider) {
-        var /** @type {?} */ compileDeps = /** @type {?} */ ((undefined));
-        var /** @type {?} */ compileTypeMetadata = /** @type {?} */ ((null));
-        var /** @type {?} */ compileFactoryMetadata = /** @type {?} */ ((null));
-        var /** @type {?} */ token = this._getTokenMetadata(provider.token);
-        if (provider.useClass) {
-            compileTypeMetadata = this._getInjectableMetadata(provider.useClass, provider.dependencies);
-            compileDeps = compileTypeMetadata.diDeps;
-            if (provider.token === provider.useClass) {
-                // use the compileTypeMetadata as it contains information about lifecycleHooks...
-                token = { identifier: compileTypeMetadata };
-            }
-        }
-        else if (provider.useFactory) {
-            compileFactoryMetadata = this._getFactoryMetadata(provider.useFactory, provider.dependencies);
-            compileDeps = compileFactoryMetadata.diDeps;
-        }
-        return {
-            token: token,
-            useClass: compileTypeMetadata,
-            useValue: provider.useValue,
-            useFactory: compileFactoryMetadata,
-            useExisting: provider.useExisting ? this._getTokenMetadata(provider.useExisting) : undefined,
-            deps: compileDeps,
-            multi: provider.multi
-        };
-    };
-    /**
-     * @param {?} queries
-     * @param {?} isViewQuery
-     * @param {?} directiveType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._getQueriesMetadata = /**
-     * @param {?} queries
-     * @param {?} isViewQuery
-     * @param {?} directiveType
-     * @return {?}
-     */
-    function (queries, isViewQuery, directiveType) {
-        var _this = this;
-        var /** @type {?} */ res = [];
-        Object.keys(queries).forEach(function (propertyName) {
-            var /** @type {?} */ query = queries[propertyName];
-            if (query.isViewQuery === isViewQuery) {
-                res.push(_this._getQueryMetadata(query, propertyName, directiveType));
-            }
-        });
-        return res;
-    };
-    /**
-     * @param {?} selector
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._queryVarBindings = /**
-     * @param {?} selector
-     * @return {?}
-     */
-    function (selector) { return selector.split(/\s*,\s*/); };
-    /**
-     * @param {?} q
-     * @param {?} propertyName
-     * @param {?} typeOrFunc
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._getQueryMetadata = /**
-     * @param {?} q
-     * @param {?} propertyName
-     * @param {?} typeOrFunc
-     * @return {?}
-     */
-    function (q, propertyName, typeOrFunc) {
-        var _this = this;
-        var /** @type {?} */ selectors;
-        if (typeof q.selector === 'string') {
-            selectors =
-                this._queryVarBindings(q.selector).map(function (varName) { return _this._getTokenMetadata(varName); });
-        }
-        else {
-            if (!q.selector) {
-                this._reportError(syntaxError("Can't construct a query for the property \"" + propertyName + "\" of \"" + stringifyType(typeOrFunc) + "\" since the query selector wasn't defined."), typeOrFunc);
-                selectors = [];
-            }
-            else {
-                selectors = [this._getTokenMetadata(q.selector)];
-            }
-        }
-        return {
-            selectors: selectors,
-            first: q.first,
-            descendants: q.descendants, propertyName: propertyName,
-            read: q.read ? this._getTokenMetadata(q.read) : /** @type {?} */ ((null))
-        };
-    };
-    /**
-     * @param {?} error
-     * @param {?=} type
-     * @param {?=} otherType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._reportError = /**
-     * @param {?} error
-     * @param {?=} type
-     * @param {?=} otherType
-     * @return {?}
-     */
-    function (error, type, otherType) {
-        if (this._errorCollector) {
-            this._errorCollector(error, type);
-            if (otherType) {
-                this._errorCollector(error, otherType);
-            }
-        }
-        else {
-            throw error;
-        }
-    };
-    return CompileMetadataResolver;
-}());
-/**
- * @param {?} tree
- * @param {?=} out
- * @return {?}
- */
-function flattenArray(tree, out) {
-    if (out === void 0) { out = []; }
-    if (tree) {
-        for (var /** @type {?} */ i = 0; i < tree.length; i++) {
-            var /** @type {?} */ item = resolveForwardRef(tree[i]);
-            if (Array.isArray(item)) {
-                flattenArray(item, out);
-            }
-            else {
-                out.push(item);
-            }
-        }
-    }
-    return out;
-}
-/**
- * @param {?} array
- * @return {?}
- */
-function dedupeArray(array) {
-    if (array) {
-        return Array.from(new Set(array));
-    }
-    return [];
-}
-/**
- * @param {?} tree
- * @return {?}
- */
-function flattenAndDedupeArray(tree) {
-    return dedupeArray(flattenArray(tree));
-}
-/**
- * @param {?} value
- * @return {?}
- */
-function isValidType(value) {
-    return (value instanceof StaticSymbol) || (value instanceof Type);
-}
-/**
- * @param {?} value
- * @param {?} targetIdentifiers
- * @return {?}
- */
-function extractIdentifiers(value, targetIdentifiers) {
-    visitValue(value, new _CompileValueConverter(), targetIdentifiers);
-}
-var _CompileValueConverter = /** @class */ (function (_super) {
-    __extends(_CompileValueConverter, _super);
-    function _CompileValueConverter() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    /**
-     * @param {?} value
-     * @param {?} targetIdentifiers
-     * @return {?}
-     */
-    _CompileValueConverter.prototype.visitOther = /**
-     * @param {?} value
-     * @param {?} targetIdentifiers
-     * @return {?}
-     */
-    function (value, targetIdentifiers) {
-        targetIdentifiers.push({ reference: value });
-    };
-    return _CompileValueConverter;
-}(ValueTransformer));
-/**
- * @param {?} type
- * @return {?}
- */
-function stringifyType(type) {
-    if (type instanceof StaticSymbol) {
-        return type.name + " in " + type.filePath;
-    }
-    else {
-        return stringify(type);
-    }
-}
-/**
- * Indicates that a component is still being loaded in a synchronous compile.
- * @param {?} compType
- * @return {?}
- */
-function componentStillLoadingError(compType) {
-    var /** @type {?} */ error = Error("Can't compile synchronously as " + stringify(compType) + " is still being loaded!");
-    (/** @type {?} */ (error))[ERROR_COMPONENT_TYPE] = compType;
-    return error;
-}
-
-/**
- * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
- */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/** @enum {number} */
 var TypeModifier = {
     Const: 0,
 };
@@ -16159,7 +14375,7 @@ var BuiltinType = /** @class */ (function (_super) {
      * @return {?}
      */
     function (visitor, context) {
-        return visitor.visitBuiltintType(this, context);
+        return visitor.visitBuiltinType(this, context);
     };
     return BuiltinType;
 }(Type$1));
@@ -16650,7 +14866,7 @@ var ReadVarExpr = /** @class */ (function (_super) {
         }
         else {
             _this.name = null;
-            _this.builtin = /** @type {?} */ (name);
+            _this.builtin = name;
         }
         return _this;
     }
@@ -16665,6 +14881,13 @@ var ReadVarExpr = /** @class */ (function (_super) {
     function (e) {
         return e instanceof ReadVarExpr && this.name === e.name && this.builtin === e.builtin;
     };
+    /**
+     * @return {?}
+     */
+    ReadVarExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -16713,6 +14936,13 @@ var WriteVarExpr = /** @class */ (function (_super) {
     function (e) {
         return e instanceof WriteVarExpr && this.name === e.name && this.value.isEquivalent(e.value);
     };
+    /**
+     * @return {?}
+     */
+    WriteVarExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -16763,6 +14993,13 @@ var WriteKeyExpr = /** @class */ (function (_super) {
             this.index.isEquivalent(e.index) && this.value.isEquivalent(e.value);
     };
     /**
+     * @return {?}
+     */
+    WriteKeyExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -16798,6 +15035,13 @@ var WritePropExpr = /** @class */ (function (_super) {
         return e instanceof WritePropExpr && this.receiver.isEquivalent(e.receiver) &&
             this.name === e.name && this.value.isEquivalent(e.value);
     };
+    /**
+     * @return {?}
+     */
+    WritePropExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -16851,6 +15095,13 @@ var InvokeMethodExpr = /** @class */ (function (_super) {
             this.name === e.name && this.builtin === e.builtin && areAllEquivalent(this.args, e.args);
     };
     /**
+     * @return {?}
+     */
+    InvokeMethodExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -16885,6 +15136,13 @@ var InvokeFunctionExpr = /** @class */ (function (_super) {
         return e instanceof InvokeFunctionExpr && this.fn.isEquivalent(e.fn) &&
             areAllEquivalent(this.args, e.args);
     };
+    /**
+     * @return {?}
+     */
+    InvokeFunctionExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -16921,6 +15179,13 @@ var InstantiateExpr = /** @class */ (function (_super) {
             areAllEquivalent(this.args, e.args);
     };
     /**
+     * @return {?}
+     */
+    InstantiateExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -16953,6 +15218,13 @@ var LiteralExpr = /** @class */ (function (_super) {
     function (e) {
         return e instanceof LiteralExpr && this.value === e.value;
     };
+    /**
+     * @return {?}
+     */
+    LiteralExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return true; };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -16989,6 +15261,13 @@ var ExternalExpr = /** @class */ (function (_super) {
         return e instanceof ExternalExpr && this.value.name === e.value.name &&
             this.value.moduleName === e.value.moduleName && this.value.runtime === e.value.runtime;
     };
+    /**
+     * @return {?}
+     */
+    ExternalExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -17035,6 +15314,13 @@ var ConditionalExpr = /** @class */ (function (_super) {
             this.trueCase.isEquivalent(e.trueCase) && nullSafeIsEquivalent(this.falseCase, e.falseCase);
     };
     /**
+     * @return {?}
+     */
+    ConditionalExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -17067,6 +15353,13 @@ var NotExpr = /** @class */ (function (_super) {
     function (e) {
         return e instanceof NotExpr && this.condition.isEquivalent(e.condition);
     };
+    /**
+     * @return {?}
+     */
+    NotExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -17101,6 +15394,13 @@ var AssertNotNull = /** @class */ (function (_super) {
         return e instanceof AssertNotNull && this.condition.isEquivalent(e.condition);
     };
     /**
+     * @return {?}
+     */
+    AssertNotNull.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -17133,6 +15433,13 @@ var CastExpr = /** @class */ (function (_super) {
     function (e) {
         return e instanceof CastExpr && this.value.isEquivalent(e.value);
     };
+    /**
+     * @return {?}
+     */
+    CastExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -17167,10 +15474,11 @@ var FnParam = /** @class */ (function () {
 }());
 var FunctionExpr = /** @class */ (function (_super) {
     __extends(FunctionExpr, _super);
-    function FunctionExpr(params, statements, type, sourceSpan) {
+    function FunctionExpr(params, statements, type, sourceSpan, name) {
         var _this = _super.call(this, type, sourceSpan) || this;
         _this.params = params;
         _this.statements = statements;
+        _this.name = name;
         return _this;
     }
     /**
@@ -17185,6 +15493,13 @@ var FunctionExpr = /** @class */ (function (_super) {
         return e instanceof FunctionExpr && areAllEquivalent(this.params, e.params) &&
             areAllEquivalent(this.statements, e.statements);
     };
+    /**
+     * @return {?}
+     */
+    FunctionExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -17236,6 +15551,13 @@ var BinaryOperatorExpr = /** @class */ (function (_super) {
             this.lhs.isEquivalent(e.lhs) && this.rhs.isEquivalent(e.rhs);
     };
     /**
+     * @return {?}
+     */
+    BinaryOperatorExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -17270,6 +15592,13 @@ var ReadPropExpr = /** @class */ (function (_super) {
         return e instanceof ReadPropExpr && this.receiver.isEquivalent(e.receiver) &&
             this.name === e.name;
     };
+    /**
+     * @return {?}
+     */
+    ReadPropExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -17317,6 +15646,13 @@ var ReadKeyExpr = /** @class */ (function (_super) {
             this.index.isEquivalent(e.index);
     };
     /**
+     * @return {?}
+     */
+    ReadKeyExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -17349,6 +15685,13 @@ var LiteralArrayExpr = /** @class */ (function (_super) {
         _this.entries = entries;
         return _this;
     }
+    /**
+     * @return {?}
+     */
+    LiteralArrayExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return this.entries.every(function (e) { return e.isConstant(); }); };
     /**
      * @param {?} e
      * @return {?}
@@ -17417,6 +15760,13 @@ var LiteralMapExpr = /** @class */ (function (_super) {
         return e instanceof LiteralMapExpr && areAllEquivalent(this.entries, e.entries);
     };
     /**
+     * @return {?}
+     */
+    LiteralMapExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return this.entries.every(function (e) { return e.value.isConstant(); }); };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -17450,6 +15800,13 @@ var CommaExpr = /** @class */ (function (_super) {
         return e instanceof CommaExpr && areAllEquivalent(this.parts, e.parts);
     };
     /**
+     * @return {?}
+     */
+    CommaExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -17479,10 +15836,12 @@ var StmtModifier = {
     Final: 0,
     Private: 1,
     Exported: 2,
+    Static: 3,
 };
 StmtModifier[StmtModifier.Final] = "Final";
 StmtModifier[StmtModifier.Private] = "Private";
 StmtModifier[StmtModifier.Exported] = "Exported";
+StmtModifier[StmtModifier.Static] = "Static";
 /**
  * @abstract
  */
@@ -17509,7 +15868,7 @@ var DeclareVarStmt = /** @class */ (function (_super) {
         var _this = _super.call(this, modifiers, sourceSpan) || this;
         _this.name = name;
         _this.value = value;
-        _this.type = type || value.type;
+        _this.type = type || (value && value.type) || null;
         return _this;
     }
     /**
@@ -17522,7 +15881,7 @@ var DeclareVarStmt = /** @class */ (function (_super) {
      */
     function (stmt) {
         return stmt instanceof DeclareVarStmt && this.name === stmt.name &&
-            this.value.isEquivalent(stmt.value);
+            (this.value ? !!stmt.value && this.value.isEquivalent(stmt.value) : !stmt.value);
     };
     /**
      * @param {?} visitor
@@ -17664,10 +16023,11 @@ var AbstractClassPart = /** @class */ (function () {
 }());
 var ClassField = /** @class */ (function (_super) {
     __extends(ClassField, _super);
-    function ClassField(name, type, modifiers) {
+    function ClassField(name, type, modifiers, initializer) {
         if (modifiers === void 0) { modifiers = null; }
         var _this = _super.call(this, type, modifiers) || this;
         _this.name = name;
+        _this.initializer = initializer;
         return _this;
     }
     /**
@@ -17810,9 +16170,11 @@ var IfStmt = /** @class */ (function (_super) {
 }(Statement));
 var CommentStmt = /** @class */ (function (_super) {
     __extends(CommentStmt, _super);
-    function CommentStmt(comment, sourceSpan) {
+    function CommentStmt(comment, multiline, sourceSpan) {
+        if (multiline === void 0) { multiline = false; }
         var _this = _super.call(this, null, sourceSpan) || this;
         _this.comment = comment;
+        _this.multiline = multiline;
         return _this;
     }
     /**
@@ -17838,6 +16200,47 @@ var CommentStmt = /** @class */ (function (_super) {
         return visitor.visitCommentStmt(this, context);
     };
     return CommentStmt;
+}(Statement));
+var JSDocCommentStmt = /** @class */ (function (_super) {
+    __extends(JSDocCommentStmt, _super);
+    function JSDocCommentStmt(tags, sourceSpan) {
+        if (tags === void 0) { tags = []; }
+        var _this = _super.call(this, null, sourceSpan) || this;
+        _this.tags = tags;
+        return _this;
+    }
+    /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    JSDocCommentStmt.prototype.isEquivalent = /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    function (stmt) {
+        return stmt instanceof JSDocCommentStmt && this.toString() === stmt.toString();
+    };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    JSDocCommentStmt.prototype.visitStatement = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitJSDocCommentStmt(this, context);
+    };
+    /**
+     * @return {?}
+     */
+    JSDocCommentStmt.prototype.toString = /**
+     * @return {?}
+     */
+    function () { return serializeTags(this.tags); };
+    return JSDocCommentStmt;
 }(Statement));
 var TryCatchStmt = /** @class */ (function (_super) {
     __extends(TryCatchStmt, _super);
@@ -18223,7 +16626,8 @@ var AstTransformer$1 = /** @class */ (function () {
      * @return {?}
      */
     function (stmt, context) {
-        return this.transformStmt(new DeclareVarStmt(stmt.name, stmt.value.visitExpression(this, context), stmt.type, stmt.modifiers, stmt.sourceSpan), context);
+        var /** @type {?} */ value = stmt.value && stmt.value.visitExpression(this, context);
+        return this.transformStmt(new DeclareVarStmt(stmt.name, value, stmt.type, stmt.modifiers, stmt.sourceSpan), context);
     };
     /**
      * @param {?} stmt
@@ -18340,6 +16744,19 @@ var AstTransformer$1 = /** @class */ (function () {
         return this.transformStmt(stmt, context);
     };
     /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitJSDocCommentStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        return this.transformStmt(stmt, context);
+    };
+    /**
      * @param {?} stmts
      * @param {?} context
      * @return {?}
@@ -18390,7 +16807,7 @@ var RecursiveAstVisitor$1 = /** @class */ (function () {
      * @param {?} context
      * @return {?}
      */
-    RecursiveAstVisitor.prototype.visitBuiltintType = /**
+    RecursiveAstVisitor.prototype.visitBuiltinType = /**
      * @param {?} type
      * @param {?} context
      * @return {?}
@@ -18749,7 +17166,9 @@ var RecursiveAstVisitor$1 = /** @class */ (function () {
      * @return {?}
      */
     function (stmt, context) {
-        stmt.value.visitExpression(this, context);
+        if (stmt.value) {
+            stmt.value.visitExpression(this, context);
+        }
         if (stmt.type) {
             stmt.type.visitType(this, context);
         }
@@ -18871,6 +17290,17 @@ var RecursiveAstVisitor$1 = /** @class */ (function () {
      * @return {?}
      */
     RecursiveAstVisitor.prototype.visitCommentStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) { return stmt; };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitJSDocCommentStmt = /**
      * @param {?} stmt
      * @param {?} context
      * @return {?}
@@ -19146,10 +17576,20 @@ function assertNotNull(expr, sourceSpan) {
  * @param {?} body
  * @param {?=} type
  * @param {?=} sourceSpan
+ * @param {?=} name
  * @return {?}
  */
-function fn(params, body, type, sourceSpan) {
-    return new FunctionExpr(params, body, type, sourceSpan);
+function fn(params, body, type, sourceSpan, name) {
+    return new FunctionExpr(params, body, type, sourceSpan, name);
+}
+/**
+ * @param {?} condition
+ * @param {?} thenClause
+ * @param {?=} elseClause
+ * @return {?}
+ */
+function ifStmt(condition, thenClause, elseClause) {
+    return new IfStmt(condition, thenClause, elseClause);
 }
 /**
  * @param {?} value
@@ -19159,6 +17599,2614 @@ function fn(params, body, type, sourceSpan) {
  */
 function literal(value, type, sourceSpan) {
     return new LiteralExpr(value, type, sourceSpan);
+}
+/**
+ * @param {?} exp
+ * @return {?}
+ */
+function isNull(exp) {
+    return exp instanceof LiteralExpr && exp.value === null;
+}
+/**
+ * @param {?} tag
+ * @return {?}
+ */
+function tagToString(tag) {
+    var /** @type {?} */ out = '';
+    if (tag.tagName) {
+        out += " @" + tag.tagName;
+    }
+    if (tag.text) {
+        if (tag.text.match(/\/\*|\*\//)) {
+            throw new Error('JSDoc text cannot contain "/*" and "*/"');
+        }
+        out += ' ' + tag.text.replace(/@/g, '\\@');
+    }
+    return out;
+}
+/**
+ * @param {?} tags
+ * @return {?}
+ */
+function serializeTags(tags) {
+    if (tags.length === 0)
+        return '';
+    var /** @type {?} */ out = '*\n';
+    for (var _i = 0, tags_1 = tags; _i < tags_1.length; _i++) {
+        var tag = tags_1[_i];
+        out += ' *';
+        // If the tagToString is multi-line, insert " * " prefixes on subsequent lines.
+        out += tagToString(tag).replace(/\n/g, '\n * ');
+        out += '\n';
+    }
+    out += ' ';
+    return out;
+}
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var QUOTED_KEYS = '$quoted$';
+/**
+ * @param {?} ctx
+ * @param {?} value
+ * @param {?=} type
+ * @return {?}
+ */
+function convertValueToOutputAst(ctx, value, type) {
+    if (type === void 0) { type = null; }
+    return visitValue(value, new _ValueOutputAstTransformer(ctx), type);
+}
+var _ValueOutputAstTransformer = /** @class */ (function () {
+    function _ValueOutputAstTransformer(ctx) {
+        this.ctx = ctx;
+    }
+    /**
+     * @param {?} arr
+     * @param {?} type
+     * @return {?}
+     */
+    _ValueOutputAstTransformer.prototype.visitArray = /**
+     * @param {?} arr
+     * @param {?} type
+     * @return {?}
+     */
+    function (arr, type) {
+        var _this = this;
+        return literalArr(arr.map(function (value) { return visitValue(value, _this, null); }), type);
+    };
+    /**
+     * @param {?} map
+     * @param {?} type
+     * @return {?}
+     */
+    _ValueOutputAstTransformer.prototype.visitStringMap = /**
+     * @param {?} map
+     * @param {?} type
+     * @return {?}
+     */
+    function (map, type) {
+        var _this = this;
+        var /** @type {?} */ entries = [];
+        var /** @type {?} */ quotedSet = new Set(map && map[QUOTED_KEYS]);
+        Object.keys(map).forEach(function (key) {
+            entries.push(new LiteralMapEntry(key, visitValue(map[key], _this, null), quotedSet.has(key)));
+        });
+        return new LiteralMapExpr(entries, type);
+    };
+    /**
+     * @param {?} value
+     * @param {?} type
+     * @return {?}
+     */
+    _ValueOutputAstTransformer.prototype.visitPrimitive = /**
+     * @param {?} value
+     * @param {?} type
+     * @return {?}
+     */
+    function (value, type) { return literal(value, type); };
+    /**
+     * @param {?} value
+     * @param {?} type
+     * @return {?}
+     */
+    _ValueOutputAstTransformer.prototype.visitOther = /**
+     * @param {?} value
+     * @param {?} type
+     * @return {?}
+     */
+    function (value, type) {
+        if (value instanceof Expression) {
+            return value;
+        }
+        else {
+            return this.ctx.importExpr(value);
+        }
+    };
+    return _ValueOutputAstTransformer;
+}());
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * @param {?} key
+ * @param {?} value
+ * @return {?}
+ */
+function mapEntry(key, value) {
+    return { key: key, value: value, quoted: false };
+}
+var InjectableCompiler = /** @class */ (function () {
+    function InjectableCompiler(reflector, alwaysGenerateDef) {
+        this.reflector = reflector;
+        this.alwaysGenerateDef = alwaysGenerateDef;
+        this.tokenInjector = reflector.resolveExternalReference(Identifiers.Injector);
+    }
+    /**
+     * @param {?} deps
+     * @param {?} ctx
+     * @return {?}
+     */
+    InjectableCompiler.prototype.depsArray = /**
+     * @param {?} deps
+     * @param {?} ctx
+     * @return {?}
+     */
+    function (deps, ctx) {
+        var _this = this;
+        return deps.map(function (dep) {
+            var /** @type {?} */ token = dep;
+            var /** @type {?} */ defaultValue = undefined;
+            var /** @type {?} */ args = [token];
+            var /** @type {?} */ flags = 0;
+            if (Array.isArray(dep)) {
+                for (var /** @type {?} */ i = 0; i < dep.length; i++) {
+                    var /** @type {?} */ v = dep[i];
+                    if (v) {
+                        if (v.ngMetadataName === 'Optional') {
+                            defaultValue = null;
+                        }
+                        else if (v.ngMetadataName === 'SkipSelf') {
+                            flags |= 1 /* SkipSelf */;
+                        }
+                        else if (v.ngMetadataName === 'Self') {
+                            flags |= 2 /* Self */;
+                        }
+                        else if (v.ngMetadataName === 'Inject') {
+                            token = v.token;
+                        }
+                        else {
+                            token = v;
+                        }
+                    }
+                }
+            }
+            var /** @type {?} */ tokenExpr;
+            if (typeof token === 'string') {
+                tokenExpr = literal(token);
+            }
+            else if (token === _this.tokenInjector) {
+                tokenExpr = importExpr(Identifiers.INJECTOR);
+            }
+            else {
+                tokenExpr = ctx.importExpr(token);
+            }
+            if (flags !== 0 /* Default */ || defaultValue !== undefined) {
+                args = [tokenExpr, literal(defaultValue), literal(flags)];
+            }
+            else {
+                args = [tokenExpr];
+            }
+            return importExpr(Identifiers.inject).callFn(args);
+        });
+    };
+    /**
+     * @param {?} injectable
+     * @param {?} ctx
+     * @return {?}
+     */
+    InjectableCompiler.prototype.factoryFor = /**
+     * @param {?} injectable
+     * @param {?} ctx
+     * @return {?}
+     */
+    function (injectable, ctx) {
+        var /** @type {?} */ retValue;
+        if (injectable.useExisting) {
+            retValue = importExpr(Identifiers.inject).callFn([ctx.importExpr(injectable.useExisting)]);
+        }
+        else if (injectable.useFactory) {
+            var /** @type {?} */ deps = injectable.deps || [];
+            if (deps.length > 0) {
+                retValue = ctx.importExpr(injectable.useFactory).callFn(this.depsArray(deps, ctx));
+            }
+            else {
+                return ctx.importExpr(injectable.useFactory);
+            }
+        }
+        else if (injectable.useValue) {
+            retValue = convertValueToOutputAst(ctx, injectable.useValue);
+        }
+        else {
+            var /** @type {?} */ clazz = injectable.useClass || injectable.symbol;
+            var /** @type {?} */ depArgs = this.depsArray(this.reflector.parameters(clazz), ctx);
+            retValue = new InstantiateExpr(ctx.importExpr(clazz), depArgs);
+        }
+        return fn([], [new ReturnStatement(retValue)], undefined, undefined, injectable.symbol.name + '_Factory');
+    };
+    /**
+     * @param {?} injectable
+     * @param {?} ctx
+     * @return {?}
+     */
+    InjectableCompiler.prototype.injectableDef = /**
+     * @param {?} injectable
+     * @param {?} ctx
+     * @return {?}
+     */
+    function (injectable, ctx) {
+        var /** @type {?} */ providedIn = NULL_EXPR;
+        if (injectable.providedIn !== undefined) {
+            if (injectable.providedIn === null) {
+                providedIn = NULL_EXPR;
+            }
+            else if (typeof injectable.providedIn === 'string') {
+                providedIn = literal(injectable.providedIn);
+            }
+            else {
+                providedIn = ctx.importExpr(injectable.providedIn);
+            }
+        }
+        var /** @type {?} */ def = [
+            mapEntry('factory', this.factoryFor(injectable, ctx)),
+            mapEntry('token', ctx.importExpr(injectable.type.reference)),
+            mapEntry('providedIn', providedIn),
+        ];
+        return importExpr(Identifiers.defineInjectable).callFn([literalMap(def)]);
+    };
+    /**
+     * @param {?} injectable
+     * @param {?} ctx
+     * @return {?}
+     */
+    InjectableCompiler.prototype.compile = /**
+     * @param {?} injectable
+     * @param {?} ctx
+     * @return {?}
+     */
+    function (injectable, ctx) {
+        if (this.alwaysGenerateDef || injectable.providedIn !== undefined) {
+            var /** @type {?} */ className = /** @type {?} */ ((identifierName(injectable.type)));
+            var /** @type {?} */ clazz = new ClassStmt(className, null, [
+                new ClassField('ngInjectableDef', INFERRED_TYPE, [StmtModifier.Static], this.injectableDef(injectable, ctx)),
+            ], [], new ClassMethod(null, [], []), []);
+            ctx.statements.push(clazz);
+        }
+    };
+    return InjectableCompiler;
+}());
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var STRIP_SRC_FILE_SUFFIXES = /(\.ts|\.d\.ts|\.js|\.jsx|\.tsx)$/;
+var GENERATED_FILE = /\.ngfactory\.|\.ngsummary\./;
+var JIT_SUMMARY_FILE = /\.ngsummary\./;
+var JIT_SUMMARY_NAME = /NgSummary$/;
+/**
+ * @param {?} filePath
+ * @param {?=} forceSourceFile
+ * @return {?}
+ */
+function ngfactoryFilePath(filePath, forceSourceFile) {
+    if (forceSourceFile === void 0) { forceSourceFile = false; }
+    var /** @type {?} */ urlWithSuffix = splitTypescriptSuffix(filePath, forceSourceFile);
+    return urlWithSuffix[0] + ".ngfactory" + normalizeGenFileSuffix(urlWithSuffix[1]);
+}
+/**
+ * @param {?} filePath
+ * @return {?}
+ */
+function stripGeneratedFileSuffix(filePath) {
+    return filePath.replace(GENERATED_FILE, '.');
+}
+/**
+ * @param {?} filePath
+ * @return {?}
+ */
+function isGeneratedFile(filePath) {
+    return GENERATED_FILE.test(filePath);
+}
+/**
+ * @param {?} path
+ * @param {?=} forceSourceFile
+ * @return {?}
+ */
+function splitTypescriptSuffix(path, forceSourceFile) {
+    if (forceSourceFile === void 0) { forceSourceFile = false; }
+    if (path.endsWith('.d.ts')) {
+        return [path.slice(0, -5), forceSourceFile ? '.ts' : '.d.ts'];
+    }
+    var /** @type {?} */ lastDot = path.lastIndexOf('.');
+    if (lastDot !== -1) {
+        return [path.substring(0, lastDot), path.substring(lastDot)];
+    }
+    return [path, ''];
+}
+/**
+ * @param {?} srcFileSuffix
+ * @return {?}
+ */
+function normalizeGenFileSuffix(srcFileSuffix) {
+    return srcFileSuffix === '.tsx' ? '.ts' : srcFileSuffix;
+}
+/**
+ * @param {?} fileName
+ * @return {?}
+ */
+function summaryFileName(fileName) {
+    var /** @type {?} */ fileNameWithoutSuffix = fileName.replace(STRIP_SRC_FILE_SUFFIXES, '');
+    return fileNameWithoutSuffix + ".ngsummary.json";
+}
+/**
+ * @param {?} fileName
+ * @param {?=} forceSourceFile
+ * @return {?}
+ */
+function summaryForJitFileName(fileName, forceSourceFile) {
+    if (forceSourceFile === void 0) { forceSourceFile = false; }
+    var /** @type {?} */ urlWithSuffix = splitTypescriptSuffix(stripGeneratedFileSuffix(fileName), forceSourceFile);
+    return urlWithSuffix[0] + ".ngsummary" + urlWithSuffix[1];
+}
+/**
+ * @param {?} filePath
+ * @return {?}
+ */
+function stripSummaryForJitFileSuffix(filePath) {
+    return filePath.replace(JIT_SUMMARY_FILE, '.');
+}
+/**
+ * @param {?} symbolName
+ * @return {?}
+ */
+function summaryForJitName(symbolName) {
+    return symbolName + "NgSummary";
+}
+/**
+ * @param {?} symbolName
+ * @return {?}
+ */
+function stripSummaryForJitNameSuffix(symbolName) {
+    return symbolName.replace(JIT_SUMMARY_NAME, '');
+}
+var LOWERED_SYMBOL = /\u0275\d+/;
+/**
+ * @param {?} name
+ * @return {?}
+ */
+function isLoweredSymbol(name) {
+    return LOWERED_SYMBOL.test(name);
+}
+/**
+ * @param {?} id
+ * @return {?}
+ */
+function createLoweredSymbol(id) {
+    return "\u0275" + id;
+}
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/** @enum {number} */
+var LifecycleHooks = {
+    OnInit: 0,
+    OnDestroy: 1,
+    DoCheck: 2,
+    OnChanges: 3,
+    AfterContentInit: 4,
+    AfterContentChecked: 5,
+    AfterViewInit: 6,
+    AfterViewChecked: 7,
+};
+LifecycleHooks[LifecycleHooks.OnInit] = "OnInit";
+LifecycleHooks[LifecycleHooks.OnDestroy] = "OnDestroy";
+LifecycleHooks[LifecycleHooks.DoCheck] = "DoCheck";
+LifecycleHooks[LifecycleHooks.OnChanges] = "OnChanges";
+LifecycleHooks[LifecycleHooks.AfterContentInit] = "AfterContentInit";
+LifecycleHooks[LifecycleHooks.AfterContentChecked] = "AfterContentChecked";
+LifecycleHooks[LifecycleHooks.AfterViewInit] = "AfterViewInit";
+LifecycleHooks[LifecycleHooks.AfterViewChecked] = "AfterViewChecked";
+var LIFECYCLE_HOOKS_VALUES = [
+    LifecycleHooks.OnInit, LifecycleHooks.OnDestroy, LifecycleHooks.DoCheck, LifecycleHooks.OnChanges,
+    LifecycleHooks.AfterContentInit, LifecycleHooks.AfterContentChecked, LifecycleHooks.AfterViewInit,
+    LifecycleHooks.AfterViewChecked
+];
+/**
+ * @param {?} reflector
+ * @param {?} hook
+ * @param {?} token
+ * @return {?}
+ */
+function hasLifecycleHook(reflector, hook, token) {
+    return reflector.hasLifecycleHook(token, getHookName(hook));
+}
+/**
+ * @param {?} reflector
+ * @param {?} token
+ * @return {?}
+ */
+function getAllLifecycleHooks(reflector, token) {
+    return LIFECYCLE_HOOKS_VALUES.filter(function (hook) { return hasLifecycleHook(reflector, hook, token); });
+}
+/**
+ * @param {?} hook
+ * @return {?}
+ */
+function getHookName(hook) {
+    switch (hook) {
+        case LifecycleHooks.OnInit:
+            return 'ngOnInit';
+        case LifecycleHooks.OnDestroy:
+            return 'ngOnDestroy';
+        case LifecycleHooks.DoCheck:
+            return 'ngDoCheck';
+        case LifecycleHooks.OnChanges:
+            return 'ngOnChanges';
+        case LifecycleHooks.AfterContentInit:
+            return 'ngAfterContentInit';
+        case LifecycleHooks.AfterContentChecked:
+            return 'ngAfterContentChecked';
+        case LifecycleHooks.AfterViewInit:
+            return 'ngAfterViewInit';
+        case LifecycleHooks.AfterViewChecked:
+            return 'ngAfterViewChecked';
+    }
+}
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' + //":not("
+    '([-\\w]+)|' + // "tag"
+    '(?:\\.([-\\w]+))|' + // ".class"
+    '(?:\\[([-.\\w*]+)(?:=([\"\']?)([^\\]\"\']*)\\5)?\\])|' + // "[name]", "[name=value]",
+    '(\\))|' + // ")"
+    '(\\s*,\\s*)', // ","
+'g');
+/**
+ * A css selector contains an element name,
+ * css classes and attribute/value pairs with the purpose
+ * of selecting subsets out of them.
+ */
+var CssSelector = /** @class */ (function () {
+    function CssSelector() {
+        this.element = null;
+        this.classNames = [];
+        /**
+         * The selectors are encoded in pairs where:
+         * - even locations are attribute names
+         * - odd locations are attribute values.
+         *
+         * Example:
+         * Selector: `[key1=value1][key2]` would parse to:
+         * ```
+         * ['key1', 'value1', 'key2', '']
+         * ```
+         */
+        this.attrs = [];
+        this.notSelectors = [];
+    }
+    /**
+     * @param {?} selector
+     * @return {?}
+     */
+    CssSelector.parse = /**
+     * @param {?} selector
+     * @return {?}
+     */
+    function (selector) {
+        var /** @type {?} */ results = [];
+        var /** @type {?} */ _addResult = function (res, cssSel) {
+            if (cssSel.notSelectors.length > 0 && !cssSel.element && cssSel.classNames.length == 0 &&
+                cssSel.attrs.length == 0) {
+                cssSel.element = '*';
+            }
+            res.push(cssSel);
+        };
+        var /** @type {?} */ cssSelector = new CssSelector();
+        var /** @type {?} */ match;
+        var /** @type {?} */ current = cssSelector;
+        var /** @type {?} */ inNot = false;
+        _SELECTOR_REGEXP.lastIndex = 0;
+        while (match = _SELECTOR_REGEXP.exec(selector)) {
+            if (match[1]) {
+                if (inNot) {
+                    throw new Error('Nesting :not is not allowed in a selector');
+                }
+                inNot = true;
+                current = new CssSelector();
+                cssSelector.notSelectors.push(current);
+            }
+            if (match[2]) {
+                current.setElement(match[2]);
+            }
+            if (match[3]) {
+                current.addClassName(match[3]);
+            }
+            if (match[4]) {
+                current.addAttribute(match[4], match[6]);
+            }
+            if (match[7]) {
+                inNot = false;
+                current = cssSelector;
+            }
+            if (match[8]) {
+                if (inNot) {
+                    throw new Error('Multiple selectors in :not are not supported');
+                }
+                _addResult(results, cssSelector);
+                cssSelector = current = new CssSelector();
+            }
+        }
+        _addResult(results, cssSelector);
+        return results;
+    };
+    /**
+     * @return {?}
+     */
+    CssSelector.prototype.isElementSelector = /**
+     * @return {?}
+     */
+    function () {
+        return this.hasElementSelector() && this.classNames.length == 0 && this.attrs.length == 0 &&
+            this.notSelectors.length === 0;
+    };
+    /**
+     * @return {?}
+     */
+    CssSelector.prototype.hasElementSelector = /**
+     * @return {?}
+     */
+    function () { return !!this.element; };
+    /**
+     * @param {?=} element
+     * @return {?}
+     */
+    CssSelector.prototype.setElement = /**
+     * @param {?=} element
+     * @return {?}
+     */
+    function (element) {
+        if (element === void 0) { element = null; }
+        this.element = element;
+    };
+    /** Gets a template string for an element that matches the selector. */
+    /**
+     * Gets a template string for an element that matches the selector.
+     * @return {?}
+     */
+    CssSelector.prototype.getMatchingElementTemplate = /**
+     * Gets a template string for an element that matches the selector.
+     * @return {?}
+     */
+    function () {
+        var /** @type {?} */ tagName = this.element || 'div';
+        var /** @type {?} */ classAttr = this.classNames.length > 0 ? " class=\"" + this.classNames.join(' ') + "\"" : '';
+        var /** @type {?} */ attrs = '';
+        for (var /** @type {?} */ i = 0; i < this.attrs.length; i += 2) {
+            var /** @type {?} */ attrName = this.attrs[i];
+            var /** @type {?} */ attrValue = this.attrs[i + 1] !== '' ? "=\"" + this.attrs[i + 1] + "\"" : '';
+            attrs += " " + attrName + attrValue;
+        }
+        return getHtmlTagDefinition(tagName).isVoid ? "<" + tagName + classAttr + attrs + "/>" :
+            "<" + tagName + classAttr + attrs + "></" + tagName + ">";
+    };
+    /**
+     * @return {?}
+     */
+    CssSelector.prototype.getAttrs = /**
+     * @return {?}
+     */
+    function () {
+        var /** @type {?} */ result = [];
+        if (this.classNames.length > 0) {
+            result.push('class', this.classNames.join(' '));
+        }
+        return result.concat(this.attrs);
+    };
+    /**
+     * @param {?} name
+     * @param {?=} value
+     * @return {?}
+     */
+    CssSelector.prototype.addAttribute = /**
+     * @param {?} name
+     * @param {?=} value
+     * @return {?}
+     */
+    function (name, value) {
+        if (value === void 0) { value = ''; }
+        this.attrs.push(name, value && value.toLowerCase() || '');
+    };
+    /**
+     * @param {?} name
+     * @return {?}
+     */
+    CssSelector.prototype.addClassName = /**
+     * @param {?} name
+     * @return {?}
+     */
+    function (name) { this.classNames.push(name.toLowerCase()); };
+    /**
+     * @return {?}
+     */
+    CssSelector.prototype.toString = /**
+     * @return {?}
+     */
+    function () {
+        var /** @type {?} */ res = this.element || '';
+        if (this.classNames) {
+            this.classNames.forEach(function (klass) { return res += "." + klass; });
+        }
+        if (this.attrs) {
+            for (var /** @type {?} */ i = 0; i < this.attrs.length; i += 2) {
+                var /** @type {?} */ name_1 = this.attrs[i];
+                var /** @type {?} */ value = this.attrs[i + 1];
+                res += "[" + name_1 + (value ? '=' + value : '') + "]";
+            }
+        }
+        this.notSelectors.forEach(function (notSelector) { return res += ":not(" + notSelector + ")"; });
+        return res;
+    };
+    return CssSelector;
+}());
+/**
+ * Reads a list of CssSelectors and allows to calculate which ones
+ * are contained in a given CssSelector.
+ */
+var SelectorMatcher = /** @class */ (function () {
+    function SelectorMatcher() {
+        this._elementMap = new Map();
+        this._elementPartialMap = new Map();
+        this._classMap = new Map();
+        this._classPartialMap = new Map();
+        this._attrValueMap = new Map();
+        this._attrValuePartialMap = new Map();
+        this._listContexts = [];
+    }
+    /**
+     * @param {?} notSelectors
+     * @return {?}
+     */
+    SelectorMatcher.createNotMatcher = /**
+     * @param {?} notSelectors
+     * @return {?}
+     */
+    function (notSelectors) {
+        var /** @type {?} */ notMatcher = new SelectorMatcher();
+        notMatcher.addSelectables(notSelectors, null);
+        return notMatcher;
+    };
+    /**
+     * @param {?} cssSelectors
+     * @param {?=} callbackCtxt
+     * @return {?}
+     */
+    SelectorMatcher.prototype.addSelectables = /**
+     * @param {?} cssSelectors
+     * @param {?=} callbackCtxt
+     * @return {?}
+     */
+    function (cssSelectors, callbackCtxt) {
+        var /** @type {?} */ listContext = /** @type {?} */ ((null));
+        if (cssSelectors.length > 1) {
+            listContext = new SelectorListContext(cssSelectors);
+            this._listContexts.push(listContext);
+        }
+        for (var /** @type {?} */ i = 0; i < cssSelectors.length; i++) {
+            this._addSelectable(cssSelectors[i], callbackCtxt, listContext);
+        }
+    };
+    /**
+     * Add an object that can be found later on by calling `match`.
+     * @param {?} cssSelector A css selector
+     * @param {?} callbackCtxt An opaque object that will be given to the callback of the `match` function
+     * @param {?} listContext
+     * @return {?}
+     */
+    SelectorMatcher.prototype._addSelectable = /**
+     * Add an object that can be found later on by calling `match`.
+     * @param {?} cssSelector A css selector
+     * @param {?} callbackCtxt An opaque object that will be given to the callback of the `match` function
+     * @param {?} listContext
+     * @return {?}
+     */
+    function (cssSelector, callbackCtxt, listContext) {
+        var /** @type {?} */ matcher = this;
+        var /** @type {?} */ element = cssSelector.element;
+        var /** @type {?} */ classNames = cssSelector.classNames;
+        var /** @type {?} */ attrs = cssSelector.attrs;
+        var /** @type {?} */ selectable = new SelectorContext(cssSelector, callbackCtxt, listContext);
+        if (element) {
+            var /** @type {?} */ isTerminal = attrs.length === 0 && classNames.length === 0;
+            if (isTerminal) {
+                this._addTerminal(matcher._elementMap, element, selectable);
+            }
+            else {
+                matcher = this._addPartial(matcher._elementPartialMap, element);
+            }
+        }
+        if (classNames) {
+            for (var /** @type {?} */ i = 0; i < classNames.length; i++) {
+                var /** @type {?} */ isTerminal = attrs.length === 0 && i === classNames.length - 1;
+                var /** @type {?} */ className = classNames[i];
+                if (isTerminal) {
+                    this._addTerminal(matcher._classMap, className, selectable);
+                }
+                else {
+                    matcher = this._addPartial(matcher._classPartialMap, className);
+                }
+            }
+        }
+        if (attrs) {
+            for (var /** @type {?} */ i = 0; i < attrs.length; i += 2) {
+                var /** @type {?} */ isTerminal = i === attrs.length - 2;
+                var /** @type {?} */ name_2 = attrs[i];
+                var /** @type {?} */ value = attrs[i + 1];
+                if (isTerminal) {
+                    var /** @type {?} */ terminalMap = matcher._attrValueMap;
+                    var /** @type {?} */ terminalValuesMap = terminalMap.get(name_2);
+                    if (!terminalValuesMap) {
+                        terminalValuesMap = new Map();
+                        terminalMap.set(name_2, terminalValuesMap);
+                    }
+                    this._addTerminal(terminalValuesMap, value, selectable);
+                }
+                else {
+                    var /** @type {?} */ partialMap = matcher._attrValuePartialMap;
+                    var /** @type {?} */ partialValuesMap = partialMap.get(name_2);
+                    if (!partialValuesMap) {
+                        partialValuesMap = new Map();
+                        partialMap.set(name_2, partialValuesMap);
+                    }
+                    matcher = this._addPartial(partialValuesMap, value);
+                }
+            }
+        }
+    };
+    /**
+     * @param {?} map
+     * @param {?} name
+     * @param {?} selectable
+     * @return {?}
+     */
+    SelectorMatcher.prototype._addTerminal = /**
+     * @param {?} map
+     * @param {?} name
+     * @param {?} selectable
+     * @return {?}
+     */
+    function (map, name, selectable) {
+        var /** @type {?} */ terminalList = map.get(name);
+        if (!terminalList) {
+            terminalList = [];
+            map.set(name, terminalList);
+        }
+        terminalList.push(selectable);
+    };
+    /**
+     * @param {?} map
+     * @param {?} name
+     * @return {?}
+     */
+    SelectorMatcher.prototype._addPartial = /**
+     * @param {?} map
+     * @param {?} name
+     * @return {?}
+     */
+    function (map, name) {
+        var /** @type {?} */ matcher = map.get(name);
+        if (!matcher) {
+            matcher = new SelectorMatcher();
+            map.set(name, matcher);
+        }
+        return matcher;
+    };
+    /**
+     * Find the objects that have been added via `addSelectable`
+     * whose css selector is contained in the given css selector.
+     * @param cssSelector A css selector
+     * @param matchedCallback This callback will be called with the object handed into `addSelectable`
+     * @return boolean true if a match was found
+    */
+    /**
+     * Find the objects that have been added via `addSelectable`
+     * whose css selector is contained in the given css selector.
+     * @param {?} cssSelector A css selector
+     * @param {?} matchedCallback This callback will be called with the object handed into `addSelectable`
+     * @return {?} boolean true if a match was found
+     */
+    SelectorMatcher.prototype.match = /**
+     * Find the objects that have been added via `addSelectable`
+     * whose css selector is contained in the given css selector.
+     * @param {?} cssSelector A css selector
+     * @param {?} matchedCallback This callback will be called with the object handed into `addSelectable`
+     * @return {?} boolean true if a match was found
+     */
+    function (cssSelector, matchedCallback) {
+        var /** @type {?} */ result = false;
+        var /** @type {?} */ element = /** @type {?} */ ((cssSelector.element));
+        var /** @type {?} */ classNames = cssSelector.classNames;
+        var /** @type {?} */ attrs = cssSelector.attrs;
+        for (var /** @type {?} */ i = 0; i < this._listContexts.length; i++) {
+            this._listContexts[i].alreadyMatched = false;
+        }
+        result = this._matchTerminal(this._elementMap, element, cssSelector, matchedCallback) || result;
+        result = this._matchPartial(this._elementPartialMap, element, cssSelector, matchedCallback) ||
+            result;
+        if (classNames) {
+            for (var /** @type {?} */ i = 0; i < classNames.length; i++) {
+                var /** @type {?} */ className = classNames[i];
+                result =
+                    this._matchTerminal(this._classMap, className, cssSelector, matchedCallback) || result;
+                result =
+                    this._matchPartial(this._classPartialMap, className, cssSelector, matchedCallback) ||
+                        result;
+            }
+        }
+        if (attrs) {
+            for (var /** @type {?} */ i = 0; i < attrs.length; i += 2) {
+                var /** @type {?} */ name_3 = attrs[i];
+                var /** @type {?} */ value = attrs[i + 1];
+                var /** @type {?} */ terminalValuesMap = /** @type {?} */ ((this._attrValueMap.get(name_3)));
+                if (value) {
+                    result =
+                        this._matchTerminal(terminalValuesMap, '', cssSelector, matchedCallback) || result;
+                }
+                result =
+                    this._matchTerminal(terminalValuesMap, value, cssSelector, matchedCallback) || result;
+                var /** @type {?} */ partialValuesMap = /** @type {?} */ ((this._attrValuePartialMap.get(name_3)));
+                if (value) {
+                    result = this._matchPartial(partialValuesMap, '', cssSelector, matchedCallback) || result;
+                }
+                result =
+                    this._matchPartial(partialValuesMap, value, cssSelector, matchedCallback) || result;
+            }
+        }
+        return result;
+    };
+    /** @internal */
+    /**
+     * \@internal
+     * @param {?} map
+     * @param {?} name
+     * @param {?} cssSelector
+     * @param {?} matchedCallback
+     * @return {?}
+     */
+    SelectorMatcher.prototype._matchTerminal = /**
+     * \@internal
+     * @param {?} map
+     * @param {?} name
+     * @param {?} cssSelector
+     * @param {?} matchedCallback
+     * @return {?}
+     */
+    function (map, name, cssSelector, matchedCallback) {
+        if (!map || typeof name !== 'string') {
+            return false;
+        }
+        var /** @type {?} */ selectables = map.get(name) || [];
+        var /** @type {?} */ starSelectables = /** @type {?} */ ((map.get('*')));
+        if (starSelectables) {
+            selectables = selectables.concat(starSelectables);
+        }
+        if (selectables.length === 0) {
+            return false;
+        }
+        var /** @type {?} */ selectable;
+        var /** @type {?} */ result = false;
+        for (var /** @type {?} */ i = 0; i < selectables.length; i++) {
+            selectable = selectables[i];
+            result = selectable.finalize(cssSelector, matchedCallback) || result;
+        }
+        return result;
+    };
+    /** @internal */
+    /**
+     * \@internal
+     * @param {?} map
+     * @param {?} name
+     * @param {?} cssSelector
+     * @param {?} matchedCallback
+     * @return {?}
+     */
+    SelectorMatcher.prototype._matchPartial = /**
+     * \@internal
+     * @param {?} map
+     * @param {?} name
+     * @param {?} cssSelector
+     * @param {?} matchedCallback
+     * @return {?}
+     */
+    function (map, name, cssSelector, matchedCallback) {
+        if (!map || typeof name !== 'string') {
+            return false;
+        }
+        var /** @type {?} */ nestedSelector = map.get(name);
+        if (!nestedSelector) {
+            return false;
+        }
+        // TODO(perf): get rid of recursion and measure again
+        // TODO(perf): don't pass the whole selector into the recursion,
+        // but only the not processed parts
+        return nestedSelector.match(cssSelector, matchedCallback);
+    };
+    return SelectorMatcher;
+}());
+var SelectorListContext = /** @class */ (function () {
+    function SelectorListContext(selectors) {
+        this.selectors = selectors;
+        this.alreadyMatched = false;
+    }
+    return SelectorListContext;
+}());
+var SelectorContext = /** @class */ (function () {
+    function SelectorContext(selector, cbContext, listContext) {
+        this.selector = selector;
+        this.cbContext = cbContext;
+        this.listContext = listContext;
+        this.notSelectors = selector.notSelectors;
+    }
+    /**
+     * @param {?} cssSelector
+     * @param {?} callback
+     * @return {?}
+     */
+    SelectorContext.prototype.finalize = /**
+     * @param {?} cssSelector
+     * @param {?} callback
+     * @return {?}
+     */
+    function (cssSelector, callback) {
+        var /** @type {?} */ result = true;
+        if (this.notSelectors.length > 0 && (!this.listContext || !this.listContext.alreadyMatched)) {
+            var /** @type {?} */ notMatcher = SelectorMatcher.createNotMatcher(this.notSelectors);
+            result = !notMatcher.match(cssSelector, null);
+        }
+        if (result && callback && (!this.listContext || !this.listContext.alreadyMatched)) {
+            if (this.listContext) {
+                this.listContext.alreadyMatched = true;
+            }
+            callback(this.selector, this.cbContext);
+        }
+        return result;
+    };
+    return SelectorContext;
+}());
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var ERROR_COMPONENT_TYPE = 'ngComponentType';
+var CompileMetadataResolver = /** @class */ (function () {
+    function CompileMetadataResolver(_config, _htmlParser, _ngModuleResolver, _directiveResolver, _pipeResolver, _summaryResolver, _schemaRegistry, _directiveNormalizer, _console, _staticSymbolCache, _reflector, _errorCollector) {
+        this._config = _config;
+        this._htmlParser = _htmlParser;
+        this._ngModuleResolver = _ngModuleResolver;
+        this._directiveResolver = _directiveResolver;
+        this._pipeResolver = _pipeResolver;
+        this._summaryResolver = _summaryResolver;
+        this._schemaRegistry = _schemaRegistry;
+        this._directiveNormalizer = _directiveNormalizer;
+        this._console = _console;
+        this._staticSymbolCache = _staticSymbolCache;
+        this._reflector = _reflector;
+        this._errorCollector = _errorCollector;
+        this._nonNormalizedDirectiveCache = new Map();
+        this._directiveCache = new Map();
+        this._summaryCache = new Map();
+        this._pipeCache = new Map();
+        this._ngModuleCache = new Map();
+        this._ngModuleOfTypes = new Map();
+        this._shallowModuleCache = new Map();
+    }
+    /**
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.getReflector = /**
+     * @return {?}
+     */
+    function () { return this._reflector; };
+    /**
+     * @param {?} type
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.clearCacheFor = /**
+     * @param {?} type
+     * @return {?}
+     */
+    function (type) {
+        var /** @type {?} */ dirMeta = this._directiveCache.get(type);
+        this._directiveCache.delete(type);
+        this._nonNormalizedDirectiveCache.delete(type);
+        this._summaryCache.delete(type);
+        this._pipeCache.delete(type);
+        this._ngModuleOfTypes.delete(type);
+        // Clear all of the NgModule as they contain transitive information!
+        this._ngModuleCache.clear();
+        if (dirMeta) {
+            this._directiveNormalizer.clearCacheFor(dirMeta);
+        }
+    };
+    /**
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.clearCache = /**
+     * @return {?}
+     */
+    function () {
+        this._directiveCache.clear();
+        this._nonNormalizedDirectiveCache.clear();
+        this._summaryCache.clear();
+        this._pipeCache.clear();
+        this._ngModuleCache.clear();
+        this._ngModuleOfTypes.clear();
+        this._directiveNormalizer.clearCache();
+    };
+    /**
+     * @param {?} baseType
+     * @param {?} name
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._createProxyClass = /**
+     * @param {?} baseType
+     * @param {?} name
+     * @return {?}
+     */
+    function (baseType, name) {
+        var /** @type {?} */ delegate = null;
+        var /** @type {?} */ proxyClass = /** @type {?} */ (function () {
+            if (!delegate) {
+                throw new Error("Illegal state: Class " + name + " for type " + stringify(baseType) + " is not compiled yet!");
+            }
+            return delegate.apply(this, arguments);
+        });
+        proxyClass.setDelegate = function (d) {
+            delegate = d;
+            (/** @type {?} */ (proxyClass)).prototype = d.prototype;
+        };
+        // Make stringify work correctly
+        (/** @type {?} */ (proxyClass)).overriddenName = name;
+        return proxyClass;
+    };
+    /**
+     * @param {?} dirType
+     * @param {?} name
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.getGeneratedClass = /**
+     * @param {?} dirType
+     * @param {?} name
+     * @return {?}
+     */
+    function (dirType, name) {
+        if (dirType instanceof StaticSymbol) {
+            return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath), name);
+        }
+        else {
+            return this._createProxyClass(dirType, name);
+        }
+    };
+    /**
+     * @param {?} dirType
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.getComponentViewClass = /**
+     * @param {?} dirType
+     * @return {?}
+     */
+    function (dirType) {
+        return this.getGeneratedClass(dirType, viewClassName(dirType, 0));
+    };
+    /**
+     * @param {?} dirType
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.getHostComponentViewClass = /**
+     * @param {?} dirType
+     * @return {?}
+     */
+    function (dirType) {
+        return this.getGeneratedClass(dirType, hostViewClassName(dirType));
+    };
+    /**
+     * @param {?} dirType
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.getHostComponentType = /**
+     * @param {?} dirType
+     * @return {?}
+     */
+    function (dirType) {
+        var /** @type {?} */ name = identifierName({ reference: dirType }) + "_Host";
+        if (dirType instanceof StaticSymbol) {
+            return this._staticSymbolCache.get(dirType.filePath, name);
+        }
+        else {
+            var /** @type {?} */ HostClass = /** @type {?} */ (function HostClass() { });
+            HostClass.overriddenName = name;
+            return HostClass;
+        }
+    };
+    /**
+     * @param {?} dirType
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.getRendererType = /**
+     * @param {?} dirType
+     * @return {?}
+     */
+    function (dirType) {
+        if (dirType instanceof StaticSymbol) {
+            return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath), rendererTypeName(dirType));
+        }
+        else {
+            // returning an object as proxy,
+            // that we fill later during runtime compilation.
+            return /** @type {?} */ ({});
+        }
+    };
+    /**
+     * @param {?} selector
+     * @param {?} dirType
+     * @param {?} inputs
+     * @param {?} outputs
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.getComponentFactory = /**
+     * @param {?} selector
+     * @param {?} dirType
+     * @param {?} inputs
+     * @param {?} outputs
+     * @return {?}
+     */
+    function (selector, dirType, inputs, outputs) {
+        if (dirType instanceof StaticSymbol) {
+            return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath), componentFactoryName(dirType));
+        }
+        else {
+            var /** @type {?} */ hostView = this.getHostComponentViewClass(dirType);
+            // Note: ngContentSelectors will be filled later once the template is
+            // loaded.
+            var /** @type {?} */ createComponentFactory = this._reflector.resolveExternalReference(Identifiers.createComponentFactory);
+            return createComponentFactory(selector, dirType, /** @type {?} */ (hostView), inputs, outputs, []);
+        }
+    };
+    /**
+     * @param {?} factory
+     * @param {?} ngContentSelectors
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.initComponentFactory = /**
+     * @param {?} factory
+     * @param {?} ngContentSelectors
+     * @return {?}
+     */
+    function (factory, ngContentSelectors) {
+        if (!(factory instanceof StaticSymbol)) {
+            (_a = (/** @type {?} */ (factory)).ngContentSelectors).push.apply(_a, ngContentSelectors);
+        }
+        var _a;
+    };
+    /**
+     * @param {?} type
+     * @param {?} kind
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._loadSummary = /**
+     * @param {?} type
+     * @param {?} kind
+     * @return {?}
+     */
+    function (type, kind) {
+        var /** @type {?} */ typeSummary = this._summaryCache.get(type);
+        if (!typeSummary) {
+            var /** @type {?} */ summary = this._summaryResolver.resolveSummary(type);
+            typeSummary = summary ? summary.type : null;
+            this._summaryCache.set(type, typeSummary || null);
+        }
+        return typeSummary && typeSummary.summaryKind === kind ? typeSummary : null;
+    };
+    /**
+     * @param {?} compMeta
+     * @param {?=} hostViewType
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.getHostComponentMetadata = /**
+     * @param {?} compMeta
+     * @param {?=} hostViewType
+     * @return {?}
+     */
+    function (compMeta, hostViewType) {
+        var /** @type {?} */ hostType = this.getHostComponentType(compMeta.type.reference);
+        if (!hostViewType) {
+            hostViewType = this.getHostComponentViewClass(hostType);
+        }
+        // Note: ! is ok here as this method should only be called with normalized directive
+        // metadata, which always fills in the selector.
+        var /** @type {?} */ template = CssSelector.parse(/** @type {?} */ ((compMeta.selector)))[0].getMatchingElementTemplate();
+        var /** @type {?} */ templateUrl = '';
+        var /** @type {?} */ htmlAst = this._htmlParser.parse(template, templateUrl);
+        return CompileDirectiveMetadata.create({
+            isHost: true,
+            type: { reference: hostType, diDeps: [], lifecycleHooks: [] },
+            template: new CompileTemplateMetadata({
+                encapsulation: ViewEncapsulation.None,
+                template: template,
+                templateUrl: templateUrl,
+                htmlAst: htmlAst,
+                styles: [],
+                styleUrls: [],
+                ngContentSelectors: [],
+                animations: [],
+                isInline: true,
+                externalStylesheets: [],
+                interpolation: null,
+                preserveWhitespaces: false,
+            }),
+            exportAs: null,
+            changeDetection: ChangeDetectionStrategy.Default,
+            inputs: [],
+            outputs: [],
+            host: {},
+            isComponent: true,
+            selector: '*',
+            providers: [],
+            viewProviders: [],
+            queries: [],
+            guards: {},
+            viewQueries: [],
+            componentViewType: hostViewType,
+            rendererType: /** @type {?} */ ({ id: '__Host__', encapsulation: ViewEncapsulation.None, styles: [], data: {} }),
+            entryComponents: [],
+            componentFactory: null
+        });
+    };
+    /**
+     * @param {?} ngModuleType
+     * @param {?} directiveType
+     * @param {?} isSync
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.loadDirectiveMetadata = /**
+     * @param {?} ngModuleType
+     * @param {?} directiveType
+     * @param {?} isSync
+     * @return {?}
+     */
+    function (ngModuleType, directiveType, isSync) {
+        var _this = this;
+        if (this._directiveCache.has(directiveType)) {
+            return null;
+        }
+        directiveType = resolveForwardRef(directiveType);
+        var _a = /** @type {?} */ ((this.getNonNormalizedDirectiveMetadata(directiveType))), annotation = _a.annotation, metadata = _a.metadata;
+        var /** @type {?} */ createDirectiveMetadata = function (templateMetadata) {
+            var /** @type {?} */ normalizedDirMeta = new CompileDirectiveMetadata({
+                isHost: false,
+                type: metadata.type,
+                isComponent: metadata.isComponent,
+                selector: metadata.selector,
+                exportAs: metadata.exportAs,
+                changeDetection: metadata.changeDetection,
+                inputs: metadata.inputs,
+                outputs: metadata.outputs,
+                hostListeners: metadata.hostListeners,
+                hostProperties: metadata.hostProperties,
+                hostAttributes: metadata.hostAttributes,
+                providers: metadata.providers,
+                viewProviders: metadata.viewProviders,
+                queries: metadata.queries,
+                guards: metadata.guards,
+                viewQueries: metadata.viewQueries,
+                entryComponents: metadata.entryComponents,
+                componentViewType: metadata.componentViewType,
+                rendererType: metadata.rendererType,
+                componentFactory: metadata.componentFactory,
+                template: templateMetadata
+            });
+            if (templateMetadata) {
+                _this.initComponentFactory(/** @type {?} */ ((metadata.componentFactory)), templateMetadata.ngContentSelectors);
+            }
+            _this._directiveCache.set(directiveType, normalizedDirMeta);
+            _this._summaryCache.set(directiveType, normalizedDirMeta.toSummary());
+            return null;
+        };
+        if (metadata.isComponent) {
+            var /** @type {?} */ template = /** @type {?} */ ((metadata.template));
+            var /** @type {?} */ templateMeta = this._directiveNormalizer.normalizeTemplate({
+                ngModuleType: ngModuleType,
+                componentType: directiveType,
+                moduleUrl: this._reflector.componentModuleUrl(directiveType, annotation),
+                encapsulation: template.encapsulation,
+                template: template.template,
+                templateUrl: template.templateUrl,
+                styles: template.styles,
+                styleUrls: template.styleUrls,
+                animations: template.animations,
+                interpolation: template.interpolation,
+                preserveWhitespaces: template.preserveWhitespaces
+            });
+            if (isPromise(templateMeta) && isSync) {
+                this._reportError(componentStillLoadingError(directiveType), directiveType);
+                return null;
+            }
+            return SyncAsync.then(templateMeta, createDirectiveMetadata);
+        }
+        else {
+            // directive
+            createDirectiveMetadata(null);
+            return null;
+        }
+    };
+    /**
+     * @param {?} directiveType
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.getNonNormalizedDirectiveMetadata = /**
+     * @param {?} directiveType
+     * @return {?}
+     */
+    function (directiveType) {
+        var _this = this;
+        directiveType = resolveForwardRef(directiveType);
+        if (!directiveType) {
+            return null;
+        }
+        var /** @type {?} */ cacheEntry = this._nonNormalizedDirectiveCache.get(directiveType);
+        if (cacheEntry) {
+            return cacheEntry;
+        }
+        var /** @type {?} */ dirMeta = this._directiveResolver.resolve(directiveType, false);
+        if (!dirMeta) {
+            return null;
+        }
+        var /** @type {?} */ nonNormalizedTemplateMetadata = /** @type {?} */ ((undefined));
+        if (createComponent.isTypeOf(dirMeta)) {
+            // component
+            var /** @type {?} */ compMeta = /** @type {?} */ (dirMeta);
+            assertArrayOfStrings('styles', compMeta.styles);
+            assertArrayOfStrings('styleUrls', compMeta.styleUrls);
+            assertInterpolationSymbols('interpolation', compMeta.interpolation);
+            var /** @type {?} */ animations = compMeta.animations;
+            nonNormalizedTemplateMetadata = new CompileTemplateMetadata({
+                encapsulation: noUndefined(compMeta.encapsulation),
+                template: noUndefined(compMeta.template),
+                templateUrl: noUndefined(compMeta.templateUrl),
+                htmlAst: null,
+                styles: compMeta.styles || [],
+                styleUrls: compMeta.styleUrls || [],
+                animations: animations || [],
+                interpolation: noUndefined(compMeta.interpolation),
+                isInline: !!compMeta.template,
+                externalStylesheets: [],
+                ngContentSelectors: [],
+                preserveWhitespaces: noUndefined(dirMeta.preserveWhitespaces),
+            });
+        }
+        var /** @type {?} */ changeDetectionStrategy = /** @type {?} */ ((null));
+        var /** @type {?} */ viewProviders = [];
+        var /** @type {?} */ entryComponentMetadata = [];
+        var /** @type {?} */ selector = dirMeta.selector;
+        if (createComponent.isTypeOf(dirMeta)) {
+            // Component
+            var /** @type {?} */ compMeta = /** @type {?} */ (dirMeta);
+            changeDetectionStrategy = /** @type {?} */ ((compMeta.changeDetection));
+            if (compMeta.viewProviders) {
+                viewProviders = this._getProvidersMetadata(compMeta.viewProviders, entryComponentMetadata, "viewProviders for \"" + stringifyType(directiveType) + "\"", [], directiveType);
+            }
+            if (compMeta.entryComponents) {
+                entryComponentMetadata = flattenAndDedupeArray(compMeta.entryComponents)
+                    .map(function (type) { return ((_this._getEntryComponentMetadata(type))); })
+                    .concat(entryComponentMetadata);
+            }
+            if (!selector) {
+                selector = this._schemaRegistry.getDefaultComponentElementName();
+            }
+        }
+        else {
+            // Directive
+            if (!selector) {
+                this._reportError(syntaxError("Directive " + stringifyType(directiveType) + " has no selector, please add it!"), directiveType);
+                selector = 'error';
+            }
+        }
+        var /** @type {?} */ providers = [];
+        if (dirMeta.providers != null) {
+            providers = this._getProvidersMetadata(dirMeta.providers, entryComponentMetadata, "providers for \"" + stringifyType(directiveType) + "\"", [], directiveType);
+        }
+        var /** @type {?} */ queries = [];
+        var /** @type {?} */ viewQueries = [];
+        if (dirMeta.queries != null) {
+            queries = this._getQueriesMetadata(dirMeta.queries, false, directiveType);
+            viewQueries = this._getQueriesMetadata(dirMeta.queries, true, directiveType);
+        }
+        var /** @type {?} */ metadata = CompileDirectiveMetadata.create({
+            isHost: false,
+            selector: selector,
+            exportAs: noUndefined(dirMeta.exportAs),
+            isComponent: !!nonNormalizedTemplateMetadata,
+            type: this._getTypeMetadata(directiveType),
+            template: nonNormalizedTemplateMetadata,
+            changeDetection: changeDetectionStrategy,
+            inputs: dirMeta.inputs || [],
+            outputs: dirMeta.outputs || [],
+            host: dirMeta.host || {},
+            providers: providers || [],
+            viewProviders: viewProviders || [],
+            queries: queries || [],
+            guards: dirMeta.guards || {},
+            viewQueries: viewQueries || [],
+            entryComponents: entryComponentMetadata,
+            componentViewType: nonNormalizedTemplateMetadata ? this.getComponentViewClass(directiveType) :
+                null,
+            rendererType: nonNormalizedTemplateMetadata ? this.getRendererType(directiveType) : null,
+            componentFactory: null
+        });
+        if (nonNormalizedTemplateMetadata) {
+            metadata.componentFactory =
+                this.getComponentFactory(selector, directiveType, metadata.inputs, metadata.outputs);
+        }
+        cacheEntry = { metadata: metadata, annotation: dirMeta };
+        this._nonNormalizedDirectiveCache.set(directiveType, cacheEntry);
+        return cacheEntry;
+    };
+    /**
+     * Gets the metadata for the given directive.
+     * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
+     */
+    /**
+     * Gets the metadata for the given directive.
+     * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
+     * @param {?} directiveType
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.getDirectiveMetadata = /**
+     * Gets the metadata for the given directive.
+     * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
+     * @param {?} directiveType
+     * @return {?}
+     */
+    function (directiveType) {
+        var /** @type {?} */ dirMeta = /** @type {?} */ ((this._directiveCache.get(directiveType)));
+        if (!dirMeta) {
+            this._reportError(syntaxError("Illegal state: getDirectiveMetadata can only be called after loadNgModuleDirectiveAndPipeMetadata for a module that declares it. Directive " + stringifyType(directiveType) + "."), directiveType);
+        }
+        return dirMeta;
+    };
+    /**
+     * @param {?} dirType
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.getDirectiveSummary = /**
+     * @param {?} dirType
+     * @return {?}
+     */
+    function (dirType) {
+        var /** @type {?} */ dirSummary = /** @type {?} */ (this._loadSummary(dirType, CompileSummaryKind.Directive));
+        if (!dirSummary) {
+            this._reportError(syntaxError("Illegal state: Could not load the summary for directive " + stringifyType(dirType) + "."), dirType);
+        }
+        return dirSummary;
+    };
+    /**
+     * @param {?} type
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.isDirective = /**
+     * @param {?} type
+     * @return {?}
+     */
+    function (type) {
+        return !!this._loadSummary(type, CompileSummaryKind.Directive) ||
+            this._directiveResolver.isDirective(type);
+    };
+    /**
+     * @param {?} type
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.isPipe = /**
+     * @param {?} type
+     * @return {?}
+     */
+    function (type) {
+        return !!this._loadSummary(type, CompileSummaryKind.Pipe) ||
+            this._pipeResolver.isPipe(type);
+    };
+    /**
+     * @param {?} type
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.isNgModule = /**
+     * @param {?} type
+     * @return {?}
+     */
+    function (type) {
+        return !!this._loadSummary(type, CompileSummaryKind.NgModule) ||
+            this._ngModuleResolver.isNgModule(type);
+    };
+    /**
+     * @param {?} moduleType
+     * @param {?=} alreadyCollecting
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.getNgModuleSummary = /**
+     * @param {?} moduleType
+     * @param {?=} alreadyCollecting
+     * @return {?}
+     */
+    function (moduleType, alreadyCollecting) {
+        if (alreadyCollecting === void 0) { alreadyCollecting = null; }
+        var /** @type {?} */ moduleSummary = /** @type {?} */ (this._loadSummary(moduleType, CompileSummaryKind.NgModule));
+        if (!moduleSummary) {
+            var /** @type {?} */ moduleMeta = this.getNgModuleMetadata(moduleType, false, alreadyCollecting);
+            moduleSummary = moduleMeta ? moduleMeta.toSummary() : null;
+            if (moduleSummary) {
+                this._summaryCache.set(moduleType, moduleSummary);
+            }
+        }
+        return moduleSummary;
+    };
+    /**
+     * Loads the declared directives and pipes of an NgModule.
+     */
+    /**
+     * Loads the declared directives and pipes of an NgModule.
+     * @param {?} moduleType
+     * @param {?} isSync
+     * @param {?=} throwIfNotFound
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.loadNgModuleDirectiveAndPipeMetadata = /**
+     * Loads the declared directives and pipes of an NgModule.
+     * @param {?} moduleType
+     * @param {?} isSync
+     * @param {?=} throwIfNotFound
+     * @return {?}
+     */
+    function (moduleType, isSync, throwIfNotFound) {
+        var _this = this;
+        if (throwIfNotFound === void 0) { throwIfNotFound = true; }
+        var /** @type {?} */ ngModule = this.getNgModuleMetadata(moduleType, throwIfNotFound);
+        var /** @type {?} */ loading = [];
+        if (ngModule) {
+            ngModule.declaredDirectives.forEach(function (id) {
+                var /** @type {?} */ promise = _this.loadDirectiveMetadata(moduleType, id.reference, isSync);
+                if (promise) {
+                    loading.push(promise);
+                }
+            });
+            ngModule.declaredPipes.forEach(function (id) { return _this._loadPipeMetadata(id.reference); });
+        }
+        return Promise.all(loading);
+    };
+    /**
+     * @param {?} moduleType
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.getShallowModuleMetadata = /**
+     * @param {?} moduleType
+     * @return {?}
+     */
+    function (moduleType) {
+        var /** @type {?} */ compileMeta = this._shallowModuleCache.get(moduleType);
+        if (compileMeta) {
+            return compileMeta;
+        }
+        var /** @type {?} */ ngModuleMeta = findLast(this._reflector.shallowAnnotations(moduleType), createNgModule.isTypeOf);
+        compileMeta = {
+            type: this._getTypeMetadata(moduleType),
+            rawExports: ngModuleMeta.exports,
+            rawImports: ngModuleMeta.imports,
+            rawProviders: ngModuleMeta.providers,
+        };
+        this._shallowModuleCache.set(moduleType, compileMeta);
+        return compileMeta;
+    };
+    /**
+     * @param {?} moduleType
+     * @param {?=} throwIfNotFound
+     * @param {?=} alreadyCollecting
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.getNgModuleMetadata = /**
+     * @param {?} moduleType
+     * @param {?=} throwIfNotFound
+     * @param {?=} alreadyCollecting
+     * @return {?}
+     */
+    function (moduleType, throwIfNotFound, alreadyCollecting) {
+        var _this = this;
+        if (throwIfNotFound === void 0) { throwIfNotFound = true; }
+        if (alreadyCollecting === void 0) { alreadyCollecting = null; }
+        moduleType = resolveForwardRef(moduleType);
+        var /** @type {?} */ compileMeta = this._ngModuleCache.get(moduleType);
+        if (compileMeta) {
+            return compileMeta;
+        }
+        var /** @type {?} */ meta = this._ngModuleResolver.resolve(moduleType, throwIfNotFound);
+        if (!meta) {
+            return null;
+        }
+        var /** @type {?} */ declaredDirectives = [];
+        var /** @type {?} */ exportedNonModuleIdentifiers = [];
+        var /** @type {?} */ declaredPipes = [];
+        var /** @type {?} */ importedModules = [];
+        var /** @type {?} */ exportedModules = [];
+        var /** @type {?} */ providers = [];
+        var /** @type {?} */ entryComponents = [];
+        var /** @type {?} */ bootstrapComponents = [];
+        var /** @type {?} */ schemas = [];
+        if (meta.imports) {
+            flattenAndDedupeArray(meta.imports).forEach(function (importedType) {
+                var /** @type {?} */ importedModuleType = /** @type {?} */ ((undefined));
+                if (isValidType(importedType)) {
+                    importedModuleType = importedType;
+                }
+                else if (importedType && importedType.ngModule) {
+                    var /** @type {?} */ moduleWithProviders = importedType;
+                    importedModuleType = moduleWithProviders.ngModule;
+                    if (moduleWithProviders.providers) {
+                        providers.push.apply(providers, _this._getProvidersMetadata(moduleWithProviders.providers, entryComponents, "provider for the NgModule '" + stringifyType(importedModuleType) + "'", [], importedType));
+                    }
+                }
+                if (importedModuleType) {
+                    if (_this._checkSelfImport(moduleType, importedModuleType))
+                        return;
+                    if (!alreadyCollecting)
+                        alreadyCollecting = new Set();
+                    if (alreadyCollecting.has(importedModuleType)) {
+                        _this._reportError(syntaxError(_this._getTypeDescriptor(importedModuleType) + " '" + stringifyType(importedType) + "' is imported recursively by the module '" + stringifyType(moduleType) + "'."), moduleType);
+                        return;
+                    }
+                    alreadyCollecting.add(importedModuleType);
+                    var /** @type {?} */ importedModuleSummary = _this.getNgModuleSummary(importedModuleType, alreadyCollecting);
+                    alreadyCollecting.delete(importedModuleType);
+                    if (!importedModuleSummary) {
+                        _this._reportError(syntaxError("Unexpected " + _this._getTypeDescriptor(importedType) + " '" + stringifyType(importedType) + "' imported by the module '" + stringifyType(moduleType) + "'. Please add a @NgModule annotation."), moduleType);
+                        return;
+                    }
+                    importedModules.push(importedModuleSummary);
+                }
+                else {
+                    _this._reportError(syntaxError("Unexpected value '" + stringifyType(importedType) + "' imported by the module '" + stringifyType(moduleType) + "'"), moduleType);
+                    return;
+                }
+            });
+        }
+        if (meta.exports) {
+            flattenAndDedupeArray(meta.exports).forEach(function (exportedType) {
+                if (!isValidType(exportedType)) {
+                    _this._reportError(syntaxError("Unexpected value '" + stringifyType(exportedType) + "' exported by the module '" + stringifyType(moduleType) + "'"), moduleType);
+                    return;
+                }
+                if (!alreadyCollecting)
+                    alreadyCollecting = new Set();
+                if (alreadyCollecting.has(exportedType)) {
+                    _this._reportError(syntaxError(_this._getTypeDescriptor(exportedType) + " '" + stringify(exportedType) + "' is exported recursively by the module '" + stringifyType(moduleType) + "'"), moduleType);
+                    return;
+                }
+                alreadyCollecting.add(exportedType);
+                var /** @type {?} */ exportedModuleSummary = _this.getNgModuleSummary(exportedType, alreadyCollecting);
+                alreadyCollecting.delete(exportedType);
+                if (exportedModuleSummary) {
+                    exportedModules.push(exportedModuleSummary);
+                }
+                else {
+                    exportedNonModuleIdentifiers.push(_this._getIdentifierMetadata(exportedType));
+                }
+            });
+        }
+        // Note: This will be modified later, so we rely on
+        // getting a new instance every time!
+        var /** @type {?} */ transitiveModule = this._getTransitiveNgModuleMetadata(importedModules, exportedModules);
+        if (meta.declarations) {
+            flattenAndDedupeArray(meta.declarations).forEach(function (declaredType) {
+                if (!isValidType(declaredType)) {
+                    _this._reportError(syntaxError("Unexpected value '" + stringifyType(declaredType) + "' declared by the module '" + stringifyType(moduleType) + "'"), moduleType);
+                    return;
+                }
+                var /** @type {?} */ declaredIdentifier = _this._getIdentifierMetadata(declaredType);
+                if (_this.isDirective(declaredType)) {
+                    transitiveModule.addDirective(declaredIdentifier);
+                    declaredDirectives.push(declaredIdentifier);
+                    _this._addTypeToModule(declaredType, moduleType);
+                }
+                else if (_this.isPipe(declaredType)) {
+                    transitiveModule.addPipe(declaredIdentifier);
+                    transitiveModule.pipes.push(declaredIdentifier);
+                    declaredPipes.push(declaredIdentifier);
+                    _this._addTypeToModule(declaredType, moduleType);
+                }
+                else {
+                    _this._reportError(syntaxError("Unexpected " + _this._getTypeDescriptor(declaredType) + " '" + stringifyType(declaredType) + "' declared by the module '" + stringifyType(moduleType) + "'. Please add a @Pipe/@Directive/@Component annotation."), moduleType);
+                    return;
+                }
+            });
+        }
+        var /** @type {?} */ exportedDirectives = [];
+        var /** @type {?} */ exportedPipes = [];
+        exportedNonModuleIdentifiers.forEach(function (exportedId) {
+            if (transitiveModule.directivesSet.has(exportedId.reference)) {
+                exportedDirectives.push(exportedId);
+                transitiveModule.addExportedDirective(exportedId);
+            }
+            else if (transitiveModule.pipesSet.has(exportedId.reference)) {
+                exportedPipes.push(exportedId);
+                transitiveModule.addExportedPipe(exportedId);
+            }
+            else {
+                _this._reportError(syntaxError("Can't export " + _this._getTypeDescriptor(exportedId.reference) + " " + stringifyType(exportedId.reference) + " from " + stringifyType(moduleType) + " as it was neither declared nor imported!"), moduleType);
+                return;
+            }
+        });
+        // The providers of the module have to go last
+        // so that they overwrite any other provider we already added.
+        if (meta.providers) {
+            providers.push.apply(providers, this._getProvidersMetadata(meta.providers, entryComponents, "provider for the NgModule '" + stringifyType(moduleType) + "'", [], moduleType));
+        }
+        if (meta.entryComponents) {
+            entryComponents.push.apply(entryComponents, flattenAndDedupeArray(meta.entryComponents)
+                .map(function (type) { return ((_this._getEntryComponentMetadata(type))); }));
+        }
+        if (meta.bootstrap) {
+            flattenAndDedupeArray(meta.bootstrap).forEach(function (type) {
+                if (!isValidType(type)) {
+                    _this._reportError(syntaxError("Unexpected value '" + stringifyType(type) + "' used in the bootstrap property of module '" + stringifyType(moduleType) + "'"), moduleType);
+                    return;
+                }
+                bootstrapComponents.push(_this._getIdentifierMetadata(type));
+            });
+        }
+        entryComponents.push.apply(entryComponents, bootstrapComponents.map(function (type) { return ((_this._getEntryComponentMetadata(type.reference))); }));
+        if (meta.schemas) {
+            schemas.push.apply(schemas, flattenAndDedupeArray(meta.schemas));
+        }
+        compileMeta = new CompileNgModuleMetadata({
+            type: this._getTypeMetadata(moduleType),
+            providers: providers,
+            entryComponents: entryComponents,
+            bootstrapComponents: bootstrapComponents,
+            schemas: schemas,
+            declaredDirectives: declaredDirectives,
+            exportedDirectives: exportedDirectives,
+            declaredPipes: declaredPipes,
+            exportedPipes: exportedPipes,
+            importedModules: importedModules,
+            exportedModules: exportedModules,
+            transitiveModule: transitiveModule,
+            id: meta.id || null,
+        });
+        entryComponents.forEach(function (id) { return transitiveModule.addEntryComponent(id); });
+        providers.forEach(function (provider) { return transitiveModule.addProvider(provider, /** @type {?} */ ((compileMeta)).type); });
+        transitiveModule.addModule(compileMeta.type);
+        this._ngModuleCache.set(moduleType, compileMeta);
+        return compileMeta;
+    };
+    /**
+     * @param {?} moduleType
+     * @param {?} importedModuleType
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._checkSelfImport = /**
+     * @param {?} moduleType
+     * @param {?} importedModuleType
+     * @return {?}
+     */
+    function (moduleType, importedModuleType) {
+        if (moduleType === importedModuleType) {
+            this._reportError(syntaxError("'" + stringifyType(moduleType) + "' module can't import itself"), moduleType);
+            return true;
+        }
+        return false;
+    };
+    /**
+     * @param {?} type
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._getTypeDescriptor = /**
+     * @param {?} type
+     * @return {?}
+     */
+    function (type) {
+        if (isValidType(type)) {
+            if (this.isDirective(type)) {
+                return 'directive';
+            }
+            if (this.isPipe(type)) {
+                return 'pipe';
+            }
+            if (this.isNgModule(type)) {
+                return 'module';
+            }
+        }
+        if ((/** @type {?} */ (type)).provide) {
+            return 'provider';
+        }
+        return 'value';
+    };
+    /**
+     * @param {?} type
+     * @param {?} moduleType
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._addTypeToModule = /**
+     * @param {?} type
+     * @param {?} moduleType
+     * @return {?}
+     */
+    function (type, moduleType) {
+        var /** @type {?} */ oldModule = this._ngModuleOfTypes.get(type);
+        if (oldModule && oldModule !== moduleType) {
+            this._reportError(syntaxError("Type " + stringifyType(type) + " is part of the declarations of 2 modules: " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + "! " +
+                ("Please consider moving " + stringifyType(type) + " to a higher module that imports " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + ". ") +
+                ("You can also create a new NgModule that exports and includes " + stringifyType(type) + " then import that NgModule in " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + ".")), moduleType);
+            return;
+        }
+        this._ngModuleOfTypes.set(type, moduleType);
+    };
+    /**
+     * @param {?} importedModules
+     * @param {?} exportedModules
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._getTransitiveNgModuleMetadata = /**
+     * @param {?} importedModules
+     * @param {?} exportedModules
+     * @return {?}
+     */
+    function (importedModules, exportedModules) {
+        // collect `providers` / `entryComponents` from all imported and all exported modules
+        var /** @type {?} */ result = new TransitiveCompileNgModuleMetadata();
+        var /** @type {?} */ modulesByToken = new Map();
+        importedModules.concat(exportedModules).forEach(function (modSummary) {
+            modSummary.modules.forEach(function (mod) { return result.addModule(mod); });
+            modSummary.entryComponents.forEach(function (comp) { return result.addEntryComponent(comp); });
+            var /** @type {?} */ addedTokens = new Set();
+            modSummary.providers.forEach(function (entry) {
+                var /** @type {?} */ tokenRef = tokenReference(entry.provider.token);
+                var /** @type {?} */ prevModules = modulesByToken.get(tokenRef);
+                if (!prevModules) {
+                    prevModules = new Set();
+                    modulesByToken.set(tokenRef, prevModules);
+                }
+                var /** @type {?} */ moduleRef = entry.module.reference;
+                // Note: the providers of one module may still contain multiple providers
+                // per token (e.g. for multi providers), and we need to preserve these.
+                if (addedTokens.has(tokenRef) || !prevModules.has(moduleRef)) {
+                    prevModules.add(moduleRef);
+                    addedTokens.add(tokenRef);
+                    result.addProvider(entry.provider, entry.module);
+                }
+            });
+        });
+        exportedModules.forEach(function (modSummary) {
+            modSummary.exportedDirectives.forEach(function (id) { return result.addExportedDirective(id); });
+            modSummary.exportedPipes.forEach(function (id) { return result.addExportedPipe(id); });
+        });
+        importedModules.forEach(function (modSummary) {
+            modSummary.exportedDirectives.forEach(function (id) { return result.addDirective(id); });
+            modSummary.exportedPipes.forEach(function (id) { return result.addPipe(id); });
+        });
+        return result;
+    };
+    /**
+     * @param {?} type
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._getIdentifierMetadata = /**
+     * @param {?} type
+     * @return {?}
+     */
+    function (type) {
+        type = resolveForwardRef(type);
+        return { reference: type };
+    };
+    /**
+     * @param {?} type
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.isInjectable = /**
+     * @param {?} type
+     * @return {?}
+     */
+    function (type) {
+        var /** @type {?} */ annotations = this._reflector.tryAnnotations(type);
+        return annotations.some(function (ann) { return createInjectable.isTypeOf(ann); });
+    };
+    /**
+     * @param {?} type
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.getInjectableSummary = /**
+     * @param {?} type
+     * @return {?}
+     */
+    function (type) {
+        return {
+            summaryKind: CompileSummaryKind.Injectable,
+            type: this._getTypeMetadata(type, null, false)
+        };
+    };
+    /**
+     * @param {?} type
+     * @param {?=} dependencies
+     * @param {?=} throwOnUnknownDeps
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.getInjectableMetadata = /**
+     * @param {?} type
+     * @param {?=} dependencies
+     * @param {?=} throwOnUnknownDeps
+     * @return {?}
+     */
+    function (type, dependencies, throwOnUnknownDeps) {
+        if (dependencies === void 0) { dependencies = null; }
+        if (throwOnUnknownDeps === void 0) { throwOnUnknownDeps = true; }
+        var /** @type {?} */ typeSummary = this._loadSummary(type, CompileSummaryKind.Injectable);
+        var /** @type {?} */ typeMetadata = typeSummary ?
+            typeSummary.type :
+            this._getTypeMetadata(type, dependencies, throwOnUnknownDeps);
+        var /** @type {?} */ annotations = this._reflector.annotations(type).filter(function (ann) { return createInjectable.isTypeOf(ann); });
+        if (annotations.length === 0) {
+            return null;
+        }
+        var /** @type {?} */ meta = annotations[annotations.length - 1];
+        return {
+            symbol: type,
+            type: typeMetadata,
+            providedIn: meta.providedIn,
+            useValue: meta.useValue,
+            useClass: meta.useClass,
+            useExisting: meta.useExisting,
+            useFactory: meta.useFactory,
+            deps: meta.deps,
+        };
+    };
+    /**
+     * @param {?} type
+     * @param {?=} dependencies
+     * @param {?=} throwOnUnknownDeps
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._getTypeMetadata = /**
+     * @param {?} type
+     * @param {?=} dependencies
+     * @param {?=} throwOnUnknownDeps
+     * @return {?}
+     */
+    function (type, dependencies, throwOnUnknownDeps) {
+        if (dependencies === void 0) { dependencies = null; }
+        if (throwOnUnknownDeps === void 0) { throwOnUnknownDeps = true; }
+        var /** @type {?} */ identifier = this._getIdentifierMetadata(type);
+        return {
+            reference: identifier.reference,
+            diDeps: this._getDependenciesMetadata(identifier.reference, dependencies, throwOnUnknownDeps),
+            lifecycleHooks: getAllLifecycleHooks(this._reflector, identifier.reference),
+        };
+    };
+    /**
+     * @param {?} factory
+     * @param {?=} dependencies
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._getFactoryMetadata = /**
+     * @param {?} factory
+     * @param {?=} dependencies
+     * @return {?}
+     */
+    function (factory, dependencies) {
+        if (dependencies === void 0) { dependencies = null; }
+        factory = resolveForwardRef(factory);
+        return { reference: factory, diDeps: this._getDependenciesMetadata(factory, dependencies) };
+    };
+    /**
+     * Gets the metadata for the given pipe.
+     * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
+     */
+    /**
+     * Gets the metadata for the given pipe.
+     * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
+     * @param {?} pipeType
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.getPipeMetadata = /**
+     * Gets the metadata for the given pipe.
+     * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
+     * @param {?} pipeType
+     * @return {?}
+     */
+    function (pipeType) {
+        var /** @type {?} */ pipeMeta = this._pipeCache.get(pipeType);
+        if (!pipeMeta) {
+            this._reportError(syntaxError("Illegal state: getPipeMetadata can only be called after loadNgModuleDirectiveAndPipeMetadata for a module that declares it. Pipe " + stringifyType(pipeType) + "."), pipeType);
+        }
+        return pipeMeta || null;
+    };
+    /**
+     * @param {?} pipeType
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.getPipeSummary = /**
+     * @param {?} pipeType
+     * @return {?}
+     */
+    function (pipeType) {
+        var /** @type {?} */ pipeSummary = /** @type {?} */ (this._loadSummary(pipeType, CompileSummaryKind.Pipe));
+        if (!pipeSummary) {
+            this._reportError(syntaxError("Illegal state: Could not load the summary for pipe " + stringifyType(pipeType) + "."), pipeType);
+        }
+        return pipeSummary;
+    };
+    /**
+     * @param {?} pipeType
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.getOrLoadPipeMetadata = /**
+     * @param {?} pipeType
+     * @return {?}
+     */
+    function (pipeType) {
+        var /** @type {?} */ pipeMeta = this._pipeCache.get(pipeType);
+        if (!pipeMeta) {
+            pipeMeta = this._loadPipeMetadata(pipeType);
+        }
+        return pipeMeta;
+    };
+    /**
+     * @param {?} pipeType
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._loadPipeMetadata = /**
+     * @param {?} pipeType
+     * @return {?}
+     */
+    function (pipeType) {
+        pipeType = resolveForwardRef(pipeType);
+        var /** @type {?} */ pipeAnnotation = /** @type {?} */ ((this._pipeResolver.resolve(pipeType)));
+        var /** @type {?} */ pipeMeta = new CompilePipeMetadata({
+            type: this._getTypeMetadata(pipeType),
+            name: pipeAnnotation.name,
+            pure: !!pipeAnnotation.pure
+        });
+        this._pipeCache.set(pipeType, pipeMeta);
+        this._summaryCache.set(pipeType, pipeMeta.toSummary());
+        return pipeMeta;
+    };
+    /**
+     * @param {?} typeOrFunc
+     * @param {?} dependencies
+     * @param {?=} throwOnUnknownDeps
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._getDependenciesMetadata = /**
+     * @param {?} typeOrFunc
+     * @param {?} dependencies
+     * @param {?=} throwOnUnknownDeps
+     * @return {?}
+     */
+    function (typeOrFunc, dependencies, throwOnUnknownDeps) {
+        var _this = this;
+        if (throwOnUnknownDeps === void 0) { throwOnUnknownDeps = true; }
+        var /** @type {?} */ hasUnknownDeps = false;
+        var /** @type {?} */ params = dependencies || this._reflector.parameters(typeOrFunc) || [];
+        var /** @type {?} */ dependenciesMetadata = params.map(function (param) {
+            var /** @type {?} */ isAttribute = false;
+            var /** @type {?} */ isHost = false;
+            var /** @type {?} */ isSelf = false;
+            var /** @type {?} */ isSkipSelf = false;
+            var /** @type {?} */ isOptional = false;
+            var /** @type {?} */ token = null;
+            if (Array.isArray(param)) {
+                param.forEach(function (paramEntry) {
+                    if (createHost.isTypeOf(paramEntry)) {
+                        isHost = true;
+                    }
+                    else if (createSelf.isTypeOf(paramEntry)) {
+                        isSelf = true;
+                    }
+                    else if (createSkipSelf.isTypeOf(paramEntry)) {
+                        isSkipSelf = true;
+                    }
+                    else if (createOptional.isTypeOf(paramEntry)) {
+                        isOptional = true;
+                    }
+                    else if (createAttribute.isTypeOf(paramEntry)) {
+                        isAttribute = true;
+                        token = paramEntry.attributeName;
+                    }
+                    else if (createInject.isTypeOf(paramEntry)) {
+                        token = paramEntry.token;
+                    }
+                    else if (createInjectionToken.isTypeOf(paramEntry) || paramEntry instanceof StaticSymbol) {
+                        token = paramEntry;
+                    }
+                    else if (isValidType(paramEntry) && token == null) {
+                        token = paramEntry;
+                    }
+                });
+            }
+            else {
+                token = param;
+            }
+            if (token == null) {
+                hasUnknownDeps = true;
+                return /** @type {?} */ ((null));
+            }
+            return {
+                isAttribute: isAttribute,
+                isHost: isHost,
+                isSelf: isSelf,
+                isSkipSelf: isSkipSelf,
+                isOptional: isOptional,
+                token: _this._getTokenMetadata(token)
+            };
+        });
+        if (hasUnknownDeps) {
+            var /** @type {?} */ depsTokens = dependenciesMetadata.map(function (dep) { return dep ? stringifyType(dep.token) : '?'; }).join(', ');
+            var /** @type {?} */ message = "Can't resolve all parameters for " + stringifyType(typeOrFunc) + ": (" + depsTokens + ").";
+            if (throwOnUnknownDeps || this._config.strictInjectionParameters) {
+                this._reportError(syntaxError(message), typeOrFunc);
+            }
+            else {
+                this._console.warn("Warning: " + message + " This will become an error in Angular v6.x");
+            }
+        }
+        return dependenciesMetadata;
+    };
+    /**
+     * @param {?} token
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._getTokenMetadata = /**
+     * @param {?} token
+     * @return {?}
+     */
+    function (token) {
+        token = resolveForwardRef(token);
+        var /** @type {?} */ compileToken;
+        if (typeof token === 'string') {
+            compileToken = { value: token };
+        }
+        else {
+            compileToken = { identifier: { reference: token } };
+        }
+        return compileToken;
+    };
+    /**
+     * @param {?} providers
+     * @param {?} targetEntryComponents
+     * @param {?=} debugInfo
+     * @param {?=} compileProviders
+     * @param {?=} type
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._getProvidersMetadata = /**
+     * @param {?} providers
+     * @param {?} targetEntryComponents
+     * @param {?=} debugInfo
+     * @param {?=} compileProviders
+     * @param {?=} type
+     * @return {?}
+     */
+    function (providers, targetEntryComponents, debugInfo, compileProviders, type) {
+        var _this = this;
+        if (compileProviders === void 0) { compileProviders = []; }
+        providers.forEach(function (provider, providerIdx) {
+            if (Array.isArray(provider)) {
+                _this._getProvidersMetadata(provider, targetEntryComponents, debugInfo, compileProviders);
+            }
+            else {
+                provider = resolveForwardRef(provider);
+                var /** @type {?} */ providerMeta = /** @type {?} */ ((undefined));
+                if (provider && typeof provider === 'object' && provider.hasOwnProperty('provide')) {
+                    _this._validateProvider(provider);
+                    providerMeta = new ProviderMeta(provider.provide, provider);
+                }
+                else if (isValidType(provider)) {
+                    providerMeta = new ProviderMeta(provider, { useClass: provider });
+                }
+                else if (provider === void 0) {
+                    _this._reportError(syntaxError("Encountered undefined provider! Usually this means you have a circular dependencies (might be caused by using 'barrel' index.ts files."));
+                    return;
+                }
+                else {
+                    var /** @type {?} */ providersInfo = (/** @type {?} */ (providers.reduce(function (soFar, seenProvider, seenProviderIdx) {
+                        if (seenProviderIdx < providerIdx) {
+                            soFar.push("" + stringifyType(seenProvider));
+                        }
+                        else if (seenProviderIdx == providerIdx) {
+                            soFar.push("?" + stringifyType(seenProvider) + "?");
+                        }
+                        else if (seenProviderIdx == providerIdx + 1) {
+                            soFar.push('...');
+                        }
+                        return soFar;
+                    }, [])))
+                        .join(', ');
+                    _this._reportError(syntaxError("Invalid " + (debugInfo ? debugInfo : 'provider') + " - only instances of Provider and Type are allowed, got: [" + providersInfo + "]"), type);
+                    return;
+                }
+                if (providerMeta.token ===
+                    _this._reflector.resolveExternalReference(Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS)) {
+                    targetEntryComponents.push.apply(targetEntryComponents, _this._getEntryComponentsFromProvider(providerMeta, type));
+                }
+                else {
+                    compileProviders.push(_this.getProviderMetadata(providerMeta));
+                }
+            }
+        });
+        return compileProviders;
+    };
+    /**
+     * @param {?} provider
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._validateProvider = /**
+     * @param {?} provider
+     * @return {?}
+     */
+    function (provider) {
+        if (provider.hasOwnProperty('useClass') && provider.useClass == null) {
+            this._reportError(syntaxError("Invalid provider for " + stringifyType(provider.provide) + ". useClass cannot be " + provider.useClass + ".\n           Usually it happens when:\n           1. There's a circular dependency (might be caused by using index.ts (barrel) files).\n           2. Class was used before it was declared. Use forwardRef in this case."));
+        }
+    };
+    /**
+     * @param {?} provider
+     * @param {?=} type
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._getEntryComponentsFromProvider = /**
+     * @param {?} provider
+     * @param {?=} type
+     * @return {?}
+     */
+    function (provider, type) {
+        var _this = this;
+        var /** @type {?} */ components = [];
+        var /** @type {?} */ collectedIdentifiers = [];
+        if (provider.useFactory || provider.useExisting || provider.useClass) {
+            this._reportError(syntaxError("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports useValue!"), type);
+            return [];
+        }
+        if (!provider.multi) {
+            this._reportError(syntaxError("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports 'multi = true'!"), type);
+            return [];
+        }
+        extractIdentifiers(provider.useValue, collectedIdentifiers);
+        collectedIdentifiers.forEach(function (identifier) {
+            var /** @type {?} */ entry = _this._getEntryComponentMetadata(identifier.reference, false);
+            if (entry) {
+                components.push(entry);
+            }
+        });
+        return components;
+    };
+    /**
+     * @param {?} dirType
+     * @param {?=} throwIfNotFound
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._getEntryComponentMetadata = /**
+     * @param {?} dirType
+     * @param {?=} throwIfNotFound
+     * @return {?}
+     */
+    function (dirType, throwIfNotFound) {
+        if (throwIfNotFound === void 0) { throwIfNotFound = true; }
+        var /** @type {?} */ dirMeta = this.getNonNormalizedDirectiveMetadata(dirType);
+        if (dirMeta && dirMeta.metadata.isComponent) {
+            return { componentType: dirType, componentFactory: /** @type {?} */ ((dirMeta.metadata.componentFactory)) };
+        }
+        var /** @type {?} */ dirSummary = /** @type {?} */ (this._loadSummary(dirType, CompileSummaryKind.Directive));
+        if (dirSummary && dirSummary.isComponent) {
+            return { componentType: dirType, componentFactory: /** @type {?} */ ((dirSummary.componentFactory)) };
+        }
+        if (throwIfNotFound) {
+            throw syntaxError(dirType.name + " cannot be used as an entry component.");
+        }
+        return null;
+    };
+    /**
+     * @param {?} type
+     * @param {?=} dependencies
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._getInjectableTypeMetadata = /**
+     * @param {?} type
+     * @param {?=} dependencies
+     * @return {?}
+     */
+    function (type, dependencies) {
+        if (dependencies === void 0) { dependencies = null; }
+        var /** @type {?} */ typeSummary = this._loadSummary(type, CompileSummaryKind.Injectable);
+        if (typeSummary) {
+            return typeSummary.type;
+        }
+        return this._getTypeMetadata(type, dependencies);
+    };
+    /**
+     * @param {?} provider
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.getProviderMetadata = /**
+     * @param {?} provider
+     * @return {?}
+     */
+    function (provider) {
+        var /** @type {?} */ compileDeps = /** @type {?} */ ((undefined));
+        var /** @type {?} */ compileTypeMetadata = /** @type {?} */ ((null));
+        var /** @type {?} */ compileFactoryMetadata = /** @type {?} */ ((null));
+        var /** @type {?} */ token = this._getTokenMetadata(provider.token);
+        if (provider.useClass) {
+            compileTypeMetadata =
+                this._getInjectableTypeMetadata(provider.useClass, provider.dependencies);
+            compileDeps = compileTypeMetadata.diDeps;
+            if (provider.token === provider.useClass) {
+                // use the compileTypeMetadata as it contains information about lifecycleHooks...
+                token = { identifier: compileTypeMetadata };
+            }
+        }
+        else if (provider.useFactory) {
+            compileFactoryMetadata = this._getFactoryMetadata(provider.useFactory, provider.dependencies);
+            compileDeps = compileFactoryMetadata.diDeps;
+        }
+        return {
+            token: token,
+            useClass: compileTypeMetadata,
+            useValue: provider.useValue,
+            useFactory: compileFactoryMetadata,
+            useExisting: provider.useExisting ? this._getTokenMetadata(provider.useExisting) : undefined,
+            deps: compileDeps,
+            multi: provider.multi
+        };
+    };
+    /**
+     * @param {?} queries
+     * @param {?} isViewQuery
+     * @param {?} directiveType
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._getQueriesMetadata = /**
+     * @param {?} queries
+     * @param {?} isViewQuery
+     * @param {?} directiveType
+     * @return {?}
+     */
+    function (queries, isViewQuery, directiveType) {
+        var _this = this;
+        var /** @type {?} */ res = [];
+        Object.keys(queries).forEach(function (propertyName) {
+            var /** @type {?} */ query = queries[propertyName];
+            if (query.isViewQuery === isViewQuery) {
+                res.push(_this._getQueryMetadata(query, propertyName, directiveType));
+            }
+        });
+        return res;
+    };
+    /**
+     * @param {?} selector
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._queryVarBindings = /**
+     * @param {?} selector
+     * @return {?}
+     */
+    function (selector) { return selector.split(/\s*,\s*/); };
+    /**
+     * @param {?} q
+     * @param {?} propertyName
+     * @param {?} typeOrFunc
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._getQueryMetadata = /**
+     * @param {?} q
+     * @param {?} propertyName
+     * @param {?} typeOrFunc
+     * @return {?}
+     */
+    function (q, propertyName, typeOrFunc) {
+        var _this = this;
+        var /** @type {?} */ selectors;
+        if (typeof q.selector === 'string') {
+            selectors =
+                this._queryVarBindings(q.selector).map(function (varName) { return _this._getTokenMetadata(varName); });
+        }
+        else {
+            if (!q.selector) {
+                this._reportError(syntaxError("Can't construct a query for the property \"" + propertyName + "\" of \"" + stringifyType(typeOrFunc) + "\" since the query selector wasn't defined."), typeOrFunc);
+                selectors = [];
+            }
+            else {
+                selectors = [this._getTokenMetadata(q.selector)];
+            }
+        }
+        return {
+            selectors: selectors,
+            first: q.first,
+            descendants: q.descendants, propertyName: propertyName,
+            read: q.read ? this._getTokenMetadata(q.read) : /** @type {?} */ ((null))
+        };
+    };
+    /**
+     * @param {?} error
+     * @param {?=} type
+     * @param {?=} otherType
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._reportError = /**
+     * @param {?} error
+     * @param {?=} type
+     * @param {?=} otherType
+     * @return {?}
+     */
+    function (error$$1, type, otherType) {
+        if (this._errorCollector) {
+            this._errorCollector(error$$1, type);
+            if (otherType) {
+                this._errorCollector(error$$1, otherType);
+            }
+        }
+        else {
+            throw error$$1;
+        }
+    };
+    return CompileMetadataResolver;
+}());
+/**
+ * @param {?} tree
+ * @param {?=} out
+ * @return {?}
+ */
+function flattenArray(tree, out) {
+    if (out === void 0) { out = []; }
+    if (tree) {
+        for (var /** @type {?} */ i = 0; i < tree.length; i++) {
+            var /** @type {?} */ item = resolveForwardRef(tree[i]);
+            if (Array.isArray(item)) {
+                flattenArray(item, out);
+            }
+            else {
+                out.push(item);
+            }
+        }
+    }
+    return out;
+}
+/**
+ * @param {?} array
+ * @return {?}
+ */
+function dedupeArray(array) {
+    if (array) {
+        return Array.from(new Set(array));
+    }
+    return [];
+}
+/**
+ * @param {?} tree
+ * @return {?}
+ */
+function flattenAndDedupeArray(tree) {
+    return dedupeArray(flattenArray(tree));
+}
+/**
+ * @param {?} value
+ * @return {?}
+ */
+function isValidType(value) {
+    return (value instanceof StaticSymbol) || (value instanceof Type);
+}
+/**
+ * @param {?} value
+ * @param {?} targetIdentifiers
+ * @return {?}
+ */
+function extractIdentifiers(value, targetIdentifiers) {
+    visitValue(value, new _CompileValueConverter(), targetIdentifiers);
+}
+var _CompileValueConverter = /** @class */ (function (_super) {
+    __extends(_CompileValueConverter, _super);
+    function _CompileValueConverter() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    /**
+     * @param {?} value
+     * @param {?} targetIdentifiers
+     * @return {?}
+     */
+    _CompileValueConverter.prototype.visitOther = /**
+     * @param {?} value
+     * @param {?} targetIdentifiers
+     * @return {?}
+     */
+    function (value, targetIdentifiers) {
+        targetIdentifiers.push({ reference: value });
+    };
+    return _CompileValueConverter;
+}(ValueTransformer));
+/**
+ * @param {?} type
+ * @return {?}
+ */
+function stringifyType(type) {
+    if (type instanceof StaticSymbol) {
+        return type.name + " in " + type.filePath;
+    }
+    else {
+        return stringify(type);
+    }
+}
+/**
+ * Indicates that a component is still being loaded in a synchronous compile.
+ * @param {?} compType
+ * @return {?}
+ */
+function componentStillLoadingError(compType) {
+    var /** @type {?} */ error$$1 = Error("Can't compile synchronously as " + stringify(compType) + " is still being loaded!");
+    (/** @type {?} */ (error$$1))[ERROR_COMPONENT_TYPE] = compType;
+    return error$$1;
 }
 
 /**
@@ -19514,7 +20562,7 @@ var ProviderElementContext = /** @class */ (function () {
                     result = dep;
                 }
                 else {
-                    result = dep.isOptional ? result = { isValue: true, value: null } : null;
+                    result = dep.isOptional ? { isValue: true, value: null } : null;
                 }
             }
         }
@@ -19535,9 +20583,9 @@ var NgModuleProviderAnalyzer = /** @class */ (function () {
         this._allProviders = new Map();
         ngModule.transitiveModule.modules.forEach(function (ngModuleType) {
             var /** @type {?} */ ngModuleProvider = { token: { identifier: ngModuleType }, useClass: ngModuleType };
-            _resolveProviders([ngModuleProvider], ProviderAstType.PublicService, true, sourceSpan, _this._errors, _this._allProviders);
+            _resolveProviders([ngModuleProvider], ProviderAstType.PublicService, true, sourceSpan, _this._errors, _this._allProviders, /* isModule */ /* isModule */ true);
         });
-        _resolveProviders(ngModule.transitiveModule.providers.map(function (entry) { return entry.provider; }).concat(extraProviders), ProviderAstType.PublicService, false, sourceSpan, this._errors, this._allProviders);
+        _resolveProviders(ngModule.transitiveModule.providers.map(function (entry) { return entry.provider; }).concat(extraProviders), ProviderAstType.PublicService, false, sourceSpan, this._errors, this._allProviders, /* isModule */ false);
     }
     /**
      * @return {?}
@@ -19655,16 +20703,7 @@ var NgModuleProviderAnalyzer = /** @class */ (function () {
                 foundLocal = true;
             }
         }
-        var /** @type {?} */ result = dep;
-        if (dep.isSelf && !foundLocal) {
-            if (dep.isOptional) {
-                result = { isValue: true, value: null };
-            }
-            else {
-                this._errors.push(new ProviderError("No provider for " + tokenName((/** @type {?} */ ((dep.token)))), requestorSourceSpan));
-            }
-        }
-        return result;
+        return dep;
     };
     return NgModuleProviderAnalyzer;
 }());
@@ -19692,7 +20731,7 @@ function _transformProvider(provider, _a) {
  */
 function _transformProviderAst(provider, _a) {
     var eager = _a.eager, providers = _a.providers;
-    return new ProviderAst(provider.token, provider.multiProvider, provider.eager || eager, providers, provider.providerType, provider.lifecycleHooks, provider.sourceSpan);
+    return new ProviderAst(provider.token, provider.multiProvider, provider.eager || eager, providers, provider.providerType, provider.lifecycleHooks, provider.sourceSpan, provider.isModule);
 }
 /**
  * @param {?} directives
@@ -19704,13 +20743,13 @@ function _resolveProvidersFromDirectives(directives, sourceSpan, targetErrors) {
     var /** @type {?} */ providersByToken = new Map();
     directives.forEach(function (directive) {
         var /** @type {?} */ dirProvider = { token: { identifier: directive.type }, useClass: directive.type };
-        _resolveProviders([dirProvider], directive.isComponent ? ProviderAstType.Component : ProviderAstType.Directive, true, sourceSpan, targetErrors, providersByToken);
+        _resolveProviders([dirProvider], directive.isComponent ? ProviderAstType.Component : ProviderAstType.Directive, true, sourceSpan, targetErrors, providersByToken, /* isModule */ /* isModule */ false);
     });
     // Note: directives need to be able to overwrite providers of a component!
     var /** @type {?} */ directivesWithComponentFirst = directives.filter(function (dir) { return dir.isComponent; }).concat(directives.filter(function (dir) { return !dir.isComponent; }));
     directivesWithComponentFirst.forEach(function (directive) {
-        _resolveProviders(directive.providers, ProviderAstType.PublicService, false, sourceSpan, targetErrors, providersByToken);
-        _resolveProviders(directive.viewProviders, ProviderAstType.PrivateService, false, sourceSpan, targetErrors, providersByToken);
+        _resolveProviders(directive.providers, ProviderAstType.PublicService, false, sourceSpan, targetErrors, providersByToken, /* isModule */ /* isModule */ false);
+        _resolveProviders(directive.viewProviders, ProviderAstType.PrivateService, false, sourceSpan, targetErrors, providersByToken, /* isModule */ /* isModule */ false);
     });
     return providersByToken;
 }
@@ -19721,9 +20760,10 @@ function _resolveProvidersFromDirectives(directives, sourceSpan, targetErrors) {
  * @param {?} sourceSpan
  * @param {?} targetErrors
  * @param {?} targetProvidersByToken
+ * @param {?} isModule
  * @return {?}
  */
-function _resolveProviders(providers, providerType, eager, sourceSpan, targetErrors, targetProvidersByToken) {
+function _resolveProviders(providers, providerType, eager, sourceSpan, targetErrors, targetProvidersByToken, isModule) {
     providers.forEach(function (provider) {
         var /** @type {?} */ resolvedProvider = targetProvidersByToken.get(tokenReference(provider.token));
         if (resolvedProvider != null && !!resolvedProvider.multiProvider !== !!provider.multi) {
@@ -19735,7 +20775,7 @@ function _resolveProviders(providers, providerType, eager, sourceSpan, targetErr
                 (/** @type {?} */ (provider.token.identifier)).lifecycleHooks :
                 [];
             var /** @type {?} */ isUseValue = !(provider.useClass || provider.useExisting || provider.useFactory);
-            resolvedProvider = new ProviderAst(provider.token, !!provider.multi, eager || isUseValue, [provider], providerType, lifecycleHooks, sourceSpan);
+            resolvedProvider = new ProviderAst(provider.token, !!provider.multi, eager || isUseValue, [provider], providerType, lifecycleHooks, sourceSpan, isModule);
             targetProvidersByToken.set(tokenReference(provider.token), resolvedProvider);
         }
         else {
@@ -19801,97 +20841,6 @@ function _addQueryToTokenMap(map, query) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var QUOTED_KEYS = '$quoted$';
-/**
- * @param {?} ctx
- * @param {?} value
- * @param {?=} type
- * @return {?}
- */
-function convertValueToOutputAst(ctx, value, type) {
-    if (type === void 0) { type = null; }
-    return visitValue(value, new _ValueOutputAstTransformer(ctx), type);
-}
-var _ValueOutputAstTransformer = /** @class */ (function () {
-    function _ValueOutputAstTransformer(ctx) {
-        this.ctx = ctx;
-    }
-    /**
-     * @param {?} arr
-     * @param {?} type
-     * @return {?}
-     */
-    _ValueOutputAstTransformer.prototype.visitArray = /**
-     * @param {?} arr
-     * @param {?} type
-     * @return {?}
-     */
-    function (arr, type) {
-        var _this = this;
-        return literalArr(arr.map(function (value) { return visitValue(value, _this, null); }), type);
-    };
-    /**
-     * @param {?} map
-     * @param {?} type
-     * @return {?}
-     */
-    _ValueOutputAstTransformer.prototype.visitStringMap = /**
-     * @param {?} map
-     * @param {?} type
-     * @return {?}
-     */
-    function (map, type) {
-        var _this = this;
-        var /** @type {?} */ entries = [];
-        var /** @type {?} */ quotedSet = new Set(map && map[QUOTED_KEYS]);
-        Object.keys(map).forEach(function (key) {
-            entries.push(new LiteralMapEntry(key, visitValue(map[key], _this, null), quotedSet.has(key)));
-        });
-        return new LiteralMapExpr(entries, type);
-    };
-    /**
-     * @param {?} value
-     * @param {?} type
-     * @return {?}
-     */
-    _ValueOutputAstTransformer.prototype.visitPrimitive = /**
-     * @param {?} value
-     * @param {?} type
-     * @return {?}
-     */
-    function (value, type) { return literal(value, type); };
-    /**
-     * @param {?} value
-     * @param {?} type
-     * @return {?}
-     */
-    _ValueOutputAstTransformer.prototype.visitOther = /**
-     * @param {?} value
-     * @param {?} type
-     * @return {?}
-     */
-    function (value, type) {
-        if (value instanceof Expression) {
-            return value;
-        }
-        else {
-            return this.ctx.importExpr(value);
-        }
-    };
-    return _ValueOutputAstTransformer;
-}());
-
-/**
- * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
- */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * @param {?} ctx
  * @param {?} providerAst
@@ -19904,6 +20853,9 @@ function providerDef(ctx, providerAst) {
     }
     if (providerAst.providerType === ProviderAstType.PrivateService) {
         flags |= 8192 /* PrivateProvider */;
+    }
+    if (providerAst.isModule) {
+        flags |= 1073741824 /* TypeModuleProvider */;
     }
     providerAst.lifecycleHooks.forEach(function (lifecycleHook) {
         // for regular providers, we only support ngOnDestroy
@@ -20026,7 +20978,7 @@ function tokenExpr(ctx, tokenMeta) {
  */
 function depDef(ctx, dep) {
     // Note: the following fields have already been normalized out by provider_analyzer:
-    // - isAttribute, isSelf, isHost
+    // - isAttribute, isHost
     var /** @type {?} */ expr = dep.isValue ? convertValueToOutputAst(ctx, dep.value) : tokenExpr(ctx, /** @type {?} */ ((dep.token)));
     var /** @type {?} */ flags = 0;
     if (dep.isSkipSelf) {
@@ -20034,6 +20986,9 @@ function depDef(ctx, dep) {
     }
     if (dep.isOptional) {
         flags |= 2 /* Optional */;
+    }
+    if (dep.isSelf) {
+        flags |= 4 /* Self */;
     }
     if (dep.isValue) {
         flags |= 8 /* Value */;
@@ -20157,8 +21112,10 @@ var NgModuleCompiler = /** @class */ (function () {
             ngModuleDefFactory
         ]));
         if (ngModuleMeta.id) {
+            var /** @type {?} */ id = typeof ngModuleMeta.id === 'string' ? literal(ngModuleMeta.id) :
+                ctx.importExpr(ngModuleMeta.id);
             var /** @type {?} */ registerFactoryStmt = importExpr(Identifiers.RegisterModuleFactoryFn)
-                .callFn([literal(ngModuleMeta.id), variable(ngModuleFactoryVar)])
+                .callFn([id, variable(ngModuleFactoryVar)])
                 .toStmt();
             ctx.statements.push(registerFactoryStmt);
         }
@@ -20851,8 +21808,26 @@ var AbstractEmitterVisitor = /** @class */ (function () {
      * @return {?}
      */
     function (stmt, ctx) {
-        var /** @type {?} */ lines = stmt.comment.split('\n');
-        lines.forEach(function (line) { ctx.println(stmt, "// " + line); });
+        if (stmt.multiline) {
+            ctx.println(stmt, "/* " + stmt.comment + " */");
+        }
+        else {
+            stmt.comment.split('\n').forEach(function (line) { ctx.println(stmt, "// " + line); });
+        }
+        return null;
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} ctx
+     * @return {?}
+     */
+    AbstractEmitterVisitor.prototype.visitJSDocCommentStmt = /**
+     * @param {?} stmt
+     * @param {?} ctx
+     * @return {?}
+     */
+    function (stmt, ctx) {
+        ctx.println(stmt, "/*" + stmt.toString() + "*/");
         return null;
     };
     /**
@@ -21401,6 +22376,7 @@ var TypeScriptEmitter = /** @class */ (function () {
      * @param {?=} preamble
      * @param {?=} emitSourceMaps
      * @param {?=} referenceFilter
+     * @param {?=} importFilter
      * @return {?}
      */
     TypeScriptEmitter.prototype.emitStatementsAndContext = /**
@@ -21409,12 +22385,13 @@ var TypeScriptEmitter = /** @class */ (function () {
      * @param {?=} preamble
      * @param {?=} emitSourceMaps
      * @param {?=} referenceFilter
+     * @param {?=} importFilter
      * @return {?}
      */
-    function (genFilePath, stmts, preamble, emitSourceMaps, referenceFilter) {
+    function (genFilePath, stmts, preamble, emitSourceMaps, referenceFilter, importFilter) {
         if (preamble === void 0) { preamble = ''; }
         if (emitSourceMaps === void 0) { emitSourceMaps = true; }
-        var /** @type {?} */ converter = new _TsEmitterVisitor(referenceFilter);
+        var /** @type {?} */ converter = new _TsEmitterVisitor(referenceFilter, importFilter);
         var /** @type {?} */ ctx = EmitterVisitorContext.createRoot();
         converter.visitAllStatements(stmts, ctx);
         var /** @type {?} */ preambleLines = preamble ? preamble.split('\n') : [];
@@ -21458,9 +22435,10 @@ var TypeScriptEmitter = /** @class */ (function () {
 }());
 var _TsEmitterVisitor = /** @class */ (function (_super) {
     __extends(_TsEmitterVisitor, _super);
-    function _TsEmitterVisitor(referenceFilter) {
+    function _TsEmitterVisitor(referenceFilter, importFilter) {
         var _this = _super.call(this, false) || this;
         _this.referenceFilter = referenceFilter;
+        _this.importFilter = importFilter;
         _this.typeExpression = 0;
         _this.importsWithPrefixes = new Map();
         _this.reexports = new Map();
@@ -21596,8 +22574,10 @@ var _TsEmitterVisitor = /** @class */ (function (_super) {
         }
         ctx.print(stmt, " " + stmt.name);
         this._printColonType(stmt.type, ctx);
-        ctx.print(stmt, " = ");
-        stmt.value.visitExpression(this, ctx);
+        if (stmt.value) {
+            ctx.print(stmt, " = ");
+            stmt.value.visitExpression(this, ctx);
+        }
         ctx.println(stmt, ";");
         return null;
     };
@@ -21690,8 +22670,15 @@ var _TsEmitterVisitor = /** @class */ (function (_super) {
             // comment out as a workaround for #10967
             ctx.print(null, "/*private*/ ");
         }
+        if (field.hasModifier(StmtModifier.Static)) {
+            ctx.print(null, 'static ');
+        }
         ctx.print(null, field.name);
         this._printColonType(field.type, ctx);
+        if (field.initializer) {
+            ctx.print(null, ' = ');
+            field.initializer.visitExpression(this, ctx);
+        }
         ctx.println(null, ";");
     };
     /**
@@ -21770,11 +22757,18 @@ var _TsEmitterVisitor = /** @class */ (function (_super) {
      * @return {?}
      */
     function (ast, ctx) {
+        if (ast.name) {
+            ctx.print(ast, 'function ');
+            ctx.print(ast, ast.name);
+        }
         ctx.print(ast, "(");
         this._visitParams(ast.params, ctx);
         ctx.print(ast, ")");
         this._printColonType(ast.type, ctx, 'void');
-        ctx.println(ast, " => {");
+        if (!ast.name) {
+            ctx.print(ast, " => ");
+        }
+        ctx.println(ast, '{');
         ctx.incIndent();
         this.visitAllStatements(ast.statements, ctx);
         ctx.decIndent();
@@ -21836,7 +22830,7 @@ var _TsEmitterVisitor = /** @class */ (function (_super) {
      * @param {?} ctx
      * @return {?}
      */
-    _TsEmitterVisitor.prototype.visitBuiltintType = /**
+    _TsEmitterVisitor.prototype.visitBuiltinType = /**
      * @param {?} type
      * @param {?} ctx
      * @return {?}
@@ -21974,7 +22968,7 @@ var _TsEmitterVisitor = /** @class */ (function (_super) {
             ctx.print(null, '(null as any)');
             return;
         }
-        if (moduleName) {
+        if (moduleName && (!this.importFilter || !this.importFilter(value))) {
             var /** @type {?} */ prefix = this.importsWithPrefixes.get(moduleName);
             if (prefix == null) {
                 prefix = "i" + this.importsWithPrefixes.size;
@@ -22833,10 +23827,11 @@ var ShadowCss = /** @class */ (function () {
      */
     function (cssText, selector, hostSelector) {
         if (hostSelector === void 0) { hostSelector = ''; }
-        var /** @type {?} */ sourceMappingUrl = extractSourceMappingUrl(cssText);
+        var /** @type {?} */ commentsWithHash = extractCommentsWithHash(cssText);
         cssText = stripComments(cssText);
         cssText = this._insertDirectives(cssText);
-        return this._scopeCssText(cssText, selector, hostSelector) + sourceMappingUrl;
+        var /** @type {?} */ scopedCssText = this._scopeCssText(cssText, selector, hostSelector);
+        return [scopedCssText].concat(commentsWithHash).join('\n');
     };
     /**
      * @param {?} cssText
@@ -23336,15 +24331,13 @@ var _commentRe = /\/\*\s*[\s\S]*?\*\//g;
 function stripComments(input) {
     return input.replace(_commentRe, '');
 }
-// all comments except inline source mapping
-var _sourceMappingUrlRe = /\/\*\s*#\s*sourceMappingURL=[\s\S]+?\*\//;
+var _commentWithHashRe = /\/\*\s*#\s*source(Mapping)?URL=[\s\S]+?\*\//g;
 /**
  * @param {?} input
  * @return {?}
  */
-function extractSourceMappingUrl(input) {
-    var /** @type {?} */ matcher = input.match(_sourceMappingUrlRe);
-    return matcher ? matcher[0] : '';
+function extractCommentsWithHash(input) {
+    return input.match(_commentWithHashRe) || [];
 }
 var _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
 var _curlyRe = /([{}])/g;
@@ -23962,17 +24955,15 @@ var BindingParser = /** @class */ (function () {
     function () { return Array.from(this._usedPipes.values()); };
     /**
      * @param {?} dirMeta
-     * @param {?} elementSelector
      * @param {?} sourceSpan
      * @return {?}
      */
-    BindingParser.prototype.createDirectiveHostPropertyAsts = /**
+    BindingParser.prototype.createBoundHostProperties = /**
      * @param {?} dirMeta
-     * @param {?} elementSelector
      * @param {?} sourceSpan
      * @return {?}
      */
-    function (dirMeta, elementSelector, sourceSpan) {
+    function (dirMeta, sourceSpan) {
         var _this = this;
         if (dirMeta.hostProperties) {
             var /** @type {?} */ boundProps_1 = [];
@@ -23985,9 +24976,27 @@ var BindingParser = /** @class */ (function () {
                     _this._reportError("Value of the host property binding \"" + propName + "\" needs to be a string representing an expression but got \"" + expression + "\" (" + typeof expression + ")", sourceSpan);
                 }
             });
-            return boundProps_1.map(function (prop) { return _this.createElementPropertyAst(elementSelector, prop); });
+            return boundProps_1;
         }
         return null;
+    };
+    /**
+     * @param {?} dirMeta
+     * @param {?} elementSelector
+     * @param {?} sourceSpan
+     * @return {?}
+     */
+    BindingParser.prototype.createDirectiveHostPropertyAsts = /**
+     * @param {?} dirMeta
+     * @param {?} elementSelector
+     * @param {?} sourceSpan
+     * @return {?}
+     */
+    function (dirMeta, elementSelector, sourceSpan) {
+        var _this = this;
+        var /** @type {?} */ boundProps = this.createBoundHostProperties(dirMeta, sourceSpan);
+        return boundProps &&
+            boundProps.map(function (prop) { return _this.createElementPropertyAst(elementSelector, prop); });
     };
     /**
      * @param {?} dirMeta
@@ -24460,8 +25469,8 @@ var BindingParser = /** @class */ (function () {
      */
     function (errors, sourceSpan) {
         for (var _i = 0, errors_1 = errors; _i < errors_1.length; _i++) {
-            var error = errors_1[_i];
-            this._reportError(error.message, sourceSpan);
+            var error$$1 = errors_1[_i];
+            this._reportError(error$$1.message, sourceSpan);
         }
     };
     /**
@@ -24594,29 +25603,9 @@ var IDENT_BANANA_BOX_IDX = 8;
 var IDENT_PROPERTY_IDX = 9;
 // Group 10 = identifier inside ()
 var IDENT_EVENT_IDX = 10;
-// deprecated in 4.x
-var TEMPLATE_ELEMENT = 'template';
-// deprecated in 4.x
-var TEMPLATE_ATTR = 'template';
 var TEMPLATE_ATTR_PREFIX = '*';
 var CLASS_ATTR = 'class';
 var TEXT_CSS_SELECTOR = CssSelector.parse('*')[0];
-var TEMPLATE_ELEMENT_DEPRECATION_WARNING = 'The <template> element is deprecated. Use <ng-template> instead';
-var TEMPLATE_ATTR_DEPRECATION_WARNING = 'The template attribute is deprecated. Use an ng-template element instead.';
-var warningCounts = {};
-/**
- * @param {?} warnings
- * @return {?}
- */
-function warnOnlyOnce(warnings) {
-    return function (error) {
-        if (warnings.indexOf(error.msg) !== -1) {
-            warningCounts[error.msg] = (warningCounts[error.msg] || 0) + 1;
-            return warningCounts[error.msg] <= 1;
-        }
-        return true;
-    };
-}
 var TemplateParseError = /** @class */ (function (_super) {
     __extends(TemplateParseError, _super);
     function TemplateParseError(message, span, level) {
@@ -24642,6 +25631,14 @@ var TemplateParser = /** @class */ (function () {
         this._console = _console;
         this.transforms = transforms;
     }
+    Object.defineProperty(TemplateParser.prototype, "expressionParser", {
+        get: /**
+         * @return {?}
+         */
+        function () { return this._exprParser; },
+        enumerable: true,
+        configurable: true
+    });
     /**
      * @param {?} component
      * @param {?} template
@@ -24664,8 +25661,8 @@ var TemplateParser = /** @class */ (function () {
      */
     function (component, template, directives, pipes, schemas, templateUrl, preserveWhitespaces) {
         var /** @type {?} */ result = this.tryParse(component, template, directives, pipes, schemas, templateUrl, preserveWhitespaces);
-        var /** @type {?} */ warnings = /** @type {?} */ ((result.errors)).filter(function (error) { return error.level === ParseErrorLevel.WARNING; }).filter(warnOnlyOnce([TEMPLATE_ATTR_DEPRECATION_WARNING, TEMPLATE_ELEMENT_DEPRECATION_WARNING]));
-        var /** @type {?} */ errors = /** @type {?} */ ((result.errors)).filter(function (error) { return error.level === ParseErrorLevel.ERROR; });
+        var /** @type {?} */ warnings = /** @type {?} */ ((result.errors)).filter(function (error$$1) { return error$$1.level === ParseErrorLevel.WARNING; });
+        var /** @type {?} */ errors = /** @type {?} */ ((result.errors)).filter(function (error$$1) { return error$$1.level === ParseErrorLevel.ERROR; });
         if (warnings.length > 0) {
             this._console.warn("Template parse warnings:\n" + warnings.join('\n'));
         }
@@ -24810,8 +25807,8 @@ var TemplateParser = /** @class */ (function () {
                     existingReferences.push(name);
                 }
                 else {
-                    var /** @type {?} */ error = new TemplateParseError("Reference \"#" + name + "\" is defined several times", reference.sourceSpan, ParseErrorLevel.ERROR);
-                    errors.push(error);
+                    var /** @type {?} */ error$$1 = new TemplateParseError("Reference \"#" + name + "\" is defined several times", reference.sourceSpan, ParseErrorLevel.ERROR);
+                    errors.push(error$$1);
                 }
             });
         });
@@ -24940,24 +25937,20 @@ var TemplateParseVisitor = /** @class */ (function () {
         var /** @type {?} */ templateElementVars = [];
         var /** @type {?} */ hasInlineTemplates = false;
         var /** @type {?} */ attrs = [];
-        var /** @type {?} */ isTemplateElement = isTemplate(element, this.config.enableLegacyTemplate, function (m, span) { return _this._reportError(m, span, ParseErrorLevel.WARNING); });
+        var /** @type {?} */ isTemplateElement = isNgTemplate(element.name);
         element.attrs.forEach(function (attr) {
             var /** @type {?} */ hasBinding = _this._parseAttr(isTemplateElement, attr, matchableAttrs, elementOrDirectiveProps, events, elementOrDirectiveRefs, elementVars);
             var /** @type {?} */ templateBindingsSource;
             var /** @type {?} */ prefixToken;
             var /** @type {?} */ normalizedName = _this._normalizeAttributeName(attr.name);
-            if (_this.config.enableLegacyTemplate && normalizedName == TEMPLATE_ATTR) {
-                _this._reportError(TEMPLATE_ATTR_DEPRECATION_WARNING, attr.sourceSpan, ParseErrorLevel.WARNING);
-                templateBindingsSource = attr.value;
-            }
-            else if (normalizedName.startsWith(TEMPLATE_ATTR_PREFIX)) {
+            if (normalizedName.startsWith(TEMPLATE_ATTR_PREFIX)) {
                 templateBindingsSource = attr.value;
                 prefixToken = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length) + ':';
             }
             var /** @type {?} */ hasTemplateBinding = templateBindingsSource != null;
             if (hasTemplateBinding) {
                 if (hasInlineTemplates) {
-                    _this._reportError("Can't have multiple template bindings on one element. Use only one attribute named 'template' or prefixed with *", attr.sourceSpan);
+                    _this._reportError("Can't have multiple template bindings on one element. Use only one attribute prefixed with *", attr.sourceSpan);
                 }
                 hasInlineTemplates = true;
                 _this._bindingParser.parseInlineTemplateBinding(/** @type {?} */ ((prefixToken)), /** @type {?} */ ((templateBindingsSource)), attr.sourceSpan, templateMatchableAttrs, templateElementOrDirectiveProps, templateElementVars);
@@ -25003,7 +25996,7 @@ var TemplateParseVisitor = /** @class */ (function () {
         }
         if (hasInlineTemplates) {
             var /** @type {?} */ templateQueryStartIndex = this.contentQueryStartId;
-            var /** @type {?} */ templateSelector = createElementCssSelector(TEMPLATE_ELEMENT, templateMatchableAttrs);
+            var /** @type {?} */ templateSelector = createElementCssSelector('ng-template', templateMatchableAttrs);
             var templateDirectiveMetas = this._parseDirectives(this.selectorMatcher, templateSelector).directives;
             var /** @type {?} */ templateBoundDirectivePropNames = new Set();
             var /** @type {?} */ templateDirectiveAsts = this._createDirectiveAsts(true, element.name, templateDirectiveMetas, templateElementOrDirectiveProps, [], /** @type {?} */ ((element.sourceSpan)), [], templateBoundDirectivePropNames);
@@ -25041,6 +26034,7 @@ var TemplateParseVisitor = /** @class */ (function () {
         var /** @type {?} */ srcSpan = attr.sourceSpan;
         var /** @type {?} */ bindParts = name.match(BIND_NAME_REGEXP);
         var /** @type {?} */ hasBinding = false;
+        var /** @type {?} */ boundEvents = [];
         if (bindParts !== null) {
             hasBinding = true;
             if (bindParts[KW_BIND_IDX] != null) {
@@ -25226,7 +26220,7 @@ var TemplateParseVisitor = /** @class */ (function () {
             elementOrDirectiveRefs.forEach(function (elOrDirRef) {
                 if ((elOrDirRef.value.length === 0 && directive.isComponent) ||
                     (elOrDirRef.isReferenceToDirective(directive))) {
-                    targetReferences.push(new ReferenceAst(elOrDirRef.name, createTokenForReference(directive.type.reference), elOrDirRef.sourceSpan));
+                    targetReferences.push(new ReferenceAst(elOrDirRef.name, createTokenForReference(directive.type.reference), elOrDirRef.value, elOrDirRef.sourceSpan));
                     matchedReferences.add(elOrDirRef.name);
                 }
             });
@@ -25245,7 +26239,7 @@ var TemplateParseVisitor = /** @class */ (function () {
                 if (isTemplateElement) {
                     refToken = createTokenForExternalReference(_this.reflector, Identifiers.TemplateRef);
                 }
-                targetReferences.push(new ReferenceAst(elOrDirRef.name, refToken, elOrDirRef.sourceSpan));
+                targetReferences.push(new ReferenceAst(elOrDirRef.name, refToken, elOrDirRef.value, elOrDirRef.sourceSpan));
             }
         });
         return directiveAsts;
@@ -25608,7 +26602,7 @@ var ElementOrDirectiveRef = /** @class */ (function () {
     return ElementOrDirectiveRef;
 }());
 /**
- * Splits a raw, potentially comma-delimted `exportAs` value into an array of names.
+ * Splits a raw, potentially comma-delimited `exportAs` value into an array of names.
  * @param {?} exportAs
  * @return {?}
  */
@@ -25732,25 +26726,6 @@ function isEmptyExpression(ast) {
     }
     return ast instanceof EmptyExpr;
 }
-/**
- * @param {?} el
- * @param {?} enableLegacyTemplate
- * @param {?} reportDeprecation
- * @return {?}
- */
-function isTemplate(el, enableLegacyTemplate, reportDeprecation) {
-    if (isNgTemplate(el.name))
-        return true;
-    var /** @type {?} */ tagNoNs = splitNsName(el.name)[1];
-    // `<template>` is HTML and case insensitive
-    if (tagNoNs.toLowerCase() === TEMPLATE_ELEMENT) {
-        if (enableLegacyTemplate && tagNoNs.toLowerCase() === TEMPLATE_ELEMENT) {
-            reportDeprecation(TEMPLATE_ELEMENT_DEPRECATION_WARNING, /** @type {?} */ ((el.sourceSpan)));
-            return true;
-        }
-    }
-    return false;
-}
 
 /**
  * @fileoverview added by tsickle
@@ -25787,9 +26762,10 @@ var ConvertActionBindingResult = /** @class */ (function () {
  * @param {?} implicitReceiver
  * @param {?} action
  * @param {?} bindingId
+ * @param {?=} interpolationFunction
  * @return {?}
  */
-function convertActionBinding(localResolver, implicitReceiver, action, bindingId) {
+function convertActionBinding(localResolver, implicitReceiver, action, bindingId, interpolationFunction) {
     if (!localResolver) {
         localResolver = new DefaultLocalResolver();
     }
@@ -25815,7 +26791,7 @@ function convertActionBinding(localResolver, implicitReceiver, action, bindingId
             throw new Error("Illegal State: Actions are not allowed to contain pipes. Pipe: " + name);
         }
     }, action);
-    var /** @type {?} */ visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId);
+    var /** @type {?} */ visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId, interpolationFunction);
     var /** @type {?} */ actionStmts = [];
     flattenStatements(actionWithoutBuiltins.visit(visitor, _Mode.Statement), actionStmts);
     prependTemporaryDecls(visitor.temporaryCount, bindingId, actionStmts);
@@ -25858,6 +26834,16 @@ var ConvertPropertyBindingResult = /** @class */ (function () {
     }
     return ConvertPropertyBindingResult;
 }());
+/** @enum {number} */
+var BindingForm = {
+    // The general form of binding expression, supports all expressions.
+    General: 0,
+    // Try to generate a simple binding (no temporaries or statements)
+    // otherwise generate a general binding
+    TrySimple: 1,
+};
+BindingForm[BindingForm.General] = "General";
+BindingForm[BindingForm.TrySimple] = "TrySimple";
 /**
  * Converts the given expression AST into an executable output AST, assuming the expression
  * is used in property binding. The expression has to be preprocessed via
@@ -25866,22 +26852,27 @@ var ConvertPropertyBindingResult = /** @class */ (function () {
  * @param {?} implicitReceiver
  * @param {?} expressionWithoutBuiltins
  * @param {?} bindingId
+ * @param {?} form
+ * @param {?=} interpolationFunction
  * @return {?}
  */
-function convertPropertyBinding(localResolver, implicitReceiver, expressionWithoutBuiltins, bindingId) {
+function convertPropertyBinding(localResolver, implicitReceiver, expressionWithoutBuiltins, bindingId, form, interpolationFunction) {
     if (!localResolver) {
         localResolver = new DefaultLocalResolver();
     }
     var /** @type {?} */ currValExpr = createCurrValueExpr(bindingId);
     var /** @type {?} */ stmts = [];
-    var /** @type {?} */ visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId);
+    var /** @type {?} */ visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId, interpolationFunction);
     var /** @type {?} */ outputExpr = expressionWithoutBuiltins.visit(visitor, _Mode.Expression);
     if (visitor.temporaryCount) {
         for (var /** @type {?} */ i = 0; i < visitor.temporaryCount; i++) {
             stmts.push(temporaryDeclaration(bindingId, i));
         }
     }
-    stmts.push(currValExpr.set(outputExpr).toDeclStmt(null, [StmtModifier.Final]));
+    else if (form == BindingForm.TrySimple) {
+        return new ConvertPropertyBindingResult([], outputExpr);
+    }
+    stmts.push(currValExpr.set(outputExpr).toDeclStmt(DYNAMIC_TYPE, [StmtModifier.Final]));
     return new ConvertPropertyBindingResult(stmts, currValExpr);
 }
 /**
@@ -26015,10 +27006,11 @@ var _BuiltinAstConverter = /** @class */ (function (_super) {
     return _BuiltinAstConverter;
 }(AstTransformer));
 var _AstToIrVisitor = /** @class */ (function () {
-    function _AstToIrVisitor(_localResolver, _implicitReceiver, bindingId) {
+    function _AstToIrVisitor(_localResolver, _implicitReceiver, bindingId, interpolationFunction) {
         this._localResolver = _localResolver;
         this._implicitReceiver = _implicitReceiver;
         this.bindingId = bindingId;
+        this.interpolationFunction = interpolationFunction;
         this._nodeMap = new Map();
         this._resultMap = new Map();
         this._currentTemporary = 0;
@@ -26181,6 +27173,9 @@ var _AstToIrVisitor = /** @class */ (function () {
             args.push(this._visit(ast.expressions[i], _Mode.Expression));
         }
         args.push(literal(ast.strings[ast.strings.length - 1]));
+        if (this.interpolationFunction) {
+            return this.interpolationFunction(args);
+        }
         return ast.expressions.length <= 9 ?
             importExpr(Identifiers.inlineInterpolate).callFn(args) :
             importExpr(Identifiers.interpolate).callFn([args[0], literalArr(args.slice(1))]);
@@ -26257,7 +27252,12 @@ var _AstToIrVisitor = /** @class */ (function () {
      * @return {?}
      */
     function (ast, mode) {
-        return convertToStatementIfNeeded(mode, literal(ast.value));
+        // For literal values of null, undefined, true, or false allow type interference
+        // to infer the type.
+        var /** @type {?} */ type = ast.value === null || ast.value === undefined || ast.value === true || ast.value === true ?
+            INFERRED_TYPE :
+            undefined;
+        return convertToStatementIfNeeded(mode, literal(ast.value, type));
     };
     /**
      * @param {?} name
@@ -26279,6 +27279,13 @@ var _AstToIrVisitor = /** @class */ (function () {
      * @return {?}
      */
     function (ast, mode) {
+        if (ast.receiver instanceof ImplicitReceiver && ast.name == '$any') {
+            var /** @type {?} */ args = /** @type {?} */ (this.visitAll(ast.args, _Mode.Expression));
+            if (args.length != 1) {
+                throw new Error("Invalid call to $any, expected 1 argument but received " + (args.length || 'none'));
+            }
+            return (/** @type {?} */ (args[0])).cast(DYNAMIC_TYPE);
+        }
         var /** @type {?} */ leftMostSafe = this.leftMostSafeNode(ast);
         if (leftMostSafe) {
             return this.convertSafeAccess(ast, leftMostSafe, mode);
@@ -26897,6 +27904,7 @@ var TypeCheckCompiler = /** @class */ (function () {
      * @param {?} template
      * @param {?} usedPipes
      * @param {?} externalReferenceVars
+     * @param {?} ctx
      * @return {?}
      */
     TypeCheckCompiler.prototype.compileComponent = /**
@@ -26911,18 +27919,19 @@ var TypeCheckCompiler = /** @class */ (function () {
      * @param {?} template
      * @param {?} usedPipes
      * @param {?} externalReferenceVars
+     * @param {?} ctx
      * @return {?}
      */
-    function (componentId, component, template, usedPipes, externalReferenceVars) {
+    function (componentId, component, template, usedPipes, externalReferenceVars, ctx) {
         var _this = this;
         var /** @type {?} */ pipes = new Map();
         usedPipes.forEach(function (p) { return pipes.set(p.name, p.type.reference); });
         var /** @type {?} */ embeddedViewCount = 0;
-        var /** @type {?} */ viewBuilderFactory = function (parent) {
+        var /** @type {?} */ viewBuilderFactory = function (parent, guards) {
             var /** @type {?} */ embeddedViewIndex = embeddedViewCount++;
-            return new ViewBuilder(_this.options, _this.reflector, externalReferenceVars, parent, component.type.reference, component.isHost, embeddedViewIndex, pipes, viewBuilderFactory);
+            return new ViewBuilder(_this.options, _this.reflector, externalReferenceVars, parent, component.type.reference, component.isHost, embeddedViewIndex, pipes, guards, ctx, viewBuilderFactory);
         };
-        var /** @type {?} */ visitor = viewBuilderFactory(null);
+        var /** @type {?} */ visitor = viewBuilderFactory(null, []);
         visitor.visitAll([], template);
         return visitor.build(componentId);
     };
@@ -26952,7 +27961,7 @@ var TypeCheckLocalResolver = /** @class */ (function () {
 }());
 var defaultResolver = new TypeCheckLocalResolver();
 var ViewBuilder = /** @class */ (function () {
-    function ViewBuilder(options, reflector, externalReferenceVars, parent, component, isHostComponent, embeddedViewIndex, pipes, viewBuilderFactory) {
+    function ViewBuilder(options, reflector, externalReferenceVars, parent, component, isHostComponent, embeddedViewIndex, pipes, guards, ctx, viewBuilderFactory) {
         this.options = options;
         this.reflector = reflector;
         this.externalReferenceVars = externalReferenceVars;
@@ -26961,6 +27970,8 @@ var ViewBuilder = /** @class */ (function () {
         this.isHostComponent = isHostComponent;
         this.embeddedViewIndex = embeddedViewIndex;
         this.pipes = pipes;
+        this.guards = guards;
+        this.ctx = ctx;
         this.viewBuilderFactory = viewBuilderFactory;
         this.refOutputVars = new Map();
         this.variables = [];
@@ -26991,6 +28002,33 @@ var ViewBuilder = /** @class */ (function () {
             throw new Error("Illegal State: referring to a type without a variable " + JSON.stringify(type));
         }
         return varName;
+    };
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    ViewBuilder.prototype.getTypeGuardExpressions = /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function (ast) {
+        var /** @type {?} */ result = this.guards.slice();
+        for (var _i = 0, _a = ast.directives; _i < _a.length; _i++) {
+            var directive = _a[_i];
+            for (var _b = 0, _c = directive.inputs; _b < _c.length; _b++) {
+                var input = _c[_b];
+                var /** @type {?} */ guard = directive.directive.guards[input.directiveName];
+                if (guard) {
+                    var /** @type {?} */ useIf = guard === 'UseIf';
+                    result.push({
+                        guard: guard,
+                        useIf: useIf,
+                        expression: /** @type {?} */ ({ context: this.component, value: input.value })
+                    });
+                }
+            }
+        }
+        return result;
     };
     /**
      * @param {?} variables
@@ -27026,7 +28064,7 @@ var ViewBuilder = /** @class */ (function () {
             var _a = _this.preprocessUpdateExpression(expression), sourceSpan = _a.sourceSpan, context = _a.context, value = _a.value;
             var /** @type {?} */ bindingId = "" + bindingCount++;
             var /** @type {?} */ nameResolver = context === _this.component ? _this : defaultResolver;
-            var _b = convertPropertyBinding(nameResolver, variable(_this.getOutputVar(context)), value, bindingId), stmts = _b.stmts, currValExpr = _b.currValExpr;
+            var _b = convertPropertyBinding(nameResolver, variable(_this.getOutputVar(context)), value, bindingId, BindingForm.General), stmts = _b.stmts, currValExpr = _b.currValExpr;
             stmts.push(new ExpressionStatement(currValExpr));
             viewStmts.push.apply(viewStmts, stmts.map(function (stmt) { return applySourceSpanToStatementIfNeeded(stmt, sourceSpan); }));
         });
@@ -27037,6 +28075,25 @@ var ViewBuilder = /** @class */ (function () {
             var stmts = convertActionBinding(nameResolver, variable(_this.getOutputVar(context)), value, bindingId).stmts;
             viewStmts.push.apply(viewStmts, stmts.map(function (stmt) { return applySourceSpanToStatementIfNeeded(stmt, sourceSpan); }));
         });
+        if (this.guards.length) {
+            var /** @type {?} */ guardExpression = undefined;
+            for (var _i = 0, _a = this.guards; _i < _a.length; _i++) {
+                var guard = _a[_i];
+                var _b = this.preprocessUpdateExpression(guard.expression), context = _b.context, value = _b.value;
+                var /** @type {?} */ bindingId = "" + bindingCount++;
+                var /** @type {?} */ nameResolver = context === this.component ? this : defaultResolver;
+                // We only support support simple expressions and ignore others as they
+                // are unlikely to affect type narrowing.
+                var _c = convertPropertyBinding(nameResolver, variable(this.getOutputVar(context)), value, bindingId, BindingForm.TrySimple), stmts = _c.stmts, currValExpr = _c.currValExpr;
+                if (stmts.length == 0) {
+                    var /** @type {?} */ guardClause = guard.useIf ? currValExpr : this.ctx.importExpr(guard.guard).callFn([currValExpr]);
+                    guardExpression = guardExpression ? guardExpression.and(guardClause) : guardClause;
+                }
+            }
+            if (guardExpression) {
+                viewStmts = [new IfStmt(guardExpression, viewStmts)];
+            }
+        }
         var /** @type {?} */ viewName = "_View_" + componentId + "_" + this.embeddedViewIndex;
         var /** @type {?} */ viewFactory = new DeclareFunctionStmt(viewName, [], viewStmts);
         targetStatements.push(viewFactory);
@@ -27076,7 +28133,12 @@ var ViewBuilder = /** @class */ (function () {
         // for the context in any embedded view.
         // We keep this behaivor behind a flag for now.
         if (this.options.fullTemplateTypeCheck) {
-            var /** @type {?} */ childVisitor = this.viewBuilderFactory(this);
+            // Find any applicable type guards. For example, NgIf has a type guard on ngIf
+            // (see NgIf.ngIfTypeGuard) that can be used to indicate that a template is only
+            // stamped out if ngIf is truthy so any bindings in the template can assume that,
+            // if a nullable type is used for ngIf, that expression is not null or undefined.
+            var /** @type {?} */ guards = this.getTypeGuardExpressions(ast);
+            var /** @type {?} */ childVisitor = this.viewBuilderFactory(this, guards);
             this.children.push(childVisitor);
             childVisitor.visitAll(ast.variables, ast.children);
         }
@@ -28308,7 +29370,7 @@ var ViewBuilder$1 = /** @class */ (function () {
                 var sourceSpan = _a.sourceSpan, context = _a.context, value = _a.value;
                 var /** @type {?} */ bindingId = "" + updateBindingCount++;
                 var /** @type {?} */ nameResolver = context === COMP_VAR ? self : null;
-                var _b = convertPropertyBinding(nameResolver, context, value, bindingId), stmts = _b.stmts, currValExpr = _b.currValExpr;
+                var _b = convertPropertyBinding(nameResolver, context, value, bindingId, BindingForm.General), stmts = _b.stmts, currValExpr = _b.currValExpr;
                 updateStmts.push.apply(updateStmts, stmts.map(function (stmt) { return applySourceSpanToStatementIfNeeded(stmt, sourceSpan); }));
                 return applySourceSpanToExpressionIfNeeded(currValExpr, sourceSpan);
             });
@@ -28651,6 +29713,496 @@ function elementEventFullName(target, name) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+var CONSTANT_PREFIX = '_c';
+// Closure variables holding messages must be named `MSG_[A-Z0-9]+`
+var TRANSLATION_PREFIX = 'MSG_';
+/**
+ * Closure uses `goog.getMsg(message)` to lookup translations
+ */
+var GOOG_GET_MSG = 'goog.getMsg';
+/**
+ * Context to use when producing a key.
+ *
+ * This ensures we see the constant not the reference variable when producing
+ * a key.
+ */
+var KEY_CONTEXT = {};
+/**
+ * A node that is a place-holder that allows the node to be replaced when the actual
+ * node is known.
+ *
+ * This allows the constant pool to change an expression from a direct reference to
+ * a constant to a shared constant. It returns a fix-up node that is later allowed to
+ * change the referenced expression.
+ */
+var FixupExpression = /** @class */ (function (_super) {
+    __extends(FixupExpression, _super);
+    function FixupExpression(resolved) {
+        var _this = _super.call(this, resolved.type) || this;
+        _this.resolved = resolved;
+        _this.original = resolved;
+        return _this;
+    }
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    FixupExpression.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        if (context === KEY_CONTEXT) {
+            // When producing a key we want to traverse the constant not the
+            // variable used to refer to it.
+            return this.original.visitExpression(visitor, context);
+        }
+        else {
+            return this.resolved.visitExpression(visitor, context);
+        }
+    };
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    FixupExpression.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof FixupExpression && this.resolved.isEquivalent(e.resolved);
+    };
+    /**
+     * @return {?}
+     */
+    FixupExpression.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return true; };
+    /**
+     * @param {?} expression
+     * @return {?}
+     */
+    FixupExpression.prototype.fixup = /**
+     * @param {?} expression
+     * @return {?}
+     */
+    function (expression) {
+        this.resolved = expression;
+        this.shared = true;
+    };
+    return FixupExpression;
+}(Expression));
+/**
+ * A constant pool allows a code emitter to share constant in an output context.
+ *
+ * The constant pool also supports sharing access to ivy definitions references.
+ */
+var ConstantPool = /** @class */ (function () {
+    function ConstantPool() {
+        this.statements = [];
+        this.translations = new Map();
+        this.literals = new Map();
+        this.literalFactories = new Map();
+        this.injectorDefinitions = new Map();
+        this.directiveDefinitions = new Map();
+        this.componentDefinitions = new Map();
+        this.pipeDefinitions = new Map();
+        this.nextNameIndex = 0;
+    }
+    /**
+     * @param {?} literal
+     * @param {?=} forceShared
+     * @return {?}
+     */
+    ConstantPool.prototype.getConstLiteral = /**
+     * @param {?} literal
+     * @param {?=} forceShared
+     * @return {?}
+     */
+    function (literal$$1, forceShared) {
+        if (literal$$1 instanceof LiteralExpr || literal$$1 instanceof FixupExpression) {
+            // Do no put simple literals into the constant pool or try to produce a constant for a
+            // reference to a constant.
+            return literal$$1;
+        }
+        var /** @type {?} */ key = this.keyOf(literal$$1);
+        var /** @type {?} */ fixup = this.literals.get(key);
+        var /** @type {?} */ newValue = false;
+        if (!fixup) {
+            fixup = new FixupExpression(literal$$1);
+            this.literals.set(key, fixup);
+            newValue = true;
+        }
+        if ((!newValue && !fixup.shared) || (newValue && forceShared)) {
+            // Replace the expression with a variable
+            var /** @type {?} */ name_1 = this.freshName();
+            this.statements.push(variable(name_1).set(literal$$1).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
+            fixup.fixup(variable(name_1));
+        }
+        return fixup;
+    };
+    // Generates closure specific code for translation.
+    //
+    // ```
+    // /**
+    //  * @desc description?
+    //  * @meaning meaning?
+    //  */
+    // const MSG_XYZ = goog.getMsg('message');
+    // ```
+    /**
+     * @param {?} message
+     * @param {?} meta
+     * @return {?}
+     */
+    ConstantPool.prototype.getTranslation = /**
+     * @param {?} message
+     * @param {?} meta
+     * @return {?}
+     */
+    function (message, meta) {
+        // The identity of an i18n message depends on the message and its meaning
+        var /** @type {?} */ key = meta.meaning ? message + "\0\0" + meta.meaning : message;
+        var /** @type {?} */ exp = this.translations.get(key);
+        if (exp) {
+            return exp;
+        }
+        var /** @type {?} */ docStmt = i18nMetaToDocStmt(meta);
+        if (docStmt) {
+            this.statements.push(docStmt);
+        }
+        // Call closure to get the translation
+        var /** @type {?} */ variable$$1 = variable(this.freshTranslationName());
+        var /** @type {?} */ fnCall = variable(GOOG_GET_MSG).callFn([literal(message)]);
+        var /** @type {?} */ msgStmt = variable$$1.set(fnCall).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]);
+        this.statements.push(msgStmt);
+        this.translations.set(key, variable$$1);
+        return variable$$1;
+    };
+    /**
+     * @param {?} type
+     * @param {?} kind
+     * @param {?} ctx
+     * @param {?=} forceShared
+     * @return {?}
+     */
+    ConstantPool.prototype.getDefinition = /**
+     * @param {?} type
+     * @param {?} kind
+     * @param {?} ctx
+     * @param {?=} forceShared
+     * @return {?}
+     */
+    function (type, kind, ctx, forceShared) {
+        if (forceShared === void 0) { forceShared = false; }
+        var /** @type {?} */ definitions = this.definitionsOf(kind);
+        var /** @type {?} */ fixup = definitions.get(type);
+        var /** @type {?} */ newValue = false;
+        if (!fixup) {
+            var /** @type {?} */ property = this.propertyNameOf(kind);
+            fixup = new FixupExpression(ctx.importExpr(type).prop(property));
+            definitions.set(type, fixup);
+            newValue = true;
+        }
+        if ((!newValue && !fixup.shared) || (newValue && forceShared)) {
+            var /** @type {?} */ name_2 = this.freshName();
+            this.statements.push(variable(name_2).set(fixup.resolved).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
+            fixup.fixup(variable(name_2));
+        }
+        return fixup;
+    };
+    /**
+     * @param {?} literal
+     * @return {?}
+     */
+    ConstantPool.prototype.getLiteralFactory = /**
+     * @param {?} literal
+     * @return {?}
+     */
+    function (literal$$1) {
+        // Create a pure function that builds an array of a mix of constant  and variable expressions
+        if (literal$$1 instanceof LiteralArrayExpr) {
+            var /** @type {?} */ argumentsForKey = literal$$1.entries.map(function (e) { return e.isConstant() ? e : literal(null); });
+            var /** @type {?} */ key = this.keyOf(literalArr(argumentsForKey));
+            return this._getLiteralFactory(key, literal$$1.entries, function (entries) { return literalArr(entries); });
+        }
+        else {
+            var /** @type {?} */ expressionForKey = literalMap(literal$$1.entries.map(function (e) {
+                return ({
+                    key: e.key,
+                    value: e.value.isConstant() ? e.value : literal(null),
+                    quoted: e.quoted
+                });
+            }));
+            var /** @type {?} */ key = this.keyOf(expressionForKey);
+            return this._getLiteralFactory(key, literal$$1.entries.map(function (e) { return e.value; }), function (entries) {
+                return literalMap(entries.map(function (value, index) {
+                    return ({
+                        key: literal$$1.entries[index].key,
+                        value: value,
+                        quoted: literal$$1.entries[index].quoted
+                    });
+                }));
+            });
+        }
+    };
+    /**
+     * @param {?} key
+     * @param {?} values
+     * @param {?} resultMap
+     * @return {?}
+     */
+    ConstantPool.prototype._getLiteralFactory = /**
+     * @param {?} key
+     * @param {?} values
+     * @param {?} resultMap
+     * @return {?}
+     */
+    function (key, values, resultMap) {
+        var _this = this;
+        var /** @type {?} */ literalFactory = this.literalFactories.get(key);
+        var /** @type {?} */ literalFactoryArguments = values.filter((function (e) { return !e.isConstant(); }));
+        if (!literalFactory) {
+            var /** @type {?} */ resultExpressions = values.map(function (e, index) { return e.isConstant() ? _this.getConstLiteral(e, true) : variable("a" + index); });
+            var /** @type {?} */ parameters = resultExpressions.filter(isVariable).map(function (e) { return new FnParam(/** @type {?} */ ((e.name)), DYNAMIC_TYPE); });
+            var /** @type {?} */ pureFunctionDeclaration = fn(parameters, [new ReturnStatement(resultMap(resultExpressions))], INFERRED_TYPE);
+            var /** @type {?} */ name_3 = this.freshName();
+            this.statements.push(variable(name_3).set(pureFunctionDeclaration).toDeclStmt(INFERRED_TYPE, [
+                StmtModifier.Final
+            ]));
+            literalFactory = variable(name_3);
+            this.literalFactories.set(key, literalFactory);
+        }
+        return { literalFactory: literalFactory, literalFactoryArguments: literalFactoryArguments };
+    };
+    /**
+     * Produce a unique name.
+     *
+     * The name might be unique among different prefixes if any of the prefixes end in
+     * a digit so the prefix should be a constant string (not based on user input) and
+     * must not end in a digit.
+     */
+    /**
+     * Produce a unique name.
+     *
+     * The name might be unique among different prefixes if any of the prefixes end in
+     * a digit so the prefix should be a constant string (not based on user input) and
+     * must not end in a digit.
+     * @param {?} prefix
+     * @return {?}
+     */
+    ConstantPool.prototype.uniqueName = /**
+     * Produce a unique name.
+     *
+     * The name might be unique among different prefixes if any of the prefixes end in
+     * a digit so the prefix should be a constant string (not based on user input) and
+     * must not end in a digit.
+     * @param {?} prefix
+     * @return {?}
+     */
+    function (prefix) { return "" + prefix + this.nextNameIndex++; };
+    /**
+     * @param {?} kind
+     * @return {?}
+     */
+    ConstantPool.prototype.definitionsOf = /**
+     * @param {?} kind
+     * @return {?}
+     */
+    function (kind) {
+        switch (kind) {
+            case 2 /* Component */:
+                return this.componentDefinitions;
+            case 1 /* Directive */:
+                return this.directiveDefinitions;
+            case 0 /* Injector */:
+                return this.injectorDefinitions;
+            case 3 /* Pipe */:
+                return this.pipeDefinitions;
+        }
+        error("Unknown definition kind " + kind);
+        return this.componentDefinitions;
+    };
+    /**
+     * @param {?} kind
+     * @return {?}
+     */
+    ConstantPool.prototype.propertyNameOf = /**
+     * @param {?} kind
+     * @return {?}
+     */
+    function (kind) {
+        switch (kind) {
+            case 2 /* Component */:
+                return 'ngComponentDef';
+            case 1 /* Directive */:
+                return 'ngDirectiveDef';
+            case 0 /* Injector */:
+                return 'ngInjectorDef';
+            case 3 /* Pipe */:
+                return 'ngPipeDef';
+        }
+        error("Unknown definition kind " + kind);
+        return '<unknown>';
+    };
+    /**
+     * @return {?}
+     */
+    ConstantPool.prototype.freshName = /**
+     * @return {?}
+     */
+    function () { return this.uniqueName(CONSTANT_PREFIX); };
+    /**
+     * @return {?}
+     */
+    ConstantPool.prototype.freshTranslationName = /**
+     * @return {?}
+     */
+    function () {
+        return this.uniqueName(TRANSLATION_PREFIX).toUpperCase();
+    };
+    /**
+     * @param {?} expression
+     * @return {?}
+     */
+    ConstantPool.prototype.keyOf = /**
+     * @param {?} expression
+     * @return {?}
+     */
+    function (expression) {
+        return expression.visitExpression(new KeyVisitor(), KEY_CONTEXT);
+    };
+    return ConstantPool;
+}());
+/**
+ * Visitor used to determine if 2 expressions are equivalent and can be shared in the
+ * `ConstantPool`.
+ *
+ * When the id (string) generated by the visitor is equal, expressions are considered equivalent.
+ */
+var KeyVisitor = /** @class */ (function () {
+    function KeyVisitor() {
+        this.visitReadVarExpr = invalid;
+        this.visitWriteVarExpr = invalid;
+        this.visitWriteKeyExpr = invalid;
+        this.visitWritePropExpr = invalid;
+        this.visitInvokeMethodExpr = invalid;
+        this.visitInvokeFunctionExpr = invalid;
+        this.visitInstantiateExpr = invalid;
+        this.visitConditionalExpr = invalid;
+        this.visitNotExpr = invalid;
+        this.visitAssertNotNullExpr = invalid;
+        this.visitCastExpr = invalid;
+        this.visitFunctionExpr = invalid;
+        this.visitBinaryOperatorExpr = invalid;
+        this.visitReadPropExpr = invalid;
+        this.visitReadKeyExpr = invalid;
+        this.visitCommaExpr = invalid;
+    }
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    KeyVisitor.prototype.visitLiteralExpr = /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function (ast) {
+        return "" + (typeof ast.value === 'string' ? '"' + ast.value + '"' : ast.value);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    KeyVisitor.prototype.visitLiteralArrayExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var _this = this;
+        return "[" + ast.entries.map(function (entry) { return entry.visitExpression(_this, context); }).join(',') + "]";
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    KeyVisitor.prototype.visitLiteralMapExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var _this = this;
+        var /** @type {?} */ mapKey = function (entry) {
+            var /** @type {?} */ quote = entry.quoted ? '"' : '';
+            return "" + quote + entry.key + quote;
+        };
+        var /** @type {?} */ mapEntry = function (entry) {
+            return mapKey(entry) + ":" + entry.value.visitExpression(_this, context);
+        };
+        return "{" + ast.entries.map(mapEntry).join(',');
+    };
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    KeyVisitor.prototype.visitExternalExpr = /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function (ast) {
+        return ast.value.moduleName ? "EX:" + ast.value.moduleName + ":" + ast.value.name :
+            "EX:" + ast.value.runtime.name;
+    };
+    return KeyVisitor;
+}());
+/**
+ * @template T
+ * @param {?} arg
+ * @return {?}
+ */
+function invalid(arg) {
+    throw new Error("Invalid state: Visitor " + this.constructor.name + " doesn't handle " + arg.constructor.name);
+}
+/**
+ * @param {?} e
+ * @return {?}
+ */
+function isVariable(e) {
+    return e instanceof ReadVarExpr;
+}
+/**
+ * @param {?} meta
+ * @return {?}
+ */
+function i18nMetaToDocStmt(meta) {
+    var /** @type {?} */ tags = [];
+    if (meta.description) {
+        tags.push({ tagName: "desc" /* Desc */, text: meta.description });
+    }
+    if (meta.meaning) {
+        tags.push({ tagName: "meaning" /* Meaning */, text: meta.meaning });
+    }
+    return tags.length == 0 ? null : new JSDocCommentStmt(tags);
+}
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * A container for message extracted from the templates.
  */
@@ -28813,6 +30365,1556 @@ var MapPlaceholderNames = /** @class */ (function (_super) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/**
+ * @param {?} key
+ * @param {?} value
+ * @return {?}
+ */
+
+/**
+ * @param {?} obj
+ * @return {?}
+ */
+function mapLiteral(obj) {
+    return literalMap(Object.keys(obj).map(function (key) {
+        return ({
+            key: key,
+            quoted: false,
+            value: obj[key],
+        });
+    }));
+}
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var CORE$1 = '@angular/core';
+var Identifiers$1 = /** @class */ (function () {
+    function Identifiers() {
+    }
+    /* Methods */
+    Identifiers.NEW_METHOD = 'factory';
+    Identifiers.TRANSFORM_METHOD = 'transform';
+    Identifiers.PATCH_DEPS = 'patchedDeps';
+    /* Instructions */
+    Identifiers.createElement = { name: 'ɵE', moduleName: CORE$1 };
+    Identifiers.elementEnd = { name: 'ɵe', moduleName: CORE$1 };
+    Identifiers.elementProperty = { name: 'ɵp', moduleName: CORE$1 };
+    Identifiers.elementAttribute = { name: 'ɵa', moduleName: CORE$1 };
+    Identifiers.elementClassNamed = { name: 'ɵkn', moduleName: CORE$1 };
+    Identifiers.elementStyleNamed = { name: 'ɵsn', moduleName: CORE$1 };
+    Identifiers.containerCreate = { name: 'ɵC', moduleName: CORE$1 };
+    Identifiers.containerEnd = { name: 'ɵc', moduleName: CORE$1 };
+    Identifiers.directiveCreate = { name: 'ɵD', moduleName: CORE$1 };
+    Identifiers.text = { name: 'ɵT', moduleName: CORE$1 };
+    Identifiers.directiveInput = { name: 'ɵi', moduleName: CORE$1 };
+    Identifiers.textCreateBound = { name: 'ɵt', moduleName: CORE$1 };
+    Identifiers.bind = { name: 'ɵb', moduleName: CORE$1 };
+    Identifiers.interpolation1 = { name: 'ɵi1', moduleName: CORE$1 };
+    Identifiers.interpolation2 = { name: 'ɵi2', moduleName: CORE$1 };
+    Identifiers.interpolation3 = { name: 'ɵi3', moduleName: CORE$1 };
+    Identifiers.interpolation4 = { name: 'ɵi4', moduleName: CORE$1 };
+    Identifiers.interpolation5 = { name: 'ɵi5', moduleName: CORE$1 };
+    Identifiers.interpolation6 = { name: 'ɵi6', moduleName: CORE$1 };
+    Identifiers.interpolation7 = { name: 'ɵi7', moduleName: CORE$1 };
+    Identifiers.interpolation8 = { name: 'ɵi8', moduleName: CORE$1 };
+    Identifiers.interpolationV = { name: 'ɵiV', moduleName: CORE$1 };
+    Identifiers.pureFunction0 = { name: 'ɵf0', moduleName: CORE$1 };
+    Identifiers.pureFunction1 = { name: 'ɵf1', moduleName: CORE$1 };
+    Identifiers.pureFunction2 = { name: 'ɵf2', moduleName: CORE$1 };
+    Identifiers.pureFunction3 = { name: 'ɵf3', moduleName: CORE$1 };
+    Identifiers.pureFunction4 = { name: 'ɵf4', moduleName: CORE$1 };
+    Identifiers.pureFunction5 = { name: 'ɵf5', moduleName: CORE$1 };
+    Identifiers.pureFunction6 = { name: 'ɵf6', moduleName: CORE$1 };
+    Identifiers.pureFunction7 = { name: 'ɵf7', moduleName: CORE$1 };
+    Identifiers.pureFunction8 = { name: 'ɵf8', moduleName: CORE$1 };
+    Identifiers.pureFunctionV = { name: 'ɵfV', moduleName: CORE$1 };
+    Identifiers.pipeBind1 = { name: 'ɵpb1', moduleName: CORE$1 };
+    Identifiers.pipeBind2 = { name: 'ɵpb2', moduleName: CORE$1 };
+    Identifiers.pipeBind3 = { name: 'ɵpb3', moduleName: CORE$1 };
+    Identifiers.pipeBind4 = { name: 'ɵpb4', moduleName: CORE$1 };
+    Identifiers.pipeBindV = { name: 'ɵpbV', moduleName: CORE$1 };
+    Identifiers.load = { name: 'ɵld', moduleName: CORE$1 };
+    Identifiers.pipe = { name: 'ɵPp', moduleName: CORE$1 };
+    Identifiers.projection = { name: 'ɵP', moduleName: CORE$1 };
+    Identifiers.projectionDef = { name: 'ɵpD', moduleName: CORE$1 };
+    Identifiers.refreshComponent = { name: 'ɵr', moduleName: CORE$1 };
+    Identifiers.directiveLifeCycle = { name: 'ɵl', moduleName: CORE$1 };
+    Identifiers.injectElementRef = { name: 'ɵinjectElementRef', moduleName: CORE$1 };
+    Identifiers.injectTemplateRef = { name: 'ɵinjectTemplateRef', moduleName: CORE$1 };
+    Identifiers.injectViewContainerRef = { name: 'ɵinjectViewContainerRef', moduleName: CORE$1 };
+    Identifiers.inject = { name: 'ɵinject', moduleName: CORE$1 };
+    Identifiers.defineComponent = { name: 'ɵdefineComponent', moduleName: CORE$1 };
+    Identifiers.defineDirective = {
+        name: 'ɵdefineDirective',
+        moduleName: CORE$1,
+    };
+    Identifiers.defineInjector = {
+        name: 'defineInjector',
+        moduleName: CORE$1,
+    };
+    Identifiers.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
+    Identifiers.query = { name: 'ɵQ', moduleName: CORE$1 };
+    Identifiers.queryRefresh = { name: 'ɵqR', moduleName: CORE$1 };
+    Identifiers.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
+    Identifiers.listener = { name: 'ɵL', moduleName: CORE$1 };
+    return Identifiers;
+}());
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var EMPTY_ARRAY = literalArr([]);
+/**
+ * @param {?} meta
+ * @param {?} ctx
+ * @return {?}
+ */
+function convertMetaToOutput(meta, ctx) {
+    if (Array.isArray(meta)) {
+        return literalArr(meta.map(function (entry) { return convertMetaToOutput(entry, ctx); }));
+    }
+    else if (meta instanceof StaticSymbol) {
+        return ctx.importExpr(meta);
+    }
+    else if (meta == null) {
+        return literal(meta);
+    }
+    else {
+        throw new Error("Internal error: Unsupported or unknown metadata: " + meta);
+    }
+}
+/**
+ * @param {?} ctx
+ * @param {?} ngModule
+ * @param {?} injectableCompiler
+ * @return {?}
+ */
+function compileNgModule(ctx, ngModule, injectableCompiler) {
+    var /** @type {?} */ className = /** @type {?} */ ((identifierName(ngModule.type)));
+    var /** @type {?} */ rawImports = ngModule.rawImports ? [ngModule.rawImports] : [];
+    var /** @type {?} */ rawExports = ngModule.rawExports ? [ngModule.rawExports] : [];
+    var /** @type {?} */ injectorDefArg = mapLiteral({
+        'factory': injectableCompiler.factoryFor({ type: ngModule.type, symbol: ngModule.type.reference }, ctx),
+        'providers': convertMetaToOutput(ngModule.rawProviders, ctx),
+        'imports': convertMetaToOutput(rawImports.concat(rawExports), ctx),
+    });
+    var /** @type {?} */ injectorDef = importExpr(Identifiers$1.defineInjector).callFn([injectorDefArg]);
+    ctx.statements.push(new ClassStmt(className, null, /* fields */ [new ClassField('ngInjectorDef', /* type */ INFERRED_TYPE, /* modifiers */ [StmtModifier.Static], injectorDef)], /* getters */ [], /* constructorMethod */ new ClassMethod(null, [], []), /* methods */ []));
+}
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/** @enum {number} */
+/**
+ * Comment to insert above back-patch
+ */
+var BUILD_OPTIMIZER_COLOCATE = '@__BUILD_OPTIMIZER_COLOCATE__';
+/**
+ * Comment to mark removable expressions
+ */
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Name of the context parameter passed into a template function
+ */
+var CONTEXT_NAME = 'ctx';
+/**
+ * Name of the creation mode flag passed into a template function
+ */
+var CREATION_MODE_FLAG = 'cm';
+/**
+ * Name of the temporary to use during data binding
+ */
+var TEMPORARY_NAME = '_t';
+/**
+ * The prefix reference variables
+ */
+var REFERENCE_PREFIX = '_r';
+/**
+ * The name of the implicit context reference
+ */
+var IMPLICIT_REFERENCE = '$implicit';
+/**
+ * Name of the i18n attributes *
+ */
+var I18N_ATTR = 'i18n';
+var I18N_ATTR_PREFIX = 'i18n-';
+/**
+ * I18n separators for metadata *
+ */
+var MEANING_SEPARATOR$1 = '|';
+var ID_SEPARATOR$1 = '@@';
+/**
+ * @param {?} outputCtx
+ * @param {?} directive
+ * @param {?} reflector
+ * @param {?} bindingParser
+ * @param {?} mode
+ * @return {?}
+ */
+function compileDirective(outputCtx, directive, reflector, bindingParser, mode) {
+    var /** @type {?} */ definitionMapValues = [];
+    var /** @type {?} */ field = function (key, value) {
+        if (value) {
+            definitionMapValues.push({ key: key, value: value, quoted: false });
+        }
+    };
+    // e.g. 'type: MyDirective`
+    field('type', outputCtx.importExpr(directive.type.reference));
+    // e.g. `selectors: [['', 'someDir', '']]`
+    field('selectors', createDirectiveSelector(/** @type {?} */ ((directive.selector))));
+    // e.g. `factory: () => new MyApp(injectElementRef())`
+    field('factory', createFactory(directive.type, outputCtx, reflector, directive.queries));
+    // e.g. `hostBindings: (dirIndex, elIndex) => { ... }
+    field('hostBindings', createHostBindingsFunction(directive, outputCtx, bindingParser));
+    // e.g. `attributes: ['role', 'listbox']`
+    field('attributes', createHostAttributesArray(directive, outputCtx));
+    // e.g 'inputs: {a: 'a'}`
+    field('inputs', createInputsObject(directive, outputCtx));
+    var /** @type {?} */ className = /** @type {?} */ ((identifierName(directive.type)));
+    className || error("Cannot resolver the name of " + directive.type);
+    var /** @type {?} */ definitionField = outputCtx.constantPool.propertyNameOf(1 /* Directive */);
+    var /** @type {?} */ definitionFunction = importExpr(Identifiers$1.defineDirective).callFn([literalMap(definitionMapValues)]);
+    if (mode === 0 /* PartialClass */) {
+        // Create the partial class to be merged with the actual class.
+        outputCtx.statements.push(new ClassStmt(className, null, /* fields */ [new ClassField(definitionField, /* type */ INFERRED_TYPE, /* modifiers */ [StmtModifier.Static], definitionFunction)], /* getters */ [], /* constructorMethod */ new ClassMethod(null, [], []), /* methods */ []));
+    }
+    else {
+        // Create back-patch definition.
+        var /** @type {?} */ classReference = outputCtx.importExpr(directive.type.reference);
+        // Create the back-patch statement
+        outputCtx.statements.push(new CommentStmt(BUILD_OPTIMIZER_COLOCATE));
+        outputCtx.statements.push(classReference.prop(definitionField).set(definitionFunction).toStmt());
+    }
+}
+/**
+ * @param {?} outputCtx
+ * @param {?} component
+ * @param {?} pipes
+ * @param {?} template
+ * @param {?} reflector
+ * @param {?} bindingParser
+ * @param {?} mode
+ * @return {?}
+ */
+function compileComponent(outputCtx, component, pipes, template, reflector, bindingParser, mode) {
+    var /** @type {?} */ definitionMapValues = [];
+    // Set of pipe names for pipe exps that have already been stored in pipes[] (to avoid dupes)
+    var /** @type {?} */ pipeSet = new Set();
+    // Pipe expressions for pipes[] field in component def
+    var /** @type {?} */ pipeExps = [];
+    /**
+     * @param {?} summary
+     * @return {?}
+     */
+    function addPipeDependency(summary) {
+        addDependencyToComponent(outputCtx, summary, pipeSet, pipeExps);
+    }
+    var /** @type {?} */ directiveExps = [];
+    var /** @type {?} */ directiveMap = new Set();
+    /**
+     * This function gets called every time a directive dependency needs to be added to the template.
+     * Its job is to remove duplicates from the list. (Only have single dependency no matter how many
+     * times the dependency is used.)
+     * @param {?} ast
+     * @return {?}
+     */
+    function addDirectiveDependency(ast) {
+        var /** @type {?} */ importExpr$$1 = /** @type {?} */ (outputCtx.importExpr(ast.directive.type.reference));
+        var /** @type {?} */ uniqueKey = importExpr$$1.value.moduleName + ':' + importExpr$$1.value.name;
+        if (!directiveMap.has(uniqueKey)) {
+            directiveMap.add(uniqueKey);
+            directiveExps.push(importExpr$$1);
+        }
+    }
+    var /** @type {?} */ field = function (key, value) {
+        if (value) {
+            definitionMapValues.push({ key: key, value: value, quoted: false });
+        }
+    };
+    // e.g. `type: MyApp`
+    field('type', outputCtx.importExpr(component.type.reference));
+    // e.g. `selectors: [['my-app']]`
+    field('selectors', createDirectiveSelector(/** @type {?} */ ((component.selector))));
+    var /** @type {?} */ selector = component.selector && CssSelector.parse(component.selector);
+    var /** @type {?} */ firstSelector = selector && selector[0];
+    // e.g. `attr: ["class", ".my.app"]
+    // This is optional an only included if the first selector of a component specifies attributes.
+    if (firstSelector) {
+        var /** @type {?} */ selectorAttributes = firstSelector.getAttrs();
+        if (selectorAttributes.length) {
+            field('attrs', outputCtx.constantPool.getConstLiteral(literalArr(selectorAttributes.map(function (value) { return value != null ? literal(value) : literal(undefined); })), /* forceShared */ true));
+        }
+    }
+    // e.g. `factory: function MyApp_Factory() { return new MyApp(injectElementRef()); }`
+    field('factory', createFactory(component.type, outputCtx, reflector, component.queries));
+    // e.g `hostBindings: function MyApp_HostBindings { ... }
+    field('hostBindings', createHostBindingsFunction(component, outputCtx, bindingParser));
+    // e.g. `template: function MyComponent_Template(_ctx, _cm) {...}`
+    var /** @type {?} */ templateTypeName = component.type.reference.name;
+    var /** @type {?} */ templateName = templateTypeName ? templateTypeName + "_Template" : null;
+    var /** @type {?} */ pipeMap = new Map(pipes.map(function (pipe) { return [pipe.name, pipe]; }));
+    var /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, ROOT_SCOPE.nestedScope(), 0, /** @type {?} */ ((component.template)).ngContentSelectors, templateTypeName, templateName, pipeMap, component.viewQueries, addDirectiveDependency, addPipeDependency)
+        .buildTemplateFunction(template, []);
+    field('template', templateFunctionExpression);
+    if (directiveExps.length) {
+        field('directives', literalArr(directiveExps));
+    }
+    // e.g. `pipes: [MyPipe]`
+    if (pipeExps.length) {
+        field('pipes', literalArr(pipeExps));
+    }
+    // e.g `inputs: {a: 'a'}`
+    field('inputs', createInputsObject(component, outputCtx));
+    // e.g. `features: [NgOnChangesFeature(MyComponent)]`
+    var /** @type {?} */ features = [];
+    if (component.type.lifecycleHooks.some(function (lifecycle) { return lifecycle == LifecycleHooks.OnChanges; })) {
+        features.push(importExpr(Identifiers$1.NgOnChangesFeature, null, null).callFn([outputCtx.importExpr(component.type.reference)]));
+    }
+    if (features.length) {
+        field('features', literalArr(features));
+    }
+    var /** @type {?} */ definitionField = outputCtx.constantPool.propertyNameOf(2 /* Component */);
+    var /** @type {?} */ definitionFunction = importExpr(Identifiers$1.defineComponent).callFn([literalMap(definitionMapValues)]);
+    if (mode === 0 /* PartialClass */) {
+        var /** @type {?} */ className = /** @type {?} */ ((identifierName(component.type)));
+        className || error("Cannot resolver the name of " + component.type);
+        // Create the partial class to be merged with the actual class.
+        outputCtx.statements.push(new ClassStmt(className, null, /* fields */ [new ClassField(definitionField, /* type */ INFERRED_TYPE, /* modifiers */ [StmtModifier.Static], definitionFunction)], /* getters */ [], /* constructorMethod */ new ClassMethod(null, [], []), /* methods */ []));
+    }
+    else {
+        var /** @type {?} */ classReference = outputCtx.importExpr(component.type.reference);
+        // Create the back-patch statement
+        outputCtx.statements.push(new CommentStmt(BUILD_OPTIMIZER_COLOCATE), classReference.prop(definitionField).set(definitionFunction).toStmt());
+    }
+}
+/**
+ * @param {?} outputCtx
+ * @param {?} summary
+ * @param {?} set
+ * @param {?} exps
+ * @return {?}
+ */
+function addDependencyToComponent(outputCtx, summary, set, exps) {
+    var /** @type {?} */ importExpr$$1 = /** @type {?} */ (outputCtx.importExpr(summary.type.reference));
+    var /** @type {?} */ uniqueKey = importExpr$$1.value.moduleName + ':' + importExpr$$1.value.name;
+    if (!set.has(uniqueKey)) {
+        set.add(uniqueKey);
+        exps.push(importExpr$$1);
+    }
+}
+/**
+ * @param {?} feature
+ * @return {?}
+ */
+function unsupported(feature) {
+    if (this) {
+        throw new Error("Builder " + this.constructor.name + " doesn't support " + feature + " yet");
+    }
+    throw new Error("Feature " + feature + " is not supported yet");
+}
+var BINDING_INSTRUCTION_MAP = (_a = {},
+    _a[PropertyBindingType.Property] = Identifiers$1.elementProperty,
+    _a[PropertyBindingType.Attribute] = Identifiers$1.elementAttribute,
+    _a[PropertyBindingType.Class] = Identifiers$1.elementClassNamed,
+    _a[PropertyBindingType.Style] = Identifiers$1.elementStyleNamed,
+    _a);
+/**
+ * @param {?} args
+ * @return {?}
+ */
+function interpolate(args) {
+    args = args.slice(1); // Ignore the length prefix added for render2
+    switch (args.length) {
+        case 3:
+            return importExpr(Identifiers$1.interpolation1).callFn(args);
+        case 5:
+            return importExpr(Identifiers$1.interpolation2).callFn(args);
+        case 7:
+            return importExpr(Identifiers$1.interpolation3).callFn(args);
+        case 9:
+            return importExpr(Identifiers$1.interpolation4).callFn(args);
+        case 11:
+            return importExpr(Identifiers$1.interpolation5).callFn(args);
+        case 13:
+            return importExpr(Identifiers$1.interpolation6).callFn(args);
+        case 15:
+            return importExpr(Identifiers$1.interpolation7).callFn(args);
+        case 17:
+            return importExpr(Identifiers$1.interpolation8).callFn(args);
+    }
+    (args.length >= 19 && args.length % 2 == 1) ||
+        error("Invalid interpolation argument length " + args.length);
+    return importExpr(Identifiers$1.interpolationV).callFn([literalArr(args)]);
+}
+/**
+ * @param {?} args
+ * @return {?}
+ */
+function pipeBinding(args) {
+    switch (args.length) {
+        case 0:
+            // The first parameter to pipeBind is always the value to be transformed followed
+            // by arg.length arguments so the total number of arguments to pipeBind are
+            // arg.length + 1.
+            return Identifiers$1.pipeBind1;
+        case 1:
+            return Identifiers$1.pipeBind2;
+        case 2:
+            return Identifiers$1.pipeBind3;
+        default:
+            return Identifiers$1.pipeBindV;
+    }
+}
+var pureFunctionIdentifiers = [
+    Identifiers$1.pureFunction0, Identifiers$1.pureFunction1, Identifiers$1.pureFunction2, Identifiers$1.pureFunction3, Identifiers$1.pureFunction4,
+    Identifiers$1.pureFunction5, Identifiers$1.pureFunction6, Identifiers$1.pureFunction7, Identifiers$1.pureFunction8
+];
+/**
+ * @param {?} outputContext
+ * @param {?} literal
+ * @return {?}
+ */
+function getLiteralFactory(outputContext, literal$$1) {
+    var _a = outputContext.constantPool.getLiteralFactory(literal$$1), literalFactory = _a.literalFactory, literalFactoryArguments = _a.literalFactoryArguments;
+    literalFactoryArguments.length > 0 || error("Expected arguments to a literal factory function");
+    var /** @type {?} */ pureFunctionIdent = pureFunctionIdentifiers[literalFactoryArguments.length] || Identifiers$1.pureFunctionV;
+    // Literal factories are pure functions that only need to be re-invoked when the parameters
+    // change.
+    return importExpr(pureFunctionIdent).callFn([literalFactory].concat(literalFactoryArguments));
+}
+var BindingScope = /** @class */ (function () {
+    function BindingScope(parent) {
+        this.parent = parent;
+        this.map = new Map();
+        this.referenceNameIndex = 0;
+    }
+    /**
+     * @param {?} name
+     * @return {?}
+     */
+    BindingScope.prototype.get = /**
+     * @param {?} name
+     * @return {?}
+     */
+    function (name) {
+        var /** @type {?} */ current = this;
+        while (current) {
+            var /** @type {?} */ value = current.map.get(name);
+            if (value != null) {
+                // Cache the value locally.
+                this.map.set(name, value);
+                return value;
+            }
+            current = current.parent;
+        }
+        return null;
+    };
+    /**
+     * @param {?} name
+     * @param {?} value
+     * @return {?}
+     */
+    BindingScope.prototype.set = /**
+     * @param {?} name
+     * @param {?} value
+     * @return {?}
+     */
+    function (name, value) {
+        !this.map.has(name) ||
+            error("The name " + name + " is already defined in scope to be " + this.map.get(name));
+        this.map.set(name, value);
+        return this;
+    };
+    /**
+     * @return {?}
+     */
+    BindingScope.prototype.nestedScope = /**
+     * @return {?}
+     */
+    function () { return new BindingScope(this); };
+    /**
+     * @return {?}
+     */
+    BindingScope.prototype.freshReferenceName = /**
+     * @return {?}
+     */
+    function () {
+        var /** @type {?} */ current = this;
+        // Find the top scope as it maintains the global reference count
+        while (current.parent)
+            current = current.parent;
+        var /** @type {?} */ ref = "" + REFERENCE_PREFIX + current.referenceNameIndex++;
+        return ref;
+    };
+    return BindingScope;
+}());
+var ROOT_SCOPE = new BindingScope(null).set('$event', variable('$event'));
+var TemplateDefinitionBuilder = /** @class */ (function () {
+    function TemplateDefinitionBuilder(outputCtx, constantPool, reflector, contextParameter, bindingScope, level, ngContentSelectors, contextName, templateName, pipes, viewQueries, addDirectiveDependency, addPipeDependency) {
+        if (level === void 0) { level = 0; }
+        var _this = this;
+        this.outputCtx = outputCtx;
+        this.constantPool = constantPool;
+        this.reflector = reflector;
+        this.contextParameter = contextParameter;
+        this.bindingScope = bindingScope;
+        this.level = level;
+        this.ngContentSelectors = ngContentSelectors;
+        this.contextName = contextName;
+        this.templateName = templateName;
+        this.pipes = pipes;
+        this.viewQueries = viewQueries;
+        this.addDirectiveDependency = addDirectiveDependency;
+        this.addPipeDependency = addPipeDependency;
+        this._dataIndex = 0;
+        this._bindingContext = 0;
+        this._referenceIndex = 0;
+        this._temporaryAllocated = false;
+        this._prefix = [];
+        this._creationMode = [];
+        this._bindingMode = [];
+        this._refreshMode = [];
+        this._postfix = [];
+        this._projectionDefinitionIndex = 0;
+        this.unsupported = unsupported;
+        this.invalid = invalid$1;
+        this._inI18nSection = false;
+        this._i18nSectionIndex = -1;
+        this._phToNodeIdxes = [{}];
+        // These should be handled in the template or element directly.
+        this.visitReference = invalid$1;
+        this.visitVariable = invalid$1;
+        this.visitEvent = invalid$1;
+        this.visitElementProperty = invalid$1;
+        this.visitAttr = invalid$1;
+        // These should be handled in the template or element directly
+        this.visitDirective = invalid$1;
+        this.visitDirectiveProperty = invalid$1;
+        this._valueConverter = new ValueConverter(outputCtx, function () { return _this.allocateDataSlot(); }, function (name, localName, slot, value) {
+            bindingScope.set(localName, value);
+            var /** @type {?} */ pipe = /** @type {?} */ ((pipes.get(name)));
+            pipe || error("Could not find pipe " + name);
+            _this.addPipeDependency(pipe);
+            _this._creationMode.push(importExpr(Identifiers$1.pipe).callFn([literal(slot), literal(name)]).toStmt());
+        });
+    }
+    /**
+     * @param {?} asts
+     * @param {?} variables
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.buildTemplateFunction = /**
+     * @param {?} asts
+     * @param {?} variables
+     * @return {?}
+     */
+    function (asts, variables) {
+        // Create variable bindings
+        for (var _i = 0, variables_1 = variables; _i < variables_1.length; _i++) {
+            var variable$$1 = variables_1[_i];
+            var /** @type {?} */ variableName = variable$$1.name;
+            var /** @type {?} */ expression = variable(this.contextParameter).prop(variable$$1.value || IMPLICIT_REFERENCE);
+            var /** @type {?} */ scopedName = this.bindingScope.freshReferenceName();
+            var /** @type {?} */ declaration = variable(scopedName).set(expression).toDeclStmt(INFERRED_TYPE, [
+                StmtModifier.Final
+            ]);
+            // Add the reference to the local scope.
+            this.bindingScope.set(variableName, variable(scopedName));
+            // Declare the local variable in binding mode
+            this._bindingMode.push(declaration);
+        }
+        // Collect content projections
+        if (this.ngContentSelectors && this.ngContentSelectors.length > 0) {
+            var /** @type {?} */ contentProjections = getContentProjection(asts, this.ngContentSelectors);
+            this._contentProjections = contentProjections;
+            if (contentProjections.size > 0) {
+                var /** @type {?} */ infos_1 = [];
+                Array.from(contentProjections.values()).forEach(function (info) {
+                    if (info.selector) {
+                        infos_1[info.index - 1] = info.selector;
+                    }
+                });
+                var /** @type {?} */ projectionIndex = this._projectionDefinitionIndex = this.allocateDataSlot();
+                var /** @type {?} */ parameters = [literal(projectionIndex)];
+                !infos_1.some(function (value) { return !value; }) || error("content project information skipped an index");
+                if (infos_1.length > 1) {
+                    parameters.push(this.outputCtx.constantPool.getConstLiteral(asLiteral(infos_1), /* forceShared */ /* forceShared */ true));
+                }
+                this.instruction.apply(this, [this._creationMode, null, Identifiers$1.projectionDef].concat(parameters));
+            }
+        }
+        // Define and update any view queries
+        for (var _a = 0, _b = this.viewQueries; _a < _b.length; _a++) {
+            var query = _b[_a];
+            // e.g. r3.Q(0, SomeDirective, true);
+            var /** @type {?} */ querySlot = this.allocateDataSlot();
+            var /** @type {?} */ predicate = getQueryPredicate(query, this.outputCtx);
+            var /** @type {?} */ args = [
+                /* memoryIndex */ literal(querySlot, INFERRED_TYPE),
+                predicate,
+                /* descend */ literal(query.descendants, INFERRED_TYPE)
+            ];
+            if (query.read) {
+                args.push(this.outputCtx.importExpr(/** @type {?} */ ((query.read.identifier)).reference));
+            }
+            this.instruction.apply(this, [this._creationMode, null, Identifiers$1.query].concat(args));
+            // (r3.qR(tmp = r3.ɵld(0)) && (ctx.someDir = tmp));
+            var /** @type {?} */ temporary = this.temp();
+            var /** @type {?} */ getQueryList = importExpr(Identifiers$1.load).callFn([literal(querySlot)]);
+            var /** @type {?} */ refresh = importExpr(Identifiers$1.queryRefresh).callFn([temporary.set(getQueryList)]);
+            var /** @type {?} */ updateDirective = variable(CONTEXT_NAME)
+                .prop(query.propertyName)
+                .set(query.first ? temporary.prop('first') : temporary);
+            this._bindingMode.push(refresh.and(updateDirective).toStmt());
+        }
+        templateVisitAll(this, asts);
+        var /** @type {?} */ creationMode = this._creationMode.length > 0 ?
+            [ifStmt(variable(CREATION_MODE_FLAG), this._creationMode)] :
+            [];
+        // Generate maps of placeholder name to node indexes
+        // TODO(vicb): This is a WIP, not fully supported yet
+        for (var _c = 0, _d = this._phToNodeIdxes; _c < _d.length; _c++) {
+            var phToNodeIdx = _d[_c];
+            if (Object.keys(phToNodeIdx).length > 0) {
+                var /** @type {?} */ scopedName = this.bindingScope.freshReferenceName();
+                var /** @type {?} */ phMap = variable(scopedName)
+                    .set(mapToExpression(phToNodeIdx, true))
+                    .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]);
+                this._prefix.push(phMap);
+            }
+        }
+        return fn([
+            new FnParam(this.contextParameter, null), new FnParam(CREATION_MODE_FLAG, BOOL_TYPE)
+        ], this._prefix.concat(creationMode, this._bindingMode, this._refreshMode, this._postfix), INFERRED_TYPE, null, this.templateName);
+    };
+    // LocalResolver
+    /**
+     * @param {?} name
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.getLocal = /**
+     * @param {?} name
+     * @return {?}
+     */
+    function (name) { return this.bindingScope.get(name); };
+    // TemplateAstVisitor
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.visitNgContent = /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function (ast) {
+        var /** @type {?} */ info = /** @type {?} */ ((this._contentProjections.get(ast)));
+        info || error("Expected " + ast.sourceSpan + " to be included in content projection collection");
+        var /** @type {?} */ slot = this.allocateDataSlot();
+        var /** @type {?} */ parameters = [literal(slot), literal(this._projectionDefinitionIndex)];
+        if (info.index !== 0) {
+            parameters.push(literal(info.index));
+        }
+        this.instruction.apply(this, [this._creationMode, ast.sourceSpan, Identifiers$1.projection].concat(parameters));
+    };
+    // TemplateAstVisitor
+    /**
+     * @param {?} element
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.visitElement = /**
+     * @param {?} element
+     * @return {?}
+     */
+    function (element) {
+        var _this = this;
+        var /** @type {?} */ elementIndex = this.allocateDataSlot();
+        var /** @type {?} */ referenceDataSlots = new Map();
+        var /** @type {?} */ wasInI18nSection = this._inI18nSection;
+        var /** @type {?} */ outputAttrs = {};
+        var /** @type {?} */ attrI18nMetas = {};
+        var /** @type {?} */ i18nMeta = '';
+        // Elements inside i18n sections are replaced with placeholders
+        // TODO(vicb): nested elements are a WIP in this phase
+        if (this._inI18nSection) {
+            var /** @type {?} */ phName = element.name.toLowerCase();
+            if (!this._phToNodeIdxes[this._i18nSectionIndex][phName]) {
+                this._phToNodeIdxes[this._i18nSectionIndex][phName] = [];
+            }
+            this._phToNodeIdxes[this._i18nSectionIndex][phName].push(elementIndex);
+        }
+        // Handle i18n attributes
+        for (var _i = 0, _a = element.attrs; _i < _a.length; _i++) {
+            var attr = _a[_i];
+            var /** @type {?} */ name_1 = attr.name;
+            var /** @type {?} */ value = attr.value;
+            if (name_1 === I18N_ATTR) {
+                if (this._inI18nSection) {
+                    throw new Error("Could not mark an element as translatable inside of a translatable section");
+                }
+                this._inI18nSection = true;
+                this._i18nSectionIndex++;
+                this._phToNodeIdxes[this._i18nSectionIndex] = {};
+                i18nMeta = value;
+            }
+            else if (name_1.startsWith(I18N_ATTR_PREFIX)) {
+                attrI18nMetas[name_1.slice(I18N_ATTR_PREFIX.length)] = value;
+            }
+            else {
+                outputAttrs[name_1] = value;
+            }
+        }
+        // Element creation mode
+        var /** @type {?} */ component = findComponent(element.directives);
+        var /** @type {?} */ nullNode = literal(null, INFERRED_TYPE);
+        var /** @type {?} */ parameters = [literal(elementIndex)];
+        if (component) {
+            this.addDirectiveDependency(component);
+        }
+        element.directives.forEach(this.addDirectiveDependency);
+        parameters.push(literal(element.name));
+        // Add the attributes
+        var /** @type {?} */ i18nMessages = [];
+        var /** @type {?} */ attributes = [];
+        var /** @type {?} */ hasI18nAttr = false;
+        Object.getOwnPropertyNames(outputAttrs).forEach(function (name) {
+            var /** @type {?} */ value = outputAttrs[name];
+            attributes.push(literal(name));
+            if (attrI18nMetas.hasOwnProperty(name)) {
+                hasI18nAttr = true;
+                var /** @type {?} */ meta = parseI18nMeta(attrI18nMetas[name]);
+                var /** @type {?} */ variable$$1 = _this.constantPool.getTranslation(value, meta);
+                attributes.push(variable$$1);
+            }
+            else {
+                attributes.push(literal(value));
+            }
+        });
+        var /** @type {?} */ attrArg = nullNode;
+        if (attributes.length > 0) {
+            attrArg = hasI18nAttr ? getLiteralFactory(this.outputCtx, literalArr(attributes)) :
+                this.constantPool.getConstLiteral(literalArr(attributes), true);
+        }
+        parameters.push(attrArg);
+        if (element.references && element.references.length > 0) {
+            var /** @type {?} */ references = flatten(element.references.map(function (reference) {
+                var /** @type {?} */ slot = _this.allocateDataSlot();
+                referenceDataSlots.set(reference.name, slot);
+                // Generate the update temporary.
+                var /** @type {?} */ variableName = _this.bindingScope.freshReferenceName();
+                _this._bindingMode.push(variable(variableName, INFERRED_TYPE)
+                    .set(importExpr(Identifiers$1.load).callFn([literal(slot)]))
+                    .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
+                _this.bindingScope.set(reference.name, variable(variableName));
+                return [reference.name, reference.originalValue];
+            })).map(function (value) { return literal(value); });
+            parameters.push(this.constantPool.getConstLiteral(literalArr(references), /* forceShared */ /* forceShared */ true));
+        }
+        else {
+            parameters.push(nullNode);
+        }
+        // Generate the instruction create element instruction
+        if (i18nMessages.length > 0) {
+            (_b = this._creationMode).push.apply(_b, i18nMessages);
+        }
+        this.instruction.apply(this, [this._creationMode, element.sourceSpan, Identifiers$1.createElement].concat(trimTrailingNulls(parameters)));
+        var /** @type {?} */ implicit = variable(this.contextParameter);
+        // Generate Listeners (outputs)
+        element.outputs.forEach(function (outputAst) {
+            var /** @type {?} */ functionName = _this.templateName + "_" + element.name + "_" + outputAst.name + "_listener";
+            var /** @type {?} */ bindingExpr = convertActionBinding(_this, implicit, outputAst.handler, 'b', function () { return error('Unexpected interpolation'); });
+            var /** @type {?} */ handler = fn([new FnParam('$event', DYNAMIC_TYPE)], bindingExpr.stmts.concat([new ReturnStatement(bindingExpr.allowDefault)]), INFERRED_TYPE, null, functionName);
+            _this.instruction(_this._creationMode, outputAst.sourceSpan, Identifiers$1.listener, literal(outputAst.name), handler);
+        });
+        // Generate element input bindings
+        for (var _c = 0, _d = element.inputs; _c < _d.length; _c++) {
+            var input = _d[_c];
+            if (input.isAnimation) {
+                this.unsupported('animations');
+            }
+            var /** @type {?} */ convertedBinding = this.convertPropertyBinding(implicit, input.value);
+            var /** @type {?} */ instruction = BINDING_INSTRUCTION_MAP[input.type];
+            if (instruction) {
+                // TODO(chuckj): runtime: security context?
+                this.instruction(this._bindingMode, input.sourceSpan, instruction, literal(elementIndex), literal(input.name), convertedBinding);
+            }
+            else {
+                this.unsupported("binding " + PropertyBindingType[input.type]);
+            }
+        }
+        // Generate directives input bindings
+        this._visitDirectives(element.directives, implicit, elementIndex);
+        // Traverse element child nodes
+        if (this._inI18nSection && element.children.length == 1 &&
+            element.children[0] instanceof TextAst) {
+            var /** @type {?} */ text = /** @type {?} */ (element.children[0]);
+            this.visitSingleI18nTextChild(text, i18nMeta);
+        }
+        else {
+            templateVisitAll(this, element.children);
+        }
+        // Finish element construction mode.
+        this.instruction(this._creationMode, element.endSourceSpan || element.sourceSpan, Identifiers$1.elementEnd);
+        // Restore the state before exiting this node
+        this._inI18nSection = wasInI18nSection;
+        var _b;
+    };
+    /**
+     * @param {?} directives
+     * @param {?} implicit
+     * @param {?} nodeIndex
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype._visitDirectives = /**
+     * @param {?} directives
+     * @param {?} implicit
+     * @param {?} nodeIndex
+     * @return {?}
+     */
+    function (directives, implicit, nodeIndex) {
+        for (var _i = 0, directives_1 = directives; _i < directives_1.length; _i++) {
+            var directive = directives_1[_i];
+            // Creation mode
+            // e.g. D(0, TodoComponentDef.n(), TodoComponentDef);
+            var /** @type {?} */ directiveType = directive.directive.type.reference;
+            var /** @type {?} */ kind = directive.directive.isComponent ? 2 /* Component */ : 1;
+            // Note: *do not cache* calls to this.directiveOf() as the constant pool needs to know if the
+            // node is referenced multiple times to know that it must generate the reference into a
+            // temporary.
+            // Bindings
+            for (var _a = 0, _b = directive.inputs; _a < _b.length; _a++) {
+                var input = _b[_a];
+                var /** @type {?} */ convertedBinding = this.convertPropertyBinding(implicit, input.value);
+                this.instruction(this._bindingMode, directive.sourceSpan, Identifiers$1.elementProperty, literal(nodeIndex), literal(input.templateName), importExpr(Identifiers$1.bind).callFn([convertedBinding]));
+            }
+        }
+    };
+    // TemplateAstVisitor
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.visitEmbeddedTemplate = /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function (ast) {
+        var _this = this;
+        var /** @type {?} */ templateIndex = this.allocateDataSlot();
+        var /** @type {?} */ templateRef = this.reflector.resolveExternalReference(Identifiers.TemplateRef);
+        var /** @type {?} */ templateDirective = ast.directives.find(function (directive) {
+            return directive.directive.type.diDeps.some(function (dependency) {
+                return dependency.token != null && (tokenReference(dependency.token) == templateRef);
+            });
+        });
+        var /** @type {?} */ contextName = this.contextName && templateDirective && templateDirective.directive.type.reference.name ?
+            this.contextName + "_" + templateDirective.directive.type.reference.name :
+            null;
+        var /** @type {?} */ templateName = contextName ? contextName + "_Template_" + templateIndex : "Template_" + templateIndex;
+        var /** @type {?} */ templateContext = "ctx" + this.level;
+        var /** @type {?} */ parameters = [variable(templateName), literal(null, INFERRED_TYPE)];
+        var /** @type {?} */ attributeNames = [];
+        ast.directives.forEach(function (directiveAst) {
+            _this.addDirectiveDependency(directiveAst);
+            CssSelector.parse(/** @type {?} */ ((directiveAst.directive.selector))).forEach(function (selector) {
+                selector.attrs.forEach(function (value) {
+                    // Convert '' (falsy) strings into `null`. This is needed because we want
+                    // to communicate to runtime that these attributes are present for
+                    // selector matching, but should not actually be added to the DOM.
+                    // attributeNames.push(o.literal(value ? value : null));
+                    // TODO(misko): make the above comment true, for now just write to DOM because
+                    // the runtime selectors have not been updated.
+                    attributeNames.push(literal(value));
+                });
+            });
+        });
+        if (attributeNames.length) {
+            parameters.push(this.constantPool.getConstLiteral(literalArr(attributeNames), /* forcedShared */ /* forcedShared */ true));
+        }
+        // e.g. C(1, C1Template)
+        this.instruction.apply(this, [this._creationMode, ast.sourceSpan, Identifiers$1.containerCreate, literal(templateIndex)].concat(trimTrailingNulls(parameters)));
+        // Generate directives
+        this._visitDirectives(ast.directives, variable(this.contextParameter), templateIndex);
+        // Create the template function
+        var /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this.bindingScope.nestedScope(), this.level + 1, this.ngContentSelectors, contextName, templateName, this.pipes, [], this.addDirectiveDependency, this.addPipeDependency);
+        var /** @type {?} */ templateFunctionExpr = templateVisitor.buildTemplateFunction(ast.children, ast.variables);
+        this._postfix.push(templateFunctionExpr.toDeclStmt(templateName, null));
+    };
+    // TemplateAstVisitor
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.visitBoundText = /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function (ast) {
+        var /** @type {?} */ nodeIndex = this.allocateDataSlot();
+        // Creation mode
+        this.instruction(this._creationMode, ast.sourceSpan, Identifiers$1.text, literal(nodeIndex));
+        // Refresh mode
+        this.instruction(this._refreshMode, ast.sourceSpan, Identifiers$1.textCreateBound, literal(nodeIndex), this.bind(variable(CONTEXT_NAME), ast.value, ast.sourceSpan));
+    };
+    // TemplateAstVisitor
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.visitText = /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function (ast) {
+        // Text is defined in creation mode only.
+        this.instruction(this._creationMode, ast.sourceSpan, Identifiers$1.text, literal(this.allocateDataSlot()), literal(ast.value));
+    };
+    // When the content of the element is a single text node the translation can be inlined:
+    //
+    // `<p i18n="desc|mean">some content</p>`
+    // compiles to
+    // ```
+    // /**
+    // * @desc desc
+    // * @meaning mean
+    // */
+    // const MSG_XYZ = goog.getMsg('some content');
+    // i0.ɵT(1, MSG_XYZ);
+    // ```
+    /**
+     * @param {?} text
+     * @param {?} i18nMeta
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.visitSingleI18nTextChild = /**
+     * @param {?} text
+     * @param {?} i18nMeta
+     * @return {?}
+     */
+    function (text, i18nMeta) {
+        var /** @type {?} */ meta = parseI18nMeta(i18nMeta);
+        var /** @type {?} */ variable$$1 = this.constantPool.getTranslation(text.value, meta);
+        this.instruction(this._creationMode, text.sourceSpan, Identifiers$1.text, literal(this.allocateDataSlot()), variable$$1);
+    };
+    /**
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.allocateDataSlot = /**
+     * @return {?}
+     */
+    function () { return this._dataIndex++; };
+    /**
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.bindingContext = /**
+     * @return {?}
+     */
+    function () { return "" + this._bindingContext++; };
+    /**
+     * @param {?} statements
+     * @param {?} span
+     * @param {?} reference
+     * @param {...?} params
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.instruction = /**
+     * @param {?} statements
+     * @param {?} span
+     * @param {?} reference
+     * @param {...?} params
+     * @return {?}
+     */
+    function (statements, span, reference) {
+        var params = [];
+        for (var _i = 3; _i < arguments.length; _i++) {
+            params[_i - 3] = arguments[_i];
+        }
+        statements.push(importExpr(reference, null, span).callFn(params, span).toStmt());
+    };
+    /**
+     * @param {?} type
+     * @param {?} kind
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.definitionOf = /**
+     * @param {?} type
+     * @param {?} kind
+     * @return {?}
+     */
+    function (type, kind) {
+        return this.constantPool.getDefinition(type, kind, this.outputCtx);
+    };
+    /**
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.temp = /**
+     * @return {?}
+     */
+    function () {
+        if (!this._temporaryAllocated) {
+            this._prefix.push(new DeclareVarStmt(TEMPORARY_NAME, undefined, DYNAMIC_TYPE));
+            this._temporaryAllocated = true;
+        }
+        return variable(TEMPORARY_NAME);
+    };
+    /**
+     * @param {?} implicit
+     * @param {?} value
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.convertPropertyBinding = /**
+     * @param {?} implicit
+     * @param {?} value
+     * @return {?}
+     */
+    function (implicit, value) {
+        var /** @type {?} */ pipesConvertedValue = value.visit(this._valueConverter);
+        var /** @type {?} */ convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, interpolate);
+        (_a = this._refreshMode).push.apply(_a, convertedPropertyBinding.stmts);
+        return convertedPropertyBinding.currValExpr;
+        var _a;
+    };
+    /**
+     * @param {?} implicit
+     * @param {?} value
+     * @param {?} sourceSpan
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.bind = /**
+     * @param {?} implicit
+     * @param {?} value
+     * @param {?} sourceSpan
+     * @return {?}
+     */
+    function (implicit, value, sourceSpan) {
+        return this.convertPropertyBinding(implicit, value);
+    };
+    return TemplateDefinitionBuilder;
+}());
+/**
+ * @param {?} query
+ * @param {?} outputCtx
+ * @return {?}
+ */
+function getQueryPredicate(query, outputCtx) {
+    var /** @type {?} */ predicate;
+    if (query.selectors.length > 1 || (query.selectors.length == 1 && query.selectors[0].value)) {
+        var /** @type {?} */ selectors = query.selectors.map(function (value) { return (value.value); });
+        selectors.some(function (value) { return !value; }) && error('Found a type among the string selectors expected');
+        predicate = outputCtx.constantPool.getConstLiteral(literalArr(selectors.map(function (value) { return literal(value); })));
+    }
+    else if (query.selectors.length == 1) {
+        var /** @type {?} */ first = query.selectors[0];
+        if (first.identifier) {
+            predicate = outputCtx.importExpr(first.identifier.reference);
+        }
+        else {
+            error('Unexpected query form');
+            predicate = literal(null);
+        }
+    }
+    else {
+        error('Unexpected query form');
+        predicate = literal(null);
+    }
+    return predicate;
+}
+/**
+ * @param {?} type
+ * @param {?} outputCtx
+ * @param {?} reflector
+ * @param {?} queries
+ * @return {?}
+ */
+function createFactory(type, outputCtx, reflector, queries) {
+    var /** @type {?} */ args = [];
+    var /** @type {?} */ elementRef = reflector.resolveExternalReference(Identifiers.ElementRef);
+    var /** @type {?} */ templateRef = reflector.resolveExternalReference(Identifiers.TemplateRef);
+    var /** @type {?} */ viewContainerRef = reflector.resolveExternalReference(Identifiers.ViewContainerRef);
+    for (var _i = 0, _a = type.diDeps; _i < _a.length; _i++) {
+        var dependency = _a[_i];
+        if (dependency.isValue) {
+            unsupported('value dependencies');
+        }
+        if (dependency.isHost) {
+            unsupported('host dependencies');
+        }
+        var /** @type {?} */ token = dependency.token;
+        if (token) {
+            var /** @type {?} */ tokenRef = tokenReference(token);
+            if (tokenRef === elementRef) {
+                args.push(importExpr(Identifiers$1.injectElementRef).callFn([]));
+            }
+            else if (tokenRef === templateRef) {
+                args.push(importExpr(Identifiers$1.injectTemplateRef).callFn([]));
+            }
+            else if (tokenRef === viewContainerRef) {
+                args.push(importExpr(Identifiers$1.injectViewContainerRef).callFn([]));
+            }
+            else {
+                var /** @type {?} */ value = token.identifier != null ? outputCtx.importExpr(tokenRef) : literal(tokenRef);
+                args.push(importExpr(Identifiers$1.inject).callFn([value]));
+            }
+        }
+        else {
+            unsupported('dependency without a token');
+        }
+    }
+    var /** @type {?} */ queryDefinitions = [];
+    for (var _b = 0, queries_1 = queries; _b < queries_1.length; _b++) {
+        var query = queries_1[_b];
+        var /** @type {?} */ predicate = getQueryPredicate(query, outputCtx);
+        // e.g. r3.Q(null, SomeDirective, false) or r3.Q(null, ['div'], false)
+        var /** @type {?} */ parameters = [
+            /* memoryIndex */ literal(null, INFERRED_TYPE),
+            predicate,
+            /* descend */ literal(query.descendants)
+        ];
+        if (query.read) {
+            parameters.push(outputCtx.importExpr(/** @type {?} */ ((query.read.identifier)).reference));
+        }
+        queryDefinitions.push(importExpr(Identifiers$1.query).callFn(parameters));
+    }
+    var /** @type {?} */ createInstance = new InstantiateExpr(outputCtx.importExpr(type.reference), args);
+    var /** @type {?} */ result = queryDefinitions.length > 0 ? literalArr([createInstance].concat(queryDefinitions)) :
+        createInstance;
+    return fn([], [new ReturnStatement(result)], INFERRED_TYPE, null, type.reference.name ? type.reference.name + "_Factory" : null);
+}
+/**
+ *  Remove trailing null nodes as they are implied.
+ * @param {?} parameters
+ * @return {?}
+ */
+function trimTrailingNulls(parameters) {
+    while (isNull(parameters[parameters.length - 1])) {
+        parameters.pop();
+    }
+    return parameters;
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function createDirectiveSelector(selector) {
+    return asLiteral(parseSelectorsToR3Selector(CssSelector.parse(selector)));
+}
+/**
+ * @param {?} directiveMetadata
+ * @param {?} outputCtx
+ * @return {?}
+ */
+function createHostAttributesArray(directiveMetadata, outputCtx) {
+    var /** @type {?} */ values = [];
+    var /** @type {?} */ attributes = directiveMetadata.hostAttributes;
+    for (var _i = 0, _a = Object.getOwnPropertyNames(attributes); _i < _a.length; _i++) {
+        var key = _a[_i];
+        var /** @type {?} */ value = attributes[key];
+        values.push(literal(key), literal(value));
+    }
+    if (values.length > 0) {
+        return outputCtx.constantPool.getConstLiteral(literalArr(values));
+    }
+    return null;
+}
+/**
+ * @param {?} directiveMetadata
+ * @param {?} outputCtx
+ * @param {?} bindingParser
+ * @return {?}
+ */
+function createHostBindingsFunction(directiveMetadata, outputCtx, bindingParser) {
+    var /** @type {?} */ statements = [];
+    var /** @type {?} */ temporary = function () {
+        var /** @type {?} */ declared = false;
+        return function () {
+            if (!declared) {
+                statements.push(new DeclareVarStmt(TEMPORARY_NAME, undefined, DYNAMIC_TYPE));
+                declared = true;
+            }
+            return variable(TEMPORARY_NAME);
+        };
+    }();
+    var /** @type {?} */ hostBindingSourceSpan = typeSourceSpan(directiveMetadata.isComponent ? 'Component' : 'Directive', directiveMetadata.type);
+    // Calculate the queries
+    for (var /** @type {?} */ index = 0; index < directiveMetadata.queries.length; index++) {
+        var /** @type {?} */ query = directiveMetadata.queries[index];
+        // e.g. r3.qR(tmp = r3.ld(dirIndex)[1]) && (r3.ld(dirIndex)[0].someDir = tmp);
+        var /** @type {?} */ getDirectiveMemory = importExpr(Identifiers$1.load).callFn([variable('dirIndex')]);
+        // The query list is at the query index + 1 because the directive itself is in slot 0.
+        var /** @type {?} */ getQueryList = getDirectiveMemory.key(literal(index + 1));
+        var /** @type {?} */ assignToTemporary = temporary().set(getQueryList);
+        var /** @type {?} */ callQueryRefresh = importExpr(Identifiers$1.queryRefresh).callFn([assignToTemporary]);
+        var /** @type {?} */ updateDirective = getDirectiveMemory.key(literal(0, INFERRED_TYPE))
+            .prop(query.propertyName)
+            .set(query.first ? temporary().prop('first') : temporary());
+        var /** @type {?} */ andExpression = callQueryRefresh.and(updateDirective);
+        statements.push(andExpression.toStmt());
+    }
+    var /** @type {?} */ directiveSummary = directiveMetadata.toSummary();
+    // Calculate the host property bindings
+    var /** @type {?} */ bindings = bindingParser.createBoundHostProperties(directiveSummary, hostBindingSourceSpan);
+    var /** @type {?} */ bindingContext = importExpr(Identifiers$1.load).callFn([variable('dirIndex')]);
+    if (bindings) {
+        for (var _i = 0, bindings_1 = bindings; _i < bindings_1.length; _i++) {
+            var binding = bindings_1[_i];
+            var /** @type {?} */ bindingExpr = convertPropertyBinding(null, bindingContext, binding.expression, 'b', BindingForm.TrySimple, function () { return error('Unexpected interpolation'); });
+            statements.push.apply(statements, bindingExpr.stmts);
+            statements.push(importExpr(Identifiers$1.elementProperty)
+                .callFn([
+                variable('elIndex'), literal(binding.name),
+                importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr])
+            ])
+                .toStmt());
+        }
+    }
+    // Calculate host event bindings
+    var /** @type {?} */ eventBindings = bindingParser.createDirectiveHostEventAsts(directiveSummary, hostBindingSourceSpan);
+    if (eventBindings) {
+        for (var _a = 0, eventBindings_1 = eventBindings; _a < eventBindings_1.length; _a++) {
+            var binding = eventBindings_1[_a];
+            var /** @type {?} */ bindingExpr = convertActionBinding(null, bindingContext, binding.handler, 'b', function () { return error('Unexpected interpolation'); });
+            var /** @type {?} */ bindingName = binding.name && sanitizeIdentifier(binding.name);
+            var /** @type {?} */ typeName = identifierName(directiveMetadata.type);
+            var /** @type {?} */ functionName = typeName && bindingName ? typeName + "_" + bindingName + "_HostBindingHandler" : null;
+            var /** @type {?} */ handler = fn([new FnParam('$event', DYNAMIC_TYPE)], bindingExpr.stmts.concat([new ReturnStatement(bindingExpr.allowDefault)]), INFERRED_TYPE, null, functionName);
+            statements.push(importExpr(Identifiers$1.listener).callFn([literal(binding.name), handler]).toStmt());
+        }
+    }
+    if (statements.length > 0) {
+        var /** @type {?} */ typeName = directiveMetadata.type.reference.name;
+        return fn([new FnParam('dirIndex', NUMBER_TYPE), new FnParam('elIndex', NUMBER_TYPE)], statements, INFERRED_TYPE, null, typeName ? typeName + "_HostBindings" : null);
+    }
+    return null;
+}
+/**
+ * @param {?} directive
+ * @param {?} outputCtx
+ * @return {?}
+ */
+function createInputsObject(directive, outputCtx) {
+    if (Object.getOwnPropertyNames(directive.inputs).length > 0) {
+        return outputCtx.constantPool.getConstLiteral(mapToExpression(directive.inputs));
+    }
+    return null;
+}
+var ValueConverter = /** @class */ (function (_super) {
+    __extends(ValueConverter, _super);
+    function ValueConverter(outputCtx, allocateSlot, definePipe) {
+        var _this = _super.call(this) || this;
+        _this.outputCtx = outputCtx;
+        _this.allocateSlot = allocateSlot;
+        _this.definePipe = definePipe;
+        _this.pipeSlots = new Map();
+        return _this;
+    }
+    // AstMemoryEfficientTransformer
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    ValueConverter.prototype.visitPipe = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        // Allocate a slot to create the pipe
+        var /** @type {?} */ slot = this.allocateSlot();
+        var /** @type {?} */ slotPseudoLocal = "PIPE:" + slot;
+        var /** @type {?} */ target = new PropertyRead(ast.span, new ImplicitReceiver(ast.span), slotPseudoLocal);
+        var /** @type {?} */ bindingId = pipeBinding(ast.args);
+        this.definePipe(ast.name, slotPseudoLocal, slot, importExpr(bindingId));
+        var /** @type {?} */ value = ast.exp.visit(this);
+        var /** @type {?} */ args = this.visitAll(ast.args);
+        return new FunctionCall(ast.span, target, [new LiteralPrimitive(ast.span, slot), value].concat(args));
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    ValueConverter.prototype.visitLiteralArray = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var _this = this;
+        return new BuiltinFunctionCall(ast.span, this.visitAll(ast.expressions), function (values) {
+            // If the literal has calculated (non-literal) elements transform it into
+            // calls to literal factories that compose the literal and will cache intermediate
+            // values. Otherwise, just return an literal array that contains the values.
+            var /** @type {?} */ literal$$1 = literalArr(values);
+            return values.every(function (a) { return a.isConstant(); }) ?
+                _this.outputCtx.constantPool.getConstLiteral(literal$$1, true) :
+                getLiteralFactory(_this.outputCtx, literal$$1);
+        });
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    ValueConverter.prototype.visitLiteralMap = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var _this = this;
+        return new BuiltinFunctionCall(ast.span, this.visitAll(ast.values), function (values) {
+            // If the literal has calculated (non-literal) elements  transform it into
+            // calls to literal factories that compose the literal and will cache intermediate
+            // values. Otherwise, just return an literal array that contains the values.
+            var /** @type {?} */ literal$$1 = literalMap(values.map(function (value, index) { return ({ key: ast.keys[index].key, value: value, quoted: ast.keys[index].quoted }); }));
+            return values.every(function (a) { return a.isConstant(); }) ?
+                _this.outputCtx.constantPool.getConstLiteral(literal$$1, true) :
+                getLiteralFactory(_this.outputCtx, literal$$1);
+        });
+    };
+    return ValueConverter;
+}(AstMemoryEfficientTransformer));
+/**
+ * @template T
+ * @param {?} arg
+ * @return {?}
+ */
+function invalid$1(arg) {
+    throw new Error("Invalid state: Visitor " + this.constructor.name + " doesn't handle " + undefined);
+}
+/**
+ * @param {?} directives
+ * @return {?}
+ */
+function findComponent(directives) {
+    return directives.filter(function (directive) { return directive.directive.isComponent; })[0];
+}
+var ContentProjectionVisitor = /** @class */ (function (_super) {
+    __extends(ContentProjectionVisitor, _super);
+    function ContentProjectionVisitor(projectionMap, ngContentSelectors) {
+        var _this = _super.call(this) || this;
+        _this.projectionMap = projectionMap;
+        _this.ngContentSelectors = ngContentSelectors;
+        _this.index = 1;
+        return _this;
+    }
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    ContentProjectionVisitor.prototype.visitNgContent = /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function (ast) {
+        var /** @type {?} */ selectorText = this.ngContentSelectors[ast.index];
+        selectorText != null || error("could not find selector for index " + ast.index + " in " + ast);
+        if (!selectorText || selectorText === '*') {
+            this.projectionMap.set(ast, { index: 0 });
+        }
+        else {
+            var /** @type {?} */ cssSelectors = CssSelector.parse(selectorText);
+            this.projectionMap.set(ast, { index: this.index++, selector: parseSelectorsToR3Selector(cssSelectors) });
+        }
+    };
+    return ContentProjectionVisitor;
+}(RecursiveTemplateAstVisitor));
+/**
+ * @param {?} asts
+ * @param {?} ngContentSelectors
+ * @return {?}
+ */
+function getContentProjection(asts, ngContentSelectors) {
+    var /** @type {?} */ projectIndexMap = new Map();
+    var /** @type {?} */ visitor = new ContentProjectionVisitor(projectIndexMap, ngContentSelectors);
+    templateVisitAll(visitor, asts);
+    return projectIndexMap;
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function parserSelectorToSimpleSelector(selector) {
+    var /** @type {?} */ classes = selector.classNames && selector.classNames.length ? [8 /* CLASS */].concat(selector.classNames) :
+        [];
+    var /** @type {?} */ elementName = selector.element && selector.element !== '*' ? selector.element : '';
+    return [elementName].concat(selector.attrs, classes);
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function parserSelectorToNegativeSelector(selector) {
+    var /** @type {?} */ classes = selector.classNames && selector.classNames.length ? [8 /* CLASS */].concat(selector.classNames) :
+        [];
+    if (selector.element) {
+        return [
+            1 /* NOT */ | 4 /* ELEMENT */, selector.element
+        ].concat(selector.attrs, classes);
+    }
+    else if (selector.attrs.length) {
+        return [1 /* NOT */ | 2 /* ATTRIBUTE */].concat(selector.attrs, classes);
+    }
+    else {
+        return selector.classNames && selector.classNames.length ? [1 /* NOT */ | 8 /* CLASS */].concat(selector.classNames) :
+            [];
+    }
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function parserSelectorToR3Selector(selector) {
+    var /** @type {?} */ positive = parserSelectorToSimpleSelector(selector);
+    var /** @type {?} */ negative = selector.notSelectors && selector.notSelectors.length ?
+        selector.notSelectors.map(function (notSelector) { return parserSelectorToNegativeSelector(notSelector); }) :
+        [];
+    return positive.concat.apply(positive, negative);
+}
+/**
+ * @param {?} selectors
+ * @return {?}
+ */
+function parseSelectorsToR3Selector(selectors) {
+    return selectors.map(parserSelectorToR3Selector);
+}
+/**
+ * @param {?} value
+ * @return {?}
+ */
+function asLiteral(value) {
+    if (Array.isArray(value)) {
+        return literalArr(value.map(asLiteral));
+    }
+    return literal(value, INFERRED_TYPE);
+}
+/**
+ * @param {?} map
+ * @param {?=} quoted
+ * @return {?}
+ */
+function mapToExpression(map, quoted) {
+    if (quoted === void 0) { quoted = false; }
+    return literalMap(Object.getOwnPropertyNames(map).map(function (key) { return ({ key: key, quoted: quoted, value: asLiteral(map[key]) }); }));
+}
+/**
+ * @param {?=} i18n
+ * @return {?}
+ */
+function parseI18nMeta(i18n) {
+    var /** @type {?} */ meaning;
+    var /** @type {?} */ description;
+    var /** @type {?} */ id;
+    if (i18n) {
+        // TODO(vicb): figure out how to force a message ID with closure ?
+        var /** @type {?} */ idIndex = i18n.indexOf(ID_SEPARATOR$1);
+        var /** @type {?} */ descIndex = i18n.indexOf(MEANING_SEPARATOR$1);
+        var /** @type {?} */ meaningAndDesc = void 0;
+        _a = (idIndex > -1) ? [i18n.slice(0, idIndex), i18n.slice(idIndex + 2)] : [i18n, ''], meaningAndDesc = _a[0], id = _a[1];
+        _b = (descIndex > -1) ?
+            [meaningAndDesc.slice(0, descIndex), meaningAndDesc.slice(descIndex + 1)] :
+            ['', meaningAndDesc], meaning = _b[0], description = _b[1];
+    }
+    return { description: description, id: id, meaning: meaning };
+    var _a, _b;
+}
+var _a;
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Write a pipe definition to the output context.
+ * @param {?} outputCtx
+ * @param {?} pipe
+ * @param {?} reflector
+ * @param {?} mode
+ * @return {?}
+ */
+function compilePipe(outputCtx, pipe, reflector, mode) {
+    var /** @type {?} */ definitionMapValues = [];
+    // e.g. `name: 'myPipe'`
+    definitionMapValues.push({ key: 'name', value: literal(pipe.name), quoted: false });
+    // e.g. `type: MyPipe`
+    definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(pipe.type.reference), quoted: false });
+    // e.g. factory: function MyPipe_Factory() { return new MyPipe(); },
+    var /** @type {?} */ templateFactory = createFactory(pipe.type, outputCtx, reflector, []);
+    definitionMapValues.push({ key: 'factory', value: templateFactory, quoted: false });
+    // e.g. pure: true
+    if (pipe.pure) {
+        definitionMapValues.push({ key: 'pure', value: literal(true), quoted: false });
+    }
+    var /** @type {?} */ className = /** @type {?} */ ((identifierName(pipe.type)));
+    className || error("Cannot resolve the name of " + pipe.type);
+    var /** @type {?} */ definitionField = outputCtx.constantPool.propertyNameOf(3 /* Pipe */);
+    var /** @type {?} */ definitionFunction = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]);
+    if (mode === 0 /* PartialClass */) {
+        outputCtx.statements.push(new ClassStmt(className, null, /* fields */ [new ClassField(definitionField, /* type */ INFERRED_TYPE, /* modifiers */ [StmtModifier.Static], definitionFunction)], /* getters */ [], /* constructorMethod */ new ClassMethod(null, [], []), /* methods */ []));
+    }
+    else {
+        // Create back-patch definition.
+        var /** @type {?} */ classReference = outputCtx.importExpr(pipe.type.reference);
+        // Create the back-patch statement
+        outputCtx.statements.push(new CommentStmt(BUILD_OPTIMIZER_COLOCATE), classReference.prop(definitionField).set(definitionFunction).toStmt());
+    }
+}
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var GeneratedFile = /** @class */ (function () {
     function GeneratedFile(srcFileUrl, genFileUrl, sourceOrStmts) {
         this.srcFileUrl = srcFileUrl;
@@ -28947,6 +32049,7 @@ function parseLazyRoute(route, reflector, module) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+var TS = /^(?!.*\.d\.ts$).*\.ts$/;
 var ResolvedStaticSymbol = /** @class */ (function () {
     function ResolvedStaticSymbol(symbol, metadata) {
         this.symbol = symbol;
@@ -29030,6 +32133,7 @@ var StaticSymbolResolver = /** @class */ (function () {
      * on an otherwise indirect dependency.
      *
      * @param {?} staticSymbol the symbol for which to generate a import symbol
+     * @param {?=} useSummaries
      * @return {?}
      */
     StaticSymbolResolver.prototype.getImportAs = /**
@@ -29040,12 +32144,14 @@ var StaticSymbolResolver = /** @class */ (function () {
      * on an otherwise indirect dependency.
      *
      * @param {?} staticSymbol the symbol for which to generate a import symbol
+     * @param {?=} useSummaries
      * @return {?}
      */
-    function (staticSymbol) {
+    function (staticSymbol, useSummaries) {
+        if (useSummaries === void 0) { useSummaries = true; }
         if (staticSymbol.members.length) {
             var /** @type {?} */ baseSymbol = this.getStaticSymbol(staticSymbol.filePath, staticSymbol.name);
-            var /** @type {?} */ baseImportAs = this.getImportAs(baseSymbol);
+            var /** @type {?} */ baseImportAs = this.getImportAs(baseSymbol, useSummaries);
             return baseImportAs ?
                 this.getStaticSymbol(baseImportAs.filePath, baseImportAs.name, staticSymbol.members) :
                 null;
@@ -29054,12 +32160,12 @@ var StaticSymbolResolver = /** @class */ (function () {
         if (summarizedFileName !== staticSymbol.filePath) {
             var /** @type {?} */ summarizedName = stripSummaryForJitNameSuffix(staticSymbol.name);
             var /** @type {?} */ baseSymbol = this.getStaticSymbol(summarizedFileName, summarizedName, staticSymbol.members);
-            var /** @type {?} */ baseImportAs = this.getImportAs(baseSymbol);
+            var /** @type {?} */ baseImportAs = this.getImportAs(baseSymbol, useSummaries);
             return baseImportAs ?
                 this.getStaticSymbol(summaryForJitFileName(baseImportAs.filePath), summaryForJitName(baseImportAs.name), baseSymbol.members) :
                 null;
         }
-        var /** @type {?} */ result = this.summaryResolver.getImportAs(staticSymbol);
+        var /** @type {?} */ result = (useSummaries && this.summaryResolver.getImportAs(staticSymbol)) || null;
         if (!result) {
             result = /** @type {?} */ ((this.importAs.get(staticSymbol)));
         }
@@ -29282,21 +32388,21 @@ var StaticSymbolResolver = /** @class */ (function () {
         return this.staticSymbolCache.get(declarationFile, name, members);
     };
     /**
-     * hasDecorators checks a file's metadata for the presense of decorators without evalutating the
+     * hasDecorators checks a file's metadata for the presence of decorators without evaluating the
      * metadata.
      *
      * @param filePath the absolute path to examine for decorators.
      * @returns true if any class in the file has a decorator.
      */
     /**
-     * hasDecorators checks a file's metadata for the presense of decorators without evalutating the
+     * hasDecorators checks a file's metadata for the presence of decorators without evaluating the
      * metadata.
      *
      * @param {?} filePath the absolute path to examine for decorators.
      * @return {?} true if any class in the file has a decorator.
      */
     StaticSymbolResolver.prototype.hasDecorators = /**
-     * hasDecorators checks a file's metadata for the presense of decorators without evalutating the
+     * hasDecorators checks a file's metadata for the presence of decorators without evaluating the
      * metadata.
      *
      * @param {?} filePath the absolute path to examine for decorators.
@@ -29446,12 +32552,14 @@ var StaticSymbolResolver = /** @class */ (function () {
      * @return {?}
      */
     function (sourceSymbol, topLevelPath, topLevelSymbolNames, metadata) {
+        var _this = this;
         // For classes that don't have Angular summaries / metadata,
         // we only keep their arity, but nothing else
         // (e.g. their constructor parameters).
         // We do this to prevent introducing deep imports
         // as we didn't generate .ngfactory.ts files with proper reexports.
-        if (this.summaryResolver.isLibraryFile(sourceSymbol.filePath) && metadata &&
+        var /** @type {?} */ isTsFile = TS.test(sourceSymbol.filePath);
+        if (this.summaryResolver.isLibraryFile(sourceSymbol.filePath) && !isTsFile && metadata &&
             metadata['__symbolic'] === 'class') {
             var /** @type {?} */ transformedMeta_1 = { __symbolic: 'class', arity: metadata.arity };
             return new ResolvedStaticSymbol(sourceSymbol, transformedMeta_1);
@@ -29464,7 +32572,8 @@ var StaticSymbolResolver = /** @class */ (function () {
                 // .ts or .d.ts, append `.ts'. Also, if it is in `node_modules`, trim the `node_module`
                 // location as it is not important to finding the file.
                 _originalFileMemo =
-                    topLevelPath.replace(/((\.ts)|(\.d\.ts)|)$/, '.ts').replace(/^.*node_modules[/\\]/, '');
+                    _this.host.getOutputName(topLevelPath.replace(/((\.ts)|(\.d\.ts)|)$/, '.ts')
+                        .replace(/^.*node_modules[/\\]/, ''));
             }
             return _originalFileMemo;
         };
@@ -29582,12 +32691,12 @@ var StaticSymbolResolver = /** @class */ (function () {
      * @param {?=} path
      * @return {?}
      */
-    function (error, context, path) {
+    function (error$$1, context, path) {
         if (this.errorRecorder) {
-            this.errorRecorder(error, (context && context.filePath) || path);
+            this.errorRecorder(error$$1, (context && context.filePath) || path);
         }
         else {
-            throw error;
+            throw error$$1;
         }
     };
     /**
@@ -29605,7 +32714,7 @@ var StaticSymbolResolver = /** @class */ (function () {
             if (moduleMetadatas) {
                 var /** @type {?} */ maxVersion_1 = -1;
                 moduleMetadatas.forEach(function (md) {
-                    if (md['version'] > maxVersion_1) {
+                    if (md && md['version'] > maxVersion_1) {
                         maxVersion_1 = md['version'];
                         moduleMetadata = md;
                     }
@@ -29689,13 +32798,6 @@ function unwrapResolvedMetadata(metadata) {
 /**
  * @fileoverview added by tsickle
  * @suppress {checkTypes} checked by tsc
- */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
  */
 /**
  * @param {?} srcFileName
@@ -29938,6 +33040,43 @@ var ToJsonSerializer = /** @class */ (function (_super) {
             var /** @type {?} */ index = this.visitStaticSymbol(baseSymbol, context);
             return { __symbol: index, members: value.members };
         }
+    };
+    /**
+     * Strip line and character numbers from ngsummaries.
+     * Emitting them causes white spaces changes to retrigger upstream
+     * recompilations in bazel.
+     * TODO: find out a way to have line and character numbers in errors without
+     * excessive recompilation in bazel.
+     */
+    /**
+     * Strip line and character numbers from ngsummaries.
+     * Emitting them causes white spaces changes to retrigger upstream
+     * recompilations in bazel.
+     * TODO: find out a way to have line and character numbers in errors without
+     * excessive recompilation in bazel.
+     * @param {?} map
+     * @param {?} context
+     * @return {?}
+     */
+    ToJsonSerializer.prototype.visitStringMap = /**
+     * Strip line and character numbers from ngsummaries.
+     * Emitting them causes white spaces changes to retrigger upstream
+     * recompilations in bazel.
+     * TODO: find out a way to have line and character numbers in errors without
+     * excessive recompilation in bazel.
+     * @param {?} map
+     * @param {?} context
+     * @return {?}
+     */
+    function (map, context) {
+        if (map['__symbolic'] === 'resolved') {
+            return visitValue(map["symbol"], this, context);
+        }
+        if (map['__symbolic'] === 'error') {
+            delete map['line'];
+            delete map['character'];
+        }
+        return _super.prototype.visitStringMap.call(this, map, context);
     };
     /**
      * Returns null if the options.resolveValue is true, and the summary for the symbol
@@ -30322,22 +33461,24 @@ StubEmitFlags[StubEmitFlags.Basic] = "Basic";
 StubEmitFlags[StubEmitFlags.TypeCheck] = "TypeCheck";
 StubEmitFlags[StubEmitFlags.All] = "All";
 var AotCompiler = /** @class */ (function () {
-    function AotCompiler(_config, _options, _host, _reflector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _typeCheckCompiler, _ngModuleCompiler, _outputEmitter, _summaryResolver, _symbolResolver) {
+    function AotCompiler(_config, _options, _host, reflector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _typeCheckCompiler, _ngModuleCompiler, _injectableCompiler, _outputEmitter, _summaryResolver, _symbolResolver) {
         this._config = _config;
         this._options = _options;
         this._host = _host;
-        this._reflector = _reflector;
+        this.reflector = reflector;
         this._metadataResolver = _metadataResolver;
         this._templateParser = _templateParser;
         this._styleCompiler = _styleCompiler;
         this._viewCompiler = _viewCompiler;
         this._typeCheckCompiler = _typeCheckCompiler;
         this._ngModuleCompiler = _ngModuleCompiler;
+        this._injectableCompiler = _injectableCompiler;
         this._outputEmitter = _outputEmitter;
         this._summaryResolver = _summaryResolver;
         this._symbolResolver = _symbolResolver;
         this._templateAstCache = new Map();
         this._analyzedFiles = new Map();
+        this._analyzedFilesForInjectables = new Map();
     }
     /**
      * @return {?}
@@ -30400,6 +33541,22 @@ var AotCompiler = /** @class */ (function () {
      * @param {?} fileName
      * @return {?}
      */
+    AotCompiler.prototype._analyzeFileForInjectables = /**
+     * @param {?} fileName
+     * @return {?}
+     */
+    function (fileName) {
+        var /** @type {?} */ analyzedFile = this._analyzedFilesForInjectables.get(fileName);
+        if (!analyzedFile) {
+            analyzedFile = analyzeFileForInjectables(this._host, this._symbolResolver, this._metadataResolver, fileName);
+            this._analyzedFilesForInjectables.set(fileName, analyzedFile);
+        }
+        return analyzedFile;
+    };
+    /**
+     * @param {?} fileName
+     * @return {?}
+     */
     AotCompiler.prototype.findGeneratedFileNames = /**
      * @param {?} fileName
      * @return {?}
@@ -30420,7 +33577,7 @@ var AotCompiler = /** @class */ (function () {
                 genFileNames.push(summaryForJitFileName(file.fileName, true));
             }
         }
-        var /** @type {?} */ fileSuffix = splitTypescriptSuffix(file.fileName, true)[1];
+        var /** @type {?} */ fileSuffix = normalizeGenFileSuffix(splitTypescriptSuffix(file.fileName, true)[1]);
         file.directives.forEach(function (dirSymbol) {
             var /** @type {?} */ compMeta = /** @type {?} */ ((_this._metadataResolver.getNonNormalizedDirectiveMetadata(dirSymbol))).metadata;
             if (!compMeta.isComponent) {
@@ -30478,7 +33635,7 @@ var AotCompiler = /** @class */ (function () {
             _createEmptyStub(outputCtx);
         }
         // Note: for the stubs, we don't need a property srcFileUrl,
-        // as lateron in emitAllImpls we will create the proper GeneratedFiles with the
+        // as later on in emitAllImpls we will create the proper GeneratedFiles with the
         // correct srcFileUrl.
         // This is good as e.g. for .ngstyle.ts files we can't derive
         // the url of components based on the genFileUrl.
@@ -30506,13 +33663,15 @@ var AotCompiler = /** @class */ (function () {
     };
     /**
      * @param {?} fileNames
+     * @param {?} tsFiles
      * @return {?}
      */
     AotCompiler.prototype.loadFilesAsync = /**
      * @param {?} fileNames
+     * @param {?} tsFiles
      * @return {?}
      */
-    function (fileNames) {
+    function (fileNames, tsFiles) {
         var _this = this;
         var /** @type {?} */ files = fileNames.map(function (fileName) { return _this._analyzeFile(fileName); });
         var /** @type {?} */ loadingPromises = [];
@@ -30521,17 +33680,25 @@ var AotCompiler = /** @class */ (function () {
                 return loadingPromises.push(_this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference, false));
             });
         });
-        return Promise.all(loadingPromises).then(function (_) { return mergeAndValidateNgFiles(files); });
+        var /** @type {?} */ analyzedInjectables = tsFiles.map(function (tsFile) { return _this._analyzeFileForInjectables(tsFile); });
+        return Promise.all(loadingPromises).then(function (_) {
+            return ({
+                analyzedModules: mergeAndValidateNgFiles(files),
+                analyzedInjectables: analyzedInjectables,
+            });
+        });
     };
     /**
      * @param {?} fileNames
+     * @param {?} tsFiles
      * @return {?}
      */
     AotCompiler.prototype.loadFilesSync = /**
      * @param {?} fileNames
+     * @param {?} tsFiles
      * @return {?}
      */
-    function (fileNames) {
+    function (fileNames, tsFiles) {
         var _this = this;
         var /** @type {?} */ files = fileNames.map(function (fileName) { return _this._analyzeFile(fileName); });
         files.forEach(function (file) {
@@ -30539,7 +33706,11 @@ var AotCompiler = /** @class */ (function () {
                 return _this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference, true);
             });
         });
-        return mergeAndValidateNgFiles(files);
+        var /** @type {?} */ analyzedInjectables = tsFiles.map(function (tsFile) { return _this._analyzeFileForInjectables(tsFile); });
+        return {
+            analyzedModules: mergeAndValidateNgFiles(files),
+            analyzedInjectables: analyzedInjectables,
+        };
     };
     /**
      * @param {?} outputCtx
@@ -30558,10 +33729,10 @@ var AotCompiler = /** @class */ (function () {
         var /** @type {?} */ componentId = 0;
         file.ngModules.forEach(function (ngModuleMeta, ngModuleIndex) {
             // Note: the code below needs to executed for StubEmitFlags.Basic and StubEmitFlags.TypeCheck,
-            // so we don't change the .ngfactory file too much when adding the typecheck block.
+            // so we don't change the .ngfactory file too much when adding the type-check block.
             // create exports that user code can reference
             // Note: the code below needs to executed for StubEmitFlags.Basic and StubEmitFlags.TypeCheck,
-            // so we don't change the .ngfactory file too much when adding the typecheck block.
+            // so we don't change the .ngfactory file too much when adding the type-check block.
             // create exports that user code can reference
             _this._ngModuleCompiler.createStub(outputCtx, ngModuleMeta.type.reference);
             // add references to the symbols from the metadata.
@@ -30571,17 +33742,15 @@ var AotCompiler = /** @class */ (function () {
             var /** @type {?} */ externalReferences = ngModuleMeta.transitiveModule.directives.map(function (d) { return d.reference; }).concat(ngModuleMeta.transitiveModule.pipes.map(function (d) { return d.reference; }), ngModuleMeta.importedModules.map(function (m) { return m.type.reference; }), ngModuleMeta.exportedModules.map(function (m) { return m.type.reference; }), _this._externalIdentifierReferences([Identifiers.TemplateRef, Identifiers.ElementRef]));
             var /** @type {?} */ externalReferenceVars = new Map();
             externalReferences.forEach(function (ref, typeIndex) {
-                if (_this._host.isSourceFile(ref.filePath)) {
-                    externalReferenceVars.set(ref, "_decl" + ngModuleIndex + "_" + typeIndex);
-                }
+                externalReferenceVars.set(ref, "_decl" + ngModuleIndex + "_" + typeIndex);
             });
             externalReferenceVars.forEach(function (varName, reference) {
                 outputCtx.statements.push(variable(varName)
                     .set(NULL_EXPR.cast(DYNAMIC_TYPE))
-                    .toDeclStmt(expressionType(outputCtx.importExpr(reference))));
+                    .toDeclStmt(expressionType(outputCtx.importExpr(reference, /* typeParams */ null, /* useSummaries */ /* useSummaries */ false))));
             });
             if (emitFlags & StubEmitFlags.TypeCheck) {
-                // add the typecheck block for all components of the NgModule
+                // add the type-check block for all components of the NgModule
                 ngModuleMeta.declaredDirectives.forEach(function (dirId) {
                     var /** @type {?} */ compMeta = _this._metadataResolver.getDirectiveMetadata(dirId.reference);
                     if (!compMeta.isComponent) {
@@ -30609,7 +33778,7 @@ var AotCompiler = /** @class */ (function () {
         var /** @type {?} */ result = [];
         for (var _i = 0, references_1 = references; _i < references_1.length; _i++) {
             var reference = references_1[_i];
-            var /** @type {?} */ token = createTokenForExternalReference(this._reflector, reference);
+            var /** @type {?} */ token = createTokenForExternalReference(this.reflector, reference);
             if (token.identifier) {
                 result.push(token.identifier.reference);
             }
@@ -30636,7 +33805,7 @@ var AotCompiler = /** @class */ (function () {
      */
     function (ctx, componentId, moduleMeta, compMeta, directives, externalReferenceVars) {
         var _a = this._parseTemplate(compMeta, moduleMeta, directives), parsedTemplate = _a.template, usedPipes = _a.pipes;
-        (_b = ctx.statements).push.apply(_b, this._typeCheckCompiler.compileComponent(componentId, compMeta, parsedTemplate, usedPipes, externalReferenceVars));
+        (_b = ctx.statements).push.apply(_b, this._typeCheckCompiler.compileComponent(componentId, compMeta, parsedTemplate, usedPipes, externalReferenceVars, ctx));
         var _b;
     };
     /**
@@ -30675,6 +33844,138 @@ var AotCompiler = /** @class */ (function () {
         return messageBundle;
     };
     /**
+     * @param {?} __0
+     * @param {?} r3Files
+     * @return {?}
+     */
+    AotCompiler.prototype.emitAllPartialModules = /**
+     * @param {?} __0
+     * @param {?} r3Files
+     * @return {?}
+     */
+    function (_a, r3Files) {
+        var _this = this;
+        var ngModuleByPipeOrDirective = _a.ngModuleByPipeOrDirective, files = _a.files;
+        var /** @type {?} */ contextMap = new Map();
+        var /** @type {?} */ getContext = function (fileName) {
+            if (!contextMap.has(fileName)) {
+                contextMap.set(fileName, _this._createOutputContext(fileName));
+            }
+            return /** @type {?} */ ((contextMap.get(fileName)));
+        };
+        files.forEach(function (file) {
+            return _this._compilePartialModule(file.fileName, ngModuleByPipeOrDirective, file.directives, file.pipes, file.ngModules, file.injectables, getContext(file.fileName));
+        });
+        r3Files.forEach(function (file) {
+            return _this._compileShallowModules(file.fileName, file.shallowModules, getContext(file.fileName));
+        });
+        return Array.from(contextMap.values())
+            .map(function (context) {
+            return ({
+                fileName: context.genFilePath,
+                statements: context.constantPool.statements.concat(context.statements),
+            });
+        });
+    };
+    /**
+     * @param {?} fileName
+     * @param {?} shallowModules
+     * @param {?} context
+     * @return {?}
+     */
+    AotCompiler.prototype._compileShallowModules = /**
+     * @param {?} fileName
+     * @param {?} shallowModules
+     * @param {?} context
+     * @return {?}
+     */
+    function (fileName, shallowModules, context) {
+        var _this = this;
+        shallowModules.forEach(function (module) { return compileNgModule(context, module, _this._injectableCompiler); });
+    };
+    /**
+     * @param {?} fileName
+     * @param {?} ngModuleByPipeOrDirective
+     * @param {?} directives
+     * @param {?} pipes
+     * @param {?} ngModules
+     * @param {?} injectables
+     * @param {?} context
+     * @return {?}
+     */
+    AotCompiler.prototype._compilePartialModule = /**
+     * @param {?} fileName
+     * @param {?} ngModuleByPipeOrDirective
+     * @param {?} directives
+     * @param {?} pipes
+     * @param {?} ngModules
+     * @param {?} injectables
+     * @param {?} context
+     * @return {?}
+     */
+    function (fileName, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables, context) {
+        var _this = this;
+        var /** @type {?} */ classes = [];
+        var /** @type {?} */ errors = [];
+        var /** @type {?} */ hostBindingParser = new BindingParser(this._templateParser.expressionParser, DEFAULT_INTERPOLATION_CONFIG, /** @type {?} */ ((null)), [], errors);
+        // Process all components and directives
+        directives.forEach(function (directiveType) {
+            var /** @type {?} */ directiveMetadata = _this._metadataResolver.getDirectiveMetadata(directiveType);
+            if (directiveMetadata.isComponent) {
+                var /** @type {?} */ module = /** @type {?} */ ((ngModuleByPipeOrDirective.get(directiveType)));
+                module ||
+                    error("Cannot determine the module for component '" + identifierName(directiveMetadata.type) + "'");
+                var _a = _this._parseTemplate(directiveMetadata, module, module.transitiveModule.directives), parsedTemplate = _a.template, parsedPipes = _a.pipes;
+                compileComponent(context, directiveMetadata, parsedPipes, parsedTemplate, _this.reflector, hostBindingParser, 0 /* PartialClass */);
+            }
+            else {
+                compileDirective(context, directiveMetadata, _this.reflector, hostBindingParser, 0 /* PartialClass */);
+            }
+        });
+        pipes.forEach(function (pipeType) {
+            var /** @type {?} */ pipeMetadata = _this._metadataResolver.getPipeMetadata(pipeType);
+            if (pipeMetadata) {
+                compilePipe(context, pipeMetadata, _this.reflector, 0 /* PartialClass */);
+            }
+        });
+        injectables.forEach(function (injectable) { return _this._injectableCompiler.compile(injectable, context); });
+    };
+    /**
+     * @param {?} files
+     * @return {?}
+     */
+    AotCompiler.prototype.emitAllPartialModules2 = /**
+     * @param {?} files
+     * @return {?}
+     */
+    function (files) {
+        var _this = this;
+        // Using reduce like this is a select many pattern (where map is a select pattern)
+        return files.reduce(function (r, file) {
+            r.push.apply(r, _this._emitPartialModule2(file.fileName, file.injectables));
+            return r;
+        }, []);
+    };
+    /**
+     * @param {?} fileName
+     * @param {?} injectables
+     * @return {?}
+     */
+    AotCompiler.prototype._emitPartialModule2 = /**
+     * @param {?} fileName
+     * @param {?} injectables
+     * @return {?}
+     */
+    function (fileName, injectables) {
+        var _this = this;
+        var /** @type {?} */ context = this._createOutputContext(fileName);
+        injectables.forEach(function (injectable) { return _this._injectableCompiler.compile(injectable, context); });
+        if (context.statements && context.statements.length > 0) {
+            return [{ fileName: fileName, statements: context.constantPool.statements.concat(context.statements) }];
+        }
+        return [];
+    };
+    /**
      * @param {?} analyzeResult
      * @return {?}
      */
@@ -30710,7 +34011,7 @@ var AotCompiler = /** @class */ (function () {
      */
     function (srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables) {
         var _this = this;
-        var /** @type {?} */ fileSuffix = splitTypescriptSuffix(srcFileUrl, true)[1];
+        var /** @type {?} */ fileSuffix = normalizeGenFileSuffix(splitTypescriptSuffix(srcFileUrl, true)[1]);
         var /** @type {?} */ generatedFiles = [];
         var /** @type {?} */ outputCtx = this._createOutputContext(ngfactoryFilePath(srcFileUrl, true));
         generatedFiles.push.apply(generatedFiles, this._createSummary(srcFileUrl, directives, pipes, ngModules, injectables, outputCtx));
@@ -30788,8 +34089,8 @@ var AotCompiler = /** @class */ (function () {
             });
         }), injectables.map(function (ref) {
             return ({
-                summary: /** @type {?} */ ((_this._metadataResolver.getInjectableSummary(ref))),
-                metadata: /** @type {?} */ ((_this._metadataResolver.getInjectableSummary(ref))).type
+                summary: /** @type {?} */ ((_this._metadataResolver.getInjectableSummary(ref.symbol))),
+                metadata: /** @type {?} */ ((_this._metadataResolver.getInjectableSummary(ref.symbol))).type
             });
         }));
         var /** @type {?} */ forJitOutputCtx = this._options.enableSummariesForJit ?
@@ -30823,13 +34124,13 @@ var AotCompiler = /** @class */ (function () {
         if (this._options.locale) {
             var /** @type {?} */ normalizedLocale = this._options.locale.replace(/_/g, '-');
             providers.push({
-                token: createTokenForExternalReference(this._reflector, Identifiers.LOCALE_ID),
+                token: createTokenForExternalReference(this.reflector, Identifiers.LOCALE_ID),
                 useValue: normalizedLocale,
             });
         }
         if (this._options.i18nFormat) {
             providers.push({
-                token: createTokenForExternalReference(this._reflector, Identifiers.TRANSLATIONS_FORMAT),
+                token: createTokenForExternalReference(this.reflector, Identifiers.TRANSLATIONS_FORMAT),
                 useValue: this._options.i18nFormat
             });
         }
@@ -30936,13 +34237,14 @@ var AotCompiler = /** @class */ (function () {
      */
     function (genFilePath) {
         var _this = this;
-        var /** @type {?} */ importExpr$$1 = function (symbol, typeParams) {
+        var /** @type {?} */ importExpr$$1 = function (symbol, typeParams, useSummaries) {
             if (typeParams === void 0) { typeParams = null; }
+            if (useSummaries === void 0) { useSummaries = true; }
             if (!(symbol instanceof StaticSymbol)) {
                 throw new Error("Internal error: unknown identifier " + JSON.stringify(symbol));
             }
             var /** @type {?} */ arity = _this._symbolResolver.getTypeArity(symbol) || 0;
-            var _a = _this._symbolResolver.getImportAs(symbol) || symbol, filePath = _a.filePath, name = _a.name, members = _a.members;
+            var _a = _this._symbolResolver.getImportAs(symbol, useSummaries) || symbol, filePath = _a.filePath, name = _a.name, members = _a.members;
             var /** @type {?} */ importModule = _this._fileNameToModuleName(filePath, genFilePath);
             // It should be good enough to compare filePath to genFilePath and if they are equal
             // there is a self reference. However, ngfactory files generate to .ts but their
@@ -30960,7 +34262,7 @@ var AotCompiler = /** @class */ (function () {
             var /** @type {?} */ allTypeParams = suppliedTypeParams.concat(new Array(missingTypeParamsCount).fill(DYNAMIC_TYPE));
             return members.reduce(function (expr, memberName) { return expr.prop(memberName); }, /** @type {?} */ (importExpr(new ExternalReference(moduleName, name, null), allTypeParams)));
         };
-        return { statements: [], genFilePath: genFilePath, importExpr: importExpr$$1 };
+        return { statements: [], genFilePath: genFilePath, importExpr: importExpr$$1, constantPool: new ConstantPool() };
     };
     /**
      * @param {?} importedFilePath
@@ -31025,14 +34327,14 @@ var AotCompiler = /** @class */ (function () {
     function (entryRoute, analyzedModules) {
         var /** @type {?} */ self = this;
         if (entryRoute) {
-            var /** @type {?} */ symbol = parseLazyRoute(entryRoute, this._reflector).referencedModule;
+            var /** @type {?} */ symbol = parseLazyRoute(entryRoute, this.reflector).referencedModule;
             return visitLazyRoute(symbol);
         }
         else if (analyzedModules) {
             var /** @type {?} */ allLazyRoutes = [];
             for (var _i = 0, _a = analyzedModules.ngModules; _i < _a.length; _i++) {
                 var ngModule = _a[_i];
-                var /** @type {?} */ lazyRoutes = listLazyRoutes(ngModule, this._reflector);
+                var /** @type {?} */ lazyRoutes = listLazyRoutes(ngModule, this.reflector);
                 for (var _b = 0, lazyRoutes_1 = lazyRoutes; _b < lazyRoutes_1.length; _b++) {
                     var lazyRoute = lazyRoutes_1[_b];
                     allLazyRoutes.push(lazyRoute);
@@ -31058,7 +34360,7 @@ var AotCompiler = /** @class */ (function () {
                 return allLazyRoutes;
             }
             seenRoutes.add(symbol);
-            var /** @type {?} */ lazyRoutes = listLazyRoutes(/** @type {?} */ ((self._metadataResolver.getNgModuleMetadata(symbol, true))), self._reflector);
+            var /** @type {?} */ lazyRoutes = listLazyRoutes(/** @type {?} */ ((self._metadataResolver.getNgModuleMetadata(symbol, true))), self.reflector);
             for (var _i = 0, lazyRoutes_2 = lazyRoutes; _i < lazyRoutes_2.length; _i++) {
                 var lazyRoute = lazyRoutes_2[_i];
                 allLazyRoutes.push(lazyRoute);
@@ -31100,6 +34402,10 @@ function _resolveStyleStatements(symbolResolver, compileResult, needsShim, fileS
 function _stylesModuleUrl(stylesheetUrl, shim, suffix) {
     return "" + stylesheetUrl + (shim ? '.shim' : '') + ".ngstyle" + suffix;
 }
+/**
+ * @record
+ */
+
 /**
  * @record
  */
@@ -31215,7 +34521,10 @@ function analyzeFile(host, staticSymbolResolver, metadataResolver, fileName) {
                 }
                 else if (metadataResolver.isInjectable(symbol)) {
                     isNgSymbol = true;
-                    injectables.push(symbol);
+                    var /** @type {?} */ injectable = metadataResolver.getInjectableMetadata(symbol, null, false);
+                    if (injectable) {
+                        injectables.push(injectable);
+                    }
                 }
             }
             if (!isNgSymbol) {
@@ -31227,6 +34536,44 @@ function analyzeFile(host, staticSymbolResolver, metadataResolver, fileName) {
     return {
         fileName: fileName, directives: directives, pipes: pipes, ngModules: ngModules, injectables: injectables, exportsNonSourceFiles: exportsNonSourceFiles,
     };
+}
+/**
+ * @param {?} host
+ * @param {?} staticSymbolResolver
+ * @param {?} metadataResolver
+ * @param {?} fileName
+ * @return {?}
+ */
+function analyzeFileForInjectables(host, staticSymbolResolver, metadataResolver, fileName) {
+    var /** @type {?} */ injectables = [];
+    var /** @type {?} */ shallowModules = [];
+    if (staticSymbolResolver.hasDecorators(fileName)) {
+        staticSymbolResolver.getSymbolsOf(fileName).forEach(function (symbol) {
+            var /** @type {?} */ resolvedSymbol = staticSymbolResolver.resolveSymbol(symbol);
+            var /** @type {?} */ symbolMeta = resolvedSymbol.metadata;
+            if (!symbolMeta || symbolMeta.__symbolic === 'error') {
+                return;
+            }
+            var /** @type {?} */ isNgSymbol = false;
+            if (symbolMeta.__symbolic === 'class') {
+                if (metadataResolver.isInjectable(symbol)) {
+                    isNgSymbol = true;
+                    var /** @type {?} */ injectable = metadataResolver.getInjectableMetadata(symbol, null, false);
+                    if (injectable) {
+                        injectables.push(injectable);
+                    }
+                }
+                else if (metadataResolver.isNgModule(symbol)) {
+                    isNgSymbol = true;
+                    var /** @type {?} */ module = metadataResolver.getShallowModuleMetadata(symbol);
+                    if (module) {
+                        shallowModules.push(module);
+                    }
+                }
+            }
+        });
+    }
+    return { fileName: fileName, injectables: injectables, shallowModules: shallowModules };
 }
 /**
  * @param {?} host
@@ -31390,18 +34737,18 @@ function formatChain(chain, indent) {
  */
 function formattedError(chain) {
     var /** @type {?} */ message = formatChain(chain) + '.';
-    var /** @type {?} */ error = /** @type {?} */ (syntaxError(message));
-    (/** @type {?} */ (error))[FORMATTED_MESSAGE] = true;
-    error.chain = chain;
-    error.position = chain.position;
-    return error;
+    var /** @type {?} */ error$$1 = /** @type {?} */ (syntaxError(message));
+    (/** @type {?} */ (error$$1))[FORMATTED_MESSAGE] = true;
+    error$$1.chain = chain;
+    error$$1.position = chain.position;
+    return error$$1;
 }
 /**
  * @param {?} error
  * @return {?}
  */
-function isFormattedError(error) {
-    return !!(/** @type {?} */ (error))[FORMATTED_MESSAGE];
+function isFormattedError(error$$1) {
+    return !!(/** @type {?} */ (error$$1))[FORMATTED_MESSAGE];
 }
 
 /**
@@ -31423,7 +34770,9 @@ var IGNORE = {
 };
 var USE_VALUE = 'useValue';
 var PROVIDE = 'provide';
-var REFERENCE_SET = new Set([USE_VALUE, 'useFactory', 'data']);
+var REFERENCE_SET = new Set([USE_VALUE, 'useFactory', 'data', 'id', 'loadChildren']);
+var TYPEGUARD_POSTFIX = 'TypeGuard';
+var USE_IF = 'UseIf';
 /**
  * @param {?} value
  * @return {?}
@@ -31444,10 +34793,13 @@ var StaticReflector = /** @class */ (function () {
         this.symbolResolver = symbolResolver;
         this.errorRecorder = errorRecorder;
         this.annotationCache = new Map();
+        this.shallowAnnotationCache = new Map();
         this.propertyCache = new Map();
         this.parameterCache = new Map();
         this.methodCache = new Map();
+        this.staticCache = new Map();
         this.conversionMap = new Map();
+        this.resolvedExternalReferences = new Map();
         this.annotationForParentClassWithSummaryKind = new Map();
         this.initializeConversionMap();
         knownMetadataClasses.forEach(function (kc) {
@@ -31482,11 +34834,21 @@ var StaticReflector = /** @class */ (function () {
      * @return {?}
      */
     function (ref, containingFile) {
+        var /** @type {?} */ key = undefined;
+        if (!containingFile) {
+            key = ref.moduleName + ":" + ref.name;
+            var /** @type {?} */ declarationSymbol_1 = this.resolvedExternalReferences.get(key);
+            if (declarationSymbol_1)
+                return declarationSymbol_1;
+        }
         var /** @type {?} */ refSymbol = this.symbolResolver.getSymbolByModule(/** @type {?} */ ((ref.moduleName)), /** @type {?} */ ((ref.name)), containingFile);
         var /** @type {?} */ declarationSymbol = this.findSymbolDeclaration(refSymbol);
         if (!containingFile) {
             this.symbolResolver.recordModuleNameForFileName(refSymbol.filePath, /** @type {?} */ ((ref.moduleName)));
             this.symbolResolver.recordImportAs(declarationSymbol, refSymbol);
+        }
+        if (key) {
+            this.resolvedExternalReferences.set(key, declarationSymbol);
         }
         return declarationSymbol;
     };
@@ -31508,16 +34870,18 @@ var StaticReflector = /** @class */ (function () {
     /**
      * @param {?} moduleUrl
      * @param {?} name
+     * @param {?=} containingFile
      * @return {?}
      */
     StaticReflector.prototype.tryFindDeclaration = /**
      * @param {?} moduleUrl
      * @param {?} name
+     * @param {?=} containingFile
      * @return {?}
      */
-    function (moduleUrl, name) {
+    function (moduleUrl, name, containingFile) {
         var _this = this;
-        return this.symbolResolver.ignoreErrorsFor(function () { return _this.findDeclaration(moduleUrl, name); });
+        return this.symbolResolver.ignoreErrorsFor(function () { return _this.findDeclaration(moduleUrl, name, containingFile); });
     };
     /**
      * @param {?} symbol
@@ -31544,12 +34908,58 @@ var StaticReflector = /** @class */ (function () {
      * @param {?} type
      * @return {?}
      */
+    StaticReflector.prototype.tryAnnotations = /**
+     * @param {?} type
+     * @return {?}
+     */
+    function (type) {
+        var /** @type {?} */ originalRecorder = this.errorRecorder;
+        this.errorRecorder = function (error$$1, fileName) { };
+        try {
+            return this.annotations(type);
+        }
+        finally {
+            this.errorRecorder = originalRecorder;
+        }
+    };
+    /**
+     * @param {?} type
+     * @return {?}
+     */
     StaticReflector.prototype.annotations = /**
      * @param {?} type
      * @return {?}
      */
     function (type) {
-        var /** @type {?} */ annotations = this.annotationCache.get(type);
+        var _this = this;
+        return this._annotations(type, function (type, decorators) { return _this.simplify(type, decorators); }, this.annotationCache);
+    };
+    /**
+     * @param {?} type
+     * @return {?}
+     */
+    StaticReflector.prototype.shallowAnnotations = /**
+     * @param {?} type
+     * @return {?}
+     */
+    function (type) {
+        var _this = this;
+        return this._annotations(type, function (type, decorators) { return _this.simplify(type, decorators, true); }, this.shallowAnnotationCache);
+    };
+    /**
+     * @param {?} type
+     * @param {?} simplify
+     * @param {?} annotationCache
+     * @return {?}
+     */
+    StaticReflector.prototype._annotations = /**
+     * @param {?} type
+     * @param {?} simplify
+     * @param {?} annotationCache
+     * @return {?}
+     */
+    function (type, simplify, annotationCache) {
+        var /** @type {?} */ annotations = annotationCache.get(type);
         if (!annotations) {
             annotations = [];
             var /** @type {?} */ classMetadata = this.getTypeMetadata(type);
@@ -31560,7 +34970,7 @@ var StaticReflector = /** @class */ (function () {
             }
             var /** @type {?} */ ownAnnotations_1 = [];
             if (classMetadata['decorators']) {
-                ownAnnotations_1 = this.simplify(type, classMetadata['decorators']);
+                ownAnnotations_1 = simplify(type, classMetadata['decorators']);
                 annotations.push.apply(annotations, ownAnnotations_1);
             }
             if (parentType && !this.summaryResolver.isLibraryFile(type.filePath) &&
@@ -31574,7 +34984,7 @@ var StaticReflector = /** @class */ (function () {
                     }
                 }
             }
-            this.annotationCache.set(type, annotations.filter(function (ann) { return !!ann; }));
+            annotationCache.set(type, annotations.filter(function (ann) { return !!ann; }));
         }
         return annotations;
     };
@@ -31702,6 +35112,24 @@ var StaticReflector = /** @class */ (function () {
     };
     /**
      * @param {?} type
+     * @return {?}
+     */
+    StaticReflector.prototype._staticMembers = /**
+     * @param {?} type
+     * @return {?}
+     */
+    function (type) {
+        var /** @type {?} */ staticMembers = this.staticCache.get(type);
+        if (!staticMembers) {
+            var /** @type {?} */ classMetadata = this.getTypeMetadata(type);
+            var /** @type {?} */ staticMemberData = classMetadata['statics'] || {};
+            staticMembers = Object.keys(staticMemberData);
+            this.staticCache.set(type, staticMembers);
+        }
+        return staticMembers;
+    };
+    /**
+     * @param {?} type
      * @param {?} classMetadata
      * @return {?}
      */
@@ -31740,6 +35168,38 @@ var StaticReflector = /** @class */ (function () {
     };
     /**
      * @param {?} type
+     * @return {?}
+     */
+    StaticReflector.prototype.guards = /**
+     * @param {?} type
+     * @return {?}
+     */
+    function (type) {
+        if (!(type instanceof StaticSymbol)) {
+            this.reportError(new Error("guards received " + JSON.stringify(type) + " which is not a StaticSymbol"), type);
+            return {};
+        }
+        var /** @type {?} */ staticMembers = this._staticMembers(type);
+        var /** @type {?} */ result = {};
+        for (var _i = 0, staticMembers_1 = staticMembers; _i < staticMembers_1.length; _i++) {
+            var name_1 = staticMembers_1[_i];
+            if (name_1.endsWith(TYPEGUARD_POSTFIX)) {
+                var /** @type {?} */ property = name_1.substr(0, name_1.length - TYPEGUARD_POSTFIX.length);
+                var /** @type {?} */ value = void 0;
+                if (property.endsWith(USE_IF)) {
+                    property = name_1.substr(0, property.length - USE_IF.length);
+                    value = USE_IF;
+                }
+                else {
+                    value = this.getStaticSymbol(type.filePath, type.name, [name_1]);
+                }
+                result[property] = value;
+            }
+        }
+        return result;
+    };
+    /**
+     * @param {?} type
      * @param {?} ctor
      * @return {?}
      */
@@ -31771,13 +35231,13 @@ var StaticReflector = /** @class */ (function () {
      * @return {?}
      */
     function () {
+        this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Injectable'), createInjectable);
         this.injectionToken = this.findDeclaration(ANGULAR_CORE, 'InjectionToken');
         this.opaqueToken = this.findDeclaration(ANGULAR_CORE, 'OpaqueToken');
         this.ROUTES = this.tryFindDeclaration(ANGULAR_ROUTER, 'ROUTES');
         this.ANALYZE_FOR_ENTRY_COMPONENTS =
             this.findDeclaration(ANGULAR_CORE, 'ANALYZE_FOR_ENTRY_COMPONENTS');
         this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Host'), createHost);
-        this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Injectable'), createInjectable);
         this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Self'), createSelf);
         this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'SkipSelf'), createSkipSelf);
         this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Inject'), createInject);
@@ -31843,7 +35303,7 @@ var StaticReflector = /** @class */ (function () {
      */
     function (context, value) {
         var /** @type {?} */ originalRecorder = this.errorRecorder;
-        this.errorRecorder = function (error, fileName) { };
+        this.errorRecorder = function (error$$1, fileName) { };
         var /** @type {?} */ result = this.simplify(context, value);
         this.errorRecorder = originalRecorder;
         return result;
@@ -31852,17 +35312,20 @@ var StaticReflector = /** @class */ (function () {
      * \@internal
      * @param {?} context
      * @param {?} value
+     * @param {?=} lazy
      * @return {?}
      */
     StaticReflector.prototype.simplify = /**
      * \@internal
      * @param {?} context
      * @param {?} value
+     * @param {?=} lazy
      * @return {?}
      */
-    function (context, value) {
+    function (context, value, lazy) {
+        if (lazy === void 0) { lazy = false; }
         var /** @type {?} */ self = this;
-        var /** @type {?} */ scope = BindingScope.empty;
+        var /** @type {?} */ scope = BindingScope$1.empty;
         var /** @type {?} */ calling = new Map();
         var /** @type {?} */ rootContext = context;
         /**
@@ -31958,7 +35421,7 @@ var StaticReflector = /** @class */ (function () {
                                 args.push.apply(args, defaults.slice(args.length).map(function (value) { return simplify(value); }));
                             }
                             calling.set(functionSymbol, true);
-                            var /** @type {?} */ functionScope = BindingScope.build();
+                            var /** @type {?} */ functionScope = BindingScope$1.build();
                             for (var /** @type {?} */ i = 0; i < parameters.length; i++) {
                                 functionScope.define(parameters[i], args[i]);
                             }
@@ -32152,9 +35615,9 @@ var StaticReflector = /** @class */ (function () {
                                 // Note: This only has to deal with variable references, as symbol references have
                                 // been converted into 'resolved'
                                 // in the StaticSymbolResolver.
-                                var /** @type {?} */ name_1 = expression['name'];
-                                var /** @type {?} */ localValue = scope.resolve(name_1);
-                                if (localValue != BindingScope.missing) {
+                                var /** @type {?} */ name_2 = expression['name'];
+                                var /** @type {?} */ localValue = scope.resolve(name_2);
+                                if (localValue != BindingScope$1.missing) {
                                     return localValue;
                                 }
                                 break;
@@ -32250,7 +35713,7 @@ var StaticReflector = /** @class */ (function () {
         }
         var /** @type {?} */ result;
         try {
-            result = simplifyInContext(context, value, 0, 0);
+            result = simplifyInContext(context, value, 0, lazy ? 1 : 0);
         }
         catch (/** @type {?} */ e) {
             if (this.errorRecorder) {
@@ -32290,12 +35753,12 @@ var StaticReflector = /** @class */ (function () {
      * @param {?=} path
      * @return {?}
      */
-    function (error, context, path) {
+    function (error$$1, context, path) {
         if (this.errorRecorder) {
-            this.errorRecorder(formatMetadataError(error, context), (context && context.filePath) || path);
+            this.errorRecorder(formatMetadataError(error$$1, context), (context && context.filePath) || path);
         }
         else {
-            throw error;
+            throw error$$1;
         }
     };
     /**
@@ -32326,28 +35789,28 @@ var METADATA_ERROR = 'ngMetadataError';
  * @return {?}
  */
 function metadataError(message, summary, advise, position, symbol, context, chain) {
-    var /** @type {?} */ error = /** @type {?} */ (syntaxError(message));
-    (/** @type {?} */ (error))[METADATA_ERROR] = true;
+    var /** @type {?} */ error$$1 = /** @type {?} */ (syntaxError(message));
+    (/** @type {?} */ (error$$1))[METADATA_ERROR] = true;
     if (advise)
-        error.advise = advise;
+        error$$1.advise = advise;
     if (position)
-        error.position = position;
+        error$$1.position = position;
     if (summary)
-        error.summary = summary;
+        error$$1.summary = summary;
     if (context)
-        error.context = context;
+        error$$1.context = context;
     if (chain)
-        error.chain = chain;
+        error$$1.chain = chain;
     if (symbol)
-        error.symbol = symbol;
-    return error;
+        error$$1.symbol = symbol;
+    return error$$1;
 }
 /**
  * @param {?} error
  * @return {?}
  */
-function isMetadataError(error) {
-    return !!(/** @type {?} */ (error))[METADATA_ERROR];
+function isMetadataError(error$$1) {
+    return !!(/** @type {?} */ (error$$1))[METADATA_ERROR];
 }
 var REFERENCE_TO_NONEXPORTED_CLASS = 'Reference to non-exported class';
 var VARIABLE_NOT_INITIALIZED = 'Variable not initialized';
@@ -32420,14 +35883,14 @@ function messageAdvise(message, context) {
  * @param {?} error
  * @return {?}
  */
-function errorSummary(error) {
-    if (error.summary) {
-        return error.summary;
+function errorSummary(error$$1) {
+    if (error$$1.summary) {
+        return error$$1.summary;
     }
-    switch (error.message) {
+    switch (error$$1.message) {
         case REFERENCE_TO_NONEXPORTED_CLASS:
-            if (error.context && error.context.className) {
-                return "references non-exported class " + error.context.className;
+            if (error$$1.context && error$$1.context.className) {
+                return "references non-exported class " + error$$1.context.className;
             }
             break;
         case VARIABLE_NOT_INITIALIZED:
@@ -32437,13 +35900,13 @@ function errorSummary(error) {
         case COULD_NOT_RESOLVE_TYPE:
             return 'could not be resolved';
         case FUNCTION_CALL_NOT_SUPPORTED:
-            if (error.context && error.context.name) {
-                return "calls '" + error.context.name + "'";
+            if (error$$1.context && error$$1.context.name) {
+                return "calls '" + error$$1.context.name + "'";
             }
             return "calls a function";
         case REFERENCE_TO_LOCAL_SYMBOL:
-            if (error.context && error.context.name) {
-                return "references local variable " + error.context.name;
+            if (error$$1.context && error$$1.context.name) {
+                return "references local variable " + error$$1.context.name;
             }
             return "references a local variable";
     }
@@ -32481,7 +35944,7 @@ function isPrimitive(o) {
 /**
  * @abstract
  */
-var BindingScope = /** @class */ (function () {
+var BindingScope$1 = /** @class */ (function () {
     function BindingScope() {
     }
     /**
@@ -32522,10 +35985,10 @@ var PopulatedScope = /** @class */ (function (_super) {
      * @return {?}
      */
     function (name) {
-        return this.bindings.has(name) ? this.bindings.get(name) : BindingScope.missing;
+        return this.bindings.has(name) ? this.bindings.get(name) : BindingScope$1.missing;
     };
     return PopulatedScope;
-}(BindingScope));
+}(BindingScope$1));
 /**
  * @param {?} chain
  * @param {?} advise
@@ -32635,13 +36098,15 @@ var AotSummaryResolver = /** @class */ (function () {
      * @return {?}
      */
     function (staticSymbol) {
-        staticSymbol.assertNoMembers();
-        var /** @type {?} */ summary = this.summaryCache.get(staticSymbol);
+        var /** @type {?} */ rootSymbol = staticSymbol.members.length ?
+            this.staticSymbolCache.get(staticSymbol.filePath, staticSymbol.name) :
+            staticSymbol;
+        var /** @type {?} */ summary = this.summaryCache.get(rootSymbol);
         if (!summary) {
             this._loadSummaryFile(staticSymbol.filePath);
             summary = /** @type {?} */ ((this.summaryCache.get(staticSymbol)));
         }
-        return summary || null;
+        return (rootSymbol === staticSymbol && summary) || null;
     };
     /**
      * @param {?} filePath
@@ -32774,11 +36239,17 @@ function createAotCompiler(compilerHost, options, errorCollector) {
     var /** @type {?} */ summaryResolver = new AotSummaryResolver(compilerHost, symbolCache);
     var /** @type {?} */ symbolResolver = new StaticSymbolResolver(compilerHost, symbolCache, summaryResolver);
     var /** @type {?} */ staticReflector = new StaticReflector(summaryResolver, symbolResolver, [], [], errorCollector);
-    var /** @type {?} */ htmlParser = new I18NHtmlParser(new HtmlParser(), translations, options.i18nFormat, options.missingTranslation, console);
+    var /** @type {?} */ htmlParser;
+    if (!!options.enableIvy) {
+        // Ivy handles i18n at the compiler level so we must use a regular parser
+        htmlParser = /** @type {?} */ (new HtmlParser());
+    }
+    else {
+        htmlParser = new I18NHtmlParser(new HtmlParser(), translations, options.i18nFormat, options.missingTranslation, console);
+    }
     var /** @type {?} */ config = new CompilerConfig({
         defaultEncapsulation: ViewEncapsulation.Emulated,
         useJit: false,
-        enableLegacyTemplate: options.enableLegacyTemplate === true,
         missingTranslation: options.missingTranslation,
         preserveWhitespaces: options.preserveWhitespaces,
         strictInjectionParameters: options.strictInjectionParameters,
@@ -32791,7 +36262,7 @@ function createAotCompiler(compilerHost, options, errorCollector) {
     // TODO(vicb): do not pass options.i18nFormat here
     var /** @type {?} */ viewCompiler = new ViewCompiler(staticReflector);
     var /** @type {?} */ typeCheckCompiler = new TypeCheckCompiler(options, staticReflector);
-    var /** @type {?} */ compiler = new AotCompiler(config, options, compilerHost, staticReflector, resolver, tmplParser, new StyleCompiler(urlResolver), viewCompiler, typeCheckCompiler, new NgModuleCompiler(staticReflector), new TypeScriptEmitter(), summaryResolver, symbolResolver);
+    var /** @type {?} */ compiler = new AotCompiler(config, options, compilerHost, staticReflector, resolver, tmplParser, new StyleCompiler(urlResolver), viewCompiler, typeCheckCompiler, new NgModuleCompiler(staticReflector), new InjectableCompiler(staticReflector, !!options.enableIvy), new TypeScriptEmitter(), summaryResolver, symbolResolver);
     return { compiler: compiler, reflector: staticReflector };
 }
 
@@ -32801,10 +36272,12 @@ function createAotCompiler(compilerHost, options, errorCollector) {
  */
 /**
  * @record
+ * @template T
  */
 
 /**
  * @abstract
+ * @template T
  */
 var SummaryResolver = /** @class */ (function () {
     function SummaryResolver() {
@@ -33027,7 +36500,8 @@ var StatementInterpreter = /** @class */ (function () {
      * @return {?}
      */
     function (stmt, ctx) {
-        ctx.vars.set(stmt.name, stmt.value.visitExpression(this, ctx));
+        var /** @type {?} */ initialValue = stmt.value ? stmt.value.visitExpression(this, ctx) : undefined;
+        ctx.vars.set(stmt.name, initialValue);
         if (stmt.hasModifier(StmtModifier.Exported)) {
             ctx.exports.push(stmt.name);
         }
@@ -33285,6 +36759,17 @@ var StatementInterpreter = /** @class */ (function () {
      * @return {?}
      */
     StatementInterpreter.prototype.visitCommentStmt = /**
+     * @param {?} stmt
+     * @param {?=} context
+     * @return {?}
+     */
+    function (stmt, context) { return null; };
+    /**
+     * @param {?} stmt
+     * @param {?=} context
+     * @return {?}
+     */
+    StatementInterpreter.prototype.visitJSDocCommentStmt = /**
      * @param {?} stmt
      * @param {?=} context
      * @return {?}
@@ -33745,8 +37230,11 @@ var AbstractJsEmitterVisitor = /** @class */ (function (_super) {
      * @return {?}
      */
     function (stmt, ctx) {
-        ctx.print(stmt, "var " + stmt.name + " = ");
-        stmt.value.visitExpression(this, ctx);
+        ctx.print(stmt, "var " + stmt.name);
+        if (stmt.value) {
+            ctx.print(stmt, ' = ');
+            stmt.value.visitExpression(this, ctx);
+        }
         ctx.println(stmt, ";");
         return null;
     };
@@ -33801,7 +37289,7 @@ var AbstractJsEmitterVisitor = /** @class */ (function (_super) {
      * @return {?}
      */
     function (ast, ctx) {
-        ctx.print(ast, "function(");
+        ctx.print(ast, "function" + (ast.name ? ' ' + ast.name : '') + "(");
         this._visitParams(ast.params, ctx);
         ctx.println(ast, ") {");
         ctx.incIndent();
@@ -34580,7 +38068,7 @@ function createOutputContext() {
     var /** @type {?} */ importExpr$$1 = function (symbol) {
         return importExpr({ name: identifierName(symbol), moduleName: null, runtime: symbol });
     };
-    return { statements: [], genFilePath: '', importExpr: importExpr$$1 };
+    return { statements: [], genFilePath: '', importExpr: importExpr$$1, constantPool: new ConstantPool() };
 }
 
 /**
@@ -34974,9 +38462,6 @@ var ResourceLoader = /** @class */ (function () {
  * found in the LICENSE file at https://angular.io/license
  */
 /**
- * Extract i18n messages from source code
- */
-/**
  * The host of the Extractor disconnects the implementation from TypeScript / other language
  * services and from underlying file systems.
  * @record
@@ -35074,6 +38559,8 @@ exports.BinaryOperatorExpr = BinaryOperatorExpr;
 exports.BuiltinMethod = BuiltinMethod;
 exports.BuiltinVar = BuiltinVar;
 exports.CastExpr = CastExpr;
+exports.ClassField = ClassField;
+exports.ClassMethod = ClassMethod;
 exports.ClassStmt = ClassStmt;
 exports.CommaExpr = CommaExpr;
 exports.CommentStmt = CommentStmt;
@@ -35088,6 +38575,7 @@ exports.IfStmt = IfStmt;
 exports.InstantiateExpr = InstantiateExpr;
 exports.InvokeFunctionExpr = InvokeFunctionExpr;
 exports.InvokeMethodExpr = InvokeMethodExpr;
+exports.JSDocCommentStmt = JSDocCommentStmt;
 exports.LiteralArrayExpr = LiteralArrayExpr;
 exports.LiteralExpr = LiteralExpr;
 exports.LiteralMapExpr = LiteralMapExpr;
@@ -35129,6 +38617,7 @@ exports.PropertyBindingType = PropertyBindingType;
 exports.NullTemplateVisitor = NullTemplateVisitor;
 exports.RecursiveTemplateAstVisitor = RecursiveTemplateAstVisitor;
 exports.templateVisitAll = templateVisitAll;
+exports.sanitizeIdentifier = sanitizeIdentifier;
 exports.identifierName = identifierName;
 exports.identifierModuleUrl = identifierModuleUrl;
 exports.viewClassName = viewClassName;
@@ -35142,6 +38631,7 @@ exports.CompileStylesheetMetadata = CompileStylesheetMetadata;
 exports.CompileTemplateMetadata = CompileTemplateMetadata;
 exports.CompileDirectiveMetadata = CompileDirectiveMetadata;
 exports.CompilePipeMetadata = CompilePipeMetadata;
+exports.CompileShallowModuleMetadata = CompileShallowModuleMetadata;
 exports.CompileNgModuleMetadata = CompileNgModuleMetadata;
 exports.TransitiveCompileNgModuleMetadata = TransitiveCompileNgModuleMetadata;
 exports.ProviderMeta = ProviderMeta;
@@ -35156,6 +38646,7 @@ exports.AotCompiler = AotCompiler;
 exports.analyzeNgModules = analyzeNgModules;
 exports.analyzeAndValidateNgModules = analyzeAndValidateNgModules;
 exports.analyzeFile = analyzeFile;
+exports.analyzeFileForInjectables = analyzeFileForInjectables;
 exports.mergeAnalyzedFiles = mergeAnalyzedFiles;
 exports.GeneratedFile = GeneratedFile;
 exports.toTypeScript = toTypeScript;
@@ -35217,6 +38708,7 @@ exports.TemplateBinding = TemplateBinding;
 exports.NullAstVisitor = NullAstVisitor;
 exports.RecursiveAstVisitor = RecursiveAstVisitor;
 exports.AstTransformer = AstTransformer;
+exports.AstMemoryEfficientTransformer = AstMemoryEfficientTransformer;
 exports.visitAstChildren = visitAstChildren;
 exports.TokenType = TokenType;
 exports.Lexer = Lexer;

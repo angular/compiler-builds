@@ -76,7 +76,7 @@ export declare class _ParseAST {
     parseAccessMemberOrMethodCall(receiver: AST, isSafe?: boolean): AST;
     parseCallArguments(): BindingPipe[];
     /**
-     * An identifier, a keyword, a string with an optional `-` inbetween.
+     * An identifier, a keyword, a string with an optional `-` in between.
      */
     expectTemplateBindingKey(): string;
     parseTemplateBindings(): TemplateBindingParseResult;
