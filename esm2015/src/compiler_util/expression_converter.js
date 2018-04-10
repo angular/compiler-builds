@@ -35,12 +35,49 @@ export class ConvertActionBindingResult {
     constructor(stmts, allowDefault) {
         this.stmts = stmts;
         this.allowDefault = allowDefault;
+        /**
+             * This is bit of a hack. It converts statements which render2 expects to statements which are
+             * expected by render3.
+             *
+             * Example: `<div click="doSomething($event)">` will generate:
+             *
+             * Render3:
+             * ```
+             * const pd_b:any = ((<any>ctx.doSomething($event)) !== false);
+             * return pd_b;
+             * ```
+             *
+             * but render2 expects:
+             * ```
+             * return ctx.doSomething($event);
+             * ```
+             */
+        // TODO(misko): remove this hack once we no longer support ViewEngine.
+        this.render3Stmts = stmts.map((statement) => {
+            if (statement instanceof o.DeclareVarStmt && statement.name == allowDefault.name &&
+                statement.value instanceof o.BinaryOperatorExpr) {
+                const /** @type {?} */ lhs = /** @type {?} */ (statement.value.lhs);
+                return new o.ReturnStatement(lhs.value);
+            }
+            return statement;
+        });
     }
 }
 function ConvertActionBindingResult_tsickle_Closure_declarations() {
-    /** @type {?} */
+    /**
+     * Store statements which are render3 compatible.
+     * @type {?}
+     */
+    ConvertActionBindingResult.prototype.render3Stmts;
+    /**
+     * Render2 compatible statements,
+     * @type {?}
+     */
     ConvertActionBindingResult.prototype.stmts;
-    /** @type {?} */
+    /**
+     * Variable name used with render2 compatible statements.
+     * @type {?}
+     */
     ConvertActionBindingResult.prototype.allowDefault;
 }
 /**

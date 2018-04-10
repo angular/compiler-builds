@@ -77,7 +77,9 @@ export function compileDirective(outputCtx, directive, reflector, bindingParser,
     // e.g. `attributes: ['role', 'listbox']`
     field('attributes', createHostAttributesArray(directive, outputCtx));
     // e.g 'inputs: {a: 'a'}`
-    field('inputs', createInputsObject(directive, outputCtx));
+    field('inputs', conditionallyCreateMapObjectLiteral(directive.inputs, outputCtx));
+    // e.g 'outputs: {a: 'a'}`
+    field('outputs', conditionallyCreateMapObjectLiteral(directive.outputs, outputCtx));
     const /** @type {?} */ className = /** @type {?} */ ((identifierName(directive.type)));
     className || error(`Cannot resolver the name of ${directive.type}`);
     const /** @type {?} */ definitionField = outputCtx.constantPool.propertyNameOf(1 /* Directive */);
@@ -161,7 +163,7 @@ export function compileComponent(outputCtx, component, pipes, template, reflecto
     const /** @type {?} */ templateTypeName = component.type.reference.name;
     const /** @type {?} */ templateName = templateTypeName ? `${templateTypeName}_Template` : null;
     const /** @type {?} */ pipeMap = new Map(pipes.map(pipe => [pipe.name, pipe]));
-    const /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, ROOT_SCOPE.nestedScope(), 0, /** @type {?} */ ((component.template)).ngContentSelectors, templateTypeName, templateName, pipeMap, component.viewQueries, addDirectiveDependency, addPipeDependency)
+    const /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, BindingScope.ROOT_SCOPE, 0, /** @type {?} */ ((component.template)).ngContentSelectors, templateTypeName, templateName, pipeMap, component.viewQueries, addDirectiveDependency, addPipeDependency)
         .buildTemplateFunction(template, []);
     field('template', templateFunctionExpression);
     if (directiveExps.length) {
@@ -172,7 +174,9 @@ export function compileComponent(outputCtx, component, pipes, template, reflecto
         field('pipes', o.literalArr(pipeExps));
     }
     // e.g `inputs: {a: 'a'}`
-    field('inputs', createInputsObject(component, outputCtx));
+    field('inputs', conditionallyCreateMapObjectLiteral(component.inputs, outputCtx));
+    // e.g 'outputs: {a: 'a'}`
+    field('outputs', conditionallyCreateMapObjectLiteral(component.outputs, outputCtx));
     // e.g. `features: [NgOnChangesFeature(MyComponent)]`
     const /** @type {?} */ features = [];
     if (component.type.lifecycleHooks.some(lifecycle => lifecycle == LifecycleHooks.OnChanges)) {
@@ -298,12 +302,28 @@ function getLiteralFactory(outputContext, literal) {
     // change.
     return o.importExpr(pureFunctionIdent).callFn([literalFactory, ...literalFactoryArguments]);
 }
+/**
+ * @return {?}
+ */
+function noop() { }
 class BindingScope {
     /**
-     * @param {?} parent
+     * @param {?=} parent
+     * @param {?=} declareLocalVarCallback
      */
-    constructor(parent) {
+    constructor(parent = null, declareLocalVarCallback = noop) {
         this.parent = parent;
+        this.declareLocalVarCallback = declareLocalVarCallback;
+        /**
+         * Keeps a map from local variables to their expressions.
+         *
+         * This is used when one refers to variable such as: 'let abc = a.b.c`.
+         * - key to the map is the string literal `"abc"`.
+         * - value `lhs` is the left hand side which is an AST representing `abc`.
+         * - value `rhs` is the right hand side which is an AST representing `a.b.c`.
+         * - value `declared` is true if the `declareLocalVarCallback` has been called for this scope
+         * already.
+         */
         this.map = new Map();
         this.referenceNameIndex = 0;
     }
@@ -314,31 +334,54 @@ class BindingScope {
     get(name) {
         let /** @type {?} */ current = this;
         while (current) {
-            const /** @type {?} */ value = current.map.get(name);
+            let /** @type {?} */ value = current.map.get(name);
             if (value != null) {
-                // Cache the value locally.
-                this.map.set(name, value);
-                return value;
+                if (current !== this) {
+                    // make a local copy and reset the `declared` state.
+                    value = { lhs: value.lhs, rhs: value.rhs, declared: false };
+                    // Cache the value locally.
+                    this.map.set(name, value);
+                }
+                if (value.rhs && !value.declared) {
+                    // if it is first time we are referencing the variable in the scope
+                    // than invoke the callback to insert variable declaration.
+                    this.declareLocalVarCallback(value.lhs, value.rhs);
+                    value.declared = true;
+                }
+                return value.lhs;
             }
             current = current.parent;
         }
         return null;
     }
     /**
-     * @param {?} name
-     * @param {?} value
+     * Create a local variable for later reference.
+     *
+     * @param {?} name Name of the variable.
+     * @param {?} lhs AST representing the left hand side of the `let lhs = rhs;`.
+     * @param {?=} rhs AST representing the right hand side of the `let lhs = rhs;`. The `rhs` can be
+     * `undefined` for variable that are ambient such as `$event` and which don't have `rhs`
+     * declaration.
      * @return {?}
      */
-    set(name, value) {
+    set(name, lhs, rhs) {
         !this.map.has(name) ||
             error(`The name ${name} is already defined in scope to be ${this.map.get(name)}`);
-        this.map.set(name, value);
+        this.map.set(name, { lhs: lhs, rhs: rhs, declared: false });
         return this;
     }
     /**
+     * @param {?} name
      * @return {?}
      */
-    nestedScope() { return new BindingScope(this); }
+    getLocal(name) { return this.get(name); }
+    /**
+     * @param {?} declareCallback
+     * @return {?}
+     */
+    nestedScope(declareCallback) {
+        return new BindingScope(this, declareCallback);
+    }
     /**
      * @return {?}
      */
@@ -351,22 +394,36 @@ class BindingScope {
         return ref;
     }
 }
+BindingScope.ROOT_SCOPE = new BindingScope().set('$event', o.variable('$event'));
 function BindingScope_tsickle_Closure_declarations() {
     /** @type {?} */
+    BindingScope.ROOT_SCOPE;
+    /**
+     * Keeps a map from local variables to their expressions.
+     *
+     * This is used when one refers to variable such as: 'let abc = a.b.c`.
+     * - key to the map is the string literal `"abc"`.
+     * - value `lhs` is the left hand side which is an AST representing `abc`.
+     * - value `rhs` is the right hand side which is an AST representing `a.b.c`.
+     * - value `declared` is true if the `declareLocalVarCallback` has been called for this scope
+     * already.
+     * @type {?}
+     */
     BindingScope.prototype.map;
     /** @type {?} */
     BindingScope.prototype.referenceNameIndex;
     /** @type {?} */
     BindingScope.prototype.parent;
+    /** @type {?} */
+    BindingScope.prototype.declareLocalVarCallback;
 }
-const /** @type {?} */ ROOT_SCOPE = new BindingScope(null).set('$event', o.variable('$event'));
 class TemplateDefinitionBuilder {
     /**
      * @param {?} outputCtx
      * @param {?} constantPool
      * @param {?} reflector
      * @param {?} contextParameter
-     * @param {?} bindingScope
+     * @param {?} parentBindingScope
      * @param {?=} level
      * @param {?=} ngContentSelectors
      * @param {?=} contextName
@@ -376,12 +433,11 @@ class TemplateDefinitionBuilder {
      * @param {?=} addDirectiveDependency
      * @param {?=} addPipeDependency
      */
-    constructor(outputCtx, constantPool, reflector, contextParameter, bindingScope, level = 0, ngContentSelectors, contextName, templateName, pipes, viewQueries, addDirectiveDependency, addPipeDependency) {
+    constructor(outputCtx, constantPool, reflector, contextParameter, parentBindingScope, level = 0, ngContentSelectors, contextName, templateName, pipes, viewQueries, addDirectiveDependency, addPipeDependency) {
         this.outputCtx = outputCtx;
         this.constantPool = constantPool;
         this.reflector = reflector;
         this.contextParameter = contextParameter;
-        this.bindingScope = bindingScope;
         this.level = level;
         this.ngContentSelectors = ngContentSelectors;
         this.contextName = contextName;
@@ -414,8 +470,12 @@ class TemplateDefinitionBuilder {
         // These should be handled in the template or element directly
         this.visitDirective = invalid;
         this.visitDirectiveProperty = invalid;
+        this.bindingScope =
+            parentBindingScope.nestedScope((lhsVar, expression) => {
+                this._bindingMode.push(lhsVar.set(expression).toDeclStmt(o.INFERRED_TYPE, [o.StmtModifier.Final]));
+            });
         this._valueConverter = new ValueConverter(outputCtx, () => this.allocateDataSlot(), (name, localName, slot, value) => {
-            bindingScope.set(localName, value);
+            this.bindingScope.set(localName, value);
             const /** @type {?} */ pipe = /** @type {?} */ ((pipes.get(name)));
             pipe || error(`Could not find pipe ${name}`);
             this.addPipeDependency(pipe);
@@ -433,13 +493,8 @@ class TemplateDefinitionBuilder {
             const /** @type {?} */ variableName = variable.name;
             const /** @type {?} */ expression = o.variable(this.contextParameter).prop(variable.value || IMPLICIT_REFERENCE);
             const /** @type {?} */ scopedName = this.bindingScope.freshReferenceName();
-            const /** @type {?} */ declaration = o.variable(scopedName).set(expression).toDeclStmt(o.INFERRED_TYPE, [
-                o.StmtModifier.Final
-            ]);
             // Add the reference to the local scope.
-            this.bindingScope.set(variableName, o.variable(scopedName));
-            // Declare the local variable in binding mode
-            this._bindingMode.push(declaration);
+            this.bindingScope.set(variableName, o.variable(variableName + scopedName), expression);
         }
         // Collect content projections
         if (this.ngContentSelectors && this.ngContentSelectors.length > 0) {
@@ -627,12 +682,16 @@ class TemplateDefinitionBuilder {
             this._creationMode.push(...i18nMessages);
         }
         this.instruction(this._creationMode, element.sourceSpan, R3.createElement, ...trimTrailingNulls(parameters));
-        const /** @type {?} */ implicit = o.variable(this.contextParameter);
+        const /** @type {?} */ implicit = o.variable(CONTEXT_NAME);
         // Generate Listeners (outputs)
         element.outputs.forEach((outputAst) => {
             const /** @type {?} */ functionName = `${this.templateName}_${element.name}_${outputAst.name}_listener`;
-            const /** @type {?} */ bindingExpr = convertActionBinding(this, implicit, outputAst.handler, 'b', () => error('Unexpected interpolation'));
-            const /** @type {?} */ handler = o.fn([new o.FnParam('$event', o.DYNAMIC_TYPE)], [...bindingExpr.stmts, new o.ReturnStatement(bindingExpr.allowDefault)], o.INFERRED_TYPE, null, functionName);
+            const /** @type {?} */ localVars = [];
+            const /** @type {?} */ bindingScope = this.bindingScope.nestedScope((lhsVar, rhsExpression) => {
+                localVars.push(lhsVar.set(rhsExpression).toDeclStmt(o.INFERRED_TYPE, [o.StmtModifier.Final]));
+            });
+            const /** @type {?} */ bindingExpr = convertActionBinding(bindingScope, o.variable(CONTEXT_NAME), outputAst.handler, 'b', () => error('Unexpected interpolation'));
+            const /** @type {?} */ handler = o.fn([new o.FnParam('$event', o.DYNAMIC_TYPE)], [...localVars, ...bindingExpr.render3Stmts], o.INFERRED_TYPE, null, functionName);
             this.instruction(this._creationMode, outputAst.sourceSpan, R3.listener, o.literal(outputAst.name), handler);
         });
         // Generate element input bindings
@@ -723,9 +782,9 @@ class TemplateDefinitionBuilder {
         // e.g. C(1, C1Template)
         this.instruction(this._creationMode, ast.sourceSpan, R3.containerCreate, o.literal(templateIndex), ...trimTrailingNulls(parameters));
         // Generate directives
-        this._visitDirectives(ast.directives, o.variable(this.contextParameter), templateIndex);
+        this._visitDirectives(ast.directives, o.variable(CONTEXT_NAME), templateIndex);
         // Create the template function
-        const /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this.bindingScope.nestedScope(), this.level + 1, this.ngContentSelectors, contextName, templateName, this.pipes, [], this.addDirectiveDependency, this.addPipeDependency);
+        const /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this.bindingScope, this.level + 1, this.ngContentSelectors, contextName, templateName, this.pipes, [], this.addDirectiveDependency, this.addPipeDependency);
         const /** @type {?} */ templateFunctionExpr = templateVisitor.buildTemplateFunction(ast.children, ast.variables);
         this._postfix.push(templateFunctionExpr.toDeclStmt(templateName, null));
     }
@@ -738,7 +797,7 @@ class TemplateDefinitionBuilder {
         // Creation mode
         this.instruction(this._creationMode, ast.sourceSpan, R3.text, o.literal(nodeIndex));
         // Refresh mode
-        this.instruction(this._refreshMode, ast.sourceSpan, R3.textCreateBound, o.literal(nodeIndex), this.bind(o.variable(CONTEXT_NAME), ast.value, ast.sourceSpan));
+        this.instruction(this._refreshMode, ast.sourceSpan, R3.textCreateBound, o.literal(nodeIndex), this.convertPropertyBinding(o.variable(CONTEXT_NAME), ast.value));
     }
     /**
      * @param {?} ast
@@ -805,15 +864,6 @@ class TemplateDefinitionBuilder {
         this._refreshMode.push(...convertedPropertyBinding.stmts);
         return convertedPropertyBinding.currValExpr;
     }
-    /**
-     * @param {?} implicit
-     * @param {?} value
-     * @param {?} sourceSpan
-     * @return {?}
-     */
-    bind(implicit, value, sourceSpan) {
-        return this.convertPropertyBinding(implicit, value);
-    }
 }
 function TemplateDefinitionBuilder_tsickle_Closure_declarations() {
     /** @type {?} */
@@ -845,6 +895,8 @@ function TemplateDefinitionBuilder_tsickle_Closure_declarations() {
     /** @type {?} */
     TemplateDefinitionBuilder.prototype.invalid;
     /** @type {?} */
+    TemplateDefinitionBuilder.prototype.bindingScope;
+    /** @type {?} */
     TemplateDefinitionBuilder.prototype._inI18nSection;
     /** @type {?} */
     TemplateDefinitionBuilder.prototype._i18nSectionIndex;
@@ -872,8 +924,6 @@ function TemplateDefinitionBuilder_tsickle_Closure_declarations() {
     TemplateDefinitionBuilder.prototype.reflector;
     /** @type {?} */
     TemplateDefinitionBuilder.prototype.contextParameter;
-    /** @type {?} */
-    TemplateDefinitionBuilder.prototype.bindingScope;
     /** @type {?} */
     TemplateDefinitionBuilder.prototype.level;
     /** @type {?} */
@@ -1082,13 +1132,13 @@ function createHostBindingsFunction(directiveMetadata, outputCtx, bindingParser)
     return null;
 }
 /**
- * @param {?} directive
+ * @param {?} keys
  * @param {?} outputCtx
  * @return {?}
  */
-function createInputsObject(directive, outputCtx) {
-    if (Object.getOwnPropertyNames(directive.inputs).length > 0) {
-        return outputCtx.constantPool.getConstLiteral(mapToExpression(directive.inputs));
+function conditionallyCreateMapObjectLiteral(keys, outputCtx) {
+    if (Object.getOwnPropertyNames(keys).length > 0) {
+        return mapToExpression(keys);
     }
     return null;
 }

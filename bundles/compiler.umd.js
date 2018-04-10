@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.3-10ecdb1
+ * @license Angular v6.0.0-rc.3-8555a3a
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v6.0.0-rc.3-10ecdb1
+ * @license Angular v6.0.0-rc.3-8555a3a
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -625,6 +625,7 @@ function utf8Encode(str) {
  * @record
  */
 
+var MAX_LENGTH_STRINGIFY = 100;
 /**
  * @param {?} token
  * @return {?}
@@ -645,12 +646,24 @@ function stringify(token) {
     if (token.name) {
         return "" + token.name;
     }
-    var /** @type {?} */ res = token.toString();
+    var /** @type {?} */ res;
+    try {
+        res = JSON.stringify(token);
+    }
+    catch (_a) {
+        res = token.toString();
+    }
     if (res == null) {
         return '' + res;
     }
     var /** @type {?} */ newLineIndex = res.indexOf('\n');
-    return newLineIndex === -1 ? res : res.substring(0, newLineIndex);
+    if (0 < newLineIndex) {
+        res = res.substring(0, newLineIndex);
+    }
+    if (MAX_LENGTH_STRINGIFY < res.length) {
+        res = res.substring(0, MAX_LENGTH_STRINGIFY) + '...';
+    }
+    return res;
 }
 /**
  * Lazily retrieves the reference value from a forwardRef.
@@ -703,7 +716,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('6.0.0-rc.3-10ecdb1');
+var VERSION = new Version('6.0.0-rc.3-8555a3a');
 
 /**
  * @fileoverview added by tsickle
@@ -26752,6 +26765,32 @@ var ConvertActionBindingResult = /** @class */ (function () {
     function ConvertActionBindingResult(stmts, allowDefault) {
         this.stmts = stmts;
         this.allowDefault = allowDefault;
+        /**
+             * This is bit of a hack. It converts statements which render2 expects to statements which are
+             * expected by render3.
+             *
+             * Example: `<div click="doSomething($event)">` will generate:
+             *
+             * Render3:
+             * ```
+             * const pd_b:any = ((<any>ctx.doSomething($event)) !== false);
+             * return pd_b;
+             * ```
+             *
+             * but render2 expects:
+             * ```
+             * return ctx.doSomething($event);
+             * ```
+             */
+        // TODO(misko): remove this hack once we no longer support ViewEngine.
+        this.render3Stmts = stmts.map(function (statement) {
+            if (statement instanceof DeclareVarStmt && statement.name == allowDefault.name &&
+                statement.value instanceof BinaryOperatorExpr) {
+                var /** @type {?} */ lhs = /** @type {?} */ (statement.value.lhs);
+                return new ReturnStatement(lhs.value);
+            }
+            return statement;
+        });
     }
     return ConvertActionBindingResult;
 }());
@@ -30606,7 +30645,9 @@ function compileDirective(outputCtx, directive, reflector, bindingParser, mode) 
     // e.g. `attributes: ['role', 'listbox']`
     field('attributes', createHostAttributesArray(directive, outputCtx));
     // e.g 'inputs: {a: 'a'}`
-    field('inputs', createInputsObject(directive, outputCtx));
+    field('inputs', conditionallyCreateMapObjectLiteral(directive.inputs, outputCtx));
+    // e.g 'outputs: {a: 'a'}`
+    field('outputs', conditionallyCreateMapObjectLiteral(directive.outputs, outputCtx));
     var /** @type {?} */ className = /** @type {?} */ ((identifierName(directive.type)));
     className || error("Cannot resolver the name of " + directive.type);
     var /** @type {?} */ definitionField = outputCtx.constantPool.propertyNameOf(1 /* Directive */);
@@ -30690,7 +30731,7 @@ function compileComponent(outputCtx, component, pipes, template, reflector, bind
     var /** @type {?} */ templateTypeName = component.type.reference.name;
     var /** @type {?} */ templateName = templateTypeName ? templateTypeName + "_Template" : null;
     var /** @type {?} */ pipeMap = new Map(pipes.map(function (pipe) { return [pipe.name, pipe]; }));
-    var /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, ROOT_SCOPE.nestedScope(), 0, /** @type {?} */ ((component.template)).ngContentSelectors, templateTypeName, templateName, pipeMap, component.viewQueries, addDirectiveDependency, addPipeDependency)
+    var /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, BindingScope.ROOT_SCOPE, 0, /** @type {?} */ ((component.template)).ngContentSelectors, templateTypeName, templateName, pipeMap, component.viewQueries, addDirectiveDependency, addPipeDependency)
         .buildTemplateFunction(template, []);
     field('template', templateFunctionExpression);
     if (directiveExps.length) {
@@ -30701,7 +30742,9 @@ function compileComponent(outputCtx, component, pipes, template, reflector, bind
         field('pipes', literalArr(pipeExps));
     }
     // e.g `inputs: {a: 'a'}`
-    field('inputs', createInputsObject(component, outputCtx));
+    field('inputs', conditionallyCreateMapObjectLiteral(component.inputs, outputCtx));
+    // e.g 'outputs: {a: 'a'}`
+    field('outputs', conditionallyCreateMapObjectLiteral(component.outputs, outputCtx));
     // e.g. `features: [NgOnChangesFeature(MyComponent)]`
     var /** @type {?} */ features = [];
     if (component.type.lifecycleHooks.some(function (lifecycle) { return lifecycle == LifecycleHooks.OnChanges; })) {
@@ -30819,9 +30862,26 @@ function getLiteralFactory(outputContext, literal$$1) {
     // change.
     return importExpr(pureFunctionIdent).callFn([literalFactory].concat(literalFactoryArguments));
 }
+/**
+ * @return {?}
+ */
+function noop() { }
 var BindingScope = /** @class */ (function () {
-    function BindingScope(parent) {
+    function BindingScope(parent, declareLocalVarCallback) {
+        if (parent === void 0) { parent = null; }
+        if (declareLocalVarCallback === void 0) { declareLocalVarCallback = noop; }
         this.parent = parent;
+        this.declareLocalVarCallback = declareLocalVarCallback;
+        /**
+         * Keeps a map from local variables to their expressions.
+         *
+         * This is used when one refers to variable such as: 'let abc = a.b.c`.
+         * - key to the map is the string literal `"abc"`.
+         * - value `lhs` is the left hand side which is an AST representing `abc`.
+         * - value `rhs` is the right hand side which is an AST representing `a.b.c`.
+         * - value `declared` is true if the `declareLocalVarCallback` has been called for this scope
+         * already.
+         */
         this.map = new Map();
         this.referenceNameIndex = 0;
     }
@@ -30838,37 +30898,79 @@ var BindingScope = /** @class */ (function () {
         while (current) {
             var /** @type {?} */ value = current.map.get(name);
             if (value != null) {
-                // Cache the value locally.
-                this.map.set(name, value);
-                return value;
+                if (current !== this) {
+                    // make a local copy and reset the `declared` state.
+                    value = { lhs: value.lhs, rhs: value.rhs, declared: false };
+                    // Cache the value locally.
+                    this.map.set(name, value);
+                }
+                if (value.rhs && !value.declared) {
+                    // if it is first time we are referencing the variable in the scope
+                    // than invoke the callback to insert variable declaration.
+                    this.declareLocalVarCallback(value.lhs, value.rhs);
+                    value.declared = true;
+                }
+                return value.lhs;
             }
             current = current.parent;
         }
         return null;
     };
     /**
-     * @param {?} name
-     * @param {?} value
+     * Create a local variable for later reference.
+     *
+     * @param name Name of the variable.
+     * @param lhs AST representing the left hand side of the `let lhs = rhs;`.
+     * @param rhs AST representing the right hand side of the `let lhs = rhs;`. The `rhs` can be
+     * `undefined` for variable that are ambient such as `$event` and which don't have `rhs`
+     * declaration.
+     */
+    /**
+     * Create a local variable for later reference.
+     *
+     * @param {?} name Name of the variable.
+     * @param {?} lhs AST representing the left hand side of the `let lhs = rhs;`.
+     * @param {?=} rhs AST representing the right hand side of the `let lhs = rhs;`. The `rhs` can be
+     * `undefined` for variable that are ambient such as `$event` and which don't have `rhs`
+     * declaration.
      * @return {?}
      */
     BindingScope.prototype.set = /**
-     * @param {?} name
-     * @param {?} value
+     * Create a local variable for later reference.
+     *
+     * @param {?} name Name of the variable.
+     * @param {?} lhs AST representing the left hand side of the `let lhs = rhs;`.
+     * @param {?=} rhs AST representing the right hand side of the `let lhs = rhs;`. The `rhs` can be
+     * `undefined` for variable that are ambient such as `$event` and which don't have `rhs`
+     * declaration.
      * @return {?}
      */
-    function (name, value) {
+    function (name, lhs, rhs) {
         !this.map.has(name) ||
             error("The name " + name + " is already defined in scope to be " + this.map.get(name));
-        this.map.set(name, value);
+        this.map.set(name, { lhs: lhs, rhs: rhs, declared: false });
         return this;
     };
     /**
+     * @param {?} name
+     * @return {?}
+     */
+    BindingScope.prototype.getLocal = /**
+     * @param {?} name
+     * @return {?}
+     */
+    function (name) { return this.get(name); };
+    /**
+     * @param {?} declareCallback
      * @return {?}
      */
     BindingScope.prototype.nestedScope = /**
+     * @param {?} declareCallback
      * @return {?}
      */
-    function () { return new BindingScope(this); };
+    function (declareCallback) {
+        return new BindingScope(this, declareCallback);
+    };
     /**
      * @return {?}
      */
@@ -30883,18 +30985,17 @@ var BindingScope = /** @class */ (function () {
         var /** @type {?} */ ref = "" + REFERENCE_PREFIX + current.referenceNameIndex++;
         return ref;
     };
+    BindingScope.ROOT_SCOPE = new BindingScope().set('$event', variable('$event'));
     return BindingScope;
 }());
-var ROOT_SCOPE = new BindingScope(null).set('$event', variable('$event'));
 var TemplateDefinitionBuilder = /** @class */ (function () {
-    function TemplateDefinitionBuilder(outputCtx, constantPool, reflector, contextParameter, bindingScope, level, ngContentSelectors, contextName, templateName, pipes, viewQueries, addDirectiveDependency, addPipeDependency) {
+    function TemplateDefinitionBuilder(outputCtx, constantPool, reflector, contextParameter, parentBindingScope, level, ngContentSelectors, contextName, templateName, pipes, viewQueries, addDirectiveDependency, addPipeDependency) {
         if (level === void 0) { level = 0; }
         var _this = this;
         this.outputCtx = outputCtx;
         this.constantPool = constantPool;
         this.reflector = reflector;
         this.contextParameter = contextParameter;
-        this.bindingScope = bindingScope;
         this.level = level;
         this.ngContentSelectors = ngContentSelectors;
         this.contextName = contextName;
@@ -30927,8 +31028,12 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // These should be handled in the template or element directly
         this.visitDirective = invalid$1;
         this.visitDirectiveProperty = invalid$1;
+        this.bindingScope =
+            parentBindingScope.nestedScope(function (lhsVar, expression) {
+                _this._bindingMode.push(lhsVar.set(expression).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
+            });
         this._valueConverter = new ValueConverter(outputCtx, function () { return _this.allocateDataSlot(); }, function (name, localName, slot, value) {
-            bindingScope.set(localName, value);
+            _this.bindingScope.set(localName, value);
             var /** @type {?} */ pipe = /** @type {?} */ ((pipes.get(name)));
             pipe || error("Could not find pipe " + name);
             _this.addPipeDependency(pipe);
@@ -30952,13 +31057,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             var /** @type {?} */ variableName = variable$$1.name;
             var /** @type {?} */ expression = variable(this.contextParameter).prop(variable$$1.value || IMPLICIT_REFERENCE);
             var /** @type {?} */ scopedName = this.bindingScope.freshReferenceName();
-            var /** @type {?} */ declaration = variable(scopedName).set(expression).toDeclStmt(INFERRED_TYPE, [
-                StmtModifier.Final
-            ]);
             // Add the reference to the local scope.
-            this.bindingScope.set(variableName, variable(scopedName));
-            // Declare the local variable in binding mode
-            this._bindingMode.push(declaration);
+            this.bindingScope.set(variableName, variable(variableName + scopedName), expression);
         }
         // Collect content projections
         if (this.ngContentSelectors && this.ngContentSelectors.length > 0) {
@@ -31154,12 +31254,16 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             (_b = this._creationMode).push.apply(_b, i18nMessages);
         }
         this.instruction.apply(this, [this._creationMode, element.sourceSpan, Identifiers$1.createElement].concat(trimTrailingNulls(parameters)));
-        var /** @type {?} */ implicit = variable(this.contextParameter);
+        var /** @type {?} */ implicit = variable(CONTEXT_NAME);
         // Generate Listeners (outputs)
         element.outputs.forEach(function (outputAst) {
             var /** @type {?} */ functionName = _this.templateName + "_" + element.name + "_" + outputAst.name + "_listener";
-            var /** @type {?} */ bindingExpr = convertActionBinding(_this, implicit, outputAst.handler, 'b', function () { return error('Unexpected interpolation'); });
-            var /** @type {?} */ handler = fn([new FnParam('$event', DYNAMIC_TYPE)], bindingExpr.stmts.concat([new ReturnStatement(bindingExpr.allowDefault)]), INFERRED_TYPE, null, functionName);
+            var /** @type {?} */ localVars = [];
+            var /** @type {?} */ bindingScope = _this.bindingScope.nestedScope(function (lhsVar, rhsExpression) {
+                localVars.push(lhsVar.set(rhsExpression).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
+            });
+            var /** @type {?} */ bindingExpr = convertActionBinding(bindingScope, variable(CONTEXT_NAME), outputAst.handler, 'b', function () { return error('Unexpected interpolation'); });
+            var /** @type {?} */ handler = fn([new FnParam('$event', DYNAMIC_TYPE)], localVars.concat(bindingExpr.render3Stmts), INFERRED_TYPE, null, functionName);
             _this.instruction(_this._creationMode, outputAst.sourceSpan, Identifiers$1.listener, literal(outputAst.name), handler);
         });
         // Generate element input bindings
@@ -31270,9 +31374,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // e.g. C(1, C1Template)
         this.instruction.apply(this, [this._creationMode, ast.sourceSpan, Identifiers$1.containerCreate, literal(templateIndex)].concat(trimTrailingNulls(parameters)));
         // Generate directives
-        this._visitDirectives(ast.directives, variable(this.contextParameter), templateIndex);
+        this._visitDirectives(ast.directives, variable(CONTEXT_NAME), templateIndex);
         // Create the template function
-        var /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this.bindingScope.nestedScope(), this.level + 1, this.ngContentSelectors, contextName, templateName, this.pipes, [], this.addDirectiveDependency, this.addPipeDependency);
+        var /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this.bindingScope, this.level + 1, this.ngContentSelectors, contextName, templateName, this.pipes, [], this.addDirectiveDependency, this.addPipeDependency);
         var /** @type {?} */ templateFunctionExpr = templateVisitor.buildTemplateFunction(ast.children, ast.variables);
         this._postfix.push(templateFunctionExpr.toDeclStmt(templateName, null));
     };
@@ -31290,7 +31394,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // Creation mode
         this.instruction(this._creationMode, ast.sourceSpan, Identifiers$1.text, literal(nodeIndex));
         // Refresh mode
-        this.instruction(this._refreshMode, ast.sourceSpan, Identifiers$1.textCreateBound, literal(nodeIndex), this.bind(variable(CONTEXT_NAME), ast.value, ast.sourceSpan));
+        this.instruction(this._refreshMode, ast.sourceSpan, Identifiers$1.textCreateBound, literal(nodeIndex), this.convertPropertyBinding(variable(CONTEXT_NAME), ast.value));
     };
     // TemplateAstVisitor
     /**
@@ -31409,21 +31513,6 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         (_a = this._refreshMode).push.apply(_a, convertedPropertyBinding.stmts);
         return convertedPropertyBinding.currValExpr;
         var _a;
-    };
-    /**
-     * @param {?} implicit
-     * @param {?} value
-     * @param {?} sourceSpan
-     * @return {?}
-     */
-    TemplateDefinitionBuilder.prototype.bind = /**
-     * @param {?} implicit
-     * @param {?} value
-     * @param {?} sourceSpan
-     * @return {?}
-     */
-    function (implicit, value, sourceSpan) {
-        return this.convertPropertyBinding(implicit, value);
     };
     return TemplateDefinitionBuilder;
 }());
@@ -31623,13 +31712,13 @@ function createHostBindingsFunction(directiveMetadata, outputCtx, bindingParser)
     return null;
 }
 /**
- * @param {?} directive
+ * @param {?} keys
  * @param {?} outputCtx
  * @return {?}
  */
-function createInputsObject(directive, outputCtx) {
-    if (Object.getOwnPropertyNames(directive.inputs).length > 0) {
-        return outputCtx.constantPool.getConstLiteral(mapToExpression(directive.inputs));
+function conditionallyCreateMapObjectLiteral(keys, outputCtx) {
+    if (Object.getOwnPropertyNames(keys).length > 0) {
+        return mapToExpression(keys);
     }
     return null;
 }
