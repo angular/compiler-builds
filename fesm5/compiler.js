@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.3-8555a3a
+ * @license Angular v6.0.0-rc.3-f1db789
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -582,7 +582,6 @@ function utf8Encode(str) {
  * @record
  */
 
-var MAX_LENGTH_STRINGIFY = 100;
 /**
  * @param {?} token
  * @return {?}
@@ -603,24 +602,12 @@ function stringify(token) {
     if (token.name) {
         return "" + token.name;
     }
-    var /** @type {?} */ res;
-    try {
-        res = JSON.stringify(token);
-    }
-    catch (_a) {
-        res = token.toString();
-    }
+    var /** @type {?} */ res = token.toString();
     if (res == null) {
         return '' + res;
     }
     var /** @type {?} */ newLineIndex = res.indexOf('\n');
-    if (0 < newLineIndex) {
-        res = res.substring(0, newLineIndex);
-    }
-    if (MAX_LENGTH_STRINGIFY < res.length) {
-        res = res.substring(0, MAX_LENGTH_STRINGIFY) + '...';
-    }
-    return res;
+    return newLineIndex === -1 ? res : res.substring(0, newLineIndex);
 }
 /**
  * Lazily retrieves the reference value from a forwardRef.
@@ -673,7 +660,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('6.0.0-rc.3-8555a3a');
+var VERSION = new Version('6.0.0-rc.3-f1db789');
 
 /**
  * @fileoverview added by tsickle
