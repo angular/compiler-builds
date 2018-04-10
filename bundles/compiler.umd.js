@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.3-f1db789
+ * @license Angular v6.0.0-rc.3-c973830
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v6.0.0-rc.3-f1db789
+ * @license Angular v6.0.0-rc.3-c973830
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -625,6 +625,7 @@ function utf8Encode(str) {
  * @record
  */
 
+var MAX_LENGTH_STRINGIFY = 100;
 /**
  * @param {?} token
  * @return {?}
@@ -645,12 +646,24 @@ function stringify(token) {
     if (token.name) {
         return "" + token.name;
     }
-    var /** @type {?} */ res = token.toString();
+    var /** @type {?} */ res;
+    try {
+        res = JSON.stringify(token);
+    }
+    catch (_a) {
+        res = token.toString();
+    }
     if (res == null) {
         return '' + res;
     }
     var /** @type {?} */ newLineIndex = res.indexOf('\n');
-    return newLineIndex === -1 ? res : res.substring(0, newLineIndex);
+    if (0 < newLineIndex) {
+        res = res.substring(0, newLineIndex);
+    }
+    if (MAX_LENGTH_STRINGIFY < res.length) {
+        res = res.substring(0, MAX_LENGTH_STRINGIFY) + '...';
+    }
+    return res;
 }
 /**
  * Lazily retrieves the reference value from a forwardRef.
@@ -703,7 +716,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('6.0.0-rc.3-f1db789');
+var VERSION = new Version('6.0.0-rc.3-c973830');
 
 /**
  * @fileoverview added by tsickle
