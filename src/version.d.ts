@@ -12,6 +12,6 @@
  */
 import { Version } from './util';
 /**
- * @stable
+ *
  */
 export declare const VERSION: Version;
