@@ -183,10 +183,11 @@ const BinaryOperator = {
     Modulo: 8,
     And: 9,
     Or: 10,
-    Lower: 11,
-    LowerEquals: 12,
-    Bigger: 13,
-    BiggerEquals: 14,
+    BitwiseAnd: 11,
+    Lower: 12,
+    LowerEquals: 13,
+    Bigger: 14,
+    BiggerEquals: 15,
 };
 export { BinaryOperator };
 BinaryOperator[BinaryOperator.Equals] = "Equals";
@@ -200,6 +201,7 @@ BinaryOperator[BinaryOperator.Multiply] = "Multiply";
 BinaryOperator[BinaryOperator.Modulo] = "Modulo";
 BinaryOperator[BinaryOperator.And] = "And";
 BinaryOperator[BinaryOperator.Or] = "Or";
+BinaryOperator[BinaryOperator.BitwiseAnd] = "BitwiseAnd";
 BinaryOperator[BinaryOperator.Lower] = "Lower";
 BinaryOperator[BinaryOperator.LowerEquals] = "LowerEquals";
 BinaryOperator[BinaryOperator.Bigger] = "Bigger";
@@ -377,6 +379,15 @@ export class Expression {
      */
     and(rhs, sourceSpan) {
         return new BinaryOperatorExpr(BinaryOperator.And, this, rhs, null, sourceSpan);
+    }
+    /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @param {?=} parens
+     * @return {?}
+     */
+    bitwiseAnd(rhs, sourceSpan, parens = true) {
+        return new BinaryOperatorExpr(BinaryOperator.BitwiseAnd, this, rhs, null, sourceSpan, parens);
     }
     /**
      * @param {?} rhs
@@ -1119,11 +1130,13 @@ export class BinaryOperatorExpr extends Expression {
      * @param {?} rhs
      * @param {?=} type
      * @param {?=} sourceSpan
+     * @param {?=} parens
      */
-    constructor(operator, lhs, rhs, type, sourceSpan) {
+    constructor(operator, lhs, rhs, type, sourceSpan, parens = true) {
         super(type || lhs.type, sourceSpan);
         this.operator = operator;
         this.rhs = rhs;
+        this.parens = parens;
         this.lhs = lhs;
     }
     /**
@@ -1154,6 +1167,8 @@ function BinaryOperatorExpr_tsickle_Closure_declarations() {
     BinaryOperatorExpr.prototype.operator;
     /** @type {?} */
     BinaryOperatorExpr.prototype.rhs;
+    /** @type {?} */
+    BinaryOperatorExpr.prototype.parens;
 }
 export class ReadPropExpr extends Expression {
     /**

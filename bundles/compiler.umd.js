@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.3-764760b
+ * @license Angular v6.0.0-rc.3-0d516f1
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v6.0.0-rc.3-764760b
+ * @license Angular v6.0.0-rc.3-0d516f1
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -716,7 +716,7 @@ var Version = /** @class */ (function () {
 /**
  *
  */
-var VERSION = new Version('6.0.0-rc.3-764760b');
+var VERSION = new Version('6.0.0-rc.3-0d516f1');
 
 /**
  * @fileoverview added by tsickle
@@ -14483,10 +14483,11 @@ var BinaryOperator = {
     Modulo: 8,
     And: 9,
     Or: 10,
-    Lower: 11,
-    LowerEquals: 12,
-    Bigger: 13,
-    BiggerEquals: 14,
+    BitwiseAnd: 11,
+    Lower: 12,
+    LowerEquals: 13,
+    Bigger: 14,
+    BiggerEquals: 15,
 };
 BinaryOperator[BinaryOperator.Equals] = "Equals";
 BinaryOperator[BinaryOperator.NotEquals] = "NotEquals";
@@ -14499,6 +14500,7 @@ BinaryOperator[BinaryOperator.Multiply] = "Multiply";
 BinaryOperator[BinaryOperator.Modulo] = "Modulo";
 BinaryOperator[BinaryOperator.And] = "And";
 BinaryOperator[BinaryOperator.Or] = "Or";
+BinaryOperator[BinaryOperator.BitwiseAnd] = "BitwiseAnd";
 BinaryOperator[BinaryOperator.Lower] = "Lower";
 BinaryOperator[BinaryOperator.LowerEquals] = "LowerEquals";
 BinaryOperator[BinaryOperator.Bigger] = "Bigger";
@@ -14757,6 +14759,22 @@ var Expression = /** @class */ (function () {
      */
     function (rhs, sourceSpan) {
         return new BinaryOperatorExpr(BinaryOperator.And, this, rhs, null, sourceSpan);
+    };
+    /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @param {?=} parens
+     * @return {?}
+     */
+    Expression.prototype.bitwiseAnd = /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @param {?=} parens
+     * @return {?}
+     */
+    function (rhs, sourceSpan, parens) {
+        if (parens === void 0) { parens = true; }
+        return new BinaryOperatorExpr(BinaryOperator.BitwiseAnd, this, rhs, null, sourceSpan, parens);
     };
     /**
      * @param {?} rhs
@@ -15544,10 +15562,12 @@ var FunctionExpr = /** @class */ (function (_super) {
 }(Expression));
 var BinaryOperatorExpr = /** @class */ (function (_super) {
     __extends(BinaryOperatorExpr, _super);
-    function BinaryOperatorExpr(operator, lhs, rhs, type, sourceSpan) {
+    function BinaryOperatorExpr(operator, lhs, rhs, type, sourceSpan, parens) {
+        if (parens === void 0) { parens = true; }
         var _this = _super.call(this, type || lhs.type, sourceSpan) || this;
         _this.operator = operator;
         _this.rhs = rhs;
+        _this.parens = parens;
         _this.lhs = lhs;
         return _this;
     }
@@ -22103,6 +22123,9 @@ var AbstractEmitterVisitor = /** @class */ (function () {
             case BinaryOperator.And:
                 opStr = '&&';
                 break;
+            case BinaryOperator.BitwiseAnd:
+                opStr = '&';
+                break;
             case BinaryOperator.Or:
                 opStr = '||';
                 break;
@@ -22136,11 +22159,13 @@ var AbstractEmitterVisitor = /** @class */ (function () {
             default:
                 throw new Error("Unknown operator " + ast.operator);
         }
-        ctx.print(ast, "(");
+        if (ast.parens)
+            ctx.print(ast, "(");
         ast.lhs.visitExpression(this, ctx);
         ctx.print(ast, " " + opStr + " ");
         ast.rhs.visitExpression(this, ctx);
-        ctx.print(ast, ")");
+        if (ast.parens)
+            ctx.print(ast, ")");
         return null;
     };
     /**
@@ -30594,9 +30619,9 @@ var BUILD_OPTIMIZER_COLOCATE = '@__BUILD_OPTIMIZER_COLOCATE__';
  */
 var CONTEXT_NAME = 'ctx';
 /**
- * Name of the creation mode flag passed into a template function
+ * Name of the RenderFlag passed into a template function
  */
-var CREATION_MODE_FLAG = 'cm';
+var RENDER_FLAGS = 'rf';
 /**
  * Name of the temporary to use during data binding
  */
@@ -31006,12 +31031,11 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this.addPipeDependency = addPipeDependency;
         this._dataIndex = 0;
         this._bindingContext = 0;
-        this._referenceIndex = 0;
         this._temporaryAllocated = false;
         this._prefix = [];
         this._creationMode = [];
+        this._variableMode = [];
         this._bindingMode = [];
-        this._refreshMode = [];
         this._postfix = [];
         this._projectionDefinitionIndex = 0;
         this.unsupported = unsupported;
@@ -31106,7 +31130,10 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         }
         templateVisitAll(this, asts);
         var /** @type {?} */ creationMode = this._creationMode.length > 0 ?
-            [ifStmt(variable(CREATION_MODE_FLAG), this._creationMode)] :
+            [ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(1 /* Create */), null, false), this._creationMode)] :
+            [];
+        var /** @type {?} */ updateMode = this._bindingMode.length > 0 ?
+            [ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(2 /* Update */), null, false), this._bindingMode)] :
             [];
         // Generate maps of placeholder name to node indexes
         // TODO(vicb): This is a WIP, not fully supported yet
@@ -31120,9 +31147,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 this._prefix.push(phMap);
             }
         }
-        return fn([
-            new FnParam(this.contextParameter, null), new FnParam(CREATION_MODE_FLAG, BOOL_TYPE)
-        ], this._prefix.concat(creationMode, this._bindingMode, this._refreshMode, this._postfix), INFERRED_TYPE, null, this.templateName);
+        return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(this.contextParameter, null)], this._prefix.concat(creationMode, this._variableMode, updateMode, this._postfix), INFERRED_TYPE, null, this.templateName);
     };
     // LocalResolver
     /**
@@ -31238,7 +31263,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 referenceDataSlots.set(reference.name, slot);
                 // Generate the update temporary.
                 var /** @type {?} */ variableName = _this.bindingScope.freshReferenceName();
-                _this._bindingMode.push(variable(variableName, INFERRED_TYPE)
+                _this._variableMode.push(variable(variableName, INFERRED_TYPE)
                     .set(importExpr(Identifiers$1.load).callFn([literal(slot)]))
                     .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
                 _this.bindingScope.set(reference.name, variable(variableName));
@@ -31393,8 +31418,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var /** @type {?} */ nodeIndex = this.allocateDataSlot();
         // Creation mode
         this.instruction(this._creationMode, ast.sourceSpan, Identifiers$1.text, literal(nodeIndex));
-        // Refresh mode
-        this.instruction(this._refreshMode, ast.sourceSpan, Identifiers$1.textCreateBound, literal(nodeIndex), this.convertPropertyBinding(variable(CONTEXT_NAME), ast.value));
+        this.instruction(this._bindingMode, ast.sourceSpan, Identifiers$1.textCreateBound, literal(nodeIndex), this.convertPropertyBinding(variable(CONTEXT_NAME), ast.value));
     };
     // TemplateAstVisitor
     /**
@@ -31510,7 +31534,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     function (implicit, value) {
         var /** @type {?} */ pipesConvertedValue = value.visit(this._valueConverter);
         var /** @type {?} */ convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, interpolate);
-        (_a = this._refreshMode).push.apply(_a, convertedPropertyBinding.stmts);
+        (_a = this._bindingMode).push.apply(_a, convertedPropertyBinding.stmts);
         return convertedPropertyBinding.currValExpr;
         var _a;
     };

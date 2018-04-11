@@ -218,10 +218,11 @@ var BinaryOperator = {
     Modulo: 8,
     And: 9,
     Or: 10,
-    Lower: 11,
-    LowerEquals: 12,
-    Bigger: 13,
-    BiggerEquals: 14,
+    BitwiseAnd: 11,
+    Lower: 12,
+    LowerEquals: 13,
+    Bigger: 14,
+    BiggerEquals: 15,
 };
 export { BinaryOperator };
 BinaryOperator[BinaryOperator.Equals] = "Equals";
@@ -235,6 +236,7 @@ BinaryOperator[BinaryOperator.Multiply] = "Multiply";
 BinaryOperator[BinaryOperator.Modulo] = "Modulo";
 BinaryOperator[BinaryOperator.And] = "And";
 BinaryOperator[BinaryOperator.Or] = "Or";
+BinaryOperator[BinaryOperator.BitwiseAnd] = "BitwiseAnd";
 BinaryOperator[BinaryOperator.Lower] = "Lower";
 BinaryOperator[BinaryOperator.LowerEquals] = "LowerEquals";
 BinaryOperator[BinaryOperator.Bigger] = "Bigger";
@@ -496,6 +498,22 @@ Expression = /** @class */ (function () {
      */
     function (rhs, sourceSpan) {
         return new BinaryOperatorExpr(BinaryOperator.And, this, rhs, null, sourceSpan);
+    };
+    /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @param {?=} parens
+     * @return {?}
+     */
+    Expression.prototype.bitwiseAnd = /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @param {?=} parens
+     * @return {?}
+     */
+    function (rhs, sourceSpan, parens) {
+        if (parens === void 0) { parens = true; }
+        return new BinaryOperatorExpr(BinaryOperator.BitwiseAnd, this, rhs, null, sourceSpan, parens);
     };
     /**
      * @param {?} rhs
@@ -1434,10 +1452,12 @@ function FunctionExpr_tsickle_Closure_declarations() {
 }
 var BinaryOperatorExpr = /** @class */ (function (_super) {
     tslib_1.__extends(BinaryOperatorExpr, _super);
-    function BinaryOperatorExpr(operator, lhs, rhs, type, sourceSpan) {
+    function BinaryOperatorExpr(operator, lhs, rhs, type, sourceSpan, parens) {
+        if (parens === void 0) { parens = true; }
         var _this = _super.call(this, type || lhs.type, sourceSpan) || this;
         _this.operator = operator;
         _this.rhs = rhs;
+        _this.parens = parens;
         _this.lhs = lhs;
         return _this;
     }
@@ -1483,6 +1503,8 @@ function BinaryOperatorExpr_tsickle_Closure_declarations() {
     BinaryOperatorExpr.prototype.operator;
     /** @type {?} */
     BinaryOperatorExpr.prototype.rhs;
+    /** @type {?} */
+    BinaryOperatorExpr.prototype.parens;
 }
 var ReadPropExpr = /** @class */ (function (_super) {
     tslib_1.__extends(ReadPropExpr, _super);

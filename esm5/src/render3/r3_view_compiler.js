@@ -27,9 +27,9 @@ import { BUILD_OPTIMIZER_COLOCATE } from './r3_types';
  */
 var /** @type {?} */ CONTEXT_NAME = 'ctx';
 /**
- * Name of the creation mode flag passed into a template function
+ * Name of the RenderFlag passed into a template function
  */
-var /** @type {?} */ CREATION_MODE_FLAG = 'cm';
+var /** @type {?} */ RENDER_FLAGS = 'rf';
 /**
  * Name of the temporary to use during data binding
  */
@@ -451,6 +451,14 @@ function BindingScope_tsickle_Closure_declarations() {
     /** @type {?} */
     BindingScope.prototype.declareLocalVarCallback;
 }
+/** @enum {number} */
+var RenderFlags = {
+    /* Whether to run the creation block (e.g. create elements and directives) */
+    Create: 1,
+    /* Whether to run the update block (e.g. refresh bindings) */
+    Update: 2,
+};
+export { RenderFlags };
 var TemplateDefinitionBuilder = /** @class */ (function () {
     function TemplateDefinitionBuilder(outputCtx, constantPool, reflector, contextParameter, parentBindingScope, level, ngContentSelectors, contextName, templateName, pipes, viewQueries, addDirectiveDependency, addPipeDependency) {
         if (level === void 0) { level = 0; }
@@ -469,12 +477,11 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this.addPipeDependency = addPipeDependency;
         this._dataIndex = 0;
         this._bindingContext = 0;
-        this._referenceIndex = 0;
         this._temporaryAllocated = false;
         this._prefix = [];
         this._creationMode = [];
+        this._variableMode = [];
         this._bindingMode = [];
-        this._refreshMode = [];
         this._postfix = [];
         this._projectionDefinitionIndex = 0;
         this.unsupported = unsupported;
@@ -569,7 +576,10 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         }
         templateVisitAll(this, asts);
         var /** @type {?} */ creationMode = this._creationMode.length > 0 ?
-            [o.ifStmt(o.variable(CREATION_MODE_FLAG), this._creationMode)] :
+            [o.ifStmt(o.variable(RENDER_FLAGS).bitwiseAnd(o.literal(1 /* Create */), null, false), this._creationMode)] :
+            [];
+        var /** @type {?} */ updateMode = this._bindingMode.length > 0 ?
+            [o.ifStmt(o.variable(RENDER_FLAGS).bitwiseAnd(o.literal(2 /* Update */), null, false), this._bindingMode)] :
             [];
         // Generate maps of placeholder name to node indexes
         // TODO(vicb): This is a WIP, not fully supported yet
@@ -583,9 +593,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 this._prefix.push(phMap);
             }
         }
-        return o.fn([
-            new o.FnParam(this.contextParameter, null), new o.FnParam(CREATION_MODE_FLAG, o.BOOL_TYPE)
-        ], this._prefix.concat(creationMode, this._bindingMode, this._refreshMode, this._postfix), o.INFERRED_TYPE, null, this.templateName);
+        return o.fn([new o.FnParam(RENDER_FLAGS, o.NUMBER_TYPE), new o.FnParam(this.contextParameter, null)], this._prefix.concat(creationMode, this._variableMode, updateMode, this._postfix), o.INFERRED_TYPE, null, this.templateName);
     };
     // LocalResolver
     /**
@@ -701,7 +709,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 referenceDataSlots.set(reference.name, slot);
                 // Generate the update temporary.
                 var /** @type {?} */ variableName = _this.bindingScope.freshReferenceName();
-                _this._bindingMode.push(o.variable(variableName, o.INFERRED_TYPE)
+                _this._variableMode.push(o.variable(variableName, o.INFERRED_TYPE)
                     .set(o.importExpr(R3.load).callFn([o.literal(slot)]))
                     .toDeclStmt(o.INFERRED_TYPE, [o.StmtModifier.Final]));
                 _this.bindingScope.set(reference.name, o.variable(variableName));
@@ -856,8 +864,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var /** @type {?} */ nodeIndex = this.allocateDataSlot();
         // Creation mode
         this.instruction(this._creationMode, ast.sourceSpan, R3.text, o.literal(nodeIndex));
-        // Refresh mode
-        this.instruction(this._refreshMode, ast.sourceSpan, R3.textCreateBound, o.literal(nodeIndex), this.convertPropertyBinding(o.variable(CONTEXT_NAME), ast.value));
+        this.instruction(this._bindingMode, ast.sourceSpan, R3.textCreateBound, o.literal(nodeIndex), this.convertPropertyBinding(o.variable(CONTEXT_NAME), ast.value));
     };
     // TemplateAstVisitor
     /**
@@ -973,7 +980,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     function (implicit, value) {
         var /** @type {?} */ pipesConvertedValue = value.visit(this._valueConverter);
         var /** @type {?} */ convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, interpolate);
-        (_a = this._refreshMode).push.apply(_a, convertedPropertyBinding.stmts);
+        (_a = this._bindingMode).push.apply(_a, convertedPropertyBinding.stmts);
         return convertedPropertyBinding.currValExpr;
         var _a;
     };
@@ -985,17 +992,15 @@ function TemplateDefinitionBuilder_tsickle_Closure_declarations() {
     /** @type {?} */
     TemplateDefinitionBuilder.prototype._bindingContext;
     /** @type {?} */
-    TemplateDefinitionBuilder.prototype._referenceIndex;
-    /** @type {?} */
     TemplateDefinitionBuilder.prototype._temporaryAllocated;
     /** @type {?} */
     TemplateDefinitionBuilder.prototype._prefix;
     /** @type {?} */
     TemplateDefinitionBuilder.prototype._creationMode;
     /** @type {?} */
-    TemplateDefinitionBuilder.prototype._bindingMode;
+    TemplateDefinitionBuilder.prototype._variableMode;
     /** @type {?} */
-    TemplateDefinitionBuilder.prototype._refreshMode;
+    TemplateDefinitionBuilder.prototype._bindingMode;
     /** @type {?} */
     TemplateDefinitionBuilder.prototype._postfix;
     /** @type {?} */

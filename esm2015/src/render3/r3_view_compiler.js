@@ -26,9 +26,9 @@ import { BUILD_OPTIMIZER_COLOCATE } from './r3_types';
  */
 const /** @type {?} */ CONTEXT_NAME = 'ctx';
 /**
- * Name of the creation mode flag passed into a template function
+ * Name of the RenderFlag passed into a template function
  */
-const /** @type {?} */ CREATION_MODE_FLAG = 'cm';
+const /** @type {?} */ RENDER_FLAGS = 'rf';
 /**
  * Name of the temporary to use during data binding
  */
@@ -417,6 +417,14 @@ function BindingScope_tsickle_Closure_declarations() {
     /** @type {?} */
     BindingScope.prototype.declareLocalVarCallback;
 }
+/** @enum {number} */
+const RenderFlags = {
+    /* Whether to run the creation block (e.g. create elements and directives) */
+    Create: 1,
+    /* Whether to run the update block (e.g. refresh bindings) */
+    Update: 2,
+};
+export { RenderFlags };
 class TemplateDefinitionBuilder {
     /**
      * @param {?} outputCtx
@@ -448,12 +456,11 @@ class TemplateDefinitionBuilder {
         this.addPipeDependency = addPipeDependency;
         this._dataIndex = 0;
         this._bindingContext = 0;
-        this._referenceIndex = 0;
         this._temporaryAllocated = false;
         this._prefix = [];
         this._creationMode = [];
+        this._variableMode = [];
         this._bindingMode = [];
-        this._refreshMode = [];
         this._postfix = [];
         this._projectionDefinitionIndex = 0;
         this.unsupported = unsupported;
@@ -541,7 +548,10 @@ class TemplateDefinitionBuilder {
         }
         templateVisitAll(this, asts);
         const /** @type {?} */ creationMode = this._creationMode.length > 0 ?
-            [o.ifStmt(o.variable(CREATION_MODE_FLAG), this._creationMode)] :
+            [o.ifStmt(o.variable(RENDER_FLAGS).bitwiseAnd(o.literal(1 /* Create */), null, false), this._creationMode)] :
+            [];
+        const /** @type {?} */ updateMode = this._bindingMode.length > 0 ?
+            [o.ifStmt(o.variable(RENDER_FLAGS).bitwiseAnd(o.literal(2 /* Update */), null, false), this._bindingMode)] :
             [];
         // Generate maps of placeholder name to node indexes
         // TODO(vicb): This is a WIP, not fully supported yet
@@ -554,17 +564,15 @@ class TemplateDefinitionBuilder {
                 this._prefix.push(phMap);
             }
         }
-        return o.fn([
-            new o.FnParam(this.contextParameter, null), new o.FnParam(CREATION_MODE_FLAG, o.BOOL_TYPE)
-        ], [
-            // Temporary variable declarations (i.e. let _t: any;)
+        return o.fn([new o.FnParam(RENDER_FLAGS, o.NUMBER_TYPE), new o.FnParam(this.contextParameter, null)], [
+            // Temporary variable declarations for query refresh (i.e. let _t: any;)
             ...this._prefix,
-            // Creating mode (i.e. if (cm) { ... })
+            // Creating mode (i.e. if (rf & RenderFlags.Create) { ... })
             ...creationMode,
-            // Binding mode (i.e. ɵp(...))
-            ...this._bindingMode,
-            // Refresh mode (i.e. Comp.r(...))
-            ...this._refreshMode,
+            // Temporary variable declarations for local refs (i.e. const tmp = ld(1) as any)
+            ...this._variableMode,
+            // Binding and refresh mode (i.e. if (rf & RenderFlags.Update) {...})
+            ...updateMode,
             // Nested templates (i.e. function CompTemplate() {})
             ...this._postfix
         ], o.INFERRED_TYPE, null, this.templateName);
@@ -666,7 +674,7 @@ class TemplateDefinitionBuilder {
                 referenceDataSlots.set(reference.name, slot);
                 // Generate the update temporary.
                 const /** @type {?} */ variableName = this.bindingScope.freshReferenceName();
-                this._bindingMode.push(o.variable(variableName, o.INFERRED_TYPE)
+                this._variableMode.push(o.variable(variableName, o.INFERRED_TYPE)
                     .set(o.importExpr(R3.load).callFn([o.literal(slot)]))
                     .toDeclStmt(o.INFERRED_TYPE, [o.StmtModifier.Final]));
                 this.bindingScope.set(reference.name, o.variable(variableName));
@@ -796,8 +804,7 @@ class TemplateDefinitionBuilder {
         const /** @type {?} */ nodeIndex = this.allocateDataSlot();
         // Creation mode
         this.instruction(this._creationMode, ast.sourceSpan, R3.text, o.literal(nodeIndex));
-        // Refresh mode
-        this.instruction(this._refreshMode, ast.sourceSpan, R3.textCreateBound, o.literal(nodeIndex), this.convertPropertyBinding(o.variable(CONTEXT_NAME), ast.value));
+        this.instruction(this._bindingMode, ast.sourceSpan, R3.textCreateBound, o.literal(nodeIndex), this.convertPropertyBinding(o.variable(CONTEXT_NAME), ast.value));
     }
     /**
      * @param {?} ast
@@ -861,7 +868,7 @@ class TemplateDefinitionBuilder {
     convertPropertyBinding(implicit, value) {
         const /** @type {?} */ pipesConvertedValue = value.visit(this._valueConverter);
         const /** @type {?} */ convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, interpolate);
-        this._refreshMode.push(...convertedPropertyBinding.stmts);
+        this._bindingMode.push(...convertedPropertyBinding.stmts);
         return convertedPropertyBinding.currValExpr;
     }
 }
@@ -871,17 +878,15 @@ function TemplateDefinitionBuilder_tsickle_Closure_declarations() {
     /** @type {?} */
     TemplateDefinitionBuilder.prototype._bindingContext;
     /** @type {?} */
-    TemplateDefinitionBuilder.prototype._referenceIndex;
-    /** @type {?} */
     TemplateDefinitionBuilder.prototype._temporaryAllocated;
     /** @type {?} */
     TemplateDefinitionBuilder.prototype._prefix;
     /** @type {?} */
     TemplateDefinitionBuilder.prototype._creationMode;
     /** @type {?} */
-    TemplateDefinitionBuilder.prototype._bindingMode;
+    TemplateDefinitionBuilder.prototype._variableMode;
     /** @type {?} */
-    TemplateDefinitionBuilder.prototype._refreshMode;
+    TemplateDefinitionBuilder.prototype._bindingMode;
     /** @type {?} */
     TemplateDefinitionBuilder.prototype._postfix;
     /** @type {?} */

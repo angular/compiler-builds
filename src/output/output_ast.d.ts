@@ -69,10 +69,11 @@ export declare enum BinaryOperator {
     Modulo = 8,
     And = 9,
     Or = 10,
-    Lower = 11,
-    LowerEquals = 12,
-    Bigger = 13,
-    BiggerEquals = 14,
+    BitwiseAnd = 11,
+    Lower = 12,
+    LowerEquals = 13,
+    Bigger = 14,
+    BiggerEquals = 15,
 }
 export declare function nullSafeIsEquivalent<T extends {
     isEquivalent(other: T): boolean;
@@ -110,6 +111,7 @@ export declare abstract class Expression {
     multiply(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     modulo(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     and(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
+    bitwiseAnd(rhs: Expression, sourceSpan?: ParseSourceSpan | null, parens?: boolean): BinaryOperatorExpr;
     or(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     lower(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     lowerEquals(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
@@ -262,8 +264,9 @@ export declare class FunctionExpr extends Expression {
 export declare class BinaryOperatorExpr extends Expression {
     operator: BinaryOperator;
     rhs: Expression;
+    parens: boolean;
     lhs: Expression;
-    constructor(operator: BinaryOperator, lhs: Expression, rhs: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    constructor(operator: BinaryOperator, lhs: Expression, rhs: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null, parens?: boolean);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;

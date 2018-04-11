@@ -14,4 +14,16 @@ import { OutputContext } from '../util';
 import { OutputMode } from './r3_types';
 export declare function compileDirective(outputCtx: OutputContext, directive: CompileDirectiveMetadata, reflector: CompileReflector, bindingParser: BindingParser, mode: OutputMode): void;
 export declare function compileComponent(outputCtx: OutputContext, component: CompileDirectiveMetadata, pipes: CompilePipeSummary[], template: TemplateAst[], reflector: CompileReflector, bindingParser: BindingParser, mode: OutputMode): void;
+/**
+ * Flags passed into template functions to determine which blocks (i.e. creation, update)
+ * should be executed.
+ *
+ * Typically, a template runs both the creation block and the update block on initialization and
+ * subsequent runs only execute the update block. However, dynamically created views require that
+ * the creation block be executed separately from the update block (for backwards compat).
+ */
+export declare const enum RenderFlags {
+    Create = 1,
+    Update = 2,
+}
 export declare function createFactory(type: CompileTypeMetadata, outputCtx: OutputContext, reflector: CompileReflector, queries: CompileQueryMetadata[]): o.Expression;

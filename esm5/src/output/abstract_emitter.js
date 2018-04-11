@@ -697,6 +697,9 @@ AbstractEmitterVisitor = /** @class */ (function () {
             case o.BinaryOperator.And:
                 opStr = '&&';
                 break;
+            case o.BinaryOperator.BitwiseAnd:
+                opStr = '&';
+                break;
             case o.BinaryOperator.Or:
                 opStr = '||';
                 break;
@@ -730,11 +733,13 @@ AbstractEmitterVisitor = /** @class */ (function () {
             default:
                 throw new Error("Unknown operator " + ast.operator);
         }
-        ctx.print(ast, "(");
+        if (ast.parens)
+            ctx.print(ast, "(");
         ast.lhs.visitExpression(this, ctx);
         ctx.print(ast, " " + opStr + " ");
         ast.rhs.visitExpression(this, ctx);
-        ctx.print(ast, ")");
+        if (ast.parens)
+            ctx.print(ast, ")");
         return null;
     };
     /**

@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.3-764760b
+ * @license Angular v6.0.0-rc.3-0d516f1
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -618,7 +618,7 @@ class Version {
 /**
  *
  */
-const VERSION = new Version('6.0.0-rc.3-764760b');
+const VERSION = new Version('6.0.0-rc.3-0d516f1');
 
 /**
  * @fileoverview added by tsickle
@@ -11863,10 +11863,11 @@ const BinaryOperator = {
     Modulo: 8,
     And: 9,
     Or: 10,
-    Lower: 11,
-    LowerEquals: 12,
-    Bigger: 13,
-    BiggerEquals: 14,
+    BitwiseAnd: 11,
+    Lower: 12,
+    LowerEquals: 13,
+    Bigger: 14,
+    BiggerEquals: 15,
 };
 BinaryOperator[BinaryOperator.Equals] = "Equals";
 BinaryOperator[BinaryOperator.NotEquals] = "NotEquals";
@@ -11879,6 +11880,7 @@ BinaryOperator[BinaryOperator.Multiply] = "Multiply";
 BinaryOperator[BinaryOperator.Modulo] = "Modulo";
 BinaryOperator[BinaryOperator.And] = "And";
 BinaryOperator[BinaryOperator.Or] = "Or";
+BinaryOperator[BinaryOperator.BitwiseAnd] = "BitwiseAnd";
 BinaryOperator[BinaryOperator.Lower] = "Lower";
 BinaryOperator[BinaryOperator.LowerEquals] = "LowerEquals";
 BinaryOperator[BinaryOperator.Bigger] = "Bigger";
@@ -12056,6 +12058,15 @@ class Expression {
      */
     and(rhs, sourceSpan) {
         return new BinaryOperatorExpr(BinaryOperator.And, this, rhs, null, sourceSpan);
+    }
+    /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @param {?=} parens
+     * @return {?}
+     */
+    bitwiseAnd(rhs, sourceSpan, parens = true) {
+        return new BinaryOperatorExpr(BinaryOperator.BitwiseAnd, this, rhs, null, sourceSpan, parens);
     }
     /**
      * @param {?} rhs
@@ -12667,11 +12678,13 @@ class BinaryOperatorExpr extends Expression {
      * @param {?} rhs
      * @param {?=} type
      * @param {?=} sourceSpan
+     * @param {?=} parens
      */
-    constructor(operator, lhs, rhs, type, sourceSpan) {
+    constructor(operator, lhs, rhs, type, sourceSpan, parens = true) {
         super(type || lhs.type, sourceSpan);
         this.operator = operator;
         this.rhs = rhs;
+        this.parens = parens;
         this.lhs = lhs;
     }
     /**
@@ -17987,6 +18000,9 @@ class AbstractEmitterVisitor {
             case BinaryOperator.And:
                 opStr = '&&';
                 break;
+            case BinaryOperator.BitwiseAnd:
+                opStr = '&';
+                break;
             case BinaryOperator.Or:
                 opStr = '||';
                 break;
@@ -18020,11 +18036,13 @@ class AbstractEmitterVisitor {
             default:
                 throw new Error(`Unknown operator ${ast.operator}`);
         }
-        ctx.print(ast, `(`);
+        if (ast.parens)
+            ctx.print(ast, `(`);
         ast.lhs.visitExpression(this, ctx);
         ctx.print(ast, ` ${opStr} `);
         ast.rhs.visitExpression(this, ctx);
-        ctx.print(ast, `)`);
+        if (ast.parens)
+            ctx.print(ast, `)`);
         return null;
     }
     /**
@@ -24943,9 +24961,9 @@ const BUILD_OPTIMIZER_COLOCATE = '@__BUILD_OPTIMIZER_COLOCATE__';
  */
 const CONTEXT_NAME = 'ctx';
 /**
- * Name of the creation mode flag passed into a template function
+ * Name of the RenderFlag passed into a template function
  */
-const CREATION_MODE_FLAG = 'cm';
+const RENDER_FLAGS = 'rf';
 /**
  * Name of the temporary to use during data binding
  */
@@ -25335,12 +25353,11 @@ class TemplateDefinitionBuilder {
         this.addPipeDependency = addPipeDependency;
         this._dataIndex = 0;
         this._bindingContext = 0;
-        this._referenceIndex = 0;
         this._temporaryAllocated = false;
         this._prefix = [];
         this._creationMode = [];
+        this._variableMode = [];
         this._bindingMode = [];
-        this._refreshMode = [];
         this._postfix = [];
         this._projectionDefinitionIndex = 0;
         this.unsupported = unsupported;
@@ -25428,7 +25445,10 @@ class TemplateDefinitionBuilder {
         }
         templateVisitAll(this, asts);
         const /** @type {?} */ creationMode = this._creationMode.length > 0 ?
-            [ifStmt(variable(CREATION_MODE_FLAG), this._creationMode)] :
+            [ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(1 /* Create */), null, false), this._creationMode)] :
+            [];
+        const /** @type {?} */ updateMode = this._bindingMode.length > 0 ?
+            [ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(2 /* Update */), null, false), this._bindingMode)] :
             [];
         // Generate maps of placeholder name to node indexes
         // TODO(vicb): This is a WIP, not fully supported yet
@@ -25441,17 +25461,15 @@ class TemplateDefinitionBuilder {
                 this._prefix.push(phMap);
             }
         }
-        return fn([
-            new FnParam(this.contextParameter, null), new FnParam(CREATION_MODE_FLAG, BOOL_TYPE)
-        ], [
-            // Temporary variable declarations (i.e. let _t: any;)
+        return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(this.contextParameter, null)], [
+            // Temporary variable declarations for query refresh (i.e. let _t: any;)
             ...this._prefix,
-            // Creating mode (i.e. if (cm) { ... })
+            // Creating mode (i.e. if (rf & RenderFlags.Create) { ... })
             ...creationMode,
-            // Binding mode (i.e. ɵp(...))
-            ...this._bindingMode,
-            // Refresh mode (i.e. Comp.r(...))
-            ...this._refreshMode,
+            // Temporary variable declarations for local refs (i.e. const tmp = ld(1) as any)
+            ...this._variableMode,
+            // Binding and refresh mode (i.e. if (rf & RenderFlags.Update) {...})
+            ...updateMode,
             // Nested templates (i.e. function CompTemplate() {})
             ...this._postfix
         ], INFERRED_TYPE, null, this.templateName);
@@ -25553,7 +25571,7 @@ class TemplateDefinitionBuilder {
                 referenceDataSlots.set(reference.name, slot);
                 // Generate the update temporary.
                 const /** @type {?} */ variableName = this.bindingScope.freshReferenceName();
-                this._bindingMode.push(variable(variableName, INFERRED_TYPE)
+                this._variableMode.push(variable(variableName, INFERRED_TYPE)
                     .set(importExpr(Identifiers$1.load).callFn([literal(slot)]))
                     .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
                 this.bindingScope.set(reference.name, variable(variableName));
@@ -25683,8 +25701,7 @@ class TemplateDefinitionBuilder {
         const /** @type {?} */ nodeIndex = this.allocateDataSlot();
         // Creation mode
         this.instruction(this._creationMode, ast.sourceSpan, Identifiers$1.text, literal(nodeIndex));
-        // Refresh mode
-        this.instruction(this._refreshMode, ast.sourceSpan, Identifiers$1.textCreateBound, literal(nodeIndex), this.convertPropertyBinding(variable(CONTEXT_NAME), ast.value));
+        this.instruction(this._bindingMode, ast.sourceSpan, Identifiers$1.textCreateBound, literal(nodeIndex), this.convertPropertyBinding(variable(CONTEXT_NAME), ast.value));
     }
     /**
      * @param {?} ast
@@ -25748,7 +25765,7 @@ class TemplateDefinitionBuilder {
     convertPropertyBinding(implicit, value) {
         const /** @type {?} */ pipesConvertedValue = value.visit(this._valueConverter);
         const /** @type {?} */ convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, interpolate);
-        this._refreshMode.push(...convertedPropertyBinding.stmts);
+        this._bindingMode.push(...convertedPropertyBinding.stmts);
         return convertedPropertyBinding.currValExpr;
     }
 }
