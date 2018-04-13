@@ -950,12 +950,6 @@ export function createFactory(type, outputCtx, reflector, queries) {
     const /** @type {?} */ templateRef = reflector.resolveExternalReference(Identifiers.TemplateRef);
     const /** @type {?} */ viewContainerRef = reflector.resolveExternalReference(Identifiers.ViewContainerRef);
     for (let /** @type {?} */ dependency of type.diDeps) {
-        if (dependency.isValue) {
-            unsupported('value dependencies');
-        }
-        if (dependency.isHost) {
-            unsupported('host dependencies');
-        }
         const /** @type {?} */ token = dependency.token;
         if (token) {
             const /** @type {?} */ tokenRef = tokenReference(token);
@@ -968,9 +962,18 @@ export function createFactory(type, outputCtx, reflector, queries) {
             else if (tokenRef === viewContainerRef) {
                 args.push(o.importExpr(R3.injectViewContainerRef).callFn([]));
             }
+            else if (dependency.isAttribute) {
+                args.push(o.importExpr(R3.injectAttribute).callFn([o.literal(/** @type {?} */ ((dependency.token)).value)]));
+            }
             else {
-                const /** @type {?} */ value = token.identifier != null ? outputCtx.importExpr(tokenRef) : o.literal(tokenRef);
-                args.push(o.importExpr(R3.inject).callFn([value]));
+                const /** @type {?} */ tokenValue = token.identifier != null ? outputCtx.importExpr(tokenRef) : o.literal(tokenRef);
+                const /** @type {?} */ directiveInjectArgs = [tokenValue];
+                const /** @type {?} */ flags = extractFlags(dependency);
+                if (flags != 0 /* Default */) {
+                    // Append flag information if other than default.
+                    directiveInjectArgs.push(o.literal(flags));
+                }
+                args.push(o.importExpr(R3.directiveInject).callFn(directiveInjectArgs));
             }
         }
         else {
@@ -995,6 +998,29 @@ export function createFactory(type, outputCtx, reflector, queries) {
     const /** @type {?} */ result = queryDefinitions.length > 0 ? o.literalArr([createInstance, ...queryDefinitions]) :
         createInstance;
     return o.fn([], [new o.ReturnStatement(result)], o.INFERRED_TYPE, null, type.reference.name ? `${type.reference.name}_Factory` : null);
+}
+/**
+ * @param {?} dependency
+ * @return {?}
+ */
+function extractFlags(dependency) {
+    let /** @type {?} */ flags = 0 /* Default */;
+    if (dependency.isHost) {
+        flags |= 1 /* Host */;
+    }
+    if (dependency.isOptional) {
+        flags |= 8 /* Optional */;
+    }
+    if (dependency.isSelf) {
+        flags |= 2 /* Self */;
+    }
+    if (dependency.isSkipSelf) {
+        flags |= 4 /* SkipSelf */;
+    }
+    if (dependency.isValue) {
+        unsupported('value dependencies');
+    }
+    return flags;
 }
 /**
  *  Remove trailing null nodes as they are implied.

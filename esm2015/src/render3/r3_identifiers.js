@@ -60,10 +60,11 @@ Identifiers.projection = { name: 'ɵP', moduleName: CORE };
 Identifiers.projectionDef = { name: 'ɵpD', moduleName: CORE };
 Identifiers.refreshComponent = { name: 'ɵr', moduleName: CORE };
 Identifiers.directiveLifeCycle = { name: 'ɵl', moduleName: CORE };
+Identifiers.injectAttribute = { name: 'ɵinjectAttribute', moduleName: CORE };
 Identifiers.injectElementRef = { name: 'ɵinjectElementRef', moduleName: CORE };
 Identifiers.injectTemplateRef = { name: 'ɵinjectTemplateRef', moduleName: CORE };
 Identifiers.injectViewContainerRef = { name: 'ɵinjectViewContainerRef', moduleName: CORE };
-Identifiers.inject = { name: 'ɵinject', moduleName: CORE };
+Identifiers.directiveInject = { name: 'ɵdirectiveInject', moduleName: CORE };
 Identifiers.defineComponent = { name: 'ɵdefineComponent', moduleName: CORE };
 Identifiers.defineDirective = {
     name: 'ɵdefineDirective',
@@ -172,13 +173,15 @@ function Identifiers_tsickle_Closure_declarations() {
     /** @type {?} */
     Identifiers.directiveLifeCycle;
     /** @type {?} */
+    Identifiers.injectAttribute;
+    /** @type {?} */
     Identifiers.injectElementRef;
     /** @type {?} */
     Identifiers.injectTemplateRef;
     /** @type {?} */
     Identifiers.injectViewContainerRef;
     /** @type {?} */
-    Identifiers.inject;
+    Identifiers.directiveInject;
     /** @type {?} */
     Identifiers.defineComponent;
     /** @type {?} */

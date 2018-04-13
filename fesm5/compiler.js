@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.4-490772e
+ * @license Angular v6.0.0-rc.4-f4017ce
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -208,10 +208,17 @@ var DepFlags = {
 /** @enum {number} */
 var InjectFlags = {
     Default: 0,
-    /** Skip the node that is requesting injection. */
-    SkipSelf: 1,
+    /**
+       * Specifies that an injector should retrieve a dependency from any injector until reaching the
+       * host element of the current component. (Only used with Element Injector)
+       */
+    Host: 1,
     /** Don't descend into ancestors of the node requesting injection. */
     Self: 2,
+    /** Skip the node that is requesting injection. */
+    SkipSelf: 4,
+    /** Inject `defaultValue` instead if token not found. */
+    Optional: 8,
 };
 /** @enum {number} */
 var ArgumentType = { Inline: 0, Dynamic: 1, };
@@ -673,7 +680,7 @@ var Version = /** @class */ (function () {
 /**
  *
  */
-var VERSION = new Version('6.0.0-rc.4-490772e');
+var VERSION = new Version('6.0.0-rc.4-f4017ce');
 
 /**
  * @fileoverview added by tsickle
@@ -17763,7 +17770,6 @@ var InjectableCompiler = /** @class */ (function () {
         var _this = this;
         return deps.map(function (dep) {
             var /** @type {?} */ token = dep;
-            var /** @type {?} */ defaultValue = undefined;
             var /** @type {?} */ args = [token];
             var /** @type {?} */ flags = 0;
             if (Array.isArray(dep)) {
@@ -17771,10 +17777,10 @@ var InjectableCompiler = /** @class */ (function () {
                     var /** @type {?} */ v = dep[i];
                     if (v) {
                         if (v.ngMetadataName === 'Optional') {
-                            defaultValue = null;
+                            flags |= 8 /* Optional */;
                         }
                         else if (v.ngMetadataName === 'SkipSelf') {
-                            flags |= 1 /* SkipSelf */;
+                            flags |= 4 /* SkipSelf */;
                         }
                         else if (v.ngMetadataName === 'Self') {
                             flags |= 2 /* Self */;
@@ -17798,8 +17804,8 @@ var InjectableCompiler = /** @class */ (function () {
             else {
                 tokenExpr = ctx.importExpr(token);
             }
-            if (flags !== 0 /* Default */ || defaultValue !== undefined) {
-                args = [tokenExpr, literal(defaultValue), literal(flags)];
+            if (flags !== 0 /* Default */) {
+                args = [tokenExpr, literal(flags)];
             }
             else {
                 args = [tokenExpr];
@@ -30469,10 +30475,11 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.projectionDef = { name: 'ɵpD', moduleName: CORE$1 };
     Identifiers.refreshComponent = { name: 'ɵr', moduleName: CORE$1 };
     Identifiers.directiveLifeCycle = { name: 'ɵl', moduleName: CORE$1 };
+    Identifiers.injectAttribute = { name: 'ɵinjectAttribute', moduleName: CORE$1 };
     Identifiers.injectElementRef = { name: 'ɵinjectElementRef', moduleName: CORE$1 };
     Identifiers.injectTemplateRef = { name: 'ɵinjectTemplateRef', moduleName: CORE$1 };
     Identifiers.injectViewContainerRef = { name: 'ɵinjectViewContainerRef', moduleName: CORE$1 };
-    Identifiers.inject = { name: 'ɵinject', moduleName: CORE$1 };
+    Identifiers.directiveInject = { name: 'ɵdirectiveInject', moduleName: CORE$1 };
     Identifiers.defineComponent = { name: 'ɵdefineComponent', moduleName: CORE$1 };
     Identifiers.defineDirective = {
         name: 'ɵdefineDirective',
@@ -31502,12 +31509,6 @@ function createFactory(type, outputCtx, reflector, queries) {
     var /** @type {?} */ viewContainerRef = reflector.resolveExternalReference(Identifiers.ViewContainerRef);
     for (var _i = 0, _a = type.diDeps; _i < _a.length; _i++) {
         var dependency = _a[_i];
-        if (dependency.isValue) {
-            unsupported('value dependencies');
-        }
-        if (dependency.isHost) {
-            unsupported('host dependencies');
-        }
         var /** @type {?} */ token = dependency.token;
         if (token) {
             var /** @type {?} */ tokenRef = tokenReference(token);
@@ -31520,9 +31521,18 @@ function createFactory(type, outputCtx, reflector, queries) {
             else if (tokenRef === viewContainerRef) {
                 args.push(importExpr(Identifiers$1.injectViewContainerRef).callFn([]));
             }
+            else if (dependency.isAttribute) {
+                args.push(importExpr(Identifiers$1.injectAttribute).callFn([literal(/** @type {?} */ ((dependency.token)).value)]));
+            }
             else {
-                var /** @type {?} */ value = token.identifier != null ? outputCtx.importExpr(tokenRef) : literal(tokenRef);
-                args.push(importExpr(Identifiers$1.inject).callFn([value]));
+                var /** @type {?} */ tokenValue = token.identifier != null ? outputCtx.importExpr(tokenRef) : literal(tokenRef);
+                var /** @type {?} */ directiveInjectArgs = [tokenValue];
+                var /** @type {?} */ flags = extractFlags(dependency);
+                if (flags != 0 /* Default */) {
+                    // Append flag information if other than default.
+                    directiveInjectArgs.push(literal(flags));
+                }
+                args.push(importExpr(Identifiers$1.directiveInject).callFn(directiveInjectArgs));
             }
         }
         else {
@@ -31548,6 +31558,29 @@ function createFactory(type, outputCtx, reflector, queries) {
     var /** @type {?} */ result = queryDefinitions.length > 0 ? literalArr([createInstance].concat(queryDefinitions)) :
         createInstance;
     return fn([], [new ReturnStatement(result)], INFERRED_TYPE, null, type.reference.name ? type.reference.name + "_Factory" : null);
+}
+/**
+ * @param {?} dependency
+ * @return {?}
+ */
+function extractFlags(dependency) {
+    var /** @type {?} */ flags = 0;
+    if (dependency.isHost) {
+        flags |= 1 /* Host */;
+    }
+    if (dependency.isOptional) {
+        flags |= 8 /* Optional */;
+    }
+    if (dependency.isSelf) {
+        flags |= 2 /* Self */;
+    }
+    if (dependency.isSkipSelf) {
+        flags |= 4 /* SkipSelf */;
+    }
+    if (dependency.isValue) {
+        unsupported('value dependencies');
+    }
+    return flags;
 }
 /**
  *  Remove trailing null nodes as they are implied.

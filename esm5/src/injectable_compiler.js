@@ -41,7 +41,6 @@ var InjectableCompiler = /** @class */ (function () {
         var _this = this;
         return deps.map(function (dep) {
             var /** @type {?} */ token = dep;
-            var /** @type {?} */ defaultValue = undefined;
             var /** @type {?} */ args = [token];
             var /** @type {?} */ flags = 0 /* Default */;
             if (Array.isArray(dep)) {
@@ -49,10 +48,10 @@ var InjectableCompiler = /** @class */ (function () {
                     var /** @type {?} */ v = dep[i];
                     if (v) {
                         if (v.ngMetadataName === 'Optional') {
-                            defaultValue = null;
+                            flags |= 8 /* Optional */;
                         }
                         else if (v.ngMetadataName === 'SkipSelf') {
-                            flags |= 1 /* SkipSelf */;
+                            flags |= 4 /* SkipSelf */;
                         }
                         else if (v.ngMetadataName === 'Self') {
                             flags |= 2 /* Self */;
@@ -76,8 +75,8 @@ var InjectableCompiler = /** @class */ (function () {
             else {
                 tokenExpr = ctx.importExpr(token);
             }
-            if (flags !== 0 /* Default */ || defaultValue !== undefined) {
-                args = [tokenExpr, o.literal(defaultValue), o.literal(flags)];
+            if (flags !== 0 /* Default */) {
+                args = [tokenExpr, o.literal(flags)];
             }
             else {
                 args = [tokenExpr];

@@ -1065,12 +1065,6 @@ export function createFactory(type, outputCtx, reflector, queries) {
     var /** @type {?} */ viewContainerRef = reflector.resolveExternalReference(Identifiers.ViewContainerRef);
     for (var _i = 0, _a = type.diDeps; _i < _a.length; _i++) {
         var dependency = _a[_i];
-        if (dependency.isValue) {
-            unsupported('value dependencies');
-        }
-        if (dependency.isHost) {
-            unsupported('host dependencies');
-        }
         var /** @type {?} */ token = dependency.token;
         if (token) {
             var /** @type {?} */ tokenRef = tokenReference(token);
@@ -1083,9 +1077,18 @@ export function createFactory(type, outputCtx, reflector, queries) {
             else if (tokenRef === viewContainerRef) {
                 args.push(o.importExpr(R3.injectViewContainerRef).callFn([]));
             }
+            else if (dependency.isAttribute) {
+                args.push(o.importExpr(R3.injectAttribute).callFn([o.literal(/** @type {?} */ ((dependency.token)).value)]));
+            }
             else {
-                var /** @type {?} */ value = token.identifier != null ? outputCtx.importExpr(tokenRef) : o.literal(tokenRef);
-                args.push(o.importExpr(R3.inject).callFn([value]));
+                var /** @type {?} */ tokenValue = token.identifier != null ? outputCtx.importExpr(tokenRef) : o.literal(tokenRef);
+                var /** @type {?} */ directiveInjectArgs = [tokenValue];
+                var /** @type {?} */ flags = extractFlags(dependency);
+                if (flags != 0 /* Default */) {
+                    // Append flag information if other than default.
+                    directiveInjectArgs.push(o.literal(flags));
+                }
+                args.push(o.importExpr(R3.directiveInject).callFn(directiveInjectArgs));
             }
         }
         else {
@@ -1111,6 +1114,29 @@ export function createFactory(type, outputCtx, reflector, queries) {
     var /** @type {?} */ result = queryDefinitions.length > 0 ? o.literalArr([createInstance].concat(queryDefinitions)) :
         createInstance;
     return o.fn([], [new o.ReturnStatement(result)], o.INFERRED_TYPE, null, type.reference.name ? type.reference.name + "_Factory" : null);
+}
+/**
+ * @param {?} dependency
+ * @return {?}
+ */
+function extractFlags(dependency) {
+    var /** @type {?} */ flags = 0 /* Default */;
+    if (dependency.isHost) {
+        flags |= 1 /* Host */;
+    }
+    if (dependency.isOptional) {
+        flags |= 8 /* Optional */;
+    }
+    if (dependency.isSelf) {
+        flags |= 2 /* Self */;
+    }
+    if (dependency.isSkipSelf) {
+        flags |= 4 /* SkipSelf */;
+    }
+    if (dependency.isValue) {
+        unsupported('value dependencies');
+    }
+    return flags;
 }
 /**
  *  Remove trailing null nodes as they are implied.

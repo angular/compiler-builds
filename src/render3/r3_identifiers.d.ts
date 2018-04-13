@@ -53,10 +53,11 @@ export declare class Identifiers {
     static projectionDef: o.ExternalReference;
     static refreshComponent: o.ExternalReference;
     static directiveLifeCycle: o.ExternalReference;
+    static injectAttribute: o.ExternalReference;
     static injectElementRef: o.ExternalReference;
     static injectTemplateRef: o.ExternalReference;
     static injectViewContainerRef: o.ExternalReference;
-    static inject: o.ExternalReference;
+    static directiveInject: o.ExternalReference;
     static defineComponent: o.ExternalReference;
     static defineDirective: o.ExternalReference;
     static defineInjector: o.ExternalReference;
