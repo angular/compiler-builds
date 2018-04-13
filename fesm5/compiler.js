@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.4-6c2c958
+ * @license Angular v6.0.0-rc.4-6e73300
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -673,7 +673,7 @@ var Version = /** @class */ (function () {
 /**
  *
  */
-var VERSION = new Version('6.0.0-rc.4-6c2c958');
+var VERSION = new Version('6.0.0-rc.4-6e73300');
 
 /**
  * @fileoverview added by tsickle
@@ -30649,43 +30649,18 @@ function compileDirective(outputCtx, directive, reflector, bindingParser, mode) 
 /**
  * @param {?} outputCtx
  * @param {?} component
- * @param {?} pipes
+ * @param {?} pipeSummaries
  * @param {?} template
  * @param {?} reflector
  * @param {?} bindingParser
  * @param {?} mode
  * @return {?}
  */
-function compileComponent(outputCtx, component, pipes, template, reflector, bindingParser, mode) {
+function compileComponent(outputCtx, component, pipeSummaries, template, reflector, bindingParser, mode) {
     var /** @type {?} */ definitionMapValues = [];
-    // Set of pipe names for pipe exps that have already been stored in pipes[] (to avoid dupes)
-    var /** @type {?} */ pipeSet = new Set();
-    // Pipe expressions for pipes[] field in component def
-    var /** @type {?} */ pipeExps = [];
-    /**
-     * @param {?} summary
-     * @return {?}
-     */
-    function addPipeDependency(summary) {
-        addDependencyToComponent(outputCtx, summary, pipeSet, pipeExps);
-    }
-    var /** @type {?} */ directiveExps = [];
-    var /** @type {?} */ directiveMap = new Set();
-    /**
-     * This function gets called every time a directive dependency needs to be added to the template.
-     * Its job is to remove duplicates from the list. (Only have single dependency no matter how many
-     * times the dependency is used.)
-     * @param {?} ast
-     * @return {?}
-     */
-    function addDirectiveDependency(ast) {
-        var /** @type {?} */ importExpr$$1 = /** @type {?} */ (outputCtx.importExpr(ast.directive.type.reference));
-        var /** @type {?} */ uniqueKey = importExpr$$1.value.moduleName + ':' + importExpr$$1.value.name;
-        if (!directiveMap.has(uniqueKey)) {
-            directiveMap.add(uniqueKey);
-            directiveExps.push(importExpr$$1);
-        }
-    }
+    // Pipes and Directives found in the template
+    var /** @type {?} */ pipes = new Set();
+    var /** @type {?} */ directives = new Set();
     var /** @type {?} */ field = function (key, value) {
         if (value) {
             definitionMapValues.push({ key: key, value: value, quoted: false });
@@ -30712,16 +30687,19 @@ function compileComponent(outputCtx, component, pipes, template, reflector, bind
     // e.g. `template: function MyComponent_Template(_ctx, _cm) {...}`
     var /** @type {?} */ templateTypeName = component.type.reference.name;
     var /** @type {?} */ templateName = templateTypeName ? templateTypeName + "_Template" : null;
-    var /** @type {?} */ pipeMap = new Map(pipes.map(function (pipe) { return [pipe.name, pipe]; }));
-    var /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, BindingScope.ROOT_SCOPE, 0, /** @type {?} */ ((component.template)).ngContentSelectors, templateTypeName, templateName, pipeMap, component.viewQueries, addDirectiveDependency, addPipeDependency)
+    var /** @type {?} */ pipeMap = new Map(pipeSummaries.map(function (pipe) { return [pipe.name, pipe]; }));
+    var /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, BindingScope.ROOT_SCOPE, 0, /** @type {?} */ ((component.template)).ngContentSelectors, templateTypeName, templateName, pipeMap, component.viewQueries, directives, pipes)
         .buildTemplateFunction(template, []);
     field('template', templateFunctionExpression);
-    if (directiveExps.length) {
-        field('directives', literalArr(directiveExps));
+    // e.g. `directives: [MyDirective]`
+    if (directives.size) {
+        var /** @type {?} */ expressions = Array.from(directives).map(function (d) { return outputCtx.importExpr(d); });
+        field('directives', literalArr(expressions));
     }
     // e.g. `pipes: [MyPipe]`
-    if (pipeExps.length) {
-        field('pipes', literalArr(pipeExps));
+    if (pipes.size) {
+        var /** @type {?} */ expressions = Array.from(pipes).map(function (p) { return outputCtx.importExpr(p); });
+        field('pipes', literalArr(expressions));
     }
     // e.g `inputs: {a: 'a'}`
     field('inputs', conditionallyCreateMapObjectLiteral(component.inputs, outputCtx));
@@ -30747,21 +30725,6 @@ function compileComponent(outputCtx, component, pipes, template, reflector, bind
         var /** @type {?} */ classReference = outputCtx.importExpr(component.type.reference);
         // Create the back-patch statement
         outputCtx.statements.push(new CommentStmt(BUILD_OPTIMIZER_COLOCATE), classReference.prop(definitionField).set(definitionFunction).toStmt());
-    }
-}
-/**
- * @param {?} outputCtx
- * @param {?} summary
- * @param {?} set
- * @param {?} exps
- * @return {?}
- */
-function addDependencyToComponent(outputCtx, summary, set, exps) {
-    var /** @type {?} */ importExpr$$1 = /** @type {?} */ (outputCtx.importExpr(summary.type.reference));
-    var /** @type {?} */ uniqueKey = importExpr$$1.value.moduleName + ':' + importExpr$$1.value.name;
-    if (!set.has(uniqueKey)) {
-        set.add(uniqueKey);
-        exps.push(importExpr$$1);
     }
 }
 /**
@@ -30971,7 +30934,7 @@ var BindingScope = /** @class */ (function () {
     return BindingScope;
 }());
 var TemplateDefinitionBuilder = /** @class */ (function () {
-    function TemplateDefinitionBuilder(outputCtx, constantPool, reflector, contextParameter, parentBindingScope, level, ngContentSelectors, contextName, templateName, pipes, viewQueries, addDirectiveDependency, addPipeDependency) {
+    function TemplateDefinitionBuilder(outputCtx, constantPool, reflector, contextParameter, parentBindingScope, level, ngContentSelectors, contextName, templateName, pipeMap, viewQueries, directives, pipes) {
         if (level === void 0) { level = 0; }
         var _this = this;
         this.outputCtx = outputCtx;
@@ -30982,10 +30945,10 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this.ngContentSelectors = ngContentSelectors;
         this.contextName = contextName;
         this.templateName = templateName;
-        this.pipes = pipes;
+        this.pipeMap = pipeMap;
         this.viewQueries = viewQueries;
-        this.addDirectiveDependency = addDirectiveDependency;
-        this.addPipeDependency = addPipeDependency;
+        this.directives = directives;
+        this.pipes = pipes;
         this._dataIndex = 0;
         this._bindingContext = 0;
         this._temporaryAllocated = false;
@@ -31015,9 +30978,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             });
         this._valueConverter = new ValueConverter(outputCtx, function () { return _this.allocateDataSlot(); }, function (name, localName, slot, value) {
             _this.bindingScope.set(localName, value);
-            var /** @type {?} */ pipe = /** @type {?} */ ((pipes.get(name)));
+            var /** @type {?} */ pipe = /** @type {?} */ ((pipeMap.get(name)));
             pipe || error("Could not find pipe " + name);
-            _this.addPipeDependency(pipe);
+            _this.pipes.add(pipe.type.reference);
             _this._creationMode.push(importExpr(Identifiers$1.pipe).callFn([literal(slot), literal(name)]).toStmt());
         });
     }
@@ -31187,9 +31150,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var /** @type {?} */ nullNode = literal(null, INFERRED_TYPE);
         var /** @type {?} */ parameters = [literal(elementIndex)];
         if (component) {
-            this.addDirectiveDependency(component);
+            this.directives.add(component.directive.type.reference);
         }
-        element.directives.forEach(this.addDirectiveDependency);
+        element.directives.forEach(function (directive) { return _this.directives.add(directive.directive.type.reference); });
         parameters.push(literal(element.name));
         // Add the attributes
         var /** @type {?} */ i18nMessages = [];
@@ -31337,7 +31300,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var /** @type {?} */ parameters = [variable(templateName), literal(null, INFERRED_TYPE)];
         var /** @type {?} */ attributeNames = [];
         ast.directives.forEach(function (directiveAst) {
-            _this.addDirectiveDependency(directiveAst);
+            _this.directives.add(directiveAst.directive.type.reference);
             CssSelector.parse(/** @type {?} */ ((directiveAst.directive.selector))).forEach(function (selector) {
                 selector.attrs.forEach(function (value) {
                     // Convert '' (falsy) strings into `null`. This is needed because we want
@@ -31358,7 +31321,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // Generate directives
         this._visitDirectives(ast.directives, variable(CONTEXT_NAME), templateIndex);
         // Create the template function
-        var /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this.bindingScope, this.level + 1, this.ngContentSelectors, contextName, templateName, this.pipes, [], this.addDirectiveDependency, this.addPipeDependency);
+        var /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this.bindingScope, this.level + 1, this.ngContentSelectors, contextName, templateName, this.pipeMap, [], this.directives, this.pipes);
         var /** @type {?} */ templateFunctionExpr = templateVisitor.buildTemplateFunction(ast.children, ast.variables);
         this._postfix.push(templateFunctionExpr.toDeclStmt(templateName, null));
     };

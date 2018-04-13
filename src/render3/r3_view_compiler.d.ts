@@ -13,7 +13,7 @@ import { TemplateAst } from '../template_parser/template_ast';
 import { OutputContext } from '../util';
 import { OutputMode } from './r3_types';
 export declare function compileDirective(outputCtx: OutputContext, directive: CompileDirectiveMetadata, reflector: CompileReflector, bindingParser: BindingParser, mode: OutputMode): void;
-export declare function compileComponent(outputCtx: OutputContext, component: CompileDirectiveMetadata, pipes: CompilePipeSummary[], template: TemplateAst[], reflector: CompileReflector, bindingParser: BindingParser, mode: OutputMode): void;
+export declare function compileComponent(outputCtx: OutputContext, component: CompileDirectiveMetadata, pipeSummaries: CompilePipeSummary[], template: TemplateAst[], reflector: CompileReflector, bindingParser: BindingParser, mode: OutputMode): void;
 /**
  * Flags passed into template functions to determine which blocks (i.e. creation, update)
  * should be executed.
