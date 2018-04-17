@@ -714,7 +714,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             var /** @type {?} */ instruction = BINDING_INSTRUCTION_MAP[input.type];
             if (instruction) {
                 // TODO(chuckj): runtime: security context?
-                this.instruction(this._bindingMode, input.sourceSpan, instruction, o.literal(elementIndex), o.literal(input.name), convertedBinding);
+                this.instruction(this._bindingMode, input.sourceSpan, instruction, o.literal(elementIndex), o.literal(input.name), o.importExpr(R3.bind).callFn([convertedBinding]));
             }
             else {
                 this.unsupported("binding " + PropertyBindingType[input.type]);

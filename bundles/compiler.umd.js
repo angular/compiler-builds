@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5-010a4ef
+ * @license Angular v6.0.0-rc.5-99f8e10
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v6.0.0-rc.5-010a4ef
+ * @license Angular v6.0.0-rc.5-99f8e10
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -723,7 +723,7 @@ var Version = /** @class */ (function () {
 /**
  *
  */
-var VERSION = new Version('6.0.0-rc.5-010a4ef');
+var VERSION = new Version('6.0.0-rc.5-99f8e10');
 
 /**
  * @fileoverview added by tsickle
@@ -31275,7 +31275,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             var /** @type {?} */ instruction = BINDING_INSTRUCTION_MAP[input.type];
             if (instruction) {
                 // TODO(chuckj): runtime: security context?
-                this.instruction(this._bindingMode, input.sourceSpan, instruction, literal(elementIndex), literal(input.name), convertedBinding);
+                this.instruction(this._bindingMode, input.sourceSpan, instruction, literal(elementIndex), literal(input.name), importExpr(Identifiers$1.bind).callFn([convertedBinding]));
             }
             else {
                 this.unsupported("binding " + PropertyBindingType[input.type]);
