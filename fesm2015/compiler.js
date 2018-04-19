@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5-acf6781
+ * @license Angular v6.0.0-rc.5-1d1e75e
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -532,7 +532,6 @@ function utf8Encode(str) {
  * @record
  */
 
-const MAX_LENGTH_STRINGIFY = 100;
 /**
  * @param {?} token
  * @return {?}
@@ -553,24 +552,14 @@ function stringify(token) {
     if (token.name) {
         return `${token.name}`;
     }
-    let /** @type {?} */ res;
-    try {
-        res = JSON.stringify(token);
-    }
-    catch (_a) {
-        res = token.toString();
-    }
+    // WARNING: do not try to `JSON.stringify(token)` here
+    // see https://github.com/angular/angular/issues/23440
+    const /** @type {?} */ res = token.toString();
     if (res == null) {
         return '' + res;
     }
     const /** @type {?} */ newLineIndex = res.indexOf('\n');
-    if (0 < newLineIndex) {
-        res = res.substring(0, newLineIndex);
-    }
-    if (MAX_LENGTH_STRINGIFY < res.length) {
-        res = res.substring(0, MAX_LENGTH_STRINGIFY) + '...';
-    }
-    return res;
+    return newLineIndex === -1 ? res : res.substring(0, newLineIndex);
 }
 /**
  * Lazily retrieves the reference value from a forwardRef.
@@ -625,7 +614,7 @@ class Version {
 /**
  *
  */
-const VERSION = new Version('6.0.0-rc.5-acf6781');
+const VERSION = new Version('6.0.0-rc.5-1d1e75e');
 
 /**
  * @fileoverview added by tsickle
