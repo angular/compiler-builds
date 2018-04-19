@@ -233,7 +233,6 @@ function OutputContext_tsickle_Closure_declarations() {
     /** @type {?} */
     OutputContext.prototype.importExpr;
 }
-const /** @type {?} */ MAX_LENGTH_STRINGIFY = 100;
 /**
  * @param {?} token
  * @return {?}
@@ -254,24 +253,14 @@ export function stringify(token) {
     if (token.name) {
         return `${token.name}`;
     }
-    let /** @type {?} */ res;
-    try {
-        res = JSON.stringify(token);
-    }
-    catch (_a) {
-        res = token.toString();
-    }
+    // WARNING: do not try to `JSON.stringify(token)` here
+    // see https://github.com/angular/angular/issues/23440
+    const /** @type {?} */ res = token.toString();
     if (res == null) {
         return '' + res;
     }
     const /** @type {?} */ newLineIndex = res.indexOf('\n');
-    if (0 < newLineIndex) {
-        res = res.substring(0, newLineIndex);
-    }
-    if (MAX_LENGTH_STRINGIFY < res.length) {
-        res = res.substring(0, MAX_LENGTH_STRINGIFY) + '...';
-    }
-    return res;
+    return newLineIndex === -1 ? res : res.substring(0, newLineIndex);
 }
 /**
  * Lazily retrieves the reference value from a forwardRef.
