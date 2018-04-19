@@ -14,7 +14,6 @@ import { identifierName } from '../compile_metadata';
 import { mapLiteral } from '../output/map_util';
 import * as o from '../output/output_ast';
 import { Identifiers as R3 } from './r3_identifiers';
-var /** @type {?} */ EMPTY_ARRAY = o.literalArr([]);
 /**
  * @param {?} meta
  * @param {?} ctx
@@ -24,15 +23,13 @@ function convertMetaToOutput(meta, ctx) {
     if (Array.isArray(meta)) {
         return o.literalArr(meta.map(function (entry) { return convertMetaToOutput(entry, ctx); }));
     }
-    else if (meta instanceof StaticSymbol) {
+    if (meta instanceof StaticSymbol) {
         return ctx.importExpr(meta);
     }
-    else if (meta == null) {
+    if (meta == null) {
         return o.literal(meta);
     }
-    else {
-        throw new Error("Internal error: Unsupported or unknown metadata: " + meta);
-    }
+    throw new Error("Internal error: Unsupported or unknown metadata: " + meta);
 }
 /**
  * @param {?} ctx

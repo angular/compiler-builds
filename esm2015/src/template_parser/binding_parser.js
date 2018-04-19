@@ -80,9 +80,15 @@ export class BindingParser {
         this._interpolationConfig = _interpolationConfig;
         this._schemaRegistry = _schemaRegistry;
         this._targetErrors = _targetErrors;
-        this.pipesByName = new Map();
+        this.pipesByName = null;
         this._usedPipes = new Map();
-        pipes.forEach(pipe => this.pipesByName.set(pipe.name, pipe));
+        // When the `pipes` parameter is `null`, do not check for used pipes
+        // This is used in IVY when we might not know the available pipes at compile time
+        if (pipes) {
+            const /** @type {?} */ pipesByName = new Map();
+            pipes.forEach(pipe => pipesByName.set(pipe.name, pipe));
+            this.pipesByName = pipesByName;
+        }
     }
     /**
      * @return {?}
@@ -481,11 +487,11 @@ export class BindingParser {
      * @return {?}
      */
     _checkPipes(ast, sourceSpan) {
-        if (ast) {
+        if (ast && this.pipesByName) {
             const /** @type {?} */ collector = new PipeCollector();
             ast.visit(collector);
             collector.pipes.forEach((ast, pipeName) => {
-                const /** @type {?} */ pipeMeta = this.pipesByName.get(pipeName);
+                const /** @type {?} */ pipeMeta = /** @type {?} */ ((this.pipesByName)).get(pipeName);
                 if (!pipeMeta) {
                     this._reportError(`The pipe '${pipeName}' could not be found`, new ParseSourceSpan(sourceSpan.start.moveBy(ast.span.start), sourceSpan.start.moveBy(ast.span.end)));
                 }

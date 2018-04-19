@@ -14,12 +14,16 @@ import { ConstantPool } from '../constant_pool';
 import { ViewEncapsulation } from '../core';
 import { MessageBundle } from '../i18n/message_bundle';
 import { Identifiers, createTokenForExternalReference } from '../identifiers';
+import * as html from '../ml_parser/ast';
 import { HtmlParser } from '../ml_parser/html_parser';
+import { removeWhitespaces } from '../ml_parser/html_whitespaces';
 import { DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig } from '../ml_parser/interpolation_config';
 import * as o from '../output/output_ast';
 import { compileNgModule as compileIvyModule } from '../render3/r3_module_compiler';
 import { compilePipe as compileIvyPipe } from '../render3/r3_pipe_compiler';
-import { compileComponent as compileIvyComponent, compileDirective as compileIvyDirective } from '../render3/r3_view_compiler';
+import { HtmlToTemplateTransform } from '../render3/r3_template_transform';
+import { compileComponent as compileIvyComponent, compileDirective as compileIvyDirective } from '../render3/r3_view_compiler_local';
+import { DomElementSchemaRegistry } from '../schema/dom_element_schema_registry';
 import { BindingParser } from '../template_parser/binding_parser';
 import { error, syntaxError, visitValue } from '../util';
 import { GeneratedFile } from './generated_file';
@@ -28,14 +32,7 @@ import { StaticSymbol } from './static_symbol';
 import { createForJitStub, serializeSummaries } from './summary_serializer';
 import { ngfactoryFilePath, normalizeGenFileSuffix, splitTypescriptSuffix, summaryFileName, summaryForJitFileName } from './util';
 /** @enum {number} */
-var StubEmitFlags = {
-    Basic: 1,
-    TypeCheck: 2,
-    All: 3,
-};
-StubEmitFlags[StubEmitFlags.Basic] = "Basic";
-StubEmitFlags[StubEmitFlags.TypeCheck] = "TypeCheck";
-StubEmitFlags[StubEmitFlags.All] = "All";
+var StubEmitFlags = { Basic: 1, TypeCheck: 2, All: 3, };
 var AotCompiler = /** @class */ (function () {
     function AotCompiler(_config, _options, _host, reflector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _typeCheckCompiler, _ngModuleCompiler, _injectableCompiler, _outputEmitter, _summaryResolver, _symbolResolver) {
         this._config = _config;
@@ -192,7 +189,7 @@ var AotCompiler = /** @class */ (function () {
                 throw new Error("Assertion error: require the original file for .ngfactory.ts stubs. File: " + genFileName);
             }
             var /** @type {?} */ originalFile = this._analyzeFile(originalFileName);
-            this._createNgFactoryStub(outputCtx, originalFile, StubEmitFlags.Basic);
+            this._createNgFactoryStub(outputCtx, originalFile, 1 /* Basic */);
         }
         else if (genFileName.endsWith('.ngsummary.ts')) {
             if (this._options.enableSummariesForJit) {
@@ -231,7 +228,7 @@ var AotCompiler = /** @class */ (function () {
         var /** @type {?} */ originalFile = this._analyzeFile(originalFileName);
         var /** @type {?} */ outputCtx = this._createOutputContext(genFileName);
         if (genFileName.endsWith('.ngfactory.ts')) {
-            this._createNgFactoryStub(outputCtx, originalFile, StubEmitFlags.TypeCheck);
+            this._createNgFactoryStub(outputCtx, originalFile, 2 /* TypeCheck */);
         }
         return outputCtx.statements.length > 0 ?
             this._codegenSourceModule(originalFile.fileName, outputCtx) :
@@ -325,7 +322,7 @@ var AotCompiler = /** @class */ (function () {
                     .set(o.NULL_EXPR.cast(o.DYNAMIC_TYPE))
                     .toDeclStmt(o.expressionType(outputCtx.importExpr(reference, /* typeParams */ null, /* useSummaries */ /* useSummaries */ false))));
             });
-            if (emitFlags & StubEmitFlags.TypeCheck) {
+            if (emitFlags & 2 /* TypeCheck */) {
                 // add the type-check block for all components of the NgModule
                 ngModuleMeta.declaredDirectives.forEach(function (dirId) {
                     var /** @type {?} */ compMeta = _this._metadataResolver.getDirectiveMetadata(dirId.reference);
@@ -491,9 +488,9 @@ var AotCompiler = /** @class */ (function () {
      */
     function (fileName, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables, context) {
         var _this = this;
-        var /** @type {?} */ classes = [];
         var /** @type {?} */ errors = [];
-        var /** @type {?} */ hostBindingParser = new BindingParser(this._templateParser.expressionParser, DEFAULT_INTERPOLATION_CONFIG, /** @type {?} */ ((null)), [], errors);
+        var /** @type {?} */ schemaRegistry = new DomElementSchemaRegistry();
+        var /** @type {?} */ hostBindingParser = new BindingParser(this._templateParser.expressionParser, DEFAULT_INTERPOLATION_CONFIG, schemaRegistry, [], errors);
         // Process all components and directives
         directives.forEach(function (directiveType) {
             var /** @type {?} */ directiveMetadata = _this._metadataResolver.getDirectiveMetadata(directiveType);
@@ -501,17 +498,37 @@ var AotCompiler = /** @class */ (function () {
                 var /** @type {?} */ module = /** @type {?} */ ((ngModuleByPipeOrDirective.get(directiveType)));
                 module ||
                     error("Cannot determine the module for component '" + identifierName(directiveMetadata.type) + "'");
-                var _a = _this._parseTemplate(directiveMetadata, module, module.transitiveModule.directives), parsedTemplate = _a.template, parsedPipes = _a.pipes;
-                compileIvyComponent(context, directiveMetadata, parsedPipes, parsedTemplate, _this.reflector, hostBindingParser, 0 /* PartialClass */);
+                var /** @type {?} */ htmlAst = /** @type {?} */ ((/** @type {?} */ ((directiveMetadata.template)).htmlAst));
+                var /** @type {?} */ preserveWhitespaces = /** @type {?} */ ((/** @type {?} */ ((directiveMetadata)).template)).preserveWhitespaces;
+                if (!preserveWhitespaces) {
+                    htmlAst = removeWhitespaces(htmlAst);
+                }
+                var /** @type {?} */ transform = new HtmlToTemplateTransform(hostBindingParser);
+                var /** @type {?} */ nodes = html.visitAll(transform, htmlAst.rootNodes, null);
+                var /** @type {?} */ hasNgContent = transform.hasNgContent;
+                var /** @type {?} */ ngContentSelectors = transform.ngContentSelectors;
+                // Map of StaticType by directive selectors
+                var /** @type {?} */ directiveTypeBySel_1 = new Map();
+                var /** @type {?} */ directives_1 = module.transitiveModule.directives.map(function (dir) { return _this._metadataResolver.getDirectiveSummary(dir.reference); });
+                directives_1.forEach(function (directive) {
+                    if (directive.selector) {
+                        directiveTypeBySel_1.set(directive.selector, directive.type.reference);
+                    }
+                });
+                // Map of StaticType by pipe names
+                var /** @type {?} */ pipeTypeByName_1 = new Map();
+                var /** @type {?} */ pipes_1 = module.transitiveModule.pipes.map(function (pipe) { return _this._metadataResolver.getPipeSummary(pipe.reference); });
+                pipes_1.forEach(function (pipe) { pipeTypeByName_1.set(pipe.name, pipe.type.reference); });
+                compileIvyComponent(context, directiveMetadata, nodes, hasNgContent, ngContentSelectors, _this.reflector, hostBindingParser, directiveTypeBySel_1, pipeTypeByName_1);
             }
             else {
-                compileIvyDirective(context, directiveMetadata, _this.reflector, hostBindingParser, 0 /* PartialClass */);
+                compileIvyDirective(context, directiveMetadata, _this.reflector, hostBindingParser);
             }
         });
         pipes.forEach(function (pipeType) {
             var /** @type {?} */ pipeMetadata = _this._metadataResolver.getPipeMetadata(pipeType);
             if (pipeMetadata) {
-                compileIvyPipe(context, pipeMetadata, _this.reflector, 0 /* PartialClass */);
+                compileIvyPipe(context, pipeMetadata, _this.reflector);
             }
         });
         injectables.forEach(function (injectable) { return _this._injectableCompiler.compile(injectable, context); });
@@ -1203,17 +1220,14 @@ export function analyzeFileForInjectables(host, staticSymbolResolver, metadataRe
             if (!symbolMeta || symbolMeta.__symbolic === 'error') {
                 return;
             }
-            var /** @type {?} */ isNgSymbol = false;
             if (symbolMeta.__symbolic === 'class') {
                 if (metadataResolver.isInjectable(symbol)) {
-                    isNgSymbol = true;
                     var /** @type {?} */ injectable = metadataResolver.getInjectableMetadata(symbol, null, false);
                     if (injectable) {
                         injectables.push(injectable);
                     }
                 }
                 else if (metadataResolver.isNgModule(symbol)) {
-                    isNgSymbol = true;
                     var /** @type {?} */ module = metadataResolver.getShallowModuleMetadata(symbol);
                     if (module) {
                         shallowModules.push(module);

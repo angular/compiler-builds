@@ -14,12 +14,16 @@ import { ConstantPool } from '../constant_pool';
 import { ViewEncapsulation } from '../core';
 import { MessageBundle } from '../i18n/message_bundle';
 import { Identifiers, createTokenForExternalReference } from '../identifiers';
+import * as html from '../ml_parser/ast';
 import { HtmlParser } from '../ml_parser/html_parser';
+import { removeWhitespaces } from '../ml_parser/html_whitespaces';
 import { DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig } from '../ml_parser/interpolation_config';
 import * as o from '../output/output_ast';
 import { compileNgModule as compileIvyModule } from '../render3/r3_module_compiler';
 import { compilePipe as compileIvyPipe } from '../render3/r3_pipe_compiler';
-import { compileComponent as compileIvyComponent, compileDirective as compileIvyDirective } from '../render3/r3_view_compiler';
+import { HtmlToTemplateTransform } from '../render3/r3_template_transform';
+import { compileComponent as compileIvyComponent, compileDirective as compileIvyDirective } from '../render3/r3_view_compiler_local';
+import { DomElementSchemaRegistry } from '../schema/dom_element_schema_registry';
 import { BindingParser } from '../template_parser/binding_parser';
 import { error, syntaxError, visitValue } from '../util';
 import { GeneratedFile } from './generated_file';
@@ -28,14 +32,7 @@ import { StaticSymbol } from './static_symbol';
 import { createForJitStub, serializeSummaries } from './summary_serializer';
 import { ngfactoryFilePath, normalizeGenFileSuffix, splitTypescriptSuffix, summaryFileName, summaryForJitFileName } from './util';
 /** @enum {number} */
-const StubEmitFlags = {
-    Basic: 1,
-    TypeCheck: 2,
-    All: 3,
-};
-StubEmitFlags[StubEmitFlags.Basic] = "Basic";
-StubEmitFlags[StubEmitFlags.TypeCheck] = "TypeCheck";
-StubEmitFlags[StubEmitFlags.All] = "All";
+const StubEmitFlags = { Basic: 1, TypeCheck: 2, All: 3, };
 export class AotCompiler {
     /**
      * @param {?} _config
@@ -173,7 +170,7 @@ export class AotCompiler {
                 throw new Error(`Assertion error: require the original file for .ngfactory.ts stubs. File: ${genFileName}`);
             }
             const /** @type {?} */ originalFile = this._analyzeFile(originalFileName);
-            this._createNgFactoryStub(outputCtx, originalFile, StubEmitFlags.Basic);
+            this._createNgFactoryStub(outputCtx, originalFile, 1 /* Basic */);
         }
         else if (genFileName.endsWith('.ngsummary.ts')) {
             if (this._options.enableSummariesForJit) {
@@ -207,7 +204,7 @@ export class AotCompiler {
         const /** @type {?} */ originalFile = this._analyzeFile(originalFileName);
         const /** @type {?} */ outputCtx = this._createOutputContext(genFileName);
         if (genFileName.endsWith('.ngfactory.ts')) {
-            this._createNgFactoryStub(outputCtx, originalFile, StubEmitFlags.TypeCheck);
+            this._createNgFactoryStub(outputCtx, originalFile, 2 /* TypeCheck */);
         }
         return outputCtx.statements.length > 0 ?
             this._codegenSourceModule(originalFile.fileName, outputCtx) :
@@ -277,7 +274,7 @@ export class AotCompiler {
                     .set(o.NULL_EXPR.cast(o.DYNAMIC_TYPE))
                     .toDeclStmt(o.expressionType(outputCtx.importExpr(reference, /* typeParams */ null, /* useSummaries */ /* useSummaries */ false))));
             });
-            if (emitFlags & StubEmitFlags.TypeCheck) {
+            if (emitFlags & 2 /* TypeCheck */) {
                 // add the type-check block for all components of the NgModule
                 ngModuleMeta.declaredDirectives.forEach((dirId) => {
                     const /** @type {?} */ compMeta = this._metadataResolver.getDirectiveMetadata(dirId.reference);
@@ -391,9 +388,9 @@ export class AotCompiler {
      * @return {?}
      */
     _compilePartialModule(fileName, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables, context) {
-        const /** @type {?} */ classes = [];
         const /** @type {?} */ errors = [];
-        const /** @type {?} */ hostBindingParser = new BindingParser(this._templateParser.expressionParser, DEFAULT_INTERPOLATION_CONFIG, /** @type {?} */ ((null)), [], errors);
+        const /** @type {?} */ schemaRegistry = new DomElementSchemaRegistry();
+        const /** @type {?} */ hostBindingParser = new BindingParser(this._templateParser.expressionParser, DEFAULT_INTERPOLATION_CONFIG, schemaRegistry, [], errors);
         // Process all components and directives
         directives.forEach(directiveType => {
             const /** @type {?} */ directiveMetadata = this._metadataResolver.getDirectiveMetadata(directiveType);
@@ -401,17 +398,37 @@ export class AotCompiler {
                 const /** @type {?} */ module = /** @type {?} */ ((ngModuleByPipeOrDirective.get(directiveType)));
                 module ||
                     error(`Cannot determine the module for component '${identifierName(directiveMetadata.type)}'`);
-                const { template: parsedTemplate, pipes: parsedPipes } = this._parseTemplate(directiveMetadata, module, module.transitiveModule.directives);
-                compileIvyComponent(context, directiveMetadata, parsedPipes, parsedTemplate, this.reflector, hostBindingParser, 0 /* PartialClass */);
+                let /** @type {?} */ htmlAst = /** @type {?} */ ((/** @type {?} */ ((directiveMetadata.template)).htmlAst));
+                const /** @type {?} */ preserveWhitespaces = /** @type {?} */ ((/** @type {?} */ ((directiveMetadata)).template)).preserveWhitespaces;
+                if (!preserveWhitespaces) {
+                    htmlAst = removeWhitespaces(htmlAst);
+                }
+                const /** @type {?} */ transform = new HtmlToTemplateTransform(hostBindingParser);
+                const /** @type {?} */ nodes = html.visitAll(transform, htmlAst.rootNodes, null);
+                const /** @type {?} */ hasNgContent = transform.hasNgContent;
+                const /** @type {?} */ ngContentSelectors = transform.ngContentSelectors;
+                // Map of StaticType by directive selectors
+                const /** @type {?} */ directiveTypeBySel = new Map();
+                const /** @type {?} */ directives = module.transitiveModule.directives.map(dir => this._metadataResolver.getDirectiveSummary(dir.reference));
+                directives.forEach(directive => {
+                    if (directive.selector) {
+                        directiveTypeBySel.set(directive.selector, directive.type.reference);
+                    }
+                });
+                // Map of StaticType by pipe names
+                const /** @type {?} */ pipeTypeByName = new Map();
+                const /** @type {?} */ pipes = module.transitiveModule.pipes.map(pipe => this._metadataResolver.getPipeSummary(pipe.reference));
+                pipes.forEach(pipe => { pipeTypeByName.set(pipe.name, pipe.type.reference); });
+                compileIvyComponent(context, directiveMetadata, nodes, hasNgContent, ngContentSelectors, this.reflector, hostBindingParser, directiveTypeBySel, pipeTypeByName);
             }
             else {
-                compileIvyDirective(context, directiveMetadata, this.reflector, hostBindingParser, 0 /* PartialClass */);
+                compileIvyDirective(context, directiveMetadata, this.reflector, hostBindingParser);
             }
         });
         pipes.forEach(pipeType => {
             const /** @type {?} */ pipeMetadata = this._metadataResolver.getPipeMetadata(pipeType);
             if (pipeMetadata) {
-                compileIvyPipe(context, pipeMetadata, this.reflector, 0 /* PartialClass */);
+                compileIvyPipe(context, pipeMetadata, this.reflector);
             }
         });
         injectables.forEach(injectable => this._injectableCompiler.compile(injectable, context));
@@ -995,17 +1012,14 @@ export function analyzeFileForInjectables(host, staticSymbolResolver, metadataRe
             if (!symbolMeta || symbolMeta.__symbolic === 'error') {
                 return;
             }
-            let /** @type {?} */ isNgSymbol = false;
             if (symbolMeta.__symbolic === 'class') {
                 if (metadataResolver.isInjectable(symbol)) {
-                    isNgSymbol = true;
                     const /** @type {?} */ injectable = metadataResolver.getInjectableMetadata(symbol, null, false);
                     if (injectable) {
                         injectables.push(injectable);
                     }
                 }
                 else if (metadataResolver.isNgModule(symbol)) {
-                    isNgSymbol = true;
                     const /** @type {?} */ module = metadataResolver.getShallowModuleMetadata(symbol);
                     if (module) {
                         shallowModules.push(module);

@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5-1d1e75e
+ * @license Angular v6.0.0-rc.5-9757347
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -669,7 +669,7 @@ var Version = /** @class */ (function () {
 /**
  *
  */
-var VERSION = new Version('6.0.0-rc.5-1d1e75e');
+var VERSION = new Version('6.0.0-rc.5-9757347');
 
 /**
  * @fileoverview added by tsickle
@@ -3057,7 +3057,7 @@ function preparseElement(ast) {
     var /** @type {?} */ hrefAttr = /** @type {?} */ ((null));
     var /** @type {?} */ relAttr = /** @type {?} */ ((null));
     var /** @type {?} */ nonBindable = false;
-    var /** @type {?} */ projectAs = /** @type {?} */ ((null));
+    var /** @type {?} */ projectAs = '';
     ast.attrs.forEach(function (attr) {
         var /** @type {?} */ lcAttrName = attr.name.toLowerCase();
         if (lcAttrName == NG_CONTENT_SELECT_ATTR) {
@@ -24927,14 +24927,19 @@ var BoundProperty = /** @class */ (function () {
  */
 var BindingParser = /** @class */ (function () {
     function BindingParser(_exprParser, _interpolationConfig, _schemaRegistry, pipes, _targetErrors) {
-        var _this = this;
         this._exprParser = _exprParser;
         this._interpolationConfig = _interpolationConfig;
         this._schemaRegistry = _schemaRegistry;
         this._targetErrors = _targetErrors;
-        this.pipesByName = new Map();
+        this.pipesByName = null;
         this._usedPipes = new Map();
-        pipes.forEach(function (pipe) { return _this.pipesByName.set(pipe.name, pipe); });
+        // When the `pipes` parameter is `null`, do not check for used pipes
+        // This is used in IVY when we might not know the available pipes at compile time
+        if (pipes) {
+            var /** @type {?} */ pipesByName_1 = new Map();
+            pipes.forEach(function (pipe) { return pipesByName_1.set(pipe.name, pipe); });
+            this.pipesByName = pipesByName_1;
+        }
     }
     /**
      * @return {?}
@@ -25039,6 +25044,7 @@ var BindingParser = /** @class */ (function () {
             return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo);
         }
     };
+    // Parse an inline template binding. ie `<tag *prefixToken="<value>">`
     /**
      * @param {?} prefixToken
      * @param {?} value
@@ -25475,11 +25481,11 @@ var BindingParser = /** @class */ (function () {
      */
     function (ast, sourceSpan) {
         var _this = this;
-        if (ast) {
+        if (ast && this.pipesByName) {
             var /** @type {?} */ collector = new PipeCollector();
             ast.visit(collector);
             collector.pipes.forEach(function (ast, pipeName) {
-                var /** @type {?} */ pipeMeta = _this.pipesByName.get(pipeName);
+                var /** @type {?} */ pipeMeta = /** @type {?} */ ((_this.pipesByName)).get(pipeName);
                 if (!pipeMeta) {
                     _this._reportError("The pipe '" + pipeName + "' could not be found", new ParseSourceSpan(sourceSpan.start.moveBy(ast.span.start), sourceSpan.start.moveBy(ast.span.end)));
                 }
@@ -25902,7 +25908,7 @@ var TemplateParseVisitor = /** @class */ (function () {
     function (element, parent) {
         var _this = this;
         var /** @type {?} */ queryStartIndex = this.contentQueryStartId;
-        var /** @type {?} */ nodeName = element.name;
+        var /** @type {?} */ elName = element.name;
         var /** @type {?} */ preparsedElement = preparseElement(element);
         if (preparsedElement.type === PreparsedElementType.SCRIPT ||
             preparsedElement.type === PreparsedElementType.STYLE) {
@@ -25951,7 +25957,7 @@ var TemplateParseVisitor = /** @class */ (function () {
                 matchableAttrs.push([attr.name, attr.value]);
             }
         });
-        var /** @type {?} */ elementCssSelector = createElementCssSelector(nodeName, matchableAttrs);
+        var /** @type {?} */ elementCssSelector = createElementCssSelector(elName, matchableAttrs);
         var _a = this._parseDirectives(this.selectorMatcher, elementCssSelector), directiveMetas = _a.directives, matchElement = _a.matchElement;
         var /** @type {?} */ references = [];
         var /** @type {?} */ boundDirectivePropNames = new Set();
@@ -25962,35 +25968,39 @@ var TemplateParseVisitor = /** @class */ (function () {
         var /** @type {?} */ children = visitAll(preparsedElement.nonBindable ? NON_BINDABLE_VISITOR : this, element.children, ElementContext.create(isTemplateElement, directiveAsts, isTemplateElement ? /** @type {?} */ ((parent.providerContext)) : providerContext));
         providerContext.afterElement();
         // Override the actual selector when the `ngProjectAs` attribute is provided
-        var /** @type {?} */ projectionSelector = preparsedElement.projectAs != null ?
+        var /** @type {?} */ projectionSelector = preparsedElement.projectAs != '' ?
             CssSelector.parse(preparsedElement.projectAs)[0] :
             elementCssSelector;
         var /** @type {?} */ ngContentIndex = /** @type {?} */ ((parent.findNgContentIndex(projectionSelector)));
         var /** @type {?} */ parsedElement;
         if (preparsedElement.type === PreparsedElementType.NG_CONTENT) {
+            // `<ng-content>` element
             if (element.children && !element.children.every(_isEmptyTextNode)) {
                 this._reportError("<ng-content> element cannot have content.", /** @type {?} */ ((element.sourceSpan)));
             }
             parsedElement = new NgContentAst(this.ngContentCount++, hasInlineTemplates ? /** @type {?} */ ((null)) : ngContentIndex, /** @type {?} */ ((element.sourceSpan)));
         }
         else if (isTemplateElement) {
+            // `<ng-template>` element
             this._assertAllEventsPublishedByDirectives(directiveAsts, events);
             this._assertNoComponentsNorElementBindingsOnTemplate(directiveAsts, elementProps, /** @type {?} */ ((element.sourceSpan)));
             parsedElement = new EmbeddedTemplateAst(attrs, events, references, elementVars, providerContext.transformedDirectiveAsts, providerContext.transformProviders, providerContext.transformedHasViewContainer, providerContext.queryMatches, children, hasInlineTemplates ? /** @type {?} */ ((null)) : ngContentIndex, /** @type {?} */ ((element.sourceSpan)));
         }
         else {
+            // element other than `<ng-content>` and `<ng-template>`
             this._assertElementExists(matchElement, element);
             this._assertOnlyOneComponent(directiveAsts, /** @type {?} */ ((element.sourceSpan)));
             var /** @type {?} */ ngContentIndex_1 = hasInlineTemplates ? null : parent.findNgContentIndex(projectionSelector);
-            parsedElement = new ElementAst(nodeName, attrs, elementProps, events, references, providerContext.transformedDirectiveAsts, providerContext.transformProviders, providerContext.transformedHasViewContainer, providerContext.queryMatches, children, hasInlineTemplates ? null : ngContentIndex_1, element.sourceSpan, element.endSourceSpan || null);
+            parsedElement = new ElementAst(elName, attrs, elementProps, events, references, providerContext.transformedDirectiveAsts, providerContext.transformProviders, providerContext.transformedHasViewContainer, providerContext.queryMatches, children, hasInlineTemplates ? null : ngContentIndex_1, element.sourceSpan, element.endSourceSpan || null);
         }
         if (hasInlineTemplates) {
+            // The element as a *-attribute
             var /** @type {?} */ templateQueryStartIndex = this.contentQueryStartId;
             var /** @type {?} */ templateSelector = createElementCssSelector('ng-template', templateMatchableAttrs);
-            var templateDirectiveMetas = this._parseDirectives(this.selectorMatcher, templateSelector).directives;
+            var directives = this._parseDirectives(this.selectorMatcher, templateSelector).directives;
             var /** @type {?} */ templateBoundDirectivePropNames = new Set();
-            var /** @type {?} */ templateDirectiveAsts = this._createDirectiveAsts(true, element.name, templateDirectiveMetas, templateElementOrDirectiveProps, [], /** @type {?} */ ((element.sourceSpan)), [], templateBoundDirectivePropNames);
-            var /** @type {?} */ templateElementProps = this._createElementPropertyAsts(element.name, templateElementOrDirectiveProps, templateBoundDirectivePropNames);
+            var /** @type {?} */ templateDirectiveAsts = this._createDirectiveAsts(true, elName, directives, templateElementOrDirectiveProps, [], /** @type {?} */ ((element.sourceSpan)), [], templateBoundDirectivePropNames);
+            var /** @type {?} */ templateElementProps = this._createElementPropertyAsts(elName, templateElementOrDirectiveProps, templateBoundDirectivePropNames);
             this._assertNoComponentsNorElementBindingsOnTemplate(templateDirectiveAsts, templateElementProps, /** @type {?} */ ((element.sourceSpan)));
             var /** @type {?} */ templateProviderContext = new ProviderElementContext(this.providerViewContext, /** @type {?} */ ((parent.providerContext)), parent.isTemplateElement, templateDirectiveAsts, [], [], true, templateQueryStartIndex, /** @type {?} */ ((element.sourceSpan)));
             templateProviderContext.afterElement();
@@ -30428,10 +30438,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.elementClassNamed = { name: 'ɵkn', moduleName: CORE$1 };
     Identifiers.elementStyleNamed = { name: 'ɵsn', moduleName: CORE$1 };
     Identifiers.containerCreate = { name: 'ɵC', moduleName: CORE$1 };
-    Identifiers.containerEnd = { name: 'ɵc', moduleName: CORE$1 };
-    Identifiers.directiveCreate = { name: 'ɵD', moduleName: CORE$1 };
     Identifiers.text = { name: 'ɵT', moduleName: CORE$1 };
-    Identifiers.directiveInput = { name: 'ɵi', moduleName: CORE$1 };
     Identifiers.textCreateBound = { name: 'ɵt', moduleName: CORE$1 };
     Identifiers.bind = { name: 'ɵb', moduleName: CORE$1 };
     Identifiers.interpolation1 = { name: 'ɵi1', moduleName: CORE$1 };
@@ -30462,8 +30469,6 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.pipe = { name: 'ɵPp', moduleName: CORE$1 };
     Identifiers.projection = { name: 'ɵP', moduleName: CORE$1 };
     Identifiers.projectionDef = { name: 'ɵpD', moduleName: CORE$1 };
-    Identifiers.refreshComponent = { name: 'ɵr', moduleName: CORE$1 };
-    Identifiers.directiveLifeCycle = { name: 'ɵl', moduleName: CORE$1 };
     Identifiers.injectAttribute = { name: 'ɵinjectAttribute', moduleName: CORE$1 };
     Identifiers.injectElementRef = { name: 'ɵinjectElementRef', moduleName: CORE$1 };
     Identifiers.injectTemplateRef = { name: 'ɵinjectTemplateRef', moduleName: CORE$1 };
@@ -30497,7 +30502,6 @@ var Identifiers$1 = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var EMPTY_ARRAY = literalArr([]);
 /**
  * @param {?} meta
  * @param {?} ctx
@@ -30507,15 +30511,13 @@ function convertMetaToOutput(meta, ctx) {
     if (Array.isArray(meta)) {
         return literalArr(meta.map(function (entry) { return convertMetaToOutput(entry, ctx); }));
     }
-    else if (meta instanceof StaticSymbol) {
+    if (meta instanceof StaticSymbol) {
         return ctx.importExpr(meta);
     }
-    else if (meta == null) {
+    if (meta == null) {
         return literal(meta);
     }
-    else {
-        throw new Error("Internal error: Unsupported or unknown metadata: " + meta);
-    }
+    throw new Error("Internal error: Unsupported or unknown metadata: " + meta);
 }
 /**
  * @param {?} ctx
@@ -30547,13 +30549,278 @@ function compileNgModule(ctx, ngModule, injectableCompiler) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/** @enum {number} */
 /**
- * Comment to insert above back-patch
+ * @record
  */
-var BUILD_OPTIMIZER_COLOCATE = '@__BUILD_OPTIMIZER_COLOCATE__';
+
+var Text$3 = /** @class */ (function () {
+    function Text(value, sourceSpan) {
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+    }
+    /**
+     * @template Result
+     * @param {?} visitor
+     * @return {?}
+     */
+    Text.prototype.visit = /**
+     * @template Result
+     * @param {?} visitor
+     * @return {?}
+     */
+    function (visitor) { return visitor.visitText(this); };
+    return Text;
+}());
+var BoundText = /** @class */ (function () {
+    function BoundText(value, sourceSpan) {
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+    }
+    /**
+     * @template Result
+     * @param {?} visitor
+     * @return {?}
+     */
+    BoundText.prototype.visit = /**
+     * @template Result
+     * @param {?} visitor
+     * @return {?}
+     */
+    function (visitor) { return visitor.visitBoundText(this); };
+    return BoundText;
+}());
+var TextAttribute = /** @class */ (function () {
+    function TextAttribute(name, value, sourceSpan, valueSpan) {
+        this.name = name;
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+        this.valueSpan = valueSpan;
+    }
+    /**
+     * @template Result
+     * @param {?} visitor
+     * @return {?}
+     */
+    TextAttribute.prototype.visit = /**
+     * @template Result
+     * @param {?} visitor
+     * @return {?}
+     */
+    function (visitor) { return visitor.visitAttribute(this); };
+    return TextAttribute;
+}());
+/** @enum {number} */
+var PropertyBindingType$1 = {
+    /**
+       * A normal binding to a property (e.g. `[property]="expression"`).
+       */
+    Property: 0,
+    /**
+       * A binding to an element attribute (e.g. `[attr.name]="expression"`).
+       */
+    Attribute: 1,
+    /**
+       * A binding to a CSS class (e.g. `[class.name]="condition"`).
+       */
+    Class: 2,
+    /**
+       * A binding to a style rule (e.g. `[style.rule]="expression"`).
+       */
+    Style: 3,
+    /**
+       * A binding to an animation reference (e.g. `[animate.key]="expression"`).
+       */
+    Animation: 4,
+};
+PropertyBindingType$1[PropertyBindingType$1.Property] = "Property";
+PropertyBindingType$1[PropertyBindingType$1.Attribute] = "Attribute";
+PropertyBindingType$1[PropertyBindingType$1.Class] = "Class";
+PropertyBindingType$1[PropertyBindingType$1.Style] = "Style";
+PropertyBindingType$1[PropertyBindingType$1.Animation] = "Animation";
+var BoundAttribute = /** @class */ (function () {
+    function BoundAttribute(name, type, securityContext, value, unit, sourceSpan) {
+        this.name = name;
+        this.type = type;
+        this.securityContext = securityContext;
+        this.value = value;
+        this.unit = unit;
+        this.sourceSpan = sourceSpan;
+    }
+    /**
+     * @template Result
+     * @param {?} visitor
+     * @return {?}
+     */
+    BoundAttribute.prototype.visit = /**
+     * @template Result
+     * @param {?} visitor
+     * @return {?}
+     */
+    function (visitor) { return visitor.visitBoundAttribute(this); };
+    return BoundAttribute;
+}());
+var BoundEvent = /** @class */ (function () {
+    function BoundEvent(name, handler, target, phase, sourceSpan) {
+        this.name = name;
+        this.handler = handler;
+        this.target = target;
+        this.phase = phase;
+        this.sourceSpan = sourceSpan;
+    }
+    /**
+     * @template Result
+     * @param {?} visitor
+     * @return {?}
+     */
+    BoundEvent.prototype.visit = /**
+     * @template Result
+     * @param {?} visitor
+     * @return {?}
+     */
+    function (visitor) { return visitor.visitBoundEvent(this); };
+    return BoundEvent;
+}());
+var Element$1 = /** @class */ (function () {
+    function Element(name, attributes, inputs, outputs, children, references, sourceSpan, startSourceSpan, endSourceSpan) {
+        this.name = name;
+        this.attributes = attributes;
+        this.inputs = inputs;
+        this.outputs = outputs;
+        this.children = children;
+        this.references = references;
+        this.sourceSpan = sourceSpan;
+        this.startSourceSpan = startSourceSpan;
+        this.endSourceSpan = endSourceSpan;
+    }
+    /**
+     * @template Result
+     * @param {?} visitor
+     * @return {?}
+     */
+    Element.prototype.visit = /**
+     * @template Result
+     * @param {?} visitor
+     * @return {?}
+     */
+    function (visitor) { return visitor.visitElement(this); };
+    return Element;
+}());
+var Template = /** @class */ (function () {
+    function Template(attributes, inputs, children, references, variables, sourceSpan, startSourceSpan, endSourceSpan) {
+        this.attributes = attributes;
+        this.inputs = inputs;
+        this.children = children;
+        this.references = references;
+        this.variables = variables;
+        this.sourceSpan = sourceSpan;
+        this.startSourceSpan = startSourceSpan;
+        this.endSourceSpan = endSourceSpan;
+    }
+    /**
+     * @template Result
+     * @param {?} visitor
+     * @return {?}
+     */
+    Template.prototype.visit = /**
+     * @template Result
+     * @param {?} visitor
+     * @return {?}
+     */
+    function (visitor) { return visitor.visitTemplate(this); };
+    return Template;
+}());
+var Content = /** @class */ (function () {
+    function Content(selectorIndex, attributes, sourceSpan) {
+        this.selectorIndex = selectorIndex;
+        this.attributes = attributes;
+        this.sourceSpan = sourceSpan;
+    }
+    /**
+     * @template Result
+     * @param {?} visitor
+     * @return {?}
+     */
+    Content.prototype.visit = /**
+     * @template Result
+     * @param {?} visitor
+     * @return {?}
+     */
+    function (visitor) { return visitor.visitContent(this); };
+    return Content;
+}());
+var Variable = /** @class */ (function () {
+    function Variable(name, value, sourceSpan) {
+        this.name = name;
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+    }
+    /**
+     * @template Result
+     * @param {?} visitor
+     * @return {?}
+     */
+    Variable.prototype.visit = /**
+     * @template Result
+     * @param {?} visitor
+     * @return {?}
+     */
+    function (visitor) { return visitor.visitVariable(this); };
+    return Variable;
+}());
+var Reference = /** @class */ (function () {
+    function Reference(name, value, sourceSpan) {
+        this.name = name;
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+    }
+    /**
+     * @template Result
+     * @param {?} visitor
+     * @return {?}
+     */
+    Reference.prototype.visit = /**
+     * @template Result
+     * @param {?} visitor
+     * @return {?}
+     */
+    function (visitor) { return visitor.visitReference(this); };
+    return Reference;
+}());
 /**
- * Comment to mark removable expressions
+ * @record
+ * @template Result
+ */
+
+/**
+ * @template Result
+ * @param {?} visitor
+ * @param {?} nodes
+ * @return {?}
+ */
+function visitAll$1(visitor, nodes) {
+    var /** @type {?} */ result = [];
+    if (visitor.visit) {
+        for (var _i = 0, nodes_1 = nodes; _i < nodes_1.length; _i++) {
+            var node = nodes_1[_i];
+            var /** @type {?} */ newNode = visitor.visit(node) || node.visit(visitor);
+        }
+    }
+    else {
+        for (var _a = 0, nodes_2 = nodes; _a < nodes_2.length; _a++) {
+            var node = nodes_2[_a];
+            var /** @type {?} */ newNode = node.visit(visitor);
+            if (newNode) {
+                result.push(newNode);
+            }
+        }
+    }
+    return result;
+}
+/**
+ * @template Result
+ * @param {?} visitor
+ * @param {?} nodes
+ * @return {?}
  */
 
 /**
@@ -30602,17 +30869,16 @@ var ID_SEPARATOR$1 = '@@';
  * @param {?} directive
  * @param {?} reflector
  * @param {?} bindingParser
- * @param {?} mode
  * @return {?}
  */
-function compileDirective(outputCtx, directive, reflector, bindingParser, mode) {
+function compileDirective(outputCtx, directive, reflector, bindingParser) {
     var /** @type {?} */ definitionMapValues = [];
     var /** @type {?} */ field = function (key, value) {
         if (value) {
             definitionMapValues.push({ key: key, value: value, quoted: false });
         }
     };
-    // e.g. 'type: MyDirective`
+    // e.g. `type: MyDirective`
     field('type', outputCtx.importExpr(directive.type.reference));
     // e.g. `selectors: [['', 'someDir', '']]`
     field('selectors', createDirectiveSelector(/** @type {?} */ ((directive.selector))));
@@ -30623,52 +30889,54 @@ function compileDirective(outputCtx, directive, reflector, bindingParser, mode) 
     // e.g. `attributes: ['role', 'listbox']`
     field('attributes', createHostAttributesArray(directive, outputCtx));
     // e.g 'inputs: {a: 'a'}`
-    field('inputs', conditionallyCreateMapObjectLiteral(directive.inputs, outputCtx));
+    field('inputs', conditionallyCreateMapObjectLiteral(directive.inputs));
     // e.g 'outputs: {a: 'a'}`
-    field('outputs', conditionallyCreateMapObjectLiteral(directive.outputs, outputCtx));
+    field('outputs', conditionallyCreateMapObjectLiteral(directive.outputs));
     var /** @type {?} */ className = /** @type {?} */ ((identifierName(directive.type)));
     className || error("Cannot resolver the name of " + directive.type);
     var /** @type {?} */ definitionField = outputCtx.constantPool.propertyNameOf(1 /* Directive */);
     var /** @type {?} */ definitionFunction = importExpr(Identifiers$1.defineDirective).callFn([literalMap(definitionMapValues)]);
-    if (mode === 0 /* PartialClass */) {
-        // Create the partial class to be merged with the actual class.
-        outputCtx.statements.push(new ClassStmt(className, null, /* fields */ [new ClassField(definitionField, /* type */ INFERRED_TYPE, /* modifiers */ [StmtModifier.Static], definitionFunction)], /* getters */ [], /* constructorMethod */ new ClassMethod(null, [], []), /* methods */ []));
-    }
-    else {
-        // Create back-patch definition.
-        var /** @type {?} */ classReference = outputCtx.importExpr(directive.type.reference);
-        // Create the back-patch statement
-        outputCtx.statements.push(new CommentStmt(BUILD_OPTIMIZER_COLOCATE));
-        outputCtx.statements.push(classReference.prop(definitionField).set(definitionFunction).toStmt());
-    }
+    // Create the partial class to be merged with the actual class.
+    outputCtx.statements.push(new ClassStmt(className, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], definitionFunction)], [], new ClassMethod(null, [], []), []));
 }
 /**
  * @param {?} outputCtx
  * @param {?} component
- * @param {?} pipeSummaries
- * @param {?} template
+ * @param {?} nodes
+ * @param {?} hasNgContent
+ * @param {?} ngContentSelectors
  * @param {?} reflector
  * @param {?} bindingParser
- * @param {?} mode
+ * @param {?} directiveTypeBySel
+ * @param {?} pipeTypeByName
  * @return {?}
  */
-function compileComponent(outputCtx, component, pipeSummaries, template, reflector, bindingParser, mode) {
+function compileComponent(outputCtx, component, nodes, hasNgContent, ngContentSelectors, reflector, bindingParser, directiveTypeBySel, pipeTypeByName) {
     var /** @type {?} */ definitionMapValues = [];
-    // Pipes and Directives found in the template
-    var /** @type {?} */ pipes = new Set();
-    var /** @type {?} */ directives = new Set();
     var /** @type {?} */ field = function (key, value) {
         if (value) {
             definitionMapValues.push({ key: key, value: value, quoted: false });
         }
     };
+    // Generate the CSS matcher that recognize directive
+    var /** @type {?} */ directiveMatcher = null;
+    if (directiveTypeBySel.size) {
+        var /** @type {?} */ matcher_1 = new SelectorMatcher();
+        directiveTypeBySel.forEach(function (staticType, selector) {
+            matcher_1.addSelectables(CssSelector.parse(selector), staticType);
+        });
+        directiveMatcher = matcher_1;
+    }
+    // Directives and Pipes used from the template
+    var /** @type {?} */ directives = new Set();
+    var /** @type {?} */ pipes = new Set();
     // e.g. `type: MyApp`
     field('type', outputCtx.importExpr(component.type.reference));
     // e.g. `selectors: [['my-app']]`
     field('selectors', createDirectiveSelector(/** @type {?} */ ((component.selector))));
     var /** @type {?} */ selector = component.selector && CssSelector.parse(component.selector);
     var /** @type {?} */ firstSelector = selector && selector[0];
-    // e.g. `attr: ["class", ".my.app"]
+    // e.g. `attr: ["class", ".my.app"]`
     // This is optional an only included if the first selector of a component specifies attributes.
     if (firstSelector) {
         var /** @type {?} */ selectorAttributes = firstSelector.getAttrs();
@@ -30683,9 +30951,8 @@ function compileComponent(outputCtx, component, pipeSummaries, template, reflect
     // e.g. `template: function MyComponent_Template(_ctx, _cm) {...}`
     var /** @type {?} */ templateTypeName = component.type.reference.name;
     var /** @type {?} */ templateName = templateTypeName ? templateTypeName + "_Template" : null;
-    var /** @type {?} */ pipeMap = new Map(pipeSummaries.map(function (pipe) { return [pipe.name, pipe]; }));
-    var /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, BindingScope.ROOT_SCOPE, 0, /** @type {?} */ ((component.template)).ngContentSelectors, templateTypeName, templateName, pipeMap, component.viewQueries, directives, pipes)
-        .buildTemplateFunction(template, []);
+    var /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, BindingScope.ROOT_SCOPE, 0, templateTypeName, templateName, component.viewQueries, directiveMatcher, directives, pipeTypeByName, pipes)
+        .buildTemplateFunction(nodes, [], hasNgContent, ngContentSelectors);
     field('template', templateFunctionExpression);
     // e.g. `directives: [MyDirective]`
     if (directives.size) {
@@ -30694,13 +30961,13 @@ function compileComponent(outputCtx, component, pipeSummaries, template, reflect
     }
     // e.g. `pipes: [MyPipe]`
     if (pipes.size) {
-        var /** @type {?} */ expressions = Array.from(pipes).map(function (p) { return outputCtx.importExpr(p); });
+        var /** @type {?} */ expressions = Array.from(pipes).map(function (d) { return outputCtx.importExpr(d); });
         field('pipes', literalArr(expressions));
     }
     // e.g `inputs: {a: 'a'}`
-    field('inputs', conditionallyCreateMapObjectLiteral(component.inputs, outputCtx));
+    field('inputs', conditionallyCreateMapObjectLiteral(component.inputs));
     // e.g 'outputs: {a: 'a'}`
-    field('outputs', conditionallyCreateMapObjectLiteral(component.outputs, outputCtx));
+    field('outputs', conditionallyCreateMapObjectLiteral(component.outputs));
     // e.g. `features: [NgOnChangesFeature(MyComponent)]`
     var /** @type {?} */ features = [];
     if (component.type.lifecycleHooks.some(function (lifecycle) { return lifecycle == LifecycleHooks.OnChanges; })) {
@@ -30711,17 +30978,10 @@ function compileComponent(outputCtx, component, pipeSummaries, template, reflect
     }
     var /** @type {?} */ definitionField = outputCtx.constantPool.propertyNameOf(2 /* Component */);
     var /** @type {?} */ definitionFunction = importExpr(Identifiers$1.defineComponent).callFn([literalMap(definitionMapValues)]);
-    if (mode === 0 /* PartialClass */) {
-        var /** @type {?} */ className = /** @type {?} */ ((identifierName(component.type)));
-        className || error("Cannot resolver the name of " + component.type);
-        // Create the partial class to be merged with the actual class.
-        outputCtx.statements.push(new ClassStmt(className, null, /* fields */ [new ClassField(definitionField, /* type */ INFERRED_TYPE, /* modifiers */ [StmtModifier.Static], definitionFunction)], /* getters */ [], /* constructorMethod */ new ClassMethod(null, [], []), /* methods */ []));
-    }
-    else {
-        var /** @type {?} */ classReference = outputCtx.importExpr(component.type.reference);
-        // Create the back-patch statement
-        outputCtx.statements.push(new CommentStmt(BUILD_OPTIMIZER_COLOCATE), classReference.prop(definitionField).set(definitionFunction).toStmt());
-    }
+    var /** @type {?} */ className = /** @type {?} */ ((identifierName(component.type)));
+    className || error("Cannot resolver the name of " + component.type);
+    // Create the partial class to be merged with the actual class.
+    outputCtx.statements.push(new ClassStmt(className, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], definitionFunction)], [], new ClassMethod(null, [], []), []));
 }
 /**
  * @param {?} feature
@@ -30734,10 +30994,10 @@ function unsupported(feature) {
     throw new Error("Feature " + feature + " is not supported yet");
 }
 var BINDING_INSTRUCTION_MAP = (_a = {},
-    _a[PropertyBindingType.Property] = Identifiers$1.elementProperty,
-    _a[PropertyBindingType.Attribute] = Identifiers$1.elementAttribute,
-    _a[PropertyBindingType.Class] = Identifiers$1.elementClassNamed,
-    _a[PropertyBindingType.Style] = Identifiers$1.elementStyleNamed,
+    _a[PropertyBindingType$1.Property] = Identifiers$1.elementProperty,
+    _a[PropertyBindingType$1.Attribute] = Identifiers$1.elementAttribute,
+    _a[PropertyBindingType$1.Class] = Identifiers$1.elementClassNamed,
+    _a[PropertyBindingType$1.Style] = Identifiers$1.elementStyleNamed,
     _a);
 /**
  * @param {?} args
@@ -30767,24 +31027,14 @@ function interpolate(args) {
         error("Invalid interpolation argument length " + args.length);
     return importExpr(Identifiers$1.interpolationV).callFn([literalArr(args)]);
 }
+// Pipes always have at least one parameter, the value they operate on
+var pipeBindingIdentifiers = [Identifiers$1.pipeBind1, Identifiers$1.pipeBind2, Identifiers$1.pipeBind3, Identifiers$1.pipeBind4];
 /**
  * @param {?} args
  * @return {?}
  */
 function pipeBinding(args) {
-    switch (args.length) {
-        case 0:
-            // The first parameter to pipeBind is always the value to be transformed followed
-            // by arg.length arguments so the total number of arguments to pipeBind are
-            // arg.length + 1.
-            return Identifiers$1.pipeBind1;
-        case 1:
-            return Identifiers$1.pipeBind2;
-        case 2:
-            return Identifiers$1.pipeBind3;
-        default:
-            return Identifiers$1.pipeBindV;
-    }
+    return pipeBindingIdentifiers[args.length] || Identifiers$1.pipeBindV;
 }
 var pureFunctionIdentifiers = [
     Identifiers$1.pureFunction0, Identifiers$1.pureFunction1, Identifiers$1.pureFunction2, Identifiers$1.pureFunction3, Identifiers$1.pureFunction4,
@@ -30930,7 +31180,7 @@ var BindingScope = /** @class */ (function () {
     return BindingScope;
 }());
 var TemplateDefinitionBuilder = /** @class */ (function () {
-    function TemplateDefinitionBuilder(outputCtx, constantPool, reflector, contextParameter, parentBindingScope, level, ngContentSelectors, contextName, templateName, pipeMap, viewQueries, directives, pipes) {
+    function TemplateDefinitionBuilder(outputCtx, constantPool, reflector, contextParameter, parentBindingScope, level, contextName, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes) {
         if (level === void 0) { level = 0; }
         var _this = this;
         this.outputCtx = outputCtx;
@@ -30938,93 +31188,84 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this.reflector = reflector;
         this.contextParameter = contextParameter;
         this.level = level;
-        this.ngContentSelectors = ngContentSelectors;
         this.contextName = contextName;
         this.templateName = templateName;
-        this.pipeMap = pipeMap;
         this.viewQueries = viewQueries;
+        this.directiveMatcher = directiveMatcher;
         this.directives = directives;
+        this.pipeTypeByName = pipeTypeByName;
         this.pipes = pipes;
         this._dataIndex = 0;
         this._bindingContext = 0;
-        this._temporaryAllocated = false;
-        this._prefix = [];
-        this._creationMode = [];
-        this._variableMode = [];
-        this._bindingMode = [];
-        this._postfix = [];
-        this._projectionDefinitionIndex = 0;
-        this.unsupported = unsupported;
-        this.invalid = invalid$1;
+        this._prefixCode = [];
+        this._creationCode = [];
+        this._variableCode = [];
+        this._bindingCode = [];
+        this._postfixCode = [];
+        this._temporary = temporaryAllocator(this._prefixCode, TEMPORARY_NAME);
+        this._projectionDefinitionIndex = -1;
+        this._unsupported = unsupported;
         this._inI18nSection = false;
         this._i18nSectionIndex = -1;
         this._phToNodeIdxes = [{}];
         // These should be handled in the template or element directly.
         this.visitReference = invalid$1;
         this.visitVariable = invalid$1;
-        this.visitEvent = invalid$1;
-        this.visitElementProperty = invalid$1;
-        this.visitAttr = invalid$1;
-        // These should be handled in the template or element directly
-        this.visitDirective = invalid$1;
-        this.visitDirectiveProperty = invalid$1;
-        this.bindingScope =
+        this.visitAttribute = invalid$1;
+        this.visitBoundAttribute = invalid$1;
+        this.visitBoundEvent = invalid$1;
+        this._bindingScope =
             parentBindingScope.nestedScope(function (lhsVar, expression) {
-                _this._bindingMode.push(lhsVar.set(expression).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
+                _this._bindingCode.push(lhsVar.set(expression).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
             });
         this._valueConverter = new ValueConverter(outputCtx, function () { return _this.allocateDataSlot(); }, function (name, localName, slot, value) {
-            _this.bindingScope.set(localName, value);
-            var /** @type {?} */ pipe = /** @type {?} */ ((pipeMap.get(name)));
-            pipe || error("Could not find pipe " + name);
-            _this.pipes.add(pipe.type.reference);
-            _this._creationMode.push(importExpr(Identifiers$1.pipe).callFn([literal(slot), literal(name)]).toStmt());
+            var /** @type {?} */ pipeType = pipeTypeByName.get(name);
+            if (pipeType) {
+                _this.pipes.add(pipeType);
+            }
+            _this._bindingScope.set(localName, value);
+            _this._creationCode.push(importExpr(Identifiers$1.pipe).callFn([literal(slot), literal(name)]).toStmt());
         });
     }
     /**
      * @param {?} nodes
      * @param {?} variables
+     * @param {?=} hasNgContent
+     * @param {?=} ngContentSelectors
      * @return {?}
      */
     TemplateDefinitionBuilder.prototype.buildTemplateFunction = /**
      * @param {?} nodes
      * @param {?} variables
+     * @param {?=} hasNgContent
+     * @param {?=} ngContentSelectors
      * @return {?}
      */
-    function (nodes, variables) {
+    function (nodes, variables, hasNgContent, ngContentSelectors) {
+        if (hasNgContent === void 0) { hasNgContent = false; }
+        if (ngContentSelectors === void 0) { ngContentSelectors = []; }
         // Create variable bindings
         for (var _i = 0, variables_1 = variables; _i < variables_1.length; _i++) {
             var variable$$1 = variables_1[_i];
             var /** @type {?} */ variableName = variable$$1.name;
             var /** @type {?} */ expression = variable(this.contextParameter).prop(variable$$1.value || IMPLICIT_REFERENCE);
-            var /** @type {?} */ scopedName = this.bindingScope.freshReferenceName();
+            var /** @type {?} */ scopedName = this._bindingScope.freshReferenceName();
             // Add the reference to the local scope.
-            this.bindingScope.set(variableName, variable(variableName + scopedName), expression);
+            this._bindingScope.set(variableName, variable(variableName + scopedName), expression);
         }
-        // Collect content projections
-        if (this.ngContentSelectors && this.ngContentSelectors.length > 0) {
-            var /** @type {?} */ contentProjections = getContentProjection(nodes, this.ngContentSelectors);
-            this._contentProjections = contentProjections;
-            if (contentProjections.size > 0) {
-                var /** @type {?} */ selectors_1 = [];
-                Array.from(contentProjections.values()).forEach(function (info) {
-                    if (info.selector) {
-                        selectors_1[info.index - 1] = info.selector;
-                    }
-                });
-                var /** @type {?} */ projectionIndex = this._projectionDefinitionIndex = this.allocateDataSlot();
-                var /** @type {?} */ parameters = [literal(projectionIndex)];
-                if (selectors_1.some(function (value) { return !value; })) {
-                    error("content project information skipped an index");
-                }
-                if (selectors_1.length > 1) {
-                    var /** @type {?} */ r3Selectors = selectors_1.map(function (s) { return parseSelectorToR3Selector(s); });
-                    // `projectionDef` needs both the parsed and raw value of the selectors
-                    var /** @type {?} */ parsed = this.outputCtx.constantPool.getConstLiteral(asLiteral(r3Selectors), true);
-                    var /** @type {?} */ unParsed = this.outputCtx.constantPool.getConstLiteral(asLiteral(selectors_1), true);
-                    parameters.push(parsed, unParsed);
-                }
-                this.instruction.apply(this, [this._creationMode, null, Identifiers$1.projectionDef].concat(parameters));
+        // Output a `ProjectionDef` instruction when some `<ng-content>` are present
+        if (hasNgContent) {
+            this._projectionDefinitionIndex = this.allocateDataSlot();
+            var /** @type {?} */ parameters = [literal(this._projectionDefinitionIndex)];
+            // Only selectors with a non-default value are generated
+            if (ngContentSelectors.length > 1) {
+                var /** @type {?} */ r3Selectors = ngContentSelectors.map(function (s) { return parseSelectorToR3Selector(s); });
+                // `projectionDef` needs both the parsed and raw value of the selectors
+                var /** @type {?} */ parsed = this.outputCtx.constantPool.getConstLiteral(asLiteral(r3Selectors), true);
+                var /** @type {?} */ unParsed = this.outputCtx.constantPool.getConstLiteral(asLiteral(ngContentSelectors), true);
+                parameters.push(parsed, unParsed);
             }
+            this.instruction.apply(this, [this._creationCode, null, Identifiers$1.projectionDef].concat(parameters));
         }
         // Define and update any view queries
         for (var _a = 0, _b = this.viewQueries; _a < _b.length; _a++) {
@@ -31033,43 +31274,43 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             var /** @type {?} */ querySlot = this.allocateDataSlot();
             var /** @type {?} */ predicate = getQueryPredicate(query, this.outputCtx);
             var /** @type {?} */ args = [
-                /* memoryIndex */ literal(querySlot, INFERRED_TYPE),
+                literal(querySlot, INFERRED_TYPE),
                 predicate,
-                /* descend */ literal(query.descendants, INFERRED_TYPE)
+                literal(query.descendants, INFERRED_TYPE),
             ];
             if (query.read) {
                 args.push(this.outputCtx.importExpr(/** @type {?} */ ((query.read.identifier)).reference));
             }
-            this.instruction.apply(this, [this._creationMode, null, Identifiers$1.query].concat(args));
+            this.instruction.apply(this, [this._creationCode, null, Identifiers$1.query].concat(args));
             // (r3.qR(tmp = r3.ɵld(0)) && (ctx.someDir = tmp));
-            var /** @type {?} */ temporary = this.temp();
+            var /** @type {?} */ temporary = this._temporary();
             var /** @type {?} */ getQueryList = importExpr(Identifiers$1.load).callFn([literal(querySlot)]);
             var /** @type {?} */ refresh = importExpr(Identifiers$1.queryRefresh).callFn([temporary.set(getQueryList)]);
             var /** @type {?} */ updateDirective = variable(CONTEXT_NAME)
                 .prop(query.propertyName)
                 .set(query.first ? temporary.prop('first') : temporary);
-            this._bindingMode.push(refresh.and(updateDirective).toStmt());
+            this._bindingCode.push(refresh.and(updateDirective).toStmt());
         }
-        templateVisitAll(this, nodes);
-        var /** @type {?} */ creationMode = this._creationMode.length > 0 ?
-            [ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(1 /* Create */), null, false), this._creationMode)] :
+        visitAll$1(this, nodes);
+        var /** @type {?} */ creationCode = this._creationCode.length > 0 ?
+            [ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(1 /* Create */), null, false), this._creationCode)] :
             [];
-        var /** @type {?} */ updateMode = this._bindingMode.length > 0 ?
-            [ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(2 /* Update */), null, false), this._bindingMode)] :
+        var /** @type {?} */ updateCode = this._bindingCode.length > 0 ?
+            [ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(2 /* Update */), null, false), this._bindingCode)] :
             [];
         // Generate maps of placeholder name to node indexes
         // TODO(vicb): This is a WIP, not fully supported yet
         for (var _c = 0, _d = this._phToNodeIdxes; _c < _d.length; _c++) {
             var phToNodeIdx = _d[_c];
             if (Object.keys(phToNodeIdx).length > 0) {
-                var /** @type {?} */ scopedName = this.bindingScope.freshReferenceName();
+                var /** @type {?} */ scopedName = this._bindingScope.freshReferenceName();
                 var /** @type {?} */ phMap = variable(scopedName)
                     .set(mapToExpression(phToNodeIdx, true))
                     .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]);
-                this._prefix.push(phMap);
+                this._prefixCode.push(phMap);
             }
         }
-        return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(this.contextParameter, null)], this._prefix.concat(creationMode, this._variableMode, updateMode, this._postfix), INFERRED_TYPE, null, this.templateName);
+        return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(this.contextParameter, null)], this._prefixCode.concat(creationCode, this._variableCode, updateCode, this._postfixCode), INFERRED_TYPE, null, this.templateName);
     };
     // LocalResolver
     /**
@@ -31080,28 +31321,37 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
      * @param {?} name
      * @return {?}
      */
-    function (name) { return this.bindingScope.get(name); };
-    // TemplateAstVisitor
+    function (name) { return this._bindingScope.get(name); };
     /**
      * @param {?} ngContent
      * @return {?}
      */
-    TemplateDefinitionBuilder.prototype.visitNgContent = /**
+    TemplateDefinitionBuilder.prototype.visitContent = /**
      * @param {?} ngContent
      * @return {?}
      */
     function (ngContent) {
-        var /** @type {?} */ info = /** @type {?} */ ((this._contentProjections.get(ngContent)));
-        info ||
-            error("Expected " + ngContent.sourceSpan + " to be included in content projection collection");
         var /** @type {?} */ slot = this.allocateDataSlot();
-        var /** @type {?} */ parameters = [literal(slot), literal(this._projectionDefinitionIndex)];
-        if (info.index !== 0) {
-            parameters.push(literal(info.index));
+        var /** @type {?} */ selectorIndex = ngContent.selectorIndex;
+        var /** @type {?} */ parameters = [
+            literal(slot),
+            literal(this._projectionDefinitionIndex),
+        ];
+        var /** @type {?} */ attributeAsList = [];
+        ngContent.attributes.forEach(function (attribute) {
+            var /** @type {?} */ name = attribute.name;
+            if (name !== 'select') {
+                attributeAsList.push(name, attribute.value);
+            }
+        });
+        if (attributeAsList.length > 0) {
+            parameters.push(literal(selectorIndex), asLiteral(attributeAsList));
         }
-        this.instruction.apply(this, [this._creationMode, ngContent.sourceSpan, Identifiers$1.projection].concat(parameters));
+        else if (selectorIndex !== 0) {
+            parameters.push(literal(selectorIndex));
+        }
+        this.instruction.apply(this, [this._creationCode, ngContent.sourceSpan, Identifiers$1.projection].concat(parameters));
     };
-    // TemplateAstVisitor
     /**
      * @param {?} element
      * @return {?}
@@ -31128,7 +31378,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             this._phToNodeIdxes[this._i18nSectionIndex][phName].push(elementIndex);
         }
         // Handle i18n attributes
-        for (var _i = 0, _a = element.attrs; _i < _a.length; _i++) {
+        for (var _i = 0, _a = element.attributes; _i < _a.length; _i++) {
             var attr = _a[_i];
             var /** @type {?} */ name_1 = attr.name;
             var /** @type {?} */ value = attr.value;
@@ -31148,12 +31398,16 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 outputAttrs[name_1] = value;
             }
         }
+        // Match directives on non i18n attributes
+        if (this.directiveMatcher) {
+            var /** @type {?} */ selector = createCssSelector(element.name, outputAttrs);
+            this.directiveMatcher.match(selector, function (sel, staticType) { _this.directives.add(staticType); });
+        }
         // Element creation mode
         var /** @type {?} */ parameters = [
             literal(elementIndex),
             literal(element.name),
         ];
-        element.directives.forEach(function (directive) { return _this.directives.add(directive.directive.type.reference); });
         // Add the attributes
         var /** @type {?} */ i18nMessages = [];
         var /** @type {?} */ attributes = [];
@@ -31182,150 +31436,119 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 var /** @type {?} */ slot = _this.allocateDataSlot();
                 referenceDataSlots.set(reference.name, slot);
                 // Generate the update temporary.
-                var /** @type {?} */ variableName = _this.bindingScope.freshReferenceName();
-                _this._variableMode.push(variable(variableName, INFERRED_TYPE)
+                var /** @type {?} */ variableName = _this._bindingScope.freshReferenceName();
+                _this._variableCode.push(variable(variableName, INFERRED_TYPE)
                     .set(importExpr(Identifiers$1.load).callFn([literal(slot)]))
                     .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
-                _this.bindingScope.set(reference.name, variable(variableName));
-                return [reference.name, reference.originalValue];
-            })).map(function (value) { return literal(value); });
-            parameters.push(this.constantPool.getConstLiteral(literalArr(references), /* forceShared */ /* forceShared */ true));
+                _this._bindingScope.set(reference.name, variable(variableName));
+                return [reference.name, reference.value];
+            }));
+            parameters.push(this.constantPool.getConstLiteral(asLiteral(references), true));
         }
         else {
             parameters.push(TYPED_NULL_EXPR);
         }
         // Generate the instruction create element instruction
         if (i18nMessages.length > 0) {
-            (_b = this._creationMode).push.apply(_b, i18nMessages);
+            (_b = this._creationCode).push.apply(_b, i18nMessages);
         }
-        this.instruction.apply(this, [this._creationMode, element.sourceSpan, Identifiers$1.createElement].concat(trimTrailingNulls(parameters)));
+        this.instruction.apply(this, [this._creationCode, element.sourceSpan, Identifiers$1.createElement].concat(trimTrailingNulls(parameters)));
         var /** @type {?} */ implicit = variable(CONTEXT_NAME);
         // Generate Listeners (outputs)
         element.outputs.forEach(function (outputAst) {
-            var /** @type {?} */ functionName = _this.templateName + "_" + element.name + "_" + outputAst.name + "_listener";
+            var /** @type {?} */ elName = sanitizeIdentifier(element.name);
+            var /** @type {?} */ evName = sanitizeIdentifier(outputAst.name);
+            var /** @type {?} */ functionName = _this.templateName + "_" + elName + "_" + evName + "_listener";
             var /** @type {?} */ localVars = [];
-            var /** @type {?} */ bindingScope = _this.bindingScope.nestedScope(function (lhsVar, rhsExpression) {
+            var /** @type {?} */ bindingScope = _this._bindingScope.nestedScope(function (lhsVar, rhsExpression) {
                 localVars.push(lhsVar.set(rhsExpression).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
             });
-            var /** @type {?} */ bindingExpr = convertActionBinding(bindingScope, variable(CONTEXT_NAME), outputAst.handler, 'b', function () { return error('Unexpected interpolation'); });
+            var /** @type {?} */ bindingExpr = convertActionBinding(bindingScope, implicit, outputAst.handler, 'b', function () { return error('Unexpected interpolation'); });
             var /** @type {?} */ handler = fn([new FnParam('$event', DYNAMIC_TYPE)], localVars.concat(bindingExpr.render3Stmts), INFERRED_TYPE, null, functionName);
-            _this.instruction(_this._creationMode, outputAst.sourceSpan, Identifiers$1.listener, literal(outputAst.name), handler);
+            _this.instruction(_this._creationCode, outputAst.sourceSpan, Identifiers$1.listener, literal(outputAst.name), handler);
         });
         // Generate element input bindings
-        for (var _c = 0, _d = element.inputs; _c < _d.length; _c++) {
-            var input = _d[_c];
-            if (input.isAnimation) {
-                this.unsupported('animations');
+        element.inputs.forEach(function (input) {
+            if (input.type === PropertyBindingType$1.Animation) {
+                _this._unsupported('animations');
             }
-            var /** @type {?} */ convertedBinding = this.convertPropertyBinding(implicit, input.value);
+            var /** @type {?} */ convertedBinding = _this.convertPropertyBinding(implicit, input.value);
             var /** @type {?} */ instruction = BINDING_INSTRUCTION_MAP[input.type];
             if (instruction) {
                 // TODO(chuckj): runtime: security context?
-                this.instruction(this._bindingMode, input.sourceSpan, instruction, literal(elementIndex), literal(input.name), importExpr(Identifiers$1.bind).callFn([convertedBinding]));
+                var /** @type {?} */ value = importExpr(Identifiers$1.bind).callFn([convertedBinding]);
+                _this.instruction(_this._bindingCode, input.sourceSpan, instruction, literal(elementIndex), literal(input.name), value);
             }
             else {
-                this.unsupported("binding " + PropertyBindingType[input.type]);
+                _this._unsupported("binding " + PropertyBindingType$1[input.type]);
             }
-        }
-        // Generate directives input bindings
-        this._visitDirectives(element.directives, implicit, elementIndex);
+        });
         // Traverse element child nodes
         if (this._inI18nSection && element.children.length == 1 &&
-            element.children[0] instanceof TextAst) {
+            element.children[0] instanceof Text$3) {
             var /** @type {?} */ text = /** @type {?} */ (element.children[0]);
             this.visitSingleI18nTextChild(text, i18nMeta);
         }
         else {
-            templateVisitAll(this, element.children);
+            visitAll$1(this, element.children);
         }
         // Finish element construction mode.
-        this.instruction(this._creationMode, element.endSourceSpan || element.sourceSpan, Identifiers$1.elementEnd);
+        this.instruction(this._creationCode, element.endSourceSpan || element.sourceSpan, Identifiers$1.elementEnd);
         // Restore the state before exiting this node
         this._inI18nSection = wasInI18nSection;
         var _b;
     };
     /**
-     * @param {?} directives
-     * @param {?} implicit
-     * @param {?} nodeIndex
-     * @return {?}
-     */
-    TemplateDefinitionBuilder.prototype._visitDirectives = /**
-     * @param {?} directives
-     * @param {?} implicit
-     * @param {?} nodeIndex
-     * @return {?}
-     */
-    function (directives, implicit, nodeIndex) {
-        for (var _i = 0, directives_1 = directives; _i < directives_1.length; _i++) {
-            var directive = directives_1[_i];
-            // Creation mode
-            // e.g. D(0, TodoComponentDef.n(), TodoComponentDef);
-            var /** @type {?} */ directiveType = directive.directive.type.reference;
-            var /** @type {?} */ kind = directive.directive.isComponent ? 2 /* Component */ : 1;
-            // Note: *do not cache* calls to this.directiveOf() as the constant pool needs to know if the
-            // node is referenced multiple times to know that it must generate the reference into a
-            // temporary.
-            // Bindings
-            for (var _a = 0, _b = directive.inputs; _a < _b.length; _a++) {
-                var input = _b[_a];
-                var /** @type {?} */ convertedBinding = this.convertPropertyBinding(implicit, input.value);
-                this.instruction(this._bindingMode, directive.sourceSpan, Identifiers$1.elementProperty, literal(nodeIndex), literal(input.templateName), importExpr(Identifiers$1.bind).callFn([convertedBinding]));
-            }
-        }
-    };
-    // TemplateAstVisitor
-    /**
      * @param {?} template
      * @return {?}
      */
-    TemplateDefinitionBuilder.prototype.visitEmbeddedTemplate = /**
+    TemplateDefinitionBuilder.prototype.visitTemplate = /**
      * @param {?} template
      * @return {?}
      */
     function (template) {
         var _this = this;
         var /** @type {?} */ templateIndex = this.allocateDataSlot();
-        var /** @type {?} */ templateRef = this.reflector.resolveExternalReference(Identifiers.TemplateRef);
-        var /** @type {?} */ templateDirective = template.directives.find(function (directive) {
-            return directive.directive.type.diDeps.some(function (dependency) {
-                return dependency.token != null && (tokenReference(dependency.token) == templateRef);
-            });
-        });
-        var /** @type {?} */ contextName = this.contextName && templateDirective && templateDirective.directive.type.reference.name ?
-            this.contextName + "_" + templateDirective.directive.type.reference.name :
-            null;
+        var /** @type {?} */ elName = '';
+        if (template.children.length === 1 && template.children[0] instanceof Element$1) {
+            // When the template as a single child, derive the context name from the tag
+            elName = sanitizeIdentifier((/** @type {?} */ (template.children[0])).name);
+        }
+        var /** @type {?} */ contextName = elName ? this.contextName + "_" + elName : '';
         var /** @type {?} */ templateName = contextName ? contextName + "_Template_" + templateIndex : "Template_" + templateIndex;
         var /** @type {?} */ templateContext = "ctx" + this.level;
-        var /** @type {?} */ parameters = [variable(templateName), literal(null, INFERRED_TYPE)];
+        var /** @type {?} */ parameters = [
+            literal(templateIndex),
+            variable(templateName),
+            TYPED_NULL_EXPR,
+        ];
         var /** @type {?} */ attributeNames = [];
-        template.directives.forEach(function (directiveAst) {
-            _this.directives.add(directiveAst.directive.type.reference);
-            CssSelector.parse(/** @type {?} */ ((directiveAst.directive.selector))).forEach(function (selector) {
-                selector.attrs.forEach(function (value) {
-                    // Convert '' (falsy) strings into `null`. This is needed because we want
-                    // to communicate to runtime that these attributes are present for
-                    // selector matching, but should not actually be added to the DOM.
-                    // attributeNames.push(o.literal(value ? value : null));
-                    // TODO(misko): make the above comment true, for now just write to DOM because
-                    // the runtime selectors have not been updated.
-                    attributeNames.push(literal(value));
-                });
-            });
+        var /** @type {?} */ attributeMap = {};
+        template.attributes.forEach(function (a) {
+            attributeNames.push(asLiteral(a.name), asLiteral(''));
+            attributeMap[a.name] = a.value;
         });
+        // Match directives on template attributes
+        if (this.directiveMatcher) {
+            var /** @type {?} */ selector = createCssSelector('ng-template', attributeMap);
+            this.directiveMatcher.match(selector, function (cssSelector, staticType) { _this.directives.add(staticType); });
+        }
         if (attributeNames.length) {
-            parameters.push(this.constantPool.getConstLiteral(literalArr(attributeNames), /* forcedShared */ /* forcedShared */ true));
+            parameters.push(this.constantPool.getConstLiteral(literalArr(attributeNames), true));
         }
         // e.g. C(1, C1Template)
-        this.instruction.apply(this, [this._creationMode, template.sourceSpan, Identifiers$1.containerCreate, literal(templateIndex)].concat(trimTrailingNulls(parameters)));
-        // Generate directives
-        this._visitDirectives(template.directives, variable(CONTEXT_NAME), templateIndex);
+        this.instruction.apply(this, [this._creationCode, template.sourceSpan, Identifiers$1.containerCreate].concat(trimTrailingNulls(parameters)));
+        // e.g. p(1, 'forOf', ɵb(ctx.items));
+        var /** @type {?} */ context = variable(CONTEXT_NAME);
+        template.inputs.forEach(function (input) {
+            var /** @type {?} */ convertedBinding = _this.convertPropertyBinding(context, input.value);
+            _this.instruction(_this._bindingCode, template.sourceSpan, Identifiers$1.elementProperty, literal(templateIndex), literal(input.name), importExpr(Identifiers$1.bind).callFn([convertedBinding]));
+        });
         // Create the template function
-        var /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this.bindingScope, this.level + 1, this.ngContentSelectors, contextName, templateName, this.pipeMap, [], this.directives, this.pipes);
+        var /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this._bindingScope, this.level + 1, contextName, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes);
         var /** @type {?} */ templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables);
-        this._postfix.push(templateFunctionExpr.toDeclStmt(templateName, null));
+        this._postfixCode.push(templateFunctionExpr.toDeclStmt(templateName, null));
     };
-    // TemplateAstVisitor
     /**
      * @param {?} text
      * @return {?}
@@ -31336,11 +31559,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
      */
     function (text) {
         var /** @type {?} */ nodeIndex = this.allocateDataSlot();
-        // Creation mode
-        this.instruction(this._creationMode, text.sourceSpan, Identifiers$1.text, literal(nodeIndex));
-        this.instruction(this._bindingMode, text.sourceSpan, Identifiers$1.textCreateBound, literal(nodeIndex), this.convertPropertyBinding(variable(CONTEXT_NAME), text.value));
+        this.instruction(this._creationCode, text.sourceSpan, Identifiers$1.text, literal(nodeIndex));
+        this.instruction(this._bindingCode, text.sourceSpan, Identifiers$1.textCreateBound, literal(nodeIndex), this.convertPropertyBinding(variable(CONTEXT_NAME), text.value));
     };
-    // TemplateAstVisitor
     /**
      * @param {?} text
      * @return {?}
@@ -31350,8 +31571,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
      * @return {?}
      */
     function (text) {
-        // Text is defined in creation mode only.
-        this.instruction(this._creationMode, text.sourceSpan, Identifiers$1.text, literal(this.allocateDataSlot()), literal(text.value));
+        this.instruction(this._creationCode, text.sourceSpan, Identifiers$1.text, literal(this.allocateDataSlot()), literal(text.value));
     };
     // When the content of the element is a single text node the translation can be inlined:
     //
@@ -31378,7 +31598,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     function (text, i18nMeta) {
         var /** @type {?} */ meta = parseI18nMeta(i18nMeta);
         var /** @type {?} */ variable$$1 = this.constantPool.getTranslation(text.value, meta);
-        this.instruction(this._creationMode, text.sourceSpan, Identifiers$1.text, literal(this.allocateDataSlot()), variable$$1);
+        this.instruction(this._creationCode, text.sourceSpan, Identifiers$1.text, literal(this.allocateDataSlot()), variable$$1);
     };
     /**
      * @return {?}
@@ -31416,32 +31636,6 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         statements.push(importExpr(reference, null, span).callFn(params, span).toStmt());
     };
     /**
-     * @param {?} type
-     * @param {?} kind
-     * @return {?}
-     */
-    TemplateDefinitionBuilder.prototype.definitionOf = /**
-     * @param {?} type
-     * @param {?} kind
-     * @return {?}
-     */
-    function (type, kind) {
-        return this.constantPool.getDefinition(type, kind, this.outputCtx);
-    };
-    /**
-     * @return {?}
-     */
-    TemplateDefinitionBuilder.prototype.temp = /**
-     * @return {?}
-     */
-    function () {
-        if (!this._temporaryAllocated) {
-            this._prefix.push(new DeclareVarStmt(TEMPORARY_NAME, undefined, DYNAMIC_TYPE));
-            this._temporaryAllocated = true;
-        }
-        return variable(TEMPORARY_NAME);
-    };
-    /**
      * @param {?} implicit
      * @param {?} value
      * @return {?}
@@ -31454,7 +31648,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     function (implicit, value) {
         var /** @type {?} */ pipesConvertedValue = value.visit(this._valueConverter);
         var /** @type {?} */ convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, interpolate);
-        (_a = this._bindingMode).push.apply(_a, convertedPropertyBinding.stmts);
+        (_a = this._bindingCode).push.apply(_a, convertedPropertyBinding.stmts);
         return convertedPropertyBinding.currValExpr;
         var _a;
     };
@@ -31530,9 +31724,9 @@ function createFactory(type, outputCtx, reflector, queries) {
         var /** @type {?} */ predicate = getQueryPredicate(query, outputCtx);
         // e.g. r3.Q(null, somePredicate, false) or r3.Q(null, ['div'], false)
         var /** @type {?} */ parameters = [
-            /* memoryIndex */ literal(null, INFERRED_TYPE),
+            literal(null, INFERRED_TYPE),
             predicate,
-            /* descend */ literal(query.descendants)
+            literal(query.descendants),
         ];
         if (query.read) {
             parameters.push(outputCtx.importExpr(/** @type {?} */ ((query.read.identifier)).reference));
@@ -31611,16 +31805,7 @@ function createHostAttributesArray(directiveMetadata, outputCtx) {
  */
 function createHostBindingsFunction(directiveMetadata, outputCtx, bindingParser) {
     var /** @type {?} */ statements = [];
-    var /** @type {?} */ temporary = function () {
-        var /** @type {?} */ declared = false;
-        return function () {
-            if (!declared) {
-                statements.push(new DeclareVarStmt(TEMPORARY_NAME, undefined, DYNAMIC_TYPE));
-                declared = true;
-            }
-            return variable(TEMPORARY_NAME);
-        };
-    }();
+    var /** @type {?} */ temporary = temporaryAllocator(statements, TEMPORARY_NAME);
     var /** @type {?} */ hostBindingSourceSpan = typeSourceSpan(directiveMetadata.isComponent ? 'Component' : 'Directive', directiveMetadata.type);
     // Calculate the queries
     for (var /** @type {?} */ index = 0; index < directiveMetadata.queries.length; index++) {
@@ -31648,8 +31833,9 @@ function createHostBindingsFunction(directiveMetadata, outputCtx, bindingParser)
             statements.push.apply(statements, bindingExpr.stmts);
             statements.push(importExpr(Identifiers$1.elementProperty)
                 .callFn([
-                variable('elIndex'), literal(binding.name),
-                importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr])
+                variable('elIndex'),
+                literal(binding.name),
+                importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr]),
             ])
                 .toStmt());
         }
@@ -31669,18 +31855,10 @@ function createHostBindingsFunction(directiveMetadata, outputCtx, bindingParser)
     }
     if (statements.length > 0) {
         var /** @type {?} */ typeName = directiveMetadata.type.reference.name;
-        return fn([new FnParam('dirIndex', NUMBER_TYPE), new FnParam('elIndex', NUMBER_TYPE)], statements, INFERRED_TYPE, null, typeName ? typeName + "_HostBindings" : null);
-    }
-    return null;
-}
-/**
- * @param {?} keys
- * @param {?} outputCtx
- * @return {?}
- */
-function conditionallyCreateMapObjectLiteral(keys, outputCtx) {
-    if (Object.getOwnPropertyNames(keys).length > 0) {
-        return mapToExpression(keys);
+        return fn([
+            new FnParam('dirIndex', NUMBER_TYPE),
+            new FnParam('elIndex', NUMBER_TYPE),
+        ], statements, INFERRED_TYPE, null, typeName ? typeName + "_HostBindings" : null);
     }
     return null;
 }
@@ -31691,7 +31869,6 @@ var ValueConverter = /** @class */ (function (_super) {
         _this.outputCtx = outputCtx;
         _this.allocateSlot = allocateSlot;
         _this.definePipe = definePipe;
-        _this.pipeSlots = new Map();
         return _this;
     }
     // AstMemoryEfficientTransformer
@@ -31770,48 +31947,6 @@ var ValueConverter = /** @class */ (function (_super) {
 function invalid$1(arg) {
     throw new Error("Invalid state: Visitor " + this.constructor.name + " doesn't handle " + undefined);
 }
-var ContentProjectionVisitor = /** @class */ (function (_super) {
-    __extends(ContentProjectionVisitor, _super);
-    function ContentProjectionVisitor(projectionMap, ngContentSelectors) {
-        var _this = _super.call(this) || this;
-        _this.projectionMap = projectionMap;
-        _this.ngContentSelectors = ngContentSelectors;
-        _this.index = 1;
-        return _this;
-    }
-    /**
-     * @param {?} ngContent
-     * @return {?}
-     */
-    ContentProjectionVisitor.prototype.visitNgContent = /**
-     * @param {?} ngContent
-     * @return {?}
-     */
-    function (ngContent) {
-        var /** @type {?} */ selector = this.ngContentSelectors[ngContent.index];
-        if (selector == null) {
-            error("could not find selector for index " + ngContent.index + " in " + ngContent);
-        }
-        if (!selector || selector === '*') {
-            this.projectionMap.set(ngContent, { index: 0 });
-        }
-        else {
-            this.projectionMap.set(ngContent, { index: this.index++, selector: selector });
-        }
-    };
-    return ContentProjectionVisitor;
-}(RecursiveTemplateAstVisitor));
-/**
- * @param {?} nodes
- * @param {?} ngContentSelectors
- * @return {?}
- */
-function getContentProjection(nodes, ngContentSelectors) {
-    var /** @type {?} */ projectIndexMap = new Map();
-    var /** @type {?} */ visitor = new ContentProjectionVisitor(projectIndexMap, ngContentSelectors);
-    templateVisitAll(visitor, nodes);
-    return projectIndexMap;
-}
 /**
  * @param {?} selector
  * @return {?}
@@ -31872,6 +32007,16 @@ function asLiteral(value) {
     return literal(value, INFERRED_TYPE);
 }
 /**
+ * @param {?} keys
+ * @return {?}
+ */
+function conditionallyCreateMapObjectLiteral(keys) {
+    if (Object.getOwnPropertyNames(keys).length > 0) {
+        return mapToExpression(keys);
+    }
+    return null;
+}
+/**
  * @param {?} map
  * @param {?=} quoted
  * @return {?}
@@ -31879,6 +32024,24 @@ function asLiteral(value) {
 function mapToExpression(map, quoted) {
     if (quoted === void 0) { quoted = false; }
     return literalMap(Object.getOwnPropertyNames(map).map(function (key) { return ({ key: key, quoted: quoted, value: asLiteral(map[key]) }); }));
+}
+/**
+ * Creates an allocator for a temporary variable.
+ *
+ * A variable declaration is added to the statements the first time the allocator is invoked.
+ * @param {?} statements
+ * @param {?} name
+ * @return {?}
+ */
+function temporaryAllocator(statements, name) {
+    var /** @type {?} */ temp = null;
+    return function () {
+        if (!temp) {
+            statements.push(new DeclareVarStmt(TEMPORARY_NAME, undefined, DYNAMIC_TYPE));
+            temp = variable(name);
+        }
+        return temp;
+    };
 }
 /**
  * @param {?=} i18n
@@ -31901,6 +32064,25 @@ function parseI18nMeta(i18n) {
     return { description: description, id: id, meaning: meaning };
     var _a, _b;
 }
+/**
+ * Creates a `CssSelector` given a tag name and a map of attributes
+ * @param {?} tag
+ * @param {?} attributes
+ * @return {?}
+ */
+function createCssSelector(tag, attributes) {
+    var /** @type {?} */ cssSelector = new CssSelector();
+    cssSelector.setElement(tag);
+    Object.getOwnPropertyNames(attributes).forEach(function (name) {
+        var /** @type {?} */ value = attributes[name];
+        cssSelector.addAttribute(name, value);
+        if (name.toLowerCase() === 'class') {
+            var /** @type {?} */ classes = value.trim().split(/\s+/g);
+            classes.forEach(function (className) { return cssSelector.addClassName(className); });
+        }
+    });
+    return cssSelector;
+}
 var _a;
 
 /**
@@ -31919,19 +32101,18 @@ var _a;
  * @param {?} outputCtx
  * @param {?} pipe
  * @param {?} reflector
- * @param {?} mode
  * @return {?}
  */
-function compilePipe(outputCtx, pipe, reflector, mode) {
+function compilePipe(outputCtx, pipe, reflector) {
     var /** @type {?} */ definitionMapValues = [];
     // e.g. `name: 'myPipe'`
     definitionMapValues.push({ key: 'name', value: literal(pipe.name), quoted: false });
     // e.g. `type: MyPipe`
     definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(pipe.type.reference), quoted: false });
-    // e.g. factory: function MyPipe_Factory() { return new MyPipe(); },
+    // e.g. `factory: function MyPipe_Factory() { return new MyPipe(); }`
     var /** @type {?} */ templateFactory = createFactory(pipe.type, outputCtx, reflector, []);
     definitionMapValues.push({ key: 'factory', value: templateFactory, quoted: false });
-    // e.g. pure: true
+    // e.g. `pure: true`
     if (pipe.pure) {
         definitionMapValues.push({ key: 'pure', value: literal(true), quoted: false });
     }
@@ -31939,15 +32120,472 @@ function compilePipe(outputCtx, pipe, reflector, mode) {
     className || error("Cannot resolve the name of " + pipe.type);
     var /** @type {?} */ definitionField = outputCtx.constantPool.propertyNameOf(3 /* Pipe */);
     var /** @type {?} */ definitionFunction = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]);
-    if (mode === 0 /* PartialClass */) {
-        outputCtx.statements.push(new ClassStmt(className, null, /* fields */ [new ClassField(definitionField, /* type */ INFERRED_TYPE, /* modifiers */ [StmtModifier.Static], definitionFunction)], /* getters */ [], /* constructorMethod */ new ClassMethod(null, [], []), /* methods */ []));
+    outputCtx.statements.push(new ClassStmt(className, null, /* fields */ [new ClassField(definitionField, /* type */ INFERRED_TYPE, /* modifiers */ [StmtModifier.Static], definitionFunction)], /* getters */ [], /* constructorMethod */ new ClassMethod(null, [], []), /* methods */ []));
+}
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var BIND_NAME_REGEXP$1 = /^(?:(?:(?:(bind-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
+// Group 1 = "bind-"
+var KW_BIND_IDX$1 = 1;
+// Group 2 = "let-"
+var KW_LET_IDX$1 = 2;
+// Group 3 = "ref-/#"
+var KW_REF_IDX$1 = 3;
+// Group 4 = "on-"
+var KW_ON_IDX$1 = 4;
+// Group 5 = "bindon-"
+var KW_BINDON_IDX$1 = 5;
+// Group 6 = "@"
+var KW_AT_IDX$1 = 6;
+// Group 7 = the identifier after "bind-", "let-", "ref-/#", "on-", "bindon-" or "@"
+var IDENT_KW_IDX$1 = 7;
+// Group 8 = identifier inside [()]
+var IDENT_BANANA_BOX_IDX$1 = 8;
+// Group 9 = identifier inside []
+var IDENT_PROPERTY_IDX$1 = 9;
+// Group 10 = identifier inside ()
+var IDENT_EVENT_IDX$1 = 10;
+var TEMPLATE_ATTR_PREFIX$1 = '*';
+// Default selector used by `<ng-content>` if none specified
+var DEFAULT_CONTENT_SELECTOR = '*';
+var HtmlToTemplateTransform = /** @class */ (function () {
+    function HtmlToTemplateTransform(bindingParser) {
+        this.bindingParser = bindingParser;
+        // Selectors for the `ng-content` tags. Only non `*` selectors are recorded here
+        this.ngContentSelectors = [];
+        // Any `<ng-content>` in the template ?
+        this.hasNgContent = false;
     }
-    else {
-        // Create back-patch definition.
-        var /** @type {?} */ classReference = outputCtx.importExpr(pipe.type.reference);
-        // Create the back-patch statement
-        outputCtx.statements.push(new CommentStmt(BUILD_OPTIMIZER_COLOCATE), classReference.prop(definitionField).set(definitionFunction).toStmt());
+    // HTML visitor
+    /**
+     * @param {?} element
+     * @return {?}
+     */
+    HtmlToTemplateTransform.prototype.visitElement = /**
+     * @param {?} element
+     * @return {?}
+     */
+    function (element) {
+        var /** @type {?} */ preparsedElement = preparseElement(element);
+        if (preparsedElement.type === PreparsedElementType.SCRIPT ||
+            preparsedElement.type === PreparsedElementType.STYLE) {
+            // Skipping <script> for security reasons
+            // Skipping <style> as we already processed them
+            // in the StyleCompiler
+            return null;
+        }
+        if (preparsedElement.type === PreparsedElementType.STYLESHEET &&
+            isStyleUrlResolvable(preparsedElement.hrefAttr)) {
+            // Skipping stylesheets with either relative urls or package scheme as we already processed
+            // them in the StyleCompiler
+            return null;
+        }
+        // Whether the element is a `<ng-template>`
+        var /** @type {?} */ isTemplateElement = isNgTemplate(element.name);
+        var /** @type {?} */ matchableAttributes = [];
+        var /** @type {?} */ boundProperties = [];
+        var /** @type {?} */ boundEvents = [];
+        var /** @type {?} */ variables = [];
+        var /** @type {?} */ references = [];
+        var /** @type {?} */ attributes = [];
+        var /** @type {?} */ templateMatchableAttributes = [];
+        var /** @type {?} */ inlineTemplateSourceSpan;
+        var /** @type {?} */ templateBoundProperties = [];
+        var /** @type {?} */ templateVariables = [];
+        // Whether the element has any *-attribute
+        var /** @type {?} */ elementHasInlineTemplate = false;
+        for (var _i = 0, _a = element.attrs; _i < _a.length; _i++) {
+            var attribute = _a[_i];
+            var /** @type {?} */ hasBinding = false;
+            var /** @type {?} */ normalizedName = normalizeAttributeName(attribute.name);
+            // `*attr` defines template bindings
+            var /** @type {?} */ isTemplateBinding = false;
+            if (normalizedName.startsWith(TEMPLATE_ATTR_PREFIX$1)) {
+                if (elementHasInlineTemplate) {
+                    this.reportError("Can't have multiple template bindings on one element. Use only one attribute prefixed with *", attribute.sourceSpan);
+                }
+                isTemplateBinding = true;
+                elementHasInlineTemplate = true;
+                var /** @type {?} */ templateBindingsSource = attribute.value;
+                var /** @type {?} */ prefixToken = normalizedName.substring(TEMPLATE_ATTR_PREFIX$1.length) + ':';
+                var /** @type {?} */ oldVariables = [];
+                inlineTemplateSourceSpan = attribute.valueSpan || attribute.sourceSpan;
+                this.bindingParser.parseInlineTemplateBinding(/** @type {?} */ ((prefixToken)), /** @type {?} */ ((templateBindingsSource)), attribute.sourceSpan, templateMatchableAttributes, templateBoundProperties, oldVariables);
+                templateVariables.push.apply(templateVariables, oldVariables.map(function (v) { return new Variable(v.name, v.value, v.sourceSpan); }));
+            }
+            else {
+                // Check for variables, events, property bindings, interpolation
+                hasBinding = this.parseAttribute(isTemplateElement, attribute, matchableAttributes, boundProperties, boundEvents, variables, references);
+            }
+            if (!hasBinding && !isTemplateBinding) {
+                // don't include the bindings as attributes as well in the AST
+                attributes.push(/** @type {?} */ (this.visitAttribute(attribute)));
+                matchableAttributes.push([attribute.name, attribute.value]);
+            }
+        }
+        var /** @type {?} */ children = visitAll(preparsedElement.nonBindable ? NON_BINDABLE_VISITOR$1 : this, element.children);
+        var /** @type {?} */ parsedElement;
+        if (preparsedElement.type === PreparsedElementType.NG_CONTENT) {
+            // `<ng-content>`
+            this.hasNgContent = true;
+            if (element.children && !element.children.every(isEmptyTextNode)) {
+                this.reportError("<ng-content> element cannot have content.", element.sourceSpan);
+            }
+            var /** @type {?} */ selector = preparsedElement.selectAttr;
+            var /** @type {?} */ attributes_1 = element.attrs.map(function (attribute) {
+                return new TextAttribute(attribute.name, attribute.value, attribute.sourceSpan, attribute.valueSpan);
+            });
+            var /** @type {?} */ selectorIndex = selector === DEFAULT_CONTENT_SELECTOR ? 0 : this.ngContentSelectors.push(selector);
+            parsedElement = new Content(selectorIndex, attributes_1, element.sourceSpan);
+        }
+        else if (isTemplateElement) {
+            // `<ng-template>`
+            var /** @type {?} */ boundAttributes = this.createBoundAttributes(element.name, boundProperties);
+            parsedElement = new Template(attributes, boundAttributes, children, references, variables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+        }
+        else {
+            var /** @type {?} */ boundAttributes = this.createBoundAttributes(element.name, boundProperties);
+            parsedElement = new Element$1(element.name, attributes, boundAttributes, boundEvents, children, references, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+        }
+        if (elementHasInlineTemplate) {
+            var /** @type {?} */ attributes_2 = [];
+            templateMatchableAttributes.forEach(function (_a) {
+                var name = _a[0], value = _a[1];
+                return attributes_2.push(new TextAttribute(name, value, inlineTemplateSourceSpan));
+            });
+            var /** @type {?} */ boundAttributes = this.createBoundAttributes('ng-template', templateBoundProperties);
+            parsedElement = new Template(attributes_2, boundAttributes, [parsedElement], [], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+        }
+        return parsedElement;
+    };
+    /**
+     * @param {?} attribute
+     * @return {?}
+     */
+    HtmlToTemplateTransform.prototype.visitAttribute = /**
+     * @param {?} attribute
+     * @return {?}
+     */
+    function (attribute) {
+        return new TextAttribute(attribute.name, attribute.value, attribute.sourceSpan, attribute.valueSpan);
+    };
+    /**
+     * @param {?} text
+     * @return {?}
+     */
+    HtmlToTemplateTransform.prototype.visitText = /**
+     * @param {?} text
+     * @return {?}
+     */
+    function (text) {
+        var /** @type {?} */ valueNoNgsp = replaceNgsp(text.value);
+        var /** @type {?} */ expr = this.bindingParser.parseInterpolation(valueNoNgsp, text.sourceSpan);
+        return expr ? new BoundText(expr, text.sourceSpan) : new Text$3(valueNoNgsp, text.sourceSpan);
+    };
+    /**
+     * @param {?} comment
+     * @return {?}
+     */
+    HtmlToTemplateTransform.prototype.visitComment = /**
+     * @param {?} comment
+     * @return {?}
+     */
+    function (comment) { return null; };
+    /**
+     * @param {?} expansion
+     * @return {?}
+     */
+    HtmlToTemplateTransform.prototype.visitExpansion = /**
+     * @param {?} expansion
+     * @return {?}
+     */
+    function (expansion) { return null; };
+    /**
+     * @param {?} expansionCase
+     * @return {?}
+     */
+    HtmlToTemplateTransform.prototype.visitExpansionCase = /**
+     * @param {?} expansionCase
+     * @return {?}
+     */
+    function (expansionCase) { return null; };
+    /**
+     * @param {?} elementName
+     * @param {?} boundProperties
+     * @return {?}
+     */
+    HtmlToTemplateTransform.prototype.createBoundAttributes = /**
+     * @param {?} elementName
+     * @param {?} boundProperties
+     * @return {?}
+     */
+    function (elementName, boundProperties) {
+        var _this = this;
+        var /** @type {?} */ literalProperties = boundProperties.filter(function (prop) { return !prop.isLiteral; });
+        return literalProperties.map(function (property) {
+            // TODO(vicb): get ride of the boundProperty (from TemplateAst)
+            var /** @type {?} */ boundProp = _this.bindingParser.createElementPropertyAst(elementName, property);
+            return new BoundAttribute(boundProp.name, /** @type {?} */ ((boundProp.type)), boundProp.securityContext, boundProp.value, boundProp.unit, boundProp.sourceSpan);
+        });
+    };
+    /**
+     * @param {?} isTemplateElement
+     * @param {?} attribute
+     * @param {?} matchableAttributes
+     * @param {?} boundProperties
+     * @param {?} boundEvents
+     * @param {?} variables
+     * @param {?} references
+     * @return {?}
+     */
+    HtmlToTemplateTransform.prototype.parseAttribute = /**
+     * @param {?} isTemplateElement
+     * @param {?} attribute
+     * @param {?} matchableAttributes
+     * @param {?} boundProperties
+     * @param {?} boundEvents
+     * @param {?} variables
+     * @param {?} references
+     * @return {?}
+     */
+    function (isTemplateElement, attribute, matchableAttributes, boundProperties, boundEvents, variables, references) {
+        var /** @type {?} */ name = normalizeAttributeName(attribute.name);
+        var /** @type {?} */ value = attribute.value;
+        var /** @type {?} */ srcSpan = attribute.sourceSpan;
+        var /** @type {?} */ bindParts = name.match(BIND_NAME_REGEXP$1);
+        var /** @type {?} */ hasBinding = false;
+        if (bindParts) {
+            hasBinding = true;
+            if (bindParts[KW_BIND_IDX$1] != null) {
+                this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX$1], value, false, srcSpan, matchableAttributes, boundProperties);
+            }
+            else if (bindParts[KW_LET_IDX$1]) {
+                if (isTemplateElement) {
+                    var /** @type {?} */ identifier = bindParts[IDENT_KW_IDX$1];
+                    this.parseVariable(identifier, value, srcSpan, variables);
+                }
+                else {
+                    this.reportError("\"let-\" is only supported on ng-template elements.", srcSpan);
+                }
+            }
+            else if (bindParts[KW_REF_IDX$1]) {
+                var /** @type {?} */ identifier = bindParts[IDENT_KW_IDX$1];
+                this.parseReference(identifier, value, srcSpan, references);
+            }
+            else if (bindParts[KW_ON_IDX$1]) {
+                var /** @type {?} */ events = [];
+                this.bindingParser.parseEvent(bindParts[IDENT_KW_IDX$1], value, srcSpan, matchableAttributes, events);
+                addEvents(events, boundEvents);
+            }
+            else if (bindParts[KW_BINDON_IDX$1]) {
+                this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX$1], value, false, srcSpan, matchableAttributes, boundProperties);
+                this.parseAssignmentEvent(bindParts[IDENT_KW_IDX$1], value, srcSpan, matchableAttributes, boundEvents);
+            }
+            else if (bindParts[KW_AT_IDX$1]) {
+                this.bindingParser.parseLiteralAttr(name, value, srcSpan, matchableAttributes, boundProperties);
+            }
+            else if (bindParts[IDENT_BANANA_BOX_IDX$1]) {
+                this.bindingParser.parsePropertyBinding(bindParts[IDENT_BANANA_BOX_IDX$1], value, false, srcSpan, matchableAttributes, boundProperties);
+                this.parseAssignmentEvent(bindParts[IDENT_BANANA_BOX_IDX$1], value, srcSpan, matchableAttributes, boundEvents);
+            }
+            else if (bindParts[IDENT_PROPERTY_IDX$1]) {
+                this.bindingParser.parsePropertyBinding(bindParts[IDENT_PROPERTY_IDX$1], value, false, srcSpan, matchableAttributes, boundProperties);
+            }
+            else if (bindParts[IDENT_EVENT_IDX$1]) {
+                var /** @type {?} */ events = [];
+                this.bindingParser.parseEvent(bindParts[IDENT_EVENT_IDX$1], value, srcSpan, matchableAttributes, events);
+                addEvents(events, boundEvents);
+            }
+        }
+        else {
+            hasBinding = this.bindingParser.parsePropertyInterpolation(name, value, srcSpan, matchableAttributes, boundProperties);
+        }
+        return hasBinding;
+    };
+    /**
+     * @param {?} identifier
+     * @param {?} value
+     * @param {?} sourceSpan
+     * @param {?} variables
+     * @return {?}
+     */
+    HtmlToTemplateTransform.prototype.parseVariable = /**
+     * @param {?} identifier
+     * @param {?} value
+     * @param {?} sourceSpan
+     * @param {?} variables
+     * @return {?}
+     */
+    function (identifier, value, sourceSpan, variables) {
+        if (identifier.indexOf('-') > -1) {
+            this.reportError("\"-\" is not allowed in variable names", sourceSpan);
+        }
+        variables.push(new Variable(identifier, value, sourceSpan));
+    };
+    /**
+     * @param {?} identifier
+     * @param {?} value
+     * @param {?} sourceSpan
+     * @param {?} references
+     * @return {?}
+     */
+    HtmlToTemplateTransform.prototype.parseReference = /**
+     * @param {?} identifier
+     * @param {?} value
+     * @param {?} sourceSpan
+     * @param {?} references
+     * @return {?}
+     */
+    function (identifier, value, sourceSpan, references) {
+        if (identifier.indexOf('-') > -1) {
+            this.reportError("\"-\" is not allowed in reference names", sourceSpan);
+        }
+        references.push(new Reference(identifier, value, sourceSpan));
+    };
+    /**
+     * @param {?} name
+     * @param {?} expression
+     * @param {?} sourceSpan
+     * @param {?} targetMatchableAttrs
+     * @param {?} boundEvents
+     * @return {?}
+     */
+    HtmlToTemplateTransform.prototype.parseAssignmentEvent = /**
+     * @param {?} name
+     * @param {?} expression
+     * @param {?} sourceSpan
+     * @param {?} targetMatchableAttrs
+     * @param {?} boundEvents
+     * @return {?}
+     */
+    function (name, expression, sourceSpan, targetMatchableAttrs, boundEvents) {
+        var /** @type {?} */ events = [];
+        this.bindingParser.parseEvent(name + "Change", expression + "=$event", sourceSpan, targetMatchableAttrs, events);
+        addEvents(events, boundEvents);
+    };
+    /**
+     * @param {?} message
+     * @param {?} sourceSpan
+     * @param {?=} level
+     * @return {?}
+     */
+    HtmlToTemplateTransform.prototype.reportError = /**
+     * @param {?} message
+     * @param {?} sourceSpan
+     * @param {?=} level
+     * @return {?}
+     */
+    function (message, sourceSpan, level) {
+        if (level === void 0) { level = ParseErrorLevel.ERROR; }
+        this.errors.push(new ParseError(sourceSpan, message, level));
+    };
+    return HtmlToTemplateTransform;
+}());
+var NonBindableVisitor$1 = /** @class */ (function () {
+    function NonBindableVisitor() {
     }
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    NonBindableVisitor.prototype.visitElement = /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function (ast) {
+        var /** @type {?} */ preparsedElement = preparseElement(ast);
+        if (preparsedElement.type === PreparsedElementType.SCRIPT ||
+            preparsedElement.type === PreparsedElementType.STYLE ||
+            preparsedElement.type === PreparsedElementType.STYLESHEET) {
+            // Skipping <script> for security reasons
+            // Skipping <style> and stylesheets as we already processed them
+            // in the StyleCompiler
+            return null;
+        }
+        var /** @type {?} */ children = visitAll(this, ast.children, null);
+        return new Element$1(ast.name, /** @type {?} */ (visitAll(this, ast.attrs)), /* inputs */ [], /* outputs */ /* outputs */ [], children, /* references */ /* references */ [], ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
+    };
+    /**
+     * @param {?} comment
+     * @return {?}
+     */
+    NonBindableVisitor.prototype.visitComment = /**
+     * @param {?} comment
+     * @return {?}
+     */
+    function (comment) { return null; };
+    /**
+     * @param {?} attribute
+     * @return {?}
+     */
+    NonBindableVisitor.prototype.visitAttribute = /**
+     * @param {?} attribute
+     * @return {?}
+     */
+    function (attribute) {
+        return new TextAttribute(attribute.name, attribute.value, attribute.sourceSpan);
+    };
+    /**
+     * @param {?} text
+     * @return {?}
+     */
+    NonBindableVisitor.prototype.visitText = /**
+     * @param {?} text
+     * @return {?}
+     */
+    function (text) { return new Text$3(text.value, text.sourceSpan); };
+    /**
+     * @param {?} expansion
+     * @return {?}
+     */
+    NonBindableVisitor.prototype.visitExpansion = /**
+     * @param {?} expansion
+     * @return {?}
+     */
+    function (expansion) { return null; };
+    /**
+     * @param {?} expansionCase
+     * @return {?}
+     */
+    NonBindableVisitor.prototype.visitExpansionCase = /**
+     * @param {?} expansionCase
+     * @return {?}
+     */
+    function (expansionCase) { return null; };
+    return NonBindableVisitor;
+}());
+var NON_BINDABLE_VISITOR$1 = new NonBindableVisitor$1();
+/**
+ * @param {?} attrName
+ * @return {?}
+ */
+function normalizeAttributeName(attrName) {
+    return /^data-/i.test(attrName) ? attrName.substring(5) : attrName;
+}
+/**
+ * @param {?} events
+ * @param {?} boundEvents
+ * @return {?}
+ */
+function addEvents(events, boundEvents) {
+    boundEvents.push.apply(boundEvents, events.map(function (e) { return new BoundEvent(e.name, e.handler, e.target, e.phase, e.sourceSpan); }));
+}
+/**
+ * @param {?} node
+ * @return {?}
+ */
+function isEmptyTextNode(node) {
+    return node instanceof Text && node.value.trim().length == 0;
 }
 
 /**
@@ -33497,15 +34135,6 @@ function isMethodCallOnVariable(metadata) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/** @enum {number} */
-var StubEmitFlags = {
-    Basic: 1,
-    TypeCheck: 2,
-    All: 3,
-};
-StubEmitFlags[StubEmitFlags.Basic] = "Basic";
-StubEmitFlags[StubEmitFlags.TypeCheck] = "TypeCheck";
-StubEmitFlags[StubEmitFlags.All] = "All";
 var AotCompiler = /** @class */ (function () {
     function AotCompiler(_config, _options, _host, reflector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _typeCheckCompiler, _ngModuleCompiler, _injectableCompiler, _outputEmitter, _summaryResolver, _symbolResolver) {
         this._config = _config;
@@ -33662,7 +34291,7 @@ var AotCompiler = /** @class */ (function () {
                 throw new Error("Assertion error: require the original file for .ngfactory.ts stubs. File: " + genFileName);
             }
             var /** @type {?} */ originalFile = this._analyzeFile(originalFileName);
-            this._createNgFactoryStub(outputCtx, originalFile, StubEmitFlags.Basic);
+            this._createNgFactoryStub(outputCtx, originalFile, 1 /* Basic */);
         }
         else if (genFileName.endsWith('.ngsummary.ts')) {
             if (this._options.enableSummariesForJit) {
@@ -33701,7 +34330,7 @@ var AotCompiler = /** @class */ (function () {
         var /** @type {?} */ originalFile = this._analyzeFile(originalFileName);
         var /** @type {?} */ outputCtx = this._createOutputContext(genFileName);
         if (genFileName.endsWith('.ngfactory.ts')) {
-            this._createNgFactoryStub(outputCtx, originalFile, StubEmitFlags.TypeCheck);
+            this._createNgFactoryStub(outputCtx, originalFile, 2 /* TypeCheck */);
         }
         return outputCtx.statements.length > 0 ?
             this._codegenSourceModule(originalFile.fileName, outputCtx) :
@@ -33795,7 +34424,7 @@ var AotCompiler = /** @class */ (function () {
                     .set(NULL_EXPR.cast(DYNAMIC_TYPE))
                     .toDeclStmt(expressionType(outputCtx.importExpr(reference, /* typeParams */ null, /* useSummaries */ /* useSummaries */ false))));
             });
-            if (emitFlags & StubEmitFlags.TypeCheck) {
+            if (emitFlags & 2 /* TypeCheck */) {
                 // add the type-check block for all components of the NgModule
                 ngModuleMeta.declaredDirectives.forEach(function (dirId) {
                     var /** @type {?} */ compMeta = _this._metadataResolver.getDirectiveMetadata(dirId.reference);
@@ -33961,9 +34590,9 @@ var AotCompiler = /** @class */ (function () {
      */
     function (fileName, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables, context) {
         var _this = this;
-        var /** @type {?} */ classes = [];
         var /** @type {?} */ errors = [];
-        var /** @type {?} */ hostBindingParser = new BindingParser(this._templateParser.expressionParser, DEFAULT_INTERPOLATION_CONFIG, /** @type {?} */ ((null)), [], errors);
+        var /** @type {?} */ schemaRegistry = new DomElementSchemaRegistry();
+        var /** @type {?} */ hostBindingParser = new BindingParser(this._templateParser.expressionParser, DEFAULT_INTERPOLATION_CONFIG, schemaRegistry, [], errors);
         // Process all components and directives
         directives.forEach(function (directiveType) {
             var /** @type {?} */ directiveMetadata = _this._metadataResolver.getDirectiveMetadata(directiveType);
@@ -33971,17 +34600,37 @@ var AotCompiler = /** @class */ (function () {
                 var /** @type {?} */ module = /** @type {?} */ ((ngModuleByPipeOrDirective.get(directiveType)));
                 module ||
                     error("Cannot determine the module for component '" + identifierName(directiveMetadata.type) + "'");
-                var _a = _this._parseTemplate(directiveMetadata, module, module.transitiveModule.directives), parsedTemplate = _a.template, parsedPipes = _a.pipes;
-                compileComponent(context, directiveMetadata, parsedPipes, parsedTemplate, _this.reflector, hostBindingParser, 0 /* PartialClass */);
+                var /** @type {?} */ htmlAst = /** @type {?} */ ((/** @type {?} */ ((directiveMetadata.template)).htmlAst));
+                var /** @type {?} */ preserveWhitespaces = /** @type {?} */ ((/** @type {?} */ ((directiveMetadata)).template)).preserveWhitespaces;
+                if (!preserveWhitespaces) {
+                    htmlAst = removeWhitespaces(htmlAst);
+                }
+                var /** @type {?} */ transform = new HtmlToTemplateTransform(hostBindingParser);
+                var /** @type {?} */ nodes = visitAll(transform, htmlAst.rootNodes, null);
+                var /** @type {?} */ hasNgContent = transform.hasNgContent;
+                var /** @type {?} */ ngContentSelectors = transform.ngContentSelectors;
+                // Map of StaticType by directive selectors
+                var /** @type {?} */ directiveTypeBySel_1 = new Map();
+                var /** @type {?} */ directives_1 = module.transitiveModule.directives.map(function (dir) { return _this._metadataResolver.getDirectiveSummary(dir.reference); });
+                directives_1.forEach(function (directive) {
+                    if (directive.selector) {
+                        directiveTypeBySel_1.set(directive.selector, directive.type.reference);
+                    }
+                });
+                // Map of StaticType by pipe names
+                var /** @type {?} */ pipeTypeByName_1 = new Map();
+                var /** @type {?} */ pipes_1 = module.transitiveModule.pipes.map(function (pipe) { return _this._metadataResolver.getPipeSummary(pipe.reference); });
+                pipes_1.forEach(function (pipe) { pipeTypeByName_1.set(pipe.name, pipe.type.reference); });
+                compileComponent(context, directiveMetadata, nodes, hasNgContent, ngContentSelectors, _this.reflector, hostBindingParser, directiveTypeBySel_1, pipeTypeByName_1);
             }
             else {
-                compileDirective(context, directiveMetadata, _this.reflector, hostBindingParser, 0 /* PartialClass */);
+                compileDirective(context, directiveMetadata, _this.reflector, hostBindingParser);
             }
         });
         pipes.forEach(function (pipeType) {
             var /** @type {?} */ pipeMetadata = _this._metadataResolver.getPipeMetadata(pipeType);
             if (pipeMetadata) {
-                compilePipe(context, pipeMetadata, _this.reflector, 0 /* PartialClass */);
+                compilePipe(context, pipeMetadata, _this.reflector);
             }
         });
         injectables.forEach(function (injectable) { return _this._injectableCompiler.compile(injectable, context); });
@@ -34600,17 +35249,14 @@ function analyzeFileForInjectables(host, staticSymbolResolver, metadataResolver,
             if (!symbolMeta || symbolMeta.__symbolic === 'error') {
                 return;
             }
-            var /** @type {?} */ isNgSymbol = false;
             if (symbolMeta.__symbolic === 'class') {
                 if (metadataResolver.isInjectable(symbol)) {
-                    isNgSymbol = true;
                     var /** @type {?} */ injectable = metadataResolver.getInjectableMetadata(symbol, null, false);
                     if (injectable) {
                         injectables.push(injectable);
                     }
                 }
                 else if (metadataResolver.isNgModule(symbol)) {
-                    isNgSymbol = true;
                     var /** @type {?} */ module = metadataResolver.getShallowModuleMetadata(symbol);
                     if (module) {
                         shallowModules.push(module);
@@ -34628,15 +35274,15 @@ function analyzeFileForInjectables(host, staticSymbolResolver, metadataResolver,
  */
 function isValueExportingNonSourceFile(host, metadata) {
     var /** @type {?} */ exportsNonSourceFiles = false;
-    var Visitor = /** @class */ (function () {
-        function Visitor() {
+    var Visitor$$1 = /** @class */ (function () {
+        function Visitor$$1() {
         }
         /**
          * @param {?} arr
          * @param {?} context
          * @return {?}
          */
-        Visitor.prototype.visitArray = /**
+        Visitor$$1.prototype.visitArray = /**
          * @param {?} arr
          * @param {?} context
          * @return {?}
@@ -34650,7 +35296,7 @@ function isValueExportingNonSourceFile(host, metadata) {
          * @param {?} context
          * @return {?}
          */
-        Visitor.prototype.visitStringMap = /**
+        Visitor$$1.prototype.visitStringMap = /**
          * @param {?} map
          * @param {?} context
          * @return {?}
@@ -34664,7 +35310,7 @@ function isValueExportingNonSourceFile(host, metadata) {
          * @param {?} context
          * @return {?}
          */
-        Visitor.prototype.visitPrimitive = /**
+        Visitor$$1.prototype.visitPrimitive = /**
          * @param {?} value
          * @param {?} context
          * @return {?}
@@ -34675,7 +35321,7 @@ function isValueExportingNonSourceFile(host, metadata) {
          * @param {?} context
          * @return {?}
          */
-        Visitor.prototype.visitOther = /**
+        Visitor$$1.prototype.visitOther = /**
          * @param {?} value
          * @param {?} context
          * @return {?}
@@ -34685,9 +35331,9 @@ function isValueExportingNonSourceFile(host, metadata) {
                 exportsNonSourceFiles = true;
             }
         };
-        return Visitor;
+        return Visitor$$1;
     }());
-    visitValue(metadata, new Visitor(), null);
+    visitValue(metadata, new Visitor$$1(), null);
     return exportsNonSourceFiles;
 }
 /**

@@ -5,15 +5,14 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { CompileDirectiveMetadata, CompilePipeSummary, CompileQueryMetadata, CompileTypeMetadata } from '../compile_metadata';
+import { CompileDirectiveMetadata, CompileQueryMetadata, CompileTypeMetadata } from '../compile_metadata';
 import { CompileReflector } from '../compile_reflector';
 import * as o from '../output/output_ast';
 import { BindingParser } from '../template_parser/binding_parser';
-import { TemplateAst } from '../template_parser/template_ast';
 import { OutputContext } from '../util';
-import { OutputMode } from './r3_types';
-export declare function compileDirective(outputCtx: OutputContext, directive: CompileDirectiveMetadata, reflector: CompileReflector, bindingParser: BindingParser, mode: OutputMode): void;
-export declare function compileComponent(outputCtx: OutputContext, component: CompileDirectiveMetadata, pipeSummaries: CompilePipeSummary[], template: TemplateAst[], reflector: CompileReflector, bindingParser: BindingParser, mode: OutputMode): void;
+import * as t from './r3_ast';
+export declare function compileDirective(outputCtx: OutputContext, directive: CompileDirectiveMetadata, reflector: CompileReflector, bindingParser: BindingParser): void;
+export declare function compileComponent(outputCtx: OutputContext, component: CompileDirectiveMetadata, nodes: t.Node[], hasNgContent: boolean, ngContentSelectors: string[], reflector: CompileReflector, bindingParser: BindingParser, directiveTypeBySel: Map<string, any>, pipeTypeByName: Map<string, any>): void;
 /**
  * Flags passed into template functions to determine which blocks (i.e. creation, update)
  * should be executed.

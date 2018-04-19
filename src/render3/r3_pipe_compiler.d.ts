@@ -8,8 +8,7 @@
 import { CompilePipeMetadata } from '../compile_metadata';
 import { CompileReflector } from '../compile_reflector';
 import { OutputContext } from '../util';
-import { OutputMode } from './r3_types';
 /**
  * Write a pipe definition to the output context.
  */
-export declare function compilePipe(outputCtx: OutputContext, pipe: CompilePipeMetadata, reflector: CompileReflector, mode: OutputMode): void;
+export declare function compilePipe(outputCtx: OutputContext, pipe: CompilePipeMetadata, reflector: CompileReflector): void;

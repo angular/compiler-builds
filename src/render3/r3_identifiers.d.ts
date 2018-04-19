@@ -17,10 +17,7 @@ export declare class Identifiers {
     static elementClassNamed: o.ExternalReference;
     static elementStyleNamed: o.ExternalReference;
     static containerCreate: o.ExternalReference;
-    static containerEnd: o.ExternalReference;
-    static directiveCreate: o.ExternalReference;
     static text: o.ExternalReference;
-    static directiveInput: o.ExternalReference;
     static textCreateBound: o.ExternalReference;
     static bind: o.ExternalReference;
     static interpolation1: o.ExternalReference;
@@ -51,8 +48,6 @@ export declare class Identifiers {
     static pipe: o.ExternalReference;
     static projection: o.ExternalReference;
     static projectionDef: o.ExternalReference;
-    static refreshComponent: o.ExternalReference;
-    static directiveLifeCycle: o.ExternalReference;
     static injectAttribute: o.ExternalReference;
     static injectElementRef: o.ExternalReference;
     static injectTemplateRef: o.ExternalReference;

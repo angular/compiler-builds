@@ -24,10 +24,7 @@ Identifiers.elementAttribute = { name: 'ɵa', moduleName: CORE };
 Identifiers.elementClassNamed = { name: 'ɵkn', moduleName: CORE };
 Identifiers.elementStyleNamed = { name: 'ɵsn', moduleName: CORE };
 Identifiers.containerCreate = { name: 'ɵC', moduleName: CORE };
-Identifiers.containerEnd = { name: 'ɵc', moduleName: CORE };
-Identifiers.directiveCreate = { name: 'ɵD', moduleName: CORE };
 Identifiers.text = { name: 'ɵT', moduleName: CORE };
-Identifiers.directiveInput = { name: 'ɵi', moduleName: CORE };
 Identifiers.textCreateBound = { name: 'ɵt', moduleName: CORE };
 Identifiers.bind = { name: 'ɵb', moduleName: CORE };
 Identifiers.interpolation1 = { name: 'ɵi1', moduleName: CORE };
@@ -58,8 +55,6 @@ Identifiers.load = { name: 'ɵld', moduleName: CORE };
 Identifiers.pipe = { name: 'ɵPp', moduleName: CORE };
 Identifiers.projection = { name: 'ɵP', moduleName: CORE };
 Identifiers.projectionDef = { name: 'ɵpD', moduleName: CORE };
-Identifiers.refreshComponent = { name: 'ɵr', moduleName: CORE };
-Identifiers.directiveLifeCycle = { name: 'ɵl', moduleName: CORE };
 Identifiers.injectAttribute = { name: 'ɵinjectAttribute', moduleName: CORE };
 Identifiers.injectElementRef = { name: 'ɵinjectElementRef', moduleName: CORE };
 Identifiers.injectTemplateRef = { name: 'ɵinjectTemplateRef', moduleName: CORE };
@@ -101,13 +96,7 @@ function Identifiers_tsickle_Closure_declarations() {
     /** @type {?} */
     Identifiers.containerCreate;
     /** @type {?} */
-    Identifiers.containerEnd;
-    /** @type {?} */
-    Identifiers.directiveCreate;
-    /** @type {?} */
     Identifiers.text;
-    /** @type {?} */
-    Identifiers.directiveInput;
     /** @type {?} */
     Identifiers.textCreateBound;
     /** @type {?} */
@@ -168,10 +157,6 @@ function Identifiers_tsickle_Closure_declarations() {
     Identifiers.projection;
     /** @type {?} */
     Identifiers.projectionDef;
-    /** @type {?} */
-    Identifiers.refreshComponent;
-    /** @type {?} */
-    Identifiers.directiveLifeCycle;
     /** @type {?} */
     Identifiers.injectAttribute;
     /** @type {?} */

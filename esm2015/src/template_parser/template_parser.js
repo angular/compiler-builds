@@ -336,7 +336,7 @@ class TemplateParseVisitor {
      */
     visitElement(element, parent) {
         const /** @type {?} */ queryStartIndex = this.contentQueryStartId;
-        const /** @type {?} */ nodeName = element.name;
+        const /** @type {?} */ elName = element.name;
         const /** @type {?} */ preparsedElement = preparseElement(element);
         if (preparsedElement.type === PreparsedElementType.SCRIPT ||
             preparsedElement.type === PreparsedElementType.STYLE) {
@@ -385,7 +385,7 @@ class TemplateParseVisitor {
                 matchableAttrs.push([attr.name, attr.value]);
             }
         });
-        const /** @type {?} */ elementCssSelector = createElementCssSelector(nodeName, matchableAttrs);
+        const /** @type {?} */ elementCssSelector = createElementCssSelector(elName, matchableAttrs);
         const { directives: directiveMetas, matchElement } = this._parseDirectives(this.selectorMatcher, elementCssSelector);
         const /** @type {?} */ references = [];
         const /** @type {?} */ boundDirectivePropNames = new Set();
@@ -396,35 +396,39 @@ class TemplateParseVisitor {
         const /** @type {?} */ children = html.visitAll(preparsedElement.nonBindable ? NON_BINDABLE_VISITOR : this, element.children, ElementContext.create(isTemplateElement, directiveAsts, isTemplateElement ? /** @type {?} */ ((parent.providerContext)) : providerContext));
         providerContext.afterElement();
         // Override the actual selector when the `ngProjectAs` attribute is provided
-        const /** @type {?} */ projectionSelector = preparsedElement.projectAs != null ?
+        const /** @type {?} */ projectionSelector = preparsedElement.projectAs != '' ?
             CssSelector.parse(preparsedElement.projectAs)[0] :
             elementCssSelector;
         const /** @type {?} */ ngContentIndex = /** @type {?} */ ((parent.findNgContentIndex(projectionSelector)));
         let /** @type {?} */ parsedElement;
         if (preparsedElement.type === PreparsedElementType.NG_CONTENT) {
+            // `<ng-content>` element
             if (element.children && !element.children.every(_isEmptyTextNode)) {
                 this._reportError(`<ng-content> element cannot have content.`, /** @type {?} */ ((element.sourceSpan)));
             }
             parsedElement = new NgContentAst(this.ngContentCount++, hasInlineTemplates ? /** @type {?} */ ((null)) : ngContentIndex, /** @type {?} */ ((element.sourceSpan)));
         }
         else if (isTemplateElement) {
+            // `<ng-template>` element
             this._assertAllEventsPublishedByDirectives(directiveAsts, events);
             this._assertNoComponentsNorElementBindingsOnTemplate(directiveAsts, elementProps, /** @type {?} */ ((element.sourceSpan)));
             parsedElement = new EmbeddedTemplateAst(attrs, events, references, elementVars, providerContext.transformedDirectiveAsts, providerContext.transformProviders, providerContext.transformedHasViewContainer, providerContext.queryMatches, children, hasInlineTemplates ? /** @type {?} */ ((null)) : ngContentIndex, /** @type {?} */ ((element.sourceSpan)));
         }
         else {
+            // element other than `<ng-content>` and `<ng-template>`
             this._assertElementExists(matchElement, element);
             this._assertOnlyOneComponent(directiveAsts, /** @type {?} */ ((element.sourceSpan)));
             const /** @type {?} */ ngContentIndex = hasInlineTemplates ? null : parent.findNgContentIndex(projectionSelector);
-            parsedElement = new ElementAst(nodeName, attrs, elementProps, events, references, providerContext.transformedDirectiveAsts, providerContext.transformProviders, providerContext.transformedHasViewContainer, providerContext.queryMatches, children, hasInlineTemplates ? null : ngContentIndex, element.sourceSpan, element.endSourceSpan || null);
+            parsedElement = new ElementAst(elName, attrs, elementProps, events, references, providerContext.transformedDirectiveAsts, providerContext.transformProviders, providerContext.transformedHasViewContainer, providerContext.queryMatches, children, hasInlineTemplates ? null : ngContentIndex, element.sourceSpan, element.endSourceSpan || null);
         }
         if (hasInlineTemplates) {
+            // The element as a *-attribute
             const /** @type {?} */ templateQueryStartIndex = this.contentQueryStartId;
             const /** @type {?} */ templateSelector = createElementCssSelector('ng-template', templateMatchableAttrs);
-            const { directives: templateDirectiveMetas } = this._parseDirectives(this.selectorMatcher, templateSelector);
+            const { directives } = this._parseDirectives(this.selectorMatcher, templateSelector);
             const /** @type {?} */ templateBoundDirectivePropNames = new Set();
-            const /** @type {?} */ templateDirectiveAsts = this._createDirectiveAsts(true, element.name, templateDirectiveMetas, templateElementOrDirectiveProps, [], /** @type {?} */ ((element.sourceSpan)), [], templateBoundDirectivePropNames);
-            const /** @type {?} */ templateElementProps = this._createElementPropertyAsts(element.name, templateElementOrDirectiveProps, templateBoundDirectivePropNames);
+            const /** @type {?} */ templateDirectiveAsts = this._createDirectiveAsts(true, elName, directives, templateElementOrDirectiveProps, [], /** @type {?} */ ((element.sourceSpan)), [], templateBoundDirectivePropNames);
+            const /** @type {?} */ templateElementProps = this._createElementPropertyAsts(elName, templateElementOrDirectiveProps, templateBoundDirectivePropNames);
             this._assertNoComponentsNorElementBindingsOnTemplate(templateDirectiveAsts, templateElementProps, /** @type {?} */ ((element.sourceSpan)));
             const /** @type {?} */ templateProviderContext = new ProviderElementContext(this.providerViewContext, /** @type {?} */ ((parent.providerContext)), parent.isTemplateElement, templateDirectiveAsts, [], [], true, templateQueryStartIndex, /** @type {?} */ ((element.sourceSpan)));
             templateProviderContext.afterElement();

@@ -28,7 +28,7 @@ export function preparseElement(ast) {
     var /** @type {?} */ hrefAttr = /** @type {?} */ ((null));
     var /** @type {?} */ relAttr = /** @type {?} */ ((null));
     var /** @type {?} */ nonBindable = false;
-    var /** @type {?} */ projectAs = /** @type {?} */ ((null));
+    var /** @type {?} */ projectAs = '';
     ast.attrs.forEach(function (attr) {
         var /** @type {?} */ lcAttrName = attr.name.toLowerCase();
         if (lcAttrName == NG_CONTENT_SELECT_ATTR) {
