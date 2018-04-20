@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5-7790cfa
+ * @license Angular v6.0.0-rc.5-b9431e8
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -614,7 +614,7 @@ class Version {
 /**
  *
  */
-const VERSION = new Version('6.0.0-rc.5-7790cfa');
+const VERSION = new Version('6.0.0-rc.5-b9431e8');
 
 /**
  * @fileoverview added by tsickle
@@ -28696,7 +28696,9 @@ class StaticReflector {
             let /** @type {?} */ ownAnnotations = [];
             if (classMetadata['decorators']) {
                 ownAnnotations = simplify(type, classMetadata['decorators']);
-                annotations.push(...ownAnnotations);
+                if (ownAnnotations) {
+                    annotations.push(...ownAnnotations);
+                }
             }
             if (parentType && !this.summaryResolver.isLibraryFile(type.filePath) &&
                 this.summaryResolver.isLibraryFile(parentType.filePath)) {

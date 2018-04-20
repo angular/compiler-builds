@@ -179,7 +179,9 @@ export class StaticReflector {
             let /** @type {?} */ ownAnnotations = [];
             if (classMetadata['decorators']) {
                 ownAnnotations = simplify(type, classMetadata['decorators']);
-                annotations.push(...ownAnnotations);
+                if (ownAnnotations) {
+                    annotations.push(...ownAnnotations);
+                }
             }
             if (parentType && !this.summaryResolver.isLibraryFile(type.filePath) &&
                 this.summaryResolver.isLibraryFile(parentType.filePath)) {

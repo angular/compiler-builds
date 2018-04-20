@@ -228,7 +228,9 @@ StaticReflector = /** @class */ (function () {
             var /** @type {?} */ ownAnnotations_1 = [];
             if (classMetadata['decorators']) {
                 ownAnnotations_1 = simplify(type, classMetadata['decorators']);
-                annotations.push.apply(annotations, ownAnnotations_1);
+                if (ownAnnotations_1) {
+                    annotations.push.apply(annotations, ownAnnotations_1);
+                }
             }
             if (parentType && !this.summaryResolver.isLibraryFile(type.filePath) &&
                 this.summaryResolver.isLibraryFile(parentType.filePath)) {
