@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5-f2563ca
+ * @license Angular v6.0.0-rc.5-ca776c5
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v6.0.0-rc.5-f2563ca
+ * @license Angular v6.0.0-rc.5-ca776c5
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -712,7 +712,7 @@ var Version = /** @class */ (function () {
 /**
  *
  */
-var VERSION = new Version('6.0.0-rc.5-f2563ca');
+var VERSION = new Version('6.0.0-rc.5-ca776c5');
 
 /**
  * @fileoverview added by tsickle
@@ -35706,7 +35706,9 @@ var StaticReflector = /** @class */ (function () {
             var /** @type {?} */ ownAnnotations_1 = [];
             if (classMetadata['decorators']) {
                 ownAnnotations_1 = simplify(type, classMetadata['decorators']);
-                annotations.push.apply(annotations, ownAnnotations_1);
+                if (ownAnnotations_1) {
+                    annotations.push.apply(annotations, ownAnnotations_1);
+                }
             }
             if (parentType && !this.summaryResolver.isLibraryFile(type.filePath) &&
                 this.summaryResolver.isLibraryFile(parentType.filePath)) {
