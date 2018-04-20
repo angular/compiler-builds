@@ -426,20 +426,20 @@ var TemplateParseVisitor = /** @class */ (function () {
         var /** @type {?} */ isTemplateElement = isNgTemplate(element.name);
         element.attrs.forEach(function (attr) {
             var /** @type {?} */ hasBinding = _this._parseAttr(isTemplateElement, attr, matchableAttrs, elementOrDirectiveProps, events, elementOrDirectiveRefs, elementVars);
-            var /** @type {?} */ templateBindingsSource;
-            var /** @type {?} */ prefixToken;
+            var /** @type {?} */ templateValue;
+            var /** @type {?} */ templateKey;
             var /** @type {?} */ normalizedName = _this._normalizeAttributeName(attr.name);
             if (normalizedName.startsWith(TEMPLATE_ATTR_PREFIX)) {
-                templateBindingsSource = attr.value;
-                prefixToken = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length) + ':';
+                templateValue = attr.value;
+                templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length);
             }
-            var /** @type {?} */ hasTemplateBinding = templateBindingsSource != null;
+            var /** @type {?} */ hasTemplateBinding = templateValue != null;
             if (hasTemplateBinding) {
                 if (hasInlineTemplates) {
                     _this._reportError("Can't have multiple template bindings on one element. Use only one attribute prefixed with *", attr.sourceSpan);
                 }
                 hasInlineTemplates = true;
-                _this._bindingParser.parseInlineTemplateBinding(/** @type {?} */ ((prefixToken)), /** @type {?} */ ((templateBindingsSource)), attr.sourceSpan, templateMatchableAttrs, templateElementOrDirectiveProps, templateElementVars);
+                _this._bindingParser.parseInlineTemplateBinding(/** @type {?} */ ((templateKey)), /** @type {?} */ ((templateValue)), attr.sourceSpan, templateMatchableAttrs, templateElementOrDirectiveProps, templateElementVars);
             }
             if (!hasBinding && !hasTemplateBinding) {
                 // don't include the bindings as attributes as well in the AST

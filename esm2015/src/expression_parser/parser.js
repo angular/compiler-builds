@@ -155,23 +155,15 @@ export class Parser {
         return new Quote(new ParseSpan(0, input.length), prefix, uninterpretedExpression, location);
     }
     /**
-     * @param {?} prefixToken
-     * @param {?} input
+     * @param {?} tplKey
+     * @param {?} tplValue
      * @param {?} location
      * @return {?}
      */
-    parseTemplateBindings(prefixToken, input, location) {
-        const /** @type {?} */ tokens = this._lexer.tokenize(input);
-        if (prefixToken) {
-            // Prefix the tokens with the tokens from prefixToken but have them take no space (0 index).
-            const /** @type {?} */ prefixTokens = this._lexer.tokenize(prefixToken).map(t => {
-                t.index = 0;
-                return t;
-            });
-            tokens.unshift(...prefixTokens);
-        }
-        return new _ParseAST(input, location, tokens, input.length, false, this.errors, 0)
-            .parseTemplateBindings();
+    parseTemplateBindings(tplKey, tplValue, location) {
+        const /** @type {?} */ tokens = this._lexer.tokenize(tplValue);
+        return new _ParseAST(tplValue, location, tokens, tplValue.length, false, this.errors, 0)
+            .parseTemplateBindings(tplKey);
     }
     /**
      * @param {?} input
@@ -847,32 +839,33 @@ export class _ParseAST {
         return result.toString();
     }
     /**
+     * @param {?} tplKey
      * @return {?}
      */
-    parseTemplateBindings() {
+    parseTemplateBindings(tplKey) {
+        let /** @type {?} */ firstBinding = true;
         const /** @type {?} */ bindings = [];
-        let /** @type {?} */ prefix = /** @type {?} */ ((null));
         const /** @type {?} */ warnings = [];
-        while (this.index < this.tokens.length) {
+        do {
             const /** @type {?} */ start = this.inputIndex;
-            let /** @type {?} */ keyIsVar = this.peekKeywordLet();
-            if (keyIsVar) {
-                this.advance();
+            let /** @type {?} */ rawKey;
+            let /** @type {?} */ key;
+            let /** @type {?} */ isVar = false;
+            if (firstBinding) {
+                rawKey = key = tplKey;
+                firstBinding = false;
             }
-            let /** @type {?} */ rawKey = this.expectTemplateBindingKey();
-            let /** @type {?} */ key = rawKey;
-            if (!keyIsVar) {
-                if (prefix == null) {
-                    prefix = key;
-                }
-                else {
-                    key = prefix + key[0].toUpperCase() + key.substring(1);
-                }
+            else {
+                isVar = this.peekKeywordLet();
+                if (isVar)
+                    this.advance();
+                rawKey = this.expectTemplateBindingKey();
+                key = isVar ? rawKey : tplKey + rawKey[0].toUpperCase() + rawKey.substring(1);
+                this.optionalCharacter(chars.$COLON);
             }
-            this.optionalCharacter(chars.$COLON);
             let /** @type {?} */ name = /** @type {?} */ ((null));
-            let /** @type {?} */ expression = /** @type {?} */ ((null));
-            if (keyIsVar) {
+            let /** @type {?} */ expression = null;
+            if (isVar) {
                 if (this.optionalOperator('=')) {
                     name = this.expectTemplateBindingKey();
                 }
@@ -881,11 +874,10 @@ export class _ParseAST {
                 }
             }
             else if (this.peekKeywordAs()) {
-                const /** @type {?} */ letStart = this.inputIndex;
                 this.advance(); // consume `as`
                 name = rawKey;
                 key = this.expectTemplateBindingKey(); // read local var name
-                keyIsVar = true;
+                isVar = true;
             }
             else if (this.next !== EOF && !this.peekKeywordLet()) {
                 const /** @type {?} */ start = this.inputIndex;
@@ -893,8 +885,8 @@ export class _ParseAST {
                 const /** @type {?} */ source = this.input.substring(start - this.offset, this.inputIndex - this.offset);
                 expression = new ASTWithSource(ast, source, this.location, this.errors);
             }
-            bindings.push(new TemplateBinding(this.span(start), key, keyIsVar, name, expression));
-            if (this.peekKeywordAs() && !keyIsVar) {
+            bindings.push(new TemplateBinding(this.span(start), key, isVar, name, expression));
+            if (this.peekKeywordAs() && !isVar) {
                 const /** @type {?} */ letStart = this.inputIndex;
                 this.advance(); // consume `as`
                 const /** @type {?} */ letName = this.expectTemplateBindingKey(); // read local var name
@@ -903,7 +895,7 @@ export class _ParseAST {
             if (!this.optionalCharacter(chars.$SEMICOLON)) {
                 this.optionalCharacter(chars.$COMMA);
             }
-        }
+        } while (this.index < this.tokens.length);
         return new TemplateBindingParseResult(bindings, warnings, this.errors);
     }
     /**

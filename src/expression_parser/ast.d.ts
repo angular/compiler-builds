@@ -181,8 +181,8 @@ export declare class TemplateBinding {
     key: string;
     keyIsVar: boolean;
     name: string;
-    expression: ASTWithSource;
-    constructor(span: ParseSpan, key: string, keyIsVar: boolean, name: string, expression: ASTWithSource);
+    expression: ASTWithSource | null;
+    constructor(span: ParseSpan, key: string, keyIsVar: boolean, name: string, expression: ASTWithSource | null);
 }
 export interface AstVisitor {
     visitBinary(ast: Binary, context: any): any;

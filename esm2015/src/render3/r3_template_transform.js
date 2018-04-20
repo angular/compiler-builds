@@ -96,11 +96,11 @@ export class HtmlToTemplateTransform {
                 }
                 isTemplateBinding = true;
                 elementHasInlineTemplate = true;
-                const /** @type {?} */ templateBindingsSource = attribute.value;
-                const /** @type {?} */ prefixToken = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length) + ':';
+                const /** @type {?} */ templateValue = attribute.value;
+                const /** @type {?} */ templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length);
                 const /** @type {?} */ oldVariables = [];
                 inlineTemplateSourceSpan = attribute.valueSpan || attribute.sourceSpan;
-                this.bindingParser.parseInlineTemplateBinding(/** @type {?} */ ((prefixToken)), /** @type {?} */ ((templateBindingsSource)), attribute.sourceSpan, templateMatchableAttributes, templateBoundProperties, oldVariables);
+                this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, templateMatchableAttributes, templateBoundProperties, oldVariables);
                 templateVariables.push(...oldVariables.map(v => new t.Variable(v.name, v.value, v.sourceSpan)));
             }
             else {

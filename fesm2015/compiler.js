@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5-ca776c5
+ * @license Angular v6.0.0-rc.5-4662878
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -614,7 +614,7 @@ class Version {
 /**
  *
  */
-const VERSION = new Version('6.0.0-rc.5-ca776c5');
+const VERSION = new Version('6.0.0-rc.5-4662878');
 
 /**
  * @fileoverview added by tsickle
@@ -5537,23 +5537,15 @@ class Parser {
         return new Quote(new ParseSpan(0, input.length), prefix, uninterpretedExpression, location);
     }
     /**
-     * @param {?} prefixToken
-     * @param {?} input
+     * @param {?} tplKey
+     * @param {?} tplValue
      * @param {?} location
      * @return {?}
      */
-    parseTemplateBindings(prefixToken, input, location) {
-        const /** @type {?} */ tokens = this._lexer.tokenize(input);
-        if (prefixToken) {
-            // Prefix the tokens with the tokens from prefixToken but have them take no space (0 index).
-            const /** @type {?} */ prefixTokens = this._lexer.tokenize(prefixToken).map(t => {
-                t.index = 0;
-                return t;
-            });
-            tokens.unshift(...prefixTokens);
-        }
-        return new _ParseAST(input, location, tokens, input.length, false, this.errors, 0)
-            .parseTemplateBindings();
+    parseTemplateBindings(tplKey, tplValue, location) {
+        const /** @type {?} */ tokens = this._lexer.tokenize(tplValue);
+        return new _ParseAST(tplValue, location, tokens, tplValue.length, false, this.errors, 0)
+            .parseTemplateBindings(tplKey);
     }
     /**
      * @param {?} input
@@ -6223,32 +6215,33 @@ class _ParseAST {
         return result.toString();
     }
     /**
+     * @param {?} tplKey
      * @return {?}
      */
-    parseTemplateBindings() {
+    parseTemplateBindings(tplKey) {
+        let /** @type {?} */ firstBinding = true;
         const /** @type {?} */ bindings = [];
-        let /** @type {?} */ prefix = /** @type {?} */ ((null));
         const /** @type {?} */ warnings = [];
-        while (this.index < this.tokens.length) {
+        do {
             const /** @type {?} */ start = this.inputIndex;
-            let /** @type {?} */ keyIsVar = this.peekKeywordLet();
-            if (keyIsVar) {
-                this.advance();
+            let /** @type {?} */ rawKey;
+            let /** @type {?} */ key;
+            let /** @type {?} */ isVar = false;
+            if (firstBinding) {
+                rawKey = key = tplKey;
+                firstBinding = false;
             }
-            let /** @type {?} */ rawKey = this.expectTemplateBindingKey();
-            let /** @type {?} */ key = rawKey;
-            if (!keyIsVar) {
-                if (prefix == null) {
-                    prefix = key;
-                }
-                else {
-                    key = prefix + key[0].toUpperCase() + key.substring(1);
-                }
+            else {
+                isVar = this.peekKeywordLet();
+                if (isVar)
+                    this.advance();
+                rawKey = this.expectTemplateBindingKey();
+                key = isVar ? rawKey : tplKey + rawKey[0].toUpperCase() + rawKey.substring(1);
+                this.optionalCharacter($COLON);
             }
-            this.optionalCharacter($COLON);
             let /** @type {?} */ name = /** @type {?} */ ((null));
-            let /** @type {?} */ expression = /** @type {?} */ ((null));
-            if (keyIsVar) {
+            let /** @type {?} */ expression = null;
+            if (isVar) {
                 if (this.optionalOperator('=')) {
                     name = this.expectTemplateBindingKey();
                 }
@@ -6257,11 +6250,10 @@ class _ParseAST {
                 }
             }
             else if (this.peekKeywordAs()) {
-                const /** @type {?} */ letStart = this.inputIndex;
                 this.advance(); // consume `as`
                 name = rawKey;
                 key = this.expectTemplateBindingKey(); // read local var name
-                keyIsVar = true;
+                isVar = true;
             }
             else if (this.next !== EOF && !this.peekKeywordLet()) {
                 const /** @type {?} */ start = this.inputIndex;
@@ -6269,8 +6261,8 @@ class _ParseAST {
                 const /** @type {?} */ source = this.input.substring(start - this.offset, this.inputIndex - this.offset);
                 expression = new ASTWithSource(ast, source, this.location, this.errors);
             }
-            bindings.push(new TemplateBinding(this.span(start), key, keyIsVar, name, expression));
-            if (this.peekKeywordAs() && !keyIsVar) {
+            bindings.push(new TemplateBinding(this.span(start), key, isVar, name, expression));
+            if (this.peekKeywordAs() && !isVar) {
                 const /** @type {?} */ letStart = this.inputIndex;
                 this.advance(); // consume `as`
                 const /** @type {?} */ letName = this.expectTemplateBindingKey(); // read local var name
@@ -6279,7 +6271,7 @@ class _ParseAST {
             if (!this.optionalCharacter($SEMICOLON)) {
                 this.optionalCharacter($COMMA);
             }
-        }
+        } while (this.index < this.tokens.length);
         return new TemplateBindingParseResult(bindings, warnings, this.errors);
     }
     /**
@@ -20445,16 +20437,16 @@ class BindingParser {
         }
     }
     /**
-     * @param {?} prefixToken
-     * @param {?} value
+     * @param {?} tplKey
+     * @param {?} tplValue
      * @param {?} sourceSpan
      * @param {?} targetMatchableAttrs
      * @param {?} targetProps
      * @param {?} targetVars
      * @return {?}
      */
-    parseInlineTemplateBinding(prefixToken, value, sourceSpan, targetMatchableAttrs, targetProps, targetVars) {
-        const /** @type {?} */ bindings = this._parseTemplateBindings(prefixToken, value, sourceSpan);
+    parseInlineTemplateBinding(tplKey, tplValue, sourceSpan, targetMatchableAttrs, targetProps, targetVars) {
+        const /** @type {?} */ bindings = this._parseTemplateBindings(tplKey, tplValue, sourceSpan);
         for (let /** @type {?} */ i = 0; i < bindings.length; i++) {
             const /** @type {?} */ binding = bindings[i];
             if (binding.keyIsVar) {
@@ -20470,15 +20462,15 @@ class BindingParser {
         }
     }
     /**
-     * @param {?} prefixToken
-     * @param {?} value
+     * @param {?} tplKey
+     * @param {?} tplValue
      * @param {?} sourceSpan
      * @return {?}
      */
-    _parseTemplateBindings(prefixToken, value, sourceSpan) {
+    _parseTemplateBindings(tplKey, tplValue, sourceSpan) {
         const /** @type {?} */ sourceInfo = sourceSpan.start.toString();
         try {
-            const /** @type {?} */ bindingsResult = this._exprParser.parseTemplateBindings(prefixToken, value, sourceInfo);
+            const /** @type {?} */ bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceInfo);
             this._reportExpressionParserErrors(bindingsResult.errors, sourceSpan);
             bindingsResult.templateBindings.forEach((binding) => {
                 if (binding.expression) {
@@ -21147,20 +21139,20 @@ class TemplateParseVisitor {
         const /** @type {?} */ isTemplateElement = isNgTemplate(element.name);
         element.attrs.forEach(attr => {
             const /** @type {?} */ hasBinding = this._parseAttr(isTemplateElement, attr, matchableAttrs, elementOrDirectiveProps, events, elementOrDirectiveRefs, elementVars);
-            let /** @type {?} */ templateBindingsSource;
-            let /** @type {?} */ prefixToken;
+            let /** @type {?} */ templateValue;
+            let /** @type {?} */ templateKey;
             const /** @type {?} */ normalizedName = this._normalizeAttributeName(attr.name);
             if (normalizedName.startsWith(TEMPLATE_ATTR_PREFIX)) {
-                templateBindingsSource = attr.value;
-                prefixToken = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length) + ':';
+                templateValue = attr.value;
+                templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length);
             }
-            const /** @type {?} */ hasTemplateBinding = templateBindingsSource != null;
+            const /** @type {?} */ hasTemplateBinding = templateValue != null;
             if (hasTemplateBinding) {
                 if (hasInlineTemplates) {
                     this._reportError(`Can't have multiple template bindings on one element. Use only one attribute prefixed with *`, attr.sourceSpan);
                 }
                 hasInlineTemplates = true;
-                this._bindingParser.parseInlineTemplateBinding(/** @type {?} */ ((prefixToken)), /** @type {?} */ ((templateBindingsSource)), attr.sourceSpan, templateMatchableAttrs, templateElementOrDirectiveProps, templateElementVars);
+                this._bindingParser.parseInlineTemplateBinding(/** @type {?} */ ((templateKey)), /** @type {?} */ ((templateValue)), attr.sourceSpan, templateMatchableAttrs, templateElementOrDirectiveProps, templateElementVars);
             }
             if (!hasBinding && !hasTemplateBinding) {
                 // don't include the bindings as attributes as well in the AST
@@ -26493,11 +26485,11 @@ class HtmlToTemplateTransform {
                 }
                 isTemplateBinding = true;
                 elementHasInlineTemplate = true;
-                const /** @type {?} */ templateBindingsSource = attribute.value;
-                const /** @type {?} */ prefixToken = normalizedName.substring(TEMPLATE_ATTR_PREFIX$1.length) + ':';
+                const /** @type {?} */ templateValue = attribute.value;
+                const /** @type {?} */ templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX$1.length);
                 const /** @type {?} */ oldVariables = [];
                 inlineTemplateSourceSpan = attribute.valueSpan || attribute.sourceSpan;
-                this.bindingParser.parseInlineTemplateBinding(/** @type {?} */ ((prefixToken)), /** @type {?} */ ((templateBindingsSource)), attribute.sourceSpan, templateMatchableAttributes, templateBoundProperties, oldVariables);
+                this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, templateMatchableAttributes, templateBoundProperties, oldVariables);
                 templateVariables.push(...oldVariables.map(v => new Variable(v.name, v.value, v.sourceSpan)));
             }
             else {

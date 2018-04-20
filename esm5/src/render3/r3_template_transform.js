@@ -99,11 +99,11 @@ var HtmlToTemplateTransform = /** @class */ (function () {
                 }
                 isTemplateBinding = true;
                 elementHasInlineTemplate = true;
-                var /** @type {?} */ templateBindingsSource = attribute.value;
-                var /** @type {?} */ prefixToken = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length) + ':';
+                var /** @type {?} */ templateValue = attribute.value;
+                var /** @type {?} */ templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length);
                 var /** @type {?} */ oldVariables = [];
                 inlineTemplateSourceSpan = attribute.valueSpan || attribute.sourceSpan;
-                this.bindingParser.parseInlineTemplateBinding(/** @type {?} */ ((prefixToken)), /** @type {?} */ ((templateBindingsSource)), attribute.sourceSpan, templateMatchableAttributes, templateBoundProperties, oldVariables);
+                this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, templateMatchableAttributes, templateBoundProperties, oldVariables);
                 templateVariables.push.apply(templateVariables, oldVariables.map(function (v) { return new t.Variable(v.name, v.value, v.sourceSpan); }));
             }
             else {

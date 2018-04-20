@@ -364,20 +364,20 @@ class TemplateParseVisitor {
         const /** @type {?} */ isTemplateElement = isNgTemplate(element.name);
         element.attrs.forEach(attr => {
             const /** @type {?} */ hasBinding = this._parseAttr(isTemplateElement, attr, matchableAttrs, elementOrDirectiveProps, events, elementOrDirectiveRefs, elementVars);
-            let /** @type {?} */ templateBindingsSource;
-            let /** @type {?} */ prefixToken;
+            let /** @type {?} */ templateValue;
+            let /** @type {?} */ templateKey;
             const /** @type {?} */ normalizedName = this._normalizeAttributeName(attr.name);
             if (normalizedName.startsWith(TEMPLATE_ATTR_PREFIX)) {
-                templateBindingsSource = attr.value;
-                prefixToken = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length) + ':';
+                templateValue = attr.value;
+                templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length);
             }
-            const /** @type {?} */ hasTemplateBinding = templateBindingsSource != null;
+            const /** @type {?} */ hasTemplateBinding = templateValue != null;
             if (hasTemplateBinding) {
                 if (hasInlineTemplates) {
                     this._reportError(`Can't have multiple template bindings on one element. Use only one attribute prefixed with *`, attr.sourceSpan);
                 }
                 hasInlineTemplates = true;
-                this._bindingParser.parseInlineTemplateBinding(/** @type {?} */ ((prefixToken)), /** @type {?} */ ((templateBindingsSource)), attr.sourceSpan, templateMatchableAttrs, templateElementOrDirectiveProps, templateElementVars);
+                this._bindingParser.parseInlineTemplateBinding(/** @type {?} */ ((templateKey)), /** @type {?} */ ((templateValue)), attr.sourceSpan, templateMatchableAttrs, templateElementOrDirectiveProps, templateElementVars);
             }
             if (!hasBinding && !hasTemplateBinding) {
                 // don't include the bindings as attributes as well in the AST

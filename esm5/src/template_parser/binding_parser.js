@@ -192,10 +192,10 @@ BindingParser = /** @class */ (function () {
             return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo);
         }
     };
-    // Parse an inline template binding. ie `<tag *prefixToken="<value>">`
+    // Parse an inline template binding. ie `<tag *tplKey="<tplValue>">`
     /**
-     * @param {?} prefixToken
-     * @param {?} value
+     * @param {?} tplKey
+     * @param {?} tplValue
      * @param {?} sourceSpan
      * @param {?} targetMatchableAttrs
      * @param {?} targetProps
@@ -203,16 +203,16 @@ BindingParser = /** @class */ (function () {
      * @return {?}
      */
     BindingParser.prototype.parseInlineTemplateBinding = /**
-     * @param {?} prefixToken
-     * @param {?} value
+     * @param {?} tplKey
+     * @param {?} tplValue
      * @param {?} sourceSpan
      * @param {?} targetMatchableAttrs
      * @param {?} targetProps
      * @param {?} targetVars
      * @return {?}
      */
-    function (prefixToken, value, sourceSpan, targetMatchableAttrs, targetProps, targetVars) {
-        var /** @type {?} */ bindings = this._parseTemplateBindings(prefixToken, value, sourceSpan);
+    function (tplKey, tplValue, sourceSpan, targetMatchableAttrs, targetProps, targetVars) {
+        var /** @type {?} */ bindings = this._parseTemplateBindings(tplKey, tplValue, sourceSpan);
         for (var /** @type {?} */ i = 0; i < bindings.length; i++) {
             var /** @type {?} */ binding = bindings[i];
             if (binding.keyIsVar) {
@@ -228,22 +228,22 @@ BindingParser = /** @class */ (function () {
         }
     };
     /**
-     * @param {?} prefixToken
-     * @param {?} value
+     * @param {?} tplKey
+     * @param {?} tplValue
      * @param {?} sourceSpan
      * @return {?}
      */
     BindingParser.prototype._parseTemplateBindings = /**
-     * @param {?} prefixToken
-     * @param {?} value
+     * @param {?} tplKey
+     * @param {?} tplValue
      * @param {?} sourceSpan
      * @return {?}
      */
-    function (prefixToken, value, sourceSpan) {
+    function (tplKey, tplValue, sourceSpan) {
         var _this = this;
         var /** @type {?} */ sourceInfo = sourceSpan.start.toString();
         try {
-            var /** @type {?} */ bindingsResult = this._exprParser.parseTemplateBindings(prefixToken, value, sourceInfo);
+            var /** @type {?} */ bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceInfo);
             this._reportExpressionParserErrors(bindingsResult.errors, sourceSpan);
             bindingsResult.templateBindings.forEach(function (binding) {
                 if (binding.expression) {

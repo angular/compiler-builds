@@ -23,7 +23,7 @@ export declare class Parser {
     private _reportError(message, input, errLocation, ctxLocation?);
     private _parseBindingAst(input, location, interpolationConfig);
     private _parseQuote(input, location);
-    parseTemplateBindings(prefixToken: string | null, input: string, location: any): TemplateBindingParseResult;
+    parseTemplateBindings(tplKey: string, tplValue: string, location: any): TemplateBindingParseResult;
     parseInterpolation(input: string, location: any, interpolationConfig?: InterpolationConfig): ASTWithSource | null;
     splitInterpolation(input: string, location: string, interpolationConfig?: InterpolationConfig): SplitInterpolation | null;
     wrapLiteralPrimitive(input: string | null, location: any): ASTWithSource;
@@ -79,7 +79,7 @@ export declare class _ParseAST {
      * An identifier, a keyword, a string with an optional `-` in between.
      */
     expectTemplateBindingKey(): string;
-    parseTemplateBindings(): TemplateBindingParseResult;
+    parseTemplateBindings(tplKey: string): TemplateBindingParseResult;
     error(message: string, index?: number | null): void;
     private locationText(index?);
     private skip();

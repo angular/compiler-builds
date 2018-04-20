@@ -167,16 +167,16 @@ export class BindingParser {
         }
     }
     /**
-     * @param {?} prefixToken
-     * @param {?} value
+     * @param {?} tplKey
+     * @param {?} tplValue
      * @param {?} sourceSpan
      * @param {?} targetMatchableAttrs
      * @param {?} targetProps
      * @param {?} targetVars
      * @return {?}
      */
-    parseInlineTemplateBinding(prefixToken, value, sourceSpan, targetMatchableAttrs, targetProps, targetVars) {
-        const /** @type {?} */ bindings = this._parseTemplateBindings(prefixToken, value, sourceSpan);
+    parseInlineTemplateBinding(tplKey, tplValue, sourceSpan, targetMatchableAttrs, targetProps, targetVars) {
+        const /** @type {?} */ bindings = this._parseTemplateBindings(tplKey, tplValue, sourceSpan);
         for (let /** @type {?} */ i = 0; i < bindings.length; i++) {
             const /** @type {?} */ binding = bindings[i];
             if (binding.keyIsVar) {
@@ -192,15 +192,15 @@ export class BindingParser {
         }
     }
     /**
-     * @param {?} prefixToken
-     * @param {?} value
+     * @param {?} tplKey
+     * @param {?} tplValue
      * @param {?} sourceSpan
      * @return {?}
      */
-    _parseTemplateBindings(prefixToken, value, sourceSpan) {
+    _parseTemplateBindings(tplKey, tplValue, sourceSpan) {
         const /** @type {?} */ sourceInfo = sourceSpan.start.toString();
         try {
-            const /** @type {?} */ bindingsResult = this._exprParser.parseTemplateBindings(prefixToken, value, sourceInfo);
+            const /** @type {?} */ bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceInfo);
             this._reportExpressionParserErrors(bindingsResult.errors, sourceSpan);
             bindingsResult.templateBindings.forEach((binding) => {
                 if (binding.expression) {
