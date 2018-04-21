@@ -76,14 +76,14 @@ var HtmlToTemplateTransform = /** @class */ (function () {
         // Whether the element is a `<ng-template>`
         var /** @type {?} */ isTemplateElement = isNgTemplate(element.name);
         var /** @type {?} */ matchableAttributes = [];
-        var /** @type {?} */ boundProperties = [];
+        var /** @type {?} */ parsedProperties = [];
         var /** @type {?} */ boundEvents = [];
         var /** @type {?} */ variables = [];
         var /** @type {?} */ references = [];
         var /** @type {?} */ attributes = [];
         var /** @type {?} */ templateMatchableAttributes = [];
         var /** @type {?} */ inlineTemplateSourceSpan;
-        var /** @type {?} */ templateBoundProperties = [];
+        var /** @type {?} */ templateParsedProperties = [];
         var /** @type {?} */ templateVariables = [];
         // Whether the element has any *-attribute
         var /** @type {?} */ elementHasInlineTemplate = false;
@@ -101,14 +101,12 @@ var HtmlToTemplateTransform = /** @class */ (function () {
                 elementHasInlineTemplate = true;
                 var /** @type {?} */ templateValue = attribute.value;
                 var /** @type {?} */ templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length);
-                var /** @type {?} */ oldVariables = [];
                 inlineTemplateSourceSpan = attribute.valueSpan || attribute.sourceSpan;
-                this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, templateMatchableAttributes, templateBoundProperties, oldVariables);
-                templateVariables.push.apply(templateVariables, oldVariables.map(function (v) { return new t.Variable(v.name, v.value, v.sourceSpan); }));
+                this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, templateMatchableAttributes, templateParsedProperties, templateVariables);
             }
             else {
                 // Check for variables, events, property bindings, interpolation
-                hasBinding = this.parseAttribute(isTemplateElement, attribute, matchableAttributes, boundProperties, boundEvents, variables, references);
+                hasBinding = this.parseAttribute(isTemplateElement, attribute, matchableAttributes, parsedProperties, boundEvents, variables, references);
             }
             if (!hasBinding && !isTemplateBinding) {
                 // don't include the bindings as attributes as well in the AST
@@ -133,11 +131,11 @@ var HtmlToTemplateTransform = /** @class */ (function () {
         }
         else if (isTemplateElement) {
             // `<ng-template>`
-            var /** @type {?} */ boundAttributes = this.createBoundAttributes(element.name, boundProperties);
+            var /** @type {?} */ boundAttributes = this.createBoundAttributes(element.name, parsedProperties);
             parsedElement = new t.Template(attributes, boundAttributes, children, references, variables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
         }
         else {
-            var /** @type {?} */ boundAttributes = this.createBoundAttributes(element.name, boundProperties);
+            var /** @type {?} */ boundAttributes = this.createBoundAttributes(element.name, parsedProperties);
             parsedElement = new t.Element(element.name, attributes, boundAttributes, boundEvents, children, references, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
         }
         if (elementHasInlineTemplate) {
@@ -146,7 +144,7 @@ var HtmlToTemplateTransform = /** @class */ (function () {
                 var name = _a[0], value = _a[1];
                 return attributes_2.push(new t.TextAttribute(name, value, inlineTemplateSourceSpan));
             });
-            var /** @type {?} */ boundAttributes = this.createBoundAttributes('ng-template', templateBoundProperties);
+            var /** @type {?} */ boundAttributes = this.createBoundAttributes('ng-template', templateParsedProperties);
             parsedElement = new t.Template(attributes_2, boundAttributes, [parsedElement], [], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
         }
         return parsedElement;
@@ -204,28 +202,25 @@ var HtmlToTemplateTransform = /** @class */ (function () {
     function (expansionCase) { return null; };
     /**
      * @param {?} elementName
-     * @param {?} boundProperties
+     * @param {?} properties
      * @return {?}
      */
     HtmlToTemplateTransform.prototype.createBoundAttributes = /**
      * @param {?} elementName
-     * @param {?} boundProperties
+     * @param {?} properties
      * @return {?}
      */
-    function (elementName, boundProperties) {
+    function (elementName, properties) {
         var _this = this;
-        var /** @type {?} */ literalProperties = boundProperties.filter(function (prop) { return !prop.isLiteral; });
-        return literalProperties.map(function (property) {
-            // TODO(vicb): get ride of the boundProperty (from TemplateAst)
-            var /** @type {?} */ boundProp = _this.bindingParser.createElementPropertyAst(elementName, property);
-            return new t.BoundAttribute(boundProp.name, /** @type {?} */ ((boundProp.type)), boundProp.securityContext, boundProp.value, boundProp.unit, boundProp.sourceSpan);
-        });
+        return properties.filter(function (prop) { return !prop.isLiteral; })
+            .map(function (prop) { return _this.bindingParser.createBoundElementProperty(elementName, prop); })
+            .map(function (prop) { return t.BoundAttribute.fromBoundElementProperty(prop); });
     };
     /**
      * @param {?} isTemplateElement
      * @param {?} attribute
      * @param {?} matchableAttributes
-     * @param {?} boundProperties
+     * @param {?} parsedProperties
      * @param {?} boundEvents
      * @param {?} variables
      * @param {?} references
@@ -235,13 +230,13 @@ var HtmlToTemplateTransform = /** @class */ (function () {
      * @param {?} isTemplateElement
      * @param {?} attribute
      * @param {?} matchableAttributes
-     * @param {?} boundProperties
+     * @param {?} parsedProperties
      * @param {?} boundEvents
      * @param {?} variables
      * @param {?} references
      * @return {?}
      */
-    function (isTemplateElement, attribute, matchableAttributes, boundProperties, boundEvents, variables, references) {
+    function (isTemplateElement, attribute, matchableAttributes, parsedProperties, boundEvents, variables, references) {
         var /** @type {?} */ name = normalizeAttributeName(attribute.name);
         var /** @type {?} */ value = attribute.value;
         var /** @type {?} */ srcSpan = attribute.sourceSpan;
@@ -250,7 +245,7 @@ var HtmlToTemplateTransform = /** @class */ (function () {
         if (bindParts) {
             hasBinding = true;
             if (bindParts[KW_BIND_IDX] != null) {
-                this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX], value, false, srcSpan, matchableAttributes, boundProperties);
+                this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX], value, false, srcSpan, matchableAttributes, parsedProperties);
             }
             else if (bindParts[KW_LET_IDX]) {
                 if (isTemplateElement) {
@@ -271,18 +266,18 @@ var HtmlToTemplateTransform = /** @class */ (function () {
                 addEvents(events, boundEvents);
             }
             else if (bindParts[KW_BINDON_IDX]) {
-                this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX], value, false, srcSpan, matchableAttributes, boundProperties);
+                this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX], value, false, srcSpan, matchableAttributes, parsedProperties);
                 this.parseAssignmentEvent(bindParts[IDENT_KW_IDX], value, srcSpan, matchableAttributes, boundEvents);
             }
             else if (bindParts[KW_AT_IDX]) {
-                this.bindingParser.parseLiteralAttr(name, value, srcSpan, matchableAttributes, boundProperties);
+                this.bindingParser.parseLiteralAttr(name, value, srcSpan, matchableAttributes, parsedProperties);
             }
             else if (bindParts[IDENT_BANANA_BOX_IDX]) {
-                this.bindingParser.parsePropertyBinding(bindParts[IDENT_BANANA_BOX_IDX], value, false, srcSpan, matchableAttributes, boundProperties);
+                this.bindingParser.parsePropertyBinding(bindParts[IDENT_BANANA_BOX_IDX], value, false, srcSpan, matchableAttributes, parsedProperties);
                 this.parseAssignmentEvent(bindParts[IDENT_BANANA_BOX_IDX], value, srcSpan, matchableAttributes, boundEvents);
             }
             else if (bindParts[IDENT_PROPERTY_IDX]) {
-                this.bindingParser.parsePropertyBinding(bindParts[IDENT_PROPERTY_IDX], value, false, srcSpan, matchableAttributes, boundProperties);
+                this.bindingParser.parsePropertyBinding(bindParts[IDENT_PROPERTY_IDX], value, false, srcSpan, matchableAttributes, parsedProperties);
             }
             else if (bindParts[IDENT_EVENT_IDX]) {
                 var /** @type {?} */ events = [];
@@ -291,7 +286,7 @@ var HtmlToTemplateTransform = /** @class */ (function () {
             }
         }
         else {
-            hasBinding = this.bindingParser.parsePropertyInterpolation(name, value, srcSpan, matchableAttributes, boundProperties);
+            hasBinding = this.bindingParser.parsePropertyInterpolation(name, value, srcSpan, matchableAttributes, parsedProperties);
         }
         return hasBinding;
     };
@@ -472,7 +467,7 @@ function normalizeAttributeName(attrName) {
  * @return {?}
  */
 function addEvents(events, boundEvents) {
-    boundEvents.push.apply(boundEvents, events.map(function (e) { return new t.BoundEvent(e.name, e.handler, e.target, e.phase, e.sourceSpan); }));
+    boundEvents.push.apply(boundEvents, events.map(function (e) { return t.BoundEvent.fromParsedEvent(e); }));
 }
 /**
  * @param {?} node

@@ -11,6 +11,7 @@
  */
 import { flatten, identifierName, sanitizeIdentifier, tokenReference } from '../compile_metadata';
 import { BindingForm, BuiltinFunctionCall, convertActionBinding, convertPropertyBinding } from '../compiler_util/expression_converter';
+import * as core from '../core';
 import { AstMemoryEfficientTransformer, FunctionCall, ImplicitReceiver, LiteralPrimitive, PropertyRead } from '../expression_parser/ast';
 import { Identifiers } from '../identifiers';
 import { LifecycleHooks } from '../lifecycle_reflector';
@@ -180,10 +181,10 @@ function unsupported(feature) {
     throw new Error(`Feature ${feature} is not supported yet`);
 }
 const /** @type {?} */ BINDING_INSTRUCTION_MAP = {
-    [t.PropertyBindingType.Property]: R3.elementProperty,
-    [t.PropertyBindingType.Attribute]: R3.elementAttribute,
-    [t.PropertyBindingType.Class]: R3.elementClassNamed,
-    [t.PropertyBindingType.Style]: R3.elementStyleNamed,
+    [0 /* Property */]: R3.elementProperty,
+    [1 /* Attribute */]: R3.elementAttribute,
+    [2 /* Class */]: R3.elementClassNamed,
+    [3 /* Style */]: R3.elementStyleNamed,
 };
 /**
  * @param {?} args
@@ -445,7 +446,7 @@ class TemplateDefinitionBuilder {
             const /** @type {?} */ parameters = [o.literal(this._projectionDefinitionIndex)];
             // Only selectors with a non-default value are generated
             if (ngContentSelectors.length > 1) {
-                const /** @type {?} */ r3Selectors = ngContentSelectors.map(s => parseSelectorToR3Selector(s));
+                const /** @type {?} */ r3Selectors = ngContentSelectors.map(s => core.parseSelectorToR3Selector(s));
                 // `projectionDef` needs both the parsed and raw value of the selectors
                 const /** @type {?} */ parsed = this.outputCtx.constantPool.getConstLiteral(asLiteral(r3Selectors), true);
                 const /** @type {?} */ unParsed = this.outputCtx.constantPool.getConstLiteral(asLiteral(ngContentSelectors), true);
@@ -649,7 +650,7 @@ class TemplateDefinitionBuilder {
         });
         // Generate element input bindings
         element.inputs.forEach((input) => {
-            if (input.type === t.PropertyBindingType.Animation) {
+            if (input.type === 4 /* Animation */) {
                 this._unsupported('animations');
             }
             const /** @type {?} */ convertedBinding = this.convertPropertyBinding(implicit, input.value);
@@ -660,7 +661,7 @@ class TemplateDefinitionBuilder {
                 this.instruction(this._bindingCode, input.sourceSpan, instruction, o.literal(elementIndex), o.literal(input.name), value);
             }
             else {
-                this._unsupported(`binding ${t.PropertyBindingType[input.type]}`);
+                this._unsupported(`binding type ${input.type}`);
             }
         });
         // Traverse element child nodes
@@ -966,7 +967,7 @@ function trimTrailingNulls(parameters) {
  * @return {?}
  */
 function createDirectiveSelector(selector) {
-    return asLiteral(parseSelectorToR3Selector(selector));
+    return asLiteral(core.parseSelectorToR3Selector(selector));
 }
 /**
  * @param {?} directiveMetadata
@@ -1124,69 +1125,6 @@ function ValueConverter_tsickle_Closure_declarations() {
  */
 function invalid(arg) {
     throw new Error(`Invalid state: Visitor ${this.constructor.name} doesn't handle ${o.constructor.name}`);
-}
-/** @enum {number} */
-const SelectorFlags = {
-    /** Indicates this is the beginning of a new negative selector */
-    NOT: 1,
-    /** Mode for matching attributes */
-    ATTRIBUTE: 2,
-    /** Mode for matching tag names */
-    ELEMENT: 4,
-    /** Mode for matching class names */
-    CLASS: 8,
-};
-/**
- * @param {?} selector
- * @return {?}
- */
-function parserSelectorToSimpleSelector(selector) {
-    const /** @type {?} */ classes = selector.classNames && selector.classNames.length ?
-        [8 /* CLASS */, ...selector.classNames] :
-        [];
-    const /** @type {?} */ elementName = selector.element && selector.element !== '*' ? selector.element : '';
-    return [elementName, ...selector.attrs, ...classes];
-}
-/**
- * @param {?} selector
- * @return {?}
- */
-function parserSelectorToNegativeSelector(selector) {
-    const /** @type {?} */ classes = selector.classNames && selector.classNames.length ?
-        [8 /* CLASS */, ...selector.classNames] :
-        [];
-    if (selector.element) {
-        return [
-            1 /* NOT */ | 4 /* ELEMENT */, selector.element, ...selector.attrs, ...classes
-        ];
-    }
-    else if (selector.attrs.length) {
-        return [1 /* NOT */ | 2 /* ATTRIBUTE */, ...selector.attrs, ...classes];
-    }
-    else {
-        return selector.classNames && selector.classNames.length ?
-            [1 /* NOT */ | 8 /* CLASS */, ...selector.classNames] :
-            [];
-    }
-}
-/**
- * @param {?} selector
- * @return {?}
- */
-function parserSelectorToR3Selector(selector) {
-    const /** @type {?} */ positive = parserSelectorToSimpleSelector(selector);
-    const /** @type {?} */ negative = selector.notSelectors && selector.notSelectors.length ?
-        selector.notSelectors.map(notSelector => parserSelectorToNegativeSelector(notSelector)) :
-        [];
-    return positive.concat(...negative);
-}
-/**
- * @param {?} selector
- * @return {?}
- */
-function parseSelectorToR3Selector(selector) {
-    const /** @type {?} */ selectors = CssSelector.parse(selector);
-    return selectors.map(parserSelectorToR3Selector);
 }
 /**
  * @param {?} value

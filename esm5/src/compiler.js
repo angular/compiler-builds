@@ -12,7 +12,7 @@
 import * as core from './core';
 export { core };
 export { VERSION } from './version';
-export { TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll } from './template_parser/template_ast';
+export { TextAst, BoundTextAst, AttrAst, PropertyBindingType, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll } from './template_parser/template_ast';
 export { CompilerConfig, preserveWhitespacesDefault } from './config';
 export { sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl } from './compile_metadata';
 export { createAotUrlResolver, createAotCompiler } from './aot/compiler_factory';
@@ -38,7 +38,7 @@ export { DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig } from './ml_parser/i
 export { ElementSchemaRegistry } from './schema/element_schema_registry';
 export { Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb } from './i18n/index';
 export { DirectiveNormalizer } from './directive_normalizer';
-export { ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren } from './expression_parser/ast';
+export { ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty } from './expression_parser/ast';
 export { TokenType, Lexer, Token, EOF, isIdentifier, isQuote } from './expression_parser/lexer';
 export { SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST } from './expression_parser/parser';
 export { ERROR_COMPONENT_TYPE, CompileMetadataResolver } from './metadata_resolver';

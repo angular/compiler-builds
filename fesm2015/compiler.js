@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5-4662878
+ * @license Angular v6.0.0-rc.5-6761a64
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -14,11 +14,895 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-// Attention:
-// This file duplicates types and values from @angular/core
-// so that we are able to make @angular/compiler independent of @angular/core.
-// This is important to prevent a build cycle, as @angular/core needs to
-// be compiled with the compiler.
+/** @enum {number} */
+const TagContentType = {
+    RAW_TEXT: 0,
+    ESCAPABLE_RAW_TEXT: 1,
+    PARSABLE_DATA: 2,
+};
+TagContentType[TagContentType.RAW_TEXT] = "RAW_TEXT";
+TagContentType[TagContentType.ESCAPABLE_RAW_TEXT] = "ESCAPABLE_RAW_TEXT";
+TagContentType[TagContentType.PARSABLE_DATA] = "PARSABLE_DATA";
+/**
+ * @record
+ */
+
+/**
+ * @param {?} elementName
+ * @return {?}
+ */
+function splitNsName(elementName) {
+    if (elementName[0] != ':') {
+        return [null, elementName];
+    }
+    const /** @type {?} */ colonIndex = elementName.indexOf(':', 1);
+    if (colonIndex == -1) {
+        throw new Error(`Unsupported format "${elementName}" expecting ":namespace:name"`);
+    }
+    return [elementName.slice(1, colonIndex), elementName.slice(colonIndex + 1)];
+}
+/**
+ * @param {?} tagName
+ * @return {?}
+ */
+function isNgContainer(tagName) {
+    return splitNsName(tagName)[1] === 'ng-container';
+}
+/**
+ * @param {?} tagName
+ * @return {?}
+ */
+function isNgContent(tagName) {
+    return splitNsName(tagName)[1] === 'ng-content';
+}
+/**
+ * @param {?} tagName
+ * @return {?}
+ */
+function isNgTemplate(tagName) {
+    return splitNsName(tagName)[1] === 'ng-template';
+}
+/**
+ * @param {?} fullName
+ * @return {?}
+ */
+function getNsPrefix(fullName) {
+    return fullName === null ? null : splitNsName(fullName)[0];
+}
+/**
+ * @param {?} prefix
+ * @param {?} localName
+ * @return {?}
+ */
+function mergeNsAndName(prefix, localName) {
+    return prefix ? `:${prefix}:${localName}` : localName;
+}
+// see http://www.w3.org/TR/html51/syntax.html#named-character-references
+// see https://html.spec.whatwg.org/multipage/entities.json
+// This list is not exhaustive to keep the compiler footprint low.
+// The `&#123;` / `&#x1ab;` syntax should be used when the named character reference does not
+// exist.
+const NAMED_ENTITIES = {
+    'Aacute': '\u00C1',
+    'aacute': '\u00E1',
+    'Acirc': '\u00C2',
+    'acirc': '\u00E2',
+    'acute': '\u00B4',
+    'AElig': '\u00C6',
+    'aelig': '\u00E6',
+    'Agrave': '\u00C0',
+    'agrave': '\u00E0',
+    'alefsym': '\u2135',
+    'Alpha': '\u0391',
+    'alpha': '\u03B1',
+    'amp': '&',
+    'and': '\u2227',
+    'ang': '\u2220',
+    'apos': '\u0027',
+    'Aring': '\u00C5',
+    'aring': '\u00E5',
+    'asymp': '\u2248',
+    'Atilde': '\u00C3',
+    'atilde': '\u00E3',
+    'Auml': '\u00C4',
+    'auml': '\u00E4',
+    'bdquo': '\u201E',
+    'Beta': '\u0392',
+    'beta': '\u03B2',
+    'brvbar': '\u00A6',
+    'bull': '\u2022',
+    'cap': '\u2229',
+    'Ccedil': '\u00C7',
+    'ccedil': '\u00E7',
+    'cedil': '\u00B8',
+    'cent': '\u00A2',
+    'Chi': '\u03A7',
+    'chi': '\u03C7',
+    'circ': '\u02C6',
+    'clubs': '\u2663',
+    'cong': '\u2245',
+    'copy': '\u00A9',
+    'crarr': '\u21B5',
+    'cup': '\u222A',
+    'curren': '\u00A4',
+    'dagger': '\u2020',
+    'Dagger': '\u2021',
+    'darr': '\u2193',
+    'dArr': '\u21D3',
+    'deg': '\u00B0',
+    'Delta': '\u0394',
+    'delta': '\u03B4',
+    'diams': '\u2666',
+    'divide': '\u00F7',
+    'Eacute': '\u00C9',
+    'eacute': '\u00E9',
+    'Ecirc': '\u00CA',
+    'ecirc': '\u00EA',
+    'Egrave': '\u00C8',
+    'egrave': '\u00E8',
+    'empty': '\u2205',
+    'emsp': '\u2003',
+    'ensp': '\u2002',
+    'Epsilon': '\u0395',
+    'epsilon': '\u03B5',
+    'equiv': '\u2261',
+    'Eta': '\u0397',
+    'eta': '\u03B7',
+    'ETH': '\u00D0',
+    'eth': '\u00F0',
+    'Euml': '\u00CB',
+    'euml': '\u00EB',
+    'euro': '\u20AC',
+    'exist': '\u2203',
+    'fnof': '\u0192',
+    'forall': '\u2200',
+    'frac12': '\u00BD',
+    'frac14': '\u00BC',
+    'frac34': '\u00BE',
+    'frasl': '\u2044',
+    'Gamma': '\u0393',
+    'gamma': '\u03B3',
+    'ge': '\u2265',
+    'gt': '>',
+    'harr': '\u2194',
+    'hArr': '\u21D4',
+    'hearts': '\u2665',
+    'hellip': '\u2026',
+    'Iacute': '\u00CD',
+    'iacute': '\u00ED',
+    'Icirc': '\u00CE',
+    'icirc': '\u00EE',
+    'iexcl': '\u00A1',
+    'Igrave': '\u00CC',
+    'igrave': '\u00EC',
+    'image': '\u2111',
+    'infin': '\u221E',
+    'int': '\u222B',
+    'Iota': '\u0399',
+    'iota': '\u03B9',
+    'iquest': '\u00BF',
+    'isin': '\u2208',
+    'Iuml': '\u00CF',
+    'iuml': '\u00EF',
+    'Kappa': '\u039A',
+    'kappa': '\u03BA',
+    'Lambda': '\u039B',
+    'lambda': '\u03BB',
+    'lang': '\u27E8',
+    'laquo': '\u00AB',
+    'larr': '\u2190',
+    'lArr': '\u21D0',
+    'lceil': '\u2308',
+    'ldquo': '\u201C',
+    'le': '\u2264',
+    'lfloor': '\u230A',
+    'lowast': '\u2217',
+    'loz': '\u25CA',
+    'lrm': '\u200E',
+    'lsaquo': '\u2039',
+    'lsquo': '\u2018',
+    'lt': '<',
+    'macr': '\u00AF',
+    'mdash': '\u2014',
+    'micro': '\u00B5',
+    'middot': '\u00B7',
+    'minus': '\u2212',
+    'Mu': '\u039C',
+    'mu': '\u03BC',
+    'nabla': '\u2207',
+    'nbsp': '\u00A0',
+    'ndash': '\u2013',
+    'ne': '\u2260',
+    'ni': '\u220B',
+    'not': '\u00AC',
+    'notin': '\u2209',
+    'nsub': '\u2284',
+    'Ntilde': '\u00D1',
+    'ntilde': '\u00F1',
+    'Nu': '\u039D',
+    'nu': '\u03BD',
+    'Oacute': '\u00D3',
+    'oacute': '\u00F3',
+    'Ocirc': '\u00D4',
+    'ocirc': '\u00F4',
+    'OElig': '\u0152',
+    'oelig': '\u0153',
+    'Ograve': '\u00D2',
+    'ograve': '\u00F2',
+    'oline': '\u203E',
+    'Omega': '\u03A9',
+    'omega': '\u03C9',
+    'Omicron': '\u039F',
+    'omicron': '\u03BF',
+    'oplus': '\u2295',
+    'or': '\u2228',
+    'ordf': '\u00AA',
+    'ordm': '\u00BA',
+    'Oslash': '\u00D8',
+    'oslash': '\u00F8',
+    'Otilde': '\u00D5',
+    'otilde': '\u00F5',
+    'otimes': '\u2297',
+    'Ouml': '\u00D6',
+    'ouml': '\u00F6',
+    'para': '\u00B6',
+    'permil': '\u2030',
+    'perp': '\u22A5',
+    'Phi': '\u03A6',
+    'phi': '\u03C6',
+    'Pi': '\u03A0',
+    'pi': '\u03C0',
+    'piv': '\u03D6',
+    'plusmn': '\u00B1',
+    'pound': '\u00A3',
+    'prime': '\u2032',
+    'Prime': '\u2033',
+    'prod': '\u220F',
+    'prop': '\u221D',
+    'Psi': '\u03A8',
+    'psi': '\u03C8',
+    'quot': '\u0022',
+    'radic': '\u221A',
+    'rang': '\u27E9',
+    'raquo': '\u00BB',
+    'rarr': '\u2192',
+    'rArr': '\u21D2',
+    'rceil': '\u2309',
+    'rdquo': '\u201D',
+    'real': '\u211C',
+    'reg': '\u00AE',
+    'rfloor': '\u230B',
+    'Rho': '\u03A1',
+    'rho': '\u03C1',
+    'rlm': '\u200F',
+    'rsaquo': '\u203A',
+    'rsquo': '\u2019',
+    'sbquo': '\u201A',
+    'Scaron': '\u0160',
+    'scaron': '\u0161',
+    'sdot': '\u22C5',
+    'sect': '\u00A7',
+    'shy': '\u00AD',
+    'Sigma': '\u03A3',
+    'sigma': '\u03C3',
+    'sigmaf': '\u03C2',
+    'sim': '\u223C',
+    'spades': '\u2660',
+    'sub': '\u2282',
+    'sube': '\u2286',
+    'sum': '\u2211',
+    'sup': '\u2283',
+    'sup1': '\u00B9',
+    'sup2': '\u00B2',
+    'sup3': '\u00B3',
+    'supe': '\u2287',
+    'szlig': '\u00DF',
+    'Tau': '\u03A4',
+    'tau': '\u03C4',
+    'there4': '\u2234',
+    'Theta': '\u0398',
+    'theta': '\u03B8',
+    'thetasym': '\u03D1',
+    'thinsp': '\u2009',
+    'THORN': '\u00DE',
+    'thorn': '\u00FE',
+    'tilde': '\u02DC',
+    'times': '\u00D7',
+    'trade': '\u2122',
+    'Uacute': '\u00DA',
+    'uacute': '\u00FA',
+    'uarr': '\u2191',
+    'uArr': '\u21D1',
+    'Ucirc': '\u00DB',
+    'ucirc': '\u00FB',
+    'Ugrave': '\u00D9',
+    'ugrave': '\u00F9',
+    'uml': '\u00A8',
+    'upsih': '\u03D2',
+    'Upsilon': '\u03A5',
+    'upsilon': '\u03C5',
+    'Uuml': '\u00DC',
+    'uuml': '\u00FC',
+    'weierp': '\u2118',
+    'Xi': '\u039E',
+    'xi': '\u03BE',
+    'Yacute': '\u00DD',
+    'yacute': '\u00FD',
+    'yen': '\u00A5',
+    'yuml': '\u00FF',
+    'Yuml': '\u0178',
+    'Zeta': '\u0396',
+    'zeta': '\u03B6',
+    'zwj': '\u200D',
+    'zwnj': '\u200C',
+};
+// The &ngsp; pseudo-entity is denoting a space. see:
+// https://github.com/dart-lang/angular/blob/0bb611387d29d65b5af7f9d2515ab571fd3fbee4/_tests/test/compiler/preserve_whitespace_test.dart
+const NGSP_UNICODE = '\uE500';
+NAMED_ENTITIES['ngsp'] = NGSP_UNICODE;
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+class HtmlTagDefinition {
+    /**
+     * @param {?=} __0
+     */
+    constructor({ closedByChildren, requiredParents, implicitNamespacePrefix, contentType = TagContentType.PARSABLE_DATA, closedByParent = false, isVoid = false, ignoreFirstLf = false } = {}) {
+        this.closedByChildren = {};
+        this.closedByParent = false;
+        this.canSelfClose = false;
+        if (closedByChildren && closedByChildren.length > 0) {
+            closedByChildren.forEach(tagName => this.closedByChildren[tagName] = true);
+        }
+        this.isVoid = isVoid;
+        this.closedByParent = closedByParent || isVoid;
+        if (requiredParents && requiredParents.length > 0) {
+            this.requiredParents = {};
+            // The first parent is the list is automatically when none of the listed parents are present
+            this.parentToAdd = requiredParents[0];
+            requiredParents.forEach(tagName => this.requiredParents[tagName] = true);
+        }
+        this.implicitNamespacePrefix = implicitNamespacePrefix || null;
+        this.contentType = contentType;
+        this.ignoreFirstLf = ignoreFirstLf;
+    }
+    /**
+     * @param {?} currentParent
+     * @return {?}
+     */
+    requireExtraParent(currentParent) {
+        if (!this.requiredParents) {
+            return false;
+        }
+        if (!currentParent) {
+            return true;
+        }
+        const /** @type {?} */ lcParent = currentParent.toLowerCase();
+        const /** @type {?} */ isParentTemplate = lcParent === 'template' || currentParent === 'ng-template';
+        return !isParentTemplate && this.requiredParents[lcParent] != true;
+    }
+    /**
+     * @param {?} name
+     * @return {?}
+     */
+    isClosedByChild(name) {
+        return this.isVoid || name.toLowerCase() in this.closedByChildren;
+    }
+}
+// see http://www.w3.org/TR/html51/syntax.html#optional-tags
+// This implementation does not fully conform to the HTML5 spec.
+const TAG_DEFINITIONS = {
+    'base': new HtmlTagDefinition({ isVoid: true }),
+    'meta': new HtmlTagDefinition({ isVoid: true }),
+    'area': new HtmlTagDefinition({ isVoid: true }),
+    'embed': new HtmlTagDefinition({ isVoid: true }),
+    'link': new HtmlTagDefinition({ isVoid: true }),
+    'img': new HtmlTagDefinition({ isVoid: true }),
+    'input': new HtmlTagDefinition({ isVoid: true }),
+    'param': new HtmlTagDefinition({ isVoid: true }),
+    'hr': new HtmlTagDefinition({ isVoid: true }),
+    'br': new HtmlTagDefinition({ isVoid: true }),
+    'source': new HtmlTagDefinition({ isVoid: true }),
+    'track': new HtmlTagDefinition({ isVoid: true }),
+    'wbr': new HtmlTagDefinition({ isVoid: true }),
+    'p': new HtmlTagDefinition({
+        closedByChildren: [
+            'address', 'article', 'aside', 'blockquote', 'div', 'dl', 'fieldset', 'footer', 'form',
+            'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hgroup', 'hr',
+            'main', 'nav', 'ol', 'p', 'pre', 'section', 'table', 'ul'
+        ],
+        closedByParent: true
+    }),
+    'thead': new HtmlTagDefinition({ closedByChildren: ['tbody', 'tfoot'] }),
+    'tbody': new HtmlTagDefinition({ closedByChildren: ['tbody', 'tfoot'], closedByParent: true }),
+    'tfoot': new HtmlTagDefinition({ closedByChildren: ['tbody'], closedByParent: true }),
+    'tr': new HtmlTagDefinition({
+        closedByChildren: ['tr'],
+        requiredParents: ['tbody', 'tfoot', 'thead'],
+        closedByParent: true
+    }),
+    'td': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
+    'th': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
+    'col': new HtmlTagDefinition({ requiredParents: ['colgroup'], isVoid: true }),
+    'svg': new HtmlTagDefinition({ implicitNamespacePrefix: 'svg' }),
+    'math': new HtmlTagDefinition({ implicitNamespacePrefix: 'math' }),
+    'li': new HtmlTagDefinition({ closedByChildren: ['li'], closedByParent: true }),
+    'dt': new HtmlTagDefinition({ closedByChildren: ['dt', 'dd'] }),
+    'dd': new HtmlTagDefinition({ closedByChildren: ['dt', 'dd'], closedByParent: true }),
+    'rb': new HtmlTagDefinition({ closedByChildren: ['rb', 'rt', 'rtc', 'rp'], closedByParent: true }),
+    'rt': new HtmlTagDefinition({ closedByChildren: ['rb', 'rt', 'rtc', 'rp'], closedByParent: true }),
+    'rtc': new HtmlTagDefinition({ closedByChildren: ['rb', 'rtc', 'rp'], closedByParent: true }),
+    'rp': new HtmlTagDefinition({ closedByChildren: ['rb', 'rt', 'rtc', 'rp'], closedByParent: true }),
+    'optgroup': new HtmlTagDefinition({ closedByChildren: ['optgroup'], closedByParent: true }),
+    'option': new HtmlTagDefinition({ closedByChildren: ['option', 'optgroup'], closedByParent: true }),
+    'pre': new HtmlTagDefinition({ ignoreFirstLf: true }),
+    'listing': new HtmlTagDefinition({ ignoreFirstLf: true }),
+    'style': new HtmlTagDefinition({ contentType: TagContentType.RAW_TEXT }),
+    'script': new HtmlTagDefinition({ contentType: TagContentType.RAW_TEXT }),
+    'title': new HtmlTagDefinition({ contentType: TagContentType.ESCAPABLE_RAW_TEXT }),
+    'textarea': new HtmlTagDefinition({ contentType: TagContentType.ESCAPABLE_RAW_TEXT, ignoreFirstLf: true }),
+};
+const _DEFAULT_TAG_DEFINITION = new HtmlTagDefinition();
+/**
+ * @param {?} tagName
+ * @return {?}
+ */
+function getHtmlTagDefinition(tagName) {
+    return TAG_DEFINITIONS[tagName.toLowerCase()] || _DEFAULT_TAG_DEFINITION;
+}
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' + //":not("
+    '([-\\w]+)|' + // "tag"
+    '(?:\\.([-\\w]+))|' + // ".class"
+    '(?:\\[([-.\\w*]+)(?:=([\"\']?)([^\\]\"\']*)\\5)?\\])|' + // "[name]", "[name=value]",
+    '(\\))|' + // ")"
+    '(\\s*,\\s*)', // ","
+'g');
+/**
+ * A css selector contains an element name,
+ * css classes and attribute/value pairs with the purpose
+ * of selecting subsets out of them.
+ */
+class CssSelector {
+    constructor() {
+        this.element = null;
+        this.classNames = [];
+        /**
+         * The selectors are encoded in pairs where:
+         * - even locations are attribute names
+         * - odd locations are attribute values.
+         *
+         * Example:
+         * Selector: `[key1=value1][key2]` would parse to:
+         * ```
+         * ['key1', 'value1', 'key2', '']
+         * ```
+         */
+        this.attrs = [];
+        this.notSelectors = [];
+    }
+    /**
+     * @param {?} selector
+     * @return {?}
+     */
+    static parse(selector) {
+        const /** @type {?} */ results = [];
+        const /** @type {?} */ _addResult = (res, cssSel) => {
+            if (cssSel.notSelectors.length > 0 && !cssSel.element && cssSel.classNames.length == 0 &&
+                cssSel.attrs.length == 0) {
+                cssSel.element = '*';
+            }
+            res.push(cssSel);
+        };
+        let /** @type {?} */ cssSelector = new CssSelector();
+        let /** @type {?} */ match;
+        let /** @type {?} */ current = cssSelector;
+        let /** @type {?} */ inNot = false;
+        _SELECTOR_REGEXP.lastIndex = 0;
+        while (match = _SELECTOR_REGEXP.exec(selector)) {
+            if (match[1]) {
+                if (inNot) {
+                    throw new Error('Nesting :not is not allowed in a selector');
+                }
+                inNot = true;
+                current = new CssSelector();
+                cssSelector.notSelectors.push(current);
+            }
+            if (match[2]) {
+                current.setElement(match[2]);
+            }
+            if (match[3]) {
+                current.addClassName(match[3]);
+            }
+            if (match[4]) {
+                current.addAttribute(match[4], match[6]);
+            }
+            if (match[7]) {
+                inNot = false;
+                current = cssSelector;
+            }
+            if (match[8]) {
+                if (inNot) {
+                    throw new Error('Multiple selectors in :not are not supported');
+                }
+                _addResult(results, cssSelector);
+                cssSelector = current = new CssSelector();
+            }
+        }
+        _addResult(results, cssSelector);
+        return results;
+    }
+    /**
+     * @return {?}
+     */
+    isElementSelector() {
+        return this.hasElementSelector() && this.classNames.length == 0 && this.attrs.length == 0 &&
+            this.notSelectors.length === 0;
+    }
+    /**
+     * @return {?}
+     */
+    hasElementSelector() { return !!this.element; }
+    /**
+     * @param {?=} element
+     * @return {?}
+     */
+    setElement(element = null) { this.element = element; }
+    /**
+     * Gets a template string for an element that matches the selector.
+     * @return {?}
+     */
+    getMatchingElementTemplate() {
+        const /** @type {?} */ tagName = this.element || 'div';
+        const /** @type {?} */ classAttr = this.classNames.length > 0 ? ` class="${this.classNames.join(' ')}"` : '';
+        let /** @type {?} */ attrs = '';
+        for (let /** @type {?} */ i = 0; i < this.attrs.length; i += 2) {
+            const /** @type {?} */ attrName = this.attrs[i];
+            const /** @type {?} */ attrValue = this.attrs[i + 1] !== '' ? `="${this.attrs[i + 1]}"` : '';
+            attrs += ` ${attrName}${attrValue}`;
+        }
+        return getHtmlTagDefinition(tagName).isVoid ? `<${tagName}${classAttr}${attrs}/>` :
+            `<${tagName}${classAttr}${attrs}></${tagName}>`;
+    }
+    /**
+     * @return {?}
+     */
+    getAttrs() {
+        const /** @type {?} */ result = [];
+        if (this.classNames.length > 0) {
+            result.push('class', this.classNames.join(' '));
+        }
+        return result.concat(this.attrs);
+    }
+    /**
+     * @param {?} name
+     * @param {?=} value
+     * @return {?}
+     */
+    addAttribute(name, value = '') {
+        this.attrs.push(name, value && value.toLowerCase() || '');
+    }
+    /**
+     * @param {?} name
+     * @return {?}
+     */
+    addClassName(name) { this.classNames.push(name.toLowerCase()); }
+    /**
+     * @return {?}
+     */
+    toString() {
+        let /** @type {?} */ res = this.element || '';
+        if (this.classNames) {
+            this.classNames.forEach(klass => res += `.${klass}`);
+        }
+        if (this.attrs) {
+            for (let /** @type {?} */ i = 0; i < this.attrs.length; i += 2) {
+                const /** @type {?} */ name = this.attrs[i];
+                const /** @type {?} */ value = this.attrs[i + 1];
+                res += `[${name}${value ? '=' + value : ''}]`;
+            }
+        }
+        this.notSelectors.forEach(notSelector => res += `:not(${notSelector})`);
+        return res;
+    }
+}
+/**
+ * Reads a list of CssSelectors and allows to calculate which ones
+ * are contained in a given CssSelector.
+ */
+class SelectorMatcher {
+    constructor() {
+        this._elementMap = new Map();
+        this._elementPartialMap = new Map();
+        this._classMap = new Map();
+        this._classPartialMap = new Map();
+        this._attrValueMap = new Map();
+        this._attrValuePartialMap = new Map();
+        this._listContexts = [];
+    }
+    /**
+     * @param {?} notSelectors
+     * @return {?}
+     */
+    static createNotMatcher(notSelectors) {
+        const /** @type {?} */ notMatcher = new SelectorMatcher();
+        notMatcher.addSelectables(notSelectors, null);
+        return notMatcher;
+    }
+    /**
+     * @param {?} cssSelectors
+     * @param {?=} callbackCtxt
+     * @return {?}
+     */
+    addSelectables(cssSelectors, callbackCtxt) {
+        let /** @type {?} */ listContext = /** @type {?} */ ((null));
+        if (cssSelectors.length > 1) {
+            listContext = new SelectorListContext(cssSelectors);
+            this._listContexts.push(listContext);
+        }
+        for (let /** @type {?} */ i = 0; i < cssSelectors.length; i++) {
+            this._addSelectable(cssSelectors[i], callbackCtxt, listContext);
+        }
+    }
+    /**
+     * Add an object that can be found later on by calling `match`.
+     * @param {?} cssSelector A css selector
+     * @param {?} callbackCtxt An opaque object that will be given to the callback of the `match` function
+     * @param {?} listContext
+     * @return {?}
+     */
+    _addSelectable(cssSelector, callbackCtxt, listContext) {
+        let /** @type {?} */ matcher = this;
+        const /** @type {?} */ element = cssSelector.element;
+        const /** @type {?} */ classNames = cssSelector.classNames;
+        const /** @type {?} */ attrs = cssSelector.attrs;
+        const /** @type {?} */ selectable = new SelectorContext(cssSelector, callbackCtxt, listContext);
+        if (element) {
+            const /** @type {?} */ isTerminal = attrs.length === 0 && classNames.length === 0;
+            if (isTerminal) {
+                this._addTerminal(matcher._elementMap, element, selectable);
+            }
+            else {
+                matcher = this._addPartial(matcher._elementPartialMap, element);
+            }
+        }
+        if (classNames) {
+            for (let /** @type {?} */ i = 0; i < classNames.length; i++) {
+                const /** @type {?} */ isTerminal = attrs.length === 0 && i === classNames.length - 1;
+                const /** @type {?} */ className = classNames[i];
+                if (isTerminal) {
+                    this._addTerminal(matcher._classMap, className, selectable);
+                }
+                else {
+                    matcher = this._addPartial(matcher._classPartialMap, className);
+                }
+            }
+        }
+        if (attrs) {
+            for (let /** @type {?} */ i = 0; i < attrs.length; i += 2) {
+                const /** @type {?} */ isTerminal = i === attrs.length - 2;
+                const /** @type {?} */ name = attrs[i];
+                const /** @type {?} */ value = attrs[i + 1];
+                if (isTerminal) {
+                    const /** @type {?} */ terminalMap = matcher._attrValueMap;
+                    let /** @type {?} */ terminalValuesMap = terminalMap.get(name);
+                    if (!terminalValuesMap) {
+                        terminalValuesMap = new Map();
+                        terminalMap.set(name, terminalValuesMap);
+                    }
+                    this._addTerminal(terminalValuesMap, value, selectable);
+                }
+                else {
+                    const /** @type {?} */ partialMap = matcher._attrValuePartialMap;
+                    let /** @type {?} */ partialValuesMap = partialMap.get(name);
+                    if (!partialValuesMap) {
+                        partialValuesMap = new Map();
+                        partialMap.set(name, partialValuesMap);
+                    }
+                    matcher = this._addPartial(partialValuesMap, value);
+                }
+            }
+        }
+    }
+    /**
+     * @param {?} map
+     * @param {?} name
+     * @param {?} selectable
+     * @return {?}
+     */
+    _addTerminal(map, name, selectable) {
+        let /** @type {?} */ terminalList = map.get(name);
+        if (!terminalList) {
+            terminalList = [];
+            map.set(name, terminalList);
+        }
+        terminalList.push(selectable);
+    }
+    /**
+     * @param {?} map
+     * @param {?} name
+     * @return {?}
+     */
+    _addPartial(map, name) {
+        let /** @type {?} */ matcher = map.get(name);
+        if (!matcher) {
+            matcher = new SelectorMatcher();
+            map.set(name, matcher);
+        }
+        return matcher;
+    }
+    /**
+     * Find the objects that have been added via `addSelectable`
+     * whose css selector is contained in the given css selector.
+     * @param {?} cssSelector A css selector
+     * @param {?} matchedCallback This callback will be called with the object handed into `addSelectable`
+     * @return {?} boolean true if a match was found
+     */
+    match(cssSelector, matchedCallback) {
+        let /** @type {?} */ result = false;
+        const /** @type {?} */ element = /** @type {?} */ ((cssSelector.element));
+        const /** @type {?} */ classNames = cssSelector.classNames;
+        const /** @type {?} */ attrs = cssSelector.attrs;
+        for (let /** @type {?} */ i = 0; i < this._listContexts.length; i++) {
+            this._listContexts[i].alreadyMatched = false;
+        }
+        result = this._matchTerminal(this._elementMap, element, cssSelector, matchedCallback) || result;
+        result = this._matchPartial(this._elementPartialMap, element, cssSelector, matchedCallback) ||
+            result;
+        if (classNames) {
+            for (let /** @type {?} */ i = 0; i < classNames.length; i++) {
+                const /** @type {?} */ className = classNames[i];
+                result =
+                    this._matchTerminal(this._classMap, className, cssSelector, matchedCallback) || result;
+                result =
+                    this._matchPartial(this._classPartialMap, className, cssSelector, matchedCallback) ||
+                        result;
+            }
+        }
+        if (attrs) {
+            for (let /** @type {?} */ i = 0; i < attrs.length; i += 2) {
+                const /** @type {?} */ name = attrs[i];
+                const /** @type {?} */ value = attrs[i + 1];
+                const /** @type {?} */ terminalValuesMap = /** @type {?} */ ((this._attrValueMap.get(name)));
+                if (value) {
+                    result =
+                        this._matchTerminal(terminalValuesMap, '', cssSelector, matchedCallback) || result;
+                }
+                result =
+                    this._matchTerminal(terminalValuesMap, value, cssSelector, matchedCallback) || result;
+                const /** @type {?} */ partialValuesMap = /** @type {?} */ ((this._attrValuePartialMap.get(name)));
+                if (value) {
+                    result = this._matchPartial(partialValuesMap, '', cssSelector, matchedCallback) || result;
+                }
+                result =
+                    this._matchPartial(partialValuesMap, value, cssSelector, matchedCallback) || result;
+            }
+        }
+        return result;
+    }
+    /**
+     * \@internal
+     * @param {?} map
+     * @param {?} name
+     * @param {?} cssSelector
+     * @param {?} matchedCallback
+     * @return {?}
+     */
+    _matchTerminal(map, name, cssSelector, matchedCallback) {
+        if (!map || typeof name !== 'string') {
+            return false;
+        }
+        let /** @type {?} */ selectables = map.get(name) || [];
+        const /** @type {?} */ starSelectables = /** @type {?} */ ((map.get('*')));
+        if (starSelectables) {
+            selectables = selectables.concat(starSelectables);
+        }
+        if (selectables.length === 0) {
+            return false;
+        }
+        let /** @type {?} */ selectable;
+        let /** @type {?} */ result = false;
+        for (let /** @type {?} */ i = 0; i < selectables.length; i++) {
+            selectable = selectables[i];
+            result = selectable.finalize(cssSelector, matchedCallback) || result;
+        }
+        return result;
+    }
+    /**
+     * \@internal
+     * @param {?} map
+     * @param {?} name
+     * @param {?} cssSelector
+     * @param {?} matchedCallback
+     * @return {?}
+     */
+    _matchPartial(map, name, cssSelector, matchedCallback) {
+        if (!map || typeof name !== 'string') {
+            return false;
+        }
+        const /** @type {?} */ nestedSelector = map.get(name);
+        if (!nestedSelector) {
+            return false;
+        }
+        // TODO(perf): get rid of recursion and measure again
+        // TODO(perf): don't pass the whole selector into the recursion,
+        // but only the not processed parts
+        return nestedSelector.match(cssSelector, matchedCallback);
+    }
+}
+class SelectorListContext {
+    /**
+     * @param {?} selectors
+     */
+    constructor(selectors) {
+        this.selectors = selectors;
+        this.alreadyMatched = false;
+    }
+}
+class SelectorContext {
+    /**
+     * @param {?} selector
+     * @param {?} cbContext
+     * @param {?} listContext
+     */
+    constructor(selector, cbContext, listContext) {
+        this.selector = selector;
+        this.cbContext = cbContext;
+        this.listContext = listContext;
+        this.notSelectors = selector.notSelectors;
+    }
+    /**
+     * @param {?} cssSelector
+     * @param {?} callback
+     * @return {?}
+     */
+    finalize(cssSelector, callback) {
+        let /** @type {?} */ result = true;
+        if (this.notSelectors.length > 0 && (!this.listContext || !this.listContext.alreadyMatched)) {
+            const /** @type {?} */ notMatcher = SelectorMatcher.createNotMatcher(this.notSelectors);
+            result = !notMatcher.match(cssSelector, null);
+        }
+        if (result && callback && (!this.listContext || !this.listContext.alreadyMatched)) {
+            if (this.listContext) {
+                this.listContext.alreadyMatched = true;
+            }
+            callback(this.selector, this.cbContext);
+        }
+        return result;
+    }
+}
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * @record
  */
@@ -260,7 +1144,69 @@ function makeMetadataFactory(name, props) {
  * @record
  */
 function Route() { }
-
+/** @enum {number} */
+const SelectorFlags = {
+    /** Indicates this is the beginning of a new negative selector */
+    NOT: 1,
+    /** Mode for matching attributes */
+    ATTRIBUTE: 2,
+    /** Mode for matching tag names */
+    ELEMENT: 4,
+    /** Mode for matching class names */
+    CLASS: 8,
+};
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function parserSelectorToSimpleSelector(selector) {
+    const /** @type {?} */ classes = selector.classNames && selector.classNames.length ?
+        [8 /* CLASS */, ...selector.classNames] :
+        [];
+    const /** @type {?} */ elementName = selector.element && selector.element !== '*' ? selector.element : '';
+    return [elementName, ...selector.attrs, ...classes];
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function parserSelectorToNegativeSelector(selector) {
+    const /** @type {?} */ classes = selector.classNames && selector.classNames.length ?
+        [8 /* CLASS */, ...selector.classNames] :
+        [];
+    if (selector.element) {
+        return [
+            1 /* NOT */ | 4 /* ELEMENT */, selector.element, ...selector.attrs, ...classes
+        ];
+    }
+    else if (selector.attrs.length) {
+        return [1 /* NOT */ | 2 /* ATTRIBUTE */, ...selector.attrs, ...classes];
+    }
+    else {
+        return selector.classNames && selector.classNames.length ?
+            [1 /* NOT */ | 8 /* CLASS */, ...selector.classNames] :
+            [];
+    }
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function parserSelectorToR3Selector(selector) {
+    const /** @type {?} */ positive = parserSelectorToSimpleSelector(selector);
+    const /** @type {?} */ negative = selector.notSelectors && selector.notSelectors.length ?
+        selector.notSelectors.map(notSelector => parserSelectorToNegativeSelector(notSelector)) :
+        [];
+    return positive.concat(...negative);
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function parseSelectorToR3Selector(selector) {
+    const /** @type {?} */ selectors = CssSelector.parse(selector);
+    return selectors.map(parserSelectorToR3Selector);
+}
 
 
 var core = Object.freeze({
@@ -314,7 +1260,9 @@ var core = Object.freeze({
 	ViewFlags: ViewFlags,
 	MissingTranslationStrategy: MissingTranslationStrategy,
 	MetadataFactory: MetadataFactory,
-	Route: Route
+	Route: Route,
+	SelectorFlags: SelectorFlags,
+	parseSelectorToR3Selector: parseSelectorToR3Selector
 });
 
 /**
@@ -614,7 +1562,7 @@ class Version {
 /**
  *
  */
-const VERSION = new Version('6.0.0-rc.5-4662878');
+const VERSION = new Version('6.0.0-rc.5-6761a64');
 
 /**
  * @fileoverview added by tsickle
@@ -697,6 +1645,31 @@ class AttrAst {
      */
     visit(visitor, context) { return visitor.visitAttr(this, context); }
 }
+/** @enum {number} */
+const PropertyBindingType = {
+    // A normal binding to a property (e.g. `[property]="expression"`).
+    Property: 0,
+    // A binding to an element attribute (e.g. `[attr.name]="expression"`).
+    Attribute: 1,
+    // A binding to a CSS class (e.g. `[class.name]="condition"`).
+    Class: 2,
+    // A binding to a style rule (e.g. `[style.rule]="expression"`).
+    Style: 3,
+    // A binding to an animation reference (e.g. `[animate.key]="expression"`).
+    Animation: 4,
+};
+PropertyBindingType[PropertyBindingType.Property] = "Property";
+PropertyBindingType[PropertyBindingType.Attribute] = "Attribute";
+PropertyBindingType[PropertyBindingType.Class] = "Class";
+PropertyBindingType[PropertyBindingType.Style] = "Style";
+PropertyBindingType[PropertyBindingType.Animation] = "Animation";
+const BoundPropertyMapping = {
+    [4 /* Animation */]: PropertyBindingType.Animation,
+    [1 /* Attribute */]: PropertyBindingType.Attribute,
+    [2 /* Class */]: PropertyBindingType.Class,
+    [0 /* Property */]: PropertyBindingType.Property,
+    [3 /* Style */]: PropertyBindingType.Style,
+};
 /**
  * A binding for an element property (e.g. `[property]="expression"`) or an animation trigger (e.g.
  * `[\@trigger]="stateExp"`)
@@ -718,6 +1691,14 @@ class BoundElementPropertyAst {
         this.unit = unit;
         this.sourceSpan = sourceSpan;
         this.isAnimation = this.type === PropertyBindingType.Animation;
+    }
+    /**
+     * @param {?} prop
+     * @return {?}
+     */
+    static fromBoundProperty(prop) {
+        const /** @type {?} */ type = BoundPropertyMapping[prop.type];
+        return new BoundElementPropertyAst(prop.name, type, prop.securityContext, prop.value, prop.unit, prop.sourceSpan);
     }
     /**
      * @param {?} visitor
@@ -759,12 +1740,19 @@ class BoundEventAst {
         if (target) {
             return `${target}:${name}`;
         }
-        else if (phase) {
+        if (phase) {
             return `@${name}.${phase}`;
         }
-        else {
-            return name;
-        }
+        return name;
+    }
+    /**
+     * @param {?} event
+     * @return {?}
+     */
+    static fromParsedEvent(event) {
+        const /** @type {?} */ target = event.type === 0 /* Regular */ ? event.targetOrPhase : null;
+        const /** @type {?} */ phase = event.type === 1 /* Animation */ ? event.targetOrPhase : null;
+        return new BoundEventAst(event.name, target, phase, event.handler, event.sourceSpan);
     }
     /**
      * @param {?} visitor
@@ -813,6 +1801,13 @@ class VariableAst {
         this.name = name;
         this.value = value;
         this.sourceSpan = sourceSpan;
+    }
+    /**
+     * @param {?} v
+     * @return {?}
+     */
+    static fromParsedVariable(v) {
+        return new VariableAst(v.name, v.value, v.sourceSpan);
     }
     /**
      * @param {?} visitor
@@ -1029,34 +2024,6 @@ class NgContentAst {
         return visitor.visitNgContent(this, context);
     }
 }
-/** @enum {number} */
-const PropertyBindingType = {
-    /**
-       * A normal binding to a property (e.g. `[property]="expression"`).
-       */
-    Property: 0,
-    /**
-       * A binding to an element attribute (e.g. `[attr.name]="expression"`).
-       */
-    Attribute: 1,
-    /**
-       * A binding to a CSS class (e.g. `[class.name]="condition"`).
-       */
-    Class: 2,
-    /**
-       * A binding to a style rule (e.g. `[style.rule]="expression"`).
-       */
-    Style: 3,
-    /**
-       * A binding to an animation reference (e.g. `[animate.key]="expression"`).
-       */
-    Animation: 4,
-};
-PropertyBindingType[PropertyBindingType.Property] = "Property";
-PropertyBindingType[PropertyBindingType.Attribute] = "Attribute";
-PropertyBindingType[PropertyBindingType.Class] = "Class";
-PropertyBindingType[PropertyBindingType.Style] = "Style";
-PropertyBindingType[PropertyBindingType.Animation] = "Animation";
 /**
  * @record
  */
@@ -2426,344 +3393,6 @@ function extractStyleUrls(resolver, baseUrl, cssText) {
 const CSS_IMPORT_REGEXP = /@import\s+(?:url\()?\s*(?:(?:['"]([^'"]*))|([^;\)\s]*))[^;]*;?/g;
 const CSS_STRIPPABLE_COMMENT_REGEXP = /\/\*(?!#\s*(?:sourceURL|sourceMappingURL)=)[\s\S]+?\*\//g;
 const URL_WITH_SCHEMA_REGEXP = /^([^:/?#]+):/;
-
-/**
- * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
- */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/** @enum {number} */
-const TagContentType = {
-    RAW_TEXT: 0,
-    ESCAPABLE_RAW_TEXT: 1,
-    PARSABLE_DATA: 2,
-};
-TagContentType[TagContentType.RAW_TEXT] = "RAW_TEXT";
-TagContentType[TagContentType.ESCAPABLE_RAW_TEXT] = "ESCAPABLE_RAW_TEXT";
-TagContentType[TagContentType.PARSABLE_DATA] = "PARSABLE_DATA";
-/**
- * @record
- */
-
-/**
- * @param {?} elementName
- * @return {?}
- */
-function splitNsName(elementName) {
-    if (elementName[0] != ':') {
-        return [null, elementName];
-    }
-    const /** @type {?} */ colonIndex = elementName.indexOf(':', 1);
-    if (colonIndex == -1) {
-        throw new Error(`Unsupported format "${elementName}" expecting ":namespace:name"`);
-    }
-    return [elementName.slice(1, colonIndex), elementName.slice(colonIndex + 1)];
-}
-/**
- * @param {?} tagName
- * @return {?}
- */
-function isNgContainer(tagName) {
-    return splitNsName(tagName)[1] === 'ng-container';
-}
-/**
- * @param {?} tagName
- * @return {?}
- */
-function isNgContent(tagName) {
-    return splitNsName(tagName)[1] === 'ng-content';
-}
-/**
- * @param {?} tagName
- * @return {?}
- */
-function isNgTemplate(tagName) {
-    return splitNsName(tagName)[1] === 'ng-template';
-}
-/**
- * @param {?} fullName
- * @return {?}
- */
-function getNsPrefix(fullName) {
-    return fullName === null ? null : splitNsName(fullName)[0];
-}
-/**
- * @param {?} prefix
- * @param {?} localName
- * @return {?}
- */
-function mergeNsAndName(prefix, localName) {
-    return prefix ? `:${prefix}:${localName}` : localName;
-}
-// see http://www.w3.org/TR/html51/syntax.html#named-character-references
-// see https://html.spec.whatwg.org/multipage/entities.json
-// This list is not exhaustive to keep the compiler footprint low.
-// The `&#123;` / `&#x1ab;` syntax should be used when the named character reference does not
-// exist.
-const NAMED_ENTITIES = {
-    'Aacute': '\u00C1',
-    'aacute': '\u00E1',
-    'Acirc': '\u00C2',
-    'acirc': '\u00E2',
-    'acute': '\u00B4',
-    'AElig': '\u00C6',
-    'aelig': '\u00E6',
-    'Agrave': '\u00C0',
-    'agrave': '\u00E0',
-    'alefsym': '\u2135',
-    'Alpha': '\u0391',
-    'alpha': '\u03B1',
-    'amp': '&',
-    'and': '\u2227',
-    'ang': '\u2220',
-    'apos': '\u0027',
-    'Aring': '\u00C5',
-    'aring': '\u00E5',
-    'asymp': '\u2248',
-    'Atilde': '\u00C3',
-    'atilde': '\u00E3',
-    'Auml': '\u00C4',
-    'auml': '\u00E4',
-    'bdquo': '\u201E',
-    'Beta': '\u0392',
-    'beta': '\u03B2',
-    'brvbar': '\u00A6',
-    'bull': '\u2022',
-    'cap': '\u2229',
-    'Ccedil': '\u00C7',
-    'ccedil': '\u00E7',
-    'cedil': '\u00B8',
-    'cent': '\u00A2',
-    'Chi': '\u03A7',
-    'chi': '\u03C7',
-    'circ': '\u02C6',
-    'clubs': '\u2663',
-    'cong': '\u2245',
-    'copy': '\u00A9',
-    'crarr': '\u21B5',
-    'cup': '\u222A',
-    'curren': '\u00A4',
-    'dagger': '\u2020',
-    'Dagger': '\u2021',
-    'darr': '\u2193',
-    'dArr': '\u21D3',
-    'deg': '\u00B0',
-    'Delta': '\u0394',
-    'delta': '\u03B4',
-    'diams': '\u2666',
-    'divide': '\u00F7',
-    'Eacute': '\u00C9',
-    'eacute': '\u00E9',
-    'Ecirc': '\u00CA',
-    'ecirc': '\u00EA',
-    'Egrave': '\u00C8',
-    'egrave': '\u00E8',
-    'empty': '\u2205',
-    'emsp': '\u2003',
-    'ensp': '\u2002',
-    'Epsilon': '\u0395',
-    'epsilon': '\u03B5',
-    'equiv': '\u2261',
-    'Eta': '\u0397',
-    'eta': '\u03B7',
-    'ETH': '\u00D0',
-    'eth': '\u00F0',
-    'Euml': '\u00CB',
-    'euml': '\u00EB',
-    'euro': '\u20AC',
-    'exist': '\u2203',
-    'fnof': '\u0192',
-    'forall': '\u2200',
-    'frac12': '\u00BD',
-    'frac14': '\u00BC',
-    'frac34': '\u00BE',
-    'frasl': '\u2044',
-    'Gamma': '\u0393',
-    'gamma': '\u03B3',
-    'ge': '\u2265',
-    'gt': '>',
-    'harr': '\u2194',
-    'hArr': '\u21D4',
-    'hearts': '\u2665',
-    'hellip': '\u2026',
-    'Iacute': '\u00CD',
-    'iacute': '\u00ED',
-    'Icirc': '\u00CE',
-    'icirc': '\u00EE',
-    'iexcl': '\u00A1',
-    'Igrave': '\u00CC',
-    'igrave': '\u00EC',
-    'image': '\u2111',
-    'infin': '\u221E',
-    'int': '\u222B',
-    'Iota': '\u0399',
-    'iota': '\u03B9',
-    'iquest': '\u00BF',
-    'isin': '\u2208',
-    'Iuml': '\u00CF',
-    'iuml': '\u00EF',
-    'Kappa': '\u039A',
-    'kappa': '\u03BA',
-    'Lambda': '\u039B',
-    'lambda': '\u03BB',
-    'lang': '\u27E8',
-    'laquo': '\u00AB',
-    'larr': '\u2190',
-    'lArr': '\u21D0',
-    'lceil': '\u2308',
-    'ldquo': '\u201C',
-    'le': '\u2264',
-    'lfloor': '\u230A',
-    'lowast': '\u2217',
-    'loz': '\u25CA',
-    'lrm': '\u200E',
-    'lsaquo': '\u2039',
-    'lsquo': '\u2018',
-    'lt': '<',
-    'macr': '\u00AF',
-    'mdash': '\u2014',
-    'micro': '\u00B5',
-    'middot': '\u00B7',
-    'minus': '\u2212',
-    'Mu': '\u039C',
-    'mu': '\u03BC',
-    'nabla': '\u2207',
-    'nbsp': '\u00A0',
-    'ndash': '\u2013',
-    'ne': '\u2260',
-    'ni': '\u220B',
-    'not': '\u00AC',
-    'notin': '\u2209',
-    'nsub': '\u2284',
-    'Ntilde': '\u00D1',
-    'ntilde': '\u00F1',
-    'Nu': '\u039D',
-    'nu': '\u03BD',
-    'Oacute': '\u00D3',
-    'oacute': '\u00F3',
-    'Ocirc': '\u00D4',
-    'ocirc': '\u00F4',
-    'OElig': '\u0152',
-    'oelig': '\u0153',
-    'Ograve': '\u00D2',
-    'ograve': '\u00F2',
-    'oline': '\u203E',
-    'Omega': '\u03A9',
-    'omega': '\u03C9',
-    'Omicron': '\u039F',
-    'omicron': '\u03BF',
-    'oplus': '\u2295',
-    'or': '\u2228',
-    'ordf': '\u00AA',
-    'ordm': '\u00BA',
-    'Oslash': '\u00D8',
-    'oslash': '\u00F8',
-    'Otilde': '\u00D5',
-    'otilde': '\u00F5',
-    'otimes': '\u2297',
-    'Ouml': '\u00D6',
-    'ouml': '\u00F6',
-    'para': '\u00B6',
-    'permil': '\u2030',
-    'perp': '\u22A5',
-    'Phi': '\u03A6',
-    'phi': '\u03C6',
-    'Pi': '\u03A0',
-    'pi': '\u03C0',
-    'piv': '\u03D6',
-    'plusmn': '\u00B1',
-    'pound': '\u00A3',
-    'prime': '\u2032',
-    'Prime': '\u2033',
-    'prod': '\u220F',
-    'prop': '\u221D',
-    'Psi': '\u03A8',
-    'psi': '\u03C8',
-    'quot': '\u0022',
-    'radic': '\u221A',
-    'rang': '\u27E9',
-    'raquo': '\u00BB',
-    'rarr': '\u2192',
-    'rArr': '\u21D2',
-    'rceil': '\u2309',
-    'rdquo': '\u201D',
-    'real': '\u211C',
-    'reg': '\u00AE',
-    'rfloor': '\u230B',
-    'Rho': '\u03A1',
-    'rho': '\u03C1',
-    'rlm': '\u200F',
-    'rsaquo': '\u203A',
-    'rsquo': '\u2019',
-    'sbquo': '\u201A',
-    'Scaron': '\u0160',
-    'scaron': '\u0161',
-    'sdot': '\u22C5',
-    'sect': '\u00A7',
-    'shy': '\u00AD',
-    'Sigma': '\u03A3',
-    'sigma': '\u03C3',
-    'sigmaf': '\u03C2',
-    'sim': '\u223C',
-    'spades': '\u2660',
-    'sub': '\u2282',
-    'sube': '\u2286',
-    'sum': '\u2211',
-    'sup': '\u2283',
-    'sup1': '\u00B9',
-    'sup2': '\u00B2',
-    'sup3': '\u00B3',
-    'supe': '\u2287',
-    'szlig': '\u00DF',
-    'Tau': '\u03A4',
-    'tau': '\u03C4',
-    'there4': '\u2234',
-    'Theta': '\u0398',
-    'theta': '\u03B8',
-    'thetasym': '\u03D1',
-    'thinsp': '\u2009',
-    'THORN': '\u00DE',
-    'thorn': '\u00FE',
-    'tilde': '\u02DC',
-    'times': '\u00D7',
-    'trade': '\u2122',
-    'Uacute': '\u00DA',
-    'uacute': '\u00FA',
-    'uarr': '\u2191',
-    'uArr': '\u21D1',
-    'Ucirc': '\u00DB',
-    'ucirc': '\u00FB',
-    'Ugrave': '\u00D9',
-    'ugrave': '\u00F9',
-    'uml': '\u00A8',
-    'upsih': '\u03D2',
-    'Upsilon': '\u03A5',
-    'upsilon': '\u03C5',
-    'Uuml': '\u00DC',
-    'uuml': '\u00FC',
-    'weierp': '\u2118',
-    'Xi': '\u039E',
-    'xi': '\u03BE',
-    'Yacute': '\u00DD',
-    'yacute': '\u00FD',
-    'yen': '\u00A5',
-    'yuml': '\u00FF',
-    'Yuml': '\u0178',
-    'Zeta': '\u0396',
-    'zeta': '\u03B6',
-    'zwj': '\u200D',
-    'zwnj': '\u200C',
-};
-// The &ngsp; pseudo-entity is denoting a space. see:
-// https://github.com/dart-lang/angular/blob/0bb611387d29d65b5af7f9d2515ab571fd3fbee4/_tests/test/compiler/preserve_whitespace_test.dart
-const NGSP_UNICODE = '\uE500';
-NAMED_ENTITIES['ngsp'] = NGSP_UNICODE;
 
 /**
  * @fileoverview added by tsickle
@@ -5399,6 +6028,77 @@ function visitAstChildren(ast, visitor, context) {
          */
         visitSafePropertyRead(ast) { visit(ast.receiver); },
     });
+}
+class ParsedProperty {
+    /**
+     * @param {?} name
+     * @param {?} expression
+     * @param {?} type
+     * @param {?} sourceSpan
+     */
+    constructor(name, expression, type, sourceSpan) {
+        this.name = name;
+        this.expression = expression;
+        this.type = type;
+        this.sourceSpan = sourceSpan;
+        this.isLiteral = this.type === ParsedPropertyType.LITERAL_ATTR;
+        this.isAnimation = this.type === ParsedPropertyType.ANIMATION;
+    }
+}
+/** @enum {number} */
+const ParsedPropertyType = {
+    DEFAULT: 0,
+    LITERAL_ATTR: 1,
+    ANIMATION: 2,
+};
+ParsedPropertyType[ParsedPropertyType.DEFAULT] = "DEFAULT";
+ParsedPropertyType[ParsedPropertyType.LITERAL_ATTR] = "LITERAL_ATTR";
+ParsedPropertyType[ParsedPropertyType.ANIMATION] = "ANIMATION";
+class ParsedEvent {
+    /**
+     * @param {?} name
+     * @param {?} targetOrPhase
+     * @param {?} type
+     * @param {?} handler
+     * @param {?} sourceSpan
+     */
+    constructor(name, targetOrPhase, type, handler, sourceSpan) {
+        this.name = name;
+        this.targetOrPhase = targetOrPhase;
+        this.type = type;
+        this.handler = handler;
+        this.sourceSpan = sourceSpan;
+    }
+}
+class ParsedVariable {
+    /**
+     * @param {?} name
+     * @param {?} value
+     * @param {?} sourceSpan
+     */
+    constructor(name, value, sourceSpan) {
+        this.name = name;
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+    }
+}
+class BoundElementProperty {
+    /**
+     * @param {?} name
+     * @param {?} type
+     * @param {?} securityContext
+     * @param {?} value
+     * @param {?} unit
+     * @param {?} sourceSpan
+     */
+    constructor(name, type, securityContext, value, unit, sourceSpan) {
+        this.name = name;
+        this.type = type;
+        this.securityContext = securityContext;
+        this.value = value;
+        this.unit = unit;
+        this.sourceSpan = sourceSpan;
+    }
 }
 
 /**
@@ -8683,125 +9383,6 @@ class RecurseVisitor {
      * @return {?}
      */
     visitIcuPlaceholder(ph, context) { }
-}
-
-/**
- * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
- */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-class HtmlTagDefinition {
-    /**
-     * @param {?=} __0
-     */
-    constructor({ closedByChildren, requiredParents, implicitNamespacePrefix, contentType = TagContentType.PARSABLE_DATA, closedByParent = false, isVoid = false, ignoreFirstLf = false } = {}) {
-        this.closedByChildren = {};
-        this.closedByParent = false;
-        this.canSelfClose = false;
-        if (closedByChildren && closedByChildren.length > 0) {
-            closedByChildren.forEach(tagName => this.closedByChildren[tagName] = true);
-        }
-        this.isVoid = isVoid;
-        this.closedByParent = closedByParent || isVoid;
-        if (requiredParents && requiredParents.length > 0) {
-            this.requiredParents = {};
-            // The first parent is the list is automatically when none of the listed parents are present
-            this.parentToAdd = requiredParents[0];
-            requiredParents.forEach(tagName => this.requiredParents[tagName] = true);
-        }
-        this.implicitNamespacePrefix = implicitNamespacePrefix || null;
-        this.contentType = contentType;
-        this.ignoreFirstLf = ignoreFirstLf;
-    }
-    /**
-     * @param {?} currentParent
-     * @return {?}
-     */
-    requireExtraParent(currentParent) {
-        if (!this.requiredParents) {
-            return false;
-        }
-        if (!currentParent) {
-            return true;
-        }
-        const /** @type {?} */ lcParent = currentParent.toLowerCase();
-        const /** @type {?} */ isParentTemplate = lcParent === 'template' || currentParent === 'ng-template';
-        return !isParentTemplate && this.requiredParents[lcParent] != true;
-    }
-    /**
-     * @param {?} name
-     * @return {?}
-     */
-    isClosedByChild(name) {
-        return this.isVoid || name.toLowerCase() in this.closedByChildren;
-    }
-}
-// see http://www.w3.org/TR/html51/syntax.html#optional-tags
-// This implementation does not fully conform to the HTML5 spec.
-const TAG_DEFINITIONS = {
-    'base': new HtmlTagDefinition({ isVoid: true }),
-    'meta': new HtmlTagDefinition({ isVoid: true }),
-    'area': new HtmlTagDefinition({ isVoid: true }),
-    'embed': new HtmlTagDefinition({ isVoid: true }),
-    'link': new HtmlTagDefinition({ isVoid: true }),
-    'img': new HtmlTagDefinition({ isVoid: true }),
-    'input': new HtmlTagDefinition({ isVoid: true }),
-    'param': new HtmlTagDefinition({ isVoid: true }),
-    'hr': new HtmlTagDefinition({ isVoid: true }),
-    'br': new HtmlTagDefinition({ isVoid: true }),
-    'source': new HtmlTagDefinition({ isVoid: true }),
-    'track': new HtmlTagDefinition({ isVoid: true }),
-    'wbr': new HtmlTagDefinition({ isVoid: true }),
-    'p': new HtmlTagDefinition({
-        closedByChildren: [
-            'address', 'article', 'aside', 'blockquote', 'div', 'dl', 'fieldset', 'footer', 'form',
-            'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hgroup', 'hr',
-            'main', 'nav', 'ol', 'p', 'pre', 'section', 'table', 'ul'
-        ],
-        closedByParent: true
-    }),
-    'thead': new HtmlTagDefinition({ closedByChildren: ['tbody', 'tfoot'] }),
-    'tbody': new HtmlTagDefinition({ closedByChildren: ['tbody', 'tfoot'], closedByParent: true }),
-    'tfoot': new HtmlTagDefinition({ closedByChildren: ['tbody'], closedByParent: true }),
-    'tr': new HtmlTagDefinition({
-        closedByChildren: ['tr'],
-        requiredParents: ['tbody', 'tfoot', 'thead'],
-        closedByParent: true
-    }),
-    'td': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
-    'th': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
-    'col': new HtmlTagDefinition({ requiredParents: ['colgroup'], isVoid: true }),
-    'svg': new HtmlTagDefinition({ implicitNamespacePrefix: 'svg' }),
-    'math': new HtmlTagDefinition({ implicitNamespacePrefix: 'math' }),
-    'li': new HtmlTagDefinition({ closedByChildren: ['li'], closedByParent: true }),
-    'dt': new HtmlTagDefinition({ closedByChildren: ['dt', 'dd'] }),
-    'dd': new HtmlTagDefinition({ closedByChildren: ['dt', 'dd'], closedByParent: true }),
-    'rb': new HtmlTagDefinition({ closedByChildren: ['rb', 'rt', 'rtc', 'rp'], closedByParent: true }),
-    'rt': new HtmlTagDefinition({ closedByChildren: ['rb', 'rt', 'rtc', 'rp'], closedByParent: true }),
-    'rtc': new HtmlTagDefinition({ closedByChildren: ['rb', 'rtc', 'rp'], closedByParent: true }),
-    'rp': new HtmlTagDefinition({ closedByChildren: ['rb', 'rt', 'rtc', 'rp'], closedByParent: true }),
-    'optgroup': new HtmlTagDefinition({ closedByChildren: ['optgroup'], closedByParent: true }),
-    'option': new HtmlTagDefinition({ closedByChildren: ['option', 'optgroup'], closedByParent: true }),
-    'pre': new HtmlTagDefinition({ ignoreFirstLf: true }),
-    'listing': new HtmlTagDefinition({ ignoreFirstLf: true }),
-    'style': new HtmlTagDefinition({ contentType: TagContentType.RAW_TEXT }),
-    'script': new HtmlTagDefinition({ contentType: TagContentType.RAW_TEXT }),
-    'title': new HtmlTagDefinition({ contentType: TagContentType.ESCAPABLE_RAW_TEXT }),
-    'textarea': new HtmlTagDefinition({ contentType: TagContentType.ESCAPABLE_RAW_TEXT, ignoreFirstLf: true }),
-};
-const _DEFAULT_TAG_DEFINITION = new HtmlTagDefinition();
-/**
- * @param {?} tagName
- * @return {?}
- */
-function getHtmlTagDefinition(tagName) {
-    return TAG_DEFINITIONS[tagName.toLowerCase()] || _DEFAULT_TAG_DEFINITION;
 }
 
 /**
@@ -14626,438 +15207,6 @@ function getHookName(hook) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' + //":not("
-    '([-\\w]+)|' + // "tag"
-    '(?:\\.([-\\w]+))|' + // ".class"
-    '(?:\\[([-.\\w*]+)(?:=([\"\']?)([^\\]\"\']*)\\5)?\\])|' + // "[name]", "[name=value]",
-    '(\\))|' + // ")"
-    '(\\s*,\\s*)', // ","
-'g');
-/**
- * A css selector contains an element name,
- * css classes and attribute/value pairs with the purpose
- * of selecting subsets out of them.
- */
-class CssSelector {
-    constructor() {
-        this.element = null;
-        this.classNames = [];
-        /**
-         * The selectors are encoded in pairs where:
-         * - even locations are attribute names
-         * - odd locations are attribute values.
-         *
-         * Example:
-         * Selector: `[key1=value1][key2]` would parse to:
-         * ```
-         * ['key1', 'value1', 'key2', '']
-         * ```
-         */
-        this.attrs = [];
-        this.notSelectors = [];
-    }
-    /**
-     * @param {?} selector
-     * @return {?}
-     */
-    static parse(selector) {
-        const /** @type {?} */ results = [];
-        const /** @type {?} */ _addResult = (res, cssSel) => {
-            if (cssSel.notSelectors.length > 0 && !cssSel.element && cssSel.classNames.length == 0 &&
-                cssSel.attrs.length == 0) {
-                cssSel.element = '*';
-            }
-            res.push(cssSel);
-        };
-        let /** @type {?} */ cssSelector = new CssSelector();
-        let /** @type {?} */ match;
-        let /** @type {?} */ current = cssSelector;
-        let /** @type {?} */ inNot = false;
-        _SELECTOR_REGEXP.lastIndex = 0;
-        while (match = _SELECTOR_REGEXP.exec(selector)) {
-            if (match[1]) {
-                if (inNot) {
-                    throw new Error('Nesting :not is not allowed in a selector');
-                }
-                inNot = true;
-                current = new CssSelector();
-                cssSelector.notSelectors.push(current);
-            }
-            if (match[2]) {
-                current.setElement(match[2]);
-            }
-            if (match[3]) {
-                current.addClassName(match[3]);
-            }
-            if (match[4]) {
-                current.addAttribute(match[4], match[6]);
-            }
-            if (match[7]) {
-                inNot = false;
-                current = cssSelector;
-            }
-            if (match[8]) {
-                if (inNot) {
-                    throw new Error('Multiple selectors in :not are not supported');
-                }
-                _addResult(results, cssSelector);
-                cssSelector = current = new CssSelector();
-            }
-        }
-        _addResult(results, cssSelector);
-        return results;
-    }
-    /**
-     * @return {?}
-     */
-    isElementSelector() {
-        return this.hasElementSelector() && this.classNames.length == 0 && this.attrs.length == 0 &&
-            this.notSelectors.length === 0;
-    }
-    /**
-     * @return {?}
-     */
-    hasElementSelector() { return !!this.element; }
-    /**
-     * @param {?=} element
-     * @return {?}
-     */
-    setElement(element = null) { this.element = element; }
-    /**
-     * Gets a template string for an element that matches the selector.
-     * @return {?}
-     */
-    getMatchingElementTemplate() {
-        const /** @type {?} */ tagName = this.element || 'div';
-        const /** @type {?} */ classAttr = this.classNames.length > 0 ? ` class="${this.classNames.join(' ')}"` : '';
-        let /** @type {?} */ attrs = '';
-        for (let /** @type {?} */ i = 0; i < this.attrs.length; i += 2) {
-            const /** @type {?} */ attrName = this.attrs[i];
-            const /** @type {?} */ attrValue = this.attrs[i + 1] !== '' ? `="${this.attrs[i + 1]}"` : '';
-            attrs += ` ${attrName}${attrValue}`;
-        }
-        return getHtmlTagDefinition(tagName).isVoid ? `<${tagName}${classAttr}${attrs}/>` :
-            `<${tagName}${classAttr}${attrs}></${tagName}>`;
-    }
-    /**
-     * @return {?}
-     */
-    getAttrs() {
-        const /** @type {?} */ result = [];
-        if (this.classNames.length > 0) {
-            result.push('class', this.classNames.join(' '));
-        }
-        return result.concat(this.attrs);
-    }
-    /**
-     * @param {?} name
-     * @param {?=} value
-     * @return {?}
-     */
-    addAttribute(name, value = '') {
-        this.attrs.push(name, value && value.toLowerCase() || '');
-    }
-    /**
-     * @param {?} name
-     * @return {?}
-     */
-    addClassName(name) { this.classNames.push(name.toLowerCase()); }
-    /**
-     * @return {?}
-     */
-    toString() {
-        let /** @type {?} */ res = this.element || '';
-        if (this.classNames) {
-            this.classNames.forEach(klass => res += `.${klass}`);
-        }
-        if (this.attrs) {
-            for (let /** @type {?} */ i = 0; i < this.attrs.length; i += 2) {
-                const /** @type {?} */ name = this.attrs[i];
-                const /** @type {?} */ value = this.attrs[i + 1];
-                res += `[${name}${value ? '=' + value : ''}]`;
-            }
-        }
-        this.notSelectors.forEach(notSelector => res += `:not(${notSelector})`);
-        return res;
-    }
-}
-/**
- * Reads a list of CssSelectors and allows to calculate which ones
- * are contained in a given CssSelector.
- */
-class SelectorMatcher {
-    constructor() {
-        this._elementMap = new Map();
-        this._elementPartialMap = new Map();
-        this._classMap = new Map();
-        this._classPartialMap = new Map();
-        this._attrValueMap = new Map();
-        this._attrValuePartialMap = new Map();
-        this._listContexts = [];
-    }
-    /**
-     * @param {?} notSelectors
-     * @return {?}
-     */
-    static createNotMatcher(notSelectors) {
-        const /** @type {?} */ notMatcher = new SelectorMatcher();
-        notMatcher.addSelectables(notSelectors, null);
-        return notMatcher;
-    }
-    /**
-     * @param {?} cssSelectors
-     * @param {?=} callbackCtxt
-     * @return {?}
-     */
-    addSelectables(cssSelectors, callbackCtxt) {
-        let /** @type {?} */ listContext = /** @type {?} */ ((null));
-        if (cssSelectors.length > 1) {
-            listContext = new SelectorListContext(cssSelectors);
-            this._listContexts.push(listContext);
-        }
-        for (let /** @type {?} */ i = 0; i < cssSelectors.length; i++) {
-            this._addSelectable(cssSelectors[i], callbackCtxt, listContext);
-        }
-    }
-    /**
-     * Add an object that can be found later on by calling `match`.
-     * @param {?} cssSelector A css selector
-     * @param {?} callbackCtxt An opaque object that will be given to the callback of the `match` function
-     * @param {?} listContext
-     * @return {?}
-     */
-    _addSelectable(cssSelector, callbackCtxt, listContext) {
-        let /** @type {?} */ matcher = this;
-        const /** @type {?} */ element = cssSelector.element;
-        const /** @type {?} */ classNames = cssSelector.classNames;
-        const /** @type {?} */ attrs = cssSelector.attrs;
-        const /** @type {?} */ selectable = new SelectorContext(cssSelector, callbackCtxt, listContext);
-        if (element) {
-            const /** @type {?} */ isTerminal = attrs.length === 0 && classNames.length === 0;
-            if (isTerminal) {
-                this._addTerminal(matcher._elementMap, element, selectable);
-            }
-            else {
-                matcher = this._addPartial(matcher._elementPartialMap, element);
-            }
-        }
-        if (classNames) {
-            for (let /** @type {?} */ i = 0; i < classNames.length; i++) {
-                const /** @type {?} */ isTerminal = attrs.length === 0 && i === classNames.length - 1;
-                const /** @type {?} */ className = classNames[i];
-                if (isTerminal) {
-                    this._addTerminal(matcher._classMap, className, selectable);
-                }
-                else {
-                    matcher = this._addPartial(matcher._classPartialMap, className);
-                }
-            }
-        }
-        if (attrs) {
-            for (let /** @type {?} */ i = 0; i < attrs.length; i += 2) {
-                const /** @type {?} */ isTerminal = i === attrs.length - 2;
-                const /** @type {?} */ name = attrs[i];
-                const /** @type {?} */ value = attrs[i + 1];
-                if (isTerminal) {
-                    const /** @type {?} */ terminalMap = matcher._attrValueMap;
-                    let /** @type {?} */ terminalValuesMap = terminalMap.get(name);
-                    if (!terminalValuesMap) {
-                        terminalValuesMap = new Map();
-                        terminalMap.set(name, terminalValuesMap);
-                    }
-                    this._addTerminal(terminalValuesMap, value, selectable);
-                }
-                else {
-                    const /** @type {?} */ partialMap = matcher._attrValuePartialMap;
-                    let /** @type {?} */ partialValuesMap = partialMap.get(name);
-                    if (!partialValuesMap) {
-                        partialValuesMap = new Map();
-                        partialMap.set(name, partialValuesMap);
-                    }
-                    matcher = this._addPartial(partialValuesMap, value);
-                }
-            }
-        }
-    }
-    /**
-     * @param {?} map
-     * @param {?} name
-     * @param {?} selectable
-     * @return {?}
-     */
-    _addTerminal(map, name, selectable) {
-        let /** @type {?} */ terminalList = map.get(name);
-        if (!terminalList) {
-            terminalList = [];
-            map.set(name, terminalList);
-        }
-        terminalList.push(selectable);
-    }
-    /**
-     * @param {?} map
-     * @param {?} name
-     * @return {?}
-     */
-    _addPartial(map, name) {
-        let /** @type {?} */ matcher = map.get(name);
-        if (!matcher) {
-            matcher = new SelectorMatcher();
-            map.set(name, matcher);
-        }
-        return matcher;
-    }
-    /**
-     * Find the objects that have been added via `addSelectable`
-     * whose css selector is contained in the given css selector.
-     * @param {?} cssSelector A css selector
-     * @param {?} matchedCallback This callback will be called with the object handed into `addSelectable`
-     * @return {?} boolean true if a match was found
-     */
-    match(cssSelector, matchedCallback) {
-        let /** @type {?} */ result = false;
-        const /** @type {?} */ element = /** @type {?} */ ((cssSelector.element));
-        const /** @type {?} */ classNames = cssSelector.classNames;
-        const /** @type {?} */ attrs = cssSelector.attrs;
-        for (let /** @type {?} */ i = 0; i < this._listContexts.length; i++) {
-            this._listContexts[i].alreadyMatched = false;
-        }
-        result = this._matchTerminal(this._elementMap, element, cssSelector, matchedCallback) || result;
-        result = this._matchPartial(this._elementPartialMap, element, cssSelector, matchedCallback) ||
-            result;
-        if (classNames) {
-            for (let /** @type {?} */ i = 0; i < classNames.length; i++) {
-                const /** @type {?} */ className = classNames[i];
-                result =
-                    this._matchTerminal(this._classMap, className, cssSelector, matchedCallback) || result;
-                result =
-                    this._matchPartial(this._classPartialMap, className, cssSelector, matchedCallback) ||
-                        result;
-            }
-        }
-        if (attrs) {
-            for (let /** @type {?} */ i = 0; i < attrs.length; i += 2) {
-                const /** @type {?} */ name = attrs[i];
-                const /** @type {?} */ value = attrs[i + 1];
-                const /** @type {?} */ terminalValuesMap = /** @type {?} */ ((this._attrValueMap.get(name)));
-                if (value) {
-                    result =
-                        this._matchTerminal(terminalValuesMap, '', cssSelector, matchedCallback) || result;
-                }
-                result =
-                    this._matchTerminal(terminalValuesMap, value, cssSelector, matchedCallback) || result;
-                const /** @type {?} */ partialValuesMap = /** @type {?} */ ((this._attrValuePartialMap.get(name)));
-                if (value) {
-                    result = this._matchPartial(partialValuesMap, '', cssSelector, matchedCallback) || result;
-                }
-                result =
-                    this._matchPartial(partialValuesMap, value, cssSelector, matchedCallback) || result;
-            }
-        }
-        return result;
-    }
-    /**
-     * \@internal
-     * @param {?} map
-     * @param {?} name
-     * @param {?} cssSelector
-     * @param {?} matchedCallback
-     * @return {?}
-     */
-    _matchTerminal(map, name, cssSelector, matchedCallback) {
-        if (!map || typeof name !== 'string') {
-            return false;
-        }
-        let /** @type {?} */ selectables = map.get(name) || [];
-        const /** @type {?} */ starSelectables = /** @type {?} */ ((map.get('*')));
-        if (starSelectables) {
-            selectables = selectables.concat(starSelectables);
-        }
-        if (selectables.length === 0) {
-            return false;
-        }
-        let /** @type {?} */ selectable;
-        let /** @type {?} */ result = false;
-        for (let /** @type {?} */ i = 0; i < selectables.length; i++) {
-            selectable = selectables[i];
-            result = selectable.finalize(cssSelector, matchedCallback) || result;
-        }
-        return result;
-    }
-    /**
-     * \@internal
-     * @param {?} map
-     * @param {?} name
-     * @param {?} cssSelector
-     * @param {?} matchedCallback
-     * @return {?}
-     */
-    _matchPartial(map, name, cssSelector, matchedCallback) {
-        if (!map || typeof name !== 'string') {
-            return false;
-        }
-        const /** @type {?} */ nestedSelector = map.get(name);
-        if (!nestedSelector) {
-            return false;
-        }
-        // TODO(perf): get rid of recursion and measure again
-        // TODO(perf): don't pass the whole selector into the recursion,
-        // but only the not processed parts
-        return nestedSelector.match(cssSelector, matchedCallback);
-    }
-}
-class SelectorListContext {
-    /**
-     * @param {?} selectors
-     */
-    constructor(selectors) {
-        this.selectors = selectors;
-        this.alreadyMatched = false;
-    }
-}
-class SelectorContext {
-    /**
-     * @param {?} selector
-     * @param {?} cbContext
-     * @param {?} listContext
-     */
-    constructor(selector, cbContext, listContext) {
-        this.selector = selector;
-        this.cbContext = cbContext;
-        this.listContext = listContext;
-        this.notSelectors = selector.notSelectors;
-    }
-    /**
-     * @param {?} cssSelector
-     * @param {?} callback
-     * @return {?}
-     */
-    finalize(cssSelector, callback) {
-        let /** @type {?} */ result = true;
-        if (this.notSelectors.length > 0 && (!this.listContext || !this.listContext.alreadyMatched)) {
-            const /** @type {?} */ notMatcher = SelectorMatcher.createNotMatcher(this.notSelectors);
-            result = !notMatcher.match(cssSelector, null);
-        }
-        if (result && callback && (!this.listContext || !this.listContext.alreadyMatched)) {
-            if (this.listContext) {
-                this.listContext.alreadyMatched = true;
-            }
-            callback(this.selector, this.cbContext);
-        }
-        return result;
-    }
-}
-
-/**
- * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
- */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const ERROR_COMPONENT_TYPE = 'ngComponentType';
 class CompileMetadataResolver {
     /**
@@ -20306,34 +20455,6 @@ const ATTRIBUTE_PREFIX = 'attr';
 const CLASS_PREFIX = 'class';
 const STYLE_PREFIX = 'style';
 const ANIMATE_PROP_PREFIX = 'animate-';
-/** @enum {number} */
-const BoundPropertyType = {
-    DEFAULT: 0,
-    LITERAL_ATTR: 1,
-    ANIMATION: 2,
-};
-BoundPropertyType[BoundPropertyType.DEFAULT] = "DEFAULT";
-BoundPropertyType[BoundPropertyType.LITERAL_ATTR] = "LITERAL_ATTR";
-BoundPropertyType[BoundPropertyType.ANIMATION] = "ANIMATION";
-/**
- * Represents a parsed property.
- */
-class BoundProperty {
-    /**
-     * @param {?} name
-     * @param {?} expression
-     * @param {?} type
-     * @param {?} sourceSpan
-     */
-    constructor(name, expression, type, sourceSpan) {
-        this.name = name;
-        this.expression = expression;
-        this.type = type;
-        this.sourceSpan = sourceSpan;
-        this.isLiteral = this.type === BoundPropertyType.LITERAL_ATTR;
-        this.isAnimation = this.type === BoundPropertyType.ANIMATION;
-    }
-}
 /**
  * Parses bindings in templates and in the directive host area.
  */
@@ -20394,7 +20515,7 @@ class BindingParser {
     createDirectiveHostPropertyAsts(dirMeta, elementSelector, sourceSpan) {
         const /** @type {?} */ boundProps = this.createBoundHostProperties(dirMeta, sourceSpan);
         return boundProps &&
-            boundProps.map((prop) => this.createElementPropertyAst(elementSelector, prop));
+            boundProps.map((prop) => this.createBoundElementProperty(elementSelector, prop));
     }
     /**
      * @param {?} dirMeta
@@ -20403,17 +20524,17 @@ class BindingParser {
      */
     createDirectiveHostEventAsts(dirMeta, sourceSpan) {
         if (dirMeta.hostListeners) {
-            const /** @type {?} */ targetEventAsts = [];
+            const /** @type {?} */ targetEvents = [];
             Object.keys(dirMeta.hostListeners).forEach(propName => {
                 const /** @type {?} */ expression = dirMeta.hostListeners[propName];
                 if (typeof expression === 'string') {
-                    this.parseEvent(propName, expression, sourceSpan, [], targetEventAsts);
+                    this.parseEvent(propName, expression, sourceSpan, [], targetEvents);
                 }
                 else {
                     this._reportError(`Value of the host listener "${propName}" needs to be a string representing an expression but got "${expression}" (${typeof expression})`, sourceSpan);
                 }
             });
-            return targetEventAsts;
+            return targetEvents;
         }
         return null;
     }
@@ -20450,7 +20571,7 @@ class BindingParser {
         for (let /** @type {?} */ i = 0; i < bindings.length; i++) {
             const /** @type {?} */ binding = bindings[i];
             if (binding.keyIsVar) {
-                targetVars.push(new VariableAst(binding.key, binding.name, sourceSpan));
+                targetVars.push(new ParsedVariable(binding.key, binding.name, sourceSpan));
             }
             else if (binding.expression) {
                 this._parsePropertyAst(binding.key, binding.expression, sourceSpan, targetMatchableAttrs, targetProps);
@@ -20494,7 +20615,7 @@ class BindingParser {
      * @return {?}
      */
     parseLiteralAttr(name, value, sourceSpan, targetMatchableAttrs, targetProps) {
-        if (_isAnimationLabel(name)) {
+        if (isAnimationLabel(name)) {
             name = name.substring(1);
             if (value) {
                 this._reportError(`Assigning animation triggers via @prop="exp" attributes with an expression is invalid.` +
@@ -20503,7 +20624,7 @@ class BindingParser {
             this._parseAnimation(name, value, sourceSpan, targetMatchableAttrs, targetProps);
         }
         else {
-            targetProps.push(new BoundProperty(name, this._exprParser.wrapLiteralPrimitive(value, ''), BoundPropertyType.LITERAL_ATTR, sourceSpan));
+            targetProps.push(new ParsedProperty(name, this._exprParser.wrapLiteralPrimitive(value, ''), ParsedPropertyType.LITERAL_ATTR, sourceSpan));
         }
     }
     /**
@@ -20521,7 +20642,7 @@ class BindingParser {
             isAnimationProp = true;
             name = name.substring(ANIMATE_PROP_PREFIX.length);
         }
-        else if (_isAnimationLabel(name)) {
+        else if (isAnimationLabel(name)) {
             isAnimationProp = true;
             name = name.substring(1);
         }
@@ -20558,7 +20679,7 @@ class BindingParser {
      */
     _parsePropertyAst(name, ast, sourceSpan, targetMatchableAttrs, targetProps) {
         targetMatchableAttrs.push([name, /** @type {?} */ ((ast.source))]);
-        targetProps.push(new BoundProperty(name, ast, BoundPropertyType.DEFAULT, sourceSpan));
+        targetProps.push(new ParsedProperty(name, ast, ParsedPropertyType.DEFAULT, sourceSpan));
     }
     /**
      * @param {?} name
@@ -20574,7 +20695,7 @@ class BindingParser {
         // states will be applied by angular when the element is attached/detached
         const /** @type {?} */ ast = this._parseBinding(expression || 'undefined', false, sourceSpan);
         targetMatchableAttrs.push([name, /** @type {?} */ ((ast.source))]);
-        targetProps.push(new BoundProperty(name, ast, BoundPropertyType.ANIMATION, sourceSpan));
+        targetProps.push(new ParsedProperty(name, ast, ParsedPropertyType.ANIMATION, sourceSpan));
     }
     /**
      * @param {?} value
@@ -20603,9 +20724,9 @@ class BindingParser {
      * @param {?} boundProp
      * @return {?}
      */
-    createElementPropertyAst(elementSelector, boundProp) {
+    createBoundElementProperty(elementSelector, boundProp) {
         if (boundProp.isAnimation) {
-            return new BoundElementPropertyAst(boundProp.name, PropertyBindingType.Animation, SecurityContext.NONE, boundProp.expression, null, boundProp.sourceSpan);
+            return new BoundElementProperty(boundProp.name, 4 /* Animation */, SecurityContext.NONE, boundProp.expression, null, boundProp.sourceSpan);
         }
         let /** @type {?} */ unit = null;
         let /** @type {?} */ bindingType = /** @type {?} */ ((undefined));
@@ -20624,17 +20745,17 @@ class BindingParser {
                     const /** @type {?} */ name = boundPropertyName.substring(nsSeparatorIdx + 1);
                     boundPropertyName = mergeNsAndName(ns, name);
                 }
-                bindingType = PropertyBindingType.Attribute;
+                bindingType = 1 /* Attribute */;
             }
             else if (parts[0] == CLASS_PREFIX) {
                 boundPropertyName = parts[1];
-                bindingType = PropertyBindingType.Class;
+                bindingType = 2 /* Class */;
                 securityContexts = [SecurityContext.NONE];
             }
             else if (parts[0] == STYLE_PREFIX) {
                 unit = parts.length > 2 ? parts[2] : null;
                 boundPropertyName = parts[1];
-                bindingType = PropertyBindingType.Style;
+                bindingType = 3 /* Style */;
                 securityContexts = [SecurityContext.STYLE];
             }
         }
@@ -20642,10 +20763,10 @@ class BindingParser {
         if (boundPropertyName === null) {
             boundPropertyName = this._schemaRegistry.getMappedPropName(boundProp.name);
             securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, boundPropertyName, false);
-            bindingType = PropertyBindingType.Property;
+            bindingType = 0 /* Property */;
             this._validatePropertyOrAttributeName(boundPropertyName, boundProp.sourceSpan, false);
         }
-        return new BoundElementPropertyAst(boundPropertyName, bindingType, securityContexts[0], boundProp.expression, unit, boundProp.sourceSpan);
+        return new BoundElementProperty(boundPropertyName, bindingType, securityContexts[0], boundProp.expression, unit, boundProp.sourceSpan);
     }
     /**
      * @param {?} name
@@ -20656,12 +20777,12 @@ class BindingParser {
      * @return {?}
      */
     parseEvent(name, expression, sourceSpan, targetMatchableAttrs, targetEvents) {
-        if (_isAnimationLabel(name)) {
+        if (isAnimationLabel(name)) {
             name = name.substr(1);
             this._parseAnimationEvent(name, expression, sourceSpan, targetEvents);
         }
         else {
-            this._parseEvent(name, expression, sourceSpan, targetMatchableAttrs, targetEvents);
+            this._parseRegularEvent(name, expression, sourceSpan, targetMatchableAttrs, targetEvents);
         }
     }
     /**
@@ -20680,7 +20801,7 @@ class BindingParser {
                 case 'start':
                 case 'done':
                     const /** @type {?} */ ast = this._parseAction(expression, sourceSpan);
-                    targetEvents.push(new BoundEventAst(eventName, null, phase, ast, sourceSpan));
+                    targetEvents.push(new ParsedEvent(eventName, phase, 1 /* Animation */, ast, sourceSpan));
                     break;
                 default:
                     this._reportError(`The provided animation output phase value "${phase}" for "@${eventName}" is not supported (use start or done)`, sourceSpan);
@@ -20699,12 +20820,12 @@ class BindingParser {
      * @param {?} targetEvents
      * @return {?}
      */
-    _parseEvent(name, expression, sourceSpan, targetMatchableAttrs, targetEvents) {
+    _parseRegularEvent(name, expression, sourceSpan, targetMatchableAttrs, targetEvents) {
         // long format: 'target: eventName'
         const [target, eventName] = splitAtColon(name, [/** @type {?} */ ((null)), name]);
         const /** @type {?} */ ast = this._parseAction(expression, sourceSpan);
         targetMatchableAttrs.push([/** @type {?} */ ((name)), /** @type {?} */ ((ast.source))]);
-        targetEvents.push(new BoundEventAst(eventName, target, null, ast, sourceSpan));
+        targetEvents.push(new ParsedEvent(eventName, target, 0 /* Regular */, ast, sourceSpan));
         // Don't detect directives for event names for now,
         // so don't add the event name to the matchableAttrs
     }
@@ -20806,7 +20927,7 @@ class PipeCollector extends RecursiveAstVisitor {
  * @param {?} name
  * @return {?}
  */
-function _isAnimationLabel(name) {
+function isAnimationLabel(name) {
     return name[0] == '@';
 }
 /**
@@ -21138,7 +21259,9 @@ class TemplateParseVisitor {
         const /** @type {?} */ attrs = [];
         const /** @type {?} */ isTemplateElement = isNgTemplate(element.name);
         element.attrs.forEach(attr => {
+            const /** @type {?} */ parsedVariables = [];
             const /** @type {?} */ hasBinding = this._parseAttr(isTemplateElement, attr, matchableAttrs, elementOrDirectiveProps, events, elementOrDirectiveRefs, elementVars);
+            elementVars.push(...parsedVariables.map(v => VariableAst.fromParsedVariable(v)));
             let /** @type {?} */ templateValue;
             let /** @type {?} */ templateKey;
             const /** @type {?} */ normalizedName = this._normalizeAttributeName(attr.name);
@@ -21152,7 +21275,9 @@ class TemplateParseVisitor {
                     this._reportError(`Can't have multiple template bindings on one element. Use only one attribute prefixed with *`, attr.sourceSpan);
                 }
                 hasInlineTemplates = true;
-                this._bindingParser.parseInlineTemplateBinding(/** @type {?} */ ((templateKey)), /** @type {?} */ ((templateValue)), attr.sourceSpan, templateMatchableAttrs, templateElementOrDirectiveProps, templateElementVars);
+                const /** @type {?} */ parsedVariables = [];
+                this._bindingParser.parseInlineTemplateBinding(/** @type {?} */ ((templateKey)), /** @type {?} */ ((templateValue)), attr.sourceSpan, templateMatchableAttrs, templateElementOrDirectiveProps, parsedVariables);
+                templateElementVars.push(...parsedVariables.map(v => VariableAst.fromParsedVariable(v)));
             }
             if (!hasBinding && !hasTemplateBinding) {
                 // don't include the bindings as attributes as well in the AST
@@ -21225,9 +21350,9 @@ class TemplateParseVisitor {
         const /** @type {?} */ name = this._normalizeAttributeName(attr.name);
         const /** @type {?} */ value = attr.value;
         const /** @type {?} */ srcSpan = attr.sourceSpan;
+        const /** @type {?} */ boundEvents = [];
         const /** @type {?} */ bindParts = name.match(BIND_NAME_REGEXP);
         let /** @type {?} */ hasBinding = false;
-        const /** @type {?} */ boundEvents = [];
         if (bindParts !== null) {
             hasBinding = true;
             if (bindParts[KW_BIND_IDX] != null) {
@@ -21247,24 +21372,24 @@ class TemplateParseVisitor {
                 this._parseReference(identifier, value, srcSpan, targetRefs);
             }
             else if (bindParts[KW_ON_IDX]) {
-                this._bindingParser.parseEvent(bindParts[IDENT_KW_IDX], value, srcSpan, targetMatchableAttrs, targetEvents);
+                this._bindingParser.parseEvent(bindParts[IDENT_KW_IDX], value, srcSpan, targetMatchableAttrs, boundEvents);
             }
             else if (bindParts[KW_BINDON_IDX]) {
                 this._bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX], value, false, srcSpan, targetMatchableAttrs, targetProps);
-                this._parseAssignmentEvent(bindParts[IDENT_KW_IDX], value, srcSpan, targetMatchableAttrs, targetEvents);
+                this._parseAssignmentEvent(bindParts[IDENT_KW_IDX], value, srcSpan, targetMatchableAttrs, boundEvents);
             }
             else if (bindParts[KW_AT_IDX]) {
                 this._bindingParser.parseLiteralAttr(name, value, srcSpan, targetMatchableAttrs, targetProps);
             }
             else if (bindParts[IDENT_BANANA_BOX_IDX]) {
                 this._bindingParser.parsePropertyBinding(bindParts[IDENT_BANANA_BOX_IDX], value, false, srcSpan, targetMatchableAttrs, targetProps);
-                this._parseAssignmentEvent(bindParts[IDENT_BANANA_BOX_IDX], value, srcSpan, targetMatchableAttrs, targetEvents);
+                this._parseAssignmentEvent(bindParts[IDENT_BANANA_BOX_IDX], value, srcSpan, targetMatchableAttrs, boundEvents);
             }
             else if (bindParts[IDENT_PROPERTY_IDX]) {
                 this._bindingParser.parsePropertyBinding(bindParts[IDENT_PROPERTY_IDX], value, false, srcSpan, targetMatchableAttrs, targetProps);
             }
             else if (bindParts[IDENT_EVENT_IDX]) {
-                this._bindingParser.parseEvent(bindParts[IDENT_EVENT_IDX], value, srcSpan, targetMatchableAttrs, targetEvents);
+                this._bindingParser.parseEvent(bindParts[IDENT_EVENT_IDX], value, srcSpan, targetMatchableAttrs, boundEvents);
             }
         }
         else {
@@ -21273,6 +21398,7 @@ class TemplateParseVisitor {
         if (!hasBinding) {
             this._bindingParser.parseLiteralAttr(name, value, srcSpan, targetMatchableAttrs, targetProps);
         }
+        targetEvents.push(...boundEvents.map(e => BoundEventAst.fromParsedEvent(e)));
         return hasBinding;
     }
     /**
@@ -21360,11 +21486,12 @@ class TemplateParseVisitor {
                 component = directive;
             }
             const /** @type {?} */ directiveProperties = [];
-            let /** @type {?} */ hostProperties = /** @type {?} */ ((this._bindingParser.createDirectiveHostPropertyAsts(directive, elementName, sourceSpan)));
+            const /** @type {?} */ boundProperties = /** @type {?} */ ((this._bindingParser.createDirectiveHostPropertyAsts(directive, elementName, sourceSpan)));
+            let /** @type {?} */ hostProperties = boundProperties.map(prop => BoundElementPropertyAst.fromBoundProperty(prop));
             // Note: We need to check the host properties here as well,
             // as we don't know the element name in the DirectiveWrapperCompiler yet.
             hostProperties = this._checkPropertiesInSchema(elementName, hostProperties);
-            const /** @type {?} */ hostEvents = /** @type {?} */ ((this._bindingParser.createDirectiveHostEventAsts(directive, sourceSpan)));
+            const /** @type {?} */ parsedEvents = /** @type {?} */ ((this._bindingParser.createDirectiveHostEventAsts(directive, sourceSpan)));
             this._createDirectivePropertyAsts(directive.inputs, props, directiveProperties, targetBoundDirectivePropNames);
             elementOrDirectiveRefs.forEach((elOrDirRef) => {
                 if ((elOrDirRef.value.length === 0 && directive.isComponent) ||
@@ -21373,6 +21500,7 @@ class TemplateParseVisitor {
                     matchedReferences.add(elOrDirRef.name);
                 }
             });
+            const /** @type {?} */ hostEvents = parsedEvents.map(e => BoundEventAst.fromParsedEvent(e));
             const /** @type {?} */ contentQueryStartId = this.contentQueryStartId;
             this.contentQueryStartId += directive.queries.length;
             return new DirectiveAst(directive, directiveProperties, hostProperties, hostEvents, contentQueryStartId, sourceSpan);
@@ -21433,7 +21561,8 @@ class TemplateParseVisitor {
         const /** @type {?} */ boundElementProps = [];
         props.forEach((prop) => {
             if (!prop.isLiteral && !boundDirectivePropNames.has(prop.name)) {
-                boundElementProps.push(this._bindingParser.createElementPropertyAst(elementName, prop));
+                const /** @type {?} */ boundProp = this._bindingParser.createBoundElementProperty(elementName, prop);
+                boundElementProps.push(BoundElementPropertyAst.fromBoundProperty(boundProp));
             }
         });
         return this._checkPropertiesInSchema(elementName, boundElementProps);
@@ -24982,34 +25111,6 @@ class TextAttribute {
      */
     visit(visitor) { return visitor.visitAttribute(this); }
 }
-/** @enum {number} */
-const PropertyBindingType$1 = {
-    /**
-       * A normal binding to a property (e.g. `[property]="expression"`).
-       */
-    Property: 0,
-    /**
-       * A binding to an element attribute (e.g. `[attr.name]="expression"`).
-       */
-    Attribute: 1,
-    /**
-       * A binding to a CSS class (e.g. `[class.name]="condition"`).
-       */
-    Class: 2,
-    /**
-       * A binding to a style rule (e.g. `[style.rule]="expression"`).
-       */
-    Style: 3,
-    /**
-       * A binding to an animation reference (e.g. `[animate.key]="expression"`).
-       */
-    Animation: 4,
-};
-PropertyBindingType$1[PropertyBindingType$1.Property] = "Property";
-PropertyBindingType$1[PropertyBindingType$1.Attribute] = "Attribute";
-PropertyBindingType$1[PropertyBindingType$1.Class] = "Class";
-PropertyBindingType$1[PropertyBindingType$1.Style] = "Style";
-PropertyBindingType$1[PropertyBindingType$1.Animation] = "Animation";
 class BoundAttribute {
     /**
      * @param {?} name
@@ -25026,6 +25127,13 @@ class BoundAttribute {
         this.value = value;
         this.unit = unit;
         this.sourceSpan = sourceSpan;
+    }
+    /**
+     * @param {?} prop
+     * @return {?}
+     */
+    static fromBoundElementProperty(prop) {
+        return new BoundAttribute(prop.name, prop.type, prop.securityContext, prop.value, prop.unit, prop.sourceSpan);
     }
     /**
      * @template Result
@@ -25048,6 +25156,15 @@ class BoundEvent {
         this.target = target;
         this.phase = phase;
         this.sourceSpan = sourceSpan;
+    }
+    /**
+     * @param {?} event
+     * @return {?}
+     */
+    static fromParsedEvent(event) {
+        const /** @type {?} */ target = event.type === 0 /* Regular */ ? event.targetOrPhase : null;
+        const /** @type {?} */ phase = event.type === 1 /* Animation */ ? event.targetOrPhase : null;
+        return new BoundEvent(event.name, event.handler, target, phase, event.sourceSpan);
     }
     /**
      * @template Result
@@ -25377,10 +25494,10 @@ function unsupported(feature) {
     throw new Error(`Feature ${feature} is not supported yet`);
 }
 const BINDING_INSTRUCTION_MAP = {
-    [PropertyBindingType$1.Property]: Identifiers$1.elementProperty,
-    [PropertyBindingType$1.Attribute]: Identifiers$1.elementAttribute,
-    [PropertyBindingType$1.Class]: Identifiers$1.elementClassNamed,
-    [PropertyBindingType$1.Style]: Identifiers$1.elementStyleNamed,
+    [0 /* Property */]: Identifiers$1.elementProperty,
+    [1 /* Attribute */]: Identifiers$1.elementAttribute,
+    [2 /* Class */]: Identifiers$1.elementClassNamed,
+    [3 /* Style */]: Identifiers$1.elementStyleNamed,
 };
 /**
  * @param {?} args
@@ -25816,7 +25933,7 @@ class TemplateDefinitionBuilder {
         });
         // Generate element input bindings
         element.inputs.forEach((input) => {
-            if (input.type === PropertyBindingType$1.Animation) {
+            if (input.type === 4 /* Animation */) {
                 this._unsupported('animations');
             }
             const /** @type {?} */ convertedBinding = this.convertPropertyBinding(implicit, input.value);
@@ -25827,7 +25944,7 @@ class TemplateDefinitionBuilder {
                 this.instruction(this._bindingCode, input.sourceSpan, instruction, literal(elementIndex), literal(input.name), value);
             }
             else {
-                this._unsupported(`binding ${PropertyBindingType$1[input.type]}`);
+                this._unsupported(`binding type ${input.type}`);
             }
         });
         // Traverse element child nodes
@@ -26219,58 +26336,6 @@ function invalid$1(arg) {
     throw new Error(`Invalid state: Visitor ${this.constructor.name} doesn't handle ${undefined}`);
 }
 /**
- * @param {?} selector
- * @return {?}
- */
-function parserSelectorToSimpleSelector(selector) {
-    const /** @type {?} */ classes = selector.classNames && selector.classNames.length ?
-        [8 /* CLASS */, ...selector.classNames] :
-        [];
-    const /** @type {?} */ elementName = selector.element && selector.element !== '*' ? selector.element : '';
-    return [elementName, ...selector.attrs, ...classes];
-}
-/**
- * @param {?} selector
- * @return {?}
- */
-function parserSelectorToNegativeSelector(selector) {
-    const /** @type {?} */ classes = selector.classNames && selector.classNames.length ?
-        [8 /* CLASS */, ...selector.classNames] :
-        [];
-    if (selector.element) {
-        return [
-            1 /* NOT */ | 4 /* ELEMENT */, selector.element, ...selector.attrs, ...classes
-        ];
-    }
-    else if (selector.attrs.length) {
-        return [1 /* NOT */ | 2 /* ATTRIBUTE */, ...selector.attrs, ...classes];
-    }
-    else {
-        return selector.classNames && selector.classNames.length ?
-            [1 /* NOT */ | 8 /* CLASS */, ...selector.classNames] :
-            [];
-    }
-}
-/**
- * @param {?} selector
- * @return {?}
- */
-function parserSelectorToR3Selector(selector) {
-    const /** @type {?} */ positive = parserSelectorToSimpleSelector(selector);
-    const /** @type {?} */ negative = selector.notSelectors && selector.notSelectors.length ?
-        selector.notSelectors.map(notSelector => parserSelectorToNegativeSelector(notSelector)) :
-        [];
-    return positive.concat(...negative);
-}
-/**
- * @param {?} selector
- * @return {?}
- */
-function parseSelectorToR3Selector(selector) {
-    const /** @type {?} */ selectors = CssSelector.parse(selector);
-    return selectors.map(parserSelectorToR3Selector);
-}
-/**
  * @param {?} value
  * @return {?}
  */
@@ -26463,14 +26528,14 @@ class HtmlToTemplateTransform {
         // Whether the element is a `<ng-template>`
         const /** @type {?} */ isTemplateElement = isNgTemplate(element.name);
         const /** @type {?} */ matchableAttributes = [];
-        const /** @type {?} */ boundProperties = [];
+        const /** @type {?} */ parsedProperties = [];
         const /** @type {?} */ boundEvents = [];
         const /** @type {?} */ variables = [];
         const /** @type {?} */ references = [];
         const /** @type {?} */ attributes = [];
         const /** @type {?} */ templateMatchableAttributes = [];
         let /** @type {?} */ inlineTemplateSourceSpan;
-        const /** @type {?} */ templateBoundProperties = [];
+        const /** @type {?} */ templateParsedProperties = [];
         const /** @type {?} */ templateVariables = [];
         // Whether the element has any *-attribute
         let /** @type {?} */ elementHasInlineTemplate = false;
@@ -26487,14 +26552,12 @@ class HtmlToTemplateTransform {
                 elementHasInlineTemplate = true;
                 const /** @type {?} */ templateValue = attribute.value;
                 const /** @type {?} */ templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX$1.length);
-                const /** @type {?} */ oldVariables = [];
                 inlineTemplateSourceSpan = attribute.valueSpan || attribute.sourceSpan;
-                this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, templateMatchableAttributes, templateBoundProperties, oldVariables);
-                templateVariables.push(...oldVariables.map(v => new Variable(v.name, v.value, v.sourceSpan)));
+                this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, templateMatchableAttributes, templateParsedProperties, templateVariables);
             }
             else {
                 // Check for variables, events, property bindings, interpolation
-                hasBinding = this.parseAttribute(isTemplateElement, attribute, matchableAttributes, boundProperties, boundEvents, variables, references);
+                hasBinding = this.parseAttribute(isTemplateElement, attribute, matchableAttributes, parsedProperties, boundEvents, variables, references);
             }
             if (!hasBinding && !isTemplateBinding) {
                 // don't include the bindings as attributes as well in the AST
@@ -26519,17 +26582,17 @@ class HtmlToTemplateTransform {
         }
         else if (isTemplateElement) {
             // `<ng-template>`
-            const /** @type {?} */ boundAttributes = this.createBoundAttributes(element.name, boundProperties);
+            const /** @type {?} */ boundAttributes = this.createBoundAttributes(element.name, parsedProperties);
             parsedElement = new Template(attributes, boundAttributes, children, references, variables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
         }
         else {
-            const /** @type {?} */ boundAttributes = this.createBoundAttributes(element.name, boundProperties);
+            const /** @type {?} */ boundAttributes = this.createBoundAttributes(element.name, parsedProperties);
             parsedElement = new Element$1(element.name, attributes, boundAttributes, boundEvents, children, references, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
         }
         if (elementHasInlineTemplate) {
             const /** @type {?} */ attributes = [];
             templateMatchableAttributes.forEach(([name, value]) => attributes.push(new TextAttribute(name, value, inlineTemplateSourceSpan)));
-            const /** @type {?} */ boundAttributes = this.createBoundAttributes('ng-template', templateBoundProperties);
+            const /** @type {?} */ boundAttributes = this.createBoundAttributes('ng-template', templateParsedProperties);
             parsedElement = new Template(attributes, boundAttributes, [parsedElement], [], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
         }
         return parsedElement;
@@ -26567,28 +26630,25 @@ class HtmlToTemplateTransform {
     visitExpansionCase(expansionCase) { return null; }
     /**
      * @param {?} elementName
-     * @param {?} boundProperties
+     * @param {?} properties
      * @return {?}
      */
-    createBoundAttributes(elementName, boundProperties) {
-        const /** @type {?} */ literalProperties = boundProperties.filter(prop => !prop.isLiteral);
-        return literalProperties.map(property => {
-            // TODO(vicb): get ride of the boundProperty (from TemplateAst)
-            const /** @type {?} */ boundProp = this.bindingParser.createElementPropertyAst(elementName, property);
-            return new BoundAttribute(boundProp.name, /** @type {?} */ ((boundProp.type)), boundProp.securityContext, boundProp.value, boundProp.unit, boundProp.sourceSpan);
-        });
+    createBoundAttributes(elementName, properties) {
+        return properties.filter(prop => !prop.isLiteral)
+            .map(prop => this.bindingParser.createBoundElementProperty(elementName, prop))
+            .map(prop => BoundAttribute.fromBoundElementProperty(prop));
     }
     /**
      * @param {?} isTemplateElement
      * @param {?} attribute
      * @param {?} matchableAttributes
-     * @param {?} boundProperties
+     * @param {?} parsedProperties
      * @param {?} boundEvents
      * @param {?} variables
      * @param {?} references
      * @return {?}
      */
-    parseAttribute(isTemplateElement, attribute, matchableAttributes, boundProperties, boundEvents, variables, references) {
+    parseAttribute(isTemplateElement, attribute, matchableAttributes, parsedProperties, boundEvents, variables, references) {
         const /** @type {?} */ name = normalizeAttributeName(attribute.name);
         const /** @type {?} */ value = attribute.value;
         const /** @type {?} */ srcSpan = attribute.sourceSpan;
@@ -26597,7 +26657,7 @@ class HtmlToTemplateTransform {
         if (bindParts) {
             hasBinding = true;
             if (bindParts[KW_BIND_IDX$1] != null) {
-                this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX$1], value, false, srcSpan, matchableAttributes, boundProperties);
+                this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX$1], value, false, srcSpan, matchableAttributes, parsedProperties);
             }
             else if (bindParts[KW_LET_IDX$1]) {
                 if (isTemplateElement) {
@@ -26618,18 +26678,18 @@ class HtmlToTemplateTransform {
                 addEvents(events, boundEvents);
             }
             else if (bindParts[KW_BINDON_IDX$1]) {
-                this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX$1], value, false, srcSpan, matchableAttributes, boundProperties);
+                this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX$1], value, false, srcSpan, matchableAttributes, parsedProperties);
                 this.parseAssignmentEvent(bindParts[IDENT_KW_IDX$1], value, srcSpan, matchableAttributes, boundEvents);
             }
             else if (bindParts[KW_AT_IDX$1]) {
-                this.bindingParser.parseLiteralAttr(name, value, srcSpan, matchableAttributes, boundProperties);
+                this.bindingParser.parseLiteralAttr(name, value, srcSpan, matchableAttributes, parsedProperties);
             }
             else if (bindParts[IDENT_BANANA_BOX_IDX$1]) {
-                this.bindingParser.parsePropertyBinding(bindParts[IDENT_BANANA_BOX_IDX$1], value, false, srcSpan, matchableAttributes, boundProperties);
+                this.bindingParser.parsePropertyBinding(bindParts[IDENT_BANANA_BOX_IDX$1], value, false, srcSpan, matchableAttributes, parsedProperties);
                 this.parseAssignmentEvent(bindParts[IDENT_BANANA_BOX_IDX$1], value, srcSpan, matchableAttributes, boundEvents);
             }
             else if (bindParts[IDENT_PROPERTY_IDX$1]) {
-                this.bindingParser.parsePropertyBinding(bindParts[IDENT_PROPERTY_IDX$1], value, false, srcSpan, matchableAttributes, boundProperties);
+                this.bindingParser.parsePropertyBinding(bindParts[IDENT_PROPERTY_IDX$1], value, false, srcSpan, matchableAttributes, parsedProperties);
             }
             else if (bindParts[IDENT_EVENT_IDX$1]) {
                 const /** @type {?} */ events = [];
@@ -26638,7 +26698,7 @@ class HtmlToTemplateTransform {
             }
         }
         else {
-            hasBinding = this.bindingParser.parsePropertyInterpolation(name, value, srcSpan, matchableAttributes, boundProperties);
+            hasBinding = this.bindingParser.parsePropertyInterpolation(name, value, srcSpan, matchableAttributes, parsedProperties);
         }
         return hasBinding;
     }
@@ -26751,7 +26811,7 @@ function normalizeAttributeName(attrName) {
  * @return {?}
  */
 function addEvents(events, boundEvents) {
-    boundEvents.push(...events.map(e => new BoundEvent(e.name, e.handler, e.target, e.phase, e.sourceSpan)));
+    boundEvents.push(...events.map(e => BoundEvent.fromParsedEvent(e)));
 }
 /**
  * @param {?} node
@@ -32306,5 +32366,5 @@ class Extractor {
 // replaces this file with production index.ts when it rewrites private symbol
 // names.
 
-export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, ExpressionStatement, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
+export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, ExpressionStatement, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, VERSION, TextAst, BoundTextAst, AttrAst, PropertyBindingType, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
 //# sourceMappingURL=compiler.js.map

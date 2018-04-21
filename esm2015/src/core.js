@@ -9,11 +9,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-// Attention:
-// This file duplicates types and values from @angular/core
-// so that we are able to make @angular/compiler independent of @angular/core.
-// This is important to prevent a build cycle, as @angular/core needs to
-// be compiled with the compiler.
+import { CssSelector } from './selector';
 /**
  * @record
  */
@@ -411,5 +407,69 @@ function Route_tsickle_Closure_declarations() {
     Route.prototype.children;
     /** @type {?|undefined} */
     Route.prototype.loadChildren;
+}
+/** @enum {number} */
+const SelectorFlags = {
+    /** Indicates this is the beginning of a new negative selector */
+    NOT: 1,
+    /** Mode for matching attributes */
+    ATTRIBUTE: 2,
+    /** Mode for matching tag names */
+    ELEMENT: 4,
+    /** Mode for matching class names */
+    CLASS: 8,
+};
+export { SelectorFlags };
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function parserSelectorToSimpleSelector(selector) {
+    const /** @type {?} */ classes = selector.classNames && selector.classNames.length ?
+        [8 /* CLASS */, ...selector.classNames] :
+        [];
+    const /** @type {?} */ elementName = selector.element && selector.element !== '*' ? selector.element : '';
+    return [elementName, ...selector.attrs, ...classes];
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function parserSelectorToNegativeSelector(selector) {
+    const /** @type {?} */ classes = selector.classNames && selector.classNames.length ?
+        [8 /* CLASS */, ...selector.classNames] :
+        [];
+    if (selector.element) {
+        return [
+            1 /* NOT */ | 4 /* ELEMENT */, selector.element, ...selector.attrs, ...classes
+        ];
+    }
+    else if (selector.attrs.length) {
+        return [1 /* NOT */ | 2 /* ATTRIBUTE */, ...selector.attrs, ...classes];
+    }
+    else {
+        return selector.classNames && selector.classNames.length ?
+            [1 /* NOT */ | 8 /* CLASS */, ...selector.classNames] :
+            [];
+    }
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function parserSelectorToR3Selector(selector) {
+    const /** @type {?} */ positive = parserSelectorToSimpleSelector(selector);
+    const /** @type {?} */ negative = selector.notSelectors && selector.notSelectors.length ?
+        selector.notSelectors.map(notSelector => parserSelectorToNegativeSelector(notSelector)) :
+        [];
+    return positive.concat(...negative);
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+export function parseSelectorToR3Selector(selector) {
+    const /** @type {?} */ selectors = CssSelector.parse(selector);
+    return selectors.map(parserSelectorToR3Selector);
 }
 //# sourceMappingURL=core.js.map

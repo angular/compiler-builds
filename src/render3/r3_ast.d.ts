@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { SecurityContext } from '../core';
-import { AST } from '../expression_parser/ast';
+import { AST, BoundElementBindingType, BoundElementProperty, ParsedEvent } from '../expression_parser/ast';
 import { ParseSourceSpan } from '../parse_util';
 export interface Node {
     sourceSpan: ParseSourceSpan;
@@ -32,39 +32,15 @@ export declare class TextAttribute implements Node {
     constructor(name: string, value: string, sourceSpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
-/**
- * Enumeration of types of property bindings.
- */
-export declare enum PropertyBindingType {
-    /**
-     * A normal binding to a property (e.g. `[property]="expression"`).
-     */
-    Property = 0,
-    /**
-     * A binding to an element attribute (e.g. `[attr.name]="expression"`).
-     */
-    Attribute = 1,
-    /**
-     * A binding to a CSS class (e.g. `[class.name]="condition"`).
-     */
-    Class = 2,
-    /**
-     * A binding to a style rule (e.g. `[style.rule]="expression"`).
-     */
-    Style = 3,
-    /**
-     * A binding to an animation reference (e.g. `[animate.key]="expression"`).
-     */
-    Animation = 4,
-}
 export declare class BoundAttribute implements Node {
     name: string;
-    type: PropertyBindingType;
+    type: BoundElementBindingType;
     securityContext: SecurityContext;
     value: AST;
     unit: string | null;
     sourceSpan: ParseSourceSpan;
-    constructor(name: string, type: PropertyBindingType, securityContext: SecurityContext, value: AST, unit: string | null, sourceSpan: ParseSourceSpan);
+    constructor(name: string, type: BoundElementBindingType, securityContext: SecurityContext, value: AST, unit: string | null, sourceSpan: ParseSourceSpan);
+    static fromBoundElementProperty(prop: BoundElementProperty): BoundAttribute;
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 export declare class BoundEvent implements Node {
@@ -74,6 +50,7 @@ export declare class BoundEvent implements Node {
     phase: string | null;
     sourceSpan: ParseSourceSpan;
     constructor(name: string, handler: AST, target: string | null, phase: string | null, sourceSpan: ParseSourceSpan);
+    static fromParsedEvent(event: ParsedEvent): BoundEvent;
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 export declare class Element implements Node {

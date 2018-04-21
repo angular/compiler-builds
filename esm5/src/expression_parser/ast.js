@@ -2196,4 +2196,130 @@ export function visitAstChildren(ast, visitor, context) {
         function (ast) { visit(ast.receiver); },
     });
 }
+var ParsedProperty = /** @class */ (function () {
+    function ParsedProperty(name, expression, type, sourceSpan) {
+        this.name = name;
+        this.expression = expression;
+        this.type = type;
+        this.sourceSpan = sourceSpan;
+        this.isLiteral = this.type === ParsedPropertyType.LITERAL_ATTR;
+        this.isAnimation = this.type === ParsedPropertyType.ANIMATION;
+    }
+    return ParsedProperty;
+}());
+export { ParsedProperty };
+function ParsedProperty_tsickle_Closure_declarations() {
+    /** @type {?} */
+    ParsedProperty.prototype.isLiteral;
+    /** @type {?} */
+    ParsedProperty.prototype.isAnimation;
+    /** @type {?} */
+    ParsedProperty.prototype.name;
+    /** @type {?} */
+    ParsedProperty.prototype.expression;
+    /** @type {?} */
+    ParsedProperty.prototype.type;
+    /** @type {?} */
+    ParsedProperty.prototype.sourceSpan;
+}
+/** @enum {number} */
+var ParsedPropertyType = {
+    DEFAULT: 0,
+    LITERAL_ATTR: 1,
+    ANIMATION: 2,
+};
+export { ParsedPropertyType };
+ParsedPropertyType[ParsedPropertyType.DEFAULT] = "DEFAULT";
+ParsedPropertyType[ParsedPropertyType.LITERAL_ATTR] = "LITERAL_ATTR";
+ParsedPropertyType[ParsedPropertyType.ANIMATION] = "ANIMATION";
+/** @enum {number} */
+var ParsedEventType = {
+    // DOM or Directive event
+    Regular: 0,
+    // Animation specific event
+    Animation: 1,
+};
+export { ParsedEventType };
+var ParsedEvent = /** @class */ (function () {
+    // Regular events have a target
+    // Animation events have a phase
+    function ParsedEvent(name, targetOrPhase, type, handler, sourceSpan) {
+        this.name = name;
+        this.targetOrPhase = targetOrPhase;
+        this.type = type;
+        this.handler = handler;
+        this.sourceSpan = sourceSpan;
+    }
+    return ParsedEvent;
+}());
+export { ParsedEvent };
+function ParsedEvent_tsickle_Closure_declarations() {
+    /** @type {?} */
+    ParsedEvent.prototype.name;
+    /** @type {?} */
+    ParsedEvent.prototype.targetOrPhase;
+    /** @type {?} */
+    ParsedEvent.prototype.type;
+    /** @type {?} */
+    ParsedEvent.prototype.handler;
+    /** @type {?} */
+    ParsedEvent.prototype.sourceSpan;
+}
+var ParsedVariable = /** @class */ (function () {
+    function ParsedVariable(name, value, sourceSpan) {
+        this.name = name;
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+    }
+    return ParsedVariable;
+}());
+export { ParsedVariable };
+function ParsedVariable_tsickle_Closure_declarations() {
+    /** @type {?} */
+    ParsedVariable.prototype.name;
+    /** @type {?} */
+    ParsedVariable.prototype.value;
+    /** @type {?} */
+    ParsedVariable.prototype.sourceSpan;
+}
+/** @enum {number} */
+var BoundElementBindingType = {
+    // A regular binding to a property (e.g. `[property]="expression"`).
+    Property: 0,
+    // A binding to an element attribute (e.g. `[attr.name]="expression"`).
+    Attribute: 1,
+    // A binding to a CSS class (e.g. `[class.name]="condition"`).
+    Class: 2,
+    // A binding to a style rule (e.g. `[style.rule]="expression"`).
+    Style: 3,
+    // A binding to an animation reference (e.g. `[animate.key]="expression"`).
+    Animation: 4,
+};
+export { BoundElementBindingType };
+var BoundElementProperty = /** @class */ (function () {
+    function BoundElementProperty(name, type, securityContext, value, unit, sourceSpan) {
+        this.name = name;
+        this.type = type;
+        this.securityContext = securityContext;
+        this.value = value;
+        this.unit = unit;
+        this.sourceSpan = sourceSpan;
+    }
+    return BoundElementProperty;
+}());
+export { BoundElementProperty };
+function BoundElementProperty_tsickle_Closure_declarations() {
+    /** @type {?} */
+    BoundElementProperty.prototype.name;
+    /** @type {?} */
+    BoundElementProperty.prototype.type;
+    /** @type {?} */
+    BoundElementProperty.prototype.securityContext;
+    /** @type {?} */
+    BoundElementProperty.prototype.value;
+    /** @type {?} */
+    BoundElementProperty.prototype.unit;
+    /** @type {?} */
+    BoundElementProperty.prototype.sourceSpan;
+}
 //# sourceMappingURL=ast.js.map

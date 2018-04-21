@@ -12,61 +12,16 @@
 import * as tslib_1 from "tslib";
 import { SecurityContext } from '../core';
 import { EmptyExpr, RecursiveAstVisitor } from '../expression_parser/ast';
+import { BoundElementProperty, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable } from '../expression_parser/ast';
 import { mergeNsAndName } from '../ml_parser/tags';
 import { ParseError, ParseErrorLevel, ParseSourceSpan } from '../parse_util';
 import { CssSelector } from '../selector';
 import { splitAtColon, splitAtPeriod } from '../util';
-import { BoundElementPropertyAst, BoundEventAst, PropertyBindingType, VariableAst } from './template_ast';
 var /** @type {?} */ PROPERTY_PARTS_SEPARATOR = '.';
 var /** @type {?} */ ATTRIBUTE_PREFIX = 'attr';
 var /** @type {?} */ CLASS_PREFIX = 'class';
 var /** @type {?} */ STYLE_PREFIX = 'style';
 var /** @type {?} */ ANIMATE_PROP_PREFIX = 'animate-';
-/** @enum {number} */
-var BoundPropertyType = {
-    DEFAULT: 0,
-    LITERAL_ATTR: 1,
-    ANIMATION: 2,
-};
-export { BoundPropertyType };
-BoundPropertyType[BoundPropertyType.DEFAULT] = "DEFAULT";
-BoundPropertyType[BoundPropertyType.LITERAL_ATTR] = "LITERAL_ATTR";
-BoundPropertyType[BoundPropertyType.ANIMATION] = "ANIMATION";
-/**
- * Represents a parsed property.
- */
-var /**
- * Represents a parsed property.
- */
-BoundProperty = /** @class */ (function () {
-    function BoundProperty(name, expression, type, sourceSpan) {
-        this.name = name;
-        this.expression = expression;
-        this.type = type;
-        this.sourceSpan = sourceSpan;
-        this.isLiteral = this.type === BoundPropertyType.LITERAL_ATTR;
-        this.isAnimation = this.type === BoundPropertyType.ANIMATION;
-    }
-    return BoundProperty;
-}());
-/**
- * Represents a parsed property.
- */
-export { BoundProperty };
-function BoundProperty_tsickle_Closure_declarations() {
-    /** @type {?} */
-    BoundProperty.prototype.isLiteral;
-    /** @type {?} */
-    BoundProperty.prototype.isAnimation;
-    /** @type {?} */
-    BoundProperty.prototype.name;
-    /** @type {?} */
-    BoundProperty.prototype.expression;
-    /** @type {?} */
-    BoundProperty.prototype.type;
-    /** @type {?} */
-    BoundProperty.prototype.sourceSpan;
-}
 /**
  * Parses bindings in templates and in the directive host area.
  */
@@ -139,7 +94,7 @@ BindingParser = /** @class */ (function () {
         var _this = this;
         var /** @type {?} */ boundProps = this.createBoundHostProperties(dirMeta, sourceSpan);
         return boundProps &&
-            boundProps.map(function (prop) { return _this.createElementPropertyAst(elementSelector, prop); });
+            boundProps.map(function (prop) { return _this.createBoundElementProperty(elementSelector, prop); });
     };
     /**
      * @param {?} dirMeta
@@ -154,17 +109,17 @@ BindingParser = /** @class */ (function () {
     function (dirMeta, sourceSpan) {
         var _this = this;
         if (dirMeta.hostListeners) {
-            var /** @type {?} */ targetEventAsts_1 = [];
+            var /** @type {?} */ targetEvents_1 = [];
             Object.keys(dirMeta.hostListeners).forEach(function (propName) {
                 var /** @type {?} */ expression = dirMeta.hostListeners[propName];
                 if (typeof expression === 'string') {
-                    _this.parseEvent(propName, expression, sourceSpan, [], targetEventAsts_1);
+                    _this.parseEvent(propName, expression, sourceSpan, [], targetEvents_1);
                 }
                 else {
                     _this._reportError("Value of the host listener \"" + propName + "\" needs to be a string representing an expression but got \"" + expression + "\" (" + typeof expression + ")", sourceSpan);
                 }
             });
-            return targetEventAsts_1;
+            return targetEvents_1;
         }
         return null;
     };
@@ -216,7 +171,7 @@ BindingParser = /** @class */ (function () {
         for (var /** @type {?} */ i = 0; i < bindings.length; i++) {
             var /** @type {?} */ binding = bindings[i];
             if (binding.keyIsVar) {
-                targetVars.push(new VariableAst(binding.key, binding.name, sourceSpan));
+                targetVars.push(new ParsedVariable(binding.key, binding.name, sourceSpan));
             }
             else if (binding.expression) {
                 this._parsePropertyAst(binding.key, binding.expression, sourceSpan, targetMatchableAttrs, targetProps);
@@ -275,7 +230,7 @@ BindingParser = /** @class */ (function () {
      * @return {?}
      */
     function (name, value, sourceSpan, targetMatchableAttrs, targetProps) {
-        if (_isAnimationLabel(name)) {
+        if (isAnimationLabel(name)) {
             name = name.substring(1);
             if (value) {
                 this._reportError("Assigning animation triggers via @prop=\"exp\" attributes with an expression is invalid." +
@@ -284,7 +239,7 @@ BindingParser = /** @class */ (function () {
             this._parseAnimation(name, value, sourceSpan, targetMatchableAttrs, targetProps);
         }
         else {
-            targetProps.push(new BoundProperty(name, this._exprParser.wrapLiteralPrimitive(value, ''), BoundPropertyType.LITERAL_ATTR, sourceSpan));
+            targetProps.push(new ParsedProperty(name, this._exprParser.wrapLiteralPrimitive(value, ''), ParsedPropertyType.LITERAL_ATTR, sourceSpan));
         }
     };
     /**
@@ -311,7 +266,7 @@ BindingParser = /** @class */ (function () {
             isAnimationProp = true;
             name = name.substring(ANIMATE_PROP_PREFIX.length);
         }
-        else if (_isAnimationLabel(name)) {
+        else if (isAnimationLabel(name)) {
             isAnimationProp = true;
             name = name.substring(1);
         }
@@ -364,7 +319,7 @@ BindingParser = /** @class */ (function () {
      */
     function (name, ast, sourceSpan, targetMatchableAttrs, targetProps) {
         targetMatchableAttrs.push([name, /** @type {?} */ ((ast.source))]);
-        targetProps.push(new BoundProperty(name, ast, BoundPropertyType.DEFAULT, sourceSpan));
+        targetProps.push(new ParsedProperty(name, ast, ParsedPropertyType.DEFAULT, sourceSpan));
     };
     /**
      * @param {?} name
@@ -388,7 +343,7 @@ BindingParser = /** @class */ (function () {
         // states will be applied by angular when the element is attached/detached
         var /** @type {?} */ ast = this._parseBinding(expression || 'undefined', false, sourceSpan);
         targetMatchableAttrs.push([name, /** @type {?} */ ((ast.source))]);
-        targetProps.push(new BoundProperty(name, ast, BoundPropertyType.ANIMATION, sourceSpan));
+        targetProps.push(new ParsedProperty(name, ast, ParsedPropertyType.ANIMATION, sourceSpan));
     };
     /**
      * @param {?} value
@@ -423,14 +378,14 @@ BindingParser = /** @class */ (function () {
      * @param {?} boundProp
      * @return {?}
      */
-    BindingParser.prototype.createElementPropertyAst = /**
+    BindingParser.prototype.createBoundElementProperty = /**
      * @param {?} elementSelector
      * @param {?} boundProp
      * @return {?}
      */
     function (elementSelector, boundProp) {
         if (boundProp.isAnimation) {
-            return new BoundElementPropertyAst(boundProp.name, PropertyBindingType.Animation, SecurityContext.NONE, boundProp.expression, null, boundProp.sourceSpan);
+            return new BoundElementProperty(boundProp.name, 4 /* Animation */, SecurityContext.NONE, boundProp.expression, null, boundProp.sourceSpan);
         }
         var /** @type {?} */ unit = null;
         var /** @type {?} */ bindingType = /** @type {?} */ ((undefined));
@@ -449,17 +404,17 @@ BindingParser = /** @class */ (function () {
                     var /** @type {?} */ name_1 = boundPropertyName.substring(nsSeparatorIdx + 1);
                     boundPropertyName = mergeNsAndName(ns, name_1);
                 }
-                bindingType = PropertyBindingType.Attribute;
+                bindingType = 1 /* Attribute */;
             }
             else if (parts[0] == CLASS_PREFIX) {
                 boundPropertyName = parts[1];
-                bindingType = PropertyBindingType.Class;
+                bindingType = 2 /* Class */;
                 securityContexts = [SecurityContext.NONE];
             }
             else if (parts[0] == STYLE_PREFIX) {
                 unit = parts.length > 2 ? parts[2] : null;
                 boundPropertyName = parts[1];
-                bindingType = PropertyBindingType.Style;
+                bindingType = 3 /* Style */;
                 securityContexts = [SecurityContext.STYLE];
             }
         }
@@ -467,10 +422,10 @@ BindingParser = /** @class */ (function () {
         if (boundPropertyName === null) {
             boundPropertyName = this._schemaRegistry.getMappedPropName(boundProp.name);
             securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, boundPropertyName, false);
-            bindingType = PropertyBindingType.Property;
+            bindingType = 0 /* Property */;
             this._validatePropertyOrAttributeName(boundPropertyName, boundProp.sourceSpan, false);
         }
-        return new BoundElementPropertyAst(boundPropertyName, bindingType, securityContexts[0], boundProp.expression, unit, boundProp.sourceSpan);
+        return new BoundElementProperty(boundPropertyName, bindingType, securityContexts[0], boundProp.expression, unit, boundProp.sourceSpan);
     };
     /**
      * @param {?} name
@@ -489,12 +444,12 @@ BindingParser = /** @class */ (function () {
      * @return {?}
      */
     function (name, expression, sourceSpan, targetMatchableAttrs, targetEvents) {
-        if (_isAnimationLabel(name)) {
+        if (isAnimationLabel(name)) {
             name = name.substr(1);
             this._parseAnimationEvent(name, expression, sourceSpan, targetEvents);
         }
         else {
-            this._parseEvent(name, expression, sourceSpan, targetMatchableAttrs, targetEvents);
+            this._parseRegularEvent(name, expression, sourceSpan, targetMatchableAttrs, targetEvents);
         }
     };
     /**
@@ -520,7 +475,7 @@ BindingParser = /** @class */ (function () {
                 case 'start':
                 case 'done':
                     var /** @type {?} */ ast = this._parseAction(expression, sourceSpan);
-                    targetEvents.push(new BoundEventAst(eventName, null, phase, ast, sourceSpan));
+                    targetEvents.push(new ParsedEvent(eventName, phase, 1 /* Animation */, ast, sourceSpan));
                     break;
                 default:
                     this._reportError("The provided animation output phase value \"" + phase + "\" for \"@" + eventName + "\" is not supported (use start or done)", sourceSpan);
@@ -539,7 +494,7 @@ BindingParser = /** @class */ (function () {
      * @param {?} targetEvents
      * @return {?}
      */
-    BindingParser.prototype._parseEvent = /**
+    BindingParser.prototype._parseRegularEvent = /**
      * @param {?} name
      * @param {?} expression
      * @param {?} sourceSpan
@@ -552,7 +507,7 @@ BindingParser = /** @class */ (function () {
         var _a = splitAtColon(name, [/** @type {?} */ ((null)), name]), target = _a[0], eventName = _a[1];
         var /** @type {?} */ ast = this._parseAction(expression, sourceSpan);
         targetMatchableAttrs.push([/** @type {?} */ ((name)), /** @type {?} */ ((ast.source))]);
-        targetEvents.push(new BoundEventAst(eventName, target, null, ast, sourceSpan));
+        targetEvents.push(new ParsedEvent(eventName, target, 0 /* Regular */, ast, sourceSpan));
         // Don't detect directives for event names for now,
         // so don't add the event name to the matchableAttrs
     };
@@ -716,7 +671,7 @@ function PipeCollector_tsickle_Closure_declarations() {
  * @param {?} name
  * @return {?}
  */
-function _isAnimationLabel(name) {
+function isAnimationLabel(name) {
     return name[0] == '@';
 }
 /**

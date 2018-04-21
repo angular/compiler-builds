@@ -115,6 +115,32 @@ function AttrAst_tsickle_Closure_declarations() {
     /** @type {?} */
     AttrAst.prototype.sourceSpan;
 }
+/** @enum {number} */
+const PropertyBindingType = {
+    // A normal binding to a property (e.g. `[property]="expression"`).
+    Property: 0,
+    // A binding to an element attribute (e.g. `[attr.name]="expression"`).
+    Attribute: 1,
+    // A binding to a CSS class (e.g. `[class.name]="condition"`).
+    Class: 2,
+    // A binding to a style rule (e.g. `[style.rule]="expression"`).
+    Style: 3,
+    // A binding to an animation reference (e.g. `[animate.key]="expression"`).
+    Animation: 4,
+};
+export { PropertyBindingType };
+PropertyBindingType[PropertyBindingType.Property] = "Property";
+PropertyBindingType[PropertyBindingType.Attribute] = "Attribute";
+PropertyBindingType[PropertyBindingType.Class] = "Class";
+PropertyBindingType[PropertyBindingType.Style] = "Style";
+PropertyBindingType[PropertyBindingType.Animation] = "Animation";
+const /** @type {?} */ BoundPropertyMapping = {
+    [4 /* Animation */]: PropertyBindingType.Animation,
+    [1 /* Attribute */]: PropertyBindingType.Attribute,
+    [2 /* Class */]: PropertyBindingType.Class,
+    [0 /* Property */]: PropertyBindingType.Property,
+    [3 /* Style */]: PropertyBindingType.Style,
+};
 /**
  * A binding for an element property (e.g. `[property]="expression"`) or an animation trigger (e.g.
  * `[\@trigger]="stateExp"`)
@@ -136,6 +162,14 @@ export class BoundElementPropertyAst {
         this.unit = unit;
         this.sourceSpan = sourceSpan;
         this.isAnimation = this.type === PropertyBindingType.Animation;
+    }
+    /**
+     * @param {?} prop
+     * @return {?}
+     */
+    static fromBoundProperty(prop) {
+        const /** @type {?} */ type = BoundPropertyMapping[prop.type];
+        return new BoundElementPropertyAst(prop.name, type, prop.securityContext, prop.value, prop.unit, prop.sourceSpan);
     }
     /**
      * @param {?} visitor
@@ -193,12 +227,19 @@ export class BoundEventAst {
         if (target) {
             return `${target}:${name}`;
         }
-        else if (phase) {
+        if (phase) {
             return `@${name}.${phase}`;
         }
-        else {
-            return name;
-        }
+        return name;
+    }
+    /**
+     * @param {?} event
+     * @return {?}
+     */
+    static fromParsedEvent(event) {
+        const /** @type {?} */ target = event.type === 0 /* Regular */ ? event.targetOrPhase : null;
+        const /** @type {?} */ phase = event.type === 1 /* Animation */ ? event.targetOrPhase : null;
+        return new BoundEventAst(event.name, target, phase, event.handler, event.sourceSpan);
     }
     /**
      * @param {?} visitor
@@ -273,6 +314,13 @@ export class VariableAst {
         this.name = name;
         this.value = value;
         this.sourceSpan = sourceSpan;
+    }
+    /**
+     * @param {?} v
+     * @return {?}
+     */
+    static fromParsedVariable(v) {
+        return new VariableAst(v.name, v.value, v.sourceSpan);
     }
     /**
      * @param {?} visitor
@@ -600,35 +648,6 @@ function NgContentAst_tsickle_Closure_declarations() {
     /** @type {?} */
     NgContentAst.prototype.sourceSpan;
 }
-/** @enum {number} */
-const PropertyBindingType = {
-    /**
-       * A normal binding to a property (e.g. `[property]="expression"`).
-       */
-    Property: 0,
-    /**
-       * A binding to an element attribute (e.g. `[attr.name]="expression"`).
-       */
-    Attribute: 1,
-    /**
-       * A binding to a CSS class (e.g. `[class.name]="condition"`).
-       */
-    Class: 2,
-    /**
-       * A binding to a style rule (e.g. `[style.rule]="expression"`).
-       */
-    Style: 3,
-    /**
-       * A binding to an animation reference (e.g. `[animate.key]="expression"`).
-       */
-    Animation: 4,
-};
-export { PropertyBindingType };
-PropertyBindingType[PropertyBindingType.Property] = "Property";
-PropertyBindingType[PropertyBindingType.Attribute] = "Attribute";
-PropertyBindingType[PropertyBindingType.Class] = "Class";
-PropertyBindingType[PropertyBindingType.Style] = "Style";
-PropertyBindingType[PropertyBindingType.Animation] = "Animation";
 /**
  * @record
  */

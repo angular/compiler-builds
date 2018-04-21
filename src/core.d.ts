@@ -1,10 +1,3 @@
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 export interface Inject {
     token: any;
 }
@@ -241,3 +234,20 @@ export interface Route {
     children?: Route[];
     loadChildren?: string | Type | any;
 }
+/**
+ * Flags used to generate R3-style CSS Selectors. They are pasted from
+ * core/src/render3/projection.ts because they cannot be referenced directly.
+ */
+export declare const enum SelectorFlags {
+    /** Indicates this is the beginning of a new negative selector */
+    NOT = 1,
+    /** Mode for matching attributes */
+    ATTRIBUTE = 2,
+    /** Mode for matching tag names */
+    ELEMENT = 4,
+    /** Mode for matching class names */
+    CLASS = 8,
+}
+export declare type R3CssSelector = (string | SelectorFlags)[];
+export declare type R3CssSelectorList = R3CssSelector[];
+export declare function parseSelectorToR3Selector(selector: string): R3CssSelectorList;

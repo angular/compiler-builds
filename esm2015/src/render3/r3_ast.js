@@ -93,35 +93,6 @@ function TextAttribute_tsickle_Closure_declarations() {
     /** @type {?} */
     TextAttribute.prototype.valueSpan;
 }
-/** @enum {number} */
-const PropertyBindingType = {
-    /**
-       * A normal binding to a property (e.g. `[property]="expression"`).
-       */
-    Property: 0,
-    /**
-       * A binding to an element attribute (e.g. `[attr.name]="expression"`).
-       */
-    Attribute: 1,
-    /**
-       * A binding to a CSS class (e.g. `[class.name]="condition"`).
-       */
-    Class: 2,
-    /**
-       * A binding to a style rule (e.g. `[style.rule]="expression"`).
-       */
-    Style: 3,
-    /**
-       * A binding to an animation reference (e.g. `[animate.key]="expression"`).
-       */
-    Animation: 4,
-};
-export { PropertyBindingType };
-PropertyBindingType[PropertyBindingType.Property] = "Property";
-PropertyBindingType[PropertyBindingType.Attribute] = "Attribute";
-PropertyBindingType[PropertyBindingType.Class] = "Class";
-PropertyBindingType[PropertyBindingType.Style] = "Style";
-PropertyBindingType[PropertyBindingType.Animation] = "Animation";
 export class BoundAttribute {
     /**
      * @param {?} name
@@ -138,6 +109,13 @@ export class BoundAttribute {
         this.value = value;
         this.unit = unit;
         this.sourceSpan = sourceSpan;
+    }
+    /**
+     * @param {?} prop
+     * @return {?}
+     */
+    static fromBoundElementProperty(prop) {
+        return new BoundAttribute(prop.name, prop.type, prop.securityContext, prop.value, prop.unit, prop.sourceSpan);
     }
     /**
      * @template Result
@@ -174,6 +152,15 @@ export class BoundEvent {
         this.target = target;
         this.phase = phase;
         this.sourceSpan = sourceSpan;
+    }
+    /**
+     * @param {?} event
+     * @return {?}
+     */
+    static fromParsedEvent(event) {
+        const /** @type {?} */ target = event.type === 0 /* Regular */ ? event.targetOrPhase : null;
+        const /** @type {?} */ phase = event.type === 1 /* Animation */ ? event.targetOrPhase : null;
+        return new BoundEvent(event.name, event.handler, target, phase, event.sourceSpan);
     }
     /**
      * @template Result

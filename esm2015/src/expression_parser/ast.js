@@ -1600,4 +1600,146 @@ export function visitAstChildren(ast, visitor, context) {
         visitSafePropertyRead(ast) { visit(ast.receiver); },
     });
 }
+export class ParsedProperty {
+    /**
+     * @param {?} name
+     * @param {?} expression
+     * @param {?} type
+     * @param {?} sourceSpan
+     */
+    constructor(name, expression, type, sourceSpan) {
+        this.name = name;
+        this.expression = expression;
+        this.type = type;
+        this.sourceSpan = sourceSpan;
+        this.isLiteral = this.type === ParsedPropertyType.LITERAL_ATTR;
+        this.isAnimation = this.type === ParsedPropertyType.ANIMATION;
+    }
+}
+function ParsedProperty_tsickle_Closure_declarations() {
+    /** @type {?} */
+    ParsedProperty.prototype.isLiteral;
+    /** @type {?} */
+    ParsedProperty.prototype.isAnimation;
+    /** @type {?} */
+    ParsedProperty.prototype.name;
+    /** @type {?} */
+    ParsedProperty.prototype.expression;
+    /** @type {?} */
+    ParsedProperty.prototype.type;
+    /** @type {?} */
+    ParsedProperty.prototype.sourceSpan;
+}
+/** @enum {number} */
+const ParsedPropertyType = {
+    DEFAULT: 0,
+    LITERAL_ATTR: 1,
+    ANIMATION: 2,
+};
+export { ParsedPropertyType };
+ParsedPropertyType[ParsedPropertyType.DEFAULT] = "DEFAULT";
+ParsedPropertyType[ParsedPropertyType.LITERAL_ATTR] = "LITERAL_ATTR";
+ParsedPropertyType[ParsedPropertyType.ANIMATION] = "ANIMATION";
+/** @enum {number} */
+const ParsedEventType = {
+    // DOM or Directive event
+    Regular: 0,
+    // Animation specific event
+    Animation: 1,
+};
+export { ParsedEventType };
+export class ParsedEvent {
+    /**
+     * @param {?} name
+     * @param {?} targetOrPhase
+     * @param {?} type
+     * @param {?} handler
+     * @param {?} sourceSpan
+     */
+    constructor(name, targetOrPhase, type, handler, sourceSpan) {
+        this.name = name;
+        this.targetOrPhase = targetOrPhase;
+        this.type = type;
+        this.handler = handler;
+        this.sourceSpan = sourceSpan;
+    }
+}
+function ParsedEvent_tsickle_Closure_declarations() {
+    /** @type {?} */
+    ParsedEvent.prototype.name;
+    /** @type {?} */
+    ParsedEvent.prototype.targetOrPhase;
+    /** @type {?} */
+    ParsedEvent.prototype.type;
+    /** @type {?} */
+    ParsedEvent.prototype.handler;
+    /** @type {?} */
+    ParsedEvent.prototype.sourceSpan;
+}
+export class ParsedVariable {
+    /**
+     * @param {?} name
+     * @param {?} value
+     * @param {?} sourceSpan
+     */
+    constructor(name, value, sourceSpan) {
+        this.name = name;
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+    }
+}
+function ParsedVariable_tsickle_Closure_declarations() {
+    /** @type {?} */
+    ParsedVariable.prototype.name;
+    /** @type {?} */
+    ParsedVariable.prototype.value;
+    /** @type {?} */
+    ParsedVariable.prototype.sourceSpan;
+}
+/** @enum {number} */
+const BoundElementBindingType = {
+    // A regular binding to a property (e.g. `[property]="expression"`).
+    Property: 0,
+    // A binding to an element attribute (e.g. `[attr.name]="expression"`).
+    Attribute: 1,
+    // A binding to a CSS class (e.g. `[class.name]="condition"`).
+    Class: 2,
+    // A binding to a style rule (e.g. `[style.rule]="expression"`).
+    Style: 3,
+    // A binding to an animation reference (e.g. `[animate.key]="expression"`).
+    Animation: 4,
+};
+export { BoundElementBindingType };
+export class BoundElementProperty {
+    /**
+     * @param {?} name
+     * @param {?} type
+     * @param {?} securityContext
+     * @param {?} value
+     * @param {?} unit
+     * @param {?} sourceSpan
+     */
+    constructor(name, type, securityContext, value, unit, sourceSpan) {
+        this.name = name;
+        this.type = type;
+        this.securityContext = securityContext;
+        this.value = value;
+        this.unit = unit;
+        this.sourceSpan = sourceSpan;
+    }
+}
+function BoundElementProperty_tsickle_Closure_declarations() {
+    /** @type {?} */
+    BoundElementProperty.prototype.name;
+    /** @type {?} */
+    BoundElementProperty.prototype.type;
+    /** @type {?} */
+    BoundElementProperty.prototype.securityContext;
+    /** @type {?} */
+    BoundElementProperty.prototype.value;
+    /** @type {?} */
+    BoundElementProperty.prototype.unit;
+    /** @type {?} */
+    BoundElementProperty.prototype.sourceSpan;
+}
 //# sourceMappingURL=ast.js.map

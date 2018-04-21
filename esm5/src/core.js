@@ -10,11 +10,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import * as tslib_1 from "tslib";
-// Attention:
-// This file duplicates types and values from @angular/core
-// so that we are able to make @angular/compiler independent of @angular/core.
-// This is important to prevent a build cycle, as @angular/core needs to
-// be compiled with the compiler.
+import { CssSelector } from './selector';
 /**
  * @record
  */
@@ -436,5 +432,66 @@ function Route_tsickle_Closure_declarations() {
     Route.prototype.children;
     /** @type {?|undefined} */
     Route.prototype.loadChildren;
+}
+/** @enum {number} */
+var SelectorFlags = {
+    /** Indicates this is the beginning of a new negative selector */
+    NOT: 1,
+    /** Mode for matching attributes */
+    ATTRIBUTE: 2,
+    /** Mode for matching tag names */
+    ELEMENT: 4,
+    /** Mode for matching class names */
+    CLASS: 8,
+};
+export { SelectorFlags };
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function parserSelectorToSimpleSelector(selector) {
+    var /** @type {?} */ classes = selector.classNames && selector.classNames.length ? [8 /* CLASS */].concat(selector.classNames) :
+        [];
+    var /** @type {?} */ elementName = selector.element && selector.element !== '*' ? selector.element : '';
+    return [elementName].concat(selector.attrs, classes);
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function parserSelectorToNegativeSelector(selector) {
+    var /** @type {?} */ classes = selector.classNames && selector.classNames.length ? [8 /* CLASS */].concat(selector.classNames) :
+        [];
+    if (selector.element) {
+        return [
+            1 /* NOT */ | 4 /* ELEMENT */, selector.element
+        ].concat(selector.attrs, classes);
+    }
+    else if (selector.attrs.length) {
+        return [1 /* NOT */ | 2 /* ATTRIBUTE */].concat(selector.attrs, classes);
+    }
+    else {
+        return selector.classNames && selector.classNames.length ? [1 /* NOT */ | 8 /* CLASS */].concat(selector.classNames) :
+            [];
+    }
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function parserSelectorToR3Selector(selector) {
+    var /** @type {?} */ positive = parserSelectorToSimpleSelector(selector);
+    var /** @type {?} */ negative = selector.notSelectors && selector.notSelectors.length ?
+        selector.notSelectors.map(function (notSelector) { return parserSelectorToNegativeSelector(notSelector); }) :
+        [];
+    return positive.concat.apply(positive, negative);
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+export function parseSelectorToR3Selector(selector) {
+    var /** @type {?} */ selectors = CssSelector.parse(selector);
+    return selectors.map(parserSelectorToR3Selector);
 }
 //# sourceMappingURL=core.js.map

@@ -140,6 +140,32 @@ function AttrAst_tsickle_Closure_declarations() {
     /** @type {?} */
     AttrAst.prototype.sourceSpan;
 }
+/** @enum {number} */
+var PropertyBindingType = {
+    // A normal binding to a property (e.g. `[property]="expression"`).
+    Property: 0,
+    // A binding to an element attribute (e.g. `[attr.name]="expression"`).
+    Attribute: 1,
+    // A binding to a CSS class (e.g. `[class.name]="condition"`).
+    Class: 2,
+    // A binding to a style rule (e.g. `[style.rule]="expression"`).
+    Style: 3,
+    // A binding to an animation reference (e.g. `[animate.key]="expression"`).
+    Animation: 4,
+};
+export { PropertyBindingType };
+PropertyBindingType[PropertyBindingType.Property] = "Property";
+PropertyBindingType[PropertyBindingType.Attribute] = "Attribute";
+PropertyBindingType[PropertyBindingType.Class] = "Class";
+PropertyBindingType[PropertyBindingType.Style] = "Style";
+PropertyBindingType[PropertyBindingType.Animation] = "Animation";
+var /** @type {?} */ BoundPropertyMapping = (_a = {},
+    _a[4 /* Animation */] = PropertyBindingType.Animation,
+    _a[1 /* Attribute */] = PropertyBindingType.Attribute,
+    _a[2 /* Class */] = PropertyBindingType.Class,
+    _a[0 /* Property */] = PropertyBindingType.Property,
+    _a[3 /* Style */] = PropertyBindingType.Style,
+    _a);
 /**
  * A binding for an element property (e.g. `[property]="expression"`) or an animation trigger (e.g.
  * `[\@trigger]="stateExp"`)
@@ -158,6 +184,18 @@ BoundElementPropertyAst = /** @class */ (function () {
         this.sourceSpan = sourceSpan;
         this.isAnimation = this.type === PropertyBindingType.Animation;
     }
+    /**
+     * @param {?} prop
+     * @return {?}
+     */
+    BoundElementPropertyAst.fromBoundProperty = /**
+     * @param {?} prop
+     * @return {?}
+     */
+    function (prop) {
+        var /** @type {?} */ type = BoundPropertyMapping[prop.type];
+        return new BoundElementPropertyAst(prop.name, type, prop.securityContext, prop.value, prop.unit, prop.sourceSpan);
+    };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -228,12 +266,23 @@ BoundEventAst = /** @class */ (function () {
         if (target) {
             return target + ":" + name;
         }
-        else if (phase) {
+        if (phase) {
             return "@" + name + "." + phase;
         }
-        else {
-            return name;
-        }
+        return name;
+    };
+    /**
+     * @param {?} event
+     * @return {?}
+     */
+    BoundEventAst.fromParsedEvent = /**
+     * @param {?} event
+     * @return {?}
+     */
+    function (event) {
+        var /** @type {?} */ target = event.type === 0 /* Regular */ ? event.targetOrPhase : null;
+        var /** @type {?} */ phase = event.type === 1 /* Animation */ ? event.targetOrPhase : null;
+        return new BoundEventAst(event.name, target, phase, event.handler, event.sourceSpan);
     };
     /**
      * @param {?} visitor
@@ -325,6 +374,17 @@ VariableAst = /** @class */ (function () {
         this.value = value;
         this.sourceSpan = sourceSpan;
     }
+    /**
+     * @param {?} v
+     * @return {?}
+     */
+    VariableAst.fromParsedVariable = /**
+     * @param {?} v
+     * @return {?}
+     */
+    function (v) {
+        return new VariableAst(v.name, v.value, v.sourceSpan);
+    };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -682,35 +742,6 @@ function NgContentAst_tsickle_Closure_declarations() {
     /** @type {?} */
     NgContentAst.prototype.sourceSpan;
 }
-/** @enum {number} */
-var PropertyBindingType = {
-    /**
-       * A normal binding to a property (e.g. `[property]="expression"`).
-       */
-    Property: 0,
-    /**
-       * A binding to an element attribute (e.g. `[attr.name]="expression"`).
-       */
-    Attribute: 1,
-    /**
-       * A binding to a CSS class (e.g. `[class.name]="condition"`).
-       */
-    Class: 2,
-    /**
-       * A binding to a style rule (e.g. `[style.rule]="expression"`).
-       */
-    Style: 3,
-    /**
-       * A binding to an animation reference (e.g. `[animate.key]="expression"`).
-       */
-    Animation: 4,
-};
-export { PropertyBindingType };
-PropertyBindingType[PropertyBindingType.Property] = "Property";
-PropertyBindingType[PropertyBindingType.Attribute] = "Attribute";
-PropertyBindingType[PropertyBindingType.Class] = "Class";
-PropertyBindingType[PropertyBindingType.Style] = "Style";
-PropertyBindingType[PropertyBindingType.Animation] = "Animation";
 /**
  * @record
  */
@@ -1031,4 +1062,5 @@ export function templateVisitAll(visitor, asts, context) {
     });
     return result;
 }
+var _a;
 //# sourceMappingURL=template_ast.js.map
