@@ -10,8 +10,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { SecurityContext } from '../core';
-import { EmptyExpr, RecursiveAstVisitor } from '../expression_parser/ast';
-import { BoundElementProperty, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable } from '../expression_parser/ast';
+import { BoundElementProperty, EmptyExpr, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, RecursiveAstVisitor } from '../expression_parser/ast';
 import { mergeNsAndName } from '../ml_parser/tags';
 import { ParseError, ParseErrorLevel, ParseSourceSpan } from '../parse_util';
 import { CssSelector } from '../selector';

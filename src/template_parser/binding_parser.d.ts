@@ -7,8 +7,7 @@
  */
 import { CompileDirectiveSummary, CompilePipeSummary } from '../compile_metadata';
 import { SecurityContext } from '../core';
-import { ASTWithSource, BindingPipe, RecursiveAstVisitor } from '../expression_parser/ast';
-import { BoundElementProperty, ParsedEvent, ParsedProperty, ParsedVariable } from '../expression_parser/ast';
+import { ASTWithSource, BindingPipe, BoundElementProperty, ParsedEvent, ParsedProperty, ParsedVariable, RecursiveAstVisitor } from '../expression_parser/ast';
 import { Parser } from '../expression_parser/parser';
 import { InterpolationConfig } from '../ml_parser/interpolation_config';
 import { ParseError, ParseSourceSpan } from '../parse_util';
