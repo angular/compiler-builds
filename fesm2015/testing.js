@@ -1,8 +1,9 @@
 /**
- * @license Angular v6.0.0-rc.5-60e5507
+ * @license Angular v6.0.0-rc.5+73.sha-ace6440
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
+
 import { DirectiveResolver, NgModuleResolver, PipeResolver, ResourceLoader, core } from '@angular/compiler';
 
 /**
@@ -457,6 +458,10 @@ class MockPipeResolver extends PipeResolver {
 // by the TypeScript language service and during build for verification. `ngc`
 // replaces this file with production index.ts when it rewrites private symbol
 // names.
+
+/**
+ * Generated bundle index. Do not edit.
+ */
 
 export { MockResourceLoader, MockSchemaRegistry, MockDirectiveResolver, MockNgModuleResolver, MockPipeResolver };
 //# sourceMappingURL=testing.js.map
