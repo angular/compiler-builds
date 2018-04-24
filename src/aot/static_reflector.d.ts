@@ -1,28 +1,30 @@
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-import { ɵReflectorReader } from '@angular/core';
+import { CompileReflector } from '../compile_reflector';
+import * as o from '../output/output_ast';
+import { SummaryResolver } from '../summary_resolver';
 import { StaticSymbol } from './static_symbol';
 import { StaticSymbolResolver } from './static_symbol_resolver';
 /**
  * A static reflector implements enough of the Reflector API that is necessary to compile
  * templates statically.
  */
-export declare class StaticReflector implements ɵReflectorReader {
+export declare class StaticReflector implements CompileReflector {
+    private summaryResolver;
     private symbolResolver;
     private errorRecorder;
     private annotationCache;
+    private shallowAnnotationCache;
     private propertyCache;
     private parameterCache;
     private methodCache;
+    private staticCache;
     private conversionMap;
+    private resolvedExternalReferences;
     private injectionToken;
     private opaqueToken;
-    constructor(symbolResolver: StaticSymbolResolver, knownMetadataClasses?: {
+    ROUTES: StaticSymbol;
+    private ANALYZE_FOR_ENTRY_COMPONENTS;
+    private annotationForParentClassWithSummaryKind;
+    constructor(summaryResolver: SummaryResolver<StaticSymbol>, symbolResolver: StaticSymbolResolver, knownMetadataClasses?: {
         name: string;
         filePath: string;
         ctor: any;
@@ -30,20 +32,27 @@ export declare class StaticReflector implements ɵReflectorReader {
         name: string;
         filePath: string;
         fn: any;
-    }[], errorRecorder?: (error: any, fileName: string) => void);
-    importUri(typeOrFunc: StaticSymbol): string;
-    resourceUri(typeOrFunc: StaticSymbol): string;
-    resolveIdentifier(name: string, moduleUrl: string, members: string[]): StaticSymbol;
+    }[], errorRecorder?: ((error: any, fileName?: string | undefined) => void) | undefined);
+    componentModuleUrl(typeOrFunc: StaticSymbol): string;
+    resolveExternalReference(ref: o.ExternalReference, containingFile?: string): StaticSymbol;
     findDeclaration(moduleUrl: string, name: string, containingFile?: string): StaticSymbol;
+    tryFindDeclaration(moduleUrl: string, name: string, containingFile?: string): StaticSymbol;
     findSymbolDeclaration(symbol: StaticSymbol): StaticSymbol;
-    resolveEnum(enumIdentifier: any, name: string): any;
+    tryAnnotations(type: StaticSymbol): any[];
     annotations(type: StaticSymbol): any[];
+    shallowAnnotations(type: StaticSymbol): any[];
+    private _annotations(type, simplify, annotationCache);
     propMetadata(type: StaticSymbol): {
         [key: string]: any[];
     };
     parameters(type: StaticSymbol): any[];
     private _methodNames(type);
+    private _staticMembers(type);
+    private findParentType(type, classMetadata);
     hasLifecycleHook(type: any, lcProperty: string): boolean;
+    guards(type: any): {
+        [key: string]: StaticSymbol;
+    };
     private _registerDecoratorOrConstructor(type, ctor);
     private _registerFunction(type, fn);
     private initializeConversionMap();
@@ -55,10 +64,11 @@ export declare class StaticReflector implements ɵReflectorReader {
      * @param name the name of the type.
      */
     getStaticSymbol(declarationFile: string, name: string, members?: string[]): StaticSymbol;
-    private reportError(error, context, path?);
     /**
      * Simplify but discard any errors
      */
     private trySimplify(context, value);
     private getTypeMetadata(type);
+    private reportError(error, context, path?);
+    private error({message, summary, advise, position, context, value, symbol, chain}, reportingContext);
 }

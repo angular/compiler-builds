@@ -5,12 +5,15 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-export declare const MODULE_SUFFIX = "";
-export declare function camelCaseToDashCase(input: string): string;
+import { ConstantPool } from './constant_pool';
+import * as o from './output/output_ast';
+import { ParseError } from './parse_util';
 export declare function dashCaseToCamelCase(input: string): string;
 export declare function splitAtColon(input: string, defaultValues: string[]): string[];
 export declare function splitAtPeriod(input: string, defaultValues: string[]): string[];
 export declare function visitValue(value: any, visitor: ValueVisitor, context: any): any;
+export declare function isDefined(val: any): boolean;
+export declare function noUndefined<T>(val: T | undefined): T;
 export interface ValueVisitor {
     visitArray(arr: any[], context: any): any;
     visitStringMap(map: {
@@ -27,12 +30,41 @@ export declare class ValueTransformer implements ValueVisitor {
     visitPrimitive(value: any, context: any): any;
     visitOther(value: any, context: any): any;
 }
-export declare class SyncAsyncResult<T> {
-    syncResult: T;
-    asyncResult: Promise<T>;
-    constructor(syncResult: T, asyncResult?: Promise<T>);
-}
-export declare function syntaxError(msg: string): Error;
+export declare type SyncAsync<T> = T | Promise<T>;
+export declare const SyncAsync: {
+    assertSync: <T>(value: SyncAsync<T>) => T;
+    then: <T, R>(value: SyncAsync<T>, cb: (value: T) => SyncAsync<R>) => SyncAsync<R>;
+    all: <T>(syncAsyncValues: SyncAsync<T>[]) => SyncAsync<T[]>;
+};
+export declare function error(msg: string): never;
+export declare function syntaxError(msg: string, parseErrors?: ParseError[]): Error;
 export declare function isSyntaxError(error: Error): boolean;
+export declare function getParseErrors(error: Error): ParseError[];
 export declare function escapeRegExp(s: string): string;
 export declare function utf8Encode(str: string): string;
+export interface OutputContext {
+    genFilePath: string;
+    statements: o.Statement[];
+    constantPool: ConstantPool;
+    importExpr(reference: any, typeParams?: o.Type[] | null, useSummaries?: boolean): o.Expression;
+}
+export declare function stringify(token: any): string;
+/**
+ * Lazily retrieves the reference value from a forwardRef.
+ */
+export declare function resolveForwardRef(type: any): any;
+/**
+ * Determine if the argument is shaped like a Promise
+ */
+export declare function isPromise(obj: any): obj is Promise<any>;
+export declare class Version {
+    full: string;
+    readonly major: string;
+    readonly minor: string;
+    readonly patch: string;
+    constructor(full: string);
+}
+export interface Console {
+    log(message: string): void;
+    warn(message: string): void;
+}

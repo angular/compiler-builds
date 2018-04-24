@@ -23,10 +23,10 @@ export declare class Parser {
     private _reportError(message, input, errLocation, ctxLocation?);
     private _parseBindingAst(input, location, interpolationConfig);
     private _parseQuote(input, location);
-    parseTemplateBindings(prefixToken: string, input: string, location: any): TemplateBindingParseResult;
-    parseInterpolation(input: string, location: any, interpolationConfig?: InterpolationConfig): ASTWithSource;
-    splitInterpolation(input: string, location: string, interpolationConfig?: InterpolationConfig): SplitInterpolation;
-    wrapLiteralPrimitive(input: string, location: any): ASTWithSource;
+    parseTemplateBindings(tplKey: string, tplValue: string, location: any): TemplateBindingParseResult;
+    parseInterpolation(input: string, location: any, interpolationConfig?: InterpolationConfig): ASTWithSource | null;
+    splitInterpolation(input: string, location: string, interpolationConfig?: InterpolationConfig): SplitInterpolation | null;
+    wrapLiteralPrimitive(input: string | null, location: any): ASTWithSource;
     private _stripComments(input);
     private _commentStart(input);
     private _checkNoInterpolation(input, location, interpolationConfig);
@@ -76,11 +76,11 @@ export declare class _ParseAST {
     parseAccessMemberOrMethodCall(receiver: AST, isSafe?: boolean): AST;
     parseCallArguments(): BindingPipe[];
     /**
-     * An identifier, a keyword, a string with an optional `-` inbetween.
+     * An identifier, a keyword, a string with an optional `-` in between.
      */
     expectTemplateBindingKey(): string;
-    parseTemplateBindings(): TemplateBindingParseResult;
-    error(message: string, index?: number): void;
+    parseTemplateBindings(tplKey: string): TemplateBindingParseResult;
+    error(message: string, index?: number | null): void;
     private locationText(index?);
     private skip();
 }

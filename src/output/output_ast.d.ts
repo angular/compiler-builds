@@ -5,14 +5,13 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { CompileIdentifierMetadata } from '../compile_metadata';
 import { ParseSourceSpan } from '../parse_util';
 export declare enum TypeModifier {
     Const = 0,
 }
 export declare abstract class Type {
-    modifiers: TypeModifier[];
-    constructor(modifiers?: TypeModifier[]);
+    modifiers: TypeModifier[] | null;
+    constructor(modifiers?: TypeModifier[] | null);
     abstract visitType(visitor: TypeVisitor, context: any): any;
     hasModifier(modifier: TypeModifier): boolean;
 }
@@ -27,22 +26,22 @@ export declare enum BuiltinTypeName {
 }
 export declare class BuiltinType extends Type {
     name: BuiltinTypeName;
-    constructor(name: BuiltinTypeName, modifiers?: TypeModifier[]);
+    constructor(name: BuiltinTypeName, modifiers?: TypeModifier[] | null);
     visitType(visitor: TypeVisitor, context: any): any;
 }
 export declare class ExpressionType extends Type {
     value: Expression;
-    constructor(value: Expression, modifiers?: TypeModifier[]);
+    constructor(value: Expression, modifiers?: TypeModifier[] | null);
     visitType(visitor: TypeVisitor, context: any): any;
 }
 export declare class ArrayType extends Type {
     of: Type;
-    constructor(of: Type, modifiers?: TypeModifier[]);
+    constructor(of: Type, modifiers?: TypeModifier[] | null);
     visitType(visitor: TypeVisitor, context: any): any;
 }
 export declare class MapType extends Type {
-    valueType: Type;
-    constructor(valueType: Type, modifiers?: TypeModifier[]);
+    valueType: Type | null;
+    constructor(valueType: Type | null | undefined, modifiers?: TypeModifier[] | null);
     visitType(visitor: TypeVisitor, context: any): any;
 }
 export declare const DYNAMIC_TYPE: BuiltinType;
@@ -53,7 +52,7 @@ export declare const NUMBER_TYPE: BuiltinType;
 export declare const STRING_TYPE: BuiltinType;
 export declare const FUNCTION_TYPE: BuiltinType;
 export interface TypeVisitor {
-    visitBuiltintType(type: BuiltinType, context: any): any;
+    visitBuiltinType(type: BuiltinType, context: any): any;
     visitExpressionType(type: ExpressionType, context: any): any;
     visitArrayType(type: ArrayType, context: any): any;
     visitMapType(type: MapType, context: any): any;
@@ -70,39 +69,56 @@ export declare enum BinaryOperator {
     Modulo = 8,
     And = 9,
     Or = 10,
-    Lower = 11,
-    LowerEquals = 12,
-    Bigger = 13,
-    BiggerEquals = 14,
+    BitwiseAnd = 11,
+    Lower = 12,
+    LowerEquals = 13,
+    Bigger = 14,
+    BiggerEquals = 15,
 }
+export declare function nullSafeIsEquivalent<T extends {
+    isEquivalent(other: T): boolean;
+}>(base: T | null, other: T | null): boolean;
+export declare function areAllEquivalent<T extends {
+    isEquivalent(other: T): boolean;
+}>(base: T[], other: T[]): boolean;
 export declare abstract class Expression {
-    type: Type;
-    sourceSpan: ParseSourceSpan;
-    constructor(type: Type, sourceSpan?: ParseSourceSpan);
+    type: Type | null;
+    sourceSpan: ParseSourceSpan | null;
+    constructor(type: Type | null | undefined, sourceSpan?: ParseSourceSpan | null);
     abstract visitExpression(visitor: ExpressionVisitor, context: any): any;
-    prop(name: string, sourceSpan?: ParseSourceSpan): ReadPropExpr;
-    key(index: Expression, type?: Type, sourceSpan?: ParseSourceSpan): ReadKeyExpr;
-    callMethod(name: string | BuiltinMethod, params: Expression[], sourceSpan?: ParseSourceSpan): InvokeMethodExpr;
-    callFn(params: Expression[], sourceSpan?: ParseSourceSpan): InvokeFunctionExpr;
-    instantiate(params: Expression[], type?: Type, sourceSpan?: ParseSourceSpan): InstantiateExpr;
-    conditional(trueCase: Expression, falseCase?: Expression, sourceSpan?: ParseSourceSpan): ConditionalExpr;
-    equals(rhs: Expression, sourceSpan?: ParseSourceSpan): BinaryOperatorExpr;
-    notEquals(rhs: Expression, sourceSpan?: ParseSourceSpan): BinaryOperatorExpr;
-    identical(rhs: Expression, sourceSpan?: ParseSourceSpan): BinaryOperatorExpr;
-    notIdentical(rhs: Expression, sourceSpan?: ParseSourceSpan): BinaryOperatorExpr;
-    minus(rhs: Expression, sourceSpan?: ParseSourceSpan): BinaryOperatorExpr;
-    plus(rhs: Expression, sourceSpan?: ParseSourceSpan): BinaryOperatorExpr;
-    divide(rhs: Expression, sourceSpan?: ParseSourceSpan): BinaryOperatorExpr;
-    multiply(rhs: Expression, sourceSpan?: ParseSourceSpan): BinaryOperatorExpr;
-    modulo(rhs: Expression, sourceSpan?: ParseSourceSpan): BinaryOperatorExpr;
-    and(rhs: Expression, sourceSpan?: ParseSourceSpan): BinaryOperatorExpr;
-    or(rhs: Expression, sourceSpan?: ParseSourceSpan): BinaryOperatorExpr;
-    lower(rhs: Expression, sourceSpan?: ParseSourceSpan): BinaryOperatorExpr;
-    lowerEquals(rhs: Expression, sourceSpan?: ParseSourceSpan): BinaryOperatorExpr;
-    bigger(rhs: Expression, sourceSpan?: ParseSourceSpan): BinaryOperatorExpr;
-    biggerEquals(rhs: Expression, sourceSpan?: ParseSourceSpan): BinaryOperatorExpr;
-    isBlank(sourceSpan?: ParseSourceSpan): Expression;
-    cast(type: Type, sourceSpan?: ParseSourceSpan): Expression;
+    /**
+     * Calculates whether this expression produces the same value as the given expression.
+     * Note: We don't check Types nor ParseSourceSpans nor function arguments.
+     */
+    abstract isEquivalent(e: Expression): boolean;
+    /**
+     * Return true if the expression is constant.
+     */
+    abstract isConstant(): boolean;
+    prop(name: string, sourceSpan?: ParseSourceSpan | null): ReadPropExpr;
+    key(index: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null): ReadKeyExpr;
+    callMethod(name: string | BuiltinMethod, params: Expression[], sourceSpan?: ParseSourceSpan | null): InvokeMethodExpr;
+    callFn(params: Expression[], sourceSpan?: ParseSourceSpan | null): InvokeFunctionExpr;
+    instantiate(params: Expression[], type?: Type | null, sourceSpan?: ParseSourceSpan | null): InstantiateExpr;
+    conditional(trueCase: Expression, falseCase?: Expression | null, sourceSpan?: ParseSourceSpan | null): ConditionalExpr;
+    equals(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
+    notEquals(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
+    identical(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
+    notIdentical(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
+    minus(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
+    plus(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
+    divide(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
+    multiply(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
+    modulo(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
+    and(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
+    bitwiseAnd(rhs: Expression, sourceSpan?: ParseSourceSpan | null, parens?: boolean): BinaryOperatorExpr;
+    or(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
+    lower(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
+    lowerEquals(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
+    bigger(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
+    biggerEquals(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
+    isBlank(sourceSpan?: ParseSourceSpan | null): Expression;
+    cast(type: Type, sourceSpan?: ParseSourceSpan | null): Expression;
     toStmt(): Statement;
 }
 export declare enum BuiltinVar {
@@ -112,31 +128,39 @@ export declare enum BuiltinVar {
     CatchStack = 3,
 }
 export declare class ReadVarExpr extends Expression {
-    name: string;
-    builtin: BuiltinVar;
-    constructor(name: string | BuiltinVar, type?: Type, sourceSpan?: ParseSourceSpan);
+    name: string | null;
+    builtin: BuiltinVar | null;
+    constructor(name: string | BuiltinVar, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     set(value: Expression): WriteVarExpr;
 }
 export declare class WriteVarExpr extends Expression {
     name: string;
     value: Expression;
-    constructor(name: string, value: Expression, type?: Type, sourceSpan?: ParseSourceSpan);
+    constructor(name: string, value: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
-    toDeclStmt(type?: Type, modifiers?: StmtModifier[]): DeclareVarStmt;
+    toDeclStmt(type?: Type | null, modifiers?: StmtModifier[] | null): DeclareVarStmt;
 }
 export declare class WriteKeyExpr extends Expression {
     receiver: Expression;
     index: Expression;
     value: Expression;
-    constructor(receiver: Expression, index: Expression, value: Expression, type?: Type, sourceSpan?: ParseSourceSpan);
+    constructor(receiver: Expression, index: Expression, value: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
 export declare class WritePropExpr extends Expression {
     receiver: Expression;
     name: string;
     value: Expression;
-    constructor(receiver: Expression, name: string, value: Expression, type?: Type, sourceSpan?: ParseSourceSpan);
+    constructor(receiver: Expression, name: string, value: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
 export declare enum BuiltinMethod {
@@ -147,104 +171,151 @@ export declare enum BuiltinMethod {
 export declare class InvokeMethodExpr extends Expression {
     receiver: Expression;
     args: Expression[];
-    name: string;
-    builtin: BuiltinMethod;
-    constructor(receiver: Expression, method: string | BuiltinMethod, args: Expression[], type?: Type, sourceSpan?: ParseSourceSpan);
+    name: string | null;
+    builtin: BuiltinMethod | null;
+    constructor(receiver: Expression, method: string | BuiltinMethod, args: Expression[], type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
 export declare class InvokeFunctionExpr extends Expression {
     fn: Expression;
     args: Expression[];
-    constructor(fn: Expression, args: Expression[], type?: Type, sourceSpan?: ParseSourceSpan);
+    constructor(fn: Expression, args: Expression[], type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
 export declare class InstantiateExpr extends Expression {
     classExpr: Expression;
     args: Expression[];
-    constructor(classExpr: Expression, args: Expression[], type?: Type, sourceSpan?: ParseSourceSpan);
+    constructor(classExpr: Expression, args: Expression[], type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
 export declare class LiteralExpr extends Expression {
-    value: any;
-    constructor(value: any, type?: Type, sourceSpan?: ParseSourceSpan);
+    value: number | string | boolean | null | undefined;
+    constructor(value: number | string | boolean | null | undefined, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
 export declare class ExternalExpr extends Expression {
-    value: CompileIdentifierMetadata;
-    typeParams: Type[];
-    constructor(value: CompileIdentifierMetadata, type?: Type, typeParams?: Type[], sourceSpan?: ParseSourceSpan);
+    value: ExternalReference;
+    typeParams: Type[] | null;
+    constructor(value: ExternalReference, type?: Type | null, typeParams?: Type[] | null, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+}
+export declare class ExternalReference {
+    moduleName: string | null;
+    name: string | null;
+    runtime: any;
+    constructor(moduleName: string | null, name: string | null, runtime?: any);
 }
 export declare class ConditionalExpr extends Expression {
     condition: Expression;
-    falseCase: Expression;
+    falseCase: Expression | null;
     trueCase: Expression;
-    constructor(condition: Expression, trueCase: Expression, falseCase?: Expression, type?: Type, sourceSpan?: ParseSourceSpan);
+    constructor(condition: Expression, trueCase: Expression, falseCase?: Expression | null, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
 export declare class NotExpr extends Expression {
     condition: Expression;
-    constructor(condition: Expression, sourceSpan?: ParseSourceSpan);
+    constructor(condition: Expression, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
+    visitExpression(visitor: ExpressionVisitor, context: any): any;
+}
+export declare class AssertNotNull extends Expression {
+    condition: Expression;
+    constructor(condition: Expression, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
 export declare class CastExpr extends Expression {
     value: Expression;
-    constructor(value: Expression, type: Type, sourceSpan?: ParseSourceSpan);
+    constructor(value: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
 export declare class FnParam {
     name: string;
-    type: Type;
-    constructor(name: string, type?: Type);
+    type: Type | null;
+    constructor(name: string, type?: Type | null);
+    isEquivalent(param: FnParam): boolean;
 }
 export declare class FunctionExpr extends Expression {
     params: FnParam[];
     statements: Statement[];
-    constructor(params: FnParam[], statements: Statement[], type?: Type, sourceSpan?: ParseSourceSpan);
+    name: string | null | undefined;
+    constructor(params: FnParam[], statements: Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null, name?: string | null | undefined);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
-    toDeclStmt(name: string, modifiers?: StmtModifier[]): DeclareFunctionStmt;
+    toDeclStmt(name: string, modifiers?: StmtModifier[] | null): DeclareFunctionStmt;
 }
 export declare class BinaryOperatorExpr extends Expression {
     operator: BinaryOperator;
     rhs: Expression;
+    parens: boolean;
     lhs: Expression;
-    constructor(operator: BinaryOperator, lhs: Expression, rhs: Expression, type?: Type, sourceSpan?: ParseSourceSpan);
+    constructor(operator: BinaryOperator, lhs: Expression, rhs: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null, parens?: boolean);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
 export declare class ReadPropExpr extends Expression {
     receiver: Expression;
     name: string;
-    constructor(receiver: Expression, name: string, type?: Type, sourceSpan?: ParseSourceSpan);
+    constructor(receiver: Expression, name: string, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     set(value: Expression): WritePropExpr;
 }
 export declare class ReadKeyExpr extends Expression {
     receiver: Expression;
     index: Expression;
-    constructor(receiver: Expression, index: Expression, type?: Type, sourceSpan?: ParseSourceSpan);
+    constructor(receiver: Expression, index: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     set(value: Expression): WriteKeyExpr;
 }
 export declare class LiteralArrayExpr extends Expression {
     entries: Expression[];
-    constructor(entries: Expression[], type?: Type, sourceSpan?: ParseSourceSpan);
+    constructor(entries: Expression[], type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    isConstant(): boolean;
+    isEquivalent(e: Expression): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
 export declare class LiteralMapEntry {
     key: string;
     value: Expression;
     quoted: boolean;
-    constructor(key: string, value: Expression, quoted?: boolean);
+    constructor(key: string, value: Expression, quoted: boolean);
+    isEquivalent(e: LiteralMapEntry): boolean;
 }
 export declare class LiteralMapExpr extends Expression {
     entries: LiteralMapEntry[];
-    valueType: Type;
-    constructor(entries: LiteralMapEntry[], type?: MapType, sourceSpan?: ParseSourceSpan);
+    valueType: Type | null;
+    constructor(entries: LiteralMapEntry[], type?: MapType | null, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
 export declare class CommaExpr extends Expression {
     parts: Expression[];
-    constructor(parts: Expression[], sourceSpan?: ParseSourceSpan);
+    constructor(parts: Expression[], sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
 export interface ExpressionVisitor {
@@ -259,6 +330,7 @@ export interface ExpressionVisitor {
     visitExternalExpr(ast: ExternalExpr, context: any): any;
     visitConditionalExpr(ast: ConditionalExpr, context: any): any;
     visitNotExpr(ast: NotExpr, context: any): any;
+    visitAssertNotNullExpr(ast: AssertNotNull, context: any): any;
     visitCastExpr(ast: CastExpr, context: any): any;
     visitFunctionExpr(ast: FunctionExpr, context: any): any;
     visitBinaryOperatorExpr(ast: BinaryOperatorExpr, context: any): any;
@@ -277,91 +349,119 @@ export declare const TYPED_NULL_EXPR: LiteralExpr;
 export declare enum StmtModifier {
     Final = 0,
     Private = 1,
+    Exported = 2,
+    Static = 3,
 }
 export declare abstract class Statement {
     modifiers: StmtModifier[];
-    sourceSpan: ParseSourceSpan;
-    constructor(modifiers?: StmtModifier[], sourceSpan?: ParseSourceSpan);
+    sourceSpan: ParseSourceSpan | null;
+    constructor(modifiers?: StmtModifier[] | null, sourceSpan?: ParseSourceSpan | null);
+    /**
+     * Calculates whether this statement produces the same value as the given statement.
+     * Note: We don't check Types nor ParseSourceSpans nor function arguments.
+     */
+    abstract isEquivalent(stmt: Statement): boolean;
     abstract visitStatement(visitor: StatementVisitor, context: any): any;
     hasModifier(modifier: StmtModifier): boolean;
 }
 export declare class DeclareVarStmt extends Statement {
     name: string;
-    value: Expression;
-    type: Type;
-    constructor(name: string, value: Expression, type?: Type, modifiers?: StmtModifier[], sourceSpan?: ParseSourceSpan);
+    value: Expression | undefined;
+    type: Type | null;
+    constructor(name: string, value?: Expression | undefined, type?: Type | null, modifiers?: StmtModifier[] | null, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(stmt: Statement): boolean;
     visitStatement(visitor: StatementVisitor, context: any): any;
 }
 export declare class DeclareFunctionStmt extends Statement {
     name: string;
     params: FnParam[];
     statements: Statement[];
-    type: Type;
-    constructor(name: string, params: FnParam[], statements: Statement[], type?: Type, modifiers?: StmtModifier[], sourceSpan?: ParseSourceSpan);
+    type: Type | null;
+    constructor(name: string, params: FnParam[], statements: Statement[], type?: Type | null, modifiers?: StmtModifier[] | null, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(stmt: Statement): boolean;
     visitStatement(visitor: StatementVisitor, context: any): any;
 }
 export declare class ExpressionStatement extends Statement {
     expr: Expression;
-    constructor(expr: Expression, sourceSpan?: ParseSourceSpan);
+    constructor(expr: Expression, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(stmt: Statement): boolean;
     visitStatement(visitor: StatementVisitor, context: any): any;
 }
 export declare class ReturnStatement extends Statement {
     value: Expression;
-    constructor(value: Expression, sourceSpan?: ParseSourceSpan);
+    constructor(value: Expression, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(stmt: Statement): boolean;
     visitStatement(visitor: StatementVisitor, context: any): any;
 }
 export declare class AbstractClassPart {
-    type: Type;
-    modifiers: StmtModifier[];
-    constructor(type: Type, modifiers: StmtModifier[]);
+    modifiers: StmtModifier[] | null;
+    type: Type | null;
+    constructor(type: Type | null | undefined, modifiers: StmtModifier[] | null);
     hasModifier(modifier: StmtModifier): boolean;
 }
 export declare class ClassField extends AbstractClassPart {
     name: string;
-    constructor(name: string, type?: Type, modifiers?: StmtModifier[]);
+    initializer: Expression | undefined;
+    constructor(name: string, type?: Type | null, modifiers?: StmtModifier[] | null, initializer?: Expression | undefined);
+    isEquivalent(f: ClassField): boolean;
 }
 export declare class ClassMethod extends AbstractClassPart {
-    name: string;
+    name: string | null;
     params: FnParam[];
     body: Statement[];
-    constructor(name: string, params: FnParam[], body: Statement[], type?: Type, modifiers?: StmtModifier[]);
+    constructor(name: string | null, params: FnParam[], body: Statement[], type?: Type | null, modifiers?: StmtModifier[] | null);
+    isEquivalent(m: ClassMethod): boolean;
 }
 export declare class ClassGetter extends AbstractClassPart {
     name: string;
     body: Statement[];
-    constructor(name: string, body: Statement[], type?: Type, modifiers?: StmtModifier[]);
+    constructor(name: string, body: Statement[], type?: Type | null, modifiers?: StmtModifier[] | null);
+    isEquivalent(m: ClassGetter): boolean;
 }
 export declare class ClassStmt extends Statement {
     name: string;
-    parent: Expression;
+    parent: Expression | null;
     fields: ClassField[];
     getters: ClassGetter[];
     constructorMethod: ClassMethod;
     methods: ClassMethod[];
-    constructor(name: string, parent: Expression, fields: ClassField[], getters: ClassGetter[], constructorMethod: ClassMethod, methods: ClassMethod[], modifiers?: StmtModifier[], sourceSpan?: ParseSourceSpan);
+    constructor(name: string, parent: Expression | null, fields: ClassField[], getters: ClassGetter[], constructorMethod: ClassMethod, methods: ClassMethod[], modifiers?: StmtModifier[] | null, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(stmt: Statement): boolean;
     visitStatement(visitor: StatementVisitor, context: any): any;
 }
 export declare class IfStmt extends Statement {
     condition: Expression;
     trueCase: Statement[];
     falseCase: Statement[];
-    constructor(condition: Expression, trueCase: Statement[], falseCase?: Statement[], sourceSpan?: ParseSourceSpan);
+    constructor(condition: Expression, trueCase: Statement[], falseCase?: Statement[], sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(stmt: Statement): boolean;
     visitStatement(visitor: StatementVisitor, context: any): any;
 }
 export declare class CommentStmt extends Statement {
     comment: string;
-    constructor(comment: string, sourceSpan?: ParseSourceSpan);
+    multiline: boolean;
+    constructor(comment: string, multiline?: boolean, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(stmt: Statement): boolean;
     visitStatement(visitor: StatementVisitor, context: any): any;
+}
+export declare class JSDocCommentStmt extends Statement {
+    tags: JSDocTag[];
+    constructor(tags?: JSDocTag[], sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(stmt: Statement): boolean;
+    visitStatement(visitor: StatementVisitor, context: any): any;
+    toString(): string;
 }
 export declare class TryCatchStmt extends Statement {
     bodyStmts: Statement[];
     catchStmts: Statement[];
-    constructor(bodyStmts: Statement[], catchStmts: Statement[], sourceSpan?: ParseSourceSpan);
+    constructor(bodyStmts: Statement[], catchStmts: Statement[], sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(stmt: Statement): boolean;
     visitStatement(visitor: StatementVisitor, context: any): any;
 }
 export declare class ThrowStmt extends Statement {
     error: Expression;
-    constructor(error: Expression, sourceSpan?: ParseSourceSpan);
+    constructor(error: Expression, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(stmt: ThrowStmt): boolean;
     visitStatement(visitor: StatementVisitor, context: any): any;
 }
 export interface StatementVisitor {
@@ -374,6 +474,7 @@ export interface StatementVisitor {
     visitTryCatchStmt(stmt: TryCatchStmt, context: any): any;
     visitThrowStmt(stmt: ThrowStmt, context: any): any;
     visitCommentStmt(stmt: CommentStmt, context: any): any;
+    visitJSDocCommentStmt(stmt: JSDocCommentStmt, context: any): any;
 }
 export declare class AstTransformer implements StatementVisitor, ExpressionVisitor {
     transformExpr(expr: Expression, context: any): Expression;
@@ -389,6 +490,7 @@ export declare class AstTransformer implements StatementVisitor, ExpressionVisit
     visitExternalExpr(ast: ExternalExpr, context: any): any;
     visitConditionalExpr(ast: ConditionalExpr, context: any): any;
     visitNotExpr(ast: NotExpr, context: any): any;
+    visitAssertNotNullExpr(ast: AssertNotNull, context: any): any;
     visitCastExpr(ast: CastExpr, context: any): any;
     visitFunctionExpr(ast: FunctionExpr, context: any): any;
     visitBinaryOperatorExpr(ast: BinaryOperatorExpr, context: any): any;
@@ -407,13 +509,20 @@ export declare class AstTransformer implements StatementVisitor, ExpressionVisit
     visitTryCatchStmt(stmt: TryCatchStmt, context: any): any;
     visitThrowStmt(stmt: ThrowStmt, context: any): any;
     visitCommentStmt(stmt: CommentStmt, context: any): any;
+    visitJSDocCommentStmt(stmt: JSDocCommentStmt, context: any): any;
     visitAllStatements(stmts: Statement[], context: any): Statement[];
 }
 export declare class RecursiveAstVisitor implements StatementVisitor, ExpressionVisitor {
+    visitType(ast: Type, context: any): any;
+    visitExpression(ast: Expression, context: any): any;
+    visitBuiltinType(type: BuiltinType, context: any): any;
+    visitExpressionType(type: ExpressionType, context: any): any;
+    visitArrayType(type: ArrayType, context: any): any;
+    visitMapType(type: MapType, context: any): any;
     visitReadVarExpr(ast: ReadVarExpr, context: any): any;
-    visitWriteVarExpr(expr: WriteVarExpr, context: any): any;
-    visitWriteKeyExpr(expr: WriteKeyExpr, context: any): any;
-    visitWritePropExpr(expr: WritePropExpr, context: any): any;
+    visitWriteVarExpr(ast: WriteVarExpr, context: any): any;
+    visitWriteKeyExpr(ast: WriteKeyExpr, context: any): any;
+    visitWritePropExpr(ast: WritePropExpr, context: any): any;
     visitInvokeMethodExpr(ast: InvokeMethodExpr, context: any): any;
     visitInvokeFunctionExpr(ast: InvokeFunctionExpr, context: any): any;
     visitInstantiateExpr(ast: InstantiateExpr, context: any): any;
@@ -421,6 +530,7 @@ export declare class RecursiveAstVisitor implements StatementVisitor, Expression
     visitExternalExpr(ast: ExternalExpr, context: any): any;
     visitConditionalExpr(ast: ConditionalExpr, context: any): any;
     visitNotExpr(ast: NotExpr, context: any): any;
+    visitAssertNotNullExpr(ast: AssertNotNull, context: any): any;
     visitCastExpr(ast: CastExpr, context: any): any;
     visitFunctionExpr(ast: FunctionExpr, context: any): any;
     visitBinaryOperatorExpr(ast: BinaryOperatorExpr, context: any): any;
@@ -439,17 +549,38 @@ export declare class RecursiveAstVisitor implements StatementVisitor, Expression
     visitTryCatchStmt(stmt: TryCatchStmt, context: any): any;
     visitThrowStmt(stmt: ThrowStmt, context: any): any;
     visitCommentStmt(stmt: CommentStmt, context: any): any;
+    visitJSDocCommentStmt(stmt: JSDocCommentStmt, context: any): any;
     visitAllStatements(stmts: Statement[], context: any): void;
 }
 export declare function findReadVarNames(stmts: Statement[]): Set<string>;
-export declare function applySourceSpanToStatementIfNeeded(stmt: Statement, sourceSpan: ParseSourceSpan): Statement;
-export declare function applySourceSpanToExpressionIfNeeded(expr: Expression, sourceSpan: ParseSourceSpan): Expression;
-export declare function variable(name: string, type?: Type, sourceSpan?: ParseSourceSpan): ReadVarExpr;
-export declare function importExpr(id: CompileIdentifierMetadata, typeParams?: Type[], sourceSpan?: ParseSourceSpan): ExternalExpr;
-export declare function importType(id: CompileIdentifierMetadata, typeParams?: Type[], typeModifiers?: TypeModifier[]): ExpressionType;
-export declare function expressionType(expr: Expression, typeModifiers?: TypeModifier[]): ExpressionType;
-export declare function literalArr(values: Expression[], type?: Type, sourceSpan?: ParseSourceSpan): LiteralArrayExpr;
-export declare function literalMap(values: [string, Expression][], type?: MapType, quoted?: boolean): LiteralMapExpr;
-export declare function not(expr: Expression, sourceSpan?: ParseSourceSpan): NotExpr;
-export declare function fn(params: FnParam[], body: Statement[], type?: Type, sourceSpan?: ParseSourceSpan): FunctionExpr;
-export declare function literal(value: any, type?: Type, sourceSpan?: ParseSourceSpan): LiteralExpr;
+export declare function collectExternalReferences(stmts: Statement[]): ExternalReference[];
+export declare function applySourceSpanToStatementIfNeeded(stmt: Statement, sourceSpan: ParseSourceSpan | null): Statement;
+export declare function applySourceSpanToExpressionIfNeeded(expr: Expression, sourceSpan: ParseSourceSpan | null): Expression;
+export declare function variable(name: string, type?: Type | null, sourceSpan?: ParseSourceSpan | null): ReadVarExpr;
+export declare function importExpr(id: ExternalReference, typeParams?: Type[] | null, sourceSpan?: ParseSourceSpan | null): ExternalExpr;
+export declare function importType(id: ExternalReference, typeParams?: Type[] | null, typeModifiers?: TypeModifier[] | null): ExpressionType | null;
+export declare function expressionType(expr: Expression, typeModifiers?: TypeModifier[] | null): ExpressionType;
+export declare function literalArr(values: Expression[], type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralArrayExpr;
+export declare function literalMap(values: {
+    key: string;
+    quoted: boolean;
+    value: Expression;
+}[], type?: MapType | null): LiteralMapExpr;
+export declare function not(expr: Expression, sourceSpan?: ParseSourceSpan | null): NotExpr;
+export declare function assertNotNull(expr: Expression, sourceSpan?: ParseSourceSpan | null): AssertNotNull;
+export declare function fn(params: FnParam[], body: Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null, name?: string | null): FunctionExpr;
+export declare function ifStmt(condition: Expression, thenClause: Statement[], elseClause?: Statement[]): IfStmt;
+export declare function literal(value: any, type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralExpr;
+export declare function isNull(exp: Expression): boolean;
+export declare const enum JSDocTagName {
+    Desc = "desc",
+    Id = "id",
+    Meaning = "meaning",
+}
+export declare type JSDocTag = {
+    tagName: JSDocTagName | string;
+    text?: string;
+} | {
+    tagName?: undefined;
+    text: string;
+};

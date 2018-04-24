@@ -4,16 +4,28 @@
  * of selecting subsets out of them.
  */
 export declare class CssSelector {
-    element: string;
+    element: string | null;
     classNames: string[];
+    /**
+     * The selectors are encoded in pairs where:
+     * - even locations are attribute names
+     * - odd locations are attribute values.
+     *
+     * Example:
+     * Selector: `[key1=value1][key2]` would parse to:
+     * ```
+     * ['key1', 'value1', 'key2', '']
+     * ```
+     */
     attrs: string[];
     notSelectors: CssSelector[];
     static parse(selector: string): CssSelector[];
     isElementSelector(): boolean;
     hasElementSelector(): boolean;
-    setElement(element?: string): void;
+    setElement(element?: string | null): void;
     /** Gets a template string for an element that matches the selector. */
     getMatchingElementTemplate(): string;
+    getAttrs(): string[];
     addAttribute(name: string, value?: string): void;
     addClassName(name: string): void;
     toString(): string;
@@ -47,7 +59,7 @@ export declare class SelectorMatcher {
      * @param matchedCallback This callback will be called with the object handed into `addSelectable`
      * @return boolean true if a match was found
     */
-    match(cssSelector: CssSelector, matchedCallback: (c: CssSelector, a: any) => void): boolean;
+    match(cssSelector: CssSelector, matchedCallback: ((c: CssSelector, a: any) => void) | null): boolean;
 }
 export declare class SelectorListContext {
     selectors: CssSelector[];
@@ -60,5 +72,5 @@ export declare class SelectorContext {
     listContext: SelectorListContext;
     notSelectors: CssSelector[];
     constructor(selector: CssSelector, cbContext: any, listContext: SelectorListContext);
-    finalize(cssSelector: CssSelector, callback: (c: CssSelector, a: any) => void): boolean;
+    finalize(cssSelector: CssSelector, callback: ((c: CssSelector, a: any) => void) | null): boolean;
 }
