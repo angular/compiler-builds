@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5+84.sha-ab5bc42
+ * @license Angular v6.0.0-rc.5+83.sha-f567e18
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1224,7 +1224,7 @@ var Version = /** @class */ (function () {
 /**
  *
  */
-var VERSION = new Version('6.0.0-rc.5+84.sha-ab5bc42');
+var VERSION = new Version('6.0.0-rc.5+83.sha-f567e18');
 
 /**
  * @license
@@ -8557,7 +8557,7 @@ var Type$1 = /** @class */ (function () {
     Type.prototype.hasModifier = function (modifier) { return this.modifiers.indexOf(modifier) !== -1; };
     return Type;
 }());
-
+var BuiltinTypeName;
 (function (BuiltinTypeName) {
     BuiltinTypeName[BuiltinTypeName["Dynamic"] = 0] = "Dynamic";
     BuiltinTypeName[BuiltinTypeName["Bool"] = 1] = "Bool";
@@ -8566,7 +8566,7 @@ var Type$1 = /** @class */ (function () {
     BuiltinTypeName[BuiltinTypeName["Number"] = 4] = "Number";
     BuiltinTypeName[BuiltinTypeName["Function"] = 5] = "Function";
     BuiltinTypeName[BuiltinTypeName["Inferred"] = 6] = "Inferred";
-})(exports.BuiltinTypeName || (exports.BuiltinTypeName = {}));
+})(BuiltinTypeName || (BuiltinTypeName = {}));
 var BuiltinType = /** @class */ (function (_super) {
     __extends(BuiltinType, _super);
     function BuiltinType(name, modifiers) {
@@ -8617,13 +8617,13 @@ var MapType = /** @class */ (function (_super) {
     MapType.prototype.visitType = function (visitor, context) { return visitor.visitMapType(this, context); };
     return MapType;
 }(Type$1));
-var DYNAMIC_TYPE = new BuiltinType(exports.BuiltinTypeName.Dynamic);
-var INFERRED_TYPE = new BuiltinType(exports.BuiltinTypeName.Inferred);
-var BOOL_TYPE = new BuiltinType(exports.BuiltinTypeName.Bool);
-var INT_TYPE = new BuiltinType(exports.BuiltinTypeName.Int);
-var NUMBER_TYPE = new BuiltinType(exports.BuiltinTypeName.Number);
-var STRING_TYPE = new BuiltinType(exports.BuiltinTypeName.String);
-var FUNCTION_TYPE = new BuiltinType(exports.BuiltinTypeName.Function);
+var DYNAMIC_TYPE = new BuiltinType(BuiltinTypeName.Dynamic);
+var INFERRED_TYPE = new BuiltinType(BuiltinTypeName.Inferred);
+var BOOL_TYPE = new BuiltinType(BuiltinTypeName.Bool);
+var INT_TYPE = new BuiltinType(BuiltinTypeName.Int);
+var NUMBER_TYPE = new BuiltinType(BuiltinTypeName.Number);
+var STRING_TYPE = new BuiltinType(BuiltinTypeName.String);
+var FUNCTION_TYPE = new BuiltinType(BuiltinTypeName.Function);
 ///// Expressions
 
 (function (BinaryOperator) {
@@ -8781,22 +8781,6 @@ var ReadVarExpr = /** @class */ (function (_super) {
         return new WriteVarExpr(this.name, value, null, this.sourceSpan);
     };
     return ReadVarExpr;
-}(Expression));
-var WrappedNodeExpr = /** @class */ (function (_super) {
-    __extends(WrappedNodeExpr, _super);
-    function WrappedNodeExpr(node, type, sourceSpan) {
-        var _this = _super.call(this, type, sourceSpan) || this;
-        _this.node = node;
-        return _this;
-    }
-    WrappedNodeExpr.prototype.isEquivalent = function (e) {
-        return e instanceof WrappedNodeExpr && this.node === e.node;
-    };
-    WrappedNodeExpr.prototype.isConstant = function () { return false; };
-    WrappedNodeExpr.prototype.visitExpression = function (visitor, context) {
-        return visitor.visitWrappedNodeExpr(this, context);
-    };
-    return WrappedNodeExpr;
 }(Expression));
 var WriteVarExpr = /** @class */ (function (_super) {
     __extends(WriteVarExpr, _super);
@@ -9452,9 +9436,6 @@ var AstTransformer$1 = /** @class */ (function () {
     AstTransformer.prototype.transformExpr = function (expr, context) { return expr; };
     AstTransformer.prototype.transformStmt = function (stmt, context) { return stmt; };
     AstTransformer.prototype.visitReadVarExpr = function (ast, context) { return this.transformExpr(ast, context); };
-    AstTransformer.prototype.visitWrappedNodeExpr = function (ast, context) {
-        return this.transformExpr(ast, context);
-    };
     AstTransformer.prototype.visitWriteVarExpr = function (expr, context) {
         return this.transformExpr(new WriteVarExpr(expr.name, expr.value.visitExpression(this, context), expr.type, expr.sourceSpan), context);
     };
@@ -9578,7 +9559,6 @@ var RecursiveAstVisitor$1 = /** @class */ (function () {
     };
     RecursiveAstVisitor.prototype.visitArrayType = function (type, context) { return this.visitType(type, context); };
     RecursiveAstVisitor.prototype.visitMapType = function (type, context) { return this.visitType(type, context); };
-    RecursiveAstVisitor.prototype.visitWrappedNodeExpr = function (ast, context) { return ast; };
     RecursiveAstVisitor.prototype.visitReadVarExpr = function (ast, context) {
         return this.visitExpression(ast, context);
     };
@@ -12421,9 +12401,6 @@ var AbstractEmitterVisitor = /** @class */ (function () {
         ctx.print(expr, ")");
         return null;
     };
-    AbstractEmitterVisitor.prototype.visitWrappedNodeExpr = function (ast, ctx) {
-        throw new Error('Abstract emitter cannot visit WrappedNodeExpr.');
-    };
     AbstractEmitterVisitor.prototype.visitReadVarExpr = function (ast, ctx) {
         var varName = ast.name;
         if (ast.builtin != null) {
@@ -12800,9 +12777,6 @@ var _TsEmitterVisitor = /** @class */ (function (_super) {
         ctx.println(stmt, ";");
         return null;
     };
-    _TsEmitterVisitor.prototype.visitWrappedNodeExpr = function (ast, ctx) {
-        throw new Error('Cannot visit a WrappedNodeExpr when outputting Typescript.');
-    };
     _TsEmitterVisitor.prototype.visitCastExpr = function (ast, ctx) {
         ctx.print(ast, "(<");
         ast.type.visitType(this, ctx);
@@ -12950,22 +12924,22 @@ var _TsEmitterVisitor = /** @class */ (function (_super) {
     _TsEmitterVisitor.prototype.visitBuiltinType = function (type, ctx) {
         var typeStr;
         switch (type.name) {
-            case exports.BuiltinTypeName.Bool:
+            case BuiltinTypeName.Bool:
                 typeStr = 'boolean';
                 break;
-            case exports.BuiltinTypeName.Dynamic:
+            case BuiltinTypeName.Dynamic:
                 typeStr = 'any';
                 break;
-            case exports.BuiltinTypeName.Function:
+            case BuiltinTypeName.Function:
                 typeStr = 'Function';
                 break;
-            case exports.BuiltinTypeName.Number:
+            case BuiltinTypeName.Number:
                 typeStr = 'number';
                 break;
-            case exports.BuiltinTypeName.Int:
+            case BuiltinTypeName.Int:
                 typeStr = 'number';
                 break;
-            case exports.BuiltinTypeName.String:
+            case BuiltinTypeName.String:
                 typeStr = 'string';
                 break;
             default:
@@ -16346,7 +16320,7 @@ var ViewBuilder = /** @class */ (function () {
                 outputVarType = ref.value.identifier.reference;
             }
             else {
-                outputVarType = exports.BuiltinTypeName.Dynamic;
+                outputVarType = BuiltinTypeName.Dynamic;
             }
             _this.refOutputVars.set(ref.name, outputVarType);
         });
@@ -16372,7 +16346,7 @@ var ViewBuilder = /** @class */ (function () {
     };
     ViewBuilder.prototype.getLocal = function (name) {
         if (name == EventHandlerVars.event.name) {
-            return variable(this.getOutputVar(exports.BuiltinTypeName.Dynamic));
+            return variable(this.getOutputVar(BuiltinTypeName.Dynamic));
         }
         for (var currBuilder = this; currBuilder; currBuilder = currBuilder.parent) {
             var outputVarType = void 0;
@@ -16382,7 +16356,7 @@ var ViewBuilder = /** @class */ (function () {
                 // check variables
                 var varAst = currBuilder.variables.find(function (varAst) { return varAst.name === name; });
                 if (varAst) {
-                    outputVarType = exports.BuiltinTypeName.Dynamic;
+                    outputVarType = BuiltinTypeName.Dynamic;
                 }
             }
             if (outputVarType != null) {
@@ -16426,7 +16400,7 @@ var ViewBuilder = /** @class */ (function () {
                     // for pipes.
                     var pipeExpr = _this.options.fullTemplateTypeCheck ?
                         variable(_this.pipeOutputVar(name)) :
-                        variable(_this.getOutputVar(exports.BuiltinTypeName.Dynamic));
+                        variable(_this.getOutputVar(BuiltinTypeName.Dynamic));
                     return pipeExpr.callMethod('transform', args);
                 }; },
             }, expression.value)
@@ -17552,7 +17526,6 @@ var ConstantPool = /** @class */ (function () {
  */
 var KeyVisitor = /** @class */ (function () {
     function KeyVisitor() {
-        this.visitWrappedNodeExpr = invalid;
         this.visitReadVarExpr = invalid;
         this.visitWriteVarExpr = invalid;
         this.visitWriteKeyExpr = invalid;
@@ -17774,9 +17747,6 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.pipe = { name: 'ɵPp', moduleName: CORE$1 };
     Identifiers.projection = { name: 'ɵP', moduleName: CORE$1 };
     Identifiers.projectionDef = { name: 'ɵpD', moduleName: CORE$1 };
-    Identifiers.refreshComponent = { name: 'ɵr', moduleName: CORE$1 };
-    Identifiers.directiveLifeCycle = { name: 'ɵl', moduleName: CORE$1 };
-    Identifiers.inject = { name: 'inject', moduleName: CORE$1 };
     Identifiers.injectAttribute = { name: 'ɵinjectAttribute', moduleName: CORE$1 };
     Identifiers.injectElementRef = { name: 'ɵinjectElementRef', moduleName: CORE$1 };
     Identifiers.injectTemplateRef = { name: 'ɵinjectTemplateRef', moduleName: CORE$1 };
@@ -22449,9 +22419,6 @@ var StatementInterpreter = /** @class */ (function () {
         }
         throw new Error("Not declared variable " + expr.name);
     };
-    StatementInterpreter.prototype.visitWrappedNodeExpr = function (ast, ctx) {
-        throw new Error('Cannot interpret a WrappedNodeExpr.');
-    };
     StatementInterpreter.prototype.visitReadVarExpr = function (ast, ctx) {
         var varName = ast.name;
         if (ast.builtin != null) {
@@ -22761,9 +22728,6 @@ var AbstractJsEmitterVisitor = /** @class */ (function (_super) {
         }
         ctx.decIndent();
         ctx.println(stmt, "};");
-    };
-    AbstractJsEmitterVisitor.prototype.visitWrappedNodeExpr = function (ast, ctx) {
-        throw new Error('Cannot emit a WrappedNodeExpr in Javascript.');
     };
     AbstractJsEmitterVisitor.prototype.visitReadVarExpr = function (ast, ctx) {
         if (ast.builtin === exports.BuiltinVar.This) {
@@ -23652,71 +23616,6 @@ var Extractor = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-function mapToMapExpression(map) {
-    var result = Object.keys(map).map(function (key) { return ({ key: key, value: map[key], quoted: false }); });
-    return literalMap(result);
-}
-function compileIvyInjectable(meta) {
-    var ret = NULL_EXPR;
-    if (meta.useType !== undefined) {
-        var args = meta.useType.map(function (dep) { return injectDep(dep); });
-        ret = new InstantiateExpr(meta.type, args);
-    }
-    else if (meta.useClass !== undefined) {
-        var factory_1 = new ReadPropExpr(new ReadPropExpr(meta.useClass, 'ngInjectableDef'), 'factory');
-        ret = new InvokeFunctionExpr(factory_1, []);
-    }
-    else if (meta.useValue !== undefined) {
-        ret = meta.useValue;
-    }
-    else if (meta.useExisting !== undefined) {
-        ret = importExpr(Identifiers$1.inject).callFn([meta.useExisting]);
-    }
-    else if (meta.useFactory !== undefined) {
-        var args = meta.useFactory.deps.map(function (dep) { return injectDep(dep); });
-        ret = new InvokeFunctionExpr(meta.useFactory.factory, args);
-    }
-    else {
-        throw new Error('No instructions for injectable compiler!');
-    }
-    var token = meta.type;
-    var providedIn = meta.providedIn;
-    var factory = fn([], [new ReturnStatement(ret)], undefined, undefined, meta.name + "_Factory");
-    var expression = importExpr({
-        moduleName: '@angular/core',
-        name: 'defineInjectable',
-    }).callFn([mapToMapExpression({ token: token, factory: factory, providedIn: providedIn })]);
-    var type = new ExpressionType(importExpr({
-        moduleName: '@angular/core',
-        name: 'InjectableDef',
-    }, [new ExpressionType(meta.type)]));
-    return {
-        expression: expression, type: type,
-    };
-}
-function injectDep(dep) {
-    var defaultValue = dep.optional ? NULL_EXPR : literal(undefined);
-    var flags = literal(0 /* Default */ | (dep.self && 2 /* Self */ || 0) |
-        (dep.skipSelf && 4 /* SkipSelf */ || 0));
-    if (!dep.optional && !dep.skipSelf && !dep.self) {
-        return importExpr(Identifiers$1.inject).callFn([dep.token]);
-    }
-    else {
-        return importExpr(Identifiers$1.inject).callFn([
-            dep.token,
-            defaultValue,
-            flags,
-        ]);
-    }
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * @module
  * @description
@@ -23787,10 +23686,8 @@ exports.NgModuleResolver = NgModuleResolver;
 exports.DEFAULT_INTERPOLATION_CONFIG = DEFAULT_INTERPOLATION_CONFIG;
 exports.InterpolationConfig = InterpolationConfig;
 exports.NgModuleCompiler = NgModuleCompiler;
-exports.ArrayType = ArrayType;
 exports.AssertNotNull = AssertNotNull;
 exports.BinaryOperatorExpr = BinaryOperatorExpr;
-exports.BuiltinType = BuiltinType;
 exports.CastExpr = CastExpr;
 exports.ClassField = ClassField;
 exports.ClassMethod = ClassMethod;
@@ -23800,9 +23697,7 @@ exports.CommentStmt = CommentStmt;
 exports.ConditionalExpr = ConditionalExpr;
 exports.DeclareFunctionStmt = DeclareFunctionStmt;
 exports.DeclareVarStmt = DeclareVarStmt;
-exports.Expression = Expression;
 exports.ExpressionStatement = ExpressionStatement;
-exports.ExpressionType = ExpressionType;
 exports.ExternalExpr = ExternalExpr;
 exports.ExternalReference = ExternalReference;
 exports.FunctionExpr = FunctionExpr;
@@ -23814,7 +23709,6 @@ exports.JSDocCommentStmt = JSDocCommentStmt;
 exports.LiteralArrayExpr = LiteralArrayExpr;
 exports.LiteralExpr = LiteralExpr;
 exports.LiteralMapExpr = LiteralMapExpr;
-exports.MapType = MapType;
 exports.NotExpr = NotExpr;
 exports.ReadKeyExpr = ReadKeyExpr;
 exports.ReadPropExpr = ReadPropExpr;
@@ -23822,8 +23716,6 @@ exports.ReadVarExpr = ReadVarExpr;
 exports.ReturnStatement = ReturnStatement;
 exports.ThrowStmt = ThrowStmt;
 exports.TryCatchStmt = TryCatchStmt;
-exports.Type = Type$1;
-exports.WrappedNodeExpr = WrappedNodeExpr;
 exports.WriteKeyExpr = WriteKeyExpr;
 exports.WritePropExpr = WritePropExpr;
 exports.WriteVarExpr = WriteVarExpr;
@@ -24002,7 +23894,6 @@ exports.TemplateParser = TemplateParser;
 exports.splitClasses = splitClasses;
 exports.createElementCssSelector = createElementCssSelector;
 exports.removeSummaryDuplicates = removeSummaryDuplicates;
-exports.compileIvyInjectable = compileIvyInjectable;
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
