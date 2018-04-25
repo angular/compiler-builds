@@ -136,6 +136,13 @@ export declare class ReadVarExpr extends Expression {
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     set(value: Expression): WriteVarExpr;
 }
+export declare class WrappedNodeExpr<T> extends Expression {
+    node: T;
+    constructor(node: T, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
+    visitExpression(visitor: ExpressionVisitor, context: any): any;
+}
 export declare class WriteVarExpr extends Expression {
     name: string;
     value: Expression;
@@ -339,6 +346,7 @@ export interface ExpressionVisitor {
     visitLiteralArrayExpr(ast: LiteralArrayExpr, context: any): any;
     visitLiteralMapExpr(ast: LiteralMapExpr, context: any): any;
     visitCommaExpr(ast: CommaExpr, context: any): any;
+    visitWrappedNodeExpr(ast: WrappedNodeExpr<any>, context: any): any;
 }
 export declare const THIS_EXPR: ReadVarExpr;
 export declare const SUPER_EXPR: ReadVarExpr;
@@ -480,6 +488,7 @@ export declare class AstTransformer implements StatementVisitor, ExpressionVisit
     transformExpr(expr: Expression, context: any): Expression;
     transformStmt(stmt: Statement, context: any): Statement;
     visitReadVarExpr(ast: ReadVarExpr, context: any): any;
+    visitWrappedNodeExpr(ast: WrappedNodeExpr<any>, context: any): any;
     visitWriteVarExpr(expr: WriteVarExpr, context: any): any;
     visitWriteKeyExpr(expr: WriteKeyExpr, context: any): any;
     visitWritePropExpr(expr: WritePropExpr, context: any): any;
@@ -519,6 +528,7 @@ export declare class RecursiveAstVisitor implements StatementVisitor, Expression
     visitExpressionType(type: ExpressionType, context: any): any;
     visitArrayType(type: ArrayType, context: any): any;
     visitMapType(type: MapType, context: any): any;
+    visitWrappedNodeExpr(ast: WrappedNodeExpr<any>, context: any): any;
     visitReadVarExpr(ast: ReadVarExpr, context: any): any;
     visitWriteVarExpr(ast: WriteVarExpr, context: any): any;
     visitWriteKeyExpr(ast: WriteKeyExpr, context: any): any;

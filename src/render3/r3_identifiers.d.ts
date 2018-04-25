@@ -48,6 +48,9 @@ export declare class Identifiers {
     static pipe: o.ExternalReference;
     static projection: o.ExternalReference;
     static projectionDef: o.ExternalReference;
+    static refreshComponent: o.ExternalReference;
+    static directiveLifeCycle: o.ExternalReference;
+    static inject: o.ExternalReference;
     static injectAttribute: o.ExternalReference;
     static injectElementRef: o.ExternalReference;
     static injectTemplateRef: o.ExternalReference;
