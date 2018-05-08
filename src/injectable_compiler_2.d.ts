@@ -8,6 +8,7 @@ export interface IvyInjectableDep {
     optional: boolean;
     self: boolean;
     skipSelf: boolean;
+    attribute: boolean;
 }
 export interface IvyInjectableMetadata {
     name: string;
