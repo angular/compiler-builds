@@ -13,6 +13,8 @@ import * as o from './output/output_ast';
 export declare abstract class CompileReflector {
     abstract parameters(typeOrFunc: any): any[][];
     abstract annotations(typeOrFunc: any): any[];
+    abstract shallowAnnotations(typeOrFunc: any): any[];
+    abstract tryAnnotations(typeOrFunc: any): any[];
     abstract propMetadata(typeOrFunc: any): {
         [key: string]: any[];
     };

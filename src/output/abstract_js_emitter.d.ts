@@ -13,6 +13,7 @@ export declare abstract class AbstractJsEmitterVisitor extends AbstractEmitterVi
     private _visitClassConstructor(stmt, ctx);
     private _visitClassGetter(stmt, getter, ctx);
     private _visitClassMethod(stmt, method, ctx);
+    visitWrappedNodeExpr(ast: o.WrappedNodeExpr<any>, ctx: EmitterVisitorContext): never;
     visitReadVarExpr(ast: o.ReadVarExpr, ctx: EmitterVisitorContext): string | null;
     visitDeclareVarStmt(stmt: o.DeclareVarStmt, ctx: EmitterVisitorContext): any;
     visitCastExpr(ast: o.CastExpr, ctx: EmitterVisitorContext): any;

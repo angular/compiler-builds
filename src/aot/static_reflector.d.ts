@@ -12,11 +12,13 @@ export declare class StaticReflector implements CompileReflector {
     private symbolResolver;
     private errorRecorder;
     private annotationCache;
+    private shallowAnnotationCache;
     private propertyCache;
     private parameterCache;
     private methodCache;
     private staticCache;
     private conversionMap;
+    private resolvedExternalReferences;
     private injectionToken;
     private opaqueToken;
     ROUTES: StaticSymbol;
@@ -34,9 +36,12 @@ export declare class StaticReflector implements CompileReflector {
     componentModuleUrl(typeOrFunc: StaticSymbol): string;
     resolveExternalReference(ref: o.ExternalReference, containingFile?: string): StaticSymbol;
     findDeclaration(moduleUrl: string, name: string, containingFile?: string): StaticSymbol;
-    tryFindDeclaration(moduleUrl: string, name: string): StaticSymbol;
+    tryFindDeclaration(moduleUrl: string, name: string, containingFile?: string): StaticSymbol;
     findSymbolDeclaration(symbol: StaticSymbol): StaticSymbol;
+    tryAnnotations(type: StaticSymbol): any[];
     annotations(type: StaticSymbol): any[];
+    shallowAnnotations(type: StaticSymbol): any[];
+    private _annotations(type, simplify, annotationCache);
     propMetadata(type: StaticSymbol): {
         [key: string]: any[];
     };
