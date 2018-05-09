@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5+148.sha-c5ca5c0
+ * @license Angular v6.0.0-rc.5+153.sha-e0ed59e
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1092,7 +1092,7 @@ class Version {
 /**
  *
  */
-const VERSION = new Version('6.0.0-rc.5+148.sha-c5ca5c0');
+const VERSION = new Version('6.0.0-rc.5+153.sha-e0ed59e');
 
 /**
  * @license
@@ -13536,11 +13536,11 @@ const ANIMATE_PROP_PREFIX = 'animate-';
  * Parses bindings in templates and in the directive host area.
  */
 class BindingParser {
-    constructor(_exprParser, _interpolationConfig, _schemaRegistry, pipes, _targetErrors) {
+    constructor(_exprParser, _interpolationConfig, _schemaRegistry, pipes, errors) {
         this._exprParser = _exprParser;
         this._interpolationConfig = _interpolationConfig;
         this._schemaRegistry = _schemaRegistry;
-        this._targetErrors = _targetErrors;
+        this.errors = errors;
         this.pipesByName = null;
         this._usedPipes = new Map();
         // When the `pipes` parameter is `null`, do not check for used pipes
@@ -13806,7 +13806,7 @@ class BindingParser {
         }
     }
     _reportError(message, sourceSpan, level = ParseErrorLevel.ERROR) {
-        this._targetErrors.push(new ParseError(sourceSpan, message, level));
+        this.errors.push(new ParseError(sourceSpan, message, level));
     }
     _reportExpressionParserErrors(errors, sourceSpan) {
         for (const error$$1 of errors) {
@@ -17092,7 +17092,7 @@ class TextAttribute {
         this.sourceSpan = sourceSpan;
         this.valueSpan = valueSpan;
     }
-    visit(visitor) { return visitor.visitAttribute(this); }
+    visit(visitor) { return visitor.visitTextAttribute(this); }
 }
 class BoundAttribute {
     constructor(name, type, securityContext, value, unit, sourceSpan) {
@@ -17226,9 +17226,27 @@ const IDENT_EVENT_IDX$1 = 10;
 const TEMPLATE_ATTR_PREFIX$1 = '*';
 // Default selector used by `<ng-content>` if none specified
 const DEFAULT_CONTENT_SELECTOR = '*';
-class HtmlToTemplateTransform {
+function htmlAstToRender3Ast(htmlNodes, bindingParser) {
+    const transformer = new HtmlAstToIvyAst(bindingParser);
+    const ivyNodes = visitAll(transformer, htmlNodes);
+    // Errors might originate in either the binding parser or the html to ivy transformer
+    const allErrors = bindingParser.errors.concat(transformer.errors);
+    const errors = allErrors.filter(e => e.level === ParseErrorLevel.ERROR);
+    if (errors.length > 0) {
+        const errorString = errors.join('\n');
+        throw syntaxError(`Template parse errors:\n${errorString}`, errors);
+    }
+    return {
+        nodes: ivyNodes,
+        errors: allErrors,
+        ngContentSelectors: transformer.ngContentSelectors,
+        hasNgContent: transformer.hasNgContent,
+    };
+}
+class HtmlAstToIvyAst {
     constructor(bindingParser) {
         this.bindingParser = bindingParser;
+        this.errors = [];
         // Selectors for the `ng-content` tags. Only non `*` selectors are recorded here
         this.ngContentSelectors = [];
         // Any `<ng-content>` in the template ?
@@ -17278,7 +17296,9 @@ class HtmlToTemplateTransform {
                 const templateValue = attribute.value;
                 const templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX$1.length);
                 inlineTemplateSourceSpan = attribute.valueSpan || attribute.sourceSpan;
-                this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, templateMatchableAttributes, templateParsedProperties, templateVariables);
+                const parsedVariables = [];
+                this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, templateMatchableAttributes, templateParsedProperties, parsedVariables);
+                templateVariables.push(...parsedVariables.map(v => new Variable(v.name, v.value, v.sourceSpan)));
             }
             else {
                 // Check for variables, events, property bindings, interpolation
@@ -17490,7 +17510,7 @@ class TemplateDefinitionBuilder {
         // These should be handled in the template or element directly.
         this.visitReference = invalid$1;
         this.visitVariable = invalid$1;
-        this.visitAttribute = invalid$1;
+        this.visitTextAttribute = invalid$1;
         this.visitBoundAttribute = invalid$1;
         this.visitBoundEvent = invalid$1;
         this._bindingScope =
@@ -18129,14 +18149,16 @@ function compileDirectiveFromRender2(outputCtx, directive, reflector, bindingPar
  * `R3ComponentMetadata` is computed from `CompileDirectiveMetadata` and other statically reflected
  * information.
  */
-function compileComponentFromRender2(outputCtx, component, nodes, hasNgContent, ngContentSelectors, reflector, bindingParser, directiveTypeBySel, pipeTypeByName) {
+function compileComponentFromRender2(outputCtx, component, render3Ast, reflector, bindingParser, directiveTypeBySel, pipeTypeByName) {
     const name = identifierName(component.type);
     name || error(`Cannot resolver the name of ${component.type}`);
     const definitionField = outputCtx.constantPool.propertyNameOf(2 /* Component */);
     const summary = component.toSummary();
     // Compute the R3ComponentMetadata from the CompileDirectiveMetadata
     const meta = Object.assign({}, directiveMetadataFromGlobalMetadata(component, outputCtx, reflector), { selector: component.selector, template: {
-            nodes, hasNgContent, ngContentSelectors,
+            nodes: render3Ast.nodes,
+            hasNgContent: render3Ast.hasNgContent,
+            ngContentSelectors: render3Ast.ngContentSelectors,
         }, lifecycle: {
             usesOnChanges: component.type.lifecycleHooks.some(lifecycle => lifecycle == LifecycleHooks.OnChanges),
         }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx) });
@@ -19556,10 +19578,7 @@ class AotCompiler {
                 if (!preserveWhitespaces) {
                     htmlAst = removeWhitespaces(htmlAst);
                 }
-                const transform = new HtmlToTemplateTransform(hostBindingParser);
-                const nodes = visitAll(transform, htmlAst.rootNodes, null);
-                const hasNgContent = transform.hasNgContent;
-                const ngContentSelectors = transform.ngContentSelectors;
+                const render3Ast = htmlAstToRender3Ast(htmlAst.rootNodes, hostBindingParser);
                 // Map of StaticType by directive selectors
                 const directiveTypeBySel = new Map();
                 const directives = module.transitiveModule.directives.map(dir => this._metadataResolver.getDirectiveSummary(dir.reference));
@@ -19572,7 +19591,7 @@ class AotCompiler {
                 const pipeTypeByName = new Map();
                 const pipes = module.transitiveModule.pipes.map(pipe => this._metadataResolver.getPipeSummary(pipe.reference));
                 pipes.forEach(pipe => { pipeTypeByName.set(pipe.name, pipe.type.reference); });
-                compileComponentFromRender2(context, directiveMetadata, nodes, hasNgContent, ngContentSelectors, this.reflector, hostBindingParser, directiveTypeBySel, pipeTypeByName);
+                compileComponentFromRender2(context, directiveMetadata, render3Ast, this.reflector, hostBindingParser, directiveTypeBySel, pipeTypeByName);
             }
             else {
                 compileDirectiveFromRender2(context, directiveMetadata, this.reflector, hostBindingParser);

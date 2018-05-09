@@ -39,7 +39,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     visitTemplate(template: t.Template): void;
     readonly visitReference: typeof invalid;
     readonly visitVariable: typeof invalid;
-    readonly visitAttribute: typeof invalid;
+    readonly visitTextAttribute: typeof invalid;
     readonly visitBoundAttribute: typeof invalid;
     readonly visitBoundEvent: typeof invalid;
     visitBoundText(text: t.BoundText): void;

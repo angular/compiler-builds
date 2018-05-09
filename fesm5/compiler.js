@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5+148.sha-c5ca5c0
+ * @license Angular v6.0.0-rc.5+153.sha-e0ed59e
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1138,7 +1138,7 @@ var Version = /** @class */ (function () {
 /**
  *
  */
-var VERSION = new Version('6.0.0-rc.5+148.sha-c5ca5c0');
+var VERSION = new Version('6.0.0-rc.5+153.sha-e0ed59e');
 
 /**
  * @license
@@ -14370,11 +14370,11 @@ var ANIMATE_PROP_PREFIX = 'animate-';
  * Parses bindings in templates and in the directive host area.
  */
 var BindingParser = /** @class */ (function () {
-    function BindingParser(_exprParser, _interpolationConfig, _schemaRegistry, pipes, _targetErrors) {
+    function BindingParser(_exprParser, _interpolationConfig, _schemaRegistry, pipes, errors) {
         this._exprParser = _exprParser;
         this._interpolationConfig = _interpolationConfig;
         this._schemaRegistry = _schemaRegistry;
-        this._targetErrors = _targetErrors;
+        this.errors = errors;
         this.pipesByName = null;
         this._usedPipes = new Map();
         // When the `pipes` parameter is `null`, do not check for used pipes
@@ -14645,7 +14645,7 @@ var BindingParser = /** @class */ (function () {
     };
     BindingParser.prototype._reportError = function (message, sourceSpan, level) {
         if (level === void 0) { level = ParseErrorLevel.ERROR; }
-        this._targetErrors.push(new ParseError(sourceSpan, message, level));
+        this.errors.push(new ParseError(sourceSpan, message, level));
     };
     BindingParser.prototype._reportExpressionParserErrors = function (errors, sourceSpan) {
         try {
@@ -18106,7 +18106,7 @@ var TextAttribute = /** @class */ (function () {
         this.sourceSpan = sourceSpan;
         this.valueSpan = valueSpan;
     }
-    TextAttribute.prototype.visit = function (visitor) { return visitor.visitAttribute(this); };
+    TextAttribute.prototype.visit = function (visitor) { return visitor.visitTextAttribute(this); };
     return TextAttribute;
 }());
 var BoundAttribute = /** @class */ (function () {
@@ -18266,16 +18266,34 @@ var IDENT_EVENT_IDX$1 = 10;
 var TEMPLATE_ATTR_PREFIX$1 = '*';
 // Default selector used by `<ng-content>` if none specified
 var DEFAULT_CONTENT_SELECTOR = '*';
-var HtmlToTemplateTransform = /** @class */ (function () {
-    function HtmlToTemplateTransform(bindingParser) {
+function htmlAstToRender3Ast(htmlNodes, bindingParser) {
+    var transformer = new HtmlAstToIvyAst(bindingParser);
+    var ivyNodes = visitAll(transformer, htmlNodes);
+    // Errors might originate in either the binding parser or the html to ivy transformer
+    var allErrors = bindingParser.errors.concat(transformer.errors);
+    var errors = allErrors.filter(function (e) { return e.level === ParseErrorLevel.ERROR; });
+    if (errors.length > 0) {
+        var errorString = errors.join('\n');
+        throw syntaxError("Template parse errors:\n" + errorString, errors);
+    }
+    return {
+        nodes: ivyNodes,
+        errors: allErrors,
+        ngContentSelectors: transformer.ngContentSelectors,
+        hasNgContent: transformer.hasNgContent,
+    };
+}
+var HtmlAstToIvyAst = /** @class */ (function () {
+    function HtmlAstToIvyAst(bindingParser) {
         this.bindingParser = bindingParser;
+        this.errors = [];
         // Selectors for the `ng-content` tags. Only non `*` selectors are recorded here
         this.ngContentSelectors = [];
         // Any `<ng-content>` in the template ?
         this.hasNgContent = false;
     }
     // HTML visitor
-    HtmlToTemplateTransform.prototype.visitElement = function (element) {
+    HtmlAstToIvyAst.prototype.visitElement = function (element) {
         var preparsedElement = preparseElement(element);
         if (preparsedElement.type === PreparsedElementType.SCRIPT ||
             preparsedElement.type === PreparsedElementType.STYLE) {
@@ -18320,7 +18338,9 @@ var HtmlToTemplateTransform = /** @class */ (function () {
                     var templateValue = attribute.value;
                     var templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX$1.length);
                     inlineTemplateSourceSpan = attribute.valueSpan || attribute.sourceSpan;
-                    this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, templateMatchableAttributes, templateParsedProperties, templateVariables);
+                    var parsedVariables = [];
+                    this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, templateMatchableAttributes, templateParsedProperties, parsedVariables);
+                    templateVariables.push.apply(templateVariables, __spread(parsedVariables.map(function (v) { return new Variable(v.name, v.value, v.sourceSpan); })));
                 }
                 else {
                     // Check for variables, events, property bindings, interpolation
@@ -18376,24 +18396,24 @@ var HtmlToTemplateTransform = /** @class */ (function () {
         return parsedElement;
         var e_1, _c;
     };
-    HtmlToTemplateTransform.prototype.visitAttribute = function (attribute) {
+    HtmlAstToIvyAst.prototype.visitAttribute = function (attribute) {
         return new TextAttribute(attribute.name, attribute.value, attribute.sourceSpan, attribute.valueSpan);
     };
-    HtmlToTemplateTransform.prototype.visitText = function (text) {
+    HtmlAstToIvyAst.prototype.visitText = function (text) {
         var valueNoNgsp = replaceNgsp(text.value);
         var expr = this.bindingParser.parseInterpolation(valueNoNgsp, text.sourceSpan);
         return expr ? new BoundText(expr, text.sourceSpan) : new Text$3(valueNoNgsp, text.sourceSpan);
     };
-    HtmlToTemplateTransform.prototype.visitComment = function (comment) { return null; };
-    HtmlToTemplateTransform.prototype.visitExpansion = function (expansion) { return null; };
-    HtmlToTemplateTransform.prototype.visitExpansionCase = function (expansionCase) { return null; };
-    HtmlToTemplateTransform.prototype.createBoundAttributes = function (elementName, properties) {
+    HtmlAstToIvyAst.prototype.visitComment = function (comment) { return null; };
+    HtmlAstToIvyAst.prototype.visitExpansion = function (expansion) { return null; };
+    HtmlAstToIvyAst.prototype.visitExpansionCase = function (expansionCase) { return null; };
+    HtmlAstToIvyAst.prototype.createBoundAttributes = function (elementName, properties) {
         var _this = this;
         return properties.filter(function (prop) { return !prop.isLiteral; })
             .map(function (prop) { return _this.bindingParser.createBoundElementProperty(elementName, prop); })
             .map(function (prop) { return BoundAttribute.fromBoundElementProperty(prop); });
     };
-    HtmlToTemplateTransform.prototype.parseAttribute = function (isTemplateElement, attribute, matchableAttributes, parsedProperties, boundEvents, variables, references) {
+    HtmlAstToIvyAst.prototype.parseAttribute = function (isTemplateElement, attribute, matchableAttributes, parsedProperties, boundEvents, variables, references) {
         var name = normalizeAttributeName(attribute.name);
         var value = attribute.value;
         var srcSpan = attribute.sourceSpan;
@@ -18447,28 +18467,28 @@ var HtmlToTemplateTransform = /** @class */ (function () {
         }
         return hasBinding;
     };
-    HtmlToTemplateTransform.prototype.parseVariable = function (identifier, value, sourceSpan, variables) {
+    HtmlAstToIvyAst.prototype.parseVariable = function (identifier, value, sourceSpan, variables) {
         if (identifier.indexOf('-') > -1) {
             this.reportError("\"-\" is not allowed in variable names", sourceSpan);
         }
         variables.push(new Variable(identifier, value, sourceSpan));
     };
-    HtmlToTemplateTransform.prototype.parseReference = function (identifier, value, sourceSpan, references) {
+    HtmlAstToIvyAst.prototype.parseReference = function (identifier, value, sourceSpan, references) {
         if (identifier.indexOf('-') > -1) {
             this.reportError("\"-\" is not allowed in reference names", sourceSpan);
         }
         references.push(new Reference(identifier, value, sourceSpan));
     };
-    HtmlToTemplateTransform.prototype.parseAssignmentEvent = function (name, expression, sourceSpan, targetMatchableAttrs, boundEvents) {
+    HtmlAstToIvyAst.prototype.parseAssignmentEvent = function (name, expression, sourceSpan, targetMatchableAttrs, boundEvents) {
         var events = [];
         this.bindingParser.parseEvent(name + "Change", expression + "=$event", sourceSpan, targetMatchableAttrs, events);
         addEvents(events, boundEvents);
     };
-    HtmlToTemplateTransform.prototype.reportError = function (message, sourceSpan, level) {
+    HtmlAstToIvyAst.prototype.reportError = function (message, sourceSpan, level) {
         if (level === void 0) { level = ParseErrorLevel.ERROR; }
         this.errors.push(new ParseError(sourceSpan, message, level));
     };
-    return HtmlToTemplateTransform;
+    return HtmlAstToIvyAst;
 }());
 var NonBindableVisitor$1 = /** @class */ (function () {
     function NonBindableVisitor() {
@@ -18547,7 +18567,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // These should be handled in the template or element directly.
         this.visitReference = invalid$1;
         this.visitVariable = invalid$1;
-        this.visitAttribute = invalid$1;
+        this.visitTextAttribute = invalid$1;
         this.visitBoundAttribute = invalid$1;
         this.visitBoundEvent = invalid$1;
         this._bindingScope =
@@ -19236,14 +19256,16 @@ function compileDirectiveFromRender2(outputCtx, directive, reflector, bindingPar
  * `R3ComponentMetadata` is computed from `CompileDirectiveMetadata` and other statically reflected
  * information.
  */
-function compileComponentFromRender2(outputCtx, component, nodes, hasNgContent, ngContentSelectors, reflector, bindingParser, directiveTypeBySel, pipeTypeByName) {
+function compileComponentFromRender2(outputCtx, component, render3Ast, reflector, bindingParser, directiveTypeBySel, pipeTypeByName) {
     var name = identifierName(component.type);
     name || error("Cannot resolver the name of " + component.type);
     var definitionField = outputCtx.constantPool.propertyNameOf(2 /* Component */);
     var summary = component.toSummary();
     // Compute the R3ComponentMetadata from the CompileDirectiveMetadata
     var meta = __assign({}, directiveMetadataFromGlobalMetadata(component, outputCtx, reflector), { selector: component.selector, template: {
-            nodes: nodes, hasNgContent: hasNgContent, ngContentSelectors: ngContentSelectors,
+            nodes: render3Ast.nodes,
+            hasNgContent: render3Ast.hasNgContent,
+            ngContentSelectors: render3Ast.ngContentSelectors,
         }, lifecycle: {
             usesOnChanges: component.type.lifecycleHooks.some(function (lifecycle) { return lifecycle == LifecycleHooks.OnChanges; }),
         }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx) });
@@ -20838,10 +20860,7 @@ var AotCompiler = /** @class */ (function () {
                 if (!preserveWhitespaces) {
                     htmlAst = removeWhitespaces(htmlAst);
                 }
-                var transform = new HtmlToTemplateTransform(hostBindingParser);
-                var nodes = visitAll(transform, htmlAst.rootNodes, null);
-                var hasNgContent = transform.hasNgContent;
-                var ngContentSelectors = transform.ngContentSelectors;
+                var render3Ast = htmlAstToRender3Ast(htmlAst.rootNodes, hostBindingParser);
                 // Map of StaticType by directive selectors
                 var directiveTypeBySel_1 = new Map();
                 var directives_1 = module.transitiveModule.directives.map(function (dir) { return _this._metadataResolver.getDirectiveSummary(dir.reference); });
@@ -20854,7 +20873,7 @@ var AotCompiler = /** @class */ (function () {
                 var pipeTypeByName_1 = new Map();
                 var pipes_1 = module.transitiveModule.pipes.map(function (pipe) { return _this._metadataResolver.getPipeSummary(pipe.reference); });
                 pipes_1.forEach(function (pipe) { pipeTypeByName_1.set(pipe.name, pipe.type.reference); });
-                compileComponentFromRender2(context, directiveMetadata, nodes, hasNgContent, ngContentSelectors, _this.reflector, hostBindingParser, directiveTypeBySel_1, pipeTypeByName_1);
+                compileComponentFromRender2(context, directiveMetadata, render3Ast, _this.reflector, hostBindingParser, directiveTypeBySel_1, pipeTypeByName_1);
             }
             else {
                 compileDirectiveFromRender2(context, directiveMetadata, _this.reflector, hostBindingParser);

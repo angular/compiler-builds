@@ -3,7 +3,7 @@ import { CompileReflector } from '../../compile_reflector';
 import { ConstantPool } from '../../constant_pool';
 import { BindingParser } from '../../template_parser/binding_parser';
 import { OutputContext } from '../../util';
-import * as t from './../r3_ast';
+import { Render3ParseResult } from '../r3_template_transform';
 import { R3ComponentDef, R3ComponentMetadata, R3DirectiveDef, R3DirectiveMetadata } from './api';
 /**
  * Compile a directive for the render3 runtime as defined by the `R3DirectiveMetadata`.
@@ -28,4 +28,4 @@ export declare function compileDirectiveFromRender2(outputCtx: OutputContext, di
  * `R3ComponentMetadata` is computed from `CompileDirectiveMetadata` and other statically reflected
  * information.
  */
-export declare function compileComponentFromRender2(outputCtx: OutputContext, component: CompileDirectiveMetadata, nodes: t.Node[], hasNgContent: boolean, ngContentSelectors: string[], reflector: CompileReflector, bindingParser: BindingParser, directiveTypeBySel: Map<string, any>, pipeTypeByName: Map<string, any>): void;
+export declare function compileComponentFromRender2(outputCtx: OutputContext, component: CompileDirectiveMetadata, render3Ast: Render3ParseResult, reflector: CompileReflector, bindingParser: BindingParser, directiveTypeBySel: Map<string, any>, pipeTypeByName: Map<string, any>): void;
