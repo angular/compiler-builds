@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5+173.sha-d889f57
+ * @license Angular v6.0.0-rc.5+174.sha-cfde36d
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1135,7 +1135,7 @@ var Version = /** @class */ (function () {
  * @description
  * Entry point for all public APIs of the common package.
  */
-var VERSION = new Version('6.0.0-rc.5+173.sha-d889f57');
+var VERSION = new Version('6.0.0-rc.5+174.sha-cfde36d');
 
 /**
  * @license
@@ -17464,7 +17464,6 @@ var ConstantPool = /** @class */ (function () {
 var KeyVisitor = /** @class */ (function () {
     function KeyVisitor() {
         this.visitWrappedNodeExpr = invalid;
-        this.visitReadVarExpr = invalid;
         this.visitWriteVarExpr = invalid;
         this.visitWriteKeyExpr = invalid;
         this.visitWritePropExpr = invalid;
@@ -17503,6 +17502,7 @@ var KeyVisitor = /** @class */ (function () {
         return ast.value.moduleName ? "EX:" + ast.value.moduleName + ":" + ast.value.name :
             "EX:" + ast.value.runtime.name;
     };
+    KeyVisitor.prototype.visitReadVarExpr = function (node) { return "VAR:" + node.name; };
     return KeyVisitor;
 }());
 function invalid(arg) {
@@ -18763,12 +18763,10 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // Add the attributes
         var i18nMessages = [];
         var attributes = [];
-        var hasI18nAttr = false;
         Object.getOwnPropertyNames(outputAttrs).forEach(function (name) {
             var value = outputAttrs[name];
             attributes.push(literal(name));
             if (attrI18nMetas.hasOwnProperty(name)) {
-                hasI18nAttr = true;
                 var meta = parseI18nMeta(attrI18nMetas[name]);
                 var variable$$1 = _this.constantPool.getTranslation(value, meta);
                 attributes.push(variable$$1);
@@ -18777,11 +18775,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 attributes.push(literal(value));
             }
         });
-        var attrArg = TYPED_NULL_EXPR;
-        if (attributes.length > 0) {
-            attrArg = hasI18nAttr ? getLiteralFactory(this.constantPool, literalArr(attributes)) :
-                this.constantPool.getConstLiteral(literalArr(attributes), true);
-        }
+        var attrArg = attributes.length > 0 ?
+            this.constantPool.getConstLiteral(literalArr(attributes), true) :
+            TYPED_NULL_EXPR;
         parameters.push(attrArg);
         if (element.references && element.references.length > 0) {
             var references = flatten(element.references.map(function (reference) {

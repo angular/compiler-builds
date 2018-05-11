@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5+173.sha-d889f57
+ * @license Angular v6.0.0-rc.5+174.sha-cfde36d
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1089,7 +1089,7 @@ class Version {
  * @description
  * Entry point for all public APIs of the common package.
  */
-const VERSION = new Version('6.0.0-rc.5+173.sha-d889f57');
+const VERSION = new Version('6.0.0-rc.5+174.sha-cfde36d');
 
 /**
  * @license
@@ -16484,7 +16484,6 @@ class ConstantPool {
 class KeyVisitor {
     constructor() {
         this.visitWrappedNodeExpr = invalid;
-        this.visitReadVarExpr = invalid;
         this.visitWriteVarExpr = invalid;
         this.visitWriteKeyExpr = invalid;
         this.visitWritePropExpr = invalid;
@@ -16519,6 +16518,7 @@ class KeyVisitor {
         return ast.value.moduleName ? `EX:${ast.value.moduleName}:${ast.value.name}` :
             `EX:${ast.value.runtime.name}`;
     }
+    visitReadVarExpr(node) { return `VAR:${node.name}`; }
 }
 function invalid(arg) {
     throw new Error(`Invalid state: Visitor ${this.constructor.name} doesn't handle ${arg.constructor.name}`);
@@ -17673,12 +17673,10 @@ class TemplateDefinitionBuilder {
         // Add the attributes
         const i18nMessages = [];
         const attributes = [];
-        let hasI18nAttr = false;
         Object.getOwnPropertyNames(outputAttrs).forEach(name => {
             const value = outputAttrs[name];
             attributes.push(literal(name));
             if (attrI18nMetas.hasOwnProperty(name)) {
-                hasI18nAttr = true;
                 const meta = parseI18nMeta(attrI18nMetas[name]);
                 const variable$$1 = this.constantPool.getTranslation(value, meta);
                 attributes.push(variable$$1);
@@ -17687,11 +17685,9 @@ class TemplateDefinitionBuilder {
                 attributes.push(literal(value));
             }
         });
-        let attrArg = TYPED_NULL_EXPR;
-        if (attributes.length > 0) {
-            attrArg = hasI18nAttr ? getLiteralFactory(this.constantPool, literalArr(attributes)) :
-                this.constantPool.getConstLiteral(literalArr(attributes), true);
-        }
+        const attrArg = attributes.length > 0 ?
+            this.constantPool.getConstLiteral(literalArr(attributes), true) :
+            TYPED_NULL_EXPR;
         parameters.push(attrArg);
         if (element.references && element.references.length > 0) {
             const references = flatten(element.references.map(reference => {
