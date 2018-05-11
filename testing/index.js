@@ -11,7 +11,7 @@
         if (v !== undefined) module.exports = v;
     }
     else if (typeof define === "function" && define.amd) {
-        define("@angular/compiler/testing/index", ["require", "exports", "tslib", "@angular/compiler/testing/public_api"], factory);
+        define("@angular/compiler/testing", ["require", "exports", "tslib", "@angular/compiler/testing/public_api"], factory);
     }
 })(function (require, exports) {
     "use strict";
