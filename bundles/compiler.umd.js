@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5+184.sha-e5e5c24
+ * @license Angular v6.0.0-rc.5+185.sha-5cf82f8
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1221,7 +1221,7 @@ var Version = /** @class */ (function () {
  * @description
  * Entry point for all public APIs of the common package.
  */
-var VERSION = new Version('6.0.0-rc.5+184.sha-e5e5c24');
+var VERSION = new Version('6.0.0-rc.5+185.sha-5cf82f8');
 
 /**
  * @license
@@ -20547,6 +20547,10 @@ var ForJitSerializer = /** @class */ (function () {
             // summaries.
             metadata.declaredDirectives.concat(metadata.declaredPipes)
                 .map(function (type) { return type.reference; })
+                // For modules,
+                // we also add the summaries for modules
+                // from libraries.
+                // This is ok as we produce reexports for all transitive modules.
                 .concat(metadata.transitiveModule.modules.map(function (type) { return type.reference; })
                 .filter(function (ref) { return ref !== metadata.type.reference; }))
                 .map(function (ref) { return _this.serializeSummaryRef(ref); })));

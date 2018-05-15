@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5+184.sha-e5e5c24
+ * @license Angular v6.0.0-rc.5+185.sha-5cf82f8
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1089,7 +1089,7 @@ class Version {
  * @description
  * Entry point for all public APIs of the common package.
  */
-const VERSION = new Version('6.0.0-rc.5+184.sha-e5e5c24');
+const VERSION = new Version('6.0.0-rc.5+185.sha-5cf82f8');
 
 /**
  * @license
@@ -19206,6 +19206,10 @@ class ForJitSerializer {
             // summaries.
             metadata.declaredDirectives.concat(metadata.declaredPipes)
                 .map(type => type.reference)
+                // For modules,
+                // we also add the summaries for modules
+                // from libraries.
+                // This is ok as we produce reexports for all transitive modules.
                 .concat(metadata.transitiveModule.modules.map(type => type.reference)
                 .filter(ref => ref !== metadata.type.reference))
                 .map((ref) => this.serializeSummaryRef(ref)));
