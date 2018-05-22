@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5+205.sha-db2329e
+ * @license Angular v6.0.0-rc.5+211.sha-373fa78
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1221,7 +1221,7 @@ var Version = /** @class */ (function () {
  * @description
  * Entry point for all public APIs of the common package.
  */
-var VERSION = new Version('6.0.0-rc.5+205.sha-db2329e');
+var VERSION = new Version('6.0.0-rc.5+211.sha-373fa78');
 
 /**
  * @license
@@ -8471,6 +8471,7 @@ var Identifiers = /** @class */ (function () {
     Identifiers.INJECTOR = { name: 'INJECTOR', moduleName: CORE };
     Identifiers.Injector = { name: 'Injector', moduleName: CORE };
     Identifiers.defineInjectable = { name: 'defineInjectable', moduleName: CORE };
+    Identifiers.InjectableDef = { name: 'InjectableDef', moduleName: CORE };
     Identifiers.ViewEncapsulation = {
         name: 'ViewEncapsulation',
         moduleName: CORE,
@@ -17796,6 +17797,7 @@ var Identifiers$1 = /** @class */ (function () {
         name: 'defineInjector',
         moduleName: CORE$1,
     };
+    Identifiers.defineNgModule = { name: 'ɵdefineNgModule', moduleName: CORE$1 };
     Identifiers.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
     Identifiers.query = { name: 'ɵQ', moduleName: CORE$1 };
     Identifiers.queryRefresh = { name: 'ɵqR', moduleName: CORE$1 };
@@ -17811,6 +17813,18 @@ var Identifiers$1 = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/**
+ * Convert an object map with `Expression` values into a `LiteralMapExpr`.
+ */
+function mapToMapExpression(map) {
+    var result = Object.keys(map).map(function (key) { return ({ key: key, value: map[key], quoted: false }); });
+    return literalMap(result);
+}
+/**
+ * Convert metadata into an `Expression` in the given `OutputContext`.
+ *
+ * This operation will handle arrays, references to symbols, or literal `null` or `undefined`.
+ */
 function convertMetaToOutput(meta, ctx) {
     if (Array.isArray(meta)) {
         return literalArr(meta.map(function (entry) { return convertMetaToOutput(entry, ctx); }));
@@ -17823,7 +17837,33 @@ function convertMetaToOutput(meta, ctx) {
     }
     throw new Error("Internal error: Unsupported or unknown metadata: " + meta);
 }
-function compileNgModule(ctx, ngModule, injectableCompiler) {
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
+ */
+function compileNgModule(meta) {
+    var moduleType = meta.type, bootstrap = meta.bootstrap, declarations = meta.declarations, imports = meta.imports, exports = meta.exports;
+    var expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression({
+            type: moduleType,
+            bootstrap: literalArr(bootstrap),
+            declarations: literalArr(declarations),
+            imports: literalArr(imports),
+            exports: literalArr(exports),
+        })]);
+    // TODO(alxhub): write a proper type reference when AOT compilation of @NgModule is implemented.
+    var type = new ExpressionType(NULL_EXPR);
+    var additionalStatements = [];
+    return { expression: expression, type: type, additionalStatements: additionalStatements };
+}
+// TODO(alxhub): integrate this with `compileNgModule`. Currently the two are separate operations.
+function compileNgModuleFromRender2(ctx, ngModule, injectableCompiler) {
     var className = identifierName(ngModule.type);
     var rawImports = ngModule.rawImports ? [ngModule.rawImports] : [];
     var rawExports = ngModule.rawExports ? [ngModule.rawExports] : [];
@@ -17955,7 +17995,7 @@ var DefinitionMap = /** @class */ (function () {
  * should be generated specially (usually by calling a special injection function instead of the
  * standard one).
  */
-var R3ResolvedDependencyType;
+
 (function (R3ResolvedDependencyType) {
     /**
      * A normal token dependency.
@@ -17983,7 +18023,7 @@ var R3ResolvedDependencyType;
      * The dependency is for `ViewContainerRef`.
      */
     R3ResolvedDependencyType[R3ResolvedDependencyType["ViewContainerRef"] = 5] = "ViewContainerRef";
-})(R3ResolvedDependencyType || (R3ResolvedDependencyType = {}));
+})(exports.R3ResolvedDependencyType || (exports.R3ResolvedDependencyType = {}));
 /**
  * Construct a factory function expression for the given `R3FactoryMetadata`.
  */
@@ -18001,8 +18041,8 @@ function compileFactoryFunction(meta) {
 function compileInjectDependency(dep, injectFn, useOptionalParam) {
     // Interpret the dependency according to its resolved type.
     switch (dep.resolved) {
-        case R3ResolvedDependencyType.Token:
-        case R3ResolvedDependencyType.Injector: {
+        case exports.R3ResolvedDependencyType.Token:
+        case exports.R3ResolvedDependencyType.Injector: {
             // Build up the injection flags according to the metadata.
             var flags = 0 /* Default */ | (dep.self ? 2 /* Self */ : 0) |
                 (dep.skipSelf ? 4 /* SkipSelf */ : 0) | (dep.host ? 1 /* Host */ : 0) |
@@ -18011,7 +18051,7 @@ function compileInjectDependency(dep, injectFn, useOptionalParam) {
             // if the dependency is resolved to the `Injector` then the special `INJECTOR` token is used
             // instead.
             var token = dep.token;
-            if (dep.resolved === R3ResolvedDependencyType.Injector) {
+            if (dep.resolved === exports.R3ResolvedDependencyType.Injector) {
                 token = importExpr(Identifiers.INJECTOR);
             }
             // Build up the arguments to the injectFn call.
@@ -18035,17 +18075,17 @@ function compileInjectDependency(dep, injectFn, useOptionalParam) {
             }
             return importExpr(injectFn).callFn(injectArgs);
         }
-        case R3ResolvedDependencyType.Attribute:
+        case exports.R3ResolvedDependencyType.Attribute:
             // In the case of attributes, the attribute name in question is given as the token.
             return importExpr(Identifiers$1.injectAttribute).callFn([dep.token]);
-        case R3ResolvedDependencyType.ElementRef:
+        case exports.R3ResolvedDependencyType.ElementRef:
             return importExpr(Identifiers$1.injectElementRef).callFn([]);
-        case R3ResolvedDependencyType.TemplateRef:
+        case exports.R3ResolvedDependencyType.TemplateRef:
             return importExpr(Identifiers$1.injectTemplateRef).callFn([]);
-        case R3ResolvedDependencyType.ViewContainerRef:
+        case exports.R3ResolvedDependencyType.ViewContainerRef:
             return importExpr(Identifiers$1.injectViewContainerRef).callFn([]);
         default:
-            return unsupported("Unknown R3ResolvedDependencyType: " + R3ResolvedDependencyType[dep.resolved]);
+            return unsupported("Unknown R3ResolvedDependencyType: " + exports.R3ResolvedDependencyType[dep.resolved]);
     }
 }
 /**
@@ -18067,21 +18107,21 @@ function dependenciesFromGlobalMetadata(type, outputCtx, reflector) {
             var dependency = _b.value;
             if (dependency.token) {
                 var tokenRef = tokenReference(dependency.token);
-                var resolved = R3ResolvedDependencyType.Token;
+                var resolved = exports.R3ResolvedDependencyType.Token;
                 if (tokenRef === elementRef) {
-                    resolved = R3ResolvedDependencyType.ElementRef;
+                    resolved = exports.R3ResolvedDependencyType.ElementRef;
                 }
                 else if (tokenRef === templateRef) {
-                    resolved = R3ResolvedDependencyType.TemplateRef;
+                    resolved = exports.R3ResolvedDependencyType.TemplateRef;
                 }
                 else if (tokenRef === viewContainerRef) {
-                    resolved = R3ResolvedDependencyType.ViewContainerRef;
+                    resolved = exports.R3ResolvedDependencyType.ViewContainerRef;
                 }
                 else if (tokenRef === injectorRef) {
-                    resolved = R3ResolvedDependencyType.Injector;
+                    resolved = exports.R3ResolvedDependencyType.Injector;
                 }
                 else if (dependency.isAttribute) {
-                    resolved = R3ResolvedDependencyType.Attribute;
+                    resolved = exports.R3ResolvedDependencyType.Attribute;
                 }
                 // In the case of most dependencies, the token will be a reference to a type. Sometimes,
                 // however, it can be a string, in the case of older Angular code or @Attribute injection.
@@ -19212,6 +19252,31 @@ function interpolate(args) {
     (args.length >= 19 && args.length % 2 == 1) ||
         error("Invalid interpolation argument length " + args.length);
     return importExpr(Identifiers$1.interpolationV).callFn([literalArr(args)]);
+}
+/**
+ * Parse a template into render3 `Node`s and additional metadata, with no other dependencies.
+ *
+ * @param template text of the template to parse
+ * @param templateUrl URL to use for source mapping of the parsed template
+ */
+function parseTemplate(template, templateUrl) {
+    var bindingParser = makeBindingParser();
+    var htmlParser = new HtmlParser();
+    var parseResult = htmlParser.parse(template, templateUrl);
+    if (parseResult.errors && parseResult.errors.length > 0) {
+        return { errors: parseResult.errors, nodes: [], hasNgContent: false, ngContentSelectors: [] };
+    }
+    var _a = htmlAstToRender3Ast(parseResult.rootNodes, bindingParser), nodes = _a.nodes, hasNgContent = _a.hasNgContent, ngContentSelectors = _a.ngContentSelectors, errors = _a.errors;
+    if (errors && errors.length > 0) {
+        return { errors: errors, nodes: [], hasNgContent: false, ngContentSelectors: [] };
+    }
+    return { nodes: nodes, hasNgContent: hasNgContent, ngContentSelectors: ngContentSelectors };
+}
+/**
+ * Construct a `BindingParser` with a default configuration.
+ */
+function makeBindingParser() {
+    return new BindingParser(new Parser(new Lexer()), DEFAULT_INTERPOLATION_CONFIG, new DomElementSchemaRegistry(), [], []);
 }
 var _a$1;
 
@@ -20924,7 +20989,7 @@ var AotCompiler = /** @class */ (function () {
     };
     AotCompiler.prototype._compileShallowModules = function (fileName, shallowModules, context) {
         var _this = this;
-        shallowModules.forEach(function (module) { return compileNgModule(context, module, _this._injectableCompiler); });
+        shallowModules.forEach(function (module) { return compileNgModuleFromRender2(context, module, _this._injectableCompiler); });
     };
     AotCompiler.prototype._compilePartialModule = function (fileName, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables, context) {
         var _this = this;
@@ -23172,15 +23237,11 @@ var JitEmitterVisitor = /** @class */ (function (_super) {
         return result;
     };
     JitEmitterVisitor.prototype.visitExternalExpr = function (ast, ctx) {
-        var value = this.reflector.resolveExternalReference(ast.value);
-        var id = this._evalArgValues.indexOf(value);
-        if (id === -1) {
-            id = this._evalArgValues.length;
-            this._evalArgValues.push(value);
-            var name_1 = identifierName({ reference: value }) || 'val';
-            this._evalArgNames.push("jit_" + name_1 + "_" + id);
-        }
-        ctx.print(ast, this._evalArgNames[id]);
+        this._emitReferenceToExternal(ast, this.reflector.resolveExternalReference(ast.value), ctx);
+        return null;
+    };
+    JitEmitterVisitor.prototype.visitWrappedNodeExpr = function (ast, ctx) {
+        this._emitReferenceToExternal(ast, ast.node, ctx);
         return null;
     };
     JitEmitterVisitor.prototype.visitDeclareVarStmt = function (stmt, ctx) {
@@ -23200,6 +23261,16 @@ var JitEmitterVisitor = /** @class */ (function (_super) {
             this._evalExportedVars.push(stmt.name);
         }
         return _super.prototype.visitDeclareClassStmt.call(this, stmt, ctx);
+    };
+    JitEmitterVisitor.prototype._emitReferenceToExternal = function (ast, value, ctx) {
+        var id = this._evalArgValues.indexOf(value);
+        if (id === -1) {
+            id = this._evalArgValues.length;
+            this._evalArgValues.push(value);
+            var name_1 = identifierName({ reference: value }) || 'val';
+            this._evalArgNames.push("jit_" + name_1 + "_" + id);
+        }
+        ctx.print(ast, this._evalArgNames[id]);
     };
     return JitEmitterVisitor;
 }(AbstractJsEmitterVisitor));
@@ -23904,62 +23975,144 @@ var Extractor = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-function mapToMapExpression(map) {
-    var result = Object.keys(map).map(function (key) { return ({ key: key, value: map[key], quoted: false }); });
-    return literalMap(result);
-}
-function compileIvyInjectable(meta) {
-    var ret = NULL_EXPR;
-    if (meta.useType !== undefined) {
-        var args = meta.useType.map(function (dep) { return injectDep(dep); });
-        ret = new InstantiateExpr(meta.type, args);
+function compileInjectable(meta) {
+    var factory = NULL_EXPR;
+    function makeFn(ret) {
+        return fn([], [new ReturnStatement(ret)], undefined, undefined, meta.name + "_Factory");
     }
-    else if (meta.useClass !== undefined) {
-        var factory_1 = new ReadPropExpr(new ReadPropExpr(meta.useClass, 'ngInjectableDef'), 'factory');
-        ret = new InvokeFunctionExpr(factory_1, []);
+    if (meta.useClass !== undefined || meta.useFactory !== undefined) {
+        // First, handle useClass and useFactory together, since both involve a similar call to
+        // `compileFactoryFunction`. Either dependencies are explicitly specified, in which case
+        // a factory function call is generated, or they're not specified and the calls are special-
+        // cased.
+        if (meta.deps !== undefined) {
+            // Either call `new meta.useClass(...)` or `meta.useFactory(...)`.
+            var fnOrClass = meta.useClass || meta.useFactory;
+            // useNew: true if meta.useClass, false for meta.useFactory.
+            var useNew = meta.useClass !== undefined;
+            factory = compileFactoryFunction({
+                name: meta.name,
+                fnOrClass: fnOrClass,
+                useNew: useNew,
+                injectFn: Identifiers.inject,
+                useOptionalParam: true,
+                deps: meta.deps,
+            });
+        }
+        else if (meta.useClass !== undefined) {
+            // Special case for useClass where the factory from the class's ngInjectableDef is used.
+            if (meta.useClass.isEquivalent(meta.type)) {
+                // For the injectable compiler, useClass represents a foreign type that should be
+                // instantiated to satisfy construction of the given type. It's not valid to specify
+                // useClass === type, since the useClass type is expected to already be compiled.
+                throw new Error("useClass is the same as the type, but no deps specified, which is invalid.");
+            }
+            factory =
+                makeFn(new ReadPropExpr(new ReadPropExpr(meta.useClass, 'ngInjectableDef'), 'factory')
+                    .callFn([]));
+        }
+        else if (meta.useFactory !== undefined) {
+            // Special case for useFactory where no arguments are passed.
+            factory = meta.useFactory.callFn([]);
+        }
+        else {
+            // Can't happen - outer conditional guards against both useClass and useFactory being
+            // undefined.
+            throw new Error('Reached unreachable block in injectable compiler.');
+        }
     }
     else if (meta.useValue !== undefined) {
-        ret = meta.useValue;
+        // Note: it's safe to use `meta.useValue` instead of the `USE_VALUE in meta` check used for
+        // client code because meta.useValue is an Expression which will be defined even if the actual
+        // value is undefined.
+        factory = makeFn(meta.useValue);
     }
     else if (meta.useExisting !== undefined) {
-        ret = importExpr(Identifiers$1.inject).callFn([meta.useExisting]);
-    }
-    else if (meta.useFactory !== undefined) {
-        var args = meta.useFactory.deps.map(function (dep) { return injectDep(dep); });
-        ret = new InvokeFunctionExpr(meta.useFactory.factory, args);
+        // useExisting is an `inject` call on the existing token.
+        factory = makeFn(importExpr(Identifiers.inject).callFn([meta.useExisting]));
     }
     else {
-        throw new Error('No instructions for injectable compiler!');
+        // A strict type is compiled according to useClass semantics, except the dependencies are
+        // required.
+        if (meta.deps === undefined) {
+            throw new Error("Type compilation of an injectable requires dependencies.");
+        }
+        factory = compileFactoryFunction({
+            name: meta.name,
+            fnOrClass: meta.type,
+            useNew: true,
+            injectFn: Identifiers.inject,
+            useOptionalParam: true,
+            deps: meta.deps,
+        });
     }
     var token = meta.type;
     var providedIn = meta.providedIn;
-    var factory = fn([], [new ReturnStatement(ret)], undefined, undefined, meta.name + "_Factory");
-    var expression = importExpr({
-        moduleName: '@angular/core',
-        name: 'defineInjectable',
-    }).callFn([mapToMapExpression({ token: token, factory: factory, providedIn: providedIn })]);
-    var type = new ExpressionType(importExpr({
-        moduleName: '@angular/core',
-        name: 'InjectableDef',
-    }, [new ExpressionType(meta.type)]));
+    var expression = importExpr(Identifiers.defineInjectable).callFn([mapToMapExpression({ token: token, factory: factory, providedIn: providedIn })]);
+    var type = new ExpressionType(importExpr(Identifiers.InjectableDef, [new ExpressionType(meta.type)]));
     return {
         expression: expression, type: type,
     };
 }
-function injectDep(dep) {
-    var defaultValue = dep.optional ? NULL_EXPR : literal(undefined);
-    var flags = literal(0 /* Default */ | (dep.self && 2 /* Self */ || 0) |
-        (dep.skipSelf && 4 /* SkipSelf */ || 0));
-    if (!dep.optional && !dep.skipSelf && !dep.self) {
-        return importExpr(Identifiers$1.inject).callFn([dep.token]);
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Implementation of `CompileReflector` which resolves references to @angular/core
+ * symbols at runtime, according to a consumer-provided mapping.
+ *
+ * Only supports `resolveExternalReference`, all other methods throw.
+ */
+var R3JitReflector = /** @class */ (function () {
+    function R3JitReflector(context) {
+        this.context = context;
     }
-    else {
-        return importExpr(Identifiers$1.inject).callFn([
-            dep.token,
-            defaultValue,
-            flags,
-        ]);
-    }
+    R3JitReflector.prototype.resolveExternalReference = function (ref) {
+        // This reflector only handles @angular/core imports.
+        if (ref.moduleName !== '@angular/core') {
+            throw new Error("Cannot resolve external reference to " + ref.moduleName + ", only references to @angular/core are supported.");
+        }
+        if (!this.context.hasOwnProperty(ref.name)) {
+            throw new Error("No value provided for @angular/core symbol '" + ref.name + "'.");
+        }
+        return this.context[ref.name];
+    };
+    R3JitReflector.prototype.parameters = function (typeOrFunc) { throw new Error('Not implemented.'); };
+    R3JitReflector.prototype.annotations = function (typeOrFunc) { throw new Error('Not implemented.'); };
+    R3JitReflector.prototype.shallowAnnotations = function (typeOrFunc) { throw new Error('Not implemented.'); };
+    R3JitReflector.prototype.tryAnnotations = function (typeOrFunc) { throw new Error('Not implemented.'); };
+    R3JitReflector.prototype.propMetadata = function (typeOrFunc) { throw new Error('Not implemented.'); };
+    R3JitReflector.prototype.hasLifecycleHook = function (type, lcProperty) { throw new Error('Not implemented.'); };
+    R3JitReflector.prototype.guards = function (typeOrFunc) { throw new Error('Not implemented.'); };
+    R3JitReflector.prototype.componentModuleUrl = function (type, cmpMetadata) { throw new Error('Not implemented.'); };
+    return R3JitReflector;
+}());
+/**
+ * JIT compiles an expression and monkey-patches the result of executing the expression onto a given
+ * type.
+ *
+ * @param type the type which will receive the monkey-patched result
+ * @param field name of the field on the type to monkey-patch
+ * @param def the definition which will be compiled and executed to get the value to patch
+ * @param context an object map of @angular/core symbol names to symbols which will be available in
+ * the context of the compiled expression
+ * @param constantPool an optional `ConstantPool` which contains constants used in the expression
+ */
+function jitPatchDefinition(type, field, def, context, constantPool) {
+    // The ConstantPool may contain Statements which declare variables used in the final expression.
+    // Therefore, its statements need to precede the actual JIT operation. The final statement is a
+    // declaration of $def which is set to the expression being compiled.
+    var statements = __spread((constantPool !== undefined ? constantPool.statements : []), [
+        new DeclareVarStmt('$def', def, undefined, [exports.StmtModifier.Exported]),
+    ]);
+    // Monkey patch the field on the given type with the result of compilation.
+    // TODO(alxhub): consider a better source url.
+    type[field] = jitStatements("ng://" + (type && type.name) + "/" + field, statements, new R3JitReflector(context), false)['$def'];
 }
 
 /**
@@ -24033,6 +24186,7 @@ exports.isLoweredSymbol = isLoweredSymbol;
 exports.createLoweredSymbol = createLoweredSymbol;
 exports.Identifiers = Identifiers;
 exports.JitCompiler = JitCompiler;
+exports.ConstantPool = ConstantPool;
 exports.DirectiveResolver = DirectiveResolver;
 exports.PipeResolver = PipeResolver;
 exports.NgModuleResolver = NgModuleResolver;
@@ -24087,6 +24241,12 @@ exports.getParseErrors = getParseErrors;
 exports.isSyntaxError = isSyntaxError;
 exports.syntaxError = syntaxError;
 exports.Version = Version;
+exports.jitPatchDefinition = jitPatchDefinition;
+exports.compileNgModule = compileNgModule;
+exports.makeBindingParser = makeBindingParser;
+exports.parseTemplate = parseTemplate;
+exports.compileComponent = compileComponent;
+exports.compileDirective = compileDirective;
 exports.VERSION = VERSION;
 exports.TextAst = TextAst;
 exports.BoundTextAst = BoundTextAst;
@@ -24254,7 +24414,7 @@ exports.TemplateParser = TemplateParser;
 exports.splitClasses = splitClasses;
 exports.createElementCssSelector = createElementCssSelector;
 exports.removeSummaryDuplicates = removeSummaryDuplicates;
-exports.compileIvyInjectable = compileIvyInjectable;
+exports.compileInjectable = compileInjectable;
 
 Object.defineProperty(exports, '__esModule', { value: true });
 

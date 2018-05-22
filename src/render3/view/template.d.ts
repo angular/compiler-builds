@@ -1,7 +1,9 @@
 import { LocalResolver } from '../../compiler_util/expression_converter';
 import { ConstantPool } from '../../constant_pool';
 import * as o from '../../output/output_ast';
+import { ParseError } from '../../parse_util';
 import { SelectorMatcher } from '../../selector';
+import { BindingParser } from '../../template_parser/binding_parser';
 import * as t from '../r3_ast';
 import { R3QueryMetadata } from './api';
 import { invalid } from './util';
@@ -89,3 +91,19 @@ export declare class BindingScope implements LocalResolver {
     nestedScope(declareCallback: DeclareLocalVarCallback): BindingScope;
     freshReferenceName(): string;
 }
+/**
+ * Parse a template into render3 `Node`s and additional metadata, with no other dependencies.
+ *
+ * @param template text of the template to parse
+ * @param templateUrl URL to use for source mapping of the parsed template
+ */
+export declare function parseTemplate(template: string, templateUrl: string): {
+    errors?: ParseError[];
+    nodes: t.Node[];
+    hasNgContent: boolean;
+    ngContentSelectors: string[];
+};
+/**
+ * Construct a `BindingParser` with a default configuration.
+ */
+export declare function makeBindingParser(): BindingParser;
