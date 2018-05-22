@@ -333,7 +333,7 @@ export declare class ParsedVariable {
     sourceSpan: ParseSourceSpan;
     constructor(name: string, value: string, sourceSpan: ParseSourceSpan);
 }
-export declare const enum BoundElementBindingType {
+export declare const enum BindingType {
     Property = 0,
     Attribute = 1,
     Class = 2,
@@ -342,10 +342,10 @@ export declare const enum BoundElementBindingType {
 }
 export declare class BoundElementProperty {
     name: string;
-    type: BoundElementBindingType;
+    type: BindingType;
     securityContext: SecurityContext;
     value: AST;
     unit: string | null;
     sourceSpan: ParseSourceSpan;
-    constructor(name: string, type: BoundElementBindingType, securityContext: SecurityContext, value: AST, unit: string | null, sourceSpan: ParseSourceSpan);
+    constructor(name: string, type: BindingType, securityContext: SecurityContext, value: AST, unit: string | null, sourceSpan: ParseSourceSpan);
 }

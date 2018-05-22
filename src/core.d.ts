@@ -251,3 +251,15 @@ export declare const enum SelectorFlags {
 export declare type R3CssSelector = (string | SelectorFlags)[];
 export declare type R3CssSelectorList = R3CssSelector[];
 export declare function parseSelectorToR3Selector(selector: string): R3CssSelectorList;
+/**
+ * Flags passed into template functions to determine which blocks (i.e. creation, update)
+ * should be executed.
+ *
+ * Typically, a template runs both the creation block and the update block on initialization and
+ * subsequent runs only execute the update block. However, dynamically created views require that
+ * the creation block be executed separately from the update block (for backwards compat).
+ */
+export declare const enum RenderFlags {
+    Create = 1,
+    Update = 2,
+}

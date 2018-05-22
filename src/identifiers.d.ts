@@ -29,6 +29,7 @@ export declare class Identifiers {
     static INJECTOR: o.ExternalReference;
     static Injector: o.ExternalReference;
     static defineInjectable: o.ExternalReference;
+    static InjectableDef: o.ExternalReference;
     static ViewEncapsulation: o.ExternalReference;
     static ChangeDetectionStrategy: o.ExternalReference;
     static SecurityContext: o.ExternalReference;
