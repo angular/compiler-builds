@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5+213.sha-fb906a8
+ * @license Angular v6.0.0-rc.5+214.sha-bd149e5
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1089,7 +1089,7 @@ class Version {
  * @description
  * Entry point for all public APIs of the common package.
  */
-const VERSION = new Version('6.0.0-rc.5+213.sha-fb906a8');
+const VERSION = new Version('6.0.0-rc.5+214.sha-bd149e5');
 
 /**
  * @license
@@ -16659,7 +16659,7 @@ Identifiers$1.elementClassNamed = { name: 'ɵkn', moduleName: CORE$1 };
 Identifiers$1.elementStyleNamed = { name: 'ɵsn', moduleName: CORE$1 };
 Identifiers$1.containerCreate = { name: 'ɵC', moduleName: CORE$1 };
 Identifiers$1.text = { name: 'ɵT', moduleName: CORE$1 };
-Identifiers$1.textCreateBound = { name: 'ɵt', moduleName: CORE$1 };
+Identifiers$1.textBinding = { name: 'ɵt', moduleName: CORE$1 };
 Identifiers$1.bind = { name: 'ɵb', moduleName: CORE$1 };
 Identifiers$1.interpolation1 = { name: 'ɵi1', moduleName: CORE$1 };
 Identifiers$1.interpolation2 = { name: 'ɵi2', moduleName: CORE$1 };
@@ -17774,8 +17774,7 @@ class TemplateDefinitionBuilder {
             const instruction = BINDING_INSTRUCTION_MAP[input.type];
             if (instruction) {
                 // TODO(chuckj): runtime: security context?
-                const value = importExpr(Identifiers$1.bind).callFn([convertedBinding]);
-                this.instruction(this._bindingCode, input.sourceSpan, instruction, literal(elementIndex), literal(input.name), value);
+                this.instruction(this._bindingCode, input.sourceSpan, instruction, literal(elementIndex), literal(input.name), convertedBinding);
             }
             else {
                 this._unsupported(`binding type ${input.type}`);
@@ -17830,7 +17829,7 @@ class TemplateDefinitionBuilder {
         const context = variable(CONTEXT_NAME);
         template.inputs.forEach(input => {
             const convertedBinding = this.convertPropertyBinding(context, input.value);
-            this.instruction(this._bindingCode, template.sourceSpan, Identifiers$1.elementProperty, literal(templateIndex), literal(input.name), importExpr(Identifiers$1.bind).callFn([convertedBinding]));
+            this.instruction(this._bindingCode, template.sourceSpan, Identifiers$1.elementProperty, literal(templateIndex), literal(input.name), convertedBinding);
         });
         // Create the template function
         const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, templateContext, this._bindingScope, this.level + 1, contextName, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes);
@@ -17840,7 +17839,7 @@ class TemplateDefinitionBuilder {
     visitBoundText(text) {
         const nodeIndex = this.allocateDataSlot();
         this.instruction(this._creationCode, text.sourceSpan, Identifiers$1.text, literal(nodeIndex));
-        this.instruction(this._bindingCode, text.sourceSpan, Identifiers$1.textCreateBound, literal(nodeIndex), this.convertPropertyBinding(variable(CONTEXT_NAME), text.value));
+        this.instruction(this._bindingCode, text.sourceSpan, Identifiers$1.textBinding, literal(nodeIndex), this.convertPropertyBinding(variable(CONTEXT_NAME), text.value));
     }
     visitText(text) {
         this.instruction(this._creationCode, text.sourceSpan, Identifiers$1.text, literal(this.allocateDataSlot()), literal(text.value));
@@ -17869,9 +17868,16 @@ class TemplateDefinitionBuilder {
     }
     convertPropertyBinding(implicit, value) {
         const pipesConvertedValue = value.visit(this._valueConverter);
-        const convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, interpolate);
-        this._bindingCode.push(...convertedPropertyBinding.stmts);
-        return convertedPropertyBinding.currValExpr;
+        if (pipesConvertedValue instanceof Interpolation) {
+            const convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, interpolate);
+            this._bindingCode.push(...convertedPropertyBinding.stmts);
+            return convertedPropertyBinding.currValExpr;
+        }
+        else {
+            const convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, () => error('Unexpected interpolation'));
+            this._bindingCode.push(...convertedPropertyBinding.stmts);
+            return importExpr(Identifiers$1.bind).callFn([convertedPropertyBinding.currValExpr]);
+        }
     }
 }
 class ValueConverter extends AstMemoryEfficientTransformer {

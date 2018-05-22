@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5+213.sha-fb906a8
+ * @license Angular v6.0.0-rc.5+214.sha-bd149e5
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1221,7 +1221,7 @@ var Version = /** @class */ (function () {
  * @description
  * Entry point for all public APIs of the common package.
  */
-var VERSION = new Version('6.0.0-rc.5+213.sha-fb906a8');
+var VERSION = new Version('6.0.0-rc.5+214.sha-bd149e5');
 
 /**
  * @license
@@ -17742,7 +17742,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.elementStyleNamed = { name: 'ɵsn', moduleName: CORE$1 };
     Identifiers.containerCreate = { name: 'ɵC', moduleName: CORE$1 };
     Identifiers.text = { name: 'ɵT', moduleName: CORE$1 };
-    Identifiers.textCreateBound = { name: 'ɵt', moduleName: CORE$1 };
+    Identifiers.textBinding = { name: 'ɵt', moduleName: CORE$1 };
     Identifiers.bind = { name: 'ɵb', moduleName: CORE$1 };
     Identifiers.interpolation1 = { name: 'ɵi1', moduleName: CORE$1 };
     Identifiers.interpolation2 = { name: 'ɵi2', moduleName: CORE$1 };
@@ -18950,8 +18950,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             var instruction = BINDING_INSTRUCTION_MAP[input.type];
             if (instruction) {
                 // TODO(chuckj): runtime: security context?
-                var value = importExpr(Identifiers$1.bind).callFn([convertedBinding]);
-                _this.instruction(_this._bindingCode, input.sourceSpan, instruction, literal(elementIndex), literal(input.name), value);
+                _this.instruction(_this._bindingCode, input.sourceSpan, instruction, literal(elementIndex), literal(input.name), convertedBinding);
             }
             else {
                 _this._unsupported("binding type " + input.type);
@@ -19008,7 +19007,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var context = variable(CONTEXT_NAME);
         template.inputs.forEach(function (input) {
             var convertedBinding = _this.convertPropertyBinding(context, input.value);
-            _this.instruction(_this._bindingCode, template.sourceSpan, Identifiers$1.elementProperty, literal(templateIndex), literal(input.name), importExpr(Identifiers$1.bind).callFn([convertedBinding]));
+            _this.instruction(_this._bindingCode, template.sourceSpan, Identifiers$1.elementProperty, literal(templateIndex), literal(input.name), convertedBinding);
         });
         // Create the template function
         var templateVisitor = new TemplateDefinitionBuilder(this.constantPool, templateContext, this._bindingScope, this.level + 1, contextName, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes);
@@ -19018,7 +19017,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     TemplateDefinitionBuilder.prototype.visitBoundText = function (text) {
         var nodeIndex = this.allocateDataSlot();
         this.instruction(this._creationCode, text.sourceSpan, Identifiers$1.text, literal(nodeIndex));
-        this.instruction(this._bindingCode, text.sourceSpan, Identifiers$1.textCreateBound, literal(nodeIndex), this.convertPropertyBinding(variable(CONTEXT_NAME), text.value));
+        this.instruction(this._bindingCode, text.sourceSpan, Identifiers$1.textBinding, literal(nodeIndex), this.convertPropertyBinding(variable(CONTEXT_NAME), text.value));
     };
     TemplateDefinitionBuilder.prototype.visitText = function (text) {
         this.instruction(this._creationCode, text.sourceSpan, Identifiers$1.text, literal(this.allocateDataSlot()), literal(text.value));
@@ -19051,10 +19050,17 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     };
     TemplateDefinitionBuilder.prototype.convertPropertyBinding = function (implicit, value) {
         var pipesConvertedValue = value.visit(this._valueConverter);
-        var convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, interpolate);
-        (_a = this._bindingCode).push.apply(_a, __spread(convertedPropertyBinding.stmts));
-        return convertedPropertyBinding.currValExpr;
-        var _a;
+        if (pipesConvertedValue instanceof Interpolation) {
+            var convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, interpolate);
+            (_a = this._bindingCode).push.apply(_a, __spread(convertedPropertyBinding.stmts));
+            return convertedPropertyBinding.currValExpr;
+        }
+        else {
+            var convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, function () { return error('Unexpected interpolation'); });
+            (_b = this._bindingCode).push.apply(_b, __spread(convertedPropertyBinding.stmts));
+            return importExpr(Identifiers$1.bind).callFn([convertedPropertyBinding.currValExpr]);
+        }
+        var _a, _b;
     };
     return TemplateDefinitionBuilder;
 }());

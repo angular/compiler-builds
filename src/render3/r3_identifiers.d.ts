@@ -18,7 +18,7 @@ export declare class Identifiers {
     static elementStyleNamed: o.ExternalReference;
     static containerCreate: o.ExternalReference;
     static text: o.ExternalReference;
-    static textCreateBound: o.ExternalReference;
+    static textBinding: o.ExternalReference;
     static bind: o.ExternalReference;
     static interpolation1: o.ExternalReference;
     static interpolation2: o.ExternalReference;
