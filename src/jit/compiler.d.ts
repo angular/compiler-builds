@@ -45,6 +45,7 @@ export declare class JitCompiler {
     private _compiledDirectiveWrapperCache;
     private _compiledNgModuleCache;
     private _sharedStylesheetCount;
+    private _addedAotSummaries;
     constructor(_metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _summaryResolver: SummaryResolver<Type>, _reflector: CompileReflector, _compilerConfig: CompilerConfig, _console: Console, getExtraNgModuleProviders: (ngModule: any) => CompileProviderMetadata[]);
     compileModuleSync(moduleType: Type): object;
     compileModuleAsync(moduleType: Type): Promise<object>;
@@ -52,6 +53,7 @@ export declare class JitCompiler {
     compileModuleAndAllComponentsAsync(moduleType: Type): Promise<ModuleWithComponentFactories>;
     getComponentFactory(component: Type): object;
     loadAotSummaries(summaries: () => any[]): void;
+    private _addAotSummaries(fn);
     hasAotSummary(ref: Type): boolean;
     private _filterJitIdentifiers(ids);
     private _compileModuleAndComponents(moduleType, isSync);

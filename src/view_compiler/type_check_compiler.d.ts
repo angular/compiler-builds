@@ -11,6 +11,7 @@ import { StaticSymbol } from '../aot/static_symbol';
 import { CompileDirectiveMetadata, CompilePipeSummary } from '../compile_metadata';
 import * as o from '../output/output_ast';
 import { TemplateAst } from '../template_parser/template_ast';
+import { OutputContext } from '../util';
 /**
  * Generates code that is used to type check templates.
  */
@@ -26,5 +27,5 @@ export declare class TypeCheckCompiler {
      * - This must not produce any exports, as this would pollute the .d.ts file
      *   and also violate the point above.
      */
-    compileComponent(componentId: string, component: CompileDirectiveMetadata, template: TemplateAst[], usedPipes: CompilePipeSummary[], externalReferenceVars: Map<StaticSymbol, string>): o.Statement[];
+    compileComponent(componentId: string, component: CompileDirectiveMetadata, template: TemplateAst[], usedPipes: CompilePipeSummary[], externalReferenceVars: Map<StaticSymbol, string>, ctx: OutputContext): o.Statement[];
 }
