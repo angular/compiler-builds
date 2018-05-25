@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5+220.sha-186118e
+ * @license Angular v6.0.0-rc.5+222.sha-36cc72e
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1221,7 +1221,7 @@ var Version = /** @class */ (function () {
  * @description
  * Entry point for all public APIs of the common package.
  */
-var VERSION = new Version('6.0.0-rc.5+220.sha-186118e');
+var VERSION = new Version('6.0.0-rc.5+222.sha-36cc72e');
 
 /**
  * @license
@@ -17769,6 +17769,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.pipeBind4 = { name: 'ɵpb4', moduleName: CORE$1 };
     Identifiers.pipeBindV = { name: 'ɵpbV', moduleName: CORE$1 };
     Identifiers.load = { name: 'ɵld', moduleName: CORE$1 };
+    Identifiers.loadDirective = { name: 'ɵd', moduleName: CORE$1 };
     Identifiers.pipe = { name: 'ɵPp', moduleName: CORE$1 };
     Identifiers.projection = { name: 'ɵP', moduleName: CORE$1 };
     Identifiers.projectionDef = { name: 'ɵpD', moduleName: CORE$1 };
@@ -19541,8 +19542,8 @@ function createHostBindingsFunction(meta, bindingParser) {
     // Calculate the queries
     for (var index = 0; index < meta.queries.length; index++) {
         var query = meta.queries[index];
-        // e.g. r3.qR(tmp = r3.ld(dirIndex)[1]) && (r3.ld(dirIndex)[0].someDir = tmp);
-        var getDirectiveMemory = importExpr(Identifiers$1.load).callFn([variable('dirIndex')]);
+        // e.g. r3.qR(tmp = r3.d(dirIndex)[1]) && (r3.d(dirIndex)[0].someDir = tmp);
+        var getDirectiveMemory = importExpr(Identifiers$1.loadDirective).callFn([variable('dirIndex')]);
         // The query list is at the query index + 1 because the directive itself is in slot 0.
         var getQueryList = getDirectiveMemory.key(literal(index + 1));
         var assignToTemporary = temporary().set(getQueryList);
@@ -19556,7 +19557,7 @@ function createHostBindingsFunction(meta, bindingParser) {
     var directiveSummary = metadataAsSummary(meta);
     // Calculate the host property bindings
     var bindings = bindingParser.createBoundHostProperties(directiveSummary, hostBindingSourceSpan);
-    var bindingContext = importExpr(Identifiers$1.load).callFn([variable('dirIndex')]);
+    var bindingContext = importExpr(Identifiers$1.loadDirective).callFn([variable('dirIndex')]);
     if (bindings) {
         try {
             for (var bindings_1 = __values(bindings), bindings_1_1 = bindings_1.next(); !bindings_1_1.done; bindings_1_1 = bindings_1.next()) {
