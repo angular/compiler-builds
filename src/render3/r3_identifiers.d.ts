@@ -68,4 +68,5 @@ export declare class Identifiers {
     static queryRefresh: o.ExternalReference;
     static NgOnChangesFeature: o.ExternalReference;
     static listener: o.ExternalReference;
+    static reserveSlots: o.ExternalReference;
 }

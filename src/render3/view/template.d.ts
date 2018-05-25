@@ -33,6 +33,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private _inI18nSection;
     private _i18nSectionIndex;
     private _phToNodeIdxes;
+    private _pureFunctionSlots;
     constructor(constantPool: ConstantPool, contextParameter: string, parentBindingScope: BindingScope, level: number, contextName: string | null, templateName: string | null, viewQueries: R3QueryMetadata[], directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>);
     buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], hasNgContent?: boolean, ngContentSelectors?: string[]): o.FunctionExpr;
     getLocal(name: string): o.Expression | null;

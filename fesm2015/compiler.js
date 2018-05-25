@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5+223.sha-3e39fef
+ * @license Angular v6.0.0-rc.5+228.sha-729c797
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1089,7 +1089,7 @@ class Version {
  * @description
  * Entry point for all public APIs of the common package.
  */
-const VERSION = new Version('6.0.0-rc.5+223.sha-3e39fef');
+const VERSION = new Version('6.0.0-rc.5+228.sha-729c797');
 
 /**
  * @license
@@ -16721,6 +16721,8 @@ Identifiers$1.query = { name: 'ɵQ', moduleName: CORE$1 };
 Identifiers$1.queryRefresh = { name: 'ɵqR', moduleName: CORE$1 };
 Identifiers$1.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
 Identifiers$1.listener = { name: 'ɵL', moduleName: CORE$1 };
+// Reserve slots for pure functions
+Identifiers$1.reserveSlots = { name: 'ɵrS', moduleName: CORE$1 };
 
 /**
  * @license
@@ -17545,6 +17547,8 @@ class TemplateDefinitionBuilder {
         this._i18nSectionIndex = -1;
         // Maps of placeholder to node indexes for each of the i18n section
         this._phToNodeIdxes = [{}];
+        // Number of slots to reserve for pureFunctions
+        this._pureFunctionSlots = 0;
         // These should be handled in the template or element directly.
         this.visitReference = invalid$1;
         this.visitVariable = invalid$1;
@@ -17555,7 +17559,7 @@ class TemplateDefinitionBuilder {
             parentBindingScope.nestedScope((lhsVar, expression) => {
                 this._bindingCode.push(lhsVar.set(expression).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
             });
-        this._valueConverter = new ValueConverter(constantPool, () => this.allocateDataSlot(), (name, localName, slot, value) => {
+        this._valueConverter = new ValueConverter(constantPool, () => this.allocateDataSlot(), (numSlots) => this._pureFunctionSlots += numSlots, (name, localName, slot, value) => {
             const pipeType = pipeTypeByName.get(name);
             if (pipeType) {
                 this.pipes.add(pipeType);
@@ -17611,6 +17615,9 @@ class TemplateDefinitionBuilder {
             this._bindingCode.push(refresh.and(updateDirective).toStmt());
         }
         visitAll$1(this, nodes);
+        if (this._pureFunctionSlots > 0) {
+            this.instruction(this._creationCode, null, Identifiers$1.reserveSlots, literal(this._pureFunctionSlots));
+        }
         const creationCode = this._creationCode.length > 0 ?
             [ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(1 /* Create */), null, false), this._creationCode)] :
             [];
@@ -17882,10 +17889,11 @@ class TemplateDefinitionBuilder {
     }
 }
 class ValueConverter extends AstMemoryEfficientTransformer {
-    constructor(constantPool, allocateSlot, definePipe) {
+    constructor(constantPool, allocateSlot, allocatePureFunctionSlots, definePipe) {
         super();
         this.constantPool = constantPool;
         this.allocateSlot = allocateSlot;
+        this.allocatePureFunctionSlots = allocatePureFunctionSlots;
         this.definePipe = definePipe;
     }
     // AstMemoryEfficientTransformer
@@ -17893,12 +17901,18 @@ class ValueConverter extends AstMemoryEfficientTransformer {
         // Allocate a slot to create the pipe
         const slot = this.allocateSlot();
         const slotPseudoLocal = `PIPE:${slot}`;
+        // Allocate one slot for the result plus one slot per pipe argument
+        const pureFunctionSlot = this.allocatePureFunctionSlots(2 + pipe.args.length);
         const target = new PropertyRead(pipe.span, new ImplicitReceiver(pipe.span), slotPseudoLocal);
-        const bindingId = pipeBinding(pipe.args);
-        this.definePipe(pipe.name, slotPseudoLocal, slot, importExpr(bindingId));
-        const value = pipe.exp.visit(this);
-        const args = this.visitAll(pipe.args);
-        return new FunctionCall(pipe.span, target, [new LiteralPrimitive(pipe.span, slot), value, ...args]);
+        const { identifier, isVarLength } = pipeBindingCallInfo(pipe.args);
+        this.definePipe(pipe.name, slotPseudoLocal, slot, importExpr(identifier));
+        const args = [pipe.exp, ...pipe.args];
+        const convertedArgs = isVarLength ? this.visitAll([new LiteralArray(pipe.span, args)]) : this.visitAll(args);
+        return new FunctionCall(pipe.span, target, [
+            new LiteralPrimitive(pipe.span, slot),
+            new LiteralPrimitive(pipe.span, pureFunctionSlot),
+            ...convertedArgs,
+        ]);
     }
     visitLiteralArray(array, context) {
         return new BuiltinFunctionCall(array.span, this.visitAll(array.expressions), values => {
@@ -17906,8 +17920,9 @@ class ValueConverter extends AstMemoryEfficientTransformer {
             // calls to literal factories that compose the literal and will cache intermediate
             // values. Otherwise, just return an literal array that contains the values.
             const literal$$1 = literalArr(values);
-            return values.every(a => a.isConstant()) ? this.constantPool.getConstLiteral(literal$$1, true) :
-                getLiteralFactory(this.constantPool, literal$$1);
+            return values.every(a => a.isConstant()) ?
+                this.constantPool.getConstLiteral(literal$$1, true) :
+                getLiteralFactory(this.constantPool, literal$$1, this.allocatePureFunctionSlots);
         });
     }
     visitLiteralMap(map, context) {
@@ -17916,27 +17931,51 @@ class ValueConverter extends AstMemoryEfficientTransformer {
             // calls to literal factories that compose the literal and will cache intermediate
             // values. Otherwise, just return an literal array that contains the values.
             const literal$$1 = literalMap(values.map((value, index) => ({ key: map.keys[index].key, value, quoted: map.keys[index].quoted })));
-            return values.every(a => a.isConstant()) ? this.constantPool.getConstLiteral(literal$$1, true) :
-                getLiteralFactory(this.constantPool, literal$$1);
+            return values.every(a => a.isConstant()) ?
+                this.constantPool.getConstLiteral(literal$$1, true) :
+                getLiteralFactory(this.constantPool, literal$$1, this.allocatePureFunctionSlots);
         });
     }
 }
 // Pipes always have at least one parameter, the value they operate on
 const pipeBindingIdentifiers = [Identifiers$1.pipeBind1, Identifiers$1.pipeBind2, Identifiers$1.pipeBind3, Identifiers$1.pipeBind4];
-function pipeBinding(args) {
-    return pipeBindingIdentifiers[args.length] || Identifiers$1.pipeBindV;
+function pipeBindingCallInfo(args) {
+    const identifier = pipeBindingIdentifiers[args.length];
+    return {
+        identifier: identifier || Identifiers$1.pipeBindV,
+        isVarLength: !identifier,
+    };
 }
 const pureFunctionIdentifiers = [
     Identifiers$1.pureFunction0, Identifiers$1.pureFunction1, Identifiers$1.pureFunction2, Identifiers$1.pureFunction3, Identifiers$1.pureFunction4,
     Identifiers$1.pureFunction5, Identifiers$1.pureFunction6, Identifiers$1.pureFunction7, Identifiers$1.pureFunction8
 ];
-function getLiteralFactory(constantPool, literal$$1) {
+function pureFunctionCallInfo(args) {
+    const identifier = pureFunctionIdentifiers[args.length];
+    return {
+        identifier: identifier || Identifiers$1.pureFunctionV,
+        isVarLength: !identifier,
+    };
+}
+function getLiteralFactory(constantPool, literal$$1, allocateSlots) {
     const { literalFactory, literalFactoryArguments } = constantPool.getLiteralFactory(literal$$1);
+    // Allocate 1 slot for the result plus 1 per argument
+    const startSlot = allocateSlots(1 + literalFactoryArguments.length);
     literalFactoryArguments.length > 0 || error(`Expected arguments to a literal factory function`);
-    let pureFunctionIdent = pureFunctionIdentifiers[literalFactoryArguments.length] || Identifiers$1.pureFunctionV;
+    const { identifier, isVarLength } = pureFunctionCallInfo(literalFactoryArguments);
     // Literal factories are pure functions that only need to be re-invoked when the parameters
     // change.
-    return importExpr(pureFunctionIdent).callFn([literalFactory, ...literalFactoryArguments]);
+    const args = [
+        literal(startSlot),
+        literalFactory,
+    ];
+    if (isVarLength) {
+        args.push(literalArr(literalFactoryArguments));
+    }
+    else {
+        args.push(...literalFactoryArguments);
+    }
+    return importExpr(identifier).callFn(args);
 }
 class BindingScope {
     constructor(parent = null, declareLocalVarCallback = noop) {
