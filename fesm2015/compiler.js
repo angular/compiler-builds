@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5+221.sha-01b5acd
+ * @license Angular v6.0.0-rc.5+220.sha-186118e
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1089,7 +1089,7 @@ class Version {
  * @description
  * Entry point for all public APIs of the common package.
  */
-const VERSION = new Version('6.0.0-rc.5+221.sha-01b5acd');
+const VERSION = new Version('6.0.0-rc.5+220.sha-186118e');
 
 /**
  * @license
@@ -16686,7 +16686,6 @@ Identifiers$1.pipeBind3 = { name: 'ɵpb3', moduleName: CORE$1 };
 Identifiers$1.pipeBind4 = { name: 'ɵpb4', moduleName: CORE$1 };
 Identifiers$1.pipeBindV = { name: 'ɵpbV', moduleName: CORE$1 };
 Identifiers$1.load = { name: 'ɵld', moduleName: CORE$1 };
-Identifiers$1.loadDirective = { name: 'ɵd', moduleName: CORE$1 };
 Identifiers$1.pipe = { name: 'ɵPp', moduleName: CORE$1 };
 Identifiers$1.projection = { name: 'ɵP', moduleName: CORE$1 };
 Identifiers$1.projectionDef = { name: 'ɵpD', moduleName: CORE$1 };
@@ -18338,8 +18337,8 @@ function createHostBindingsFunction(meta, bindingParser) {
     // Calculate the queries
     for (let index = 0; index < meta.queries.length; index++) {
         const query = meta.queries[index];
-        // e.g. r3.qR(tmp = r3.d(dirIndex)[1]) && (r3.d(dirIndex)[0].someDir = tmp);
-        const getDirectiveMemory = importExpr(Identifiers$1.loadDirective).callFn([variable('dirIndex')]);
+        // e.g. r3.qR(tmp = r3.ld(dirIndex)[1]) && (r3.ld(dirIndex)[0].someDir = tmp);
+        const getDirectiveMemory = importExpr(Identifiers$1.load).callFn([variable('dirIndex')]);
         // The query list is at the query index + 1 because the directive itself is in slot 0.
         const getQueryList = getDirectiveMemory.key(literal(index + 1));
         const assignToTemporary = temporary().set(getQueryList);
@@ -18353,7 +18352,7 @@ function createHostBindingsFunction(meta, bindingParser) {
     const directiveSummary = metadataAsSummary(meta);
     // Calculate the host property bindings
     const bindings = bindingParser.createBoundHostProperties(directiveSummary, hostBindingSourceSpan);
-    const bindingContext = importExpr(Identifiers$1.loadDirective).callFn([variable('dirIndex')]);
+    const bindingContext = importExpr(Identifiers$1.load).callFn([variable('dirIndex')]);
     if (bindings) {
         for (const binding of bindings) {
             const bindingExpr = convertPropertyBinding(null, bindingContext, binding.expression, 'b', BindingForm.TrySimple, () => error('Unexpected interpolation'));
