@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5+245.sha-41cd8f3
+ * @license Angular v6.0.0-rc.5+246.sha-31795b6
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1221,7 +1221,7 @@ var Version = /** @class */ (function () {
  * @description
  * Entry point for all public APIs of the common package.
  */
-var VERSION = new Version('6.0.0-rc.5+245.sha-41cd8f3');
+var VERSION = new Version('6.0.0-rc.5+246.sha-31795b6');
 
 /**
  * @license
@@ -20101,7 +20101,7 @@ var StaticSymbolResolver = /** @class */ (function () {
             }
         }
         // handle the actual metadata. Has to be after the exports
-        // as there migth be collisions in the names, and we want the symbols
+        // as there might be collisions in the names, and we want the symbols
         // of the current module to win ofter reexports.
         if (metadata['metadata']) {
             // handle direct declarations of the symbol
@@ -20147,7 +20147,7 @@ var StaticSymbolResolver = /** @class */ (function () {
         var _originalFileMemo;
         var getOriginalName = function () {
             if (!_originalFileMemo) {
-                // Guess what hte original file name is from the reference. If it has a `.d.ts` extension
+                // Guess what the original file name is from the reference. If it has a `.d.ts` extension
                 // replace it with `.ts`. If it already has `.ts` just leave it in place. If it doesn't have
                 // .ts or .d.ts, append `.ts'. Also, if it is in `node_modules`, trim the `node_module`
                 // location as it is not important to finding the file.
