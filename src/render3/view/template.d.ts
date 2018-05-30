@@ -98,7 +98,9 @@ export declare class BindingScope implements LocalResolver {
  * @param template text of the template to parse
  * @param templateUrl URL to use for source mapping of the parsed template
  */
-export declare function parseTemplate(template: string, templateUrl: string): {
+export declare function parseTemplate(template: string, templateUrl: string, options?: {
+    preserveWhitespace?: boolean;
+}): {
     errors?: ParseError[];
     nodes: t.Node[];
     hasNgContent: boolean;

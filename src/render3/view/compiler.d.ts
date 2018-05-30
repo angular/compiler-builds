@@ -8,11 +8,11 @@ import { R3ComponentDef, R3ComponentMetadata, R3DirectiveDef, R3DirectiveMetadat
 /**
  * Compile a directive for the render3 runtime as defined by the `R3DirectiveMetadata`.
  */
-export declare function compileDirective(meta: R3DirectiveMetadata, constantPool: ConstantPool, bindingParser: BindingParser): R3DirectiveDef;
+export declare function compileDirectiveFromMetadata(meta: R3DirectiveMetadata, constantPool: ConstantPool, bindingParser: BindingParser): R3DirectiveDef;
 /**
  * Compile a component for the render3 runtime as defined by the `R3ComponentMetadata`.
  */
-export declare function compileComponent(meta: R3ComponentMetadata, constantPool: ConstantPool, bindingParser: BindingParser): R3ComponentDef;
+export declare function compileComponentFromMetadata(meta: R3ComponentMetadata, constantPool: ConstantPool, bindingParser: BindingParser): R3ComponentDef;
 /**
  * A wrapper around `compileDirective` which depends on render2 global analysis data as its input
  * instead of the `R3DirectiveMetadata`.
