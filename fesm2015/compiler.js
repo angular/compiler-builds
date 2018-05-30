@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.3+23.sha-29dfc8f
+ * @license Angular v6.0.3+26.sha-4d25705
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -291,7 +291,7 @@ class Version {
  * @description
  * Entry point for all public APIs of the common package.
  */
-const VERSION = new Version('6.0.3+23.sha-29dfc8f');
+const VERSION = new Version('6.0.3+26.sha-4d25705');
 
 /**
  * @license
@@ -10166,7 +10166,7 @@ class CompileMetadataResolver {
                     providerMeta = new ProviderMeta(provider, { useClass: provider });
                 }
                 else if (provider === void 0) {
-                    this._reportError(syntaxError(`Encountered undefined provider! Usually this means you have a circular dependencies (might be caused by using 'barrel' index.ts files.`));
+                    this._reportError(syntaxError(`Encountered undefined provider! Usually this means you have a circular dependencies. This might be caused by using 'barrel' index.ts files.`));
                     return;
                 }
                 else {
