@@ -45,6 +45,7 @@ export declare class Identifiers {
     static pipeBind4: o.ExternalReference;
     static pipeBindV: o.ExternalReference;
     static load: o.ExternalReference;
+    static loadDirective: o.ExternalReference;
     static pipe: o.ExternalReference;
     static projection: o.ExternalReference;
     static projectionDef: o.ExternalReference;
@@ -67,4 +68,5 @@ export declare class Identifiers {
     static queryRefresh: o.ExternalReference;
     static NgOnChangesFeature: o.ExternalReference;
     static listener: o.ExternalReference;
+    static reserveSlots: o.ExternalReference;
 }

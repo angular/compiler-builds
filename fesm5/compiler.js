@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-rc.5+215.sha-23a98b9
+ * @license Angular v6.0.0-rc.5+243.sha-1eafd04
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1135,7 +1135,7 @@ var Version = /** @class */ (function () {
  * @description
  * Entry point for all public APIs of the common package.
  */
-var VERSION = new Version('6.0.0-rc.5+215.sha-23a98b9');
+var VERSION = new Version('6.0.0-rc.5+243.sha-1eafd04');
 
 /**
  * @license
@@ -17683,6 +17683,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.pipeBind4 = { name: 'ɵpb4', moduleName: CORE$1 };
     Identifiers.pipeBindV = { name: 'ɵpbV', moduleName: CORE$1 };
     Identifiers.load = { name: 'ɵld', moduleName: CORE$1 };
+    Identifiers.loadDirective = { name: 'ɵd', moduleName: CORE$1 };
     Identifiers.pipe = { name: 'ɵPp', moduleName: CORE$1 };
     Identifiers.projection = { name: 'ɵP', moduleName: CORE$1 };
     Identifiers.projectionDef = { name: 'ɵpD', moduleName: CORE$1 };
@@ -17717,6 +17718,8 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.queryRefresh = { name: 'ɵqR', moduleName: CORE$1 };
     Identifiers.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
     Identifiers.listener = { name: 'ɵL', moduleName: CORE$1 };
+    // Reserve slots for pure functions
+    Identifiers.reserveSlots = { name: 'ɵrS', moduleName: CORE$1 };
     return Identifiers;
 }());
 
@@ -18601,6 +18604,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this._i18nSectionIndex = -1;
         // Maps of placeholder to node indexes for each of the i18n section
         this._phToNodeIdxes = [{}];
+        // Number of slots to reserve for pureFunctions
+        this._pureFunctionSlots = 0;
         // These should be handled in the template or element directly.
         this.visitReference = invalid$1;
         this.visitVariable = invalid$1;
@@ -18611,7 +18616,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             parentBindingScope.nestedScope(function (lhsVar, expression) {
                 _this._bindingCode.push(lhsVar.set(expression).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
             });
-        this._valueConverter = new ValueConverter(constantPool, function () { return _this.allocateDataSlot(); }, function (name, localName, slot, value) {
+        this._valueConverter = new ValueConverter(constantPool, function () { return _this.allocateDataSlot(); }, function (numSlots) { return _this._pureFunctionSlots += numSlots; }, function (name, localName, slot, value) {
             var pipeType = pipeTypeByName.get(name);
             if (pipeType) {
                 _this.pipes.add(pipeType);
@@ -18689,6 +18694,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             finally { if (e_2) throw e_2.error; }
         }
         visitAll$1(this, nodes);
+        if (this._pureFunctionSlots > 0) {
+            this.instruction(this._creationCode, null, Identifiers$1.reserveSlots, literal(this._pureFunctionSlots));
+        }
         var creationCode = this._creationCode.length > 0 ?
             [ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(1 /* Create */), null, false), this._creationCode)] :
             [];
@@ -18980,10 +18988,11 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
 }());
 var ValueConverter = /** @class */ (function (_super) {
     __extends(ValueConverter, _super);
-    function ValueConverter(constantPool, allocateSlot, definePipe) {
+    function ValueConverter(constantPool, allocateSlot, allocatePureFunctionSlots, definePipe) {
         var _this = _super.call(this) || this;
         _this.constantPool = constantPool;
         _this.allocateSlot = allocateSlot;
+        _this.allocatePureFunctionSlots = allocatePureFunctionSlots;
         _this.definePipe = definePipe;
         return _this;
     }
@@ -18992,12 +19001,17 @@ var ValueConverter = /** @class */ (function (_super) {
         // Allocate a slot to create the pipe
         var slot = this.allocateSlot();
         var slotPseudoLocal = "PIPE:" + slot;
+        // Allocate one slot for the result plus one slot per pipe argument
+        var pureFunctionSlot = this.allocatePureFunctionSlots(2 + pipe.args.length);
         var target = new PropertyRead(pipe.span, new ImplicitReceiver(pipe.span), slotPseudoLocal);
-        var bindingId = pipeBinding(pipe.args);
-        this.definePipe(pipe.name, slotPseudoLocal, slot, importExpr(bindingId));
-        var value = pipe.exp.visit(this);
-        var args = this.visitAll(pipe.args);
-        return new FunctionCall(pipe.span, target, __spread([new LiteralPrimitive(pipe.span, slot), value], args));
+        var _a = pipeBindingCallInfo(pipe.args), identifier = _a.identifier, isVarLength = _a.isVarLength;
+        this.definePipe(pipe.name, slotPseudoLocal, slot, importExpr(identifier));
+        var args = __spread([pipe.exp], pipe.args);
+        var convertedArgs = isVarLength ? this.visitAll([new LiteralArray(pipe.span, args)]) : this.visitAll(args);
+        return new FunctionCall(pipe.span, target, __spread([
+            new LiteralPrimitive(pipe.span, slot),
+            new LiteralPrimitive(pipe.span, pureFunctionSlot)
+        ], convertedArgs));
     };
     ValueConverter.prototype.visitLiteralArray = function (array, context) {
         var _this = this;
@@ -19006,8 +19020,9 @@ var ValueConverter = /** @class */ (function (_super) {
             // calls to literal factories that compose the literal and will cache intermediate
             // values. Otherwise, just return an literal array that contains the values.
             var literal$$1 = literalArr(values);
-            return values.every(function (a) { return a.isConstant(); }) ? _this.constantPool.getConstLiteral(literal$$1, true) :
-                getLiteralFactory(_this.constantPool, literal$$1);
+            return values.every(function (a) { return a.isConstant(); }) ?
+                _this.constantPool.getConstLiteral(literal$$1, true) :
+                getLiteralFactory(_this.constantPool, literal$$1, _this.allocatePureFunctionSlots);
         });
     };
     ValueConverter.prototype.visitLiteralMap = function (map, context) {
@@ -19017,28 +19032,52 @@ var ValueConverter = /** @class */ (function (_super) {
             // calls to literal factories that compose the literal and will cache intermediate
             // values. Otherwise, just return an literal array that contains the values.
             var literal$$1 = literalMap(values.map(function (value, index) { return ({ key: map.keys[index].key, value: value, quoted: map.keys[index].quoted }); }));
-            return values.every(function (a) { return a.isConstant(); }) ? _this.constantPool.getConstLiteral(literal$$1, true) :
-                getLiteralFactory(_this.constantPool, literal$$1);
+            return values.every(function (a) { return a.isConstant(); }) ?
+                _this.constantPool.getConstLiteral(literal$$1, true) :
+                getLiteralFactory(_this.constantPool, literal$$1, _this.allocatePureFunctionSlots);
         });
     };
     return ValueConverter;
 }(AstMemoryEfficientTransformer));
 // Pipes always have at least one parameter, the value they operate on
 var pipeBindingIdentifiers = [Identifiers$1.pipeBind1, Identifiers$1.pipeBind2, Identifiers$1.pipeBind3, Identifiers$1.pipeBind4];
-function pipeBinding(args) {
-    return pipeBindingIdentifiers[args.length] || Identifiers$1.pipeBindV;
+function pipeBindingCallInfo(args) {
+    var identifier = pipeBindingIdentifiers[args.length];
+    return {
+        identifier: identifier || Identifiers$1.pipeBindV,
+        isVarLength: !identifier,
+    };
 }
 var pureFunctionIdentifiers = [
     Identifiers$1.pureFunction0, Identifiers$1.pureFunction1, Identifiers$1.pureFunction2, Identifiers$1.pureFunction3, Identifiers$1.pureFunction4,
     Identifiers$1.pureFunction5, Identifiers$1.pureFunction6, Identifiers$1.pureFunction7, Identifiers$1.pureFunction8
 ];
-function getLiteralFactory(constantPool, literal$$1) {
+function pureFunctionCallInfo(args) {
+    var identifier = pureFunctionIdentifiers[args.length];
+    return {
+        identifier: identifier || Identifiers$1.pureFunctionV,
+        isVarLength: !identifier,
+    };
+}
+function getLiteralFactory(constantPool, literal$$1, allocateSlots) {
     var _a = constantPool.getLiteralFactory(literal$$1), literalFactory = _a.literalFactory, literalFactoryArguments = _a.literalFactoryArguments;
+    // Allocate 1 slot for the result plus 1 per argument
+    var startSlot = allocateSlots(1 + literalFactoryArguments.length);
     literalFactoryArguments.length > 0 || error("Expected arguments to a literal factory function");
-    var pureFunctionIdent = pureFunctionIdentifiers[literalFactoryArguments.length] || Identifiers$1.pureFunctionV;
+    var _b = pureFunctionCallInfo(literalFactoryArguments), identifier = _b.identifier, isVarLength = _b.isVarLength;
     // Literal factories are pure functions that only need to be re-invoked when the parameters
     // change.
-    return importExpr(pureFunctionIdent).callFn(__spread([literalFactory], literalFactoryArguments));
+    var args = [
+        literal(startSlot),
+        literalFactory,
+    ];
+    if (isVarLength) {
+        args.push(literalArr(literalFactoryArguments));
+    }
+    else {
+        args.push.apply(args, __spread(literalFactoryArguments));
+    }
+    return importExpr(identifier).callFn(args);
 }
 var BindingScope = /** @class */ (function () {
     function BindingScope(parent, declareLocalVarCallback) {
@@ -19455,8 +19494,8 @@ function createHostBindingsFunction(meta, bindingParser) {
     // Calculate the queries
     for (var index = 0; index < meta.queries.length; index++) {
         var query = meta.queries[index];
-        // e.g. r3.qR(tmp = r3.ld(dirIndex)[1]) && (r3.ld(dirIndex)[0].someDir = tmp);
-        var getDirectiveMemory = importExpr(Identifiers$1.load).callFn([variable('dirIndex')]);
+        // e.g. r3.qR(tmp = r3.d(dirIndex)[1]) && (r3.d(dirIndex)[0].someDir = tmp);
+        var getDirectiveMemory = importExpr(Identifiers$1.loadDirective).callFn([variable('dirIndex')]);
         // The query list is at the query index + 1 because the directive itself is in slot 0.
         var getQueryList = getDirectiveMemory.key(literal(index + 1));
         var assignToTemporary = temporary().set(getQueryList);
@@ -19470,7 +19509,7 @@ function createHostBindingsFunction(meta, bindingParser) {
     var directiveSummary = metadataAsSummary(meta);
     // Calculate the host property bindings
     var bindings = bindingParser.createBoundHostProperties(directiveSummary, hostBindingSourceSpan);
-    var bindingContext = importExpr(Identifiers$1.load).callFn([variable('dirIndex')]);
+    var bindingContext = importExpr(Identifiers$1.loadDirective).callFn([variable('dirIndex')]);
     if (bindings) {
         try {
             for (var bindings_1 = __values(bindings), bindings_1_1 = bindings_1.next(); !bindings_1_1.done; bindings_1_1 = bindings_1.next()) {
