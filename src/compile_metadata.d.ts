@@ -9,6 +9,7 @@ import { StaticSymbol } from './aot/static_symbol';
 import { ChangeDetectionStrategy, SchemaMetadata, Type, ViewEncapsulation } from './core';
 import { LifecycleHooks } from './lifecycle_reflector';
 import { ParseTreeResult as HtmlParseTreeResult } from './ml_parser/parser';
+export declare function sanitizeIdentifier(name: string): string;
 export declare function identifierName(compileIdentifier: CompileIdentifierMetadata | null | undefined): string | null;
 export declare function identifierModuleUrl(compileIdentifier: CompileIdentifierMetadata): string;
 export declare function viewClassName(compType: any, embeddedTemplateIndex: number): string;
@@ -64,6 +65,16 @@ export declare function tokenReference(token: CompileTokenMetadata): any;
 export interface CompileTokenMetadata {
     value?: any;
     identifier?: CompileIdentifierMetadata | CompileTypeMetadata;
+}
+export interface CompileInjectableMetadata {
+    symbol: StaticSymbol;
+    type: CompileTypeMetadata;
+    providedIn?: StaticSymbol;
+    useValue?: any;
+    useClass?: StaticSymbol;
+    useExisting?: StaticSymbol;
+    useFactory?: StaticSymbol;
+    deps?: any[];
 }
 /**
  * Metadata regarding compilation of a type.
@@ -295,6 +306,12 @@ export interface CompileNgModuleSummary extends CompileTypeSummary {
         module: CompileIdentifierMetadata;
     }[];
     modules: CompileTypeMetadata[];
+}
+export declare class CompileShallowModuleMetadata {
+    type: CompileTypeMetadata;
+    rawExports: any;
+    rawImports: any;
+    rawProviders: any;
 }
 /**
  * Metadata regarding compilation of a module.
