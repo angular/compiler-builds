@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.3+35.sha-a634a5a
+ * @license Angular v6.0.3+36.sha-c9eb491
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -415,7 +415,7 @@ var Version = /** @class */ (function () {
  * @description
  * Entry point for all public APIs of the common package.
  */
-var VERSION = new Version('6.0.3+35.sha-a634a5a');
+var VERSION = new Version('6.0.3+36.sha-c9eb491');
 
 /**
  * @license
