@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.0
+ * @license Angular v6.1.0-beta.0+11.sha-7de2ba0
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1089,7 +1089,7 @@ class Version {
  * @description
  * Entry point for all public APIs of the common package.
  */
-const VERSION = new Version('6.1.0-beta.0');
+const VERSION = new Version('6.1.0-beta.0+11.sha-7de2ba0');
 
 /**
  * @license
@@ -16651,9 +16651,8 @@ Identifiers$1.NEW_METHOD = 'factory';
 Identifiers$1.TRANSFORM_METHOD = 'transform';
 Identifiers$1.PATCH_DEPS = 'patchedDeps';
 /* Instructions */
-Identifiers$1.elementStart = { name: 'ɵE', moduleName: CORE$1 };
+Identifiers$1.createElement = { name: 'ɵE', moduleName: CORE$1 };
 Identifiers$1.elementEnd = { name: 'ɵe', moduleName: CORE$1 };
-Identifiers$1.element = { name: 'ɵEe', moduleName: CORE$1 };
 Identifiers$1.elementProperty = { name: 'ɵp', moduleName: CORE$1 };
 Identifiers$1.elementAttribute = { name: 'ɵa', moduleName: CORE$1 };
 Identifiers$1.elementClassNamed = { name: 'ɵkn', moduleName: CORE$1 };
@@ -16662,10 +16661,6 @@ Identifiers$1.containerCreate = { name: 'ɵC', moduleName: CORE$1 };
 Identifiers$1.text = { name: 'ɵT', moduleName: CORE$1 };
 Identifiers$1.textBinding = { name: 'ɵt', moduleName: CORE$1 };
 Identifiers$1.bind = { name: 'ɵb', moduleName: CORE$1 };
-Identifiers$1.namespace = { name: 'ɵN', moduleName: CORE$1 };
-Identifiers$1.namespaceHTML = { name: 'ɵNH', moduleName: CORE$1 };
-Identifiers$1.namespaceMathML = { name: 'ɵNM', moduleName: CORE$1 };
-Identifiers$1.namespaceSVG = { name: 'ɵNS', moduleName: CORE$1 };
 Identifiers$1.interpolation1 = { name: 'ɵi1', moduleName: CORE$1 };
 Identifiers$1.interpolation2 = { name: 'ɵi2', moduleName: CORE$1 };
 Identifiers$1.interpolation3 = { name: 'ɵi3', moduleName: CORE$1 };
@@ -17526,7 +17521,7 @@ const BINDING_INSTRUCTION_MAP = {
     [3 /* Style */]: Identifiers$1.elementStyleNamed,
 };
 class TemplateDefinitionBuilder {
-    constructor(constantPool, contextParameter, parentBindingScope, level = 0, contextName, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace) {
+    constructor(constantPool, contextParameter, parentBindingScope, level = 0, contextName, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes) {
         this.constantPool = constantPool;
         this.contextParameter = contextParameter;
         this.level = level;
@@ -17537,7 +17532,6 @@ class TemplateDefinitionBuilder {
         this.directives = directives;
         this.pipeTypeByName = pipeTypeByName;
         this.pipes = pipes;
-        this._namespace = _namespace;
         this._dataIndex = 0;
         this._bindingContext = 0;
         this._prefixCode = [];
@@ -17575,9 +17569,6 @@ class TemplateDefinitionBuilder {
         });
     }
     buildTemplateFunction(nodes, variables, hasNgContent = false, ngContentSelectors = []) {
-        if (this._namespace !== Identifiers$1.namespaceHTML) {
-            this.instruction(this._creationCode, null, this._namespace);
-        }
         // Create variable bindings
         for (const variable$$1 of variables) {
             const variableName = variable$$1.name;
@@ -17681,24 +17672,6 @@ class TemplateDefinitionBuilder {
         }
         this.instruction(this._creationCode, ngContent.sourceSpan, Identifiers$1.projection, ...parameters);
     }
-    /**
-     * Gets the namespace instruction function based on the current element
-     * @param namespaceKey A system key for a namespace (e.g. 'svg' or 'math')
-     */
-    getNamespaceInstruction(namespaceKey) {
-        switch (namespaceKey) {
-            case 'svg':
-                return Identifiers$1.namespaceSVG;
-            case 'math':
-                return Identifiers$1.namespaceMathML;
-            default:
-                return Identifiers$1.namespaceHTML;
-        }
-    }
-    addNamespaceInstruction(nsInstruction, element) {
-        this._namespace = nsInstruction;
-        this.instruction(this._creationCode, element.sourceSpan, nsInstruction);
-    }
     visitElement(element) {
         const elementIndex = this.allocateDataSlot();
         const referenceDataSlots = new Map();
@@ -17706,7 +17679,6 @@ class TemplateDefinitionBuilder {
         const outputAttrs = {};
         const attrI18nMetas = {};
         let i18nMeta = '';
-        const [namespaceKey, elementName] = splitNsName(element.name);
         // Elements inside i18n sections are replaced with placeholders
         // TODO(vicb): nested elements are a WIP in this phase
         if (this._inI18nSection) {
@@ -17744,7 +17716,7 @@ class TemplateDefinitionBuilder {
         // Element creation mode
         const parameters = [
             literal(elementIndex),
-            literal(elementName),
+            literal(element.name),
         ];
         // Add the attributes
         const i18nMessages = [];
@@ -17786,34 +17758,21 @@ class TemplateDefinitionBuilder {
         if (i18nMessages.length > 0) {
             this._creationCode.push(...i18nMessages);
         }
-        const isEmptyElement = element.children.length === 0 && element.outputs.length === 0;
+        this.instruction(this._creationCode, element.sourceSpan, Identifiers$1.createElement, ...trimTrailingNulls(parameters));
         const implicit = variable(CONTEXT_NAME);
-        const wasInNamespace = this._namespace;
-        const currentNamespace = this.getNamespaceInstruction(namespaceKey);
-        // If the namespace is changing now, include an instruction to change it
-        // during element creation.
-        if (currentNamespace !== wasInNamespace) {
-            this.addNamespaceInstruction(currentNamespace, element);
-        }
-        if (isEmptyElement) {
-            this.instruction(this._creationCode, element.sourceSpan, Identifiers$1.element, ...trimTrailingNulls(parameters));
-        }
-        else {
-            this.instruction(this._creationCode, element.sourceSpan, Identifiers$1.elementStart, ...trimTrailingNulls(parameters));
-            // Generate Listeners (outputs)
-            element.outputs.forEach((outputAst) => {
-                const elName = sanitizeIdentifier(element.name);
-                const evName = sanitizeIdentifier(outputAst.name);
-                const functionName = `${this.templateName}_${elName}_${evName}_listener`;
-                const localVars = [];
-                const bindingScope = this._bindingScope.nestedScope((lhsVar, rhsExpression) => {
-                    localVars.push(lhsVar.set(rhsExpression).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
-                });
-                const bindingExpr = convertActionBinding(bindingScope, implicit, outputAst.handler, 'b', () => error('Unexpected interpolation'));
-                const handler = fn([new FnParam('$event', DYNAMIC_TYPE)], [...localVars, ...bindingExpr.render3Stmts], INFERRED_TYPE, null, functionName);
-                this.instruction(this._creationCode, outputAst.sourceSpan, Identifiers$1.listener, literal(outputAst.name), handler);
+        // Generate Listeners (outputs)
+        element.outputs.forEach((outputAst) => {
+            const elName = sanitizeIdentifier(element.name);
+            const evName = sanitizeIdentifier(outputAst.name);
+            const functionName = `${this.templateName}_${elName}_${evName}_listener`;
+            const localVars = [];
+            const bindingScope = this._bindingScope.nestedScope((lhsVar, rhsExpression) => {
+                localVars.push(lhsVar.set(rhsExpression).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
             });
-        }
+            const bindingExpr = convertActionBinding(bindingScope, implicit, outputAst.handler, 'b', () => error('Unexpected interpolation'));
+            const handler = fn([new FnParam('$event', DYNAMIC_TYPE)], [...localVars, ...bindingExpr.render3Stmts], INFERRED_TYPE, null, functionName);
+            this.instruction(this._creationCode, outputAst.sourceSpan, Identifiers$1.listener, literal(outputAst.name), handler);
+        });
         // Generate element input bindings
         element.inputs.forEach((input) => {
             if (input.type === 4 /* Animation */) {
@@ -17838,10 +17797,8 @@ class TemplateDefinitionBuilder {
         else {
             visitAll$1(this, element.children);
         }
-        if (!isEmptyElement) {
-            // Finish element construction mode.
-            this.instruction(this._creationCode, element.endSourceSpan || element.sourceSpan, Identifiers$1.elementEnd);
-        }
+        // Finish element construction mode.
+        this.instruction(this._creationCode, element.endSourceSpan || element.sourceSpan, Identifiers$1.elementEnd);
         // Restore the state before exiting this node
         this._inI18nSection = wasInI18nSection;
     }
@@ -17883,7 +17840,7 @@ class TemplateDefinitionBuilder {
             this.instruction(this._bindingCode, template.sourceSpan, Identifiers$1.elementProperty, literal(templateIndex), literal(input.name), convertedBinding);
         });
         // Create the template function
-        const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, templateContext, this._bindingScope, this.level + 1, contextName, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes, this._namespace);
+        const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, templateContext, this._bindingScope, this.level + 1, contextName, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes);
         const templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables);
         this._postfixCode.push(templateFunctionExpr.toDeclStmt(templateName, null));
     }
@@ -18262,7 +18219,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     const directivesUsed = new Set();
     const pipesUsed = new Set();
     const template = meta.template;
-    const templateFunctionExpression = new TemplateDefinitionBuilder(constantPool, CONTEXT_NAME, BindingScope.ROOT_SCOPE, 0, templateTypeName, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML)
+    const templateFunctionExpression = new TemplateDefinitionBuilder(constantPool, CONTEXT_NAME, BindingScope.ROOT_SCOPE, 0, templateTypeName, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed)
         .buildTemplateFunction(template.nodes, [], template.hasNgContent, template.ngContentSelectors);
     definitionMap.set('template', templateFunctionExpression);
     // e.g. `directives: [MyDirective]`
