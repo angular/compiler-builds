@@ -10,8 +10,9 @@ export declare class Identifiers {
     static NEW_METHOD: string;
     static TRANSFORM_METHOD: string;
     static PATCH_DEPS: string;
-    static createElement: o.ExternalReference;
+    static elementStart: o.ExternalReference;
     static elementEnd: o.ExternalReference;
+    static element: o.ExternalReference;
     static elementProperty: o.ExternalReference;
     static elementAttribute: o.ExternalReference;
     static elementClassNamed: o.ExternalReference;
@@ -20,6 +21,10 @@ export declare class Identifiers {
     static text: o.ExternalReference;
     static textBinding: o.ExternalReference;
     static bind: o.ExternalReference;
+    static namespace: o.ExternalReference;
+    static namespaceHTML: o.ExternalReference;
+    static namespaceMathML: o.ExternalReference;
+    static namespaceSVG: o.ExternalReference;
     static interpolation1: o.ExternalReference;
     static interpolation2: o.ExternalReference;
     static interpolation3: o.ExternalReference;
