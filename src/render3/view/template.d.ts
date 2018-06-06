@@ -18,6 +18,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private directives;
     private pipeTypeByName;
     private pipes;
+    private _namespace;
     private _dataIndex;
     private _bindingContext;
     private _prefixCode;
@@ -34,10 +35,16 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private _i18nSectionIndex;
     private _phToNodeIdxes;
     private _pureFunctionSlots;
-    constructor(constantPool: ConstantPool, contextParameter: string, parentBindingScope: BindingScope, level: number, contextName: string | null, templateName: string | null, viewQueries: R3QueryMetadata[], directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>);
+    constructor(constantPool: ConstantPool, contextParameter: string, parentBindingScope: BindingScope, level: number, contextName: string | null, templateName: string | null, viewQueries: R3QueryMetadata[], directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference);
     buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], hasNgContent?: boolean, ngContentSelectors?: string[]): o.FunctionExpr;
     getLocal(name: string): o.Expression | null;
     visitContent(ngContent: t.Content): void;
+    /**
+     * Gets the namespace instruction function based on the current element
+     * @param namespaceKey A system key for a namespace (e.g. 'svg' or 'math')
+     */
+    getNamespaceInstruction(namespaceKey: string | null): o.ExternalReference;
+    addNamespaceInstruction(nsInstruction: o.ExternalReference, element: t.Element): void;
     visitElement(element: t.Element): void;
     visitTemplate(template: t.Template): void;
     readonly visitReference: typeof invalid;
