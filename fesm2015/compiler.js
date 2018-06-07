@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.0+12.sha-e3759f7
+ * @license Angular v6.1.0-beta.0+13.sha-bd02b27
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1089,7 +1089,7 @@ class Version {
  * @description
  * Entry point for all public APIs of the common package.
  */
-const VERSION = new Version('6.1.0-beta.0+12.sha-e3759f7');
+const VERSION = new Version('6.1.0-beta.0+13.sha-bd02b27');
 
 /**
  * @license
