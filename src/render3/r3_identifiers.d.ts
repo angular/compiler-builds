@@ -10,6 +10,9 @@ export declare class Identifiers {
     static NEW_METHOD: string;
     static TRANSFORM_METHOD: string;
     static PATCH_DEPS: string;
+    static namespaceHTML: o.ExternalReference;
+    static namespaceMathML: o.ExternalReference;
+    static namespaceSVG: o.ExternalReference;
     static createElement: o.ExternalReference;
     static elementEnd: o.ExternalReference;
     static elementProperty: o.ExternalReference;
