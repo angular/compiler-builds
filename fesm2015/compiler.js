@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.0+25.sha-8c1ac28
+ * @license Angular v6.1.0-beta.0+26.sha-1b253e1
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1089,7 +1089,7 @@ class Version {
  * @description
  * Entry point for all public APIs of the common package.
  */
-const VERSION = new Version('6.1.0-beta.0+25.sha-8c1ac28');
+const VERSION = new Version('6.1.0-beta.0+26.sha-1b253e1');
 
 /**
  * @license
@@ -16658,7 +16658,9 @@ Identifiers$1.createElement = { name: 'ɵE', moduleName: CORE$1 };
 Identifiers$1.elementEnd = { name: 'ɵe', moduleName: CORE$1 };
 Identifiers$1.elementProperty = { name: 'ɵp', moduleName: CORE$1 };
 Identifiers$1.elementAttribute = { name: 'ɵa', moduleName: CORE$1 };
+Identifiers$1.elementClass = { name: 'ɵk', moduleName: CORE$1 };
 Identifiers$1.elementClassNamed = { name: 'ɵkn', moduleName: CORE$1 };
+Identifiers$1.elementStyle = { name: 'ɵs', moduleName: CORE$1 };
 Identifiers$1.elementStyleNamed = { name: 'ɵsn', moduleName: CORE$1 };
 Identifiers$1.containerCreate = { name: 'ɵC', moduleName: CORE$1 };
 Identifiers$1.text = { name: 'ɵT', moduleName: CORE$1 };
@@ -17523,6 +17525,13 @@ const BINDING_INSTRUCTION_MAP = {
     [2 /* Class */]: Identifiers$1.elementClassNamed,
     [3 /* Style */]: Identifiers$1.elementStyleNamed,
 };
+// `className` is used below instead of `class` because the interception
+// code (where this map is used) deals with DOM element property values
+// (like elm.propName) and not component bindining properties (like [propName]).
+const SPECIAL_CASED_PROPERTIES_INSTRUCTION_MAP = {
+    'className': Identifiers$1.elementClass,
+    'style': Identifiers$1.elementStyle
+};
 class TemplateDefinitionBuilder {
     constructor(constantPool, contextParameter, parentBindingScope, level = 0, contextName, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace) {
         this.constantPool = constantPool;
@@ -17808,6 +17817,15 @@ class TemplateDefinitionBuilder {
                 this._unsupported('animations');
             }
             const convertedBinding = this.convertPropertyBinding(implicit, input.value);
+            const specialInstruction = SPECIAL_CASED_PROPERTIES_INSTRUCTION_MAP[input.name];
+            if (specialInstruction) {
+                // special case for [style] and [class] bindings since they are not handled as
+                // standard properties within this implementation. Instead they are
+                // handed off to special cased instruction handlers which will then
+                // delegate them as animation sequences (or input bindings for dirs/cmps)
+                this.instruction(this._bindingCode, input.sourceSpan, specialInstruction, literal(elementIndex), convertedBinding);
+                return;
+            }
             const instruction = BINDING_INSTRUCTION_MAP[input.type];
             if (instruction) {
                 // TODO(chuckj): runtime: security context?

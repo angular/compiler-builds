@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.0+25.sha-8c1ac28
+ * @license Angular v6.1.0-beta.0+26.sha-1b253e1
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1221,7 +1221,7 @@ var Version = /** @class */ (function () {
  * @description
  * Entry point for all public APIs of the common package.
  */
-var VERSION = new Version('6.1.0-beta.0+25.sha-8c1ac28');
+var VERSION = new Version('6.1.0-beta.0+26.sha-1b253e1');
 
 /**
  * @license
@@ -17741,7 +17741,9 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.elementEnd = { name: 'ɵe', moduleName: CORE$1 };
     Identifiers.elementProperty = { name: 'ɵp', moduleName: CORE$1 };
     Identifiers.elementAttribute = { name: 'ɵa', moduleName: CORE$1 };
+    Identifiers.elementClass = { name: 'ɵk', moduleName: CORE$1 };
     Identifiers.elementClassNamed = { name: 'ɵkn', moduleName: CORE$1 };
+    Identifiers.elementStyle = { name: 'ɵs', moduleName: CORE$1 };
     Identifiers.elementStyleNamed = { name: 'ɵsn', moduleName: CORE$1 };
     Identifiers.containerCreate = { name: 'ɵC', moduleName: CORE$1 };
     Identifiers.text = { name: 'ɵT', moduleName: CORE$1 };
@@ -18664,6 +18666,13 @@ function isEmptyTextNode(node) {
  * found in the LICENSE file at https://angular.io/license
  */
 var BINDING_INSTRUCTION_MAP = (_a$1 = {}, _a$1[0 /* Property */] = Identifiers$1.elementProperty, _a$1[1 /* Attribute */] = Identifiers$1.elementAttribute, _a$1[2 /* Class */] = Identifiers$1.elementClassNamed, _a$1[3 /* Style */] = Identifiers$1.elementStyleNamed, _a$1);
+// `className` is used below instead of `class` because the interception
+// code (where this map is used) deals with DOM element property values
+// (like elm.propName) and not component bindining properties (like [propName]).
+var SPECIAL_CASED_PROPERTIES_INSTRUCTION_MAP = {
+    'className': Identifiers$1.elementClass,
+    'style': Identifiers$1.elementStyle
+};
 var TemplateDefinitionBuilder = /** @class */ (function () {
     function TemplateDefinitionBuilder(constantPool, contextParameter, parentBindingScope, level, contextName, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace) {
         if (level === void 0) { level = 0; }
@@ -18984,6 +18993,15 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 _this._unsupported('animations');
             }
             var convertedBinding = _this.convertPropertyBinding(implicit, input.value);
+            var specialInstruction = SPECIAL_CASED_PROPERTIES_INSTRUCTION_MAP[input.name];
+            if (specialInstruction) {
+                // special case for [style] and [class] bindings since they are not handled as
+                // standard properties within this implementation. Instead they are
+                // handed off to special cased instruction handlers which will then
+                // delegate them as animation sequences (or input bindings for dirs/cmps)
+                _this.instruction(_this._bindingCode, input.sourceSpan, specialInstruction, literal(elementIndex), convertedBinding);
+                return;
+            }
             var instruction = BINDING_INSTRUCTION_MAP[input.type];
             if (instruction) {
                 // TODO(chuckj): runtime: security context?
