@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.0+23.sha-1135563
+ * @license Angular v6.1.0-beta.0+27.sha-49c5234
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1089,7 +1089,7 @@ class Version {
  * @description
  * Entry point for all public APIs of the common package.
  */
-const VERSION = new Version('6.1.0-beta.0+23.sha-1135563');
+const VERSION = new Version('6.1.0-beta.0+27.sha-49c5234');
 
 /**
  * @license
@@ -16651,11 +16651,16 @@ Identifiers$1.NEW_METHOD = 'factory';
 Identifiers$1.TRANSFORM_METHOD = 'transform';
 Identifiers$1.PATCH_DEPS = 'patchedDeps';
 /* Instructions */
+Identifiers$1.namespaceHTML = { name: 'ɵNH', moduleName: CORE$1 };
+Identifiers$1.namespaceMathML = { name: 'ɵNM', moduleName: CORE$1 };
+Identifiers$1.namespaceSVG = { name: 'ɵNS', moduleName: CORE$1 };
 Identifiers$1.createElement = { name: 'ɵE', moduleName: CORE$1 };
 Identifiers$1.elementEnd = { name: 'ɵe', moduleName: CORE$1 };
 Identifiers$1.elementProperty = { name: 'ɵp', moduleName: CORE$1 };
 Identifiers$1.elementAttribute = { name: 'ɵa', moduleName: CORE$1 };
+Identifiers$1.elementClass = { name: 'ɵk', moduleName: CORE$1 };
 Identifiers$1.elementClassNamed = { name: 'ɵkn', moduleName: CORE$1 };
+Identifiers$1.elementStyle = { name: 'ɵs', moduleName: CORE$1 };
 Identifiers$1.elementStyleNamed = { name: 'ɵsn', moduleName: CORE$1 };
 Identifiers$1.containerCreate = { name: 'ɵC', moduleName: CORE$1 };
 Identifiers$1.text = { name: 'ɵT', moduleName: CORE$1 };
@@ -17520,8 +17525,15 @@ const BINDING_INSTRUCTION_MAP = {
     [2 /* Class */]: Identifiers$1.elementClassNamed,
     [3 /* Style */]: Identifiers$1.elementStyleNamed,
 };
+// `className` is used below instead of `class` because the interception
+// code (where this map is used) deals with DOM element property values
+// (like elm.propName) and not component bindining properties (like [propName]).
+const SPECIAL_CASED_PROPERTIES_INSTRUCTION_MAP = {
+    'className': Identifiers$1.elementClass,
+    'style': Identifiers$1.elementStyle
+};
 class TemplateDefinitionBuilder {
-    constructor(constantPool, contextParameter, parentBindingScope, level = 0, contextName, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes) {
+    constructor(constantPool, contextParameter, parentBindingScope, level = 0, contextName, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace) {
         this.constantPool = constantPool;
         this.contextParameter = contextParameter;
         this.level = level;
@@ -17532,6 +17544,7 @@ class TemplateDefinitionBuilder {
         this.directives = directives;
         this.pipeTypeByName = pipeTypeByName;
         this.pipes = pipes;
+        this._namespace = _namespace;
         this._dataIndex = 0;
         this._bindingContext = 0;
         this._prefixCode = [];
@@ -17569,6 +17582,9 @@ class TemplateDefinitionBuilder {
         });
     }
     buildTemplateFunction(nodes, variables, hasNgContent = false, ngContentSelectors = []) {
+        if (this._namespace !== Identifiers$1.namespaceHTML) {
+            this.instruction(this._creationCode, null, this._namespace);
+        }
         // Create variable bindings
         for (const variable$$1 of variables) {
             const variableName = variable$$1.name;
@@ -17672,6 +17688,20 @@ class TemplateDefinitionBuilder {
         }
         this.instruction(this._creationCode, ngContent.sourceSpan, Identifiers$1.projection, ...parameters);
     }
+    getNamespaceInstruction(namespaceKey) {
+        switch (namespaceKey) {
+            case 'math':
+                return Identifiers$1.namespaceMathML;
+            case 'svg':
+                return Identifiers$1.namespaceSVG;
+            default:
+                return Identifiers$1.namespaceHTML;
+        }
+    }
+    addNamespaceInstruction(nsInstruction, element) {
+        this._namespace = nsInstruction;
+        this.instruction(this._creationCode, element.sourceSpan, nsInstruction);
+    }
     visitElement(element) {
         const elementIndex = this.allocateDataSlot();
         const referenceDataSlots = new Map();
@@ -17679,6 +17709,7 @@ class TemplateDefinitionBuilder {
         const outputAttrs = {};
         const attrI18nMetas = {};
         let i18nMeta = '';
+        const [namespaceKey, elementName] = splitNsName(element.name);
         // Elements inside i18n sections are replaced with placeholders
         // TODO(vicb): nested elements are a WIP in this phase
         if (this._inI18nSection) {
@@ -17716,7 +17747,7 @@ class TemplateDefinitionBuilder {
         // Element creation mode
         const parameters = [
             literal(elementIndex),
-            literal(element.name),
+            literal(elementName),
         ];
         // Add the attributes
         const i18nMessages = [];
@@ -17758,6 +17789,13 @@ class TemplateDefinitionBuilder {
         if (i18nMessages.length > 0) {
             this._creationCode.push(...i18nMessages);
         }
+        const wasInNamespace = this._namespace;
+        const currentNamespace = this.getNamespaceInstruction(namespaceKey);
+        // If the namespace is changing now, include an instruction to change it
+        // during element creation.
+        if (currentNamespace !== wasInNamespace) {
+            this.addNamespaceInstruction(currentNamespace, element);
+        }
         this.instruction(this._creationCode, element.sourceSpan, Identifiers$1.createElement, ...trimTrailingNulls(parameters));
         const implicit = variable(CONTEXT_NAME);
         // Generate Listeners (outputs)
@@ -17779,6 +17817,15 @@ class TemplateDefinitionBuilder {
                 this._unsupported('animations');
             }
             const convertedBinding = this.convertPropertyBinding(implicit, input.value);
+            const specialInstruction = SPECIAL_CASED_PROPERTIES_INSTRUCTION_MAP[input.name];
+            if (specialInstruction) {
+                // special case for [style] and [class] bindings since they are not handled as
+                // standard properties within this implementation. Instead they are
+                // handed off to special cased instruction handlers which will then
+                // delegate them as animation sequences (or input bindings for dirs/cmps)
+                this.instruction(this._bindingCode, input.sourceSpan, specialInstruction, literal(elementIndex), convertedBinding);
+                return;
+            }
             const instruction = BINDING_INSTRUCTION_MAP[input.type];
             if (instruction) {
                 // TODO(chuckj): runtime: security context?
@@ -17840,7 +17887,7 @@ class TemplateDefinitionBuilder {
             this.instruction(this._bindingCode, template.sourceSpan, Identifiers$1.elementProperty, literal(templateIndex), literal(input.name), convertedBinding);
         });
         // Create the template function
-        const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, templateContext, this._bindingScope, this.level + 1, contextName, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes);
+        const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, templateContext, this._bindingScope, this.level + 1, contextName, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes, this._namespace);
         const templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables);
         this._postfixCode.push(templateFunctionExpr.toDeclStmt(templateName, null));
     }
@@ -18219,7 +18266,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     const directivesUsed = new Set();
     const pipesUsed = new Set();
     const template = meta.template;
-    const templateFunctionExpression = new TemplateDefinitionBuilder(constantPool, CONTEXT_NAME, BindingScope.ROOT_SCOPE, 0, templateTypeName, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed)
+    const templateFunctionExpression = new TemplateDefinitionBuilder(constantPool, CONTEXT_NAME, BindingScope.ROOT_SCOPE, 0, templateTypeName, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML)
         .buildTemplateFunction(template.nodes, [], template.hasNgContent, template.ngContentSelectors);
     definitionMap.set('template', templateFunctionExpression);
     // e.g. `directives: [MyDirective]`
