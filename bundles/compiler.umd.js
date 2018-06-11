@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.0+32.sha-5e8bf2f
+ * @license Angular v6.1.0-beta.0+34.sha-8dd99ac
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1221,7 +1221,7 @@ var Version = /** @class */ (function () {
  * @description
  * Entry point for all public APIs of the common package.
  */
-var VERSION = new Version('6.1.0-beta.0+32.sha-5e8bf2f');
+var VERSION = new Version('6.1.0-beta.0+34.sha-8dd99ac');
 
 /**
  * @license
@@ -17737,7 +17737,8 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.namespaceHTML = { name: 'ɵNH', moduleName: CORE$1 };
     Identifiers.namespaceMathML = { name: 'ɵNM', moduleName: CORE$1 };
     Identifiers.namespaceSVG = { name: 'ɵNS', moduleName: CORE$1 };
-    Identifiers.createElement = { name: 'ɵE', moduleName: CORE$1 };
+    Identifiers.element = { name: 'ɵEe', moduleName: CORE$1 };
+    Identifiers.elementStart = { name: 'ɵE', moduleName: CORE$1 };
     Identifiers.elementEnd = { name: 'ɵe', moduleName: CORE$1 };
     Identifiers.elementProperty = { name: 'ɵp', moduleName: CORE$1 };
     Identifiers.elementAttribute = { name: 'ɵa', moduleName: CORE$1 };
@@ -18972,21 +18973,31 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         if (currentNamespace !== wasInNamespace) {
             this.addNamespaceInstruction(currentNamespace, element);
         }
-        this.instruction.apply(this, __spread([this._creationCode, element.sourceSpan, Identifiers$1.createElement], trimTrailingNulls(parameters)));
+        var isEmptyElement = element.children.length === 0 && element.outputs.length === 0;
         var implicit = variable(CONTEXT_NAME);
-        // Generate Listeners (outputs)
-        element.outputs.forEach(function (outputAst) {
-            var elName = sanitizeIdentifier(element.name);
-            var evName = sanitizeIdentifier(outputAst.name);
-            var functionName = _this.templateName + "_" + elName + "_" + evName + "_listener";
-            var localVars = [];
-            var bindingScope = _this._bindingScope.nestedScope(function (lhsVar, rhsExpression) {
-                localVars.push(lhsVar.set(rhsExpression).toDeclStmt(INFERRED_TYPE, [exports.StmtModifier.Final]));
+        if (isEmptyElement) {
+            this.instruction.apply(this, __spread([this._creationCode, element.sourceSpan, Identifiers$1.element], trimTrailingNulls(parameters)));
+        }
+        else {
+            // Generate the instruction create element instruction
+            if (i18nMessages.length > 0) {
+                (_f = this._creationCode).push.apply(_f, __spread(i18nMessages));
+            }
+            this.instruction.apply(this, __spread([this._creationCode, element.sourceSpan, Identifiers$1.elementStart], trimTrailingNulls(parameters)));
+            // Generate Listeners (outputs)
+            element.outputs.forEach(function (outputAst) {
+                var elName = sanitizeIdentifier(element.name);
+                var evName = sanitizeIdentifier(outputAst.name);
+                var functionName = _this.templateName + "_" + elName + "_" + evName + "_listener";
+                var localVars = [];
+                var bindingScope = _this._bindingScope.nestedScope(function (lhsVar, rhsExpression) {
+                    localVars.push(lhsVar.set(rhsExpression).toDeclStmt(INFERRED_TYPE, [exports.StmtModifier.Final]));
+                });
+                var bindingExpr = convertActionBinding(bindingScope, implicit, outputAst.handler, 'b', function () { return error('Unexpected interpolation'); });
+                var handler = fn([new FnParam('$event', DYNAMIC_TYPE)], __spread(localVars, bindingExpr.render3Stmts), INFERRED_TYPE, null, functionName);
+                _this.instruction(_this._creationCode, outputAst.sourceSpan, Identifiers$1.listener, literal(outputAst.name), handler);
             });
-            var bindingExpr = convertActionBinding(bindingScope, implicit, outputAst.handler, 'b', function () { return error('Unexpected interpolation'); });
-            var handler = fn([new FnParam('$event', DYNAMIC_TYPE)], __spread(localVars, bindingExpr.render3Stmts), INFERRED_TYPE, null, functionName);
-            _this.instruction(_this._creationCode, outputAst.sourceSpan, Identifiers$1.listener, literal(outputAst.name), handler);
-        });
+        }
         // Generate element input bindings
         element.inputs.forEach(function (input) {
             if (input.type === 4 /* Animation */) {
@@ -19020,11 +19031,13 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         else {
             visitAll$1(this, element.children);
         }
-        // Finish element construction mode.
-        this.instruction(this._creationCode, element.endSourceSpan || element.sourceSpan, Identifiers$1.elementEnd);
+        if (!isEmptyElement) {
+            // Finish element construction mode.
+            this.instruction(this._creationCode, element.endSourceSpan || element.sourceSpan, Identifiers$1.elementEnd);
+        }
         // Restore the state before exiting this node
         this._inI18nSection = wasInI18nSection;
-        var e_4, _d, _e;
+        var e_4, _d, _e, _f;
     };
     TemplateDefinitionBuilder.prototype.visitTemplate = function (template) {
         var _this = this;
