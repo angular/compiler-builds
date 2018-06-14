@@ -102,7 +102,7 @@ export declare class BindingScope implements LocalResolver {
  * @param templateUrl URL to use for source mapping of the parsed template
  */
 export declare function parseTemplate(template: string, templateUrl: string, options?: {
-    preserveWhitespace?: boolean;
+    preserveWhitespaces?: boolean;
 }): {
     errors?: ParseError[];
     nodes: t.Node[];
