@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.1+26.sha-6d246d6
+ * @license Angular v6.1.0-beta.1+29.sha-0f7e4fa
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1221,7 +1221,7 @@ var Version = /** @class */ (function () {
  * @description
  * Entry point for all public APIs of the common package.
  */
-var VERSION = new Version('6.1.0-beta.1+26.sha-6d246d6');
+var VERSION = new Version('6.1.0-beta.1+29.sha-0f7e4fa');
 
 /**
  * @license
@@ -14611,7 +14611,7 @@ var BindingParser = /** @class */ (function () {
         targetProps.push(new ParsedProperty(name, ast, exports.ParsedPropertyType.ANIMATION, sourceSpan));
     };
     BindingParser.prototype._parseBinding = function (value, isHostBinding, sourceSpan) {
-        var sourceInfo = sourceSpan.start.toString();
+        var sourceInfo = (sourceSpan && sourceSpan.start || '(unknown)').toString();
         try {
             var ast = isHostBinding ?
                 this._exprParser.parseSimpleBinding(value, sourceInfo, this._interpolationConfig) :
@@ -14709,7 +14709,7 @@ var BindingParser = /** @class */ (function () {
         // so don't add the event name to the matchableAttrs
     };
     BindingParser.prototype._parseAction = function (value, sourceSpan) {
-        var sourceInfo = sourceSpan.start.toString();
+        var sourceInfo = (sourceSpan && sourceSpan.start || '(unknown').toString();
         try {
             var ast = this._exprParser.parseAction(value, sourceInfo, this._interpolationConfig);
             if (ast) {
@@ -17779,8 +17779,6 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.pipe = { name: 'ɵPp', moduleName: CORE$1 };
     Identifiers.projection = { name: 'ɵP', moduleName: CORE$1 };
     Identifiers.projectionDef = { name: 'ɵpD', moduleName: CORE$1 };
-    Identifiers.refreshComponent = { name: 'ɵr', moduleName: CORE$1 };
-    Identifiers.directiveLifeCycle = { name: 'ɵl', moduleName: CORE$1 };
     Identifiers.inject = { name: 'inject', moduleName: CORE$1 };
     Identifiers.injectAttribute = { name: 'ɵinjectAttribute', moduleName: CORE$1 };
     Identifiers.injectElementRef = { name: 'ɵinjectElementRef', moduleName: CORE$1 };
@@ -19733,6 +19731,30 @@ function typeMapToExpressionMap(map, outputCtx) {
         return [key, outputCtx.importExpr(type)];
     });
     return new Map(entries);
+}
+var HOST_REG_EXP$1 = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
+function parseHostBindings(host) {
+    var attributes = {};
+    var listeners = {};
+    var properties = {};
+    var animations = {};
+    Object.keys(host).forEach(function (key) {
+        var value = host[key];
+        var matches = key.match(HOST_REG_EXP$1);
+        if (matches === null) {
+            attributes[key] = value;
+        }
+        else if (matches[1 /* Property */] != null) {
+            properties[matches[1 /* Property */]] = value;
+        }
+        else if (matches[2 /* Event */] != null) {
+            listeners[matches[2 /* Event */]] = value;
+        }
+        else if (matches[3 /* Animation */] != null) {
+            animations[matches[3 /* Animation */]] = value;
+        }
+    });
+    return { attributes: attributes, listeners: listeners, properties: properties, animations: animations };
 }
 
 /**
@@ -24355,6 +24377,7 @@ exports.makeBindingParser = makeBindingParser;
 exports.parseTemplate = parseTemplate;
 exports.compileComponentFromMetadata = compileComponentFromMetadata;
 exports.compileDirectiveFromMetadata = compileDirectiveFromMetadata;
+exports.parseHostBindings = parseHostBindings;
 exports.VERSION = VERSION;
 exports.TextAst = TextAst;
 exports.BoundTextAst = BoundTextAst;

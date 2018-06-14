@@ -29,3 +29,19 @@ export declare function compileDirectiveFromRender2(outputCtx: OutputContext, di
  * information.
  */
 export declare function compileComponentFromRender2(outputCtx: OutputContext, component: CompileDirectiveMetadata, render3Ast: Render3ParseResult, reflector: CompileReflector, bindingParser: BindingParser, directiveTypeBySel: Map<string, any>, pipeTypeByName: Map<string, any>): void;
+export declare function parseHostBindings(host: {
+    [key: string]: string;
+}): {
+    attributes: {
+        [key: string]: string;
+    };
+    listeners: {
+        [key: string]: string;
+    };
+    properties: {
+        [key: string]: string;
+    };
+    animations: {
+        [key: string]: string;
+    };
+};
