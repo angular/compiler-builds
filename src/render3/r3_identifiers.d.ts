@@ -66,6 +66,7 @@ export declare class Identifiers {
     static defineDirective: o.ExternalReference;
     static DirectiveDef: o.ExternalReference;
     static defineInjector: o.ExternalReference;
+    static NgModuleDef: o.ExternalReference;
     static defineNgModule: o.ExternalReference;
     static definePipe: o.ExternalReference;
     static query: o.ExternalReference;

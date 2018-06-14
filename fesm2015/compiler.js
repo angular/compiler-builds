@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.1+29.sha-0f7e4fa
+ * @license Angular v6.1.0-beta.1+30.sha-27bc7dc
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1089,7 +1089,7 @@ class Version {
  * @description
  * Entry point for all public APIs of the common package.
  */
-const VERSION = new Version('6.1.0-beta.1+29.sha-0f7e4fa');
+const VERSION = new Version('6.1.0-beta.1+30.sha-27bc7dc');
 
 /**
  * @license
@@ -16719,6 +16719,10 @@ Identifiers$1.defineInjector = {
     name: 'defineInjector',
     moduleName: CORE$1,
 };
+Identifiers$1.NgModuleDef = {
+    name: 'NgModuleDef',
+    moduleName: CORE$1,
+};
 Identifiers$1.defineNgModule = { name: 'ɵdefineNgModule', moduleName: CORE$1 };
 Identifiers$1.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
 Identifiers$1.query = { name: 'ɵQ', moduleName: CORE$1 };
@@ -16779,8 +16783,10 @@ function compileNgModule(meta) {
             imports: literalArr(imports),
             exports: literalArr(exports),
         })]);
-    // TODO(alxhub): write a proper type reference when AOT compilation of @NgModule is implemented.
-    const type = new ExpressionType(NULL_EXPR);
+    const type = new ExpressionType(importExpr(Identifiers$1.NgModuleDef, [
+        new ExpressionType(moduleType), new ExpressionType(literalArr(declarations)),
+        new ExpressionType(literalArr(imports)), new ExpressionType(literalArr(exports))
+    ]));
     const additionalStatements = [];
     return { expression, type, additionalStatements };
 }
@@ -18179,7 +18185,7 @@ function parseTemplate(template, templateUrl, options = {}) {
         return { errors: parseResult.errors, nodes: [], hasNgContent: false, ngContentSelectors: [] };
     }
     let rootNodes = parseResult.rootNodes;
-    if (!options.preserveWhitespace) {
+    if (!options.preserveWhitespaces) {
         rootNodes = visitAll(new WhitespaceVisitor(), rootNodes);
     }
     const { nodes, hasNgContent, ngContentSelectors, errors } = htmlAstToRender3Ast(rootNodes, bindingParser);
@@ -18243,7 +18249,7 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
 function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
     const definitionMap = baseDirectiveFields(meta, constantPool, bindingParser);
     const expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()]);
-    const type = new ExpressionType(importExpr(Identifiers$1.DirectiveDef, [new ExpressionType(meta.type)]));
+    const type = new ExpressionType(importExpr(Identifiers$1.DirectiveDef, [new ExpressionType(meta.type), new ExpressionType(literal(meta.selector || ''))]));
     return { expression, type };
 }
 /**
@@ -18289,7 +18295,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
         definitionMap.set('pipes', literalArr(Array.from(pipesUsed)));
     }
     const expression = importExpr(Identifiers$1.defineComponent).callFn([definitionMap.toLiteralMap()]);
-    const type = new ExpressionType(importExpr(Identifiers$1.ComponentDef, [new ExpressionType(meta.type)]));
+    const type = new ExpressionType(importExpr(Identifiers$1.ComponentDef, [new ExpressionType(meta.type), new ExpressionType(literal(meta.selector || ''))]));
     return { expression, type };
 }
 /**
@@ -18344,13 +18350,13 @@ function directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector) {
         selector: directive.selector,
         deps: dependenciesFromGlobalMetadata(directive.type, outputCtx, reflector),
         queries: queriesFromGlobalMetadata(directive.queries, outputCtx),
+        lifecycle: {
+            usesOnChanges: directive.type.lifecycleHooks.some(lifecycle => lifecycle == LifecycleHooks.OnChanges),
+        },
         host: {
             attributes: directive.hostAttributes,
             listeners: summary.hostListeners,
             properties: summary.hostProperties,
-        },
-        lifecycle: {
-            usesOnChanges: directive.type.lifecycleHooks.some(lifecycle => lifecycle == LifecycleHooks.OnChanges),
         },
         inputs: directive.inputs,
         outputs: directive.outputs,

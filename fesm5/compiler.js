@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.1+29.sha-0f7e4fa
+ * @license Angular v6.1.0-beta.1+30.sha-27bc7dc
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1135,7 +1135,7 @@ var Version = /** @class */ (function () {
  * @description
  * Entry point for all public APIs of the common package.
  */
-var VERSION = new Version('6.1.0-beta.1+29.sha-0f7e4fa');
+var VERSION = new Version('6.1.0-beta.1+30.sha-27bc7dc');
 
 /**
  * @license
@@ -17716,6 +17716,10 @@ var Identifiers$1 = /** @class */ (function () {
         name: 'defineInjector',
         moduleName: CORE$1,
     };
+    Identifiers.NgModuleDef = {
+        name: 'NgModuleDef',
+        moduleName: CORE$1,
+    };
     Identifiers.defineNgModule = { name: 'ɵdefineNgModule', moduleName: CORE$1 };
     Identifiers.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
     Identifiers.query = { name: 'ɵQ', moduleName: CORE$1 };
@@ -17778,8 +17782,10 @@ function compileNgModule(meta) {
             imports: literalArr(imports),
             exports: literalArr(exports),
         })]);
-    // TODO(alxhub): write a proper type reference when AOT compilation of @NgModule is implemented.
-    var type = new ExpressionType(NULL_EXPR);
+    var type = new ExpressionType(importExpr(Identifiers$1.NgModuleDef, [
+        new ExpressionType(moduleType), new ExpressionType(literalArr(declarations)),
+        new ExpressionType(literalArr(imports)), new ExpressionType(literalArr(exports))
+    ]));
     var additionalStatements = [];
     return { expression: expression, type: type, additionalStatements: additionalStatements };
 }
@@ -19285,7 +19291,7 @@ function parseTemplate(template, templateUrl, options) {
         return { errors: parseResult.errors, nodes: [], hasNgContent: false, ngContentSelectors: [] };
     }
     var rootNodes = parseResult.rootNodes;
-    if (!options.preserveWhitespace) {
+    if (!options.preserveWhitespaces) {
         rootNodes = visitAll(new WhitespaceVisitor(), rootNodes);
     }
     var _a = htmlAstToRender3Ast(rootNodes, bindingParser), nodes = _a.nodes, hasNgContent = _a.hasNgContent, ngContentSelectors = _a.ngContentSelectors, errors = _a.errors;
@@ -19350,7 +19356,7 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
 function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
     var definitionMap = baseDirectiveFields(meta, constantPool, bindingParser);
     var expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()]);
-    var type = new ExpressionType(importExpr(Identifiers$1.DirectiveDef, [new ExpressionType(meta.type)]));
+    var type = new ExpressionType(importExpr(Identifiers$1.DirectiveDef, [new ExpressionType(meta.type), new ExpressionType(literal(meta.selector || ''))]));
     return { expression: expression, type: type };
 }
 /**
@@ -19396,7 +19402,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
         definitionMap.set('pipes', literalArr(Array.from(pipesUsed)));
     }
     var expression = importExpr(Identifiers$1.defineComponent).callFn([definitionMap.toLiteralMap()]);
-    var type = new ExpressionType(importExpr(Identifiers$1.ComponentDef, [new ExpressionType(meta.type)]));
+    var type = new ExpressionType(importExpr(Identifiers$1.ComponentDef, [new ExpressionType(meta.type), new ExpressionType(literal(meta.selector || ''))]));
     return { expression: expression, type: type };
 }
 /**
@@ -19451,13 +19457,13 @@ function directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector) {
         selector: directive.selector,
         deps: dependenciesFromGlobalMetadata(directive.type, outputCtx, reflector),
         queries: queriesFromGlobalMetadata(directive.queries, outputCtx),
+        lifecycle: {
+            usesOnChanges: directive.type.lifecycleHooks.some(function (lifecycle) { return lifecycle == LifecycleHooks.OnChanges; }),
+        },
         host: {
             attributes: directive.hostAttributes,
             listeners: summary.hostListeners,
             properties: summary.hostProperties,
-        },
-        lifecycle: {
-            usesOnChanges: directive.type.lifecycleHooks.some(function (lifecycle) { return lifecycle == LifecycleHooks.OnChanges; }),
         },
         inputs: directive.inputs,
         outputs: directive.outputs,
