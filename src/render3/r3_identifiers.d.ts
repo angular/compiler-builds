@@ -13,7 +13,8 @@ export declare class Identifiers {
     static namespaceHTML: o.ExternalReference;
     static namespaceMathML: o.ExternalReference;
     static namespaceSVG: o.ExternalReference;
-    static createElement: o.ExternalReference;
+    static element: o.ExternalReference;
+    static elementStart: o.ExternalReference;
     static elementEnd: o.ExternalReference;
     static elementProperty: o.ExternalReference;
     static elementAttribute: o.ExternalReference;

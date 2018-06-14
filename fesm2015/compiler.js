@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.0+30.sha-29eb24b
+ * @license Angular v6.1.0-beta.1+15.sha-e6516b0
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1089,7 +1089,7 @@ class Version {
  * @description
  * Entry point for all public APIs of the common package.
  */
-const VERSION = new Version('6.1.0-beta.0+30.sha-29eb24b');
+const VERSION = new Version('6.1.0-beta.1+15.sha-e6516b0');
 
 /**
  * @license
@@ -16654,7 +16654,8 @@ Identifiers$1.PATCH_DEPS = 'patchedDeps';
 Identifiers$1.namespaceHTML = { name: 'ɵNH', moduleName: CORE$1 };
 Identifiers$1.namespaceMathML = { name: 'ɵNM', moduleName: CORE$1 };
 Identifiers$1.namespaceSVG = { name: 'ɵNS', moduleName: CORE$1 };
-Identifiers$1.createElement = { name: 'ɵE', moduleName: CORE$1 };
+Identifiers$1.element = { name: 'ɵEe', moduleName: CORE$1 };
+Identifiers$1.elementStart = { name: 'ɵE', moduleName: CORE$1 };
 Identifiers$1.elementEnd = { name: 'ɵe', moduleName: CORE$1 };
 Identifiers$1.elementProperty = { name: 'ɵp', moduleName: CORE$1 };
 Identifiers$1.elementAttribute = { name: 'ɵa', moduleName: CORE$1 };
@@ -17796,21 +17797,31 @@ class TemplateDefinitionBuilder {
         if (currentNamespace !== wasInNamespace) {
             this.addNamespaceInstruction(currentNamespace, element);
         }
-        this.instruction(this._creationCode, element.sourceSpan, Identifiers$1.createElement, ...trimTrailingNulls(parameters));
+        const isEmptyElement = element.children.length === 0 && element.outputs.length === 0;
         const implicit = variable(CONTEXT_NAME);
-        // Generate Listeners (outputs)
-        element.outputs.forEach((outputAst) => {
-            const elName = sanitizeIdentifier(element.name);
-            const evName = sanitizeIdentifier(outputAst.name);
-            const functionName = `${this.templateName}_${elName}_${evName}_listener`;
-            const localVars = [];
-            const bindingScope = this._bindingScope.nestedScope((lhsVar, rhsExpression) => {
-                localVars.push(lhsVar.set(rhsExpression).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
+        if (isEmptyElement) {
+            this.instruction(this._creationCode, element.sourceSpan, Identifiers$1.element, ...trimTrailingNulls(parameters));
+        }
+        else {
+            // Generate the instruction create element instruction
+            if (i18nMessages.length > 0) {
+                this._creationCode.push(...i18nMessages);
+            }
+            this.instruction(this._creationCode, element.sourceSpan, Identifiers$1.elementStart, ...trimTrailingNulls(parameters));
+            // Generate Listeners (outputs)
+            element.outputs.forEach((outputAst) => {
+                const elName = sanitizeIdentifier(element.name);
+                const evName = sanitizeIdentifier(outputAst.name);
+                const functionName = `${this.templateName}_${elName}_${evName}_listener`;
+                const localVars = [];
+                const bindingScope = this._bindingScope.nestedScope((lhsVar, rhsExpression) => {
+                    localVars.push(lhsVar.set(rhsExpression).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
+                });
+                const bindingExpr = convertActionBinding(bindingScope, implicit, outputAst.handler, 'b', () => error('Unexpected interpolation'));
+                const handler = fn([new FnParam('$event', DYNAMIC_TYPE)], [...localVars, ...bindingExpr.render3Stmts], INFERRED_TYPE, null, functionName);
+                this.instruction(this._creationCode, outputAst.sourceSpan, Identifiers$1.listener, literal(outputAst.name), handler);
             });
-            const bindingExpr = convertActionBinding(bindingScope, implicit, outputAst.handler, 'b', () => error('Unexpected interpolation'));
-            const handler = fn([new FnParam('$event', DYNAMIC_TYPE)], [...localVars, ...bindingExpr.render3Stmts], INFERRED_TYPE, null, functionName);
-            this.instruction(this._creationCode, outputAst.sourceSpan, Identifiers$1.listener, literal(outputAst.name), handler);
-        });
+        }
         // Generate element input bindings
         element.inputs.forEach((input) => {
             if (input.type === 4 /* Animation */) {
@@ -17844,8 +17855,10 @@ class TemplateDefinitionBuilder {
         else {
             visitAll$1(this, element.children);
         }
-        // Finish element construction mode.
-        this.instruction(this._creationCode, element.endSourceSpan || element.sourceSpan, Identifiers$1.elementEnd);
+        if (!isEmptyElement) {
+            // Finish element construction mode.
+            this.instruction(this._creationCode, element.endSourceSpan || element.sourceSpan, Identifiers$1.elementEnd);
+        }
         // Restore the state before exiting this node
         this._inI18nSection = wasInI18nSection;
     }
