@@ -35,18 +35,6 @@ export interface R3FactoryMetadata {
      */
     injectFn: o.ExternalReference;
     /**
-     * Whether the `injectFn` given above accepts a 2nd parameter indicating the default value to
-     * be used to resolve missing @Optional dependencies.
-     *
-     * If the optional parameter is used, injectFn for an optional dependency will be invoked as:
-     * `injectFn(token, null, flags)`.
-     *
-     * If it's not used, injectFn for an optional dependency will be invoked as:
-     * `injectFn(token, flags)`. The Optional flag will indicate that injectFn should select a default
-     * value if it cannot satisfy the injection request for the token.
-     */
-    useOptionalParam: boolean;
-    /**
      * If present, the return of the factory function will be an array with the injected value in the
      * 0th position and the extra results included in subsequent positions.
      *
