@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.2+27.sha-2a68ba4
+ * @license Angular v6.1.0-beta.2+32.sha-855e8ad
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1221,7 +1221,7 @@ var Version = /** @class */ (function () {
  * @description
  * Entry point for all public APIs of the common package.
  */
-var VERSION = new Version('6.1.0-beta.2+27.sha-2a68ba4');
+var VERSION = new Version('6.1.0-beta.2+32.sha-855e8ad');
 
 /**
  * @license
@@ -17798,6 +17798,10 @@ var Identifiers$1 = /** @class */ (function () {
         name: 'DirectiveDef',
         moduleName: CORE$1,
     };
+    Identifiers.InjectorDef = {
+        name: 'InjectorDef',
+        moduleName: CORE$1,
+    };
     Identifiers.defineInjector = {
         name: 'defineInjector',
         moduleName: CORE$1,
@@ -17816,88 +17820,6 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.reserveSlots = { name: 'ɵrS', moduleName: CORE$1 };
     return Identifiers;
 }());
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * Convert an object map with `Expression` values into a `LiteralMapExpr`.
- */
-function mapToMapExpression(map) {
-    var result = Object.keys(map).map(function (key) { return ({ key: key, value: map[key], quoted: false }); });
-    return literalMap(result);
-}
-/**
- * Convert metadata into an `Expression` in the given `OutputContext`.
- *
- * This operation will handle arrays, references to symbols, or literal `null` or `undefined`.
- */
-function convertMetaToOutput(meta, ctx) {
-    if (Array.isArray(meta)) {
-        return literalArr(meta.map(function (entry) { return convertMetaToOutput(entry, ctx); }));
-    }
-    if (meta instanceof StaticSymbol) {
-        return ctx.importExpr(meta);
-    }
-    if (meta == null) {
-        return literal(meta);
-    }
-    throw new Error("Internal error: Unsupported or unknown metadata: " + meta);
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
- */
-function compileNgModule(meta) {
-    var moduleType = meta.type, bootstrap = meta.bootstrap, declarations = meta.declarations, imports = meta.imports, exports = meta.exports;
-    var expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression({
-            type: moduleType,
-            bootstrap: literalArr(bootstrap),
-            declarations: literalArr(declarations),
-            imports: literalArr(imports),
-            exports: literalArr(exports),
-        })]);
-    var type = new ExpressionType(importExpr(Identifiers$1.NgModuleDef, [
-        new ExpressionType(moduleType), new ExpressionType(literalArr(declarations)),
-        new ExpressionType(literalArr(imports)), new ExpressionType(literalArr(exports))
-    ]));
-    var additionalStatements = [];
-    return { expression: expression, type: type, additionalStatements: additionalStatements };
-}
-// TODO(alxhub): integrate this with `compileNgModule`. Currently the two are separate operations.
-function compileNgModuleFromRender2(ctx, ngModule, injectableCompiler) {
-    var className = identifierName(ngModule.type);
-    var rawImports = ngModule.rawImports ? [ngModule.rawImports] : [];
-    var rawExports = ngModule.rawExports ? [ngModule.rawExports] : [];
-    var injectorDefArg = mapLiteral({
-        'factory': injectableCompiler.factoryFor({ type: ngModule.type, symbol: ngModule.type.reference }, ctx),
-        'providers': convertMetaToOutput(ngModule.rawProviders, ctx),
-        'imports': convertMetaToOutput(__spread(rawImports, rawExports), ctx),
-    });
-    var injectorDef = importExpr(Identifiers$1.defineInjector).callFn([injectorDefArg]);
-    ctx.statements.push(new ClassStmt(
-    /* name */ className, 
-    /* parent */ null, 
-    /* fields */ [new ClassField(
-        /* name */ 'ngInjectorDef', 
-        /* type */ INFERRED_TYPE, 
-        /* modifiers */ [exports.StmtModifier.Static], 
-        /* initializer */ injectorDef)], 
-    /* getters */ [], 
-    /* constructorMethod */ new ClassMethod(null, [], []), 
-    /* methods */ []));
-}
 
 /**
  * @license
@@ -18152,6 +18074,103 @@ function dependenciesFromGlobalMetadata(type, outputCtx, reflector) {
     }
     return deps;
     var e_1, _c;
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Convert an object map with `Expression` values into a `LiteralMapExpr`.
+ */
+function mapToMapExpression(map) {
+    var result = Object.keys(map).map(function (key) { return ({ key: key, value: map[key], quoted: false }); });
+    return literalMap(result);
+}
+/**
+ * Convert metadata into an `Expression` in the given `OutputContext`.
+ *
+ * This operation will handle arrays, references to symbols, or literal `null` or `undefined`.
+ */
+function convertMetaToOutput(meta, ctx) {
+    if (Array.isArray(meta)) {
+        return literalArr(meta.map(function (entry) { return convertMetaToOutput(entry, ctx); }));
+    }
+    if (meta instanceof StaticSymbol) {
+        return ctx.importExpr(meta);
+    }
+    if (meta == null) {
+        return literal(meta);
+    }
+    throw new Error("Internal error: Unsupported or unknown metadata: " + meta);
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
+ */
+function compileNgModule(meta) {
+    var moduleType = meta.type, bootstrap = meta.bootstrap, declarations = meta.declarations, imports = meta.imports, exports = meta.exports;
+    var expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression({
+            type: moduleType,
+            bootstrap: literalArr(bootstrap),
+            declarations: literalArr(declarations),
+            imports: literalArr(imports),
+            exports: literalArr(exports),
+        })]);
+    var type = new ExpressionType(importExpr(Identifiers$1.NgModuleDef, [
+        new ExpressionType(moduleType), new ExpressionType(literalArr(declarations)),
+        new ExpressionType(literalArr(imports)), new ExpressionType(literalArr(exports))
+    ]));
+    var additionalStatements = [];
+    return { expression: expression, type: type, additionalStatements: additionalStatements };
+}
+function compileInjector(meta) {
+    var expression = importExpr(Identifiers$1.defineInjector).callFn([mapToMapExpression({
+            factory: compileFactoryFunction({
+                name: meta.name,
+                fnOrClass: meta.type,
+                deps: meta.deps,
+                useNew: true,
+                injectFn: Identifiers$1.inject,
+            }),
+            providers: meta.providers,
+            imports: meta.imports,
+        })]);
+    var type = new ExpressionType(importExpr(Identifiers$1.InjectorDef));
+    return { expression: expression, type: type };
+}
+// TODO(alxhub): integrate this with `compileNgModule`. Currently the two are separate operations.
+function compileNgModuleFromRender2(ctx, ngModule, injectableCompiler) {
+    var className = identifierName(ngModule.type);
+    var rawImports = ngModule.rawImports ? [ngModule.rawImports] : [];
+    var rawExports = ngModule.rawExports ? [ngModule.rawExports] : [];
+    var injectorDefArg = mapLiteral({
+        'factory': injectableCompiler.factoryFor({ type: ngModule.type, symbol: ngModule.type.reference }, ctx),
+        'providers': convertMetaToOutput(ngModule.rawProviders, ctx),
+        'imports': convertMetaToOutput(__spread(rawImports, rawExports), ctx),
+    });
+    var injectorDef = importExpr(Identifiers$1.defineInjector).callFn([injectorDefArg]);
+    ctx.statements.push(new ClassStmt(
+    /* name */ className, 
+    /* parent */ null, 
+    /* fields */ [new ClassField(
+        /* name */ 'ngInjectorDef', 
+        /* type */ INFERRED_TYPE, 
+        /* modifiers */ [exports.StmtModifier.Static], 
+        /* initializer */ injectorDef)], 
+    /* getters */ [], 
+    /* constructorMethod */ new ClassMethod(null, [], []), 
+    /* methods */ []));
 }
 
 /**
@@ -24363,6 +24382,7 @@ exports.isSyntaxError = isSyntaxError;
 exports.syntaxError = syntaxError;
 exports.Version = Version;
 exports.jitExpression = jitExpression;
+exports.compileInjector = compileInjector;
 exports.compileNgModule = compileNgModule;
 exports.makeBindingParser = makeBindingParser;
 exports.parseTemplate = parseTemplate;
