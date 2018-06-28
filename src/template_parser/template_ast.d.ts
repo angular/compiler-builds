@@ -54,7 +54,7 @@ export declare class AttrAst implements TemplateAst {
     constructor(name: string, value: string, sourceSpan: ParseSourceSpan);
     visit(visitor: TemplateAstVisitor, context: any): any;
 }
-export declare enum PropertyBindingType {
+export declare const enum PropertyBindingType {
     Property = 0,
     Attribute = 1,
     Class = 2,
