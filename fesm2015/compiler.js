@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.2+54.sha-39c8bae
+ * @license Angular v6.1.0-beta.3+16.sha-13d60ea
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1089,7 +1089,7 @@ class Version {
  * @description
  * Entry point for all public APIs of the common package.
  */
-const VERSION = new Version('6.1.0-beta.2+54.sha-39c8bae');
+const VERSION = new Version('6.1.0-beta.3+16.sha-13d60ea');
 
 /**
  * @license
@@ -1133,25 +1133,12 @@ class AttrAst {
     }
     visit(visitor, context) { return visitor.visitAttr(this, context); }
 }
-var PropertyBindingType;
-(function (PropertyBindingType) {
-    // A normal binding to a property (e.g. `[property]="expression"`).
-    PropertyBindingType[PropertyBindingType["Property"] = 0] = "Property";
-    // A binding to an element attribute (e.g. `[attr.name]="expression"`).
-    PropertyBindingType[PropertyBindingType["Attribute"] = 1] = "Attribute";
-    // A binding to a CSS class (e.g. `[class.name]="condition"`).
-    PropertyBindingType[PropertyBindingType["Class"] = 2] = "Class";
-    // A binding to a style rule (e.g. `[style.rule]="expression"`).
-    PropertyBindingType[PropertyBindingType["Style"] = 3] = "Style";
-    // A binding to an animation reference (e.g. `[animate.key]="expression"`).
-    PropertyBindingType[PropertyBindingType["Animation"] = 4] = "Animation";
-})(PropertyBindingType || (PropertyBindingType = {}));
 const BoundPropertyMapping = {
-    [4 /* Animation */]: PropertyBindingType.Animation,
-    [1 /* Attribute */]: PropertyBindingType.Attribute,
-    [2 /* Class */]: PropertyBindingType.Class,
-    [0 /* Property */]: PropertyBindingType.Property,
-    [3 /* Style */]: PropertyBindingType.Style,
+    [4 /* Animation */]: 4 /* Animation */,
+    [1 /* Attribute */]: 1 /* Attribute */,
+    [2 /* Class */]: 2 /* Class */,
+    [0 /* Property */]: 0 /* Property */,
+    [3 /* Style */]: 3 /* Style */,
 };
 /**
  * A binding for an element property (e.g. `[property]="expression"`) or an animation trigger (e.g.
@@ -1165,7 +1152,7 @@ class BoundElementPropertyAst {
         this.value = value;
         this.unit = unit;
         this.sourceSpan = sourceSpan;
-        this.isAnimation = this.type === PropertyBindingType.Animation;
+        this.isAnimation = this.type === 4 /* Animation */;
     }
     static fromBoundProperty(prop) {
         const type = BoundPropertyMapping[prop.type];
@@ -14381,7 +14368,7 @@ class TemplateParseVisitor {
         // Note: We can't filter out empty expressions before this method,
         // as we still want to validate them!
         return boundProps.filter((boundProp) => {
-            if (boundProp.type === PropertyBindingType.Property &&
+            if (boundProp.type === 0 /* Property */ &&
                 !this._schemaRegistry.hasProperty(elementName, boundProp.name, this._schemas)) {
                 let errorMsg = `Can't bind to '${boundProp.name}' since it isn't a known property of '${elementName}'.`;
                 if (elementName.startsWith('ng-')) {
@@ -16129,26 +16116,26 @@ function needsAdditionalRootNode(astNodes) {
 }
 function elementBindingDef(inputAst, dirAst) {
     switch (inputAst.type) {
-        case PropertyBindingType.Attribute:
+        case 1 /* Attribute */:
             return literalArr([
                 literal(1 /* TypeElementAttribute */), literal(inputAst.name),
                 literal(inputAst.securityContext)
             ]);
-        case PropertyBindingType.Property:
+        case 0 /* Property */:
             return literalArr([
                 literal(8 /* TypeProperty */), literal(inputAst.name),
                 literal(inputAst.securityContext)
             ]);
-        case PropertyBindingType.Animation:
+        case 4 /* Animation */:
             const bindingType = 8 /* TypeProperty */ |
                 (dirAst && dirAst.directive.isComponent ? 32 /* SyntheticHostProperty */ :
                     16 /* SyntheticProperty */);
             return literalArr([
                 literal(bindingType), literal('@' + inputAst.name), literal(inputAst.securityContext)
             ]);
-        case PropertyBindingType.Class:
+        case 2 /* Class */:
             return literalArr([literal(2 /* TypeElementClass */), literal(inputAst.name), NULL_EXPR]);
-        case PropertyBindingType.Style:
+        case 3 /* Style */:
             return literalArr([
                 literal(4 /* TypeElementStyle */), literal(inputAst.name), literal(inputAst.unit)
             ]);
@@ -17531,12 +17518,20 @@ function isEmptyTextNode(node) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const BINDING_INSTRUCTION_MAP = {
-    [0 /* Property */]: Identifiers$1.elementProperty,
-    [1 /* Attribute */]: Identifiers$1.elementAttribute,
-    [2 /* Class */]: Identifiers$1.elementClassNamed,
-    [3 /* Style */]: Identifiers$1.elementStyleNamed,
-};
+function mapBindingToInstruction(type) {
+    switch (type) {
+        case 0 /* Property */:
+            return Identifiers$1.elementProperty;
+        case 1 /* Attribute */:
+            return Identifiers$1.elementAttribute;
+        case 2 /* Class */:
+            return Identifiers$1.elementClassNamed;
+        case 3 /* Style */:
+            return Identifiers$1.elementStyleNamed;
+        default:
+            return undefined;
+    }
+}
 // `className` is used below instead of `class` because the interception
 // code (where this map is used) deals with DOM element property values
 // (like elm.propName) and not component bindining properties (like [propName]).
@@ -17848,7 +17843,7 @@ class TemplateDefinitionBuilder {
                 this.instruction(this._bindingCode, input.sourceSpan, specialInstruction, literal(elementIndex), convertedBinding);
                 return;
             }
-            const instruction = BINDING_INSTRUCTION_MAP[input.type];
+            const instruction = mapBindingToInstruction(input.type);
             if (instruction) {
                 // TODO(chuckj): runtime: security context?
                 this.instruction(this._bindingCode, input.sourceSpan, instruction, literal(elementIndex), literal(input.name), convertedBinding);
@@ -22796,5 +22791,5 @@ function jitExpression(def, context, sourceUrl, constantPool) {
 // replaces this file with production index.ts when it rewrites private symbol
 // names.
 
-export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, jitExpression, R3ResolvedDependencyType, compileInjector, compileNgModule, makeBindingParser, parseTemplate, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, VERSION, TextAst, BoundTextAst, AttrAst, PropertyBindingType, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, compileInjectable };
+export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, jitExpression, R3ResolvedDependencyType, compileInjector, compileNgModule, makeBindingParser, parseTemplate, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, compileInjectable };
 //# sourceMappingURL=compiler.js.map
