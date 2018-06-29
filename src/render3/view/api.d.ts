@@ -83,6 +83,10 @@ export interface R3DirectiveMetadata {
     outputs: {
         [field: string]: string;
     };
+    /**
+     * Whether or not the component or directive inherits from another class
+     */
+    usesInheritance: boolean;
 }
 /**
  * Information needed to compile a component for the render3 runtime.

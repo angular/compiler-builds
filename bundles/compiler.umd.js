@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.3+16.sha-13d60ea
+ * @license Angular v6.1.0-beta.3+20.sha-d243baf
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1221,7 +1221,7 @@ var Version = /** @class */ (function () {
  * @description
  * Entry point for all public APIs of the common package.
  */
-var VERSION = new Version('6.1.0-beta.3+16.sha-13d60ea');
+var VERSION = new Version('6.1.0-beta.3+20.sha-d243baf');
 
 /**
  * @license
@@ -17802,6 +17802,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.query = { name: 'ɵQ', moduleName: CORE$1 };
     Identifiers.queryRefresh = { name: 'ɵqR', moduleName: CORE$1 };
     Identifiers.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
+    Identifiers.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
     Identifiers.listener = { name: 'ɵL', moduleName: CORE$1 };
     // Reserve slots for pure functions
     Identifiers.reserveSlots = { name: 'ɵrS', moduleName: CORE$1 };
@@ -19431,10 +19432,13 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs));
     // e.g 'outputs: {a: 'a'}`
     definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
-    // e.g. `features: [NgOnChangesFeature(MyComponent)]`
+    // e.g. `features: [NgOnChangesFeature]`
     var features = [];
+    if (meta.usesInheritance) {
+        features.push(importExpr(Identifiers$1.InheritDefinitionFeature));
+    }
     if (meta.lifecycle.usesOnChanges) {
-        features.push(importExpr(Identifiers$1.NgOnChangesFeature, null, null).callFn([meta.type]));
+        features.push(importExpr(Identifiers$1.NgOnChangesFeature));
     }
     if (features.length) {
         definitionMap.set('features', literalArr(features));
@@ -19558,6 +19562,7 @@ function directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector) {
         },
         inputs: directive.inputs,
         outputs: directive.outputs,
+        usesInheritance: false,
     };
 }
 /**
