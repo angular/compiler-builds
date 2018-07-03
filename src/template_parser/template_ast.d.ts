@@ -59,7 +59,7 @@ export declare const enum PropertyBindingType {
     Attribute = 1,
     Class = 2,
     Style = 3,
-    Animation = 4,
+    Animation = 4
 }
 /**
  * A binding for an element property (e.g. `[property]="expression"`) or an animation trigger (e.g.
@@ -198,7 +198,7 @@ export declare enum ProviderAstType {
     PrivateService = 1,
     Component = 2,
     Directive = 3,
-    Builtin = 4,
+    Builtin = 4
 }
 /**
  * Position where content is to be projected (instance of `<ng-content>` in a template).

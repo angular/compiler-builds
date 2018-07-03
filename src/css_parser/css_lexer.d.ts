@@ -1,3 +1,10 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 export declare enum CssTokenType {
     EOF = 0,
     String = 1,
@@ -8,7 +15,7 @@ export declare enum CssTokenType {
     AtKeyword = 6,
     Character = 7,
     Whitespace = 8,
-    Invalid = 9,
+    Invalid = 9
 }
 export declare enum CssLexerMode {
     ALL = 0,
@@ -24,7 +31,7 @@ export declare enum CssLexerMode {
     STYLE_BLOCK = 10,
     STYLE_VALUE = 11,
     STYLE_VALUE_FUNCTION = 12,
-    STYLE_CALC_FUNCTION = 13,
+    STYLE_CALC_FUNCTION = 13
 }
 export declare class LexedCssResult {
     error: Error | null;
