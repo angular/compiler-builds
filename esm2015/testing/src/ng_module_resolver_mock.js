@@ -1,6 +1,6 @@
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
+ * @suppress {checkTypes,extraRequire,uselessCode} checked by tsc
  */
 /**
  * @license
@@ -40,7 +40,7 @@ export class MockNgModuleResolver extends NgModuleResolver {
         return this._ngModules.get(type) || /** @type {?} */ ((super.resolve(type, throwIfNotFound)));
     }
 }
-function MockNgModuleResolver_tsickle_Closure_declarations() {
+if (false) {
     /** @type {?} */
     MockNgModuleResolver.prototype._ngModules;
 }

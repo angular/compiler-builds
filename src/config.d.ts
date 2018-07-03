@@ -1,3 +1,10 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 import { MissingTranslationStrategy, ViewEncapsulation } from './core';
 export declare class CompilerConfig {
     defaultEncapsulation: ViewEncapsulation | null;
@@ -6,7 +13,7 @@ export declare class CompilerConfig {
     missingTranslation: MissingTranslationStrategy | null;
     preserveWhitespaces: boolean;
     strictInjectionParameters: boolean;
-    constructor({defaultEncapsulation, useJit, jitDevMode, missingTranslation, preserveWhitespaces, strictInjectionParameters}?: {
+    constructor({ defaultEncapsulation, useJit, jitDevMode, missingTranslation, preserveWhitespaces, strictInjectionParameters }?: {
         defaultEncapsulation?: ViewEncapsulation;
         useJit?: boolean;
         jitDevMode?: boolean;
