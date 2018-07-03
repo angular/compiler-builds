@@ -1,10 +1,3 @@
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 import { InterpolationConfig } from '../ml_parser/interpolation_config';
 import { AST, ASTWithSource, BindingPipe, LiteralMap, ParseSpan, ParserError, TemplateBinding } from './ast';
 import { Lexer, Token } from './lexer';
@@ -27,17 +20,17 @@ export declare class Parser {
     parseAction(input: string, location: any, interpolationConfig?: InterpolationConfig): ASTWithSource;
     parseBinding(input: string, location: any, interpolationConfig?: InterpolationConfig): ASTWithSource;
     parseSimpleBinding(input: string, location: string, interpolationConfig?: InterpolationConfig): ASTWithSource;
-    private _reportError;
-    private _parseBindingAst;
-    private _parseQuote;
+    private _reportError(message, input, errLocation, ctxLocation?);
+    private _parseBindingAst(input, location, interpolationConfig);
+    private _parseQuote(input, location);
     parseTemplateBindings(tplKey: string, tplValue: string, location: any): TemplateBindingParseResult;
     parseInterpolation(input: string, location: any, interpolationConfig?: InterpolationConfig): ASTWithSource | null;
     splitInterpolation(input: string, location: string, interpolationConfig?: InterpolationConfig): SplitInterpolation | null;
     wrapLiteralPrimitive(input: string | null, location: any): ASTWithSource;
-    private _stripComments;
-    private _commentStart;
-    private _checkNoInterpolation;
-    private _findInterpolationErrorColumn;
+    private _stripComments(input);
+    private _commentStart(input);
+    private _checkNoInterpolation(input, location, interpolationConfig);
+    private _findInterpolationErrorColumn(parts, partInErrIdx, interpolationConfig);
 }
 export declare class _ParseAST {
     input: string;
@@ -88,6 +81,6 @@ export declare class _ParseAST {
     expectTemplateBindingKey(): string;
     parseTemplateBindings(tplKey: string): TemplateBindingParseResult;
     error(message: string, index?: number | null): void;
-    private locationText;
-    private skip;
+    private locationText(index?);
+    private skip();
 }

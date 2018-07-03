@@ -7,7 +7,7 @@
  */
 import { ParseSourceSpan } from '../parse_util';
 export declare enum TypeModifier {
-    Const = 0
+    Const = 0,
 }
 export declare abstract class Type {
     modifiers: TypeModifier[] | null;
@@ -22,7 +22,7 @@ export declare enum BuiltinTypeName {
     Int = 3,
     Number = 4,
     Function = 5,
-    Inferred = 6
+    Inferred = 6,
 }
 export declare class BuiltinType extends Type {
     name: BuiltinTypeName;
@@ -73,7 +73,7 @@ export declare enum BinaryOperator {
     Lower = 12,
     LowerEquals = 13,
     Bigger = 14,
-    BiggerEquals = 15
+    BiggerEquals = 15,
 }
 export declare function nullSafeIsEquivalent<T extends {
     isEquivalent(other: T): boolean;
@@ -125,7 +125,7 @@ export declare enum BuiltinVar {
     This = 0,
     Super = 1,
     CatchError = 2,
-    CatchStack = 3
+    CatchStack = 3,
 }
 export declare class ReadVarExpr extends Expression {
     name: string | null;
@@ -173,7 +173,7 @@ export declare class WritePropExpr extends Expression {
 export declare enum BuiltinMethod {
     ConcatArray = 0,
     SubscribeObservable = 1,
-    Bind = 2
+    Bind = 2,
 }
 export declare class InvokeMethodExpr extends Expression {
     receiver: Expression;
@@ -219,7 +219,7 @@ export declare class ExternalExpr extends Expression {
 export declare class ExternalReference {
     moduleName: string | null;
     name: string | null;
-    runtime?: any;
+    runtime: any;
     constructor(moduleName: string | null, name: string | null, runtime?: any);
 }
 export declare class ConditionalExpr extends Expression {
@@ -261,7 +261,7 @@ export declare class FnParam {
 export declare class FunctionExpr extends Expression {
     params: FnParam[];
     statements: Statement[];
-    name?: string | null | undefined;
+    name: string | null | undefined;
     constructor(params: FnParam[], statements: Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null, name?: string | null | undefined);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
@@ -358,7 +358,7 @@ export declare enum StmtModifier {
     Final = 0,
     Private = 1,
     Exported = 2,
-    Static = 3
+    Static = 3,
 }
 export declare abstract class Statement {
     modifiers: StmtModifier[];
@@ -374,7 +374,7 @@ export declare abstract class Statement {
 }
 export declare class DeclareVarStmt extends Statement {
     name: string;
-    value?: Expression | undefined;
+    value: Expression | undefined;
     type: Type | null;
     constructor(name: string, value?: Expression | undefined, type?: Type | null, modifiers?: StmtModifier[] | null, sourceSpan?: ParseSourceSpan | null);
     isEquivalent(stmt: Statement): boolean;
@@ -409,7 +409,7 @@ export declare class AbstractClassPart {
 }
 export declare class ClassField extends AbstractClassPart {
     name: string;
-    initializer?: Expression | undefined;
+    initializer: Expression | undefined;
     constructor(name: string, type?: Type | null, modifiers?: StmtModifier[] | null, initializer?: Expression | undefined);
     isEquivalent(f: ClassField): boolean;
 }
@@ -585,7 +585,7 @@ export declare function isNull(exp: Expression): boolean;
 export declare const enum JSDocTagName {
     Desc = "desc",
     Id = "id",
-    Meaning = "meaning"
+    Meaning = "meaning",
 }
 export declare type JSDocTag = {
     tagName: JSDocTagName | string;
