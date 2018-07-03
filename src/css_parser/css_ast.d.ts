@@ -19,7 +19,7 @@ export declare enum BlockType {
     Page = 8,
     Document = 9,
     Viewport = 10,
-    Unsupported = 11,
+    Unsupported = 11
 }
 export interface CssAstVisitor {
     visitCssValue(ast: CssStyleValueAst, context?: any): any;

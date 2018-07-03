@@ -11,7 +11,7 @@ export declare const enum DefinitionKind {
     Injector = 0,
     Directive = 1,
     Component = 2,
-    Pipe = 3,
+    Pipe = 3
 }
 /**
  * A constant pool allows a code emitter to share constant in an output context.
@@ -38,7 +38,7 @@ export declare class ConstantPool {
         literalFactory: o.Expression;
         literalFactoryArguments: o.Expression[];
     };
-    private _getLiteralFactory(key, values, resultMap);
+    private _getLiteralFactory;
     /**
      * Produce a unique name.
      *
@@ -47,9 +47,9 @@ export declare class ConstantPool {
      * must not end in a digit.
      */
     uniqueName(prefix: string): string;
-    private definitionsOf(kind);
+    private definitionsOf;
     propertyNameOf(kind: DefinitionKind): string;
-    private freshName();
-    private freshTranslationName();
-    private keyOf(expression);
+    private freshName;
+    private freshTranslationName;
+    private keyOf;
 }
