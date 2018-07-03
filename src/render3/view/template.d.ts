@@ -1,10 +1,3 @@
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 import { LocalResolver } from '../../compiler_util/expression_converter';
 import { ConstantPool } from '../../constant_pool';
 import * as o from '../../output/output_ast';
@@ -58,10 +51,10 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     visitBoundText(text: t.BoundText): void;
     visitText(text: t.Text): void;
     visitSingleI18nTextChild(text: t.Text, i18nMeta: string): void;
-    private allocateDataSlot;
-    private bindingContext;
-    private instruction;
-    private convertPropertyBinding;
+    private allocateDataSlot();
+    private bindingContext();
+    private instruction(statements, span, reference, ...params);
+    private convertPropertyBinding(implicit, value);
 }
 /**
  * Function which is executed whenever a variable is referenced for the first time in a given

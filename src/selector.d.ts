@@ -1,11 +1,4 @@
 /**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * A css selector contains an element name,
  * css classes and attribute/value pairs with the purpose
  * of selecting subsets out of them.
@@ -56,9 +49,9 @@ export declare class SelectorMatcher {
      * @param cssSelector A css selector
      * @param callbackCtxt An opaque object that will be given to the callback of the `match` function
      */
-    private _addSelectable;
-    private _addTerminal;
-    private _addPartial;
+    private _addSelectable(cssSelector, callbackCtxt, listContext);
+    private _addTerminal(map, name, selectable);
+    private _addPartial(map, name);
     /**
      * Find the objects that have been added via `addSelectable`
      * whose css selector is contained in the given css selector.

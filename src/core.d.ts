@@ -1,10 +1,3 @@
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 export interface Inject {
     token: any;
 }
@@ -60,11 +53,11 @@ export declare enum ViewEncapsulation {
     Emulated = 0,
     Native = 1,
     None = 2,
-    ShadowDom = 3
+    ShadowDom = 3,
 }
 export declare enum ChangeDetectionStrategy {
     OnPush = 0,
-    Default = 1
+    Default = 1,
 }
 export declare const createComponent: MetadataFactory<Component>;
 export interface Pipe {
@@ -132,7 +125,7 @@ export declare enum SecurityContext {
     STYLE = 2,
     SCRIPT = 3,
     URL = 4,
-    RESOURCE_URL = 5
+    RESOURCE_URL = 5,
 }
 export declare type Provider = any;
 export declare const enum NodeFlags {
@@ -173,14 +166,14 @@ export declare const enum NodeFlags {
     DynamicQuery = 536870912,
     TypeModuleProvider = 1073741824,
     CatQuery = 201326592,
-    Types = 201347067
+    Types = 201347067,
 }
 export declare const enum DepFlags {
     None = 0,
     SkipSelf = 1,
     Optional = 2,
     Self = 4,
-    Value = 8
+    Value = 8,
 }
 /**
  * Injection flags for DI.
@@ -197,11 +190,11 @@ export declare const enum InjectFlags {
     /** Skip the node that is requesting injection. */
     SkipSelf = 4,
     /** Inject `defaultValue` instead if token not found. */
-    Optional = 8
+    Optional = 8,
 }
 export declare const enum ArgumentType {
     Inline = 0,
-    Dynamic = 1
+    Dynamic = 1,
 }
 export declare const enum BindingFlags {
     TypeElementAttribute = 1,
@@ -211,27 +204,27 @@ export declare const enum BindingFlags {
     SyntheticProperty = 16,
     SyntheticHostProperty = 32,
     CatSyntheticProperty = 48,
-    Types = 15
+    Types = 15,
 }
 export declare const enum QueryBindingType {
     First = 0,
-    All = 1
+    All = 1,
 }
 export declare const enum QueryValueType {
     ElementRef = 0,
     RenderElement = 1,
     TemplateRef = 2,
     ViewContainerRef = 3,
-    Provider = 4
+    Provider = 4,
 }
 export declare const enum ViewFlags {
     None = 0,
-    OnPush = 2
+    OnPush = 2,
 }
 export declare enum MissingTranslationStrategy {
     Error = 0,
     Warning = 1,
-    Ignore = 2
+    Ignore = 2,
 }
 export interface MetadataFactory<T> {
     (...args: any[]): T;
@@ -254,7 +247,7 @@ export declare const enum SelectorFlags {
     /** Mode for matching tag names */
     ELEMENT = 4,
     /** Mode for matching class names */
-    CLASS = 8
+    CLASS = 8,
 }
 export declare type R3CssSelector = (string | SelectorFlags)[];
 export declare type R3CssSelectorList = R3CssSelector[];
@@ -269,5 +262,5 @@ export declare function parseSelectorToR3Selector(selector: string): R3CssSelect
  */
 export declare const enum RenderFlags {
     Create = 1,
-    Update = 2
+    Update = 2,
 }

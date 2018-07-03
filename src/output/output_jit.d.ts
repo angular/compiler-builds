@@ -1,10 +1,3 @@
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 import { CompileReflector } from '../compile_reflector';
 import { EmitterVisitorContext } from './abstract_emitter';
 import { AbstractJsEmitterVisitor } from './abstract_js_emitter';
@@ -27,5 +20,5 @@ export declare class JitEmitterVisitor extends AbstractJsEmitterVisitor {
     visitDeclareVarStmt(stmt: o.DeclareVarStmt, ctx: EmitterVisitorContext): any;
     visitDeclareFunctionStmt(stmt: o.DeclareFunctionStmt, ctx: EmitterVisitorContext): any;
     visitDeclareClassStmt(stmt: o.ClassStmt, ctx: EmitterVisitorContext): any;
-    private _emitReferenceToExternal;
+    private _emitReferenceToExternal(ast, value, ctx);
 }

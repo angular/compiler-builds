@@ -54,7 +54,7 @@ export declare class StaticSymbolResolver {
     private host;
     private staticSymbolCache;
     private summaryResolver;
-    private errorRecorder?;
+    private errorRecorder;
     private metadataCache;
     private resolvedSymbols;
     private resolvedFilePaths;
@@ -94,8 +94,8 @@ export declare class StaticSymbolResolver {
      * @param fileName the file to invalidate
      */
     invalidateFile(fileName: string): void;
-    private _resolveSymbolMembers;
-    private _resolveSymbolFromSummary;
+    private _resolveSymbolMembers(staticSymbol);
+    private _resolveSymbolFromSummary(staticSymbol);
     /**
      * getStaticSymbol produces a Type whose metadata is known but whose implementation is not loaded.
      * All types passed to the StaticResolver should be pseudo-types returned by this method.
@@ -114,16 +114,16 @@ export declare class StaticSymbolResolver {
      */
     hasDecorators(filePath: string): boolean;
     getSymbolsOf(filePath: string): StaticSymbol[];
-    private _createSymbolsOf;
-    private createResolvedSymbol;
-    private createExport;
-    private reportError;
+    private _createSymbolsOf(filePath);
+    private createResolvedSymbol(sourceSymbol, topLevelPath, topLevelSymbolNames, metadata);
+    private createExport(sourceSymbol, targetSymbol);
+    private reportError(error, context?, path?);
     /**
      * @param module an absolute path to a module file.
      */
-    private getModuleMetadata;
+    private getModuleMetadata(module);
     getSymbolByModule(module: string, symbolName: string, containingFile?: string): StaticSymbol;
-    private resolveModule;
+    private resolveModule(module, containingFile?);
 }
 export declare function unescapeIdentifier(identifier: string): string;
 export declare function unwrapResolvedMetadata(metadata: any): any;

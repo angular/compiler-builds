@@ -39,7 +39,7 @@ export declare class Attribute implements Node {
     name: string;
     value: string;
     sourceSpan: ParseSourceSpan;
-    valueSpan?: ParseSourceSpan | undefined;
+    valueSpan: ParseSourceSpan | undefined;
     constructor(name: string, value: string, sourceSpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined);
     visit(visitor: Visitor, context: any): any;
 }
@@ -77,7 +77,7 @@ export declare class RecursiveVisitor implements Visitor {
     visitComment(ast: Comment, context: any): any;
     visitExpansion(ast: Expansion, context: any): any;
     visitExpansionCase(ast: ExpansionCase, context: any): any;
-    private visitChildren;
+    private visitChildren<T>(context, cb);
 }
 export declare type HtmlAstPath = AstPath<Node>;
 export declare function findNode(nodes: Node[], position: number): HtmlAstPath;

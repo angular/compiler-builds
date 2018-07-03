@@ -1,10 +1,3 @@
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 import { CompileTypeMetadata } from '../compile_metadata';
 import { CompileReflector } from '../compile_reflector';
 import * as o from '../output/output_ast';
@@ -85,7 +78,7 @@ export declare enum R3ResolvedDependencyType {
     /**
      * The dependency is for `ViewContainerRef`.
      */
-    ViewContainerRef = 5
+    ViewContainerRef = 5,
 }
 /**
  * Metadata representing a single dependency to be injected into a constructor or function call.

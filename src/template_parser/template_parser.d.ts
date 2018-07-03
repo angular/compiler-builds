@@ -21,9 +21,9 @@ export declare class TemplateParseError extends ParseError {
     constructor(message: string, span: ParseSourceSpan, level: ParseErrorLevel);
 }
 export declare class TemplateParseResult {
-    templateAst?: t.TemplateAst[] | undefined;
-    usedPipes?: CompilePipeSummary[] | undefined;
-    errors?: ParseError[] | undefined;
+    templateAst: t.TemplateAst[] | undefined;
+    usedPipes: CompilePipeSummary[] | undefined;
+    errors: ParseError[] | undefined;
     constructor(templateAst?: t.TemplateAst[] | undefined, usedPipes?: CompilePipeSummary[] | undefined, errors?: ParseError[] | undefined);
 }
 export declare class TemplateParser {
