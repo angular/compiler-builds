@@ -1,6 +1,6 @@
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
+ * @suppress {checkTypes,extraRequire,uselessCode} checked by tsc
  */
 import { DirectiveResolver } from '@angular/compiler';
 /**
@@ -33,7 +33,7 @@ export class MockDirectiveResolver extends DirectiveResolver {
         this._directives.set(type, metadata);
     }
 }
-function MockDirectiveResolver_tsickle_Closure_declarations() {
+if (false) {
     /** @type {?} */
     MockDirectiveResolver.prototype._directives;
 }

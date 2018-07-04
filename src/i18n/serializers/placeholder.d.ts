@@ -1,4 +1,11 @@
 /**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * Creates unique names for placeholder with different content.
  *
  * Returns the same placeholder name when the content is identical.
@@ -12,7 +19,7 @@ export declare class PlaceholderRegistry {
     getCloseTagPlaceholderName(tag: string): string;
     getPlaceholderName(name: string, content: string): string;
     getUniquePlaceholder(name: string): string;
-    private _hashTag(tag, attrs, isVoid);
-    private _hashClosingTag(tag);
-    private _generateUniqueName(base);
+    private _hashTag;
+    private _hashClosingTag;
+    private _generateUniqueName;
 }
