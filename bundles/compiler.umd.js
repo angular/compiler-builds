@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.3+28.sha-0922228
+ * @license Angular v6.1.0-beta.3+35.sha-b6af870
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1222,7 +1222,7 @@ var Version = /** @class */ (function () {
  * @description
  * Entry point for all public APIs of the common package.
  */
-var VERSION = new Version('6.1.0-beta.3+28.sha-0922228');
+var VERSION = new Version('6.1.0-beta.3+35.sha-b6af870');
 
 /**
  * @license
@@ -1231,6 +1231,7 @@ var VERSION = new Version('6.1.0-beta.3+28.sha-0922228');
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+var _a;
 /**
  * A segment of text within the template.
  */
@@ -1566,7 +1567,6 @@ function templateVisitAll(visitor, asts, context) {
     });
     return result;
 }
-var _a;
 
 /**
  * @license
@@ -6053,15 +6053,16 @@ var _SerializerIgnoreIcuExpVisitor = /** @class */ (function (_super) {
  *          DO NOT USE IT IN A SECURITY SENSITIVE CONTEXT.
  */
 function sha1(str) {
+    var _a, _b;
     var utf8 = utf8Encode(str);
     var words32 = stringToWords32(utf8, Endian.Big);
     var len = utf8.length * 8;
     var w = new Array(80);
-    var _a = __read([0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0], 5), a = _a[0], b = _a[1], c = _a[2], d = _a[3], e = _a[4];
+    var _c = __read([0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0], 5), a = _c[0], b = _c[1], c = _c[2], d = _c[3], e = _c[4];
     words32[len >> 5] |= 0x80 << (24 - len % 32);
     words32[((len + 64 >> 9) << 4) + 15] = len;
     for (var i = 0; i < words32.length; i += 16) {
-        var _b = __read([a, b, c, d, e], 5), h0 = _b[0], h1 = _b[1], h2 = _b[2], h3 = _b[3], h4 = _b[4];
+        var _d = __read([a, b, c, d, e], 5), h0 = _d[0], h1 = _d[1], h2 = _d[2], h3 = _d[3], h4 = _d[4];
         for (var j = 0; j < 80; j++) {
             if (j < 16) {
                 w[j] = words32[i + j];
@@ -6069,14 +6070,13 @@ function sha1(str) {
             else {
                 w[j] = rol32(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
             }
-            var _c = __read(fk(j, b, c, d), 2), f = _c[0], k = _c[1];
+            var _e = __read(fk(j, b, c, d), 2), f = _e[0], k = _e[1];
             var temp = [rol32(a, 5), f, e, k, w[j]].reduce(add32);
-            _d = __read([d, c, rol32(b, 30), a, temp], 5), e = _d[0], d = _d[1], c = _d[2], b = _d[3], a = _d[4];
+            _a = __read([d, c, rol32(b, 30), a, temp], 5), e = _a[0], d = _a[1], c = _a[2], b = _a[3], a = _a[4];
         }
-        _e = __read([add32(a, h0), add32(b, h1), add32(c, h2), add32(d, h3), add32(e, h4)], 5), a = _e[0], b = _e[1], c = _e[2], d = _e[3], e = _e[4];
+        _b = __read([add32(a, h0), add32(b, h1), add32(c, h2), add32(d, h3), add32(e, h4)], 5), a = _b[0], b = _b[1], c = _b[2], d = _b[3], e = _b[4];
     }
     return byteStringToHexString(words32ToByteString([a, b, c, d, e]));
-    var _d, _e;
 }
 function fk(index, b, c, d) {
     if (index < 20) {
@@ -6108,23 +6108,24 @@ function fingerprint(str) {
     return [hi, lo];
 }
 function computeMsgId(msg, meaning) {
-    var _a = __read(fingerprint(msg), 2), hi = _a[0], lo = _a[1];
+    var _a;
+    var _b = __read(fingerprint(msg), 2), hi = _b[0], lo = _b[1];
     if (meaning) {
-        var _b = __read(fingerprint(meaning), 2), him = _b[0], lom = _b[1];
-        _c = __read(add64(rol64([hi, lo], 1), [him, lom]), 2), hi = _c[0], lo = _c[1];
+        var _c = __read(fingerprint(meaning), 2), him = _c[0], lom = _c[1];
+        _a = __read(add64(rol64([hi, lo], 1), [him, lom]), 2), hi = _a[0], lo = _a[1];
     }
     return byteStringToDecString(words32ToByteString([hi & 0x7fffffff, lo]));
-    var _c;
 }
 function hash32(str, c) {
-    var _a = __read([0x9e3779b9, 0x9e3779b9], 2), a = _a[0], b = _a[1];
+    var _a;
+    var _b = __read([0x9e3779b9, 0x9e3779b9], 2), a = _b[0], b = _b[1];
     var i;
     var len = str.length;
     for (i = 0; i + 12 <= len; i += 12) {
         a = add32(a, wordAt(str, i, Endian.Little));
         b = add32(b, wordAt(str, i + 4, Endian.Little));
         c = add32(c, wordAt(str, i + 8, Endian.Little));
-        _b = __read(mix([a, b, c]), 3), a = _b[0], b = _b[1], c = _b[2];
+        _a = __read(mix([a, b, c]), 3), a = _a[0], b = _a[1], c = _a[2];
     }
     a = add32(a, wordAt(str, i, Endian.Little));
     b = add32(b, wordAt(str, i + 4, Endian.Little));
@@ -6132,7 +6133,6 @@ function hash32(str, c) {
     c = add32(c, len);
     c = add32(c, wordAt(str, i + 8, Endian.Little) << 8);
     return mix([a, b, c])[2];
-    var _b;
 }
 // clang-format off
 function mix(_a) {
@@ -7327,6 +7327,7 @@ var Xliff = /** @class */ (function (_super) {
         var visitor = new _WriteVisitor();
         var transUnits = [];
         messages.forEach(function (message) {
+            var _a;
             var contextTags = [];
             message.sources.forEach(function (source) {
                 var contextGroupTag = new Tag(_CONTEXT_GROUP_TAG, { purpose: 'location' });
@@ -7343,7 +7344,6 @@ var Xliff = /** @class */ (function (_super) {
             }
             transUnit.children.push(new CR(6));
             transUnits.push(new CR(6), transUnit);
-            var _a;
         });
         var body = new Tag('body', {}, __spread(transUnits, [new CR(4)]));
         var file = new Tag('file', {
@@ -9867,6 +9867,7 @@ function tagToString(tag) {
     return out;
 }
 function serializeTags(tags) {
+    var e_1, _a;
     if (tags.length === 0)
         return '';
     var out = '*\n';
@@ -9888,7 +9889,6 @@ function serializeTags(tags) {
     }
     out += ' ';
     return out;
-    var e_1, _a;
 }
 
 /**
@@ -10287,10 +10287,10 @@ var CompileMetadataResolver = /** @class */ (function () {
         }
     };
     CompileMetadataResolver.prototype.initComponentFactory = function (factory, ngContentSelectors) {
+        var _a;
         if (!(factory instanceof StaticSymbol)) {
             (_a = factory.ngContentSelectors).push.apply(_a, __spread(ngContentSelectors));
         }
-        var _a;
     };
     CompileMetadataResolver.prototype._loadSummary = function (type, kind) {
         var typeSummary = this._summaryCache.get(type);
@@ -13100,6 +13100,7 @@ var PipeResolver = /** @class */ (function () {
 /** Map from tagName|propertyName SecurityContext. Properties applying to all tags use '*'. */
 var SECURITY_SCHEMA = {};
 function registerContext(ctx, specs) {
+    var e_1, _a;
     try {
         for (var specs_1 = __values(specs), specs_1_1 = specs_1.next(); !specs_1_1.done; specs_1_1 = specs_1.next()) {
             var spec = specs_1_1.value;
@@ -13113,7 +13114,6 @@ function registerContext(ctx, specs) {
         }
         finally { if (e_1) throw e_1.error; }
     }
-    var e_1, _a;
 }
 // Case is insignificant below, all element and attribute names are lower-cased for lookup.
 registerContext(SecurityContext.HTML, [
@@ -14720,6 +14720,7 @@ var BindingParser = /** @class */ (function () {
         this.errors.push(new ParseError(sourceSpan, message, level));
     };
     BindingParser.prototype._reportExpressionParserErrors = function (errors, sourceSpan) {
+        var e_1, _a;
         try {
             for (var errors_1 = __values(errors), errors_1_1 = errors_1.next(); !errors_1_1.done; errors_1_1 = errors_1.next()) {
                 var error$$1 = errors_1_1.value;
@@ -14733,7 +14734,6 @@ var BindingParser = /** @class */ (function () {
             }
             finally { if (e_1) throw e_1.error; }
         }
-        var e_1, _a;
     };
     // Make sure all the used pipes are known in `this.pipesByName`
     BindingParser.prototype._checkPipes = function (ast, sourceSpan) {
@@ -16192,13 +16192,14 @@ var ViewBuilder = /** @class */ (function () {
         return varName;
     };
     ViewBuilder.prototype.getTypeGuardExpressions = function (ast) {
+        var e_1, _a, e_2, _b;
         var result = __spread(this.guards);
         try {
-            for (var _a = __values(ast.directives), _b = _a.next(); !_b.done; _b = _a.next()) {
-                var directive = _b.value;
+            for (var _c = __values(ast.directives), _d = _c.next(); !_d.done; _d = _c.next()) {
+                var directive = _d.value;
                 try {
-                    for (var _c = __values(directive.inputs), _d = _c.next(); !_d.done; _d = _c.next()) {
-                        var input = _d.value;
+                    for (var _e = __values(directive.inputs), _f = _e.next(); !_f.done; _f = _e.next()) {
+                        var input = _f.value;
                         var guard = directive.directive.guards[input.directiveName];
                         if (guard) {
                             var useIf = guard === 'UseIf';
@@ -16210,24 +16211,23 @@ var ViewBuilder = /** @class */ (function () {
                         }
                     }
                 }
-                catch (e_1_1) { e_1 = { error: e_1_1 }; }
+                catch (e_2_1) { e_2 = { error: e_2_1 }; }
                 finally {
                     try {
-                        if (_d && !_d.done && (_e = _c.return)) _e.call(_c);
+                        if (_f && !_f.done && (_b = _e.return)) _b.call(_e);
                     }
-                    finally { if (e_1) throw e_1.error; }
+                    finally { if (e_2) throw e_2.error; }
                 }
             }
         }
-        catch (e_2_1) { e_2 = { error: e_2_1 }; }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
-                if (_b && !_b.done && (_f = _a.return)) _f.call(_a);
+                if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
             }
-            finally { if (e_2) throw e_2.error; }
+            finally { if (e_1) throw e_1.error; }
         }
         return result;
-        var e_2, _f, e_1, _e;
     };
     ViewBuilder.prototype.visitAll = function (variables, astNodes) {
         this.variables = variables;
@@ -16236,6 +16236,7 @@ var ViewBuilder = /** @class */ (function () {
     ViewBuilder.prototype.build = function (componentId, targetStatements) {
         var _this = this;
         if (targetStatements === void 0) { targetStatements = []; }
+        var e_3, _a;
         this.children.forEach(function (child) { return child.build(componentId, targetStatements); });
         var viewStmts = [variable(DYNAMIC_VAR_NAME).set(NULL_EXPR).toDeclStmt(DYNAMIC_TYPE)];
         var bindingCount = 0;
@@ -16257,14 +16258,14 @@ var ViewBuilder = /** @class */ (function () {
         if (this.guards.length) {
             var guardExpression = undefined;
             try {
-                for (var _a = __values(this.guards), _b = _a.next(); !_b.done; _b = _a.next()) {
-                    var guard = _b.value;
-                    var _c = this.preprocessUpdateExpression(guard.expression), context = _c.context, value = _c.value;
+                for (var _b = __values(this.guards), _c = _b.next(); !_c.done; _c = _b.next()) {
+                    var guard = _c.value;
+                    var _d = this.preprocessUpdateExpression(guard.expression), context = _d.context, value = _d.value;
                     var bindingId = "" + bindingCount++;
                     var nameResolver = context === this.component ? this : defaultResolver;
                     // We only support support simple expressions and ignore others as they
                     // are unlikely to affect type narrowing.
-                    var _d = convertPropertyBinding(nameResolver, variable(this.getOutputVar(context)), value, bindingId, BindingForm.TrySimple), stmts = _d.stmts, currValExpr = _d.currValExpr;
+                    var _e = convertPropertyBinding(nameResolver, variable(this.getOutputVar(context)), value, bindingId, BindingForm.TrySimple), stmts = _e.stmts, currValExpr = _e.currValExpr;
                     if (stmts.length == 0) {
                         var guardClause = guard.useIf ? currValExpr : this.ctx.importExpr(guard.guard).callFn([currValExpr]);
                         guardExpression = guardExpression ? guardExpression.and(guardClause) : guardClause;
@@ -16274,7 +16275,7 @@ var ViewBuilder = /** @class */ (function () {
             catch (e_3_1) { e_3 = { error: e_3_1 }; }
             finally {
                 try {
-                    if (_b && !_b.done && (_e = _a.return)) _e.call(_a);
+                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
                 }
                 finally { if (e_3) throw e_3.error; }
             }
@@ -16286,7 +16287,6 @@ var ViewBuilder = /** @class */ (function () {
         var viewFactory = new DeclareFunctionStmt(viewName, [], viewStmts);
         targetStatements.push(viewFactory);
         return targetStatements;
-        var e_3, _e;
     };
     ViewBuilder.prototype.visitBoundText = function (ast, context) {
         var _this = this;
@@ -16452,6 +16452,7 @@ var ViewCompiler = /** @class */ (function () {
     }
     ViewCompiler.prototype.compileComponent = function (outputCtx, component, template, styles, usedPipes) {
         var _this = this;
+        var _a;
         var embeddedViewCount = 0;
         var staticQueryIds = findStaticQueryIds(template);
         var renderComponentVarName = undefined;
@@ -16479,7 +16480,6 @@ var ViewCompiler = /** @class */ (function () {
         visitor.visitAll([], template);
         (_a = outputCtx.statements).push.apply(_a, __spread(visitor.build()));
         return new ViewCompileResult(visitor.viewName, renderComponentVarName);
-        var _a;
     };
     return ViewCompiler;
 }());
@@ -17619,6 +17619,7 @@ var MessageBundle = /** @class */ (function () {
         this._messages = [];
     }
     MessageBundle.prototype.updateFromTemplate = function (html, url, interpolationConfig) {
+        var _a;
         var htmlParserResult = this._htmlParser.parse(html, url, true, interpolationConfig);
         if (htmlParserResult.errors.length) {
             return htmlParserResult.errors;
@@ -17629,7 +17630,6 @@ var MessageBundle = /** @class */ (function () {
         }
         (_a = this._messages).push.apply(_a, __spread(i18nParserResult.messages));
         return [];
-        var _a;
     };
     // Return the message in the internal format
     // The public (serialized) format might be different, see the `write` method.
@@ -17639,6 +17639,7 @@ var MessageBundle = /** @class */ (function () {
         var mapperVisitor = new MapPlaceholderNames();
         // Deduplicate messages based on their ID
         this._messages.forEach(function (message) {
+            var _a;
             var id = serializer.digest(message);
             if (!messages.hasOwnProperty(id)) {
                 messages[id] = message;
@@ -17646,7 +17647,6 @@ var MessageBundle = /** @class */ (function () {
             else {
                 (_a = messages[id].sources).push.apply(_a, __spread(message.sources));
             }
-            var _a;
         });
         // Transform placeholder names using the serializer mapping
         var msgList = Object.keys(messages).map(function (id) {
@@ -17799,6 +17799,7 @@ var Identifiers$1 = /** @class */ (function () {
         moduleName: CORE$1,
     };
     Identifiers.defineNgModule = { name: 'ɵdefineNgModule', moduleName: CORE$1 };
+    Identifiers.PipeDef = { name: 'ɵPipeDef', moduleName: CORE$1 };
     Identifiers.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
     Identifiers.query = { name: 'ɵQ', moduleName: CORE$1 };
     Identifiers.queryRefresh = { name: 'ɵqR', moduleName: CORE$1 };
@@ -18006,6 +18007,7 @@ function compileInjectDependency(dep, injectFn) {
  * `CompileTypeMetadata` instance.
  */
 function dependenciesFromGlobalMetadata(type, outputCtx, reflector) {
+    var e_1, _a;
     // Use the `CompileReflector` to look up references to some well-known Angular types. These will
     // be compared with the token to statically determine whether the token has significance to
     // Angular, and set the correct `R3ResolvedDependencyType` as a result.
@@ -18016,8 +18018,8 @@ function dependenciesFromGlobalMetadata(type, outputCtx, reflector) {
     // Iterate through the type's DI dependencies and produce `R3DependencyMetadata` for each of them.
     var deps = [];
     try {
-        for (var _a = __values(type.diDeps), _b = _a.next(); !_b.done; _b = _a.next()) {
-            var dependency = _b.value;
+        for (var _b = __values(type.diDeps), _c = _b.next(); !_c.done; _c = _b.next()) {
+            var dependency = _c.value;
             if (dependency.token) {
                 var tokenRef = tokenReference(dependency.token);
                 var resolved = exports.R3ResolvedDependencyType.Token;
@@ -18057,12 +18059,11 @@ function dependenciesFromGlobalMetadata(type, outputCtx, reflector) {
     catch (e_1_1) { e_1 = { error: e_1_1 }; }
     finally {
         try {
-            if (_b && !_b.done && (_c = _a.return)) _c.call(_a);
+            if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
         }
         finally { if (e_1) throw e_1.error; }
     }
     return deps;
-    var e_1, _c;
 }
 
 /**
@@ -18169,40 +18170,54 @@ function compileNgModuleFromRender2(ctx, ngModule, injectableCompiler) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * Write a pipe definition to the output context.
- */
-function compilePipe(outputCtx, pipe, reflector) {
+function compilePipeFromMetadata(metadata) {
     var definitionMapValues = [];
     // e.g. `name: 'myPipe'`
-    definitionMapValues.push({ key: 'name', value: literal(pipe.name), quoted: false });
+    definitionMapValues.push({ key: 'name', value: literal(metadata.pipeName), quoted: false });
     // e.g. `type: MyPipe`
-    definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(pipe.type.reference), quoted: false });
-    // e.g. `factory: function MyPipe_Factory() { return new MyPipe(); }`
-    var deps = dependenciesFromGlobalMetadata(pipe.type, outputCtx, reflector);
+    definitionMapValues.push({ key: 'type', value: metadata.type, quoted: false });
     var templateFactory = compileFactoryFunction({
-        name: identifierName(pipe.type),
-        fnOrClass: outputCtx.importExpr(pipe.type.reference), deps: deps,
+        name: metadata.name,
+        fnOrClass: metadata.type,
+        deps: metadata.deps,
         useNew: true,
         injectFn: Identifiers$1.directiveInject,
     });
     definitionMapValues.push({ key: 'factory', value: templateFactory, quoted: false });
     // e.g. `pure: true`
-    if (pipe.pure) {
-        definitionMapValues.push({ key: 'pure', value: literal(true), quoted: false });
+    definitionMapValues.push({ key: 'pure', value: literal(metadata.pure), quoted: false });
+    var expression = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]);
+    var type = new ExpressionType(importExpr(Identifiers$1.PipeDef, [
+        new ExpressionType(metadata.type),
+        new ExpressionType(new LiteralExpr(metadata.pipeName)),
+    ]));
+    return { expression: expression, type: type };
+}
+/**
+ * Write a pipe definition to the output context.
+ */
+function compilePipeFromRender2(outputCtx, pipe, reflector) {
+    var name = identifierName(pipe.type);
+    if (!name) {
+        return error("Cannot resolve the name of " + pipe.type);
     }
-    var className = identifierName(pipe.type);
-    className || error("Cannot resolve the name of " + pipe.type);
+    var metadata = {
+        name: name,
+        pipeName: pipe.name,
+        type: outputCtx.importExpr(pipe.type.reference),
+        deps: dependenciesFromGlobalMetadata(pipe.type, outputCtx, reflector),
+        pure: pipe.pure,
+    };
+    var res = compilePipeFromMetadata(metadata);
     var definitionField = outputCtx.constantPool.propertyNameOf(3 /* Pipe */);
-    var definitionFunction = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]);
     outputCtx.statements.push(new ClassStmt(
-    /* name */ className, 
+    /* name */ name, 
     /* parent */ null, 
     /* fields */ [new ClassField(
         /* name */ definitionField, 
         /* type */ INFERRED_TYPE, 
         /* modifiers */ [exports.StmtModifier.Static], 
-        /* initializer */ definitionFunction)], 
+        /* initializer */ res.expression)], 
     /* getters */ [], 
     /* constructorMethod */ new ClassMethod(null, [], []), 
     /* methods */ []));
@@ -18329,6 +18344,7 @@ var Reference = /** @class */ (function () {
     return Reference;
 }());
 function visitAll$1(visitor, nodes) {
+    var e_1, _a, e_2, _b;
     var result = [];
     if (visitor.visit) {
         try {
@@ -18364,7 +18380,6 @@ function visitAll$1(visitor, nodes) {
         }
     }
     return result;
-    var e_1, _a, e_2, _b;
 }
 
 /**
@@ -18426,6 +18441,7 @@ var HtmlAstToIvyAst = /** @class */ (function () {
     }
     // HTML visitor
     HtmlAstToIvyAst.prototype.visitElement = function (element) {
+        var e_1, _a;
         var preparsedElement = preparseElement(element);
         if (preparsedElement.type === PreparsedElementType.SCRIPT ||
             preparsedElement.type === PreparsedElementType.STYLE) {
@@ -18455,8 +18471,8 @@ var HtmlAstToIvyAst = /** @class */ (function () {
         // Whether the element has any *-attribute
         var elementHasInlineTemplate = false;
         try {
-            for (var _a = __values(element.attrs), _b = _a.next(); !_b.done; _b = _a.next()) {
-                var attribute = _b.value;
+            for (var _b = __values(element.attrs), _c = _b.next(); !_c.done; _c = _b.next()) {
+                var attribute = _c.value;
                 var hasBinding = false;
                 var normalizedName = normalizeAttributeName(attribute.name);
                 // `*attr` defines template bindings
@@ -18488,7 +18504,7 @@ var HtmlAstToIvyAst = /** @class */ (function () {
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
-                if (_b && !_b.done && (_c = _a.return)) _c.call(_a);
+                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
             }
             finally { if (e_1) throw e_1.error; }
         }
@@ -18526,7 +18542,6 @@ var HtmlAstToIvyAst = /** @class */ (function () {
             parsedElement = new Template(attributes_2, boundAttributes, [parsedElement], [], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
         }
         return parsedElement;
-        var e_1, _c;
     };
     HtmlAstToIvyAst.prototype.visitAttribute = function (attribute) {
         return new TextAttribute(attribute.name, attribute.value, attribute.sourceSpan, attribute.valueSpan);
@@ -18741,6 +18756,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     TemplateDefinitionBuilder.prototype.buildTemplateFunction = function (nodes, variables, hasNgContent, ngContentSelectors) {
         if (hasNgContent === void 0) { hasNgContent = false; }
         if (ngContentSelectors === void 0) { ngContentSelectors = []; }
+        var e_1, _a, e_2, _b, e_3, _c;
         if (this._namespace !== Identifiers$1.namespaceHTML) {
             this.instruction(this._creationCode, null, this._namespace);
         }
@@ -18778,8 +18794,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         }
         try {
             // Define and update any view queries
-            for (var _b = __values(this.viewQueries), _c = _b.next(); !_c.done; _c = _b.next()) {
-                var query = _c.value;
+            for (var _d = __values(this.viewQueries), _e = _d.next(); !_e.done; _e = _d.next()) {
+                var query = _e.value;
                 // e.g. r3.Q(0, somePredicate, true);
                 var querySlot = this.allocateDataSlot();
                 var predicate = getQueryPredicate(query, this.constantPool);
@@ -18805,7 +18821,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         catch (e_2_1) { e_2 = { error: e_2_1 }; }
         finally {
             try {
-                if (_c && !_c.done && (_d = _b.return)) _d.call(_b);
+                if (_e && !_e.done && (_b = _d.return)) _b.call(_d);
             }
             finally { if (e_2) throw e_2.error; }
         }
@@ -18822,8 +18838,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         try {
             // Generate maps of placeholder name to node indexes
             // TODO(vicb): This is a WIP, not fully supported yet
-            for (var _e = __values(this._phToNodeIdxes), _f = _e.next(); !_f.done; _f = _e.next()) {
-                var phToNodeIdx = _f.value;
+            for (var _f = __values(this._phToNodeIdxes), _g = _f.next(); !_g.done; _g = _f.next()) {
+                var phToNodeIdx = _g.value;
                 if (Object.keys(phToNodeIdx).length > 0) {
                     var scopedName = this._bindingScope.freshReferenceName();
                     var phMap = variable(scopedName)
@@ -18836,12 +18852,11 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         catch (e_3_1) { e_3 = { error: e_3_1 }; }
         finally {
             try {
-                if (_f && !_f.done && (_g = _e.return)) _g.call(_e);
+                if (_g && !_g.done && (_c = _f.return)) _c.call(_f);
             }
             finally { if (e_3) throw e_3.error; }
         }
         return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(this.contextParameter, null)], __spread(this._prefixCode, creationCode, this._variableCode, updateCode, this._postfixCode), INFERRED_TYPE, null, this.templateName);
-        var e_1, _a, e_2, _d, e_3, _g;
     };
     // LocalResolver
     TemplateDefinitionBuilder.prototype.getLocal = function (name) { return this._bindingScope.get(name); };
@@ -18883,13 +18898,14 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     };
     TemplateDefinitionBuilder.prototype.visitElement = function (element) {
         var _this = this;
+        var e_4, _a, _b, _c;
         var elementIndex = this.allocateDataSlot();
         var referenceDataSlots = new Map();
         var wasInI18nSection = this._inI18nSection;
         var outputAttrs = {};
         var attrI18nMetas = {};
         var i18nMeta = '';
-        var _a = __read(splitNsName(element.name), 2), namespaceKey = _a[0], elementName = _a[1];
+        var _d = __read(splitNsName(element.name), 2), namespaceKey = _d[0], elementName = _d[1];
         // Elements inside i18n sections are replaced with placeholders
         // TODO(vicb): nested elements are a WIP in this phase
         if (this._inI18nSection) {
@@ -18901,8 +18917,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         }
         try {
             // Handle i18n attributes
-            for (var _b = __values(element.attributes), _c = _b.next(); !_c.done; _c = _b.next()) {
-                var attr = _c.value;
+            for (var _e = __values(element.attributes), _f = _e.next(); !_f.done; _f = _e.next()) {
+                var attr = _f.value;
                 var name_1 = attr.name;
                 var value = attr.value;
                 if (name_1 === I18N_ATTR) {
@@ -18925,7 +18941,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         catch (e_4_1) { e_4 = { error: e_4_1 }; }
         finally {
             try {
-                if (_c && !_c.done && (_d = _b.return)) _d.call(_b);
+                if (_f && !_f.done && (_a = _e.return)) _a.call(_e);
             }
             finally { if (e_4) throw e_4.error; }
         }
@@ -18977,7 +18993,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         }
         // Generate the instruction create element instruction
         if (i18nMessages.length > 0) {
-            (_e = this._creationCode).push.apply(_e, __spread(i18nMessages));
+            (_b = this._creationCode).push.apply(_b, __spread(i18nMessages));
         }
         var wasInNamespace = this._namespace;
         var currentNamespace = this.getNamespaceInstruction(namespaceKey);
@@ -18994,7 +19010,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         else {
             // Generate the instruction create element instruction
             if (i18nMessages.length > 0) {
-                (_f = this._creationCode).push.apply(_f, __spread(i18nMessages));
+                (_c = this._creationCode).push.apply(_c, __spread(i18nMessages));
             }
             this.instruction.apply(this, __spread([this._creationCode, element.sourceSpan, Identifiers$1.elementStart], trimTrailingNulls(parameters)));
             // Generate Listeners (outputs)
@@ -19050,7 +19066,6 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         }
         // Restore the state before exiting this node
         this._inI18nSection = wasInI18nSection;
-        var e_4, _d, _e, _f;
     };
     TemplateDefinitionBuilder.prototype.visitTemplate = function (template) {
         var _this = this;
@@ -19130,6 +19145,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         statements.push(importExpr(reference, null, span).callFn(params, span).toStmt());
     };
     TemplateDefinitionBuilder.prototype.convertPropertyBinding = function (implicit, value) {
+        var _a, _b;
         var pipesConvertedValue = value.visit(this._valueConverter);
         if (pipesConvertedValue instanceof Interpolation) {
             var convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, interpolate);
@@ -19141,7 +19157,6 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             (_b = this._bindingCode).push.apply(_b, __spread(convertedPropertyBinding.stmts));
             return importExpr(Identifiers$1.bind).callFn([convertedPropertyBinding.currValExpr]);
         }
-        var _a, _b;
     };
     return TemplateDefinitionBuilder;
 }());
@@ -19331,6 +19346,7 @@ function createCssSelector(tag, attributes) {
 // - "description[@@id]",
 // - "meaning|description[@@id]"
 function parseI18nMeta(i18n) {
+    var _a, _b;
     var meaning;
     var description;
     var id;
@@ -19345,7 +19361,6 @@ function parseI18nMeta(i18n) {
             ['', meaningAndDesc], 2), meaning = _b[0], description = _b[1];
     }
     return { description: description, id: id, meaning: meaning };
-    var _a, _b;
 }
 function interpolate(args) {
     args = args.slice(1); // Ignore the length prefix added for render2
@@ -19399,7 +19414,7 @@ function parseTemplate(template, templateUrl, options) {
  * Construct a `BindingParser` with a default configuration.
  */
 function makeBindingParser() {
-    return new BindingParser(new Parser(new Lexer()), DEFAULT_INTERPOLATION_CONFIG, new DomElementSchemaRegistry(), [], []);
+    return new BindingParser(new Parser(new Lexer()), DEFAULT_INTERPOLATION_CONFIG, new DomElementSchemaRegistry(), null, []);
 }
 
 /**
@@ -19631,11 +19646,12 @@ function createDirectiveSelector(selector) {
     return asLiteral(parseSelectorToR3Selector(selector));
 }
 function createHostAttributesArray(meta) {
+    var e_1, _a;
     var values = [];
     var attributes = meta.host.attributes;
     try {
-        for (var _a = __values(Object.getOwnPropertyNames(attributes)), _b = _a.next(); !_b.done; _b = _a.next()) {
-            var key = _b.value;
+        for (var _b = __values(Object.getOwnPropertyNames(attributes)), _c = _b.next(); !_c.done; _c = _b.next()) {
+            var key = _c.value;
             var value = attributes[key];
             values.push(literal(key), literal(value));
         }
@@ -19643,7 +19659,7 @@ function createHostAttributesArray(meta) {
     catch (e_1_1) { e_1 = { error: e_1_1 }; }
     finally {
         try {
-            if (_b && !_b.done && (_c = _a.return)) _c.call(_a);
+            if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
         }
         finally { if (e_1) throw e_1.error; }
     }
@@ -19651,10 +19667,10 @@ function createHostAttributesArray(meta) {
         return literalArr(values);
     }
     return null;
-    var e_1, _c;
 }
 // Return a host binding function or null if one is not necessary.
 function createHostBindingsFunction(meta, bindingParser) {
+    var e_2, _a, e_3, _b;
     var statements = [];
     var temporary = temporaryAllocator(statements, TEMPORARY_NAME);
     var hostBindingSourceSpan = meta.typeSourceSpan;
@@ -19730,7 +19746,6 @@ function createHostBindingsFunction(meta, bindingParser) {
         ], statements, INFERRED_TYPE, null, typeName ? typeName + "_HostBindings" : null);
     }
     return null;
-    var e_2, _a, e_3, _b;
 }
 function metadataAsSummary(meta) {
     // clang-format off
@@ -19826,10 +19841,11 @@ function toTypeScript(file, preamble) {
  * found in the LICENSE file at https://angular.io/license
  */
 function listLazyRoutes(moduleMeta, reflector) {
+    var e_1, _a, e_2, _b;
     var allLazyRoutes = [];
     try {
-        for (var _a = __values(moduleMeta.transitiveModule.providers), _b = _a.next(); !_b.done; _b = _a.next()) {
-            var _c = _b.value, provider = _c.provider, module = _c.module;
+        for (var _c = __values(moduleMeta.transitiveModule.providers), _d = _c.next(); !_d.done; _d = _c.next()) {
+            var _e = _d.value, provider = _e.provider, module = _e.module;
             if (tokenReference(provider.token) === reflector.ROUTES) {
                 var loadChildren = _collectLoadChildren(provider.useValue);
                 try {
@@ -19838,28 +19854,28 @@ function listLazyRoutes(moduleMeta, reflector) {
                         allLazyRoutes.push(parseLazyRoute(route, reflector, module.reference));
                     }
                 }
-                catch (e_1_1) { e_1 = { error: e_1_1 }; }
+                catch (e_2_1) { e_2 = { error: e_2_1 }; }
                 finally {
                     try {
-                        if (loadChildren_1_1 && !loadChildren_1_1.done && (_d = loadChildren_1.return)) _d.call(loadChildren_1);
+                        if (loadChildren_1_1 && !loadChildren_1_1.done && (_b = loadChildren_1.return)) _b.call(loadChildren_1);
                     }
-                    finally { if (e_1) throw e_1.error; }
+                    finally { if (e_2) throw e_2.error; }
                 }
             }
         }
     }
-    catch (e_2_1) { e_2 = { error: e_2_1 }; }
+    catch (e_1_1) { e_1 = { error: e_1_1 }; }
     finally {
         try {
-            if (_b && !_b.done && (_e = _a.return)) _e.call(_a);
+            if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
         }
-        finally { if (e_2) throw e_2.error; }
+        finally { if (e_1) throw e_1.error; }
     }
     return allLazyRoutes;
-    var e_2, _e, e_1, _d;
 }
 function _collectLoadChildren(routes, target) {
     if (target === void 0) { target = []; }
+    var e_3, _a;
     if (typeof routes === 'string') {
         target.push(routes);
     }
@@ -19885,7 +19901,6 @@ function _collectLoadChildren(routes, target) {
         _collectLoadChildren(routes.children, target);
     }
     return target;
-    var e_3, _a;
 }
 function parseLazyRoute(route, reflector, module) {
     var _a = __read(route.split('#'), 2), routePath = _a[0], routeName = _a[1];
@@ -20033,6 +20048,7 @@ var StaticSymbolResolver = /** @class */ (function () {
      * @param fileName the file to invalidate
      */
     StaticSymbolResolver.prototype.invalidateFile = function (fileName) {
+        var e_1, _a;
         this.metadataCache.delete(fileName);
         this.resolvedFilePaths.delete(fileName);
         var symbols = this.symbolFromFile.get(fileName);
@@ -20054,7 +20070,6 @@ var StaticSymbolResolver = /** @class */ (function () {
                 finally { if (e_1) throw e_1.error; }
             }
         }
-        var e_1, _a;
     };
     /* @internal */
     StaticSymbolResolver.prototype.ignoreErrorsFor = function (cb) {
@@ -20141,6 +20156,7 @@ var StaticSymbolResolver = /** @class */ (function () {
     };
     StaticSymbolResolver.prototype._createSymbolsOf = function (filePath) {
         var _this = this;
+        var e_2, _a;
         if (this.resolvedFilePaths.has(filePath)) {
             return;
         }
@@ -20192,15 +20208,15 @@ var StaticSymbolResolver = /** @class */ (function () {
             };
             var this_1 = this;
             try {
-                for (var _a = __values(metadata['exports']), _b = _a.next(); !_b.done; _b = _a.next()) {
-                    var moduleExport = _b.value;
+                for (var _b = __values(metadata['exports']), _c = _b.next(); !_c.done; _c = _b.next()) {
+                    var moduleExport = _c.value;
                     _loop_1(moduleExport);
                 }
             }
             catch (e_2_1) { e_2 = { error: e_2_1 }; }
             finally {
                 try {
-                    if (_b && !_b.done && (_c = _a.return)) _c.call(_a);
+                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
                 }
                 finally { if (e_2) throw e_2.error; }
             }
@@ -20234,7 +20250,6 @@ var StaticSymbolResolver = /** @class */ (function () {
         }
         resolvedSymbols.forEach(function (resolvedSymbol) { return _this.resolvedSymbols.set(resolvedSymbol.symbol, resolvedSymbol); });
         this.symbolFromFile.set(filePath, resolvedSymbols.map(function (resolvedSymbol) { return resolvedSymbol.symbol; }));
-        var e_2, _c;
     };
     StaticSymbolResolver.prototype.createResolvedSymbol = function (sourceSymbol, topLevelPath, topLevelSymbolNames, metadata) {
         var _this = this;
@@ -20688,24 +20703,25 @@ var ForJitSerializer = /** @class */ (function () {
     };
     ForJitSerializer.prototype.serialize = function (exportAsArr) {
         var _this = this;
+        var e_1, _a, e_2, _b, e_3, _c;
         var exportAsBySymbol = new Map();
         try {
             for (var exportAsArr_1 = __values(exportAsArr), exportAsArr_1_1 = exportAsArr_1.next(); !exportAsArr_1_1.done; exportAsArr_1_1 = exportAsArr_1.next()) {
-                var _a = exportAsArr_1_1.value, symbol = _a.symbol, exportAs = _a.exportAs;
+                var _d = exportAsArr_1_1.value, symbol = _d.symbol, exportAs = _d.exportAs;
                 exportAsBySymbol.set(symbol, exportAs);
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
-                if (exportAsArr_1_1 && !exportAsArr_1_1.done && (_b = exportAsArr_1.return)) _b.call(exportAsArr_1);
+                if (exportAsArr_1_1 && !exportAsArr_1_1.done && (_a = exportAsArr_1.return)) _a.call(exportAsArr_1);
             }
             finally { if (e_1) throw e_1.error; }
         }
         var ngModuleSymbols = new Set();
         try {
-            for (var _c = __values(this.data), _d = _c.next(); !_d.done; _d = _c.next()) {
-                var _e = _d.value, summary = _e.summary, metadata = _e.metadata, isLibrary = _e.isLibrary;
+            for (var _e = __values(this.data), _f = _e.next(); !_f.done; _f = _e.next()) {
+                var _g = _f.value, summary = _g.summary, metadata = _g.metadata, isLibrary = _g.isLibrary;
                 if (summary.summaryKind === exports.CompileSummaryKind.NgModule) {
                     // collect the symbols that refer to NgModule classes.
                     // Note: we can't just rely on `summary.type.summaryKind` to determine this as
@@ -20714,17 +20730,17 @@ var ForJitSerializer = /** @class */ (function () {
                     ngModuleSymbols.add(summary.type.reference);
                     var modSummary = summary;
                     try {
-                        for (var _f = __values(modSummary.modules), _g = _f.next(); !_g.done; _g = _f.next()) {
-                            var mod = _g.value;
+                        for (var _h = __values(modSummary.modules), _j = _h.next(); !_j.done; _j = _h.next()) {
+                            var mod = _j.value;
                             ngModuleSymbols.add(mod.reference);
                         }
                     }
-                    catch (e_2_1) { e_2 = { error: e_2_1 }; }
+                    catch (e_3_1) { e_3 = { error: e_3_1 }; }
                     finally {
                         try {
-                            if (_g && !_g.done && (_h = _f.return)) _h.call(_f);
+                            if (_j && !_j.done && (_c = _h.return)) _c.call(_h);
                         }
-                        finally { if (e_2) throw e_2.error; }
+                        finally { if (e_3) throw e_3.error; }
                     }
                 }
                 if (!isLibrary) {
@@ -20733,12 +20749,12 @@ var ForJitSerializer = /** @class */ (function () {
                 }
             }
         }
-        catch (e_3_1) { e_3 = { error: e_3_1 }; }
+        catch (e_2_1) { e_2 = { error: e_2_1 }; }
         finally {
             try {
-                if (_d && !_d.done && (_j = _c.return)) _j.call(_c);
+                if (_f && !_f.done && (_b = _e.return)) _b.call(_e);
             }
-            finally { if (e_3) throw e_3.error; }
+            finally { if (e_2) throw e_2.error; }
         }
         ngModuleSymbols.forEach(function (ngModuleSymbol) {
             if (_this.summaryResolver.isLibraryFile(ngModuleSymbol.filePath)) {
@@ -20749,7 +20765,6 @@ var ForJitSerializer = /** @class */ (function () {
                     .toDeclStmt(null, [exports.StmtModifier.Exported]));
             }
         });
-        var e_1, _b, e_3, _j, e_2, _h;
     };
     ForJitSerializer.prototype.serializeSummaryWithDeps = function (summary, metadata) {
         var _this = this;
@@ -21069,6 +21084,7 @@ var AotCompiler = /** @class */ (function () {
         }
     };
     AotCompiler.prototype._externalIdentifierReferences = function (references) {
+        var e_1, _a;
         var result = [];
         try {
             for (var references_1 = __values(references), references_1_1 = references_1.next(); !references_1_1.done; references_1_1 = references_1.next()) {
@@ -21087,12 +21103,11 @@ var AotCompiler = /** @class */ (function () {
             finally { if (e_1) throw e_1.error; }
         }
         return result;
-        var e_1, _a;
     };
     AotCompiler.prototype._createTypeCheckBlock = function (ctx, componentId, moduleMeta, compMeta, directives, externalReferenceVars) {
-        var _a = this._parseTemplate(compMeta, moduleMeta, directives), parsedTemplate = _a.template, usedPipes = _a.pipes;
-        (_b = ctx.statements).push.apply(_b, __spread(this._typeCheckCompiler.compileComponent(componentId, compMeta, parsedTemplate, usedPipes, externalReferenceVars, ctx)));
-        var _b;
+        var _a;
+        var _b = this._parseTemplate(compMeta, moduleMeta, directives), parsedTemplate = _b.template, usedPipes = _b.pipes;
+        (_a = ctx.statements).push.apply(_a, __spread(this._typeCheckCompiler.compileComponent(componentId, compMeta, parsedTemplate, usedPipes, externalReferenceVars, ctx)));
     };
     AotCompiler.prototype.emitMessageBundle = function (analyzeResult, locale) {
         var _this = this;
@@ -21180,7 +21195,7 @@ var AotCompiler = /** @class */ (function () {
         pipes.forEach(function (pipeType) {
             var pipeMetadata = _this._metadataResolver.getPipeMetadata(pipeType);
             if (pipeMetadata) {
-                compilePipe(context, pipeMetadata, _this.reflector);
+                compilePipeFromRender2(context, pipeMetadata, _this.reflector);
             }
         });
         injectables.forEach(function (injectable) { return _this._injectableCompiler.compile(injectable, context); });
@@ -21389,6 +21404,7 @@ var AotCompiler = /** @class */ (function () {
         return new GeneratedFile(srcFileUrl, ctx.genFilePath, ctx.statements);
     };
     AotCompiler.prototype.listLazyRoutes = function (entryRoute, analyzedModules) {
+        var e_2, _a, e_3, _b;
         var self = this;
         if (entryRoute) {
             var symbol = parseLazyRoute(entryRoute, this.reflector).referencedModule;
@@ -21397,8 +21413,8 @@ var AotCompiler = /** @class */ (function () {
         else if (analyzedModules) {
             var allLazyRoutes = [];
             try {
-                for (var _a = __values(analyzedModules.ngModules), _b = _a.next(); !_b.done; _b = _a.next()) {
-                    var ngModule = _b.value;
+                for (var _c = __values(analyzedModules.ngModules), _d = _c.next(); !_d.done; _d = _c.next()) {
+                    var ngModule = _d.value;
                     var lazyRoutes = listLazyRoutes(ngModule, this.reflector);
                     try {
                         for (var lazyRoutes_1 = __values(lazyRoutes), lazyRoutes_1_1 = lazyRoutes_1.next(); !lazyRoutes_1_1.done; lazyRoutes_1_1 = lazyRoutes_1.next()) {
@@ -21406,21 +21422,21 @@ var AotCompiler = /** @class */ (function () {
                             allLazyRoutes.push(lazyRoute);
                         }
                     }
-                    catch (e_2_1) { e_2 = { error: e_2_1 }; }
+                    catch (e_3_1) { e_3 = { error: e_3_1 }; }
                     finally {
                         try {
-                            if (lazyRoutes_1_1 && !lazyRoutes_1_1.done && (_c = lazyRoutes_1.return)) _c.call(lazyRoutes_1);
+                            if (lazyRoutes_1_1 && !lazyRoutes_1_1.done && (_b = lazyRoutes_1.return)) _b.call(lazyRoutes_1);
                         }
-                        finally { if (e_2) throw e_2.error; }
+                        finally { if (e_3) throw e_3.error; }
                     }
                 }
             }
-            catch (e_3_1) { e_3 = { error: e_3_1 }; }
+            catch (e_2_1) { e_2 = { error: e_2_1 }; }
             finally {
                 try {
-                    if (_b && !_b.done && (_d = _a.return)) _d.call(_a);
+                    if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
                 }
-                finally { if (e_3) throw e_3.error; }
+                finally { if (e_2) throw e_2.error; }
             }
             return allLazyRoutes;
         }
@@ -21430,6 +21446,7 @@ var AotCompiler = /** @class */ (function () {
         function visitLazyRoute(symbol, seenRoutes, allLazyRoutes) {
             if (seenRoutes === void 0) { seenRoutes = new Set(); }
             if (allLazyRoutes === void 0) { allLazyRoutes = []; }
+            var e_4, _a;
             // Support pointing to default exports, but stop recursing there,
             // as the StaticReflector does not yet support default exports.
             if (seenRoutes.has(symbol) || !symbol.name) {
@@ -21452,9 +21469,7 @@ var AotCompiler = /** @class */ (function () {
                 finally { if (e_4) throw e_4.error; }
             }
             return allLazyRoutes;
-            var e_4, _a;
         }
-        var e_3, _d, e_2, _c;
     };
     return AotCompiler;
 }());
@@ -21955,6 +21970,7 @@ var StaticReflector = /** @class */ (function () {
         }
     };
     StaticReflector.prototype.guards = function (type) {
+        var e_1, _a;
         if (!(type instanceof StaticSymbol)) {
             this.reportError(new Error("guards received " + JSON.stringify(type) + " which is not a StaticSymbol"), type);
             return {};
@@ -21986,7 +22002,6 @@ var StaticReflector = /** @class */ (function () {
             finally { if (e_1) throw e_1.error; }
         }
         return result;
-        var e_1, _a;
     };
     StaticReflector.prototype._registerDecoratorOrConstructor = function (type, ctor) {
         this.conversionMap.set(type, function (context, args) { return new (ctor.bind.apply(ctor, __spread([void 0], args)))(); });
@@ -22155,14 +22170,15 @@ var StaticReflector = /** @class */ (function () {
                 }, context);
             }
             function simplify(expression) {
+                var e_2, _a, e_3, _b;
                 if (isPrimitive(expression)) {
                     return expression;
                 }
                 if (expression instanceof Array) {
                     var result_2 = [];
                     try {
-                        for (var _a = __values(expression), _b = _a.next(); !_b.done; _b = _a.next()) {
-                            var item = _b.value;
+                        for (var _c = __values(expression), _d = _c.next(); !_d.done; _d = _c.next()) {
+                            var item = _d.value;
                             // Check for a spread expression
                             if (item && item.__symbolic === 'spread') {
                                 // We call with references as 0 because we require the actual value and cannot
@@ -22175,12 +22191,12 @@ var StaticReflector = /** @class */ (function () {
                                             result_2.push(spreadItem);
                                         }
                                     }
-                                    catch (e_2_1) { e_2 = { error: e_2_1 }; }
+                                    catch (e_3_1) { e_3 = { error: e_3_1 }; }
                                     finally {
                                         try {
-                                            if (spreadArray_1_1 && !spreadArray_1_1.done && (_c = spreadArray_1.return)) _c.call(spreadArray_1);
+                                            if (spreadArray_1_1 && !spreadArray_1_1.done && (_b = spreadArray_1.return)) _b.call(spreadArray_1);
                                         }
-                                        finally { if (e_2) throw e_2.error; }
+                                        finally { if (e_3) throw e_3.error; }
                                     }
                                     continue;
                                 }
@@ -22192,12 +22208,12 @@ var StaticReflector = /** @class */ (function () {
                             result_2.push(value_2);
                         }
                     }
-                    catch (e_3_1) { e_3 = { error: e_3_1 }; }
+                    catch (e_2_1) { e_2 = { error: e_2_1 }; }
                     finally {
                         try {
-                            if (_b && !_b.done && (_d = _a.return)) _d.call(_a);
+                            if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
                         }
-                        finally { if (e_3) throw e_3.error; }
+                        finally { if (e_2) throw e_2.error; }
                     }
                     return result_2;
                 }
@@ -22414,7 +22430,6 @@ var StaticReflector = /** @class */ (function () {
                     });
                 }
                 return IGNORE;
-                var e_3, _d, e_2, _c;
             }
             return simplify(value);
         }
@@ -24389,6 +24404,7 @@ exports.Version = Version;
 exports.jitExpression = jitExpression;
 exports.compileInjector = compileInjector;
 exports.compileNgModule = compileNgModule;
+exports.compilePipeFromMetadata = compilePipeFromMetadata;
 exports.makeBindingParser = makeBindingParser;
 exports.parseTemplate = parseTemplate;
 exports.compileComponentFromMetadata = compileComponentFromMetadata;
