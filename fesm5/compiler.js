@@ -1,10 +1,10 @@
 /**
- * @license Angular v6.1.0-beta.3+45.sha-fddd2af
+ * @license Angular v6.1.0-beta.3+47.sha-1e74ea9
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __assign, __extends, __read, __spread, __values } from 'tslib';
+import { __assign, __spread, __extends, __values, __read } from 'tslib';
 
 /**
  * @license
@@ -780,11 +780,6 @@ var SelectorContext = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-// Attention:
-// This file duplicates types and values from @angular/core
-// so that we are able to make @angular/compiler independent of @angular/core.
-// This is important to prevent a build cycle, as @angular/core needs to
-// be compiled with the compiler.
 var createInject = makeMetadataFactory('Inject', function (token) { return ({ token: token }); });
 var createInjectionToken = makeMetadataFactory('InjectionToken', function (desc) { return ({ _desc: desc, ngInjectableDef: undefined }); });
 var createAttribute = makeMetadataFactory('Attribute', function (attributeName) { return ({ attributeName: attributeName }); });
@@ -906,36 +901,35 @@ function parseSelectorToR3Selector(selector) {
     return selectors.map(parserSelectorToR3Selector);
 }
 
-
-var core = Object.freeze({
-	createInject: createInject,
-	createInjectionToken: createInjectionToken,
-	createAttribute: createAttribute,
-	createContentChildren: createContentChildren,
-	createContentChild: createContentChild,
-	createViewChildren: createViewChildren,
-	createViewChild: createViewChild,
-	createDirective: createDirective,
-	get ViewEncapsulation () { return ViewEncapsulation; },
-	get ChangeDetectionStrategy () { return ChangeDetectionStrategy; },
-	createComponent: createComponent,
-	createPipe: createPipe,
-	createInput: createInput,
-	createOutput: createOutput,
-	createHostBinding: createHostBinding,
-	createHostListener: createHostListener,
-	createNgModule: createNgModule,
-	createInjectable: createInjectable,
-	CUSTOM_ELEMENTS_SCHEMA: CUSTOM_ELEMENTS_SCHEMA,
-	NO_ERRORS_SCHEMA: NO_ERRORS_SCHEMA,
-	createOptional: createOptional,
-	createSelf: createSelf,
-	createSkipSelf: createSkipSelf,
-	createHost: createHost,
-	Type: Type,
-	get SecurityContext () { return SecurityContext; },
-	get MissingTranslationStrategy () { return MissingTranslationStrategy; },
-	parseSelectorToR3Selector: parseSelectorToR3Selector
+var core = /*#__PURE__*/Object.freeze({
+    createInject: createInject,
+    createInjectionToken: createInjectionToken,
+    createAttribute: createAttribute,
+    createContentChildren: createContentChildren,
+    createContentChild: createContentChild,
+    createViewChildren: createViewChildren,
+    createViewChild: createViewChild,
+    createDirective: createDirective,
+    get ViewEncapsulation () { return ViewEncapsulation; },
+    get ChangeDetectionStrategy () { return ChangeDetectionStrategy; },
+    createComponent: createComponent,
+    createPipe: createPipe,
+    createInput: createInput,
+    createOutput: createOutput,
+    createHostBinding: createHostBinding,
+    createHostListener: createHostListener,
+    createNgModule: createNgModule,
+    createInjectable: createInjectable,
+    CUSTOM_ELEMENTS_SCHEMA: CUSTOM_ELEMENTS_SCHEMA,
+    NO_ERRORS_SCHEMA: NO_ERRORS_SCHEMA,
+    createOptional: createOptional,
+    createSelf: createSelf,
+    createSkipSelf: createSkipSelf,
+    createHost: createHost,
+    Type: Type,
+    get SecurityContext () { return SecurityContext; },
+    get MissingTranslationStrategy () { return MissingTranslationStrategy; },
+    parseSelectorToR3Selector: parseSelectorToR3Selector
 });
 
 /**
@@ -1131,12 +1125,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * @module
- * @description
- * Entry point for all public APIs of the common package.
- */
-var VERSION = new Version('6.1.0-beta.3+45.sha-fddd2af');
+var VERSION = new Version('6.1.0-beta.3+47.sha-1e74ea9');
 
 /**
  * @license
@@ -1184,7 +1173,13 @@ var AttrAst = /** @class */ (function () {
     AttrAst.prototype.visit = function (visitor, context) { return visitor.visitAttr(this, context); };
     return AttrAst;
 }());
-var BoundPropertyMapping = (_a = {}, _a[4 /* Animation */] = 4, _a[1 /* Attribute */] = 1, _a[2 /* Class */] = 2, _a[0 /* Property */] = 0, _a[3 /* Style */] = 3, _a);
+var BoundPropertyMapping = (_a = {},
+    _a[4 /* Animation */] = 4 /* Animation */,
+    _a[1 /* Attribute */] = 1 /* Attribute */,
+    _a[2 /* Class */] = 2 /* Class */,
+    _a[0 /* Property */] = 0 /* Property */,
+    _a[3 /* Style */] = 3 /* Style */,
+    _a);
 /**
  * A binding for an element property (e.g. `[property]="expression"`) or an animation trigger (e.g.
  * `[@trigger]="stateExp"`)
@@ -2806,9 +2801,6 @@ var $LBRACE = 123;
 var $BAR = 124;
 var $RBRACE = 125;
 var $NBSP = 160;
-
-
-
 var $BT = 96;
 function isWhitespace(code) {
     return (code >= $TAB && code <= $SPACE) || (code == $NBSP);
@@ -3048,9 +3040,7 @@ var _Scanner = /** @class */ (function () {
         var simple = (this.index === start);
         this.advance(); // Skip initial digit.
         while (true) {
-            if (isDigit(this.peek)) {
-                // Do nothing.
-            }
+            if (isDigit(this.peek)) ;
             else if (this.peek == $PERIOD) {
                 simple = false;
             }
@@ -9867,7 +9857,7 @@ var InjectableCompiler = /** @class */ (function () {
         return deps.map(function (dep) {
             var token = dep;
             var args = [token];
-            var flags = 0;
+            var flags = 0 /* Default */;
             if (Array.isArray(dep)) {
                 for (var i = 0; i < dep.length; i++) {
                     var v = dep[i];
@@ -11519,13 +11509,8 @@ var NgModuleProviderAnalyzer = /** @class */ (function () {
             if (tokenReference(dep.token) ===
                 this.reflector.resolveExternalReference(Identifiers.Injector) ||
                 tokenReference(dep.token) ===
-                    this.reflector.resolveExternalReference(Identifiers.ComponentFactoryResolver)) {
-                
-                // access providers
-            }
-            else if (this._getOrCreateLocalProvider(dep.token, eager) != null) {
-                
-            }
+                    this.reflector.resolveExternalReference(Identifiers.ComponentFactoryResolver)) ;
+            else if (this._getOrCreateLocalProvider(dep.token, eager) != null) ;
         }
         return dep;
     };
@@ -11622,7 +11607,7 @@ function _addQueryToTokenMap(map, query) {
  * found in the LICENSE file at https://angular.io/license
  */
 function providerDef(ctx, providerAst) {
-    var flags = 0;
+    var flags = 0 /* None */;
     if (!providerAst.eager) {
         flags |= 4096 /* LazyProvider */;
     }
@@ -11727,7 +11712,7 @@ function depDef(ctx, dep) {
     // Note: the following fields have already been normalized out by provider_analyzer:
     // - isAttribute, isHost
     var expr = dep.isValue ? convertValueToOutputAst(ctx, dep.value) : tokenExpr(ctx, dep.token);
-    var flags = 0;
+    var flags = 0 /* None */;
     if (dep.isSkipSelf) {
         flags |= 1 /* SkipSelf */;
     }
@@ -11743,7 +11728,7 @@ function depDef(ctx, dep) {
     return flags === 0 /* None */ ? expr : literalArr([literal(flags), expr]);
 }
 function lifecycleHookToNodeFlag(lifecycleHook) {
-    var nodeFlag = 0;
+    var nodeFlag = 0 /* None */;
     switch (lifecycleHook) {
         case LifecycleHooks.AfterContentChecked:
             nodeFlag = 2097152 /* AfterContentChecked */;
@@ -16443,7 +16428,7 @@ var ViewBuilder$1 = /** @class */ (function () {
             this.component.viewQueries.forEach(function (query, queryIndex) {
                 // Note: queries start with id 1 so we can use the number in a Bloom filter!
                 var queryId = queryIndex + 1;
-                var bindingType = query.first ? 0 /* First */ : 1;
+                var bindingType = query.first ? 0 /* First */ : 1 /* All */;
                 var flags = 134217728 /* TypeViewQuery */ | calcStaticDynamicQueryFlags(queryIds_1, queryId, query.first);
                 _this.nodes.push(function () { return ({
                     sourceSpan: null,
@@ -16473,7 +16458,7 @@ var ViewBuilder$1 = /** @class */ (function () {
         var _a = this._createNodeExpressions(), updateRendererStmts = _a.updateRendererStmts, updateDirectivesStmts = _a.updateDirectivesStmts, nodeDefExprs = _a.nodeDefExprs;
         var updateRendererFn = this._createUpdateFn(updateRendererStmts);
         var updateDirectivesFn = this._createUpdateFn(updateDirectivesStmts);
-        var viewFlags = 0;
+        var viewFlags = 0 /* None */;
         if (!this.parent && this.component.changeDetection === ChangeDetectionStrategy.OnPush) {
             viewFlags |= 2 /* OnPush */;
         }
@@ -16644,7 +16629,7 @@ var ViewBuilder$1 = /** @class */ (function () {
     };
     ViewBuilder.prototype._visitElementOrTemplate = function (nodeIndex, ast) {
         var _this = this;
-        var flags = 0;
+        var flags = 0 /* None */;
         if (ast.hasViewContainer) {
             flags |= 16777216 /* EmbeddedViews */;
         }
@@ -16732,7 +16717,7 @@ var ViewBuilder$1 = /** @class */ (function () {
         dirAst.directive.queries.forEach(function (query, queryIndex) {
             var queryId = dirAst.contentQueryStartId + queryIndex;
             var flags = 67108864 /* TypeContentQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
-            var bindingType = query.first ? 0 /* First */ : 1;
+            var bindingType = query.first ? 0 /* First */ : 1 /* All */;
             _this.nodes.push(function () { return ({
                 sourceSpan: dirAst.sourceSpan,
                 nodeFlags: flags,
@@ -16846,7 +16831,7 @@ var ViewBuilder$1 = /** @class */ (function () {
         }); });
     };
     ViewBuilder.prototype._visitProviderOrDirective = function (providerAst, queryMatches) {
-        var flags = 0;
+        var flags = 0 /* None */;
         var queryMatchExprs = [];
         queryMatches.forEach(function (match) {
             if (tokenReference(match.value) === tokenReference(providerAst.token)) {
@@ -16868,7 +16853,8 @@ var ViewBuilder$1 = /** @class */ (function () {
             return EventHandlerVars.event;
         }
         var currViewExpr = VIEW_VAR;
-        for (var currBuilder = this; currBuilder; currBuilder = currBuilder.parent, currViewExpr = currViewExpr.prop('parent').cast(DYNAMIC_TYPE)) {
+        for (var currBuilder = this; currBuilder; currBuilder = currBuilder.parent,
+            currViewExpr = currViewExpr.prop('parent').cast(DYNAMIC_TYPE)) {
             // check references
             var refNodeIndex = currBuilder.refNodeIndices[name];
             if (refNodeIndex != null) {
@@ -16948,7 +16934,7 @@ var ViewBuilder$1 = /** @class */ (function () {
     ViewBuilder.prototype._createPipe = function (sourceSpan, pipe) {
         var _this = this;
         var nodeIndex = this.nodes.length;
-        var flags = 0;
+        var flags = 0 /* None */;
         pipe.type.lifecycleHooks.forEach(function (lifecycleHook) {
             // for pipes, we only support ngOnDestroy
             if (lifecycleHook === LifecycleHooks.OnDestroy) {
@@ -17204,7 +17190,7 @@ function elementEventNameAndTarget(eventAst, dirAst) {
     }
 }
 function calcStaticDynamicQueryFlags(queryIds, queryId, isFirst) {
-    var flags = 0;
+    var flags = 0 /* None */;
     // Note: We only make queries static that query for a single item.
     // This is because of backwards compatibility with the old view compiler...
     if (isFirst && (queryIds.staticQueryIds.has(queryId) || !queryIds.dynamicQueryIds.has(queryId))) {
@@ -17611,7 +17597,6 @@ var MapPlaceholderNames = /** @class */ (function (_super) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-
 function mapLiteral(obj) {
     return literalMap(Object.keys(obj).map(function (key) { return ({
         key: key,
@@ -20240,8 +20225,6 @@ var StaticSymbolResolver = /** @class */ (function () {
                         if (topLevelSymbolNames.has(name_1)) {
                             return self.getStaticSymbol(topLevelPath, name_1);
                         }
-                        // ambient value
-                        
                     }
                 }
                 else if (symbolic === 'error') {
@@ -20344,13 +20327,6 @@ function unwrapResolvedMetadata(metadata) {
     return metadata;
 }
 
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 function serializeSummaries(srcFileName, forJitCtx, summaryResolver, symbolResolver, symbols, types) {
     var toJsonSerializer = new ToJsonSerializer(symbolResolver, summaryResolver, srcFileName);
     // for symbols, we use everything except for the class metadata itself
@@ -23983,9 +23959,6 @@ var ResourceLoader = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * Extract i18n messages from source code
- */
 var Extractor = /** @class */ (function () {
     function Extractor(host, staticSymbolResolver, messageBundle, metadataResolver) {
         this.host = host;
@@ -24196,22 +24169,6 @@ function jitExpression(def, context, sourceUrl, constantPool) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * @module
- * @description
- * Entry point for all APIs of the compiler package.
- *
- * <div class="callout is-critical">
- *   <header>Unstable APIs</header>
- *   <p>
- *     All compiler apis are currently considered experimental and private!
- *   </p>
- *   <p>
- *     We expect the APIs in this package to keep on changing. Do not rely on them.
- *   </p>
- * </div>
- */
-
 // This file only reexports content of the `src` folder. Keep it that way.
 
 /**
@@ -24221,12 +24178,6 @@ function jitExpression(def, context, sourceUrl, constantPool) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * @module
- * @description
- * Entry point for all public APIs of this package.
- */
-
 // This file only reexports content of the `src` folder. Keep it that way.
 
 /**
@@ -24236,10 +24187,6 @@ function jitExpression(def, context, sourceUrl, constantPool) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-// This file is not used to build this module. It is only used during editing
-// by the TypeScript language service and during build for verification. `ngc`
-// replaces this file with production index.ts when it rewrites private symbol
-// names.
 
 /**
  * @license
@@ -24248,10 +24195,6 @@ function jitExpression(def, context, sourceUrl, constantPool) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-// This file is not used to build this module. It is only used during editing
-// by the TypeScript language service and during build for verification. `ngc`
-// replaces this file with production index.ts when it rewrites private symbol
-// names.
 
 export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, jitExpression, R3ResolvedDependencyType, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, compileInjectable };
 //# sourceMappingURL=compiler.js.map
