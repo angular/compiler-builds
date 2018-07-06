@@ -271,3 +271,7 @@ export declare const enum RenderFlags {
     Create = 1,
     Update = 2
 }
+export declare const enum InitialStylingFlags {
+    /** Mode for matching initial style values */
+    INITIAL_STYLES = 0
+}
