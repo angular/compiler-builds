@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.3+31.sha-7f3242a
+ * @license Angular v6.1.0-beta.3+36.sha-8fe8b8f
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1222,7 +1222,7 @@ var Version = /** @class */ (function () {
  * @description
  * Entry point for all public APIs of the common package.
  */
-var VERSION = new Version('6.1.0-beta.3+31.sha-7f3242a');
+var VERSION = new Version('6.1.0-beta.3+36.sha-8fe8b8f');
 
 /**
  * @license
@@ -17799,6 +17799,7 @@ var Identifiers$1 = /** @class */ (function () {
         moduleName: CORE$1,
     };
     Identifiers.defineNgModule = { name: 'ɵdefineNgModule', moduleName: CORE$1 };
+    Identifiers.PipeDef = { name: 'ɵPipeDef', moduleName: CORE$1 };
     Identifiers.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
     Identifiers.query = { name: 'ɵQ', moduleName: CORE$1 };
     Identifiers.queryRefresh = { name: 'ɵqR', moduleName: CORE$1 };
@@ -18169,40 +18170,54 @@ function compileNgModuleFromRender2(ctx, ngModule, injectableCompiler) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * Write a pipe definition to the output context.
- */
-function compilePipe(outputCtx, pipe, reflector) {
+function compilePipeFromMetadata(metadata) {
     var definitionMapValues = [];
     // e.g. `name: 'myPipe'`
-    definitionMapValues.push({ key: 'name', value: literal(pipe.name), quoted: false });
+    definitionMapValues.push({ key: 'name', value: literal(metadata.pipeName), quoted: false });
     // e.g. `type: MyPipe`
-    definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(pipe.type.reference), quoted: false });
-    // e.g. `factory: function MyPipe_Factory() { return new MyPipe(); }`
-    var deps = dependenciesFromGlobalMetadata(pipe.type, outputCtx, reflector);
+    definitionMapValues.push({ key: 'type', value: metadata.type, quoted: false });
     var templateFactory = compileFactoryFunction({
-        name: identifierName(pipe.type),
-        fnOrClass: outputCtx.importExpr(pipe.type.reference), deps: deps,
+        name: metadata.name,
+        fnOrClass: metadata.type,
+        deps: metadata.deps,
         useNew: true,
         injectFn: Identifiers$1.directiveInject,
     });
     definitionMapValues.push({ key: 'factory', value: templateFactory, quoted: false });
     // e.g. `pure: true`
-    if (pipe.pure) {
-        definitionMapValues.push({ key: 'pure', value: literal(true), quoted: false });
+    definitionMapValues.push({ key: 'pure', value: literal(metadata.pure), quoted: false });
+    var expression = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]);
+    var type = new ExpressionType(importExpr(Identifiers$1.PipeDef, [
+        new ExpressionType(metadata.type),
+        new ExpressionType(new LiteralExpr(metadata.pipeName)),
+    ]));
+    return { expression: expression, type: type };
+}
+/**
+ * Write a pipe definition to the output context.
+ */
+function compilePipeFromRender2(outputCtx, pipe, reflector) {
+    var name = identifierName(pipe.type);
+    if (!name) {
+        return error("Cannot resolve the name of " + pipe.type);
     }
-    var className = identifierName(pipe.type);
-    className || error("Cannot resolve the name of " + pipe.type);
+    var metadata = {
+        name: name,
+        pipeName: pipe.name,
+        type: outputCtx.importExpr(pipe.type.reference),
+        deps: dependenciesFromGlobalMetadata(pipe.type, outputCtx, reflector),
+        pure: pipe.pure,
+    };
+    var res = compilePipeFromMetadata(metadata);
     var definitionField = outputCtx.constantPool.propertyNameOf(3 /* Pipe */);
-    var definitionFunction = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]);
     outputCtx.statements.push(new ClassStmt(
-    /* name */ className, 
+    /* name */ name, 
     /* parent */ null, 
     /* fields */ [new ClassField(
         /* name */ definitionField, 
         /* type */ INFERRED_TYPE, 
         /* modifiers */ [exports.StmtModifier.Static], 
-        /* initializer */ definitionFunction)], 
+        /* initializer */ res.expression)], 
     /* getters */ [], 
     /* constructorMethod */ new ClassMethod(null, [], []), 
     /* methods */ []));
@@ -19399,7 +19414,7 @@ function parseTemplate(template, templateUrl, options) {
  * Construct a `BindingParser` with a default configuration.
  */
 function makeBindingParser() {
-    return new BindingParser(new Parser(new Lexer()), DEFAULT_INTERPOLATION_CONFIG, new DomElementSchemaRegistry(), [], []);
+    return new BindingParser(new Parser(new Lexer()), DEFAULT_INTERPOLATION_CONFIG, new DomElementSchemaRegistry(), null, []);
 }
 
 /**
@@ -21180,7 +21195,7 @@ var AotCompiler = /** @class */ (function () {
         pipes.forEach(function (pipeType) {
             var pipeMetadata = _this._metadataResolver.getPipeMetadata(pipeType);
             if (pipeMetadata) {
-                compilePipe(context, pipeMetadata, _this.reflector);
+                compilePipeFromRender2(context, pipeMetadata, _this.reflector);
             }
         });
         injectables.forEach(function (injectable) { return _this._injectableCompiler.compile(injectable, context); });
@@ -24389,6 +24404,7 @@ exports.Version = Version;
 exports.jitExpression = jitExpression;
 exports.compileInjector = compileInjector;
 exports.compileNgModule = compileNgModule;
+exports.compilePipeFromMetadata = compilePipeFromMetadata;
 exports.makeBindingParser = makeBindingParser;
 exports.parseTemplate = parseTemplate;
 exports.compileComponentFromMetadata = compileComponentFromMetadata;
