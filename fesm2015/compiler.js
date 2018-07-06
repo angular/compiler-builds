@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.3+46.sha-f62876b
+ * @license Angular v6.1.0-beta.3+61.sha-3980640
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -767,11 +767,6 @@ class SelectorContext {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-// Attention:
-// This file duplicates types and values from @angular/core
-// so that we are able to make @angular/compiler independent of @angular/core.
-// This is important to prevent a build cycle, as @angular/core needs to
-// be compiled with the compiler.
 const createInject = makeMetadataFactory('Inject', (token) => ({ token }));
 const createInjectionToken = makeMetadataFactory('InjectionToken', (desc) => ({ _desc: desc, ngInjectableDef: undefined }));
 const createAttribute = makeMetadataFactory('Attribute', (attributeName) => ({ attributeName }));
@@ -872,36 +867,35 @@ function parseSelectorToR3Selector(selector) {
     return selectors.map(parserSelectorToR3Selector);
 }
 
-
-var core = Object.freeze({
-	createInject: createInject,
-	createInjectionToken: createInjectionToken,
-	createAttribute: createAttribute,
-	createContentChildren: createContentChildren,
-	createContentChild: createContentChild,
-	createViewChildren: createViewChildren,
-	createViewChild: createViewChild,
-	createDirective: createDirective,
-	get ViewEncapsulation () { return ViewEncapsulation; },
-	get ChangeDetectionStrategy () { return ChangeDetectionStrategy; },
-	createComponent: createComponent,
-	createPipe: createPipe,
-	createInput: createInput,
-	createOutput: createOutput,
-	createHostBinding: createHostBinding,
-	createHostListener: createHostListener,
-	createNgModule: createNgModule,
-	createInjectable: createInjectable,
-	CUSTOM_ELEMENTS_SCHEMA: CUSTOM_ELEMENTS_SCHEMA,
-	NO_ERRORS_SCHEMA: NO_ERRORS_SCHEMA,
-	createOptional: createOptional,
-	createSelf: createSelf,
-	createSkipSelf: createSkipSelf,
-	createHost: createHost,
-	Type: Type,
-	get SecurityContext () { return SecurityContext; },
-	get MissingTranslationStrategy () { return MissingTranslationStrategy; },
-	parseSelectorToR3Selector: parseSelectorToR3Selector
+var core = /*#__PURE__*/Object.freeze({
+    createInject: createInject,
+    createInjectionToken: createInjectionToken,
+    createAttribute: createAttribute,
+    createContentChildren: createContentChildren,
+    createContentChild: createContentChild,
+    createViewChildren: createViewChildren,
+    createViewChild: createViewChild,
+    createDirective: createDirective,
+    get ViewEncapsulation () { return ViewEncapsulation; },
+    get ChangeDetectionStrategy () { return ChangeDetectionStrategy; },
+    createComponent: createComponent,
+    createPipe: createPipe,
+    createInput: createInput,
+    createOutput: createOutput,
+    createHostBinding: createHostBinding,
+    createHostListener: createHostListener,
+    createNgModule: createNgModule,
+    createInjectable: createInjectable,
+    CUSTOM_ELEMENTS_SCHEMA: CUSTOM_ELEMENTS_SCHEMA,
+    NO_ERRORS_SCHEMA: NO_ERRORS_SCHEMA,
+    createOptional: createOptional,
+    createSelf: createSelf,
+    createSkipSelf: createSkipSelf,
+    createHost: createHost,
+    Type: Type,
+    get SecurityContext () { return SecurityContext; },
+    get MissingTranslationStrategy () { return MissingTranslationStrategy; },
+    parseSelectorToR3Selector: parseSelectorToR3Selector
 });
 
 /**
@@ -1085,12 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * @module
- * @description
- * Entry point for all public APIs of the common package.
- */
-const VERSION = new Version('6.1.0-beta.3+46.sha-f62876b');
+const VERSION = new Version('6.1.0-beta.3+61.sha-3980640');
 
 /**
  * @license
@@ -2672,9 +2661,6 @@ const $LBRACE = 123;
 const $BAR = 124;
 const $RBRACE = 125;
 const $NBSP = 160;
-
-
-
 const $BT = 96;
 function isWhitespace(code) {
     return (code >= $TAB && code <= $SPACE) || (code == $NBSP);
@@ -2910,9 +2896,7 @@ class _Scanner {
         let simple = (this.index === start);
         this.advance(); // Skip initial digit.
         while (true) {
-            if (isDigit(this.peek)) {
-                // Do nothing.
-            }
+            if (isDigit(this.peek)) ;
             else if (this.peek == $PERIOD) {
                 simple = false;
             }
@@ -9215,7 +9199,7 @@ class InjectableCompiler {
         return deps.map(dep => {
             let token = dep;
             let args = [token];
-            let flags = 0;
+            let flags = 0 /* Default */;
             if (Array.isArray(dep)) {
                 for (let i = 0; i < dep.length; i++) {
                     const v = dep[i];
@@ -10808,13 +10792,8 @@ class NgModuleProviderAnalyzer {
             if (tokenReference(dep.token) ===
                 this.reflector.resolveExternalReference(Identifiers.Injector) ||
                 tokenReference(dep.token) ===
-                    this.reflector.resolveExternalReference(Identifiers.ComponentFactoryResolver)) {
-                
-                // access providers
-            }
-            else if (this._getOrCreateLocalProvider(dep.token, eager) != null) {
-                
-            }
+                    this.reflector.resolveExternalReference(Identifiers.ComponentFactoryResolver)) ;
+            else if (this._getOrCreateLocalProvider(dep.token, eager) != null) ;
         }
         return dep;
     }
@@ -10908,7 +10887,7 @@ function _addQueryToTokenMap(map, query) {
  * found in the LICENSE file at https://angular.io/license
  */
 function providerDef(ctx, providerAst) {
-    let flags = 0;
+    let flags = 0 /* None */;
     if (!providerAst.eager) {
         flags |= 4096 /* LazyProvider */;
     }
@@ -11013,7 +10992,7 @@ function depDef(ctx, dep) {
     // Note: the following fields have already been normalized out by provider_analyzer:
     // - isAttribute, isHost
     const expr = dep.isValue ? convertValueToOutputAst(ctx, dep.value) : tokenExpr(ctx, dep.token);
-    let flags = 0;
+    let flags = 0 /* None */;
     if (dep.isSkipSelf) {
         flags |= 1 /* SkipSelf */;
     }
@@ -11029,7 +11008,7 @@ function depDef(ctx, dep) {
     return flags === 0 /* None */ ? expr : literalArr([literal(flags), expr]);
 }
 function lifecycleHookToNodeFlag(lifecycleHook) {
-    let nodeFlag = 0;
+    let nodeFlag = 0 /* None */;
     switch (lifecycleHook) {
         case LifecycleHooks.AfterContentChecked:
             nodeFlag = 2097152 /* AfterContentChecked */;
@@ -15489,7 +15468,7 @@ class ViewBuilder$1 {
             this.component.viewQueries.forEach((query, queryIndex) => {
                 // Note: queries start with id 1 so we can use the number in a Bloom filter!
                 const queryId = queryIndex + 1;
-                const bindingType = query.first ? 0 /* First */ : 1;
+                const bindingType = query.first ? 0 /* First */ : 1 /* All */;
                 const flags = 134217728 /* TypeViewQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
                 this.nodes.push(() => ({
                     sourceSpan: null,
@@ -15518,7 +15497,7 @@ class ViewBuilder$1 {
         const { updateRendererStmts, updateDirectivesStmts, nodeDefExprs } = this._createNodeExpressions();
         const updateRendererFn = this._createUpdateFn(updateRendererStmts);
         const updateDirectivesFn = this._createUpdateFn(updateDirectivesStmts);
-        let viewFlags = 0;
+        let viewFlags = 0 /* None */;
         if (!this.parent && this.component.changeDetection === ChangeDetectionStrategy.OnPush) {
             viewFlags |= 2 /* OnPush */;
         }
@@ -15682,7 +15661,7 @@ class ViewBuilder$1 {
         });
     }
     _visitElementOrTemplate(nodeIndex, ast) {
-        let flags = 0;
+        let flags = 0 /* None */;
         if (ast.hasViewContainer) {
             flags |= 16777216 /* EmbeddedViews */;
         }
@@ -15769,7 +15748,7 @@ class ViewBuilder$1 {
         dirAst.directive.queries.forEach((query, queryIndex) => {
             const queryId = dirAst.contentQueryStartId + queryIndex;
             const flags = 67108864 /* TypeContentQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
-            const bindingType = query.first ? 0 /* First */ : 1;
+            const bindingType = query.first ? 0 /* First */ : 1 /* All */;
             this.nodes.push(() => ({
                 sourceSpan: dirAst.sourceSpan,
                 nodeFlags: flags,
@@ -15883,7 +15862,7 @@ class ViewBuilder$1 {
         }));
     }
     _visitProviderOrDirective(providerAst, queryMatches) {
-        let flags = 0;
+        let flags = 0 /* None */;
         let queryMatchExprs = [];
         queryMatches.forEach((match) => {
             if (tokenReference(match.value) === tokenReference(providerAst.token)) {
@@ -15905,7 +15884,8 @@ class ViewBuilder$1 {
             return EventHandlerVars.event;
         }
         let currViewExpr = VIEW_VAR;
-        for (let currBuilder = this; currBuilder; currBuilder = currBuilder.parent, currViewExpr = currViewExpr.prop('parent').cast(DYNAMIC_TYPE)) {
+        for (let currBuilder = this; currBuilder; currBuilder = currBuilder.parent,
+            currViewExpr = currViewExpr.prop('parent').cast(DYNAMIC_TYPE)) {
             // check references
             const refNodeIndex = currBuilder.refNodeIndices[name];
             if (refNodeIndex != null) {
@@ -15984,7 +15964,7 @@ class ViewBuilder$1 {
     }
     _createPipe(sourceSpan, pipe) {
         const nodeIndex = this.nodes.length;
-        let flags = 0;
+        let flags = 0 /* None */;
         pipe.type.lifecycleHooks.forEach((lifecycleHook) => {
             // for pipes, we only support ngOnDestroy
             if (lifecycleHook === LifecycleHooks.OnDestroy) {
@@ -16230,7 +16210,7 @@ function elementEventNameAndTarget(eventAst, dirAst) {
     }
 }
 function calcStaticDynamicQueryFlags(queryIds, queryId, isFirst) {
-    let flags = 0;
+    let flags = 0 /* None */;
     // Note: We only make queries static that query for a single item.
     // This is because of backwards compatibility with the old view compiler...
     if (isFirst && (queryIds.staticQueryIds.has(queryId) || !queryIds.dynamicQueryIds.has(queryId))) {
@@ -16615,7 +16595,6 @@ class MapPlaceholderNames extends CloneVisitor {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-
 function mapLiteral(obj) {
     return literalMap(Object.keys(obj).map(key => ({
         key,
@@ -16649,8 +16628,10 @@ Identifiers$1.elementProperty = { name: 'ɵp', moduleName: CORE$1 };
 Identifiers$1.elementAttribute = { name: 'ɵa', moduleName: CORE$1 };
 Identifiers$1.elementClass = { name: 'ɵk', moduleName: CORE$1 };
 Identifiers$1.elementClassNamed = { name: 'ɵkn', moduleName: CORE$1 };
-Identifiers$1.elementStyle = { name: 'ɵs', moduleName: CORE$1 };
-Identifiers$1.elementStyleNamed = { name: 'ɵsn', moduleName: CORE$1 };
+Identifiers$1.elementStyling = { name: 'ɵs', moduleName: CORE$1 };
+Identifiers$1.elementStyle = { name: 'ɵsm', moduleName: CORE$1 };
+Identifiers$1.elementStyleProp = { name: 'ɵsp', moduleName: CORE$1 };
+Identifiers$1.elementStylingApply = { name: 'ɵsa', moduleName: CORE$1 };
 Identifiers$1.containerCreate = { name: 'ɵC', moduleName: CORE$1 };
 Identifiers$1.text = { name: 'ɵT', moduleName: CORE$1 };
 Identifiers$1.textBinding = { name: 'ɵt', moduleName: CORE$1 };
@@ -17235,9 +17216,6 @@ class Reference {
     }
     visit(visitor) { return visitor.visitReference(this); }
 }
-
-
-
 function visitAll$1(visitor, nodes) {
     const result = [];
     if (visitor.visit) {
@@ -17535,6 +17513,102 @@ function isEmptyTextNode(node) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/**
+ * Parses string representation of a style and converts it into object literal.
+ *
+ * @param value string representation of style as used in the `style` attribute in HTML.
+ *   Example: `color: red; height: auto`.
+ * @returns an object literal. `{ color: 'red', height: 'auto'}`.
+ */
+function parseStyle(value) {
+    const styles = {};
+    let i = 0;
+    let parenDepth = 0;
+    let quote = 0 /* QuoteNone */;
+    let valueStart = 0;
+    let propStart = 0;
+    let currentProp = null;
+    let valueHasQuotes = false;
+    while (i < value.length) {
+        const token = value.charCodeAt(i++);
+        switch (token) {
+            case 40 /* OpenParen */:
+                parenDepth++;
+                break;
+            case 41 /* CloseParen */:
+                parenDepth--;
+                break;
+            case 39 /* QuoteSingle */:
+                // valueStart needs to be there since prop values don't
+                // have quotes in CSS
+                valueHasQuotes = valueHasQuotes || valueStart > 0;
+                if (quote === 0 /* QuoteNone */) {
+                    quote = 39 /* QuoteSingle */;
+                }
+                else if (quote === 39 /* QuoteSingle */ && value.charCodeAt(i - 1) !== 92 /* BackSlash */) {
+                    quote = 0 /* QuoteNone */;
+                }
+                break;
+            case 34 /* QuoteDouble */:
+                // same logic as above
+                valueHasQuotes = valueHasQuotes || valueStart > 0;
+                if (quote === 0 /* QuoteNone */) {
+                    quote = 34 /* QuoteDouble */;
+                }
+                else if (quote === 34 /* QuoteDouble */ && value.charCodeAt(i - 1) !== 92 /* BackSlash */) {
+                    quote = 0 /* QuoteNone */;
+                }
+                break;
+            case 58 /* Colon */:
+                if (!currentProp && parenDepth === 0 && quote === 0 /* QuoteNone */) {
+                    currentProp = hyphenate(value.substring(propStart, i - 1).trim());
+                    valueStart = i;
+                }
+                break;
+            case 59 /* Semicolon */:
+                if (currentProp && valueStart > 0 && parenDepth === 0 && quote === 0 /* QuoteNone */) {
+                    const styleVal = value.substring(valueStart, i - 1).trim();
+                    styles[currentProp] = valueHasQuotes ? stripUnnecessaryQuotes(styleVal) : styleVal;
+                    propStart = i;
+                    valueStart = 0;
+                    currentProp = null;
+                    valueHasQuotes = false;
+                }
+                break;
+        }
+    }
+    if (currentProp && valueStart) {
+        const styleVal = value.substr(valueStart).trim();
+        styles[currentProp] = valueHasQuotes ? stripUnnecessaryQuotes(styleVal) : styleVal;
+    }
+    return styles;
+}
+function stripUnnecessaryQuotes(value) {
+    const qS = value.charCodeAt(0);
+    const qE = value.charCodeAt(value.length - 1);
+    if (qS == qE && (qS == 39 /* QuoteSingle */ || qS == 34 /* QuoteDouble */)) {
+        const tempValue = value.substring(1, value.length - 1);
+        // special case to avoid using a multi-quoted string that was just chomped
+        // (e.g. `font-family: "Verdana", "sans-serif"`)
+        if (tempValue.indexOf('\'') == -1 && tempValue.indexOf('"') == -1) {
+            value = tempValue;
+        }
+    }
+    return value;
+}
+function hyphenate(value) {
+    return value.replace(/[a-z][A-Z]/g, v => {
+        return v.charAt(0) + '-' + v.charAt(1);
+    }).toLowerCase();
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 function mapBindingToInstruction(type) {
     switch (type) {
         case 0 /* Property */:
@@ -17543,8 +17617,6 @@ function mapBindingToInstruction(type) {
             return Identifiers$1.elementAttribute;
         case 2 /* Class */:
             return Identifiers$1.elementClassNamed;
-        case 3 /* Style */:
-            return Identifiers$1.elementStyleNamed;
         default:
             return undefined;
     }
@@ -17553,8 +17625,7 @@ function mapBindingToInstruction(type) {
 // code (where this map is used) deals with DOM element property values
 // (like elm.propName) and not component bindining properties (like [propName]).
 const SPECIAL_CASED_PROPERTIES_INSTRUCTION_MAP = {
-    'className': Identifiers$1.elementClass,
-    'style': Identifiers$1.elementStyle
+    'className': Identifiers$1.elementClass
 };
 class TemplateDefinitionBuilder {
     constructor(constantPool, contextParameter, parentBindingScope, level = 0, contextName, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace) {
@@ -17776,18 +17847,66 @@ class TemplateDefinitionBuilder {
         // Add the attributes
         const i18nMessages = [];
         const attributes = [];
-        Object.getOwnPropertyNames(outputAttrs).forEach(name => {
-            const value = outputAttrs[name];
-            attributes.push(literal(name));
-            if (attrI18nMetas.hasOwnProperty(name)) {
-                const meta = parseI18nMeta(attrI18nMetas[name]);
-                const variable$$1 = this.constantPool.getTranslation(value, meta);
-                attributes.push(variable$$1);
+        const initialStyleDeclarations = [];
+        const styleInputs = [];
+        const allOtherInputs = [];
+        element.inputs.forEach((input) => {
+            // [attr.style] should not be treated as a styling-based
+            // binding since it is intended to write directly to the attr
+            // and therefore will skip all style resolution that is present
+            // with style="", [style]="" and [style.prop]="" assignments
+            if (input.name == 'style' && input.type == 0 /* Property */) {
+                // this should always go first in the compilation (for [style])
+                styleInputs.splice(0, 0, input);
+            }
+            else if (input.type == 3 /* Style */) {
+                styleInputs.push(input);
             }
             else {
-                attributes.push(literal(value));
+                allOtherInputs.push(input);
             }
         });
+        let currStyleIndex = 0;
+        let staticStylesMap = null;
+        const stylesIndexMap = {};
+        Object.getOwnPropertyNames(outputAttrs).forEach(name => {
+            const value = outputAttrs[name];
+            if (name == 'style') {
+                staticStylesMap = parseStyle(value);
+                Object.keys(staticStylesMap).forEach(prop => { stylesIndexMap[prop] = currStyleIndex++; });
+            }
+            else {
+                attributes.push(literal(name));
+                if (attrI18nMetas.hasOwnProperty(name)) {
+                    const meta = parseI18nMeta(attrI18nMetas[name]);
+                    const variable$$1 = this.constantPool.getTranslation(value, meta);
+                    attributes.push(variable$$1);
+                }
+                else {
+                    attributes.push(literal(value));
+                }
+            }
+        });
+        for (let i = 0; i < styleInputs.length; i++) {
+            const input = styleInputs[i];
+            const isMapBasedStyleBinding = i === 0 && input.name === 'style';
+            if (!isMapBasedStyleBinding && !stylesIndexMap.hasOwnProperty(input.name)) {
+                stylesIndexMap[input.name] = currStyleIndex++;
+            }
+        }
+        // this will build the instructions so that they fall into the following syntax
+        // => [prop1, prop2, prop3, 0, prop1, value1, prop2, value2]
+        Object.keys(stylesIndexMap).forEach(prop => {
+            initialStyleDeclarations.push(literal(prop));
+        });
+        if (staticStylesMap) {
+            initialStyleDeclarations.push(literal(0 /* INITIAL_STYLES */));
+            Object.keys(staticStylesMap).forEach(prop => {
+                initialStyleDeclarations.push(literal(prop));
+                const value = staticStylesMap[prop];
+                initialStyleDeclarations.push(literal(value));
+            });
+        }
         const attrArg = attributes.length > 0 ?
             this.constantPool.getConstLiteral(literalArr(attributes), true) :
             TYPED_NULL_EXPR;
@@ -17820,9 +17939,10 @@ class TemplateDefinitionBuilder {
         if (currentNamespace !== wasInNamespace) {
             this.addNamespaceInstruction(currentNamespace, element);
         }
-        const isEmptyElement = element.children.length === 0 && element.outputs.length === 0;
         const implicit = variable(CONTEXT_NAME);
-        if (isEmptyElement) {
+        const elementStyleIndex = (initialStyleDeclarations.length || styleInputs.length) ? this.allocateDataSlot() : 0;
+        const createSelfClosingInstruction = elementStyleIndex === 0 && element.children.length === 0 && element.outputs.length === 0;
+        if (createSelfClosingInstruction) {
             this.instruction(this._creationCode, element.sourceSpan, Identifiers$1.element, ...trimTrailingNulls(parameters));
         }
         else {
@@ -17831,6 +17951,18 @@ class TemplateDefinitionBuilder {
                 this._creationCode.push(...i18nMessages);
             }
             this.instruction(this._creationCode, element.sourceSpan, Identifiers$1.elementStart, ...trimTrailingNulls(parameters));
+            // initial styling for static style="..." attributes
+            if (elementStyleIndex > 0) {
+                let paramsList = [literal(elementStyleIndex)];
+                if (initialStyleDeclarations.length) {
+                    // the template compiler handles initial styling (e.g. style="foo") values
+                    // in a special command called `elementStyle` so that the initial styles
+                    // can be processed during runtime. These initial styles values are bound to
+                    // a constant because the inital style values do not change (since they're static).
+                    paramsList.push(this.constantPool.getConstLiteral(literalArr(initialStyleDeclarations), true));
+                }
+                this._creationCode.push(importExpr(Identifiers$1.elementStyling).callFn(paramsList).toStmt());
+            }
             // Generate Listeners (outputs)
             element.outputs.forEach((outputAst) => {
                 const elName = sanitizeIdentifier(element.name);
@@ -17845,8 +17977,25 @@ class TemplateDefinitionBuilder {
                 this.instruction(this._creationCode, outputAst.sourceSpan, Identifiers$1.listener, literal(outputAst.name), handler);
             });
         }
+        if (styleInputs.length && elementStyleIndex > 0) {
+            const indexLiteral = literal(elementStyleIndex);
+            styleInputs.forEach((input, i) => {
+                const isMapBasedStyleBinding = i == 0 && input.name == 'style';
+                const convertedBinding = this.convertPropertyBinding(implicit, input.value, true);
+                if (isMapBasedStyleBinding) {
+                    this.instruction(this._bindingCode, input.sourceSpan, Identifiers$1.elementStyle, indexLiteral, convertedBinding);
+                }
+                else {
+                    const key = input.name;
+                    let styleIndex = stylesIndexMap[key];
+                    this.instruction(this._bindingCode, input.sourceSpan, Identifiers$1.elementStyleProp, indexLiteral, literal(styleIndex), convertedBinding);
+                }
+            });
+            const spanEnd = styleInputs[styleInputs.length - 1].sourceSpan;
+            this.instruction(this._bindingCode, spanEnd, Identifiers$1.elementStylingApply, indexLiteral);
+        }
         // Generate element input bindings
-        element.inputs.forEach((input) => {
+        allOtherInputs.forEach((input) => {
             if (input.type === 4 /* Animation */) {
                 this._unsupported('animations');
             }
@@ -17878,7 +18027,7 @@ class TemplateDefinitionBuilder {
         else {
             visitAll$1(this, element.children);
         }
-        if (!isEmptyElement) {
+        if (!createSelfClosingInstruction) {
             // Finish element construction mode.
             this.instruction(this._creationCode, element.endSourceSpan || element.sourceSpan, Identifiers$1.elementEnd);
         }
@@ -17957,7 +18106,7 @@ class TemplateDefinitionBuilder {
     instruction(statements, span, reference, ...params) {
         statements.push(importExpr(reference, null, span).callFn(params, span).toStmt());
     }
-    convertPropertyBinding(implicit, value) {
+    convertPropertyBinding(implicit, value, skipBindFn) {
         const pipesConvertedValue = value.visit(this._valueConverter);
         if (pipesConvertedValue instanceof Interpolation) {
             const convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, interpolate);
@@ -17967,7 +18116,8 @@ class TemplateDefinitionBuilder {
         else {
             const convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, () => error('Unexpected interpolation'));
             this._bindingCode.push(...convertedPropertyBinding.stmts);
-            return importExpr(Identifiers$1.bind).callFn([convertedPropertyBinding.currValExpr]);
+            const valExpr = convertedPropertyBinding.currValExpr;
+            return skipBindFn ? valExpr : importExpr(Identifiers$1.bind).callFn([valExpr]);
         }
     }
 }
@@ -19025,8 +19175,6 @@ class StaticSymbolResolver {
                         if (topLevelSymbolNames.has(name)) {
                             return self.getStaticSymbol(topLevelPath, name);
                         }
-                        // ambient value
-                        
                     }
                 }
                 else if (symbolic === 'error') {
@@ -22544,9 +22692,6 @@ class ResourceLoader {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * Extract i18n messages from source code
- */
 class Extractor {
     constructor(host, staticSymbolResolver, messageBundle, metadataResolver) {
         this.host = host;
@@ -22755,22 +22900,6 @@ function jitExpression(def, context, sourceUrl, constantPool) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * @module
- * @description
- * Entry point for all APIs of the compiler package.
- *
- * <div class="callout is-critical">
- *   <header>Unstable APIs</header>
- *   <p>
- *     All compiler apis are currently considered experimental and private!
- *   </p>
- *   <p>
- *     We expect the APIs in this package to keep on changing. Do not rely on them.
- *   </p>
- * </div>
- */
-
 // This file only reexports content of the `src` folder. Keep it that way.
 
 /**
@@ -22780,12 +22909,6 @@ function jitExpression(def, context, sourceUrl, constantPool) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * @module
- * @description
- * Entry point for all public APIs of this package.
- */
-
 // This file only reexports content of the `src` folder. Keep it that way.
 
 /**
@@ -22795,10 +22918,6 @@ function jitExpression(def, context, sourceUrl, constantPool) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-// This file is not used to build this module. It is only used during editing
-// by the TypeScript language service and during build for verification. `ngc`
-// replaces this file with production index.ts when it rewrites private symbol
-// names.
 
 /**
  * @license
@@ -22807,10 +22926,6 @@ function jitExpression(def, context, sourceUrl, constantPool) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-// This file is not used to build this module. It is only used during editing
-// by the TypeScript language service and during build for verification. `ngc`
-// replaces this file with production index.ts when it rewrites private symbol
-// names.
 
 export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, jitExpression, R3ResolvedDependencyType, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, compileInjectable };
 //# sourceMappingURL=compiler.js.map

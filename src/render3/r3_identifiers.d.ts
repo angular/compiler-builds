@@ -20,8 +20,10 @@ export declare class Identifiers {
     static elementAttribute: o.ExternalReference;
     static elementClass: o.ExternalReference;
     static elementClassNamed: o.ExternalReference;
+    static elementStyling: o.ExternalReference;
     static elementStyle: o.ExternalReference;
-    static elementStyleNamed: o.ExternalReference;
+    static elementStyleProp: o.ExternalReference;
+    static elementStylingApply: o.ExternalReference;
     static containerCreate: o.ExternalReference;
     static text: o.ExternalReference;
     static textBinding: o.ExternalReference;
