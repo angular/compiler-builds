@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.3+60.sha-52d43a9
+ * @license Angular v6.1.0-beta.3+61.sha-3980640
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('6.1.0-beta.3+60.sha-52d43a9');
+const VERSION = new Version('6.1.0-beta.3+61.sha-3980640');
 
 /**
  * @license
@@ -16628,8 +16628,10 @@ Identifiers$1.elementProperty = { name: 'ɵp', moduleName: CORE$1 };
 Identifiers$1.elementAttribute = { name: 'ɵa', moduleName: CORE$1 };
 Identifiers$1.elementClass = { name: 'ɵk', moduleName: CORE$1 };
 Identifiers$1.elementClassNamed = { name: 'ɵkn', moduleName: CORE$1 };
-Identifiers$1.elementStyle = { name: 'ɵs', moduleName: CORE$1 };
-Identifiers$1.elementStyleNamed = { name: 'ɵsn', moduleName: CORE$1 };
+Identifiers$1.elementStyling = { name: 'ɵs', moduleName: CORE$1 };
+Identifiers$1.elementStyle = { name: 'ɵsm', moduleName: CORE$1 };
+Identifiers$1.elementStyleProp = { name: 'ɵsp', moduleName: CORE$1 };
+Identifiers$1.elementStylingApply = { name: 'ɵsa', moduleName: CORE$1 };
 Identifiers$1.containerCreate = { name: 'ɵC', moduleName: CORE$1 };
 Identifiers$1.text = { name: 'ɵT', moduleName: CORE$1 };
 Identifiers$1.textBinding = { name: 'ɵt', moduleName: CORE$1 };
@@ -17511,6 +17513,102 @@ function isEmptyTextNode(node) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/**
+ * Parses string representation of a style and converts it into object literal.
+ *
+ * @param value string representation of style as used in the `style` attribute in HTML.
+ *   Example: `color: red; height: auto`.
+ * @returns an object literal. `{ color: 'red', height: 'auto'}`.
+ */
+function parseStyle(value) {
+    const styles = {};
+    let i = 0;
+    let parenDepth = 0;
+    let quote = 0 /* QuoteNone */;
+    let valueStart = 0;
+    let propStart = 0;
+    let currentProp = null;
+    let valueHasQuotes = false;
+    while (i < value.length) {
+        const token = value.charCodeAt(i++);
+        switch (token) {
+            case 40 /* OpenParen */:
+                parenDepth++;
+                break;
+            case 41 /* CloseParen */:
+                parenDepth--;
+                break;
+            case 39 /* QuoteSingle */:
+                // valueStart needs to be there since prop values don't
+                // have quotes in CSS
+                valueHasQuotes = valueHasQuotes || valueStart > 0;
+                if (quote === 0 /* QuoteNone */) {
+                    quote = 39 /* QuoteSingle */;
+                }
+                else if (quote === 39 /* QuoteSingle */ && value.charCodeAt(i - 1) !== 92 /* BackSlash */) {
+                    quote = 0 /* QuoteNone */;
+                }
+                break;
+            case 34 /* QuoteDouble */:
+                // same logic as above
+                valueHasQuotes = valueHasQuotes || valueStart > 0;
+                if (quote === 0 /* QuoteNone */) {
+                    quote = 34 /* QuoteDouble */;
+                }
+                else if (quote === 34 /* QuoteDouble */ && value.charCodeAt(i - 1) !== 92 /* BackSlash */) {
+                    quote = 0 /* QuoteNone */;
+                }
+                break;
+            case 58 /* Colon */:
+                if (!currentProp && parenDepth === 0 && quote === 0 /* QuoteNone */) {
+                    currentProp = hyphenate(value.substring(propStart, i - 1).trim());
+                    valueStart = i;
+                }
+                break;
+            case 59 /* Semicolon */:
+                if (currentProp && valueStart > 0 && parenDepth === 0 && quote === 0 /* QuoteNone */) {
+                    const styleVal = value.substring(valueStart, i - 1).trim();
+                    styles[currentProp] = valueHasQuotes ? stripUnnecessaryQuotes(styleVal) : styleVal;
+                    propStart = i;
+                    valueStart = 0;
+                    currentProp = null;
+                    valueHasQuotes = false;
+                }
+                break;
+        }
+    }
+    if (currentProp && valueStart) {
+        const styleVal = value.substr(valueStart).trim();
+        styles[currentProp] = valueHasQuotes ? stripUnnecessaryQuotes(styleVal) : styleVal;
+    }
+    return styles;
+}
+function stripUnnecessaryQuotes(value) {
+    const qS = value.charCodeAt(0);
+    const qE = value.charCodeAt(value.length - 1);
+    if (qS == qE && (qS == 39 /* QuoteSingle */ || qS == 34 /* QuoteDouble */)) {
+        const tempValue = value.substring(1, value.length - 1);
+        // special case to avoid using a multi-quoted string that was just chomped
+        // (e.g. `font-family: "Verdana", "sans-serif"`)
+        if (tempValue.indexOf('\'') == -1 && tempValue.indexOf('"') == -1) {
+            value = tempValue;
+        }
+    }
+    return value;
+}
+function hyphenate(value) {
+    return value.replace(/[a-z][A-Z]/g, v => {
+        return v.charAt(0) + '-' + v.charAt(1);
+    }).toLowerCase();
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 function mapBindingToInstruction(type) {
     switch (type) {
         case 0 /* Property */:
@@ -17519,8 +17617,6 @@ function mapBindingToInstruction(type) {
             return Identifiers$1.elementAttribute;
         case 2 /* Class */:
             return Identifiers$1.elementClassNamed;
-        case 3 /* Style */:
-            return Identifiers$1.elementStyleNamed;
         default:
             return undefined;
     }
@@ -17529,8 +17625,7 @@ function mapBindingToInstruction(type) {
 // code (where this map is used) deals with DOM element property values
 // (like elm.propName) and not component bindining properties (like [propName]).
 const SPECIAL_CASED_PROPERTIES_INSTRUCTION_MAP = {
-    'className': Identifiers$1.elementClass,
-    'style': Identifiers$1.elementStyle
+    'className': Identifiers$1.elementClass
 };
 class TemplateDefinitionBuilder {
     constructor(constantPool, contextParameter, parentBindingScope, level = 0, contextName, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace) {
@@ -17752,18 +17847,66 @@ class TemplateDefinitionBuilder {
         // Add the attributes
         const i18nMessages = [];
         const attributes = [];
-        Object.getOwnPropertyNames(outputAttrs).forEach(name => {
-            const value = outputAttrs[name];
-            attributes.push(literal(name));
-            if (attrI18nMetas.hasOwnProperty(name)) {
-                const meta = parseI18nMeta(attrI18nMetas[name]);
-                const variable$$1 = this.constantPool.getTranslation(value, meta);
-                attributes.push(variable$$1);
+        const initialStyleDeclarations = [];
+        const styleInputs = [];
+        const allOtherInputs = [];
+        element.inputs.forEach((input) => {
+            // [attr.style] should not be treated as a styling-based
+            // binding since it is intended to write directly to the attr
+            // and therefore will skip all style resolution that is present
+            // with style="", [style]="" and [style.prop]="" assignments
+            if (input.name == 'style' && input.type == 0 /* Property */) {
+                // this should always go first in the compilation (for [style])
+                styleInputs.splice(0, 0, input);
+            }
+            else if (input.type == 3 /* Style */) {
+                styleInputs.push(input);
             }
             else {
-                attributes.push(literal(value));
+                allOtherInputs.push(input);
             }
         });
+        let currStyleIndex = 0;
+        let staticStylesMap = null;
+        const stylesIndexMap = {};
+        Object.getOwnPropertyNames(outputAttrs).forEach(name => {
+            const value = outputAttrs[name];
+            if (name == 'style') {
+                staticStylesMap = parseStyle(value);
+                Object.keys(staticStylesMap).forEach(prop => { stylesIndexMap[prop] = currStyleIndex++; });
+            }
+            else {
+                attributes.push(literal(name));
+                if (attrI18nMetas.hasOwnProperty(name)) {
+                    const meta = parseI18nMeta(attrI18nMetas[name]);
+                    const variable$$1 = this.constantPool.getTranslation(value, meta);
+                    attributes.push(variable$$1);
+                }
+                else {
+                    attributes.push(literal(value));
+                }
+            }
+        });
+        for (let i = 0; i < styleInputs.length; i++) {
+            const input = styleInputs[i];
+            const isMapBasedStyleBinding = i === 0 && input.name === 'style';
+            if (!isMapBasedStyleBinding && !stylesIndexMap.hasOwnProperty(input.name)) {
+                stylesIndexMap[input.name] = currStyleIndex++;
+            }
+        }
+        // this will build the instructions so that they fall into the following syntax
+        // => [prop1, prop2, prop3, 0, prop1, value1, prop2, value2]
+        Object.keys(stylesIndexMap).forEach(prop => {
+            initialStyleDeclarations.push(literal(prop));
+        });
+        if (staticStylesMap) {
+            initialStyleDeclarations.push(literal(0 /* INITIAL_STYLES */));
+            Object.keys(staticStylesMap).forEach(prop => {
+                initialStyleDeclarations.push(literal(prop));
+                const value = staticStylesMap[prop];
+                initialStyleDeclarations.push(literal(value));
+            });
+        }
         const attrArg = attributes.length > 0 ?
             this.constantPool.getConstLiteral(literalArr(attributes), true) :
             TYPED_NULL_EXPR;
@@ -17796,9 +17939,10 @@ class TemplateDefinitionBuilder {
         if (currentNamespace !== wasInNamespace) {
             this.addNamespaceInstruction(currentNamespace, element);
         }
-        const isEmptyElement = element.children.length === 0 && element.outputs.length === 0;
         const implicit = variable(CONTEXT_NAME);
-        if (isEmptyElement) {
+        const elementStyleIndex = (initialStyleDeclarations.length || styleInputs.length) ? this.allocateDataSlot() : 0;
+        const createSelfClosingInstruction = elementStyleIndex === 0 && element.children.length === 0 && element.outputs.length === 0;
+        if (createSelfClosingInstruction) {
             this.instruction(this._creationCode, element.sourceSpan, Identifiers$1.element, ...trimTrailingNulls(parameters));
         }
         else {
@@ -17807,6 +17951,18 @@ class TemplateDefinitionBuilder {
                 this._creationCode.push(...i18nMessages);
             }
             this.instruction(this._creationCode, element.sourceSpan, Identifiers$1.elementStart, ...trimTrailingNulls(parameters));
+            // initial styling for static style="..." attributes
+            if (elementStyleIndex > 0) {
+                let paramsList = [literal(elementStyleIndex)];
+                if (initialStyleDeclarations.length) {
+                    // the template compiler handles initial styling (e.g. style="foo") values
+                    // in a special command called `elementStyle` so that the initial styles
+                    // can be processed during runtime. These initial styles values are bound to
+                    // a constant because the inital style values do not change (since they're static).
+                    paramsList.push(this.constantPool.getConstLiteral(literalArr(initialStyleDeclarations), true));
+                }
+                this._creationCode.push(importExpr(Identifiers$1.elementStyling).callFn(paramsList).toStmt());
+            }
             // Generate Listeners (outputs)
             element.outputs.forEach((outputAst) => {
                 const elName = sanitizeIdentifier(element.name);
@@ -17821,8 +17977,25 @@ class TemplateDefinitionBuilder {
                 this.instruction(this._creationCode, outputAst.sourceSpan, Identifiers$1.listener, literal(outputAst.name), handler);
             });
         }
+        if (styleInputs.length && elementStyleIndex > 0) {
+            const indexLiteral = literal(elementStyleIndex);
+            styleInputs.forEach((input, i) => {
+                const isMapBasedStyleBinding = i == 0 && input.name == 'style';
+                const convertedBinding = this.convertPropertyBinding(implicit, input.value, true);
+                if (isMapBasedStyleBinding) {
+                    this.instruction(this._bindingCode, input.sourceSpan, Identifiers$1.elementStyle, indexLiteral, convertedBinding);
+                }
+                else {
+                    const key = input.name;
+                    let styleIndex = stylesIndexMap[key];
+                    this.instruction(this._bindingCode, input.sourceSpan, Identifiers$1.elementStyleProp, indexLiteral, literal(styleIndex), convertedBinding);
+                }
+            });
+            const spanEnd = styleInputs[styleInputs.length - 1].sourceSpan;
+            this.instruction(this._bindingCode, spanEnd, Identifiers$1.elementStylingApply, indexLiteral);
+        }
         // Generate element input bindings
-        element.inputs.forEach((input) => {
+        allOtherInputs.forEach((input) => {
             if (input.type === 4 /* Animation */) {
                 this._unsupported('animations');
             }
@@ -17854,7 +18027,7 @@ class TemplateDefinitionBuilder {
         else {
             visitAll$1(this, element.children);
         }
-        if (!isEmptyElement) {
+        if (!createSelfClosingInstruction) {
             // Finish element construction mode.
             this.instruction(this._creationCode, element.endSourceSpan || element.sourceSpan, Identifiers$1.elementEnd);
         }
@@ -17933,7 +18106,7 @@ class TemplateDefinitionBuilder {
     instruction(statements, span, reference, ...params) {
         statements.push(importExpr(reference, null, span).callFn(params, span).toStmt());
     }
-    convertPropertyBinding(implicit, value) {
+    convertPropertyBinding(implicit, value, skipBindFn) {
         const pipesConvertedValue = value.visit(this._valueConverter);
         if (pipesConvertedValue instanceof Interpolation) {
             const convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, interpolate);
@@ -17943,7 +18116,8 @@ class TemplateDefinitionBuilder {
         else {
             const convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, () => error('Unexpected interpolation'));
             this._bindingCode.push(...convertedPropertyBinding.stmts);
-            return importExpr(Identifiers$1.bind).callFn([convertedPropertyBinding.currValExpr]);
+            const valExpr = convertedPropertyBinding.currValExpr;
+            return skipBindFn ? valExpr : importExpr(Identifiers$1.bind).callFn([valExpr]);
         }
     }
 }
