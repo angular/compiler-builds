@@ -20,8 +20,10 @@ export declare class Identifiers {
     static elementAttribute: o.ExternalReference;
     static elementClass: o.ExternalReference;
     static elementClassNamed: o.ExternalReference;
+    static elementStyling: o.ExternalReference;
     static elementStyle: o.ExternalReference;
-    static elementStyleNamed: o.ExternalReference;
+    static elementStyleProp: o.ExternalReference;
+    static elementStylingApply: o.ExternalReference;
     static containerCreate: o.ExternalReference;
     static text: o.ExternalReference;
     static textBinding: o.ExternalReference;
@@ -65,13 +67,16 @@ export declare class Identifiers {
     static ComponentDef: o.ExternalReference;
     static defineDirective: o.ExternalReference;
     static DirectiveDef: o.ExternalReference;
+    static InjectorDef: o.ExternalReference;
     static defineInjector: o.ExternalReference;
     static NgModuleDef: o.ExternalReference;
     static defineNgModule: o.ExternalReference;
+    static PipeDef: o.ExternalReference;
     static definePipe: o.ExternalReference;
     static query: o.ExternalReference;
     static queryRefresh: o.ExternalReference;
     static NgOnChangesFeature: o.ExternalReference;
+    static InheritDefinitionFeature: o.ExternalReference;
     static listener: o.ExternalReference;
     static reserveSlots: o.ExternalReference;
 }

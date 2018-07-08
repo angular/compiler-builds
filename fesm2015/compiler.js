@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.1+46.sha-a5799e6
+ * @license Angular v6.1.0-beta.3+80.sha-6c604bd
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -767,11 +767,6 @@ class SelectorContext {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-// Attention:
-// This file duplicates types and values from @angular/core
-// so that we are able to make @angular/compiler independent of @angular/core.
-// This is important to prevent a build cycle, as @angular/core needs to
-// be compiled with the compiler.
 const createInject = makeMetadataFactory('Inject', (token) => ({ token }));
 const createInjectionToken = makeMetadataFactory('InjectionToken', (desc) => ({ _desc: desc, ngInjectableDef: undefined }));
 const createAttribute = makeMetadataFactory('Attribute', (attributeName) => ({ attributeName }));
@@ -785,6 +780,7 @@ var ViewEncapsulation;
     ViewEncapsulation[ViewEncapsulation["Emulated"] = 0] = "Emulated";
     ViewEncapsulation[ViewEncapsulation["Native"] = 1] = "Native";
     ViewEncapsulation[ViewEncapsulation["None"] = 2] = "None";
+    ViewEncapsulation[ViewEncapsulation["ShadowDom"] = 3] = "ShadowDom";
 })(ViewEncapsulation || (ViewEncapsulation = {}));
 var ChangeDetectionStrategy;
 (function (ChangeDetectionStrategy) {
@@ -871,36 +867,35 @@ function parseSelectorToR3Selector(selector) {
     return selectors.map(parserSelectorToR3Selector);
 }
 
-
-var core = Object.freeze({
-	createInject: createInject,
-	createInjectionToken: createInjectionToken,
-	createAttribute: createAttribute,
-	createContentChildren: createContentChildren,
-	createContentChild: createContentChild,
-	createViewChildren: createViewChildren,
-	createViewChild: createViewChild,
-	createDirective: createDirective,
-	get ViewEncapsulation () { return ViewEncapsulation; },
-	get ChangeDetectionStrategy () { return ChangeDetectionStrategy; },
-	createComponent: createComponent,
-	createPipe: createPipe,
-	createInput: createInput,
-	createOutput: createOutput,
-	createHostBinding: createHostBinding,
-	createHostListener: createHostListener,
-	createNgModule: createNgModule,
-	createInjectable: createInjectable,
-	CUSTOM_ELEMENTS_SCHEMA: CUSTOM_ELEMENTS_SCHEMA,
-	NO_ERRORS_SCHEMA: NO_ERRORS_SCHEMA,
-	createOptional: createOptional,
-	createSelf: createSelf,
-	createSkipSelf: createSkipSelf,
-	createHost: createHost,
-	Type: Type,
-	get SecurityContext () { return SecurityContext; },
-	get MissingTranslationStrategy () { return MissingTranslationStrategy; },
-	parseSelectorToR3Selector: parseSelectorToR3Selector
+var core = /*#__PURE__*/Object.freeze({
+    createInject: createInject,
+    createInjectionToken: createInjectionToken,
+    createAttribute: createAttribute,
+    createContentChildren: createContentChildren,
+    createContentChild: createContentChild,
+    createViewChildren: createViewChildren,
+    createViewChild: createViewChild,
+    createDirective: createDirective,
+    get ViewEncapsulation () { return ViewEncapsulation; },
+    get ChangeDetectionStrategy () { return ChangeDetectionStrategy; },
+    createComponent: createComponent,
+    createPipe: createPipe,
+    createInput: createInput,
+    createOutput: createOutput,
+    createHostBinding: createHostBinding,
+    createHostListener: createHostListener,
+    createNgModule: createNgModule,
+    createInjectable: createInjectable,
+    CUSTOM_ELEMENTS_SCHEMA: CUSTOM_ELEMENTS_SCHEMA,
+    NO_ERRORS_SCHEMA: NO_ERRORS_SCHEMA,
+    createOptional: createOptional,
+    createSelf: createSelf,
+    createSkipSelf: createSkipSelf,
+    createHost: createHost,
+    Type: Type,
+    get SecurityContext () { return SecurityContext; },
+    get MissingTranslationStrategy () { return MissingTranslationStrategy; },
+    parseSelectorToR3Selector: parseSelectorToR3Selector
 });
 
 /**
@@ -1084,12 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * @module
- * @description
- * Entry point for all public APIs of the common package.
- */
-const VERSION = new Version('6.1.0-beta.1+46.sha-a5799e6');
+const VERSION = new Version('6.1.0-beta.3+80.sha-6c604bd');
 
 /**
  * @license
@@ -1133,25 +1123,12 @@ class AttrAst {
     }
     visit(visitor, context) { return visitor.visitAttr(this, context); }
 }
-var PropertyBindingType;
-(function (PropertyBindingType) {
-    // A normal binding to a property (e.g. `[property]="expression"`).
-    PropertyBindingType[PropertyBindingType["Property"] = 0] = "Property";
-    // A binding to an element attribute (e.g. `[attr.name]="expression"`).
-    PropertyBindingType[PropertyBindingType["Attribute"] = 1] = "Attribute";
-    // A binding to a CSS class (e.g. `[class.name]="condition"`).
-    PropertyBindingType[PropertyBindingType["Class"] = 2] = "Class";
-    // A binding to a style rule (e.g. `[style.rule]="expression"`).
-    PropertyBindingType[PropertyBindingType["Style"] = 3] = "Style";
-    // A binding to an animation reference (e.g. `[animate.key]="expression"`).
-    PropertyBindingType[PropertyBindingType["Animation"] = 4] = "Animation";
-})(PropertyBindingType || (PropertyBindingType = {}));
 const BoundPropertyMapping = {
-    [4 /* Animation */]: PropertyBindingType.Animation,
-    [1 /* Attribute */]: PropertyBindingType.Attribute,
-    [2 /* Class */]: PropertyBindingType.Class,
-    [0 /* Property */]: PropertyBindingType.Property,
-    [3 /* Style */]: PropertyBindingType.Style,
+    [4 /* Animation */]: 4 /* Animation */,
+    [1 /* Attribute */]: 1 /* Attribute */,
+    [2 /* Class */]: 2 /* Class */,
+    [0 /* Property */]: 0 /* Property */,
+    [3 /* Style */]: 3 /* Style */,
 };
 /**
  * A binding for an element property (e.g. `[property]="expression"`) or an animation trigger (e.g.
@@ -1165,7 +1142,7 @@ class BoundElementPropertyAst {
         this.value = value;
         this.unit = unit;
         this.sourceSpan = sourceSpan;
-        this.isAnimation = this.type === PropertyBindingType.Animation;
+        this.isAnimation = this.type === 4 /* Animation */;
     }
     static fromBoundProperty(prop) {
         const type = BoundPropertyMapping[prop.type];
@@ -2684,9 +2661,6 @@ const $LBRACE = 123;
 const $BAR = 124;
 const $RBRACE = 125;
 const $NBSP = 160;
-
-
-
 const $BT = 96;
 function isWhitespace(code) {
     return (code >= $TAB && code <= $SPACE) || (code == $NBSP);
@@ -2922,9 +2896,7 @@ class _Scanner {
         let simple = (this.index === start);
         this.advance(); // Skip initial digit.
         while (true) {
-            if (isDigit(this.peek)) {
-                // Do nothing.
-            }
+            if (isDigit(this.peek)) ;
             else if (this.peek == $PERIOD) {
                 simple = false;
             }
@@ -9227,7 +9199,7 @@ class InjectableCompiler {
         return deps.map(dep => {
             let token = dep;
             let args = [token];
-            let flags = 0;
+            let flags = 0 /* Default */;
             if (Array.isArray(dep)) {
                 for (let i = 0; i < dep.length; i++) {
                     const v = dep[i];
@@ -10820,13 +10792,8 @@ class NgModuleProviderAnalyzer {
             if (tokenReference(dep.token) ===
                 this.reflector.resolveExternalReference(Identifiers.Injector) ||
                 tokenReference(dep.token) ===
-                    this.reflector.resolveExternalReference(Identifiers.ComponentFactoryResolver)) {
-                
-                // access providers
-            }
-            else if (this._getOrCreateLocalProvider(dep.token, eager) != null) {
-                
-            }
+                    this.reflector.resolveExternalReference(Identifiers.ComponentFactoryResolver)) ;
+            else if (this._getOrCreateLocalProvider(dep.token, eager) != null) ;
         }
         return dep;
     }
@@ -10920,7 +10887,7 @@ function _addQueryToTokenMap(map, query) {
  * found in the LICENSE file at https://angular.io/license
  */
 function providerDef(ctx, providerAst) {
-    let flags = 0;
+    let flags = 0 /* None */;
     if (!providerAst.eager) {
         flags |= 4096 /* LazyProvider */;
     }
@@ -11025,7 +10992,7 @@ function depDef(ctx, dep) {
     // Note: the following fields have already been normalized out by provider_analyzer:
     // - isAttribute, isHost
     const expr = dep.isValue ? convertValueToOutputAst(ctx, dep.value) : tokenExpr(ctx, dep.token);
-    let flags = 0;
+    let flags = 0 /* None */;
     if (dep.isSkipSelf) {
         flags |= 1 /* SkipSelf */;
     }
@@ -11041,7 +11008,7 @@ function depDef(ctx, dep) {
     return flags === 0 /* None */ ? expr : literalArr([literal(flags), expr]);
 }
 function lifecycleHookToNodeFlag(lifecycleHook) {
-    let nodeFlag = 0;
+    let nodeFlag = 0 /* None */;
     switch (lifecycleHook) {
         case LifecycleHooks.AfterContentChecked:
             nodeFlag = 2097152 /* AfterContentChecked */;
@@ -14381,7 +14348,7 @@ class TemplateParseVisitor {
         // Note: We can't filter out empty expressions before this method,
         // as we still want to validate them!
         return boundProps.filter((boundProp) => {
-            if (boundProp.type === PropertyBindingType.Property &&
+            if (boundProp.type === 0 /* Property */ &&
                 !this._schemaRegistry.hasProperty(elementName, boundProp.name, this._schemas)) {
                 let errorMsg = `Can't bind to '${boundProp.name}' since it isn't a known property of '${elementName}'.`;
                 if (elementName.startsWith('ng-')) {
@@ -15501,7 +15468,7 @@ class ViewBuilder$1 {
             this.component.viewQueries.forEach((query, queryIndex) => {
                 // Note: queries start with id 1 so we can use the number in a Bloom filter!
                 const queryId = queryIndex + 1;
-                const bindingType = query.first ? 0 /* First */ : 1;
+                const bindingType = query.first ? 0 /* First */ : 1 /* All */;
                 const flags = 134217728 /* TypeViewQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
                 this.nodes.push(() => ({
                     sourceSpan: null,
@@ -15530,7 +15497,7 @@ class ViewBuilder$1 {
         const { updateRendererStmts, updateDirectivesStmts, nodeDefExprs } = this._createNodeExpressions();
         const updateRendererFn = this._createUpdateFn(updateRendererStmts);
         const updateDirectivesFn = this._createUpdateFn(updateDirectivesStmts);
-        let viewFlags = 0;
+        let viewFlags = 0 /* None */;
         if (!this.parent && this.component.changeDetection === ChangeDetectionStrategy.OnPush) {
             viewFlags |= 2 /* OnPush */;
         }
@@ -15694,7 +15661,7 @@ class ViewBuilder$1 {
         });
     }
     _visitElementOrTemplate(nodeIndex, ast) {
-        let flags = 0;
+        let flags = 0 /* None */;
         if (ast.hasViewContainer) {
             flags |= 16777216 /* EmbeddedViews */;
         }
@@ -15781,7 +15748,7 @@ class ViewBuilder$1 {
         dirAst.directive.queries.forEach((query, queryIndex) => {
             const queryId = dirAst.contentQueryStartId + queryIndex;
             const flags = 67108864 /* TypeContentQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
-            const bindingType = query.first ? 0 /* First */ : 1;
+            const bindingType = query.first ? 0 /* First */ : 1 /* All */;
             this.nodes.push(() => ({
                 sourceSpan: dirAst.sourceSpan,
                 nodeFlags: flags,
@@ -15895,7 +15862,7 @@ class ViewBuilder$1 {
         }));
     }
     _visitProviderOrDirective(providerAst, queryMatches) {
-        let flags = 0;
+        let flags = 0 /* None */;
         let queryMatchExprs = [];
         queryMatches.forEach((match) => {
             if (tokenReference(match.value) === tokenReference(providerAst.token)) {
@@ -15917,7 +15884,8 @@ class ViewBuilder$1 {
             return EventHandlerVars.event;
         }
         let currViewExpr = VIEW_VAR;
-        for (let currBuilder = this; currBuilder; currBuilder = currBuilder.parent, currViewExpr = currViewExpr.prop('parent').cast(DYNAMIC_TYPE)) {
+        for (let currBuilder = this; currBuilder; currBuilder = currBuilder.parent,
+            currViewExpr = currViewExpr.prop('parent').cast(DYNAMIC_TYPE)) {
             // check references
             const refNodeIndex = currBuilder.refNodeIndices[name];
             if (refNodeIndex != null) {
@@ -15996,7 +15964,7 @@ class ViewBuilder$1 {
     }
     _createPipe(sourceSpan, pipe) {
         const nodeIndex = this.nodes.length;
-        let flags = 0;
+        let flags = 0 /* None */;
         pipe.type.lifecycleHooks.forEach((lifecycleHook) => {
             // for pipes, we only support ngOnDestroy
             if (lifecycleHook === LifecycleHooks.OnDestroy) {
@@ -16129,26 +16097,26 @@ function needsAdditionalRootNode(astNodes) {
 }
 function elementBindingDef(inputAst, dirAst) {
     switch (inputAst.type) {
-        case PropertyBindingType.Attribute:
+        case 1 /* Attribute */:
             return literalArr([
                 literal(1 /* TypeElementAttribute */), literal(inputAst.name),
                 literal(inputAst.securityContext)
             ]);
-        case PropertyBindingType.Property:
+        case 0 /* Property */:
             return literalArr([
                 literal(8 /* TypeProperty */), literal(inputAst.name),
                 literal(inputAst.securityContext)
             ]);
-        case PropertyBindingType.Animation:
+        case 4 /* Animation */:
             const bindingType = 8 /* TypeProperty */ |
                 (dirAst && dirAst.directive.isComponent ? 32 /* SyntheticHostProperty */ :
                     16 /* SyntheticProperty */);
             return literalArr([
                 literal(bindingType), literal('@' + inputAst.name), literal(inputAst.securityContext)
             ]);
-        case PropertyBindingType.Class:
+        case 2 /* Class */:
             return literalArr([literal(2 /* TypeElementClass */), literal(inputAst.name), NULL_EXPR]);
-        case PropertyBindingType.Style:
+        case 3 /* Style */:
             return literalArr([
                 literal(4 /* TypeElementStyle */), literal(inputAst.name), literal(inputAst.unit)
             ]);
@@ -16242,7 +16210,7 @@ function elementEventNameAndTarget(eventAst, dirAst) {
     }
 }
 function calcStaticDynamicQueryFlags(queryIds, queryId, isFirst) {
-    let flags = 0;
+    let flags = 0 /* None */;
     // Note: We only make queries static that query for a single item.
     // This is because of backwards compatibility with the old view compiler...
     if (isFirst && (queryIds.staticQueryIds.has(queryId) || !queryIds.dynamicQueryIds.has(queryId))) {
@@ -16627,7 +16595,6 @@ class MapPlaceholderNames extends CloneVisitor {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-
 function mapLiteral(obj) {
     return literalMap(Object.keys(obj).map(key => ({
         key,
@@ -16661,8 +16628,10 @@ Identifiers$1.elementProperty = { name: 'ɵp', moduleName: CORE$1 };
 Identifiers$1.elementAttribute = { name: 'ɵa', moduleName: CORE$1 };
 Identifiers$1.elementClass = { name: 'ɵk', moduleName: CORE$1 };
 Identifiers$1.elementClassNamed = { name: 'ɵkn', moduleName: CORE$1 };
-Identifiers$1.elementStyle = { name: 'ɵs', moduleName: CORE$1 };
-Identifiers$1.elementStyleNamed = { name: 'ɵsn', moduleName: CORE$1 };
+Identifiers$1.elementStyling = { name: 'ɵs', moduleName: CORE$1 };
+Identifiers$1.elementStyle = { name: 'ɵsm', moduleName: CORE$1 };
+Identifiers$1.elementStyleProp = { name: 'ɵsp', moduleName: CORE$1 };
+Identifiers$1.elementStylingApply = { name: 'ɵsa', moduleName: CORE$1 };
 Identifiers$1.containerCreate = { name: 'ɵC', moduleName: CORE$1 };
 Identifiers$1.text = { name: 'ɵT', moduleName: CORE$1 };
 Identifiers$1.textBinding = { name: 'ɵt', moduleName: CORE$1 };
@@ -16715,6 +16684,10 @@ Identifiers$1.DirectiveDef = {
     name: 'DirectiveDef',
     moduleName: CORE$1,
 };
+Identifiers$1.InjectorDef = {
+    name: 'InjectorDef',
+    moduleName: CORE$1,
+};
 Identifiers$1.defineInjector = {
     name: 'defineInjector',
     moduleName: CORE$1,
@@ -16724,95 +16697,15 @@ Identifiers$1.NgModuleDef = {
     moduleName: CORE$1,
 };
 Identifiers$1.defineNgModule = { name: 'ɵdefineNgModule', moduleName: CORE$1 };
+Identifiers$1.PipeDef = { name: 'ɵPipeDef', moduleName: CORE$1 };
 Identifiers$1.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
 Identifiers$1.query = { name: 'ɵQ', moduleName: CORE$1 };
 Identifiers$1.queryRefresh = { name: 'ɵqR', moduleName: CORE$1 };
 Identifiers$1.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
+Identifiers$1.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
 Identifiers$1.listener = { name: 'ɵL', moduleName: CORE$1 };
 // Reserve slots for pure functions
 Identifiers$1.reserveSlots = { name: 'ɵrS', moduleName: CORE$1 };
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * Convert an object map with `Expression` values into a `LiteralMapExpr`.
- */
-function mapToMapExpression(map) {
-    const result = Object.keys(map).map(key => ({ key, value: map[key], quoted: false }));
-    return literalMap(result);
-}
-/**
- * Convert metadata into an `Expression` in the given `OutputContext`.
- *
- * This operation will handle arrays, references to symbols, or literal `null` or `undefined`.
- */
-function convertMetaToOutput(meta, ctx) {
-    if (Array.isArray(meta)) {
-        return literalArr(meta.map(entry => convertMetaToOutput(entry, ctx)));
-    }
-    if (meta instanceof StaticSymbol) {
-        return ctx.importExpr(meta);
-    }
-    if (meta == null) {
-        return literal(meta);
-    }
-    throw new Error(`Internal error: Unsupported or unknown metadata: ${meta}`);
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
- */
-function compileNgModule(meta) {
-    const { type: moduleType, bootstrap, declarations, imports, exports } = meta;
-    const expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression({
-            type: moduleType,
-            bootstrap: literalArr(bootstrap),
-            declarations: literalArr(declarations),
-            imports: literalArr(imports),
-            exports: literalArr(exports),
-        })]);
-    const type = new ExpressionType(importExpr(Identifiers$1.NgModuleDef, [
-        new ExpressionType(moduleType), new ExpressionType(literalArr(declarations)),
-        new ExpressionType(literalArr(imports)), new ExpressionType(literalArr(exports))
-    ]));
-    const additionalStatements = [];
-    return { expression, type, additionalStatements };
-}
-// TODO(alxhub): integrate this with `compileNgModule`. Currently the two are separate operations.
-function compileNgModuleFromRender2(ctx, ngModule, injectableCompiler) {
-    const className = identifierName(ngModule.type);
-    const rawImports = ngModule.rawImports ? [ngModule.rawImports] : [];
-    const rawExports = ngModule.rawExports ? [ngModule.rawExports] : [];
-    const injectorDefArg = mapLiteral({
-        'factory': injectableCompiler.factoryFor({ type: ngModule.type, symbol: ngModule.type.reference }, ctx),
-        'providers': convertMetaToOutput(ngModule.rawProviders, ctx),
-        'imports': convertMetaToOutput([...rawImports, ...rawExports], ctx),
-    });
-    const injectorDef = importExpr(Identifiers$1.defineInjector).callFn([injectorDefArg]);
-    ctx.statements.push(new ClassStmt(
-    /* name */ className, 
-    /* parent */ null, 
-    /* fields */ [new ClassField(
-        /* name */ 'ngInjectorDef', 
-        /* type */ INFERRED_TYPE, 
-        /* modifiers */ [StmtModifier.Static], 
-        /* initializer */ injectorDef)], 
-    /* getters */ [], 
-    /* constructorMethod */ new ClassMethod(null, [], []), 
-    /* methods */ []));
-}
 
 /**
  * @license
@@ -16955,7 +16848,7 @@ var R3ResolvedDependencyType;
  */
 function compileFactoryFunction(meta) {
     // Each dependency becomes an invocation of an inject*() function.
-    const args = meta.deps.map(dep => compileInjectDependency(dep, meta.injectFn, meta.useOptionalParam));
+    const args = meta.deps.map(dep => compileInjectDependency(dep, meta.injectFn));
     // The overall result depends on whether this is construction or function invocation.
     const expr = meta.useNew ? new InstantiateExpr(meta.fnOrClass, args) :
         new InvokeFunctionExpr(meta.fnOrClass, args);
@@ -16964,7 +16857,7 @@ function compileFactoryFunction(meta) {
     const retExpr = meta.extraResults === undefined ? expr : literalArr([expr, ...meta.extraResults]);
     return fn([], [new ReturnStatement(retExpr)], INFERRED_TYPE, undefined, `${meta.name}_Factory`);
 }
-function compileInjectDependency(dep, injectFn, useOptionalParam) {
+function compileInjectDependency(dep, injectFn) {
     // Interpret the dependency according to its resolved type.
     switch (dep.resolved) {
         case R3ResolvedDependencyType.Token:
@@ -16986,18 +16879,7 @@ function compileInjectDependency(dep, injectFn, useOptionalParam) {
             // parameters describing how to inject the dependency must be passed to the inject function
             // that's being used.
             if (flags !== 0 /* Default */ || dep.optional) {
-                // Either the dependency is optional, or non-default flags are in use. Either of these cases
-                // necessitates adding an argument for the default value if such an argument is required
-                // by the inject function (useOptionalParam === true).
-                if (useOptionalParam) {
-                    // The inject function requires a default value parameter.
-                    injectArgs.push(dep.optional ? NULL_EXPR : literal(undefined));
-                }
-                // The last parameter is always the InjectFlags, which only need to be specified if they're
-                // non-default.
-                if (flags !== 0 /* Default */) {
-                    injectArgs.push(literal(flags));
-                }
+                injectArgs.push(literal(flags));
             }
             return importExpr(injectFn).callFn(injectArgs);
         }
@@ -17075,40 +16957,150 @@ function dependenciesFromGlobalMetadata(type, outputCtx, reflector) {
  * found in the LICENSE file at https://angular.io/license
  */
 /**
- * Write a pipe definition to the output context.
+ * Convert an object map with `Expression` values into a `LiteralMapExpr`.
  */
-function compilePipe(outputCtx, pipe, reflector) {
+function mapToMapExpression(map) {
+    const result = Object.keys(map).map(key => ({ key, value: map[key], quoted: false }));
+    return literalMap(result);
+}
+/**
+ * Convert metadata into an `Expression` in the given `OutputContext`.
+ *
+ * This operation will handle arrays, references to symbols, or literal `null` or `undefined`.
+ */
+function convertMetaToOutput(meta, ctx) {
+    if (Array.isArray(meta)) {
+        return literalArr(meta.map(entry => convertMetaToOutput(entry, ctx)));
+    }
+    if (meta instanceof StaticSymbol) {
+        return ctx.importExpr(meta);
+    }
+    if (meta == null) {
+        return literal(meta);
+    }
+    throw new Error(`Internal error: Unsupported or unknown metadata: ${meta}`);
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
+ */
+function compileNgModule(meta) {
+    const { type: moduleType, bootstrap, declarations, imports, exports } = meta;
+    const expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression({
+            type: moduleType,
+            bootstrap: literalArr(bootstrap),
+            declarations: literalArr(declarations),
+            imports: literalArr(imports),
+            exports: literalArr(exports),
+        })]);
+    const type = new ExpressionType(importExpr(Identifiers$1.NgModuleDef, [
+        new ExpressionType(moduleType), new ExpressionType(literalArr(declarations)),
+        new ExpressionType(literalArr(imports)), new ExpressionType(literalArr(exports))
+    ]));
+    const additionalStatements = [];
+    return { expression, type, additionalStatements };
+}
+function compileInjector(meta) {
+    const expression = importExpr(Identifiers$1.defineInjector).callFn([mapToMapExpression({
+            factory: compileFactoryFunction({
+                name: meta.name,
+                fnOrClass: meta.type,
+                deps: meta.deps,
+                useNew: true,
+                injectFn: Identifiers$1.inject,
+            }),
+            providers: meta.providers,
+            imports: meta.imports,
+        })]);
+    const type = new ExpressionType(importExpr(Identifiers$1.InjectorDef));
+    return { expression, type };
+}
+// TODO(alxhub): integrate this with `compileNgModule`. Currently the two are separate operations.
+function compileNgModuleFromRender2(ctx, ngModule, injectableCompiler) {
+    const className = identifierName(ngModule.type);
+    const rawImports = ngModule.rawImports ? [ngModule.rawImports] : [];
+    const rawExports = ngModule.rawExports ? [ngModule.rawExports] : [];
+    const injectorDefArg = mapLiteral({
+        'factory': injectableCompiler.factoryFor({ type: ngModule.type, symbol: ngModule.type.reference }, ctx),
+        'providers': convertMetaToOutput(ngModule.rawProviders, ctx),
+        'imports': convertMetaToOutput([...rawImports, ...rawExports], ctx),
+    });
+    const injectorDef = importExpr(Identifiers$1.defineInjector).callFn([injectorDefArg]);
+    ctx.statements.push(new ClassStmt(
+    /* name */ className, 
+    /* parent */ null, 
+    /* fields */ [new ClassField(
+        /* name */ 'ngInjectorDef', 
+        /* type */ INFERRED_TYPE, 
+        /* modifiers */ [StmtModifier.Static], 
+        /* initializer */ injectorDef)], 
+    /* getters */ [], 
+    /* constructorMethod */ new ClassMethod(null, [], []), 
+    /* methods */ []));
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+function compilePipeFromMetadata(metadata) {
     const definitionMapValues = [];
     // e.g. `name: 'myPipe'`
-    definitionMapValues.push({ key: 'name', value: literal(pipe.name), quoted: false });
+    definitionMapValues.push({ key: 'name', value: literal(metadata.pipeName), quoted: false });
     // e.g. `type: MyPipe`
-    definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(pipe.type.reference), quoted: false });
-    // e.g. `factory: function MyPipe_Factory() { return new MyPipe(); }`
-    const deps = dependenciesFromGlobalMetadata(pipe.type, outputCtx, reflector);
+    definitionMapValues.push({ key: 'type', value: metadata.type, quoted: false });
     const templateFactory = compileFactoryFunction({
-        name: identifierName(pipe.type),
-        fnOrClass: outputCtx.importExpr(pipe.type.reference), deps,
+        name: metadata.name,
+        fnOrClass: metadata.type,
+        deps: metadata.deps,
         useNew: true,
         injectFn: Identifiers$1.directiveInject,
-        useOptionalParam: false,
     });
     definitionMapValues.push({ key: 'factory', value: templateFactory, quoted: false });
     // e.g. `pure: true`
-    if (pipe.pure) {
-        definitionMapValues.push({ key: 'pure', value: literal(true), quoted: false });
+    definitionMapValues.push({ key: 'pure', value: literal(metadata.pure), quoted: false });
+    const expression = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]);
+    const type = new ExpressionType(importExpr(Identifiers$1.PipeDef, [
+        new ExpressionType(metadata.type),
+        new ExpressionType(new LiteralExpr(metadata.pipeName)),
+    ]));
+    return { expression, type };
+}
+/**
+ * Write a pipe definition to the output context.
+ */
+function compilePipeFromRender2(outputCtx, pipe, reflector) {
+    const name = identifierName(pipe.type);
+    if (!name) {
+        return error(`Cannot resolve the name of ${pipe.type}`);
     }
-    const className = identifierName(pipe.type);
-    className || error(`Cannot resolve the name of ${pipe.type}`);
+    const metadata = {
+        name,
+        pipeName: pipe.name,
+        type: outputCtx.importExpr(pipe.type.reference),
+        deps: dependenciesFromGlobalMetadata(pipe.type, outputCtx, reflector),
+        pure: pipe.pure,
+    };
+    const res = compilePipeFromMetadata(metadata);
     const definitionField = outputCtx.constantPool.propertyNameOf(3 /* Pipe */);
-    const definitionFunction = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]);
     outputCtx.statements.push(new ClassStmt(
-    /* name */ className, 
+    /* name */ name, 
     /* parent */ null, 
     /* fields */ [new ClassField(
         /* name */ definitionField, 
         /* type */ INFERRED_TYPE, 
         /* modifiers */ [StmtModifier.Static], 
-        /* initializer */ definitionFunction)], 
+        /* initializer */ res.expression)], 
     /* getters */ [], 
     /* constructorMethod */ new ClassMethod(null, [], []), 
     /* methods */ []));
@@ -17224,9 +17216,6 @@ class Reference {
     }
     visit(visitor) { return visitor.visitReference(this); }
 }
-
-
-
 function visitAll$1(visitor, nodes) {
     const result = [];
     if (visitor.visit) {
@@ -17524,18 +17513,119 @@ function isEmptyTextNode(node) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const BINDING_INSTRUCTION_MAP = {
-    [0 /* Property */]: Identifiers$1.elementProperty,
-    [1 /* Attribute */]: Identifiers$1.elementAttribute,
-    [2 /* Class */]: Identifiers$1.elementClassNamed,
-    [3 /* Style */]: Identifiers$1.elementStyleNamed,
-};
+/**
+ * Parses string representation of a style and converts it into object literal.
+ *
+ * @param value string representation of style as used in the `style` attribute in HTML.
+ *   Example: `color: red; height: auto`.
+ * @returns an object literal. `{ color: 'red', height: 'auto'}`.
+ */
+function parseStyle(value) {
+    const styles = {};
+    let i = 0;
+    let parenDepth = 0;
+    let quote = 0 /* QuoteNone */;
+    let valueStart = 0;
+    let propStart = 0;
+    let currentProp = null;
+    let valueHasQuotes = false;
+    while (i < value.length) {
+        const token = value.charCodeAt(i++);
+        switch (token) {
+            case 40 /* OpenParen */:
+                parenDepth++;
+                break;
+            case 41 /* CloseParen */:
+                parenDepth--;
+                break;
+            case 39 /* QuoteSingle */:
+                // valueStart needs to be there since prop values don't
+                // have quotes in CSS
+                valueHasQuotes = valueHasQuotes || valueStart > 0;
+                if (quote === 0 /* QuoteNone */) {
+                    quote = 39 /* QuoteSingle */;
+                }
+                else if (quote === 39 /* QuoteSingle */ && value.charCodeAt(i - 1) !== 92 /* BackSlash */) {
+                    quote = 0 /* QuoteNone */;
+                }
+                break;
+            case 34 /* QuoteDouble */:
+                // same logic as above
+                valueHasQuotes = valueHasQuotes || valueStart > 0;
+                if (quote === 0 /* QuoteNone */) {
+                    quote = 34 /* QuoteDouble */;
+                }
+                else if (quote === 34 /* QuoteDouble */ && value.charCodeAt(i - 1) !== 92 /* BackSlash */) {
+                    quote = 0 /* QuoteNone */;
+                }
+                break;
+            case 58 /* Colon */:
+                if (!currentProp && parenDepth === 0 && quote === 0 /* QuoteNone */) {
+                    currentProp = hyphenate(value.substring(propStart, i - 1).trim());
+                    valueStart = i;
+                }
+                break;
+            case 59 /* Semicolon */:
+                if (currentProp && valueStart > 0 && parenDepth === 0 && quote === 0 /* QuoteNone */) {
+                    const styleVal = value.substring(valueStart, i - 1).trim();
+                    styles[currentProp] = valueHasQuotes ? stripUnnecessaryQuotes(styleVal) : styleVal;
+                    propStart = i;
+                    valueStart = 0;
+                    currentProp = null;
+                    valueHasQuotes = false;
+                }
+                break;
+        }
+    }
+    if (currentProp && valueStart) {
+        const styleVal = value.substr(valueStart).trim();
+        styles[currentProp] = valueHasQuotes ? stripUnnecessaryQuotes(styleVal) : styleVal;
+    }
+    return styles;
+}
+function stripUnnecessaryQuotes(value) {
+    const qS = value.charCodeAt(0);
+    const qE = value.charCodeAt(value.length - 1);
+    if (qS == qE && (qS == 39 /* QuoteSingle */ || qS == 34 /* QuoteDouble */)) {
+        const tempValue = value.substring(1, value.length - 1);
+        // special case to avoid using a multi-quoted string that was just chomped
+        // (e.g. `font-family: "Verdana", "sans-serif"`)
+        if (tempValue.indexOf('\'') == -1 && tempValue.indexOf('"') == -1) {
+            value = tempValue;
+        }
+    }
+    return value;
+}
+function hyphenate(value) {
+    return value.replace(/[a-z][A-Z]/g, v => {
+        return v.charAt(0) + '-' + v.charAt(1);
+    }).toLowerCase();
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+function mapBindingToInstruction(type) {
+    switch (type) {
+        case 0 /* Property */:
+            return Identifiers$1.elementProperty;
+        case 1 /* Attribute */:
+            return Identifiers$1.elementAttribute;
+        case 2 /* Class */:
+            return Identifiers$1.elementClassNamed;
+        default:
+            return undefined;
+    }
+}
 // `className` is used below instead of `class` because the interception
 // code (where this map is used) deals with DOM element property values
 // (like elm.propName) and not component bindining properties (like [propName]).
 const SPECIAL_CASED_PROPERTIES_INSTRUCTION_MAP = {
-    'className': Identifiers$1.elementClass,
-    'style': Identifiers$1.elementStyle
+    'className': Identifiers$1.elementClass
 };
 class TemplateDefinitionBuilder {
     constructor(constantPool, contextParameter, parentBindingScope, level = 0, contextName, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace) {
@@ -17757,18 +17847,66 @@ class TemplateDefinitionBuilder {
         // Add the attributes
         const i18nMessages = [];
         const attributes = [];
-        Object.getOwnPropertyNames(outputAttrs).forEach(name => {
-            const value = outputAttrs[name];
-            attributes.push(literal(name));
-            if (attrI18nMetas.hasOwnProperty(name)) {
-                const meta = parseI18nMeta(attrI18nMetas[name]);
-                const variable$$1 = this.constantPool.getTranslation(value, meta);
-                attributes.push(variable$$1);
+        const initialStyleDeclarations = [];
+        const styleInputs = [];
+        const allOtherInputs = [];
+        element.inputs.forEach((input) => {
+            // [attr.style] should not be treated as a styling-based
+            // binding since it is intended to write directly to the attr
+            // and therefore will skip all style resolution that is present
+            // with style="", [style]="" and [style.prop]="" assignments
+            if (input.name == 'style' && input.type == 0 /* Property */) {
+                // this should always go first in the compilation (for [style])
+                styleInputs.splice(0, 0, input);
+            }
+            else if (input.type == 3 /* Style */) {
+                styleInputs.push(input);
             }
             else {
-                attributes.push(literal(value));
+                allOtherInputs.push(input);
             }
         });
+        let currStyleIndex = 0;
+        let staticStylesMap = null;
+        const stylesIndexMap = {};
+        Object.getOwnPropertyNames(outputAttrs).forEach(name => {
+            const value = outputAttrs[name];
+            if (name == 'style') {
+                staticStylesMap = parseStyle(value);
+                Object.keys(staticStylesMap).forEach(prop => { stylesIndexMap[prop] = currStyleIndex++; });
+            }
+            else {
+                attributes.push(literal(name));
+                if (attrI18nMetas.hasOwnProperty(name)) {
+                    const meta = parseI18nMeta(attrI18nMetas[name]);
+                    const variable$$1 = this.constantPool.getTranslation(value, meta);
+                    attributes.push(variable$$1);
+                }
+                else {
+                    attributes.push(literal(value));
+                }
+            }
+        });
+        for (let i = 0; i < styleInputs.length; i++) {
+            const input = styleInputs[i];
+            const isMapBasedStyleBinding = i === 0 && input.name === 'style';
+            if (!isMapBasedStyleBinding && !stylesIndexMap.hasOwnProperty(input.name)) {
+                stylesIndexMap[input.name] = currStyleIndex++;
+            }
+        }
+        // this will build the instructions so that they fall into the following syntax
+        // => [prop1, prop2, prop3, 0, prop1, value1, prop2, value2]
+        Object.keys(stylesIndexMap).forEach(prop => {
+            initialStyleDeclarations.push(literal(prop));
+        });
+        if (staticStylesMap) {
+            initialStyleDeclarations.push(literal(0 /* INITIAL_STYLES */));
+            Object.keys(staticStylesMap).forEach(prop => {
+                initialStyleDeclarations.push(literal(prop));
+                const value = staticStylesMap[prop];
+                initialStyleDeclarations.push(literal(value));
+            });
+        }
         const attrArg = attributes.length > 0 ?
             this.constantPool.getConstLiteral(literalArr(attributes), true) :
             TYPED_NULL_EXPR;
@@ -17801,9 +17939,10 @@ class TemplateDefinitionBuilder {
         if (currentNamespace !== wasInNamespace) {
             this.addNamespaceInstruction(currentNamespace, element);
         }
-        const isEmptyElement = element.children.length === 0 && element.outputs.length === 0;
         const implicit = variable(CONTEXT_NAME);
-        if (isEmptyElement) {
+        const elementStyleIndex = (initialStyleDeclarations.length || styleInputs.length) ? this.allocateDataSlot() : 0;
+        const createSelfClosingInstruction = elementStyleIndex === 0 && element.children.length === 0 && element.outputs.length === 0;
+        if (createSelfClosingInstruction) {
             this.instruction(this._creationCode, element.sourceSpan, Identifiers$1.element, ...trimTrailingNulls(parameters));
         }
         else {
@@ -17812,6 +17951,18 @@ class TemplateDefinitionBuilder {
                 this._creationCode.push(...i18nMessages);
             }
             this.instruction(this._creationCode, element.sourceSpan, Identifiers$1.elementStart, ...trimTrailingNulls(parameters));
+            // initial styling for static style="..." attributes
+            if (elementStyleIndex > 0) {
+                let paramsList = [literal(elementStyleIndex)];
+                if (initialStyleDeclarations.length) {
+                    // the template compiler handles initial styling (e.g. style="foo") values
+                    // in a special command called `elementStyle` so that the initial styles
+                    // can be processed during runtime. These initial styles values are bound to
+                    // a constant because the inital style values do not change (since they're static).
+                    paramsList.push(this.constantPool.getConstLiteral(literalArr(initialStyleDeclarations), true));
+                }
+                this._creationCode.push(importExpr(Identifiers$1.elementStyling).callFn(paramsList).toStmt());
+            }
             // Generate Listeners (outputs)
             element.outputs.forEach((outputAst) => {
                 const elName = sanitizeIdentifier(element.name);
@@ -17826,8 +17977,25 @@ class TemplateDefinitionBuilder {
                 this.instruction(this._creationCode, outputAst.sourceSpan, Identifiers$1.listener, literal(outputAst.name), handler);
             });
         }
+        if (styleInputs.length && elementStyleIndex > 0) {
+            const indexLiteral = literal(elementStyleIndex);
+            styleInputs.forEach((input, i) => {
+                const isMapBasedStyleBinding = i == 0 && input.name == 'style';
+                const convertedBinding = this.convertPropertyBinding(implicit, input.value, true);
+                if (isMapBasedStyleBinding) {
+                    this.instruction(this._bindingCode, input.sourceSpan, Identifiers$1.elementStyle, indexLiteral, convertedBinding);
+                }
+                else {
+                    const key = input.name;
+                    let styleIndex = stylesIndexMap[key];
+                    this.instruction(this._bindingCode, input.sourceSpan, Identifiers$1.elementStyleProp, indexLiteral, literal(styleIndex), convertedBinding);
+                }
+            });
+            const spanEnd = styleInputs[styleInputs.length - 1].sourceSpan;
+            this.instruction(this._bindingCode, spanEnd, Identifiers$1.elementStylingApply, indexLiteral);
+        }
         // Generate element input bindings
-        element.inputs.forEach((input) => {
+        allOtherInputs.forEach((input) => {
             if (input.type === 4 /* Animation */) {
                 this._unsupported('animations');
             }
@@ -17841,7 +18009,7 @@ class TemplateDefinitionBuilder {
                 this.instruction(this._bindingCode, input.sourceSpan, specialInstruction, literal(elementIndex), convertedBinding);
                 return;
             }
-            const instruction = BINDING_INSTRUCTION_MAP[input.type];
+            const instruction = mapBindingToInstruction(input.type);
             if (instruction) {
                 // TODO(chuckj): runtime: security context?
                 this.instruction(this._bindingCode, input.sourceSpan, instruction, literal(elementIndex), literal(input.name), convertedBinding);
@@ -17859,7 +18027,7 @@ class TemplateDefinitionBuilder {
         else {
             visitAll$1(this, element.children);
         }
-        if (!isEmptyElement) {
+        if (!createSelfClosingInstruction) {
             // Finish element construction mode.
             this.instruction(this._creationCode, element.endSourceSpan || element.sourceSpan, Identifiers$1.elementEnd);
         }
@@ -17938,7 +18106,7 @@ class TemplateDefinitionBuilder {
     instruction(statements, span, reference, ...params) {
         statements.push(importExpr(reference, null, span).callFn(params, span).toStmt());
     }
-    convertPropertyBinding(implicit, value) {
+    convertPropertyBinding(implicit, value, skipBindFn) {
         const pipesConvertedValue = value.visit(this._valueConverter);
         if (pipesConvertedValue instanceof Interpolation) {
             const convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, interpolate);
@@ -17948,7 +18116,8 @@ class TemplateDefinitionBuilder {
         else {
             const convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, () => error('Unexpected interpolation'));
             this._bindingCode.push(...convertedPropertyBinding.stmts);
-            return importExpr(Identifiers$1.bind).callFn([convertedPropertyBinding.currValExpr]);
+            const valExpr = convertedPropertyBinding.currValExpr;
+            return skipBindFn ? valExpr : importExpr(Identifiers$1.bind).callFn([valExpr]);
         }
     }
 }
@@ -18198,7 +18367,7 @@ function parseTemplate(template, templateUrl, options = {}) {
  * Construct a `BindingParser` with a default configuration.
  */
 function makeBindingParser() {
-    return new BindingParser(new Parser(new Lexer()), DEFAULT_INTERPOLATION_CONFIG, new DomElementSchemaRegistry(), [], []);
+    return new BindingParser(new Parser(new Lexer()), DEFAULT_INTERPOLATION_CONFIG, new DomElementSchemaRegistry(), null, []);
 }
 
 /**
@@ -18222,7 +18391,6 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
         deps: meta.deps,
         useNew: true,
         injectFn: Identifiers$1.directiveInject,
-        useOptionalParam: false,
         extraResults: queryDefinitions,
     }));
     // e.g. `hostBindings: (dirIndex, elIndex) => { ... }
@@ -18233,10 +18401,13 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs));
     // e.g 'outputs: {a: 'a'}`
     definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
-    // e.g. `features: [NgOnChangesFeature(MyComponent)]`
+    // e.g. `features: [NgOnChangesFeature]`
     const features = [];
+    if (meta.usesInheritance) {
+        features.push(importExpr(Identifiers$1.InheritDefinitionFeature));
+    }
     if (meta.lifecycle.usesOnChanges) {
-        features.push(importExpr(Identifiers$1.NgOnChangesFeature, null, null).callFn([meta.type]));
+        features.push(importExpr(Identifiers$1.NgOnChangesFeature));
     }
     if (features.length) {
         definitionMap.set('features', literalArr(features));
@@ -18360,6 +18531,7 @@ function directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector) {
         },
         inputs: directive.inputs,
         outputs: directive.outputs,
+        usesInheritance: false,
     };
 }
 /**
@@ -19003,8 +19175,6 @@ class StaticSymbolResolver {
                         if (topLevelSymbolNames.has(name)) {
                             return self.getStaticSymbol(topLevelPath, name);
                         }
-                        // ambient value
-                        
                     }
                 }
                 else if (symbolic === 'error') {
@@ -19801,7 +19971,7 @@ class AotCompiler {
         pipes.forEach(pipeType => {
             const pipeMetadata = this._metadataResolver.getPipeMetadata(pipeType);
             if (pipeMetadata) {
-                compilePipe(context, pipeMetadata, this.reflector);
+                compilePipeFromRender2(context, pipeMetadata, this.reflector);
             }
         });
         injectables.forEach(injectable => this._injectableCompiler.compile(injectable, context));
@@ -22522,9 +22692,6 @@ class ResourceLoader {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * Extract i18n messages from source code
- */
 class Extractor {
     constructor(host, staticSymbolResolver, messageBundle, metadataResolver) {
         this.host = host;
@@ -22611,7 +22778,6 @@ function compileInjectable(meta) {
                 fnOrClass,
                 useNew,
                 injectFn: Identifiers.inject,
-                useOptionalParam: true,
                 deps: meta.deps,
             });
         }
@@ -22658,7 +22824,6 @@ function compileInjectable(meta) {
             fnOrClass: meta.type,
             useNew: true,
             injectFn: Identifiers.inject,
-            useOptionalParam: true,
             deps: meta.deps,
         });
     }
@@ -22735,22 +22900,6 @@ function jitExpression(def, context, sourceUrl, constantPool) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * @module
- * @description
- * Entry point for all APIs of the compiler package.
- *
- * <div class="callout is-critical">
- *   <header>Unstable APIs</header>
- *   <p>
- *     All compiler apis are currently considered experimental and private!
- *   </p>
- *   <p>
- *     We expect the APIs in this package to keep on changing. Do not rely on them.
- *   </p>
- * </div>
- */
-
 // This file only reexports content of the `src` folder. Keep it that way.
 
 /**
@@ -22760,12 +22909,6 @@ function jitExpression(def, context, sourceUrl, constantPool) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * @module
- * @description
- * Entry point for all public APIs of this package.
- */
-
 // This file only reexports content of the `src` folder. Keep it that way.
 
 /**
@@ -22775,10 +22918,6 @@ function jitExpression(def, context, sourceUrl, constantPool) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-// This file is not used to build this module. It is only used during editing
-// by the TypeScript language service and during build for verification. `ngc`
-// replaces this file with production index.ts when it rewrites private symbol
-// names.
 
 /**
  * @license
@@ -22787,10 +22926,6 @@ function jitExpression(def, context, sourceUrl, constantPool) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-// This file is not used to build this module. It is only used during editing
-// by the TypeScript language service and during build for verification. `ngc`
-// replaces this file with production index.ts when it rewrites private symbol
-// names.
 
-export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, jitExpression, R3ResolvedDependencyType, compileNgModule, makeBindingParser, parseTemplate, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, VERSION, TextAst, BoundTextAst, AttrAst, PropertyBindingType, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, compileInjectable };
+export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, jitExpression, R3ResolvedDependencyType, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, compileInjectable };
 //# sourceMappingURL=compiler.js.map

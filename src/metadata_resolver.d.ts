@@ -32,7 +32,7 @@ export declare class CompileMetadataResolver {
     private _console;
     private _staticSymbolCache;
     private _reflector;
-    private _errorCollector;
+    private _errorCollector?;
     private _nonNormalizedDirectiveCache;
     private _directiveCache;
     private _summaryCache;
@@ -44,15 +44,15 @@ export declare class CompileMetadataResolver {
     getReflector(): CompileReflector;
     clearCacheFor(type: Type): void;
     clearCache(): void;
-    private _createProxyClass(baseType, name);
-    private getGeneratedClass(dirType, name);
-    private getComponentViewClass(dirType);
+    private _createProxyClass;
+    private getGeneratedClass;
+    private getComponentViewClass;
     getHostComponentViewClass(dirType: any): StaticSymbol | cpl.ProxyClass;
     getHostComponentType(dirType: any): StaticSymbol | Type;
-    private getRendererType(dirType);
-    private getComponentFactory(selector, dirType, inputs, outputs);
-    private initComponentFactory(factory, ngContentSelectors);
-    private _loadSummary(type, kind);
+    private getRendererType;
+    private getComponentFactory;
+    private initComponentFactory;
+    private _loadSummary;
     getHostComponentMetadata(compMeta: cpl.CompileDirectiveMetadata, hostViewType?: StaticSymbol | cpl.ProxyClass): cpl.CompileDirectiveMetadata;
     loadDirectiveMetadata(ngModuleType: any, directiveType: any, isSync: boolean): SyncAsync<null>;
     getNonNormalizedDirectiveMetadata(directiveType: any): {
@@ -75,16 +75,16 @@ export declare class CompileMetadataResolver {
     loadNgModuleDirectiveAndPipeMetadata(moduleType: any, isSync: boolean, throwIfNotFound?: boolean): Promise<any>;
     getShallowModuleMetadata(moduleType: any): cpl.CompileShallowModuleMetadata | null;
     getNgModuleMetadata(moduleType: any, throwIfNotFound?: boolean, alreadyCollecting?: Set<any> | null): cpl.CompileNgModuleMetadata | null;
-    private _checkSelfImport(moduleType, importedModuleType);
-    private _getTypeDescriptor(type);
-    private _addTypeToModule(type, moduleType);
-    private _getTransitiveNgModuleMetadata(importedModules, exportedModules);
-    private _getIdentifierMetadata(type);
+    private _checkSelfImport;
+    private _getTypeDescriptor;
+    private _addTypeToModule;
+    private _getTransitiveNgModuleMetadata;
+    private _getIdentifierMetadata;
     isInjectable(type: any): boolean;
     getInjectableSummary(type: any): cpl.CompileTypeSummary;
     getInjectableMetadata(type: any, dependencies?: any[] | null, throwOnUnknownDeps?: boolean): cpl.CompileInjectableMetadata | null;
-    private _getTypeMetadata(type, dependencies?, throwOnUnknownDeps?);
-    private _getFactoryMetadata(factory, dependencies?);
+    private _getTypeMetadata;
+    private _getFactoryMetadata;
     /**
      * Gets the metadata for the given pipe.
      * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
@@ -92,17 +92,17 @@ export declare class CompileMetadataResolver {
     getPipeMetadata(pipeType: any): cpl.CompilePipeMetadata | null;
     getPipeSummary(pipeType: any): cpl.CompilePipeSummary;
     getOrLoadPipeMetadata(pipeType: any): cpl.CompilePipeMetadata;
-    private _loadPipeMetadata(pipeType);
-    private _getDependenciesMetadata(typeOrFunc, dependencies, throwOnUnknownDeps?);
-    private _getTokenMetadata(token);
-    private _getProvidersMetadata(providers, targetEntryComponents, debugInfo?, compileProviders?, type?);
-    private _validateProvider(provider);
-    private _getEntryComponentsFromProvider(provider, type?);
-    private _getEntryComponentMetadata(dirType, throwIfNotFound?);
-    private _getInjectableTypeMetadata(type, dependencies?);
+    private _loadPipeMetadata;
+    private _getDependenciesMetadata;
+    private _getTokenMetadata;
+    private _getProvidersMetadata;
+    private _validateProvider;
+    private _getEntryComponentsFromProvider;
+    private _getEntryComponentMetadata;
+    private _getInjectableTypeMetadata;
     getProviderMetadata(provider: cpl.ProviderMeta): cpl.CompileProviderMetadata;
-    private _getQueriesMetadata(queries, isViewQuery, directiveType);
-    private _queryVarBindings(selector);
-    private _getQueryMetadata(q, propertyName, typeOrFunc);
-    private _reportError(error, type?, otherType?);
+    private _getQueriesMetadata;
+    private _queryVarBindings;
+    private _getQueryMetadata;
+    private _reportError;
 }
