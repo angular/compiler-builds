@@ -1,3 +1,10 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 import { CompileTypeMetadata } from '../compile_metadata';
 import { CompileReflector } from '../compile_reflector';
 import * as o from '../output/output_ast';
@@ -34,18 +41,6 @@ export interface R3FactoryMetadata {
      * function could be different, and other options control how it will be invoked.
      */
     injectFn: o.ExternalReference;
-    /**
-     * Whether the `injectFn` given above accepts a 2nd parameter indicating the default value to
-     * be used to resolve missing @Optional dependencies.
-     *
-     * If the optional parameter is used, injectFn for an optional dependency will be invoked as:
-     * `injectFn(token, null, flags)`.
-     *
-     * If it's not used, injectFn for an optional dependency will be invoked as:
-     * `injectFn(token, flags)`. The Optional flag will indicate that injectFn should select a default
-     * value if it cannot satisfy the injection request for the token.
-     */
-    useOptionalParam: boolean;
     /**
      * If present, the return of the factory function will be an array with the injected value in the
      * 0th position and the extra results included in subsequent positions.
@@ -90,7 +85,7 @@ export declare enum R3ResolvedDependencyType {
     /**
      * The dependency is for `ViewContainerRef`.
      */
-    ViewContainerRef = 5,
+    ViewContainerRef = 5
 }
 /**
  * Metadata representing a single dependency to be injected into a constructor or function call.

@@ -28,7 +28,7 @@ export declare class TextAttribute implements Node {
     name: string;
     value: string;
     sourceSpan: ParseSourceSpan;
-    valueSpan: ParseSourceSpan | undefined;
+    valueSpan?: ParseSourceSpan | undefined;
     constructor(name: string, value: string, sourceSpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }

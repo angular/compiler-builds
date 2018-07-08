@@ -1,21 +1,14 @@
 /**
- * @license Angular v6.1.0-beta.1+46.sha-a5799e6
+ * @license Angular v6.1.0-beta.3+80.sha-6c604bd
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { DirectiveResolver, NgModuleResolver, PipeResolver, ResourceLoader, core } from '@angular/compiler';
+import { ResourceLoader, core, DirectiveResolver, NgModuleResolver, PipeResolver } from '@angular/compiler';
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
- */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
+ * @suppress {checkTypes,extraRequire,uselessCode} checked by tsc
  */
 /**
  * A mock implementation of {\@link ResourceLoader} that allows outgoing requests to be mocked
@@ -33,7 +26,8 @@ class MockResourceLoader extends ResourceLoader {
      * @return {?}
      */
     get(url) {
-        const /** @type {?} */ request = new _PendingRequest(url);
+        /** @type {?} */
+        const request = new _PendingRequest(url);
         this._requests.push(request);
         return request.getPromise();
     }
@@ -52,7 +46,8 @@ class MockResourceLoader extends ResourceLoader {
      * @return {?}
      */
     expect(url, response) {
-        const /** @type {?} */ expectation = new _Expectation(url, response);
+        /** @type {?} */
+        const expectation = new _Expectation(url, response);
         this._expectations.push(expectation);
     }
     /**
@@ -86,9 +81,11 @@ class MockResourceLoader extends ResourceLoader {
     verifyNoOutstandingExpectations() {
         if (this._expectations.length === 0)
             return;
-        const /** @type {?} */ urls = [];
-        for (let /** @type {?} */ i = 0; i < this._expectations.length; i++) {
-            const /** @type {?} */ expectation = this._expectations[i];
+        /** @type {?} */
+        const urls = [];
+        for (let i = 0; i < this._expectations.length; i++) {
+            /** @type {?} */
+            const expectation = this._expectations[i];
             urls.push(expectation.url);
         }
         throw new Error(`Unsatisfied requests: ${urls.join(', ')}`);
@@ -98,9 +95,11 @@ class MockResourceLoader extends ResourceLoader {
      * @return {?}
      */
     _processRequest(request) {
-        const /** @type {?} */ url = request.url;
+        /** @type {?} */
+        const url = request.url;
         if (this._expectations.length > 0) {
-            const /** @type {?} */ expectation = this._expectations[0];
+            /** @type {?} */
+            const expectation = this._expectations[0];
             if (expectation.url == url) {
                 remove(this._expectations, expectation);
                 request.complete(expectation.response);
@@ -108,7 +107,8 @@ class MockResourceLoader extends ResourceLoader {
             }
         }
         if (this._definitions.has(url)) {
-            const /** @type {?} */ response = this._definitions.get(url);
+            /** @type {?} */
+            const response = this._definitions.get(url);
             request.complete(response == null ? null : response);
             return;
         }
@@ -160,7 +160,8 @@ class _Expectation {
  * @return {?}
  */
 function remove(list, el) {
-    const /** @type {?} */ index = list.indexOf(el);
+    /** @type {?} */
+    const index = list.indexOf(el);
     if (index > -1) {
         list.splice(index, 1);
     }
@@ -168,14 +169,7 @@ function remove(list, el) {
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
- */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
+ * @suppress {checkTypes,extraRequire,uselessCode} checked by tsc
  */
 class MockSchemaRegistry {
     /**
@@ -199,7 +193,8 @@ class MockSchemaRegistry {
      * @return {?}
      */
     hasProperty(tagName, property, schemas) {
-        const /** @type {?} */ value = this.existingProperties[property];
+        /** @type {?} */
+        const value = this.existingProperties[property];
         return value === void 0 ? true : value;
     }
     /**
@@ -208,7 +203,8 @@ class MockSchemaRegistry {
      * @return {?}
      */
     hasElement(tagName, schemaMetas) {
-        const /** @type {?} */ value = this.existingElements[tagName.toLowerCase()];
+        /** @type {?} */
+        const value = this.existingElements[tagName.toLowerCase()];
         return value === void 0 ? true : value;
     }
     /**
@@ -278,7 +274,7 @@ class MockSchemaRegistry {
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
+ * @suppress {checkTypes,extraRequire,uselessCode} checked by tsc
  */
 /**
  * An implementation of {\@link DirectiveResolver} that allows overriding
@@ -313,14 +309,7 @@ class MockDirectiveResolver extends DirectiveResolver {
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
- */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
+ * @suppress {checkTypes,extraRequire,uselessCode} checked by tsc
  */
 class MockNgModuleResolver extends NgModuleResolver {
     /**
@@ -355,14 +344,7 @@ class MockNgModuleResolver extends NgModuleResolver {
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
- */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
+ * @suppress {checkTypes,extraRequire,uselessCode} checked by tsc
  */
 class MockPipeResolver extends PipeResolver {
     /**
@@ -389,7 +371,8 @@ class MockPipeResolver extends PipeResolver {
      * @return {?}
      */
     resolve(type, throwIfNotFound = true) {
-        let /** @type {?} */ metadata = this._pipes.get(type);
+        /** @type {?} */
+        let metadata = this._pipes.get(type);
         if (!metadata) {
             metadata = /** @type {?} */ ((super.resolve(type, throwIfNotFound)));
         }
@@ -399,65 +382,19 @@ class MockPipeResolver extends PipeResolver {
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
- */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * @module
- * @description
- * Entry point for all APIs of the compiler package.
- *
- * <div class="callout is-critical">
- *   <header>Unstable APIs</header>
- *   <p>
- *     All compiler apis are currently considered experimental and private!
- *   </p>
- *   <p>
- *     We expect the APIs in this package to keep on changing. Do not rely on them.
- *   </p>
- * </div>
+ * @suppress {checkTypes,extraRequire,uselessCode} checked by tsc
  */
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
+ * @suppress {checkTypes,extraRequire,uselessCode} checked by tsc
  */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * @module
- * @description
- * Entry point for all public APIs of this package.
- */
-
 // This file only reexports content of the `src` folder. Keep it that way.
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
+ * @suppress {checkTypes,extraRequire,uselessCode} checked by tsc
  */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-// This file is not used to build this module. It is only used during editing
-// by the TypeScript language service and during build for verification. `ngc`
-// replaces this file with production index.ts when it rewrites private symbol
-// names.
 
 /**
  * Generated bundle index. Do not edit.
