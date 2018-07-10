@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.3+71.sha-0d5f2d3
+ * @license Angular v6.1.0-beta.3+75.sha-3a19f70
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('6.1.0-beta.3+71.sha-0d5f2d3');
+const VERSION = new Version('6.1.0-beta.3+75.sha-3a19f70');
 
 /**
  * @license
@@ -17648,7 +17648,6 @@ class TemplateDefinitionBuilder {
         this._bindingCode = [];
         this._postfixCode = [];
         this._temporary = temporaryAllocator(this._prefixCode, TEMPORARY_NAME);
-        this._projectionDefinitionIndex = -1;
         this._unsupported = unsupported;
         // Whether we are inside a translatable element (`<p i18n>... somewhere here ... </p>)
         this._inI18nSection = false;
@@ -17690,8 +17689,7 @@ class TemplateDefinitionBuilder {
         }
         // Output a `ProjectionDef` instruction when some `<ng-content>` are present
         if (hasNgContent) {
-            this._projectionDefinitionIndex = this.allocateDataSlot();
-            const parameters = [literal(this._projectionDefinitionIndex)];
+            const parameters = [];
             // Only selectors with a non-default value are generated
             if (ngContentSelectors.length > 1) {
                 const r3Selectors = ngContentSelectors.map(s => parseSelectorToR3Selector(s));
@@ -17764,10 +17762,7 @@ class TemplateDefinitionBuilder {
     visitContent(ngContent) {
         const slot = this.allocateDataSlot();
         const selectorIndex = ngContent.selectorIndex;
-        const parameters = [
-            literal(slot),
-            literal(this._projectionDefinitionIndex),
-        ];
+        const parameters = [literal(slot)];
         const attributeAsList = [];
         ngContent.attributes.forEach((attribute) => {
             const name = attribute.name;

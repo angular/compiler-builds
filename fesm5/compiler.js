@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.3+71.sha-0d5f2d3
+ * @license Angular v6.1.0-beta.3+75.sha-3a19f70
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1125,7 +1125,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('6.1.0-beta.3+71.sha-0d5f2d3');
+var VERSION = new Version('6.1.0-beta.3+75.sha-3a19f70');
 
 /**
  * @license
@@ -18719,7 +18719,6 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this._bindingCode = [];
         this._postfixCode = [];
         this._temporary = temporaryAllocator(this._prefixCode, TEMPORARY_NAME);
-        this._projectionDefinitionIndex = -1;
         this._unsupported = unsupported;
         // Whether we are inside a translatable element (`<p i18n>... somewhere here ... </p>)
         this._inI18nSection = false;
@@ -18774,8 +18773,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         }
         // Output a `ProjectionDef` instruction when some `<ng-content>` are present
         if (hasNgContent) {
-            this._projectionDefinitionIndex = this.allocateDataSlot();
-            var parameters = [literal(this._projectionDefinitionIndex)];
+            var parameters = [];
             // Only selectors with a non-default value are generated
             if (ngContentSelectors.length > 1) {
                 var r3Selectors = ngContentSelectors.map(function (s) { return parseSelectorToR3Selector(s); });
@@ -18857,10 +18855,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     TemplateDefinitionBuilder.prototype.visitContent = function (ngContent) {
         var slot = this.allocateDataSlot();
         var selectorIndex = ngContent.selectorIndex;
-        var parameters = [
-            literal(slot),
-            literal(this._projectionDefinitionIndex),
-        ];
+        var parameters = [literal(slot)];
         var attributeAsList = [];
         ngContent.attributes.forEach(function (attribute) {
             var name = attribute.name;

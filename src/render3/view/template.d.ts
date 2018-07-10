@@ -34,7 +34,6 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private _bindingCode;
     private _postfixCode;
     private _temporary;
-    private _projectionDefinitionIndex;
     private _valueConverter;
     private _unsupported;
     private _bindingScope;
