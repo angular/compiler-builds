@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.3+94.sha-328971f
+ * @license Angular v6.1.0-beta.3+108.sha-80a74b4
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1125,7 +1125,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('6.1.0-beta.3+94.sha-328971f');
+var VERSION = new Version('6.1.0-beta.3+108.sha-80a74b4');
 
 /**
  * @license
@@ -17676,7 +17676,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.directiveInject = { name: 'ɵdirectiveInject', moduleName: CORE$1 };
     Identifiers.defineComponent = { name: 'ɵdefineComponent', moduleName: CORE$1 };
     Identifiers.ComponentDef = {
-        name: 'ComponentDef',
+        name: 'ɵComponentDef',
         moduleName: CORE$1,
     };
     Identifiers.defineDirective = {
@@ -17684,11 +17684,11 @@ var Identifiers$1 = /** @class */ (function () {
         moduleName: CORE$1,
     };
     Identifiers.DirectiveDef = {
-        name: 'DirectiveDef',
+        name: 'ɵDirectiveDef',
         moduleName: CORE$1,
     };
     Identifiers.InjectorDef = {
-        name: 'InjectorDef',
+        name: 'ɵInjectorDef',
         moduleName: CORE$1,
     };
     Identifiers.defineInjector = {
@@ -17696,7 +17696,7 @@ var Identifiers$1 = /** @class */ (function () {
         moduleName: CORE$1,
     };
     Identifiers.NgModuleDef = {
-        name: 'NgModuleDef',
+        name: 'ɵNgModuleDef',
         moduleName: CORE$1,
     };
     Identifiers.defineNgModule = { name: 'ɵdefineNgModule', moduleName: CORE$1 };
@@ -18037,7 +18037,7 @@ function compileInjector(meta) {
             providers: meta.providers,
             imports: meta.imports,
         })]);
-    var type = new ExpressionType(importExpr(Identifiers$1.InjectorDef));
+    var type = new ExpressionType(importExpr(Identifiers$1.InjectorDef, [new ExpressionType(meta.type)]));
     return { expression: expression, type: type };
 }
 // TODO(alxhub): integrate this with `compileNgModule`. Currently the two are separate operations.
@@ -19097,7 +19097,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // Generate element input bindings
         allOtherInputs.forEach(function (input) {
             if (input.type === 4 /* Animation */) {
-                _this._unsupported('animations');
+                console.error('warning: animation bindings not yet supported');
+                return;
             }
             var convertedBinding = _this.convertPropertyBinding(implicit, input.value);
             var specialInstruction = SPECIAL_CASED_PROPERTIES_INSTRUCTION_MAP[input.name];
@@ -19535,7 +19536,10 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
 function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
     var definitionMap = baseDirectiveFields(meta, constantPool, bindingParser);
     var expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()]);
-    var type = new ExpressionType(importExpr(Identifiers$1.DirectiveDef, [new ExpressionType(meta.type), new ExpressionType(literal(meta.selector || ''))]));
+    // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
+    // string literal, which must be on one line.
+    var selectorForType = (meta.selector || '').replace(/\n/g, '');
+    var type = new ExpressionType(importExpr(Identifiers$1.DirectiveDef, [new ExpressionType(meta.type), new ExpressionType(literal(selectorForType))]));
     return { expression: expression, type: type };
 }
 /**
@@ -19580,8 +19584,11 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     if (pipesUsed.size) {
         definitionMap.set('pipes', literalArr(Array.from(pipesUsed)));
     }
+    // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
+    // string literal, which must be on one line.
+    var selectorForType = (meta.selector || '').replace(/\n/g, '');
     var expression = importExpr(Identifiers$1.defineComponent).callFn([definitionMap.toLiteralMap()]);
-    var type = new ExpressionType(importExpr(Identifiers$1.ComponentDef, [new ExpressionType(meta.type), new ExpressionType(literal(meta.selector || ''))]));
+    var type = new ExpressionType(importExpr(Identifiers$1.ComponentDef, [new ExpressionType(meta.type), new ExpressionType(literal(selectorForType))]));
     return { expression: expression, type: type };
 }
 /**
