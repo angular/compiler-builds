@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.3+86.sha-6b3f5dd
+ * @license Angular v6.1.0-beta.3+129.sha-acdb672
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('6.1.0-beta.3+86.sha-6b3f5dd');
+const VERSION = new Version('6.1.0-beta.3+129.sha-acdb672');
 
 /**
  * @license
@@ -16673,7 +16673,7 @@ Identifiers$1.injectViewContainerRef = { name: 'ɵinjectViewContainerRef', modul
 Identifiers$1.directiveInject = { name: 'ɵdirectiveInject', moduleName: CORE$1 };
 Identifiers$1.defineComponent = { name: 'ɵdefineComponent', moduleName: CORE$1 };
 Identifiers$1.ComponentDef = {
-    name: 'ComponentDef',
+    name: 'ɵComponentDef',
     moduleName: CORE$1,
 };
 Identifiers$1.defineDirective = {
@@ -16681,11 +16681,11 @@ Identifiers$1.defineDirective = {
     moduleName: CORE$1,
 };
 Identifiers$1.DirectiveDef = {
-    name: 'DirectiveDef',
+    name: 'ɵDirectiveDef',
     moduleName: CORE$1,
 };
 Identifiers$1.InjectorDef = {
-    name: 'InjectorDef',
+    name: 'ɵInjectorDef',
     moduleName: CORE$1,
 };
 Identifiers$1.defineInjector = {
@@ -16693,7 +16693,7 @@ Identifiers$1.defineInjector = {
     moduleName: CORE$1,
 };
 Identifiers$1.NgModuleDef = {
-    name: 'NgModuleDef',
+    name: 'ɵNgModuleDef',
     moduleName: CORE$1,
 };
 Identifiers$1.defineNgModule = { name: 'ɵdefineNgModule', moduleName: CORE$1 };
@@ -17019,7 +17019,7 @@ function compileInjector(meta) {
             providers: meta.providers,
             imports: meta.imports,
         })]);
-    const type = new ExpressionType(importExpr(Identifiers$1.InjectorDef));
+    const type = new ExpressionType(importExpr(Identifiers$1.InjectorDef, [new ExpressionType(meta.type)]));
     return { expression, type };
 }
 // TODO(alxhub): integrate this with `compileNgModule`. Currently the two are separate operations.
@@ -17648,7 +17648,6 @@ class TemplateDefinitionBuilder {
         this._bindingCode = [];
         this._postfixCode = [];
         this._temporary = temporaryAllocator(this._prefixCode, TEMPORARY_NAME);
-        this._projectionDefinitionIndex = -1;
         this._unsupported = unsupported;
         // Whether we are inside a translatable element (`<p i18n>... somewhere here ... </p>)
         this._inI18nSection = false;
@@ -17690,8 +17689,7 @@ class TemplateDefinitionBuilder {
         }
         // Output a `ProjectionDef` instruction when some `<ng-content>` are present
         if (hasNgContent) {
-            this._projectionDefinitionIndex = this.allocateDataSlot();
-            const parameters = [literal(this._projectionDefinitionIndex)];
+            const parameters = [];
             // Only selectors with a non-default value are generated
             if (ngContentSelectors.length > 1) {
                 const r3Selectors = ngContentSelectors.map(s => parseSelectorToR3Selector(s));
@@ -17764,10 +17762,7 @@ class TemplateDefinitionBuilder {
     visitContent(ngContent) {
         const slot = this.allocateDataSlot();
         const selectorIndex = ngContent.selectorIndex;
-        const parameters = [
-            literal(slot),
-            literal(this._projectionDefinitionIndex),
-        ];
+        const parameters = [literal(slot)];
         const attributeAsList = [];
         ngContent.attributes.forEach((attribute) => {
             const name = attribute.name;
@@ -17997,7 +17992,8 @@ class TemplateDefinitionBuilder {
         // Generate element input bindings
         allOtherInputs.forEach((input) => {
             if (input.type === 4 /* Animation */) {
-                this._unsupported('animations');
+                console.error('warning: animation bindings not yet supported');
+                return;
             }
             const convertedBinding = this.convertPropertyBinding(implicit, input.value);
             const specialInstruction = SPECIAL_CASED_PROPERTIES_INSTRUCTION_MAP[input.name];
@@ -18420,7 +18416,10 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
 function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
     const definitionMap = baseDirectiveFields(meta, constantPool, bindingParser);
     const expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()]);
-    const type = new ExpressionType(importExpr(Identifiers$1.DirectiveDef, [new ExpressionType(meta.type), new ExpressionType(literal(meta.selector || ''))]));
+    // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
+    // string literal, which must be on one line.
+    const selectorForType = (meta.selector || '').replace(/\n/g, '');
+    const type = new ExpressionType(importExpr(Identifiers$1.DirectiveDef, [new ExpressionType(meta.type), new ExpressionType(literal(selectorForType))]));
     return { expression, type };
 }
 /**
@@ -18465,8 +18464,11 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     if (pipesUsed.size) {
         definitionMap.set('pipes', literalArr(Array.from(pipesUsed)));
     }
+    // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
+    // string literal, which must be on one line.
+    const selectorForType = (meta.selector || '').replace(/\n/g, '');
     const expression = importExpr(Identifiers$1.defineComponent).callFn([definitionMap.toLiteralMap()]);
-    const type = new ExpressionType(importExpr(Identifiers$1.ComponentDef, [new ExpressionType(meta.type), new ExpressionType(literal(meta.selector || ''))]));
+    const type = new ExpressionType(importExpr(Identifiers$1.ComponentDef, [new ExpressionType(meta.type), new ExpressionType(literal(selectorForType))]));
     return { expression, type };
 }
 /**
