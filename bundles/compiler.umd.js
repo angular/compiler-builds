@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.9+10.sha-d42a662
+ * @license Angular v6.0.9+11.sha-e97d961
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -396,7 +396,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('6.0.9+10.sha-d42a662');
+    var VERSION = new Version('6.0.9+11.sha-e97d961');
 
     /**
      * @license
@@ -20216,8 +20216,11 @@
                 });
                 compMetas.forEach(function (compMeta) {
                     var html = compMeta.template.template;
+                    // Template URL points to either an HTML or TS file depending on whether
+                    // the file is used with `templateUrl:` or `template:`, respectively.
+                    var templateUrl = compMeta.template.templateUrl;
                     var interpolationConfig = InterpolationConfig.fromArray(compMeta.template.interpolation);
-                    errors.push.apply(errors, __spread(messageBundle.updateFromTemplate(html, file.fileName, interpolationConfig)));
+                    errors.push.apply(errors, __spread(messageBundle.updateFromTemplate(html, templateUrl, interpolationConfig)));
                 });
             });
             if (errors.length) {
@@ -23154,8 +23157,12 @@
                     });
                     compMetas.forEach(function (compMeta) {
                         var html = compMeta.template.template;
+                        // Template URL points to either an HTML or TS file depending on
+                        // whether the file is used with `templateUrl:` or `template:`,
+                        // respectively.
+                        var templateUrl = compMeta.template.templateUrl;
                         var interpolationConfig = InterpolationConfig.fromArray(compMeta.template.interpolation);
-                        errors.push.apply(errors, __spread(_this.messageBundle.updateFromTemplate(html, file.fileName, interpolationConfig)));
+                        errors.push.apply(errors, __spread(_this.messageBundle.updateFromTemplate(html, templateUrl, interpolationConfig)));
                     });
                 });
                 if (errors.length) {
