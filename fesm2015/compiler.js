@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.3+108.sha-80a74b4
+ * @license Angular v6.1.0-beta.3+117.sha-c8ad965
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('6.1.0-beta.3+108.sha-80a74b4');
+const VERSION = new Version('6.1.0-beta.3+117.sha-c8ad965');
 
 /**
  * @license
@@ -19907,8 +19907,11 @@ class AotCompiler {
             });
             compMetas.forEach(compMeta => {
                 const html = compMeta.template.template;
+                // Template URL points to either an HTML or TS file depending on whether
+                // the file is used with `templateUrl:` or `template:`, respectively.
+                const templateUrl = compMeta.template.templateUrl;
                 const interpolationConfig = InterpolationConfig.fromArray(compMeta.template.interpolation);
-                errors.push(...messageBundle.updateFromTemplate(html, file.fileName, interpolationConfig));
+                errors.push(...messageBundle.updateFromTemplate(html, templateUrl, interpolationConfig));
             });
         });
         if (errors.length) {
@@ -22717,8 +22720,12 @@ class Extractor {
                 });
                 compMetas.forEach(compMeta => {
                     const html = compMeta.template.template;
+                    // Template URL points to either an HTML or TS file depending on
+                    // whether the file is used with `templateUrl:` or `template:`,
+                    // respectively.
+                    const templateUrl = compMeta.template.templateUrl;
                     const interpolationConfig = InterpolationConfig.fromArray(compMeta.template.interpolation);
-                    errors.push(...this.messageBundle.updateFromTemplate(html, file.fileName, interpolationConfig));
+                    errors.push(...this.messageBundle.updateFromTemplate(html, templateUrl, interpolationConfig));
                 });
             });
             if (errors.length) {
