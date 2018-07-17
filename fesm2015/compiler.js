@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.3+117.sha-c8ad965
+ * @license Angular v6.1.0-beta.3+118.sha-ba3eb8b
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('6.1.0-beta.3+117.sha-c8ad965');
+const VERSION = new Version('6.1.0-beta.3+118.sha-ba3eb8b');
 
 /**
  * @license
@@ -16626,10 +16626,9 @@ Identifiers$1.elementStart = { name: 'ɵE', moduleName: CORE$1 };
 Identifiers$1.elementEnd = { name: 'ɵe', moduleName: CORE$1 };
 Identifiers$1.elementProperty = { name: 'ɵp', moduleName: CORE$1 };
 Identifiers$1.elementAttribute = { name: 'ɵa', moduleName: CORE$1 };
-Identifiers$1.elementClass = { name: 'ɵk', moduleName: CORE$1 };
-Identifiers$1.elementClassNamed = { name: 'ɵkn', moduleName: CORE$1 };
+Identifiers$1.elementClassProp = { name: 'ɵcp', moduleName: CORE$1 };
 Identifiers$1.elementStyling = { name: 'ɵs', moduleName: CORE$1 };
-Identifiers$1.elementStyle = { name: 'ɵsm', moduleName: CORE$1 };
+Identifiers$1.elementStylingMap = { name: 'ɵsm', moduleName: CORE$1 };
 Identifiers$1.elementStyleProp = { name: 'ɵsp', moduleName: CORE$1 };
 Identifiers$1.elementStylingApply = { name: 'ɵsa', moduleName: CORE$1 };
 Identifiers$1.containerCreate = { name: 'ɵC', moduleName: CORE$1 };
@@ -17616,17 +17615,11 @@ function mapBindingToInstruction(type) {
         case 1 /* Attribute */:
             return Identifiers$1.elementAttribute;
         case 2 /* Class */:
-            return Identifiers$1.elementClassNamed;
+            return Identifiers$1.elementClassProp;
         default:
             return undefined;
     }
 }
-// `className` is used below instead of `class` because the interception
-// code (where this map is used) deals with DOM element property values
-// (like elm.propName) and not component bindining properties (like [propName]).
-const SPECIAL_CASED_PROPERTIES_INSTRUCTION_MAP = {
-    'className': Identifiers$1.elementClass
-};
 class TemplateDefinitionBuilder {
     constructor(constantPool, contextParameter, parentBindingScope, level = 0, contextName, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace) {
         this.constantPool = constantPool;
@@ -17843,32 +17836,59 @@ class TemplateDefinitionBuilder {
         const i18nMessages = [];
         const attributes = [];
         const initialStyleDeclarations = [];
+        const initialClassDeclarations = [];
         const styleInputs = [];
+        const classInputs = [];
         const allOtherInputs = [];
         element.inputs.forEach((input) => {
-            // [attr.style] should not be treated as a styling-based
-            // binding since it is intended to write directly to the attr
-            // and therefore will skip all style resolution that is present
-            // with style="", [style]="" and [style.prop]="" assignments
-            if (input.name == 'style' && input.type == 0 /* Property */) {
-                // this should always go first in the compilation (for [style])
-                styleInputs.splice(0, 0, input);
-            }
-            else if (input.type == 3 /* Style */) {
-                styleInputs.push(input);
-            }
-            else {
-                allOtherInputs.push(input);
+            switch (input.type) {
+                // [attr.style] or [attr.class] should not be treated as styling-based
+                // bindings since they are intended to be written directly to the attr
+                // and therefore will skip all style/class resolution that is present
+                // with style="", [style]="" and [style.prop]="", class="",
+                // [class.prop]="". [class]="" assignments
+                case 0 /* Property */:
+                    if (input.name == 'style') {
+                        // this should always go first in the compilation (for [style])
+                        styleInputs.splice(0, 0, input);
+                    }
+                    else if (isClassBinding(input)) {
+                        // this should always go first in the compilation (for [class])
+                        classInputs.splice(0, 0, input);
+                    }
+                    else {
+                        allOtherInputs.push(input);
+                    }
+                    break;
+                case 3 /* Style */:
+                    styleInputs.push(input);
+                    break;
+                case 2 /* Class */:
+                    classInputs.push(input);
+                    break;
+                default:
+                    allOtherInputs.push(input);
+                    break;
             }
         });
         let currStyleIndex = 0;
+        let currClassIndex = 0;
         let staticStylesMap = null;
+        let staticClassesMap = null;
         const stylesIndexMap = {};
+        const classesIndexMap = {};
         Object.getOwnPropertyNames(outputAttrs).forEach(name => {
             const value = outputAttrs[name];
             if (name == 'style') {
                 staticStylesMap = parseStyle(value);
                 Object.keys(staticStylesMap).forEach(prop => { stylesIndexMap[prop] = currStyleIndex++; });
+            }
+            else if (name == 'class') {
+                staticClassesMap = {};
+                value.split(/\s+/g).forEach(className => {
+                    classesIndexMap[className] = currClassIndex++;
+                    staticClassesMap[className] = true;
+                });
             }
             else {
                 attributes.push(literal(name));
@@ -17889,19 +17909,38 @@ class TemplateDefinitionBuilder {
                 stylesIndexMap[input.name] = currStyleIndex++;
             }
         }
+        for (let i = 0; i < classInputs.length; i++) {
+            const input = classInputs[i];
+            const isMapBasedClassBinding = i === 0 && isClassBinding(input);
+            if (!isMapBasedClassBinding && !stylesIndexMap.hasOwnProperty(input.name)) {
+                classesIndexMap[input.name] = currClassIndex++;
+            }
+        }
         // this will build the instructions so that they fall into the following syntax
         // => [prop1, prop2, prop3, 0, prop1, value1, prop2, value2]
         Object.keys(stylesIndexMap).forEach(prop => {
             initialStyleDeclarations.push(literal(prop));
         });
         if (staticStylesMap) {
-            initialStyleDeclarations.push(literal(0 /* INITIAL_STYLES */));
+            initialStyleDeclarations.push(literal(1 /* VALUES_MODE */));
             Object.keys(staticStylesMap).forEach(prop => {
                 initialStyleDeclarations.push(literal(prop));
                 const value = staticStylesMap[prop];
                 initialStyleDeclarations.push(literal(value));
             });
         }
+        Object.keys(classesIndexMap).forEach(prop => {
+            initialClassDeclarations.push(literal(prop));
+        });
+        if (staticClassesMap) {
+            initialClassDeclarations.push(literal(1 /* VALUES_MODE */));
+            Object.keys(staticClassesMap).forEach(className => {
+                initialClassDeclarations.push(literal(className));
+                initialClassDeclarations.push(literal(true));
+            });
+        }
+        const hasStylingInstructions = initialStyleDeclarations.length || styleInputs.length ||
+            initialClassDeclarations.length || classInputs.length;
         const attrArg = attributes.length > 0 ?
             this.constantPool.getConstLiteral(literalArr(attributes), true) :
             TYPED_NULL_EXPR;
@@ -17935,8 +17974,7 @@ class TemplateDefinitionBuilder {
             this.addNamespaceInstruction(currentNamespace, element);
         }
         const implicit = variable(CONTEXT_NAME);
-        const elementStyleIndex = (initialStyleDeclarations.length || styleInputs.length) ? this.allocateDataSlot() : 0;
-        const createSelfClosingInstruction = elementStyleIndex === 0 && element.children.length === 0 && element.outputs.length === 0;
+        const createSelfClosingInstruction = !hasStylingInstructions && element.children.length === 0 && element.outputs.length === 0;
         if (createSelfClosingInstruction) {
             this.instruction(this._creationCode, element.sourceSpan, Identifiers$1.element, ...trimTrailingNulls(parameters));
         }
@@ -17947,14 +17985,25 @@ class TemplateDefinitionBuilder {
             }
             this.instruction(this._creationCode, element.sourceSpan, Identifiers$1.elementStart, ...trimTrailingNulls(parameters));
             // initial styling for static style="..." attributes
-            if (elementStyleIndex > 0) {
-                let paramsList = [literal(elementStyleIndex)];
+            if (hasStylingInstructions) {
+                const paramsList = [];
                 if (initialStyleDeclarations.length) {
-                    // the template compiler handles initial styling (e.g. style="foo") values
+                    // the template compiler handles initial style (e.g. style="foo") values
                     // in a special command called `elementStyle` so that the initial styles
                     // can be processed during runtime. These initial styles values are bound to
                     // a constant because the inital style values do not change (since they're static).
                     paramsList.push(this.constantPool.getConstLiteral(literalArr(initialStyleDeclarations), true));
+                }
+                else if (initialClassDeclarations.length) {
+                    // no point in having an extra `null` value unless there are follow-up params
+                    paramsList.push(NULL_EXPR);
+                }
+                if (initialClassDeclarations.length) {
+                    // the template compiler handles initial class styling (e.g. class="foo") values
+                    // in a special command called `elementClass` so that the initial class
+                    // can be processed during runtime. These initial class values are bound to
+                    // a constant because the inital class values do not change (since they're static).
+                    paramsList.push(this.constantPool.getConstLiteral(literalArr(initialClassDeclarations), true));
                 }
                 this._creationCode.push(importExpr(Identifiers$1.elementStyling).callFn(paramsList).toStmt());
             }
@@ -17972,22 +18021,50 @@ class TemplateDefinitionBuilder {
                 this.instruction(this._creationCode, outputAst.sourceSpan, Identifiers$1.listener, literal(outputAst.name), handler);
             });
         }
-        if (styleInputs.length && elementStyleIndex > 0) {
-            const indexLiteral = literal(elementStyleIndex);
-            styleInputs.forEach((input, i) => {
-                const isMapBasedStyleBinding = i == 0 && input.name == 'style';
-                const convertedBinding = this.convertPropertyBinding(implicit, input.value, true);
-                if (isMapBasedStyleBinding) {
-                    this.instruction(this._bindingCode, input.sourceSpan, Identifiers$1.elementStyle, indexLiteral, convertedBinding);
+        if ((styleInputs.length || classInputs.length) && hasStylingInstructions) {
+            const indexLiteral = literal(elementIndex);
+            const firstStyle = styleInputs[0];
+            const mapBasedStyleInput = firstStyle && firstStyle.name == 'style' ? firstStyle : null;
+            const firstClass = classInputs[0];
+            const mapBasedClassInput = firstClass && isClassBinding(firstClass) ? firstClass : null;
+            const stylingInput = mapBasedStyleInput || mapBasedClassInput;
+            if (stylingInput) {
+                const params = [];
+                if (mapBasedStyleInput) {
+                    params.push(this.convertPropertyBinding(implicit, mapBasedStyleInput.value, true));
                 }
-                else {
+                else if (mapBasedClassInput) {
+                    params.push(NULL_EXPR);
+                }
+                if (mapBasedClassInput) {
+                    params.push(this.convertPropertyBinding(implicit, mapBasedClassInput.value, true));
+                }
+                this.instruction(this._bindingCode, stylingInput.sourceSpan, Identifiers$1.elementStylingMap, indexLiteral, ...params);
+            }
+            let lastInputCommand = null;
+            if (styleInputs.length) {
+                let i = mapBasedStyleInput ? 1 : 0;
+                for (i; i < styleInputs.length; i++) {
+                    const input = styleInputs[i];
+                    const convertedBinding = this.convertPropertyBinding(implicit, input.value, true);
                     const key = input.name;
-                    let styleIndex = stylesIndexMap[key];
+                    const styleIndex = stylesIndexMap[key];
                     this.instruction(this._bindingCode, input.sourceSpan, Identifiers$1.elementStyleProp, indexLiteral, literal(styleIndex), convertedBinding);
                 }
-            });
-            const spanEnd = styleInputs[styleInputs.length - 1].sourceSpan;
-            this.instruction(this._bindingCode, spanEnd, Identifiers$1.elementStylingApply, indexLiteral);
+                lastInputCommand = styleInputs[styleInputs.length - 1];
+            }
+            if (classInputs.length) {
+                let i = mapBasedClassInput ? 1 : 0;
+                for (i; i < classInputs.length; i++) {
+                    const input = classInputs[i];
+                    const convertedBinding = this.convertPropertyBinding(implicit, input.value, true);
+                    const key = input.name;
+                    const classIndex = classesIndexMap[key];
+                    this.instruction(this._bindingCode, input.sourceSpan, Identifiers$1.elementClassProp, indexLiteral, literal(classIndex), convertedBinding);
+                }
+                lastInputCommand = classInputs[classInputs.length - 1];
+            }
+            this.instruction(this._bindingCode, lastInputCommand.sourceSpan, Identifiers$1.elementStylingApply, indexLiteral);
         }
         // Generate element input bindings
         allOtherInputs.forEach((input) => {
@@ -17996,15 +18073,6 @@ class TemplateDefinitionBuilder {
                 return;
             }
             const convertedBinding = this.convertPropertyBinding(implicit, input.value);
-            const specialInstruction = SPECIAL_CASED_PROPERTIES_INSTRUCTION_MAP[input.name];
-            if (specialInstruction) {
-                // special case for [style] and [class] bindings since they are not handled as
-                // standard properties within this implementation. Instead they are
-                // handed off to special cased instruction handlers which will then
-                // delegate them as animation sequences (or input bindings for dirs/cmps)
-                this.instruction(this._bindingCode, input.sourceSpan, specialInstruction, literal(elementIndex), convertedBinding);
-                return;
-            }
             const instruction = mapBindingToInstruction(input.type);
             if (instruction) {
                 // TODO(chuckj): runtime: security context?
@@ -18364,6 +18432,9 @@ function parseTemplate(template, templateUrl, options = {}) {
  */
 function makeBindingParser() {
     return new BindingParser(new Parser(new Lexer()), DEFAULT_INTERPOLATION_CONFIG, new DomElementSchemaRegistry(), null, []);
+}
+function isClassBinding(input) {
+    return input.name == 'className' || input.name == 'class';
 }
 
 /**
