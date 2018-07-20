@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-rc.3+17.sha-bb58138
+ * @license Angular v6.1.0-rc.3+41.sha-8620373
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('6.1.0-rc.3+17.sha-bb58138');
+const VERSION = new Version('6.1.0-rc.3+41.sha-8620373');
 
 /**
  * @license
@@ -7894,7 +7894,7 @@ Identifiers.inject = { name: 'inject', moduleName: CORE };
 Identifiers.INJECTOR = { name: 'INJECTOR', moduleName: CORE };
 Identifiers.Injector = { name: 'Injector', moduleName: CORE };
 Identifiers.defineInjectable = { name: 'defineInjectable', moduleName: CORE };
-Identifiers.InjectableDef = { name: 'InjectableDef', moduleName: CORE };
+Identifiers.InjectableDef = { name: 'ɵInjectableDef', moduleName: CORE };
 Identifiers.ViewEncapsulation = {
     name: 'ViewEncapsulation',
     moduleName: CORE,
@@ -7983,6 +7983,7 @@ var BuiltinTypeName;
     BuiltinTypeName[BuiltinTypeName["Number"] = 4] = "Number";
     BuiltinTypeName[BuiltinTypeName["Function"] = 5] = "Function";
     BuiltinTypeName[BuiltinTypeName["Inferred"] = 6] = "Inferred";
+    BuiltinTypeName[BuiltinTypeName["None"] = 7] = "None";
 })(BuiltinTypeName || (BuiltinTypeName = {}));
 class BuiltinType extends Type$1 {
     constructor(name, modifiers = null) {
@@ -7994,9 +7995,10 @@ class BuiltinType extends Type$1 {
     }
 }
 class ExpressionType extends Type$1 {
-    constructor(value, modifiers = null) {
+    constructor(value, modifiers = null, typeParams = null) {
         super(modifiers);
         this.value = value;
+        this.typeParams = typeParams;
     }
     visitType(visitor, context) {
         return visitor.visitExpressionType(this, context);
@@ -8025,6 +8027,7 @@ const INT_TYPE = new BuiltinType(BuiltinTypeName.Int);
 const NUMBER_TYPE = new BuiltinType(BuiltinTypeName.Number);
 const STRING_TYPE = new BuiltinType(BuiltinTypeName.String);
 const FUNCTION_TYPE = new BuiltinType(BuiltinTypeName.Function);
+const NONE_TYPE = new BuiltinType(BuiltinTypeName.None);
 ///// Expressions
 var BinaryOperator;
 (function (BinaryOperator) {
@@ -8176,6 +8179,19 @@ class ReadVarExpr extends Expression {
         }
         return new WriteVarExpr(this.name, value, null, this.sourceSpan);
     }
+}
+class TypeofExpr extends Expression {
+    constructor(expr, type, sourceSpan) {
+        super(type, sourceSpan);
+        this.expr = expr;
+    }
+    visitExpression(visitor, context) {
+        return visitor.visitTypeofExpr(this, context);
+    }
+    isEquivalent(e) {
+        return e instanceof TypeofExpr && e.expr.isEquivalent(this.expr);
+    }
+    isConstant() { return this.expr.isConstant(); }
 }
 class WrappedNodeExpr extends Expression {
     constructor(node, type, sourceSpan) {
@@ -8730,6 +8746,9 @@ class AstTransformer$1 {
     visitWrappedNodeExpr(ast, context) {
         return this.transformExpr(ast, context);
     }
+    visitTypeofExpr(expr, context) {
+        return this.transformExpr(new TypeofExpr(expr.expr.visitExpression(this, context), expr.type, expr.sourceSpan), context);
+    }
     visitWriteVarExpr(expr, context) {
         return this.transformExpr(new WriteVarExpr(expr.name, expr.value.visitExpression(this, context), expr.type, expr.sourceSpan), context);
     }
@@ -8842,11 +8861,15 @@ class RecursiveAstVisitor$1 {
     visitBuiltinType(type, context) { return this.visitType(type, context); }
     visitExpressionType(type, context) {
         type.value.visitExpression(this, context);
+        if (type.typeParams !== null) {
+            type.typeParams.forEach(param => this.visitType(param, context));
+        }
         return this.visitType(type, context);
     }
     visitArrayType(type, context) { return this.visitType(type, context); }
     visitMapType(type, context) { return this.visitType(type, context); }
     visitWrappedNodeExpr(ast, context) { return ast; }
+    visitTypeofExpr(ast, context) { return this.visitExpression(ast, context); }
     visitReadVarExpr(ast, context) {
         return this.visitExpression(ast, context);
     }
@@ -9084,8 +9107,11 @@ function importExpr(id, typeParams = null, sourceSpan) {
 function importType(id, typeParams = null, typeModifiers = null) {
     return id != null ? expressionType(importExpr(id, typeParams, null), typeModifiers) : null;
 }
-function expressionType(expr, typeModifiers = null) {
-    return new ExpressionType(expr, typeModifiers);
+function expressionType(expr, typeModifiers = null, typeParams = null) {
+    return new ExpressionType(expr, typeModifiers, typeParams);
+}
+function typeofExpr(expr) {
+    return new TypeofExpr(expr);
 }
 function literalArr(values, type, sourceSpan) {
     return new LiteralArrayExpr(values, type, sourceSpan);
@@ -11559,6 +11585,10 @@ class AbstractEmitterVisitor {
     visitWrappedNodeExpr(ast, ctx) {
         throw new Error('Abstract emitter cannot visit WrappedNodeExpr.');
     }
+    visitTypeofExpr(expr, ctx) {
+        ctx.print(expr, 'typeof ');
+        expr.expr.visitExpression(this, ctx);
+    }
     visitReadVarExpr(ast, ctx) {
         let varName = ast.name;
         if (ast.builtin != null) {
@@ -12084,6 +12114,9 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
             case BuiltinTypeName.String:
                 typeStr = 'string';
                 break;
+            case BuiltinTypeName.None:
+                typeStr = 'never';
+                break;
             default:
                 throw new Error(`Unsupported builtin type ${type.name}`);
         }
@@ -12092,6 +12125,11 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
     }
     visitExpressionType(ast, ctx) {
         ast.value.visitExpression(this, ctx);
+        if (ast.typeParams !== null) {
+            ctx.print(null, '<');
+            this.visitAllObjects(type => this.visitType(type, ctx), ast.typeParams, ctx, ',');
+            ctx.print(null, '>');
+        }
         return null;
     }
     visitArrayType(type, ctx) {
@@ -16488,6 +16526,9 @@ class KeyVisitor {
             `EX:${ast.value.runtime.name}`;
     }
     visitReadVarExpr(node) { return `VAR:${node.name}`; }
+    visitTypeofExpr(node, context) {
+        return `TYPEOF:${node.expr.visitExpression(this, context)}`;
+    }
 }
 function invalid(arg) {
     throw new Error(`Invalid state: Visitor ${this.constructor.name} doesn't handle ${arg.constructor.name}`);
@@ -16669,6 +16710,7 @@ Identifiers$1.injectAttribute = { name: 'ɵinjectAttribute', moduleName: CORE$1 
 Identifiers$1.injectElementRef = { name: 'ɵinjectElementRef', moduleName: CORE$1 };
 Identifiers$1.injectTemplateRef = { name: 'ɵinjectTemplateRef', moduleName: CORE$1 };
 Identifiers$1.injectViewContainerRef = { name: 'ɵinjectViewContainerRef', moduleName: CORE$1 };
+Identifiers$1.injectChangeDetectorRef = { name: 'ɵinjectChangeDetectorRef', moduleName: CORE$1 };
 Identifiers$1.directiveInject = { name: 'ɵdirectiveInject', moduleName: CORE$1 };
 Identifiers$1.defineComponent = { name: 'ɵdefineComponent', moduleName: CORE$1 };
 Identifiers$1.ComponentDef = {
@@ -16841,6 +16883,10 @@ var R3ResolvedDependencyType;
      * The dependency is for `ViewContainerRef`.
      */
     R3ResolvedDependencyType[R3ResolvedDependencyType["ViewContainerRef"] = 5] = "ViewContainerRef";
+    /**
+     * The dependency is for `ChangeDetectorRef`.
+     */
+    R3ResolvedDependencyType[R3ResolvedDependencyType["ChangeDetectorRef"] = 6] = "ChangeDetectorRef";
 })(R3ResolvedDependencyType || (R3ResolvedDependencyType = {}));
 /**
  * Construct a factory function expression for the given `R3FactoryMetadata`.
@@ -16873,7 +16919,7 @@ function compileInjectDependency(dep, injectFn) {
                 token = importExpr(Identifiers.INJECTOR);
             }
             // Build up the arguments to the injectFn call.
-            const injectArgs = [dep.token];
+            const injectArgs = [token];
             // If this dependency is optional or otherwise has non-default flags, then additional
             // parameters describing how to inject the dependency must be passed to the inject function
             // that's being used.
@@ -16891,6 +16937,8 @@ function compileInjectDependency(dep, injectFn) {
             return importExpr(Identifiers$1.injectTemplateRef).callFn([]);
         case R3ResolvedDependencyType.ViewContainerRef:
             return importExpr(Identifiers$1.injectViewContainerRef).callFn([]);
+        case R3ResolvedDependencyType.ChangeDetectorRef:
+            return importExpr(Identifiers$1.injectChangeDetectorRef).callFn([]);
         default:
             return unsupported(`Unknown R3ResolvedDependencyType: ${R3ResolvedDependencyType[dep.resolved]}`);
     }
@@ -16979,6 +17027,16 @@ function convertMetaToOutput(meta, ctx) {
     }
     throw new Error(`Internal error: Unsupported or unknown metadata: ${meta}`);
 }
+function typeWithParameters(type, numParams) {
+    let params = null;
+    if (numParams > 0) {
+        params = [];
+        for (let i = 0; i < numParams; i++) {
+            params.push(DYNAMIC_TYPE);
+        }
+    }
+    return expressionType(type, null, params);
+}
 
 /**
  * @license
@@ -17000,8 +17058,8 @@ function compileNgModule(meta) {
             exports: literalArr(exports),
         })]);
     const type = new ExpressionType(importExpr(Identifiers$1.NgModuleDef, [
-        new ExpressionType(moduleType), new ExpressionType(literalArr(declarations)),
-        new ExpressionType(literalArr(imports)), new ExpressionType(literalArr(exports))
+        new ExpressionType(moduleType), tupleTypeOf(declarations), tupleTypeOf(imports),
+        tupleTypeOf(exports)
     ]));
     const additionalStatements = [];
     return { expression, type, additionalStatements };
@@ -17043,6 +17101,10 @@ function compileNgModuleFromRender2(ctx, ngModule, injectableCompiler) {
     /* getters */ [], 
     /* constructorMethod */ new ClassMethod(null, [], []), 
     /* methods */ []));
+}
+function tupleTypeOf(exp) {
+    const types = exp.map(type => typeofExpr(type));
+    return exp.length > 0 ? expressionType(literalArr(types)) : NONE_TYPE;
 }
 
 /**
@@ -18490,7 +18552,10 @@ function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
     // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
     // string literal, which must be on one line.
     const selectorForType = (meta.selector || '').replace(/\n/g, '');
-    const type = new ExpressionType(importExpr(Identifiers$1.DirectiveDef, [new ExpressionType(meta.type), new ExpressionType(literal(selectorForType))]));
+    const type = new ExpressionType(importExpr(Identifiers$1.DirectiveDef, [
+        typeWithParameters(meta.type, meta.typeArgumentCount),
+        new ExpressionType(literal(selectorForType))
+    ]));
     return { expression, type };
 }
 /**
@@ -18539,7 +18604,10 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     // string literal, which must be on one line.
     const selectorForType = (meta.selector || '').replace(/\n/g, '');
     const expression = importExpr(Identifiers$1.defineComponent).callFn([definitionMap.toLiteralMap()]);
-    const type = new ExpressionType(importExpr(Identifiers$1.ComponentDef, [new ExpressionType(meta.type), new ExpressionType(literal(selectorForType))]));
+    const type = new ExpressionType(importExpr(Identifiers$1.ComponentDef, [
+        typeWithParameters(meta.type, meta.typeArgumentCount),
+        new ExpressionType(literal(selectorForType))
+    ]));
     return { expression, type };
 }
 /**
@@ -18590,6 +18658,7 @@ function directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector) {
     return {
         name,
         type: outputCtx.importExpr(directive.type.reference),
+        typeArgumentCount: 0,
         typeSourceSpan: typeSourceSpan(directive.isComponent ? 'Component' : 'Directive', directive.type),
         selector: directive.selector,
         deps: dependenciesFromGlobalMetadata(directive.type, outputCtx, reflector),
@@ -21671,6 +21740,9 @@ class StatementInterpreter {
     visitWrappedNodeExpr(ast, ctx) {
         throw new Error('Cannot interpret a WrappedNodeExpr.');
     }
+    visitTypeofExpr(ast, ctx) {
+        throw new Error('Cannot interpret a TypeofExpr');
+    }
     visitReadVarExpr(ast, ctx) {
         let varName = ast.name;
         if (ast.builtin != null) {
@@ -23007,5 +23079,5 @@ function jitExpression(def, context, sourceUrl, constantPool) {
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, jitExpression, R3ResolvedDependencyType, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, compileInjectable };
+export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, TypeofExpr, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, jitExpression, R3ResolvedDependencyType, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, compileInjectable };
 //# sourceMappingURL=compiler.js.map
