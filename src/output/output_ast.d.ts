@@ -22,7 +22,8 @@ export declare enum BuiltinTypeName {
     Int = 3,
     Number = 4,
     Function = 5,
-    Inferred = 6
+    Inferred = 6,
+    None = 7
 }
 export declare class BuiltinType extends Type {
     name: BuiltinTypeName;
@@ -31,7 +32,8 @@ export declare class BuiltinType extends Type {
 }
 export declare class ExpressionType extends Type {
     value: Expression;
-    constructor(value: Expression, modifiers?: TypeModifier[] | null);
+    typeParams: Type[] | null;
+    constructor(value: Expression, modifiers?: TypeModifier[] | null, typeParams?: Type[] | null);
     visitType(visitor: TypeVisitor, context: any): any;
 }
 export declare class ArrayType extends Type {
@@ -51,6 +53,7 @@ export declare const INT_TYPE: BuiltinType;
 export declare const NUMBER_TYPE: BuiltinType;
 export declare const STRING_TYPE: BuiltinType;
 export declare const FUNCTION_TYPE: BuiltinType;
+export declare const NONE_TYPE: BuiltinType;
 export interface TypeVisitor {
     visitBuiltinType(type: BuiltinType, context: any): any;
     visitExpressionType(type: ExpressionType, context: any): any;
@@ -135,6 +138,13 @@ export declare class ReadVarExpr extends Expression {
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     set(value: Expression): WriteVarExpr;
+}
+export declare class TypeofExpr extends Expression {
+    expr: Expression;
+    constructor(expr: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    visitExpression(visitor: ExpressionVisitor, context: any): any;
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
 }
 export declare class WrappedNodeExpr<T> extends Expression {
     node: T;
@@ -347,6 +357,7 @@ export interface ExpressionVisitor {
     visitLiteralMapExpr(ast: LiteralMapExpr, context: any): any;
     visitCommaExpr(ast: CommaExpr, context: any): any;
     visitWrappedNodeExpr(ast: WrappedNodeExpr<any>, context: any): any;
+    visitTypeofExpr(ast: TypeofExpr, context: any): any;
 }
 export declare const THIS_EXPR: ReadVarExpr;
 export declare const SUPER_EXPR: ReadVarExpr;
@@ -489,6 +500,7 @@ export declare class AstTransformer implements StatementVisitor, ExpressionVisit
     transformStmt(stmt: Statement, context: any): Statement;
     visitReadVarExpr(ast: ReadVarExpr, context: any): any;
     visitWrappedNodeExpr(ast: WrappedNodeExpr<any>, context: any): any;
+    visitTypeofExpr(expr: TypeofExpr, context: any): any;
     visitWriteVarExpr(expr: WriteVarExpr, context: any): any;
     visitWriteKeyExpr(expr: WriteKeyExpr, context: any): any;
     visitWritePropExpr(expr: WritePropExpr, context: any): any;
@@ -529,6 +541,7 @@ export declare class RecursiveAstVisitor implements StatementVisitor, Expression
     visitArrayType(type: ArrayType, context: any): any;
     visitMapType(type: MapType, context: any): any;
     visitWrappedNodeExpr(ast: WrappedNodeExpr<any>, context: any): any;
+    visitTypeofExpr(ast: TypeofExpr, context: any): any;
     visitReadVarExpr(ast: ReadVarExpr, context: any): any;
     visitWriteVarExpr(ast: WriteVarExpr, context: any): any;
     visitWriteKeyExpr(ast: WriteKeyExpr, context: any): any;
@@ -569,7 +582,8 @@ export declare function applySourceSpanToExpressionIfNeeded(expr: Expression, so
 export declare function variable(name: string, type?: Type | null, sourceSpan?: ParseSourceSpan | null): ReadVarExpr;
 export declare function importExpr(id: ExternalReference, typeParams?: Type[] | null, sourceSpan?: ParseSourceSpan | null): ExternalExpr;
 export declare function importType(id: ExternalReference, typeParams?: Type[] | null, typeModifiers?: TypeModifier[] | null): ExpressionType | null;
-export declare function expressionType(expr: Expression, typeModifiers?: TypeModifier[] | null): ExpressionType;
+export declare function expressionType(expr: Expression, typeModifiers?: TypeModifier[] | null, typeParams?: Type[] | null): ExpressionType;
+export declare function typeofExpr(expr: Expression): TypeofExpr;
 export declare function literalArr(values: Expression[], type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralArrayExpr;
 export declare function literalMap(values: {
     key: string;
