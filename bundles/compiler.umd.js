@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-rc.3+17.sha-bb58138
+ * @license Angular v6.1.0-rc.3+41.sha-8620373
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1196,7 +1196,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('6.1.0-rc.3+17.sha-bb58138');
+    var VERSION = new Version('6.1.0-rc.3+41.sha-8620373');
 
     /**
      * @license
@@ -8429,7 +8429,7 @@
         Identifiers.INJECTOR = { name: 'INJECTOR', moduleName: CORE };
         Identifiers.Injector = { name: 'Injector', moduleName: CORE };
         Identifiers.defineInjectable = { name: 'defineInjectable', moduleName: CORE };
-        Identifiers.InjectableDef = { name: 'InjectableDef', moduleName: CORE };
+        Identifiers.InjectableDef = { name: 'ɵInjectableDef', moduleName: CORE };
         Identifiers.ViewEncapsulation = {
             name: 'ViewEncapsulation',
             moduleName: CORE,
@@ -8521,6 +8521,7 @@
         BuiltinTypeName[BuiltinTypeName["Number"] = 4] = "Number";
         BuiltinTypeName[BuiltinTypeName["Function"] = 5] = "Function";
         BuiltinTypeName[BuiltinTypeName["Inferred"] = 6] = "Inferred";
+        BuiltinTypeName[BuiltinTypeName["None"] = 7] = "None";
     })(exports.BuiltinTypeName || (exports.BuiltinTypeName = {}));
     var BuiltinType = /** @class */ (function (_super) {
         __extends(BuiltinType, _super);
@@ -8537,10 +8538,12 @@
     }(Type$1));
     var ExpressionType = /** @class */ (function (_super) {
         __extends(ExpressionType, _super);
-        function ExpressionType(value, modifiers) {
+        function ExpressionType(value, modifiers, typeParams) {
             if (modifiers === void 0) { modifiers = null; }
+            if (typeParams === void 0) { typeParams = null; }
             var _this = _super.call(this, modifiers) || this;
             _this.value = value;
+            _this.typeParams = typeParams;
             return _this;
         }
         ExpressionType.prototype.visitType = function (visitor, context) {
@@ -8579,6 +8582,7 @@
     var NUMBER_TYPE = new BuiltinType(exports.BuiltinTypeName.Number);
     var STRING_TYPE = new BuiltinType(exports.BuiltinTypeName.String);
     var FUNCTION_TYPE = new BuiltinType(exports.BuiltinTypeName.Function);
+    var NONE_TYPE = new BuiltinType(exports.BuiltinTypeName.None);
     (function (BinaryOperator) {
         BinaryOperator[BinaryOperator["Equals"] = 0] = "Equals";
         BinaryOperator[BinaryOperator["NotEquals"] = 1] = "NotEquals";
@@ -8733,6 +8737,22 @@
             return new WriteVarExpr(this.name, value, null, this.sourceSpan);
         };
         return ReadVarExpr;
+    }(Expression));
+    var TypeofExpr = /** @class */ (function (_super) {
+        __extends(TypeofExpr, _super);
+        function TypeofExpr(expr, type, sourceSpan) {
+            var _this = _super.call(this, type, sourceSpan) || this;
+            _this.expr = expr;
+            return _this;
+        }
+        TypeofExpr.prototype.visitExpression = function (visitor, context) {
+            return visitor.visitTypeofExpr(this, context);
+        };
+        TypeofExpr.prototype.isEquivalent = function (e) {
+            return e instanceof TypeofExpr && e.expr.isEquivalent(this.expr);
+        };
+        TypeofExpr.prototype.isConstant = function () { return this.expr.isConstant(); };
+        return TypeofExpr;
     }(Expression));
     var WrappedNodeExpr = /** @class */ (function (_super) {
         __extends(WrappedNodeExpr, _super);
@@ -9404,6 +9424,9 @@
         AstTransformer.prototype.visitWrappedNodeExpr = function (ast, context) {
             return this.transformExpr(ast, context);
         };
+        AstTransformer.prototype.visitTypeofExpr = function (expr, context) {
+            return this.transformExpr(new TypeofExpr(expr.expr.visitExpression(this, context), expr.type, expr.sourceSpan), context);
+        };
         AstTransformer.prototype.visitWriteVarExpr = function (expr, context) {
             return this.transformExpr(new WriteVarExpr(expr.name, expr.value.visitExpression(this, context), expr.type, expr.sourceSpan), context);
         };
@@ -9522,12 +9545,17 @@
         };
         RecursiveAstVisitor.prototype.visitBuiltinType = function (type, context) { return this.visitType(type, context); };
         RecursiveAstVisitor.prototype.visitExpressionType = function (type, context) {
+            var _this = this;
             type.value.visitExpression(this, context);
+            if (type.typeParams !== null) {
+                type.typeParams.forEach(function (param) { return _this.visitType(param, context); });
+            }
             return this.visitType(type, context);
         };
         RecursiveAstVisitor.prototype.visitArrayType = function (type, context) { return this.visitType(type, context); };
         RecursiveAstVisitor.prototype.visitMapType = function (type, context) { return this.visitType(type, context); };
         RecursiveAstVisitor.prototype.visitWrappedNodeExpr = function (ast, context) { return ast; };
+        RecursiveAstVisitor.prototype.visitTypeofExpr = function (ast, context) { return this.visitExpression(ast, context); };
         RecursiveAstVisitor.prototype.visitReadVarExpr = function (ast, context) {
             return this.visitExpression(ast, context);
         };
@@ -9783,9 +9811,13 @@
         if (typeModifiers === void 0) { typeModifiers = null; }
         return id != null ? expressionType(importExpr(id, typeParams, null), typeModifiers) : null;
     }
-    function expressionType(expr, typeModifiers) {
+    function expressionType(expr, typeModifiers, typeParams) {
         if (typeModifiers === void 0) { typeModifiers = null; }
-        return new ExpressionType(expr, typeModifiers);
+        if (typeParams === void 0) { typeParams = null; }
+        return new ExpressionType(expr, typeModifiers, typeParams);
+    }
+    function typeofExpr(expr) {
+        return new TypeofExpr(expr);
     }
     function literalArr(values, type, sourceSpan) {
         return new LiteralArrayExpr(values, type, sourceSpan);
@@ -12368,6 +12400,10 @@
         AbstractEmitterVisitor.prototype.visitWrappedNodeExpr = function (ast, ctx) {
             throw new Error('Abstract emitter cannot visit WrappedNodeExpr.');
         };
+        AbstractEmitterVisitor.prototype.visitTypeofExpr = function (expr, ctx) {
+            ctx.print(expr, 'typeof ');
+            expr.expr.visitExpression(this, ctx);
+        };
         AbstractEmitterVisitor.prototype.visitReadVarExpr = function (ast, ctx) {
             var varName = ast.name;
             if (ast.builtin != null) {
@@ -12912,6 +12948,9 @@
                 case exports.BuiltinTypeName.String:
                     typeStr = 'string';
                     break;
+                case exports.BuiltinTypeName.None:
+                    typeStr = 'never';
+                    break;
                 default:
                     throw new Error("Unsupported builtin type " + type.name);
             }
@@ -12919,7 +12958,13 @@
             return null;
         };
         _TsEmitterVisitor.prototype.visitExpressionType = function (ast, ctx) {
+            var _this = this;
             ast.value.visitExpression(this, ctx);
+            if (ast.typeParams !== null) {
+                ctx.print(null, '<');
+                this.visitAllObjects(function (type) { return _this.visitType(type, ctx); }, ast.typeParams, ctx, ',');
+                ctx.print(null, '>');
+            }
             return null;
         };
         _TsEmitterVisitor.prototype.visitArrayType = function (type, ctx) {
@@ -17537,6 +17582,9 @@
                 "EX:" + ast.value.runtime.name;
         };
         KeyVisitor.prototype.visitReadVarExpr = function (node) { return "VAR:" + node.name; };
+        KeyVisitor.prototype.visitTypeofExpr = function (node, context) {
+            return "TYPEOF:" + node.expr.visitExpression(this, context);
+        };
         return KeyVisitor;
     }());
     function invalid(arg) {
@@ -17731,6 +17779,7 @@
         Identifiers.injectElementRef = { name: 'ɵinjectElementRef', moduleName: CORE$1 };
         Identifiers.injectTemplateRef = { name: 'ɵinjectTemplateRef', moduleName: CORE$1 };
         Identifiers.injectViewContainerRef = { name: 'ɵinjectViewContainerRef', moduleName: CORE$1 };
+        Identifiers.injectChangeDetectorRef = { name: 'ɵinjectChangeDetectorRef', moduleName: CORE$1 };
         Identifiers.directiveInject = { name: 'ɵdirectiveInject', moduleName: CORE$1 };
         Identifiers.defineComponent = { name: 'ɵdefineComponent', moduleName: CORE$1 };
         Identifiers.ComponentDef = {
@@ -17898,6 +17947,10 @@
          * The dependency is for `ViewContainerRef`.
          */
         R3ResolvedDependencyType[R3ResolvedDependencyType["ViewContainerRef"] = 5] = "ViewContainerRef";
+        /**
+         * The dependency is for `ChangeDetectorRef`.
+         */
+        R3ResolvedDependencyType[R3ResolvedDependencyType["ChangeDetectorRef"] = 6] = "ChangeDetectorRef";
     })(exports.R3ResolvedDependencyType || (exports.R3ResolvedDependencyType = {}));
     /**
      * Construct a factory function expression for the given `R3FactoryMetadata`.
@@ -17930,7 +17983,7 @@
                     token = importExpr(Identifiers.INJECTOR);
                 }
                 // Build up the arguments to the injectFn call.
-                var injectArgs = [dep.token];
+                var injectArgs = [token];
                 // If this dependency is optional or otherwise has non-default flags, then additional
                 // parameters describing how to inject the dependency must be passed to the inject function
                 // that's being used.
@@ -17948,6 +18001,8 @@
                 return importExpr(Identifiers$1.injectTemplateRef).callFn([]);
             case exports.R3ResolvedDependencyType.ViewContainerRef:
                 return importExpr(Identifiers$1.injectViewContainerRef).callFn([]);
+            case exports.R3ResolvedDependencyType.ChangeDetectorRef:
+                return importExpr(Identifiers$1.injectChangeDetectorRef).callFn([]);
             default:
                 return unsupported("Unknown R3ResolvedDependencyType: " + exports.R3ResolvedDependencyType[dep.resolved]);
         }
@@ -18047,6 +18102,16 @@
         }
         throw new Error("Internal error: Unsupported or unknown metadata: " + meta);
     }
+    function typeWithParameters(type, numParams) {
+        var params = null;
+        if (numParams > 0) {
+            params = [];
+            for (var i = 0; i < numParams; i++) {
+                params.push(DYNAMIC_TYPE);
+            }
+        }
+        return expressionType(type, null, params);
+    }
 
     /**
      * @license
@@ -18068,8 +18133,8 @@
                 exports: literalArr(exports),
             })]);
         var type = new ExpressionType(importExpr(Identifiers$1.NgModuleDef, [
-            new ExpressionType(moduleType), new ExpressionType(literalArr(declarations)),
-            new ExpressionType(literalArr(imports)), new ExpressionType(literalArr(exports))
+            new ExpressionType(moduleType), tupleTypeOf(declarations), tupleTypeOf(imports),
+            tupleTypeOf(exports)
         ]));
         var additionalStatements = [];
         return { expression: expression, type: type, additionalStatements: additionalStatements };
@@ -18111,6 +18176,10 @@
         /* getters */ [], 
         /* constructorMethod */ new ClassMethod(null, [], []), 
         /* methods */ []));
+    }
+    function tupleTypeOf(exp) {
+        var types = exp.map(function (type) { return typeofExpr(type); });
+        return exp.length > 0 ? expressionType(literalArr(types)) : NONE_TYPE;
     }
 
     /**
@@ -19660,7 +19729,10 @@
         // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
         // string literal, which must be on one line.
         var selectorForType = (meta.selector || '').replace(/\n/g, '');
-        var type = new ExpressionType(importExpr(Identifiers$1.DirectiveDef, [new ExpressionType(meta.type), new ExpressionType(literal(selectorForType))]));
+        var type = new ExpressionType(importExpr(Identifiers$1.DirectiveDef, [
+            typeWithParameters(meta.type, meta.typeArgumentCount),
+            new ExpressionType(literal(selectorForType))
+        ]));
         return { expression: expression, type: type };
     }
     /**
@@ -19709,7 +19781,10 @@
         // string literal, which must be on one line.
         var selectorForType = (meta.selector || '').replace(/\n/g, '');
         var expression = importExpr(Identifiers$1.defineComponent).callFn([definitionMap.toLiteralMap()]);
-        var type = new ExpressionType(importExpr(Identifiers$1.ComponentDef, [new ExpressionType(meta.type), new ExpressionType(literal(selectorForType))]));
+        var type = new ExpressionType(importExpr(Identifiers$1.ComponentDef, [
+            typeWithParameters(meta.type, meta.typeArgumentCount),
+            new ExpressionType(literal(selectorForType))
+        ]));
         return { expression: expression, type: type };
     }
     /**
@@ -19760,6 +19835,7 @@
         return {
             name: name,
             type: outputCtx.importExpr(directive.type.reference),
+            typeArgumentCount: 0,
             typeSourceSpan: typeSourceSpan(directive.isComponent ? 'Component' : 'Directive', directive.type),
             selector: directive.selector,
             deps: dependenciesFromGlobalMetadata(directive.type, outputCtx, reflector),
@@ -23124,6 +23200,9 @@
         StatementInterpreter.prototype.visitWrappedNodeExpr = function (ast, ctx) {
             throw new Error('Cannot interpret a WrappedNodeExpr.');
         };
+        StatementInterpreter.prototype.visitTypeofExpr = function (ast, ctx) {
+            throw new Error('Cannot interpret a TypeofExpr');
+        };
         StatementInterpreter.prototype.visitReadVarExpr = function (ast, ctx) {
             var varName = ast.name;
             if (ast.builtin != null) {
@@ -24555,6 +24634,7 @@
     exports.WritePropExpr = WritePropExpr;
     exports.WriteVarExpr = WriteVarExpr;
     exports.Statement = Statement;
+    exports.TypeofExpr = TypeofExpr;
     exports.collectExternalReferences = collectExternalReferences;
     exports.EmitterVisitorContext = EmitterVisitorContext;
     exports.ViewCompiler = ViewCompiler;
