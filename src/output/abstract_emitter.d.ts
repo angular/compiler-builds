@@ -61,6 +61,7 @@ export declare abstract class AbstractEmitterVisitor implements o.StatementVisit
     abstract getBuiltinMethodName(method: o.BuiltinMethod): string;
     visitInvokeFunctionExpr(expr: o.InvokeFunctionExpr, ctx: EmitterVisitorContext): any;
     visitWrappedNodeExpr(ast: o.WrappedNodeExpr<any>, ctx: EmitterVisitorContext): any;
+    visitTypeofExpr(expr: o.TypeofExpr, ctx: EmitterVisitorContext): any;
     visitReadVarExpr(ast: o.ReadVarExpr, ctx: EmitterVisitorContext): any;
     visitInstantiateExpr(ast: o.InstantiateExpr, ctx: EmitterVisitorContext): any;
     visitLiteralExpr(ast: o.LiteralExpr, ctx: EmitterVisitorContext): any;

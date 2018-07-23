@@ -61,6 +61,7 @@ export declare class Identifiers {
     static injectElementRef: o.ExternalReference;
     static injectTemplateRef: o.ExternalReference;
     static injectViewContainerRef: o.ExternalReference;
+    static injectChangeDetectorRef: o.ExternalReference;
     static directiveInject: o.ExternalReference;
     static defineComponent: o.ExternalReference;
     static ComponentDef: o.ExternalReference;
