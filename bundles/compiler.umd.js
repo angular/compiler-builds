@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.3+142.sha-082c994
+ * @license Angular v6.1.0-rc.3+70.sha-8a7b0e9
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1196,7 +1196,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('6.1.0-beta.3+142.sha-082c994');
+    var VERSION = new Version('6.1.0-rc.3+70.sha-8a7b0e9');
 
     /**
      * @license
@@ -8429,7 +8429,7 @@
         Identifiers.INJECTOR = { name: 'INJECTOR', moduleName: CORE };
         Identifiers.Injector = { name: 'Injector', moduleName: CORE };
         Identifiers.defineInjectable = { name: 'defineInjectable', moduleName: CORE };
-        Identifiers.InjectableDef = { name: 'InjectableDef', moduleName: CORE };
+        Identifiers.InjectableDef = { name: 'ɵInjectableDef', moduleName: CORE };
         Identifiers.ViewEncapsulation = {
             name: 'ViewEncapsulation',
             moduleName: CORE,
@@ -8521,6 +8521,7 @@
         BuiltinTypeName[BuiltinTypeName["Number"] = 4] = "Number";
         BuiltinTypeName[BuiltinTypeName["Function"] = 5] = "Function";
         BuiltinTypeName[BuiltinTypeName["Inferred"] = 6] = "Inferred";
+        BuiltinTypeName[BuiltinTypeName["None"] = 7] = "None";
     })(exports.BuiltinTypeName || (exports.BuiltinTypeName = {}));
     var BuiltinType = /** @class */ (function (_super) {
         __extends(BuiltinType, _super);
@@ -8537,10 +8538,12 @@
     }(Type$1));
     var ExpressionType = /** @class */ (function (_super) {
         __extends(ExpressionType, _super);
-        function ExpressionType(value, modifiers) {
+        function ExpressionType(value, modifiers, typeParams) {
             if (modifiers === void 0) { modifiers = null; }
+            if (typeParams === void 0) { typeParams = null; }
             var _this = _super.call(this, modifiers) || this;
             _this.value = value;
+            _this.typeParams = typeParams;
             return _this;
         }
         ExpressionType.prototype.visitType = function (visitor, context) {
@@ -8579,6 +8582,7 @@
     var NUMBER_TYPE = new BuiltinType(exports.BuiltinTypeName.Number);
     var STRING_TYPE = new BuiltinType(exports.BuiltinTypeName.String);
     var FUNCTION_TYPE = new BuiltinType(exports.BuiltinTypeName.Function);
+    var NONE_TYPE = new BuiltinType(exports.BuiltinTypeName.None);
     (function (BinaryOperator) {
         BinaryOperator[BinaryOperator["Equals"] = 0] = "Equals";
         BinaryOperator[BinaryOperator["NotEquals"] = 1] = "NotEquals";
@@ -8733,6 +8737,22 @@
             return new WriteVarExpr(this.name, value, null, this.sourceSpan);
         };
         return ReadVarExpr;
+    }(Expression));
+    var TypeofExpr = /** @class */ (function (_super) {
+        __extends(TypeofExpr, _super);
+        function TypeofExpr(expr, type, sourceSpan) {
+            var _this = _super.call(this, type, sourceSpan) || this;
+            _this.expr = expr;
+            return _this;
+        }
+        TypeofExpr.prototype.visitExpression = function (visitor, context) {
+            return visitor.visitTypeofExpr(this, context);
+        };
+        TypeofExpr.prototype.isEquivalent = function (e) {
+            return e instanceof TypeofExpr && e.expr.isEquivalent(this.expr);
+        };
+        TypeofExpr.prototype.isConstant = function () { return this.expr.isConstant(); };
+        return TypeofExpr;
     }(Expression));
     var WrappedNodeExpr = /** @class */ (function (_super) {
         __extends(WrappedNodeExpr, _super);
@@ -9404,6 +9424,9 @@
         AstTransformer.prototype.visitWrappedNodeExpr = function (ast, context) {
             return this.transformExpr(ast, context);
         };
+        AstTransformer.prototype.visitTypeofExpr = function (expr, context) {
+            return this.transformExpr(new TypeofExpr(expr.expr.visitExpression(this, context), expr.type, expr.sourceSpan), context);
+        };
         AstTransformer.prototype.visitWriteVarExpr = function (expr, context) {
             return this.transformExpr(new WriteVarExpr(expr.name, expr.value.visitExpression(this, context), expr.type, expr.sourceSpan), context);
         };
@@ -9522,12 +9545,17 @@
         };
         RecursiveAstVisitor.prototype.visitBuiltinType = function (type, context) { return this.visitType(type, context); };
         RecursiveAstVisitor.prototype.visitExpressionType = function (type, context) {
+            var _this = this;
             type.value.visitExpression(this, context);
+            if (type.typeParams !== null) {
+                type.typeParams.forEach(function (param) { return _this.visitType(param, context); });
+            }
             return this.visitType(type, context);
         };
         RecursiveAstVisitor.prototype.visitArrayType = function (type, context) { return this.visitType(type, context); };
         RecursiveAstVisitor.prototype.visitMapType = function (type, context) { return this.visitType(type, context); };
         RecursiveAstVisitor.prototype.visitWrappedNodeExpr = function (ast, context) { return ast; };
+        RecursiveAstVisitor.prototype.visitTypeofExpr = function (ast, context) { return this.visitExpression(ast, context); };
         RecursiveAstVisitor.prototype.visitReadVarExpr = function (ast, context) {
             return this.visitExpression(ast, context);
         };
@@ -9783,9 +9811,13 @@
         if (typeModifiers === void 0) { typeModifiers = null; }
         return id != null ? expressionType(importExpr(id, typeParams, null), typeModifiers) : null;
     }
-    function expressionType(expr, typeModifiers) {
+    function expressionType(expr, typeModifiers, typeParams) {
         if (typeModifiers === void 0) { typeModifiers = null; }
-        return new ExpressionType(expr, typeModifiers);
+        if (typeParams === void 0) { typeParams = null; }
+        return new ExpressionType(expr, typeModifiers, typeParams);
+    }
+    function typeofExpr(expr) {
+        return new TypeofExpr(expr);
     }
     function literalArr(values, type, sourceSpan) {
         return new LiteralArrayExpr(values, type, sourceSpan);
@@ -12368,6 +12400,10 @@
         AbstractEmitterVisitor.prototype.visitWrappedNodeExpr = function (ast, ctx) {
             throw new Error('Abstract emitter cannot visit WrappedNodeExpr.');
         };
+        AbstractEmitterVisitor.prototype.visitTypeofExpr = function (expr, ctx) {
+            ctx.print(expr, 'typeof ');
+            expr.expr.visitExpression(this, ctx);
+        };
         AbstractEmitterVisitor.prototype.visitReadVarExpr = function (ast, ctx) {
             var varName = ast.name;
             if (ast.builtin != null) {
@@ -12912,6 +12948,9 @@
                 case exports.BuiltinTypeName.String:
                     typeStr = 'string';
                     break;
+                case exports.BuiltinTypeName.None:
+                    typeStr = 'never';
+                    break;
                 default:
                     throw new Error("Unsupported builtin type " + type.name);
             }
@@ -12919,7 +12958,13 @@
             return null;
         };
         _TsEmitterVisitor.prototype.visitExpressionType = function (ast, ctx) {
+            var _this = this;
             ast.value.visitExpression(this, ctx);
+            if (ast.typeParams !== null) {
+                ctx.print(null, '<');
+                this.visitAllObjects(function (type) { return _this.visitType(type, ctx); }, ast.typeParams, ctx, ',');
+                ctx.print(null, '>');
+            }
             return null;
         };
         _TsEmitterVisitor.prototype.visitArrayType = function (type, ctx) {
@@ -17537,6 +17582,9 @@
                 "EX:" + ast.value.runtime.name;
         };
         KeyVisitor.prototype.visitReadVarExpr = function (node) { return "VAR:" + node.name; };
+        KeyVisitor.prototype.visitTypeofExpr = function (node, context) {
+            return "TYPEOF:" + node.expr.visitExpression(this, context);
+        };
         return KeyVisitor;
     }());
     function invalid(arg) {
@@ -17688,10 +17736,9 @@
         Identifiers.elementEnd = { name: 'ɵe', moduleName: CORE$1 };
         Identifiers.elementProperty = { name: 'ɵp', moduleName: CORE$1 };
         Identifiers.elementAttribute = { name: 'ɵa', moduleName: CORE$1 };
-        Identifiers.elementClass = { name: 'ɵk', moduleName: CORE$1 };
-        Identifiers.elementClassNamed = { name: 'ɵkn', moduleName: CORE$1 };
+        Identifiers.elementClassProp = { name: 'ɵcp', moduleName: CORE$1 };
         Identifiers.elementStyling = { name: 'ɵs', moduleName: CORE$1 };
-        Identifiers.elementStyle = { name: 'ɵsm', moduleName: CORE$1 };
+        Identifiers.elementStylingMap = { name: 'ɵsm', moduleName: CORE$1 };
         Identifiers.elementStyleProp = { name: 'ɵsp', moduleName: CORE$1 };
         Identifiers.elementStylingApply = { name: 'ɵsa', moduleName: CORE$1 };
         Identifiers.containerCreate = { name: 'ɵC', moduleName: CORE$1 };
@@ -17732,6 +17779,7 @@
         Identifiers.injectElementRef = { name: 'ɵinjectElementRef', moduleName: CORE$1 };
         Identifiers.injectTemplateRef = { name: 'ɵinjectTemplateRef', moduleName: CORE$1 };
         Identifiers.injectViewContainerRef = { name: 'ɵinjectViewContainerRef', moduleName: CORE$1 };
+        Identifiers.injectChangeDetectorRef = { name: 'ɵinjectChangeDetectorRef', moduleName: CORE$1 };
         Identifiers.directiveInject = { name: 'ɵdirectiveInject', moduleName: CORE$1 };
         Identifiers.defineComponent = { name: 'ɵdefineComponent', moduleName: CORE$1 };
         Identifiers.ComponentDef = {
@@ -17899,6 +17947,10 @@
          * The dependency is for `ViewContainerRef`.
          */
         R3ResolvedDependencyType[R3ResolvedDependencyType["ViewContainerRef"] = 5] = "ViewContainerRef";
+        /**
+         * The dependency is for `ChangeDetectorRef`.
+         */
+        R3ResolvedDependencyType[R3ResolvedDependencyType["ChangeDetectorRef"] = 6] = "ChangeDetectorRef";
     })(exports.R3ResolvedDependencyType || (exports.R3ResolvedDependencyType = {}));
     /**
      * Construct a factory function expression for the given `R3FactoryMetadata`.
@@ -17931,7 +17983,7 @@
                     token = importExpr(Identifiers.INJECTOR);
                 }
                 // Build up the arguments to the injectFn call.
-                var injectArgs = [dep.token];
+                var injectArgs = [token];
                 // If this dependency is optional or otherwise has non-default flags, then additional
                 // parameters describing how to inject the dependency must be passed to the inject function
                 // that's being used.
@@ -17949,6 +18001,8 @@
                 return importExpr(Identifiers$1.injectTemplateRef).callFn([]);
             case exports.R3ResolvedDependencyType.ViewContainerRef:
                 return importExpr(Identifiers$1.injectViewContainerRef).callFn([]);
+            case exports.R3ResolvedDependencyType.ChangeDetectorRef:
+                return importExpr(Identifiers$1.injectChangeDetectorRef).callFn([]);
             default:
                 return unsupported("Unknown R3ResolvedDependencyType: " + exports.R3ResolvedDependencyType[dep.resolved]);
         }
@@ -18048,6 +18102,16 @@
         }
         throw new Error("Internal error: Unsupported or unknown metadata: " + meta);
     }
+    function typeWithParameters(type, numParams) {
+        var params = null;
+        if (numParams > 0) {
+            params = [];
+            for (var i = 0; i < numParams; i++) {
+                params.push(DYNAMIC_TYPE);
+            }
+        }
+        return expressionType(type, null, params);
+    }
 
     /**
      * @license
@@ -18069,8 +18133,8 @@
                 exports: literalArr(exports),
             })]);
         var type = new ExpressionType(importExpr(Identifiers$1.NgModuleDef, [
-            new ExpressionType(moduleType), new ExpressionType(literalArr(declarations)),
-            new ExpressionType(literalArr(imports)), new ExpressionType(literalArr(exports))
+            new ExpressionType(moduleType), tupleTypeOf(declarations), tupleTypeOf(imports),
+            tupleTypeOf(exports)
         ]));
         var additionalStatements = [];
         return { expression: expression, type: type, additionalStatements: additionalStatements };
@@ -18112,6 +18176,10 @@
         /* getters */ [], 
         /* constructorMethod */ new ClassMethod(null, [], []), 
         /* methods */ []));
+    }
+    function tupleTypeOf(exp) {
+        var types = exp.map(function (type) { return typeofExpr(type); });
+        return exp.length > 0 ? expressionType(literalArr(types)) : NONE_TYPE;
     }
 
     /**
@@ -18735,17 +18803,11 @@
             case 1 /* Attribute */:
                 return Identifiers$1.elementAttribute;
             case 2 /* Class */:
-                return Identifiers$1.elementClassNamed;
+                return Identifiers$1.elementClassProp;
             default:
                 return undefined;
         }
     }
-    // `className` is used below instead of `class` because the interception
-    // code (where this map is used) deals with DOM element property values
-    // (like elm.propName) and not component bindining properties (like [propName]).
-    var SPECIAL_CASED_PROPERTIES_INSTRUCTION_MAP = {
-        'className': Identifiers$1.elementClass
-    };
     var TemplateDefinitionBuilder = /** @class */ (function () {
         function TemplateDefinitionBuilder(constantPool, contextParameter, parentBindingScope, level, contextName, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace) {
             if (level === void 0) { level = 0; }
@@ -18998,32 +19060,59 @@
             var i18nMessages = [];
             var attributes = [];
             var initialStyleDeclarations = [];
+            var initialClassDeclarations = [];
             var styleInputs = [];
+            var classInputs = [];
             var allOtherInputs = [];
             element.inputs.forEach(function (input) {
-                // [attr.style] should not be treated as a styling-based
-                // binding since it is intended to write directly to the attr
-                // and therefore will skip all style resolution that is present
-                // with style="", [style]="" and [style.prop]="" assignments
-                if (input.name == 'style' && input.type == 0 /* Property */) {
-                    // this should always go first in the compilation (for [style])
-                    styleInputs.splice(0, 0, input);
-                }
-                else if (input.type == 3 /* Style */) {
-                    styleInputs.push(input);
-                }
-                else {
-                    allOtherInputs.push(input);
+                switch (input.type) {
+                    // [attr.style] or [attr.class] should not be treated as styling-based
+                    // bindings since they are intended to be written directly to the attr
+                    // and therefore will skip all style/class resolution that is present
+                    // with style="", [style]="" and [style.prop]="", class="",
+                    // [class.prop]="". [class]="" assignments
+                    case 0 /* Property */:
+                        if (input.name == 'style') {
+                            // this should always go first in the compilation (for [style])
+                            styleInputs.splice(0, 0, input);
+                        }
+                        else if (isClassBinding(input)) {
+                            // this should always go first in the compilation (for [class])
+                            classInputs.splice(0, 0, input);
+                        }
+                        else {
+                            allOtherInputs.push(input);
+                        }
+                        break;
+                    case 3 /* Style */:
+                        styleInputs.push(input);
+                        break;
+                    case 2 /* Class */:
+                        classInputs.push(input);
+                        break;
+                    default:
+                        allOtherInputs.push(input);
+                        break;
                 }
             });
             var currStyleIndex = 0;
+            var currClassIndex = 0;
             var staticStylesMap = null;
+            var staticClassesMap = null;
             var stylesIndexMap = {};
+            var classesIndexMap = {};
             Object.getOwnPropertyNames(outputAttrs).forEach(function (name) {
                 var value = outputAttrs[name];
                 if (name == 'style') {
                     staticStylesMap = parseStyle(value);
                     Object.keys(staticStylesMap).forEach(function (prop) { stylesIndexMap[prop] = currStyleIndex++; });
+                }
+                else if (name == 'class') {
+                    staticClassesMap = {};
+                    value.split(/\s+/g).forEach(function (className) {
+                        classesIndexMap[className] = currClassIndex++;
+                        staticClassesMap[className] = true;
+                    });
                 }
                 else {
                     attributes.push(literal(name));
@@ -19044,19 +19133,38 @@
                     stylesIndexMap[input.name] = currStyleIndex++;
                 }
             }
+            for (var i = 0; i < classInputs.length; i++) {
+                var input = classInputs[i];
+                var isMapBasedClassBinding = i === 0 && isClassBinding(input);
+                if (!isMapBasedClassBinding && !stylesIndexMap.hasOwnProperty(input.name)) {
+                    classesIndexMap[input.name] = currClassIndex++;
+                }
+            }
             // this will build the instructions so that they fall into the following syntax
             // => [prop1, prop2, prop3, 0, prop1, value1, prop2, value2]
             Object.keys(stylesIndexMap).forEach(function (prop) {
                 initialStyleDeclarations.push(literal(prop));
             });
             if (staticStylesMap) {
-                initialStyleDeclarations.push(literal(0 /* INITIAL_STYLES */));
+                initialStyleDeclarations.push(literal(1 /* VALUES_MODE */));
                 Object.keys(staticStylesMap).forEach(function (prop) {
                     initialStyleDeclarations.push(literal(prop));
                     var value = staticStylesMap[prop];
                     initialStyleDeclarations.push(literal(value));
                 });
             }
+            Object.keys(classesIndexMap).forEach(function (prop) {
+                initialClassDeclarations.push(literal(prop));
+            });
+            if (staticClassesMap) {
+                initialClassDeclarations.push(literal(1 /* VALUES_MODE */));
+                Object.keys(staticClassesMap).forEach(function (className) {
+                    initialClassDeclarations.push(literal(className));
+                    initialClassDeclarations.push(literal(true));
+                });
+            }
+            var hasStylingInstructions = initialStyleDeclarations.length || styleInputs.length ||
+                initialClassDeclarations.length || classInputs.length;
             var attrArg = attributes.length > 0 ?
                 this.constantPool.getConstLiteral(literalArr(attributes), true) :
                 TYPED_NULL_EXPR;
@@ -19090,8 +19198,7 @@
                 this.addNamespaceInstruction(currentNamespace, element);
             }
             var implicit = variable(CONTEXT_NAME);
-            var elementStyleIndex = (initialStyleDeclarations.length || styleInputs.length) ? this.allocateDataSlot() : 0;
-            var createSelfClosingInstruction = elementStyleIndex === 0 && element.children.length === 0 && element.outputs.length === 0;
+            var createSelfClosingInstruction = !hasStylingInstructions && element.children.length === 0 && element.outputs.length === 0;
             if (createSelfClosingInstruction) {
                 this.instruction.apply(this, __spread([this._creationCode, element.sourceSpan, Identifiers$1.element], trimTrailingNulls(parameters)));
             }
@@ -19102,14 +19209,25 @@
                 }
                 this.instruction.apply(this, __spread([this._creationCode, element.sourceSpan, Identifiers$1.elementStart], trimTrailingNulls(parameters)));
                 // initial styling for static style="..." attributes
-                if (elementStyleIndex > 0) {
-                    var paramsList = [literal(elementStyleIndex)];
+                if (hasStylingInstructions) {
+                    var paramsList = [];
                     if (initialStyleDeclarations.length) {
-                        // the template compiler handles initial styling (e.g. style="foo") values
+                        // the template compiler handles initial style (e.g. style="foo") values
                         // in a special command called `elementStyle` so that the initial styles
                         // can be processed during runtime. These initial styles values are bound to
                         // a constant because the inital style values do not change (since they're static).
                         paramsList.push(this.constantPool.getConstLiteral(literalArr(initialStyleDeclarations), true));
+                    }
+                    else if (initialClassDeclarations.length) {
+                        // no point in having an extra `null` value unless there are follow-up params
+                        paramsList.push(NULL_EXPR);
+                    }
+                    if (initialClassDeclarations.length) {
+                        // the template compiler handles initial class styling (e.g. class="foo") values
+                        // in a special command called `elementClass` so that the initial class
+                        // can be processed during runtime. These initial class values are bound to
+                        // a constant because the inital class values do not change (since they're static).
+                        paramsList.push(this.constantPool.getConstLiteral(literalArr(initialClassDeclarations), true));
                     }
                     this._creationCode.push(importExpr(Identifiers$1.elementStyling).callFn(paramsList).toStmt());
                 }
@@ -19127,22 +19245,50 @@
                     _this.instruction(_this._creationCode, outputAst.sourceSpan, Identifiers$1.listener, literal(outputAst.name), handler);
                 });
             }
-            if (styleInputs.length && elementStyleIndex > 0) {
-                var indexLiteral_1 = literal(elementStyleIndex);
-                styleInputs.forEach(function (input, i) {
-                    var isMapBasedStyleBinding = i == 0 && input.name == 'style';
-                    var convertedBinding = _this.convertPropertyBinding(implicit, input.value, true);
-                    if (isMapBasedStyleBinding) {
-                        _this.instruction(_this._bindingCode, input.sourceSpan, Identifiers$1.elementStyle, indexLiteral_1, convertedBinding);
+            if ((styleInputs.length || classInputs.length) && hasStylingInstructions) {
+                var indexLiteral = literal(elementIndex);
+                var firstStyle = styleInputs[0];
+                var mapBasedStyleInput = firstStyle && firstStyle.name == 'style' ? firstStyle : null;
+                var firstClass = classInputs[0];
+                var mapBasedClassInput = firstClass && isClassBinding(firstClass) ? firstClass : null;
+                var stylingInput = mapBasedStyleInput || mapBasedClassInput;
+                if (stylingInput) {
+                    var params = [];
+                    if (mapBasedStyleInput) {
+                        params.push(this.convertPropertyBinding(implicit, mapBasedStyleInput.value, true));
                     }
-                    else {
+                    else if (mapBasedClassInput) {
+                        params.push(NULL_EXPR);
+                    }
+                    if (mapBasedClassInput) {
+                        params.push(this.convertPropertyBinding(implicit, mapBasedClassInput.value, true));
+                    }
+                    this.instruction.apply(this, __spread([this._bindingCode, stylingInput.sourceSpan, Identifiers$1.elementStylingMap, indexLiteral], params));
+                }
+                var lastInputCommand = null;
+                if (styleInputs.length) {
+                    var i = mapBasedStyleInput ? 1 : 0;
+                    for (i; i < styleInputs.length; i++) {
+                        var input = styleInputs[i];
+                        var convertedBinding = this.convertPropertyBinding(implicit, input.value, true);
                         var key = input.name;
                         var styleIndex = stylesIndexMap[key];
-                        _this.instruction(_this._bindingCode, input.sourceSpan, Identifiers$1.elementStyleProp, indexLiteral_1, literal(styleIndex), convertedBinding);
+                        this.instruction(this._bindingCode, input.sourceSpan, Identifiers$1.elementStyleProp, indexLiteral, literal(styleIndex), convertedBinding);
                     }
-                });
-                var spanEnd = styleInputs[styleInputs.length - 1].sourceSpan;
-                this.instruction(this._bindingCode, spanEnd, Identifiers$1.elementStylingApply, indexLiteral_1);
+                    lastInputCommand = styleInputs[styleInputs.length - 1];
+                }
+                if (classInputs.length) {
+                    var i = mapBasedClassInput ? 1 : 0;
+                    for (i; i < classInputs.length; i++) {
+                        var input = classInputs[i];
+                        var convertedBinding = this.convertPropertyBinding(implicit, input.value, true);
+                        var key = input.name;
+                        var classIndex = classesIndexMap[key];
+                        this.instruction(this._bindingCode, input.sourceSpan, Identifiers$1.elementClassProp, indexLiteral, literal(classIndex), convertedBinding);
+                    }
+                    lastInputCommand = classInputs[classInputs.length - 1];
+                }
+                this.instruction(this._bindingCode, lastInputCommand.sourceSpan, Identifiers$1.elementStylingApply, indexLiteral);
             }
             // Generate element input bindings
             allOtherInputs.forEach(function (input) {
@@ -19151,15 +19297,6 @@
                     return;
                 }
                 var convertedBinding = _this.convertPropertyBinding(implicit, input.value);
-                var specialInstruction = SPECIAL_CASED_PROPERTIES_INSTRUCTION_MAP[input.name];
-                if (specialInstruction) {
-                    // special case for [style] and [class] bindings since they are not handled as
-                    // standard properties within this implementation. Instead they are
-                    // handed off to special cased instruction handlers which will then
-                    // delegate them as animation sequences (or input bindings for dirs/cmps)
-                    _this.instruction(_this._bindingCode, input.sourceSpan, specialInstruction, literal(elementIndex), convertedBinding);
-                    return;
-                }
                 var instruction = mapBindingToInstruction(input.type);
                 if (instruction) {
                     // TODO(chuckj): runtime: security context?
@@ -19535,6 +19672,9 @@
     function makeBindingParser() {
         return new BindingParser(new Parser(new Lexer()), DEFAULT_INTERPOLATION_CONFIG, new DomElementSchemaRegistry(), null, []);
     }
+    function isClassBinding(input) {
+        return input.name == 'className' || input.name == 'class';
+    }
 
     /**
      * @license
@@ -19589,7 +19729,10 @@
         // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
         // string literal, which must be on one line.
         var selectorForType = (meta.selector || '').replace(/\n/g, '');
-        var type = new ExpressionType(importExpr(Identifiers$1.DirectiveDef, [new ExpressionType(meta.type), new ExpressionType(literal(selectorForType))]));
+        var type = new ExpressionType(importExpr(Identifiers$1.DirectiveDef, [
+            typeWithParameters(meta.type, meta.typeArgumentCount),
+            new ExpressionType(literal(selectorForType))
+        ]));
         return { expression: expression, type: type };
     }
     /**
@@ -19638,7 +19781,10 @@
         // string literal, which must be on one line.
         var selectorForType = (meta.selector || '').replace(/\n/g, '');
         var expression = importExpr(Identifiers$1.defineComponent).callFn([definitionMap.toLiteralMap()]);
-        var type = new ExpressionType(importExpr(Identifiers$1.ComponentDef, [new ExpressionType(meta.type), new ExpressionType(literal(selectorForType))]));
+        var type = new ExpressionType(importExpr(Identifiers$1.ComponentDef, [
+            typeWithParameters(meta.type, meta.typeArgumentCount),
+            new ExpressionType(literal(selectorForType))
+        ]));
         return { expression: expression, type: type };
     }
     /**
@@ -19689,6 +19835,7 @@
         return {
             name: name,
             type: outputCtx.importExpr(directive.type.reference),
+            typeArgumentCount: 0,
             typeSourceSpan: typeSourceSpan(directive.isComponent ? 'Component' : 'Directive', directive.type),
             selector: directive.selector,
             deps: dependenciesFromGlobalMetadata(directive.type, outputCtx, reflector),
@@ -23053,6 +23200,9 @@
         StatementInterpreter.prototype.visitWrappedNodeExpr = function (ast, ctx) {
             throw new Error('Cannot interpret a WrappedNodeExpr.');
         };
+        StatementInterpreter.prototype.visitTypeofExpr = function (ast, ctx) {
+            throw new Error('Cannot interpret a TypeofExpr');
+        };
         StatementInterpreter.prototype.visitReadVarExpr = function (ast, ctx) {
             var varName = ast.name;
             if (ast.builtin != null) {
@@ -24484,6 +24634,7 @@
     exports.WritePropExpr = WritePropExpr;
     exports.WriteVarExpr = WriteVarExpr;
     exports.Statement = Statement;
+    exports.TypeofExpr = TypeofExpr;
     exports.collectExternalReferences = collectExternalReferences;
     exports.EmitterVisitorContext = EmitterVisitorContext;
     exports.ViewCompiler = ViewCompiler;

@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-beta.3+142.sha-082c994
+ * @license Angular v6.1.0-rc.3+70.sha-8a7b0e9
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('6.1.0-beta.3+142.sha-082c994');
+const VERSION = new Version('6.1.0-rc.3+70.sha-8a7b0e9');
 
 /**
  * @license
@@ -7894,7 +7894,7 @@ Identifiers.inject = { name: 'inject', moduleName: CORE };
 Identifiers.INJECTOR = { name: 'INJECTOR', moduleName: CORE };
 Identifiers.Injector = { name: 'Injector', moduleName: CORE };
 Identifiers.defineInjectable = { name: 'defineInjectable', moduleName: CORE };
-Identifiers.InjectableDef = { name: 'InjectableDef', moduleName: CORE };
+Identifiers.InjectableDef = { name: 'ɵInjectableDef', moduleName: CORE };
 Identifiers.ViewEncapsulation = {
     name: 'ViewEncapsulation',
     moduleName: CORE,
@@ -7983,6 +7983,7 @@ var BuiltinTypeName;
     BuiltinTypeName[BuiltinTypeName["Number"] = 4] = "Number";
     BuiltinTypeName[BuiltinTypeName["Function"] = 5] = "Function";
     BuiltinTypeName[BuiltinTypeName["Inferred"] = 6] = "Inferred";
+    BuiltinTypeName[BuiltinTypeName["None"] = 7] = "None";
 })(BuiltinTypeName || (BuiltinTypeName = {}));
 class BuiltinType extends Type$1 {
     constructor(name, modifiers = null) {
@@ -7994,9 +7995,10 @@ class BuiltinType extends Type$1 {
     }
 }
 class ExpressionType extends Type$1 {
-    constructor(value, modifiers = null) {
+    constructor(value, modifiers = null, typeParams = null) {
         super(modifiers);
         this.value = value;
+        this.typeParams = typeParams;
     }
     visitType(visitor, context) {
         return visitor.visitExpressionType(this, context);
@@ -8025,6 +8027,7 @@ const INT_TYPE = new BuiltinType(BuiltinTypeName.Int);
 const NUMBER_TYPE = new BuiltinType(BuiltinTypeName.Number);
 const STRING_TYPE = new BuiltinType(BuiltinTypeName.String);
 const FUNCTION_TYPE = new BuiltinType(BuiltinTypeName.Function);
+const NONE_TYPE = new BuiltinType(BuiltinTypeName.None);
 ///// Expressions
 var BinaryOperator;
 (function (BinaryOperator) {
@@ -8176,6 +8179,19 @@ class ReadVarExpr extends Expression {
         }
         return new WriteVarExpr(this.name, value, null, this.sourceSpan);
     }
+}
+class TypeofExpr extends Expression {
+    constructor(expr, type, sourceSpan) {
+        super(type, sourceSpan);
+        this.expr = expr;
+    }
+    visitExpression(visitor, context) {
+        return visitor.visitTypeofExpr(this, context);
+    }
+    isEquivalent(e) {
+        return e instanceof TypeofExpr && e.expr.isEquivalent(this.expr);
+    }
+    isConstant() { return this.expr.isConstant(); }
 }
 class WrappedNodeExpr extends Expression {
     constructor(node, type, sourceSpan) {
@@ -8730,6 +8746,9 @@ class AstTransformer$1 {
     visitWrappedNodeExpr(ast, context) {
         return this.transformExpr(ast, context);
     }
+    visitTypeofExpr(expr, context) {
+        return this.transformExpr(new TypeofExpr(expr.expr.visitExpression(this, context), expr.type, expr.sourceSpan), context);
+    }
     visitWriteVarExpr(expr, context) {
         return this.transformExpr(new WriteVarExpr(expr.name, expr.value.visitExpression(this, context), expr.type, expr.sourceSpan), context);
     }
@@ -8842,11 +8861,15 @@ class RecursiveAstVisitor$1 {
     visitBuiltinType(type, context) { return this.visitType(type, context); }
     visitExpressionType(type, context) {
         type.value.visitExpression(this, context);
+        if (type.typeParams !== null) {
+            type.typeParams.forEach(param => this.visitType(param, context));
+        }
         return this.visitType(type, context);
     }
     visitArrayType(type, context) { return this.visitType(type, context); }
     visitMapType(type, context) { return this.visitType(type, context); }
     visitWrappedNodeExpr(ast, context) { return ast; }
+    visitTypeofExpr(ast, context) { return this.visitExpression(ast, context); }
     visitReadVarExpr(ast, context) {
         return this.visitExpression(ast, context);
     }
@@ -9084,8 +9107,11 @@ function importExpr(id, typeParams = null, sourceSpan) {
 function importType(id, typeParams = null, typeModifiers = null) {
     return id != null ? expressionType(importExpr(id, typeParams, null), typeModifiers) : null;
 }
-function expressionType(expr, typeModifiers = null) {
-    return new ExpressionType(expr, typeModifiers);
+function expressionType(expr, typeModifiers = null, typeParams = null) {
+    return new ExpressionType(expr, typeModifiers, typeParams);
+}
+function typeofExpr(expr) {
+    return new TypeofExpr(expr);
 }
 function literalArr(values, type, sourceSpan) {
     return new LiteralArrayExpr(values, type, sourceSpan);
@@ -11559,6 +11585,10 @@ class AbstractEmitterVisitor {
     visitWrappedNodeExpr(ast, ctx) {
         throw new Error('Abstract emitter cannot visit WrappedNodeExpr.');
     }
+    visitTypeofExpr(expr, ctx) {
+        ctx.print(expr, 'typeof ');
+        expr.expr.visitExpression(this, ctx);
+    }
     visitReadVarExpr(ast, ctx) {
         let varName = ast.name;
         if (ast.builtin != null) {
@@ -12084,6 +12114,9 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
             case BuiltinTypeName.String:
                 typeStr = 'string';
                 break;
+            case BuiltinTypeName.None:
+                typeStr = 'never';
+                break;
             default:
                 throw new Error(`Unsupported builtin type ${type.name}`);
         }
@@ -12092,6 +12125,11 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
     }
     visitExpressionType(ast, ctx) {
         ast.value.visitExpression(this, ctx);
+        if (ast.typeParams !== null) {
+            ctx.print(null, '<');
+            this.visitAllObjects(type => this.visitType(type, ctx), ast.typeParams, ctx, ',');
+            ctx.print(null, '>');
+        }
         return null;
     }
     visitArrayType(type, ctx) {
@@ -16488,6 +16526,9 @@ class KeyVisitor {
             `EX:${ast.value.runtime.name}`;
     }
     visitReadVarExpr(node) { return `VAR:${node.name}`; }
+    visitTypeofExpr(node, context) {
+        return `TYPEOF:${node.expr.visitExpression(this, context)}`;
+    }
 }
 function invalid(arg) {
     throw new Error(`Invalid state: Visitor ${this.constructor.name} doesn't handle ${arg.constructor.name}`);
@@ -16626,10 +16667,9 @@ Identifiers$1.elementStart = { name: 'ɵE', moduleName: CORE$1 };
 Identifiers$1.elementEnd = { name: 'ɵe', moduleName: CORE$1 };
 Identifiers$1.elementProperty = { name: 'ɵp', moduleName: CORE$1 };
 Identifiers$1.elementAttribute = { name: 'ɵa', moduleName: CORE$1 };
-Identifiers$1.elementClass = { name: 'ɵk', moduleName: CORE$1 };
-Identifiers$1.elementClassNamed = { name: 'ɵkn', moduleName: CORE$1 };
+Identifiers$1.elementClassProp = { name: 'ɵcp', moduleName: CORE$1 };
 Identifiers$1.elementStyling = { name: 'ɵs', moduleName: CORE$1 };
-Identifiers$1.elementStyle = { name: 'ɵsm', moduleName: CORE$1 };
+Identifiers$1.elementStylingMap = { name: 'ɵsm', moduleName: CORE$1 };
 Identifiers$1.elementStyleProp = { name: 'ɵsp', moduleName: CORE$1 };
 Identifiers$1.elementStylingApply = { name: 'ɵsa', moduleName: CORE$1 };
 Identifiers$1.containerCreate = { name: 'ɵC', moduleName: CORE$1 };
@@ -16670,6 +16710,7 @@ Identifiers$1.injectAttribute = { name: 'ɵinjectAttribute', moduleName: CORE$1 
 Identifiers$1.injectElementRef = { name: 'ɵinjectElementRef', moduleName: CORE$1 };
 Identifiers$1.injectTemplateRef = { name: 'ɵinjectTemplateRef', moduleName: CORE$1 };
 Identifiers$1.injectViewContainerRef = { name: 'ɵinjectViewContainerRef', moduleName: CORE$1 };
+Identifiers$1.injectChangeDetectorRef = { name: 'ɵinjectChangeDetectorRef', moduleName: CORE$1 };
 Identifiers$1.directiveInject = { name: 'ɵdirectiveInject', moduleName: CORE$1 };
 Identifiers$1.defineComponent = { name: 'ɵdefineComponent', moduleName: CORE$1 };
 Identifiers$1.ComponentDef = {
@@ -16842,6 +16883,10 @@ var R3ResolvedDependencyType;
      * The dependency is for `ViewContainerRef`.
      */
     R3ResolvedDependencyType[R3ResolvedDependencyType["ViewContainerRef"] = 5] = "ViewContainerRef";
+    /**
+     * The dependency is for `ChangeDetectorRef`.
+     */
+    R3ResolvedDependencyType[R3ResolvedDependencyType["ChangeDetectorRef"] = 6] = "ChangeDetectorRef";
 })(R3ResolvedDependencyType || (R3ResolvedDependencyType = {}));
 /**
  * Construct a factory function expression for the given `R3FactoryMetadata`.
@@ -16874,7 +16919,7 @@ function compileInjectDependency(dep, injectFn) {
                 token = importExpr(Identifiers.INJECTOR);
             }
             // Build up the arguments to the injectFn call.
-            const injectArgs = [dep.token];
+            const injectArgs = [token];
             // If this dependency is optional or otherwise has non-default flags, then additional
             // parameters describing how to inject the dependency must be passed to the inject function
             // that's being used.
@@ -16892,6 +16937,8 @@ function compileInjectDependency(dep, injectFn) {
             return importExpr(Identifiers$1.injectTemplateRef).callFn([]);
         case R3ResolvedDependencyType.ViewContainerRef:
             return importExpr(Identifiers$1.injectViewContainerRef).callFn([]);
+        case R3ResolvedDependencyType.ChangeDetectorRef:
+            return importExpr(Identifiers$1.injectChangeDetectorRef).callFn([]);
         default:
             return unsupported(`Unknown R3ResolvedDependencyType: ${R3ResolvedDependencyType[dep.resolved]}`);
     }
@@ -16980,6 +17027,16 @@ function convertMetaToOutput(meta, ctx) {
     }
     throw new Error(`Internal error: Unsupported or unknown metadata: ${meta}`);
 }
+function typeWithParameters(type, numParams) {
+    let params = null;
+    if (numParams > 0) {
+        params = [];
+        for (let i = 0; i < numParams; i++) {
+            params.push(DYNAMIC_TYPE);
+        }
+    }
+    return expressionType(type, null, params);
+}
 
 /**
  * @license
@@ -17001,8 +17058,8 @@ function compileNgModule(meta) {
             exports: literalArr(exports),
         })]);
     const type = new ExpressionType(importExpr(Identifiers$1.NgModuleDef, [
-        new ExpressionType(moduleType), new ExpressionType(literalArr(declarations)),
-        new ExpressionType(literalArr(imports)), new ExpressionType(literalArr(exports))
+        new ExpressionType(moduleType), tupleTypeOf(declarations), tupleTypeOf(imports),
+        tupleTypeOf(exports)
     ]));
     const additionalStatements = [];
     return { expression, type, additionalStatements };
@@ -17044,6 +17101,10 @@ function compileNgModuleFromRender2(ctx, ngModule, injectableCompiler) {
     /* getters */ [], 
     /* constructorMethod */ new ClassMethod(null, [], []), 
     /* methods */ []));
+}
+function tupleTypeOf(exp) {
+    const types = exp.map(type => typeofExpr(type));
+    return exp.length > 0 ? expressionType(literalArr(types)) : NONE_TYPE;
 }
 
 /**
@@ -17616,17 +17677,11 @@ function mapBindingToInstruction(type) {
         case 1 /* Attribute */:
             return Identifiers$1.elementAttribute;
         case 2 /* Class */:
-            return Identifiers$1.elementClassNamed;
+            return Identifiers$1.elementClassProp;
         default:
             return undefined;
     }
 }
-// `className` is used below instead of `class` because the interception
-// code (where this map is used) deals with DOM element property values
-// (like elm.propName) and not component bindining properties (like [propName]).
-const SPECIAL_CASED_PROPERTIES_INSTRUCTION_MAP = {
-    'className': Identifiers$1.elementClass
-};
 class TemplateDefinitionBuilder {
     constructor(constantPool, contextParameter, parentBindingScope, level = 0, contextName, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace) {
         this.constantPool = constantPool;
@@ -17843,32 +17898,59 @@ class TemplateDefinitionBuilder {
         const i18nMessages = [];
         const attributes = [];
         const initialStyleDeclarations = [];
+        const initialClassDeclarations = [];
         const styleInputs = [];
+        const classInputs = [];
         const allOtherInputs = [];
         element.inputs.forEach((input) => {
-            // [attr.style] should not be treated as a styling-based
-            // binding since it is intended to write directly to the attr
-            // and therefore will skip all style resolution that is present
-            // with style="", [style]="" and [style.prop]="" assignments
-            if (input.name == 'style' && input.type == 0 /* Property */) {
-                // this should always go first in the compilation (for [style])
-                styleInputs.splice(0, 0, input);
-            }
-            else if (input.type == 3 /* Style */) {
-                styleInputs.push(input);
-            }
-            else {
-                allOtherInputs.push(input);
+            switch (input.type) {
+                // [attr.style] or [attr.class] should not be treated as styling-based
+                // bindings since they are intended to be written directly to the attr
+                // and therefore will skip all style/class resolution that is present
+                // with style="", [style]="" and [style.prop]="", class="",
+                // [class.prop]="". [class]="" assignments
+                case 0 /* Property */:
+                    if (input.name == 'style') {
+                        // this should always go first in the compilation (for [style])
+                        styleInputs.splice(0, 0, input);
+                    }
+                    else if (isClassBinding(input)) {
+                        // this should always go first in the compilation (for [class])
+                        classInputs.splice(0, 0, input);
+                    }
+                    else {
+                        allOtherInputs.push(input);
+                    }
+                    break;
+                case 3 /* Style */:
+                    styleInputs.push(input);
+                    break;
+                case 2 /* Class */:
+                    classInputs.push(input);
+                    break;
+                default:
+                    allOtherInputs.push(input);
+                    break;
             }
         });
         let currStyleIndex = 0;
+        let currClassIndex = 0;
         let staticStylesMap = null;
+        let staticClassesMap = null;
         const stylesIndexMap = {};
+        const classesIndexMap = {};
         Object.getOwnPropertyNames(outputAttrs).forEach(name => {
             const value = outputAttrs[name];
             if (name == 'style') {
                 staticStylesMap = parseStyle(value);
                 Object.keys(staticStylesMap).forEach(prop => { stylesIndexMap[prop] = currStyleIndex++; });
+            }
+            else if (name == 'class') {
+                staticClassesMap = {};
+                value.split(/\s+/g).forEach(className => {
+                    classesIndexMap[className] = currClassIndex++;
+                    staticClassesMap[className] = true;
+                });
             }
             else {
                 attributes.push(literal(name));
@@ -17889,19 +17971,38 @@ class TemplateDefinitionBuilder {
                 stylesIndexMap[input.name] = currStyleIndex++;
             }
         }
+        for (let i = 0; i < classInputs.length; i++) {
+            const input = classInputs[i];
+            const isMapBasedClassBinding = i === 0 && isClassBinding(input);
+            if (!isMapBasedClassBinding && !stylesIndexMap.hasOwnProperty(input.name)) {
+                classesIndexMap[input.name] = currClassIndex++;
+            }
+        }
         // this will build the instructions so that they fall into the following syntax
         // => [prop1, prop2, prop3, 0, prop1, value1, prop2, value2]
         Object.keys(stylesIndexMap).forEach(prop => {
             initialStyleDeclarations.push(literal(prop));
         });
         if (staticStylesMap) {
-            initialStyleDeclarations.push(literal(0 /* INITIAL_STYLES */));
+            initialStyleDeclarations.push(literal(1 /* VALUES_MODE */));
             Object.keys(staticStylesMap).forEach(prop => {
                 initialStyleDeclarations.push(literal(prop));
                 const value = staticStylesMap[prop];
                 initialStyleDeclarations.push(literal(value));
             });
         }
+        Object.keys(classesIndexMap).forEach(prop => {
+            initialClassDeclarations.push(literal(prop));
+        });
+        if (staticClassesMap) {
+            initialClassDeclarations.push(literal(1 /* VALUES_MODE */));
+            Object.keys(staticClassesMap).forEach(className => {
+                initialClassDeclarations.push(literal(className));
+                initialClassDeclarations.push(literal(true));
+            });
+        }
+        const hasStylingInstructions = initialStyleDeclarations.length || styleInputs.length ||
+            initialClassDeclarations.length || classInputs.length;
         const attrArg = attributes.length > 0 ?
             this.constantPool.getConstLiteral(literalArr(attributes), true) :
             TYPED_NULL_EXPR;
@@ -17935,8 +18036,7 @@ class TemplateDefinitionBuilder {
             this.addNamespaceInstruction(currentNamespace, element);
         }
         const implicit = variable(CONTEXT_NAME);
-        const elementStyleIndex = (initialStyleDeclarations.length || styleInputs.length) ? this.allocateDataSlot() : 0;
-        const createSelfClosingInstruction = elementStyleIndex === 0 && element.children.length === 0 && element.outputs.length === 0;
+        const createSelfClosingInstruction = !hasStylingInstructions && element.children.length === 0 && element.outputs.length === 0;
         if (createSelfClosingInstruction) {
             this.instruction(this._creationCode, element.sourceSpan, Identifiers$1.element, ...trimTrailingNulls(parameters));
         }
@@ -17947,14 +18047,25 @@ class TemplateDefinitionBuilder {
             }
             this.instruction(this._creationCode, element.sourceSpan, Identifiers$1.elementStart, ...trimTrailingNulls(parameters));
             // initial styling for static style="..." attributes
-            if (elementStyleIndex > 0) {
-                let paramsList = [literal(elementStyleIndex)];
+            if (hasStylingInstructions) {
+                const paramsList = [];
                 if (initialStyleDeclarations.length) {
-                    // the template compiler handles initial styling (e.g. style="foo") values
+                    // the template compiler handles initial style (e.g. style="foo") values
                     // in a special command called `elementStyle` so that the initial styles
                     // can be processed during runtime. These initial styles values are bound to
                     // a constant because the inital style values do not change (since they're static).
                     paramsList.push(this.constantPool.getConstLiteral(literalArr(initialStyleDeclarations), true));
+                }
+                else if (initialClassDeclarations.length) {
+                    // no point in having an extra `null` value unless there are follow-up params
+                    paramsList.push(NULL_EXPR);
+                }
+                if (initialClassDeclarations.length) {
+                    // the template compiler handles initial class styling (e.g. class="foo") values
+                    // in a special command called `elementClass` so that the initial class
+                    // can be processed during runtime. These initial class values are bound to
+                    // a constant because the inital class values do not change (since they're static).
+                    paramsList.push(this.constantPool.getConstLiteral(literalArr(initialClassDeclarations), true));
                 }
                 this._creationCode.push(importExpr(Identifiers$1.elementStyling).callFn(paramsList).toStmt());
             }
@@ -17972,22 +18083,50 @@ class TemplateDefinitionBuilder {
                 this.instruction(this._creationCode, outputAst.sourceSpan, Identifiers$1.listener, literal(outputAst.name), handler);
             });
         }
-        if (styleInputs.length && elementStyleIndex > 0) {
-            const indexLiteral = literal(elementStyleIndex);
-            styleInputs.forEach((input, i) => {
-                const isMapBasedStyleBinding = i == 0 && input.name == 'style';
-                const convertedBinding = this.convertPropertyBinding(implicit, input.value, true);
-                if (isMapBasedStyleBinding) {
-                    this.instruction(this._bindingCode, input.sourceSpan, Identifiers$1.elementStyle, indexLiteral, convertedBinding);
+        if ((styleInputs.length || classInputs.length) && hasStylingInstructions) {
+            const indexLiteral = literal(elementIndex);
+            const firstStyle = styleInputs[0];
+            const mapBasedStyleInput = firstStyle && firstStyle.name == 'style' ? firstStyle : null;
+            const firstClass = classInputs[0];
+            const mapBasedClassInput = firstClass && isClassBinding(firstClass) ? firstClass : null;
+            const stylingInput = mapBasedStyleInput || mapBasedClassInput;
+            if (stylingInput) {
+                const params = [];
+                if (mapBasedStyleInput) {
+                    params.push(this.convertPropertyBinding(implicit, mapBasedStyleInput.value, true));
                 }
-                else {
+                else if (mapBasedClassInput) {
+                    params.push(NULL_EXPR);
+                }
+                if (mapBasedClassInput) {
+                    params.push(this.convertPropertyBinding(implicit, mapBasedClassInput.value, true));
+                }
+                this.instruction(this._bindingCode, stylingInput.sourceSpan, Identifiers$1.elementStylingMap, indexLiteral, ...params);
+            }
+            let lastInputCommand = null;
+            if (styleInputs.length) {
+                let i = mapBasedStyleInput ? 1 : 0;
+                for (i; i < styleInputs.length; i++) {
+                    const input = styleInputs[i];
+                    const convertedBinding = this.convertPropertyBinding(implicit, input.value, true);
                     const key = input.name;
-                    let styleIndex = stylesIndexMap[key];
+                    const styleIndex = stylesIndexMap[key];
                     this.instruction(this._bindingCode, input.sourceSpan, Identifiers$1.elementStyleProp, indexLiteral, literal(styleIndex), convertedBinding);
                 }
-            });
-            const spanEnd = styleInputs[styleInputs.length - 1].sourceSpan;
-            this.instruction(this._bindingCode, spanEnd, Identifiers$1.elementStylingApply, indexLiteral);
+                lastInputCommand = styleInputs[styleInputs.length - 1];
+            }
+            if (classInputs.length) {
+                let i = mapBasedClassInput ? 1 : 0;
+                for (i; i < classInputs.length; i++) {
+                    const input = classInputs[i];
+                    const convertedBinding = this.convertPropertyBinding(implicit, input.value, true);
+                    const key = input.name;
+                    const classIndex = classesIndexMap[key];
+                    this.instruction(this._bindingCode, input.sourceSpan, Identifiers$1.elementClassProp, indexLiteral, literal(classIndex), convertedBinding);
+                }
+                lastInputCommand = classInputs[classInputs.length - 1];
+            }
+            this.instruction(this._bindingCode, lastInputCommand.sourceSpan, Identifiers$1.elementStylingApply, indexLiteral);
         }
         // Generate element input bindings
         allOtherInputs.forEach((input) => {
@@ -17996,15 +18135,6 @@ class TemplateDefinitionBuilder {
                 return;
             }
             const convertedBinding = this.convertPropertyBinding(implicit, input.value);
-            const specialInstruction = SPECIAL_CASED_PROPERTIES_INSTRUCTION_MAP[input.name];
-            if (specialInstruction) {
-                // special case for [style] and [class] bindings since they are not handled as
-                // standard properties within this implementation. Instead they are
-                // handed off to special cased instruction handlers which will then
-                // delegate them as animation sequences (or input bindings for dirs/cmps)
-                this.instruction(this._bindingCode, input.sourceSpan, specialInstruction, literal(elementIndex), convertedBinding);
-                return;
-            }
             const instruction = mapBindingToInstruction(input.type);
             if (instruction) {
                 // TODO(chuckj): runtime: security context?
@@ -18365,6 +18495,9 @@ function parseTemplate(template, templateUrl, options = {}) {
 function makeBindingParser() {
     return new BindingParser(new Parser(new Lexer()), DEFAULT_INTERPOLATION_CONFIG, new DomElementSchemaRegistry(), null, []);
 }
+function isClassBinding(input) {
+    return input.name == 'className' || input.name == 'class';
+}
 
 /**
  * @license
@@ -18419,7 +18552,10 @@ function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
     // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
     // string literal, which must be on one line.
     const selectorForType = (meta.selector || '').replace(/\n/g, '');
-    const type = new ExpressionType(importExpr(Identifiers$1.DirectiveDef, [new ExpressionType(meta.type), new ExpressionType(literal(selectorForType))]));
+    const type = new ExpressionType(importExpr(Identifiers$1.DirectiveDef, [
+        typeWithParameters(meta.type, meta.typeArgumentCount),
+        new ExpressionType(literal(selectorForType))
+    ]));
     return { expression, type };
 }
 /**
@@ -18468,7 +18604,10 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     // string literal, which must be on one line.
     const selectorForType = (meta.selector || '').replace(/\n/g, '');
     const expression = importExpr(Identifiers$1.defineComponent).callFn([definitionMap.toLiteralMap()]);
-    const type = new ExpressionType(importExpr(Identifiers$1.ComponentDef, [new ExpressionType(meta.type), new ExpressionType(literal(selectorForType))]));
+    const type = new ExpressionType(importExpr(Identifiers$1.ComponentDef, [
+        typeWithParameters(meta.type, meta.typeArgumentCount),
+        new ExpressionType(literal(selectorForType))
+    ]));
     return { expression, type };
 }
 /**
@@ -18519,6 +18658,7 @@ function directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector) {
     return {
         name,
         type: outputCtx.importExpr(directive.type.reference),
+        typeArgumentCount: 0,
         typeSourceSpan: typeSourceSpan(directive.isComponent ? 'Component' : 'Directive', directive.type),
         selector: directive.selector,
         deps: dependenciesFromGlobalMetadata(directive.type, outputCtx, reflector),
@@ -21600,6 +21740,9 @@ class StatementInterpreter {
     visitWrappedNodeExpr(ast, ctx) {
         throw new Error('Cannot interpret a WrappedNodeExpr.');
     }
+    visitTypeofExpr(ast, ctx) {
+        throw new Error('Cannot interpret a TypeofExpr');
+    }
     visitReadVarExpr(ast, ctx) {
         let varName = ast.name;
         if (ast.builtin != null) {
@@ -22936,5 +23079,5 @@ function jitExpression(def, context, sourceUrl, constantPool) {
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, jitExpression, R3ResolvedDependencyType, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, compileInjectable };
+export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, TypeofExpr, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, jitExpression, R3ResolvedDependencyType, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, compileInjectable };
 //# sourceMappingURL=compiler.js.map
