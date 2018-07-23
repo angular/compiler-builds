@@ -19,3 +19,4 @@ export declare function mapToMapExpression(map: {
  * This operation will handle arrays, references to symbols, or literal `null` or `undefined`.
  */
 export declare function convertMetaToOutput(meta: any, ctx: OutputContext): o.Expression;
+export declare function typeWithParameters(type: o.Expression, numParams: number): o.ExpressionType;
