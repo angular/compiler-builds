@@ -53,7 +53,6 @@ export declare class Identifiers {
     static pipeBindV: o.ExternalReference;
     static load: o.ExternalReference;
     static loadDirective: o.ExternalReference;
-    static loadQueryList: o.ExternalReference;
     static pipe: o.ExternalReference;
     static projection: o.ExternalReference;
     static projectionDef: o.ExternalReference;
@@ -76,15 +75,8 @@ export declare class Identifiers {
     static definePipe: o.ExternalReference;
     static query: o.ExternalReference;
     static queryRefresh: o.ExternalReference;
-    static registerContentQuery: o.ExternalReference;
     static NgOnChangesFeature: o.ExternalReference;
     static InheritDefinitionFeature: o.ExternalReference;
     static listener: o.ExternalReference;
     static reserveSlots: o.ExternalReference;
-    static sanitizeHtml: o.ExternalReference;
-    static sanitizeStyle: o.ExternalReference;
-    static defaultStyleSanitizer: o.ExternalReference;
-    static sanitizeResourceUrl: o.ExternalReference;
-    static sanitizeScript: o.ExternalReference;
-    static sanitizeUrl: o.ExternalReference;
 }
