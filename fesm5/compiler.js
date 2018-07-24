@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-rc.3+54.sha-be3cca4
+ * @license Angular v6.1.0-rc.3+43.sha-7960d18
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1125,7 +1125,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('6.1.0-rc.3+54.sha-be3cca4');
+var VERSION = new Version('6.1.0-rc.3+43.sha-7960d18');
 
 /**
  * @license
@@ -17712,7 +17712,6 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.pipeBindV = { name: 'ɵpbV', moduleName: CORE$1 };
     Identifiers.load = { name: 'ɵld', moduleName: CORE$1 };
     Identifiers.loadDirective = { name: 'ɵd', moduleName: CORE$1 };
-    Identifiers.loadQueryList = { name: 'ɵql', moduleName: CORE$1 };
     Identifiers.pipe = { name: 'ɵPp', moduleName: CORE$1 };
     Identifiers.projection = { name: 'ɵP', moduleName: CORE$1 };
     Identifiers.projectionDef = { name: 'ɵpD', moduleName: CORE$1 };
@@ -17753,19 +17752,11 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
     Identifiers.query = { name: 'ɵQ', moduleName: CORE$1 };
     Identifiers.queryRefresh = { name: 'ɵqR', moduleName: CORE$1 };
-    Identifiers.registerContentQuery = { name: 'ɵQr', moduleName: CORE$1 };
     Identifiers.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
     Identifiers.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
     Identifiers.listener = { name: 'ɵL', moduleName: CORE$1 };
     // Reserve slots for pure functions
     Identifiers.reserveSlots = { name: 'ɵrS', moduleName: CORE$1 };
-    // sanitization-related functions
-    Identifiers.sanitizeHtml = { name: 'ɵzh', moduleName: CORE$1 };
-    Identifiers.sanitizeStyle = { name: 'ɵzs', moduleName: CORE$1 };
-    Identifiers.defaultStyleSanitizer = { name: 'ɵzss', moduleName: CORE$1 };
-    Identifiers.sanitizeResourceUrl = { name: 'ɵzr', moduleName: CORE$1 };
-    Identifiers.sanitizeScript = { name: 'ɵzc', moduleName: CORE$1 };
-    Identifiers.sanitizeUrl = { name: 'ɵzu', moduleName: CORE$1 };
     return Identifiers;
 }());
 
@@ -17920,7 +17911,10 @@ function compileFactoryFunction(meta) {
     // The overall result depends on whether this is construction or function invocation.
     var expr = meta.useNew ? new InstantiateExpr(meta.fnOrClass, args) :
         new InvokeFunctionExpr(meta.fnOrClass, args);
-    return fn([], [new ReturnStatement(expr)], INFERRED_TYPE, undefined, meta.name + "_Factory");
+    // If `extraResults` is specified, then the result is an array consisting of the instantiated
+    // value plus any extra results.
+    var retExpr = meta.extraResults === undefined ? expr : literalArr(__spread([expr], meta.extraResults));
+    return fn([], [new ReturnStatement(retExpr)], INFERRED_TYPE, undefined, meta.name + "_Factory");
 }
 function compileInjectDependency(dep, injectFn) {
     // Interpret the dependency according to its resolved type.
@@ -19082,14 +19076,10 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 }
             }
         });
-        var hasMapBasedStyling = false;
         for (var i = 0; i < styleInputs.length; i++) {
             var input = styleInputs[i];
             var isMapBasedStyleBinding = i === 0 && input.name === 'style';
-            if (isMapBasedStyleBinding) {
-                hasMapBasedStyling = true;
-            }
-            else if (!stylesIndexMap.hasOwnProperty(input.name)) {
+            if (!isMapBasedStyleBinding && !stylesIndexMap.hasOwnProperty(input.name)) {
                 stylesIndexMap[input.name] = currStyleIndex++;
             }
         }
@@ -19100,15 +19090,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 classesIndexMap[input.name] = currClassIndex++;
             }
         }
-        // in the event that a [style] binding is used then sanitization will
-        // always be imported because it is not possible to know ahead of time
-        // whether style bindings will use or not use any sanitizable properties
-        // that isStyleSanitizable() will detect
-        var useDefaultStyleSanitizer = hasMapBasedStyling;
         // this will build the instructions so that they fall into the following syntax
         // => [prop1, prop2, prop3, 0, prop1, value1, prop2, value2]
         Object.keys(stylesIndexMap).forEach(function (prop) {
-            useDefaultStyleSanitizer = useDefaultStyleSanitizer || isStyleSanitizable(prop);
             initialStyleDeclarations.push(literal(prop));
         });
         if (staticStylesMap) {
@@ -19177,17 +19161,6 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             // initial styling for static style="..." attributes
             if (hasStylingInstructions) {
                 var paramsList = [];
-                if (initialClassDeclarations.length) {
-                    // the template compiler handles initial class styling (e.g. class="foo") values
-                    // in a special command called `elementClass` so that the initial class
-                    // can be processed during runtime. These initial class values are bound to
-                    // a constant because the inital class values do not change (since they're static).
-                    paramsList.push(this.constantPool.getConstLiteral(literalArr(initialClassDeclarations), true));
-                }
-                else if (initialStyleDeclarations.length || useDefaultStyleSanitizer) {
-                    // no point in having an extra `null` value unless there are follow-up params
-                    paramsList.push(NULL_EXPR);
-                }
                 if (initialStyleDeclarations.length) {
                     // the template compiler handles initial style (e.g. style="foo") values
                     // in a special command called `elementStyle` so that the initial styles
@@ -19195,12 +19168,16 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                     // a constant because the inital style values do not change (since they're static).
                     paramsList.push(this.constantPool.getConstLiteral(literalArr(initialStyleDeclarations), true));
                 }
-                else if (useDefaultStyleSanitizer) {
+                else if (initialClassDeclarations.length) {
                     // no point in having an extra `null` value unless there are follow-up params
                     paramsList.push(NULL_EXPR);
                 }
-                if (useDefaultStyleSanitizer) {
-                    paramsList.push(importExpr(Identifiers$1.defaultStyleSanitizer));
+                if (initialClassDeclarations.length) {
+                    // the template compiler handles initial class styling (e.g. class="foo") values
+                    // in a special command called `elementClass` so that the initial class
+                    // can be processed during runtime. These initial class values are bound to
+                    // a constant because the inital class values do not change (since they're static).
+                    paramsList.push(this.constantPool.getConstLiteral(literalArr(initialClassDeclarations), true));
                 }
                 this._creationCode.push(importExpr(Identifiers$1.elementStyling).callFn(paramsList).toStmt());
             }
@@ -19227,14 +19204,14 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             var stylingInput = mapBasedStyleInput || mapBasedClassInput;
             if (stylingInput) {
                 var params = [];
-                if (mapBasedClassInput) {
-                    params.push(this.convertPropertyBinding(implicit, mapBasedClassInput.value, true));
-                }
-                else if (mapBasedStyleInput) {
-                    params.push(NULL_EXPR);
-                }
                 if (mapBasedStyleInput) {
                     params.push(this.convertPropertyBinding(implicit, mapBasedStyleInput.value, true));
+                }
+                else if (mapBasedClassInput) {
+                    params.push(NULL_EXPR);
+                }
+                if (mapBasedClassInput) {
+                    params.push(this.convertPropertyBinding(implicit, mapBasedClassInput.value, true));
                 }
                 this.instruction.apply(this, __spread([this._bindingCode, stylingInput.sourceSpan, Identifiers$1.elementStylingMap, indexLiteral], params));
             }
@@ -19244,15 +19221,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 for (i; i < styleInputs.length; i++) {
                     var input = styleInputs[i];
                     var convertedBinding = this.convertPropertyBinding(implicit, input.value, true);
-                    var params = [convertedBinding];
-                    var sanitizationRef = resolveSanitizationFn(input, input.securityContext);
-                    if (sanitizationRef) {
-                        params.push(sanitizationRef);
-                    }
                     var key = input.name;
                     var styleIndex = stylesIndexMap[key];
-                    this.instruction.apply(this, __spread([this._bindingCode, input.sourceSpan, Identifiers$1.elementStyleProp, indexLiteral,
-                        literal(styleIndex)], params));
+                    this.instruction(this._bindingCode, input.sourceSpan, Identifiers$1.elementStyleProp, indexLiteral, literal(styleIndex), convertedBinding);
                 }
                 lastInputCommand = styleInputs[styleInputs.length - 1];
             }
@@ -19261,15 +19232,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 for (i; i < classInputs.length; i++) {
                     var input = classInputs[i];
                     var convertedBinding = this.convertPropertyBinding(implicit, input.value, true);
-                    var params = [convertedBinding];
-                    var sanitizationRef = resolveSanitizationFn(input, input.securityContext);
-                    if (sanitizationRef) {
-                        params.push(sanitizationRef);
-                    }
                     var key = input.name;
                     var classIndex = classesIndexMap[key];
-                    this.instruction.apply(this, __spread([this._bindingCode, input.sourceSpan, Identifiers$1.elementClassProp, indexLiteral,
-                        literal(classIndex)], params));
+                    this.instruction(this._bindingCode, input.sourceSpan, Identifiers$1.elementClassProp, indexLiteral, literal(classIndex), convertedBinding);
                 }
                 lastInputCommand = classInputs[classInputs.length - 1];
             }
@@ -19284,14 +19249,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             var convertedBinding = _this.convertPropertyBinding(implicit, input.value);
             var instruction = mapBindingToInstruction(input.type);
             if (instruction) {
-                var params = [convertedBinding];
-                var sanitizationRef = resolveSanitizationFn(input, input.securityContext);
-                if (sanitizationRef) {
-                    params.push(sanitizationRef);
-                }
                 // TODO(chuckj): runtime: security context?
-                _this.instruction.apply(_this, __spread([_this._bindingCode, input.sourceSpan, instruction, literal(elementIndex),
-                    literal(input.name)], params));
+                _this.instruction(_this._bindingCode, input.sourceSpan, instruction, literal(elementIndex), literal(input.name), convertedBinding);
             }
             else {
                 _this._unsupported("binding type " + input.type);
@@ -19666,37 +19625,6 @@ function makeBindingParser() {
 function isClassBinding(input) {
     return input.name == 'className' || input.name == 'class';
 }
-function resolveSanitizationFn(input, context) {
-    switch (context) {
-        case SecurityContext.HTML:
-            return importExpr(Identifiers$1.sanitizeHtml);
-        case SecurityContext.SCRIPT:
-            return importExpr(Identifiers$1.sanitizeScript);
-        case SecurityContext.STYLE:
-            // the compiler does not fill in an instruction for [style.prop?] binding
-            // values because the style algorithm knows internally what props are subject
-            // to sanitization (only [attr.style] values are explicitly sanitized)
-            return input.type === 1 /* Attribute */ ? importExpr(Identifiers$1.sanitizeStyle) : null;
-        case SecurityContext.URL:
-            return importExpr(Identifiers$1.sanitizeUrl);
-        case SecurityContext.RESOURCE_URL:
-            return importExpr(Identifiers$1.sanitizeResourceUrl);
-        default:
-            return null;
-    }
-}
-function isStyleSanitizable(prop) {
-    switch (prop) {
-        case 'background-image':
-        case 'background':
-        case 'border-image':
-        case 'filter':
-        case 'list-style':
-        case 'list-style-image':
-            return true;
-    }
-    return false;
-}
 
 /**
  * @license
@@ -19711,6 +19639,7 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     definitionMap.set('type', meta.type);
     // e.g. `selectors: [['', 'someDir', '']]`
     definitionMap.set('selectors', createDirectiveSelector(meta.selector));
+    var queryDefinitions = createQueryDefinitions(meta.queries, constantPool);
     // e.g. `factory: () => new MyApp(injectElementRef())`
     definitionMap.set('factory', compileFactoryFunction({
         name: meta.name,
@@ -19718,9 +19647,8 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
         deps: meta.deps,
         useNew: true,
         injectFn: Identifiers$1.directiveInject,
+        extraResults: queryDefinitions,
     }));
-    definitionMap.set('contentQueries', createContentQueriesFunction(meta, constantPool));
-    definitionMap.set('contentQueriesRefresh', createContentQueriesRefreshFunction(meta));
     // e.g. `hostBindings: (dirIndex, elIndex) => { ... }
     definitionMap.set('hostBindings', createHostBindingsFunction(meta, bindingParser));
     // e.g. `attributes: ['role', 'listbox']`
@@ -19962,54 +19890,27 @@ function createHostAttributesArray(meta) {
     }
     return null;
 }
-// Return a contentQueries function or null if one is not necessary.
-function createContentQueriesFunction(meta, constantPool) {
-    var queryDefinitions = createQueryDefinitions(meta.queries, constantPool);
-    if (queryDefinitions) {
-        var statements = queryDefinitions.map(function (qd) {
-            return importExpr(Identifiers$1.registerContentQuery).callFn([qd]).toStmt();
-        });
-        var typeName = meta.name;
-        return fn([], statements, INFERRED_TYPE, null, typeName ? typeName + "_ContentQueries" : null);
-    }
-    return null;
-}
-// Return a contentQueriesRefresh function or null if one is not necessary.
-function createContentQueriesRefreshFunction(meta) {
-    if (meta.queries.length > 0) {
-        var statements_1 = [];
-        var typeName = meta.name;
-        var parameters = [
-            new FnParam('dirIndex', NUMBER_TYPE),
-            new FnParam('queryStartIndex', NUMBER_TYPE),
-        ];
-        var directiveInstanceVar_1 = variable('instance');
-        // var $tmp$: any;
-        var temporary_1 = temporaryAllocator(statements_1, TEMPORARY_NAME);
-        // const $instance$ = $r3$.ɵd(dirIndex);
-        statements_1.push(directiveInstanceVar_1.set(importExpr(Identifiers$1.loadDirective).callFn([variable('dirIndex')]))
-            .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
-        meta.queries.forEach(function (query, idx) {
-            var loadQLArg = variable('queryStartIndex');
-            var getQueryList = importExpr(Identifiers$1.loadQueryList).callFn([
-                idx > 0 ? loadQLArg.plus(literal(idx)) : loadQLArg
-            ]);
-            var assignToTemporary = temporary_1().set(getQueryList);
-            var callQueryRefresh = importExpr(Identifiers$1.queryRefresh).callFn([assignToTemporary]);
-            var updateDirective = directiveInstanceVar_1.prop(query.propertyName)
-                .set(query.first ? temporary_1().prop('first') : temporary_1());
-            var refreshQueryAndUpdateDirective = callQueryRefresh.and(updateDirective);
-            statements_1.push(refreshQueryAndUpdateDirective.toStmt());
-        });
-        return fn(parameters, statements_1, INFERRED_TYPE, null, typeName ? typeName + "_ContentQueriesRefresh" : null);
-    }
-    return null;
-}
 // Return a host binding function or null if one is not necessary.
 function createHostBindingsFunction(meta, bindingParser) {
     var e_2, _a, e_3, _b;
     var statements = [];
+    var temporary = temporaryAllocator(statements, TEMPORARY_NAME);
     var hostBindingSourceSpan = meta.typeSourceSpan;
+    // Calculate the queries
+    for (var index = 0; index < meta.queries.length; index++) {
+        var query = meta.queries[index];
+        // e.g. r3.qR(tmp = r3.d(dirIndex)[1]) && (r3.d(dirIndex)[0].someDir = tmp);
+        var getDirectiveMemory = importExpr(Identifiers$1.loadDirective).callFn([variable('dirIndex')]);
+        // The query list is at the query index + 1 because the directive itself is in slot 0.
+        var getQueryList = getDirectiveMemory.key(literal(index + 1));
+        var assignToTemporary = temporary().set(getQueryList);
+        var callQueryRefresh = importExpr(Identifiers$1.queryRefresh).callFn([assignToTemporary]);
+        var updateDirective = getDirectiveMemory.key(literal(0, INFERRED_TYPE))
+            .prop(query.propertyName)
+            .set(query.first ? temporary().prop('first') : temporary());
+        var andExpression = callQueryRefresh.and(updateDirective);
+        statements.push(andExpression.toStmt());
+    }
     var directiveSummary = metadataAsSummary(meta);
     // Calculate the host property bindings
     var bindings = bindingParser.createBoundHostProperties(directiveSummary, hostBindingSourceSpan);
