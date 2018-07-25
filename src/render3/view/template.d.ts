@@ -7,6 +7,7 @@
  */
 import { LocalResolver } from '../../compiler_util/expression_converter';
 import { ConstantPool } from '../../constant_pool';
+import * as core from '../../core';
 import * as o from '../../output/output_ast';
 import { ParseError } from '../../parse_util';
 import { SelectorMatcher } from '../../selector';
@@ -14,6 +15,7 @@ import { BindingParser } from '../../template_parser/binding_parser';
 import * as t from '../r3_ast';
 import { R3QueryMetadata } from './api';
 import { invalid } from './util';
+export declare function renderFlagCheckIfStmt(flags: core.RenderFlags, statements: o.Statement[]): o.IfStmt;
 export declare class TemplateDefinitionBuilder implements t.Visitor<void>, LocalResolver {
     private constantPool;
     private contextParameter;
@@ -33,7 +35,6 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private _variableCode;
     private _bindingCode;
     private _postfixCode;
-    private _temporary;
     private _valueConverter;
     private _unsupported;
     private _bindingScope;
