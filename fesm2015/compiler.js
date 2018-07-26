@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0-rc.3+85.sha-70668f7
+ * @license Angular v6.1.0+15.sha-70174d1
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('6.1.0-rc.3+85.sha-70668f7');
+const VERSION = new Version('6.1.0+15.sha-70174d1');
 
 /**
  * @license
@@ -17688,6 +17688,10 @@ function mapBindingToInstruction(type) {
             return undefined;
     }
 }
+//  if (rf & flags) { .. }
+function renderFlagCheckIfStmt(flags, statements) {
+    return ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(flags), null, false), statements);
+}
 class TemplateDefinitionBuilder {
     constructor(constantPool, contextParameter, parentBindingScope, level = 0, contextName, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace) {
         this.constantPool = constantPool;
@@ -17708,7 +17712,6 @@ class TemplateDefinitionBuilder {
         this._variableCode = [];
         this._bindingCode = [];
         this._postfixCode = [];
-        this._temporary = temporaryAllocator(this._prefixCode, TEMPORARY_NAME);
         this._unsupported = unsupported;
         // Whether we are inside a translatable element (`<p i18n>... somewhere here ... </p>)
         this._inI18nSection = false;
@@ -17723,6 +17726,9 @@ class TemplateDefinitionBuilder {
         this.visitTextAttribute = invalid$1;
         this.visitBoundAttribute = invalid$1;
         this.visitBoundEvent = invalid$1;
+        // view queries can take up space in data and allocation happens earlier (in the "viewQuery"
+        // function)
+        this._dataIndex = viewQueries.length;
         this._bindingScope =
             parentBindingScope.nestedScope((lhsVar, expression) => {
                 this._bindingCode.push(lhsVar.set(expression).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
@@ -17761,38 +17767,15 @@ class TemplateDefinitionBuilder {
             }
             this.instruction(this._creationCode, null, Identifiers$1.projectionDef, ...parameters);
         }
-        // Define and update any view queries
-        for (let query of this.viewQueries) {
-            // e.g. r3.Q(0, somePredicate, true);
-            const querySlot = this.allocateDataSlot();
-            const predicate = getQueryPredicate(query, this.constantPool);
-            const args = [
-                literal(querySlot, INFERRED_TYPE),
-                predicate,
-                literal(query.descendants, INFERRED_TYPE),
-            ];
-            if (query.read) {
-                args.push(query.read);
-            }
-            this.instruction(this._creationCode, null, Identifiers$1.query, ...args);
-            // (r3.qR(tmp = r3.ɵld(0)) && (ctx.someDir = tmp));
-            const temporary = this._temporary();
-            const getQueryList = importExpr(Identifiers$1.load).callFn([literal(querySlot)]);
-            const refresh = importExpr(Identifiers$1.queryRefresh).callFn([temporary.set(getQueryList)]);
-            const updateDirective = variable(CONTEXT_NAME)
-                .prop(query.propertyName)
-                .set(query.first ? temporary.prop('first') : temporary);
-            this._bindingCode.push(refresh.and(updateDirective).toStmt());
-        }
         visitAll$1(this, nodes);
         if (this._pureFunctionSlots > 0) {
             this.instruction(this._creationCode, null, Identifiers$1.reserveSlots, literal(this._pureFunctionSlots));
         }
         const creationCode = this._creationCode.length > 0 ?
-            [ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(1 /* Create */), null, false), this._creationCode)] :
+            [renderFlagCheckIfStmt(1 /* Create */, this._creationCode)] :
             [];
         const updateCode = this._bindingCode.length > 0 ?
-            [ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(2 /* Update */), null, false), this._bindingCode)] :
+            [renderFlagCheckIfStmt(2 /* Update */, this._bindingCode)] :
             [];
         // Generate maps of placeholder name to node indexes
         // TODO(vicb): This is a WIP, not fully supported yet
@@ -18652,6 +18635,9 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
         });
         directiveMatcher = matcher;
     }
+    if (meta.viewQueries.length) {
+        definitionMap.set('viewQuery', createViewQueriesFunction(meta, constantPool));
+    }
     // e.g. `template: function MyComponent_Template(_ctx, _cm) {...}`
     const templateTypeName = meta.name;
     const templateName = templateTypeName ? `${templateTypeName}_Template` : null;
@@ -18782,28 +18768,18 @@ function selectorsFromGlobalMetadata(selectors, outputCtx) {
     error('Unexpected query form');
     return NULL_EXPR;
 }
-/**
- *
- * @param meta
- * @param constantPool
- */
-function createQueryDefinitions(queries, constantPool) {
-    const queryDefinitions = [];
-    for (let i = 0; i < queries.length; i++) {
-        const query = queries[i];
-        const predicate = getQueryPredicate(query, constantPool);
-        // e.g. r3.Q(null, somePredicate, false) or r3.Q(null, ['div'], false)
-        const parameters = [
-            literal(null, INFERRED_TYPE),
-            predicate,
-            literal(query.descendants),
-        ];
-        if (query.read) {
-            parameters.push(query.read);
-        }
-        queryDefinitions.push(importExpr(Identifiers$1.query).callFn(parameters));
+function createQueryDefinition(query, constantPool, idx) {
+    const predicate = getQueryPredicate(query, constantPool);
+    // e.g. r3.Q(null, somePredicate, false) or r3.Q(0, ['div'], false)
+    const parameters = [
+        literal(idx, INFERRED_TYPE),
+        predicate,
+        literal(query.descendants),
+    ];
+    if (query.read) {
+        parameters.push(query.read);
     }
-    return queryDefinitions.length > 0 ? queryDefinitions : undefined;
+    return importExpr(Identifiers$1.query).callFn(parameters);
 }
 // Turn a directive selector into an R3-compatible selector for directive def
 function createDirectiveSelector(selector) {
@@ -18823,10 +18799,10 @@ function createHostAttributesArray(meta) {
 }
 // Return a contentQueries function or null if one is not necessary.
 function createContentQueriesFunction(meta, constantPool) {
-    const queryDefinitions = createQueryDefinitions(meta.queries, constantPool);
-    if (queryDefinitions) {
-        const statements = queryDefinitions.map((qd) => {
-            return importExpr(Identifiers$1.registerContentQuery).callFn([qd]).toStmt();
+    if (meta.queries.length) {
+        const statements = meta.queries.map((query) => {
+            const queryDefinition = createQueryDefinition(query, constantPool, null);
+            return importExpr(Identifiers$1.registerContentQuery).callFn([queryDefinition]).toStmt();
         });
         const typeName = meta.name;
         return fn([], statements, INFERRED_TYPE, null, typeName ? `${typeName}_ContentQueries` : null);
@@ -18863,6 +18839,31 @@ function createContentQueriesRefreshFunction(meta) {
         return fn(parameters, statements, INFERRED_TYPE, null, typeName ? `${typeName}_ContentQueriesRefresh` : null);
     }
     return null;
+}
+// Define and update any view queries
+function createViewQueriesFunction(meta, constantPool) {
+    const createStatements = [];
+    const updateStatements = [];
+    const tempAllocator = temporaryAllocator(updateStatements, TEMPORARY_NAME);
+    for (let i = 0; i < meta.viewQueries.length; i++) {
+        const query = meta.viewQueries[i];
+        // creation, e.g. r3.Q(0, somePredicate, true);
+        const queryDefinition = createQueryDefinition(query, constantPool, i);
+        createStatements.push(queryDefinition.toStmt());
+        // update, e.g. (r3.qR(tmp = r3.ɵld(0)) && (ctx.someDir = tmp));
+        const temporary = tempAllocator();
+        const getQueryList = importExpr(Identifiers$1.load).callFn([literal(i)]);
+        const refresh = importExpr(Identifiers$1.queryRefresh).callFn([temporary.set(getQueryList)]);
+        const updateDirective = variable(CONTEXT_NAME)
+            .prop(query.propertyName)
+            .set(query.first ? temporary.prop('first') : temporary);
+        updateStatements.push(refresh.and(updateDirective).toStmt());
+    }
+    const viewQueryFnName = meta.name ? `${meta.name}_Query` : null;
+    return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null)], [
+        renderFlagCheckIfStmt(1 /* Create */, createStatements),
+        renderFlagCheckIfStmt(2 /* Update */, updateStatements)
+    ], INFERRED_TYPE, null, viewQueryFnName);
 }
 // Return a host binding function or null if one is not necessary.
 function createHostBindingsFunction(meta, bindingParser) {
