@@ -82,4 +82,5 @@ export { R3DependencyMetadata, R3FactoryMetadata, R3ResolvedDependencyType } fro
 export { compileInjector, compileNgModule, R3InjectorMetadata, R3NgModuleMetadata } from './render3/r3_module_compiler';
 export { compilePipeFromMetadata, R3PipeMetadata } from './render3/r3_pipe_compiler';
 export { makeBindingParser, parseTemplate } from './render3/view/template';
+export { R3Reference } from './render3/util';
 export { compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings } from './render3/view/compiler';

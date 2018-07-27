@@ -10,6 +10,7 @@ import { InjectableCompiler } from '../injectable_compiler';
 import * as o from '../output/output_ast';
 import { OutputContext } from '../util';
 import { R3DependencyMetadata } from './r3_factory';
+import { R3Reference } from './util';
 export interface R3NgModuleDef {
     expression: o.Expression;
     type: o.Type;
@@ -30,15 +31,15 @@ export interface R3NgModuleMetadata {
     /**
      * An array of expressions representing the directives and pipes declared by the module.
      */
-    declarations: o.Expression[];
+    declarations: R3Reference[];
     /**
      * An array of expressions representing the imports of the module.
      */
-    imports: o.Expression[];
+    imports: R3Reference[];
     /**
      * An array of expressions representing the exports of the module.
      */
-    exports: o.Expression[];
+    exports: R3Reference[];
     /**
      * Whether to emit the selector scope values (declarations, imports, exports) inline into the
      * module definition, or to generate additional statements which patch them on. Inline emission
