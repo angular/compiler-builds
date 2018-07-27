@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0+15.sha-70174d1
+ * @license Angular v6.1.0+28.sha-dad1d3d
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('6.1.0+15.sha-70174d1');
+const VERSION = new Version('6.1.0+28.sha-dad1d3d');
 
 /**
  * @license
@@ -17059,9 +17059,9 @@ function compileNgModule(meta) {
     const expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression({
             type: moduleType,
             bootstrap: literalArr(bootstrap),
-            declarations: literalArr(declarations),
-            imports: literalArr(imports),
-            exports: literalArr(exports),
+            declarations: literalArr(declarations.map(ref => ref.value)),
+            imports: literalArr(imports.map(ref => ref.value)),
+            exports: literalArr(exports.map(ref => ref.value)),
         })]);
     const type = new ExpressionType(importExpr(Identifiers$1.NgModuleDef, [
         new ExpressionType(moduleType), tupleTypeOf(declarations), tupleTypeOf(imports),
@@ -17109,7 +17109,7 @@ function compileNgModuleFromRender2(ctx, ngModule, injectableCompiler) {
     /* methods */ []));
 }
 function tupleTypeOf(exp) {
-    const types = exp.map(type => typeofExpr(type));
+    const types = exp.map(ref => typeofExpr(ref.type));
     return exp.length > 0 ? expressionType(literalArr(types)) : NONE_TYPE;
 }
 
