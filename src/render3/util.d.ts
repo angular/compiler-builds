@@ -20,3 +20,7 @@ export declare function mapToMapExpression(map: {
  */
 export declare function convertMetaToOutput(meta: any, ctx: OutputContext): o.Expression;
 export declare function typeWithParameters(type: o.Expression, numParams: number): o.ExpressionType;
+export interface R3Reference {
+    value: o.Expression;
+    type: o.Expression;
+}
