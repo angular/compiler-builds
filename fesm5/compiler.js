@@ -1,10 +1,10 @@
 /**
- * @license Angular v6.1.0+44.sha-9a6d26e
+ * @license Angular v6.1.0+47.sha-2ef777b
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __assign, __spread, __values, __extends, __read } from 'tslib';
+import { __assign, __spread, __extends, __values, __read } from 'tslib';
 
 /**
  * @license
@@ -1125,7 +1125,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('6.1.0+44.sha-9a6d26e');
+var VERSION = new Version('6.1.0+47.sha-2ef777b');
 
 /**
  * @license
@@ -8726,6 +8726,7 @@ var WriteVarExpr = /** @class */ (function (_super) {
     WriteVarExpr.prototype.toDeclStmt = function (type, modifiers) {
         return new DeclareVarStmt(this.name, this.value, type, modifiers, this.sourceSpan);
     };
+    WriteVarExpr.prototype.toConstDecl = function () { return this.toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]); };
     return WriteVarExpr;
 }(Expression));
 var WriteKeyExpr = /** @class */ (function (_super) {
@@ -17683,6 +17684,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.elementStyleProp = { name: 'ɵsp', moduleName: CORE$1 };
     Identifiers.elementStylingApply = { name: 'ɵsa', moduleName: CORE$1 };
     Identifiers.containerCreate = { name: 'ɵC', moduleName: CORE$1 };
+    Identifiers.nextContext = { name: 'ɵx', moduleName: CORE$1 };
     Identifiers.text = { name: 'ɵT', moduleName: CORE$1 };
     Identifiers.textBinding = { name: 'ɵt', moduleName: CORE$1 };
     Identifiers.bind = { name: 'ɵb', moduleName: CORE$1 };
@@ -17716,6 +17718,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.pipe = { name: 'ɵPp', moduleName: CORE$1 };
     Identifiers.projection = { name: 'ɵP', moduleName: CORE$1 };
     Identifiers.projectionDef = { name: 'ɵpD', moduleName: CORE$1 };
+    Identifiers.reference = { name: 'ɵr', moduleName: CORE$1 };
     Identifiers.inject = { name: 'inject', moduleName: CORE$1 };
     Identifiers.injectAttribute = { name: 'ɵinjectAttribute', moduleName: CORE$1 };
     Identifiers.injectElementRef = { name: 'ɵinjectElementRef', moduleName: CORE$1 };
@@ -17849,7 +17852,6 @@ function getQueryPredicate(query, constantPool) {
         return query.predicate;
     }
 }
-function noop() { }
 var DefinitionMap = /** @class */ (function () {
     function DefinitionMap() {
         this.values = [];
@@ -18769,11 +18771,10 @@ function renderFlagCheckIfStmt(flags, statements) {
     return ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(flags), null, false), statements);
 }
 var TemplateDefinitionBuilder = /** @class */ (function () {
-    function TemplateDefinitionBuilder(constantPool, contextParameter, parentBindingScope, level, contextName, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace) {
+    function TemplateDefinitionBuilder(constantPool, parentBindingScope, level, contextName, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace) {
         if (level === void 0) { level = 0; }
         var _this = this;
         this.constantPool = constantPool;
-        this.contextParameter = contextParameter;
         this.level = level;
         this.contextName = contextName;
         this.templateName = templateName;
@@ -18787,9 +18788,21 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this._bindingContext = 0;
         this._prefixCode = [];
         this._creationCode = [];
-        this._variableCode = [];
-        this._bindingCode = [];
-        this._postfixCode = [];
+        /**
+         * List of callbacks to generate update mode instructions. We store them here as we process
+         * the template so bindings are resolved only once all nodes have been visited. This ensures
+         * all local refs and context variables are available for matching.
+         */
+        this._updateCodeFns = [];
+        /** Temporary variable declarations generated from visiting pipes, literals, etc. */
+        this._tempVariables = [];
+        /**
+         * List of callbacks to build nested templates. Nested templates must not be visited until
+         * after the parent template has finished visiting all of its nodes. This ensures that all
+         * local ref bindings in nested templates are able to find local ref values if the refs
+         * are defined after the template declaration.
+         */
+        this._nestedTemplateFns = [];
         this._unsupported = unsupported;
         // Whether we are inside a translatable element (`<p i18n>... somewhere here ... </p>)
         this._inI18nSection = false;
@@ -18807,34 +18820,50 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // view queries can take up space in data and allocation happens earlier (in the "viewQuery"
         // function)
         this._dataIndex = viewQueries.length;
-        this._bindingScope =
-            parentBindingScope.nestedScope(function (lhsVar, expression) {
-                _this._bindingCode.push(lhsVar.set(expression).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
-            });
+        // TODO(kara): generate restore instruction in listener to replace creation scope
+        this._creationScope = parentBindingScope.nestedScope(level);
+        this._updateScope = parentBindingScope.nestedScope(level);
         this._valueConverter = new ValueConverter(constantPool, function () { return _this.allocateDataSlot(); }, function (numSlots) { return _this._pureFunctionSlots += numSlots; }, function (name, localName, slot, value) {
             var pipeType = pipeTypeByName.get(name);
             if (pipeType) {
                 _this.pipes.add(pipeType);
             }
-            _this._bindingScope.set(localName, value);
+            _this._updateScope.set(_this.level, localName, value);
             _this._creationCode.push(importExpr(Identifiers$1.pipe).callFn([literal(slot), literal(name)]).toStmt());
         });
     }
+    TemplateDefinitionBuilder.prototype.registerContextVariables = function (variable$$1, retrievalScope) {
+        var scopedName = retrievalScope.freshReferenceName();
+        var retrievalLevel = this.level;
+        var lhs = variable(variable$$1.name + scopedName);
+        retrievalScope.set(retrievalLevel, variable$$1.name, lhs, 1 /* CONTEXT */, function (scope, relativeLevel) {
+            var rhs;
+            if (scope.bindingLevel === retrievalLevel) {
+                // e.g. ctx
+                rhs = variable(CONTEXT_NAME);
+            }
+            else {
+                var sharedCtxVar = scope.getSharedContextName(retrievalLevel);
+                // e.g. ctx_r0   OR  x(2);
+                rhs = sharedCtxVar ? sharedCtxVar : generateNextContextExpr(relativeLevel);
+            }
+            // e.g. const $item$ = x(2).$implicit;
+            return [lhs.set(rhs.prop(variable$$1.value || IMPLICIT_REFERENCE)).toConstDecl()];
+        });
+    };
     TemplateDefinitionBuilder.prototype.buildTemplateFunction = function (nodes, variables, hasNgContent, ngContentSelectors) {
         if (hasNgContent === void 0) { hasNgContent = false; }
         if (ngContentSelectors === void 0) { ngContentSelectors = []; }
         if (this._namespace !== Identifiers$1.namespaceHTML) {
-            this.instruction(this._creationCode, null, this._namespace);
+            this.creationInstruction(null, this._namespace);
         }
         try {
             // Create variable bindings
             for (var variables_1 = __values(variables), variables_1_1 = variables_1.next(); !variables_1_1.done; variables_1_1 = variables_1.next()) {
                 var variable$$1 = variables_1_1.value;
-                var variableName = variable$$1.name;
-                var expression = variable(this.contextParameter).prop(variable$$1.value || IMPLICIT_REFERENCE);
-                var scopedName = this._bindingScope.freshReferenceName();
                 // Add the reference to the local scope.
-                this._bindingScope.set(variableName, variable(variableName + scopedName), expression);
+                this.registerContextVariables(variable$$1, this._creationScope);
+                this.registerContextVariables(variable$$1, this._updateScope);
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
@@ -18855,17 +18884,27 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 var unParsed = this.constantPool.getConstLiteral(asLiteral(ngContentSelectors), true);
                 parameters.push(parsed, unParsed);
             }
-            this.instruction.apply(this, __spread([this._creationCode, null, Identifiers$1.projectionDef], parameters));
+            this.creationInstruction.apply(this, __spread([null, Identifiers$1.projectionDef], parameters));
         }
+        // This is the initial pass through the nodes of this template. In this pass, we
+        // generate all creation mode instructions & queue all update mode instructions for
+        // generation in the second pass. It's necessary to separate the passes to ensure
+        // local refs are defined before resolving bindings.
         visitAll$1(this, nodes);
+        // Generate all the update mode instructions as the second pass (e.g. resolve bindings)
+        var updateStatements = this._updateCodeFns.map(function (fn$$1) { return fn$$1(); });
+        // To count slots for the reserveSlots() instruction, all bindings must have been visited.
         if (this._pureFunctionSlots > 0) {
-            this.instruction(this._creationCode, null, Identifiers$1.reserveSlots, literal(this._pureFunctionSlots));
+            this.creationInstruction(null, Identifiers$1.reserveSlots, literal(this._pureFunctionSlots));
         }
         var creationCode = this._creationCode.length > 0 ?
-            [renderFlagCheckIfStmt(1 /* Create */, this._creationCode)] :
+            [renderFlagCheckIfStmt(1 /* Create */, this._creationScope.variableDeclarations().concat(this._creationCode))] :
             [];
-        var updateCode = this._bindingCode.length > 0 ?
-            [renderFlagCheckIfStmt(2 /* Update */, this._bindingCode)] :
+        //  This must occur after binding resolution so we can generate context instructions that
+        // build on each other. e.g. const row = x().$implicit; const table = x().$implicit();
+        var updateVariables = this._updateScope.variableDeclarations().concat(this._tempVariables);
+        var updateCode = this._updateCodeFns.length > 0 ?
+            [renderFlagCheckIfStmt(2 /* Update */, updateVariables.concat(updateStatements))] :
             [];
         try {
             // Generate maps of placeholder name to node indexes
@@ -18873,10 +18912,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             for (var _b = __values(this._phToNodeIdxes), _c = _b.next(); !_c.done; _c = _b.next()) {
                 var phToNodeIdx = _c.value;
                 if (Object.keys(phToNodeIdx).length > 0) {
-                    var scopedName = this._bindingScope.freshReferenceName();
-                    var phMap = variable(scopedName)
-                        .set(mapToExpression(phToNodeIdx, true))
-                        .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]);
+                    var scopedName = this._updateScope.freshReferenceName();
+                    var phMap = variable(scopedName).set(mapToExpression(phToNodeIdx, true)).toConstDecl();
                     this._prefixCode.push(phMap);
                 }
             }
@@ -18888,11 +18925,14 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             }
             finally { if (e_2) throw e_2.error; }
         }
-        return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(this.contextParameter, null)], __spread(this._prefixCode, creationCode, this._variableCode, updateCode, this._postfixCode), INFERRED_TYPE, null, this.templateName);
+        this._nestedTemplateFns.forEach(function (buildTemplateFn) { return buildTemplateFn(); });
+        return fn(
+        // i.e. (rf: RenderFlags, ctx: any)
+        [new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null)], __spread(this._prefixCode, creationCode, updateCode), INFERRED_TYPE, null, this.templateName);
         var e_1, _a, e_2, _d;
     };
     // LocalResolver
-    TemplateDefinitionBuilder.prototype.getLocal = function (name) { return this._bindingScope.get(name); };
+    TemplateDefinitionBuilder.prototype.getLocal = function (name) { return this._updateScope.get(name); };
     TemplateDefinitionBuilder.prototype.visitContent = function (ngContent) {
         var slot = this.allocateDataSlot();
         var selectorIndex = ngContent.selectorIndex;
@@ -18910,7 +18950,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         else if (selectorIndex !== 0) {
             parameters.push(literal(selectorIndex));
         }
-        this.instruction.apply(this, __spread([this._creationCode, ngContent.sourceSpan, Identifiers$1.projection], parameters));
+        this.creationInstruction.apply(this, __spread([ngContent.sourceSpan, Identifiers$1.projection], parameters));
     };
     TemplateDefinitionBuilder.prototype.getNamespaceInstruction = function (namespaceKey) {
         switch (namespaceKey) {
@@ -18924,12 +18964,11 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     };
     TemplateDefinitionBuilder.prototype.addNamespaceInstruction = function (nsInstruction, element) {
         this._namespace = nsInstruction;
-        this.instruction(this._creationCode, element.sourceSpan, nsInstruction);
+        this.creationInstruction(element.sourceSpan, nsInstruction);
     };
     TemplateDefinitionBuilder.prototype.visitElement = function (element) {
         var _this = this;
         var elementIndex = this.allocateDataSlot();
-        var referenceDataSlots = new Map();
         var wasInI18nSection = this._inI18nSection;
         var outputAttrs = {};
         var attrI18nMetas = {};
@@ -19110,13 +19149,17 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         if (element.references && element.references.length > 0) {
             var references = flatten(element.references.map(function (reference) {
                 var slot = _this.allocateDataSlot();
-                referenceDataSlots.set(reference.name, slot);
                 // Generate the update temporary.
-                var variableName = _this._bindingScope.freshReferenceName();
-                _this._variableCode.push(variable(variableName, INFERRED_TYPE)
-                    .set(importExpr(Identifiers$1.load).callFn([literal(slot)]))
-                    .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
-                _this._bindingScope.set(reference.name, variable(variableName));
+                var variableName = _this._updateScope.freshReferenceName();
+                var retrievalLevel = _this.level;
+                var lhs = variable(variableName);
+                _this._updateScope.set(retrievalLevel, reference.name, lhs, 0 /* DEFAULT */, function (scope, relativeLevel) {
+                    // e.g. x(2);
+                    var nextContextStmt = relativeLevel > 0 ? [generateNextContextExpr(relativeLevel).toStmt()] : [];
+                    // e.g. const $foo$ = r(1);
+                    var refExpr = lhs.set(importExpr(Identifiers$1.reference).callFn([literal(slot)]));
+                    return nextContextStmt.concat(refExpr.toConstDecl());
+                });
                 return [reference.name, reference.value];
             }));
             parameters.push(this.constantPool.getConstLiteral(asLiteral(references), true));
@@ -19138,14 +19181,14 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var implicit = variable(CONTEXT_NAME);
         var createSelfClosingInstruction = !hasStylingInstructions && element.children.length === 0 && element.outputs.length === 0;
         if (createSelfClosingInstruction) {
-            this.instruction.apply(this, __spread([this._creationCode, element.sourceSpan, Identifiers$1.element], trimTrailingNulls(parameters)));
+            this.creationInstruction.apply(this, __spread([element.sourceSpan, Identifiers$1.element], trimTrailingNulls(parameters)));
         }
         else {
             // Generate the instruction create element instruction
             if (i18nMessages.length > 0) {
                 (_f = this._creationCode).push.apply(_f, __spread(i18nMessages));
             }
-            this.instruction.apply(this, __spread([this._creationCode, element.sourceSpan, Identifiers$1.elementStart], trimTrailingNulls(parameters)));
+            this.creationInstruction.apply(this, __spread([element.sourceSpan, Identifiers$1.elementStart], trimTrailingNulls(parameters)));
             // initial styling for static style="..." attributes
             if (hasStylingInstructions) {
                 var paramsList = [];
@@ -19181,71 +19224,85 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 var elName = sanitizeIdentifier(element.name);
                 var evName = sanitizeIdentifier(outputAst.name);
                 var functionName = _this.templateName + "_" + elName + "_" + evName + "_listener";
-                var localVars = [];
-                var bindingScope = _this._bindingScope.nestedScope(function (lhsVar, rhsExpression) {
-                    localVars.push(lhsVar.set(rhsExpression).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
-                });
-                var bindingExpr = convertActionBinding(bindingScope, implicit, outputAst.handler, 'b', function () { return error('Unexpected interpolation'); });
-                var handler = fn([new FnParam('$event', DYNAMIC_TYPE)], __spread(localVars, bindingExpr.render3Stmts), INFERRED_TYPE, null, functionName);
-                _this.instruction(_this._creationCode, outputAst.sourceSpan, Identifiers$1.listener, literal(outputAst.name), handler);
+                var bindingExpr = convertActionBinding(_this._creationScope, implicit, outputAst.handler, 'b', function () { return error('Unexpected interpolation'); });
+                var handler = fn([new FnParam('$event', DYNAMIC_TYPE)], __spread(bindingExpr.render3Stmts), INFERRED_TYPE, null, functionName);
+                _this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, literal(outputAst.name), handler);
             });
         }
         if ((styleInputs.length || classInputs.length) && hasStylingInstructions) {
-            var indexLiteral = literal(elementIndex);
+            var indexLiteral_1 = literal(elementIndex);
             var firstStyle = styleInputs[0];
             var mapBasedStyleInput = firstStyle && firstStyle.name == 'style' ? firstStyle : null;
             var firstClass = classInputs[0];
             var mapBasedClassInput = firstClass && isClassBinding(firstClass) ? firstClass : null;
             var stylingInput = mapBasedStyleInput || mapBasedClassInput;
             if (stylingInput) {
-                var params = [];
+                var params_1 = [];
+                var value_1;
                 if (mapBasedClassInput) {
-                    params.push(this.convertPropertyBinding(implicit, mapBasedClassInput.value, true));
+                    value_1 = mapBasedClassInput.value.visit(this._valueConverter);
                 }
                 else if (mapBasedStyleInput) {
-                    params.push(NULL_EXPR);
+                    params_1.push(NULL_EXPR);
                 }
                 if (mapBasedStyleInput) {
-                    params.push(this.convertPropertyBinding(implicit, mapBasedStyleInput.value, true));
+                    value_1 = mapBasedStyleInput.value.visit(this._valueConverter);
                 }
-                this.instruction.apply(this, __spread([this._bindingCode, stylingInput.sourceSpan, Identifiers$1.elementStylingMap, indexLiteral], params));
+                this.updateInstruction(stylingInput.sourceSpan, Identifiers$1.elementStylingMap, function () {
+                    params_1.push(_this.convertPropertyBinding(implicit, value_1, true));
+                    return __spread([indexLiteral_1], params_1);
+                });
             }
             var lastInputCommand = null;
             if (styleInputs.length) {
                 var i = mapBasedStyleInput ? 1 : 0;
-                for (i; i < styleInputs.length; i++) {
+                var _loop_1 = function () {
                     var input = styleInputs[i];
-                    var convertedBinding = this.convertPropertyBinding(implicit, input.value, true);
-                    var params = [convertedBinding];
+                    var params = [];
                     var sanitizationRef = resolveSanitizationFn(input, input.securityContext);
-                    if (sanitizationRef) {
+                    if (sanitizationRef)
                         params.push(sanitizationRef);
-                    }
                     var key = input.name;
                     var styleIndex = stylesIndexMap[key];
-                    this.instruction.apply(this, __spread([this._bindingCode, input.sourceSpan, Identifiers$1.elementStyleProp, indexLiteral,
-                        literal(styleIndex)], params));
+                    var value = input.value.visit(this_1._valueConverter);
+                    this_1.updateInstruction(input.sourceSpan, Identifiers$1.elementStyleProp, function () {
+                        return __spread([
+                            indexLiteral_1, literal(styleIndex),
+                            _this.convertPropertyBinding(implicit, value, true)
+                        ], params);
+                    });
+                };
+                var this_1 = this;
+                for (i; i < styleInputs.length; i++) {
+                    _loop_1();
                 }
                 lastInputCommand = styleInputs[styleInputs.length - 1];
             }
             if (classInputs.length) {
                 var i = mapBasedClassInput ? 1 : 0;
-                for (i; i < classInputs.length; i++) {
+                var _loop_2 = function () {
                     var input = classInputs[i];
-                    var convertedBinding = this.convertPropertyBinding(implicit, input.value, true);
-                    var params = [convertedBinding];
+                    var params = [];
                     var sanitizationRef = resolveSanitizationFn(input, input.securityContext);
-                    if (sanitizationRef) {
+                    if (sanitizationRef)
                         params.push(sanitizationRef);
-                    }
                     var key = input.name;
                     var classIndex = classesIndexMap[key];
-                    this.instruction.apply(this, __spread([this._bindingCode, input.sourceSpan, Identifiers$1.elementClassProp, indexLiteral,
-                        literal(classIndex)], params));
+                    var value = input.value.visit(this_2._valueConverter);
+                    this_2.updateInstruction(input.sourceSpan, Identifiers$1.elementClassProp, function () {
+                        return __spread([
+                            indexLiteral_1, literal(classIndex),
+                            _this.convertPropertyBinding(implicit, value, true)
+                        ], params);
+                    });
+                };
+                var this_2 = this;
+                for (i; i < classInputs.length; i++) {
+                    _loop_2();
                 }
                 lastInputCommand = classInputs[classInputs.length - 1];
             }
-            this.instruction(this._bindingCode, lastInputCommand.sourceSpan, Identifiers$1.elementStylingApply, indexLiteral);
+            this.updateInstruction(lastInputCommand.sourceSpan, Identifiers$1.elementStylingApply, function () { return [indexLiteral_1]; });
         }
         // Generate element input bindings
         allOtherInputs.forEach(function (input) {
@@ -19253,17 +19310,20 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 console.error('warning: animation bindings not yet supported');
                 return;
             }
-            var convertedBinding = _this.convertPropertyBinding(implicit, input.value);
             var instruction = mapBindingToInstruction(input.type);
             if (instruction) {
-                var params = [convertedBinding];
+                var params_2 = [];
                 var sanitizationRef = resolveSanitizationFn(input, input.securityContext);
-                if (sanitizationRef) {
-                    params.push(sanitizationRef);
-                }
+                if (sanitizationRef)
+                    params_2.push(sanitizationRef);
                 // TODO(chuckj): runtime: security context?
-                _this.instruction.apply(_this, __spread([_this._bindingCode, input.sourceSpan, instruction, literal(elementIndex),
-                    literal(input.name)], params));
+                var value_2 = input.value.visit(_this._valueConverter);
+                _this.updateInstruction(input.sourceSpan, instruction, function () {
+                    return __spread([
+                        literal(elementIndex), literal(input.name),
+                        _this.convertPropertyBinding(implicit, value_2)
+                    ], params_2);
+                });
             }
             else {
                 _this._unsupported("binding type " + input.type);
@@ -19280,7 +19340,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         }
         if (!createSelfClosingInstruction) {
             // Finish element construction mode.
-            this.instruction(this._creationCode, element.endSourceSpan || element.sourceSpan, Identifiers$1.elementEnd);
+            this.creationInstruction(element.endSourceSpan || element.sourceSpan, Identifiers$1.elementEnd);
         }
         // Restore the state before exiting this node
         this._inI18nSection = wasInI18nSection;
@@ -19296,7 +19356,6 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         }
         var contextName = elName ? this.contextName + "_" + elName : '';
         var templateName = contextName ? contextName + "_Template_" + templateIndex : "Template_" + templateIndex;
-        var templateContext = "ctx" + this.level;
         var parameters = [
             literal(templateIndex),
             variable(templateName),
@@ -19317,25 +19376,38 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             parameters.push(this.constantPool.getConstLiteral(literalArr(attributeNames), true));
         }
         // e.g. C(1, C1Template)
-        this.instruction.apply(this, __spread([this._creationCode, template.sourceSpan, Identifiers$1.containerCreate], trimTrailingNulls(parameters)));
+        this.creationInstruction.apply(this, __spread([template.sourceSpan, Identifiers$1.containerCreate], trimTrailingNulls(parameters)));
         // e.g. p(1, 'forOf', ɵb(ctx.items));
         var context = variable(CONTEXT_NAME);
         template.inputs.forEach(function (input) {
-            var convertedBinding = _this.convertPropertyBinding(context, input.value);
-            _this.instruction(_this._bindingCode, template.sourceSpan, Identifiers$1.elementProperty, literal(templateIndex), literal(input.name), convertedBinding);
+            var value = input.value.visit(_this._valueConverter);
+            _this.updateInstruction(template.sourceSpan, Identifiers$1.elementProperty, function () {
+                return [
+                    literal(templateIndex), literal(input.name),
+                    _this.convertPropertyBinding(context, value)
+                ];
+            });
         });
         // Create the template function
-        var templateVisitor = new TemplateDefinitionBuilder(this.constantPool, templateContext, this._bindingScope, this.level + 1, contextName, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes, this._namespace);
-        var templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables);
-        this._postfixCode.push(templateFunctionExpr.toDeclStmt(templateName, null));
+        var templateVisitor = new TemplateDefinitionBuilder(this.constantPool, this._updateScope, this.level + 1, contextName, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes, this._namespace);
+        // Nested templates must not be visited until after their parent templates have completed
+        // processing, so they are queued here until after the initial pass. Otherwise, we wouldn't
+        // be able to support bindings in nested templates to local refs that occur after the
+        // template definition. e.g. <div *ngIf="showing"> {{ foo }} </div>  <div #foo></div>
+        this._nestedTemplateFns.push(function () {
+            var templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables);
+            _this.constantPool.statements.push(templateFunctionExpr.toDeclStmt(templateName, null));
+        });
     };
     TemplateDefinitionBuilder.prototype.visitBoundText = function (text) {
+        var _this = this;
         var nodeIndex = this.allocateDataSlot();
-        this.instruction(this._creationCode, text.sourceSpan, Identifiers$1.text, literal(nodeIndex));
-        this.instruction(this._bindingCode, text.sourceSpan, Identifiers$1.textBinding, literal(nodeIndex), this.convertPropertyBinding(variable(CONTEXT_NAME), text.value));
+        this.creationInstruction(text.sourceSpan, Identifiers$1.text, literal(nodeIndex));
+        var value = text.value.visit(this._valueConverter);
+        this.updateInstruction(text.sourceSpan, Identifiers$1.textBinding, function () { return [literal(nodeIndex), _this.convertPropertyBinding(variable(CONTEXT_NAME), value)]; });
     };
     TemplateDefinitionBuilder.prototype.visitText = function (text) {
-        this.instruction(this._creationCode, text.sourceSpan, Identifiers$1.text, literal(this.allocateDataSlot()), literal(text.value));
+        this.creationInstruction(text.sourceSpan, Identifiers$1.text, literal(this.allocateDataSlot()), literal(text.value));
     };
     // When the content of the element is a single text node the translation can be inlined:
     //
@@ -19352,31 +19424,36 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     TemplateDefinitionBuilder.prototype.visitSingleI18nTextChild = function (text, i18nMeta) {
         var meta = parseI18nMeta(i18nMeta);
         var variable$$1 = this.constantPool.getTranslation(text.value, meta);
-        this.instruction(this._creationCode, text.sourceSpan, Identifiers$1.text, literal(this.allocateDataSlot()), variable$$1);
+        this.creationInstruction(text.sourceSpan, Identifiers$1.text, literal(this.allocateDataSlot()), variable$$1);
     };
     TemplateDefinitionBuilder.prototype.allocateDataSlot = function () { return this._dataIndex++; };
     TemplateDefinitionBuilder.prototype.bindingContext = function () { return "" + this._bindingContext++; };
-    TemplateDefinitionBuilder.prototype.instruction = function (statements, span, reference) {
+    TemplateDefinitionBuilder.prototype.instruction = function (span, reference, params) {
+        return importExpr(reference, null, span).callFn(params, span).toStmt();
+    };
+    TemplateDefinitionBuilder.prototype.creationInstruction = function (span, reference) {
         var params = [];
-        for (var _i = 3; _i < arguments.length; _i++) {
-            params[_i - 3] = arguments[_i];
+        for (var _i = 2; _i < arguments.length; _i++) {
+            params[_i - 2] = arguments[_i];
         }
-        statements.push(importExpr(reference, null, span).callFn(params, span).toStmt());
+        this._creationCode.push(this.instruction(span, reference, params));
+    };
+    // Bindings must only be resolved after all local refs have been visited, so update mode
+    // instructions are queued in callbacks that execute once the initial pass has completed.
+    // Otherwise, we wouldn't be able to support local refs that are defined after their
+    // bindings. e.g. {{ foo }} <div #foo></div>
+    TemplateDefinitionBuilder.prototype.updateInstruction = function (span, reference, paramsFn) {
+        var _this = this;
+        this._updateCodeFns.push(function () { return _this.instruction(span, reference, paramsFn()); });
     };
     TemplateDefinitionBuilder.prototype.convertPropertyBinding = function (implicit, value, skipBindFn) {
-        var pipesConvertedValue = value.visit(this._valueConverter);
-        if (pipesConvertedValue instanceof Interpolation) {
-            var convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, interpolate);
-            (_a = this._bindingCode).push.apply(_a, __spread(convertedPropertyBinding.stmts));
-            return convertedPropertyBinding.currValExpr;
-        }
-        else {
-            var convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, function () { return error('Unexpected interpolation'); });
-            (_b = this._bindingCode).push.apply(_b, __spread(convertedPropertyBinding.stmts));
-            var valExpr = convertedPropertyBinding.currValExpr;
-            return skipBindFn ? valExpr : importExpr(Identifiers$1.bind).callFn([valExpr]);
-        }
-        var _a, _b;
+        var interpolationFn = value instanceof Interpolation ? interpolate : function () { return error('Unexpected interpolation'); };
+        var convertedPropertyBinding = convertPropertyBinding(this, implicit, value, this.bindingContext(), BindingForm.TrySimple, interpolationFn);
+        (_a = this._tempVariables).push.apply(_a, __spread(convertedPropertyBinding.stmts));
+        var valExpr = convertedPropertyBinding.currValExpr;
+        return value instanceof Interpolation || skipBindFn ? valExpr :
+            importExpr(Identifiers$1.bind).callFn([valExpr]);
+        var _a;
     };
     return TemplateDefinitionBuilder;
 }());
@@ -19453,6 +19530,11 @@ function pureFunctionCallInfo(args) {
         isVarLength: !identifier,
     };
 }
+// e.g. x(2);
+function generateNextContextExpr(relativeLevelDiff) {
+    return importExpr(Identifiers$1.nextContext)
+        .callFn(relativeLevelDiff > 1 ? [literal(relativeLevelDiff)] : []);
+}
 function getLiteralFactory(constantPool, literal$$1, allocateSlots) {
     var _a = constantPool.getLiteralFactory(literal$$1), literalFactory = _a.literalFactory, literalFactoryArguments = _a.literalFactoryArguments;
     // Allocate 1 slot for the result plus 1 per argument
@@ -19473,22 +19555,15 @@ function getLiteralFactory(constantPool, literal$$1, allocateSlots) {
     }
     return importExpr(identifier).callFn(args);
 }
+/** The prefix used to get a shared context in BindingScope's map. */
+var SHARED_CONTEXT_KEY = '$$shared_ctx$$';
 var BindingScope = /** @class */ (function () {
-    function BindingScope(parent, declareLocalVarCallback) {
+    function BindingScope(bindingLevel, parent) {
+        if (bindingLevel === void 0) { bindingLevel = 0; }
         if (parent === void 0) { parent = null; }
-        if (declareLocalVarCallback === void 0) { declareLocalVarCallback = noop; }
+        this.bindingLevel = bindingLevel;
         this.parent = parent;
-        this.declareLocalVarCallback = declareLocalVarCallback;
-        /**
-         * Keeps a map from local variables to their expressions.
-         *
-         * This is used when one refers to variable such as: 'let abc = a.b.c`.
-         * - key to the map is the string literal `"abc"`.
-         * - value `lhs` is the left hand side which is an AST representing `abc`.
-         * - value `rhs` is the right hand side which is an AST representing `a.b.c`.
-         * - value `declared` is true if the `declareLocalVarCallback` has been called for this scope
-         * already.
-         */
+        /** Keeps a map from local variables to their BindingData. */
         this.map = new Map();
         this.referenceNameIndex = 0;
     }
@@ -19498,41 +19573,106 @@ var BindingScope = /** @class */ (function () {
             var value = current.map.get(name);
             if (value != null) {
                 if (current !== this) {
-                    // make a local copy and reset the `declared` state.
-                    value = { lhs: value.lhs, rhs: value.rhs, declared: false };
+                    // make a local copy and reset the `declare` state
+                    value = {
+                        retrievalLevel: value.retrievalLevel,
+                        lhs: value.lhs,
+                        declareLocalCallback: value.declareLocalCallback,
+                        declare: false,
+                        priority: value.priority
+                    };
                     // Cache the value locally.
                     this.map.set(name, value);
+                    // Possibly generate a shared context var
+                    this.maybeGenerateSharedContextVar(value);
                 }
-                if (value.rhs && !value.declared) {
-                    // if it is first time we are referencing the variable in the scope
-                    // than invoke the callback to insert variable declaration.
-                    this.declareLocalVarCallback(value.lhs, value.rhs);
-                    value.declared = true;
+                if (value.declareLocalCallback && !value.declare) {
+                    value.declare = true;
                 }
                 return value.lhs;
             }
             current = current.parent;
         }
-        return null;
+        // If we get to this point, we are looking for a property on the top level component
+        // - If level === 0, we are on the top and don't need to re-declare `ctx`.
+        // - If level > 0, we are in an embedded view. We need to retrieve the name of the
+        // local var we used to store the component context, e.g. const $comp$ = x();
+        return this.bindingLevel === 0 ? null : this.getComponentProperty(name);
     };
     /**
      * Create a local variable for later reference.
      *
+     * @param retrievalLevel The level from which this value can be retrieved
      * @param name Name of the variable.
      * @param lhs AST representing the left hand side of the `let lhs = rhs;`.
-     * @param rhs AST representing the right hand side of the `let lhs = rhs;`. The `rhs` can be
-     * `undefined` for variable that are ambient such as `$event` and which don't have `rhs`
-     * declaration.
+     * @param priority The sorting priority of this var
+     * @param declareLocalCallback The callback to invoke when declaring this local var
      */
-    BindingScope.prototype.set = function (name, lhs, rhs) {
+    BindingScope.prototype.set = function (retrievalLevel, name, lhs, priority, declareLocalCallback) {
+        if (priority === void 0) { priority = 0 /* DEFAULT */; }
         !this.map.has(name) ||
             error("The name " + name + " is already defined in scope to be " + this.map.get(name));
-        this.map.set(name, { lhs: lhs, rhs: rhs, declared: false });
+        this.map.set(name, {
+            retrievalLevel: retrievalLevel,
+            lhs: lhs,
+            declare: false,
+            declareLocalCallback: declareLocalCallback,
+            priority: priority
+        });
         return this;
     };
     BindingScope.prototype.getLocal = function (name) { return this.get(name); };
-    BindingScope.prototype.nestedScope = function (declareCallback) {
-        return new BindingScope(this, declareCallback);
+    BindingScope.prototype.nestedScope = function (level) {
+        var newScope = new BindingScope(level, this);
+        if (level > 0)
+            newScope.generateSharedContextVar(0);
+        return newScope;
+    };
+    BindingScope.prototype.getSharedContextName = function (retrievalLevel) {
+        var sharedCtxObj = this.map.get(SHARED_CONTEXT_KEY + retrievalLevel);
+        return sharedCtxObj && sharedCtxObj.declare ? sharedCtxObj.lhs : null;
+    };
+    BindingScope.prototype.maybeGenerateSharedContextVar = function (value) {
+        if (value.priority === 1 /* CONTEXT */) {
+            var sharedCtxObj = this.map.get(SHARED_CONTEXT_KEY + value.retrievalLevel);
+            if (sharedCtxObj) {
+                sharedCtxObj.declare = true;
+            }
+            else {
+                this.generateSharedContextVar(value.retrievalLevel);
+            }
+        }
+    };
+    BindingScope.prototype.generateSharedContextVar = function (retrievalLevel) {
+        var lhs = variable(CONTEXT_NAME + this.freshReferenceName());
+        this.map.set(SHARED_CONTEXT_KEY + retrievalLevel, {
+            retrievalLevel: retrievalLevel,
+            lhs: lhs,
+            declareLocalCallback: function (scope, relativeLevel) {
+                // const ctx_r0 = x(2);
+                return [lhs.set(generateNextContextExpr(relativeLevel)).toConstDecl()];
+            },
+            declare: false,
+            priority: 2 /* SHARED_CONTEXT */
+        });
+    };
+    BindingScope.prototype.getComponentProperty = function (name) {
+        var componentValue = this.map.get(SHARED_CONTEXT_KEY + 0);
+        componentValue.declare = true;
+        return componentValue.lhs.prop(name);
+    };
+    BindingScope.prototype.variableDeclarations = function () {
+        var _this = this;
+        var currentContextLevel = 0;
+        return Array.from(this.map.values())
+            .filter(function (value) { return value.declare; })
+            .sort(function (a, b) { return b.retrievalLevel - a.retrievalLevel || b.priority - a.priority; })
+            .reduce(function (stmts, value) {
+            var levelDiff = _this.bindingLevel - value.retrievalLevel;
+            var currStmts = value.declareLocalCallback(_this, levelDiff - currentContextLevel);
+            currentContextLevel = levelDiff;
+            return stmts.concat(currStmts);
+        }, []);
     };
     BindingScope.prototype.freshReferenceName = function () {
         var current = this;
@@ -19542,7 +19682,7 @@ var BindingScope = /** @class */ (function () {
         var ref = "" + REFERENCE_PREFIX + current.referenceNameIndex++;
         return ref;
     };
-    BindingScope.ROOT_SCOPE = new BindingScope().set('$event', variable('$event'));
+    BindingScope.ROOT_SCOPE = new BindingScope().set(-1, '$event', variable('$event'));
     return BindingScope;
 }());
 /**
@@ -19764,7 +19904,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     var directivesUsed = new Set();
     var pipesUsed = new Set();
     var template = meta.template;
-    var templateFunctionExpression = new TemplateDefinitionBuilder(constantPool, CONTEXT_NAME, BindingScope.ROOT_SCOPE, 0, templateTypeName, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML)
+    var templateFunctionExpression = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML)
         .buildTemplateFunction(template.nodes, [], template.hasNgContent, template.ngContentSelectors);
     definitionMap.set('template', templateFunctionExpression);
     // e.g. `directives: [MyDirective]`
