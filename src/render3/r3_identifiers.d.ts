@@ -24,6 +24,7 @@ export declare class Identifiers {
     static elementStyleProp: o.ExternalReference;
     static elementStylingApply: o.ExternalReference;
     static containerCreate: o.ExternalReference;
+    static nextContext: o.ExternalReference;
     static text: o.ExternalReference;
     static textBinding: o.ExternalReference;
     static bind: o.ExternalReference;
@@ -57,6 +58,7 @@ export declare class Identifiers {
     static pipe: o.ExternalReference;
     static projection: o.ExternalReference;
     static projectionDef: o.ExternalReference;
+    static reference: o.ExternalReference;
     static inject: o.ExternalReference;
     static injectAttribute: o.ExternalReference;
     static injectElementRef: o.ExternalReference;
