@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0+51.sha-24789e9
+ * @license Angular v6.1.0+52.sha-e99d860
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1125,7 +1125,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('6.1.0+51.sha-24789e9');
+var VERSION = new Version('6.1.0+52.sha-e99d860');
 
 /**
  * @license
@@ -7778,7 +7778,7 @@ function getTypeForTag(tag) {
 var _MESSAGES_TAG = 'messagebundle';
 var _MESSAGE_TAG = 'msg';
 var _PLACEHOLDER_TAG$2 = 'ph';
-var _EXEMPLE_TAG = 'ex';
+var _EXAMPLE_TAG = 'ex';
 var _SOURCE_TAG$2 = 'source';
 var _DOCTYPE = "<!ELEMENT messagebundle (msg)*>\n<!ATTLIST messagebundle class CDATA #IMPLIED>\n\n<!ELEMENT msg (#PCDATA|ph|source)*>\n<!ATTLIST msg id CDATA #IMPLIED>\n<!ATTLIST msg seq CDATA #IMPLIED>\n<!ATTLIST msg name CDATA #IMPLIED>\n<!ATTLIST msg desc CDATA #IMPLIED>\n<!ATTLIST msg meaning CDATA #IMPLIED>\n<!ATTLIST msg obsolete (obsolete) #IMPLIED>\n<!ATTLIST msg xml:space (default|preserve) \"default\">\n<!ATTLIST msg is_hidden CDATA #IMPLIED>\n\n<!ELEMENT source (#PCDATA)>\n\n<!ELEMENT ph (#PCDATA|ex)*>\n<!ATTLIST ph name CDATA #REQUIRED>\n\n<!ELEMENT ex (#PCDATA)>";
 var Xmb = /** @class */ (function (_super) {
@@ -7845,25 +7845,39 @@ var _Visitor$2 = /** @class */ (function () {
         return nodes;
     };
     _Visitor.prototype.visitTagPlaceholder = function (ph, context) {
-        var startEx = new Tag(_EXEMPLE_TAG, {}, [new Text$2("<" + ph.tag + ">")]);
-        var startTagPh = new Tag(_PLACEHOLDER_TAG$2, { name: ph.startName }, [startEx]);
+        var startTagAsText = new Text$2("<" + ph.tag + ">");
+        var startEx = new Tag(_EXAMPLE_TAG, {}, [startTagAsText]);
+        // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
+        var startTagPh = new Tag(_PLACEHOLDER_TAG$2, { name: ph.startName }, [startEx, startTagAsText]);
         if (ph.isVoid) {
             // void tags have no children nor closing tags
             return [startTagPh];
         }
-        var closeEx = new Tag(_EXEMPLE_TAG, {}, [new Text$2("</" + ph.tag + ">")]);
-        var closeTagPh = new Tag(_PLACEHOLDER_TAG$2, { name: ph.closeName }, [closeEx]);
+        var closeTagAsText = new Text$2("</" + ph.tag + ">");
+        var closeEx = new Tag(_EXAMPLE_TAG, {}, [closeTagAsText]);
+        // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
+        var closeTagPh = new Tag(_PLACEHOLDER_TAG$2, { name: ph.closeName }, [closeEx, closeTagAsText]);
         return __spread([startTagPh], this.serialize(ph.children), [closeTagPh]);
     };
     _Visitor.prototype.visitPlaceholder = function (ph, context) {
-        var exTag = new Tag(_EXEMPLE_TAG, {}, [new Text$2("{{" + ph.value + "}}")]);
-        return [new Tag(_PLACEHOLDER_TAG$2, { name: ph.name }, [exTag])];
+        var interpolationAsText = new Text$2("{{" + ph.value + "}}");
+        // Example tag needs to be not-empty for TC.
+        var exTag = new Tag(_EXAMPLE_TAG, {}, [interpolationAsText]);
+        return [
+            // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
+            new Tag(_PLACEHOLDER_TAG$2, { name: ph.name }, [exTag, interpolationAsText])
+        ];
     };
     _Visitor.prototype.visitIcuPlaceholder = function (ph, context) {
-        var exTag = new Tag(_EXEMPLE_TAG, {}, [
-            new Text$2("{" + ph.value.expression + ", " + ph.value.type + ", " + Object.keys(ph.value.cases).map(function (value) { return value + ' {...}'; }).join(' ') + "}")
-        ]);
-        return [new Tag(_PLACEHOLDER_TAG$2, { name: ph.name }, [exTag])];
+        var icuExpression = ph.value.expression;
+        var icuType = ph.value.type;
+        var icuCases = Object.keys(ph.value.cases).map(function (value) { return value + ' {...}'; }).join(' ');
+        var icuAsText = new Text$2("{" + icuExpression + ", " + icuType + ", " + icuCases + "}");
+        var exTag = new Tag(_EXAMPLE_TAG, {}, [icuAsText]);
+        return [
+            // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
+            new Tag(_PLACEHOLDER_TAG$2, { name: ph.name }, [exTag, icuAsText])
+        ];
     };
     _Visitor.prototype.serialize = function (nodes) {
         var _this = this;
@@ -7887,7 +7901,7 @@ var ExampleVisitor = /** @class */ (function () {
         if (tag.name === _PLACEHOLDER_TAG$2) {
             if (!tag.children || tag.children.length == 0) {
                 var exText = new Text$2(tag.attrs['name'] || '...');
-                tag.children = [new Tag(_EXEMPLE_TAG, {}, [exText])];
+                tag.children = [new Tag(_EXAMPLE_TAG, {}, [exText])];
             }
         }
         else if (tag.children) {
