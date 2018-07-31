@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0+51.sha-24789e9
+ * @license Angular v6.1.0+52.sha-e99d860
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('6.1.0+51.sha-24789e9');
+const VERSION = new Version('6.1.0+52.sha-e99d860');
 
 /**
  * @license
@@ -7335,7 +7335,7 @@ function getTypeForTag(tag) {
 const _MESSAGES_TAG = 'messagebundle';
 const _MESSAGE_TAG = 'msg';
 const _PLACEHOLDER_TAG$2 = 'ph';
-const _EXEMPLE_TAG = 'ex';
+const _EXAMPLE_TAG = 'ex';
 const _SOURCE_TAG$2 = 'source';
 const _DOCTYPE = `<!ELEMENT messagebundle (msg)*>
 <!ATTLIST messagebundle class CDATA #IMPLIED>
@@ -7411,25 +7411,39 @@ class _Visitor$2 {
         return nodes;
     }
     visitTagPlaceholder(ph, context) {
-        const startEx = new Tag(_EXEMPLE_TAG, {}, [new Text$2(`<${ph.tag}>`)]);
-        const startTagPh = new Tag(_PLACEHOLDER_TAG$2, { name: ph.startName }, [startEx]);
+        const startTagAsText = new Text$2(`<${ph.tag}>`);
+        const startEx = new Tag(_EXAMPLE_TAG, {}, [startTagAsText]);
+        // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
+        const startTagPh = new Tag(_PLACEHOLDER_TAG$2, { name: ph.startName }, [startEx, startTagAsText]);
         if (ph.isVoid) {
             // void tags have no children nor closing tags
             return [startTagPh];
         }
-        const closeEx = new Tag(_EXEMPLE_TAG, {}, [new Text$2(`</${ph.tag}>`)]);
-        const closeTagPh = new Tag(_PLACEHOLDER_TAG$2, { name: ph.closeName }, [closeEx]);
+        const closeTagAsText = new Text$2(`</${ph.tag}>`);
+        const closeEx = new Tag(_EXAMPLE_TAG, {}, [closeTagAsText]);
+        // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
+        const closeTagPh = new Tag(_PLACEHOLDER_TAG$2, { name: ph.closeName }, [closeEx, closeTagAsText]);
         return [startTagPh, ...this.serialize(ph.children), closeTagPh];
     }
     visitPlaceholder(ph, context) {
-        const exTag = new Tag(_EXEMPLE_TAG, {}, [new Text$2(`{{${ph.value}}}`)]);
-        return [new Tag(_PLACEHOLDER_TAG$2, { name: ph.name }, [exTag])];
+        const interpolationAsText = new Text$2(`{{${ph.value}}}`);
+        // Example tag needs to be not-empty for TC.
+        const exTag = new Tag(_EXAMPLE_TAG, {}, [interpolationAsText]);
+        return [
+            // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
+            new Tag(_PLACEHOLDER_TAG$2, { name: ph.name }, [exTag, interpolationAsText])
+        ];
     }
     visitIcuPlaceholder(ph, context) {
-        const exTag = new Tag(_EXEMPLE_TAG, {}, [
-            new Text$2(`{${ph.value.expression}, ${ph.value.type}, ${Object.keys(ph.value.cases).map((value) => value + ' {...}').join(' ')}}`)
-        ]);
-        return [new Tag(_PLACEHOLDER_TAG$2, { name: ph.name }, [exTag])];
+        const icuExpression = ph.value.expression;
+        const icuType = ph.value.type;
+        const icuCases = Object.keys(ph.value.cases).map((value) => value + ' {...}').join(' ');
+        const icuAsText = new Text$2(`{${icuExpression}, ${icuType}, ${icuCases}}`);
+        const exTag = new Tag(_EXAMPLE_TAG, {}, [icuAsText]);
+        return [
+            // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
+            new Tag(_PLACEHOLDER_TAG$2, { name: ph.name }, [exTag, icuAsText])
+        ];
     }
     serialize(nodes) {
         return [].concat(...nodes.map(node => node.visit(this)));
@@ -7448,7 +7462,7 @@ class ExampleVisitor {
         if (tag.name === _PLACEHOLDER_TAG$2) {
             if (!tag.children || tag.children.length == 0) {
                 const exText = new Text$2(tag.attrs['name'] || '...');
-                tag.children = [new Tag(_EXEMPLE_TAG, {}, [exText])];
+                tag.children = [new Tag(_EXAMPLE_TAG, {}, [exText])];
             }
         }
         else if (tag.children) {
