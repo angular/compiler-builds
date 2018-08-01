@@ -28,6 +28,8 @@ export declare class Identifiers {
     static text: o.ExternalReference;
     static textBinding: o.ExternalReference;
     static bind: o.ExternalReference;
+    static getCurrentView: o.ExternalReference;
+    static restoreView: o.ExternalReference;
     static interpolation1: o.ExternalReference;
     static interpolation2: o.ExternalReference;
     static interpolation3: o.ExternalReference;
