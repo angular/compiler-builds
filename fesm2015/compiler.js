@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0+64.sha-64516da
+ * @license Angular v6.1.0+65.sha-c8a4fb1
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('6.1.0+64.sha-64516da');
+const VERSION = new Version('6.1.0+65.sha-c8a4fb1');
 
 /**
  * @license
@@ -16692,6 +16692,8 @@ Identifiers$1.nextContext = { name: 'ɵx', moduleName: CORE$1 };
 Identifiers$1.text = { name: 'ɵT', moduleName: CORE$1 };
 Identifiers$1.textBinding = { name: 'ɵt', moduleName: CORE$1 };
 Identifiers$1.bind = { name: 'ɵb', moduleName: CORE$1 };
+Identifiers$1.getCurrentView = { name: 'ɵgV', moduleName: CORE$1 };
+Identifiers$1.restoreView = { name: 'ɵrV', moduleName: CORE$1 };
 Identifiers$1.interpolation1 = { name: 'ɵi1', moduleName: CORE$1 };
 Identifiers$1.interpolation2 = { name: 'ɵi2', moduleName: CORE$1 };
 Identifiers$1.interpolation3 = { name: 'ɵi3', moduleName: CORE$1 };
@@ -17723,7 +17725,12 @@ class TemplateDefinitionBuilder {
         this._dataIndex = 0;
         this._bindingContext = 0;
         this._prefixCode = [];
-        this._creationCode = [];
+        /**
+         * List of callbacks to generate creation mode instructions. We store them here as we process
+         * the template so bindings in listeners are resolved only once all nodes have been visited.
+         * This ensures all local refs and context variables are available for matching.
+         */
+        this._creationCodeFns = [];
         /**
          * List of callbacks to generate update mode instructions. We store them here as we process
          * the template so bindings are resolved only once all nodes have been visited. This ensures
@@ -17756,23 +17763,21 @@ class TemplateDefinitionBuilder {
         // view queries can take up space in data and allocation happens earlier (in the "viewQuery"
         // function)
         this._dataIndex = viewQueries.length;
-        // TODO(kara): generate restore instruction in listener to replace creation scope
-        this._creationScope = parentBindingScope.nestedScope(level);
-        this._updateScope = parentBindingScope.nestedScope(level);
+        this._bindingScope = parentBindingScope.nestedScope(level);
         this._valueConverter = new ValueConverter(constantPool, () => this.allocateDataSlot(), (numSlots) => this._pureFunctionSlots += numSlots, (name, localName, slot, value) => {
             const pipeType = pipeTypeByName.get(name);
             if (pipeType) {
                 this.pipes.add(pipeType);
             }
-            this._updateScope.set(this.level, localName, value);
-            this._creationCode.push(importExpr(Identifiers$1.pipe).callFn([literal(slot), literal(name)]).toStmt());
+            this._bindingScope.set(this.level, localName, value);
+            this.creationInstruction(null, Identifiers$1.pipe, [literal(slot), literal(name)]);
         });
     }
-    registerContextVariables(variable$$1, retrievalScope) {
-        const scopedName = retrievalScope.freshReferenceName();
+    registerContextVariables(variable$$1) {
+        const scopedName = this._bindingScope.freshReferenceName();
         const retrievalLevel = this.level;
         const lhs = variable(variable$$1.name + scopedName);
-        retrievalScope.set(retrievalLevel, variable$$1.name, lhs, 1 /* CONTEXT */, (scope, relativeLevel) => {
+        this._bindingScope.set(retrievalLevel, variable$$1.name, lhs, 1 /* CONTEXT */, (scope, relativeLevel) => {
             let rhs;
             if (scope.bindingLevel === retrievalLevel) {
                 // e.g. ctx
@@ -17792,11 +17797,7 @@ class TemplateDefinitionBuilder {
             this.creationInstruction(null, this._namespace);
         }
         // Create variable bindings
-        for (const variable$$1 of variables) {
-            // Add the reference to the local scope.
-            this.registerContextVariables(variable$$1, this._creationScope);
-            this.registerContextVariables(variable$$1, this._updateScope);
-        }
+        variables.forEach(v => this.registerContextVariables(v));
         // Output a `ProjectionDef` instruction when some `<ng-content>` are present
         if (hasNgContent) {
             const parameters = [];
@@ -17808,33 +17809,36 @@ class TemplateDefinitionBuilder {
                 const unParsed = this.constantPool.getConstLiteral(asLiteral(ngContentSelectors), true);
                 parameters.push(parsed, unParsed);
             }
-            this.creationInstruction(null, Identifiers$1.projectionDef, ...parameters);
+            this.creationInstruction(null, Identifiers$1.projectionDef, parameters);
         }
         // This is the initial pass through the nodes of this template. In this pass, we
-        // generate all creation mode instructions & queue all update mode instructions for
-        // generation in the second pass. It's necessary to separate the passes to ensure
-        // local refs are defined before resolving bindings.
+        // queue all creation mode and update mode instructions for generation in the second
+        // pass. It's necessary to separate the passes to ensure local refs are defined before
+        // resolving bindings.
         visitAll$1(this, nodes);
-        // Generate all the update mode instructions as the second pass (e.g. resolve bindings)
+        // Generate all the creation mode instructions (e.g. resolve bindings in listeners)
+        const creationStatements = this._creationCodeFns.map((fn$$1) => fn$$1());
+        // Generate all the update mode instructions (e.g. resolve property or text bindings)
         const updateStatements = this._updateCodeFns.map((fn$$1) => fn$$1());
         // To count slots for the reserveSlots() instruction, all bindings must have been visited.
         if (this._pureFunctionSlots > 0) {
-            this.creationInstruction(null, Identifiers$1.reserveSlots, literal(this._pureFunctionSlots));
+            creationStatements.push(instruction(null, Identifiers$1.reserveSlots, [literal(this._pureFunctionSlots)]).toStmt());
         }
-        const creationCode = this._creationCode.length > 0 ?
-            [renderFlagCheckIfStmt(1 /* Create */, this._creationScope.variableDeclarations().concat(this._creationCode))] :
+        //  Variable declaration must occur after binding resolution so we can generate context
+        //  instructions that build on each other. e.g. const b = x().$implicit(); const b = x();
+        const creationVariables = this._bindingScope.viewSnapshotStatements();
+        const updateVariables = this._bindingScope.variableDeclarations().concat(this._tempVariables);
+        const creationBlock = creationStatements.length > 0 ?
+            [renderFlagCheckIfStmt(1 /* Create */, creationVariables.concat(creationStatements))] :
             [];
-        //  This must occur after binding resolution so we can generate context instructions that
-        // build on each other. e.g. const row = x().$implicit; const table = x().$implicit();
-        const updateVariables = this._updateScope.variableDeclarations().concat(this._tempVariables);
-        const updateCode = this._updateCodeFns.length > 0 ?
+        const updateBlock = updateStatements.length > 0 ?
             [renderFlagCheckIfStmt(2 /* Update */, updateVariables.concat(updateStatements))] :
             [];
         // Generate maps of placeholder name to node indexes
         // TODO(vicb): This is a WIP, not fully supported yet
         for (const phToNodeIdx of this._phToNodeIdxes) {
             if (Object.keys(phToNodeIdx).length > 0) {
-                const scopedName = this._updateScope.freshReferenceName();
+                const scopedName = this._bindingScope.freshReferenceName();
                 const phMap = variable(scopedName).set(mapToExpression(phToNodeIdx, true)).toConstDecl();
                 this._prefixCode.push(phMap);
             }
@@ -17846,13 +17850,13 @@ class TemplateDefinitionBuilder {
             // Temporary variable declarations for query refresh (i.e. let _t: any;)
             ...this._prefixCode,
             // Creating mode (i.e. if (rf & RenderFlags.Create) { ... })
-            ...creationCode,
+            ...creationBlock,
             // Binding and refresh mode (i.e. if (rf & RenderFlags.Update) {...})
-            ...updateCode,
+            ...updateBlock,
         ], INFERRED_TYPE, null, this.templateName);
     }
     // LocalResolver
-    getLocal(name) { return this._updateScope.get(name); }
+    getLocal(name) { return this._bindingScope.get(name); }
     visitContent(ngContent) {
         const slot = this.allocateDataSlot();
         const selectorIndex = ngContent.selectorIndex;
@@ -17870,7 +17874,7 @@ class TemplateDefinitionBuilder {
         else if (selectorIndex !== 0) {
             parameters.push(literal(selectorIndex));
         }
-        this.creationInstruction(ngContent.sourceSpan, Identifiers$1.projection, ...parameters);
+        this.creationInstruction(ngContent.sourceSpan, Identifiers$1.projection, parameters);
     }
     getNamespaceInstruction(namespaceKey) {
         switch (namespaceKey) {
@@ -17933,7 +17937,6 @@ class TemplateDefinitionBuilder {
             literal(elementName),
         ];
         // Add the attributes
-        const i18nMessages = [];
         const attributes = [];
         const initialStyleDeclarations = [];
         const initialClassDeclarations = [];
@@ -18059,10 +18062,10 @@ class TemplateDefinitionBuilder {
             const references = flatten(element.references.map(reference => {
                 const slot = this.allocateDataSlot();
                 // Generate the update temporary.
-                const variableName = this._updateScope.freshReferenceName();
+                const variableName = this._bindingScope.freshReferenceName();
                 const retrievalLevel = this.level;
                 const lhs = variable(variableName);
-                this._updateScope.set(retrievalLevel, reference.name, lhs, 0 /* DEFAULT */, (scope, relativeLevel) => {
+                this._bindingScope.set(retrievalLevel, reference.name, lhs, 0 /* DEFAULT */, (scope, relativeLevel) => {
                     // e.g. x(2);
                     const nextContextStmt = relativeLevel > 0 ? [generateNextContextExpr(relativeLevel).toStmt()] : [];
                     // e.g. const $foo$ = r(1);
@@ -18076,10 +18079,6 @@ class TemplateDefinitionBuilder {
         else {
             parameters.push(TYPED_NULL_EXPR);
         }
-        // Generate the instruction create element instruction
-        if (i18nMessages.length > 0) {
-            this._creationCode.push(...i18nMessages);
-        }
         const wasInNamespace = this._namespace;
         const currentNamespace = this.getNamespaceInstruction(namespaceKey);
         // If the namespace is changing now, include an instruction to change it
@@ -18090,14 +18089,10 @@ class TemplateDefinitionBuilder {
         const implicit = variable(CONTEXT_NAME);
         const createSelfClosingInstruction = !hasStylingInstructions && element.children.length === 0 && element.outputs.length === 0;
         if (createSelfClosingInstruction) {
-            this.creationInstruction(element.sourceSpan, Identifiers$1.element, ...trimTrailingNulls(parameters));
+            this.creationInstruction(element.sourceSpan, Identifiers$1.element, trimTrailingNulls(parameters));
         }
         else {
-            // Generate the instruction create element instruction
-            if (i18nMessages.length > 0) {
-                this._creationCode.push(...i18nMessages);
-            }
-            this.creationInstruction(element.sourceSpan, Identifiers$1.elementStart, ...trimTrailingNulls(parameters));
+            this.creationInstruction(element.sourceSpan, Identifiers$1.elementStart, trimTrailingNulls(parameters));
             // initial styling for static style="..." attributes
             if (hasStylingInstructions) {
                 const paramsList = [];
@@ -18126,16 +18121,23 @@ class TemplateDefinitionBuilder {
                 if (useDefaultStyleSanitizer) {
                     paramsList.push(importExpr(Identifiers$1.defaultStyleSanitizer));
                 }
-                this._creationCode.push(importExpr(Identifiers$1.elementStyling).callFn(paramsList).toStmt());
+                this.creationInstruction(null, Identifiers$1.elementStyling, paramsList);
             }
             // Generate Listeners (outputs)
             element.outputs.forEach((outputAst) => {
                 const elName = sanitizeIdentifier(element.name);
                 const evName = sanitizeIdentifier(outputAst.name);
                 const functionName = `${this.templateName}_${elName}_${evName}_listener`;
-                const bindingExpr = convertActionBinding(this._creationScope, implicit, outputAst.handler, 'b', () => error('Unexpected interpolation'));
-                const handler = fn([new FnParam('$event', DYNAMIC_TYPE)], [...bindingExpr.render3Stmts], INFERRED_TYPE, null, functionName);
-                this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, literal(outputAst.name), handler);
+                this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, () => {
+                    const listenerScope = this._bindingScope.nestedScope(this._bindingScope.bindingLevel);
+                    const bindingExpr = convertActionBinding(listenerScope, implicit, outputAst.handler, 'b', () => error('Unexpected interpolation'));
+                    const statements = [
+                        ...listenerScope.restoreViewStatement(), ...listenerScope.variableDeclarations(),
+                        ...bindingExpr.render3Stmts
+                    ];
+                    const handler = fn([new FnParam('$event', DYNAMIC_TYPE)], statements, INFERRED_TYPE, null, functionName);
+                    return [literal(outputAst.name), handler];
+                });
             });
         }
         if ((styleInputs.length || classInputs.length) && hasStylingInstructions) {
@@ -18203,7 +18205,7 @@ class TemplateDefinitionBuilder {
                 }
                 lastInputCommand = classInputs[classInputs.length - 1];
             }
-            this.updateInstruction(lastInputCommand.sourceSpan, Identifiers$1.elementStylingApply, () => [indexLiteral]);
+            this.updateInstruction(lastInputCommand.sourceSpan, Identifiers$1.elementStylingApply, [indexLiteral]);
         }
         // Generate element input bindings
         allOtherInputs.forEach((input) => {
@@ -18275,7 +18277,7 @@ class TemplateDefinitionBuilder {
             parameters.push(this.constantPool.getConstLiteral(literalArr(attributeNames), true));
         }
         // e.g. C(1, C1Template)
-        this.creationInstruction(template.sourceSpan, Identifiers$1.containerCreate, ...trimTrailingNulls(parameters));
+        this.creationInstruction(template.sourceSpan, Identifiers$1.containerCreate, trimTrailingNulls(parameters));
         // e.g. p(1, 'forOf', ɵb(ctx.items));
         const context = variable(CONTEXT_NAME);
         template.inputs.forEach(input => {
@@ -18288,7 +18290,7 @@ class TemplateDefinitionBuilder {
             });
         });
         // Create the template function
-        const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, this._updateScope, this.level + 1, contextName, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes, this._namespace);
+        const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, this._bindingScope, this.level + 1, contextName, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes, this._namespace);
         // Nested templates must not be visited until after their parent templates have completed
         // processing, so they are queued here until after the initial pass. Otherwise, we wouldn't
         // be able to support bindings in nested templates to local refs that occur after the
@@ -18300,12 +18302,12 @@ class TemplateDefinitionBuilder {
     }
     visitBoundText(text) {
         const nodeIndex = this.allocateDataSlot();
-        this.creationInstruction(text.sourceSpan, Identifiers$1.text, literal(nodeIndex));
+        this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(nodeIndex)]);
         const value = text.value.visit(this._valueConverter);
         this.updateInstruction(text.sourceSpan, Identifiers$1.textBinding, () => [literal(nodeIndex), this.convertPropertyBinding(variable(CONTEXT_NAME), value)]);
     }
     visitText(text) {
-        this.creationInstruction(text.sourceSpan, Identifiers$1.text, literal(this.allocateDataSlot()), literal(text.value));
+        this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(this.allocateDataSlot()), literal(text.value)]);
     }
     // When the content of the element is a single text node the translation can be inlined:
     //
@@ -18322,22 +18324,25 @@ class TemplateDefinitionBuilder {
     visitSingleI18nTextChild(text, i18nMeta) {
         const meta = parseI18nMeta(i18nMeta);
         const variable$$1 = this.constantPool.getTranslation(text.value, meta);
-        this.creationInstruction(text.sourceSpan, Identifiers$1.text, literal(this.allocateDataSlot()), variable$$1);
+        this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(this.allocateDataSlot()), variable$$1]);
     }
     allocateDataSlot() { return this._dataIndex++; }
     bindingContext() { return `${this._bindingContext++}`; }
-    instruction(span, reference, params) {
-        return importExpr(reference, null, span).callFn(params, span).toStmt();
-    }
-    creationInstruction(span, reference, ...params) {
-        this._creationCode.push(this.instruction(span, reference, params));
-    }
-    // Bindings must only be resolved after all local refs have been visited, so update mode
+    // Bindings must only be resolved after all local refs have been visited, so all
     // instructions are queued in callbacks that execute once the initial pass has completed.
     // Otherwise, we wouldn't be able to support local refs that are defined after their
     // bindings. e.g. {{ foo }} <div #foo></div>
-    updateInstruction(span, reference, paramsFn) {
-        this._updateCodeFns.push(() => { return this.instruction(span, reference, paramsFn()); });
+    instructionFn(fns, span, reference, paramsOrFn) {
+        fns.push(() => {
+            const params = Array.isArray(paramsOrFn) ? paramsOrFn : paramsOrFn();
+            return instruction(span, reference, params).toStmt();
+        });
+    }
+    creationInstruction(span, reference, paramsOrFn) {
+        this.instructionFn(this._creationCodeFns, span, reference, paramsOrFn || []);
+    }
+    updateInstruction(span, reference, paramsOrFn) {
+        this.instructionFn(this._updateCodeFns, span, reference, paramsOrFn || []);
     }
     convertPropertyBinding(implicit, value, skipBindFn) {
         const interpolationFn = value instanceof Interpolation ? interpolate : () => error('Unexpected interpolation');
@@ -18417,6 +18422,9 @@ function pureFunctionCallInfo(args) {
         isVarLength: !identifier,
     };
 }
+function instruction(span, reference, params) {
+    return importExpr(reference, null, span).callFn(params, span);
+}
 // e.g. x(2);
 function generateNextContextExpr(relativeLevelDiff) {
     return importExpr(Identifiers$1.nextContext)
@@ -18451,6 +18459,7 @@ class BindingScope {
         /** Keeps a map from local variables to their BindingData. */
         this.map = new Map();
         this.referenceNameIndex = 0;
+        this.restoreViewVariable = null;
     }
     get(name) {
         let current = this;
@@ -18470,6 +18479,7 @@ class BindingScope {
                     this.map.set(name, value);
                     // Possibly generate a shared context var
                     this.maybeGenerateSharedContextVar(value);
+                    this.maybeRestoreView(value.retrievalLevel);
                 }
                 if (value.declareLocalCallback && !value.declare) {
                     value.declare = true;
@@ -18543,8 +18553,32 @@ class BindingScope {
     getComponentProperty(name) {
         const componentValue = this.map.get(SHARED_CONTEXT_KEY + 0);
         componentValue.declare = true;
+        this.maybeRestoreView(0);
         return componentValue.lhs.prop(name);
     }
+    maybeRestoreView(retrievalLevel) {
+        if (this.isListenerScope() && retrievalLevel < this.bindingLevel) {
+            if (!this.parent.restoreViewVariable) {
+                // parent saves variable to generate a shared `const $s$ = gV();` instruction
+                this.parent.restoreViewVariable = variable(this.parent.freshReferenceName());
+            }
+            this.restoreViewVariable = this.parent.restoreViewVariable;
+        }
+    }
+    restoreViewStatement() {
+        // rV($state$);
+        return this.restoreViewVariable ?
+            [instruction(null, Identifiers$1.restoreView, [this.restoreViewVariable]).toStmt()] :
+            [];
+    }
+    viewSnapshotStatements() {
+        // const $state$ = gV();
+        const getCurrentViewInstruction = instruction(null, Identifiers$1.getCurrentView, []);
+        return this.restoreViewVariable ?
+            [this.restoreViewVariable.set(getCurrentViewInstruction).toConstDecl()] :
+            [];
+    }
+    isListenerScope() { return this.parent && this.parent.bindingLevel === this.bindingLevel; }
     variableDeclarations() {
         let currentContextLevel = 0;
         return Array.from(this.map.values())
@@ -18566,7 +18600,7 @@ class BindingScope {
         return ref;
     }
 }
-BindingScope.ROOT_SCOPE = new BindingScope().set(-1, '$event', variable('$event'));
+BindingScope.ROOT_SCOPE = new BindingScope().set(0, '$event', variable('$event'));
 /**
  * Creates a `CssSelector` given a tag name and a map of attributes
  */

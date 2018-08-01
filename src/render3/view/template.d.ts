@@ -30,7 +30,12 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private _dataIndex;
     private _bindingContext;
     private _prefixCode;
-    private _creationCode;
+    /**
+     * List of callbacks to generate creation mode instructions. We store them here as we process
+     * the template so bindings in listeners are resolved only once all nodes have been visited.
+     * This ensures all local refs and context variables are available for matching.
+     */
+    private _creationCodeFns;
     /**
      * List of callbacks to generate update mode instructions. We store them here as we process
      * the template so bindings are resolved only once all nodes have been visited. This ensures
@@ -50,12 +55,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
      * This scope contains local variables declared in the update mode block of the template.
      * (e.g. refs and context vars in bindings)
      */
-    private _updateScope;
-    /**
-     * This scope contains local variables declared in the creation mode block of the template
-     * (e.g. refs and context vars in listeners)
-     */
-    private _creationScope;
+    private _bindingScope;
     private _valueConverter;
     private _unsupported;
     private _inI18nSection;
@@ -63,7 +63,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private _phToNodeIdxes;
     private _pureFunctionSlots;
     constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, templateName: string | null, viewQueries: R3QueryMetadata[], directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference);
-    registerContextVariables(variable: t.Variable, retrievalScope: BindingScope): void;
+    registerContextVariables(variable: t.Variable): void;
     buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], hasNgContent?: boolean, ngContentSelectors?: string[]): o.FunctionExpr;
     getLocal(name: string): o.Expression | null;
     visitContent(ngContent: t.Content): void;
@@ -81,7 +81,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     visitSingleI18nTextChild(text: t.Text, i18nMeta: string): void;
     private allocateDataSlot;
     private bindingContext;
-    private instruction;
+    private instructionFn;
     private creationInstruction;
     private updateInstruction;
     private convertPropertyBinding;
@@ -119,6 +119,7 @@ export declare class BindingScope implements LocalResolver {
     /** Keeps a map from local variables to their BindingData. */
     private map;
     private referenceNameIndex;
+    private restoreViewVariable;
     static ROOT_SCOPE: BindingScope;
     private constructor();
     get(name: string): o.Expression | null;
@@ -138,6 +139,10 @@ export declare class BindingScope implements LocalResolver {
     maybeGenerateSharedContextVar(value: BindingData): void;
     generateSharedContextVar(retrievalLevel: number): void;
     getComponentProperty(name: string): o.Expression;
+    maybeRestoreView(retrievalLevel: number): void;
+    restoreViewStatement(): o.Statement[];
+    viewSnapshotStatements(): o.Statement[];
+    isListenerScope(): boolean | null;
     variableDeclarations(): o.Statement[];
     freshReferenceName(): string;
 }
