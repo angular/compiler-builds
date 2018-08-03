@@ -18,7 +18,6 @@ import { invalid } from './util';
 export declare function renderFlagCheckIfStmt(flags: core.RenderFlags, statements: o.Statement[]): o.IfStmt;
 export declare class TemplateDefinitionBuilder implements t.Visitor<void>, LocalResolver {
     private constantPool;
-    private contextParameter;
     private level;
     private contextName;
     private templateName;
@@ -31,18 +30,40 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private _dataIndex;
     private _bindingContext;
     private _prefixCode;
-    private _creationCode;
-    private _variableCode;
-    private _bindingCode;
-    private _postfixCode;
+    /**
+     * List of callbacks to generate creation mode instructions. We store them here as we process
+     * the template so bindings in listeners are resolved only once all nodes have been visited.
+     * This ensures all local refs and context variables are available for matching.
+     */
+    private _creationCodeFns;
+    /**
+     * List of callbacks to generate update mode instructions. We store them here as we process
+     * the template so bindings are resolved only once all nodes have been visited. This ensures
+     * all local refs and context variables are available for matching.
+     */
+    private _updateCodeFns;
+    /** Temporary variable declarations generated from visiting pipes, literals, etc. */
+    private _tempVariables;
+    /**
+     * List of callbacks to build nested templates. Nested templates must not be visited until
+     * after the parent template has finished visiting all of its nodes. This ensures that all
+     * local ref bindings in nested templates are able to find local ref values if the refs
+     * are defined after the template declaration.
+     */
+    private _nestedTemplateFns;
+    /**
+     * This scope contains local variables declared in the update mode block of the template.
+     * (e.g. refs and context vars in bindings)
+     */
+    private _bindingScope;
     private _valueConverter;
     private _unsupported;
-    private _bindingScope;
     private _inI18nSection;
     private _i18nSectionIndex;
     private _phToNodeIdxes;
     private _pureFunctionSlots;
-    constructor(constantPool: ConstantPool, contextParameter: string, parentBindingScope: BindingScope, level: number, contextName: string | null, templateName: string | null, viewQueries: R3QueryMetadata[], directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference);
+    constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, templateName: string | null, viewQueries: R3QueryMetadata[], directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference);
+    registerContextVariables(variable: t.Variable): void;
     buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], hasNgContent?: boolean, ngContentSelectors?: string[]): o.FunctionExpr;
     getLocal(name: string): o.Expression | null;
     visitContent(ngContent: t.Content): void;
@@ -60,7 +81,9 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     visitSingleI18nTextChild(text: t.Text, i18nMeta: string): void;
     private allocateDataSlot;
     private bindingContext;
-    private instruction;
+    private instructionFn;
+    private creationInstruction;
+    private updateInstruction;
     private convertPropertyBinding;
 }
 /**
@@ -69,37 +92,58 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
  *
  * It is expected that the function creates the `const localName = expression`; statement.
  */
-export declare type DeclareLocalVarCallback = (lhsVar: o.ReadVarExpr, rhsExpression: o.Expression) => void;
+export declare type DeclareLocalVarCallback = (scope: BindingScope, relativeLevel: number) => o.Statement[];
+/**
+ * This is used when one refers to variable such as: 'let abc = x(2).$implicit`.
+ * - key to the map is the string literal `"abc"`.
+ * - value `retrievalLevel` is the level from which this value can be retrieved, which is 2 levels
+ * up in example.
+ * - value `lhs` is the left hand side which is an AST representing `abc`.
+ * - value `declareLocalCallback` is a callback that is invoked when declaring the local.
+ * - value `declare` is true if this value needs to be declared.
+ * - value `priority` dictates the sorting priority of this var declaration compared
+ * to other var declarations on the same retrieval level. For example, if there is a
+ * context variable and a local ref accessing the same parent view, the context var
+ * declaration should always come before the local ref declaration.
+ */
+declare type BindingData = {
+    retrievalLevel: number;
+    lhs: o.ReadVarExpr;
+    declareLocalCallback?: DeclareLocalVarCallback;
+    declare: boolean;
+    priority: number;
+};
 export declare class BindingScope implements LocalResolver {
+    bindingLevel: number;
     private parent;
-    private declareLocalVarCallback;
-    /**
-     * Keeps a map from local variables to their expressions.
-     *
-     * This is used when one refers to variable such as: 'let abc = a.b.c`.
-     * - key to the map is the string literal `"abc"`.
-     * - value `lhs` is the left hand side which is an AST representing `abc`.
-     * - value `rhs` is the right hand side which is an AST representing `a.b.c`.
-     * - value `declared` is true if the `declareLocalVarCallback` has been called for this scope
-     * already.
-     */
+    /** Keeps a map from local variables to their BindingData. */
     private map;
     private referenceNameIndex;
+    private restoreViewVariable;
     static ROOT_SCOPE: BindingScope;
     private constructor();
     get(name: string): o.Expression | null;
     /**
      * Create a local variable for later reference.
      *
+     * @param retrievalLevel The level from which this value can be retrieved
      * @param name Name of the variable.
      * @param lhs AST representing the left hand side of the `let lhs = rhs;`.
-     * @param rhs AST representing the right hand side of the `let lhs = rhs;`. The `rhs` can be
-     * `undefined` for variable that are ambient such as `$event` and which don't have `rhs`
-     * declaration.
+     * @param priority The sorting priority of this var
+     * @param declareLocalCallback The callback to invoke when declaring this local var
      */
-    set(name: string, lhs: o.ReadVarExpr, rhs?: o.Expression): BindingScope;
+    set(retrievalLevel: number, name: string, lhs: o.ReadVarExpr, priority?: number, declareLocalCallback?: DeclareLocalVarCallback): BindingScope;
     getLocal(name: string): (o.Expression | null);
-    nestedScope(declareCallback: DeclareLocalVarCallback): BindingScope;
+    nestedScope(level: number): BindingScope;
+    getSharedContextName(retrievalLevel: number): o.ReadVarExpr | null;
+    maybeGenerateSharedContextVar(value: BindingData): void;
+    generateSharedContextVar(retrievalLevel: number): void;
+    getComponentProperty(name: string): o.Expression;
+    maybeRestoreView(retrievalLevel: number): void;
+    restoreViewStatement(): o.Statement[];
+    viewSnapshotStatements(): o.Statement[];
+    isListenerScope(): boolean | null;
+    variableDeclarations(): o.Statement[];
     freshReferenceName(): string;
 }
 /**
@@ -120,3 +164,4 @@ export declare function parseTemplate(template: string, templateUrl: string, opt
  * Construct a `BindingParser` with a default configuration.
  */
 export declare function makeBindingParser(): BindingParser;
+export {};
