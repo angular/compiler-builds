@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.0+18.sha-26a15cc
+ * @license Angular v7.0.0-beta.0+22.sha-97b5cb2
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-beta.0+18.sha-26a15cc');
+const VERSION = new Version('7.0.0-beta.0+22.sha-97b5cb2');
 
 /**
  * @license
@@ -16765,6 +16765,7 @@ Identifiers$1.queryRefresh = { name: 'ɵqR', moduleName: CORE$1 };
 Identifiers$1.registerContentQuery = { name: 'ɵQr', moduleName: CORE$1 };
 Identifiers$1.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
 Identifiers$1.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
+Identifiers$1.PublicFeature = { name: 'ɵPublicFeature', moduleName: CORE$1 };
 Identifiers$1.listener = { name: 'ɵL', moduleName: CORE$1 };
 // Reserve slots for pure functions
 Identifiers$1.reserveSlots = { name: 'ɵrS', moduleName: CORE$1 };
@@ -18765,6 +18766,8 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
     // e.g. `features: [NgOnChangesFeature]`
     const features = [];
+    // TODO: add `PublicFeature` so that directives get registered to the DI - make this configurable
+    features.push(importExpr(Identifiers$1.PublicFeature));
     if (meta.usesInheritance) {
         features.push(importExpr(Identifiers$1.InheritDefinitionFeature));
     }
