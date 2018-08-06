@@ -83,6 +83,7 @@ export declare class Identifiers {
     static registerContentQuery: o.ExternalReference;
     static NgOnChangesFeature: o.ExternalReference;
     static InheritDefinitionFeature: o.ExternalReference;
+    static PublicFeature: o.ExternalReference;
     static listener: o.ExternalReference;
     static reserveSlots: o.ExternalReference;
     static sanitizeHtml: o.ExternalReference;
