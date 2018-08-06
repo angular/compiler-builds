@@ -54,7 +54,7 @@ export declare class StaticSymbolResolver {
     private host;
     private staticSymbolCache;
     private summaryResolver;
-    private errorRecorder;
+    private errorRecorder?;
     private metadataCache;
     private resolvedSymbols;
     private resolvedFilePaths;
@@ -94,8 +94,8 @@ export declare class StaticSymbolResolver {
      * @param fileName the file to invalidate
      */
     invalidateFile(fileName: string): void;
-    private _resolveSymbolMembers(staticSymbol);
-    private _resolveSymbolFromSummary(staticSymbol);
+    private _resolveSymbolMembers;
+    private _resolveSymbolFromSummary;
     /**
      * getStaticSymbol produces a Type whose metadata is known but whose implementation is not loaded.
      * All types passed to the StaticResolver should be pseudo-types returned by this method.
@@ -106,7 +106,7 @@ export declare class StaticSymbolResolver {
      */
     getStaticSymbol(declarationFile: string, name: string, members?: string[]): StaticSymbol;
     /**
-     * hasDecorators checks a file's metadata for the presense of decorators without evalutating the
+     * hasDecorators checks a file's metadata for the presence of decorators without evaluating the
      * metadata.
      *
      * @param filePath the absolute path to examine for decorators.
@@ -114,16 +114,16 @@ export declare class StaticSymbolResolver {
      */
     hasDecorators(filePath: string): boolean;
     getSymbolsOf(filePath: string): StaticSymbol[];
-    private _createSymbolsOf(filePath);
-    private createResolvedSymbol(sourceSymbol, topLevelPath, topLevelSymbolNames, metadata);
-    private createExport(sourceSymbol, targetSymbol);
-    private reportError(error, context?, path?);
+    private _createSymbolsOf;
+    private createResolvedSymbol;
+    private createExport;
+    private reportError;
     /**
      * @param module an absolute path to a module file.
      */
-    private getModuleMetadata(module);
+    private getModuleMetadata;
     getSymbolByModule(module: string, symbolName: string, containingFile?: string): StaticSymbol;
-    private resolveModule(module, containingFile?);
+    private resolveModule;
 }
 export declare function unescapeIdentifier(identifier: string): string;
 export declare function unwrapResolvedMetadata(metadata: any): any;

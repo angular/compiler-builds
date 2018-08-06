@@ -5,10 +5,12 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import { SecurityContext } from '../core';
+import { ParseSourceSpan } from '../parse_util';
 export declare class ParserError {
     input: string;
     errLocation: string;
-    ctxLocation: any;
+    ctxLocation?: any;
     message: string;
     constructor(message: string, input: string, errLocation: string, ctxLocation?: any);
 }
@@ -181,8 +183,8 @@ export declare class TemplateBinding {
     key: string;
     keyIsVar: boolean;
     name: string;
-    expression: ASTWithSource;
-    constructor(span: ParseSpan, key: string, keyIsVar: boolean, name: string, expression: ASTWithSource);
+    expression: ASTWithSource | null;
+    constructor(span: ParseSpan, key: string, keyIsVar: boolean, name: string, expression: ASTWithSource | null);
 }
 export interface AstVisitor {
     visitBinary(ast: Binary, context: any): any;
@@ -299,3 +301,51 @@ export declare class AstMemoryEfficientTransformer implements AstVisitor {
     visitQuote(ast: Quote, context: any): AST;
 }
 export declare function visitAstChildren(ast: AST, visitor: AstVisitor, context?: any): void;
+export declare class ParsedProperty {
+    name: string;
+    expression: ASTWithSource;
+    type: ParsedPropertyType;
+    sourceSpan: ParseSourceSpan;
+    readonly isLiteral: boolean;
+    readonly isAnimation: boolean;
+    constructor(name: string, expression: ASTWithSource, type: ParsedPropertyType, sourceSpan: ParseSourceSpan);
+}
+export declare enum ParsedPropertyType {
+    DEFAULT = 0,
+    LITERAL_ATTR = 1,
+    ANIMATION = 2
+}
+export declare const enum ParsedEventType {
+    Regular = 0,
+    Animation = 1
+}
+export declare class ParsedEvent {
+    name: string;
+    targetOrPhase: string;
+    type: ParsedEventType;
+    handler: AST;
+    sourceSpan: ParseSourceSpan;
+    constructor(name: string, targetOrPhase: string, type: ParsedEventType, handler: AST, sourceSpan: ParseSourceSpan);
+}
+export declare class ParsedVariable {
+    name: string;
+    value: string;
+    sourceSpan: ParseSourceSpan;
+    constructor(name: string, value: string, sourceSpan: ParseSourceSpan);
+}
+export declare const enum BindingType {
+    Property = 0,
+    Attribute = 1,
+    Class = 2,
+    Style = 3,
+    Animation = 4
+}
+export declare class BoundElementProperty {
+    name: string;
+    type: BindingType;
+    securityContext: SecurityContext;
+    value: AST;
+    unit: string | null;
+    sourceSpan: ParseSourceSpan;
+    constructor(name: string, type: BindingType, securityContext: SecurityContext, value: AST, unit: string | null, sourceSpan: ParseSourceSpan);
+}

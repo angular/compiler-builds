@@ -1,3 +1,10 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 import { InterpolationConfig } from '../ml_parser/interpolation_config';
 import { AST, ASTWithSource, BindingPipe, LiteralMap, ParseSpan, ParserError, TemplateBinding } from './ast';
 import { Lexer, Token } from './lexer';
@@ -20,17 +27,17 @@ export declare class Parser {
     parseAction(input: string, location: any, interpolationConfig?: InterpolationConfig): ASTWithSource;
     parseBinding(input: string, location: any, interpolationConfig?: InterpolationConfig): ASTWithSource;
     parseSimpleBinding(input: string, location: string, interpolationConfig?: InterpolationConfig): ASTWithSource;
-    private _reportError(message, input, errLocation, ctxLocation?);
-    private _parseBindingAst(input, location, interpolationConfig);
-    private _parseQuote(input, location);
-    parseTemplateBindings(prefixToken: string | null, input: string, location: any): TemplateBindingParseResult;
+    private _reportError;
+    private _parseBindingAst;
+    private _parseQuote;
+    parseTemplateBindings(tplKey: string, tplValue: string, location: any): TemplateBindingParseResult;
     parseInterpolation(input: string, location: any, interpolationConfig?: InterpolationConfig): ASTWithSource | null;
     splitInterpolation(input: string, location: string, interpolationConfig?: InterpolationConfig): SplitInterpolation | null;
     wrapLiteralPrimitive(input: string | null, location: any): ASTWithSource;
-    private _stripComments(input);
-    private _commentStart(input);
-    private _checkNoInterpolation(input, location, interpolationConfig);
-    private _findInterpolationErrorColumn(parts, partInErrIdx, interpolationConfig);
+    private _stripComments;
+    private _commentStart;
+    private _checkNoInterpolation;
+    private _findInterpolationErrorColumn;
 }
 export declare class _ParseAST {
     input: string;
@@ -76,11 +83,11 @@ export declare class _ParseAST {
     parseAccessMemberOrMethodCall(receiver: AST, isSafe?: boolean): AST;
     parseCallArguments(): BindingPipe[];
     /**
-     * An identifier, a keyword, a string with an optional `-` inbetween.
+     * An identifier, a keyword, a string with an optional `-` in between.
      */
     expectTemplateBindingKey(): string;
-    parseTemplateBindings(): TemplateBindingParseResult;
+    parseTemplateBindings(tplKey: string): TemplateBindingParseResult;
     error(message: string, index?: number | null): void;
-    private locationText(index?);
-    private skip();
+    private locationText;
+    private skip;
 }

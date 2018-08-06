@@ -10,22 +10,21 @@ import { CompileReflector } from '../compile_reflector';
 import { CompilerConfig } from '../config';
 import { SchemaMetadata } from '../core';
 import { Parser } from '../expression_parser/parser';
-import { I18NHtmlParser } from '../i18n/i18n_html_parser';
-import { ParseTreeResult } from '../ml_parser/html_parser';
+import { HtmlParser, ParseTreeResult } from '../ml_parser/html_parser';
 import { InterpolationConfig } from '../ml_parser/interpolation_config';
 import { ParseError, ParseErrorLevel, ParseSourceSpan } from '../parse_util';
 import { ElementSchemaRegistry } from '../schema/element_schema_registry';
 import { CssSelector } from '../selector';
 import { Console } from '../util';
-import { TemplateAst, TemplateAstVisitor } from './template_ast';
+import * as t from './template_ast';
 export declare class TemplateParseError extends ParseError {
     constructor(message: string, span: ParseSourceSpan, level: ParseErrorLevel);
 }
 export declare class TemplateParseResult {
-    templateAst: TemplateAst[] | undefined;
-    usedPipes: CompilePipeSummary[] | undefined;
-    errors: ParseError[] | undefined;
-    constructor(templateAst?: TemplateAst[] | undefined, usedPipes?: CompilePipeSummary[] | undefined, errors?: ParseError[] | undefined);
+    templateAst?: t.TemplateAst[] | undefined;
+    usedPipes?: CompilePipeSummary[] | undefined;
+    errors?: ParseError[] | undefined;
+    constructor(templateAst?: t.TemplateAst[] | undefined, usedPipes?: CompilePipeSummary[] | undefined, errors?: ParseError[] | undefined);
 }
 export declare class TemplateParser {
     private _config;
@@ -34,10 +33,11 @@ export declare class TemplateParser {
     private _schemaRegistry;
     private _htmlParser;
     private _console;
-    transforms: TemplateAstVisitor[];
-    constructor(_config: CompilerConfig, _reflector: CompileReflector, _exprParser: Parser, _schemaRegistry: ElementSchemaRegistry, _htmlParser: I18NHtmlParser, _console: Console, transforms: TemplateAstVisitor[]);
+    transforms: t.TemplateAstVisitor[];
+    constructor(_config: CompilerConfig, _reflector: CompileReflector, _exprParser: Parser, _schemaRegistry: ElementSchemaRegistry, _htmlParser: HtmlParser, _console: Console, transforms: t.TemplateAstVisitor[]);
+    readonly expressionParser: Parser;
     parse(component: CompileDirectiveMetadata, template: string | ParseTreeResult, directives: CompileDirectiveSummary[], pipes: CompilePipeSummary[], schemas: SchemaMetadata[], templateUrl: string, preserveWhitespaces: boolean): {
-        template: TemplateAst[];
+        template: t.TemplateAst[];
         pipes: CompilePipeSummary[];
     };
     tryParse(component: CompileDirectiveMetadata, template: string | ParseTreeResult, directives: CompileDirectiveSummary[], pipes: CompilePipeSummary[], schemas: SchemaMetadata[], templateUrl: string, preserveWhitespaces: boolean): TemplateParseResult;

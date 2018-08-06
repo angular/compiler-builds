@@ -9,6 +9,7 @@ import { StaticSymbol } from './aot/static_symbol';
 import { ChangeDetectionStrategy, SchemaMetadata, Type, ViewEncapsulation } from './core';
 import { LifecycleHooks } from './lifecycle_reflector';
 import { ParseTreeResult as HtmlParseTreeResult } from './ml_parser/parser';
+export declare function sanitizeIdentifier(name: string): string;
 export declare function identifierName(compileIdentifier: CompileIdentifierMetadata | null | undefined): string | null;
 export declare function identifierModuleUrl(compileIdentifier: CompileIdentifierMetadata): string;
 export declare function viewClassName(compType: any, embeddedTemplateIndex: number): string;
@@ -25,7 +26,7 @@ export declare enum CompileSummaryKind {
     Pipe = 0,
     Directive = 1,
     NgModule = 2,
-    Injectable = 3,
+    Injectable = 3
 }
 /**
  * A CompileSummary is the data needed to use a directive / pipe / module
@@ -68,7 +69,7 @@ export interface CompileTokenMetadata {
 export interface CompileInjectableMetadata {
     symbol: StaticSymbol;
     type: CompileTypeMetadata;
-    module?: StaticSymbol;
+    providedIn?: StaticSymbol;
     useValue?: any;
     useClass?: StaticSymbol;
     useExisting?: StaticSymbol;
@@ -97,7 +98,7 @@ export declare class CompileStylesheetMetadata {
     moduleUrl: string | null;
     styles: string[];
     styleUrls: string[];
-    constructor({moduleUrl, styles, styleUrls}?: {
+    constructor({ moduleUrl, styles, styleUrls }?: {
         moduleUrl?: string;
         styles?: string[];
         styleUrls?: string[];
@@ -126,7 +127,7 @@ export declare class CompileTemplateMetadata {
     ngContentSelectors: string[];
     interpolation: [string, string] | null;
     preserveWhitespaces: boolean;
-    constructor({encapsulation, template, templateUrl, htmlAst, styles, styleUrls, externalStylesheets, animations, ngContentSelectors, interpolation, isInline, preserveWhitespaces}: {
+    constructor({ encapsulation, template, templateUrl, htmlAst, styles, styleUrls, externalStylesheets, animations, ngContentSelectors, interpolation, isInline, preserveWhitespaces }: {
         encapsulation: ViewEncapsulation | null;
         template: string | null;
         templateUrl: string | null;
@@ -184,7 +185,7 @@ export interface CompileDirectiveSummary extends CompileTypeSummary {
  * Metadata regarding compilation of a directive.
  */
 export declare class CompileDirectiveMetadata {
-    static create({isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, providers, viewProviders, queries, guards, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory}: {
+    static create({ isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, providers, viewProviders, queries, guards, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory }: {
         isHost: boolean;
         type: CompileTypeMetadata;
         isComponent: boolean;
@@ -242,7 +243,7 @@ export declare class CompileDirectiveMetadata {
     componentViewType: StaticSymbol | ProxyClass | null;
     rendererType: StaticSymbol | object | null;
     componentFactory: StaticSymbol | object | null;
-    constructor({isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, guards, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory}: {
+    constructor({ isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, guards, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory }: {
         isHost: boolean;
         type: CompileTypeMetadata;
         isComponent: boolean;
@@ -288,7 +289,7 @@ export declare class CompilePipeMetadata {
     type: CompileTypeMetadata;
     name: string;
     pure: boolean;
-    constructor({type, name, pure}: {
+    constructor({ type, name, pure }: {
         type: CompileTypeMetadata;
         name: string;
         pure: boolean;
@@ -305,6 +306,12 @@ export interface CompileNgModuleSummary extends CompileTypeSummary {
         module: CompileIdentifierMetadata;
     }[];
     modules: CompileTypeMetadata[];
+}
+export declare class CompileShallowModuleMetadata {
+    type: CompileTypeMetadata;
+    rawExports: any;
+    rawImports: any;
+    rawProviders: any;
 }
 /**
  * Metadata regarding compilation of a module.
@@ -323,7 +330,7 @@ export declare class CompileNgModuleMetadata {
     schemas: SchemaMetadata[];
     id: string | null;
     transitiveModule: TransitiveCompileNgModuleMetadata;
-    constructor({type, providers, declaredDirectives, exportedDirectives, declaredPipes, exportedPipes, entryComponents, bootstrapComponents, importedModules, exportedModules, schemas, transitiveModule, id}: {
+    constructor({ type, providers, declaredDirectives, exportedDirectives, declaredPipes, exportedPipes, entryComponents, bootstrapComponents, importedModules, exportedModules, schemas, transitiveModule, id }: {
         type: CompileTypeMetadata;
         providers: CompileProviderMetadata[];
         declaredDirectives: CompileIdentifierMetadata[];
@@ -373,7 +380,7 @@ export declare class ProviderMeta {
     useFactory: Function | null;
     dependencies: Object[] | null;
     multi: boolean;
-    constructor(token: any, {useClass, useValue, useExisting, useFactory, deps, multi}: {
+    constructor(token: any, { useClass, useValue, useExisting, useFactory, deps, multi }: {
         useClass?: Type;
         useValue?: any;
         useExisting?: any;

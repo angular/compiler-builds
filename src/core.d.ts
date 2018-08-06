@@ -60,10 +60,11 @@ export declare enum ViewEncapsulation {
     Emulated = 0,
     Native = 1,
     None = 2,
+    ShadowDom = 3
 }
 export declare enum ChangeDetectionStrategy {
     OnPush = 0,
-    Default = 1,
+    Default = 1
 }
 export declare const createComponent: MetadataFactory<Component>;
 export interface Pipe {
@@ -104,7 +105,7 @@ export interface ModuleWithProviders {
     providers?: Provider[];
 }
 export interface Injectable {
-    scope?: Type | any;
+    providedIn?: Type | 'root' | any;
     useClass?: Type | any;
     useExisting?: Type | any;
     useValue?: any;
@@ -131,7 +132,7 @@ export declare enum SecurityContext {
     STYLE = 2,
     SCRIPT = 3,
     URL = 4,
-    RESOURCE_URL = 5,
+    RESOURCE_URL = 5
 }
 export declare type Provider = any;
 export declare const enum NodeFlags {
@@ -172,26 +173,35 @@ export declare const enum NodeFlags {
     DynamicQuery = 536870912,
     TypeModuleProvider = 1073741824,
     CatQuery = 201326592,
-    Types = 201347067,
+    Types = 201347067
 }
 export declare const enum DepFlags {
     None = 0,
     SkipSelf = 1,
     Optional = 2,
     Self = 4,
-    Value = 8,
+    Value = 8
 }
-/** Injection flags for DI. */
+/**
+ * Injection flags for DI.
+ */
 export declare const enum InjectFlags {
     Default = 0,
-    /** Skip the node that is requesting injection. */
-    SkipSelf = 1,
+    /**
+     * Specifies that an injector should retrieve a dependency from any injector until reaching the
+     * host element of the current component. (Only used with Element Injector)
+     */
+    Host = 1,
     /** Don't descend into ancestors of the node requesting injection. */
     Self = 2,
+    /** Skip the node that is requesting injection. */
+    SkipSelf = 4,
+    /** Inject `defaultValue` instead if token not found. */
+    Optional = 8
 }
 export declare const enum ArgumentType {
     Inline = 0,
-    Dynamic = 1,
+    Dynamic = 1
 }
 export declare const enum BindingFlags {
     TypeElementAttribute = 1,
@@ -201,27 +211,27 @@ export declare const enum BindingFlags {
     SyntheticProperty = 16,
     SyntheticHostProperty = 32,
     CatSyntheticProperty = 48,
-    Types = 15,
+    Types = 15
 }
 export declare const enum QueryBindingType {
     First = 0,
-    All = 1,
+    All = 1
 }
 export declare const enum QueryValueType {
     ElementRef = 0,
     RenderElement = 1,
     TemplateRef = 2,
     ViewContainerRef = 3,
-    Provider = 4,
+    Provider = 4
 }
 export declare const enum ViewFlags {
     None = 0,
-    OnPush = 2,
+    OnPush = 2
 }
 export declare enum MissingTranslationStrategy {
     Error = 0,
     Warning = 1,
-    Ignore = 2,
+    Ignore = 2
 }
 export interface MetadataFactory<T> {
     (...args: any[]): T;
@@ -231,4 +241,36 @@ export interface MetadataFactory<T> {
 export interface Route {
     children?: Route[];
     loadChildren?: string | Type | any;
+}
+/**
+ * Flags used to generate R3-style CSS Selectors. They are pasted from
+ * core/src/render3/projection.ts because they cannot be referenced directly.
+ */
+export declare const enum SelectorFlags {
+    /** Indicates this is the beginning of a new negative selector */
+    NOT = 1,
+    /** Mode for matching attributes */
+    ATTRIBUTE = 2,
+    /** Mode for matching tag names */
+    ELEMENT = 4,
+    /** Mode for matching class names */
+    CLASS = 8
+}
+export declare type R3CssSelector = (string | SelectorFlags)[];
+export declare type R3CssSelectorList = R3CssSelector[];
+export declare function parseSelectorToR3Selector(selector: string): R3CssSelectorList;
+/**
+ * Flags passed into template functions to determine which blocks (i.e. creation, update)
+ * should be executed.
+ *
+ * Typically, a template runs both the creation block and the update block on initialization and
+ * subsequent runs only execute the update block. However, dynamically created views require that
+ * the creation block be executed separately from the update block (for backwards compat).
+ */
+export declare const enum RenderFlags {
+    Create = 1,
+    Update = 2
+}
+export declare const enum InitialStylingFlags {
+    VALUES_MODE = 1
 }

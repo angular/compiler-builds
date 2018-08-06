@@ -14,9 +14,27 @@ export interface LocalResolver {
     getLocal(name: string): o.Expression | null;
 }
 export declare class ConvertActionBindingResult {
+    /**
+     * Render2 compatible statements,
+     */
     stmts: o.Statement[];
+    /**
+     * Variable name used with render2 compatible statements.
+     */
     allowDefault: o.ReadVarExpr;
-    constructor(stmts: o.Statement[], allowDefault: o.ReadVarExpr);
+    /**
+     * Store statements which are render3 compatible.
+     */
+    render3Stmts: o.Statement[];
+    constructor(
+    /**
+     * Render2 compatible statements,
+     */
+    stmts: o.Statement[], 
+    /**
+     * Variable name used with render2 compatible statements.
+     */
+    allowDefault: o.ReadVarExpr);
 }
 export declare type InterpolationFunction = (args: o.Expression[]) => o.Expression;
 /**
@@ -43,7 +61,7 @@ export declare class ConvertPropertyBindingResult {
 }
 export declare enum BindingForm {
     General = 0,
-    TrySimple = 1,
+    TrySimple = 1
 }
 /**
  * Converts the given expression AST into an executable output AST, assuming the expression

@@ -10,9 +10,10 @@ import * as o from './output_ast';
 export declare abstract class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
     constructor();
     visitDeclareClassStmt(stmt: o.ClassStmt, ctx: EmitterVisitorContext): any;
-    private _visitClassConstructor(stmt, ctx);
-    private _visitClassGetter(stmt, getter, ctx);
-    private _visitClassMethod(stmt, method, ctx);
+    private _visitClassConstructor;
+    private _visitClassGetter;
+    private _visitClassMethod;
+    visitWrappedNodeExpr(ast: o.WrappedNodeExpr<any>, ctx: EmitterVisitorContext): any;
     visitReadVarExpr(ast: o.ReadVarExpr, ctx: EmitterVisitorContext): string | null;
     visitDeclareVarStmt(stmt: o.DeclareVarStmt, ctx: EmitterVisitorContext): any;
     visitCastExpr(ast: o.CastExpr, ctx: EmitterVisitorContext): any;
@@ -20,6 +21,6 @@ export declare abstract class AbstractJsEmitterVisitor extends AbstractEmitterVi
     visitFunctionExpr(ast: o.FunctionExpr, ctx: EmitterVisitorContext): any;
     visitDeclareFunctionStmt(stmt: o.DeclareFunctionStmt, ctx: EmitterVisitorContext): any;
     visitTryCatchStmt(stmt: o.TryCatchStmt, ctx: EmitterVisitorContext): any;
-    private _visitParams(params, ctx);
+    private _visitParams;
     getBuiltinMethodName(method: o.BuiltinMethod): string;
 }

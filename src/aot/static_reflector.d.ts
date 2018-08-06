@@ -1,3 +1,10 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 import { CompileReflector } from '../compile_reflector';
 import * as o from '../output/output_ast';
 import { SummaryResolver } from '../summary_resolver';
@@ -10,8 +17,9 @@ import { StaticSymbolResolver } from './static_symbol_resolver';
 export declare class StaticReflector implements CompileReflector {
     private summaryResolver;
     private symbolResolver;
-    private errorRecorder;
+    private errorRecorder?;
     private annotationCache;
+    private shallowAnnotationCache;
     private propertyCache;
     private parameterCache;
     private methodCache;
@@ -35,24 +43,26 @@ export declare class StaticReflector implements CompileReflector {
     componentModuleUrl(typeOrFunc: StaticSymbol): string;
     resolveExternalReference(ref: o.ExternalReference, containingFile?: string): StaticSymbol;
     findDeclaration(moduleUrl: string, name: string, containingFile?: string): StaticSymbol;
-    tryFindDeclaration(moduleUrl: string, name: string): StaticSymbol;
+    tryFindDeclaration(moduleUrl: string, name: string, containingFile?: string): StaticSymbol;
     findSymbolDeclaration(symbol: StaticSymbol): StaticSymbol;
     tryAnnotations(type: StaticSymbol): any[];
     annotations(type: StaticSymbol): any[];
+    shallowAnnotations(type: StaticSymbol): any[];
+    private _annotations;
     propMetadata(type: StaticSymbol): {
         [key: string]: any[];
     };
     parameters(type: StaticSymbol): any[];
-    private _methodNames(type);
-    private _staticMembers(type);
-    private findParentType(type, classMetadata);
+    private _methodNames;
+    private _staticMembers;
+    private findParentType;
     hasLifecycleHook(type: any, lcProperty: string): boolean;
     guards(type: any): {
         [key: string]: StaticSymbol;
     };
-    private _registerDecoratorOrConstructor(type, ctor);
-    private _registerFunction(type, fn);
-    private initializeConversionMap();
+    private _registerDecoratorOrConstructor;
+    private _registerFunction;
+    private initializeConversionMap;
     /**
      * getStaticSymbol produces a Type whose metadata is known but whose implementation is not loaded.
      * All types passed to the StaticResolver should be pseudo-types returned by this method.
@@ -64,8 +74,8 @@ export declare class StaticReflector implements CompileReflector {
     /**
      * Simplify but discard any errors
      */
-    private trySimplify(context, value);
-    private getTypeMetadata(type);
-    private reportError(error, context, path?);
-    private error({message, summary, advise, position, context, value, symbol, chain}, reportingContext);
+    private trySimplify;
+    private getTypeMetadata;
+    private reportError;
+    private error;
 }
