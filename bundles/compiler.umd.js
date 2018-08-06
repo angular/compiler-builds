@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.0+18.sha-26a15cc
+ * @license Angular v7.0.0-beta.0+22.sha-97b5cb2
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1202,7 +1202,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('7.0.0-beta.0+18.sha-26a15cc');
+    var VERSION = new Version('7.0.0-beta.0+22.sha-97b5cb2');
 
     /**
      * @license
@@ -17840,6 +17840,7 @@
         Identifiers.registerContentQuery = { name: 'ɵQr', moduleName: CORE$1 };
         Identifiers.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
         Identifiers.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
+        Identifiers.PublicFeature = { name: 'ɵPublicFeature', moduleName: CORE$1 };
         Identifiers.listener = { name: 'ɵL', moduleName: CORE$1 };
         // Reserve slots for pure functions
         Identifiers.reserveSlots = { name: 'ɵrS', moduleName: CORE$1 };
@@ -19935,6 +19936,8 @@
         definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
         // e.g. `features: [NgOnChangesFeature]`
         var features = [];
+        // TODO: add `PublicFeature` so that directives get registered to the DI - make this configurable
+        features.push(importExpr(Identifiers$1.PublicFeature));
         if (meta.usesInheritance) {
             features.push(importExpr(Identifiers$1.InheritDefinitionFeature));
         }
