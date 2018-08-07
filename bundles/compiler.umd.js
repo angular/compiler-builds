@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.0+38.sha-16c03c0
+ * @license Angular v7.0.0-beta.0+50.sha-732026c
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1202,7 +1202,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('7.0.0-beta.0+38.sha-16c03c0');
+    var VERSION = new Version('7.0.0-beta.0+50.sha-732026c');
 
     /**
      * @license
@@ -15900,13 +15900,28 @@
         };
         _AstToIrVisitor.prototype.visitPropertyWrite = function (ast, mode) {
             var receiver = this._visit(ast.receiver, _Mode.Expression);
+            var varExpr = null;
             if (receiver === this._implicitReceiver) {
-                var varExpr = this._getLocal(ast.name);
-                if (varExpr) {
-                    throw new Error('Cannot assign to a reference or variable!');
+                var localExpr = this._getLocal(ast.name);
+                if (localExpr) {
+                    if (localExpr instanceof ReadPropExpr) {
+                        // If the local variable is a property read expression, it's a reference
+                        // to a 'context.property' value and will be used as the target of the
+                        // write expression.
+                        varExpr = localExpr;
+                    }
+                    else {
+                        // Otherwise it's an error.
+                        throw new Error('Cannot assign to a reference or variable!');
+                    }
                 }
             }
-            return convertToStatementIfNeeded(mode, receiver.prop(ast.name).set(this._visit(ast.value, _Mode.Expression)));
+            // If no local expression could be produced, use the original receiver's
+            // property as the target.
+            if (varExpr === null) {
+                varExpr = receiver.prop(ast.name);
+            }
+            return convertToStatementIfNeeded(mode, varExpr.set(this._visit(ast.value, _Mode.Expression)));
         };
         _AstToIrVisitor.prototype.visitSafePropertyRead = function (ast, mode) {
             return this.convertSafeAccess(ast, this.leftMostSafeNode(ast), mode);
@@ -23275,6 +23290,14 @@
                 summaries.forEach(function (summary) { return _this.summaryCache.set(summary.symbol, summary); });
                 if (moduleName) {
                     this.knownFileNameToModuleNames.set(filePath, moduleName);
+                    if (filePath.endsWith('.d.ts')) {
+                        // Also add entries to map the ngfactory & ngsummary files to their module names.
+                        // This is necessary to resolve ngfactory & ngsummary files to their AMD module
+                        // names when building angular with Bazel from source downstream.
+                        // See https://github.com/bazelbuild/rules_typescript/pull/223 for context.
+                        this.knownFileNameToModuleNames.set(filePath.replace(/\.d\.ts$/, '.ngfactory.d.ts'), moduleName + '.ngfactory');
+                        this.knownFileNameToModuleNames.set(filePath.replace(/\.d\.ts$/, '.ngsummary.d.ts'), moduleName + '.ngsummary');
+                    }
                 }
                 importAs.forEach(function (importAs) { _this.importAs.set(importAs.symbol, importAs.importAs); });
             }
