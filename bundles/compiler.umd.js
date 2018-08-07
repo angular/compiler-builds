@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0+100.sha-183757d
+ * @license Angular v7.0.0-beta.0+38.sha-16c03c0
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1202,7 +1202,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('6.1.0+100.sha-183757d');
+    var VERSION = new Version('7.0.0-beta.0+38.sha-16c03c0');
 
     /**
      * @license
@@ -17840,6 +17840,7 @@
         Identifiers.registerContentQuery = { name: 'ɵQr', moduleName: CORE$1 };
         Identifiers.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
         Identifiers.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
+        Identifiers.PublicFeature = { name: 'ɵPublicFeature', moduleName: CORE$1 };
         Identifiers.listener = { name: 'ɵL', moduleName: CORE$1 };
         // Reserve slots for pure functions
         Identifiers.reserveSlots = { name: 'ɵrS', moduleName: CORE$1 };
@@ -18490,6 +18491,7 @@
         }
         // HTML visitor
         HtmlAstToIvyAst.prototype.visitElement = function (element) {
+            var _this = this;
             var e_1, _a;
             var preparsedElement = preparseElement(element);
             if (preparsedElement.type === PreparsedElementType.SCRIPT ||
@@ -18507,14 +18509,11 @@
             }
             // Whether the element is a `<ng-template>`
             var isTemplateElement = isNgTemplate(element.name);
-            var matchableAttributes = [];
             var parsedProperties = [];
             var boundEvents = [];
             var variables = [];
             var references = [];
             var attributes = [];
-            var templateMatchableAttributes = [];
-            var inlineTemplateSourceSpan;
             var templateParsedProperties = [];
             var templateVariables = [];
             // Whether the element has any *-attribute
@@ -18527,6 +18526,7 @@
                     // `*attr` defines template bindings
                     var isTemplateBinding = false;
                     if (normalizedName.startsWith(TEMPLATE_ATTR_PREFIX$1)) {
+                        // *-attributes
                         if (elementHasInlineTemplate) {
                             this.reportError("Can't have multiple template bindings on one element. Use only one attribute prefixed with *", attribute.sourceSpan);
                         }
@@ -18534,19 +18534,17 @@
                         elementHasInlineTemplate = true;
                         var templateValue = attribute.value;
                         var templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX$1.length);
-                        inlineTemplateSourceSpan = attribute.valueSpan || attribute.sourceSpan;
                         var parsedVariables = [];
-                        this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, templateMatchableAttributes, templateParsedProperties, parsedVariables);
+                        this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, [], templateParsedProperties, parsedVariables);
                         templateVariables.push.apply(templateVariables, __spread(parsedVariables.map(function (v) { return new Variable(v.name, v.value, v.sourceSpan); })));
                     }
                     else {
                         // Check for variables, events, property bindings, interpolation
-                        hasBinding = this.parseAttribute(isTemplateElement, attribute, matchableAttributes, parsedProperties, boundEvents, variables, references);
+                        hasBinding = this.parseAttribute(isTemplateElement, attribute, [], parsedProperties, boundEvents, variables, references);
                     }
                     if (!hasBinding && !isTemplateBinding) {
                         // don't include the bindings as attributes as well in the AST
                         attributes.push(this.visitAttribute(attribute));
-                        matchableAttributes.push([attribute.name, attribute.value]);
                     }
                 }
             }
@@ -18566,29 +18564,22 @@
                     this.reportError("<ng-content> element cannot have content.", element.sourceSpan);
                 }
                 var selector = preparsedElement.selectAttr;
-                var attributes_1 = element.attrs.map(function (attribute) {
-                    return new TextAttribute(attribute.name, attribute.value, attribute.sourceSpan, attribute.valueSpan);
-                });
+                var attributes_1 = element.attrs.map(function (attribute) { return _this.visitAttribute(attribute); });
                 var selectorIndex = selector === DEFAULT_CONTENT_SELECTOR ? 0 : this.ngContentSelectors.push(selector);
                 parsedElement = new Content(selectorIndex, attributes_1, element.sourceSpan);
             }
             else if (isTemplateElement) {
                 // `<ng-template>`
-                var boundAttributes = this.createBoundAttributes(element.name, parsedProperties);
-                parsedElement = new Template(attributes, boundAttributes, children, references, variables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+                var attrs = this.extractAttributes(element.name, parsedProperties);
+                parsedElement = new Template(attributes, attrs.bound, children, references, variables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
             }
             else {
-                var boundAttributes = this.createBoundAttributes(element.name, parsedProperties);
-                parsedElement = new Element$1(element.name, attributes, boundAttributes, boundEvents, children, references, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+                var attrs = this.extractAttributes(element.name, parsedProperties);
+                parsedElement = new Element$1(element.name, attributes, attrs.bound, boundEvents, children, references, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
             }
             if (elementHasInlineTemplate) {
-                var attributes_2 = [];
-                templateMatchableAttributes.forEach(function (_a) {
-                    var _b = __read(_a, 2), name = _b[0], value = _b[1];
-                    return attributes_2.push(new TextAttribute(name, value, inlineTemplateSourceSpan));
-                });
-                var boundAttributes = this.createBoundAttributes('ng-template', templateParsedProperties);
-                parsedElement = new Template(attributes_2, boundAttributes, [parsedElement], [], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+                var attrs = this.extractAttributes('ng-template', templateParsedProperties);
+                parsedElement = new Template(attrs.literal, attrs.bound, [parsedElement], [], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
             }
             return parsedElement;
         };
@@ -18603,11 +18594,21 @@
         HtmlAstToIvyAst.prototype.visitComment = function (comment) { return null; };
         HtmlAstToIvyAst.prototype.visitExpansion = function (expansion) { return null; };
         HtmlAstToIvyAst.prototype.visitExpansionCase = function (expansionCase) { return null; };
-        HtmlAstToIvyAst.prototype.createBoundAttributes = function (elementName, properties) {
+        // convert view engine `ParsedProperty` to a format suitable for IVY
+        HtmlAstToIvyAst.prototype.extractAttributes = function (elementName, properties) {
             var _this = this;
-            return properties.filter(function (prop) { return !prop.isLiteral; })
-                .map(function (prop) { return _this.bindingParser.createBoundElementProperty(elementName, prop); })
-                .map(function (prop) { return BoundAttribute.fromBoundElementProperty(prop); });
+            var bound = [];
+            var literal = [];
+            properties.forEach(function (prop) {
+                if (prop.isLiteral) {
+                    literal.push(new TextAttribute(prop.name, prop.expression.source || '', prop.sourceSpan));
+                }
+                else {
+                    var bep = _this.bindingParser.createBoundElementProperty(elementName, prop);
+                    bound.push(BoundAttribute.fromBoundElementProperty(bep));
+                }
+            });
+            return { bound: bound, literal: literal };
         };
         HtmlAstToIvyAst.prototype.parseAttribute = function (isTemplateElement, attribute, matchableAttributes, parsedProperties, boundEvents, variables, references) {
             var name = normalizeAttributeName(attribute.name);
@@ -19421,13 +19422,17 @@
                 variable(templateName),
                 TYPED_NULL_EXPR,
             ];
+            // Match directives on both attributes and bound properties
             var attributeNames = [];
             var attributeMap = {};
             template.attributes.forEach(function (a) {
                 attributeNames.push(asLiteral(a.name), asLiteral(''));
                 attributeMap[a.name] = a.value;
             });
-            // Match directives on template attributes
+            template.inputs.forEach(function (i) {
+                attributeNames.push(asLiteral(i.name), asLiteral(''));
+                attributeMap[i.name] = '';
+            });
             if (this.directiveMatcher) {
                 var selector = createCssSelector('ng-template', attributeMap);
                 this.directiveMatcher.match(selector, function (cssSelector, staticType) { _this.directives.add(staticType); });
@@ -19931,6 +19936,8 @@
         definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
         // e.g. `features: [NgOnChangesFeature]`
         var features = [];
+        // TODO: add `PublicFeature` so that directives get registered to the DI - make this configurable
+        features.push(importExpr(Identifiers$1.PublicFeature));
         if (meta.usesInheritance) {
             features.push(importExpr(Identifiers$1.InheritDefinitionFeature));
         }
