@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.0+44.sha-02e201a
+ * @license Angular v7.0.0-beta.0+45.sha-fefc860
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1202,7 +1202,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('7.0.0-beta.0+44.sha-02e201a');
+    var VERSION = new Version('7.0.0-beta.0+45.sha-fefc860');
 
     /**
      * @license
@@ -15900,13 +15900,28 @@
         };
         _AstToIrVisitor.prototype.visitPropertyWrite = function (ast, mode) {
             var receiver = this._visit(ast.receiver, _Mode.Expression);
+            var varExpr = null;
             if (receiver === this._implicitReceiver) {
-                var varExpr = this._getLocal(ast.name);
-                if (varExpr) {
-                    throw new Error('Cannot assign to a reference or variable!');
+                var localExpr = this._getLocal(ast.name);
+                if (localExpr) {
+                    if (localExpr instanceof ReadPropExpr) {
+                        // If the local variable is a property read expression, it's a reference
+                        // to a 'context.property' value and will be used as the target of the
+                        // write expression.
+                        varExpr = localExpr;
+                    }
+                    else {
+                        // Otherwise it's an error.
+                        throw new Error('Cannot assign to a reference or variable!');
+                    }
                 }
             }
-            return convertToStatementIfNeeded(mode, receiver.prop(ast.name).set(this._visit(ast.value, _Mode.Expression)));
+            // If no local expression could be produced, use the original receiver's
+            // property as the target.
+            if (varExpr === null) {
+                varExpr = receiver.prop(ast.name);
+            }
+            return convertToStatementIfNeeded(mode, varExpr.set(this._visit(ast.value, _Mode.Expression)));
         };
         _AstToIrVisitor.prototype.visitSafePropertyRead = function (ast, mode) {
             return this.convertSafeAccess(ast, this.leftMostSafeNode(ast), mode);
