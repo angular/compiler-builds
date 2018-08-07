@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.1+24.sha-94a2ac7
+ * @license Angular v6.1.1+26.sha-054fbbe
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('6.1.1+24.sha-94a2ac7');
+const VERSION = new Version('6.1.1+26.sha-054fbbe');
 
 /**
  * @license
@@ -21654,6 +21654,14 @@ class AotSummaryResolver {
             summaries.forEach((summary) => this.summaryCache.set(summary.symbol, summary));
             if (moduleName) {
                 this.knownFileNameToModuleNames.set(filePath, moduleName);
+                if (filePath.endsWith('.d.ts')) {
+                    // Also add entries to map the ngfactory & ngsummary files to their module names.
+                    // This is necessary to resolve ngfactory & ngsummary files to their AMD module
+                    // names when building angular with Bazel from source downstream.
+                    // See https://github.com/bazelbuild/rules_typescript/pull/223 for context.
+                    this.knownFileNameToModuleNames.set(filePath.replace(/\.d\.ts$/, '.ngfactory.d.ts'), moduleName + '.ngfactory');
+                    this.knownFileNameToModuleNames.set(filePath.replace(/\.d\.ts$/, '.ngsummary.d.ts'), moduleName + '.ngsummary');
+                }
             }
             importAs.forEach((importAs) => { this.importAs.set(importAs.symbol, importAs.importAs); });
         }
