@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0+100.sha-183757d
+ * @license Angular v7.0.0-beta.0+38.sha-16c03c0
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('6.1.0+100.sha-183757d');
+const VERSION = new Version('7.0.0-beta.0+38.sha-16c03c0');
 
 /**
  * @license
@@ -16765,6 +16765,7 @@ Identifiers$1.queryRefresh = { name: 'ɵqR', moduleName: CORE$1 };
 Identifiers$1.registerContentQuery = { name: 'ɵQr', moduleName: CORE$1 };
 Identifiers$1.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
 Identifiers$1.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
+Identifiers$1.PublicFeature = { name: 'ɵPublicFeature', moduleName: CORE$1 };
 Identifiers$1.listener = { name: 'ɵL', moduleName: CORE$1 };
 // Reserve slots for pure functions
 Identifiers$1.reserveSlots = { name: 'ɵrS', moduleName: CORE$1 };
@@ -17394,14 +17395,11 @@ class HtmlAstToIvyAst {
         }
         // Whether the element is a `<ng-template>`
         const isTemplateElement = isNgTemplate(element.name);
-        const matchableAttributes = [];
         const parsedProperties = [];
         const boundEvents = [];
         const variables = [];
         const references = [];
         const attributes = [];
-        const templateMatchableAttributes = [];
-        let inlineTemplateSourceSpan;
         const templateParsedProperties = [];
         const templateVariables = [];
         // Whether the element has any *-attribute
@@ -17412,6 +17410,7 @@ class HtmlAstToIvyAst {
             // `*attr` defines template bindings
             let isTemplateBinding = false;
             if (normalizedName.startsWith(TEMPLATE_ATTR_PREFIX$1)) {
+                // *-attributes
                 if (elementHasInlineTemplate) {
                     this.reportError(`Can't have multiple template bindings on one element. Use only one attribute prefixed with *`, attribute.sourceSpan);
                 }
@@ -17419,19 +17418,17 @@ class HtmlAstToIvyAst {
                 elementHasInlineTemplate = true;
                 const templateValue = attribute.value;
                 const templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX$1.length);
-                inlineTemplateSourceSpan = attribute.valueSpan || attribute.sourceSpan;
                 const parsedVariables = [];
-                this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, templateMatchableAttributes, templateParsedProperties, parsedVariables);
+                this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, [], templateParsedProperties, parsedVariables);
                 templateVariables.push(...parsedVariables.map(v => new Variable(v.name, v.value, v.sourceSpan)));
             }
             else {
                 // Check for variables, events, property bindings, interpolation
-                hasBinding = this.parseAttribute(isTemplateElement, attribute, matchableAttributes, parsedProperties, boundEvents, variables, references);
+                hasBinding = this.parseAttribute(isTemplateElement, attribute, [], parsedProperties, boundEvents, variables, references);
             }
             if (!hasBinding && !isTemplateBinding) {
                 // don't include the bindings as attributes as well in the AST
                 attributes.push(this.visitAttribute(attribute));
-                matchableAttributes.push([attribute.name, attribute.value]);
             }
         }
         const children = visitAll(preparsedElement.nonBindable ? NON_BINDABLE_VISITOR$1 : this, element.children);
@@ -17443,26 +17440,22 @@ class HtmlAstToIvyAst {
                 this.reportError(`<ng-content> element cannot have content.`, element.sourceSpan);
             }
             const selector = preparsedElement.selectAttr;
-            let attributes = element.attrs.map(attribute => {
-                return new TextAttribute(attribute.name, attribute.value, attribute.sourceSpan, attribute.valueSpan);
-            });
+            let attributes = element.attrs.map(attribute => this.visitAttribute(attribute));
             const selectorIndex = selector === DEFAULT_CONTENT_SELECTOR ? 0 : this.ngContentSelectors.push(selector);
             parsedElement = new Content(selectorIndex, attributes, element.sourceSpan);
         }
         else if (isTemplateElement) {
             // `<ng-template>`
-            const boundAttributes = this.createBoundAttributes(element.name, parsedProperties);
-            parsedElement = new Template(attributes, boundAttributes, children, references, variables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+            const attrs = this.extractAttributes(element.name, parsedProperties);
+            parsedElement = new Template(attributes, attrs.bound, children, references, variables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
         }
         else {
-            const boundAttributes = this.createBoundAttributes(element.name, parsedProperties);
-            parsedElement = new Element$1(element.name, attributes, boundAttributes, boundEvents, children, references, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+            const attrs = this.extractAttributes(element.name, parsedProperties);
+            parsedElement = new Element$1(element.name, attributes, attrs.bound, boundEvents, children, references, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
         }
         if (elementHasInlineTemplate) {
-            const attributes = [];
-            templateMatchableAttributes.forEach(([name, value]) => attributes.push(new TextAttribute(name, value, inlineTemplateSourceSpan)));
-            const boundAttributes = this.createBoundAttributes('ng-template', templateParsedProperties);
-            parsedElement = new Template(attributes, boundAttributes, [parsedElement], [], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+            const attrs = this.extractAttributes('ng-template', templateParsedProperties);
+            parsedElement = new Template(attrs.literal, attrs.bound, [parsedElement], [], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
         }
         return parsedElement;
     }
@@ -17477,10 +17470,20 @@ class HtmlAstToIvyAst {
     visitComment(comment) { return null; }
     visitExpansion(expansion) { return null; }
     visitExpansionCase(expansionCase) { return null; }
-    createBoundAttributes(elementName, properties) {
-        return properties.filter(prop => !prop.isLiteral)
-            .map(prop => this.bindingParser.createBoundElementProperty(elementName, prop))
-            .map(prop => BoundAttribute.fromBoundElementProperty(prop));
+    // convert view engine `ParsedProperty` to a format suitable for IVY
+    extractAttributes(elementName, properties) {
+        const bound = [];
+        const literal = [];
+        properties.forEach(prop => {
+            if (prop.isLiteral) {
+                literal.push(new TextAttribute(prop.name, prop.expression.source || '', prop.sourceSpan));
+            }
+            else {
+                const bep = this.bindingParser.createBoundElementProperty(elementName, prop);
+                bound.push(BoundAttribute.fromBoundElementProperty(bep));
+            }
+        });
+        return { bound, literal };
     }
     parseAttribute(isTemplateElement, attribute, matchableAttributes, parsedProperties, boundEvents, variables, references) {
         const name = normalizeAttributeName(attribute.name);
@@ -18262,13 +18265,17 @@ class TemplateDefinitionBuilder {
             variable(templateName),
             TYPED_NULL_EXPR,
         ];
+        // Match directives on both attributes and bound properties
         const attributeNames = [];
         const attributeMap = {};
         template.attributes.forEach(a => {
             attributeNames.push(asLiteral(a.name), asLiteral(''));
             attributeMap[a.name] = a.value;
         });
-        // Match directives on template attributes
+        template.inputs.forEach(i => {
+            attributeNames.push(asLiteral(i.name), asLiteral(''));
+            attributeMap[i.name] = '';
+        });
         if (this.directiveMatcher) {
             const selector = createCssSelector('ng-template', attributeMap);
             this.directiveMatcher.match(selector, (cssSelector, staticType) => { this.directives.add(staticType); });
@@ -18759,6 +18766,8 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
     // e.g. `features: [NgOnChangesFeature]`
     const features = [];
+    // TODO: add `PublicFeature` so that directives get registered to the DI - make this configurable
+    features.push(importExpr(Identifiers$1.PublicFeature));
     if (meta.usesInheritance) {
         features.push(importExpr(Identifiers$1.InheritDefinitionFeature));
     }
