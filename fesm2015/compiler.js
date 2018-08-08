@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.0+64.sha-2ee0c9e
+ * @license Angular v6.1.0+66.sha-26adee9
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('6.1.0+64.sha-2ee0c9e');
+const VERSION = new Version('6.1.0+66.sha-26adee9');
 
 /**
  * @license
