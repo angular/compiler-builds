@@ -85,6 +85,8 @@ export declare class Identifiers {
     static InheritDefinitionFeature: o.ExternalReference;
     static PublicFeature: o.ExternalReference;
     static listener: o.ExternalReference;
+    static getFactoryOf: o.ExternalReference;
+    static getInheritedFactory: o.ExternalReference;
     static reserveSlots: o.ExternalReference;
     static sanitizeHtml: o.ExternalReference;
     static sanitizeStyle: o.ExternalReference;

@@ -32,7 +32,7 @@ export interface R3DirectiveMetadata {
     /**
      * Dependencies of the directive's constructor.
      */
-    deps: R3DependencyMetadata[];
+    deps: R3DependencyMetadata[] | null;
     /**
      * Unparsed selector of the directive, or `null` if there was no selector.
      */
@@ -91,6 +91,11 @@ export interface R3DirectiveMetadata {
      * Whether or not the component or directive inherits from another class
      */
     usesInheritance: boolean;
+    /**
+     * Reference name under which to export the directive's type in a template,
+     * if any.
+     */
+    exportAs: string | null;
 }
 /**
  * Information needed to compile a component for the render3 runtime.
@@ -127,6 +132,12 @@ export interface R3ComponentMetadata extends R3DirectiveMetadata {
      * scope of the compilation.
      */
     directives: Map<string, o.Expression>;
+    /**
+     * Whether to wrap the 'directives' array, if one is generated, in a closure.
+     *
+     * This is done when the directives contain forward references.
+     */
+    wrapDirectivesInClosure: boolean;
 }
 /**
  * Information needed to compile a query (view or content).
@@ -160,6 +171,7 @@ export interface R3QueryMetadata {
 export interface R3DirectiveDef {
     expression: o.Expression;
     type: o.Type;
+    statements: o.Statement[];
 }
 /**
  * Output of render3 component compilation.
@@ -167,4 +179,5 @@ export interface R3DirectiveDef {
 export interface R3ComponentDef {
     expression: o.Expression;
     type: o.Type;
+    statements: o.Statement[];
 }
