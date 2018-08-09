@@ -24,9 +24,12 @@ export declare class Identifiers {
     static elementStyleProp: o.ExternalReference;
     static elementStylingApply: o.ExternalReference;
     static containerCreate: o.ExternalReference;
+    static nextContext: o.ExternalReference;
     static text: o.ExternalReference;
     static textBinding: o.ExternalReference;
     static bind: o.ExternalReference;
+    static getCurrentView: o.ExternalReference;
+    static restoreView: o.ExternalReference;
     static interpolation1: o.ExternalReference;
     static interpolation2: o.ExternalReference;
     static interpolation3: o.ExternalReference;
@@ -57,6 +60,7 @@ export declare class Identifiers {
     static pipe: o.ExternalReference;
     static projection: o.ExternalReference;
     static projectionDef: o.ExternalReference;
+    static reference: o.ExternalReference;
     static inject: o.ExternalReference;
     static injectAttribute: o.ExternalReference;
     static injectElementRef: o.ExternalReference;
@@ -79,7 +83,10 @@ export declare class Identifiers {
     static registerContentQuery: o.ExternalReference;
     static NgOnChangesFeature: o.ExternalReference;
     static InheritDefinitionFeature: o.ExternalReference;
+    static PublicFeature: o.ExternalReference;
     static listener: o.ExternalReference;
+    static getFactoryOf: o.ExternalReference;
+    static getInheritedFactory: o.ExternalReference;
     static reserveSlots: o.ExternalReference;
     static sanitizeHtml: o.ExternalReference;
     static sanitizeStyle: o.ExternalReference;

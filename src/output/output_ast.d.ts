@@ -161,6 +161,7 @@ export declare class WriteVarExpr extends Expression {
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     toDeclStmt(type?: Type | null, modifiers?: StmtModifier[] | null): DeclareVarStmt;
+    toConstDecl(): DeclareVarStmt;
 }
 export declare class WriteKeyExpr extends Expression {
     receiver: Expression;
