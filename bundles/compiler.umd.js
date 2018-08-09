@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.1+18.sha-7058072
+ * @license Angular v7.0.0-beta.1+19.sha-2d75992
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1202,7 +1202,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('7.0.0-beta.1+18.sha-7058072');
+    var VERSION = new Version('7.0.0-beta.1+19.sha-2d75992');
 
     /**
      * @license
@@ -17773,6 +17773,8 @@
         Identifiers.elementProperty = { name: 'ɵp', moduleName: CORE$1 };
         Identifiers.elementAttribute = { name: 'ɵa', moduleName: CORE$1 };
         Identifiers.elementClassProp = { name: 'ɵcp', moduleName: CORE$1 };
+        Identifiers.elementContainerStart = { name: 'ɵEC', moduleName: CORE$1 };
+        Identifiers.elementContainerEnd = { name: 'ɵeC', moduleName: CORE$1 };
         Identifiers.elementStyling = { name: 'ɵs', moduleName: CORE$1 };
         Identifiers.elementStylingMap = { name: 'ɵsm', moduleName: CORE$1 };
         Identifiers.elementStyleProp = { name: 'ɵsp', moduleName: CORE$1 };
@@ -19134,6 +19136,7 @@
             var attrI18nMetas = {};
             var i18nMeta = '';
             var _b = __read(splitNsName(element.name), 2), namespaceKey = _b[0], elementName = _b[1];
+            var isNgContainer$$1 = isNgContainer(element.name);
             // Elements inside i18n sections are replaced with placeholders
             // TODO(vicb): nested elements are a WIP in this phase
             if (this._inI18nSection) {
@@ -19178,11 +19181,11 @@
                 var selector = createCssSelector(element.name, outputAttrs);
                 this.directiveMatcher.match(selector, function (sel, staticType) { _this.directives.add(staticType); });
             }
-            // Element creation mode
-            var parameters = [
-                literal(elementIndex),
-                literal(elementName),
-            ];
+            // Regular element or ng-container creation mode
+            var parameters = [literal(elementIndex)];
+            if (!isNgContainer$$1) {
+                parameters.push(literal(elementName));
+            }
             // Add the attributes
             var attributes = [];
             var initialStyleDeclarations = [];
@@ -19334,12 +19337,13 @@
                 this.addNamespaceInstruction(currentNamespace, element);
             }
             var implicit = variable(CONTEXT_NAME);
-            var createSelfClosingInstruction = !hasStylingInstructions && element.children.length === 0 && element.outputs.length === 0;
+            var createSelfClosingInstruction = !hasStylingInstructions && !isNgContainer$$1 &&
+                element.children.length === 0 && element.outputs.length === 0;
             if (createSelfClosingInstruction) {
                 this.creationInstruction(element.sourceSpan, Identifiers$1.element, trimTrailingNulls(parameters));
             }
             else {
-                this.creationInstruction(element.sourceSpan, Identifiers$1.elementStart, trimTrailingNulls(parameters));
+                this.creationInstruction(element.sourceSpan, isNgContainer$$1 ? Identifiers$1.elementContainerStart : Identifiers$1.elementStart, trimTrailingNulls(parameters));
                 // initial styling for static style="..." attributes
                 if (hasStylingInstructions) {
                     var paramsList = [];
@@ -19495,7 +19499,7 @@
             }
             if (!createSelfClosingInstruction) {
                 // Finish element construction mode.
-                this.creationInstruction(element.endSourceSpan || element.sourceSpan, Identifiers$1.elementEnd);
+                this.creationInstruction(element.endSourceSpan || element.sourceSpan, isNgContainer$$1 ? Identifiers$1.elementContainerEnd : Identifiers$1.elementEnd);
             }
             // Restore the state before exiting this node
             this._inI18nSection = wasInI18nSection;
