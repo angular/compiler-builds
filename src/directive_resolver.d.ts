@@ -17,9 +17,9 @@ export declare class DirectiveResolver {
     resolve(type: Type): Directive;
     resolve(type: Type, throwIfNotFound: true): Directive;
     resolve(type: Type, throwIfNotFound: boolean): Directive | null;
-    private _mergeWithPropertyMetadata(dm, propertyMetadata, guards, directiveType);
-    private _extractPublicName(def);
-    private _dedupeBindings(bindings);
-    private _merge(directive, inputs, outputs, host, queries, guards, directiveType);
+    private _mergeWithPropertyMetadata;
+    private _extractPublicName;
+    private _dedupeBindings;
+    private _merge;
 }
 export declare function findLast<T>(arr: T[], condition: (value: T) => boolean): T | null;

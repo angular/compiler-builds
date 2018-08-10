@@ -1,11 +1,11 @@
 /**
- * @license Angular v6.0.0-rc.5+145.sha-741fa9e
+ * @license Angular v7.0.0-beta.1+25.sha-ca8c683
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
 import { __extends } from 'tslib';
-import { DirectiveResolver, NgModuleResolver, PipeResolver, ResourceLoader, core } from '@angular/compiler';
+import { ResourceLoader, core, DirectiveResolver, NgModuleResolver, PipeResolver } from '@angular/compiler';
 
 /**
  * @license
@@ -40,21 +40,7 @@ var MockResourceLoader = /** @class */ (function (_super) {
      *
      * The response given will be returned if the expectation matches.
      */
-    /**
-       * Add an expectation for the given URL. Incoming requests will be checked against
-       * the next expectation (in FIFO order). The `verifyNoOutstandingExpectations` method
-       * can be used to check if any expectations have not yet been met.
-       *
-       * The response given will be returned if the expectation matches.
-       */
-    MockResourceLoader.prototype.expect = /**
-       * Add an expectation for the given URL. Incoming requests will be checked against
-       * the next expectation (in FIFO order). The `verifyNoOutstandingExpectations` method
-       * can be used to check if any expectations have not yet been met.
-       *
-       * The response given will be returned if the expectation matches.
-       */
-    function (url, response) {
+    MockResourceLoader.prototype.expect = function (url, response) {
         var expectation = new _Expectation(url, response);
         this._expectations.push(expectation);
     };
@@ -64,50 +50,24 @@ var MockResourceLoader = /** @class */ (function (_super) {
      * unlike expectations, unused definitions do not cause `verifyNoOutstandingExpectations`
      * to return an error.
      */
-    /**
-       * Add a definition for the given URL to return the given response. Unlike expectations,
-       * definitions have no order and will satisfy any matching request at any time. Also
-       * unlike expectations, unused definitions do not cause `verifyNoOutstandingExpectations`
-       * to return an error.
-       */
-    MockResourceLoader.prototype.when = /**
-       * Add a definition for the given URL to return the given response. Unlike expectations,
-       * definitions have no order and will satisfy any matching request at any time. Also
-       * unlike expectations, unused definitions do not cause `verifyNoOutstandingExpectations`
-       * to return an error.
-       */
-    function (url, response) { this._definitions.set(url, response); };
+    MockResourceLoader.prototype.when = function (url, response) { this._definitions.set(url, response); };
     /**
      * Process pending requests and verify there are no outstanding expectations. Also fails
      * if no requests are pending.
      */
-    /**
-       * Process pending requests and verify there are no outstanding expectations. Also fails
-       * if no requests are pending.
-       */
-    MockResourceLoader.prototype.flush = /**
-       * Process pending requests and verify there are no outstanding expectations. Also fails
-       * if no requests are pending.
-       */
-    function () {
+    MockResourceLoader.prototype.flush = function () {
         if (this._requests.length === 0) {
             throw new Error('No pending requests to flush');
         }
         do {
-            this._processRequest((this._requests.shift()));
+            this._processRequest(this._requests.shift());
         } while (this._requests.length > 0);
         this.verifyNoOutstandingExpectations();
     };
     /**
      * Throw an exception if any expectations have not been satisfied.
      */
-    /**
-       * Throw an exception if any expectations have not been satisfied.
-       */
-    MockResourceLoader.prototype.verifyNoOutstandingExpectations = /**
-       * Throw an exception if any expectations have not been satisfied.
-       */
-    function () {
+    MockResourceLoader.prototype.verifyNoOutstandingExpectations = function () {
         if (this._expectations.length === 0)
             return;
         var urls = [];
@@ -220,7 +180,7 @@ var MockSchemaRegistry = /** @class */ (function () {
     };
     MockSchemaRegistry.prototype.normalizeAnimationStyleProperty = function (propName) { return propName; };
     MockSchemaRegistry.prototype.normalizeAnimationStyleValue = function (camelCaseProp, userProvidedProp, val) {
-        return { error: (null), value: val.toString() };
+        return { error: null, value: val.toString() };
     };
     return MockSchemaRegistry;
 }());
@@ -243,13 +203,7 @@ var MockDirectiveResolver = /** @class */ (function (_super) {
     /**
      * Overrides the {@link core.Directive} for a directive.
      */
-    /**
-       * Overrides the {@link core.Directive} for a directive.
-       */
-    MockDirectiveResolver.prototype.setDirective = /**
-       * Overrides the {@link core.Directive} for a directive.
-       */
-    function (type, metadata) {
+    MockDirectiveResolver.prototype.setDirective = function (type, metadata) {
         this._directives.set(type, metadata);
     };
     return MockDirectiveResolver;
@@ -272,13 +226,7 @@ var MockNgModuleResolver = /** @class */ (function (_super) {
     /**
      * Overrides the {@link NgModule} for a module.
      */
-    /**
-       * Overrides the {@link NgModule} for a module.
-       */
-    MockNgModuleResolver.prototype.setNgModule = /**
-       * Overrides the {@link NgModule} for a module.
-       */
-    function (type, metadata) {
+    MockNgModuleResolver.prototype.setNgModule = function (type, metadata) {
         this._ngModules.set(type, metadata);
     };
     /**
@@ -287,21 +235,9 @@ var MockNgModuleResolver = /** @class */ (function (_super) {
      * default
      * `NgModuleResolver`, see `setNgModule`.
      */
-    /**
-       * Returns the {@link NgModule} for a module:
-       * - Set the {@link NgModule} to the overridden view when it exists or fallback to the
-       * default
-       * `NgModuleResolver`, see `setNgModule`.
-       */
-    MockNgModuleResolver.prototype.resolve = /**
-       * Returns the {@link NgModule} for a module:
-       * - Set the {@link NgModule} to the overridden view when it exists or fallback to the
-       * default
-       * `NgModuleResolver`, see `setNgModule`.
-       */
-    function (type, throwIfNotFound) {
+    MockNgModuleResolver.prototype.resolve = function (type, throwIfNotFound) {
         if (throwIfNotFound === void 0) { throwIfNotFound = true; }
-        return this._ngModules.get(type) || (_super.prototype.resolve.call(this, type, throwIfNotFound));
+        return this._ngModules.get(type) || _super.prototype.resolve.call(this, type, throwIfNotFound);
     };
     return MockNgModuleResolver;
 }(NgModuleResolver));
@@ -323,36 +259,18 @@ var MockPipeResolver = /** @class */ (function (_super) {
     /**
      * Overrides the {@link Pipe} for a pipe.
      */
-    /**
-       * Overrides the {@link Pipe} for a pipe.
-       */
-    MockPipeResolver.prototype.setPipe = /**
-       * Overrides the {@link Pipe} for a pipe.
-       */
-    function (type, metadata) { this._pipes.set(type, metadata); };
+    MockPipeResolver.prototype.setPipe = function (type, metadata) { this._pipes.set(type, metadata); };
     /**
      * Returns the {@link Pipe} for a pipe:
      * - Set the {@link Pipe} to the overridden view when it exists or fallback to the
      * default
      * `PipeResolver`, see `setPipe`.
      */
-    /**
-       * Returns the {@link Pipe} for a pipe:
-       * - Set the {@link Pipe} to the overridden view when it exists or fallback to the
-       * default
-       * `PipeResolver`, see `setPipe`.
-       */
-    MockPipeResolver.prototype.resolve = /**
-       * Returns the {@link Pipe} for a pipe:
-       * - Set the {@link Pipe} to the overridden view when it exists or fallback to the
-       * default
-       * `PipeResolver`, see `setPipe`.
-       */
-    function (type, throwIfNotFound) {
+    MockPipeResolver.prototype.resolve = function (type, throwIfNotFound) {
         if (throwIfNotFound === void 0) { throwIfNotFound = true; }
         var metadata = this._pipes.get(type);
         if (!metadata) {
-            metadata = (_super.prototype.resolve.call(this, type, throwIfNotFound));
+            metadata = _super.prototype.resolve.call(this, type, throwIfNotFound);
         }
         return metadata;
     };
@@ -374,7 +292,6 @@ var MockPipeResolver = /** @class */ (function (_super) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-
 // This file only reexports content of the `src` folder. Keep it that way.
 
 /**

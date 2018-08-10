@@ -11,7 +11,7 @@
         if (v !== undefined) module.exports = v;
     }
     else if (typeof define === "function" && define.amd) {
-        define("@angular/compiler/index", ["require", "exports", "tslib", "@angular/compiler/compiler"], factory);
+        define("@angular/compiler", ["require", "exports", "tslib", "@angular/compiler/compiler"], factory);
     }
 })(function (require, exports) {
     "use strict";

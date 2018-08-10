@@ -1,3 +1,10 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 export declare enum TokenType {
     Character = 0,
     Identifier = 1,
@@ -5,7 +12,7 @@ export declare enum TokenType {
     String = 3,
     Operator = 4,
     Number = 5,
-    Error = 6,
+    Error = 6
 }
 export declare class Lexer {
     tokenize(text: string): Token[];

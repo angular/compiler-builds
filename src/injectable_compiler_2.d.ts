@@ -1,26 +1,26 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 import * as o from './output/output_ast';
+import { R3DependencyMetadata } from './render3/r3_factory';
 export interface InjectableDef {
     expression: o.Expression;
     type: o.Type;
+    statements: o.Statement[];
 }
-export interface IvyInjectableDep {
-    token: o.Expression;
-    optional: boolean;
-    self: boolean;
-    skipSelf: boolean;
-    attribute: boolean;
-}
-export interface IvyInjectableMetadata {
+export interface R3InjectableMetadata {
     name: string;
     type: o.Expression;
+    ctorDeps: R3DependencyMetadata[] | null;
     providedIn: o.Expression;
-    useType?: IvyInjectableDep[];
     useClass?: o.Expression;
-    useFactory?: {
-        factory: o.Expression;
-        deps: IvyInjectableDep[];
-    };
+    useFactory?: o.Expression;
     useExisting?: o.Expression;
     useValue?: o.Expression;
+    userDeps?: R3DependencyMetadata[];
 }
-export declare function compileIvyInjectable(meta: IvyInjectableMetadata): InjectableDef;
+export declare function compileInjectable(meta: R3InjectableMetadata): InjectableDef;

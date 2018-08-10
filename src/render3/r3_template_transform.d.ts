@@ -1,23 +1,18 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 import * as html from '../ml_parser/ast';
 import { ParseError } from '../parse_util';
 import { BindingParser } from '../template_parser/binding_parser';
 import * as t from './r3_ast';
-export declare class HtmlToTemplateTransform implements html.Visitor {
-    private bindingParser;
+export declare type Render3ParseResult = {
+    nodes: t.Node[];
     errors: ParseError[];
     ngContentSelectors: string[];
     hasNgContent: boolean;
-    constructor(bindingParser: BindingParser);
-    visitElement(element: html.Element): t.Node | null;
-    visitAttribute(attribute: html.Attribute): t.Node;
-    visitText(text: html.Text): t.Node;
-    visitComment(comment: html.Comment): null;
-    visitExpansion(expansion: html.Expansion): null;
-    visitExpansionCase(expansionCase: html.ExpansionCase): null;
-    private createBoundAttributes(elementName, properties);
-    private parseAttribute(isTemplateElement, attribute, matchableAttributes, parsedProperties, boundEvents, variables, references);
-    private parseVariable(identifier, value, sourceSpan, variables);
-    private parseReference(identifier, value, sourceSpan, references);
-    private parseAssignmentEvent(name, expression, sourceSpan, targetMatchableAttrs, boundEvents);
-    private reportError(message, sourceSpan, level?);
-}
+};
+export declare function htmlAstToRender3Ast(htmlNodes: html.Node[], bindingParser: BindingParser): Render3ParseResult;
