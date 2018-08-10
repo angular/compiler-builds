@@ -1,10 +1,10 @@
 /**
- * @license Angular v7.0.0-beta.1+23.sha-c8c1aa7
+ * @license Angular v7.0.0-beta.1+20.sha-209cc7e
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __assign, __spread, __values, __extends, __read } from 'tslib';
+import { __extends, __spread, __values, __assign, __read } from 'tslib';
 
 /**
  * @license
@@ -1125,7 +1125,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.0.0-beta.1+23.sha-c8c1aa7');
+var VERSION = new Version('7.0.0-beta.1+20.sha-209cc7e');
 
 /**
  * @license
