@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.1+34.sha-ecb5dc0
+ * @license Angular v7.0.0-beta.1+37.sha-0c4209f
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1202,7 +1202,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('7.0.0-beta.1+34.sha-ecb5dc0');
+    var VERSION = new Version('7.0.0-beta.1+37.sha-0c4209f');
 
     /**
      * @license
@@ -10176,6 +10176,13 @@
                 return 'ngAfterViewInit';
             case LifecycleHooks.AfterViewChecked:
                 return 'ngAfterViewChecked';
+            default:
+                // This default case is not needed by TypeScript compiler, as the switch is exhaustive.
+                // However Closure Compiler does not understand that and reports an error in typed mode.
+                // The `throw new Error` below works around the problem, and the unexpected: never variable
+                // makes sure tsc still checks this code is unreachable.
+                var unexpected = hook;
+                throw new Error("unexpected " + unexpected);
         }
     }
 
@@ -10274,11 +10281,7 @@
             if (dirType instanceof StaticSymbol) {
                 return this._staticSymbolCache.get(dirType.filePath, name);
             }
-            else {
-                var HostClass = function HostClass() { };
-                HostClass.overriddenName = name;
-                return HostClass;
-            }
+            return this._createProxyClass(dirType, name);
         };
         CompileMetadataResolver.prototype.getRendererType = function (dirType) {
             if (dirType instanceof StaticSymbol) {
@@ -17215,7 +17218,8 @@
         return lastAstNode instanceof NgContentAst;
     }
     function elementBindingDef(inputAst, dirAst) {
-        switch (inputAst.type) {
+        var inputType = inputAst.type;
+        switch (inputType) {
             case 1 /* Attribute */:
                 return literalArr([
                     literal(1 /* TypeElementAttribute */), literal(inputAst.name),
@@ -17239,6 +17243,13 @@
                 return literalArr([
                     literal(4 /* TypeElementStyle */), literal(inputAst.name), literal(inputAst.unit)
                 ]);
+            default:
+                // This default case is not needed by TypeScript compiler, as the switch is exhaustive.
+                // However Closure Compiler does not understand that and reports an error in typed mode.
+                // The `throw new Error` below works around the problem, and the unexpected: never variable
+                // makes sure tsc still checks this code is unreachable.
+                var unexpected = inputType;
+                throw new Error("unexpected " + unexpected);
         }
     }
     function fixedAttrsDef(elementAst) {
