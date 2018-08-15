@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.1+46.sha-26066f2
+ * @license Angular v7.0.0-beta.1+48.sha-b5f354f
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1202,7 +1202,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('7.0.0-beta.1+46.sha-26066f2');
+    var VERSION = new Version('7.0.0-beta.1+48.sha-b5f354f');
 
     /**
      * @license
@@ -17835,6 +17835,11 @@
         Identifiers.injectViewContainerRef = { name: 'ɵinjectViewContainerRef', moduleName: CORE$1 };
         Identifiers.injectChangeDetectorRef = { name: 'ɵinjectChangeDetectorRef', moduleName: CORE$1 };
         Identifiers.directiveInject = { name: 'ɵdirectiveInject', moduleName: CORE$1 };
+        Identifiers.defineBase = { name: 'ɵdefineBase', moduleName: CORE$1 };
+        Identifiers.BaseDef = {
+            name: 'ɵBaseDef',
+            moduleName: CORE$1,
+        };
         Identifiers.defineComponent = { name: 'ɵdefineComponent', moduleName: CORE$1 };
         Identifiers.ComponentDef = {
             name: 'ɵComponentDef',
@@ -20076,6 +20081,33 @@
             new ExpressionType(literal(selectorForType))
         ]));
         return { expression: expression, type: type, statements: statements };
+    }
+    /**
+     * Compile a base definition for the render3 runtime as defined by {@link R3BaseRefMetadata}
+     * @param meta the metadata used for compilation.
+     */
+    function compileBaseDefFromMetadata(meta) {
+        var definitionMap = new DefinitionMap();
+        if (meta.inputs) {
+            var inputs_1 = meta.inputs;
+            var inputsMap = Object.keys(inputs_1).map(function (key) {
+                var v = inputs_1[key];
+                var value = Array.isArray(v) ? literalArr(v.map(function (vx) { return literal(vx); })) : literal(v);
+                return { key: key, value: value, quoted: false };
+            });
+            definitionMap.set('inputs', literalMap(inputsMap));
+        }
+        if (meta.outputs) {
+            var outputs_1 = meta.outputs;
+            var outputsMap = Object.keys(outputs_1).map(function (key) {
+                var value = literal(outputs_1[key]);
+                return { key: key, value: value, quoted: false };
+            });
+            definitionMap.set('outputs', literalMap(outputsMap));
+        }
+        var expression = importExpr(Identifiers$1.defineBase).callFn([definitionMap.toLiteralMap()]);
+        var type = new ExpressionType(importExpr(Identifiers$1.BaseDef));
+        return { expression: expression, type: type };
     }
     /**
      * Compile a component for the render3 runtime as defined by the `R3ComponentMetadata`.
@@ -25022,6 +25054,7 @@
     exports.compilePipeFromMetadata = compilePipeFromMetadata;
     exports.makeBindingParser = makeBindingParser;
     exports.parseTemplate = parseTemplate;
+    exports.compileBaseDefFromMetadata = compileBaseDefFromMetadata;
     exports.compileComponentFromMetadata = compileComponentFromMetadata;
     exports.compileDirectiveFromMetadata = compileDirectiveFromMetadata;
     exports.parseHostBindings = parseHostBindings;
