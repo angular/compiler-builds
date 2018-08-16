@@ -1,10 +1,10 @@
 /**
- * @license Angular v7.0.0-beta.2+16.sha-de03abb
+ * @license Angular v7.0.0-beta.2+14.sha-abcc430
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __extends, __spread, __values, __assign, __read } from 'tslib';
+import { __assign, __spread, __extends, __values, __read } from 'tslib';
 
 /**
  * @license
@@ -1125,7 +1125,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.0.0-beta.2+16.sha-de03abb');
+var VERSION = new Version('7.0.0-beta.2+14.sha-abcc430');
 
 /**
  * @license
@@ -17727,7 +17727,6 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.elementStylingApply = { name: 'ɵelementStylingApply', moduleName: CORE$1 };
     Identifiers.containerCreate = { name: 'ɵcontainer', moduleName: CORE$1 };
     Identifiers.nextContext = { name: 'ɵnextContext', moduleName: CORE$1 };
-    Identifiers.templateCreate = { name: 'ɵtemplate', moduleName: CORE$1 };
     Identifiers.text = { name: 'ɵtext', moduleName: CORE$1 };
     Identifiers.textBinding = { name: 'ɵtextBinding', moduleName: CORE$1 };
     Identifiers.bind = { name: 'ɵbind', moduleName: CORE$1 };
@@ -19500,8 +19499,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         if (attributeNames.length) {
             parameters.push(this.constantPool.getConstLiteral(literalArr(attributeNames), true));
         }
-        // e.g. template(1, MyComp_Template_1)
-        this.creationInstruction(template.sourceSpan, Identifiers$1.templateCreate, trimTrailingNulls(parameters));
+        // e.g. C(1, C1Template)
+        this.creationInstruction(template.sourceSpan, Identifiers$1.containerCreate, trimTrailingNulls(parameters));
         // e.g. p(1, 'forOf', ɵbind(ctx.items));
         var context = variable(CONTEXT_NAME);
         template.inputs.forEach(function (input) {

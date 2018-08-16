@@ -27,7 +27,6 @@ export declare class Identifiers {
     static elementStylingApply: o.ExternalReference;
     static containerCreate: o.ExternalReference;
     static nextContext: o.ExternalReference;
-    static templateCreate: o.ExternalReference;
     static text: o.ExternalReference;
     static textBinding: o.ExternalReference;
     static bind: o.ExternalReference;
