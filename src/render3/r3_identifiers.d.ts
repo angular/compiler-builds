@@ -19,6 +19,8 @@ export declare class Identifiers {
     static elementProperty: o.ExternalReference;
     static elementAttribute: o.ExternalReference;
     static elementClassProp: o.ExternalReference;
+    static elementContainerStart: o.ExternalReference;
+    static elementContainerEnd: o.ExternalReference;
     static elementStyling: o.ExternalReference;
     static elementStylingMap: o.ExternalReference;
     static elementStyleProp: o.ExternalReference;
@@ -68,6 +70,8 @@ export declare class Identifiers {
     static injectViewContainerRef: o.ExternalReference;
     static injectChangeDetectorRef: o.ExternalReference;
     static directiveInject: o.ExternalReference;
+    static defineBase: o.ExternalReference;
+    static BaseDef: o.ExternalReference;
     static defineComponent: o.ExternalReference;
     static ComponentDef: o.ExternalReference;
     static defineDirective: o.ExternalReference;
