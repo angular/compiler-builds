@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.2+12.sha-9ee6702
+ * @license Angular v7.0.0-beta.2+16.sha-de03abb
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-beta.2+12.sha-9ee6702');
+const VERSION = new Version('7.0.0-beta.2+16.sha-de03abb');
 
 /**
  * @license
@@ -16717,6 +16717,7 @@ Identifiers$1.elementStyleProp = { name: 'ɵelementStylingProp', moduleName: COR
 Identifiers$1.elementStylingApply = { name: 'ɵelementStylingApply', moduleName: CORE$1 };
 Identifiers$1.containerCreate = { name: 'ɵcontainer', moduleName: CORE$1 };
 Identifiers$1.nextContext = { name: 'ɵnextContext', moduleName: CORE$1 };
+Identifiers$1.templateCreate = { name: 'ɵtemplate', moduleName: CORE$1 };
 Identifiers$1.text = { name: 'ɵtext', moduleName: CORE$1 };
 Identifiers$1.textBinding = { name: 'ɵtextBinding', moduleName: CORE$1 };
 Identifiers$1.bind = { name: 'ɵbind', moduleName: CORE$1 };
@@ -18398,8 +18399,8 @@ class TemplateDefinitionBuilder {
         if (attributeNames.length) {
             parameters.push(this.constantPool.getConstLiteral(literalArr(attributeNames), true));
         }
-        // e.g. C(1, C1Template)
-        this.creationInstruction(template.sourceSpan, Identifiers$1.containerCreate, trimTrailingNulls(parameters));
+        // e.g. template(1, MyComp_Template_1)
+        this.creationInstruction(template.sourceSpan, Identifiers$1.templateCreate, trimTrailingNulls(parameters));
         // e.g. p(1, 'forOf', ɵbind(ctx.items));
         const context = variable(CONTEXT_NAME);
         template.inputs.forEach(input => {
