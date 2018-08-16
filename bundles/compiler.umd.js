@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.1+10.sha-b64fed1
+ * @license Angular v7.0.0-beta.1+52.sha-1f11039
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1202,7 +1202,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('7.0.0-beta.1+10.sha-b64fed1');
+    var VERSION = new Version('7.0.0-beta.1+52.sha-1f11039');
 
     /**
      * @license
@@ -10176,6 +10176,13 @@
                 return 'ngAfterViewInit';
             case LifecycleHooks.AfterViewChecked:
                 return 'ngAfterViewChecked';
+            default:
+                // This default case is not needed by TypeScript compiler, as the switch is exhaustive.
+                // However Closure Compiler does not understand that and reports an error in typed mode.
+                // The `throw new Error` below works around the problem, and the unexpected: never variable
+                // makes sure tsc still checks this code is unreachable.
+                var unexpected = hook;
+                throw new Error("unexpected " + unexpected);
         }
     }
 
@@ -10274,11 +10281,7 @@
             if (dirType instanceof StaticSymbol) {
                 return this._staticSymbolCache.get(dirType.filePath, name);
             }
-            else {
-                var HostClass = function HostClass() { };
-                HostClass.overriddenName = name;
-                return HostClass;
-            }
+            return this._createProxyClass(dirType, name);
         };
         CompileMetadataResolver.prototype.getRendererType = function (dirType) {
             if (dirType instanceof StaticSymbol) {
@@ -17215,7 +17218,8 @@
         return lastAstNode instanceof NgContentAst;
     }
     function elementBindingDef(inputAst, dirAst) {
-        switch (inputAst.type) {
+        var inputType = inputAst.type;
+        switch (inputType) {
             case 1 /* Attribute */:
                 return literalArr([
                     literal(1 /* TypeElementAttribute */), literal(inputAst.name),
@@ -17239,6 +17243,13 @@
                 return literalArr([
                     literal(4 /* TypeElementStyle */), literal(inputAst.name), literal(inputAst.unit)
                 ]);
+            default:
+                // This default case is not needed by TypeScript compiler, as the switch is exhaustive.
+                // However Closure Compiler does not understand that and reports an error in typed mode.
+                // The `throw new Error` below works around the problem, and the unexpected: never variable
+                // makes sure tsc still checks this code is unreachable.
+                var unexpected = inputType;
+                throw new Error("unexpected " + unexpected);
         }
     }
     function fixedAttrsDef(elementAst) {
@@ -17773,6 +17784,8 @@
         Identifiers.elementProperty = { name: 'ɵp', moduleName: CORE$1 };
         Identifiers.elementAttribute = { name: 'ɵa', moduleName: CORE$1 };
         Identifiers.elementClassProp = { name: 'ɵcp', moduleName: CORE$1 };
+        Identifiers.elementContainerStart = { name: 'ɵEC', moduleName: CORE$1 };
+        Identifiers.elementContainerEnd = { name: 'ɵeC', moduleName: CORE$1 };
         Identifiers.elementStyling = { name: 'ɵs', moduleName: CORE$1 };
         Identifiers.elementStylingMap = { name: 'ɵsm', moduleName: CORE$1 };
         Identifiers.elementStyleProp = { name: 'ɵsp', moduleName: CORE$1 };
@@ -17822,6 +17835,11 @@
         Identifiers.injectViewContainerRef = { name: 'ɵinjectViewContainerRef', moduleName: CORE$1 };
         Identifiers.injectChangeDetectorRef = { name: 'ɵinjectChangeDetectorRef', moduleName: CORE$1 };
         Identifiers.directiveInject = { name: 'ɵdirectiveInject', moduleName: CORE$1 };
+        Identifiers.defineBase = { name: 'ɵdefineBase', moduleName: CORE$1 };
+        Identifiers.BaseDef = {
+            name: 'ɵBaseDef',
+            moduleName: CORE$1,
+        };
         Identifiers.defineComponent = { name: 'ɵdefineComponent', moduleName: CORE$1 };
         Identifiers.ComponentDef = {
             name: 'ɵComponentDef',
@@ -17857,6 +17875,14 @@
         Identifiers.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
         Identifiers.PublicFeature = { name: 'ɵPublicFeature', moduleName: CORE$1 };
         Identifiers.listener = { name: 'ɵL', moduleName: CORE$1 };
+        Identifiers.getFactoryOf = {
+            name: 'ɵgetFactoryOf',
+            moduleName: CORE$1,
+        };
+        Identifiers.getInheritedFactory = {
+            name: 'ɵgetInheritedFactory',
+            moduleName: CORE$1,
+        };
         // Reserve slots for pure functions
         Identifiers.reserveSlots = { name: 'ɵrS', moduleName: CORE$1 };
         // sanitization-related functions
@@ -17969,6 +17995,12 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
+    var R3FactoryDelegateType;
+    (function (R3FactoryDelegateType) {
+        R3FactoryDelegateType[R3FactoryDelegateType["Class"] = 0] = "Class";
+        R3FactoryDelegateType[R3FactoryDelegateType["Function"] = 1] = "Function";
+        R3FactoryDelegateType[R3FactoryDelegateType["Factory"] = 2] = "Factory";
+    })(R3FactoryDelegateType || (R3FactoryDelegateType = {}));
     (function (R3ResolvedDependencyType) {
         /**
          * A normal token dependency.
@@ -18005,12 +18037,73 @@
      * Construct a factory function expression for the given `R3FactoryMetadata`.
      */
     function compileFactoryFunction(meta) {
-        // Each dependency becomes an invocation of an inject*() function.
-        var args = meta.deps.map(function (dep) { return compileInjectDependency(dep, meta.injectFn); });
-        // The overall result depends on whether this is construction or function invocation.
-        var expr = meta.useNew ? new InstantiateExpr(meta.fnOrClass, args) :
-            new InvokeFunctionExpr(meta.fnOrClass, args);
-        return fn([], [new ReturnStatement(expr)], INFERRED_TYPE, undefined, meta.name + "_Factory");
+        var t = variable('t');
+        var statements = [];
+        // The type to instantiate via constructor invocation. If there is no delegated factory, meaning
+        // this type is always created by constructor invocation, then this is the type-to-create
+        // parameter provided by the user (t) if specified, or the current type if not. If there is a
+        // delegated factory (which is used to create the current type) then this is only the type-to-
+        // create parameter (t).
+        var typeForCtor = !isDelegatedMetadata(meta) ? new BinaryOperatorExpr(exports.BinaryOperator.Or, t, meta.type) : t;
+        var ctorExpr = null;
+        if (meta.deps !== null) {
+            // There is a constructor (either explicitly or implicitly defined).
+            ctorExpr = new InstantiateExpr(typeForCtor, injectDependencies(meta.deps, meta.injectFn));
+        }
+        else {
+            var baseFactory = variable("\u0275" + meta.name + "_BaseFactory");
+            var getInheritedFactory = importExpr(Identifiers$1.getInheritedFactory);
+            var baseFactoryStmt = baseFactory.set(getInheritedFactory.callFn([meta.type]))
+                .toDeclStmt(INFERRED_TYPE, [exports.StmtModifier.Final]);
+            statements.push(baseFactoryStmt);
+            // There is no constructor, use the base class' factory to construct typeForCtor.
+            ctorExpr = baseFactory.callFn([typeForCtor]);
+        }
+        var ctorExprFinal = ctorExpr;
+        var body = [];
+        var retExpr = null;
+        function makeConditionalFactory(nonCtorExpr) {
+            var r = variable('r');
+            body.push(r.set(NULL_EXPR).toDeclStmt());
+            body.push(ifStmt(t, [r.set(ctorExprFinal).toStmt()], [r.set(nonCtorExpr).toStmt()]));
+            return r;
+        }
+        if (isDelegatedMetadata(meta) && meta.delegateType === R3FactoryDelegateType.Factory) {
+            var delegateFactory = variable("\u0275" + meta.name + "_BaseFactory");
+            var getFactoryOf = importExpr(Identifiers$1.getFactoryOf);
+            if (meta.delegate.isEquivalent(meta.type)) {
+                throw new Error("Illegal state: compiling factory that delegates to itself");
+            }
+            var delegateFactoryStmt = delegateFactory.set(getFactoryOf.callFn([meta.delegate]))
+                .toDeclStmt(INFERRED_TYPE, [exports.StmtModifier.Final]);
+            statements.push(delegateFactoryStmt);
+            var r = makeConditionalFactory(delegateFactory.callFn([]));
+            retExpr = r;
+        }
+        else if (isDelegatedMetadata(meta)) {
+            // This type is created with a delegated factory. If a type parameter is not specified, call
+            // the factory instead.
+            var delegateArgs = injectDependencies(meta.delegateDeps, meta.injectFn);
+            // Either call `new delegate(...)` or `delegate(...)` depending on meta.useNewForDelegate.
+            var factoryExpr = new (meta.delegateType === R3FactoryDelegateType.Class ?
+                InstantiateExpr :
+                InvokeFunctionExpr)(meta.delegate, delegateArgs);
+            retExpr = makeConditionalFactory(factoryExpr);
+        }
+        else if (isExpressionFactoryMetadata(meta)) {
+            // TODO(alxhub): decide whether to lower the value here or in the caller
+            retExpr = makeConditionalFactory(meta.expression);
+        }
+        else {
+            retExpr = ctorExpr;
+        }
+        return {
+            factory: fn([new FnParam('t', DYNAMIC_TYPE)], __spread(body, [new ReturnStatement(retExpr)]), INFERRED_TYPE, undefined, meta.name + "_Factory"),
+            statements: statements,
+        };
+    }
+    function injectDependencies(deps, injectFn) {
+        return deps.map(function (dep) { return compileInjectDependency(dep, injectFn); });
     }
     function compileInjectDependency(dep, injectFn) {
         // Interpret the dependency according to its resolved type.
@@ -18116,6 +18209,12 @@
         }
         return deps;
     }
+    function isDelegatedMetadata(meta) {
+        return meta.delegateType !== undefined;
+    }
+    function isExpressionFactoryMetadata(meta) {
+        return meta.expression !== undefined;
+    }
 
     /**
      * @license
@@ -18186,19 +18285,19 @@
         return { expression: expression, type: type, additionalStatements: additionalStatements };
     }
     function compileInjector(meta) {
+        var result = compileFactoryFunction({
+            name: meta.name,
+            type: meta.type,
+            deps: meta.deps,
+            injectFn: Identifiers$1.inject,
+        });
         var expression = importExpr(Identifiers$1.defineInjector).callFn([mapToMapExpression({
-                factory: compileFactoryFunction({
-                    name: meta.name,
-                    fnOrClass: meta.type,
-                    deps: meta.deps,
-                    useNew: true,
-                    injectFn: Identifiers$1.inject,
-                }),
+                factory: result.factory,
                 providers: meta.providers,
                 imports: meta.imports,
             })]);
         var type = new ExpressionType(importExpr(Identifiers$1.InjectorDef, [new ExpressionType(meta.type)]));
-        return { expression: expression, type: type };
+        return { expression: expression, type: type, statements: result.statements };
     }
     // TODO(alxhub): integrate this with `compileNgModule`. Currently the two are separate operations.
     function compileNgModuleFromRender2(ctx, ngModule, injectableCompiler) {
@@ -18243,12 +18342,11 @@
         definitionMapValues.push({ key: 'type', value: metadata.type, quoted: false });
         var templateFactory = compileFactoryFunction({
             name: metadata.name,
-            fnOrClass: metadata.type,
+            type: metadata.type,
             deps: metadata.deps,
-            useNew: true,
             injectFn: Identifiers$1.directiveInject,
         });
-        definitionMapValues.push({ key: 'factory', value: templateFactory, quoted: false });
+        definitionMapValues.push({ key: 'factory', value: templateFactory.factory, quoted: false });
         // e.g. `pure: true`
         definitionMapValues.push({ key: 'pure', value: literal(metadata.pure), quoted: false });
         var expression = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]);
@@ -18256,7 +18354,7 @@
             new ExpressionType(metadata.type),
             new ExpressionType(new LiteralExpr(metadata.pipeName)),
         ]));
-        return { expression: expression, type: type };
+        return { expression: expression, type: type, statements: templateFactory.statements };
     }
     /**
      * Write a pipe definition to the output context.
@@ -19056,6 +19154,7 @@
             var attrI18nMetas = {};
             var i18nMeta = '';
             var _b = __read(splitNsName(element.name), 2), namespaceKey = _b[0], elementName = _b[1];
+            var isNgContainer$$1 = isNgContainer(element.name);
             // Elements inside i18n sections are replaced with placeholders
             // TODO(vicb): nested elements are a WIP in this phase
             if (this._inI18nSection) {
@@ -19100,11 +19199,11 @@
                 var selector = createCssSelector(element.name, outputAttrs);
                 this.directiveMatcher.match(selector, function (sel, staticType) { _this.directives.add(staticType); });
             }
-            // Element creation mode
-            var parameters = [
-                literal(elementIndex),
-                literal(elementName),
-            ];
+            // Regular element or ng-container creation mode
+            var parameters = [literal(elementIndex)];
+            if (!isNgContainer$$1) {
+                parameters.push(literal(elementName));
+            }
             // Add the attributes
             var attributes = [];
             var initialStyleDeclarations = [];
@@ -19256,12 +19355,13 @@
                 this.addNamespaceInstruction(currentNamespace, element);
             }
             var implicit = variable(CONTEXT_NAME);
-            var createSelfClosingInstruction = !hasStylingInstructions && element.children.length === 0 && element.outputs.length === 0;
+            var createSelfClosingInstruction = !hasStylingInstructions && !isNgContainer$$1 &&
+                element.children.length === 0 && element.outputs.length === 0;
             if (createSelfClosingInstruction) {
                 this.creationInstruction(element.sourceSpan, Identifiers$1.element, trimTrailingNulls(parameters));
             }
             else {
-                this.creationInstruction(element.sourceSpan, Identifiers$1.elementStart, trimTrailingNulls(parameters));
+                this.creationInstruction(element.sourceSpan, isNgContainer$$1 ? Identifiers$1.elementContainerStart : Identifiers$1.elementStart, trimTrailingNulls(parameters));
                 // initial styling for static style="..." attributes
                 if (hasStylingInstructions) {
                     var paramsList = [];
@@ -19417,7 +19517,7 @@
             }
             if (!createSelfClosingInstruction) {
                 // Finish element construction mode.
-                this.creationInstruction(element.endSourceSpan || element.sourceSpan, Identifiers$1.elementEnd);
+                this.creationInstruction(element.endSourceSpan || element.sourceSpan, isNgContainer$$1 ? Identifiers$1.elementContainerEnd : Identifiers$1.elementEnd);
             }
             // Restore the state before exiting this node
             this._inI18nSection = wasInI18nSection;
@@ -19932,13 +20032,13 @@
         // e.g. `selectors: [['', 'someDir', '']]`
         definitionMap.set('selectors', createDirectiveSelector(meta.selector));
         // e.g. `factory: () => new MyApp(injectElementRef())`
-        definitionMap.set('factory', compileFactoryFunction({
+        var result = compileFactoryFunction({
             name: meta.name,
-            fnOrClass: meta.type,
+            type: meta.type,
             deps: meta.deps,
-            useNew: true,
             injectFn: Identifiers$1.directiveInject,
-        }));
+        });
+        definitionMap.set('factory', result.factory);
         definitionMap.set('contentQueries', createContentQueriesFunction(meta, constantPool));
         definitionMap.set('contentQueriesRefresh', createContentQueriesRefreshFunction(meta));
         // e.g. `hostBindings: (dirIndex, elIndex) => { ... }
@@ -19962,13 +20062,16 @@
         if (features.length) {
             definitionMap.set('features', literalArr(features));
         }
-        return definitionMap;
+        if (meta.exportAs !== null) {
+            definitionMap.set('exportAs', literal(meta.exportAs));
+        }
+        return { definitionMap: definitionMap, statements: result.statements };
     }
     /**
      * Compile a directive for the render3 runtime as defined by the `R3DirectiveMetadata`.
      */
     function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
-        var definitionMap = baseDirectiveFields(meta, constantPool, bindingParser);
+        var _a = baseDirectiveFields(meta, constantPool, bindingParser), definitionMap = _a.definitionMap, statements = _a.statements;
         var expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()]);
         // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
         // string literal, which must be on one line.
@@ -19977,13 +20080,40 @@
             typeWithParameters(meta.type, meta.typeArgumentCount),
             new ExpressionType(literal(selectorForType))
         ]));
+        return { expression: expression, type: type, statements: statements };
+    }
+    /**
+     * Compile a base definition for the render3 runtime as defined by {@link R3BaseRefMetadata}
+     * @param meta the metadata used for compilation.
+     */
+    function compileBaseDefFromMetadata(meta) {
+        var definitionMap = new DefinitionMap();
+        if (meta.inputs) {
+            var inputs_1 = meta.inputs;
+            var inputsMap = Object.keys(inputs_1).map(function (key) {
+                var v = inputs_1[key];
+                var value = Array.isArray(v) ? literalArr(v.map(function (vx) { return literal(vx); })) : literal(v);
+                return { key: key, value: value, quoted: false };
+            });
+            definitionMap.set('inputs', literalMap(inputsMap));
+        }
+        if (meta.outputs) {
+            var outputs_1 = meta.outputs;
+            var outputsMap = Object.keys(outputs_1).map(function (key) {
+                var value = literal(outputs_1[key]);
+                return { key: key, value: value, quoted: false };
+            });
+            definitionMap.set('outputs', literalMap(outputsMap));
+        }
+        var expression = importExpr(Identifiers$1.defineBase).callFn([definitionMap.toLiteralMap()]);
+        var type = new ExpressionType(importExpr(Identifiers$1.BaseDef));
         return { expression: expression, type: type };
     }
     /**
      * Compile a component for the render3 runtime as defined by the `R3ComponentMetadata`.
      */
     function compileComponentFromMetadata(meta, constantPool, bindingParser) {
-        var definitionMap = baseDirectiveFields(meta, constantPool, bindingParser);
+        var _a = baseDirectiveFields(meta, constantPool, bindingParser), definitionMap = _a.definitionMap, statements = _a.statements;
         var selector = meta.selector && CssSelector.parse(meta.selector);
         var firstSelector = selector && selector[0];
         // e.g. `attr: ["class", ".my.app"]`
@@ -20018,7 +20148,11 @@
         definitionMap.set('template', templateFunctionExpression);
         // e.g. `directives: [MyDirective]`
         if (directivesUsed.size) {
-            definitionMap.set('directives', literalArr(Array.from(directivesUsed)));
+            var directivesExpr = literalArr(Array.from(directivesUsed));
+            if (meta.wrapDirectivesInClosure) {
+                directivesExpr = fn([], [new ReturnStatement(directivesExpr)]);
+            }
+            definitionMap.set('directives', directivesExpr);
         }
         // e.g. `pipes: [MyPipe]`
         if (pipesUsed.size) {
@@ -20032,7 +20166,7 @@
             typeWithParameters(meta.type, meta.typeArgumentCount),
             new ExpressionType(literal(selectorForType))
         ]));
-        return { expression: expression, type: type };
+        return { expression: expression, type: type, statements: statements };
     }
     /**
      * A wrapper around `compileDirective` which depends on render2 global analysis data as its input
@@ -20067,7 +20201,7 @@
                 nodes: render3Ast.nodes,
                 hasNgContent: render3Ast.hasNgContent,
                 ngContentSelectors: render3Ast.ngContentSelectors,
-            }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx) });
+            }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesInClosure: false });
         var res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
         // Create the partial class to be merged with the actual class.
         outputCtx.statements.push(new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [exports.StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []));
@@ -20098,6 +20232,7 @@
             inputs: directive.inputs,
             outputs: directive.outputs,
             usesInheritance: false,
+            exportAs: null,
         };
     }
     /**
@@ -24708,80 +24843,54 @@
      * found in the LICENSE file at https://angular.io/license
      */
     function compileInjectable(meta) {
-        var factory = NULL_EXPR;
-        function makeFn(ret) {
-            return fn([], [new ReturnStatement(ret)], undefined, undefined, meta.name + "_Factory");
-        }
-        if (meta.useClass !== undefined || meta.useFactory !== undefined) {
-            // First, handle useClass and useFactory together, since both involve a similar call to
-            // `compileFactoryFunction`. Either dependencies are explicitly specified, in which case
-            // a factory function call is generated, or they're not specified and the calls are special-
-            // cased.
-            if (meta.deps !== undefined) {
-                // Either call `new meta.useClass(...)` or `meta.useFactory(...)`.
-                var fnOrClass = meta.useClass || meta.useFactory;
-                // useNew: true if meta.useClass, false for meta.useFactory.
-                var useNew = meta.useClass !== undefined;
-                factory = compileFactoryFunction({
-                    name: meta.name,
-                    fnOrClass: fnOrClass,
-                    useNew: useNew,
-                    injectFn: Identifiers.inject,
-                    deps: meta.deps,
-                });
-            }
-            else if (meta.useClass !== undefined) {
-                // Special case for useClass where the factory from the class's ngInjectableDef is used.
-                if (meta.useClass.isEquivalent(meta.type)) {
-                    // For the injectable compiler, useClass represents a foreign type that should be
-                    // instantiated to satisfy construction of the given type. It's not valid to specify
-                    // useClass === type, since the useClass type is expected to already be compiled.
-                    throw new Error("useClass is the same as the type, but no deps specified, which is invalid.");
-                }
-                factory =
-                    makeFn(new ReadPropExpr(new ReadPropExpr(meta.useClass, 'ngInjectableDef'), 'factory')
-                        .callFn([]));
-            }
-            else if (meta.useFactory !== undefined) {
-                // Special case for useFactory where no arguments are passed.
-                factory = meta.useFactory.callFn([]);
+        var result = null;
+        var factoryMeta = {
+            name: meta.name,
+            type: meta.type,
+            deps: meta.ctorDeps,
+            injectFn: Identifiers.inject,
+        };
+        if (meta.useClass !== undefined) {
+            // meta.useClass has two modes of operation. Either deps are specified, in which case `new` is
+            // used to instantiate the class with dependencies injected, or deps are not specified and
+            // the factory of the class is used to instantiate it.
+            //
+            // A special case exists for useClass: Type where Type is the injectable type itself, in which
+            // case omitting deps just uses the constructor dependencies instead.
+            var useClassOnSelf = meta.useClass.isEquivalent(meta.type);
+            var deps = meta.userDeps || (useClassOnSelf && meta.ctorDeps) || undefined;
+            if (deps !== undefined) {
+                // factory: () => new meta.useClass(...deps)
+                result = compileFactoryFunction(__assign({}, factoryMeta, { delegate: meta.useClass, delegateDeps: deps, delegateType: R3FactoryDelegateType.Class }));
             }
             else {
-                // Can't happen - outer conditional guards against both useClass and useFactory being
-                // undefined.
-                throw new Error('Reached unreachable block in injectable compiler.');
+                result = compileFactoryFunction(__assign({}, factoryMeta, { delegate: meta.useClass, delegateType: R3FactoryDelegateType.Factory }));
             }
+        }
+        else if (meta.useFactory !== undefined) {
+            result = compileFactoryFunction(__assign({}, factoryMeta, { delegate: meta.useFactory, delegateDeps: meta.userDeps || [], delegateType: R3FactoryDelegateType.Function }));
         }
         else if (meta.useValue !== undefined) {
             // Note: it's safe to use `meta.useValue` instead of the `USE_VALUE in meta` check used for
             // client code because meta.useValue is an Expression which will be defined even if the actual
             // value is undefined.
-            factory = makeFn(meta.useValue);
+            result = compileFactoryFunction(__assign({}, factoryMeta, { expression: meta.useValue }));
         }
         else if (meta.useExisting !== undefined) {
             // useExisting is an `inject` call on the existing token.
-            factory = makeFn(importExpr(Identifiers.inject).callFn([meta.useExisting]));
+            result = compileFactoryFunction(__assign({}, factoryMeta, { expression: importExpr(Identifiers.inject).callFn([meta.useExisting]) }));
         }
         else {
-            // A strict type is compiled according to useClass semantics, except the dependencies are
-            // required.
-            if (meta.deps === undefined) {
-                throw new Error("Type compilation of an injectable requires dependencies.");
-            }
-            factory = compileFactoryFunction({
-                name: meta.name,
-                fnOrClass: meta.type,
-                useNew: true,
-                injectFn: Identifiers.inject,
-                deps: meta.deps,
-            });
+            result = compileFactoryFunction(factoryMeta);
         }
         var token = meta.type;
         var providedIn = meta.providedIn;
-        var expression = importExpr(Identifiers.defineInjectable).callFn([mapToMapExpression({ token: token, factory: factory, providedIn: providedIn })]);
+        var expression = importExpr(Identifiers.defineInjectable).callFn([mapToMapExpression({ token: token, factory: result.factory, providedIn: providedIn })]);
         var type = new ExpressionType(importExpr(Identifiers.InjectableDef, [new ExpressionType(meta.type)]));
         return {
-            expression: expression, type: type,
+            expression: expression,
+            type: type,
+            statements: result.statements,
         };
     }
 
@@ -24831,11 +24940,11 @@
      * @param sourceUrl a URL to use for the source map of the compiled expression
      * @param constantPool an optional `ConstantPool` which contains constants used in the expression
      */
-    function jitExpression(def, context, sourceUrl, constantPool) {
+    function jitExpression(def, context, sourceUrl, preStatements) {
         // The ConstantPool may contain Statements which declare variables used in the final expression.
         // Therefore, its statements need to precede the actual JIT operation. The final statement is a
         // declaration of $def which is set to the expression being compiled.
-        var statements = __spread((constantPool !== undefined ? constantPool.statements : []), [
+        var statements = __spread(preStatements, [
             new DeclareVarStmt('$def', def, undefined, [exports.StmtModifier.Exported]),
         ]);
         var res = jitStatements(sourceUrl, statements, new R3JitReflector(context), false);
@@ -24945,6 +25054,7 @@
     exports.compilePipeFromMetadata = compilePipeFromMetadata;
     exports.makeBindingParser = makeBindingParser;
     exports.parseTemplate = parseTemplate;
+    exports.compileBaseDefFromMetadata = compileBaseDefFromMetadata;
     exports.compileComponentFromMetadata = compileComponentFromMetadata;
     exports.compileDirectiveFromMetadata = compileDirectiveFromMetadata;
     exports.parseHostBindings = parseHostBindings;
