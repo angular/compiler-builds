@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.1+52.sha-1f11039
+ * @license Angular v7.0.0-beta.2+18.sha-503905c
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-beta.1+52.sha-1f11039');
+const VERSION = new Version('7.0.0-beta.2+18.sha-503905c');
 
 /**
  * @license
@@ -16700,59 +16700,60 @@ Identifiers$1.NEW_METHOD = 'factory';
 Identifiers$1.TRANSFORM_METHOD = 'transform';
 Identifiers$1.PATCH_DEPS = 'patchedDeps';
 /* Instructions */
-Identifiers$1.namespaceHTML = { name: 'ɵNH', moduleName: CORE$1 };
-Identifiers$1.namespaceMathML = { name: 'ɵNM', moduleName: CORE$1 };
-Identifiers$1.namespaceSVG = { name: 'ɵNS', moduleName: CORE$1 };
-Identifiers$1.element = { name: 'ɵEe', moduleName: CORE$1 };
-Identifiers$1.elementStart = { name: 'ɵE', moduleName: CORE$1 };
-Identifiers$1.elementEnd = { name: 'ɵe', moduleName: CORE$1 };
-Identifiers$1.elementProperty = { name: 'ɵp', moduleName: CORE$1 };
-Identifiers$1.elementAttribute = { name: 'ɵa', moduleName: CORE$1 };
-Identifiers$1.elementClassProp = { name: 'ɵcp', moduleName: CORE$1 };
+Identifiers$1.namespaceHTML = { name: 'ɵnamespaceHTML', moduleName: CORE$1 };
+Identifiers$1.namespaceMathML = { name: 'ɵnamespaceMathML', moduleName: CORE$1 };
+Identifiers$1.namespaceSVG = { name: 'ɵnamespaceSVG', moduleName: CORE$1 };
+Identifiers$1.element = { name: 'ɵelement', moduleName: CORE$1 };
+Identifiers$1.elementStart = { name: 'ɵelementStart', moduleName: CORE$1 };
+Identifiers$1.elementEnd = { name: 'ɵelementEnd', moduleName: CORE$1 };
+Identifiers$1.elementProperty = { name: 'ɵelementProperty', moduleName: CORE$1 };
+Identifiers$1.elementAttribute = { name: 'ɵelementAttribute', moduleName: CORE$1 };
+Identifiers$1.elementClassProp = { name: 'ɵelementClassProp', moduleName: CORE$1 };
 Identifiers$1.elementContainerStart = { name: 'ɵEC', moduleName: CORE$1 };
 Identifiers$1.elementContainerEnd = { name: 'ɵeC', moduleName: CORE$1 };
-Identifiers$1.elementStyling = { name: 'ɵs', moduleName: CORE$1 };
-Identifiers$1.elementStylingMap = { name: 'ɵsm', moduleName: CORE$1 };
-Identifiers$1.elementStyleProp = { name: 'ɵsp', moduleName: CORE$1 };
-Identifiers$1.elementStylingApply = { name: 'ɵsa', moduleName: CORE$1 };
-Identifiers$1.containerCreate = { name: 'ɵC', moduleName: CORE$1 };
-Identifiers$1.nextContext = { name: 'ɵx', moduleName: CORE$1 };
-Identifiers$1.text = { name: 'ɵT', moduleName: CORE$1 };
-Identifiers$1.textBinding = { name: 'ɵt', moduleName: CORE$1 };
-Identifiers$1.bind = { name: 'ɵb', moduleName: CORE$1 };
-Identifiers$1.getCurrentView = { name: 'ɵgV', moduleName: CORE$1 };
-Identifiers$1.restoreView = { name: 'ɵrV', moduleName: CORE$1 };
-Identifiers$1.interpolation1 = { name: 'ɵi1', moduleName: CORE$1 };
-Identifiers$1.interpolation2 = { name: 'ɵi2', moduleName: CORE$1 };
-Identifiers$1.interpolation3 = { name: 'ɵi3', moduleName: CORE$1 };
-Identifiers$1.interpolation4 = { name: 'ɵi4', moduleName: CORE$1 };
-Identifiers$1.interpolation5 = { name: 'ɵi5', moduleName: CORE$1 };
-Identifiers$1.interpolation6 = { name: 'ɵi6', moduleName: CORE$1 };
-Identifiers$1.interpolation7 = { name: 'ɵi7', moduleName: CORE$1 };
-Identifiers$1.interpolation8 = { name: 'ɵi8', moduleName: CORE$1 };
-Identifiers$1.interpolationV = { name: 'ɵiV', moduleName: CORE$1 };
-Identifiers$1.pureFunction0 = { name: 'ɵf0', moduleName: CORE$1 };
-Identifiers$1.pureFunction1 = { name: 'ɵf1', moduleName: CORE$1 };
-Identifiers$1.pureFunction2 = { name: 'ɵf2', moduleName: CORE$1 };
-Identifiers$1.pureFunction3 = { name: 'ɵf3', moduleName: CORE$1 };
-Identifiers$1.pureFunction4 = { name: 'ɵf4', moduleName: CORE$1 };
-Identifiers$1.pureFunction5 = { name: 'ɵf5', moduleName: CORE$1 };
-Identifiers$1.pureFunction6 = { name: 'ɵf6', moduleName: CORE$1 };
-Identifiers$1.pureFunction7 = { name: 'ɵf7', moduleName: CORE$1 };
-Identifiers$1.pureFunction8 = { name: 'ɵf8', moduleName: CORE$1 };
-Identifiers$1.pureFunctionV = { name: 'ɵfV', moduleName: CORE$1 };
-Identifiers$1.pipeBind1 = { name: 'ɵpb1', moduleName: CORE$1 };
-Identifiers$1.pipeBind2 = { name: 'ɵpb2', moduleName: CORE$1 };
-Identifiers$1.pipeBind3 = { name: 'ɵpb3', moduleName: CORE$1 };
-Identifiers$1.pipeBind4 = { name: 'ɵpb4', moduleName: CORE$1 };
-Identifiers$1.pipeBindV = { name: 'ɵpbV', moduleName: CORE$1 };
-Identifiers$1.load = { name: 'ɵld', moduleName: CORE$1 };
-Identifiers$1.loadDirective = { name: 'ɵd', moduleName: CORE$1 };
-Identifiers$1.loadQueryList = { name: 'ɵql', moduleName: CORE$1 };
-Identifiers$1.pipe = { name: 'ɵPp', moduleName: CORE$1 };
-Identifiers$1.projection = { name: 'ɵP', moduleName: CORE$1 };
-Identifiers$1.projectionDef = { name: 'ɵpD', moduleName: CORE$1 };
-Identifiers$1.reference = { name: 'ɵr', moduleName: CORE$1 };
+Identifiers$1.elementStyling = { name: 'ɵelementStyling', moduleName: CORE$1 };
+Identifiers$1.elementStylingMap = { name: 'ɵelementStylingMap', moduleName: CORE$1 };
+Identifiers$1.elementStyleProp = { name: 'ɵelementStylingProp', moduleName: CORE$1 };
+Identifiers$1.elementStylingApply = { name: 'ɵelementStylingApply', moduleName: CORE$1 };
+Identifiers$1.containerCreate = { name: 'ɵcontainer', moduleName: CORE$1 };
+Identifiers$1.nextContext = { name: 'ɵnextContext', moduleName: CORE$1 };
+Identifiers$1.templateCreate = { name: 'ɵtemplate', moduleName: CORE$1 };
+Identifiers$1.text = { name: 'ɵtext', moduleName: CORE$1 };
+Identifiers$1.textBinding = { name: 'ɵtextBinding', moduleName: CORE$1 };
+Identifiers$1.bind = { name: 'ɵbind', moduleName: CORE$1 };
+Identifiers$1.getCurrentView = { name: 'ɵgetCurrentView', moduleName: CORE$1 };
+Identifiers$1.restoreView = { name: 'ɵrestoreView', moduleName: CORE$1 };
+Identifiers$1.interpolation1 = { name: 'ɵinterpolation1', moduleName: CORE$1 };
+Identifiers$1.interpolation2 = { name: 'ɵinterpolation2', moduleName: CORE$1 };
+Identifiers$1.interpolation3 = { name: 'ɵinterpolation3', moduleName: CORE$1 };
+Identifiers$1.interpolation4 = { name: 'ɵinterpolation4', moduleName: CORE$1 };
+Identifiers$1.interpolation5 = { name: 'ɵinterpolation5', moduleName: CORE$1 };
+Identifiers$1.interpolation6 = { name: 'ɵinterpolation6', moduleName: CORE$1 };
+Identifiers$1.interpolation7 = { name: 'ɵinterpolation7', moduleName: CORE$1 };
+Identifiers$1.interpolation8 = { name: 'ɵinterpolation8', moduleName: CORE$1 };
+Identifiers$1.interpolationV = { name: 'ɵinterpolationV', moduleName: CORE$1 };
+Identifiers$1.pureFunction0 = { name: 'ɵpureFunction0', moduleName: CORE$1 };
+Identifiers$1.pureFunction1 = { name: 'ɵpureFunction1', moduleName: CORE$1 };
+Identifiers$1.pureFunction2 = { name: 'ɵpureFunction2', moduleName: CORE$1 };
+Identifiers$1.pureFunction3 = { name: 'ɵpureFunction3', moduleName: CORE$1 };
+Identifiers$1.pureFunction4 = { name: 'ɵpureFunction4', moduleName: CORE$1 };
+Identifiers$1.pureFunction5 = { name: 'ɵpureFunction5', moduleName: CORE$1 };
+Identifiers$1.pureFunction6 = { name: 'ɵpureFunction6', moduleName: CORE$1 };
+Identifiers$1.pureFunction7 = { name: 'ɵpureFunction7', moduleName: CORE$1 };
+Identifiers$1.pureFunction8 = { name: 'ɵpureFunction8', moduleName: CORE$1 };
+Identifiers$1.pureFunctionV = { name: 'ɵpureFunctionV', moduleName: CORE$1 };
+Identifiers$1.pipeBind1 = { name: 'ɵpipeBind1', moduleName: CORE$1 };
+Identifiers$1.pipeBind2 = { name: 'ɵpipeBind2', moduleName: CORE$1 };
+Identifiers$1.pipeBind3 = { name: 'ɵpipeBind3', moduleName: CORE$1 };
+Identifiers$1.pipeBind4 = { name: 'ɵpipeBind4', moduleName: CORE$1 };
+Identifiers$1.pipeBindV = { name: 'ɵpipeBindV', moduleName: CORE$1 };
+Identifiers$1.load = { name: 'ɵload', moduleName: CORE$1 };
+Identifiers$1.loadDirective = { name: 'ɵloadDirective', moduleName: CORE$1 };
+Identifiers$1.loadQueryList = { name: 'ɵloadQueryList', moduleName: CORE$1 };
+Identifiers$1.pipe = { name: 'ɵpipe', moduleName: CORE$1 };
+Identifiers$1.projection = { name: 'ɵprojection', moduleName: CORE$1 };
+Identifiers$1.projectionDef = { name: 'ɵprojectionDef', moduleName: CORE$1 };
+Identifiers$1.reference = { name: 'ɵreference', moduleName: CORE$1 };
 Identifiers$1.inject = { name: 'inject', moduleName: CORE$1 };
 Identifiers$1.injectAttribute = { name: 'ɵinjectAttribute', moduleName: CORE$1 };
 Identifiers$1.injectElementRef = { name: 'ɵinjectElementRef', moduleName: CORE$1 };
@@ -16793,13 +16794,13 @@ Identifiers$1.NgModuleDef = {
 Identifiers$1.defineNgModule = { name: 'ɵdefineNgModule', moduleName: CORE$1 };
 Identifiers$1.PipeDef = { name: 'ɵPipeDef', moduleName: CORE$1 };
 Identifiers$1.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
-Identifiers$1.query = { name: 'ɵQ', moduleName: CORE$1 };
-Identifiers$1.queryRefresh = { name: 'ɵqR', moduleName: CORE$1 };
-Identifiers$1.registerContentQuery = { name: 'ɵQr', moduleName: CORE$1 };
+Identifiers$1.query = { name: 'ɵquery', moduleName: CORE$1 };
+Identifiers$1.queryRefresh = { name: 'ɵqueryRefresh', moduleName: CORE$1 };
+Identifiers$1.registerContentQuery = { name: 'ɵregisterContentQuery', moduleName: CORE$1 };
 Identifiers$1.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
 Identifiers$1.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
 Identifiers$1.PublicFeature = { name: 'ɵPublicFeature', moduleName: CORE$1 };
-Identifiers$1.listener = { name: 'ɵL', moduleName: CORE$1 };
+Identifiers$1.listener = { name: 'ɵlistener', moduleName: CORE$1 };
 Identifiers$1.getFactoryOf = {
     name: 'ɵgetFactoryOf',
     moduleName: CORE$1,
@@ -16809,7 +16810,7 @@ Identifiers$1.getInheritedFactory = {
     moduleName: CORE$1,
 };
 // Reserve slots for pure functions
-Identifiers$1.reserveSlots = { name: 'ɵrS', moduleName: CORE$1 };
+Identifiers$1.reserveSlots = { name: 'ɵreserveSlots', moduleName: CORE$1 };
 // sanitization-related functions
 Identifiers$1.sanitizeHtml = { name: 'ɵzh', moduleName: CORE$1 };
 Identifiers$1.sanitizeStyle = { name: 'ɵzs', moduleName: CORE$1 };
@@ -18398,9 +18399,9 @@ class TemplateDefinitionBuilder {
         if (attributeNames.length) {
             parameters.push(this.constantPool.getConstLiteral(literalArr(attributeNames), true));
         }
-        // e.g. C(1, C1Template)
-        this.creationInstruction(template.sourceSpan, Identifiers$1.containerCreate, trimTrailingNulls(parameters));
-        // e.g. p(1, 'forOf', ɵb(ctx.items));
+        // e.g. template(1, MyComp_Template_1)
+        this.creationInstruction(template.sourceSpan, Identifiers$1.templateCreate, trimTrailingNulls(parameters));
+        // e.g. p(1, 'forOf', ɵbind(ctx.items));
         const context = variable(CONTEXT_NAME);
         template.inputs.forEach(input => {
             const value = input.value.visit(this._valueConverter);
@@ -18441,7 +18442,7 @@ class TemplateDefinitionBuilder {
     // * @meaning mean
     // */
     // const MSG_XYZ = goog.getMsg('some content');
-    // i0.ɵT(1, MSG_XYZ);
+    // i0.ɵtext(1, MSG_XYZ);
     // ```
     visitSingleI18nTextChild(text, i18nMeta) {
         const meta = parseI18nMeta(i18nMeta);
@@ -19155,7 +19156,7 @@ function createContentQueriesRefreshFunction(meta) {
         const directiveInstanceVar = variable('instance');
         // var $tmp$: any;
         const temporary = temporaryAllocator(statements, TEMPORARY_NAME);
-        // const $instance$ = $r3$.ɵd(dirIndex);
+        // const $instance$ = $r3$.ɵloadDirective(dirIndex);
         statements.push(directiveInstanceVar.set(importExpr(Identifiers$1.loadDirective).callFn([variable('dirIndex')]))
             .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
         meta.queries.forEach((query, idx) => {
@@ -19184,7 +19185,7 @@ function createViewQueriesFunction(meta, constantPool) {
         // creation, e.g. r3.Q(0, somePredicate, true);
         const queryDefinition = createQueryDefinition(query, constantPool, i);
         createStatements.push(queryDefinition.toStmt());
-        // update, e.g. (r3.qR(tmp = r3.ɵld(0)) && (ctx.someDir = tmp));
+        // update, e.g. (r3.qR(tmp = r3.ɵload(0)) && (ctx.someDir = tmp));
         const temporary = tempAllocator();
         const getQueryList = importExpr(Identifiers$1.load).callFn([literal(i)]);
         const refresh = importExpr(Identifiers$1.queryRefresh).callFn([temporary.set(getQueryList)]);
