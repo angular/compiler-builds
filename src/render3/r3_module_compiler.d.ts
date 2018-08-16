@@ -54,11 +54,12 @@ export declare function compileNgModule(meta: R3NgModuleMetadata): R3NgModuleDef
 export interface R3InjectorDef {
     expression: o.Expression;
     type: o.Type;
+    statements: o.Statement[];
 }
 export interface R3InjectorMetadata {
     name: string;
     type: o.Expression;
-    deps: R3DependencyMetadata[];
+    deps: R3DependencyMetadata[] | null;
     providers: o.Expression;
     imports: o.Expression;
 }
