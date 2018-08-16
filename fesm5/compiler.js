@@ -1,10 +1,10 @@
 /**
- * @license Angular v7.0.0-beta.1+52.sha-1f11039
+ * @license Angular v7.0.0-beta.2+18.sha-503905c
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __assign, __spread, __extends, __values, __read } from 'tslib';
+import { __extends, __assign, __spread, __values, __read } from 'tslib';
 
 /**
  * @license
@@ -1125,7 +1125,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.0.0-beta.1+52.sha-1f11039');
+var VERSION = new Version('7.0.0-beta.2+18.sha-503905c');
 
 /**
  * @license
@@ -17710,59 +17710,60 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.TRANSFORM_METHOD = 'transform';
     Identifiers.PATCH_DEPS = 'patchedDeps';
     /* Instructions */
-    Identifiers.namespaceHTML = { name: 'ɵNH', moduleName: CORE$1 };
-    Identifiers.namespaceMathML = { name: 'ɵNM', moduleName: CORE$1 };
-    Identifiers.namespaceSVG = { name: 'ɵNS', moduleName: CORE$1 };
-    Identifiers.element = { name: 'ɵEe', moduleName: CORE$1 };
-    Identifiers.elementStart = { name: 'ɵE', moduleName: CORE$1 };
-    Identifiers.elementEnd = { name: 'ɵe', moduleName: CORE$1 };
-    Identifiers.elementProperty = { name: 'ɵp', moduleName: CORE$1 };
-    Identifiers.elementAttribute = { name: 'ɵa', moduleName: CORE$1 };
-    Identifiers.elementClassProp = { name: 'ɵcp', moduleName: CORE$1 };
+    Identifiers.namespaceHTML = { name: 'ɵnamespaceHTML', moduleName: CORE$1 };
+    Identifiers.namespaceMathML = { name: 'ɵnamespaceMathML', moduleName: CORE$1 };
+    Identifiers.namespaceSVG = { name: 'ɵnamespaceSVG', moduleName: CORE$1 };
+    Identifiers.element = { name: 'ɵelement', moduleName: CORE$1 };
+    Identifiers.elementStart = { name: 'ɵelementStart', moduleName: CORE$1 };
+    Identifiers.elementEnd = { name: 'ɵelementEnd', moduleName: CORE$1 };
+    Identifiers.elementProperty = { name: 'ɵelementProperty', moduleName: CORE$1 };
+    Identifiers.elementAttribute = { name: 'ɵelementAttribute', moduleName: CORE$1 };
+    Identifiers.elementClassProp = { name: 'ɵelementClassProp', moduleName: CORE$1 };
     Identifiers.elementContainerStart = { name: 'ɵEC', moduleName: CORE$1 };
     Identifiers.elementContainerEnd = { name: 'ɵeC', moduleName: CORE$1 };
-    Identifiers.elementStyling = { name: 'ɵs', moduleName: CORE$1 };
-    Identifiers.elementStylingMap = { name: 'ɵsm', moduleName: CORE$1 };
-    Identifiers.elementStyleProp = { name: 'ɵsp', moduleName: CORE$1 };
-    Identifiers.elementStylingApply = { name: 'ɵsa', moduleName: CORE$1 };
-    Identifiers.containerCreate = { name: 'ɵC', moduleName: CORE$1 };
-    Identifiers.nextContext = { name: 'ɵx', moduleName: CORE$1 };
-    Identifiers.text = { name: 'ɵT', moduleName: CORE$1 };
-    Identifiers.textBinding = { name: 'ɵt', moduleName: CORE$1 };
-    Identifiers.bind = { name: 'ɵb', moduleName: CORE$1 };
-    Identifiers.getCurrentView = { name: 'ɵgV', moduleName: CORE$1 };
-    Identifiers.restoreView = { name: 'ɵrV', moduleName: CORE$1 };
-    Identifiers.interpolation1 = { name: 'ɵi1', moduleName: CORE$1 };
-    Identifiers.interpolation2 = { name: 'ɵi2', moduleName: CORE$1 };
-    Identifiers.interpolation3 = { name: 'ɵi3', moduleName: CORE$1 };
-    Identifiers.interpolation4 = { name: 'ɵi4', moduleName: CORE$1 };
-    Identifiers.interpolation5 = { name: 'ɵi5', moduleName: CORE$1 };
-    Identifiers.interpolation6 = { name: 'ɵi6', moduleName: CORE$1 };
-    Identifiers.interpolation7 = { name: 'ɵi7', moduleName: CORE$1 };
-    Identifiers.interpolation8 = { name: 'ɵi8', moduleName: CORE$1 };
-    Identifiers.interpolationV = { name: 'ɵiV', moduleName: CORE$1 };
-    Identifiers.pureFunction0 = { name: 'ɵf0', moduleName: CORE$1 };
-    Identifiers.pureFunction1 = { name: 'ɵf1', moduleName: CORE$1 };
-    Identifiers.pureFunction2 = { name: 'ɵf2', moduleName: CORE$1 };
-    Identifiers.pureFunction3 = { name: 'ɵf3', moduleName: CORE$1 };
-    Identifiers.pureFunction4 = { name: 'ɵf4', moduleName: CORE$1 };
-    Identifiers.pureFunction5 = { name: 'ɵf5', moduleName: CORE$1 };
-    Identifiers.pureFunction6 = { name: 'ɵf6', moduleName: CORE$1 };
-    Identifiers.pureFunction7 = { name: 'ɵf7', moduleName: CORE$1 };
-    Identifiers.pureFunction8 = { name: 'ɵf8', moduleName: CORE$1 };
-    Identifiers.pureFunctionV = { name: 'ɵfV', moduleName: CORE$1 };
-    Identifiers.pipeBind1 = { name: 'ɵpb1', moduleName: CORE$1 };
-    Identifiers.pipeBind2 = { name: 'ɵpb2', moduleName: CORE$1 };
-    Identifiers.pipeBind3 = { name: 'ɵpb3', moduleName: CORE$1 };
-    Identifiers.pipeBind4 = { name: 'ɵpb4', moduleName: CORE$1 };
-    Identifiers.pipeBindV = { name: 'ɵpbV', moduleName: CORE$1 };
-    Identifiers.load = { name: 'ɵld', moduleName: CORE$1 };
-    Identifiers.loadDirective = { name: 'ɵd', moduleName: CORE$1 };
-    Identifiers.loadQueryList = { name: 'ɵql', moduleName: CORE$1 };
-    Identifiers.pipe = { name: 'ɵPp', moduleName: CORE$1 };
-    Identifiers.projection = { name: 'ɵP', moduleName: CORE$1 };
-    Identifiers.projectionDef = { name: 'ɵpD', moduleName: CORE$1 };
-    Identifiers.reference = { name: 'ɵr', moduleName: CORE$1 };
+    Identifiers.elementStyling = { name: 'ɵelementStyling', moduleName: CORE$1 };
+    Identifiers.elementStylingMap = { name: 'ɵelementStylingMap', moduleName: CORE$1 };
+    Identifiers.elementStyleProp = { name: 'ɵelementStylingProp', moduleName: CORE$1 };
+    Identifiers.elementStylingApply = { name: 'ɵelementStylingApply', moduleName: CORE$1 };
+    Identifiers.containerCreate = { name: 'ɵcontainer', moduleName: CORE$1 };
+    Identifiers.nextContext = { name: 'ɵnextContext', moduleName: CORE$1 };
+    Identifiers.templateCreate = { name: 'ɵtemplate', moduleName: CORE$1 };
+    Identifiers.text = { name: 'ɵtext', moduleName: CORE$1 };
+    Identifiers.textBinding = { name: 'ɵtextBinding', moduleName: CORE$1 };
+    Identifiers.bind = { name: 'ɵbind', moduleName: CORE$1 };
+    Identifiers.getCurrentView = { name: 'ɵgetCurrentView', moduleName: CORE$1 };
+    Identifiers.restoreView = { name: 'ɵrestoreView', moduleName: CORE$1 };
+    Identifiers.interpolation1 = { name: 'ɵinterpolation1', moduleName: CORE$1 };
+    Identifiers.interpolation2 = { name: 'ɵinterpolation2', moduleName: CORE$1 };
+    Identifiers.interpolation3 = { name: 'ɵinterpolation3', moduleName: CORE$1 };
+    Identifiers.interpolation4 = { name: 'ɵinterpolation4', moduleName: CORE$1 };
+    Identifiers.interpolation5 = { name: 'ɵinterpolation5', moduleName: CORE$1 };
+    Identifiers.interpolation6 = { name: 'ɵinterpolation6', moduleName: CORE$1 };
+    Identifiers.interpolation7 = { name: 'ɵinterpolation7', moduleName: CORE$1 };
+    Identifiers.interpolation8 = { name: 'ɵinterpolation8', moduleName: CORE$1 };
+    Identifiers.interpolationV = { name: 'ɵinterpolationV', moduleName: CORE$1 };
+    Identifiers.pureFunction0 = { name: 'ɵpureFunction0', moduleName: CORE$1 };
+    Identifiers.pureFunction1 = { name: 'ɵpureFunction1', moduleName: CORE$1 };
+    Identifiers.pureFunction2 = { name: 'ɵpureFunction2', moduleName: CORE$1 };
+    Identifiers.pureFunction3 = { name: 'ɵpureFunction3', moduleName: CORE$1 };
+    Identifiers.pureFunction4 = { name: 'ɵpureFunction4', moduleName: CORE$1 };
+    Identifiers.pureFunction5 = { name: 'ɵpureFunction5', moduleName: CORE$1 };
+    Identifiers.pureFunction6 = { name: 'ɵpureFunction6', moduleName: CORE$1 };
+    Identifiers.pureFunction7 = { name: 'ɵpureFunction7', moduleName: CORE$1 };
+    Identifiers.pureFunction8 = { name: 'ɵpureFunction8', moduleName: CORE$1 };
+    Identifiers.pureFunctionV = { name: 'ɵpureFunctionV', moduleName: CORE$1 };
+    Identifiers.pipeBind1 = { name: 'ɵpipeBind1', moduleName: CORE$1 };
+    Identifiers.pipeBind2 = { name: 'ɵpipeBind2', moduleName: CORE$1 };
+    Identifiers.pipeBind3 = { name: 'ɵpipeBind3', moduleName: CORE$1 };
+    Identifiers.pipeBind4 = { name: 'ɵpipeBind4', moduleName: CORE$1 };
+    Identifiers.pipeBindV = { name: 'ɵpipeBindV', moduleName: CORE$1 };
+    Identifiers.load = { name: 'ɵload', moduleName: CORE$1 };
+    Identifiers.loadDirective = { name: 'ɵloadDirective', moduleName: CORE$1 };
+    Identifiers.loadQueryList = { name: 'ɵloadQueryList', moduleName: CORE$1 };
+    Identifiers.pipe = { name: 'ɵpipe', moduleName: CORE$1 };
+    Identifiers.projection = { name: 'ɵprojection', moduleName: CORE$1 };
+    Identifiers.projectionDef = { name: 'ɵprojectionDef', moduleName: CORE$1 };
+    Identifiers.reference = { name: 'ɵreference', moduleName: CORE$1 };
     Identifiers.inject = { name: 'inject', moduleName: CORE$1 };
     Identifiers.injectAttribute = { name: 'ɵinjectAttribute', moduleName: CORE$1 };
     Identifiers.injectElementRef = { name: 'ɵinjectElementRef', moduleName: CORE$1 };
@@ -17803,13 +17804,13 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.defineNgModule = { name: 'ɵdefineNgModule', moduleName: CORE$1 };
     Identifiers.PipeDef = { name: 'ɵPipeDef', moduleName: CORE$1 };
     Identifiers.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
-    Identifiers.query = { name: 'ɵQ', moduleName: CORE$1 };
-    Identifiers.queryRefresh = { name: 'ɵqR', moduleName: CORE$1 };
-    Identifiers.registerContentQuery = { name: 'ɵQr', moduleName: CORE$1 };
+    Identifiers.query = { name: 'ɵquery', moduleName: CORE$1 };
+    Identifiers.queryRefresh = { name: 'ɵqueryRefresh', moduleName: CORE$1 };
+    Identifiers.registerContentQuery = { name: 'ɵregisterContentQuery', moduleName: CORE$1 };
     Identifiers.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
     Identifiers.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
     Identifiers.PublicFeature = { name: 'ɵPublicFeature', moduleName: CORE$1 };
-    Identifiers.listener = { name: 'ɵL', moduleName: CORE$1 };
+    Identifiers.listener = { name: 'ɵlistener', moduleName: CORE$1 };
     Identifiers.getFactoryOf = {
         name: 'ɵgetFactoryOf',
         moduleName: CORE$1,
@@ -17819,7 +17820,7 @@ var Identifiers$1 = /** @class */ (function () {
         moduleName: CORE$1,
     };
     // Reserve slots for pure functions
-    Identifiers.reserveSlots = { name: 'ɵrS', moduleName: CORE$1 };
+    Identifiers.reserveSlots = { name: 'ɵreserveSlots', moduleName: CORE$1 };
     // sanitization-related functions
     Identifiers.sanitizeHtml = { name: 'ɵzh', moduleName: CORE$1 };
     Identifiers.sanitizeStyle = { name: 'ɵzs', moduleName: CORE$1 };
@@ -19499,9 +19500,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         if (attributeNames.length) {
             parameters.push(this.constantPool.getConstLiteral(literalArr(attributeNames), true));
         }
-        // e.g. C(1, C1Template)
-        this.creationInstruction(template.sourceSpan, Identifiers$1.containerCreate, trimTrailingNulls(parameters));
-        // e.g. p(1, 'forOf', ɵb(ctx.items));
+        // e.g. template(1, MyComp_Template_1)
+        this.creationInstruction(template.sourceSpan, Identifiers$1.templateCreate, trimTrailingNulls(parameters));
+        // e.g. p(1, 'forOf', ɵbind(ctx.items));
         var context = variable(CONTEXT_NAME);
         template.inputs.forEach(function (input) {
             var value = input.value.visit(_this._valueConverter);
@@ -19543,7 +19544,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     // * @meaning mean
     // */
     // const MSG_XYZ = goog.getMsg('some content');
-    // i0.ɵT(1, MSG_XYZ);
+    // i0.ɵtext(1, MSG_XYZ);
     // ```
     TemplateDefinitionBuilder.prototype.visitSingleI18nTextChild = function (text, i18nMeta) {
         var meta = parseI18nMeta(i18nMeta);
@@ -20280,7 +20281,7 @@ function createContentQueriesRefreshFunction(meta) {
         var directiveInstanceVar_1 = variable('instance');
         // var $tmp$: any;
         var temporary_1 = temporaryAllocator(statements_1, TEMPORARY_NAME);
-        // const $instance$ = $r3$.ɵd(dirIndex);
+        // const $instance$ = $r3$.ɵloadDirective(dirIndex);
         statements_1.push(directiveInstanceVar_1.set(importExpr(Identifiers$1.loadDirective).callFn([variable('dirIndex')]))
             .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
         meta.queries.forEach(function (query, idx) {
@@ -20309,7 +20310,7 @@ function createViewQueriesFunction(meta, constantPool) {
         // creation, e.g. r3.Q(0, somePredicate, true);
         var queryDefinition = createQueryDefinition(query, constantPool, i);
         createStatements.push(queryDefinition.toStmt());
-        // update, e.g. (r3.qR(tmp = r3.ɵld(0)) && (ctx.someDir = tmp));
+        // update, e.g. (r3.qR(tmp = r3.ɵload(0)) && (ctx.someDir = tmp));
         var temporary = tempAllocator();
         var getQueryList = importExpr(Identifiers$1.load).callFn([literal(i)]);
         var refresh = importExpr(Identifiers$1.queryRefresh).callFn([temporary.set(getQueryList)]);
