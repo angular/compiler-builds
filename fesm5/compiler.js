@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.2+22.sha-f053a3f
+ * @license Angular v7.0.0-beta.2+26.sha-f2aa9c6
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1125,7 +1125,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.0.0-beta.2+22.sha-f053a3f');
+var VERSION = new Version('7.0.0-beta.2+26.sha-f2aa9c6');
 
 /**
  * @license
@@ -19013,6 +19013,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // pass. It's necessary to separate the passes to ensure local refs are defined before
         // resolving bindings.
         visitAll$1(this, nodes);
+        // Nested templates must be processed before creation instructions so template()
+        // instructions can be generated with the correct internal const count.
+        this._nestedTemplateFns.forEach(function (buildTemplateFn) { return buildTemplateFn(); });
         // Generate all the creation mode instructions (e.g. resolve bindings in listeners)
         var creationStatements = this._creationCodeFns.map(function (fn$$1) { return fn$$1(); });
         // Generate all the update mode instructions (e.g. resolve property or text bindings)
@@ -19050,7 +19053,6 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             }
             finally { if (e_1) throw e_1.error; }
         }
-        this._nestedTemplateFns.forEach(function (buildTemplateFn) { return buildTemplateFn(); });
         return fn(
         // i.e. (rf: RenderFlags, ctx: any)
         [new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null)], __spread(this._prefixCode, creationBlock, updateBlock), INFERRED_TYPE, null, this.templateName);
@@ -19500,8 +19502,6 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         if (attributeNames.length) {
             parameters.push(this.constantPool.getConstLiteral(literalArr(attributeNames), true));
         }
-        // e.g. template(1, MyComp_Template_1)
-        this.creationInstruction(template.sourceSpan, Identifiers$1.templateCreate, trimTrailingNulls(parameters));
         // e.g. p(1, 'forOf', ɵbind(ctx.items));
         var context = variable(CONTEXT_NAME);
         template.inputs.forEach(function (input) {
@@ -19522,6 +19522,11 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this._nestedTemplateFns.push(function () {
             var templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables);
             _this.constantPool.statements.push(templateFunctionExpr.toDeclStmt(templateName, null));
+        });
+        // e.g. template(1, MyComp_Template_1)
+        this.creationInstruction(template.sourceSpan, Identifiers$1.templateCreate, function () {
+            parameters.splice(2, 0, literal(templateVisitor.getSlotCount()));
+            return trimTrailingNulls(parameters);
         });
     };
     TemplateDefinitionBuilder.prototype.visitBoundText = function (text) {
@@ -19552,6 +19557,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(this.allocateDataSlot()), variable$$1]);
     };
     TemplateDefinitionBuilder.prototype.allocateDataSlot = function () { return this._dataIndex++; };
+    TemplateDefinitionBuilder.prototype.getSlotCount = function () { return this._dataIndex; };
     TemplateDefinitionBuilder.prototype.bindingContext = function () { return "" + this._bindingContext++; };
     // Bindings must only be resolved after all local refs have been visited, so all
     // instructions are queued in callbacks that execute once the initial pass has completed.
@@ -20088,8 +20094,10 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     var directivesUsed = new Set();
     var pipesUsed = new Set();
     var template = meta.template;
-    var templateFunctionExpression = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML)
-        .buildTemplateFunction(template.nodes, [], template.hasNgContent, template.ngContentSelectors);
+    var templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML);
+    var templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, [], template.hasNgContent, template.ngContentSelectors);
+    // e.g. `consts: 2`
+    definitionMap.set('consts', literal(templateBuilder.getSlotCount()));
     definitionMap.set('template', templateFunctionExpression);
     // e.g. `directives: [MyDirective]`
     if (directivesUsed.size) {
