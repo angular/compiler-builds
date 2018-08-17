@@ -80,6 +80,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     visitText(text: t.Text): void;
     visitSingleI18nTextChild(text: t.Text, i18nMeta: string): void;
     private allocateDataSlot;
+    getSlotCount(): number;
     private bindingContext;
     private instructionFn;
     private creationInstruction;
