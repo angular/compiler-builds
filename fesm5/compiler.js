@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.2+26.sha-f2aa9c6
+ * @license Angular v7.0.0-beta.2+28.sha-21a1440
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1125,7 +1125,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.0.0-beta.2+26.sha-f2aa9c6');
+var VERSION = new Version('7.0.0-beta.2+28.sha-21a1440');
 
 /**
  * @license
@@ -18947,6 +18947,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this._phToNodeIdxes = [{}];
         // Number of slots to reserve for pureFunctions
         this._pureFunctionSlots = 0;
+        // Number of binding slots
+        this._bindingSlots = 0;
         // These should be handled in the template or element directly.
         this.visitReference = invalid$1;
         this.visitVariable = invalid$1;
@@ -19016,10 +19018,10 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // Nested templates must be processed before creation instructions so template()
         // instructions can be generated with the correct internal const count.
         this._nestedTemplateFns.forEach(function (buildTemplateFn) { return buildTemplateFn(); });
-        // Generate all the creation mode instructions (e.g. resolve bindings in listeners)
-        var creationStatements = this._creationCodeFns.map(function (fn$$1) { return fn$$1(); });
         // Generate all the update mode instructions (e.g. resolve property or text bindings)
         var updateStatements = this._updateCodeFns.map(function (fn$$1) { return fn$$1(); });
+        // Generate all the creation mode instructions (e.g. resolve bindings in listeners)
+        var creationStatements = this._creationCodeFns.map(function (fn$$1) { return fn$$1(); });
         // To count slots for the reserveSlots() instruction, all bindings must have been visited.
         if (this._pureFunctionSlots > 0) {
             creationStatements.push(instruction(null, Identifiers$1.reserveSlots, [literal(this._pureFunctionSlots)]).toStmt());
@@ -19525,7 +19527,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         });
         // e.g. template(1, MyComp_Template_1)
         this.creationInstruction(template.sourceSpan, Identifiers$1.templateCreate, function () {
-            parameters.splice(2, 0, literal(templateVisitor.getSlotCount()));
+            parameters.splice(2, 0, literal(templateVisitor.getConstCount()), literal(templateVisitor.getVarCount()));
             return trimTrailingNulls(parameters);
         });
     };
@@ -19557,7 +19559,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(this.allocateDataSlot()), variable$$1]);
     };
     TemplateDefinitionBuilder.prototype.allocateDataSlot = function () { return this._dataIndex++; };
-    TemplateDefinitionBuilder.prototype.getSlotCount = function () { return this._dataIndex; };
+    TemplateDefinitionBuilder.prototype.getConstCount = function () { return this._dataIndex; };
+    TemplateDefinitionBuilder.prototype.getVarCount = function () { return this._bindingSlots + this._pureFunctionSlots; };
     TemplateDefinitionBuilder.prototype.bindingContext = function () { return "" + this._bindingContext++; };
     // Bindings must only be resolved after all local refs have been visited, so all
     // instructions are queued in callbacks that execute once the initial pass has completed.
@@ -19577,6 +19580,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     };
     TemplateDefinitionBuilder.prototype.convertPropertyBinding = function (implicit, value, skipBindFn) {
         var _a;
+        if (!skipBindFn)
+            this._bindingSlots++;
         var interpolationFn = value instanceof Interpolation ? interpolate : function () { return error('Unexpected interpolation'); };
         var convertedPropertyBinding = convertPropertyBinding(this, implicit, value, this.bindingContext(), BindingForm.TrySimple, interpolationFn);
         (_a = this._tempVariables).push.apply(_a, __spread(convertedPropertyBinding.stmts));
@@ -20097,7 +20102,9 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     var templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML);
     var templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, [], template.hasNgContent, template.ngContentSelectors);
     // e.g. `consts: 2`
-    definitionMap.set('consts', literal(templateBuilder.getSlotCount()));
+    definitionMap.set('consts', literal(templateBuilder.getConstCount()));
+    // e.g. `vars: 2`
+    definitionMap.set('vars', literal(templateBuilder.getVarCount()));
     definitionMap.set('template', templateFunctionExpression);
     // e.g. `directives: [MyDirective]`
     if (directivesUsed.size) {
