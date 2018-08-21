@@ -88,6 +88,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private creationInstruction;
     private updateInstruction;
     private convertPropertyBinding;
+    private prepareRefsParameter;
 }
 /**
  * Function which is executed whenever a variable is referenced for the first time in a given

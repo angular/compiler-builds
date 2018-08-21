@@ -1,10 +1,10 @@
 /**
- * @license Angular v7.0.0-beta.2+30.sha-b05d4a5
+ * @license Angular v7.0.0-beta.2+38.sha-6176974
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __assign, __spread, __values, __extends, __read } from 'tslib';
+import { __assign, __spread, __extends, __values, __read } from 'tslib';
 
 /**
  * @license
@@ -1125,7 +1125,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.0.0-beta.2+30.sha-b05d4a5');
+var VERSION = new Version('7.0.0-beta.2+38.sha-6176974');
 
 /**
  * @license
@@ -17771,6 +17771,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.injectViewContainerRef = { name: 'ɵinjectViewContainerRef', moduleName: CORE$1 };
     Identifiers.injectChangeDetectorRef = { name: 'ɵinjectChangeDetectorRef', moduleName: CORE$1 };
     Identifiers.directiveInject = { name: 'ɵdirectiveInject', moduleName: CORE$1 };
+    Identifiers.templateRefExtractor = { name: 'ɵtemplateRefExtractor', moduleName: CORE$1 };
     Identifiers.defineBase = { name: 'ɵdefineBase', moduleName: CORE$1 };
     Identifiers.BaseDef = {
         name: 'ɵBaseDef',
@@ -19275,27 +19276,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             this.constantPool.getConstLiteral(literalArr(attributes), true) :
             TYPED_NULL_EXPR;
         parameters.push(attrArg);
-        if (element.references && element.references.length > 0) {
-            var references = flatten(element.references.map(function (reference) {
-                var slot = _this.allocateDataSlot();
-                // Generate the update temporary.
-                var variableName = _this._bindingScope.freshReferenceName();
-                var retrievalLevel = _this.level;
-                var lhs = variable(variableName);
-                _this._bindingScope.set(retrievalLevel, reference.name, lhs, 0 /* DEFAULT */, function (scope, relativeLevel) {
-                    // e.g. x(2);
-                    var nextContextStmt = relativeLevel > 0 ? [generateNextContextExpr(relativeLevel).toStmt()] : [];
-                    // e.g. const $foo$ = r(1);
-                    var refExpr = lhs.set(importExpr(Identifiers$1.reference).callFn([literal(slot)]));
-                    return nextContextStmt.concat(refExpr.toConstDecl());
-                });
-                return [reference.name, reference.value];
-            }));
-            parameters.push(this.constantPool.getConstLiteral(asLiteral(references), true));
-        }
-        else {
-            parameters.push(TYPED_NULL_EXPR);
-        }
+        // local refs (ex.: <div #foo #bar="baz">)
+        parameters.push(this.prepareRefsParameter(element.references));
         var wasInNamespace = this._namespace;
         var currentNamespace = this.getNamespaceInstruction(namespaceKey);
         // If the namespace is changing now, include an instruction to change it
@@ -19504,6 +19486,14 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         if (attributeNames.length) {
             parameters.push(this.constantPool.getConstLiteral(literalArr(attributeNames), true));
         }
+        else {
+            parameters.push(TYPED_NULL_EXPR);
+        }
+        // local refs (ex.: <ng-template #foo>)
+        if (template.references && template.references.length) {
+            parameters.push(this.prepareRefsParameter(template.references));
+            parameters.push(importExpr(Identifiers$1.templateRefExtractor));
+        }
         // e.g. p(1, 'forOf', ɵbind(ctx.items));
         var context = variable(CONTEXT_NAME);
         template.inputs.forEach(function (input) {
@@ -19588,6 +19578,28 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var valExpr = convertedPropertyBinding.currValExpr;
         return value instanceof Interpolation || skipBindFn ? valExpr :
             importExpr(Identifiers$1.bind).callFn([valExpr]);
+    };
+    TemplateDefinitionBuilder.prototype.prepareRefsParameter = function (references) {
+        var _this = this;
+        if (!references || references.length === 0) {
+            return TYPED_NULL_EXPR;
+        }
+        var refsParam = flatten(references.map(function (reference) {
+            var slot = _this.allocateDataSlot();
+            // Generate the update temporary.
+            var variableName = _this._bindingScope.freshReferenceName();
+            var retrievalLevel = _this.level;
+            var lhs = variable(variableName);
+            _this._bindingScope.set(retrievalLevel, reference.name, lhs, 0 /* DEFAULT */, function (scope, relativeLevel) {
+                // e.g. x(2);
+                var nextContextStmt = relativeLevel > 0 ? [generateNextContextExpr(relativeLevel).toStmt()] : [];
+                // e.g. const $foo$ = r(1);
+                var refExpr = lhs.set(importExpr(Identifiers$1.reference).callFn([literal(slot)]));
+                return nextContextStmt.concat(refExpr.toConstDecl());
+            });
+            return [reference.name, reference.value];
+        }));
+        return this.constantPool.getConstLiteral(asLiteral(refsParam), true);
     };
     return TemplateDefinitionBuilder;
 }());
