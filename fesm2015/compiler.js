@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.2+30.sha-b05d4a5
+ * @license Angular v7.0.0-beta.2+38.sha-6176974
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-beta.2+30.sha-b05d4a5');
+const VERSION = new Version('7.0.0-beta.2+38.sha-6176974');
 
 /**
  * @license
@@ -16761,6 +16761,7 @@ Identifiers$1.injectTemplateRef = { name: 'ɵinjectTemplateRef', moduleName: COR
 Identifiers$1.injectViewContainerRef = { name: 'ɵinjectViewContainerRef', moduleName: CORE$1 };
 Identifiers$1.injectChangeDetectorRef = { name: 'ɵinjectChangeDetectorRef', moduleName: CORE$1 };
 Identifiers$1.directiveInject = { name: 'ɵdirectiveInject', moduleName: CORE$1 };
+Identifiers$1.templateRefExtractor = { name: 'ɵtemplateRefExtractor', moduleName: CORE$1 };
 Identifiers$1.defineBase = { name: 'ɵdefineBase', moduleName: CORE$1 };
 Identifiers$1.BaseDef = {
     name: 'ɵBaseDef',
@@ -18180,27 +18181,8 @@ class TemplateDefinitionBuilder {
             this.constantPool.getConstLiteral(literalArr(attributes), true) :
             TYPED_NULL_EXPR;
         parameters.push(attrArg);
-        if (element.references && element.references.length > 0) {
-            const references = flatten(element.references.map(reference => {
-                const slot = this.allocateDataSlot();
-                // Generate the update temporary.
-                const variableName = this._bindingScope.freshReferenceName();
-                const retrievalLevel = this.level;
-                const lhs = variable(variableName);
-                this._bindingScope.set(retrievalLevel, reference.name, lhs, 0 /* DEFAULT */, (scope, relativeLevel) => {
-                    // e.g. x(2);
-                    const nextContextStmt = relativeLevel > 0 ? [generateNextContextExpr(relativeLevel).toStmt()] : [];
-                    // e.g. const $foo$ = r(1);
-                    const refExpr = lhs.set(importExpr(Identifiers$1.reference).callFn([literal(slot)]));
-                    return nextContextStmt.concat(refExpr.toConstDecl());
-                });
-                return [reference.name, reference.value];
-            }));
-            parameters.push(this.constantPool.getConstLiteral(asLiteral(references), true));
-        }
-        else {
-            parameters.push(TYPED_NULL_EXPR);
-        }
+        // local refs (ex.: <div #foo #bar="baz">)
+        parameters.push(this.prepareRefsParameter(element.references));
         const wasInNamespace = this._namespace;
         const currentNamespace = this.getNamespaceInstruction(namespaceKey);
         // If the namespace is changing now, include an instruction to change it
@@ -18403,6 +18385,14 @@ class TemplateDefinitionBuilder {
         if (attributeNames.length) {
             parameters.push(this.constantPool.getConstLiteral(literalArr(attributeNames), true));
         }
+        else {
+            parameters.push(TYPED_NULL_EXPR);
+        }
+        // local refs (ex.: <ng-template #foo>)
+        if (template.references && template.references.length) {
+            parameters.push(this.prepareRefsParameter(template.references));
+            parameters.push(importExpr(Identifiers$1.templateRefExtractor));
+        }
         // e.g. p(1, 'forOf', ɵbind(ctx.items));
         const context = variable(CONTEXT_NAME);
         template.inputs.forEach(input => {
@@ -18485,6 +18475,27 @@ class TemplateDefinitionBuilder {
         const valExpr = convertedPropertyBinding.currValExpr;
         return value instanceof Interpolation || skipBindFn ? valExpr :
             importExpr(Identifiers$1.bind).callFn([valExpr]);
+    }
+    prepareRefsParameter(references) {
+        if (!references || references.length === 0) {
+            return TYPED_NULL_EXPR;
+        }
+        const refsParam = flatten(references.map(reference => {
+            const slot = this.allocateDataSlot();
+            // Generate the update temporary.
+            const variableName = this._bindingScope.freshReferenceName();
+            const retrievalLevel = this.level;
+            const lhs = variable(variableName);
+            this._bindingScope.set(retrievalLevel, reference.name, lhs, 0 /* DEFAULT */, (scope, relativeLevel) => {
+                // e.g. x(2);
+                const nextContextStmt = relativeLevel > 0 ? [generateNextContextExpr(relativeLevel).toStmt()] : [];
+                // e.g. const $foo$ = r(1);
+                const refExpr = lhs.set(importExpr(Identifiers$1.reference).callFn([literal(slot)]));
+                return nextContextStmt.concat(refExpr.toConstDecl());
+            });
+            return [reference.name, reference.value];
+        }));
+        return this.constantPool.getConstLiteral(asLiteral(refsParam), true);
     }
 }
 class ValueConverter extends AstMemoryEfficientTransformer {
