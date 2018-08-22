@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.2+33.sha-73146c1
+ * @license Angular v7.0.0-beta.2+63.sha-950639c
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1202,7 +1202,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('7.0.0-beta.2+33.sha-73146c1');
+    var VERSION = new Version('7.0.0-beta.2+63.sha-950639c');
 
     /**
      * @license
@@ -17775,59 +17775,60 @@
         Identifiers.TRANSFORM_METHOD = 'transform';
         Identifiers.PATCH_DEPS = 'patchedDeps';
         /* Instructions */
-        Identifiers.namespaceHTML = { name: 'ɵNH', moduleName: CORE$1 };
-        Identifiers.namespaceMathML = { name: 'ɵNM', moduleName: CORE$1 };
-        Identifiers.namespaceSVG = { name: 'ɵNS', moduleName: CORE$1 };
-        Identifiers.element = { name: 'ɵEe', moduleName: CORE$1 };
-        Identifiers.elementStart = { name: 'ɵE', moduleName: CORE$1 };
-        Identifiers.elementEnd = { name: 'ɵe', moduleName: CORE$1 };
-        Identifiers.elementProperty = { name: 'ɵp', moduleName: CORE$1 };
-        Identifiers.elementAttribute = { name: 'ɵa', moduleName: CORE$1 };
-        Identifiers.elementClassProp = { name: 'ɵcp', moduleName: CORE$1 };
+        Identifiers.namespaceHTML = { name: 'ɵnamespaceHTML', moduleName: CORE$1 };
+        Identifiers.namespaceMathML = { name: 'ɵnamespaceMathML', moduleName: CORE$1 };
+        Identifiers.namespaceSVG = { name: 'ɵnamespaceSVG', moduleName: CORE$1 };
+        Identifiers.element = { name: 'ɵelement', moduleName: CORE$1 };
+        Identifiers.elementStart = { name: 'ɵelementStart', moduleName: CORE$1 };
+        Identifiers.elementEnd = { name: 'ɵelementEnd', moduleName: CORE$1 };
+        Identifiers.elementProperty = { name: 'ɵelementProperty', moduleName: CORE$1 };
+        Identifiers.elementAttribute = { name: 'ɵelementAttribute', moduleName: CORE$1 };
+        Identifiers.elementClassProp = { name: 'ɵelementClassProp', moduleName: CORE$1 };
         Identifiers.elementContainerStart = { name: 'ɵEC', moduleName: CORE$1 };
         Identifiers.elementContainerEnd = { name: 'ɵeC', moduleName: CORE$1 };
-        Identifiers.elementStyling = { name: 'ɵs', moduleName: CORE$1 };
-        Identifiers.elementStylingMap = { name: 'ɵsm', moduleName: CORE$1 };
-        Identifiers.elementStyleProp = { name: 'ɵsp', moduleName: CORE$1 };
-        Identifiers.elementStylingApply = { name: 'ɵsa', moduleName: CORE$1 };
-        Identifiers.containerCreate = { name: 'ɵC', moduleName: CORE$1 };
-        Identifiers.nextContext = { name: 'ɵx', moduleName: CORE$1 };
-        Identifiers.text = { name: 'ɵT', moduleName: CORE$1 };
-        Identifiers.textBinding = { name: 'ɵt', moduleName: CORE$1 };
-        Identifiers.bind = { name: 'ɵb', moduleName: CORE$1 };
-        Identifiers.getCurrentView = { name: 'ɵgV', moduleName: CORE$1 };
-        Identifiers.restoreView = { name: 'ɵrV', moduleName: CORE$1 };
-        Identifiers.interpolation1 = { name: 'ɵi1', moduleName: CORE$1 };
-        Identifiers.interpolation2 = { name: 'ɵi2', moduleName: CORE$1 };
-        Identifiers.interpolation3 = { name: 'ɵi3', moduleName: CORE$1 };
-        Identifiers.interpolation4 = { name: 'ɵi4', moduleName: CORE$1 };
-        Identifiers.interpolation5 = { name: 'ɵi5', moduleName: CORE$1 };
-        Identifiers.interpolation6 = { name: 'ɵi6', moduleName: CORE$1 };
-        Identifiers.interpolation7 = { name: 'ɵi7', moduleName: CORE$1 };
-        Identifiers.interpolation8 = { name: 'ɵi8', moduleName: CORE$1 };
-        Identifiers.interpolationV = { name: 'ɵiV', moduleName: CORE$1 };
-        Identifiers.pureFunction0 = { name: 'ɵf0', moduleName: CORE$1 };
-        Identifiers.pureFunction1 = { name: 'ɵf1', moduleName: CORE$1 };
-        Identifiers.pureFunction2 = { name: 'ɵf2', moduleName: CORE$1 };
-        Identifiers.pureFunction3 = { name: 'ɵf3', moduleName: CORE$1 };
-        Identifiers.pureFunction4 = { name: 'ɵf4', moduleName: CORE$1 };
-        Identifiers.pureFunction5 = { name: 'ɵf5', moduleName: CORE$1 };
-        Identifiers.pureFunction6 = { name: 'ɵf6', moduleName: CORE$1 };
-        Identifiers.pureFunction7 = { name: 'ɵf7', moduleName: CORE$1 };
-        Identifiers.pureFunction8 = { name: 'ɵf8', moduleName: CORE$1 };
-        Identifiers.pureFunctionV = { name: 'ɵfV', moduleName: CORE$1 };
-        Identifiers.pipeBind1 = { name: 'ɵpb1', moduleName: CORE$1 };
-        Identifiers.pipeBind2 = { name: 'ɵpb2', moduleName: CORE$1 };
-        Identifiers.pipeBind3 = { name: 'ɵpb3', moduleName: CORE$1 };
-        Identifiers.pipeBind4 = { name: 'ɵpb4', moduleName: CORE$1 };
-        Identifiers.pipeBindV = { name: 'ɵpbV', moduleName: CORE$1 };
-        Identifiers.load = { name: 'ɵld', moduleName: CORE$1 };
-        Identifiers.loadDirective = { name: 'ɵd', moduleName: CORE$1 };
-        Identifiers.loadQueryList = { name: 'ɵql', moduleName: CORE$1 };
-        Identifiers.pipe = { name: 'ɵPp', moduleName: CORE$1 };
-        Identifiers.projection = { name: 'ɵP', moduleName: CORE$1 };
-        Identifiers.projectionDef = { name: 'ɵpD', moduleName: CORE$1 };
-        Identifiers.reference = { name: 'ɵr', moduleName: CORE$1 };
+        Identifiers.elementStyling = { name: 'ɵelementStyling', moduleName: CORE$1 };
+        Identifiers.elementStylingMap = { name: 'ɵelementStylingMap', moduleName: CORE$1 };
+        Identifiers.elementStyleProp = { name: 'ɵelementStylingProp', moduleName: CORE$1 };
+        Identifiers.elementStylingApply = { name: 'ɵelementStylingApply', moduleName: CORE$1 };
+        Identifiers.containerCreate = { name: 'ɵcontainer', moduleName: CORE$1 };
+        Identifiers.nextContext = { name: 'ɵnextContext', moduleName: CORE$1 };
+        Identifiers.templateCreate = { name: 'ɵtemplate', moduleName: CORE$1 };
+        Identifiers.text = { name: 'ɵtext', moduleName: CORE$1 };
+        Identifiers.textBinding = { name: 'ɵtextBinding', moduleName: CORE$1 };
+        Identifiers.bind = { name: 'ɵbind', moduleName: CORE$1 };
+        Identifiers.getCurrentView = { name: 'ɵgetCurrentView', moduleName: CORE$1 };
+        Identifiers.restoreView = { name: 'ɵrestoreView', moduleName: CORE$1 };
+        Identifiers.interpolation1 = { name: 'ɵinterpolation1', moduleName: CORE$1 };
+        Identifiers.interpolation2 = { name: 'ɵinterpolation2', moduleName: CORE$1 };
+        Identifiers.interpolation3 = { name: 'ɵinterpolation3', moduleName: CORE$1 };
+        Identifiers.interpolation4 = { name: 'ɵinterpolation4', moduleName: CORE$1 };
+        Identifiers.interpolation5 = { name: 'ɵinterpolation5', moduleName: CORE$1 };
+        Identifiers.interpolation6 = { name: 'ɵinterpolation6', moduleName: CORE$1 };
+        Identifiers.interpolation7 = { name: 'ɵinterpolation7', moduleName: CORE$1 };
+        Identifiers.interpolation8 = { name: 'ɵinterpolation8', moduleName: CORE$1 };
+        Identifiers.interpolationV = { name: 'ɵinterpolationV', moduleName: CORE$1 };
+        Identifiers.pureFunction0 = { name: 'ɵpureFunction0', moduleName: CORE$1 };
+        Identifiers.pureFunction1 = { name: 'ɵpureFunction1', moduleName: CORE$1 };
+        Identifiers.pureFunction2 = { name: 'ɵpureFunction2', moduleName: CORE$1 };
+        Identifiers.pureFunction3 = { name: 'ɵpureFunction3', moduleName: CORE$1 };
+        Identifiers.pureFunction4 = { name: 'ɵpureFunction4', moduleName: CORE$1 };
+        Identifiers.pureFunction5 = { name: 'ɵpureFunction5', moduleName: CORE$1 };
+        Identifiers.pureFunction6 = { name: 'ɵpureFunction6', moduleName: CORE$1 };
+        Identifiers.pureFunction7 = { name: 'ɵpureFunction7', moduleName: CORE$1 };
+        Identifiers.pureFunction8 = { name: 'ɵpureFunction8', moduleName: CORE$1 };
+        Identifiers.pureFunctionV = { name: 'ɵpureFunctionV', moduleName: CORE$1 };
+        Identifiers.pipeBind1 = { name: 'ɵpipeBind1', moduleName: CORE$1 };
+        Identifiers.pipeBind2 = { name: 'ɵpipeBind2', moduleName: CORE$1 };
+        Identifiers.pipeBind3 = { name: 'ɵpipeBind3', moduleName: CORE$1 };
+        Identifiers.pipeBind4 = { name: 'ɵpipeBind4', moduleName: CORE$1 };
+        Identifiers.pipeBindV = { name: 'ɵpipeBindV', moduleName: CORE$1 };
+        Identifiers.load = { name: 'ɵload', moduleName: CORE$1 };
+        Identifiers.loadDirective = { name: 'ɵloadDirective', moduleName: CORE$1 };
+        Identifiers.loadQueryList = { name: 'ɵloadQueryList', moduleName: CORE$1 };
+        Identifiers.pipe = { name: 'ɵpipe', moduleName: CORE$1 };
+        Identifiers.projection = { name: 'ɵprojection', moduleName: CORE$1 };
+        Identifiers.projectionDef = { name: 'ɵprojectionDef', moduleName: CORE$1 };
+        Identifiers.reference = { name: 'ɵreference', moduleName: CORE$1 };
         Identifiers.inject = { name: 'inject', moduleName: CORE$1 };
         Identifiers.injectAttribute = { name: 'ɵinjectAttribute', moduleName: CORE$1 };
         Identifiers.injectElementRef = { name: 'ɵinjectElementRef', moduleName: CORE$1 };
@@ -17835,6 +17836,7 @@
         Identifiers.injectViewContainerRef = { name: 'ɵinjectViewContainerRef', moduleName: CORE$1 };
         Identifiers.injectChangeDetectorRef = { name: 'ɵinjectChangeDetectorRef', moduleName: CORE$1 };
         Identifiers.directiveInject = { name: 'ɵdirectiveInject', moduleName: CORE$1 };
+        Identifiers.templateRefExtractor = { name: 'ɵtemplateRefExtractor', moduleName: CORE$1 };
         Identifiers.defineBase = { name: 'ɵdefineBase', moduleName: CORE$1 };
         Identifiers.BaseDef = {
             name: 'ɵBaseDef',
@@ -17868,13 +17870,13 @@
         Identifiers.defineNgModule = { name: 'ɵdefineNgModule', moduleName: CORE$1 };
         Identifiers.PipeDef = { name: 'ɵPipeDef', moduleName: CORE$1 };
         Identifiers.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
-        Identifiers.query = { name: 'ɵQ', moduleName: CORE$1 };
-        Identifiers.queryRefresh = { name: 'ɵqR', moduleName: CORE$1 };
-        Identifiers.registerContentQuery = { name: 'ɵQr', moduleName: CORE$1 };
+        Identifiers.query = { name: 'ɵquery', moduleName: CORE$1 };
+        Identifiers.queryRefresh = { name: 'ɵqueryRefresh', moduleName: CORE$1 };
+        Identifiers.registerContentQuery = { name: 'ɵregisterContentQuery', moduleName: CORE$1 };
         Identifiers.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
         Identifiers.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
         Identifiers.PublicFeature = { name: 'ɵPublicFeature', moduleName: CORE$1 };
-        Identifiers.listener = { name: 'ɵL', moduleName: CORE$1 };
+        Identifiers.listener = { name: 'ɵlistener', moduleName: CORE$1 };
         Identifiers.getFactoryOf = {
             name: 'ɵgetFactoryOf',
             moduleName: CORE$1,
@@ -17884,7 +17886,7 @@
             moduleName: CORE$1,
         };
         // Reserve slots for pure functions
-        Identifiers.reserveSlots = { name: 'ɵrS', moduleName: CORE$1 };
+        Identifiers.reserveSlots = { name: 'ɵreserveSlots', moduleName: CORE$1 };
         // sanitization-related functions
         Identifiers.sanitizeHtml = { name: 'ɵzh', moduleName: CORE$1 };
         Identifiers.sanitizeStyle = { name: 'ɵzs', moduleName: CORE$1 };
@@ -19004,6 +19006,8 @@
             this._phToNodeIdxes = [{}];
             // Number of slots to reserve for pureFunctions
             this._pureFunctionSlots = 0;
+            // Number of binding slots
+            this._bindingSlots = 0;
             // These should be handled in the template or element directly.
             this.visitReference = invalid$1;
             this.visitVariable = invalid$1;
@@ -19070,10 +19074,13 @@
             // pass. It's necessary to separate the passes to ensure local refs are defined before
             // resolving bindings.
             visitAll$1(this, nodes);
-            // Generate all the creation mode instructions (e.g. resolve bindings in listeners)
-            var creationStatements = this._creationCodeFns.map(function (fn$$1) { return fn$$1(); });
+            // Nested templates must be processed before creation instructions so template()
+            // instructions can be generated with the correct internal const count.
+            this._nestedTemplateFns.forEach(function (buildTemplateFn) { return buildTemplateFn(); });
             // Generate all the update mode instructions (e.g. resolve property or text bindings)
             var updateStatements = this._updateCodeFns.map(function (fn$$1) { return fn$$1(); });
+            // Generate all the creation mode instructions (e.g. resolve bindings in listeners)
+            var creationStatements = this._creationCodeFns.map(function (fn$$1) { return fn$$1(); });
             // To count slots for the reserveSlots() instruction, all bindings must have been visited.
             if (this._pureFunctionSlots > 0) {
                 creationStatements.push(instruction(null, Identifiers$1.reserveSlots, [literal(this._pureFunctionSlots)]).toStmt());
@@ -19107,7 +19114,6 @@
                 }
                 finally { if (e_1) throw e_1.error; }
             }
-            this._nestedTemplateFns.forEach(function (buildTemplateFn) { return buildTemplateFn(); });
             return fn(
             // i.e. (rf: RenderFlags, ctx: any)
             [new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null)], __spread(this._prefixCode, creationBlock, updateBlock), INFERRED_TYPE, null, this.templateName);
@@ -19328,27 +19334,8 @@
                 this.constantPool.getConstLiteral(literalArr(attributes), true) :
                 TYPED_NULL_EXPR;
             parameters.push(attrArg);
-            if (element.references && element.references.length > 0) {
-                var references = flatten(element.references.map(function (reference) {
-                    var slot = _this.allocateDataSlot();
-                    // Generate the update temporary.
-                    var variableName = _this._bindingScope.freshReferenceName();
-                    var retrievalLevel = _this.level;
-                    var lhs = variable(variableName);
-                    _this._bindingScope.set(retrievalLevel, reference.name, lhs, 0 /* DEFAULT */, function (scope, relativeLevel) {
-                        // e.g. x(2);
-                        var nextContextStmt = relativeLevel > 0 ? [generateNextContextExpr(relativeLevel).toStmt()] : [];
-                        // e.g. const $foo$ = r(1);
-                        var refExpr = lhs.set(importExpr(Identifiers$1.reference).callFn([literal(slot)]));
-                        return nextContextStmt.concat(refExpr.toConstDecl());
-                    });
-                    return [reference.name, reference.value];
-                }));
-                parameters.push(this.constantPool.getConstLiteral(asLiteral(references), true));
-            }
-            else {
-                parameters.push(TYPED_NULL_EXPR);
-            }
+            // local refs (ex.: <div #foo #bar="baz">)
+            parameters.push(this.prepareRefsParameter(element.references));
             var wasInNamespace = this._namespace;
             var currentNamespace = this.getNamespaceInstruction(namespaceKey);
             // If the namespace is changing now, include an instruction to change it
@@ -19557,9 +19544,15 @@
             if (attributeNames.length) {
                 parameters.push(this.constantPool.getConstLiteral(literalArr(attributeNames), true));
             }
-            // e.g. C(1, C1Template)
-            this.creationInstruction(template.sourceSpan, Identifiers$1.containerCreate, trimTrailingNulls(parameters));
-            // e.g. p(1, 'forOf', ɵb(ctx.items));
+            else {
+                parameters.push(TYPED_NULL_EXPR);
+            }
+            // local refs (ex.: <ng-template #foo>)
+            if (template.references && template.references.length) {
+                parameters.push(this.prepareRefsParameter(template.references));
+                parameters.push(importExpr(Identifiers$1.templateRefExtractor));
+            }
+            // e.g. p(1, 'forOf', ɵbind(ctx.items));
             var context = variable(CONTEXT_NAME);
             template.inputs.forEach(function (input) {
                 var value = input.value.visit(_this._valueConverter);
@@ -19579,6 +19572,11 @@
             this._nestedTemplateFns.push(function () {
                 var templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables);
                 _this.constantPool.statements.push(templateFunctionExpr.toDeclStmt(templateName, null));
+            });
+            // e.g. template(1, MyComp_Template_1)
+            this.creationInstruction(template.sourceSpan, Identifiers$1.templateCreate, function () {
+                parameters.splice(2, 0, literal(templateVisitor.getConstCount()), literal(templateVisitor.getVarCount()));
+                return trimTrailingNulls(parameters);
             });
         };
         TemplateDefinitionBuilder.prototype.visitBoundText = function (text) {
@@ -19601,7 +19599,7 @@
         // * @meaning mean
         // */
         // const MSG_XYZ = goog.getMsg('some content');
-        // i0.ɵT(1, MSG_XYZ);
+        // i0.ɵtext(1, MSG_XYZ);
         // ```
         TemplateDefinitionBuilder.prototype.visitSingleI18nTextChild = function (text, i18nMeta) {
             var meta = parseI18nMeta(i18nMeta);
@@ -19609,6 +19607,8 @@
             this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(this.allocateDataSlot()), variable$$1]);
         };
         TemplateDefinitionBuilder.prototype.allocateDataSlot = function () { return this._dataIndex++; };
+        TemplateDefinitionBuilder.prototype.getConstCount = function () { return this._dataIndex; };
+        TemplateDefinitionBuilder.prototype.getVarCount = function () { return this._bindingSlots + this._pureFunctionSlots; };
         TemplateDefinitionBuilder.prototype.bindingContext = function () { return "" + this._bindingContext++; };
         // Bindings must only be resolved after all local refs have been visited, so all
         // instructions are queued in callbacks that execute once the initial pass has completed.
@@ -19628,12 +19628,36 @@
         };
         TemplateDefinitionBuilder.prototype.convertPropertyBinding = function (implicit, value, skipBindFn) {
             var _a;
+            if (!skipBindFn)
+                this._bindingSlots++;
             var interpolationFn = value instanceof Interpolation ? interpolate : function () { return error('Unexpected interpolation'); };
             var convertedPropertyBinding = convertPropertyBinding(this, implicit, value, this.bindingContext(), BindingForm.TrySimple, interpolationFn);
             (_a = this._tempVariables).push.apply(_a, __spread(convertedPropertyBinding.stmts));
             var valExpr = convertedPropertyBinding.currValExpr;
             return value instanceof Interpolation || skipBindFn ? valExpr :
                 importExpr(Identifiers$1.bind).callFn([valExpr]);
+        };
+        TemplateDefinitionBuilder.prototype.prepareRefsParameter = function (references) {
+            var _this = this;
+            if (!references || references.length === 0) {
+                return TYPED_NULL_EXPR;
+            }
+            var refsParam = flatten(references.map(function (reference) {
+                var slot = _this.allocateDataSlot();
+                // Generate the update temporary.
+                var variableName = _this._bindingScope.freshReferenceName();
+                var retrievalLevel = _this.level;
+                var lhs = variable(variableName);
+                _this._bindingScope.set(retrievalLevel, reference.name, lhs, 0 /* DEFAULT */, function (scope, relativeLevel) {
+                    // e.g. x(2);
+                    var nextContextStmt = relativeLevel > 0 ? [generateNextContextExpr(relativeLevel).toStmt()] : [];
+                    // e.g. const $foo$ = r(1);
+                    var refExpr = lhs.set(importExpr(Identifiers$1.reference).callFn([literal(slot)]));
+                    return nextContextStmt.concat(refExpr.toConstDecl());
+                });
+                return [reference.name, reference.value];
+            }));
+            return this.constantPool.getConstLiteral(asLiteral(refsParam), true);
         };
         return TemplateDefinitionBuilder;
     }());
@@ -20145,8 +20169,12 @@
         var directivesUsed = new Set();
         var pipesUsed = new Set();
         var template = meta.template;
-        var templateFunctionExpression = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML)
-            .buildTemplateFunction(template.nodes, [], template.hasNgContent, template.ngContentSelectors);
+        var templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML);
+        var templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, [], template.hasNgContent, template.ngContentSelectors);
+        // e.g. `consts: 2`
+        definitionMap.set('consts', literal(templateBuilder.getConstCount()));
+        // e.g. `vars: 2`
+        definitionMap.set('vars', literal(templateBuilder.getVarCount()));
         definitionMap.set('template', templateFunctionExpression);
         // e.g. `directives: [MyDirective]`
         if (directivesUsed.size) {
@@ -20338,7 +20366,7 @@
             var directiveInstanceVar_1 = variable('instance');
             // var $tmp$: any;
             var temporary_1 = temporaryAllocator(statements_1, TEMPORARY_NAME);
-            // const $instance$ = $r3$.ɵd(dirIndex);
+            // const $instance$ = $r3$.ɵloadDirective(dirIndex);
             statements_1.push(directiveInstanceVar_1.set(importExpr(Identifiers$1.loadDirective).callFn([variable('dirIndex')]))
                 .toDeclStmt(INFERRED_TYPE, [exports.StmtModifier.Final]));
             meta.queries.forEach(function (query, idx) {
@@ -20367,7 +20395,7 @@
             // creation, e.g. r3.Q(0, somePredicate, true);
             var queryDefinition = createQueryDefinition(query, constantPool, i);
             createStatements.push(queryDefinition.toStmt());
-            // update, e.g. (r3.qR(tmp = r3.ɵld(0)) && (ctx.someDir = tmp));
+            // update, e.g. (r3.qR(tmp = r3.ɵload(0)) && (ctx.someDir = tmp));
             var temporary = tempAllocator();
             var getQueryList = importExpr(Identifiers$1.load).callFn([literal(i)]);
             var refresh = importExpr(Identifiers$1.queryRefresh).callFn([temporary.set(getQueryList)]);
