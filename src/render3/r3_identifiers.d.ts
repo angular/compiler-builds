@@ -27,6 +27,7 @@ export declare class Identifiers {
     static elementStylingApply: o.ExternalReference;
     static containerCreate: o.ExternalReference;
     static nextContext: o.ExternalReference;
+    static templateCreate: o.ExternalReference;
     static text: o.ExternalReference;
     static textBinding: o.ExternalReference;
     static bind: o.ExternalReference;
@@ -70,6 +71,7 @@ export declare class Identifiers {
     static injectViewContainerRef: o.ExternalReference;
     static injectChangeDetectorRef: o.ExternalReference;
     static directiveInject: o.ExternalReference;
+    static templateRefExtractor: o.ExternalReference;
     static defineBase: o.ExternalReference;
     static BaseDef: o.ExternalReference;
     static defineComponent: o.ExternalReference;

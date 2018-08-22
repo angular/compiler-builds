@@ -62,6 +62,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private _i18nSectionIndex;
     private _phToNodeIdxes;
     private _pureFunctionSlots;
+    private _bindingSlots;
     constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, templateName: string | null, viewQueries: R3QueryMetadata[], directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference);
     registerContextVariables(variable: t.Variable): void;
     buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], hasNgContent?: boolean, ngContentSelectors?: string[]): o.FunctionExpr;
@@ -80,11 +81,14 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     visitText(text: t.Text): void;
     visitSingleI18nTextChild(text: t.Text, i18nMeta: string): void;
     private allocateDataSlot;
+    getConstCount(): number;
+    getVarCount(): number;
     private bindingContext;
     private instructionFn;
     private creationInstruction;
     private updateInstruction;
     private convertPropertyBinding;
+    private prepareRefsParameter;
 }
 /**
  * Function which is executed whenever a variable is referenced for the first time in a given
