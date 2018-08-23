@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.3
+ * @license Angular v7.0.0-beta.3+24.sha-61218f5
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-beta.3');
+const VERSION = new Version('7.0.0-beta.3+24.sha-61218f5');
 
 /**
  * @license
@@ -16985,8 +16985,9 @@ function compileFactoryFunction(meta) {
     else {
         const baseFactory = variable(`ɵ${meta.name}_BaseFactory`);
         const getInheritedFactory = importExpr(Identifiers$1.getInheritedFactory);
-        const baseFactoryStmt = baseFactory.set(getInheritedFactory.callFn([meta.type]))
-            .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]);
+        const baseFactoryStmt = baseFactory.set(getInheritedFactory.callFn([meta.type])).toDeclStmt(INFERRED_TYPE, [
+            StmtModifier.Exported, StmtModifier.Final
+        ]);
         statements.push(baseFactoryStmt);
         // There is no constructor, use the base class' factory to construct typeForCtor.
         ctorExpr = baseFactory.callFn([typeForCtor]);
@@ -17006,8 +17007,9 @@ function compileFactoryFunction(meta) {
         if (meta.delegate.isEquivalent(meta.type)) {
             throw new Error(`Illegal state: compiling factory that delegates to itself`);
         }
-        const delegateFactoryStmt = delegateFactory.set(getFactoryOf.callFn([meta.delegate]))
-            .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]);
+        const delegateFactoryStmt = delegateFactory.set(getFactoryOf.callFn([meta.delegate])).toDeclStmt(INFERRED_TYPE, [
+            StmtModifier.Exported, StmtModifier.Final
+        ]);
         statements.push(delegateFactoryStmt);
         const r = makeConditionalFactory(delegateFactory.callFn([]));
         retExpr = r;
