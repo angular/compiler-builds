@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.4
+ * @license Angular v6.1.4+1.sha-82f26fe
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1202,7 +1202,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('6.1.4');
+    var VERSION = new Version('6.1.4+1.sha-82f26fe');
 
     /**
      * @license
@@ -23097,14 +23097,6 @@
                 summaries.forEach(function (summary) { return _this.summaryCache.set(summary.symbol, summary); });
                 if (moduleName) {
                     this.knownFileNameToModuleNames.set(filePath, moduleName);
-                    if (filePath.endsWith('.d.ts')) {
-                        // Also add entries to map the ngfactory & ngsummary files to their module names.
-                        // This is necessary to resolve ngfactory & ngsummary files to their AMD module
-                        // names when building angular with Bazel from source downstream.
-                        // See https://github.com/bazelbuild/rules_typescript/pull/223 for context.
-                        this.knownFileNameToModuleNames.set(filePath.replace(/\.d\.ts$/, '.ngfactory.d.ts'), moduleName + '.ngfactory');
-                        this.knownFileNameToModuleNames.set(filePath.replace(/\.d\.ts$/, '.ngsummary.d.ts'), moduleName + '.ngsummary');
-                    }
                 }
                 importAs.forEach(function (importAs) { _this.importAs.set(importAs.symbol, importAs.importAs); });
             }
