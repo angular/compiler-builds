@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.3+28.sha-eb1fe19
+ * @license Angular v7.0.0-beta.3+29.sha-668bfce
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-beta.3+28.sha-eb1fe19');
+const VERSION = new Version('7.0.0-beta.3+29.sha-668bfce');
 
 /**
  * @license
@@ -19563,7 +19563,7 @@ class StaticSymbolResolver {
             }
         }
     }
-    /* @internal */
+    /** @internal */
     ignoreErrorsFor(cb) {
         const recorder = this.errorRecorder;
         this.errorRecorder = () => { };
