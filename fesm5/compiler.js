@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.3+24.sha-61218f5
+ * @license Angular v7.0.0-beta.3+27.sha-22d58fc
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1125,7 +1125,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.0.0-beta.3+24.sha-61218f5');
+var VERSION = new Version('7.0.0-beta.3+27.sha-22d58fc');
 
 /**
  * @license
@@ -17820,8 +17820,6 @@ var Identifiers$1 = /** @class */ (function () {
         name: 'ɵgetInheritedFactory',
         moduleName: CORE$1,
     };
-    // Reserve slots for pure functions
-    Identifiers.reserveSlots = { name: 'ɵreserveSlots', moduleName: CORE$1 };
     // sanitization-related functions
     Identifiers.sanitizeHtml = { name: 'ɵzh', moduleName: CORE$1 };
     Identifiers.sanitizeStyle = { name: 'ɵzs', moduleName: CORE$1 };
@@ -18962,7 +18960,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // function)
         this._dataIndex = viewQueries.length;
         this._bindingScope = parentBindingScope.nestedScope(level);
-        this._valueConverter = new ValueConverter(constantPool, function () { return _this.allocateDataSlot(); }, function (numSlots) { return _this._pureFunctionSlots += numSlots; }, function (name, localName, slot, value) {
+        this._valueConverter = new ValueConverter(constantPool, function () { return _this.allocateDataSlot(); }, function (numSlots) { return _this.allocatePureFunctionSlots(numSlots); }, function (name, localName, slot, value) {
             var pipeType = pipeTypeByName.get(name);
             if (pipeType) {
                 _this.pipes.add(pipeType);
@@ -19016,19 +19014,22 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // This is the initial pass through the nodes of this template. In this pass, we
         // queue all creation mode and update mode instructions for generation in the second
         // pass. It's necessary to separate the passes to ensure local refs are defined before
-        // resolving bindings.
+        // resolving bindings. We also count bindings in this pass as we walk bound expressions.
         visitAll$1(this, nodes);
+        // Add total binding count to pure function count so pure function instructions are
+        // generated with the correct slot offset when update instructions are processed.
+        this._pureFunctionSlots += this._bindingSlots;
+        // Pipes are walked in the first pass (to enqueue `pipe()` creation instructions and
+        // `pipeBind` update instructions), so we have to update the slot offsets manually
+        // to account for bindings.
+        this._valueConverter.updatePipeSlotOffsets(this._bindingSlots);
         // Nested templates must be processed before creation instructions so template()
         // instructions can be generated with the correct internal const count.
         this._nestedTemplateFns.forEach(function (buildTemplateFn) { return buildTemplateFn(); });
-        // Generate all the update mode instructions (e.g. resolve property or text bindings)
-        var updateStatements = this._updateCodeFns.map(function (fn$$1) { return fn$$1(); });
         // Generate all the creation mode instructions (e.g. resolve bindings in listeners)
         var creationStatements = this._creationCodeFns.map(function (fn$$1) { return fn$$1(); });
-        // To count slots for the reserveSlots() instruction, all bindings must have been visited.
-        if (this._pureFunctionSlots > 0) {
-            creationStatements.push(instruction(null, Identifiers$1.reserveSlots, [literal(this._pureFunctionSlots)]).toStmt());
-        }
+        // Generate all the update mode instructions (e.g. resolve property or text bindings)
+        var updateStatements = this._updateCodeFns.map(function (fn$$1) { return fn$$1(); });
         //  Variable declaration must occur after binding resolution so we can generate context
         //  instructions that build on each other. e.g. const b = x().$implicit(); const b = x();
         var creationVariables = this._bindingScope.viewSnapshotStatements();
@@ -19428,6 +19429,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                     params_2.push(sanitizationRef);
                 // TODO(chuckj): runtime: security context?
                 var value_2 = input.value.visit(_this._valueConverter);
+                _this.allocateBindingSlots(value_2);
                 _this.updateInstruction(input.sourceSpan, instruction, function () {
                     return __spread([
                         literal(elementIndex), literal(input.name),
@@ -19500,6 +19502,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var context = variable(CONTEXT_NAME);
         template.inputs.forEach(function (input) {
             var value = input.value.visit(_this._valueConverter);
+            _this.allocateBindingSlots(value);
             _this.updateInstruction(template.sourceSpan, Identifiers$1.elementProperty, function () {
                 return [
                     literal(templateIndex), literal(input.name),
@@ -19528,6 +19531,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var nodeIndex = this.allocateDataSlot();
         this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(nodeIndex)]);
         var value = text.value.visit(this._valueConverter);
+        this.allocateBindingSlots(value);
         this.updateInstruction(text.sourceSpan, Identifiers$1.textBinding, function () { return [literal(nodeIndex), _this.convertPropertyBinding(variable(CONTEXT_NAME), value)]; });
     };
     TemplateDefinitionBuilder.prototype.visitText = function (text) {
@@ -19552,7 +19556,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     };
     TemplateDefinitionBuilder.prototype.allocateDataSlot = function () { return this._dataIndex++; };
     TemplateDefinitionBuilder.prototype.getConstCount = function () { return this._dataIndex; };
-    TemplateDefinitionBuilder.prototype.getVarCount = function () { return this._bindingSlots + this._pureFunctionSlots; };
+    TemplateDefinitionBuilder.prototype.getVarCount = function () { return this._pureFunctionSlots; };
     TemplateDefinitionBuilder.prototype.bindingContext = function () { return "" + this._bindingContext++; };
     // Bindings must only be resolved after all local refs have been visited, so all
     // instructions are queued in callbacks that execute once the initial pass has completed.
@@ -19570,10 +19574,16 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     TemplateDefinitionBuilder.prototype.updateInstruction = function (span, reference, paramsOrFn) {
         this.instructionFn(this._updateCodeFns, span, reference, paramsOrFn || []);
     };
+    TemplateDefinitionBuilder.prototype.allocatePureFunctionSlots = function (numSlots) {
+        var originalSlots = this._pureFunctionSlots;
+        this._pureFunctionSlots += numSlots;
+        return originalSlots;
+    };
+    TemplateDefinitionBuilder.prototype.allocateBindingSlots = function (value) {
+        this._bindingSlots += value instanceof Interpolation ? value.expressions.length : 1;
+    };
     TemplateDefinitionBuilder.prototype.convertPropertyBinding = function (implicit, value, skipBindFn) {
         var _a;
-        if (!skipBindFn)
-            this._bindingSlots++;
         var interpolationFn = value instanceof Interpolation ? interpolate : function () { return error('Unexpected interpolation'); };
         var convertedPropertyBinding = convertPropertyBinding(this, implicit, value, this.bindingContext(), BindingForm.TrySimple, interpolationFn);
         (_a = this._tempVariables).push.apply(_a, __spread(convertedPropertyBinding.stmts));
@@ -19613,6 +19623,7 @@ var ValueConverter = /** @class */ (function (_super) {
         _this.allocateSlot = allocateSlot;
         _this.allocatePureFunctionSlots = allocatePureFunctionSlots;
         _this.definePipe = definePipe;
+        _this._pipeBindExprs = [];
         return _this;
     }
     // AstMemoryEfficientTransformer
@@ -19627,10 +19638,19 @@ var ValueConverter = /** @class */ (function (_super) {
         this.definePipe(pipe.name, slotPseudoLocal, slot, importExpr(identifier));
         var args = __spread([pipe.exp], pipe.args);
         var convertedArgs = isVarLength ? this.visitAll([new LiteralArray(pipe.span, args)]) : this.visitAll(args);
-        return new FunctionCall(pipe.span, target, __spread([
+        var pipeBindExpr = new FunctionCall(pipe.span, target, __spread([
             new LiteralPrimitive(pipe.span, slot),
             new LiteralPrimitive(pipe.span, pureFunctionSlot)
         ], convertedArgs));
+        this._pipeBindExprs.push(pipeBindExpr);
+        return pipeBindExpr;
+    };
+    ValueConverter.prototype.updatePipeSlotOffsets = function (bindingSlots) {
+        this._pipeBindExprs.forEach(function (pipe) {
+            // update the slot offset arg (index 1) to account for binding slots
+            var slotOffset = pipe.args[1];
+            slotOffset.value += bindingSlots;
+        });
     };
     ValueConverter.prototype.visitLiteralArray = function (array, context) {
         var _this = this;
@@ -23399,14 +23419,6 @@ var AotSummaryResolver = /** @class */ (function () {
             summaries.forEach(function (summary) { return _this.summaryCache.set(summary.symbol, summary); });
             if (moduleName) {
                 this.knownFileNameToModuleNames.set(filePath, moduleName);
-                if (filePath.endsWith('.d.ts')) {
-                    // Also add entries to map the ngfactory & ngsummary files to their module names.
-                    // This is necessary to resolve ngfactory & ngsummary files to their AMD module
-                    // names when building angular with Bazel from source downstream.
-                    // See https://github.com/bazelbuild/rules_typescript/pull/223 for context.
-                    this.knownFileNameToModuleNames.set(filePath.replace(/\.d\.ts$/, '.ngfactory.d.ts'), moduleName + '.ngfactory');
-                    this.knownFileNameToModuleNames.set(filePath.replace(/\.d\.ts$/, '.ngsummary.d.ts'), moduleName + '.ngsummary');
-                }
             }
             importAs.forEach(function (importAs) { _this.importAs.set(importAs.symbol, importAs.importAs); });
         }

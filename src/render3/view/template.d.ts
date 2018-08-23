@@ -87,6 +87,8 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private instructionFn;
     private creationInstruction;
     private updateInstruction;
+    private allocatePureFunctionSlots;
+    private allocateBindingSlots;
     private convertPropertyBinding;
     private prepareRefsParameter;
 }

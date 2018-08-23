@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.3+24.sha-61218f5
+ * @license Angular v7.0.0-beta.3+27.sha-22d58fc
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1079,7 +1079,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-beta.3+24.sha-61218f5');
+const VERSION = new Version('7.0.0-beta.3+27.sha-22d58fc');
 
 /**
  * @license
@@ -16810,8 +16810,6 @@ Identifiers$1.getInheritedFactory = {
     name: 'ɵgetInheritedFactory',
     moduleName: CORE$1,
 };
-// Reserve slots for pure functions
-Identifiers$1.reserveSlots = { name: 'ɵreserveSlots', moduleName: CORE$1 };
 // sanitization-related functions
 Identifiers$1.sanitizeHtml = { name: 'ɵzh', moduleName: CORE$1 };
 Identifiers$1.sanitizeStyle = { name: 'ɵzs', moduleName: CORE$1 };
@@ -17886,7 +17884,7 @@ class TemplateDefinitionBuilder {
         // function)
         this._dataIndex = viewQueries.length;
         this._bindingScope = parentBindingScope.nestedScope(level);
-        this._valueConverter = new ValueConverter(constantPool, () => this.allocateDataSlot(), (numSlots) => this._pureFunctionSlots += numSlots, (name, localName, slot, value) => {
+        this._valueConverter = new ValueConverter(constantPool, () => this.allocateDataSlot(), (numSlots) => this.allocatePureFunctionSlots(numSlots), (name, localName, slot, value) => {
             const pipeType = pipeTypeByName.get(name);
             if (pipeType) {
                 this.pipes.add(pipeType);
@@ -17936,19 +17934,22 @@ class TemplateDefinitionBuilder {
         // This is the initial pass through the nodes of this template. In this pass, we
         // queue all creation mode and update mode instructions for generation in the second
         // pass. It's necessary to separate the passes to ensure local refs are defined before
-        // resolving bindings.
+        // resolving bindings. We also count bindings in this pass as we walk bound expressions.
         visitAll$1(this, nodes);
+        // Add total binding count to pure function count so pure function instructions are
+        // generated with the correct slot offset when update instructions are processed.
+        this._pureFunctionSlots += this._bindingSlots;
+        // Pipes are walked in the first pass (to enqueue `pipe()` creation instructions and
+        // `pipeBind` update instructions), so we have to update the slot offsets manually
+        // to account for bindings.
+        this._valueConverter.updatePipeSlotOffsets(this._bindingSlots);
         // Nested templates must be processed before creation instructions so template()
         // instructions can be generated with the correct internal const count.
         this._nestedTemplateFns.forEach(buildTemplateFn => buildTemplateFn());
-        // Generate all the update mode instructions (e.g. resolve property or text bindings)
-        const updateStatements = this._updateCodeFns.map((fn$$1) => fn$$1());
         // Generate all the creation mode instructions (e.g. resolve bindings in listeners)
         const creationStatements = this._creationCodeFns.map((fn$$1) => fn$$1());
-        // To count slots for the reserveSlots() instruction, all bindings must have been visited.
-        if (this._pureFunctionSlots > 0) {
-            creationStatements.push(instruction(null, Identifiers$1.reserveSlots, [literal(this._pureFunctionSlots)]).toStmt());
-        }
+        // Generate all the update mode instructions (e.g. resolve property or text bindings)
+        const updateStatements = this._updateCodeFns.map((fn$$1) => fn$$1());
         //  Variable declaration must occur after binding resolution so we can generate context
         //  instructions that build on each other. e.g. const b = x().$implicit(); const b = x();
         const creationVariables = this._bindingScope.viewSnapshotStatements();
@@ -18328,6 +18329,7 @@ class TemplateDefinitionBuilder {
                     params.push(sanitizationRef);
                 // TODO(chuckj): runtime: security context?
                 const value = input.value.visit(this._valueConverter);
+                this.allocateBindingSlots(value);
                 this.updateInstruction(input.sourceSpan, instruction, () => {
                     return [
                         literal(elementIndex), literal(input.name),
@@ -18399,6 +18401,7 @@ class TemplateDefinitionBuilder {
         const context = variable(CONTEXT_NAME);
         template.inputs.forEach(input => {
             const value = input.value.visit(this._valueConverter);
+            this.allocateBindingSlots(value);
             this.updateInstruction(template.sourceSpan, Identifiers$1.elementProperty, () => {
                 return [
                     literal(templateIndex), literal(input.name),
@@ -18426,6 +18429,7 @@ class TemplateDefinitionBuilder {
         const nodeIndex = this.allocateDataSlot();
         this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(nodeIndex)]);
         const value = text.value.visit(this._valueConverter);
+        this.allocateBindingSlots(value);
         this.updateInstruction(text.sourceSpan, Identifiers$1.textBinding, () => [literal(nodeIndex), this.convertPropertyBinding(variable(CONTEXT_NAME), value)]);
     }
     visitText(text) {
@@ -18450,7 +18454,7 @@ class TemplateDefinitionBuilder {
     }
     allocateDataSlot() { return this._dataIndex++; }
     getConstCount() { return this._dataIndex; }
-    getVarCount() { return this._bindingSlots + this._pureFunctionSlots; }
+    getVarCount() { return this._pureFunctionSlots; }
     bindingContext() { return `${this._bindingContext++}`; }
     // Bindings must only be resolved after all local refs have been visited, so all
     // instructions are queued in callbacks that execute once the initial pass has completed.
@@ -18468,9 +18472,15 @@ class TemplateDefinitionBuilder {
     updateInstruction(span, reference, paramsOrFn) {
         this.instructionFn(this._updateCodeFns, span, reference, paramsOrFn || []);
     }
+    allocatePureFunctionSlots(numSlots) {
+        const originalSlots = this._pureFunctionSlots;
+        this._pureFunctionSlots += numSlots;
+        return originalSlots;
+    }
+    allocateBindingSlots(value) {
+        this._bindingSlots += value instanceof Interpolation ? value.expressions.length : 1;
+    }
     convertPropertyBinding(implicit, value, skipBindFn) {
-        if (!skipBindFn)
-            this._bindingSlots++;
         const interpolationFn = value instanceof Interpolation ? interpolate : () => error('Unexpected interpolation');
         const convertedPropertyBinding = convertPropertyBinding(this, implicit, value, this.bindingContext(), BindingForm.TrySimple, interpolationFn);
         this._tempVariables.push(...convertedPropertyBinding.stmts);
@@ -18507,6 +18517,7 @@ class ValueConverter extends AstMemoryEfficientTransformer {
         this.allocateSlot = allocateSlot;
         this.allocatePureFunctionSlots = allocatePureFunctionSlots;
         this.definePipe = definePipe;
+        this._pipeBindExprs = [];
     }
     // AstMemoryEfficientTransformer
     visitPipe(pipe, context) {
@@ -18520,11 +18531,20 @@ class ValueConverter extends AstMemoryEfficientTransformer {
         this.definePipe(pipe.name, slotPseudoLocal, slot, importExpr(identifier));
         const args = [pipe.exp, ...pipe.args];
         const convertedArgs = isVarLength ? this.visitAll([new LiteralArray(pipe.span, args)]) : this.visitAll(args);
-        return new FunctionCall(pipe.span, target, [
+        const pipeBindExpr = new FunctionCall(pipe.span, target, [
             new LiteralPrimitive(pipe.span, slot),
             new LiteralPrimitive(pipe.span, pureFunctionSlot),
             ...convertedArgs,
         ]);
+        this._pipeBindExprs.push(pipeBindExpr);
+        return pipeBindExpr;
+    }
+    updatePipeSlotOffsets(bindingSlots) {
+        this._pipeBindExprs.forEach((pipe) => {
+            // update the slot offset arg (index 1) to account for binding slots
+            const slotOffset = pipe.args[1];
+            slotOffset.value += bindingSlots;
+        });
     }
     visitLiteralArray(array, context) {
         return new BuiltinFunctionCall(array.span, this.visitAll(array.expressions), values => {
@@ -22017,14 +22037,6 @@ class AotSummaryResolver {
             summaries.forEach((summary) => this.summaryCache.set(summary.symbol, summary));
             if (moduleName) {
                 this.knownFileNameToModuleNames.set(filePath, moduleName);
-                if (filePath.endsWith('.d.ts')) {
-                    // Also add entries to map the ngfactory & ngsummary files to their module names.
-                    // This is necessary to resolve ngfactory & ngsummary files to their AMD module
-                    // names when building angular with Bazel from source downstream.
-                    // See https://github.com/bazelbuild/rules_typescript/pull/223 for context.
-                    this.knownFileNameToModuleNames.set(filePath.replace(/\.d\.ts$/, '.ngfactory.d.ts'), moduleName + '.ngfactory');
-                    this.knownFileNameToModuleNames.set(filePath.replace(/\.d\.ts$/, '.ngsummary.d.ts'), moduleName + '.ngsummary');
-                }
             }
             importAs.forEach((importAs) => { this.importAs.set(importAs.symbol, importAs.importAs); });
         }
