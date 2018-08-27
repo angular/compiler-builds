@@ -33,6 +33,7 @@ export declare const ID_SEPARATOR = "@@";
 export declare function temporaryAllocator(statements: o.Statement[], name: string): () => o.ReadVarExpr;
 export declare function unsupported(feature: string): never;
 export declare function invalid<T>(arg: o.Expression | o.Statement | t.Node): never;
+export declare function isI18NAttribute(name: string): boolean;
 export declare function asLiteral(value: any): o.Expression;
 export declare function conditionallyCreateMapObjectLiteral(keys: {
     [key: string]: string;
