@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.3+57.sha-3634575
+ * @license Angular v7.0.0-beta.3+58.sha-6a0f78f
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1125,7 +1125,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.0.0-beta.3+57.sha-3634575');
+var VERSION = new Version('7.0.0-beta.3+58.sha-6a0f78f');
 
 /**
  * @license
@@ -17878,6 +17878,9 @@ function unsupported(feature) {
 function invalid$1(arg) {
     throw new Error("Invalid state: Visitor " + this.constructor.name + " doesn't handle " + undefined);
 }
+function isI18NAttribute(name) {
+    return name === I18N_ATTR || name.startsWith(I18N_ATTR_PREFIX);
+}
 function asLiteral(value) {
     if (Array.isArray(value)) {
         return literalArr(value.map(asLiteral));
@@ -18413,9 +18416,10 @@ var Element$1 = /** @class */ (function () {
     return Element;
 }());
 var Template = /** @class */ (function () {
-    function Template(attributes, inputs, children, references, variables, sourceSpan, startSourceSpan, endSourceSpan) {
+    function Template(attributes, inputs, outputs, children, references, variables, sourceSpan, startSourceSpan, endSourceSpan) {
         this.attributes = attributes;
         this.inputs = inputs;
+        this.outputs = outputs;
         this.children = children;
         this.references = references;
         this.variables = variables;
@@ -18631,7 +18635,7 @@ var HtmlAstToIvyAst = /** @class */ (function () {
         else if (isTemplateElement) {
             // `<ng-template>`
             var attrs = this.extractAttributes(element.name, parsedProperties);
-            parsedElement = new Template(attributes, attrs.bound, children, references, variables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+            parsedElement = new Template(attributes, attrs.bound, boundEvents, children, references, variables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
         }
         else {
             var attrs = this.extractAttributes(element.name, parsedProperties);
@@ -18639,7 +18643,8 @@ var HtmlAstToIvyAst = /** @class */ (function () {
         }
         if (elementHasInlineTemplate) {
             var attrs = this.extractAttributes('ng-template', templateParsedProperties);
-            parsedElement = new Template(attrs.literal, attrs.bound, [parsedElement], [], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+            // TODO(pk): test for this case
+            parsedElement = new Template(attrs.literal, attrs.bound, [], [parsedElement], [], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
         }
         return parsedElement;
     };
@@ -19149,10 +19154,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             finally { if (e_2) throw e_2.error; }
         }
         // Match directives on non i18n attributes
-        if (this.directiveMatcher) {
-            var selector = createCssSelector(element.name, outputAttrs);
-            this.directiveMatcher.match(selector, function (sel, staticType) { _this.directives.add(staticType); });
-        }
+        this.matchDirectives(element.name, element);
         // Regular element or ng-container creation mode
         var parameters = [literal(elementIndex)];
         if (!isNgContainer$$1) {
@@ -19276,10 +19278,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         }
         var hasStylingInstructions = initialStyleDeclarations.length || styleInputs.length ||
             initialClassDeclarations.length || classInputs.length;
-        var attrArg = attributes.length > 0 ?
-            this.constantPool.getConstLiteral(literalArr(attributes), true) :
-            TYPED_NULL_EXPR;
-        parameters.push(attrArg);
+        // add attributes for directive matching purposes
+        attributes.push.apply(attributes, __spread(this.prepareSelectOnlyAttrs(allOtherInputs, element.outputs)));
+        parameters.push(this.toAttrsParam(attributes));
         // local refs (ex.: <div #foo #bar="baz">)
         parameters.push(this.prepareRefsParameter(element.references));
         var wasInNamespace = this._namespace;
@@ -19473,33 +19474,19 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             variable(templateName),
             TYPED_NULL_EXPR,
         ];
-        // Match directives on both attributes and bound properties
-        var attributeNames = [];
-        var attributeMap = {};
-        template.attributes.forEach(function (a) {
-            attributeNames.push(asLiteral(a.name), asLiteral(''));
-            attributeMap[a.name] = a.value;
-        });
-        template.inputs.forEach(function (i) {
-            attributeNames.push(asLiteral(i.name), asLiteral(''));
-            attributeMap[i.name] = '';
-        });
-        if (this.directiveMatcher) {
-            var selector = createCssSelector('ng-template', attributeMap);
-            this.directiveMatcher.match(selector, function (cssSelector, staticType) { _this.directives.add(staticType); });
-        }
-        if (attributeNames.length) {
-            parameters.push(this.constantPool.getConstLiteral(literalArr(attributeNames), true));
-        }
-        else {
-            parameters.push(TYPED_NULL_EXPR);
-        }
+        // find directives matching on a given <ng-template> node
+        this.matchDirectives('ng-template', template);
+        // prepare attributes parameter (including attributes used for directive matching)
+        var attrsExprs = [];
+        template.attributes.forEach(function (a) { attrsExprs.push(asLiteral(a.name), asLiteral(a.value)); });
+        attrsExprs.push.apply(attrsExprs, __spread(this.prepareSelectOnlyAttrs(template.inputs, template.outputs)));
+        parameters.push(this.toAttrsParam(attrsExprs));
         // local refs (ex.: <ng-template #foo>)
         if (template.references && template.references.length) {
             parameters.push(this.prepareRefsParameter(template.references));
             parameters.push(importExpr(Identifiers$1.templateRefExtractor));
         }
-        // e.g. p(1, 'forOf', ɵbind(ctx.items));
+        // handle property bindings e.g. p(1, 'forOf', ɵbind(ctx.items));
         var context = variable(CONTEXT_NAME);
         template.inputs.forEach(function (input) {
             var value = input.value.visit(_this._valueConverter);
@@ -19591,6 +19578,38 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var valExpr = convertedPropertyBinding.currValExpr;
         return value instanceof Interpolation || skipBindFn ? valExpr :
             importExpr(Identifiers$1.bind).callFn([valExpr]);
+    };
+    TemplateDefinitionBuilder.prototype.matchDirectives = function (tagName, elOrTpl) {
+        var _this = this;
+        if (this.directiveMatcher) {
+            var selector = createCssSelector(tagName, this.getAttrsForDirectiveMatching(elOrTpl));
+            this.directiveMatcher.match(selector, function (cssSelector, staticType) { _this.directives.add(staticType); });
+        }
+    };
+    TemplateDefinitionBuilder.prototype.getAttrsForDirectiveMatching = function (elOrTpl) {
+        var attributesMap = {};
+        elOrTpl.attributes.forEach(function (a) {
+            if (!isI18NAttribute(a.name)) {
+                attributesMap[a.name] = a.value;
+            }
+        });
+        elOrTpl.inputs.forEach(function (i) { attributesMap[i.name] = ''; });
+        elOrTpl.outputs.forEach(function (o) { attributesMap[o.name] = ''; });
+        return attributesMap;
+    };
+    TemplateDefinitionBuilder.prototype.prepareSelectOnlyAttrs = function (inputs, outputs) {
+        var attrExprs = [];
+        if (inputs.length || outputs.length) {
+            attrExprs.push(literal(1 /* SelectOnly */));
+            inputs.forEach(function (i) { attrExprs.push(asLiteral(i.name)); });
+            outputs.forEach(function (o) { attrExprs.push(asLiteral(o.name)); });
+        }
+        return attrExprs;
+    };
+    TemplateDefinitionBuilder.prototype.toAttrsParam = function (attrsExprs) {
+        return attrsExprs.length > 0 ?
+            this.constantPool.getConstLiteral(literalArr(attrsExprs), true) :
+            TYPED_NULL_EXPR;
     };
     TemplateDefinitionBuilder.prototype.prepareRefsParameter = function (references) {
         var _this = this;
