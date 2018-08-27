@@ -110,6 +110,7 @@ export declare class CompileStylesheetMetadata {
 export interface CompileTemplateSummary {
     ngContentSelectors: string[];
     encapsulation: ViewEncapsulation | null;
+    styles: string[];
 }
 /**
  * Metadata regarding compilation of a template.
