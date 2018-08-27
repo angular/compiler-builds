@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.3+30.sha-3d41739
+ * @license Angular v7.0.0-beta.3+39.sha-9bcd8c2
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1202,7 +1202,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('7.0.0-beta.3+30.sha-3d41739');
+    var VERSION = new Version('7.0.0-beta.3+39.sha-9bcd8c2');
 
     /**
      * @license
@@ -1737,6 +1737,7 @@
             return {
                 ngContentSelectors: this.ngContentSelectors,
                 encapsulation: this.encapsulation,
+                styles: this.styles
             };
         };
         return CompileTemplateMetadata;
@@ -20071,6 +20072,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
+    var EMPTY_ARRAY = [];
     function baseDirectiveFields(meta, constantPool, bindingParser) {
         var definitionMap = new DefinitionMap();
         // e.g. `type: MyDirective`
@@ -20208,6 +20210,14 @@
         if (pipesUsed.size) {
             definitionMap.set('pipes', literalArr(Array.from(pipesUsed)));
         }
+        // e.g. `styles: [str1, str2]`
+        if (meta.styles && meta.styles.length) {
+            var styleValues = meta.encapsulation == ViewEncapsulation.Emulated ?
+                compileStyles(meta.styles, CONTENT_ATTR, HOST_ATTR) :
+                meta.styles;
+            var strings = styleValues.map(function (str) { return literal(str); });
+            definitionMap.set('styles', literalArr(strings));
+        }
         // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
         // string literal, which must be on one line.
         var selectorForType = (meta.selector || '').replace(/\n/g, '');
@@ -20251,7 +20261,7 @@
                 nodes: render3Ast.nodes,
                 hasNgContent: render3Ast.hasNgContent,
                 ngContentSelectors: render3Ast.ngContentSelectors,
-            }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesInClosure: false });
+            }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated });
         var res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
         // Create the partial class to be merged with the actual class.
         outputCtx.statements.push(new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [exports.StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []));
@@ -20533,6 +20543,10 @@
             }
         });
         return { attributes: attributes, listeners: listeners, properties: properties, animations: animations };
+    }
+    function compileStyles(styles, selector, hostSelector) {
+        var shadowCss = new ShadowCss();
+        return styles.map(function (style) { return shadowCss.shimCssText(style, selector, hostSelector); });
     }
 
     /**
@@ -25258,6 +25272,8 @@
     exports.SelectorMatcher = SelectorMatcher;
     exports.SelectorListContext = SelectorListContext;
     exports.SelectorContext = SelectorContext;
+    exports.HOST_ATTR = HOST_ATTR;
+    exports.CONTENT_ATTR = CONTENT_ATTR;
     exports.StylesCompileDependency = StylesCompileDependency;
     exports.CompiledStylesheet = CompiledStylesheet;
     exports.StyleCompiler = StyleCompiler;
