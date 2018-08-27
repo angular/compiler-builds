@@ -90,6 +90,10 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private allocatePureFunctionSlots;
     private allocateBindingSlots;
     private convertPropertyBinding;
+    private matchDirectives;
+    private getAttrsForDirectiveMatching;
+    private prepareSelectOnlyAttrs;
+    private toAttrsParam;
     private prepareRefsParameter;
 }
 /**
