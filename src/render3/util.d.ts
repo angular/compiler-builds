@@ -1,3 +1,10 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 import * as o from '../output/output_ast';
 import { OutputContext } from '../util';
 /**
@@ -12,3 +19,8 @@ export declare function mapToMapExpression(map: {
  * This operation will handle arrays, references to symbols, or literal `null` or `undefined`.
  */
 export declare function convertMetaToOutput(meta: any, ctx: OutputContext): o.Expression;
+export declare function typeWithParameters(type: o.Expression, numParams: number): o.ExpressionType;
+export interface R3Reference {
+    value: o.Expression;
+    type: o.Expression;
+}

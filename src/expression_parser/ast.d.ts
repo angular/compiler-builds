@@ -10,7 +10,7 @@ import { ParseSourceSpan } from '../parse_util';
 export declare class ParserError {
     input: string;
     errLocation: string;
-    ctxLocation: any;
+    ctxLocation?: any;
     message: string;
     constructor(message: string, input: string, errLocation: string, ctxLocation?: any);
 }
@@ -313,11 +313,11 @@ export declare class ParsedProperty {
 export declare enum ParsedPropertyType {
     DEFAULT = 0,
     LITERAL_ATTR = 1,
-    ANIMATION = 2,
+    ANIMATION = 2
 }
 export declare const enum ParsedEventType {
     Regular = 0,
-    Animation = 1,
+    Animation = 1
 }
 export declare class ParsedEvent {
     name: string;
@@ -338,7 +338,7 @@ export declare const enum BindingType {
     Attribute = 1,
     Class = 2,
     Style = 3,
-    Animation = 4,
+    Animation = 4
 }
 export declare class BoundElementProperty {
     name: string;

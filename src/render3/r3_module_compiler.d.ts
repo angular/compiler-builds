@@ -1,7 +1,16 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 import { CompileShallowModuleMetadata } from '../compile_metadata';
 import { InjectableCompiler } from '../injectable_compiler';
 import * as o from '../output/output_ast';
 import { OutputContext } from '../util';
+import { R3DependencyMetadata } from './r3_factory';
+import { R3Reference } from './util';
 export interface R3NgModuleDef {
     expression: o.Expression;
     type: o.Type;
@@ -22,15 +31,15 @@ export interface R3NgModuleMetadata {
     /**
      * An array of expressions representing the directives and pipes declared by the module.
      */
-    declarations: o.Expression[];
+    declarations: R3Reference[];
     /**
      * An array of expressions representing the imports of the module.
      */
-    imports: o.Expression[];
+    imports: R3Reference[];
     /**
      * An array of expressions representing the exports of the module.
      */
-    exports: o.Expression[];
+    exports: R3Reference[];
     /**
      * Whether to emit the selector scope values (declarations, imports, exports) inline into the
      * module definition, or to generate additional statements which patch them on. Inline emission
@@ -42,4 +51,17 @@ export interface R3NgModuleMetadata {
  * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
  */
 export declare function compileNgModule(meta: R3NgModuleMetadata): R3NgModuleDef;
+export interface R3InjectorDef {
+    expression: o.Expression;
+    type: o.Type;
+    statements: o.Statement[];
+}
+export interface R3InjectorMetadata {
+    name: string;
+    type: o.Expression;
+    deps: R3DependencyMetadata[] | null;
+    providers: o.Expression;
+    imports: o.Expression;
+}
+export declare function compileInjector(meta: R3InjectorMetadata): R3InjectorDef;
 export declare function compileNgModuleFromRender2(ctx: OutputContext, ngModule: CompileShallowModuleMetadata, injectableCompiler: InjectableCompiler): void;

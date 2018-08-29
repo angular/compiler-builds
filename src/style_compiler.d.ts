@@ -8,6 +8,8 @@
 import { CompileDirectiveMetadata, CompileStylesheetMetadata } from './compile_metadata';
 import { UrlResolver } from './url_resolver';
 import { OutputContext } from './util';
+export declare const HOST_ATTR: string;
+export declare const CONTENT_ATTR: string;
 export declare class StylesCompileDependency {
     name: string;
     moduleUrl: string;
@@ -29,6 +31,6 @@ export declare class StyleCompiler {
     compileComponent(outputCtx: OutputContext, comp: CompileDirectiveMetadata): CompiledStylesheet;
     compileStyles(outputCtx: OutputContext, comp: CompileDirectiveMetadata, stylesheet: CompileStylesheetMetadata, shim?: boolean): CompiledStylesheet;
     needsStyleShim(comp: CompileDirectiveMetadata): boolean;
-    private _compileStyles(outputCtx, comp, stylesheet, shim, isComponentStylesheet);
-    private _shimIfNeeded(style, shim);
+    private _compileStyles;
+    private _shimIfNeeded;
 }

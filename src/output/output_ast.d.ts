@@ -7,7 +7,7 @@
  */
 import { ParseSourceSpan } from '../parse_util';
 export declare enum TypeModifier {
-    Const = 0,
+    Const = 0
 }
 export declare abstract class Type {
     modifiers: TypeModifier[] | null;
@@ -23,6 +23,7 @@ export declare enum BuiltinTypeName {
     Number = 4,
     Function = 5,
     Inferred = 6,
+    None = 7
 }
 export declare class BuiltinType extends Type {
     name: BuiltinTypeName;
@@ -31,7 +32,8 @@ export declare class BuiltinType extends Type {
 }
 export declare class ExpressionType extends Type {
     value: Expression;
-    constructor(value: Expression, modifiers?: TypeModifier[] | null);
+    typeParams: Type[] | null;
+    constructor(value: Expression, modifiers?: TypeModifier[] | null, typeParams?: Type[] | null);
     visitType(visitor: TypeVisitor, context: any): any;
 }
 export declare class ArrayType extends Type {
@@ -51,6 +53,7 @@ export declare const INT_TYPE: BuiltinType;
 export declare const NUMBER_TYPE: BuiltinType;
 export declare const STRING_TYPE: BuiltinType;
 export declare const FUNCTION_TYPE: BuiltinType;
+export declare const NONE_TYPE: BuiltinType;
 export interface TypeVisitor {
     visitBuiltinType(type: BuiltinType, context: any): any;
     visitExpressionType(type: ExpressionType, context: any): any;
@@ -73,7 +76,7 @@ export declare enum BinaryOperator {
     Lower = 12,
     LowerEquals = 13,
     Bigger = 14,
-    BiggerEquals = 15,
+    BiggerEquals = 15
 }
 export declare function nullSafeIsEquivalent<T extends {
     isEquivalent(other: T): boolean;
@@ -125,7 +128,7 @@ export declare enum BuiltinVar {
     This = 0,
     Super = 1,
     CatchError = 2,
-    CatchStack = 3,
+    CatchStack = 3
 }
 export declare class ReadVarExpr extends Expression {
     name: string | null;
@@ -135,6 +138,13 @@ export declare class ReadVarExpr extends Expression {
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     set(value: Expression): WriteVarExpr;
+}
+export declare class TypeofExpr extends Expression {
+    expr: Expression;
+    constructor(expr: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    visitExpression(visitor: ExpressionVisitor, context: any): any;
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
 }
 export declare class WrappedNodeExpr<T> extends Expression {
     node: T;
@@ -151,6 +161,7 @@ export declare class WriteVarExpr extends Expression {
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     toDeclStmt(type?: Type | null, modifiers?: StmtModifier[] | null): DeclareVarStmt;
+    toConstDecl(): DeclareVarStmt;
 }
 export declare class WriteKeyExpr extends Expression {
     receiver: Expression;
@@ -173,7 +184,7 @@ export declare class WritePropExpr extends Expression {
 export declare enum BuiltinMethod {
     ConcatArray = 0,
     SubscribeObservable = 1,
-    Bind = 2,
+    Bind = 2
 }
 export declare class InvokeMethodExpr extends Expression {
     receiver: Expression;
@@ -219,7 +230,7 @@ export declare class ExternalExpr extends Expression {
 export declare class ExternalReference {
     moduleName: string | null;
     name: string | null;
-    runtime: any;
+    runtime?: any;
     constructor(moduleName: string | null, name: string | null, runtime?: any);
 }
 export declare class ConditionalExpr extends Expression {
@@ -261,7 +272,7 @@ export declare class FnParam {
 export declare class FunctionExpr extends Expression {
     params: FnParam[];
     statements: Statement[];
-    name: string | null | undefined;
+    name?: string | null | undefined;
     constructor(params: FnParam[], statements: Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null, name?: string | null | undefined);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
@@ -347,6 +358,7 @@ export interface ExpressionVisitor {
     visitLiteralMapExpr(ast: LiteralMapExpr, context: any): any;
     visitCommaExpr(ast: CommaExpr, context: any): any;
     visitWrappedNodeExpr(ast: WrappedNodeExpr<any>, context: any): any;
+    visitTypeofExpr(ast: TypeofExpr, context: any): any;
 }
 export declare const THIS_EXPR: ReadVarExpr;
 export declare const SUPER_EXPR: ReadVarExpr;
@@ -358,7 +370,7 @@ export declare enum StmtModifier {
     Final = 0,
     Private = 1,
     Exported = 2,
-    Static = 3,
+    Static = 3
 }
 export declare abstract class Statement {
     modifiers: StmtModifier[];
@@ -374,7 +386,7 @@ export declare abstract class Statement {
 }
 export declare class DeclareVarStmt extends Statement {
     name: string;
-    value: Expression | undefined;
+    value?: Expression | undefined;
     type: Type | null;
     constructor(name: string, value?: Expression | undefined, type?: Type | null, modifiers?: StmtModifier[] | null, sourceSpan?: ParseSourceSpan | null);
     isEquivalent(stmt: Statement): boolean;
@@ -409,7 +421,7 @@ export declare class AbstractClassPart {
 }
 export declare class ClassField extends AbstractClassPart {
     name: string;
-    initializer: Expression | undefined;
+    initializer?: Expression | undefined;
     constructor(name: string, type?: Type | null, modifiers?: StmtModifier[] | null, initializer?: Expression | undefined);
     isEquivalent(f: ClassField): boolean;
 }
@@ -489,6 +501,7 @@ export declare class AstTransformer implements StatementVisitor, ExpressionVisit
     transformStmt(stmt: Statement, context: any): Statement;
     visitReadVarExpr(ast: ReadVarExpr, context: any): any;
     visitWrappedNodeExpr(ast: WrappedNodeExpr<any>, context: any): any;
+    visitTypeofExpr(expr: TypeofExpr, context: any): any;
     visitWriteVarExpr(expr: WriteVarExpr, context: any): any;
     visitWriteKeyExpr(expr: WriteKeyExpr, context: any): any;
     visitWritePropExpr(expr: WritePropExpr, context: any): any;
@@ -529,6 +542,7 @@ export declare class RecursiveAstVisitor implements StatementVisitor, Expression
     visitArrayType(type: ArrayType, context: any): any;
     visitMapType(type: MapType, context: any): any;
     visitWrappedNodeExpr(ast: WrappedNodeExpr<any>, context: any): any;
+    visitTypeofExpr(ast: TypeofExpr, context: any): any;
     visitReadVarExpr(ast: ReadVarExpr, context: any): any;
     visitWriteVarExpr(ast: WriteVarExpr, context: any): any;
     visitWriteKeyExpr(ast: WriteKeyExpr, context: any): any;
@@ -569,7 +583,8 @@ export declare function applySourceSpanToExpressionIfNeeded(expr: Expression, so
 export declare function variable(name: string, type?: Type | null, sourceSpan?: ParseSourceSpan | null): ReadVarExpr;
 export declare function importExpr(id: ExternalReference, typeParams?: Type[] | null, sourceSpan?: ParseSourceSpan | null): ExternalExpr;
 export declare function importType(id: ExternalReference, typeParams?: Type[] | null, typeModifiers?: TypeModifier[] | null): ExpressionType | null;
-export declare function expressionType(expr: Expression, typeModifiers?: TypeModifier[] | null): ExpressionType;
+export declare function expressionType(expr: Expression, typeModifiers?: TypeModifier[] | null, typeParams?: Type[] | null): ExpressionType;
+export declare function typeofExpr(expr: Expression): TypeofExpr;
 export declare function literalArr(values: Expression[], type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralArrayExpr;
 export declare function literalMap(values: {
     key: string;
@@ -585,7 +600,7 @@ export declare function isNull(exp: Expression): boolean;
 export declare const enum JSDocTagName {
     Desc = "desc",
     Id = "id",
-    Meaning = "meaning",
+    Meaning = "meaning"
 }
 export declare type JSDocTag = {
     tagName: JSDocTagName | string;

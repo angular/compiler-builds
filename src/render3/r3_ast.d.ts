@@ -28,7 +28,7 @@ export declare class TextAttribute implements Node {
     name: string;
     value: string;
     sourceSpan: ParseSourceSpan;
-    valueSpan: ParseSourceSpan | undefined;
+    valueSpan?: ParseSourceSpan | undefined;
     constructor(name: string, value: string, sourceSpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
@@ -69,13 +69,14 @@ export declare class Element implements Node {
 export declare class Template implements Node {
     attributes: TextAttribute[];
     inputs: BoundAttribute[];
+    outputs: BoundEvent[];
     children: Node[];
     references: Reference[];
     variables: Variable[];
     sourceSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan | null;
     endSourceSpan: ParseSourceSpan | null;
-    constructor(attributes: TextAttribute[], inputs: BoundAttribute[], children: Node[], references: Reference[], variables: Variable[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan | null, endSourceSpan: ParseSourceSpan | null);
+    constructor(attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], children: Node[], references: Reference[], variables: Variable[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan | null, endSourceSpan: ParseSourceSpan | null);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 export declare class Content implements Node {

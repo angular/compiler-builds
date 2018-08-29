@@ -1,3 +1,10 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 import { CompileTypeMetadata } from '../compile_metadata';
 import { CompileReflector } from '../compile_reflector';
 import * as o from '../output/output_ast';
@@ -5,7 +12,7 @@ import { OutputContext } from '../util';
 /**
  * Metadata required by the factory generator to generate a `factory` function for a type.
  */
-export interface R3FactoryMetadata {
+export interface R3ConstructorFactoryMetadata {
     /**
      * String name of the type being generated (used to name the factory function).
      */
@@ -17,45 +24,38 @@ export interface R3FactoryMetadata {
      * This could be a reference to a constructor type, or to a user-defined factory function. The
      * `useNew` property determines whether it will be called as a constructor or not.
      */
-    fnOrClass: o.Expression;
+    type: o.Expression;
     /**
      * Regardless of whether `fnOrClass` is a constructor function or a user-defined factory, it
      * may have 0 or more parameters, which will be injected according to the `R3DependencyMetadata`
-     * for those parameters.
+     * for those parameters. If this is `null`, then the type's constructor is nonexistent and will
+     * be inherited from `fnOrClass` which is interpreted as the current type.
      */
-    deps: R3DependencyMetadata[];
-    /**
-     * Whether to interpret `fnOrClass` as a constructor function (`useNew: true`) or as a factory
-     * (`useNew: false`).
-     */
-    useNew: boolean;
+    deps: R3DependencyMetadata[] | null;
     /**
      * An expression for the function which will be used to inject dependencies. The API of this
      * function could be different, and other options control how it will be invoked.
      */
     injectFn: o.ExternalReference;
-    /**
-     * Whether the `injectFn` given above accepts a 2nd parameter indicating the default value to
-     * be used to resolve missing @Optional dependencies.
-     *
-     * If the optional parameter is used, injectFn for an optional dependency will be invoked as:
-     * `injectFn(token, null, flags)`.
-     *
-     * If it's not used, injectFn for an optional dependency will be invoked as:
-     * `injectFn(token, flags)`. The Optional flag will indicate that injectFn should select a default
-     * value if it cannot satisfy the injection request for the token.
-     */
-    useOptionalParam: boolean;
-    /**
-     * If present, the return of the factory function will be an array with the injected value in the
-     * 0th position and the extra results included in subsequent positions.
-     *
-     * Occasionally APIs want to construct additional values when the factory function is called. The
-     * paradigm there is to have the factory function return an array, with the DI-created value as
-     * well as other values. Specifying `extraResults` enables this functionality.
-     */
-    extraResults?: o.Expression[];
 }
+export declare enum R3FactoryDelegateType {
+    Class = 0,
+    Function = 1,
+    Factory = 2
+}
+export interface R3DelegatedFactoryMetadata extends R3ConstructorFactoryMetadata {
+    delegate: o.Expression;
+    delegateType: R3FactoryDelegateType.Factory;
+}
+export interface R3DelegatedFnOrClassMetadata extends R3ConstructorFactoryMetadata {
+    delegate: o.Expression;
+    delegateType: R3FactoryDelegateType.Class | R3FactoryDelegateType.Function;
+    delegateDeps: R3DependencyMetadata[];
+}
+export interface R3ExpressionFactoryMetadata extends R3ConstructorFactoryMetadata {
+    expression: o.Expression;
+}
+export declare type R3FactoryMetadata = R3ConstructorFactoryMetadata | R3DelegatedFactoryMetadata | R3DelegatedFnOrClassMetadata | R3ExpressionFactoryMetadata;
 /**
  * Resolved type of a dependency.
  *
@@ -91,6 +91,10 @@ export declare enum R3ResolvedDependencyType {
      * The dependency is for `ViewContainerRef`.
      */
     ViewContainerRef = 5,
+    /**
+     * The dependency is for `ChangeDetectorRef`.
+     */
+    ChangeDetectorRef = 6
 }
 /**
  * Metadata representing a single dependency to be injected into a constructor or function call.
@@ -125,7 +129,10 @@ export interface R3DependencyMetadata {
 /**
  * Construct a factory function expression for the given `R3FactoryMetadata`.
  */
-export declare function compileFactoryFunction(meta: R3FactoryMetadata): o.Expression;
+export declare function compileFactoryFunction(meta: R3FactoryMetadata): {
+    factory: o.Expression;
+    statements: o.Statement[];
+};
 /**
  * A helper function useful for extracting `R3DependencyMetadata` from a Render2
  * `CompileTypeMetadata` instance.
