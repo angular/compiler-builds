@@ -94,7 +94,11 @@ export declare enum R3ResolvedDependencyType {
     /**
      * The dependency is for `ChangeDetectorRef`.
      */
-    ChangeDetectorRef = 6
+    ChangeDetectorRef = 6,
+    /**
+     * The dependency is for `Renderer2`.
+     */
+    Renderer2 = 7
 }
 /**
  * Metadata representing a single dependency to be injected into a constructor or function call.

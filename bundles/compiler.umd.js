@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.4
+ * @license Angular v7.0.0-beta.4+20.sha-00f1311
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -433,61 +433,66 @@
         };
         return HtmlTagDefinition;
     }());
+    var _DEFAULT_TAG_DEFINITION;
     // see http://www.w3.org/TR/html51/syntax.html#optional-tags
     // This implementation does not fully conform to the HTML5 spec.
-    var TAG_DEFINITIONS = {
-        'base': new HtmlTagDefinition({ isVoid: true }),
-        'meta': new HtmlTagDefinition({ isVoid: true }),
-        'area': new HtmlTagDefinition({ isVoid: true }),
-        'embed': new HtmlTagDefinition({ isVoid: true }),
-        'link': new HtmlTagDefinition({ isVoid: true }),
-        'img': new HtmlTagDefinition({ isVoid: true }),
-        'input': new HtmlTagDefinition({ isVoid: true }),
-        'param': new HtmlTagDefinition({ isVoid: true }),
-        'hr': new HtmlTagDefinition({ isVoid: true }),
-        'br': new HtmlTagDefinition({ isVoid: true }),
-        'source': new HtmlTagDefinition({ isVoid: true }),
-        'track': new HtmlTagDefinition({ isVoid: true }),
-        'wbr': new HtmlTagDefinition({ isVoid: true }),
-        'p': new HtmlTagDefinition({
-            closedByChildren: [
-                'address', 'article', 'aside', 'blockquote', 'div', 'dl', 'fieldset', 'footer', 'form',
-                'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hgroup', 'hr',
-                'main', 'nav', 'ol', 'p', 'pre', 'section', 'table', 'ul'
-            ],
-            closedByParent: true
-        }),
-        'thead': new HtmlTagDefinition({ closedByChildren: ['tbody', 'tfoot'] }),
-        'tbody': new HtmlTagDefinition({ closedByChildren: ['tbody', 'tfoot'], closedByParent: true }),
-        'tfoot': new HtmlTagDefinition({ closedByChildren: ['tbody'], closedByParent: true }),
-        'tr': new HtmlTagDefinition({
-            closedByChildren: ['tr'],
-            requiredParents: ['tbody', 'tfoot', 'thead'],
-            closedByParent: true
-        }),
-        'td': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
-        'th': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
-        'col': new HtmlTagDefinition({ requiredParents: ['colgroup'], isVoid: true }),
-        'svg': new HtmlTagDefinition({ implicitNamespacePrefix: 'svg' }),
-        'math': new HtmlTagDefinition({ implicitNamespacePrefix: 'math' }),
-        'li': new HtmlTagDefinition({ closedByChildren: ['li'], closedByParent: true }),
-        'dt': new HtmlTagDefinition({ closedByChildren: ['dt', 'dd'] }),
-        'dd': new HtmlTagDefinition({ closedByChildren: ['dt', 'dd'], closedByParent: true }),
-        'rb': new HtmlTagDefinition({ closedByChildren: ['rb', 'rt', 'rtc', 'rp'], closedByParent: true }),
-        'rt': new HtmlTagDefinition({ closedByChildren: ['rb', 'rt', 'rtc', 'rp'], closedByParent: true }),
-        'rtc': new HtmlTagDefinition({ closedByChildren: ['rb', 'rtc', 'rp'], closedByParent: true }),
-        'rp': new HtmlTagDefinition({ closedByChildren: ['rb', 'rt', 'rtc', 'rp'], closedByParent: true }),
-        'optgroup': new HtmlTagDefinition({ closedByChildren: ['optgroup'], closedByParent: true }),
-        'option': new HtmlTagDefinition({ closedByChildren: ['option', 'optgroup'], closedByParent: true }),
-        'pre': new HtmlTagDefinition({ ignoreFirstLf: true }),
-        'listing': new HtmlTagDefinition({ ignoreFirstLf: true }),
-        'style': new HtmlTagDefinition({ contentType: exports.TagContentType.RAW_TEXT }),
-        'script': new HtmlTagDefinition({ contentType: exports.TagContentType.RAW_TEXT }),
-        'title': new HtmlTagDefinition({ contentType: exports.TagContentType.ESCAPABLE_RAW_TEXT }),
-        'textarea': new HtmlTagDefinition({ contentType: exports.TagContentType.ESCAPABLE_RAW_TEXT, ignoreFirstLf: true }),
-    };
-    var _DEFAULT_TAG_DEFINITION = new HtmlTagDefinition();
+    var TAG_DEFINITIONS;
     function getHtmlTagDefinition(tagName) {
+        if (!TAG_DEFINITIONS) {
+            _DEFAULT_TAG_DEFINITION = new HtmlTagDefinition();
+            TAG_DEFINITIONS = {
+                'base': new HtmlTagDefinition({ isVoid: true }),
+                'meta': new HtmlTagDefinition({ isVoid: true }),
+                'area': new HtmlTagDefinition({ isVoid: true }),
+                'embed': new HtmlTagDefinition({ isVoid: true }),
+                'link': new HtmlTagDefinition({ isVoid: true }),
+                'img': new HtmlTagDefinition({ isVoid: true }),
+                'input': new HtmlTagDefinition({ isVoid: true }),
+                'param': new HtmlTagDefinition({ isVoid: true }),
+                'hr': new HtmlTagDefinition({ isVoid: true }),
+                'br': new HtmlTagDefinition({ isVoid: true }),
+                'source': new HtmlTagDefinition({ isVoid: true }),
+                'track': new HtmlTagDefinition({ isVoid: true }),
+                'wbr': new HtmlTagDefinition({ isVoid: true }),
+                'p': new HtmlTagDefinition({
+                    closedByChildren: [
+                        'address', 'article', 'aside', 'blockquote', 'div', 'dl', 'fieldset',
+                        'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5',
+                        'h6', 'header', 'hgroup', 'hr', 'main', 'nav', 'ol',
+                        'p', 'pre', 'section', 'table', 'ul'
+                    ],
+                    closedByParent: true
+                }),
+                'thead': new HtmlTagDefinition({ closedByChildren: ['tbody', 'tfoot'] }),
+                'tbody': new HtmlTagDefinition({ closedByChildren: ['tbody', 'tfoot'], closedByParent: true }),
+                'tfoot': new HtmlTagDefinition({ closedByChildren: ['tbody'], closedByParent: true }),
+                'tr': new HtmlTagDefinition({
+                    closedByChildren: ['tr'],
+                    requiredParents: ['tbody', 'tfoot', 'thead'],
+                    closedByParent: true
+                }),
+                'td': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
+                'th': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
+                'col': new HtmlTagDefinition({ requiredParents: ['colgroup'], isVoid: true }),
+                'svg': new HtmlTagDefinition({ implicitNamespacePrefix: 'svg' }),
+                'math': new HtmlTagDefinition({ implicitNamespacePrefix: 'math' }),
+                'li': new HtmlTagDefinition({ closedByChildren: ['li'], closedByParent: true }),
+                'dt': new HtmlTagDefinition({ closedByChildren: ['dt', 'dd'] }),
+                'dd': new HtmlTagDefinition({ closedByChildren: ['dt', 'dd'], closedByParent: true }),
+                'rb': new HtmlTagDefinition({ closedByChildren: ['rb', 'rt', 'rtc', 'rp'], closedByParent: true }),
+                'rt': new HtmlTagDefinition({ closedByChildren: ['rb', 'rt', 'rtc', 'rp'], closedByParent: true }),
+                'rtc': new HtmlTagDefinition({ closedByChildren: ['rb', 'rtc', 'rp'], closedByParent: true }),
+                'rp': new HtmlTagDefinition({ closedByChildren: ['rb', 'rt', 'rtc', 'rp'], closedByParent: true }),
+                'optgroup': new HtmlTagDefinition({ closedByChildren: ['optgroup'], closedByParent: true }),
+                'option': new HtmlTagDefinition({ closedByChildren: ['option', 'optgroup'], closedByParent: true }),
+                'pre': new HtmlTagDefinition({ ignoreFirstLf: true }),
+                'listing': new HtmlTagDefinition({ ignoreFirstLf: true }),
+                'style': new HtmlTagDefinition({ contentType: exports.TagContentType.RAW_TEXT }),
+                'script': new HtmlTagDefinition({ contentType: exports.TagContentType.RAW_TEXT }),
+                'title': new HtmlTagDefinition({ contentType: exports.TagContentType.ESCAPABLE_RAW_TEXT }),
+                'textarea': new HtmlTagDefinition({ contentType: exports.TagContentType.ESCAPABLE_RAW_TEXT, ignoreFirstLf: true }),
+            };
+        }
         return TAG_DEFINITIONS[tagName.toLowerCase()] || _DEFAULT_TAG_DEFINITION;
     }
 
@@ -1202,7 +1207,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('7.0.0-beta.4');
+    var VERSION = new Version('7.0.0-beta.4+20.sha-00f1311');
 
     /**
      * @license
@@ -8419,6 +8424,7 @@
         };
         Identifiers.QueryList = { name: 'QueryList', moduleName: CORE };
         Identifiers.TemplateRef = { name: 'TemplateRef', moduleName: CORE };
+        Identifiers.Renderer2 = { name: 'Renderer2', moduleName: CORE };
         Identifiers.CodegenComponentFactoryResolver = {
             name: 'ɵCodegenComponentFactoryResolver',
             moduleName: CORE,
@@ -13126,13 +13132,48 @@
     //
     // =================================================================================================
     /** Map from tagName|propertyName SecurityContext. Properties applying to all tags use '*'. */
-    var SECURITY_SCHEMA = {};
+    var _SECURITY_SCHEMA;
+    function SECURITY_SCHEMA() {
+        if (!_SECURITY_SCHEMA) {
+            _SECURITY_SCHEMA = {};
+            // Case is insignificant below, all element and attribute names are lower-cased for lookup.
+            registerContext(SecurityContext.HTML, [
+                'iframe|srcdoc',
+                '*|innerHTML',
+                '*|outerHTML',
+            ]);
+            registerContext(SecurityContext.STYLE, ['*|style']);
+            // NB: no SCRIPT contexts here, they are never allowed due to the parser stripping them.
+            registerContext(SecurityContext.URL, [
+                '*|formAction', 'area|href', 'area|ping', 'audio|src', 'a|href',
+                'a|ping', 'blockquote|cite', 'body|background', 'del|cite', 'form|action',
+                'img|src', 'img|srcset', 'input|src', 'ins|cite', 'q|cite',
+                'source|src', 'source|srcset', 'track|src', 'video|poster', 'video|src',
+            ]);
+            registerContext(SecurityContext.RESOURCE_URL, [
+                'applet|code',
+                'applet|codebase',
+                'base|href',
+                'embed|src',
+                'frame|src',
+                'head|profile',
+                'html|manifest',
+                'iframe|src',
+                'link|href',
+                'media|src',
+                'object|codebase',
+                'object|data',
+                'script|src',
+            ]);
+        }
+        return _SECURITY_SCHEMA;
+    }
     function registerContext(ctx, specs) {
         var e_1, _a;
         try {
             for (var specs_1 = __values(specs), specs_1_1 = specs_1.next(); !specs_1_1.done; specs_1_1 = specs_1.next()) {
                 var spec = specs_1_1.value;
-                SECURITY_SCHEMA[spec.toLowerCase()] = ctx;
+                _SECURITY_SCHEMA[spec.toLowerCase()] = ctx;
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
@@ -13143,35 +13184,6 @@
             finally { if (e_1) throw e_1.error; }
         }
     }
-    // Case is insignificant below, all element and attribute names are lower-cased for lookup.
-    registerContext(SecurityContext.HTML, [
-        'iframe|srcdoc',
-        '*|innerHTML',
-        '*|outerHTML',
-    ]);
-    registerContext(SecurityContext.STYLE, ['*|style']);
-    // NB: no SCRIPT contexts here, they are never allowed due to the parser stripping them.
-    registerContext(SecurityContext.URL, [
-        '*|formAction', 'area|href', 'area|ping', 'audio|src', 'a|href',
-        'a|ping', 'blockquote|cite', 'body|background', 'del|cite', 'form|action',
-        'img|src', 'img|srcset', 'input|src', 'ins|cite', 'q|cite',
-        'source|src', 'source|srcset', 'track|src', 'video|poster', 'video|src',
-    ]);
-    registerContext(SecurityContext.RESOURCE_URL, [
-        'applet|code',
-        'applet|codebase',
-        'base|href',
-        'embed|src',
-        'frame|src',
-        'head|profile',
-        'html|manifest',
-        'iframe|src',
-        'link|href',
-        'media|src',
-        'object|codebase',
-        'object|data',
-        'script|src',
-    ]);
 
     /**
      * @license
@@ -13507,11 +13519,11 @@
             // property names do not have a security impact.
             tagName = tagName.toLowerCase();
             propName = propName.toLowerCase();
-            var ctx = SECURITY_SCHEMA[tagName + '|' + propName];
+            var ctx = SECURITY_SCHEMA()[tagName + '|' + propName];
             if (ctx) {
                 return ctx;
             }
-            ctx = SECURITY_SCHEMA['*|' + propName];
+            ctx = SECURITY_SCHEMA()['*|' + propName];
             return ctx ? ctx : SecurityContext.NONE;
         };
         DomElementSchemaRegistry.prototype.getMappedPropName = function (propName) { return _ATTR_TO_PROP[propName] || propName; };
@@ -14854,7 +14866,13 @@
     var IDENT_EVENT_IDX = 10;
     var TEMPLATE_ATTR_PREFIX = '*';
     var CLASS_ATTR = 'class';
-    var TEXT_CSS_SELECTOR = CssSelector.parse('*')[0];
+    var _TEXT_CSS_SELECTOR;
+    function TEXT_CSS_SELECTOR() {
+        if (!_TEXT_CSS_SELECTOR) {
+            _TEXT_CSS_SELECTOR = CssSelector.parse('*')[0];
+        }
+        return _TEXT_CSS_SELECTOR;
+    }
     var TemplateParseError = /** @class */ (function (_super) {
         __extends(TemplateParseError, _super);
         function TemplateParseError(message, span, level) {
@@ -14998,7 +15016,7 @@
         TemplateParseVisitor.prototype.visitExpansion = function (expansion, context) { return null; };
         TemplateParseVisitor.prototype.visitExpansionCase = function (expansionCase, context) { return null; };
         TemplateParseVisitor.prototype.visitText = function (text, parent) {
-            var ngContentIndex = parent.findNgContentIndex(TEXT_CSS_SELECTOR);
+            var ngContentIndex = parent.findNgContentIndex(TEXT_CSS_SELECTOR());
             var valueNoNgsp = replaceNgsp(text.value);
             var expr = this._bindingParser.parseInterpolation(valueNoNgsp, text.sourceSpan);
             return expr ? new BoundTextAst(expr, ngContentIndex, text.sourceSpan) :
@@ -15404,7 +15422,7 @@
             return new AttrAst(attribute.name, attribute.value, attribute.sourceSpan);
         };
         NonBindableVisitor.prototype.visitText = function (text, parent) {
-            var ngContentIndex = parent.findNgContentIndex(TEXT_CSS_SELECTOR);
+            var ngContentIndex = parent.findNgContentIndex(TEXT_CSS_SELECTOR());
             return new TextAst(text.value, ngContentIndex, text.sourceSpan);
         };
         NonBindableVisitor.prototype.visitExpansion = function (expansion, context) { return expansion; };
@@ -17836,6 +17854,7 @@
         Identifiers.injectTemplateRef = { name: 'ɵinjectTemplateRef', moduleName: CORE$1 };
         Identifiers.injectViewContainerRef = { name: 'ɵinjectViewContainerRef', moduleName: CORE$1 };
         Identifiers.injectChangeDetectorRef = { name: 'ɵinjectChangeDetectorRef', moduleName: CORE$1 };
+        Identifiers.injectRenderer2 = { name: 'ɵinjectRenderer2', moduleName: CORE$1 };
         Identifiers.directiveInject = { name: 'ɵdirectiveInject', moduleName: CORE$1 };
         Identifiers.templateRefExtractor = { name: 'ɵtemplateRefExtractor', moduleName: CORE$1 };
         Identifiers.defineBase = { name: 'ɵdefineBase', moduleName: CORE$1 };
@@ -18036,6 +18055,10 @@
          * The dependency is for `ChangeDetectorRef`.
          */
         R3ResolvedDependencyType[R3ResolvedDependencyType["ChangeDetectorRef"] = 6] = "ChangeDetectorRef";
+        /**
+         * The dependency is for `Renderer2`.
+         */
+        R3ResolvedDependencyType[R3ResolvedDependencyType["Renderer2"] = 7] = "Renderer2";
     })(exports.R3ResolvedDependencyType || (exports.R3ResolvedDependencyType = {}));
     /**
      * Construct a factory function expression for the given `R3FactoryMetadata`.
@@ -18148,6 +18171,8 @@
                 return importExpr(Identifiers$1.injectViewContainerRef).callFn([]);
             case exports.R3ResolvedDependencyType.ChangeDetectorRef:
                 return importExpr(Identifiers$1.injectChangeDetectorRef).callFn([]);
+            case exports.R3ResolvedDependencyType.Renderer2:
+                return importExpr(Identifiers$1.injectRenderer2).callFn([]);
             default:
                 return unsupported("Unknown R3ResolvedDependencyType: " + exports.R3ResolvedDependencyType[dep.resolved]);
         }
@@ -18165,6 +18190,7 @@
         var templateRef = reflector.resolveExternalReference(Identifiers.TemplateRef);
         var viewContainerRef = reflector.resolveExternalReference(Identifiers.ViewContainerRef);
         var injectorRef = reflector.resolveExternalReference(Identifiers.Injector);
+        var renderer2 = reflector.resolveExternalReference(Identifiers.Renderer2);
         // Iterate through the type's DI dependencies and produce `R3DependencyMetadata` for each of them.
         var deps = [];
         try {
@@ -18184,6 +18210,9 @@
                     }
                     else if (tokenRef === injectorRef) {
                         resolved = exports.R3ResolvedDependencyType.Injector;
+                    }
+                    else if (tokenRef === renderer2) {
+                        resolved = exports.R3ResolvedDependencyType.Renderer2;
                     }
                     else if (dependency.isAttribute) {
                         resolved = exports.R3ResolvedDependencyType.Attribute;
@@ -19815,6 +19844,16 @@
             this.referenceNameIndex = 0;
             this.restoreViewVariable = null;
         }
+        Object.defineProperty(BindingScope, "ROOT_SCOPE", {
+            get: function () {
+                if (!BindingScope._ROOT_SCOPE) {
+                    BindingScope._ROOT_SCOPE = new BindingScope().set(0, '$event', variable('$event'));
+                }
+                return BindingScope._ROOT_SCOPE;
+            },
+            enumerable: true,
+            configurable: true
+        });
         BindingScope.prototype.get = function (name) {
             var current = this;
             while (current) {
@@ -19955,7 +19994,6 @@
             var ref = "" + REFERENCE_PREFIX + current.referenceNameIndex++;
             return ref;
         };
-        BindingScope.ROOT_SCOPE = new BindingScope().set(0, '$event', variable('$event'));
         return BindingScope;
     }());
     /**

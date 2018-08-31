@@ -16,6 +16,7 @@ export declare class Identifiers {
     static ChangeDetectorRef: o.ExternalReference;
     static QueryList: o.ExternalReference;
     static TemplateRef: o.ExternalReference;
+    static Renderer2: o.ExternalReference;
     static CodegenComponentFactoryResolver: o.ExternalReference;
     static ComponentFactoryResolver: o.ExternalReference;
     static ComponentFactory: o.ExternalReference;
