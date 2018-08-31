@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.4+20.sha-00f1311
+ * @license Angular v7.0.0-beta.4+21.sha-b424b31
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1084,7 +1084,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-beta.4+20.sha-00f1311');
+const VERSION = new Version('7.0.0-beta.4+21.sha-b424b31');
 
 /**
  * @license
@@ -18970,8 +18970,18 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     definitionMap.set('factory', result.factory);
     definitionMap.set('contentQueries', createContentQueriesFunction(meta, constantPool));
     definitionMap.set('contentQueriesRefresh', createContentQueriesRefreshFunction(meta));
+    // Initialize hostVars to number of bound host properties (interpolations illegal)
+    let hostVars = Object.keys(meta.host.properties).length;
     // e.g. `hostBindings: (dirIndex, elIndex) => { ... }
-    definitionMap.set('hostBindings', createHostBindingsFunction(meta, bindingParser));
+    definitionMap.set('hostBindings', createHostBindingsFunction(meta, bindingParser, constantPool, (slots) => {
+        const originalSlots = hostVars;
+        hostVars += slots;
+        return originalSlots;
+    }));
+    if (hostVars) {
+        // e.g. `hostVars: 2
+        definitionMap.set('hostVars', literal(hostVars));
+    }
     // e.g. `attributes: ['role', 'listbox']`
     definitionMap.set('attributes', createHostAttributesArray(meta));
     // e.g 'inputs: {a: 'a'}`
@@ -19311,7 +19321,7 @@ function createViewQueriesFunction(meta, constantPool) {
     ], INFERRED_TYPE, null, viewQueryFnName);
 }
 // Return a host binding function or null if one is not necessary.
-function createHostBindingsFunction(meta, bindingParser) {
+function createHostBindingsFunction(meta, bindingParser, constantPool, allocatePureFunctionSlots) {
     const statements = [];
     const hostBindingSourceSpan = meta.typeSourceSpan;
     const directiveSummary = metadataAsSummary(meta);
@@ -19319,8 +19329,13 @@ function createHostBindingsFunction(meta, bindingParser) {
     const bindings = bindingParser.createBoundHostProperties(directiveSummary, hostBindingSourceSpan);
     const bindingContext = importExpr(Identifiers$1.loadDirective).callFn([variable('dirIndex')]);
     if (bindings) {
+        const valueConverter = new ValueConverter(constantPool, 
+        /* new nodes are illegal here */ () => error('Unexpected node'), allocatePureFunctionSlots, 
+        /* pipes are illegal here */ () => error('Unexpected pipe'));
         for (const binding of bindings) {
-            const bindingExpr = convertPropertyBinding(null, bindingContext, binding.expression, 'b', BindingForm.TrySimple, () => error('Unexpected interpolation'));
+            // resolve literal arrays and literal objects
+            const value = binding.expression.visit(valueConverter);
+            const bindingExpr = convertPropertyBinding(null, bindingContext, value, 'b', BindingForm.TrySimple, () => error('Unexpected interpolation'));
             statements.push(...bindingExpr.stmts);
             statements.push(importExpr(Identifiers$1.elementProperty)
                 .callFn([

@@ -8,6 +8,7 @@
 import { LocalResolver } from '../../compiler_util/expression_converter';
 import { ConstantPool } from '../../constant_pool';
 import * as core from '../../core';
+import { AST, AstMemoryEfficientTransformer, BindingPipe, LiteralArray, LiteralMap } from '../../expression_parser/ast';
 import * as o from '../../output/output_ast';
 import { ParseError } from '../../parse_util';
 import { SelectorMatcher } from '../../selector';
@@ -95,6 +96,18 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private prepareSelectOnlyAttrs;
     private toAttrsParam;
     private prepareRefsParameter;
+}
+export declare class ValueConverter extends AstMemoryEfficientTransformer {
+    private constantPool;
+    private allocateSlot;
+    private allocatePureFunctionSlots;
+    private definePipe;
+    private _pipeBindExprs;
+    constructor(constantPool: ConstantPool, allocateSlot: () => number, allocatePureFunctionSlots: (numSlots: number) => number, definePipe: (name: string, localName: string, slot: number, value: o.Expression) => void);
+    visitPipe(pipe: BindingPipe, context: any): AST;
+    updatePipeSlotOffsets(bindingSlots: number): void;
+    visitLiteralArray(array: LiteralArray, context: any): AST;
+    visitLiteralMap(map: LiteralMap, context: any): AST;
 }
 /**
  * Function which is executed whenever a variable is referenced for the first time in a given
