@@ -1,10 +1,10 @@
 /**
- * @license Angular v7.0.0-beta.4+35.sha-abd29f5
+ * @license Angular v7.0.0-beta.4+32.sha-1e3460b
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __assign, __spread, __extends, __values, __read } from 'tslib';
+import { __assign, __spread, __values, __extends, __read } from 'tslib';
 
 /**
  * @license
@@ -1130,7 +1130,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.0.0-beta.4+35.sha-abd29f5');
+var VERSION = new Version('7.0.0-beta.4+32.sha-1e3460b');
 
 /**
  * @license
@@ -19359,7 +19359,16 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             }
             // Generate Listeners (outputs)
             element.outputs.forEach(function (outputAst) {
-                _this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, _this.prepareListenerParameter(element.name, outputAst));
+                var elName = sanitizeIdentifier(element.name);
+                var evName = sanitizeIdentifier(outputAst.name);
+                var functionName = _this.templateName + "_" + elName + "_" + evName + "_listener";
+                _this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, function () {
+                    var listenerScope = _this._bindingScope.nestedScope(_this._bindingScope.bindingLevel);
+                    var bindingExpr = convertActionBinding(listenerScope, implicit, outputAst.handler, 'b', function () { return error('Unexpected interpolation'); });
+                    var statements = __spread(listenerScope.restoreViewStatement(), listenerScope.variableDeclarations(), bindingExpr.render3Stmts);
+                    var handler = fn([new FnParam('$event', DYNAMIC_TYPE)], statements, INFERRED_TYPE, null, functionName);
+                    return [literal(outputAst.name), handler];
+                });
             });
         }
         if ((styleInputs.length || classInputs.length) && hasStylingInstructions) {
@@ -19533,10 +19542,6 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             parameters.splice(2, 0, literal(templateVisitor.getConstCount()), literal(templateVisitor.getVarCount()));
             return trimTrailingNulls(parameters);
         });
-        // Generate listeners for directive output
-        template.outputs.forEach(function (outputAst) {
-            _this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, _this.prepareListenerParameter('ng_template', outputAst));
-        });
     };
     TemplateDefinitionBuilder.prototype.visitBoundText = function (text) {
         var _this = this;
@@ -19656,18 +19661,6 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             return [reference.name, reference.value];
         }));
         return this.constantPool.getConstLiteral(asLiteral(refsParam), true);
-    };
-    TemplateDefinitionBuilder.prototype.prepareListenerParameter = function (tagName, outputAst) {
-        var _this = this;
-        var evName = sanitizeIdentifier(outputAst.name);
-        var functionName = this.templateName + "_" + tagName + "_" + evName + "_listener";
-        return function () {
-            var listenerScope = _this._bindingScope.nestedScope(_this._bindingScope.bindingLevel);
-            var bindingExpr = convertActionBinding(listenerScope, variable(CONTEXT_NAME), outputAst.handler, 'b', function () { return error('Unexpected interpolation'); });
-            var statements = __spread(listenerScope.restoreViewStatement(), listenerScope.variableDeclarations(), bindingExpr.render3Stmts);
-            var handler = fn([new FnParam('$event', DYNAMIC_TYPE)], statements, INFERRED_TYPE, null, functionName);
-            return [literal(outputAst.name), handler];
-        };
     };
     return TemplateDefinitionBuilder;
 }());

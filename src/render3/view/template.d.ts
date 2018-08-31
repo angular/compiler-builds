@@ -96,7 +96,6 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private prepareSelectOnlyAttrs;
     private toAttrsParam;
     private prepareRefsParameter;
-    private prepareListenerParameter;
 }
 export declare class ValueConverter extends AstMemoryEfficientTransformer {
     private constantPool;
