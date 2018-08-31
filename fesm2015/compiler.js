@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.4+32.sha-1e3460b
+ * @license Angular v7.0.0-beta.4+34.sha-6def18a
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1084,7 +1084,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-beta.4+32.sha-1e3460b');
+const VERSION = new Version('7.0.0-beta.4+34.sha-6def18a');
 
 /**
  * @license
@@ -18264,19 +18264,7 @@ class TemplateDefinitionBuilder {
             }
             // Generate Listeners (outputs)
             element.outputs.forEach((outputAst) => {
-                const elName = sanitizeIdentifier(element.name);
-                const evName = sanitizeIdentifier(outputAst.name);
-                const functionName = `${this.templateName}_${elName}_${evName}_listener`;
-                this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, () => {
-                    const listenerScope = this._bindingScope.nestedScope(this._bindingScope.bindingLevel);
-                    const bindingExpr = convertActionBinding(listenerScope, implicit, outputAst.handler, 'b', () => error('Unexpected interpolation'));
-                    const statements = [
-                        ...listenerScope.restoreViewStatement(), ...listenerScope.variableDeclarations(),
-                        ...bindingExpr.render3Stmts
-                    ];
-                    const handler = fn([new FnParam('$event', DYNAMIC_TYPE)], statements, INFERRED_TYPE, null, functionName);
-                    return [literal(outputAst.name), handler];
-                });
+                this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter(element.name, outputAst));
             });
         }
         if ((styleInputs.length || classInputs.length) && hasStylingInstructions) {
@@ -18441,6 +18429,10 @@ class TemplateDefinitionBuilder {
             parameters.splice(2, 0, literal(templateVisitor.getConstCount()), literal(templateVisitor.getVarCount()));
             return trimTrailingNulls(parameters);
         });
+        // Generate listeners for directive output
+        template.outputs.forEach((outputAst) => {
+            this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter('ng_template', outputAst));
+        });
     }
     visitBoundText(text) {
         const nodeIndex = this.allocateDataSlot();
@@ -18556,6 +18548,20 @@ class TemplateDefinitionBuilder {
             return [reference.name, reference.value];
         }));
         return this.constantPool.getConstLiteral(asLiteral(refsParam), true);
+    }
+    prepareListenerParameter(tagName, outputAst) {
+        const evName = sanitizeIdentifier(outputAst.name);
+        const functionName = `${this.templateName}_${tagName}_${evName}_listener`;
+        return () => {
+            const listenerScope = this._bindingScope.nestedScope(this._bindingScope.bindingLevel);
+            const bindingExpr = convertActionBinding(listenerScope, variable(CONTEXT_NAME), outputAst.handler, 'b', () => error('Unexpected interpolation'));
+            const statements = [
+                ...listenerScope.restoreViewStatement(), ...listenerScope.variableDeclarations(),
+                ...bindingExpr.render3Stmts
+            ];
+            const handler = fn([new FnParam('$event', DYNAMIC_TYPE)], statements, INFERRED_TYPE, null, functionName);
+            return [literal(outputAst.name), handler];
+        };
     }
 }
 class ValueConverter extends AstMemoryEfficientTransformer {
