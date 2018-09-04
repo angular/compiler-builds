@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.4+33.sha-34be518
+ * @license Angular v7.0.0-beta.4+38.sha-cc29b9c
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1084,7 +1084,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-beta.4+33.sha-34be518');
+const VERSION = new Version('7.0.0-beta.4+38.sha-cc29b9c');
 
 /**
  * @license
@@ -16425,7 +16425,7 @@ class ConstantPool {
     //  */
     // const MSG_XYZ = goog.getMsg('message');
     // ```
-    getTranslation(message, meta) {
+    getTranslation(message, meta, suffix) {
         // The identity of an i18n message depends on the message and its meaning
         const key = meta.meaning ? `${message}\u0000\u0000${meta.meaning}` : message;
         const exp = this.translations.get(key);
@@ -16437,7 +16437,7 @@ class ConstantPool {
             this.statements.push(docStmt);
         }
         // Call closure to get the translation
-        const variable$$1 = variable(this.freshTranslationName());
+        const variable$$1 = variable(this.freshTranslationName(suffix));
         const fnCall = variable(GOOG_GET_MSG).callFn([literal(message)]);
         const msgStmt = variable$$1.set(fnCall).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]);
         this.statements.push(msgStmt);
@@ -16535,8 +16535,8 @@ class ConstantPool {
         return '<unknown>';
     }
     freshName() { return this.uniqueName(CONSTANT_PREFIX); }
-    freshTranslationName() {
-        return this.uniqueName(TRANSLATION_PREFIX).toUpperCase();
+    freshTranslationName(suffix) {
+        return this.uniqueName(TRANSLATION_PREFIX + suffix).toUpperCase();
     }
     keyOf(expression) {
         return expression.visitExpression(new KeyVisitor(), KEY_CONTEXT);
@@ -17864,7 +17864,7 @@ function renderFlagCheckIfStmt(flags, statements) {
     return ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(flags), null, false), statements);
 }
 class TemplateDefinitionBuilder {
-    constructor(constantPool, parentBindingScope, level = 0, contextName, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace) {
+    constructor(constantPool, parentBindingScope, level = 0, contextName, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace, relativeContextFilePath) {
         this.constantPool = constantPool;
         this.level = level;
         this.contextName = contextName;
@@ -17875,6 +17875,7 @@ class TemplateDefinitionBuilder {
         this.pipeTypeByName = pipeTypeByName;
         this.pipes = pipes;
         this._namespace = _namespace;
+        this.relativeContextFilePath = relativeContextFilePath;
         this._dataIndex = 0;
         this._bindingContext = 0;
         this._prefixCode = [];
@@ -17919,6 +17920,9 @@ class TemplateDefinitionBuilder {
         // function)
         this._dataIndex = viewQueries.length;
         this._bindingScope = parentBindingScope.nestedScope(level);
+        // Turn the relative context file path into an identifier by replacing non-alphanumeric
+        // characters with underscores.
+        this.fileBasedI18nSuffix = relativeContextFilePath.replace(/[^A-Za-z0-9]/g, '_') + '_';
         this._valueConverter = new ValueConverter(constantPool, () => this.allocateDataSlot(), (numSlots) => this.allocatePureFunctionSlots(numSlots), (name, localName, slot, value) => {
             const pipeType = pipeTypeByName.get(name);
             if (pipeType) {
@@ -18155,7 +18159,7 @@ class TemplateDefinitionBuilder {
                 attributes.push(literal(name));
                 if (attrI18nMetas.hasOwnProperty(name)) {
                     const meta = parseI18nMeta(attrI18nMetas[name]);
-                    const variable$$1 = this.constantPool.getTranslation(value, meta);
+                    const variable$$1 = this.constantPool.getTranslation(value, meta, this.fileBasedI18nSuffix);
                     attributes.push(variable$$1);
                 }
                 else {
@@ -18264,19 +18268,7 @@ class TemplateDefinitionBuilder {
             }
             // Generate Listeners (outputs)
             element.outputs.forEach((outputAst) => {
-                const elName = sanitizeIdentifier(element.name);
-                const evName = sanitizeIdentifier(outputAst.name);
-                const functionName = `${this.templateName}_${elName}_${evName}_listener`;
-                this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, () => {
-                    const listenerScope = this._bindingScope.nestedScope(this._bindingScope.bindingLevel);
-                    const bindingExpr = convertActionBinding(listenerScope, implicit, outputAst.handler, 'b', () => error('Unexpected interpolation'));
-                    const statements = [
-                        ...listenerScope.restoreViewStatement(), ...listenerScope.variableDeclarations(),
-                        ...bindingExpr.render3Stmts
-                    ];
-                    const handler = fn([new FnParam('$event', DYNAMIC_TYPE)], statements, INFERRED_TYPE, null, functionName);
-                    return [literal(outputAst.name), handler];
-                });
+                this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter(element.name, outputAst));
             });
         }
         if ((styleInputs.length || classInputs.length) && hasStylingInstructions) {
@@ -18427,7 +18419,7 @@ class TemplateDefinitionBuilder {
             });
         });
         // Create the template function
-        const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, this._bindingScope, this.level + 1, contextName, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes, this._namespace);
+        const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, this._bindingScope, this.level + 1, contextName, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes, this._namespace, this.fileBasedI18nSuffix);
         // Nested templates must not be visited until after their parent templates have completed
         // processing, so they are queued here until after the initial pass. Otherwise, we wouldn't
         // be able to support bindings in nested templates to local refs that occur after the
@@ -18440,6 +18432,10 @@ class TemplateDefinitionBuilder {
         this.creationInstruction(template.sourceSpan, Identifiers$1.templateCreate, () => {
             parameters.splice(2, 0, literal(templateVisitor.getConstCount()), literal(templateVisitor.getVarCount()));
             return trimTrailingNulls(parameters);
+        });
+        // Generate listeners for directive output
+        template.outputs.forEach((outputAst) => {
+            this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter('ng_template', outputAst));
         });
     }
     visitBoundText(text) {
@@ -18466,7 +18462,7 @@ class TemplateDefinitionBuilder {
     // ```
     visitSingleI18nTextChild(text, i18nMeta) {
         const meta = parseI18nMeta(i18nMeta);
-        const variable$$1 = this.constantPool.getTranslation(text.value, meta);
+        const variable$$1 = this.constantPool.getTranslation(text.value, meta, this.fileBasedI18nSuffix);
         this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(this.allocateDataSlot()), variable$$1]);
     }
     allocateDataSlot() { return this._dataIndex++; }
@@ -18556,6 +18552,20 @@ class TemplateDefinitionBuilder {
             return [reference.name, reference.value];
         }));
         return this.constantPool.getConstLiteral(asLiteral(refsParam), true);
+    }
+    prepareListenerParameter(tagName, outputAst) {
+        const evName = sanitizeIdentifier(outputAst.name);
+        const functionName = `${this.templateName}_${tagName}_${evName}_listener`;
+        return () => {
+            const listenerScope = this._bindingScope.nestedScope(this._bindingScope.bindingLevel);
+            const bindingExpr = convertActionBinding(listenerScope, variable(CONTEXT_NAME), outputAst.handler, 'b', () => error('Unexpected interpolation'));
+            const statements = [
+                ...listenerScope.restoreViewStatement(), ...listenerScope.variableDeclarations(),
+                ...bindingExpr.render3Stmts
+            ];
+            const handler = fn([new FnParam('$event', DYNAMIC_TYPE)], statements, INFERRED_TYPE, null, functionName);
+            return [literal(outputAst.name), handler];
+        };
     }
 }
 class ValueConverter extends AstMemoryEfficientTransformer {
@@ -18888,12 +18898,17 @@ function interpolate(args) {
  * @param template text of the template to parse
  * @param templateUrl URL to use for source mapping of the parsed template
  */
-function parseTemplate(template, templateUrl, options = {}) {
+function parseTemplate(template, templateUrl, options = {}, relativeContextFilePath) {
     const bindingParser = makeBindingParser();
     const htmlParser = new HtmlParser();
     const parseResult = htmlParser.parse(template, templateUrl);
     if (parseResult.errors && parseResult.errors.length > 0) {
-        return { errors: parseResult.errors, nodes: [], hasNgContent: false, ngContentSelectors: [] };
+        return {
+            errors: parseResult.errors,
+            nodes: [],
+            hasNgContent: false,
+            ngContentSelectors: [], relativeContextFilePath
+        };
     }
     let rootNodes = parseResult.rootNodes;
     if (!options.preserveWhitespaces) {
@@ -18901,9 +18916,14 @@ function parseTemplate(template, templateUrl, options = {}) {
     }
     const { nodes, hasNgContent, ngContentSelectors, errors } = htmlAstToRender3Ast(rootNodes, bindingParser);
     if (errors && errors.length > 0) {
-        return { errors, nodes: [], hasNgContent: false, ngContentSelectors: [] };
+        return {
+            errors,
+            nodes: [],
+            hasNgContent: false,
+            ngContentSelectors: [], relativeContextFilePath
+        };
     }
-    return { nodes, hasNgContent, ngContentSelectors };
+    return { nodes, hasNgContent, ngContentSelectors, relativeContextFilePath };
 }
 /**
  * Construct a `BindingParser` with a default configuration.
@@ -19082,7 +19102,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     const directivesUsed = new Set();
     const pipesUsed = new Set();
     const template = meta.template;
-    const templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML);
+    const templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML, meta.template.relativeContextFilePath);
     const templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, [], template.hasNgContent, template.ngContentSelectors);
     // e.g. `consts: 2`
     definitionMap.set('consts', literal(templateBuilder.getConstCount()));
@@ -19152,6 +19172,7 @@ function compileComponentFromRender2(outputCtx, component, render3Ast, reflector
             nodes: render3Ast.nodes,
             hasNgContent: render3Ast.hasNgContent,
             ngContentSelectors: render3Ast.ngContentSelectors,
+            relativeContextFilePath: '',
         }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated });
     const res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
     // Create the partial class to be merged with the actual class.
