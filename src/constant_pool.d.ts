@@ -32,7 +32,7 @@ export declare class ConstantPool {
     getTranslation(message: string, meta: {
         description?: string;
         meaning?: string;
-    }, suffix: string): o.Expression;
+    }): o.Expression;
     getDefinition(type: any, kind: DefinitionKind, ctx: OutputContext, forceShared?: boolean): o.Expression;
     getLiteralFactory(literal: o.LiteralArrayExpr | o.LiteralMapExpr): {
         literalFactory: o.Expression;
