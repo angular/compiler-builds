@@ -111,6 +111,7 @@ export interface CompileTemplateSummary {
     ngContentSelectors: string[];
     encapsulation: ViewEncapsulation | null;
     styles: string[];
+    animations: any[] | null;
 }
 /**
  * Metadata regarding compilation of a template.
