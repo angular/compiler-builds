@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.5+4.sha-d6cd041
+ * @license Angular v7.0.0-beta.5+6.sha-62be8c2
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1207,7 +1207,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('7.0.0-beta.5+4.sha-d6cd041');
+    var VERSION = new Version('7.0.0-beta.5+6.sha-62be8c2');
 
     /**
      * @license
@@ -1742,7 +1742,8 @@
             return {
                 ngContentSelectors: this.ngContentSelectors,
                 encapsulation: this.encapsulation,
-                styles: this.styles
+                styles: this.styles,
+                animations: this.animations
             };
         };
         return CompileTemplateMetadata;
@@ -20306,6 +20307,11 @@
             var strings = styleValues.map(function (str) { return literal(str); });
             definitionMap.set('styles', literalArr(strings));
         }
+        // e.g. `animations: [trigger('123', [])]`
+        if (meta.animations) {
+            var animationValues = meta.animations.map(function (entry) { return mapToExpression(entry); });
+            definitionMap.set('animations', literalArr(animationValues));
+        }
         // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
         // string literal, which must be on one line.
         var selectorForType = (meta.selector || '').replace(/\n/g, '');
@@ -20344,13 +20350,14 @@
         name || error("Cannot resolver the name of " + component.type);
         var definitionField = outputCtx.constantPool.propertyNameOf(2 /* Component */);
         var summary = component.toSummary();
+        var animations = summary.template && summary.template.animations || null;
         // Compute the R3ComponentMetadata from the CompileDirectiveMetadata
         var meta = __assign({}, directiveMetadataFromGlobalMetadata(component, outputCtx, reflector), { selector: component.selector, template: {
                 nodes: render3Ast.nodes,
                 hasNgContent: render3Ast.hasNgContent,
                 ngContentSelectors: render3Ast.ngContentSelectors,
                 relativeContextFilePath: '',
-            }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated });
+            }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations: animations });
         var res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
         // Create the partial class to be merged with the actual class.
         outputCtx.statements.push(new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [exports.StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []));
