@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.5+13.sha-ed266da
+ * @license Angular v7.0.0-beta.5+14.sha-e363388
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1084,7 +1084,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-beta.5+13.sha-ed266da');
+const VERSION = new Version('7.0.0-beta.5+14.sha-e363388');
 
 /**
  * @license
@@ -17852,10 +17852,11 @@ function mapBindingToInstruction(type) {
     switch (type) {
         case 0 /* Property */:
             return Identifiers$1.elementProperty;
-        case 1 /* Attribute */:
-            return Identifiers$1.elementAttribute;
         case 2 /* Class */:
             return Identifiers$1.elementClassProp;
+        case 1 /* Attribute */:
+        case 4 /* Animation */:
+            return Identifiers$1.elementAttribute;
         default:
             return undefined;
     }
@@ -18218,7 +18219,7 @@ class TemplateDefinitionBuilder {
         const hasStylingInstructions = initialStyleDeclarations.length || styleInputs.length ||
             initialClassDeclarations.length || classInputs.length;
         // add attributes for directive matching purposes
-        attributes.push(...this.prepareSelectOnlyAttrs(allOtherInputs, element.outputs));
+        attributes.push(...this.prepareSyntheticAndSelectOnlyAttrs(allOtherInputs, element.outputs));
         parameters.push(this.toAttrsParam(attributes));
         // local refs (ex.: <div #foo #bar="baz">)
         parameters.push(this.prepareRefsParameter(element.references));
@@ -18341,17 +18342,25 @@ class TemplateDefinitionBuilder {
         }
         // Generate element input bindings
         allOtherInputs.forEach((input) => {
-            if (input.type === 4 /* Animation */) {
-                console.error('warning: animation bindings not yet supported');
-                return;
-            }
             const instruction = mapBindingToInstruction(input.type);
-            if (instruction) {
+            if (input.type === 4 /* Animation */) {
+                const value = input.value.visit(this._valueConverter);
+                // setAttribute without a value doesn't make any sense
+                if (value.name || value.value) {
+                    const name = prepareSyntheticAttributeName(input.name);
+                    this.updateInstruction(input.sourceSpan, Identifiers$1.elementAttribute, () => {
+                        return [
+                            literal(elementIndex), literal(name), this.convertPropertyBinding(implicit, value)
+                        ];
+                    });
+                }
+            }
+            else if (instruction) {
                 const params = [];
                 const sanitizationRef = resolveSanitizationFn(input, input.securityContext);
                 if (sanitizationRef)
                     params.push(sanitizationRef);
-                // TODO(chuckj): runtime: security context?
+                // TODO(chuckj): runtime: security context
                 const value = input.value.visit(this._valueConverter);
                 this.allocateBindingSlots(value);
                 this.updateInstruction(input.sourceSpan, instruction, () => {
@@ -18400,7 +18409,7 @@ class TemplateDefinitionBuilder {
         // prepare attributes parameter (including attributes used for directive matching)
         const attrsExprs = [];
         template.attributes.forEach((a) => { attrsExprs.push(asLiteral(a.name), asLiteral(a.value)); });
-        attrsExprs.push(...this.prepareSelectOnlyAttrs(template.inputs, template.outputs));
+        attrsExprs.push(...this.prepareSyntheticAndSelectOnlyAttrs(template.inputs, template.outputs));
         parameters.push(this.toAttrsParam(attrsExprs));
         // local refs (ex.: <ng-template #foo>)
         if (template.references && template.references.length) {
@@ -18519,12 +18528,28 @@ class TemplateDefinitionBuilder {
         elOrTpl.outputs.forEach(o => { attributesMap[o.name] = ''; });
         return attributesMap;
     }
-    prepareSelectOnlyAttrs(inputs, outputs) {
+    prepareSyntheticAndSelectOnlyAttrs(inputs, outputs) {
         const attrExprs = [];
-        if (inputs.length || outputs.length) {
+        const nonSyntheticInputs = [];
+        if (inputs.length) {
+            const EMPTY_STRING_EXPR = asLiteral('');
+            inputs.forEach(input => {
+                if (input.type === 4 /* Animation */) {
+                    // @attributes are for Renderer2 animation @triggers, but this feature
+                    // may be supported differently in future versions of angular. However,
+                    // @triggers should always just be treated as regular attributes (it's up
+                    // to the renderer to detect and use them in a special way).
+                    attrExprs.push(asLiteral(prepareSyntheticAttributeName(input.name)), EMPTY_STRING_EXPR);
+                }
+                else {
+                    nonSyntheticInputs.push(input);
+                }
+            });
+        }
+        if (nonSyntheticInputs.length || outputs.length) {
             attrExprs.push(literal(1 /* SelectOnly */));
-            inputs.forEach((i) => { attrExprs.push(asLiteral(i.name)); });
-            outputs.forEach((o) => { attrExprs.push(asLiteral(o.name)); });
+            nonSyntheticInputs.forEach((i) => attrExprs.push(asLiteral(i.name)));
+            outputs.forEach((o) => attrExprs.push(asLiteral(o.name)));
         }
         return attrExprs;
     }
@@ -18965,6 +18990,9 @@ function isStyleSanitizable(prop) {
             return true;
     }
     return false;
+}
+function prepareSyntheticAttributeName(name) {
+    return '@' + name;
 }
 
 /**
