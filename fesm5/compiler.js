@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.5+13.sha-ed266da
+ * @license Angular v7.0.0-beta.5+14.sha-e363388
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1130,7 +1130,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.0.0-beta.5+13.sha-ed266da');
+var VERSION = new Version('7.0.0-beta.5+14.sha-e363388');
 
 /**
  * @license
@@ -18926,10 +18926,11 @@ function mapBindingToInstruction(type) {
     switch (type) {
         case 0 /* Property */:
             return Identifiers$1.elementProperty;
-        case 1 /* Attribute */:
-            return Identifiers$1.elementAttribute;
         case 2 /* Class */:
             return Identifiers$1.elementClassProp;
+        case 1 /* Attribute */:
+        case 4 /* Animation */:
+            return Identifiers$1.elementAttribute;
         default:
             return undefined;
     }
@@ -19313,7 +19314,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var hasStylingInstructions = initialStyleDeclarations.length || styleInputs.length ||
             initialClassDeclarations.length || classInputs.length;
         // add attributes for directive matching purposes
-        attributes.push.apply(attributes, __spread(this.prepareSelectOnlyAttrs(allOtherInputs, element.outputs)));
+        attributes.push.apply(attributes, __spread(this.prepareSyntheticAndSelectOnlyAttrs(allOtherInputs, element.outputs)));
         parameters.push(this.toAttrsParam(attributes));
         // local refs (ex.: <div #foo #bar="baz">)
         parameters.push(this.prepareRefsParameter(element.references));
@@ -19444,23 +19445,31 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         }
         // Generate element input bindings
         allOtherInputs.forEach(function (input) {
-            if (input.type === 4 /* Animation */) {
-                console.error('warning: animation bindings not yet supported');
-                return;
-            }
             var instruction = mapBindingToInstruction(input.type);
-            if (instruction) {
+            if (input.type === 4 /* Animation */) {
+                var value_2 = input.value.visit(_this._valueConverter);
+                // setAttribute without a value doesn't make any sense
+                if (value_2.name || value_2.value) {
+                    var name_2 = prepareSyntheticAttributeName(input.name);
+                    _this.updateInstruction(input.sourceSpan, Identifiers$1.elementAttribute, function () {
+                        return [
+                            literal(elementIndex), literal(name_2), _this.convertPropertyBinding(implicit, value_2)
+                        ];
+                    });
+                }
+            }
+            else if (instruction) {
                 var params_2 = [];
                 var sanitizationRef = resolveSanitizationFn(input, input.securityContext);
                 if (sanitizationRef)
                     params_2.push(sanitizationRef);
-                // TODO(chuckj): runtime: security context?
-                var value_2 = input.value.visit(_this._valueConverter);
-                _this.allocateBindingSlots(value_2);
+                // TODO(chuckj): runtime: security context
+                var value_3 = input.value.visit(_this._valueConverter);
+                _this.allocateBindingSlots(value_3);
                 _this.updateInstruction(input.sourceSpan, instruction, function () {
                     return __spread([
                         literal(elementIndex), literal(input.name),
-                        _this.convertPropertyBinding(implicit, value_2)
+                        _this.convertPropertyBinding(implicit, value_3)
                     ], params_2);
                 });
             }
@@ -19504,7 +19513,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // prepare attributes parameter (including attributes used for directive matching)
         var attrsExprs = [];
         template.attributes.forEach(function (a) { attrsExprs.push(asLiteral(a.name), asLiteral(a.value)); });
-        attrsExprs.push.apply(attrsExprs, __spread(this.prepareSelectOnlyAttrs(template.inputs, template.outputs)));
+        attrsExprs.push.apply(attrsExprs, __spread(this.prepareSyntheticAndSelectOnlyAttrs(template.inputs, template.outputs)));
         parameters.push(this.toAttrsParam(attrsExprs));
         // local refs (ex.: <ng-template #foo>)
         if (template.references && template.references.length) {
@@ -19626,12 +19635,28 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         elOrTpl.outputs.forEach(function (o) { attributesMap[o.name] = ''; });
         return attributesMap;
     };
-    TemplateDefinitionBuilder.prototype.prepareSelectOnlyAttrs = function (inputs, outputs) {
+    TemplateDefinitionBuilder.prototype.prepareSyntheticAndSelectOnlyAttrs = function (inputs, outputs) {
         var attrExprs = [];
-        if (inputs.length || outputs.length) {
+        var nonSyntheticInputs = [];
+        if (inputs.length) {
+            var EMPTY_STRING_EXPR_1 = asLiteral('');
+            inputs.forEach(function (input) {
+                if (input.type === 4 /* Animation */) {
+                    // @attributes are for Renderer2 animation @triggers, but this feature
+                    // may be supported differently in future versions of angular. However,
+                    // @triggers should always just be treated as regular attributes (it's up
+                    // to the renderer to detect and use them in a special way).
+                    attrExprs.push(asLiteral(prepareSyntheticAttributeName(input.name)), EMPTY_STRING_EXPR_1);
+                }
+                else {
+                    nonSyntheticInputs.push(input);
+                }
+            });
+        }
+        if (nonSyntheticInputs.length || outputs.length) {
             attrExprs.push(literal(1 /* SelectOnly */));
-            inputs.forEach(function (i) { attrExprs.push(asLiteral(i.name)); });
-            outputs.forEach(function (o) { attrExprs.push(asLiteral(o.name)); });
+            nonSyntheticInputs.forEach(function (i) { return attrExprs.push(asLiteral(i.name)); });
+            outputs.forEach(function (o) { return attrExprs.push(asLiteral(o.name)); });
         }
         return attrExprs;
     };
@@ -20086,6 +20111,9 @@ function isStyleSanitizable(prop) {
             return true;
     }
     return false;
+}
+function prepareSyntheticAttributeName(name) {
+    return '@' + name;
 }
 
 /**
