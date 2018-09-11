@@ -27,7 +27,7 @@ export interface R3NgModuleMetadata {
     /**
      * An array of expressions representing the bootstrap components specified by the module.
      */
-    bootstrap: o.Expression[];
+    bootstrap: R3Reference[];
     /**
      * An array of expressions representing the directives and pipes declared by the module.
      */

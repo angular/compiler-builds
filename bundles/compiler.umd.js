@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.5+16.sha-7ba0cb7
+ * @license Angular v7.0.0-beta.5+20.sha-a9099e8
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1207,7 +1207,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('7.0.0-beta.5+16.sha-7ba0cb7');
+    var VERSION = new Version('7.0.0-beta.5+20.sha-a9099e8');
 
     /**
      * @license
@@ -18308,7 +18308,7 @@
         var moduleType = meta.type, bootstrap = meta.bootstrap, declarations = meta.declarations, imports = meta.imports, exports = meta.exports;
         var expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression({
                 type: moduleType,
-                bootstrap: literalArr(bootstrap),
+                bootstrap: literalArr(bootstrap.map(function (ref) { return ref.value; })),
                 declarations: literalArr(declarations.map(function (ref) { return ref.value; })),
                 imports: literalArr(imports.map(function (ref) { return ref.value; })),
                 exports: literalArr(exports.map(function (ref) { return ref.value; })),
