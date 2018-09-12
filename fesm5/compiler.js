@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.5+24.sha-f3b552f
+ * @license Angular v7.0.0-beta.5+28.sha-f2ba55f
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1130,7 +1130,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.0.0-beta.5+24.sha-f3b552f');
+var VERSION = new Version('7.0.0-beta.5+28.sha-f2ba55f');
 
 /**
  * @license
@@ -17842,12 +17842,12 @@ var Identifiers$1 = /** @class */ (function () {
         moduleName: CORE$1,
     };
     // sanitization-related functions
-    Identifiers.sanitizeHtml = { name: 'ɵzh', moduleName: CORE$1 };
-    Identifiers.sanitizeStyle = { name: 'ɵzs', moduleName: CORE$1 };
-    Identifiers.defaultStyleSanitizer = { name: 'ɵzss', moduleName: CORE$1 };
-    Identifiers.sanitizeResourceUrl = { name: 'ɵzr', moduleName: CORE$1 };
-    Identifiers.sanitizeScript = { name: 'ɵzc', moduleName: CORE$1 };
-    Identifiers.sanitizeUrl = { name: 'ɵzu', moduleName: CORE$1 };
+    Identifiers.sanitizeHtml = { name: 'ɵsanitizeHtml', moduleName: CORE$1 };
+    Identifiers.sanitizeStyle = { name: 'ɵsanitizeStyle', moduleName: CORE$1 };
+    Identifiers.defaultStyleSanitizer = { name: 'ɵdefaultStyleSanitizer', moduleName: CORE$1 };
+    Identifiers.sanitizeResourceUrl = { name: 'ɵsanitizeResourceUrl', moduleName: CORE$1 };
+    Identifiers.sanitizeScript = { name: 'ɵsanitizeScript', moduleName: CORE$1 };
+    Identifiers.sanitizeUrl = { name: 'ɵsanitizeUrl', moduleName: CORE$1 };
     return Identifiers;
 }());
 
@@ -24434,7 +24434,7 @@ var JitCompiler = /** @class */ (function () {
                 }
             });
             localModuleMeta.entryComponents.forEach(function (entryComponentType) {
-                if (!_this.hasAotSummary(entryComponentType.componentType.reference)) {
+                if (!_this.hasAotSummary(entryComponentType.componentType)) {
                     var moduleMeta = moduleByJitDirective.get(entryComponentType.componentType);
                     templates.add(_this._createCompiledHostTemplate(entryComponentType.componentType, moduleMeta));
                 }
