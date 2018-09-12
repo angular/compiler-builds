@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.1.7+11.sha-55a1ce7
+ * @license Angular v6.1.7+13.sha-8d7fbb6
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1084,7 +1084,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('6.1.7+11.sha-55a1ce7');
+const VERSION = new Version('6.1.7+13.sha-8d7fbb6');
 
 /**
  * @license
@@ -22509,7 +22509,7 @@ class JitCompiler {
                 }
             });
             localModuleMeta.entryComponents.forEach((entryComponentType) => {
-                if (!this.hasAotSummary(entryComponentType.componentType.reference)) {
+                if (!this.hasAotSummary(entryComponentType.componentType)) {
                     const moduleMeta = moduleByJitDirective.get(entryComponentType.componentType);
                     templates.add(this._createCompiledHostTemplate(entryComponentType.componentType, moduleMeta));
                 }
