@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.5+24.sha-f3b552f
+ * @license Angular v7.0.0-beta.5+28.sha-f2ba55f
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1084,7 +1084,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-beta.5+24.sha-f3b552f');
+const VERSION = new Version('7.0.0-beta.5+28.sha-f2ba55f');
 
 /**
  * @license
@@ -16832,12 +16832,12 @@ Identifiers$1.getInheritedFactory = {
     moduleName: CORE$1,
 };
 // sanitization-related functions
-Identifiers$1.sanitizeHtml = { name: 'ɵzh', moduleName: CORE$1 };
-Identifiers$1.sanitizeStyle = { name: 'ɵzs', moduleName: CORE$1 };
-Identifiers$1.defaultStyleSanitizer = { name: 'ɵzss', moduleName: CORE$1 };
-Identifiers$1.sanitizeResourceUrl = { name: 'ɵzr', moduleName: CORE$1 };
-Identifiers$1.sanitizeScript = { name: 'ɵzc', moduleName: CORE$1 };
-Identifiers$1.sanitizeUrl = { name: 'ɵzu', moduleName: CORE$1 };
+Identifiers$1.sanitizeHtml = { name: 'ɵsanitizeHtml', moduleName: CORE$1 };
+Identifiers$1.sanitizeStyle = { name: 'ɵsanitizeStyle', moduleName: CORE$1 };
+Identifiers$1.defaultStyleSanitizer = { name: 'ɵdefaultStyleSanitizer', moduleName: CORE$1 };
+Identifiers$1.sanitizeResourceUrl = { name: 'ɵsanitizeResourceUrl', moduleName: CORE$1 };
+Identifiers$1.sanitizeScript = { name: 'ɵsanitizeScript', moduleName: CORE$1 };
+Identifiers$1.sanitizeUrl = { name: 'ɵsanitizeUrl', moduleName: CORE$1 };
 
 /**
  * @license
@@ -23007,7 +23007,7 @@ class JitCompiler {
                 }
             });
             localModuleMeta.entryComponents.forEach((entryComponentType) => {
-                if (!this.hasAotSummary(entryComponentType.componentType.reference)) {
+                if (!this.hasAotSummary(entryComponentType.componentType)) {
                     const moduleMeta = moduleByJitDirective.get(entryComponentType.componentType);
                     templates.add(this._createCompiledHostTemplate(entryComponentType.componentType, moduleMeta));
                 }
