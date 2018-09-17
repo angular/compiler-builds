@@ -8,6 +8,7 @@
 import { LocalResolver } from '../../compiler_util/expression_converter';
 import { ConstantPool } from '../../constant_pool';
 import * as core from '../../core';
+import { AST, AstMemoryEfficientTransformer, BindingPipe, LiteralArray, LiteralMap } from '../../expression_parser/ast';
 import * as o from '../../output/output_ast';
 import { ParseError } from '../../parse_util';
 import { SelectorMatcher } from '../../selector';
@@ -27,6 +28,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private pipeTypeByName;
     private pipes;
     private _namespace;
+    private relativeContextFilePath;
     private _dataIndex;
     private _bindingContext;
     private _prefixCode;
@@ -63,7 +65,8 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private _phToNodeIdxes;
     private _pureFunctionSlots;
     private _bindingSlots;
-    constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, templateName: string | null, viewQueries: R3QueryMetadata[], directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference);
+    private fileBasedI18nSuffix;
+    constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, templateName: string | null, viewQueries: R3QueryMetadata[], directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference, relativeContextFilePath: string);
     registerContextVariables(variable: t.Variable): void;
     buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], hasNgContent?: boolean, ngContentSelectors?: string[]): o.FunctionExpr;
     getLocal(name: string): o.Expression | null;
@@ -87,7 +90,27 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private instructionFn;
     private creationInstruction;
     private updateInstruction;
+    private allocatePureFunctionSlots;
+    private allocateBindingSlots;
     private convertPropertyBinding;
+    private matchDirectives;
+    private getAttrsForDirectiveMatching;
+    private prepareSyntheticAndSelectOnlyAttrs;
+    private toAttrsParam;
+    private prepareRefsParameter;
+    private prepareListenerParameter;
+}
+export declare class ValueConverter extends AstMemoryEfficientTransformer {
+    private constantPool;
+    private allocateSlot;
+    private allocatePureFunctionSlots;
+    private definePipe;
+    private _pipeBindExprs;
+    constructor(constantPool: ConstantPool, allocateSlot: () => number, allocatePureFunctionSlots: (numSlots: number) => number, definePipe: (name: string, localName: string, slot: number, value: o.Expression) => void);
+    visitPipe(pipe: BindingPipe, context: any): AST;
+    updatePipeSlotOffsets(bindingSlots: number): void;
+    visitLiteralArray(array: LiteralArray, context: any): AST;
+    visitLiteralMap(map: LiteralMap, context: any): AST;
 }
 /**
  * Function which is executed whenever a variable is referenced for the first time in a given
@@ -123,7 +146,8 @@ export declare class BindingScope implements LocalResolver {
     private map;
     private referenceNameIndex;
     private restoreViewVariable;
-    static ROOT_SCOPE: BindingScope;
+    private static _ROOT_SCOPE;
+    static readonly ROOT_SCOPE: BindingScope;
     private constructor();
     get(name: string): o.Expression | null;
     /**
@@ -155,13 +179,14 @@ export declare class BindingScope implements LocalResolver {
  * @param template text of the template to parse
  * @param templateUrl URL to use for source mapping of the parsed template
  */
-export declare function parseTemplate(template: string, templateUrl: string, options?: {
-    preserveWhitespaces?: boolean;
-}): {
+export declare function parseTemplate(template: string, templateUrl: string, options: {
+    preserveWhitespaces?: boolean | undefined;
+} | undefined, relativeContextFilePath: string): {
     errors?: ParseError[];
     nodes: t.Node[];
     hasNgContent: boolean;
     ngContentSelectors: string[];
+    relativeContextFilePath: string;
 };
 /**
  * Construct a `BindingParser` with a default configuration.
