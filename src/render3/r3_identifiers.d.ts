@@ -70,7 +70,9 @@ export declare class Identifiers {
     static injectTemplateRef: o.ExternalReference;
     static injectViewContainerRef: o.ExternalReference;
     static injectChangeDetectorRef: o.ExternalReference;
+    static injectRenderer2: o.ExternalReference;
     static directiveInject: o.ExternalReference;
+    static templateRefExtractor: o.ExternalReference;
     static defineBase: o.ExternalReference;
     static BaseDef: o.ExternalReference;
     static defineComponent: o.ExternalReference;
@@ -92,7 +94,6 @@ export declare class Identifiers {
     static listener: o.ExternalReference;
     static getFactoryOf: o.ExternalReference;
     static getInheritedFactory: o.ExternalReference;
-    static reserveSlots: o.ExternalReference;
     static sanitizeHtml: o.ExternalReference;
     static sanitizeStyle: o.ExternalReference;
     static defaultStyleSanitizer: o.ExternalReference;
