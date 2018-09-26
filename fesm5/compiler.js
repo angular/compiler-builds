@@ -1,10 +1,10 @@
 /**
- * @license Angular v7.0.0-beta.6+58.sha-0c34471
+ * @license Angular v7.0.0-beta.6+80.sha-15a2b8f
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __extends, __assign, __spread, __values, __read } from 'tslib';
+import { __extends, __spread, __assign, __values, __read } from 'tslib';
 
 /**
  * @license
@@ -1130,7 +1130,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.0.0-beta.6+58.sha-0c34471');
+var VERSION = new Version('7.0.0-beta.6+80.sha-15a2b8f');
 
 /**
  * @license
@@ -17786,10 +17786,6 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.reference = { name: 'ɵreference', moduleName: CORE$1 };
     Identifiers.inject = { name: 'inject', moduleName: CORE$1 };
     Identifiers.injectAttribute = { name: 'ɵinjectAttribute', moduleName: CORE$1 };
-    Identifiers.injectElementRef = { name: 'ɵinjectElementRef', moduleName: CORE$1 };
-    Identifiers.injectTemplateRef = { name: 'ɵinjectTemplateRef', moduleName: CORE$1 };
-    Identifiers.injectViewContainerRef = { name: 'ɵinjectViewContainerRef', moduleName: CORE$1 };
-    Identifiers.injectChangeDetectorRef = { name: 'ɵinjectChangeDetectorRef', moduleName: CORE$1 };
     Identifiers.injectRenderer2 = { name: 'ɵinjectRenderer2', moduleName: CORE$1 };
     Identifiers.directiveInject = { name: 'ɵdirectiveInject', moduleName: CORE$1 };
     Identifiers.templateRefExtractor = { name: 'ɵtemplateRefExtractor', moduleName: CORE$1 };
@@ -17985,25 +17981,9 @@ var R3ResolvedDependencyType;
      */
     R3ResolvedDependencyType[R3ResolvedDependencyType["Injector"] = 2] = "Injector";
     /**
-     * The dependency is for `ElementRef`.
-     */
-    R3ResolvedDependencyType[R3ResolvedDependencyType["ElementRef"] = 3] = "ElementRef";
-    /**
-     * The dependency is for `TemplateRef`.
-     */
-    R3ResolvedDependencyType[R3ResolvedDependencyType["TemplateRef"] = 4] = "TemplateRef";
-    /**
-     * The dependency is for `ViewContainerRef`.
-     */
-    R3ResolvedDependencyType[R3ResolvedDependencyType["ViewContainerRef"] = 5] = "ViewContainerRef";
-    /**
-     * The dependency is for `ChangeDetectorRef`.
-     */
-    R3ResolvedDependencyType[R3ResolvedDependencyType["ChangeDetectorRef"] = 6] = "ChangeDetectorRef";
-    /**
      * The dependency is for `Renderer2`.
      */
-    R3ResolvedDependencyType[R3ResolvedDependencyType["Renderer2"] = 7] = "Renderer2";
+    R3ResolvedDependencyType[R3ResolvedDependencyType["Renderer2"] = 3] = "Renderer2";
 })(R3ResolvedDependencyType || (R3ResolvedDependencyType = {}));
 /**
  * Construct a factory function expression for the given `R3FactoryMetadata`.
@@ -18108,14 +18088,6 @@ function compileInjectDependency(dep, injectFn) {
         case R3ResolvedDependencyType.Attribute:
             // In the case of attributes, the attribute name in question is given as the token.
             return importExpr(Identifiers$1.injectAttribute).callFn([dep.token]);
-        case R3ResolvedDependencyType.ElementRef:
-            return importExpr(Identifiers$1.injectElementRef).callFn([]);
-        case R3ResolvedDependencyType.TemplateRef:
-            return importExpr(Identifiers$1.injectTemplateRef).callFn([]);
-        case R3ResolvedDependencyType.ViewContainerRef:
-            return importExpr(Identifiers$1.injectViewContainerRef).callFn([]);
-        case R3ResolvedDependencyType.ChangeDetectorRef:
-            return importExpr(Identifiers$1.injectChangeDetectorRef).callFn([]);
         case R3ResolvedDependencyType.Renderer2:
             return importExpr(Identifiers$1.injectRenderer2).callFn([]);
         default:
@@ -18144,16 +18116,7 @@ function dependenciesFromGlobalMetadata(type, outputCtx, reflector) {
             if (dependency.token) {
                 var tokenRef = tokenReference(dependency.token);
                 var resolved = R3ResolvedDependencyType.Token;
-                if (tokenRef === elementRef) {
-                    resolved = R3ResolvedDependencyType.ElementRef;
-                }
-                else if (tokenRef === templateRef) {
-                    resolved = R3ResolvedDependencyType.TemplateRef;
-                }
-                else if (tokenRef === viewContainerRef) {
-                    resolved = R3ResolvedDependencyType.ViewContainerRef;
-                }
-                else if (tokenRef === injectorRef) {
+                if (tokenRef === injectorRef) {
                     resolved = R3ResolvedDependencyType.Injector;
                 }
                 else if (tokenRef === renderer2) {
@@ -20130,7 +20093,7 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     definitionMap.set('type', meta.type);
     // e.g. `selectors: [['', 'someDir', '']]`
     definitionMap.set('selectors', createDirectiveSelector(meta.selector));
-    // e.g. `factory: () => new MyApp(injectElementRef())`
+    // e.g. `factory: () => new MyApp(directiveInject(ElementRef))`
     var result = compileFactoryFunction({
         name: meta.name,
         type: meta.type,
