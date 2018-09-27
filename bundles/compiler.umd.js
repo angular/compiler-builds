@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.7+20.sha-eeebe28
+ * @license Angular v7.0.0-beta.7+28.sha-325e801
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1207,7 +1207,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('7.0.0-beta.7+20.sha-eeebe28');
+    var VERSION = new Version('7.0.0-beta.7+28.sha-325e801');
 
     /**
      * @license
@@ -17816,6 +17816,8 @@
         Identifiers.text = { name: 'ɵtext', moduleName: CORE$1 };
         Identifiers.textBinding = { name: 'ɵtextBinding', moduleName: CORE$1 };
         Identifiers.bind = { name: 'ɵbind', moduleName: CORE$1 };
+        Identifiers.enableBindings = { name: 'ɵenableBindings', moduleName: CORE$1 };
+        Identifiers.disableBindings = { name: 'ɵdisableBindings', moduleName: CORE$1 };
         Identifiers.getCurrentView = { name: 'ɵgetCurrentView', moduleName: CORE$1 };
         Identifiers.restoreView = { name: 'ɵrestoreView', moduleName: CORE$1 };
         Identifiers.interpolation1 = { name: 'ɵinterpolation1', moduleName: CORE$1 };
@@ -17935,6 +17937,8 @@
     /** I18n separators for metadata **/
     var MEANING_SEPARATOR$1 = '|';
     var ID_SEPARATOR$1 = '@@';
+    /** Non bindable attribute name **/
+    var NON_BINDABLE_ATTR = 'ngNonBindable';
     /**
      * Creates an allocator for a temporary variable.
      *
@@ -19177,13 +19181,17 @@
                 }
                 this._phToNodeIdxes[this._i18nSectionIndex][phName].push(elementIndex);
             }
+            var isNonBindableMode = false;
             try {
                 // Handle i18n attributes
                 for (var _c = __values(element.attributes), _d = _c.next(); !_d.done; _d = _c.next()) {
                     var attr = _d.value;
                     var name_1 = attr.name;
                     var value = attr.value;
-                    if (name_1 === I18N_ATTR) {
+                    if (name_1 === NON_BINDABLE_ATTR) {
+                        isNonBindableMode = true;
+                    }
+                    else if (name_1 === I18N_ATTR) {
                         if (this._inI18nSection) {
                             throw new Error("Could not mark an element as translatable inside of a translatable section");
                         }
@@ -19352,6 +19360,9 @@
             }
             else {
                 this.creationInstruction(element.sourceSpan, isNgContainer$$1 ? Identifiers$1.elementContainerStart : Identifiers$1.elementStart, trimTrailingNulls(parameters));
+                if (isNonBindableMode) {
+                    this.creationInstruction(element.sourceSpan, Identifiers$1.disableBindings);
+                }
                 // initial styling for static style="..." attributes
                 if (hasStylingInstructions) {
                     var paramsList = [];
@@ -19507,6 +19518,9 @@
             }
             if (!createSelfClosingInstruction) {
                 // Finish element construction mode.
+                if (isNonBindableMode) {
+                    this.creationInstruction(element.endSourceSpan || element.sourceSpan, Identifiers$1.enableBindings);
+                }
                 this.creationInstruction(element.endSourceSpan || element.sourceSpan, isNgContainer$$1 ? Identifiers$1.elementContainerEnd : Identifiers$1.elementEnd);
             }
             // Restore the state before exiting this node

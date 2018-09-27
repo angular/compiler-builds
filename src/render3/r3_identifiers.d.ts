@@ -31,6 +31,8 @@ export declare class Identifiers {
     static text: o.ExternalReference;
     static textBinding: o.ExternalReference;
     static bind: o.ExternalReference;
+    static enableBindings: o.ExternalReference;
+    static disableBindings: o.ExternalReference;
     static getCurrentView: o.ExternalReference;
     static restoreView: o.ExternalReference;
     static interpolation1: o.ExternalReference;
