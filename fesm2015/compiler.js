@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.6+80.sha-15a2b8f
+ * @license Angular v7.0.0-beta.7+30.sha-63b795a
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1084,7 +1084,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-beta.6+80.sha-15a2b8f');
+const VERSION = new Version('7.0.0-beta.7+30.sha-63b795a');
 
 /**
  * @license
@@ -16741,6 +16741,8 @@ Identifiers$1.templateCreate = { name: 'ɵtemplate', moduleName: CORE$1 };
 Identifiers$1.text = { name: 'ɵtext', moduleName: CORE$1 };
 Identifiers$1.textBinding = { name: 'ɵtextBinding', moduleName: CORE$1 };
 Identifiers$1.bind = { name: 'ɵbind', moduleName: CORE$1 };
+Identifiers$1.enableBindings = { name: 'ɵenableBindings', moduleName: CORE$1 };
+Identifiers$1.disableBindings = { name: 'ɵdisableBindings', moduleName: CORE$1 };
 Identifiers$1.getCurrentView = { name: 'ɵgetCurrentView', moduleName: CORE$1 };
 Identifiers$1.restoreView = { name: 'ɵrestoreView', moduleName: CORE$1 };
 Identifiers$1.interpolation1 = { name: 'ɵinterpolation1', moduleName: CORE$1 };
@@ -16858,6 +16860,8 @@ const I18N_ATTR_PREFIX = 'i18n-';
 /** I18n separators for metadata **/
 const MEANING_SEPARATOR$1 = '|';
 const ID_SEPARATOR$1 = '@@';
+/** Non bindable attribute name **/
+const NON_BINDABLE_ATTR = 'ngNonBindable';
 /**
  * Creates an allocator for a temporary variable.
  *
@@ -18036,11 +18040,15 @@ class TemplateDefinitionBuilder {
             }
             this._phToNodeIdxes[this._i18nSectionIndex][phName].push(elementIndex);
         }
+        let isNonBindableMode = false;
         // Handle i18n attributes
         for (const attr of element.attributes) {
             const name = attr.name;
             const value = attr.value;
-            if (name === I18N_ATTR) {
+            if (name === NON_BINDABLE_ATTR) {
+                isNonBindableMode = true;
+            }
+            else if (name === I18N_ATTR) {
                 if (this._inI18nSection) {
                     throw new Error(`Could not mark an element as translatable inside of a translatable section`);
                 }
@@ -18201,6 +18209,9 @@ class TemplateDefinitionBuilder {
         }
         else {
             this.creationInstruction(element.sourceSpan, isNgContainer$$1 ? Identifiers$1.elementContainerStart : Identifiers$1.elementStart, trimTrailingNulls(parameters));
+            if (isNonBindableMode) {
+                this.creationInstruction(element.sourceSpan, Identifiers$1.disableBindings);
+            }
             // initial styling for static style="..." attributes
             if (hasStylingInstructions) {
                 const paramsList = [];
@@ -18348,6 +18359,9 @@ class TemplateDefinitionBuilder {
         }
         if (!createSelfClosingInstruction) {
             // Finish element construction mode.
+            if (isNonBindableMode) {
+                this.creationInstruction(element.endSourceSpan || element.sourceSpan, Identifiers$1.enableBindings);
+            }
             this.creationInstruction(element.endSourceSpan || element.sourceSpan, isNgContainer$$1 ? Identifiers$1.elementContainerEnd : Identifiers$1.elementEnd);
         }
         // Restore the state before exiting this node
