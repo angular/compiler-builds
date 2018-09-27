@@ -25,6 +25,8 @@ export declare const I18N_ATTR_PREFIX = "i18n-";
 /** I18n separators for metadata **/
 export declare const MEANING_SEPARATOR = "|";
 export declare const ID_SEPARATOR = "@@";
+/** Non bindable attribute name **/
+export declare const NON_BINDABLE_ATTR = "ngNonBindable";
 /**
  * Creates an allocator for a temporary variable.
  *
