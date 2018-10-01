@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.7+46.sha-9523991
+ * @license Angular v7.0.0-rc.0+5.sha-ab379ab
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1084,7 +1084,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-beta.7+46.sha-9523991');
+const VERSION = new Version('7.0.0-rc.0+5.sha-ab379ab');
 
 /**
  * @license
@@ -16733,7 +16733,7 @@ Identifiers$1.elementContainerStart = { name: 'ɵEC', moduleName: CORE$1 };
 Identifiers$1.elementContainerEnd = { name: 'ɵeC', moduleName: CORE$1 };
 Identifiers$1.elementStyling = { name: 'ɵelementStyling', moduleName: CORE$1 };
 Identifiers$1.elementStylingMap = { name: 'ɵelementStylingMap', moduleName: CORE$1 };
-Identifiers$1.elementStyleProp = { name: 'ɵelementStylingProp', moduleName: CORE$1 };
+Identifiers$1.elementStyleProp = { name: 'ɵelementStyleProp', moduleName: CORE$1 };
 Identifiers$1.elementStylingApply = { name: 'ɵelementStylingApply', moduleName: CORE$1 };
 Identifiers$1.containerCreate = { name: 'ɵcontainer', moduleName: CORE$1 };
 Identifiers$1.nextContext = { name: 'ɵnextContext', moduleName: CORE$1 };
@@ -18255,20 +18255,20 @@ class TemplateDefinitionBuilder {
             const mapBasedClassInput = firstClass && isClassBinding(firstClass) ? firstClass : null;
             const stylingInput = mapBasedStyleInput || mapBasedClassInput;
             if (stylingInput) {
-                const params = [];
-                let value;
-                if (mapBasedClassInput) {
-                    value = mapBasedClassInput.value.visit(this._valueConverter);
-                }
-                else if (mapBasedStyleInput) {
-                    params.push(NULL_EXPR);
-                }
-                if (mapBasedStyleInput) {
-                    value = mapBasedStyleInput.value.visit(this._valueConverter);
-                }
                 this.updateInstruction(stylingInput.sourceSpan, Identifiers$1.elementStylingMap, () => {
-                    params.push(this.convertPropertyBinding(implicit, value, true));
-                    return [indexLiteral, ...params];
+                    const params = [indexLiteral];
+                    if (mapBasedClassInput) {
+                        const mapBasedClassValue = mapBasedClassInput.value.visit(this._valueConverter);
+                        params.push(this.convertPropertyBinding(implicit, mapBasedClassValue, true));
+                    }
+                    else if (mapBasedStyleInput) {
+                        params.push(NULL_EXPR);
+                    }
+                    if (mapBasedStyleInput) {
+                        const mapBasedStyleValue = mapBasedStyleInput.value.visit(this._valueConverter);
+                        params.push(this.convertPropertyBinding(implicit, mapBasedStyleValue, true));
+                    }
+                    return params;
                 });
             }
             let lastInputCommand = null;

@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-beta.7+46.sha-9523991
+ * @license Angular v7.0.0-rc.0+5.sha-ab379ab
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1130,7 +1130,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.0.0-beta.7+46.sha-9523991');
+var VERSION = new Version('7.0.0-rc.0+5.sha-ab379ab');
 
 /**
  * @license
@@ -17743,7 +17743,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.elementContainerEnd = { name: 'ɵeC', moduleName: CORE$1 };
     Identifiers.elementStyling = { name: 'ɵelementStyling', moduleName: CORE$1 };
     Identifiers.elementStylingMap = { name: 'ɵelementStylingMap', moduleName: CORE$1 };
-    Identifiers.elementStyleProp = { name: 'ɵelementStylingProp', moduleName: CORE$1 };
+    Identifiers.elementStyleProp = { name: 'ɵelementStyleProp', moduleName: CORE$1 };
     Identifiers.elementStylingApply = { name: 'ɵelementStylingApply', moduleName: CORE$1 };
     Identifiers.containerCreate = { name: 'ɵcontainer', moduleName: CORE$1 };
     Identifiers.nextContext = { name: 'ɵnextContext', moduleName: CORE$1 };
@@ -19345,30 +19345,30 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         if ((styleInputs.length || classInputs.length) && hasStylingInstructions) {
             var indexLiteral_1 = literal(elementIndex);
             var firstStyle = styleInputs[0];
-            var mapBasedStyleInput = firstStyle && firstStyle.name == 'style' ? firstStyle : null;
+            var mapBasedStyleInput_1 = firstStyle && firstStyle.name == 'style' ? firstStyle : null;
             var firstClass = classInputs[0];
-            var mapBasedClassInput = firstClass && isClassBinding(firstClass) ? firstClass : null;
-            var stylingInput = mapBasedStyleInput || mapBasedClassInput;
+            var mapBasedClassInput_1 = firstClass && isClassBinding(firstClass) ? firstClass : null;
+            var stylingInput = mapBasedStyleInput_1 || mapBasedClassInput_1;
             if (stylingInput) {
-                var params_1 = [];
-                var value_1;
-                if (mapBasedClassInput) {
-                    value_1 = mapBasedClassInput.value.visit(this._valueConverter);
-                }
-                else if (mapBasedStyleInput) {
-                    params_1.push(NULL_EXPR);
-                }
-                if (mapBasedStyleInput) {
-                    value_1 = mapBasedStyleInput.value.visit(this._valueConverter);
-                }
                 this.updateInstruction(stylingInput.sourceSpan, Identifiers$1.elementStylingMap, function () {
-                    params_1.push(_this.convertPropertyBinding(implicit, value_1, true));
-                    return __spread([indexLiteral_1], params_1);
+                    var params = [indexLiteral_1];
+                    if (mapBasedClassInput_1) {
+                        var mapBasedClassValue = mapBasedClassInput_1.value.visit(_this._valueConverter);
+                        params.push(_this.convertPropertyBinding(implicit, mapBasedClassValue, true));
+                    }
+                    else if (mapBasedStyleInput_1) {
+                        params.push(NULL_EXPR);
+                    }
+                    if (mapBasedStyleInput_1) {
+                        var mapBasedStyleValue = mapBasedStyleInput_1.value.visit(_this._valueConverter);
+                        params.push(_this.convertPropertyBinding(implicit, mapBasedStyleValue, true));
+                    }
+                    return params;
                 });
             }
             var lastInputCommand = null;
             if (styleInputs.length) {
-                var i = mapBasedStyleInput ? 1 : 0;
+                var i = mapBasedStyleInput_1 ? 1 : 0;
                 var _loop_1 = function () {
                     var input = styleInputs[i];
                     var params = [];
@@ -19392,7 +19392,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 lastInputCommand = styleInputs[styleInputs.length - 1];
             }
             if (classInputs.length) {
-                var i = mapBasedClassInput ? 1 : 0;
+                var i = mapBasedClassInput_1 ? 1 : 0;
                 var _loop_2 = function () {
                     var input = classInputs[i];
                     var params = [];
@@ -19421,30 +19421,30 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         allOtherInputs.forEach(function (input) {
             var instruction = mapBindingToInstruction(input.type);
             if (input.type === 4 /* Animation */) {
-                var value_2 = input.value.visit(_this._valueConverter);
+                var value_1 = input.value.visit(_this._valueConverter);
                 // setAttribute without a value doesn't make any sense
-                if (value_2.name || value_2.value) {
+                if (value_1.name || value_1.value) {
                     var name_2 = prepareSyntheticAttributeName(input.name);
                     _this.updateInstruction(input.sourceSpan, Identifiers$1.elementAttribute, function () {
                         return [
-                            literal(elementIndex), literal(name_2), _this.convertPropertyBinding(implicit, value_2)
+                            literal(elementIndex), literal(name_2), _this.convertPropertyBinding(implicit, value_1)
                         ];
                     });
                 }
             }
             else if (instruction) {
-                var params_2 = [];
+                var params_1 = [];
                 var sanitizationRef = resolveSanitizationFn(input, input.securityContext);
                 if (sanitizationRef)
-                    params_2.push(sanitizationRef);
+                    params_1.push(sanitizationRef);
                 // TODO(chuckj): runtime: security context
-                var value_3 = input.value.visit(_this._valueConverter);
-                _this.allocateBindingSlots(value_3);
+                var value_2 = input.value.visit(_this._valueConverter);
+                _this.allocateBindingSlots(value_2);
                 _this.updateInstruction(input.sourceSpan, instruction, function () {
                     return __spread([
                         literal(elementIndex), literal(input.name),
-                        _this.convertPropertyBinding(implicit, value_3)
-                    ], params_2);
+                        _this.convertPropertyBinding(implicit, value_2)
+                    ], params_1);
                 });
             }
             else {
