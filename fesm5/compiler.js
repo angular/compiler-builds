@@ -1,10 +1,10 @@
 /**
- * @license Angular v7.0.0-rc.0+1.sha-68fadd9
+ * @license Angular v7.0.0-rc.0+24.sha-d216a46
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __extends, __assign, __spread, __values, __read } from 'tslib';
+import { __extends, __spread, __assign, __values, __read } from 'tslib';
 
 /**
  * @license
@@ -1130,7 +1130,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.0.0-rc.0+1.sha-68fadd9');
+var VERSION = new Version('7.0.0-rc.0+24.sha-d216a46');
 
 /**
  * @license
@@ -17743,7 +17743,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.elementContainerEnd = { name: 'ɵeC', moduleName: CORE$1 };
     Identifiers.elementStyling = { name: 'ɵelementStyling', moduleName: CORE$1 };
     Identifiers.elementStylingMap = { name: 'ɵelementStylingMap', moduleName: CORE$1 };
-    Identifiers.elementStyleProp = { name: 'ɵelementStylingProp', moduleName: CORE$1 };
+    Identifiers.elementStyleProp = { name: 'ɵelementStyleProp', moduleName: CORE$1 };
     Identifiers.elementStylingApply = { name: 'ɵelementStylingApply', moduleName: CORE$1 };
     Identifiers.containerCreate = { name: 'ɵcontainer', moduleName: CORE$1 };
     Identifiers.nextContext = { name: 'ɵnextContext', moduleName: CORE$1 };
