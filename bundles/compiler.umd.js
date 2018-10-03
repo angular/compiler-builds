@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-rc.0+26.sha-7306799
+ * @license Angular v7.0.0-rc.0+27.sha-aaaa340
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1207,7 +1207,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('7.0.0-rc.0+26.sha-7306799');
+    var VERSION = new Version('7.0.0-rc.0+27.sha-aaaa340');
 
     /**
      * @license
@@ -19730,8 +19730,9 @@
         };
         TemplateDefinitionBuilder.prototype.prepareListenerParameter = function (tagName, outputAst) {
             var _this = this;
-            var evName = sanitizeIdentifier(outputAst.name);
-            var functionName = this.templateName + "_" + tagName + "_" + evName + "_listener";
+            var evNameSanitized = sanitizeIdentifier(outputAst.name);
+            var tagNameSanitized = sanitizeIdentifier(tagName);
+            var functionName = this.templateName + "_" + tagNameSanitized + "_" + evNameSanitized + "_listener";
             return function () {
                 var listenerScope = _this._bindingScope.nestedScope(_this._bindingScope.bindingLevel);
                 var bindingExpr = convertActionBinding(listenerScope, variable(CONTEXT_NAME), outputAst.handler, 'b', function () { return error('Unexpected interpolation'); });
