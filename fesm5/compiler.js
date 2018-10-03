@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-rc.0+24.sha-d216a46
+ * @license Angular v7.0.0-rc.0+25.sha-cb59d87
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1130,7 +1130,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.0.0-rc.0+24.sha-d216a46');
+var VERSION = new Version('7.0.0-rc.0+25.sha-cb59d87');
 
 /**
  * @license
@@ -17928,7 +17928,15 @@ function trimTrailingNulls(parameters) {
 }
 function getQueryPredicate(query, constantPool) {
     if (Array.isArray(query.predicate)) {
-        return constantPool.getConstLiteral(literalArr(query.predicate.map(function (selector) { return literal(selector); })));
+        var predicate_1 = [];
+        query.predicate.forEach(function (selector) {
+            // Each item in predicates array may contain strings with comma-separated refs
+            // (for ex. 'ref, ref1, ..., refN'), thus we extract individual refs and store them
+            // as separate array entities
+            var selectors = selector.split(',').map(function (token) { return literal(token.trim()); });
+            predicate_1.push.apply(predicate_1, __spread(selectors));
+        });
+        return constantPool.getConstLiteral(literalArr(predicate_1));
     }
     else {
         return query.predicate;
