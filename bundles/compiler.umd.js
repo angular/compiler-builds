@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-rc.0+5.sha-ab379ab
+ * @license Angular v7.0.0-rc.0+27.sha-aaaa340
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1207,7 +1207,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('7.0.0-rc.0+5.sha-ab379ab');
+    var VERSION = new Version('7.0.0-rc.0+27.sha-aaaa340');
 
     /**
      * @license
@@ -17993,7 +17993,15 @@
     }
     function getQueryPredicate(query, constantPool) {
         if (Array.isArray(query.predicate)) {
-            return constantPool.getConstLiteral(literalArr(query.predicate.map(function (selector) { return literal(selector); })));
+            var predicate_1 = [];
+            query.predicate.forEach(function (selector) {
+                // Each item in predicates array may contain strings with comma-separated refs
+                // (for ex. 'ref, ref1, ..., refN'), thus we extract individual refs and store them
+                // as separate array entities
+                var selectors = selector.split(',').map(function (token) { return literal(token.trim()); });
+                predicate_1.push.apply(predicate_1, __spread(selectors));
+            });
+            return constantPool.getConstLiteral(literalArr(predicate_1));
         }
         else {
             return query.predicate;
@@ -19722,8 +19730,9 @@
         };
         TemplateDefinitionBuilder.prototype.prepareListenerParameter = function (tagName, outputAst) {
             var _this = this;
-            var evName = sanitizeIdentifier(outputAst.name);
-            var functionName = this.templateName + "_" + tagName + "_" + evName + "_listener";
+            var evNameSanitized = sanitizeIdentifier(outputAst.name);
+            var tagNameSanitized = sanitizeIdentifier(tagName);
+            var functionName = this.templateName + "_" + tagNameSanitized + "_" + evNameSanitized + "_listener";
             return function () {
                 var listenerScope = _this._bindingScope.nestedScope(_this._bindingScope.bindingLevel);
                 var bindingExpr = convertActionBinding(listenerScope, variable(CONTEXT_NAME), outputAst.handler, 'b', function () { return error('Unexpected interpolation'); });

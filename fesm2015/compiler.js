@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-rc.0+5.sha-ab379ab
+ * @license Angular v7.0.0-rc.0+27.sha-aaaa340
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1084,7 +1084,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-rc.0+5.sha-ab379ab');
+const VERSION = new Version('7.0.0-rc.0+27.sha-aaaa340');
 
 /**
  * @license
@@ -16915,7 +16915,15 @@ function trimTrailingNulls(parameters) {
 }
 function getQueryPredicate(query, constantPool) {
     if (Array.isArray(query.predicate)) {
-        return constantPool.getConstLiteral(literalArr(query.predicate.map(selector => literal(selector))));
+        let predicate = [];
+        query.predicate.forEach((selector) => {
+            // Each item in predicates array may contain strings with comma-separated refs
+            // (for ex. 'ref, ref1, ..., refN'), thus we extract individual refs and store them
+            // as separate array entities
+            const selectors = selector.split(',').map(token => literal(token.trim()));
+            predicate.push(...selectors);
+        });
+        return constantPool.getConstLiteral(literalArr(predicate));
     }
     else {
         return query.predicate;
@@ -18557,8 +18565,9 @@ class TemplateDefinitionBuilder {
         return this.constantPool.getConstLiteral(asLiteral(refsParam), true);
     }
     prepareListenerParameter(tagName, outputAst) {
-        const evName = sanitizeIdentifier(outputAst.name);
-        const functionName = `${this.templateName}_${tagName}_${evName}_listener`;
+        const evNameSanitized = sanitizeIdentifier(outputAst.name);
+        const tagNameSanitized = sanitizeIdentifier(tagName);
+        const functionName = `${this.templateName}_${tagNameSanitized}_${evNameSanitized}_listener`;
         return () => {
             const listenerScope = this._bindingScope.nestedScope(this._bindingScope.bindingLevel);
             const bindingExpr = convertActionBinding(listenerScope, variable(CONTEXT_NAME), outputAst.handler, 'b', () => error('Unexpected interpolation'));
