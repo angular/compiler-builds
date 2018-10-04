@@ -74,14 +74,14 @@ export declare class Identifiers {
     static defineBase: o.ExternalReference;
     static BaseDef: o.ExternalReference;
     static defineComponent: o.ExternalReference;
-    static ComponentDef: o.ExternalReference;
+    static ComponentDefWithMeta: o.ExternalReference;
     static defineDirective: o.ExternalReference;
-    static DirectiveDef: o.ExternalReference;
+    static DirectiveDefWithMeta: o.ExternalReference;
     static InjectorDef: o.ExternalReference;
     static defineInjector: o.ExternalReference;
-    static NgModuleDef: o.ExternalReference;
+    static NgModuleDefWithMeta: o.ExternalReference;
     static defineNgModule: o.ExternalReference;
-    static PipeDef: o.ExternalReference;
+    static PipeDefWithMeta: o.ExternalReference;
     static definePipe: o.ExternalReference;
     static query: o.ExternalReference;
     static queryRefresh: o.ExternalReference;
