@@ -94,7 +94,6 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private allocateBindingSlots;
     private convertPropertyBinding;
     private matchDirectives;
-    private getAttrsForDirectiveMatching;
     private prepareSyntheticAndSelectOnlyAttrs;
     private toAttrsParam;
     private prepareRefsParameter;
