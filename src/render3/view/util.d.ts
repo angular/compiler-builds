@@ -58,3 +58,15 @@ export declare class DefinitionMap {
     set(key: string, value: o.Expression | null): void;
     toLiteralMap(): o.LiteralMapExpr;
 }
+/**
+ * Extract a map of properties to values for a given element or template node, which can be used
+ * by the directive matching machinery.
+ *
+ * @param elOrTpl the element or template in question
+ * @return an object set up for directive matching. For attributes on the element/template, this
+ * object maps a property name to its (static) value. For any bindings, this map simply maps the
+ * property name to an empty string.
+ */
+export declare function getAttrsForDirectiveMatching(elOrTpl: t.Element | t.Template): {
+    [name: string]: string;
+};
