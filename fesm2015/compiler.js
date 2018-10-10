@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-rc.0+79.sha-83302d1
+ * @license Angular v7.0.0-rc.0+101.sha-be4edf1
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1084,7 +1084,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-rc.0+79.sha-83302d1');
+const VERSION = new Version('7.0.0-rc.0+101.sha-be4edf1');
 
 /**
  * @license
@@ -16770,7 +16770,6 @@ Identifiers$1.pipeBind3 = { name: 'ɵpipeBind3', moduleName: CORE$1 };
 Identifiers$1.pipeBind4 = { name: 'ɵpipeBind4', moduleName: CORE$1 };
 Identifiers$1.pipeBindV = { name: 'ɵpipeBindV', moduleName: CORE$1 };
 Identifiers$1.load = { name: 'ɵload', moduleName: CORE$1 };
-Identifiers$1.loadDirective = { name: 'ɵloadDirective', moduleName: CORE$1 };
 Identifiers$1.loadQueryList = { name: 'ɵloadQueryList', moduleName: CORE$1 };
 Identifiers$1.pipe = { name: 'ɵpipe', moduleName: CORE$1 };
 Identifiers$1.projection = { name: 'ɵprojection', moduleName: CORE$1 };
@@ -16923,7 +16922,7 @@ function getQueryPredicate(query, constantPool) {
             const selectors = selector.split(',').map(token => literal(token.trim()));
             predicate.push(...selectors);
         });
-        return constantPool.getConstLiteral(literalArr(predicate));
+        return constantPool.getConstLiteral(literalArr(predicate), true);
     }
     else {
         return query.predicate;
@@ -19151,9 +19150,8 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
         definitionMap.set('styles', literalArr(strings));
     }
     // e.g. `animations: [trigger('123', [])]`
-    if (meta.animations) {
-        const animationValues = meta.animations.map(entry => mapToExpression(entry));
-        definitionMap.set('animations', literalArr(animationValues));
+    if (meta.animations !== null) {
+        definitionMap.set('animations', meta.animations);
     }
     // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
     // string literal, which must be on one line.
@@ -19190,14 +19188,13 @@ function compileComponentFromRender2(outputCtx, component, render3Ast, reflector
     name || error(`Cannot resolver the name of ${component.type}`);
     const definitionField = outputCtx.constantPool.propertyNameOf(2 /* Component */);
     const summary = component.toSummary();
-    const animations = summary.template && summary.template.animations || null;
     // Compute the R3ComponentMetadata from the CompileDirectiveMetadata
     const meta = Object.assign({}, directiveMetadataFromGlobalMetadata(component, outputCtx, reflector), { selector: component.selector, template: {
             nodes: render3Ast.nodes,
             hasNgContent: render3Ast.hasNgContent,
             ngContentSelectors: render3Ast.ngContentSelectors,
             relativeContextFilePath: '',
-        }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations });
+        }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations: null });
     const res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
     // Create the partial class to be merged with the actual class.
     outputCtx.statements.push(new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []));
@@ -19321,8 +19318,8 @@ function createContentQueriesRefreshFunction(meta) {
         const directiveInstanceVar = variable('instance');
         // var $tmp$: any;
         const temporary = temporaryAllocator(statements, TEMPORARY_NAME);
-        // const $instance$ = $r3$.ɵloadDirective(dirIndex);
-        statements.push(directiveInstanceVar.set(importExpr(Identifiers$1.loadDirective).callFn([variable('dirIndex')]))
+        // const $instance$ = $r3$.ɵload(dirIndex);
+        statements.push(directiveInstanceVar.set(importExpr(Identifiers$1.load).callFn([variable('dirIndex')]))
             .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
         meta.queries.forEach((query, idx) => {
             const loadQLArg = variable('queryStartIndex');
@@ -19400,7 +19397,7 @@ function createHostBindingsFunction(meta, bindingParser, constantPool, allocateP
     const directiveSummary = metadataAsSummary(meta);
     // Calculate the host property bindings
     const bindings = bindingParser.createBoundHostProperties(directiveSummary, hostBindingSourceSpan);
-    const bindingContext = importExpr(Identifiers$1.loadDirective).callFn([variable('dirIndex')]);
+    const bindingContext = importExpr(Identifiers$1.load).callFn([variable('dirIndex')]);
     if (bindings) {
         const valueConverter = new ValueConverter(constantPool, 
         /* new nodes are illegal here */ () => error('Unexpected node'), allocatePureFunctionSlots, 
