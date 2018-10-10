@@ -60,6 +60,7 @@ export declare class Identifiers {
     static pipeBind4: o.ExternalReference;
     static pipeBindV: o.ExternalReference;
     static load: o.ExternalReference;
+    static loadDirective: o.ExternalReference;
     static loadQueryList: o.ExternalReference;
     static pipe: o.ExternalReference;
     static projection: o.ExternalReference;
