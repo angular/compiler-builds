@@ -162,9 +162,7 @@ export interface R3ComponentMetadata extends R3DirectiveMetadata {
     /**
      * A collection of animation triggers that will be used in the component template.
      */
-    animations: {
-        [key: string]: any;
-    }[] | null;
+    animations: o.Expression | null;
 }
 /**
  * Information needed to compile a query (view or content).
