@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-rc.0+81.sha-456f23f
+ * @license Angular v7.0.0-rc.0+102.sha-e26cb21
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1084,7 +1084,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-rc.0+81.sha-456f23f');
+const VERSION = new Version('7.0.0-rc.0+102.sha-e26cb21');
 
 /**
  * @license
@@ -16770,7 +16770,6 @@ Identifiers$1.pipeBind3 = { name: 'ɵpipeBind3', moduleName: CORE$1 };
 Identifiers$1.pipeBind4 = { name: 'ɵpipeBind4', moduleName: CORE$1 };
 Identifiers$1.pipeBindV = { name: 'ɵpipeBindV', moduleName: CORE$1 };
 Identifiers$1.load = { name: 'ɵload', moduleName: CORE$1 };
-Identifiers$1.loadDirective = { name: 'ɵloadDirective', moduleName: CORE$1 };
 Identifiers$1.loadQueryList = { name: 'ɵloadQueryList', moduleName: CORE$1 };
 Identifiers$1.pipe = { name: 'ɵpipe', moduleName: CORE$1 };
 Identifiers$1.projection = { name: 'ɵprojection', moduleName: CORE$1 };
@@ -16923,7 +16922,7 @@ function getQueryPredicate(query, constantPool) {
             const selectors = selector.split(',').map(token => literal(token.trim()));
             predicate.push(...selectors);
         });
-        return constantPool.getConstLiteral(literalArr(predicate));
+        return constantPool.getConstLiteral(literalArr(predicate), true);
     }
     else {
         return query.predicate;
@@ -19319,8 +19318,8 @@ function createContentQueriesRefreshFunction(meta) {
         const directiveInstanceVar = variable('instance');
         // var $tmp$: any;
         const temporary = temporaryAllocator(statements, TEMPORARY_NAME);
-        // const $instance$ = $r3$.ɵloadDirective(dirIndex);
-        statements.push(directiveInstanceVar.set(importExpr(Identifiers$1.loadDirective).callFn([variable('dirIndex')]))
+        // const $instance$ = $r3$.ɵload(dirIndex);
+        statements.push(directiveInstanceVar.set(importExpr(Identifiers$1.load).callFn([variable('dirIndex')]))
             .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
         meta.queries.forEach((query, idx) => {
             const loadQLArg = variable('queryStartIndex');
@@ -19398,7 +19397,7 @@ function createHostBindingsFunction(meta, bindingParser, constantPool, allocateP
     const directiveSummary = metadataAsSummary(meta);
     // Calculate the host property bindings
     const bindings = bindingParser.createBoundHostProperties(directiveSummary, hostBindingSourceSpan);
-    const bindingContext = importExpr(Identifiers$1.loadDirective).callFn([variable('dirIndex')]);
+    const bindingContext = importExpr(Identifiers$1.load).callFn([variable('dirIndex')]);
     if (bindings) {
         const valueConverter = new ValueConverter(constantPool, 
         /* new nodes are illegal here */ () => error('Unexpected node'), allocatePureFunctionSlots, 
