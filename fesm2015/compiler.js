@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-rc.1+19.sha-4b494f2
+ * @license Angular v7.0.0-rc.1+18.sha-bd186c7
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1084,7 +1084,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-rc.1+19.sha-4b494f2');
+const VERSION = new Version('7.0.0-rc.1+18.sha-bd186c7');
 
 /**
  * @license
@@ -18362,16 +18362,19 @@ class TemplateDefinitionBuilder {
                 let i = mapBasedStyleInput ? 1 : 0;
                 for (i; i < styleInputs.length; i++) {
                     const input = styleInputs[i];
+                    const params = [];
+                    const sanitizationRef = resolveSanitizationFn(input, input.securityContext);
+                    if (sanitizationRef)
+                        params.push(sanitizationRef);
                     const key = input.name;
                     const styleIndex = stylesIndexMap[key];
                     const value = input.value.visit(this._valueConverter);
-                    const params = [
-                        indexLiteral, literal(styleIndex), this.convertPropertyBinding(implicit, value, true)
-                    ];
-                    if (input.unit != null) {
-                        params.push(literal(input.unit));
-                    }
-                    this.updateInstruction(input.sourceSpan, Identifiers$1.elementStyleProp, params);
+                    this.updateInstruction(input.sourceSpan, Identifiers$1.elementStyleProp, () => {
+                        return [
+                            indexLiteral, literal(styleIndex),
+                            this.convertPropertyBinding(implicit, value, true), ...params
+                        ];
+                    });
                 }
                 lastInputCommand = styleInputs[styleInputs.length - 1];
             }
