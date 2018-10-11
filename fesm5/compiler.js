@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-rc.1+18.sha-bd186c7
+ * @license Angular v7.0.0-rc.1+22.sha-0a3f817
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1130,7 +1130,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.0.0-rc.1+18.sha-bd186c7');
+var VERSION = new Version('7.0.0-rc.1+22.sha-0a3f817');
 
 /**
  * @license
@@ -17792,7 +17792,6 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.reference = { name: 'ɵreference', moduleName: CORE$1 };
     Identifiers.inject = { name: 'inject', moduleName: CORE$1 };
     Identifiers.injectAttribute = { name: 'ɵinjectAttribute', moduleName: CORE$1 };
-    Identifiers.injectRenderer2 = { name: 'ɵinjectRenderer2', moduleName: CORE$1 };
     Identifiers.directiveInject = { name: 'ɵdirectiveInject', moduleName: CORE$1 };
     Identifiers.templateRefExtractor = { name: 'ɵtemplateRefExtractor', moduleName: CORE$1 };
     Identifiers.defineBase = { name: 'ɵdefineBase', moduleName: CORE$1 };
@@ -18032,10 +18031,6 @@ var R3ResolvedDependencyType;
      * The dependency is for the `Injector` type itself.
      */
     R3ResolvedDependencyType[R3ResolvedDependencyType["Injector"] = 2] = "Injector";
-    /**
-     * The dependency is for `Renderer2`.
-     */
-    R3ResolvedDependencyType[R3ResolvedDependencyType["Renderer2"] = 3] = "Renderer2";
 })(R3ResolvedDependencyType || (R3ResolvedDependencyType = {}));
 /**
  * Construct a factory function expression for the given `R3FactoryMetadata`.
@@ -18140,8 +18135,6 @@ function compileInjectDependency(dep, injectFn) {
         case R3ResolvedDependencyType.Attribute:
             // In the case of attributes, the attribute name in question is given as the token.
             return importExpr(Identifiers$1.injectAttribute).callFn([dep.token]);
-        case R3ResolvedDependencyType.Renderer2:
-            return importExpr(Identifiers$1.injectRenderer2).callFn([]);
         default:
             return unsupported("Unknown R3ResolvedDependencyType: " + R3ResolvedDependencyType[dep.resolved]);
     }
@@ -18155,11 +18148,7 @@ function dependenciesFromGlobalMetadata(type, outputCtx, reflector) {
     // Use the `CompileReflector` to look up references to some well-known Angular types. These will
     // be compared with the token to statically determine whether the token has significance to
     // Angular, and set the correct `R3ResolvedDependencyType` as a result.
-    var elementRef = reflector.resolveExternalReference(Identifiers.ElementRef);
-    var templateRef = reflector.resolveExternalReference(Identifiers.TemplateRef);
-    var viewContainerRef = reflector.resolveExternalReference(Identifiers.ViewContainerRef);
     var injectorRef = reflector.resolveExternalReference(Identifiers.Injector);
-    var renderer2 = reflector.resolveExternalReference(Identifiers.Renderer2);
     // Iterate through the type's DI dependencies and produce `R3DependencyMetadata` for each of them.
     var deps = [];
     try {
@@ -18170,9 +18159,6 @@ function dependenciesFromGlobalMetadata(type, outputCtx, reflector) {
                 var resolved = R3ResolvedDependencyType.Token;
                 if (tokenRef === injectorRef) {
                     resolved = R3ResolvedDependencyType.Injector;
-                }
-                else if (tokenRef === renderer2) {
-                    resolved = R3ResolvedDependencyType.Renderer2;
                 }
                 else if (dependency.isAttribute) {
                     resolved = R3ResolvedDependencyType.Attribute;
@@ -19456,31 +19442,24 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             var lastInputCommand = null;
             if (styleInputs.length) {
                 var i = mapBasedStyleInput_1 ? 1 : 0;
-                var _loop_1 = function () {
+                for (i; i < styleInputs.length; i++) {
                     var input = styleInputs[i];
-                    var params = [];
-                    var sanitizationRef = resolveSanitizationFn(input, input.securityContext);
-                    if (sanitizationRef)
-                        params.push(sanitizationRef);
                     var key = input.name;
                     var styleIndex = stylesIndexMap[key];
-                    var value = input.value.visit(this_1._valueConverter);
-                    this_1.updateInstruction(input.sourceSpan, Identifiers$1.elementStyleProp, function () {
-                        return __spread([
-                            indexLiteral_1, literal(styleIndex),
-                            _this.convertPropertyBinding(implicit, value, true)
-                        ], params);
-                    });
-                };
-                var this_1 = this;
-                for (i; i < styleInputs.length; i++) {
-                    _loop_1();
+                    var value = input.value.visit(this._valueConverter);
+                    var params = [
+                        indexLiteral_1, literal(styleIndex), this.convertPropertyBinding(implicit, value, true)
+                    ];
+                    if (input.unit != null) {
+                        params.push(literal(input.unit));
+                    }
+                    this.updateInstruction(input.sourceSpan, Identifiers$1.elementStyleProp, params);
                 }
                 lastInputCommand = styleInputs[styleInputs.length - 1];
             }
             if (classInputs.length) {
                 var i = mapBasedClassInput_1 ? 1 : 0;
-                var _loop_2 = function () {
+                var _loop_1 = function () {
                     var input = classInputs[i];
                     var params = [];
                     var sanitizationRef = resolveSanitizationFn(input, input.securityContext);
@@ -19488,17 +19467,17 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                         params.push(sanitizationRef);
                     var key = input.name;
                     var classIndex = classesIndexMap[key];
-                    var value = input.value.visit(this_2._valueConverter);
-                    this_2.updateInstruction(input.sourceSpan, Identifiers$1.elementClassProp, function () {
+                    var value = input.value.visit(this_1._valueConverter);
+                    this_1.updateInstruction(input.sourceSpan, Identifiers$1.elementClassProp, function () {
                         return __spread([
                             indexLiteral_1, literal(classIndex),
                             _this.convertPropertyBinding(implicit, value, true)
                         ], params);
                     });
                 };
-                var this_2 = this;
+                var this_1 = this;
                 for (i; i < classInputs.length; i++) {
-                    _loop_2();
+                    _loop_1();
                 }
                 lastInputCommand = classInputs[classInputs.length - 1];
             }
