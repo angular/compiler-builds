@@ -78,11 +78,7 @@ export declare enum R3ResolvedDependencyType {
     /**
      * The dependency is for the `Injector` type itself.
      */
-    Injector = 2,
-    /**
-     * The dependency is for `Renderer2`.
-     */
-    Renderer2 = 3
+    Injector = 2
 }
 /**
  * Metadata representing a single dependency to be injected into a constructor or function call.
