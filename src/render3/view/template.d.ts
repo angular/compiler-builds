@@ -70,6 +70,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     registerContextVariables(variable: t.Variable): void;
     buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], hasNgContent?: boolean, ngContentSelectors?: string[]): o.FunctionExpr;
     getLocal(name: string): o.Expression | null;
+    i18nTranslate(label: string, meta?: string): o.Expression;
     visitContent(ngContent: t.Content): void;
     getNamespaceInstruction(namespaceKey: string | null): o.ExternalReference;
     addNamespaceInstruction(nsInstruction: o.ExternalReference, element: t.Element): void;
@@ -92,6 +93,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private updateInstruction;
     private allocatePureFunctionSlots;
     private allocateBindingSlots;
+    private convertExpressionBinding;
     private convertPropertyBinding;
     private matchDirectives;
     private prepareSyntheticAndSelectOnlyAttrs;
