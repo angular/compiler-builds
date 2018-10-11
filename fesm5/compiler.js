@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-rc.0+103.sha-912f3d1
+ * @license Angular v7.0.0-rc.1+22.sha-0a3f817
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1130,7 +1130,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.0.0-rc.0+103.sha-912f3d1');
+var VERSION = new Version('7.0.0-rc.1+22.sha-0a3f817');
 
 /**
  * @license
@@ -17779,6 +17779,11 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.pipeBind3 = { name: 'ɵpipeBind3', moduleName: CORE$1 };
     Identifiers.pipeBind4 = { name: 'ɵpipeBind4', moduleName: CORE$1 };
     Identifiers.pipeBindV = { name: 'ɵpipeBindV', moduleName: CORE$1 };
+    Identifiers.i18nAttribute = { name: 'ɵi18nAttribute', moduleName: CORE$1 };
+    Identifiers.i18nExp = { name: 'ɵi18nExp', moduleName: CORE$1 };
+    Identifiers.i18nStart = { name: 'ɵi18nStart', moduleName: CORE$1 };
+    Identifiers.i18nEnd = { name: 'ɵi18nEnd', moduleName: CORE$1 };
+    Identifiers.i18nApply = { name: 'ɵi18nApply', moduleName: CORE$1 };
     Identifiers.load = { name: 'ɵload', moduleName: CORE$1 };
     Identifiers.loadQueryList = { name: 'ɵloadQueryList', moduleName: CORE$1 };
     Identifiers.pipe = { name: 'ɵpipe', moduleName: CORE$1 };
@@ -17787,7 +17792,6 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.reference = { name: 'ɵreference', moduleName: CORE$1 };
     Identifiers.inject = { name: 'inject', moduleName: CORE$1 };
     Identifiers.injectAttribute = { name: 'ɵinjectAttribute', moduleName: CORE$1 };
-    Identifiers.injectRenderer2 = { name: 'ɵinjectRenderer2', moduleName: CORE$1 };
     Identifiers.directiveInject = { name: 'ɵdirectiveInject', moduleName: CORE$1 };
     Identifiers.templateRefExtractor = { name: 'ɵtemplateRefExtractor', moduleName: CORE$1 };
     Identifiers.defineBase = { name: 'ɵdefineBase', moduleName: CORE$1 };
@@ -17871,6 +17875,8 @@ var I18N_ATTR_PREFIX = 'i18n-';
 /** I18n separators for metadata **/
 var MEANING_SEPARATOR$1 = '|';
 var ID_SEPARATOR$1 = '@@';
+/** Placeholder wrapper for i18n expressions **/
+var I18N_PLACEHOLDER_SYMBOL = '�';
 /** Non bindable attribute name **/
 var NON_BINDABLE_ATTR = 'ngNonBindable';
 /**
@@ -17899,6 +17905,20 @@ function invalid$1(arg) {
 }
 function isI18NAttribute(name) {
     return name === I18N_ATTR || name.startsWith(I18N_ATTR_PREFIX);
+}
+function wrapI18nPlaceholder(content) {
+    return "" + I18N_PLACEHOLDER_SYMBOL + content + I18N_PLACEHOLDER_SYMBOL;
+}
+function assembleI18nTemplate(strings) {
+    if (!strings.length)
+        return '';
+    var acc = '';
+    var lastIdx = strings.length - 1;
+    for (var i = 0; i < lastIdx; i++) {
+        acc += "" + strings[i] + wrapI18nPlaceholder(i);
+    }
+    acc += strings[lastIdx];
+    return acc;
 }
 function asLiteral(value) {
     if (Array.isArray(value)) {
@@ -18011,10 +18031,6 @@ var R3ResolvedDependencyType;
      * The dependency is for the `Injector` type itself.
      */
     R3ResolvedDependencyType[R3ResolvedDependencyType["Injector"] = 2] = "Injector";
-    /**
-     * The dependency is for `Renderer2`.
-     */
-    R3ResolvedDependencyType[R3ResolvedDependencyType["Renderer2"] = 3] = "Renderer2";
 })(R3ResolvedDependencyType || (R3ResolvedDependencyType = {}));
 /**
  * Construct a factory function expression for the given `R3FactoryMetadata`.
@@ -18119,8 +18135,6 @@ function compileInjectDependency(dep, injectFn) {
         case R3ResolvedDependencyType.Attribute:
             // In the case of attributes, the attribute name in question is given as the token.
             return importExpr(Identifiers$1.injectAttribute).callFn([dep.token]);
-        case R3ResolvedDependencyType.Renderer2:
-            return importExpr(Identifiers$1.injectRenderer2).callFn([]);
         default:
             return unsupported("Unknown R3ResolvedDependencyType: " + R3ResolvedDependencyType[dep.resolved]);
     }
@@ -18134,11 +18148,7 @@ function dependenciesFromGlobalMetadata(type, outputCtx, reflector) {
     // Use the `CompileReflector` to look up references to some well-known Angular types. These will
     // be compared with the token to statically determine whether the token has significance to
     // Angular, and set the correct `R3ResolvedDependencyType` as a result.
-    var elementRef = reflector.resolveExternalReference(Identifiers.ElementRef);
-    var templateRef = reflector.resolveExternalReference(Identifiers.TemplateRef);
-    var viewContainerRef = reflector.resolveExternalReference(Identifiers.ViewContainerRef);
     var injectorRef = reflector.resolveExternalReference(Identifiers.Injector);
-    var renderer2 = reflector.resolveExternalReference(Identifiers.Renderer2);
     // Iterate through the type's DI dependencies and produce `R3DependencyMetadata` for each of them.
     var deps = [];
     try {
@@ -18149,9 +18159,6 @@ function dependenciesFromGlobalMetadata(type, outputCtx, reflector) {
                 var resolved = R3ResolvedDependencyType.Token;
                 if (tokenRef === injectorRef) {
                     resolved = R3ResolvedDependencyType.Injector;
-                }
-                else if (tokenRef === renderer2) {
-                    resolved = R3ResolvedDependencyType.Renderer2;
                 }
                 else if (dependency.isAttribute) {
                     resolved = R3ResolvedDependencyType.Attribute;
@@ -19100,6 +19107,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     };
     // LocalResolver
     TemplateDefinitionBuilder.prototype.getLocal = function (name) { return this._bindingScope.get(name); };
+    TemplateDefinitionBuilder.prototype.i18nTranslate = function (label, meta) {
+        return this.constantPool.getTranslation(label, parseI18nMeta(meta), this.fileBasedI18nSuffix);
+    };
     TemplateDefinitionBuilder.prototype.visitContent = function (ngContent) {
         var slot = this.allocateDataSlot();
         var selectorIndex = ngContent.selectorIndex;
@@ -19154,7 +19164,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         }
         var isNonBindableMode = false;
         try {
-            // Handle i18n attributes
+            // Handle i18n and ngNonBindable attributes
             for (var _c = __values(element.attributes), _d = _c.next(); !_d.done; _d = _c.next()) {
                 var attr = _d.value;
                 var name_1 = attr.name;
@@ -19200,6 +19210,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var styleInputs = [];
         var classInputs = [];
         var allOtherInputs = [];
+        var i18nAttrs = [];
         element.inputs.forEach(function (input) {
             switch (input.type) {
                 // [attr.style] or [attr.class] should not be treated as styling-based
@@ -19215,6 +19226,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                     else if (isClassBinding(input)) {
                         // this should always go first in the compilation (for [class])
                         classInputs.splice(0, 0, input);
+                    }
+                    else if (attrI18nMetas.hasOwnProperty(input.name)) {
+                        i18nAttrs.push({ name: input.name, value: input.value });
                     }
                     else {
                         allOtherInputs.push(input);
@@ -19251,14 +19265,11 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 });
             }
             else {
-                attributes.push(literal(name));
                 if (attrI18nMetas.hasOwnProperty(name)) {
-                    var meta = parseI18nMeta(attrI18nMetas[name]);
-                    var variable$$1 = _this.constantPool.getTranslation(value, meta, _this.fileBasedI18nSuffix);
-                    attributes.push(variable$$1);
+                    i18nAttrs.push({ name: name, value: value });
                 }
                 else {
-                    attributes.push(literal(value));
+                    attributes.push(literal(name), literal(value));
                 }
             }
         });
@@ -19325,7 +19336,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         }
         var implicit = variable(CONTEXT_NAME);
         var createSelfClosingInstruction = !hasStylingInstructions && !isNgContainer$$1 &&
-            element.children.length === 0 && element.outputs.length === 0;
+            element.children.length === 0 && element.outputs.length === 0 && i18nAttrs.length === 0;
         if (createSelfClosingInstruction) {
             this.creationInstruction(element.sourceSpan, Identifiers$1.element, trimTrailingNulls(parameters));
         }
@@ -19333,6 +19344,41 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             this.creationInstruction(element.sourceSpan, isNgContainer$$1 ? Identifiers$1.elementContainerStart : Identifiers$1.elementStart, trimTrailingNulls(parameters));
             if (isNonBindableMode) {
                 this.creationInstruction(element.sourceSpan, Identifiers$1.disableBindings);
+            }
+            // process i18n element attributes
+            if (i18nAttrs.length) {
+                var hasBindings_1 = false;
+                var i18nAttrArgs_1 = [];
+                i18nAttrs.forEach(function (_a) {
+                    var name = _a.name, value = _a.value;
+                    var meta = attrI18nMetas[name];
+                    if (typeof value === 'string') {
+                        // in case of static string value, 3rd argument is 0 declares
+                        // that there are no expressions defined in this translation
+                        i18nAttrArgs_1.push(literal(name), _this.i18nTranslate(value, meta), literal(0));
+                    }
+                    else {
+                        var converted = value.visit(_this._valueConverter);
+                        if (converted instanceof Interpolation) {
+                            var strings = converted.strings, expressions = converted.expressions;
+                            var label = assembleI18nTemplate(strings);
+                            i18nAttrArgs_1.push(literal(name), _this.i18nTranslate(label, meta), literal(expressions.length));
+                            expressions.forEach(function (expression) {
+                                hasBindings_1 = true;
+                                var binding = _this.convertExpressionBinding(implicit, expression);
+                                _this.updateInstruction(element.sourceSpan, Identifiers$1.i18nExp, [binding]);
+                            });
+                        }
+                    }
+                });
+                if (i18nAttrArgs_1.length) {
+                    var index = literal(this.allocateDataSlot());
+                    var args = this.constantPool.getConstLiteral(literalArr(i18nAttrArgs_1), true);
+                    this.creationInstruction(element.sourceSpan, Identifiers$1.i18nAttribute, [index, args]);
+                    if (hasBindings_1) {
+                        this.updateInstruction(element.sourceSpan, Identifiers$1.i18nApply, [index]);
+                    }
+                }
             }
             // initial styling for static style="..." attributes
             if (hasStylingInstructions) {
@@ -19396,31 +19442,24 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             var lastInputCommand = null;
             if (styleInputs.length) {
                 var i = mapBasedStyleInput_1 ? 1 : 0;
-                var _loop_1 = function () {
+                for (i; i < styleInputs.length; i++) {
                     var input = styleInputs[i];
-                    var params = [];
-                    var sanitizationRef = resolveSanitizationFn(input, input.securityContext);
-                    if (sanitizationRef)
-                        params.push(sanitizationRef);
                     var key = input.name;
                     var styleIndex = stylesIndexMap[key];
-                    var value = input.value.visit(this_1._valueConverter);
-                    this_1.updateInstruction(input.sourceSpan, Identifiers$1.elementStyleProp, function () {
-                        return __spread([
-                            indexLiteral_1, literal(styleIndex),
-                            _this.convertPropertyBinding(implicit, value, true)
-                        ], params);
-                    });
-                };
-                var this_1 = this;
-                for (i; i < styleInputs.length; i++) {
-                    _loop_1();
+                    var value = input.value.visit(this._valueConverter);
+                    var params = [
+                        indexLiteral_1, literal(styleIndex), this.convertPropertyBinding(implicit, value, true)
+                    ];
+                    if (input.unit != null) {
+                        params.push(literal(input.unit));
+                    }
+                    this.updateInstruction(input.sourceSpan, Identifiers$1.elementStyleProp, params);
                 }
                 lastInputCommand = styleInputs[styleInputs.length - 1];
             }
             if (classInputs.length) {
                 var i = mapBasedClassInput_1 ? 1 : 0;
-                var _loop_2 = function () {
+                var _loop_1 = function () {
                     var input = classInputs[i];
                     var params = [];
                     var sanitizationRef = resolveSanitizationFn(input, input.securityContext);
@@ -19428,17 +19467,17 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                         params.push(sanitizationRef);
                     var key = input.name;
                     var classIndex = classesIndexMap[key];
-                    var value = input.value.visit(this_2._valueConverter);
-                    this_2.updateInstruction(input.sourceSpan, Identifiers$1.elementClassProp, function () {
+                    var value = input.value.visit(this_1._valueConverter);
+                    this_1.updateInstruction(input.sourceSpan, Identifiers$1.elementClassProp, function () {
                         return __spread([
                             indexLiteral_1, literal(classIndex),
                             _this.convertPropertyBinding(implicit, value, true)
                         ], params);
                     });
                 };
-                var this_2 = this;
+                var this_1 = this;
                 for (i; i < classInputs.length; i++) {
-                    _loop_2();
+                    _loop_1();
                 }
                 lastInputCommand = classInputs[classInputs.length - 1];
             }
@@ -19580,8 +19619,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     // i0.ɵtext(1, MSG_XYZ);
     // ```
     TemplateDefinitionBuilder.prototype.visitSingleI18nTextChild = function (text, i18nMeta) {
-        var meta = parseI18nMeta(i18nMeta);
-        var variable$$1 = this.constantPool.getTranslation(text.value, meta, this.fileBasedI18nSuffix);
+        var variable$$1 = this.i18nTranslate(text.value, i18nMeta);
         this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(this.allocateDataSlot()), variable$$1]);
     };
     TemplateDefinitionBuilder.prototype.allocateDataSlot = function () { return this._dataIndex++; };
@@ -19611,6 +19649,11 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     };
     TemplateDefinitionBuilder.prototype.allocateBindingSlots = function (value) {
         this._bindingSlots += value instanceof Interpolation ? value.expressions.length : 1;
+    };
+    TemplateDefinitionBuilder.prototype.convertExpressionBinding = function (implicit, value) {
+        var convertedPropertyBinding = convertPropertyBinding(this, implicit, value, this.bindingContext(), BindingForm.TrySimple);
+        var valExpr = convertedPropertyBinding.currValExpr;
+        return importExpr(Identifiers$1.bind).callFn([valExpr]);
     };
     TemplateDefinitionBuilder.prototype.convertPropertyBinding = function (implicit, value, skipBindFn) {
         var _a;

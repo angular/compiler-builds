@@ -25,6 +25,8 @@ export declare const I18N_ATTR_PREFIX = "i18n-";
 /** I18n separators for metadata **/
 export declare const MEANING_SEPARATOR = "|";
 export declare const ID_SEPARATOR = "@@";
+/** Placeholder wrapper for i18n expressions **/
+export declare const I18N_PLACEHOLDER_SYMBOL = "\uFFFD";
 /** Non bindable attribute name **/
 export declare const NON_BINDABLE_ATTR = "ngNonBindable";
 /**
@@ -36,6 +38,8 @@ export declare function temporaryAllocator(statements: o.Statement[], name: stri
 export declare function unsupported(feature: string): never;
 export declare function invalid<T>(arg: o.Expression | o.Statement | t.Node): never;
 export declare function isI18NAttribute(name: string): boolean;
+export declare function wrapI18nPlaceholder(content: string | number): string;
+export declare function assembleI18nTemplate(strings: Array<string>): string;
 export declare function asLiteral(value: any): o.Expression;
 export declare function conditionallyCreateMapObjectLiteral(keys: {
     [key: string]: string;
