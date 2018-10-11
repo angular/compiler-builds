@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-rc.1+21.sha-6a64ac4
+ * @license Angular v7.0.0-rc.1+20.sha-062fe5c
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1084,7 +1084,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-rc.1+21.sha-6a64ac4');
+const VERSION = new Version('7.0.0-rc.1+20.sha-062fe5c');
 
 /**
  * @license
@@ -16782,6 +16782,7 @@ Identifiers$1.projectionDef = { name: 'ɵprojectionDef', moduleName: CORE$1 };
 Identifiers$1.reference = { name: 'ɵreference', moduleName: CORE$1 };
 Identifiers$1.inject = { name: 'inject', moduleName: CORE$1 };
 Identifiers$1.injectAttribute = { name: 'ɵinjectAttribute', moduleName: CORE$1 };
+Identifiers$1.injectRenderer2 = { name: 'ɵinjectRenderer2', moduleName: CORE$1 };
 Identifiers$1.directiveInject = { name: 'ɵdirectiveInject', moduleName: CORE$1 };
 Identifiers$1.templateRefExtractor = { name: 'ɵtemplateRefExtractor', moduleName: CORE$1 };
 Identifiers$1.defineBase = { name: 'ɵdefineBase', moduleName: CORE$1 };
@@ -17017,6 +17018,10 @@ var R3ResolvedDependencyType;
      * The dependency is for the `Injector` type itself.
      */
     R3ResolvedDependencyType[R3ResolvedDependencyType["Injector"] = 2] = "Injector";
+    /**
+     * The dependency is for `Renderer2`.
+     */
+    R3ResolvedDependencyType[R3ResolvedDependencyType["Renderer2"] = 3] = "Renderer2";
 })(R3ResolvedDependencyType || (R3ResolvedDependencyType = {}));
 /**
  * Construct a factory function expression for the given `R3FactoryMetadata`.
@@ -17121,6 +17126,8 @@ function compileInjectDependency(dep, injectFn) {
         case R3ResolvedDependencyType.Attribute:
             // In the case of attributes, the attribute name in question is given as the token.
             return importExpr(Identifiers$1.injectAttribute).callFn([dep.token]);
+        case R3ResolvedDependencyType.Renderer2:
+            return importExpr(Identifiers$1.injectRenderer2).callFn([]);
         default:
             return unsupported(`Unknown R3ResolvedDependencyType: ${R3ResolvedDependencyType[dep.resolved]}`);
     }
@@ -17133,7 +17140,11 @@ function dependenciesFromGlobalMetadata(type, outputCtx, reflector) {
     // Use the `CompileReflector` to look up references to some well-known Angular types. These will
     // be compared with the token to statically determine whether the token has significance to
     // Angular, and set the correct `R3ResolvedDependencyType` as a result.
+    const elementRef = reflector.resolveExternalReference(Identifiers.ElementRef);
+    const templateRef = reflector.resolveExternalReference(Identifiers.TemplateRef);
+    const viewContainerRef = reflector.resolveExternalReference(Identifiers.ViewContainerRef);
     const injectorRef = reflector.resolveExternalReference(Identifiers.Injector);
+    const renderer2 = reflector.resolveExternalReference(Identifiers.Renderer2);
     // Iterate through the type's DI dependencies and produce `R3DependencyMetadata` for each of them.
     const deps = [];
     for (let dependency of type.diDeps) {
@@ -17142,6 +17153,9 @@ function dependenciesFromGlobalMetadata(type, outputCtx, reflector) {
             let resolved = R3ResolvedDependencyType.Token;
             if (tokenRef === injectorRef) {
                 resolved = R3ResolvedDependencyType.Injector;
+            }
+            else if (tokenRef === renderer2) {
+                resolved = R3ResolvedDependencyType.Renderer2;
             }
             else if (dependency.isAttribute) {
                 resolved = R3ResolvedDependencyType.Attribute;
