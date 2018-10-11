@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-rc.0+105.sha-7acdad6
+ * @license Angular v7.0.0-rc.1+4.sha-39f42ba
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1084,7 +1084,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-rc.0+105.sha-7acdad6');
+const VERSION = new Version('7.0.0-rc.1+4.sha-39f42ba');
 
 /**
  * @license
@@ -16769,6 +16769,11 @@ Identifiers$1.pipeBind2 = { name: 'ɵpipeBind2', moduleName: CORE$1 };
 Identifiers$1.pipeBind3 = { name: 'ɵpipeBind3', moduleName: CORE$1 };
 Identifiers$1.pipeBind4 = { name: 'ɵpipeBind4', moduleName: CORE$1 };
 Identifiers$1.pipeBindV = { name: 'ɵpipeBindV', moduleName: CORE$1 };
+Identifiers$1.i18nAttribute = { name: 'ɵi18nAttribute', moduleName: CORE$1 };
+Identifiers$1.i18nExp = { name: 'ɵi18nExp', moduleName: CORE$1 };
+Identifiers$1.i18nStart = { name: 'ɵi18nStart', moduleName: CORE$1 };
+Identifiers$1.i18nEnd = { name: 'ɵi18nEnd', moduleName: CORE$1 };
+Identifiers$1.i18nApply = { name: 'ɵi18nApply', moduleName: CORE$1 };
 Identifiers$1.load = { name: 'ɵload', moduleName: CORE$1 };
 Identifiers$1.loadQueryList = { name: 'ɵloadQueryList', moduleName: CORE$1 };
 Identifiers$1.pipe = { name: 'ɵpipe', moduleName: CORE$1 };
@@ -16859,6 +16864,8 @@ const I18N_ATTR_PREFIX = 'i18n-';
 /** I18n separators for metadata **/
 const MEANING_SEPARATOR$1 = '|';
 const ID_SEPARATOR$1 = '@@';
+/** Placeholder wrapper for i18n expressions **/
+const I18N_PLACEHOLDER_SYMBOL = '�';
 /** Non bindable attribute name **/
 const NON_BINDABLE_ATTR = 'ngNonBindable';
 /**
@@ -16887,6 +16894,20 @@ function invalid$1(arg) {
 }
 function isI18NAttribute(name) {
     return name === I18N_ATTR || name.startsWith(I18N_ATTR_PREFIX);
+}
+function wrapI18nPlaceholder(content) {
+    return `${I18N_PLACEHOLDER_SYMBOL}${content}${I18N_PLACEHOLDER_SYMBOL}`;
+}
+function assembleI18nTemplate(strings) {
+    if (!strings.length)
+        return '';
+    let acc = '';
+    const lastIdx = strings.length - 1;
+    for (let i = 0; i < lastIdx; i++) {
+        acc += `${strings[i]}${wrapI18nPlaceholder(i)}`;
+    }
+    acc += strings[lastIdx];
+    return acc;
 }
 function asLiteral(value) {
     if (Array.isArray(value)) {
@@ -18017,6 +18038,9 @@ class TemplateDefinitionBuilder {
     }
     // LocalResolver
     getLocal(name) { return this._bindingScope.get(name); }
+    i18nTranslate(label, meta) {
+        return this.constantPool.getTranslation(label, parseI18nMeta(meta), this.fileBasedI18nSuffix);
+    }
     visitContent(ngContent) {
         const slot = this.allocateDataSlot();
         const selectorIndex = ngContent.selectorIndex;
@@ -18068,7 +18092,7 @@ class TemplateDefinitionBuilder {
             this._phToNodeIdxes[this._i18nSectionIndex][phName].push(elementIndex);
         }
         let isNonBindableMode = false;
-        // Handle i18n attributes
+        // Handle i18n and ngNonBindable attributes
         for (const attr of element.attributes) {
             const name = attr.name;
             const value = attr.value;
@@ -18105,6 +18129,7 @@ class TemplateDefinitionBuilder {
         const styleInputs = [];
         const classInputs = [];
         const allOtherInputs = [];
+        const i18nAttrs = [];
         element.inputs.forEach((input) => {
             switch (input.type) {
                 // [attr.style] or [attr.class] should not be treated as styling-based
@@ -18120,6 +18145,9 @@ class TemplateDefinitionBuilder {
                     else if (isClassBinding(input)) {
                         // this should always go first in the compilation (for [class])
                         classInputs.splice(0, 0, input);
+                    }
+                    else if (attrI18nMetas.hasOwnProperty(input.name)) {
+                        i18nAttrs.push({ name: input.name, value: input.value });
                     }
                     else {
                         allOtherInputs.push(input);
@@ -18156,14 +18184,11 @@ class TemplateDefinitionBuilder {
                 });
             }
             else {
-                attributes.push(literal(name));
                 if (attrI18nMetas.hasOwnProperty(name)) {
-                    const meta = parseI18nMeta(attrI18nMetas[name]);
-                    const variable$$1 = this.constantPool.getTranslation(value, meta, this.fileBasedI18nSuffix);
-                    attributes.push(variable$$1);
+                    i18nAttrs.push({ name, value });
                 }
                 else {
-                    attributes.push(literal(value));
+                    attributes.push(literal(name), literal(value));
                 }
             }
         });
@@ -18230,7 +18255,7 @@ class TemplateDefinitionBuilder {
         }
         const implicit = variable(CONTEXT_NAME);
         const createSelfClosingInstruction = !hasStylingInstructions && !isNgContainer$$1 &&
-            element.children.length === 0 && element.outputs.length === 0;
+            element.children.length === 0 && element.outputs.length === 0 && i18nAttrs.length === 0;
         if (createSelfClosingInstruction) {
             this.creationInstruction(element.sourceSpan, Identifiers$1.element, trimTrailingNulls(parameters));
         }
@@ -18238,6 +18263,40 @@ class TemplateDefinitionBuilder {
             this.creationInstruction(element.sourceSpan, isNgContainer$$1 ? Identifiers$1.elementContainerStart : Identifiers$1.elementStart, trimTrailingNulls(parameters));
             if (isNonBindableMode) {
                 this.creationInstruction(element.sourceSpan, Identifiers$1.disableBindings);
+            }
+            // process i18n element attributes
+            if (i18nAttrs.length) {
+                let hasBindings = false;
+                const i18nAttrArgs = [];
+                i18nAttrs.forEach(({ name, value }) => {
+                    const meta = attrI18nMetas[name];
+                    if (typeof value === 'string') {
+                        // in case of static string value, 3rd argument is 0 declares
+                        // that there are no expressions defined in this translation
+                        i18nAttrArgs.push(literal(name), this.i18nTranslate(value, meta), literal(0));
+                    }
+                    else {
+                        const converted = value.visit(this._valueConverter);
+                        if (converted instanceof Interpolation) {
+                            const { strings, expressions } = converted;
+                            const label = assembleI18nTemplate(strings);
+                            i18nAttrArgs.push(literal(name), this.i18nTranslate(label, meta), literal(expressions.length));
+                            expressions.forEach(expression => {
+                                hasBindings = true;
+                                const binding = this.convertExpressionBinding(implicit, expression);
+                                this.updateInstruction(element.sourceSpan, Identifiers$1.i18nExp, [binding]);
+                            });
+                        }
+                    }
+                });
+                if (i18nAttrArgs.length) {
+                    const index = literal(this.allocateDataSlot());
+                    const args = this.constantPool.getConstLiteral(literalArr(i18nAttrArgs), true);
+                    this.creationInstruction(element.sourceSpan, Identifiers$1.i18nAttribute, [index, args]);
+                    if (hasBindings) {
+                        this.updateInstruction(element.sourceSpan, Identifiers$1.i18nApply, [index]);
+                    }
+                }
             }
             // initial styling for static style="..." attributes
             if (hasStylingInstructions) {
@@ -18475,8 +18534,7 @@ class TemplateDefinitionBuilder {
     // i0.ɵtext(1, MSG_XYZ);
     // ```
     visitSingleI18nTextChild(text, i18nMeta) {
-        const meta = parseI18nMeta(i18nMeta);
-        const variable$$1 = this.constantPool.getTranslation(text.value, meta, this.fileBasedI18nSuffix);
+        const variable$$1 = this.i18nTranslate(text.value, i18nMeta);
         this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(this.allocateDataSlot()), variable$$1]);
     }
     allocateDataSlot() { return this._dataIndex++; }
@@ -18506,6 +18564,11 @@ class TemplateDefinitionBuilder {
     }
     allocateBindingSlots(value) {
         this._bindingSlots += value instanceof Interpolation ? value.expressions.length : 1;
+    }
+    convertExpressionBinding(implicit, value) {
+        const convertedPropertyBinding = convertPropertyBinding(this, implicit, value, this.bindingContext(), BindingForm.TrySimple);
+        const valExpr = convertedPropertyBinding.currValExpr;
+        return importExpr(Identifiers$1.bind).callFn([valExpr]);
     }
     convertPropertyBinding(implicit, value, skipBindFn) {
         const interpolationFn = value instanceof Interpolation ? interpolate : () => error('Unexpected interpolation');
