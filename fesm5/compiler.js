@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-rc.1+58.sha-0f7d2ca
+ * @license Angular v7.0.0-rc.1+61.sha-371ffef
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1130,7 +1130,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.0.0-rc.1+58.sha-0f7d2ca');
+var VERSION = new Version('7.0.0-rc.1+61.sha-371ffef');
 
 /**
  * @license
@@ -20315,7 +20315,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     }
     // e.g. `animations: [trigger('123', [])]`
     if (meta.animations !== null) {
-        definitionMap.set('animations', meta.animations);
+        definitionMap.set('data', literalMap([{ key: 'animations', value: meta.animations, quoted: false }]));
     }
     // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
     // string literal, which must be on one line.
