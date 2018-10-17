@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-rc.1+64.sha-fa8e633
+ * @license Angular v7.0.0-rc.1+71.sha-8a3fd58
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1130,7 +1130,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.0.0-rc.1+64.sha-fa8e633');
+var VERSION = new Version('7.0.0-rc.1+71.sha-8a3fd58');
 
 /**
  * @license
@@ -17318,6 +17318,128 @@ function elementEventFullName(target, name) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/** I18n separators for metadata **/
+var I18N_MEANING_SEPARATOR = '|';
+var I18N_ID_SEPARATOR = '@@';
+/** Name of the i18n attributes **/
+var I18N_ATTR = 'i18n';
+var I18N_ATTR_PREFIX = 'i18n-';
+/** Placeholder wrapper for i18n expressions **/
+var I18N_PLACEHOLDER_SYMBOL = '�';
+// Parse i18n metas like:
+// - "@@id",
+// - "description[@@id]",
+// - "meaning|description[@@id]"
+function parseI18nMeta(meta) {
+    var _a, _b;
+    var id;
+    var meaning;
+    var description;
+    if (meta) {
+        var idIndex = meta.indexOf(I18N_ID_SEPARATOR);
+        var descIndex = meta.indexOf(I18N_MEANING_SEPARATOR);
+        var meaningAndDesc = void 0;
+        _a = __read((idIndex > -1) ? [meta.slice(0, idIndex), meta.slice(idIndex + 2)] : [meta, ''], 2), meaningAndDesc = _a[0], id = _a[1];
+        _b = __read((descIndex > -1) ?
+            [meaningAndDesc.slice(0, descIndex), meaningAndDesc.slice(descIndex + 1)] :
+            ['', meaningAndDesc], 2), meaning = _b[0], description = _b[1];
+    }
+    return { id: id, meaning: meaning, description: description };
+}
+function isI18NAttribute(name) {
+    return name === I18N_ATTR || name.startsWith(I18N_ATTR_PREFIX);
+}
+function wrapI18nPlaceholder(content, contextId) {
+    if (contextId === void 0) { contextId = 0; }
+    var blockId = contextId > 0 ? ":" + contextId : '';
+    return "" + I18N_PLACEHOLDER_SYMBOL + content + blockId + I18N_PLACEHOLDER_SYMBOL;
+}
+function assembleI18nBoundString(strings, bindingStartIndex, contextId) {
+    if (bindingStartIndex === void 0) { bindingStartIndex = 0; }
+    if (contextId === void 0) { contextId = 0; }
+    if (!strings.length)
+        return '';
+    var acc = '';
+    var lastIdx = strings.length - 1;
+    for (var i = 0; i < lastIdx; i++) {
+        acc += "" + strings[i] + wrapI18nPlaceholder(bindingStartIndex + i, contextId);
+    }
+    acc += strings[lastIdx];
+    return acc;
+}
+function getSeqNumberGenerator(startsAt) {
+    if (startsAt === void 0) { startsAt = 0; }
+    var current = startsAt;
+    return function () { return current++; };
+}
+/**
+ * I18nContext is a helper class which keeps track of all i18n-related aspects
+ * (accumulates content, bindings, etc) between i18nStart and i18nEnd instructions.
+ *
+ * When we enter a nested template, the top-level context is being passed down
+ * to the nested component, which uses this context to generate a child instance
+ * of I18nContext class (to handle nested template) and at the end, reconciles it back
+ * with the parent context.
+ */
+var I18nContext = /** @class */ (function () {
+    function I18nContext(index, templateIndex, ref, level, uniqueIdGen) {
+        if (level === void 0) { level = 0; }
+        this.index = index;
+        this.templateIndex = templateIndex;
+        this.ref = ref;
+        this.level = level;
+        this.uniqueIdGen = uniqueIdGen;
+        this.content = '';
+        this.bindings = new Set();
+        this.uniqueIdGen = uniqueIdGen || getSeqNumberGenerator();
+        this.id = this.uniqueIdGen();
+    }
+    I18nContext.prototype.wrap = function (symbol, elementIndex, contextId, closed) {
+        var state = closed ? '/' : '';
+        return wrapI18nPlaceholder("" + state + symbol + elementIndex, contextId);
+    };
+    I18nContext.prototype.append = function (content) { this.content += content; };
+    I18nContext.prototype.genTemplatePattern = function (contextId, templateId) {
+        return wrapI18nPlaceholder("tmpl:" + contextId + ":" + templateId);
+    };
+    I18nContext.prototype.getId = function () { return this.id; };
+    I18nContext.prototype.getRef = function () { return this.ref; };
+    I18nContext.prototype.getIndex = function () { return this.index; };
+    I18nContext.prototype.getContent = function () { return this.content; };
+    I18nContext.prototype.getTemplateIndex = function () { return this.templateIndex; };
+    I18nContext.prototype.getBindings = function () { return this.bindings; };
+    I18nContext.prototype.appendBinding = function (binding) { this.bindings.add(binding); };
+    I18nContext.prototype.isRoot = function () { return this.level === 0; };
+    I18nContext.prototype.isResolved = function () {
+        var regex = new RegExp(this.genTemplatePattern('\\d+', '\\d+'));
+        return !regex.test(this.content);
+    };
+    I18nContext.prototype.appendText = function (content) { this.append(content.trim()); };
+    I18nContext.prototype.appendTemplate = function (index) { this.append(this.genTemplatePattern(this.id, index)); };
+    I18nContext.prototype.appendElement = function (elementIndex, closed) {
+        this.append(this.wrap('#', elementIndex, this.id, closed));
+    };
+    I18nContext.prototype.forkChildContext = function (index, templateIndex) {
+        return new I18nContext(index, templateIndex, this.ref, this.level + 1, this.uniqueIdGen);
+    };
+    I18nContext.prototype.reconcileChildContext = function (context) {
+        var id = context.getId();
+        var content = context.getContent();
+        var templateIndex = context.getTemplateIndex();
+        var pattern = new RegExp(this.genTemplatePattern(this.id, templateIndex));
+        var replacement = "" + this.wrap('*', templateIndex, id) + content + this.wrap('*', templateIndex, id, true);
+        this.content = this.content.replace(pattern, replacement);
+    };
+    return I18nContext;
+}());
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var CONSTANT_PREFIX = '_c';
 // Closure variables holding messages must be named `MSG_[A-Z0-9]+`
 var TRANSLATION_PREFIX = 'MSG_';
@@ -17377,6 +17499,7 @@ var ConstantPool = /** @class */ (function () {
     function ConstantPool() {
         this.statements = [];
         this.translations = new Map();
+        this.deferredTranslations = new Map();
         this.literals = new Map();
         this.literalFactories = new Map();
         this.injectorDefinitions = new Map();
@@ -17407,6 +17530,27 @@ var ConstantPool = /** @class */ (function () {
         }
         return fixup;
     };
+    ConstantPool.prototype.getDeferredTranslationConst = function (suffix) {
+        var index = this.statements.push(new ExpressionStatement(NULL_EXPR)) - 1;
+        var variable$$1 = variable(this.freshTranslationName(suffix));
+        this.deferredTranslations.set(variable$$1, index);
+        return variable$$1;
+    };
+    ConstantPool.prototype.setDeferredTranslationConst = function (variable$$1, message) {
+        var index = this.deferredTranslations.get(variable$$1);
+        this.statements[index] = this.getTranslationDeclStmt(variable$$1, message);
+    };
+    ConstantPool.prototype.getTranslationDeclStmt = function (variable$$1, message) {
+        var fnCall = variable(GOOG_GET_MSG).callFn([literal(message)]);
+        return variable$$1.set(fnCall).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]);
+    };
+    ConstantPool.prototype.appendTranslationMeta = function (meta) {
+        var parsedMeta = typeof meta === 'string' ? parseI18nMeta(meta) : meta;
+        var docStmt = i18nMetaToDocStmt(parsedMeta);
+        if (docStmt) {
+            this.statements.push(docStmt);
+        }
+    };
     // Generates closure specific code for translation.
     //
     // ```
@@ -17417,21 +17561,16 @@ var ConstantPool = /** @class */ (function () {
     // const MSG_XYZ = goog.getMsg('message');
     // ```
     ConstantPool.prototype.getTranslation = function (message, meta, suffix) {
+        var parsedMeta = parseI18nMeta(meta);
         // The identity of an i18n message depends on the message and its meaning
-        var key = meta.meaning ? message + "\0\0" + meta.meaning : message;
+        var key = parsedMeta.meaning ? message + "\0\0" + parsedMeta.meaning : message;
         var exp = this.translations.get(key);
         if (exp) {
             return exp;
         }
-        var docStmt = i18nMetaToDocStmt(meta);
-        if (docStmt) {
-            this.statements.push(docStmt);
-        }
-        // Call closure to get the translation
         var variable$$1 = variable(this.freshTranslationName(suffix));
-        var fnCall = variable(GOOG_GET_MSG).callFn([literal(message)]);
-        var msgStmt = variable$$1.set(fnCall).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]);
-        this.statements.push(msgStmt);
+        this.appendTranslationMeta(parsedMeta);
+        this.statements.push(this.getTranslationDeclStmt(variable$$1, message));
         this.translations.set(key, variable$$1);
         return variable$$1;
     };
@@ -17595,12 +17734,13 @@ function invalid(arg) {
 function isVariable(e) {
     return e instanceof ReadVarExpr;
 }
-// Converts i18n meta informations for a message (description, meaning) to a JsDoc statement
-// formatted as expected by the Closure compiler.
+// Converts i18n meta informations for a message (id, description, meaning)
+// to a JsDoc statement formatted as expected by the Closure compiler.
 function i18nMetaToDocStmt(meta) {
     var tags = [];
-    if (meta.description) {
-        tags.push({ tagName: "desc" /* Desc */, text: meta.description });
+    if (meta.id || meta.description) {
+        var text = meta.id ? "[BACKUP_MESSAGE_ID:" + meta.id + "] " + meta.description : meta.description;
+        tags.push({ tagName: "desc" /* Desc */, text: text.trim() });
     }
     if (meta.meaning) {
         tags.push({ tagName: "meaning" /* Meaning */, text: meta.meaning });
@@ -17869,14 +18009,6 @@ var RENDER_FLAGS = 'rf';
 var REFERENCE_PREFIX = '_r';
 /** The name of the implicit context reference */
 var IMPLICIT_REFERENCE = '$implicit';
-/** Name of the i18n attributes **/
-var I18N_ATTR = 'i18n';
-var I18N_ATTR_PREFIX = 'i18n-';
-/** I18n separators for metadata **/
-var MEANING_SEPARATOR$1 = '|';
-var ID_SEPARATOR$1 = '@@';
-/** Placeholder wrapper for i18n expressions **/
-var I18N_PLACEHOLDER_SYMBOL = '�';
 /** Non bindable attribute name **/
 var NON_BINDABLE_ATTR = 'ngNonBindable';
 /**
@@ -17902,23 +18034,6 @@ function unsupported(feature) {
 }
 function invalid$1(arg) {
     throw new Error("Invalid state: Visitor " + this.constructor.name + " doesn't handle " + undefined);
-}
-function isI18NAttribute(name) {
-    return name === I18N_ATTR || name.startsWith(I18N_ATTR_PREFIX);
-}
-function wrapI18nPlaceholder(content) {
-    return "" + I18N_PLACEHOLDER_SYMBOL + content + I18N_PLACEHOLDER_SYMBOL;
-}
-function assembleI18nTemplate(strings) {
-    if (!strings.length)
-        return '';
-    var acc = '';
-    var lastIdx = strings.length - 1;
-    for (var i = 0; i < lastIdx; i++) {
-        acc += "" + strings[i] + wrapI18nPlaceholder(i);
-    }
-    acc += strings[lastIdx];
-    return acc;
 }
 function asLiteral(value) {
     if (Array.isArray(value)) {
@@ -18941,12 +19056,14 @@ function renderFlagCheckIfStmt(flags, statements) {
     return ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(flags), null, false), statements);
 }
 var TemplateDefinitionBuilder = /** @class */ (function () {
-    function TemplateDefinitionBuilder(constantPool, parentBindingScope, level, contextName, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace, relativeContextFilePath) {
+    function TemplateDefinitionBuilder(constantPool, parentBindingScope, level, contextName, i18nContext, templateIndex, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace, relativeContextFilePath) {
         if (level === void 0) { level = 0; }
         var _this = this;
         this.constantPool = constantPool;
         this.level = level;
         this.contextName = contextName;
+        this.i18nContext = i18nContext;
+        this.templateIndex = templateIndex;
         this.templateName = templateName;
         this.viewQueries = viewQueries;
         this.directiveMatcher = directiveMatcher;
@@ -18980,11 +19097,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
          */
         this._nestedTemplateFns = [];
         this._unsupported = unsupported;
-        // Whether we are inside a translatable element (`<p i18n>... somewhere here ... </p>)
-        this._inI18nSection = false;
-        this._i18nSectionIndex = -1;
-        // Maps of placeholder to node indexes for each of the i18n section
-        this._phToNodeIdxes = [{}];
+        // i18n context local to this template
+        this.i18n = null;
         // Number of slots to reserve for pureFunctions
         this._pureFunctionSlots = 0;
         // Number of binding slots
@@ -19034,7 +19148,6 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var _this = this;
         if (hasNgContent === void 0) { hasNgContent = false; }
         if (ngContentSelectors === void 0) { ngContentSelectors = []; }
-        var e_1, _a;
         if (this._namespace !== Identifiers$1.namespaceHTML) {
             this.creationInstruction(null, this._namespace);
         }
@@ -19053,6 +19166,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             }
             this.creationInstruction(null, Identifiers$1.projectionDef, parameters);
         }
+        if (this.i18nContext) {
+            this.i18nStart();
+        }
         // This is the initial pass through the nodes of this template. In this pass, we
         // queue all creation mode and update mode instructions for generation in the second
         // pass. It's necessary to separate the passes to ensure local refs are defined before
@@ -19068,6 +19184,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // Nested templates must be processed before creation instructions so template()
         // instructions can be generated with the correct internal const count.
         this._nestedTemplateFns.forEach(function (buildTemplateFn) { return buildTemplateFn(); });
+        if (this.i18nContext) {
+            this.i18nEnd();
+        }
         // Generate all the creation mode instructions (e.g. resolve bindings in listeners)
         var creationStatements = this._creationCodeFns.map(function (fn$$1) { return fn$$1(); });
         // Generate all the update mode instructions (e.g. resolve property or text bindings)
@@ -19082,25 +19201,6 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var updateBlock = updateStatements.length > 0 ?
             [renderFlagCheckIfStmt(2 /* Update */, updateVariables.concat(updateStatements))] :
             [];
-        try {
-            // Generate maps of placeholder name to node indexes
-            // TODO(vicb): This is a WIP, not fully supported yet
-            for (var _b = __values(this._phToNodeIdxes), _c = _b.next(); !_c.done; _c = _b.next()) {
-                var phToNodeIdx = _c.value;
-                if (Object.keys(phToNodeIdx).length > 0) {
-                    var scopedName = this._bindingScope.freshReferenceName();
-                    var phMap = variable(scopedName).set(mapToExpression(phToNodeIdx, true)).toConstDecl();
-                    this._prefixCode.push(phMap);
-                }
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-            }
-            finally { if (e_1) throw e_1.error; }
-        }
         return fn(
         // i.e. (rf: RenderFlags, ctx: any)
         [new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null)], __spread(this._prefixCode, creationBlock, updateBlock), INFERRED_TYPE, null, this.templateName);
@@ -19108,7 +19208,60 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     // LocalResolver
     TemplateDefinitionBuilder.prototype.getLocal = function (name) { return this._bindingScope.get(name); };
     TemplateDefinitionBuilder.prototype.i18nTranslate = function (label, meta) {
-        return this.constantPool.getTranslation(label, parseI18nMeta(meta), this.fileBasedI18nSuffix);
+        if (meta === void 0) { meta = ''; }
+        return this.constantPool.getTranslation(label, meta, this.fileBasedI18nSuffix);
+    };
+    TemplateDefinitionBuilder.prototype.i18nAppendTranslationMeta = function (meta) {
+        if (meta === void 0) { meta = ''; }
+        this.constantPool.appendTranslationMeta(meta);
+    };
+    TemplateDefinitionBuilder.prototype.i18nAllocateRef = function () {
+        return this.constantPool.getDeferredTranslationConst(this.fileBasedI18nSuffix);
+    };
+    TemplateDefinitionBuilder.prototype.i18nUpdateRef = function (context) {
+        if (context.isRoot() && context.isResolved()) {
+            this.constantPool.setDeferredTranslationConst(context.getRef(), context.getContent());
+        }
+    };
+    TemplateDefinitionBuilder.prototype.i18nStart = function (span, meta) {
+        if (span === void 0) { span = null; }
+        var index = this.allocateDataSlot();
+        if (this.i18nContext) {
+            this.i18n = this.i18nContext.forkChildContext(index, this.templateIndex);
+        }
+        else {
+            this.i18nAppendTranslationMeta(meta);
+            var ref = this.i18nAllocateRef();
+            this.i18n = new I18nContext(index, this.templateIndex, ref);
+        }
+        // generate i18nStart instruction
+        var params = [literal(index), this.i18n.getRef()];
+        if (this.i18n.getId() > 0) {
+            // do not push 3rd argument (sub-block id)
+            // into i18nStart call for top level i18n context
+            params.push(literal(this.i18n.getId()));
+        }
+        this.creationInstruction(span, Identifiers$1.i18nStart, params);
+    };
+    TemplateDefinitionBuilder.prototype.i18nEnd = function (span) {
+        var _this = this;
+        if (span === void 0) { span = null; }
+        if (this.i18nContext) {
+            this.i18nContext.reconcileChildContext(this.i18n);
+            this.i18nUpdateRef(this.i18nContext);
+        }
+        else {
+            this.i18nUpdateRef(this.i18n);
+        }
+        // setup accumulated bindings
+        var bindings = this.i18n.getBindings();
+        if (bindings.size) {
+            bindings.forEach(function (binding) { _this.updateInstruction(span, Identifiers$1.i18nExp, [binding]); });
+            var index = literal(this.i18n.getIndex());
+            this.updateInstruction(span, Identifiers$1.i18nApply, [index]);
+        }
+        this.creationInstruction(span, Identifiers$1.i18nEnd);
+        this.i18n = null; // reset local i18n context
     };
     TemplateDefinitionBuilder.prototype.visitContent = function (ngContent) {
         var slot = this.allocateDataSlot();
@@ -19145,24 +19298,15 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     };
     TemplateDefinitionBuilder.prototype.visitElement = function (element) {
         var _this = this;
-        var e_2, _a;
+        var e_1, _a;
         var elementIndex = this.allocateDataSlot();
-        var wasInI18nSection = this._inI18nSection;
+        var isNonBindableMode = false;
+        var isI18nRootElement = false;
         var outputAttrs = {};
         var attrI18nMetas = {};
         var i18nMeta = '';
         var _b = __read(splitNsName(element.name), 2), namespaceKey = _b[0], elementName = _b[1];
         var isNgContainer$$1 = isNgContainer(element.name);
-        // Elements inside i18n sections are replaced with placeholders
-        // TODO(vicb): nested elements are a WIP in this phase
-        if (this._inI18nSection) {
-            var phName = element.name.toLowerCase();
-            if (!this._phToNodeIdxes[this._i18nSectionIndex][phName]) {
-                this._phToNodeIdxes[this._i18nSectionIndex][phName] = [];
-            }
-            this._phToNodeIdxes[this._i18nSectionIndex][phName].push(elementIndex);
-        }
-        var isNonBindableMode = false;
         try {
             // Handle i18n and ngNonBindable attributes
             for (var _c = __values(element.attributes), _d = _c.next(); !_d.done; _d = _c.next()) {
@@ -19173,12 +19317,10 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                     isNonBindableMode = true;
                 }
                 else if (name_1 === I18N_ATTR) {
-                    if (this._inI18nSection) {
+                    if (this.i18n) {
                         throw new Error("Could not mark an element as translatable inside of a translatable section");
                     }
-                    this._inI18nSection = true;
-                    this._i18nSectionIndex++;
-                    this._phToNodeIdxes[this._i18nSectionIndex] = {};
+                    isI18nRootElement = true;
                     i18nMeta = value;
                 }
                 else if (name_1.startsWith(I18N_ATTR_PREFIX)) {
@@ -19189,12 +19331,12 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 }
             }
         }
-        catch (e_2_1) { e_2 = { error: e_2_1 }; }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
                 if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
             }
-            finally { if (e_2) throw e_2.error; }
+            finally { if (e_1) throw e_1.error; }
         }
         // Match directives on non i18n attributes
         this.matchDirectives(element.name, element);
@@ -19335,8 +19477,19 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             this.addNamespaceInstruction(currentNamespace, element);
         }
         var implicit = variable(CONTEXT_NAME);
+        if (this.i18n) {
+            this.i18n.appendElement(elementIndex);
+        }
+        var hasChildren = function () {
+            if (!isI18nRootElement && _this.i18n) {
+                // we do not append text node instructions inside i18n section, so we
+                // exclude them while calculating whether current element has children
+                return element.children.find(function (child) { return !(child instanceof Text$3 || child instanceof BoundText); });
+            }
+            return element.children.length > 0;
+        };
         var createSelfClosingInstruction = !hasStylingInstructions && !isNgContainer$$1 &&
-            element.children.length === 0 && element.outputs.length === 0 && i18nAttrs.length === 0;
+            element.outputs.length === 0 && i18nAttrs.length === 0 && !hasChildren();
         if (createSelfClosingInstruction) {
             this.creationInstruction(element.sourceSpan, Identifiers$1.element, trimTrailingNulls(parameters));
         }
@@ -19344,6 +19497,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             this.creationInstruction(element.sourceSpan, isNgContainer$$1 ? Identifiers$1.elementContainerStart : Identifiers$1.elementStart, trimTrailingNulls(parameters));
             if (isNonBindableMode) {
                 this.creationInstruction(element.sourceSpan, Identifiers$1.disableBindings);
+            }
+            if (isI18nRootElement) {
+                this.i18nStart(element.sourceSpan, i18nMeta);
             }
             // process i18n element attributes
             if (i18nAttrs.length) {
@@ -19361,7 +19517,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                         var converted = value.visit(_this._valueConverter);
                         if (converted instanceof Interpolation) {
                             var strings = converted.strings, expressions = converted.expressions;
-                            var label = assembleI18nTemplate(strings);
+                            var label = assembleI18nBoundString(strings);
                             i18nAttrArgs_1.push(literal(name), _this.i18nTranslate(label, meta), literal(expressions.length));
                             expressions.forEach(function (expression) {
                                 hasBindings_1 = true;
@@ -19518,27 +19674,28 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             }
         });
         // Traverse element child nodes
-        if (this._inI18nSection && element.children.length == 1 &&
-            element.children[0] instanceof Text$3) {
-            var text = element.children[0];
-            this.visitSingleI18nTextChild(text, i18nMeta);
-        }
-        else {
-            visitAll$1(this, element.children);
+        visitAll$1(this, element.children);
+        if (!isI18nRootElement && this.i18n) {
+            this.i18n.appendElement(elementIndex, true);
         }
         if (!createSelfClosingInstruction) {
             // Finish element construction mode.
-            if (isNonBindableMode) {
-                this.creationInstruction(element.endSourceSpan || element.sourceSpan, Identifiers$1.enableBindings);
+            var span = element.endSourceSpan || element.sourceSpan;
+            if (isI18nRootElement) {
+                this.i18nEnd(span);
             }
-            this.creationInstruction(element.endSourceSpan || element.sourceSpan, isNgContainer$$1 ? Identifiers$1.elementContainerEnd : Identifiers$1.elementEnd);
+            if (isNonBindableMode) {
+                this.creationInstruction(span, Identifiers$1.enableBindings);
+            }
+            this.creationInstruction(span, isNgContainer$$1 ? Identifiers$1.elementContainerEnd : Identifiers$1.elementEnd);
         }
-        // Restore the state before exiting this node
-        this._inI18nSection = wasInI18nSection;
     };
     TemplateDefinitionBuilder.prototype.visitTemplate = function (template) {
         var _this = this;
         var templateIndex = this.allocateDataSlot();
+        if (this.i18n) {
+            this.i18n.appendTemplate(templateIndex);
+        }
         var elName = '';
         if (template.children.length === 1 && template.children[0] instanceof Element$1) {
             // When the template as a single child, derive the context name from the tag
@@ -19576,7 +19733,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             });
         });
         // Create the template function
-        var templateVisitor = new TemplateDefinitionBuilder(this.constantPool, this._bindingScope, this.level + 1, contextName, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes, this._namespace, this.fileBasedI18nSuffix);
+        var templateVisitor = new TemplateDefinitionBuilder(this.constantPool, this._bindingScope, this.level + 1, contextName, this.i18n, templateIndex, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes, this._namespace, this.fileBasedI18nSuffix);
         // Nested templates must not be visited until after their parent templates have completed
         // processing, so they are queued here until after the initial pass. Otherwise, we wouldn't
         // be able to support bindings in nested templates to local refs that occur after the
@@ -19597,6 +19754,20 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     };
     TemplateDefinitionBuilder.prototype.visitBoundText = function (text) {
         var _this = this;
+        if (this.i18n) {
+            var value_3 = text.value.visit(this._valueConverter);
+            if (value_3 instanceof Interpolation) {
+                var strings = value_3.strings, expressions = value_3.expressions;
+                var label = assembleI18nBoundString(strings, this.i18n.getBindings().size, this.i18n.getId());
+                var implicit_1 = variable(CONTEXT_NAME);
+                expressions.forEach(function (expression) {
+                    var binding = _this.convertExpressionBinding(implicit_1, expression);
+                    _this.i18n.appendBinding(binding);
+                });
+                this.i18n.appendText(label);
+            }
+            return;
+        }
         var nodeIndex = this.allocateDataSlot();
         this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(nodeIndex)]);
         var value = text.value.visit(this._valueConverter);
@@ -19604,23 +19775,11 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this.updateInstruction(text.sourceSpan, Identifiers$1.textBinding, function () { return [literal(nodeIndex), _this.convertPropertyBinding(variable(CONTEXT_NAME), value)]; });
     };
     TemplateDefinitionBuilder.prototype.visitText = function (text) {
+        if (this.i18n) {
+            this.i18n.appendText(text.value);
+            return;
+        }
         this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(this.allocateDataSlot()), literal(text.value)]);
-    };
-    // When the content of the element is a single text node the translation can be inlined:
-    //
-    // `<p i18n="desc|mean">some content</p>`
-    // compiles to
-    // ```
-    // /**
-    // * @desc desc
-    // * @meaning mean
-    // */
-    // const MSG_XYZ = goog.getMsg('some content');
-    // i0.ɵtext(1, MSG_XYZ);
-    // ```
-    TemplateDefinitionBuilder.prototype.visitSingleI18nTextChild = function (text, i18nMeta) {
-        var variable$$1 = this.i18nTranslate(text.value, i18nMeta);
-        this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(this.allocateDataSlot()), variable$$1]);
     };
     TemplateDefinitionBuilder.prototype.allocateDataSlot = function () { return this._dataIndex++; };
     TemplateDefinitionBuilder.prototype.getConstCount = function () { return this._dataIndex; };
@@ -20030,27 +20189,6 @@ function createCssSelector(tag, attributes) {
     });
     return cssSelector;
 }
-// Parse i18n metas like:
-// - "@@id",
-// - "description[@@id]",
-// - "meaning|description[@@id]"
-function parseI18nMeta(i18n) {
-    var _a, _b;
-    var meaning;
-    var description;
-    var id;
-    if (i18n) {
-        // TODO(vicb): figure out how to force a message ID with closure ?
-        var idIndex = i18n.indexOf(ID_SEPARATOR$1);
-        var descIndex = i18n.indexOf(MEANING_SEPARATOR$1);
-        var meaningAndDesc = void 0;
-        _a = __read((idIndex > -1) ? [i18n.slice(0, idIndex), i18n.slice(idIndex + 2)] : [i18n, ''], 2), meaningAndDesc = _a[0], id = _a[1];
-        _b = __read((descIndex > -1) ?
-            [meaningAndDesc.slice(0, descIndex), meaningAndDesc.slice(descIndex + 1)] :
-            ['', meaningAndDesc], 2), meaning = _b[0], description = _b[1];
-    }
-    return { description: description, id: id, meaning: meaning };
-}
 function interpolate(args) {
     args = args.slice(1); // Ignore the length prefix added for render2
     switch (args.length) {
@@ -20286,7 +20424,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     var directivesUsed = new Set();
     var pipesUsed = new Set();
     var template = meta.template;
-    var templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML, meta.template.relativeContextFilePath);
+    var templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, null, null, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML, meta.template.relativeContextFilePath);
     var templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, [], template.hasNgContent, template.ngContentSelectors);
     // e.g. `consts: 2`
     definitionMap.set('consts', literal(templateBuilder.getConstCount()));
