@@ -19,14 +19,6 @@ export declare const RENDER_FLAGS = "rf";
 export declare const REFERENCE_PREFIX = "_r";
 /** The name of the implicit context reference */
 export declare const IMPLICIT_REFERENCE = "$implicit";
-/** Name of the i18n attributes **/
-export declare const I18N_ATTR = "i18n";
-export declare const I18N_ATTR_PREFIX = "i18n-";
-/** I18n separators for metadata **/
-export declare const MEANING_SEPARATOR = "|";
-export declare const ID_SEPARATOR = "@@";
-/** Placeholder wrapper for i18n expressions **/
-export declare const I18N_PLACEHOLDER_SYMBOL = "\uFFFD";
 /** Non bindable attribute name **/
 export declare const NON_BINDABLE_ATTR = "ngNonBindable";
 /**
@@ -37,9 +29,6 @@ export declare const NON_BINDABLE_ATTR = "ngNonBindable";
 export declare function temporaryAllocator(statements: o.Statement[], name: string): () => o.ReadVarExpr;
 export declare function unsupported(feature: string): never;
 export declare function invalid<T>(arg: o.Expression | o.Statement | t.Node): never;
-export declare function isI18NAttribute(name: string): boolean;
-export declare function wrapI18nPlaceholder(content: string | number): string;
-export declare function assembleI18nTemplate(strings: Array<string>): string;
 export declare function asLiteral(value: any): o.Expression;
 export declare function conditionallyCreateMapObjectLiteral(keys: {
     [key: string]: string;
