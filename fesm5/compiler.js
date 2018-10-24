@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-beta.0
+ * @license Angular v7.1.0-beta.0+1.sha-f6c2db8
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1130,7 +1130,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.1.0-beta.0');
+var VERSION = new Version('7.1.0-beta.0+1.sha-f6c2db8');
 
 /**
  * @license
@@ -19576,21 +19576,24 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             var firstStyle = styleInputs[0];
             var mapBasedStyleInput_1 = firstStyle && firstStyle.name == 'style' ? firstStyle : null;
             var firstClass = classInputs[0];
-            var mapBasedClassInput_1 = firstClass && isClassBinding(firstClass) ? firstClass : null;
-            var stylingInput = mapBasedStyleInput_1 || mapBasedClassInput_1;
+            var mapBasedClassInput = firstClass && isClassBinding(firstClass) ? firstClass : null;
+            var stylingInput = mapBasedStyleInput_1 || mapBasedClassInput;
             if (stylingInput) {
+                // these values must be outside of the update block so that they can
+                // be evaluted (the AST visit call) during creation time so that any
+                // pipes can be picked up in time before the template is built
+                var mapBasedClassValue_1 = mapBasedClassInput ? mapBasedClassInput.value.visit(this._valueConverter) : null;
+                var mapBasedStyleValue_1 = mapBasedStyleInput_1 ? mapBasedStyleInput_1.value.visit(this._valueConverter) : null;
                 this.updateInstruction(stylingInput.sourceSpan, Identifiers$1.elementStylingMap, function () {
                     var params = [indexLiteral_1];
-                    if (mapBasedClassInput_1) {
-                        var mapBasedClassValue = mapBasedClassInput_1.value.visit(_this._valueConverter);
-                        params.push(_this.convertPropertyBinding(implicit, mapBasedClassValue, true));
+                    if (mapBasedClassValue_1) {
+                        params.push(_this.convertPropertyBinding(implicit, mapBasedClassValue_1, true));
                     }
                     else if (mapBasedStyleInput_1) {
                         params.push(NULL_EXPR);
                     }
-                    if (mapBasedStyleInput_1) {
-                        var mapBasedStyleValue = mapBasedStyleInput_1.value.visit(_this._valueConverter);
-                        params.push(_this.convertPropertyBinding(implicit, mapBasedStyleValue, true));
+                    if (mapBasedStyleValue_1) {
+                        params.push(_this.convertPropertyBinding(implicit, mapBasedStyleValue_1, true));
                     }
                     return params;
                 });
@@ -19614,7 +19617,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 lastInputCommand = styleInputs[styleInputs.length - 1];
             }
             if (classInputs.length) {
-                var i = mapBasedClassInput_1 ? 1 : 0;
+                var i = mapBasedClassInput ? 1 : 0;
                 var _loop_1 = function () {
                     var input = classInputs[i];
                     var params = [];

@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-beta.0
+ * @license Angular v7.1.0-beta.0+1.sha-f6c2db8
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1084,7 +1084,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.1.0-beta.0');
+const VERSION = new Version('7.1.0-beta.0+1.sha-f6c2db8');
 
 /**
  * @license
@@ -18481,17 +18481,20 @@ class TemplateDefinitionBuilder {
             const mapBasedClassInput = firstClass && isClassBinding(firstClass) ? firstClass : null;
             const stylingInput = mapBasedStyleInput || mapBasedClassInput;
             if (stylingInput) {
+                // these values must be outside of the update block so that they can
+                // be evaluted (the AST visit call) during creation time so that any
+                // pipes can be picked up in time before the template is built
+                const mapBasedClassValue = mapBasedClassInput ? mapBasedClassInput.value.visit(this._valueConverter) : null;
+                const mapBasedStyleValue = mapBasedStyleInput ? mapBasedStyleInput.value.visit(this._valueConverter) : null;
                 this.updateInstruction(stylingInput.sourceSpan, Identifiers$1.elementStylingMap, () => {
                     const params = [indexLiteral];
-                    if (mapBasedClassInput) {
-                        const mapBasedClassValue = mapBasedClassInput.value.visit(this._valueConverter);
+                    if (mapBasedClassValue) {
                         params.push(this.convertPropertyBinding(implicit, mapBasedClassValue, true));
                     }
                     else if (mapBasedStyleInput) {
                         params.push(NULL_EXPR);
                     }
-                    if (mapBasedStyleInput) {
-                        const mapBasedStyleValue = mapBasedStyleInput.value.visit(this._valueConverter);
+                    if (mapBasedStyleValue) {
                         params.push(this.convertPropertyBinding(implicit, mapBasedStyleValue, true));
                     }
                     return params;
