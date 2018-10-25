@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-beta.0+6.sha-297dc2b
+ * @license Angular v7.1.0-beta.0+8.sha-b0476f3
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1084,7 +1084,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.1.0-beta.0+6.sha-297dc2b');
+const VERSION = new Version('7.1.0-beta.0+8.sha-b0476f3');
 
 /**
  * @license
@@ -16956,7 +16956,7 @@ Identifiers$1.queryRefresh = { name: 'ɵqueryRefresh', moduleName: CORE$1 };
 Identifiers$1.registerContentQuery = { name: 'ɵregisterContentQuery', moduleName: CORE$1 };
 Identifiers$1.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
 Identifiers$1.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
-Identifiers$1.PublicFeature = { name: 'ɵPublicFeature', moduleName: CORE$1 };
+Identifiers$1.ProvidersFeature = { name: 'ɵProvidersFeature', moduleName: CORE$1 };
 Identifiers$1.listener = { name: 'ɵlistener', moduleName: CORE$1 };
 Identifiers$1.getFactoryOf = {
     name: 'ɵgetFactoryOf',
@@ -19216,10 +19216,26 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs));
     // e.g 'outputs: {a: 'a'}`
     definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
+    if (meta.exportAs !== null) {
+        definitionMap.set('exportAs', literal(meta.exportAs));
+    }
+    return { definitionMap, statements: result.statements };
+}
+/**
+ * Add features to the definition map.
+ */
+function addFeatures(definitionMap, meta) {
     // e.g. `features: [NgOnChangesFeature]`
     const features = [];
-    // TODO: add `PublicFeature` so that directives get registered to the DI - make this configurable
-    features.push(importExpr(Identifiers$1.PublicFeature));
+    const providers = meta.providers;
+    const viewProviders = meta.viewProviders;
+    if (providers || viewProviders) {
+        const args = [providers || new LiteralArrayExpr([])];
+        if (viewProviders) {
+            args.push(viewProviders);
+        }
+        features.push(importExpr(Identifiers$1.ProvidersFeature).callFn(args));
+    }
     if (meta.usesInheritance) {
         features.push(importExpr(Identifiers$1.InheritDefinitionFeature));
     }
@@ -19229,16 +19245,13 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     if (features.length) {
         definitionMap.set('features', literalArr(features));
     }
-    if (meta.exportAs !== null) {
-        definitionMap.set('exportAs', literal(meta.exportAs));
-    }
-    return { definitionMap, statements: result.statements };
 }
 /**
  * Compile a directive for the render3 runtime as defined by the `R3DirectiveMetadata`.
  */
 function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
     const { definitionMap, statements } = baseDirectiveFields(meta, constantPool, bindingParser);
+    addFeatures(definitionMap, meta);
     const expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()]);
     // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
     // string literal, which must be on one line.
@@ -19278,6 +19291,7 @@ function compileBaseDefFromMetadata(meta) {
  */
 function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     const { definitionMap, statements } = baseDirectiveFields(meta, constantPool, bindingParser);
+    addFeatures(definitionMap, meta);
     const selector = meta.selector && CssSelector.parse(meta.selector);
     const firstSelector = selector && selector[0];
     // e.g. `attr: ["class", ".my.app"]`
@@ -19379,7 +19393,7 @@ function compileComponentFromRender2(outputCtx, component, render3Ast, reflector
             hasNgContent: render3Ast.hasNgContent,
             ngContentSelectors: render3Ast.ngContentSelectors,
             relativeContextFilePath: '',
-        }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations: null });
+        }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null });
     const res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
     // Create the partial class to be merged with the actual class.
     outputCtx.statements.push(new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []));
@@ -19411,6 +19425,7 @@ function directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector) {
         outputs: directive.outputs,
         usesInheritance: false,
         exportAs: null,
+        providers: directive.providers.length > 0 ? new WrappedNodeExpr(directive.providers) : null
     };
 }
 /**
@@ -19484,10 +19499,13 @@ function createContentQueriesFunction(meta, constantPool) {
     if (meta.queries.length) {
         const statements = meta.queries.map((query) => {
             const queryDefinition = createQueryDefinition(query, constantPool, null);
-            return importExpr(Identifiers$1.registerContentQuery).callFn([queryDefinition]).toStmt();
+            return importExpr(Identifiers$1.registerContentQuery)
+                .callFn([queryDefinition, variable('dirIndex')])
+                .toStmt();
         });
         const typeName = meta.name;
-        return fn([], statements, INFERRED_TYPE, null, typeName ? `${typeName}_ContentQueries` : null);
+        const parameters = [new FnParam('dirIndex', NUMBER_TYPE)];
+        return fn(parameters, statements, INFERRED_TYPE, null, typeName ? `${typeName}_ContentQueries` : null);
     }
     return null;
 }

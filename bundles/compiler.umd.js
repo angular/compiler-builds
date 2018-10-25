@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-beta.0+6.sha-297dc2b
+ * @license Angular v7.1.0-beta.0+8.sha-b0476f3
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1207,7 +1207,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION = new Version('7.1.0-beta.0+6.sha-297dc2b');
+    var VERSION = new Version('7.1.0-beta.0+8.sha-b0476f3');
 
     /**
      * @license
@@ -18037,7 +18037,7 @@
         Identifiers.registerContentQuery = { name: 'ɵregisterContentQuery', moduleName: CORE$1 };
         Identifiers.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
         Identifiers.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
-        Identifiers.PublicFeature = { name: 'ɵPublicFeature', moduleName: CORE$1 };
+        Identifiers.ProvidersFeature = { name: 'ɵProvidersFeature', moduleName: CORE$1 };
         Identifiers.listener = { name: 'ɵlistener', moduleName: CORE$1 };
         Identifiers.getFactoryOf = {
             name: 'ɵgetFactoryOf',
@@ -20392,10 +20392,26 @@
         definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs));
         // e.g 'outputs: {a: 'a'}`
         definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
+        if (meta.exportAs !== null) {
+            definitionMap.set('exportAs', literal(meta.exportAs));
+        }
+        return { definitionMap: definitionMap, statements: result.statements };
+    }
+    /**
+     * Add features to the definition map.
+     */
+    function addFeatures(definitionMap, meta) {
         // e.g. `features: [NgOnChangesFeature]`
         var features = [];
-        // TODO: add `PublicFeature` so that directives get registered to the DI - make this configurable
-        features.push(importExpr(Identifiers$1.PublicFeature));
+        var providers = meta.providers;
+        var viewProviders = meta.viewProviders;
+        if (providers || viewProviders) {
+            var args = [providers || new LiteralArrayExpr([])];
+            if (viewProviders) {
+                args.push(viewProviders);
+            }
+            features.push(importExpr(Identifiers$1.ProvidersFeature).callFn(args));
+        }
         if (meta.usesInheritance) {
             features.push(importExpr(Identifiers$1.InheritDefinitionFeature));
         }
@@ -20405,16 +20421,13 @@
         if (features.length) {
             definitionMap.set('features', literalArr(features));
         }
-        if (meta.exportAs !== null) {
-            definitionMap.set('exportAs', literal(meta.exportAs));
-        }
-        return { definitionMap: definitionMap, statements: result.statements };
     }
     /**
      * Compile a directive for the render3 runtime as defined by the `R3DirectiveMetadata`.
      */
     function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
         var _a = baseDirectiveFields(meta, constantPool, bindingParser), definitionMap = _a.definitionMap, statements = _a.statements;
+        addFeatures(definitionMap, meta);
         var expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()]);
         // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
         // string literal, which must be on one line.
@@ -20454,6 +20467,7 @@
      */
     function compileComponentFromMetadata(meta, constantPool, bindingParser) {
         var _a = baseDirectiveFields(meta, constantPool, bindingParser), definitionMap = _a.definitionMap, statements = _a.statements;
+        addFeatures(definitionMap, meta);
         var selector = meta.selector && CssSelector.parse(meta.selector);
         var firstSelector = selector && selector[0];
         // e.g. `attr: ["class", ".my.app"]`
@@ -20555,7 +20569,7 @@
                 hasNgContent: render3Ast.hasNgContent,
                 ngContentSelectors: render3Ast.ngContentSelectors,
                 relativeContextFilePath: '',
-            }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations: null });
+            }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null });
         var res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
         // Create the partial class to be merged with the actual class.
         outputCtx.statements.push(new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [exports.StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []));
@@ -20587,6 +20601,7 @@
             outputs: directive.outputs,
             usesInheritance: false,
             exportAs: null,
+            providers: directive.providers.length > 0 ? new WrappedNodeExpr(directive.providers) : null
         };
     }
     /**
@@ -20671,10 +20686,13 @@
         if (meta.queries.length) {
             var statements = meta.queries.map(function (query) {
                 var queryDefinition = createQueryDefinition(query, constantPool, null);
-                return importExpr(Identifiers$1.registerContentQuery).callFn([queryDefinition]).toStmt();
+                return importExpr(Identifiers$1.registerContentQuery)
+                    .callFn([queryDefinition, variable('dirIndex')])
+                    .toStmt();
             });
             var typeName = meta.name;
-            return fn([], statements, INFERRED_TYPE, null, typeName ? typeName + "_ContentQueries" : null);
+            var parameters = [new FnParam('dirIndex', NUMBER_TYPE)];
+            return fn(parameters, statements, INFERRED_TYPE, null, typeName ? typeName + "_ContentQueries" : null);
         }
         return null;
     }
