@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-beta.0+30.sha-f385913
+ * @license Angular v7.1.0-beta.0+34.sha-c048358
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1084,7 +1084,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.1.0-beta.0+30.sha-f385913');
+const VERSION = new Version('7.1.0-beta.0+34.sha-c048358');
 
 /**
  * @license
@@ -19315,14 +19315,18 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     // e.g. `directives: [MyDirective]`
     if (directivesUsed.size) {
         let directivesExpr = literalArr(Array.from(directivesUsed));
-        if (meta.wrapDirectivesInClosure) {
+        if (meta.wrapDirectivesAndPipesInClosure) {
             directivesExpr = fn([], [new ReturnStatement(directivesExpr)]);
         }
         definitionMap.set('directives', directivesExpr);
     }
     // e.g. `pipes: [MyPipe]`
     if (pipesUsed.size) {
-        definitionMap.set('pipes', literalArr(Array.from(pipesUsed)));
+        let pipesExpr = literalArr(Array.from(pipesUsed));
+        if (meta.wrapDirectivesAndPipesInClosure) {
+            pipesExpr = fn([], [new ReturnStatement(pipesExpr)]);
+        }
+        definitionMap.set('pipes', pipesExpr);
     }
     // e.g. `styles: [str1, str2]`
     if (meta.styles && meta.styles.length) {
@@ -19377,7 +19381,7 @@ function compileComponentFromRender2(outputCtx, component, render3Ast, reflector
             hasNgContent: render3Ast.hasNgContent,
             ngContentSelectors: render3Ast.ngContentSelectors,
             relativeContextFilePath: '',
-        }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null });
+        }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null });
     const res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
     // Create the partial class to be merged with the actual class.
     outputCtx.statements.push(new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []));
