@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-beta.0+42.sha-d2e6d69
+ * @license Angular v7.1.0-beta.0+44.sha-95993e1
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1084,7 +1084,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.1.0-beta.0+42.sha-d2e6d69');
+const VERSION = new Version('7.1.0-beta.0+44.sha-95993e1');
 
 /**
  * @license
@@ -18492,13 +18492,16 @@ class TemplateDefinitionBuilder {
                     const key = input.name;
                     const styleIndex = stylesIndexMap[key];
                     const value = input.value.visit(this._valueConverter);
-                    const params = [
-                        indexLiteral, literal(styleIndex), this.convertPropertyBinding(implicit, value, true)
-                    ];
-                    if (input.unit != null) {
-                        params.push(literal(input.unit));
-                    }
-                    this.updateInstruction(input.sourceSpan, Identifiers$1.elementStyleProp, params);
+                    this.updateInstruction(input.sourceSpan, Identifiers$1.elementStyleProp, () => {
+                        const params = [
+                            indexLiteral, literal(styleIndex),
+                            this.convertPropertyBinding(implicit, value, true)
+                        ];
+                        if (input.unit != null) {
+                            params.push(literal(input.unit));
+                        }
+                        return params;
+                    });
                 }
                 lastInputCommand = styleInputs[styleInputs.length - 1];
             }
@@ -18506,18 +18509,13 @@ class TemplateDefinitionBuilder {
                 let i = mapBasedClassInput ? 1 : 0;
                 for (i; i < classInputs.length; i++) {
                     const input = classInputs[i];
-                    const params = [];
                     const sanitizationRef = resolveSanitizationFn(input, input.securityContext);
-                    if (sanitizationRef)
-                        params.push(sanitizationRef);
                     const key = input.name;
                     const classIndex = classesIndexMap[key];
                     const value = input.value.visit(this._valueConverter);
                     this.updateInstruction(input.sourceSpan, Identifiers$1.elementClassProp, () => {
-                        return [
-                            indexLiteral, literal(classIndex),
-                            this.convertPropertyBinding(implicit, value, true), ...params
-                        ];
+                        const valueLiteral = this.convertPropertyBinding(implicit, value, true);
+                        return [indexLiteral, literal(classIndex), valueLiteral];
                     });
                 }
                 lastInputCommand = classInputs[classInputs.length - 1];
