@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-beta.0+36.sha-d50d400
+ * @license Angular v7.1.0-beta.0+39.sha-07509da
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1130,7 +1130,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.1.0-beta.0+36.sha-d50d400');
+var VERSION = new Version('7.1.0-beta.0+39.sha-07509da');
 
 /**
  * @license
@@ -21279,7 +21279,7 @@ var StaticSymbolResolver = /** @class */ (function () {
                     // correctly.
                     var originFilePath = _this.resolveModule(origin, filePath);
                     if (!originFilePath) {
-                        _this.reportError(new Error("Couldn't resolve original symbol for " + origin + " from " + filePath));
+                        _this.reportError(new Error("Couldn't resolve original symbol for " + origin + " from " + _this.host.getOutputName(filePath)));
                     }
                     else {
                         _this.symbolResourcePaths.set(symbol, originFilePath);
@@ -21344,7 +21344,7 @@ var StaticSymbolResolver = /** @class */ (function () {
                         if (!filePath) {
                             return {
                                 __symbolic: 'error',
-                                message: "Could not resolve " + module + " relative to " + sourceSymbol.filePath + ".",
+                                message: "Could not resolve " + module + " relative to " + self.host.getMetadataFor(sourceSymbol.filePath) + ".",
                                 line: map.line,
                                 character: map.character,
                                 fileName: getOriginalName()
@@ -21428,7 +21428,7 @@ var StaticSymbolResolver = /** @class */ (function () {
             if (moduleMetadata['version'] != SUPPORTED_SCHEMA_VERSION) {
                 var errorMessage = moduleMetadata['version'] == 2 ?
                     "Unsupported metadata version " + moduleMetadata['version'] + " for module " + module + ". This module should be compiled with a newer version of ngc" :
-                    "Metadata version mismatch for module " + module + ", found version " + moduleMetadata['version'] + ", expected " + SUPPORTED_SCHEMA_VERSION;
+                    "Metadata version mismatch for module " + this.host.getOutputName(module) + ", found version " + moduleMetadata['version'] + ", expected " + SUPPORTED_SCHEMA_VERSION;
                 this.reportError(new Error(errorMessage));
             }
             this.metadataCache.set(module, moduleMetadata);
@@ -21439,7 +21439,7 @@ var StaticSymbolResolver = /** @class */ (function () {
         var filePath = this.resolveModule(module, containingFile);
         if (!filePath) {
             this.reportError(new Error("Could not resolve module " + module + (containingFile ? ' relative to ' +
-                containingFile : '')));
+                this.host.getOutputName(containingFile) : '')));
             return this.getStaticSymbol("ERROR:" + module, symbolName);
         }
         return this.getStaticSymbol(filePath, symbolName);
