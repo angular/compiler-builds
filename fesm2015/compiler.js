@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-beta.0+8.sha-b0476f3
+ * @license Angular v7.1.0-beta.0+18.sha-aefa06f
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1084,7 +1084,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.1.0-beta.0+8.sha-b0476f3');
+const VERSION = new Version('7.1.0-beta.0+18.sha-aefa06f');
 
 /**
  * @license
@@ -17122,10 +17122,6 @@ var R3ResolvedDependencyType;
      * The token expression is a string representing the attribute name.
      */
     R3ResolvedDependencyType[R3ResolvedDependencyType["Attribute"] = 1] = "Attribute";
-    /**
-     * The dependency is for the `Injector` type itself.
-     */
-    R3ResolvedDependencyType[R3ResolvedDependencyType["Injector"] = 2] = "Injector";
 })(R3ResolvedDependencyType || (R3ResolvedDependencyType = {}));
 /**
  * Construct a factory function expression for the given `R3FactoryMetadata`.
@@ -17204,21 +17200,13 @@ function injectDependencies(deps, injectFn) {
 function compileInjectDependency(dep, injectFn) {
     // Interpret the dependency according to its resolved type.
     switch (dep.resolved) {
-        case R3ResolvedDependencyType.Token:
-        case R3ResolvedDependencyType.Injector: {
+        case R3ResolvedDependencyType.Token: {
             // Build up the injection flags according to the metadata.
             const flags = 0 /* Default */ | (dep.self ? 2 /* Self */ : 0) |
                 (dep.skipSelf ? 4 /* SkipSelf */ : 0) | (dep.host ? 1 /* Host */ : 0) |
                 (dep.optional ? 8 /* Optional */ : 0);
-            // Determine the token used for injection. In almost all cases this is the given token, but
-            // if the dependency is resolved to the `Injector` then the special `INJECTOR` token is used
-            // instead.
-            let token = dep.token;
-            if (dep.resolved === R3ResolvedDependencyType.Injector) {
-                token = importExpr(Identifiers.INJECTOR);
-            }
             // Build up the arguments to the injectFn call.
-            const injectArgs = [token];
+            const injectArgs = [dep.token];
             // If this dependency is optional or otherwise has non-default flags, then additional
             // parameters describing how to inject the dependency must be passed to the inject function
             // that's being used.
@@ -17248,13 +17236,9 @@ function dependenciesFromGlobalMetadata(type, outputCtx, reflector) {
     for (let dependency of type.diDeps) {
         if (dependency.token) {
             const tokenRef = tokenReference(dependency.token);
-            let resolved = R3ResolvedDependencyType.Token;
-            if (tokenRef === injectorRef) {
-                resolved = R3ResolvedDependencyType.Injector;
-            }
-            else if (dependency.isAttribute) {
-                resolved = R3ResolvedDependencyType.Attribute;
-            }
+            let resolved = dependency.isAttribute ?
+                R3ResolvedDependencyType.Attribute :
+                R3ResolvedDependencyType.Token;
             // In the case of most dependencies, the token will be a reference to a type. Sometimes,
             // however, it can be a string, in the case of older Angular code or @Attribute injection.
             const token = tokenRef instanceof StaticSymbol ? outputCtx.importExpr(tokenRef) : literal(tokenRef);
