@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-beta.0+34.sha-c048358
+ * @license Angular v7.1.0-beta.0+35.sha-19fcfc3
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1130,7 +1130,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.1.0-beta.0+34.sha-c048358');
+var VERSION = new Version('7.1.0-beta.0+35.sha-19fcfc3');
 
 /**
  * @license
@@ -20663,11 +20663,14 @@ function stringAsType(str) {
     return expressionType(literal(str));
 }
 function stringMapAsType(map) {
-    var mapValues = Object.keys(map).map(function (key) { return ({
-        key: key,
-        value: literal(map[key]),
-        quoted: true,
-    }); });
+    var mapValues = Object.keys(map).map(function (key) {
+        var value = Array.isArray(map[key]) ? map[key][0] : map[key];
+        return {
+            key: key,
+            value: literal(value),
+            quoted: true,
+        };
+    });
     return expressionType(literalMap(mapValues));
 }
 function stringArrayAsType(arr) {
