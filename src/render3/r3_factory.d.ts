@@ -74,11 +74,7 @@ export declare enum R3ResolvedDependencyType {
      *
      * The token expression is a string representing the attribute name.
      */
-    Attribute = 1,
-    /**
-     * The dependency is for the `Injector` type itself.
-     */
-    Injector = 2
+    Attribute = 1
 }
 /**
  * Metadata representing a single dependency to be injected into a constructor or function call.
