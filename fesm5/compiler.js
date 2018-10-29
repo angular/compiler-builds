@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-beta.0+55.sha-c0bf222
+ * @license Angular v7.1.0-beta.0+56.sha-2a86927
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1130,7 +1130,7 @@ var Version = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION = new Version('7.1.0-beta.0+55.sha-c0bf222');
+var VERSION = new Version('7.1.0-beta.0+56.sha-2a86927');
 
 /**
  * @license
@@ -18189,8 +18189,7 @@ function compileFactoryFunction(meta) {
             StmtModifier.Exported, StmtModifier.Final
         ]);
         statements.push(delegateFactoryStmt);
-        var r = makeConditionalFactory(delegateFactory.callFn([]));
-        retExpr = r;
+        retExpr = makeConditionalFactory(delegateFactory.callFn([]));
     }
     else if (isDelegatedMetadata(meta)) {
         // This type is created with a delegated factory. If a type parameter is not specified, call
@@ -18206,8 +18205,20 @@ function compileFactoryFunction(meta) {
         // TODO(alxhub): decide whether to lower the value here or in the caller
         retExpr = makeConditionalFactory(meta.expression);
     }
+    else if (meta.extraStatementFn) {
+        // if extraStatementsFn is specified and the 'makeConditionalFactory' function
+        // was not invoked, we need to create a reference to the instance, so we can
+        // pass it as an argument to the 'extraStatementFn' function while calling it
+        var variable$$1 = variable('f');
+        body.push(variable$$1.set(ctorExpr).toDeclStmt());
+        retExpr = variable$$1;
+    }
     else {
         retExpr = ctorExpr;
+    }
+    if (meta.extraStatementFn) {
+        var extraStmts = meta.extraStatementFn(retExpr);
+        body.push.apply(body, __spread(extraStmts));
     }
     return {
         factory: fn([new FnParam('t', DYNAMIC_TYPE)], __spread(body, [new ReturnStatement(retExpr)]), INFERRED_TYPE, undefined, meta.name + "_Factory"),
@@ -18370,6 +18381,7 @@ function compileInjector(meta) {
         type: meta.type,
         deps: meta.deps,
         injectFn: Identifiers$1.inject,
+        extraStatementFn: null,
     });
     var expression = importExpr(Identifiers$1.defineInjector).callFn([mapToMapExpression({
             factory: result.factory,
@@ -18425,6 +18437,7 @@ function compilePipeFromMetadata(metadata) {
         type: metadata.type,
         deps: metadata.deps,
         injectFn: Identifiers$1.directiveInject,
+        extraStatementFn: null,
     });
     definitionMapValues.push({ key: 'factory', value: templateFactory.factory, quoted: false });
     // e.g. `pure: true`
@@ -20300,6 +20313,7 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
         type: meta.type,
         deps: meta.deps,
         injectFn: Identifiers$1.directiveInject,
+        extraStatementFn: createFactoryExtraStatementsFn(meta, bindingParser)
     });
     definitionMap.set('factory', result.factory);
     definitionMap.set('contentQueries', createContentQueriesFunction(meta, constantPool));
@@ -20719,7 +20733,7 @@ function createViewQueriesFunction(meta, constantPool) {
 }
 // Return a host binding function or null if one is not necessary.
 function createHostBindingsFunction(meta, bindingParser, constantPool, allocatePureFunctionSlots) {
-    var e_2, _a, e_3, _b;
+    var e_2, _a;
     var statements = [];
     var hostBindingSourceSpan = meta.typeSourceSpan;
     var directiveSummary = metadataAsSummary(meta);
@@ -20754,28 +20768,6 @@ function createHostBindingsFunction(meta, bindingParser, constantPool, allocateP
             finally { if (e_2) throw e_2.error; }
         }
     }
-    // Calculate host event bindings
-    var eventBindings = bindingParser.createDirectiveHostEventAsts(directiveSummary, hostBindingSourceSpan);
-    if (eventBindings) {
-        try {
-            for (var eventBindings_1 = __values(eventBindings), eventBindings_1_1 = eventBindings_1.next(); !eventBindings_1_1.done; eventBindings_1_1 = eventBindings_1.next()) {
-                var binding = eventBindings_1_1.value;
-                var bindingExpr = convertActionBinding(null, bindingContext, binding.handler, 'b', function () { return error('Unexpected interpolation'); });
-                var bindingName = binding.name && sanitizeIdentifier(binding.name);
-                var typeName = meta.name;
-                var functionName = typeName && bindingName ? typeName + "_" + bindingName + "_HostBindingHandler" : null;
-                var handler = fn([new FnParam('$event', DYNAMIC_TYPE)], __spread(bindingExpr.stmts, [new ReturnStatement(bindingExpr.allowDefault)]), INFERRED_TYPE, null, functionName);
-                statements.push(importExpr(Identifiers$1.listener).callFn([literal(binding.name), handler]).toStmt());
-            }
-        }
-        catch (e_3_1) { e_3 = { error: e_3_1 }; }
-        finally {
-            try {
-                if (eventBindings_1_1 && !eventBindings_1_1.done && (_b = eventBindings_1.return)) _b.call(eventBindings_1);
-            }
-            finally { if (e_3) throw e_3.error; }
-        }
-    }
     if (statements.length > 0) {
         var typeName = meta.name;
         return fn([
@@ -20784,6 +20776,22 @@ function createHostBindingsFunction(meta, bindingParser, constantPool, allocateP
         ], statements, INFERRED_TYPE, null, typeName ? typeName + "_HostBindings" : null);
     }
     return null;
+}
+function createFactoryExtraStatementsFn(meta, bindingParser) {
+    var eventBindings = bindingParser.createDirectiveHostEventAsts(metadataAsSummary(meta), meta.typeSourceSpan);
+    return eventBindings && eventBindings.length ?
+        function (instance) { return createHostListeners(instance, eventBindings, meta); } :
+        null;
+}
+function createHostListeners(bindingContext, eventBindings, meta) {
+    return eventBindings.map(function (binding) {
+        var bindingExpr = convertActionBinding(null, bindingContext, binding.handler, 'b', function () { return error('Unexpected interpolation'); });
+        var bindingName = binding.name && sanitizeIdentifier(binding.name);
+        var typeName = meta.name;
+        var functionName = typeName && bindingName ? typeName + "_" + bindingName + "_HostBindingHandler" : null;
+        var handler = fn([new FnParam('$event', DYNAMIC_TYPE)], __spread(bindingExpr.render3Stmts), INFERRED_TYPE, null, functionName);
+        return importExpr(Identifiers$1.listener).callFn([literal(binding.name), handler]).toStmt();
+    });
 }
 function metadataAsSummary(meta) {
     // clang-format off
@@ -25187,6 +25195,7 @@ function compileInjectable(meta) {
         type: meta.type,
         deps: meta.ctorDeps,
         injectFn: Identifiers.inject,
+        extraStatementFn: null,
     };
     if (meta.useClass !== undefined) {
         // meta.useClass has two modes of operation. Either deps are specified, in which case `new` is
