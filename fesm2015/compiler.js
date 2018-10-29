@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.0.0-rc.1+192.sha-4e91ead.with-local-changes
+ * @license Angular v7.1.0-beta.0+58.sha-96770e5
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1084,7 +1084,7 @@ class Version {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('7.0.0-rc.1+192.sha-4e91ead.with-local-changes');
+const VERSION = new Version('7.1.0-beta.0+58.sha-96770e5');
 
 /**
  * @license
@@ -16956,7 +16956,7 @@ Identifiers$1.queryRefresh = { name: 'ɵqueryRefresh', moduleName: CORE$1 };
 Identifiers$1.registerContentQuery = { name: 'ɵregisterContentQuery', moduleName: CORE$1 };
 Identifiers$1.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
 Identifiers$1.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
-Identifiers$1.PublicFeature = { name: 'ɵPublicFeature', moduleName: CORE$1 };
+Identifiers$1.ProvidersFeature = { name: 'ɵProvidersFeature', moduleName: CORE$1 };
 Identifiers$1.listener = { name: 'ɵlistener', moduleName: CORE$1 };
 Identifiers$1.getFactoryOf = {
     name: 'ɵgetFactoryOf',
@@ -17122,10 +17122,6 @@ var R3ResolvedDependencyType;
      * The token expression is a string representing the attribute name.
      */
     R3ResolvedDependencyType[R3ResolvedDependencyType["Attribute"] = 1] = "Attribute";
-    /**
-     * The dependency is for the `Injector` type itself.
-     */
-    R3ResolvedDependencyType[R3ResolvedDependencyType["Injector"] = 2] = "Injector";
 })(R3ResolvedDependencyType || (R3ResolvedDependencyType = {}));
 /**
  * Construct a factory function expression for the given `R3FactoryMetadata`.
@@ -17173,8 +17169,7 @@ function compileFactoryFunction(meta) {
             StmtModifier.Exported, StmtModifier.Final
         ]);
         statements.push(delegateFactoryStmt);
-        const r = makeConditionalFactory(delegateFactory.callFn([]));
-        retExpr = r;
+        retExpr = makeConditionalFactory(delegateFactory.callFn([]));
     }
     else if (isDelegatedMetadata(meta)) {
         // This type is created with a delegated factory. If a type parameter is not specified, call
@@ -17190,8 +17185,20 @@ function compileFactoryFunction(meta) {
         // TODO(alxhub): decide whether to lower the value here or in the caller
         retExpr = makeConditionalFactory(meta.expression);
     }
+    else if (meta.extraStatementFn) {
+        // if extraStatementsFn is specified and the 'makeConditionalFactory' function
+        // was not invoked, we need to create a reference to the instance, so we can
+        // pass it as an argument to the 'extraStatementFn' function while calling it
+        const variable$$1 = variable('f');
+        body.push(variable$$1.set(ctorExpr).toDeclStmt());
+        retExpr = variable$$1;
+    }
     else {
         retExpr = ctorExpr;
+    }
+    if (meta.extraStatementFn) {
+        const extraStmts = meta.extraStatementFn(retExpr);
+        body.push(...extraStmts);
     }
     return {
         factory: fn([new FnParam('t', DYNAMIC_TYPE)], [...body, new ReturnStatement(retExpr)], INFERRED_TYPE, undefined, `${meta.name}_Factory`),
@@ -17204,21 +17211,13 @@ function injectDependencies(deps, injectFn) {
 function compileInjectDependency(dep, injectFn) {
     // Interpret the dependency according to its resolved type.
     switch (dep.resolved) {
-        case R3ResolvedDependencyType.Token:
-        case R3ResolvedDependencyType.Injector: {
+        case R3ResolvedDependencyType.Token: {
             // Build up the injection flags according to the metadata.
             const flags = 0 /* Default */ | (dep.self ? 2 /* Self */ : 0) |
                 (dep.skipSelf ? 4 /* SkipSelf */ : 0) | (dep.host ? 1 /* Host */ : 0) |
                 (dep.optional ? 8 /* Optional */ : 0);
-            // Determine the token used for injection. In almost all cases this is the given token, but
-            // if the dependency is resolved to the `Injector` then the special `INJECTOR` token is used
-            // instead.
-            let token = dep.token;
-            if (dep.resolved === R3ResolvedDependencyType.Injector) {
-                token = importExpr(Identifiers.INJECTOR);
-            }
             // Build up the arguments to the injectFn call.
-            const injectArgs = [token];
+            const injectArgs = [dep.token];
             // If this dependency is optional or otherwise has non-default flags, then additional
             // parameters describing how to inject the dependency must be passed to the inject function
             // that's being used.
@@ -17248,13 +17247,9 @@ function dependenciesFromGlobalMetadata(type, outputCtx, reflector) {
     for (let dependency of type.diDeps) {
         if (dependency.token) {
             const tokenRef = tokenReference(dependency.token);
-            let resolved = R3ResolvedDependencyType.Token;
-            if (tokenRef === injectorRef) {
-                resolved = R3ResolvedDependencyType.Injector;
-            }
-            else if (dependency.isAttribute) {
-                resolved = R3ResolvedDependencyType.Attribute;
-            }
+            let resolved = dependency.isAttribute ?
+                R3ResolvedDependencyType.Attribute :
+                R3ResolvedDependencyType.Token;
             // In the case of most dependencies, the token will be a reference to a type. Sometimes,
             // however, it can be a string, in the case of older Angular code or @Attribute injection.
             const token = tokenRef instanceof StaticSymbol ? outputCtx.importExpr(tokenRef) : literal(tokenRef);
@@ -17355,6 +17350,7 @@ function compileInjector(meta) {
         type: meta.type,
         deps: meta.deps,
         injectFn: Identifiers$1.inject,
+        extraStatementFn: null,
     });
     const expression = importExpr(Identifiers$1.defineInjector).callFn([mapToMapExpression({
             factory: result.factory,
@@ -17410,6 +17406,7 @@ function compilePipeFromMetadata(metadata) {
         type: metadata.type,
         deps: metadata.deps,
         injectFn: Identifiers$1.directiveInject,
+        extraStatementFn: null,
     });
     definitionMapValues.push({ key: 'factory', value: templateFactory.factory, quoted: false });
     // e.g. `pure: true`
@@ -18481,17 +18478,20 @@ class TemplateDefinitionBuilder {
             const mapBasedClassInput = firstClass && isClassBinding(firstClass) ? firstClass : null;
             const stylingInput = mapBasedStyleInput || mapBasedClassInput;
             if (stylingInput) {
+                // these values must be outside of the update block so that they can
+                // be evaluted (the AST visit call) during creation time so that any
+                // pipes can be picked up in time before the template is built
+                const mapBasedClassValue = mapBasedClassInput ? mapBasedClassInput.value.visit(this._valueConverter) : null;
+                const mapBasedStyleValue = mapBasedStyleInput ? mapBasedStyleInput.value.visit(this._valueConverter) : null;
                 this.updateInstruction(stylingInput.sourceSpan, Identifiers$1.elementStylingMap, () => {
                     const params = [indexLiteral];
-                    if (mapBasedClassInput) {
-                        const mapBasedClassValue = mapBasedClassInput.value.visit(this._valueConverter);
+                    if (mapBasedClassValue) {
                         params.push(this.convertPropertyBinding(implicit, mapBasedClassValue, true));
                     }
                     else if (mapBasedStyleInput) {
                         params.push(NULL_EXPR);
                     }
-                    if (mapBasedStyleInput) {
-                        const mapBasedStyleValue = mapBasedStyleInput.value.visit(this._valueConverter);
+                    if (mapBasedStyleValue) {
                         params.push(this.convertPropertyBinding(implicit, mapBasedStyleValue, true));
                     }
                     return params;
@@ -18505,13 +18505,16 @@ class TemplateDefinitionBuilder {
                     const key = input.name;
                     const styleIndex = stylesIndexMap[key];
                     const value = input.value.visit(this._valueConverter);
-                    const params = [
-                        indexLiteral, literal(styleIndex), this.convertPropertyBinding(implicit, value, true)
-                    ];
-                    if (input.unit != null) {
-                        params.push(literal(input.unit));
-                    }
-                    this.updateInstruction(input.sourceSpan, Identifiers$1.elementStyleProp, params);
+                    this.updateInstruction(input.sourceSpan, Identifiers$1.elementStyleProp, () => {
+                        const params = [
+                            indexLiteral, literal(styleIndex),
+                            this.convertPropertyBinding(implicit, value, true)
+                        ];
+                        if (input.unit != null) {
+                            params.push(literal(input.unit));
+                        }
+                        return params;
+                    });
                 }
                 lastInputCommand = styleInputs[styleInputs.length - 1];
             }
@@ -18519,18 +18522,13 @@ class TemplateDefinitionBuilder {
                 let i = mapBasedClassInput ? 1 : 0;
                 for (i; i < classInputs.length; i++) {
                     const input = classInputs[i];
-                    const params = [];
                     const sanitizationRef = resolveSanitizationFn(input, input.securityContext);
-                    if (sanitizationRef)
-                        params.push(sanitizationRef);
                     const key = input.name;
                     const classIndex = classesIndexMap[key];
                     const value = input.value.visit(this._valueConverter);
                     this.updateInstruction(input.sourceSpan, Identifiers$1.elementClassProp, () => {
-                        return [
-                            indexLiteral, literal(classIndex),
-                            this.convertPropertyBinding(implicit, value, true), ...params
-                        ];
+                        const valueLiteral = this.convertPropertyBinding(implicit, value, true);
+                        return [indexLiteral, literal(classIndex), valueLiteral];
                     });
                 }
                 lastInputCommand = classInputs[classInputs.length - 1];
@@ -19191,6 +19189,7 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
         type: meta.type,
         deps: meta.deps,
         injectFn: Identifiers$1.directiveInject,
+        extraStatementFn: createFactoryExtraStatementsFn(meta, bindingParser)
     });
     definitionMap.set('factory', result.factory);
     definitionMap.set('contentQueries', createContentQueriesFunction(meta, constantPool));
@@ -19213,10 +19212,26 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs));
     // e.g 'outputs: {a: 'a'}`
     definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
+    if (meta.exportAs !== null) {
+        definitionMap.set('exportAs', literal(meta.exportAs));
+    }
+    return { definitionMap, statements: result.statements };
+}
+/**
+ * Add features to the definition map.
+ */
+function addFeatures(definitionMap, meta) {
     // e.g. `features: [NgOnChangesFeature]`
     const features = [];
-    // TODO: add `PublicFeature` so that directives get registered to the DI - make this configurable
-    features.push(importExpr(Identifiers$1.PublicFeature));
+    const providers = meta.providers;
+    const viewProviders = meta.viewProviders;
+    if (providers || viewProviders) {
+        const args = [providers || new LiteralArrayExpr([])];
+        if (viewProviders) {
+            args.push(viewProviders);
+        }
+        features.push(importExpr(Identifiers$1.ProvidersFeature).callFn(args));
+    }
     if (meta.usesInheritance) {
         features.push(importExpr(Identifiers$1.InheritDefinitionFeature));
     }
@@ -19226,16 +19241,13 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     if (features.length) {
         definitionMap.set('features', literalArr(features));
     }
-    if (meta.exportAs !== null) {
-        definitionMap.set('exportAs', literal(meta.exportAs));
-    }
-    return { definitionMap, statements: result.statements };
 }
 /**
  * Compile a directive for the render3 runtime as defined by the `R3DirectiveMetadata`.
  */
 function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
     const { definitionMap, statements } = baseDirectiveFields(meta, constantPool, bindingParser);
+    addFeatures(definitionMap, meta);
     const expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()]);
     // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
     // string literal, which must be on one line.
@@ -19275,6 +19287,7 @@ function compileBaseDefFromMetadata(meta) {
  */
 function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     const { definitionMap, statements } = baseDirectiveFields(meta, constantPool, bindingParser);
+    addFeatures(definitionMap, meta);
     const selector = meta.selector && CssSelector.parse(meta.selector);
     const firstSelector = selector && selector[0];
     // e.g. `attr: ["class", ".my.app"]`
@@ -19314,14 +19327,18 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     // e.g. `directives: [MyDirective]`
     if (directivesUsed.size) {
         let directivesExpr = literalArr(Array.from(directivesUsed));
-        if (meta.wrapDirectivesInClosure) {
+        if (meta.wrapDirectivesAndPipesInClosure) {
             directivesExpr = fn([], [new ReturnStatement(directivesExpr)]);
         }
         definitionMap.set('directives', directivesExpr);
     }
     // e.g. `pipes: [MyPipe]`
     if (pipesUsed.size) {
-        definitionMap.set('pipes', literalArr(Array.from(pipesUsed)));
+        let pipesExpr = literalArr(Array.from(pipesUsed));
+        if (meta.wrapDirectivesAndPipesInClosure) {
+            pipesExpr = fn([], [new ReturnStatement(pipesExpr)]);
+        }
+        definitionMap.set('pipes', pipesExpr);
     }
     // e.g. `styles: [str1, str2]`
     if (meta.styles && meta.styles.length) {
@@ -19376,7 +19393,7 @@ function compileComponentFromRender2(outputCtx, component, render3Ast, reflector
             hasNgContent: render3Ast.hasNgContent,
             ngContentSelectors: render3Ast.ngContentSelectors,
             relativeContextFilePath: '',
-        }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations: null });
+        }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null });
     const res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
     // Create the partial class to be merged with the actual class.
     outputCtx.statements.push(new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []));
@@ -19408,6 +19425,7 @@ function directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector) {
         outputs: directive.outputs,
         usesInheritance: false,
         exportAs: null,
+        providers: directive.providers.length > 0 ? new WrappedNodeExpr(directive.providers) : null
     };
 }
 /**
@@ -19481,10 +19499,13 @@ function createContentQueriesFunction(meta, constantPool) {
     if (meta.queries.length) {
         const statements = meta.queries.map((query) => {
             const queryDefinition = createQueryDefinition(query, constantPool, null);
-            return importExpr(Identifiers$1.registerContentQuery).callFn([queryDefinition]).toStmt();
+            return importExpr(Identifiers$1.registerContentQuery)
+                .callFn([queryDefinition, variable('dirIndex')])
+                .toStmt();
         });
         const typeName = meta.name;
-        return fn([], statements, INFERRED_TYPE, null, typeName ? `${typeName}_ContentQueries` : null);
+        const parameters = [new FnParam('dirIndex', NUMBER_TYPE)];
+        return fn(parameters, statements, INFERRED_TYPE, null, typeName ? `${typeName}_ContentQueries` : null);
     }
     return null;
 }
@@ -19523,11 +19544,14 @@ function stringAsType(str) {
     return expressionType(literal(str));
 }
 function stringMapAsType(map) {
-    const mapValues = Object.keys(map).map(key => ({
-        key,
-        value: literal(map[key]),
-        quoted: true,
-    }));
+    const mapValues = Object.keys(map).map(key => {
+        const value = Array.isArray(map[key]) ? map[key][0] : map[key];
+        return {
+            key,
+            value: literal(value),
+            quoted: true,
+        };
+    });
     return expressionType(literalMap(mapValues));
 }
 function stringArrayAsType(arr) {
@@ -19598,18 +19622,6 @@ function createHostBindingsFunction(meta, bindingParser, constantPool, allocateP
                 .toStmt());
         }
     }
-    // Calculate host event bindings
-    const eventBindings = bindingParser.createDirectiveHostEventAsts(directiveSummary, hostBindingSourceSpan);
-    if (eventBindings) {
-        for (const binding of eventBindings) {
-            const bindingExpr = convertActionBinding(null, bindingContext, binding.handler, 'b', () => error('Unexpected interpolation'));
-            const bindingName = binding.name && sanitizeIdentifier(binding.name);
-            const typeName = meta.name;
-            const functionName = typeName && bindingName ? `${typeName}_${bindingName}_HostBindingHandler` : null;
-            const handler = fn([new FnParam('$event', DYNAMIC_TYPE)], [...bindingExpr.stmts, new ReturnStatement(bindingExpr.allowDefault)], INFERRED_TYPE, null, functionName);
-            statements.push(importExpr(Identifiers$1.listener).callFn([literal(binding.name), handler]).toStmt());
-        }
-    }
     if (statements.length > 0) {
         const typeName = meta.name;
         return fn([
@@ -19618,6 +19630,22 @@ function createHostBindingsFunction(meta, bindingParser, constantPool, allocateP
         ], statements, INFERRED_TYPE, null, typeName ? `${typeName}_HostBindings` : null);
     }
     return null;
+}
+function createFactoryExtraStatementsFn(meta, bindingParser) {
+    const eventBindings = bindingParser.createDirectiveHostEventAsts(metadataAsSummary(meta), meta.typeSourceSpan);
+    return eventBindings && eventBindings.length ?
+        (instance) => createHostListeners(instance, eventBindings, meta) :
+        null;
+}
+function createHostListeners(bindingContext, eventBindings, meta) {
+    return eventBindings.map(binding => {
+        const bindingExpr = convertActionBinding(null, bindingContext, binding.handler, 'b', () => error('Unexpected interpolation'));
+        const bindingName = binding.name && sanitizeIdentifier(binding.name);
+        const typeName = meta.name;
+        const functionName = typeName && bindingName ? `${typeName}_${bindingName}_HostBindingHandler` : null;
+        const handler = fn([new FnParam('$event', DYNAMIC_TYPE)], [...bindingExpr.render3Stmts], INFERRED_TYPE, null, functionName);
+        return importExpr(Identifiers$1.listener).callFn([literal(binding.name), handler]).toStmt();
+    });
 }
 function metadataAsSummary(meta) {
     // clang-format off
@@ -20048,7 +20076,7 @@ class StaticSymbolResolver {
                     // correctly.
                     const originFilePath = this.resolveModule(origin, filePath);
                     if (!originFilePath) {
-                        this.reportError(new Error(`Couldn't resolve original symbol for ${origin} from ${filePath}`));
+                        this.reportError(new Error(`Couldn't resolve original symbol for ${origin} from ${this.host.getOutputName(filePath)}`));
                     }
                     else {
                         this.symbolResourcePaths.set(symbol, originFilePath);
@@ -20108,7 +20136,7 @@ class StaticSymbolResolver {
                         if (!filePath) {
                             return {
                                 __symbolic: 'error',
-                                message: `Could not resolve ${module} relative to ${sourceSymbol.filePath}.`,
+                                message: `Could not resolve ${module} relative to ${self.host.getMetadataFor(sourceSymbol.filePath)}.`,
                                 line: map.line,
                                 character: map.character,
                                 fileName: getOriginalName()
@@ -20191,7 +20219,7 @@ class StaticSymbolResolver {
             if (moduleMetadata['version'] != SUPPORTED_SCHEMA_VERSION) {
                 const errorMessage = moduleMetadata['version'] == 2 ?
                     `Unsupported metadata version ${moduleMetadata['version']} for module ${module}. This module should be compiled with a newer version of ngc` :
-                    `Metadata version mismatch for module ${module}, found version ${moduleMetadata['version']}, expected ${SUPPORTED_SCHEMA_VERSION}`;
+                    `Metadata version mismatch for module ${this.host.getOutputName(module)}, found version ${moduleMetadata['version']}, expected ${SUPPORTED_SCHEMA_VERSION}`;
                 this.reportError(new Error(errorMessage));
             }
             this.metadataCache.set(module, moduleMetadata);
@@ -20202,7 +20230,7 @@ class StaticSymbolResolver {
         const filePath = this.resolveModule(module, containingFile);
         if (!filePath) {
             this.reportError(new Error(`Could not resolve module ${module}${containingFile ? ' relative to ' +
-                containingFile : ''}`));
+                this.host.getOutputName(containingFile) : ''}`));
             return this.getStaticSymbol(`ERROR:${module}`, symbolName);
         }
         return this.getStaticSymbol(filePath, symbolName);
@@ -23730,6 +23758,7 @@ function compileInjectable(meta) {
         type: meta.type,
         deps: meta.ctorDeps,
         injectFn: Identifiers.inject,
+        extraStatementFn: null,
     };
     if (meta.useClass !== undefined) {
         // meta.useClass has two modes of operation. Either deps are specified, in which case `new` is
