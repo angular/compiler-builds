@@ -87,3 +87,4 @@ export { compilePipeFromMetadata, R3PipeMetadata } from './render3/r3_pipe_compi
 export { makeBindingParser, parseTemplate } from './render3/view/template';
 export { R3Reference } from './render3/util';
 export { compileBaseDefFromMetadata, R3BaseRefMetaData, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings } from './render3/view/compiler';
+export { publishFacade } from './jit_compiler_facade';

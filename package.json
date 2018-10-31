@@ -1,6 +1,6 @@
 {
   "name": "@angular/compiler",
-  "version": "7.1.0-beta.0+74.sha-332394d",
+  "version": "7.1.0-beta.0+77.sha-d042c4a",
   "description": "Angular - the compiler library",
   "main": "./bundles/compiler.umd.js",
   "module": "./fesm5/compiler.js",
@@ -41,5 +41,5 @@
       "@angular/service-worker"
     ]
   },
-  "sideEffects": false
+  "sideEffects": true
 }
