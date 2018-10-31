@@ -31,7 +31,7 @@ export declare function unsupported(feature: string): never;
 export declare function invalid<T>(arg: o.Expression | o.Statement | t.Node): never;
 export declare function asLiteral(value: any): o.Expression;
 export declare function conditionallyCreateMapObjectLiteral(keys: {
-    [key: string]: string;
+    [key: string]: string | [string, string];
 }): o.Expression | null;
 export declare function mapToExpression(map: {
     [key: string]: any;
