@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-beta.1+6.sha-4e9f2e5
+ * @license Angular v7.1.0-beta.1+14.sha-2e7b5c5
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1236,14 +1236,15 @@ class InvokeMethodExpr extends Expression {
     }
 }
 class InvokeFunctionExpr extends Expression {
-    constructor(fn, args, type, sourceSpan) {
+    constructor(fn, args, type, sourceSpan, pure = false) {
         super(type, sourceSpan);
         this.fn = fn;
         this.args = args;
+        this.pure = pure;
     }
     isEquivalent(e) {
         return e instanceof InvokeFunctionExpr && this.fn.isEquivalent(e.fn) &&
-            areAllEquivalent(this.args, e.args);
+            areAllEquivalent(this.args, e.args) && this.pure === e.pure;
     }
     isConstant() { return false; }
     visitExpression(visitor, context) {
@@ -2827,6 +2828,7 @@ Identifiers.ViewDefinition = {
     moduleName: CORE,
 };
 Identifiers.createComponentFactory = { name: 'ɵccf', moduleName: CORE };
+Identifiers.setClassMetadata = { name: 'ɵsetClassMetadata', moduleName: CORE };
 function createTokenForReference(reference) {
     return { identifier: { reference: reference } };
 }
@@ -12882,7 +12884,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.1.0-beta.1+6.sha-4e9f2e5');
+const VERSION$1 = new Version('7.1.0-beta.1+14.sha-2e7b5c5');
 
 /**
  * @license
