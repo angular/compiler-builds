@@ -59,6 +59,7 @@ export declare class Identifiers {
     static RendererType2: o.ExternalReference;
     static ViewDefinition: o.ExternalReference;
     static createComponentFactory: o.ExternalReference;
+    static setClassMetadata: o.ExternalReference;
 }
 export declare function createTokenForReference(reference: any): CompileTokenMetadata;
 export declare function createTokenForExternalReference(reflector: CompileReflector, reference: o.ExternalReference): CompileTokenMetadata;

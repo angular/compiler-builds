@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-beta.1+6.sha-4e9f2e5
+ * @license Angular v7.1.0-beta.1+14.sha-2e7b5c5
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1314,15 +1314,17 @@ var InvokeMethodExpr = /** @class */ (function (_super) {
 }(Expression));
 var InvokeFunctionExpr = /** @class */ (function (_super) {
     __extends(InvokeFunctionExpr, _super);
-    function InvokeFunctionExpr(fn, args, type, sourceSpan) {
+    function InvokeFunctionExpr(fn, args, type, sourceSpan, pure) {
+        if (pure === void 0) { pure = false; }
         var _this = _super.call(this, type, sourceSpan) || this;
         _this.fn = fn;
         _this.args = args;
+        _this.pure = pure;
         return _this;
     }
     InvokeFunctionExpr.prototype.isEquivalent = function (e) {
         return e instanceof InvokeFunctionExpr && this.fn.isEquivalent(e.fn) &&
-            areAllEquivalent(this.args, e.args);
+            areAllEquivalent(this.args, e.args) && this.pure === e.pure;
     };
     InvokeFunctionExpr.prototype.isConstant = function () { return false; };
     InvokeFunctionExpr.prototype.visitExpression = function (visitor, context) {
@@ -3079,6 +3081,7 @@ var Identifiers = /** @class */ (function () {
         moduleName: CORE,
     };
     Identifiers.createComponentFactory = { name: 'ɵccf', moduleName: CORE };
+    Identifiers.setClassMetadata = { name: 'ɵsetClassMetadata', moduleName: CORE };
     return Identifiers;
 }());
 function createTokenForReference(reference) {
@@ -13668,7 +13671,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.1.0-beta.1+6.sha-4e9f2e5');
+var VERSION$1 = new Version('7.1.0-beta.1+14.sha-2e7b5c5');
 
 /**
  * @license
