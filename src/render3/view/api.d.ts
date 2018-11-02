@@ -80,7 +80,7 @@ export interface R3DirectiveMetadata {
      * A mapping of input field names to the property names.
      */
     inputs: {
-        [field: string]: string | string[];
+        [field: string]: string | [string, string];
     };
     /**
      * A mapping of output field names to the property names.
@@ -193,8 +193,8 @@ export interface R3QueryMetadata {
      */
     descendants: boolean;
     /**
-     * An expression representing a type to read from each matched node, or null if the node itself
-     * is to be returned.
+     * An expression representing a type to read from each matched node, or null if the default value
+     * for a given node is to be returned.
      */
     read: o.Expression | null;
 }
