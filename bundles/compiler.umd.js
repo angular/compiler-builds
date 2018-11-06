@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-beta.1+62.sha-64647af
+ * @license Angular v7.1.0-beta.1+77.sha-7dbc103
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -7724,8 +7724,8 @@
         };
         Token.prototype.isNumber = function () { return this.type == exports.TokenType.Number; };
         Token.prototype.isString = function () { return this.type == exports.TokenType.String; };
-        Token.prototype.isOperator = function (operater) {
-            return this.type == exports.TokenType.Operator && this.strValue == operater;
+        Token.prototype.isOperator = function (operator) {
+            return this.type == exports.TokenType.Operator && this.strValue == operator;
         };
         Token.prototype.isIdentifier = function () { return this.type == exports.TokenType.Identifier; };
         Token.prototype.isKeyword = function () { return this.type == exports.TokenType.Keyword; };
@@ -13728,7 +13728,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('7.1.0-beta.1+62.sha-64647af');
+    var VERSION$1 = new Version('7.1.0-beta.1+77.sha-7dbc103');
 
     /**
      * @license
