@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-beta.1+79.sha-297c54e
+ * @license Angular v7.1.0-beta.1+85.sha-9e26216
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12974,6 +12974,9 @@
      * found in the LICENSE file at https://angular.io/license
      */
     var EMPTY_ARRAY = [];
+    // This regex matches any binding names that contain the "attr." prefix, e.g. "attr.required"
+    // If there is a match, the first matching group will contain the attribute name to bind.
+    var ATTR_REGEX = /attr\.([^\]]+)/;
     function baseDirectiveFields(meta, constantPool, bindingParser) {
         var definitionMap = new DefinitionMap();
         // e.g. `type: MyDirective`
@@ -13423,11 +13426,12 @@
                     // resolve literal arrays and literal objects
                     var value = binding.expression.visit(valueConverter);
                     var bindingExpr = convertPropertyBinding(null, bindingContext, value, 'b', BindingForm.TrySimple, function () { return error('Unexpected interpolation'); });
+                    var _b = getBindingNameAndInstruction(binding.name), bindingName = _b.bindingName, instruction = _b.instruction;
                     statements.push.apply(statements, __spread(bindingExpr.stmts));
-                    statements.push(importExpr(Identifiers$1.elementProperty)
+                    statements.push(importExpr(instruction)
                         .callFn([
                         variable('elIndex'),
-                        literal(binding.name),
+                        literal(bindingName),
                         importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr]),
                     ])
                         .toStmt());
@@ -13449,6 +13453,19 @@
             ], statements, INFERRED_TYPE, null, typeName ? typeName + "_HostBindings" : null);
         }
         return null;
+    }
+    function getBindingNameAndInstruction(bindingName) {
+        var instruction;
+        // Check to see if this is an attr binding or a property binding
+        var attrMatches = bindingName.match(ATTR_REGEX);
+        if (attrMatches) {
+            bindingName = attrMatches[1];
+            instruction = Identifiers$1.elementAttribute;
+        }
+        else {
+            instruction = Identifiers$1.elementProperty;
+        }
+        return { bindingName: bindingName, instruction: instruction };
     }
     function createFactoryExtraStatementsFn(meta, bindingParser) {
         var eventBindings = bindingParser.createDirectiveHostEventAsts(metadataAsSummary(meta), meta.typeSourceSpan);
@@ -13495,8 +13512,8 @@
             if (matches === null) {
                 attributes[key] = value;
             }
-            else if (matches[1 /* Property */] != null) {
-                properties[matches[1 /* Property */]] = value;
+            else if (matches[1 /* Binding */] != null) {
+                properties[matches[1 /* Binding */]] = value;
             }
             else if (matches[2 /* Event */] != null) {
                 listeners[matches[2 /* Event */]] = value;
@@ -13728,7 +13745,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('7.1.0-beta.1+79.sha-297c54e');
+    var VERSION$1 = new Version('7.1.0-beta.1+85.sha-9e26216');
 
     /**
      * @license
