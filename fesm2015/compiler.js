@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-beta.1+84.sha-a4398aa
+ * @license Angular v7.1.0-beta.1+85.sha-9e26216
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12162,6 +12162,9 @@ function prepareSyntheticAttributeName(name) {
  * found in the LICENSE file at https://angular.io/license
  */
 const EMPTY_ARRAY = [];
+// This regex matches any binding names that contain the "attr." prefix, e.g. "attr.required"
+// If there is a match, the first matching group will contain the attribute name to bind.
+const ATTR_REGEX = /attr\.([^\]]+)/;
 function baseDirectiveFields(meta, constantPool, bindingParser) {
     const definitionMap = new DefinitionMap();
     // e.g. `type: MyDirective`
@@ -12597,11 +12600,12 @@ function createHostBindingsFunction(meta, bindingParser, constantPool, allocateP
             // resolve literal arrays and literal objects
             const value = binding.expression.visit(valueConverter);
             const bindingExpr = convertPropertyBinding(null, bindingContext, value, 'b', BindingForm.TrySimple, () => error('Unexpected interpolation'));
+            const { bindingName, instruction } = getBindingNameAndInstruction(binding.name);
             statements.push(...bindingExpr.stmts);
-            statements.push(importExpr(Identifiers$1.elementProperty)
+            statements.push(importExpr(instruction)
                 .callFn([
                 variable('elIndex'),
-                literal(binding.name),
+                literal(bindingName),
                 importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr]),
             ])
                 .toStmt());
@@ -12615,6 +12619,19 @@ function createHostBindingsFunction(meta, bindingParser, constantPool, allocateP
         ], statements, INFERRED_TYPE, null, typeName ? `${typeName}_HostBindings` : null);
     }
     return null;
+}
+function getBindingNameAndInstruction(bindingName) {
+    let instruction;
+    // Check to see if this is an attr binding or a property binding
+    const attrMatches = bindingName.match(ATTR_REGEX);
+    if (attrMatches) {
+        bindingName = attrMatches[1];
+        instruction = Identifiers$1.elementAttribute;
+    }
+    else {
+        instruction = Identifiers$1.elementProperty;
+    }
+    return { bindingName, instruction };
 }
 function createFactoryExtraStatementsFn(meta, bindingParser) {
     const eventBindings = bindingParser.createDirectiveHostEventAsts(metadataAsSummary(meta), meta.typeSourceSpan);
@@ -12658,8 +12675,8 @@ function parseHostBindings(host) {
         if (matches === null) {
             attributes[key] = value;
         }
-        else if (matches[1 /* Property */] != null) {
-            properties[matches[1 /* Property */]] = value;
+        else if (matches[1 /* Binding */] != null) {
+            properties[matches[1 /* Binding */]] = value;
         }
         else if (matches[2 /* Event */] != null) {
             listeners[matches[2 /* Event */]] = value;
@@ -12884,7 +12901,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.1.0-beta.1+84.sha-a4398aa');
+const VERSION$1 = new Version('7.1.0-beta.1+85.sha-9e26216');
 
 /**
  * @license
