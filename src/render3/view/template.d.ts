@@ -94,6 +94,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     getVarCount(): number;
     private bindingContext;
     private instructionFn;
+    private processStylingInstruction;
     private creationInstruction;
     private updateInstruction;
     private allocatePureFunctionSlots;
