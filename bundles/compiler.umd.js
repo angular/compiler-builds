@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-beta.2+21.sha-e5c9f7a
+ * @license Angular v7.1.0-beta.2+24.sha-1810cdf
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -11862,7 +11862,8 @@
             // Generate all the update mode instructions (e.g. resolve property or text bindings)
             var updateStatements = this._updateCodeFns.map(function (fn$$1) { return fn$$1(); });
             //  Variable declaration must occur after binding resolution so we can generate context
-            //  instructions that build on each other. e.g. const b = x().$implicit(); const b = x();
+            //  instructions that build on each other.
+            // e.g. const b = nextContext().$implicit(); const b = nextContext();
             var creationVariables = this._bindingScope.viewSnapshotStatements();
             var updateVariables = this._bindingScope.variableDeclarations().concat(this._tempVariables);
             var creationBlock = creationStatements.length > 0 ?
@@ -12547,12 +12548,12 @@
                 var retrievalLevel = _this.level;
                 var lhs = variable(variableName);
                 _this._bindingScope.set(retrievalLevel, reference.name, lhs, 0 /* DEFAULT */, function (scope, relativeLevel) {
-                    // e.g. x(2);
+                    // e.g. nextContext(2);
                     var nextContextStmt = relativeLevel > 0 ? [generateNextContextExpr(relativeLevel).toStmt()] : [];
-                    // e.g. const $foo$ = r(1);
+                    // e.g. const $foo$ = reference(1);
                     var refExpr = lhs.set(importExpr(Identifiers$1.reference).callFn([literal(slot)]));
                     return nextContextStmt.concat(refExpr.toConstDecl());
-                });
+                }, true);
                 return [reference.name, reference.value];
             }));
             return this.constantPool.getConstLiteral(asLiteral(refsParam), true);
@@ -12718,13 +12719,14 @@
                             lhs: value.lhs,
                             declareLocalCallback: value.declareLocalCallback,
                             declare: false,
-                            priority: value.priority
+                            priority: value.priority,
+                            localRef: value.localRef
                         };
                         // Cache the value locally.
                         this.map.set(name, value);
                         // Possibly generate a shared context var
                         this.maybeGenerateSharedContextVar(value);
-                        this.maybeRestoreView(value.retrievalLevel);
+                        this.maybeRestoreView(value.retrievalLevel, value.localRef);
                     }
                     if (value.declareLocalCallback && !value.declare) {
                         value.declare = true;
@@ -12747,8 +12749,9 @@
          * @param lhs AST representing the left hand side of the `let lhs = rhs;`.
          * @param priority The sorting priority of this var
          * @param declareLocalCallback The callback to invoke when declaring this local var
+         * @param localRef Whether or not this is a local ref
          */
-        BindingScope.prototype.set = function (retrievalLevel, name, lhs, priority, declareLocalCallback) {
+        BindingScope.prototype.set = function (retrievalLevel, name, lhs, priority, declareLocalCallback, localRef) {
             if (priority === void 0) { priority = 0 /* DEFAULT */; }
             !this.map.has(name) ||
                 error("The name " + name + " is already defined in scope to be " + this.map.get(name));
@@ -12757,7 +12760,8 @@
                 lhs: lhs,
                 declare: false,
                 declareLocalCallback: declareLocalCallback,
-                priority: priority
+                priority: priority,
+                localRef: localRef || false
             });
             return this;
         };
@@ -12789,36 +12793,42 @@
                 retrievalLevel: retrievalLevel,
                 lhs: lhs,
                 declareLocalCallback: function (scope, relativeLevel) {
-                    // const ctx_r0 = x(2);
+                    // const ctx_r0 = nextContext(2);
                     return [lhs.set(generateNextContextExpr(relativeLevel)).toConstDecl()];
                 },
                 declare: false,
-                priority: 2 /* SHARED_CONTEXT */
+                priority: 2 /* SHARED_CONTEXT */,
+                localRef: false
             });
         };
         BindingScope.prototype.getComponentProperty = function (name) {
             var componentValue = this.map.get(SHARED_CONTEXT_KEY + 0);
             componentValue.declare = true;
-            this.maybeRestoreView(0);
+            this.maybeRestoreView(0, false);
             return componentValue.lhs.prop(name);
         };
-        BindingScope.prototype.maybeRestoreView = function (retrievalLevel) {
-            if (this.isListenerScope() && retrievalLevel < this.bindingLevel) {
+        BindingScope.prototype.maybeRestoreView = function (retrievalLevel, localRefLookup) {
+            // We want to restore the current view in listener fns if:
+            // 1 - we are accessing a value in a parent view, which requires walking the view tree rather
+            // than using the ctx arg. In this case, the retrieval and binding level will be different.
+            // 2 - we are looking up a local ref, which requires restoring the view where the local
+            // ref is stored
+            if (this.isListenerScope() && (retrievalLevel < this.bindingLevel || localRefLookup)) {
                 if (!this.parent.restoreViewVariable) {
-                    // parent saves variable to generate a shared `const $s$ = gV();` instruction
+                    // parent saves variable to generate a shared `const $s$ = getCurrentView();` instruction
                     this.parent.restoreViewVariable = variable(this.parent.freshReferenceName());
                 }
                 this.restoreViewVariable = this.parent.restoreViewVariable;
             }
         };
         BindingScope.prototype.restoreViewStatement = function () {
-            // rV($state$);
+            // restoreView($state$);
             return this.restoreViewVariable ?
                 [instruction(null, Identifiers$1.restoreView, [this.restoreViewVariable]).toStmt()] :
                 [];
         };
         BindingScope.prototype.viewSnapshotStatements = function () {
-            // const $state$ = gV();
+            // const $state$ = getCurrentView();
             var getCurrentViewInstruction = instruction(null, Identifiers$1.getCurrentView, []);
             return this.restoreViewVariable ?
                 [this.restoreViewVariable.set(getCurrentViewInstruction).toConstDecl()] :
@@ -13745,7 +13755,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('7.1.0-beta.2+21.sha-e5c9f7a');
+    var VERSION$1 = new Version('7.1.0-beta.2+24.sha-1810cdf');
 
     /**
      * @license
