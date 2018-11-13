@@ -94,6 +94,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     getVarCount(): number;
     private bindingContext;
     private instructionFn;
+    private processStylingInstruction;
     private creationInstruction;
     private updateInstruction;
     private allocatePureFunctionSlots;
@@ -126,13 +127,14 @@ export declare class ValueConverter extends AstMemoryEfficientTransformer {
  */
 export declare type DeclareLocalVarCallback = (scope: BindingScope, relativeLevel: number) => o.Statement[];
 /**
- * This is used when one refers to variable such as: 'let abc = x(2).$implicit`.
+ * This is used when one refers to variable such as: 'let abc = nextContext(2).$implicit`.
  * - key to the map is the string literal `"abc"`.
  * - value `retrievalLevel` is the level from which this value can be retrieved, which is 2 levels
  * up in example.
  * - value `lhs` is the left hand side which is an AST representing `abc`.
  * - value `declareLocalCallback` is a callback that is invoked when declaring the local.
  * - value `declare` is true if this value needs to be declared.
+ * - value `localRef` is true if we are storing a local reference
  * - value `priority` dictates the sorting priority of this var declaration compared
  * to other var declarations on the same retrieval level. For example, if there is a
  * context variable and a local ref accessing the same parent view, the context var
@@ -144,6 +146,7 @@ declare type BindingData = {
     declareLocalCallback?: DeclareLocalVarCallback;
     declare: boolean;
     priority: number;
+    localRef: boolean;
 };
 export declare class BindingScope implements LocalResolver {
     bindingLevel: number;
@@ -164,15 +167,16 @@ export declare class BindingScope implements LocalResolver {
      * @param lhs AST representing the left hand side of the `let lhs = rhs;`.
      * @param priority The sorting priority of this var
      * @param declareLocalCallback The callback to invoke when declaring this local var
+     * @param localRef Whether or not this is a local ref
      */
-    set(retrievalLevel: number, name: string, lhs: o.ReadVarExpr, priority?: number, declareLocalCallback?: DeclareLocalVarCallback): BindingScope;
+    set(retrievalLevel: number, name: string, lhs: o.ReadVarExpr, priority?: number, declareLocalCallback?: DeclareLocalVarCallback, localRef?: true): BindingScope;
     getLocal(name: string): (o.Expression | null);
     nestedScope(level: number): BindingScope;
     getSharedContextName(retrievalLevel: number): o.ReadVarExpr | null;
     maybeGenerateSharedContextVar(value: BindingData): void;
     generateSharedContextVar(retrievalLevel: number): void;
     getComponentProperty(name: string): o.Expression;
-    maybeRestoreView(retrievalLevel: number): void;
+    maybeRestoreView(retrievalLevel: number, localRefLookup: boolean): void;
     restoreViewStatement(): o.Statement[];
     viewSnapshotStatements(): o.Statement[];
     isListenerScope(): boolean | null;
