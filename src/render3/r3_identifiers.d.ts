@@ -59,7 +59,7 @@ export declare class Identifiers {
     static pipeBind3: o.ExternalReference;
     static pipeBind4: o.ExternalReference;
     static pipeBindV: o.ExternalReference;
-    static i18nAttributes: o.ExternalReference;
+    static i18nAttribute: o.ExternalReference;
     static i18nExp: o.ExternalReference;
     static i18nStart: o.ExternalReference;
     static i18nEnd: o.ExternalReference;
