@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-beta.2+40.sha-bc652a2
+ * @license Angular v7.1.0-beta.2+43.sha-a63fd2d
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -3606,7 +3606,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.pipeBind3 = { name: 'ɵpipeBind3', moduleName: CORE$1 };
     Identifiers.pipeBind4 = { name: 'ɵpipeBind4', moduleName: CORE$1 };
     Identifiers.pipeBindV = { name: 'ɵpipeBindV', moduleName: CORE$1 };
-    Identifiers.i18nAttribute = { name: 'ɵi18nAttribute', moduleName: CORE$1 };
+    Identifiers.i18nAttributes = { name: 'ɵi18nAttributes', moduleName: CORE$1 };
     Identifiers.i18nExp = { name: 'ɵi18nExp', moduleName: CORE$1 };
     Identifiers.i18nStart = { name: 'ɵi18nStart', moduleName: CORE$1 };
     Identifiers.i18nEnd = { name: 'ɵi18nEnd', moduleName: CORE$1 };
@@ -12317,7 +12317,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 if (i18nAttrArgs_1.length) {
                     var index = literal(this.allocateDataSlot());
                     var args = this.constantPool.getConstLiteral(literalArr(i18nAttrArgs_1), true);
-                    this.creationInstruction(element.sourceSpan, Identifiers$1.i18nAttribute, [index, args]);
+                    this.creationInstruction(element.sourceSpan, Identifiers$1.i18nAttributes, [index, args]);
                     if (hasBindings_1) {
                         this.updateInstruction(element.sourceSpan, Identifiers$1.i18nApply, [index]);
                     }
@@ -13772,7 +13772,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.1.0-beta.2+40.sha-bc652a2');
+var VERSION$1 = new Version('7.1.0-beta.2+43.sha-a63fd2d');
 
 /**
  * @license
