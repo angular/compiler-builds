@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-rc.0+3.sha-ee12e72
+ * @license Angular v7.1.0-rc.0+10.sha-91bffa9
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -3635,8 +3635,8 @@
         Identifiers.elementProperty = { name: 'ɵelementProperty', moduleName: CORE$1 };
         Identifiers.elementAttribute = { name: 'ɵelementAttribute', moduleName: CORE$1 };
         Identifiers.elementClassProp = { name: 'ɵelementClassProp', moduleName: CORE$1 };
-        Identifiers.elementContainerStart = { name: 'ɵEC', moduleName: CORE$1 };
-        Identifiers.elementContainerEnd = { name: 'ɵeC', moduleName: CORE$1 };
+        Identifiers.elementContainerStart = { name: 'ɵelementContainerStart', moduleName: CORE$1 };
+        Identifiers.elementContainerEnd = { name: 'ɵelementContainerEnd', moduleName: CORE$1 };
         Identifiers.elementStyling = { name: 'ɵelementStyling', moduleName: CORE$1 };
         Identifiers.elementStylingMap = { name: 'ɵelementStylingMap', moduleName: CORE$1 };
         Identifiers.elementStyleProp = { name: 'ɵelementStyleProp', moduleName: CORE$1 };
@@ -13232,6 +13232,10 @@
             var strings = styleValues.map(function (str) { return literal(str); });
             definitionMap.set('styles', literalArr(strings));
         }
+        // Only set view encapsulation if it's not the default value
+        if (meta.encapsulation !== null && meta.encapsulation !== ViewEncapsulation.Emulated) {
+            definitionMap.set('encapsulation', literal(meta.encapsulation));
+        }
         // e.g. `animations: [trigger('123', [])]`
         if (meta.animations !== null) {
             definitionMap.set('data', literalMap([{ key: 'animations', value: meta.animations, quoted: false }]));
@@ -13829,7 +13833,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('7.1.0-rc.0+3.sha-ee12e72');
+    var VERSION$1 = new Version('7.1.0-rc.0+10.sha-91bffa9');
 
     /**
      * @license
