@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-rc.0+8.sha-b07bd30
+ * @license Angular v7.1.0-rc.0+9.sha-60800da
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -3291,8 +3291,8 @@ Identifiers$1.elementEnd = { name: 'ɵelementEnd', moduleName: CORE$1 };
 Identifiers$1.elementProperty = { name: 'ɵelementProperty', moduleName: CORE$1 };
 Identifiers$1.elementAttribute = { name: 'ɵelementAttribute', moduleName: CORE$1 };
 Identifiers$1.elementClassProp = { name: 'ɵelementClassProp', moduleName: CORE$1 };
-Identifiers$1.elementContainerStart = { name: 'ɵEC', moduleName: CORE$1 };
-Identifiers$1.elementContainerEnd = { name: 'ɵeC', moduleName: CORE$1 };
+Identifiers$1.elementContainerStart = { name: 'ɵelementContainerStart', moduleName: CORE$1 };
+Identifiers$1.elementContainerEnd = { name: 'ɵelementContainerEnd', moduleName: CORE$1 };
 Identifiers$1.elementStyling = { name: 'ɵelementStyling', moduleName: CORE$1 };
 Identifiers$1.elementStylingMap = { name: 'ɵelementStylingMap', moduleName: CORE$1 };
 Identifiers$1.elementStyleProp = { name: 'ɵelementStyleProp', moduleName: CORE$1 };
@@ -12984,7 +12984,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.1.0-rc.0+8.sha-b07bd30');
+const VERSION$1 = new Version('7.1.0-rc.0+9.sha-60800da');
 
 /**
  * @license
