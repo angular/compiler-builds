@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ConstantPool } from '../../constant_pool';
+import { AST } from '../../expression_parser/ast';
 import * as o from '../../output/output_ast';
 import { ParseSourceSpan } from '../../parse_util';
 import * as t from '../r3_ast';
@@ -17,6 +18,15 @@ export interface StylingInstruction {
     sourceSpan: ParseSourceSpan | null;
     reference: o.ExternalReference;
     buildParams(convertFn: (value: any) => o.Expression): o.Expression[];
+}
+/**
+ * An internal record of the input data for a styling binding
+ */
+interface BoundStylingEntry {
+    name: string;
+    unit: string | null;
+    sourceSpan: ParseSourceSpan;
+    value: AST;
 }
 /**
  * Produces creation/update instructions for all styling bindings (class and style)
@@ -44,8 +54,9 @@ export interface StylingInstruction {
  * The creation/update methods within the builder class produce these instructions.
  */
 export declare class StylingBuilder {
+    private _elementIndexExpr;
+    private _directiveIndexExpr;
     readonly hasBindingsOrInitialValues = false;
-    private _indexLiteral;
     private _classMapInput;
     private _styleMapInput;
     private _singleStyleInputs;
@@ -57,12 +68,14 @@ export declare class StylingBuilder {
     private _initialClassValues;
     private _useDefaultSanitizer;
     private _applyFnRequired;
-    constructor(elementIndex: number);
-    registerInput(input: t.BoundAttribute): boolean;
+    constructor(_elementIndexExpr: o.Expression, _directiveIndexExpr: o.Expression | null);
+    registerBoundInput(input: t.BoundAttribute): boolean;
+    registerStyleInput(propertyName: string | null, value: AST, unit: string | null, sourceSpan: ParseSourceSpan): BoundStylingEntry;
+    registerClassInput(className: string | null, value: AST, sourceSpan: ParseSourceSpan): BoundStylingEntry;
     registerStyleAttr(value: string): void;
     registerClassAttr(value: string): void;
     private _buildInitExpr;
-    buildCreateLevelInstruction(sourceSpan: ParseSourceSpan, constantPool: ConstantPool): StylingInstruction | null;
+    buildCreateLevelInstruction(sourceSpan: ParseSourceSpan | null, constantPool: ConstantPool): StylingInstruction | null;
     private _buildStylingMap;
     private _buildSingleInputs;
     private _buildClassInputs;
@@ -70,3 +83,4 @@ export declare class StylingBuilder {
     private _buildApplyFn;
     buildUpdateLevelInstructions(valueConverter: ValueConverter): StylingInstruction[];
 }
+export {};
