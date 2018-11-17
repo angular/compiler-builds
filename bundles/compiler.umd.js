@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-rc.0+14.sha-4222b63
+ * @license Angular v7.1.0-rc.0+15.sha-20ea5b5
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8499,6 +8499,401 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
+    /**
+     * Parses string representation of a style and converts it into object literal.
+     *
+     * @param value string representation of style as used in the `style` attribute in HTML.
+     *   Example: `color: red; height: auto`.
+     * @returns an object literal. `{ color: 'red', height: 'auto'}`.
+     */
+    function parse(value) {
+        var styles = {};
+        var i = 0;
+        var parenDepth = 0;
+        var quote = 0 /* QuoteNone */;
+        var valueStart = 0;
+        var propStart = 0;
+        var currentProp = null;
+        var valueHasQuotes = false;
+        while (i < value.length) {
+            var token = value.charCodeAt(i++);
+            switch (token) {
+                case 40 /* OpenParen */:
+                    parenDepth++;
+                    break;
+                case 41 /* CloseParen */:
+                    parenDepth--;
+                    break;
+                case 39 /* QuoteSingle */:
+                    // valueStart needs to be there since prop values don't
+                    // have quotes in CSS
+                    valueHasQuotes = valueHasQuotes || valueStart > 0;
+                    if (quote === 0 /* QuoteNone */) {
+                        quote = 39 /* QuoteSingle */;
+                    }
+                    else if (quote === 39 /* QuoteSingle */ && value.charCodeAt(i - 1) !== 92 /* BackSlash */) {
+                        quote = 0 /* QuoteNone */;
+                    }
+                    break;
+                case 34 /* QuoteDouble */:
+                    // same logic as above
+                    valueHasQuotes = valueHasQuotes || valueStart > 0;
+                    if (quote === 0 /* QuoteNone */) {
+                        quote = 34 /* QuoteDouble */;
+                    }
+                    else if (quote === 34 /* QuoteDouble */ && value.charCodeAt(i - 1) !== 92 /* BackSlash */) {
+                        quote = 0 /* QuoteNone */;
+                    }
+                    break;
+                case 58 /* Colon */:
+                    if (!currentProp && parenDepth === 0 && quote === 0 /* QuoteNone */) {
+                        currentProp = hyphenate(value.substring(propStart, i - 1).trim());
+                        valueStart = i;
+                    }
+                    break;
+                case 59 /* Semicolon */:
+                    if (currentProp && valueStart > 0 && parenDepth === 0 && quote === 0 /* QuoteNone */) {
+                        var styleVal = value.substring(valueStart, i - 1).trim();
+                        styles[currentProp] = valueHasQuotes ? stripUnnecessaryQuotes(styleVal) : styleVal;
+                        propStart = i;
+                        valueStart = 0;
+                        currentProp = null;
+                        valueHasQuotes = false;
+                    }
+                    break;
+            }
+        }
+        if (currentProp && valueStart) {
+            var styleVal = value.substr(valueStart).trim();
+            styles[currentProp] = valueHasQuotes ? stripUnnecessaryQuotes(styleVal) : styleVal;
+        }
+        return styles;
+    }
+    function stripUnnecessaryQuotes(value) {
+        var qS = value.charCodeAt(0);
+        var qE = value.charCodeAt(value.length - 1);
+        if (qS == qE && (qS == 39 /* QuoteSingle */ || qS == 34 /* QuoteDouble */)) {
+            var tempValue = value.substring(1, value.length - 1);
+            // special case to avoid using a multi-quoted string that was just chomped
+            // (e.g. `font-family: "Verdana", "sans-serif"`)
+            if (tempValue.indexOf('\'') == -1 && tempValue.indexOf('"') == -1) {
+                value = tempValue;
+            }
+        }
+        return value;
+    }
+    function hyphenate(value) {
+        return value.replace(/[a-z][A-Z]/g, function (v) {
+            return v.charAt(0) + '-' + v.charAt(1);
+        }).toLowerCase();
+    }
+
+    /**
+     * Produces creation/update instructions for all styling bindings (class and style)
+     *
+     * The builder class below handles producing instructions for the following cases:
+     *
+     * - Static style/class attributes (style="..." and class="...")
+     * - Dynamic style/class map bindings ([style]="map" and [class]="map|string")
+     * - Dynamic style/class property bindings ([style.prop]="exp" and [class.name]="exp")
+     *
+     * Due to the complex relationship of all of these cases, the instructions generated
+     * for these attributes/properties/bindings must be done so in the correct order. The
+     * order which these must be generated is as follows:
+     *
+     * if (createMode) {
+     *   elementStyling(...)
+     * }
+     * if (updateMode) {
+     *   elementStylingMap(...)
+     *   elementStyleProp(...)
+     *   elementClassProp(...)
+     *   elementStylingApp(...)
+     * }
+     *
+     * The creation/update methods within the builder class produce these instructions.
+     */
+    var StylingBuilder = /** @class */ (function () {
+        function StylingBuilder(_elementIndexExpr, _directiveIndexExpr) {
+            this._elementIndexExpr = _elementIndexExpr;
+            this._directiveIndexExpr = _directiveIndexExpr;
+            this.hasBindingsOrInitialValues = false;
+            this._classMapInput = null;
+            this._styleMapInput = null;
+            this._singleStyleInputs = null;
+            this._singleClassInputs = null;
+            this._lastStylingInput = null;
+            // maps are used instead of hash maps because a Map will
+            // retain the ordering of the keys
+            this._stylesIndex = new Map();
+            this._classesIndex = new Map();
+            this._initialStyleValues = {};
+            this._initialClassValues = {};
+            this._useDefaultSanitizer = false;
+            this._applyFnRequired = false;
+        }
+        StylingBuilder.prototype.registerBoundInput = function (input) {
+            // [attr.style] or [attr.class] are skipped in the code below,
+            // they should not be treated as styling-based bindings since
+            // they are intended to be written directly to the attr and
+            // will therefore skip all style/class resolution that is present
+            // with style="", [style]="" and [style.prop]="", class="",
+            // [class.prop]="". [class]="" assignments
+            var name = input.name;
+            var binding = null;
+            switch (input.type) {
+                case 0 /* Property */:
+                    if (name == 'style') {
+                        binding = this.registerStyleInput(null, input.value, '', input.sourceSpan);
+                    }
+                    else if (isClassBinding(input.name)) {
+                        binding = this.registerClassInput(null, input.value, input.sourceSpan);
+                    }
+                    break;
+                case 3 /* Style */:
+                    binding = this.registerStyleInput(input.name, input.value, input.unit, input.sourceSpan);
+                    break;
+                case 2 /* Class */:
+                    binding = this.registerClassInput(input.name, input.value, input.sourceSpan);
+                    break;
+            }
+            return binding ? true : false;
+        };
+        StylingBuilder.prototype.registerStyleInput = function (propertyName, value, unit, sourceSpan) {
+            var entry = { name: propertyName, unit: unit, value: value, sourceSpan: sourceSpan };
+            if (propertyName) {
+                (this._singleStyleInputs = this._singleStyleInputs || []).push(entry);
+                this._useDefaultSanitizer = this._useDefaultSanitizer || isStyleSanitizable(propertyName);
+                registerIntoMap(this._stylesIndex, propertyName);
+                this.hasBindingsOrInitialValues = true;
+            }
+            else {
+                this._useDefaultSanitizer = true;
+                this._styleMapInput = entry;
+            }
+            this._lastStylingInput = entry;
+            this.hasBindingsOrInitialValues = true;
+            this._applyFnRequired = true;
+            return entry;
+        };
+        StylingBuilder.prototype.registerClassInput = function (className, value, sourceSpan) {
+            var entry = { name: className, value: value, sourceSpan: sourceSpan };
+            if (className) {
+                (this._singleClassInputs = this._singleClassInputs || []).push(entry);
+                this.hasBindingsOrInitialValues = true;
+                registerIntoMap(this._classesIndex, className);
+            }
+            else {
+                this._classMapInput = entry;
+            }
+            this._lastStylingInput = entry;
+            this.hasBindingsOrInitialValues = true;
+            this._applyFnRequired = true;
+            return entry;
+        };
+        StylingBuilder.prototype.registerStyleAttr = function (value) {
+            var _this = this;
+            this._initialStyleValues = parse(value);
+            Object.keys(this._initialStyleValues).forEach(function (prop) {
+                registerIntoMap(_this._stylesIndex, prop);
+                _this.hasBindingsOrInitialValues = true;
+            });
+        };
+        StylingBuilder.prototype.registerClassAttr = function (value) {
+            var _this = this;
+            this._initialClassValues = {};
+            value.split(/\s+/g).forEach(function (className) {
+                _this._initialClassValues[className] = true;
+                registerIntoMap(_this._classesIndex, className);
+                _this.hasBindingsOrInitialValues = true;
+            });
+        };
+        StylingBuilder.prototype._buildInitExpr = function (registry, initialValues) {
+            var exprs = [];
+            var nameAndValueExprs = [];
+            // _c0 = [prop, prop2, prop3, ...]
+            registry.forEach(function (value, key) {
+                var keyLiteral = literal(key);
+                exprs.push(keyLiteral);
+                var initialValue = initialValues[key];
+                if (initialValue) {
+                    nameAndValueExprs.push(keyLiteral, literal(initialValue));
+                }
+            });
+            if (nameAndValueExprs.length) {
+                // _c0 = [... MARKER ...]
+                exprs.push(literal(1 /* VALUES_MODE */));
+                // _c0 = [prop, VALUE, prop2, VALUE2, ...]
+                exprs.push.apply(exprs, __spread(nameAndValueExprs));
+            }
+            return exprs.length ? literalArr(exprs) : null;
+        };
+        StylingBuilder.prototype.buildCreateLevelInstruction = function (sourceSpan, constantPool) {
+            if (this.hasBindingsOrInitialValues) {
+                var initialClasses = this._buildInitExpr(this._classesIndex, this._initialClassValues);
+                var initialStyles = this._buildInitExpr(this._stylesIndex, this._initialStyleValues);
+                // in the event that a [style] binding is used then sanitization will
+                // always be imported because it is not possible to know ahead of time
+                // whether style bindings will use or not use any sanitizable properties
+                // that isStyleSanitizable() will detect
+                var useSanitizer = this._useDefaultSanitizer;
+                var params_1 = [];
+                if (initialClasses) {
+                    // the template compiler handles initial class styling (e.g. class="foo") values
+                    // in a special command called `elementClass` so that the initial class
+                    // can be processed during runtime. These initial class values are bound to
+                    // a constant because the inital class values do not change (since they're static).
+                    params_1.push(constantPool.getConstLiteral(initialClasses, true));
+                }
+                else if (initialStyles || useSanitizer) {
+                    // no point in having an extra `null` value unless there are follow-up params
+                    params_1.push(NULL_EXPR);
+                }
+                if (initialStyles) {
+                    // the template compiler handles initial style (e.g. style="foo") values
+                    // in a special command called `elementStyle` so that the initial styles
+                    // can be processed during runtime. These initial styles values are bound to
+                    // a constant because the inital style values do not change (since they're static).
+                    params_1.push(constantPool.getConstLiteral(initialStyles, true));
+                }
+                else if (useSanitizer || this._directiveIndexExpr) {
+                    // no point in having an extra `null` value unless there are follow-up params
+                    params_1.push(NULL_EXPR);
+                }
+                if (useSanitizer || this._directiveIndexExpr) {
+                    params_1.push(useSanitizer ? importExpr(Identifiers$1.defaultStyleSanitizer) : NULL_EXPR);
+                    if (this._directiveIndexExpr) {
+                        params_1.push(this._directiveIndexExpr);
+                    }
+                }
+                return { sourceSpan: sourceSpan, reference: Identifiers$1.elementStyling, buildParams: function () { return params_1; } };
+            }
+            return null;
+        };
+        StylingBuilder.prototype._buildStylingMap = function (valueConverter) {
+            var _this = this;
+            if (this._classMapInput || this._styleMapInput) {
+                var stylingInput = this._classMapInput || this._styleMapInput;
+                // these values must be outside of the update block so that they can
+                // be evaluted (the AST visit call) during creation time so that any
+                // pipes can be picked up in time before the template is built
+                var mapBasedClassValue_1 = this._classMapInput ? this._classMapInput.value.visit(valueConverter) : null;
+                var mapBasedStyleValue_1 = this._styleMapInput ? this._styleMapInput.value.visit(valueConverter) : null;
+                return {
+                    sourceSpan: stylingInput.sourceSpan,
+                    reference: Identifiers$1.elementStylingMap,
+                    buildParams: function (convertFn) {
+                        var params = [_this._elementIndexExpr];
+                        if (mapBasedClassValue_1) {
+                            params.push(convertFn(mapBasedClassValue_1));
+                        }
+                        else if (_this._styleMapInput) {
+                            params.push(NULL_EXPR);
+                        }
+                        if (mapBasedStyleValue_1) {
+                            params.push(convertFn(mapBasedStyleValue_1));
+                        }
+                        else if (_this._directiveIndexExpr) {
+                            params.push(NULL_EXPR);
+                        }
+                        if (_this._directiveIndexExpr) {
+                            params.push(_this._directiveIndexExpr);
+                        }
+                        return params;
+                    }
+                };
+            }
+            return null;
+        };
+        StylingBuilder.prototype._buildSingleInputs = function (reference, inputs, mapIndex, allowUnits, valueConverter) {
+            var _this = this;
+            return inputs.map(function (input) {
+                var bindingIndex = mapIndex.get(input.name);
+                var value = input.value.visit(valueConverter);
+                return {
+                    sourceSpan: input.sourceSpan,
+                    reference: reference,
+                    buildParams: function (convertFn) {
+                        var params = [_this._elementIndexExpr, literal(bindingIndex), convertFn(value)];
+                        if (allowUnits) {
+                            if (input.unit) {
+                                params.push(literal(input.unit));
+                            }
+                            else if (_this._directiveIndexExpr) {
+                                params.push(NULL_EXPR);
+                            }
+                        }
+                        if (_this._directiveIndexExpr) {
+                            params.push(_this._directiveIndexExpr);
+                        }
+                        return params;
+                    }
+                };
+            });
+        };
+        StylingBuilder.prototype._buildClassInputs = function (valueConverter) {
+            if (this._singleClassInputs) {
+                return this._buildSingleInputs(Identifiers$1.elementClassProp, this._singleClassInputs, this._classesIndex, false, valueConverter);
+            }
+            return [];
+        };
+        StylingBuilder.prototype._buildStyleInputs = function (valueConverter) {
+            if (this._singleStyleInputs) {
+                return this._buildSingleInputs(Identifiers$1.elementStyleProp, this._singleStyleInputs, this._stylesIndex, true, valueConverter);
+            }
+            return [];
+        };
+        StylingBuilder.prototype._buildApplyFn = function () {
+            var _this = this;
+            return {
+                sourceSpan: this._lastStylingInput ? this._lastStylingInput.sourceSpan : null,
+                reference: Identifiers$1.elementStylingApply,
+                buildParams: function () {
+                    var params = [_this._elementIndexExpr];
+                    if (_this._directiveIndexExpr) {
+                        params.push(_this._directiveIndexExpr);
+                    }
+                    return params;
+                }
+            };
+        };
+        StylingBuilder.prototype.buildUpdateLevelInstructions = function (valueConverter) {
+            var instructions = [];
+            if (this.hasBindingsOrInitialValues) {
+                var mapInstruction = this._buildStylingMap(valueConverter);
+                if (mapInstruction) {
+                    instructions.push(mapInstruction);
+                }
+                instructions.push.apply(instructions, __spread(this._buildStyleInputs(valueConverter)));
+                instructions.push.apply(instructions, __spread(this._buildClassInputs(valueConverter)));
+                if (this._applyFnRequired) {
+                    instructions.push(this._buildApplyFn());
+                }
+            }
+            return instructions;
+        };
+        return StylingBuilder;
+    }());
+    function isClassBinding(name) {
+        return name == 'className' || name == 'class';
+    }
+    function registerIntoMap(map, key) {
+        if (!map.has(key)) {
+            map.set(key, map.size);
+        }
+    }
+    function isStyleSanitizable(prop) {
+        return prop === 'background-image' || prop === 'background' || prop === 'border-image' ||
+            prop === 'filter' || prop === 'list-style' || prop === 'list-style-image';
+    }
+
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
     (function (TokenType) {
         TokenType[TokenType["Character"] = 0] = "Character";
         TokenType[TokenType["Identifier"] = 1] = "Identifier";
@@ -13076,358 +13471,6 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    /**
-     * Parses string representation of a style and converts it into object literal.
-     *
-     * @param value string representation of style as used in the `style` attribute in HTML.
-     *   Example: `color: red; height: auto`.
-     * @returns an object literal. `{ color: 'red', height: 'auto'}`.
-     */
-    function parse(value) {
-        var styles = {};
-        var i = 0;
-        var parenDepth = 0;
-        var quote = 0 /* QuoteNone */;
-        var valueStart = 0;
-        var propStart = 0;
-        var currentProp = null;
-        var valueHasQuotes = false;
-        while (i < value.length) {
-            var token = value.charCodeAt(i++);
-            switch (token) {
-                case 40 /* OpenParen */:
-                    parenDepth++;
-                    break;
-                case 41 /* CloseParen */:
-                    parenDepth--;
-                    break;
-                case 39 /* QuoteSingle */:
-                    // valueStart needs to be there since prop values don't
-                    // have quotes in CSS
-                    valueHasQuotes = valueHasQuotes || valueStart > 0;
-                    if (quote === 0 /* QuoteNone */) {
-                        quote = 39 /* QuoteSingle */;
-                    }
-                    else if (quote === 39 /* QuoteSingle */ && value.charCodeAt(i - 1) !== 92 /* BackSlash */) {
-                        quote = 0 /* QuoteNone */;
-                    }
-                    break;
-                case 34 /* QuoteDouble */:
-                    // same logic as above
-                    valueHasQuotes = valueHasQuotes || valueStart > 0;
-                    if (quote === 0 /* QuoteNone */) {
-                        quote = 34 /* QuoteDouble */;
-                    }
-                    else if (quote === 34 /* QuoteDouble */ && value.charCodeAt(i - 1) !== 92 /* BackSlash */) {
-                        quote = 0 /* QuoteNone */;
-                    }
-                    break;
-                case 58 /* Colon */:
-                    if (!currentProp && parenDepth === 0 && quote === 0 /* QuoteNone */) {
-                        currentProp = hyphenate(value.substring(propStart, i - 1).trim());
-                        valueStart = i;
-                    }
-                    break;
-                case 59 /* Semicolon */:
-                    if (currentProp && valueStart > 0 && parenDepth === 0 && quote === 0 /* QuoteNone */) {
-                        var styleVal = value.substring(valueStart, i - 1).trim();
-                        styles[currentProp] = valueHasQuotes ? stripUnnecessaryQuotes(styleVal) : styleVal;
-                        propStart = i;
-                        valueStart = 0;
-                        currentProp = null;
-                        valueHasQuotes = false;
-                    }
-                    break;
-            }
-        }
-        if (currentProp && valueStart) {
-            var styleVal = value.substr(valueStart).trim();
-            styles[currentProp] = valueHasQuotes ? stripUnnecessaryQuotes(styleVal) : styleVal;
-        }
-        return styles;
-    }
-    function stripUnnecessaryQuotes(value) {
-        var qS = value.charCodeAt(0);
-        var qE = value.charCodeAt(value.length - 1);
-        if (qS == qE && (qS == 39 /* QuoteSingle */ || qS == 34 /* QuoteDouble */)) {
-            var tempValue = value.substring(1, value.length - 1);
-            // special case to avoid using a multi-quoted string that was just chomped
-            // (e.g. `font-family: "Verdana", "sans-serif"`)
-            if (tempValue.indexOf('\'') == -1 && tempValue.indexOf('"') == -1) {
-                value = tempValue;
-            }
-        }
-        return value;
-    }
-    function hyphenate(value) {
-        return value.replace(/[a-z][A-Z]/g, function (v) {
-            return v.charAt(0) + '-' + v.charAt(1);
-        }).toLowerCase();
-    }
-
-    /**
-     * Produces creation/update instructions for all styling bindings (class and style)
-     *
-     * The builder class below handles producing instructions for the following cases:
-     *
-     * - Static style/class attributes (style="..." and class="...")
-     * - Dynamic style/class map bindings ([style]="map" and [class]="map|string")
-     * - Dynamic style/class property bindings ([style.prop]="exp" and [class.name]="exp")
-     *
-     * Due to the complex relationship of all of these cases, the instructions generated
-     * for these attributes/properties/bindings must be done so in the correct order. The
-     * order which these must be generated is as follows:
-     *
-     * if (createMode) {
-     *   elementStyling(...)
-     * }
-     * if (updateMode) {
-     *   elementStylingMap(...)
-     *   elementStyleProp(...)
-     *   elementClassProp(...)
-     *   elementStylingApp(...)
-     * }
-     *
-     * The creation/update methods within the builder class produce these instructions.
-     */
-    var StylingBuilder = /** @class */ (function () {
-        function StylingBuilder(elementIndex) {
-            this.hasBindingsOrInitialValues = false;
-            this._classMapInput = null;
-            this._styleMapInput = null;
-            this._singleStyleInputs = null;
-            this._singleClassInputs = null;
-            this._lastStylingInput = null;
-            // maps are used instead of hash maps because a Map will
-            // retain the ordering of the keys
-            this._stylesIndex = new Map();
-            this._classesIndex = new Map();
-            this._initialStyleValues = {};
-            this._initialClassValues = {};
-            this._useDefaultSanitizer = false;
-            this._applyFnRequired = false;
-            this._indexLiteral = literal(elementIndex);
-        }
-        StylingBuilder.prototype.registerInput = function (input) {
-            // [attr.style] or [attr.class] are skipped in the code below,
-            // they should not be treated as styling-based bindings since
-            // they are intended to be written directly to the attr and
-            // will therefore skip all style/class resolution that is present
-            // with style="", [style]="" and [style.prop]="", class="",
-            // [class.prop]="". [class]="" assignments
-            var registered = false;
-            var name = input.name;
-            switch (input.type) {
-                case 0 /* Property */:
-                    if (name == 'style') {
-                        this._styleMapInput = input;
-                        this._useDefaultSanitizer = true;
-                        registered = true;
-                    }
-                    else if (isClassBinding(input)) {
-                        this._classMapInput = input;
-                        registered = true;
-                    }
-                    break;
-                case 3 /* Style */:
-                    (this._singleStyleInputs = this._singleStyleInputs || []).push(input);
-                    this._useDefaultSanitizer = this._useDefaultSanitizer || isStyleSanitizable(name);
-                    registerIntoMap(this._stylesIndex, name);
-                    registered = true;
-                    break;
-                case 2 /* Class */:
-                    (this._singleClassInputs = this._singleClassInputs || []).push(input);
-                    registerIntoMap(this._classesIndex, name);
-                    registered = true;
-                    break;
-            }
-            if (registered) {
-                this._lastStylingInput = input;
-                this.hasBindingsOrInitialValues = true;
-                this._applyFnRequired = true;
-            }
-            return registered;
-        };
-        StylingBuilder.prototype.registerStyleAttr = function (value) {
-            var _this = this;
-            this._initialStyleValues = parse(value);
-            Object.keys(this._initialStyleValues).forEach(function (prop) {
-                registerIntoMap(_this._stylesIndex, prop);
-                _this.hasBindingsOrInitialValues = true;
-            });
-        };
-        StylingBuilder.prototype.registerClassAttr = function (value) {
-            var _this = this;
-            this._initialClassValues = {};
-            value.split(/\s+/g).forEach(function (className) {
-                _this._initialClassValues[className] = true;
-                registerIntoMap(_this._classesIndex, className);
-                _this.hasBindingsOrInitialValues = true;
-            });
-        };
-        StylingBuilder.prototype._buildInitExpr = function (registry, initialValues) {
-            var exprs = [];
-            var nameAndValueExprs = [];
-            // _c0 = [prop, prop2, prop3, ...]
-            registry.forEach(function (value, key) {
-                var keyLiteral = literal(key);
-                exprs.push(keyLiteral);
-                var initialValue = initialValues[key];
-                if (initialValue) {
-                    nameAndValueExprs.push(keyLiteral, literal(initialValue));
-                }
-            });
-            if (nameAndValueExprs.length) {
-                // _c0 = [... MARKER ...]
-                exprs.push(literal(1 /* VALUES_MODE */));
-                // _c0 = [prop, VALUE, prop2, VALUE2, ...]
-                exprs.push.apply(exprs, __spread(nameAndValueExprs));
-            }
-            return exprs.length ? literalArr(exprs) : null;
-        };
-        StylingBuilder.prototype.buildCreateLevelInstruction = function (sourceSpan, constantPool) {
-            if (this.hasBindingsOrInitialValues) {
-                var initialClasses = this._buildInitExpr(this._classesIndex, this._initialClassValues);
-                var initialStyles = this._buildInitExpr(this._stylesIndex, this._initialStyleValues);
-                // in the event that a [style] binding is used then sanitization will
-                // always be imported because it is not possible to know ahead of time
-                // whether style bindings will use or not use any sanitizable properties
-                // that isStyleSanitizable() will detect
-                var useSanitizer = this._useDefaultSanitizer;
-                var params_1 = [];
-                if (initialClasses) {
-                    // the template compiler handles initial class styling (e.g. class="foo") values
-                    // in a special command called `elementClass` so that the initial class
-                    // can be processed during runtime. These initial class values are bound to
-                    // a constant because the inital class values do not change (since they're static).
-                    params_1.push(constantPool.getConstLiteral(initialClasses, true));
-                }
-                else if (initialStyles || useSanitizer) {
-                    // no point in having an extra `null` value unless there are follow-up params
-                    params_1.push(NULL_EXPR);
-                }
-                if (initialStyles) {
-                    // the template compiler handles initial style (e.g. style="foo") values
-                    // in a special command called `elementStyle` so that the initial styles
-                    // can be processed during runtime. These initial styles values are bound to
-                    // a constant because the inital style values do not change (since they're static).
-                    params_1.push(constantPool.getConstLiteral(initialStyles, true));
-                }
-                else if (useSanitizer) {
-                    // no point in having an extra `null` value unless there are follow-up params
-                    params_1.push(NULL_EXPR);
-                }
-                if (useSanitizer) {
-                    params_1.push(importExpr(Identifiers$1.defaultStyleSanitizer));
-                }
-                return { sourceSpan: sourceSpan, reference: Identifiers$1.elementStyling, buildParams: function () { return params_1; } };
-            }
-            return null;
-        };
-        StylingBuilder.prototype._buildStylingMap = function (valueConverter) {
-            var _this = this;
-            if (this._classMapInput || this._styleMapInput) {
-                var stylingInput = this._classMapInput || this._styleMapInput;
-                // these values must be outside of the update block so that they can
-                // be evaluted (the AST visit call) during creation time so that any
-                // pipes can be picked up in time before the template is built
-                var mapBasedClassValue_1 = this._classMapInput ? this._classMapInput.value.visit(valueConverter) : null;
-                var mapBasedStyleValue_1 = this._styleMapInput ? this._styleMapInput.value.visit(valueConverter) : null;
-                return {
-                    sourceSpan: stylingInput.sourceSpan,
-                    reference: Identifiers$1.elementStylingMap,
-                    buildParams: function (convertFn) {
-                        var params = [_this._indexLiteral];
-                        if (mapBasedClassValue_1) {
-                            params.push(convertFn(mapBasedClassValue_1));
-                        }
-                        else if (_this._styleMapInput) {
-                            params.push(NULL_EXPR);
-                        }
-                        if (mapBasedStyleValue_1) {
-                            params.push(convertFn(mapBasedStyleValue_1));
-                        }
-                        return params;
-                    }
-                };
-            }
-            return null;
-        };
-        StylingBuilder.prototype._buildSingleInputs = function (reference, inputs, mapIndex, valueConverter) {
-            var _this = this;
-            return inputs.map(function (input) {
-                var bindingIndex = mapIndex.get(input.name);
-                var value = input.value.visit(valueConverter);
-                return {
-                    sourceSpan: input.sourceSpan,
-                    reference: reference,
-                    buildParams: function (convertFn) {
-                        var params = [_this._indexLiteral, literal(bindingIndex), convertFn(value)];
-                        if (input.unit != null) {
-                            params.push(literal(input.unit));
-                        }
-                        return params;
-                    }
-                };
-            });
-        };
-        StylingBuilder.prototype._buildClassInputs = function (valueConverter) {
-            if (this._singleClassInputs) {
-                return this._buildSingleInputs(Identifiers$1.elementClassProp, this._singleClassInputs, this._classesIndex, valueConverter);
-            }
-            return [];
-        };
-        StylingBuilder.prototype._buildStyleInputs = function (valueConverter) {
-            if (this._singleStyleInputs) {
-                return this._buildSingleInputs(Identifiers$1.elementStyleProp, this._singleStyleInputs, this._stylesIndex, valueConverter);
-            }
-            return [];
-        };
-        StylingBuilder.prototype._buildApplyFn = function () {
-            var _this = this;
-            return {
-                sourceSpan: this._lastStylingInput ? this._lastStylingInput.sourceSpan : null,
-                reference: Identifiers$1.elementStylingApply,
-                buildParams: function () { return [_this._indexLiteral]; }
-            };
-        };
-        StylingBuilder.prototype.buildUpdateLevelInstructions = function (valueConverter) {
-            var instructions = [];
-            if (this.hasBindingsOrInitialValues) {
-                var mapInstruction = this._buildStylingMap(valueConverter);
-                if (mapInstruction) {
-                    instructions.push(mapInstruction);
-                }
-                instructions.push.apply(instructions, __spread(this._buildStyleInputs(valueConverter)));
-                instructions.push.apply(instructions, __spread(this._buildClassInputs(valueConverter)));
-                if (this._applyFnRequired) {
-                    instructions.push(this._buildApplyFn());
-                }
-            }
-            return instructions;
-        };
-        return StylingBuilder;
-    }());
-    function isClassBinding(input) {
-        return input.name == 'className' || input.name == 'class';
-    }
-    function registerIntoMap(map, key) {
-        if (!map.has(key)) {
-            map.set(key, map.size);
-        }
-    }
-    function isStyleSanitizable(prop) {
-        return prop === 'background-image' || prop === 'background' || prop === 'border-image' ||
-            prop === 'filter' || prop === 'list-style' || prop === 'list-style-image';
-    }
-
-    /**
-     * @license
-     * Copyright Google Inc. All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     function mapBindingToInstruction(type) {
         switch (type) {
             case 0 /* Property */:
@@ -13775,7 +13818,7 @@
             var _this = this;
             var e_1, _a;
             var elementIndex = this.allocateDataSlot();
-            var stylingBuilder = new StylingBuilder(elementIndex);
+            var stylingBuilder = new StylingBuilder(literal(elementIndex), null);
             var isNonBindableMode = false;
             var isI18nRootElement = isI18nRootNode(element.i18n);
             if (isI18nRootElement && this.i18n) {
@@ -13825,7 +13868,7 @@
             var attributes = [];
             var allOtherInputs = [];
             element.inputs.forEach(function (input) {
-                if (!stylingBuilder.registerInput(input)) {
+                if (!stylingBuilder.registerBoundInput(input)) {
                     if (input.type == 0 /* Property */) {
                         if (input.i18n) {
                             i18nAttrs.push(input);
@@ -14658,8 +14701,32 @@
         definitionMap.set('contentQueriesRefresh', createContentQueriesRefreshFunction(meta));
         // Initialize hostVars to number of bound host properties (interpolations illegal)
         var hostVars = Object.keys(meta.host.properties).length;
+        var elVarExp = variable('elIndex');
+        var dirVarExp = variable('dirIndex');
+        var styleBuilder = new StylingBuilder(elVarExp, dirVarExp);
+        var allOtherAttributes = {};
+        var attrNames = Object.getOwnPropertyNames(meta.host.attributes);
+        for (var i = 0; i < attrNames.length; i++) {
+            var attr = attrNames[i];
+            var value = meta.host.attributes[attr];
+            switch (attr) {
+                // style attributes are handled in the styling context
+                case 'style':
+                    styleBuilder.registerStyleAttr(value);
+                    break;
+                // class attributes are handled in the styling context
+                case 'class':
+                    styleBuilder.registerClassAttr(value);
+                    break;
+                default:
+                    allOtherAttributes[attr] = value;
+                    break;
+            }
+        }
+        // e.g. `attributes: ['role', 'listbox']`
+        definitionMap.set('attributes', createHostAttributesArray(allOtherAttributes));
         // e.g. `hostBindings: (dirIndex, elIndex) => { ... }
-        definitionMap.set('hostBindings', createHostBindingsFunction(meta, bindingParser, constantPool, function (slots) {
+        definitionMap.set('hostBindings', createHostBindingsFunction(meta, elVarExp, dirVarExp, styleBuilder, bindingParser, constantPool, function (slots) {
             var originalSlots = hostVars;
             hostVars += slots;
             return originalSlots;
@@ -14668,8 +14735,6 @@
             // e.g. `hostVars: 2
             definitionMap.set('hostVars', literal(hostVars));
         }
-        // e.g. `attributes: ['role', 'listbox']`
-        definitionMap.set('attributes', createHostAttributesArray(meta));
         // e.g 'inputs: {a: 'a'}`
         definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs));
         // e.g 'outputs: {a: 'a'}`
@@ -14948,10 +15013,9 @@
     function createDirectiveSelector(selector) {
         return asLiteral(parseSelectorToR3Selector(selector));
     }
-    function createHostAttributesArray(meta) {
+    function createHostAttributesArray(attributes) {
         var e_1, _a;
         var values = [];
-        var attributes = meta.host.attributes;
         try {
             for (var _b = __values(Object.getOwnPropertyNames(attributes)), _c = _b.next(); !_c.done; _c = _b.next()) {
                 var key = _c.value;
@@ -15074,14 +15138,17 @@
         ], INFERRED_TYPE, null, viewQueryFnName);
     }
     // Return a host binding function or null if one is not necessary.
-    function createHostBindingsFunction(meta, bindingParser, constantPool, allocatePureFunctionSlots) {
+    function createHostBindingsFunction(meta, elVarExp, dirVarExp, styleBuilder, bindingParser, constantPool, allocatePureFunctionSlots) {
         var e_2, _a;
         var statements = [];
         var hostBindingSourceSpan = meta.typeSourceSpan;
         var directiveSummary = metadataAsSummary(meta);
         // Calculate the host property bindings
         var bindings = bindingParser.createBoundHostProperties(directiveSummary, hostBindingSourceSpan);
-        var bindingContext = importExpr(Identifiers$1.load).callFn([variable('dirIndex')]);
+        var bindingContext = importExpr(Identifiers$1.load).callFn([dirVarExp]);
+        var bindingFn = function (implicit, value) {
+            return convertPropertyBinding(null, implicit, value, 'b', BindingForm.TrySimple, function () { return error('Unexpected interpolation'); });
+        };
         if (bindings) {
             var valueConverter = new ValueConverter(constantPool, 
             /* new nodes are illegal here */ function () { return error('Unexpected node'); }, allocatePureFunctionSlots, 
@@ -15089,18 +15156,29 @@
             try {
                 for (var bindings_1 = __values(bindings), bindings_1_1 = bindings_1.next(); !bindings_1_1.done; bindings_1_1 = bindings_1.next()) {
                     var binding = bindings_1_1.value;
-                    // resolve literal arrays and literal objects
-                    var value = binding.expression.visit(valueConverter);
-                    var bindingExpr = convertPropertyBinding(null, bindingContext, value, 'b', BindingForm.TrySimple, function () { return error('Unexpected interpolation'); });
-                    var _b = getBindingNameAndInstruction(binding.name), bindingName = _b.bindingName, instruction = _b.instruction;
-                    statements.push.apply(statements, __spread(bindingExpr.stmts));
-                    statements.push(importExpr(instruction)
-                        .callFn([
-                        variable('elIndex'),
-                        literal(bindingName),
-                        importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr]),
-                    ])
-                        .toStmt());
+                    var name_1 = binding.name;
+                    var stylePrefix = name_1.substring(0, 5).toLowerCase();
+                    if (stylePrefix === 'style') {
+                        var _b = parseNamedProperty(name_1), propertyName = _b.propertyName, unit = _b.unit;
+                        styleBuilder.registerStyleInput(propertyName, binding.expression, unit, binding.sourceSpan);
+                    }
+                    else if (stylePrefix === 'class') {
+                        styleBuilder.registerClassInput(parseNamedProperty(name_1).propertyName, binding.expression, binding.sourceSpan);
+                    }
+                    else {
+                        // resolve literal arrays and literal objects
+                        var value = binding.expression.visit(valueConverter);
+                        var bindingExpr = bindingFn(bindingContext, value);
+                        var _c = getBindingNameAndInstruction(name_1), bindingName = _c.bindingName, instruction = _c.instruction;
+                        statements.push.apply(statements, __spread(bindingExpr.stmts));
+                        statements.push(importExpr(instruction)
+                            .callFn([
+                            elVarExp,
+                            literal(bindingName),
+                            importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr]),
+                        ])
+                            .toStmt());
+                    }
                 }
             }
             catch (e_2_1) { e_2 = { error: e_2_1 }; }
@@ -15110,15 +15188,32 @@
                 }
                 finally { if (e_2) throw e_2.error; }
             }
+            if (styleBuilder.hasBindingsOrInitialValues) {
+                var createInstruction = styleBuilder.buildCreateLevelInstruction(null, constantPool);
+                if (createInstruction) {
+                    var createStmt = createStylingStmt(createInstruction, bindingContext, bindingFn);
+                    statements.push(createStmt);
+                }
+                styleBuilder.buildUpdateLevelInstructions(valueConverter).forEach(function (instruction) {
+                    var updateStmt = createStylingStmt(instruction, bindingContext, bindingFn);
+                    statements.push(updateStmt);
+                });
+            }
         }
         if (statements.length > 0) {
             var typeName = meta.name;
             return fn([
-                new FnParam('dirIndex', NUMBER_TYPE),
-                new FnParam('elIndex', NUMBER_TYPE),
+                new FnParam(dirVarExp.name, NUMBER_TYPE),
+                new FnParam(elVarExp.name, NUMBER_TYPE),
             ], statements, INFERRED_TYPE, null, typeName ? typeName + "_HostBindings" : null);
         }
         return null;
+    }
+    function createStylingStmt(instruction, bindingContext, bindingFn) {
+        var params = instruction.buildParams(function (value) { return bindingFn(bindingContext, value).currValExpr; });
+        return importExpr(instruction.reference, null, instruction.sourceSpan)
+            .callFn(params, instruction.sourceSpan)
+            .toStmt();
     }
     function getBindingNameAndInstruction(bindingName) {
         var instruction;
@@ -15193,6 +15288,22 @@
     function compileStyles(styles, selector, hostSelector) {
         var shadowCss = new ShadowCss();
         return styles.map(function (style) { return shadowCss.shimCssText(style, selector, hostSelector); });
+    }
+    function parseNamedProperty(name) {
+        var unit = '';
+        var propertyName = '';
+        var index = name.indexOf('.');
+        if (index > 0) {
+            var unitIndex = name.lastIndexOf('.');
+            if (unitIndex !== index) {
+                unit = name.substring(unitIndex + 1, name.length);
+                propertyName = name.substring(index + 1, unitIndex);
+            }
+            else {
+                propertyName = name.substring(index + 1, name.length);
+            }
+        }
+        return { propertyName: propertyName, unit: unit };
     }
 
     /**
@@ -15411,7 +15522,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('7.1.0-rc.0+14.sha-4222b63');
+    var VERSION$1 = new Version('7.1.0-rc.0+15.sha-20ea5b5');
 
     /**
      * @license
