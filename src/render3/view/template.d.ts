@@ -9,13 +9,14 @@ import { LocalResolver } from '../../compiler_util/expression_converter';
 import { ConstantPool } from '../../constant_pool';
 import * as core from '../../core';
 import { AST, AstMemoryEfficientTransformer, BindingPipe, LiteralArray, LiteralMap } from '../../expression_parser/ast';
+import * as i18n from '../../i18n/i18n_ast';
 import * as o from '../../output/output_ast';
 import { ParseError, ParseSourceSpan } from '../../parse_util';
 import { SelectorMatcher } from '../../selector';
 import { BindingParser } from '../../template_parser/binding_parser';
 import * as t from '../r3_ast';
 import { R3QueryMetadata } from './api';
-import { I18nContext } from './i18n';
+import { I18nContext } from './i18n/context';
 import { invalid } from './util';
 export declare function renderFlagCheckIfStmt(flags: core.RenderFlags, statements: o.Statement[]): o.IfStmt;
 export declare class TemplateDefinitionBuilder implements t.Visitor<void>, LocalResolver {
@@ -69,14 +70,21 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private fileBasedI18nSuffix;
     constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, i18nContext: I18nContext | null, templateIndex: number | null, templateName: string | null, viewQueries: R3QueryMetadata[], directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference, relativeContextFilePath: string);
     registerContextVariables(variable: t.Variable): void;
-    buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], hasNgContent?: boolean, ngContentSelectors?: string[]): o.FunctionExpr;
+    buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], hasNgContent?: boolean, ngContentSelectors?: string[], i18n?: i18n.AST): o.FunctionExpr;
     getLocal(name: string): o.Expression | null;
-    i18nTranslate(label: string, meta?: string): o.Expression;
-    i18nAppendTranslationMeta(meta?: string): void;
+    i18nTranslate(message: i18n.Message, params?: {
+        [name: string]: o.Expression;
+    }, ref?: o.ReadVarExpr, transformFn?: (raw: o.ReadVarExpr) => o.Expression): o.Expression;
+    i18nAppendBindings(expressions: AST[]): void;
+    i18nBindProps(props: {
+        [key: string]: t.Text | t.BoundText;
+    }): {
+        [key: string]: o.Expression;
+    };
     i18nAllocateRef(): o.ReadVarExpr;
     i18nUpdateRef(context: I18nContext): void;
-    i18nStart(span?: ParseSourceSpan | null, meta?: string): void;
-    i18nEnd(span?: ParseSourceSpan | null): void;
+    i18nStart(span: ParseSourceSpan | null | undefined, meta: i18n.AST, selfClosing?: boolean): void;
+    i18nEnd(span?: ParseSourceSpan | null, selfClosing?: boolean): void;
     visitContent(ngContent: t.Content): void;
     getNamespaceInstruction(namespaceKey: string | null): o.ExternalReference;
     addNamespaceInstruction(nsInstruction: o.ExternalReference, element: t.Element): void;
@@ -89,6 +97,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     readonly visitBoundEvent: typeof invalid;
     visitBoundText(text: t.BoundText): void;
     visitText(text: t.Text): void;
+    visitIcu(icu: t.Icu): null;
     private allocateDataSlot;
     getConstCount(): number;
     getVarCount(): number;

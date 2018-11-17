@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-rc.0+11.sha-a4934a7
+ * @license Angular v7.1.0-rc.0+12.sha-92e80af
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -2127,122 +2127,6 @@ function serializeTags(tags) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/** I18n separators for metadata **/
-const I18N_MEANING_SEPARATOR = '|';
-const I18N_ID_SEPARATOR = '@@';
-/** Name of the i18n attributes **/
-const I18N_ATTR = 'i18n';
-const I18N_ATTR_PREFIX = 'i18n-';
-/** Placeholder wrapper for i18n expressions **/
-const I18N_PLACEHOLDER_SYMBOL = '�';
-// Parse i18n metas like:
-// - "@@id",
-// - "description[@@id]",
-// - "meaning|description[@@id]"
-function parseI18nMeta(meta) {
-    let id;
-    let meaning;
-    let description;
-    if (meta) {
-        const idIndex = meta.indexOf(I18N_ID_SEPARATOR);
-        const descIndex = meta.indexOf(I18N_MEANING_SEPARATOR);
-        let meaningAndDesc;
-        [meaningAndDesc, id] =
-            (idIndex > -1) ? [meta.slice(0, idIndex), meta.slice(idIndex + 2)] : [meta, ''];
-        [meaning, description] = (descIndex > -1) ?
-            [meaningAndDesc.slice(0, descIndex), meaningAndDesc.slice(descIndex + 1)] :
-            ['', meaningAndDesc];
-    }
-    return { id, meaning, description };
-}
-function isI18NAttribute(name) {
-    return name === I18N_ATTR || name.startsWith(I18N_ATTR_PREFIX);
-}
-function wrapI18nPlaceholder(content, contextId = 0) {
-    const blockId = contextId > 0 ? `:${contextId}` : '';
-    return `${I18N_PLACEHOLDER_SYMBOL}${content}${blockId}${I18N_PLACEHOLDER_SYMBOL}`;
-}
-function assembleI18nBoundString(strings, bindingStartIndex = 0, contextId = 0) {
-    if (!strings.length)
-        return '';
-    let acc = '';
-    const lastIdx = strings.length - 1;
-    for (let i = 0; i < lastIdx; i++) {
-        acc += `${strings[i]}${wrapI18nPlaceholder(bindingStartIndex + i, contextId)}`;
-    }
-    acc += strings[lastIdx];
-    return acc;
-}
-function getSeqNumberGenerator(startsAt = 0) {
-    let current = startsAt;
-    return () => current++;
-}
-/**
- * I18nContext is a helper class which keeps track of all i18n-related aspects
- * (accumulates content, bindings, etc) between i18nStart and i18nEnd instructions.
- *
- * When we enter a nested template, the top-level context is being passed down
- * to the nested component, which uses this context to generate a child instance
- * of I18nContext class (to handle nested template) and at the end, reconciles it back
- * with the parent context.
- */
-class I18nContext {
-    constructor(index, templateIndex, ref, level = 0, uniqueIdGen) {
-        this.index = index;
-        this.templateIndex = templateIndex;
-        this.ref = ref;
-        this.level = level;
-        this.uniqueIdGen = uniqueIdGen;
-        this.content = '';
-        this.bindings = new Set();
-        this.uniqueIdGen = uniqueIdGen || getSeqNumberGenerator();
-        this.id = this.uniqueIdGen();
-    }
-    wrap(symbol, elementIndex, contextId, closed) {
-        const state = closed ? '/' : '';
-        return wrapI18nPlaceholder(`${state}${symbol}${elementIndex}`, contextId);
-    }
-    append(content) { this.content += content; }
-    genTemplatePattern(contextId, templateId) {
-        return wrapI18nPlaceholder(`tmpl:${contextId}:${templateId}`);
-    }
-    getId() { return this.id; }
-    getRef() { return this.ref; }
-    getIndex() { return this.index; }
-    getContent() { return this.content; }
-    getTemplateIndex() { return this.templateIndex; }
-    getBindings() { return this.bindings; }
-    appendBinding(binding) { this.bindings.add(binding); }
-    isRoot() { return this.level === 0; }
-    isResolved() {
-        const regex = new RegExp(this.genTemplatePattern('\\d+', '\\d+'));
-        return !regex.test(this.content);
-    }
-    appendText(content) { this.append(content.trim()); }
-    appendTemplate(index) { this.append(this.genTemplatePattern(this.id, index)); }
-    appendElement(elementIndex, closed) {
-        this.append(this.wrap('#', elementIndex, this.id, closed));
-    }
-    forkChildContext(index, templateIndex) {
-        return new I18nContext(index, templateIndex, this.ref, this.level + 1, this.uniqueIdGen);
-    }
-    reconcileChildContext(context) {
-        const id = context.getId();
-        const content = context.getContent();
-        const templateIndex = context.getTemplateIndex();
-        const pattern = new RegExp(this.genTemplatePattern(this.id, templateIndex));
-        const replacement = `${this.wrap('*', templateIndex, id)}${content}${this.wrap('*', templateIndex, id, true)}`;
-        this.content = this.content.replace(pattern, replacement);
-    }
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const DASH_CASE_REGEXP = /-+([a-z0-9])/g;
 function dashCaseToCamelCase(input) {
     return input.replace(DASH_CASE_REGEXP, (...m) => m[1].toUpperCase());
@@ -2425,12 +2309,6 @@ const _global = __global || __window || __self;
  * found in the LICENSE file at https://angular.io/license
  */
 const CONSTANT_PREFIX = '_c';
-// Closure variables holding messages must be named `MSG_[A-Z0-9]+`
-const TRANSLATION_PREFIX = 'MSG_';
-/**
- * Closure uses `goog.getMsg(message)` to lookup translations
- */
-const GOOG_GET_MSG = 'goog.getMsg';
 /**
  * Context to use when producing a key.
  *
@@ -2479,8 +2357,6 @@ class FixupExpression extends Expression {
 class ConstantPool {
     constructor() {
         this.statements = [];
-        this.translations = new Map();
-        this.deferredTranslations = new Map();
         this.literals = new Map();
         this.literalFactories = new Map();
         this.injectorDefinitions = new Map();
@@ -2510,50 +2386,6 @@ class ConstantPool {
             fixup.fixup(variable(name));
         }
         return fixup;
-    }
-    getDeferredTranslationConst(suffix) {
-        const index = this.statements.push(new ExpressionStatement(NULL_EXPR)) - 1;
-        const variable$$1 = variable(this.freshTranslationName(suffix));
-        this.deferredTranslations.set(variable$$1, index);
-        return variable$$1;
-    }
-    setDeferredTranslationConst(variable$$1, message) {
-        const index = this.deferredTranslations.get(variable$$1);
-        this.statements[index] = this.getTranslationDeclStmt(variable$$1, message);
-    }
-    getTranslationDeclStmt(variable$$1, message) {
-        const fnCall = variable(GOOG_GET_MSG).callFn([literal(message)]);
-        return variable$$1.set(fnCall).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]);
-    }
-    appendTranslationMeta(meta) {
-        const parsedMeta = typeof meta === 'string' ? parseI18nMeta(meta) : meta;
-        const docStmt = i18nMetaToDocStmt(parsedMeta);
-        if (docStmt) {
-            this.statements.push(docStmt);
-        }
-    }
-    // Generates closure specific code for translation.
-    //
-    // ```
-    // /**
-    //  * @desc description?
-    //  * @meaning meaning?
-    //  */
-    // const MSG_XYZ = goog.getMsg('message');
-    // ```
-    getTranslation(message, meta, suffix) {
-        const parsedMeta = parseI18nMeta(meta);
-        // The identity of an i18n message depends on the message and its meaning
-        const key = parsedMeta.meaning ? `${message}\u0000\u0000${parsedMeta.meaning}` : message;
-        const exp = this.translations.get(key);
-        if (exp) {
-            return exp;
-        }
-        const variable$$1 = variable(this.freshTranslationName(suffix));
-        this.appendTranslationMeta(parsedMeta);
-        this.statements.push(this.getTranslationDeclStmt(variable$$1, message));
-        this.translations.set(key, variable$$1);
-        return variable$$1;
     }
     getDefinition(type, kind, ctx, forceShared = false) {
         const definitions = this.definitionsOf(kind);
@@ -2646,9 +2478,6 @@ class ConstantPool {
         return '<unknown>';
     }
     freshName() { return this.uniqueName(CONSTANT_PREFIX); }
-    freshTranslationName(suffix) {
-        return this.uniqueName(TRANSLATION_PREFIX + suffix).toUpperCase();
-    }
     keyOf(expression) {
         return expression.visitExpression(new KeyVisitor(), KEY_CONTEXT);
     }
@@ -2706,19 +2535,6 @@ function invalid(arg) {
 }
 function isVariable(e) {
     return e instanceof ReadVarExpr;
-}
-// Converts i18n meta informations for a message (id, description, meaning)
-// to a JsDoc statement formatted as expected by the Closure compiler.
-function i18nMetaToDocStmt(meta) {
-    const tags = [];
-    if (meta.id || meta.description) {
-        const text = meta.id ? `[BACKUP_MESSAGE_ID:${meta.id}] ${meta.description}` : meta.description;
-        tags.push({ tagName: "desc" /* Desc */, text: text.trim() });
-    }
-    if (meta.meaning) {
-        tags.push({ tagName: "meaning" /* Meaning */, text: meta.meaning });
-    }
-    return tags.length == 0 ? null : new JSDocCommentStmt(tags);
 }
 
 /**
@@ -3331,11 +3147,13 @@ Identifiers$1.pipeBind2 = { name: 'ɵpipeBind2', moduleName: CORE$1 };
 Identifiers$1.pipeBind3 = { name: 'ɵpipeBind3', moduleName: CORE$1 };
 Identifiers$1.pipeBind4 = { name: 'ɵpipeBind4', moduleName: CORE$1 };
 Identifiers$1.pipeBindV = { name: 'ɵpipeBindV', moduleName: CORE$1 };
+Identifiers$1.i18n = { name: 'ɵi18n', moduleName: CORE$1 };
 Identifiers$1.i18nAttributes = { name: 'ɵi18nAttributes', moduleName: CORE$1 };
 Identifiers$1.i18nExp = { name: 'ɵi18nExp', moduleName: CORE$1 };
 Identifiers$1.i18nStart = { name: 'ɵi18nStart', moduleName: CORE$1 };
 Identifiers$1.i18nEnd = { name: 'ɵi18nEnd', moduleName: CORE$1 };
 Identifiers$1.i18nApply = { name: 'ɵi18nApply', moduleName: CORE$1 };
+Identifiers$1.i18nPostprocess = { name: 'ɵi18nPostprocess', moduleName: CORE$1 };
 Identifiers$1.load = { name: 'ɵload', moduleName: CORE$1 };
 Identifiers$1.loadQueryList = { name: 'ɵloadQueryList', moduleName: CORE$1 };
 Identifiers$1.pipe = { name: 'ɵpipe', moduleName: CORE$1 };
@@ -3401,6 +3219,949 @@ Identifiers$1.defaultStyleSanitizer = { name: 'ɵdefaultStyleSanitizer', moduleN
 Identifiers$1.sanitizeResourceUrl = { name: 'ɵsanitizeResourceUrl', moduleName: CORE$1 };
 Identifiers$1.sanitizeScript = { name: 'ɵsanitizeScript', moduleName: CORE$1 };
 Identifiers$1.sanitizeUrl = { name: 'ɵsanitizeUrl', moduleName: CORE$1 };
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+class Message {
+    /**
+     * @param nodes message AST
+     * @param placeholders maps placeholder names to static content
+     * @param placeholderToMessage maps placeholder names to messages (used for nested ICU messages)
+     * @param meaning
+     * @param description
+     * @param id
+     */
+    constructor(nodes, placeholders, placeholderToMessage, meaning, description, id) {
+        this.nodes = nodes;
+        this.placeholders = placeholders;
+        this.placeholderToMessage = placeholderToMessage;
+        this.meaning = meaning;
+        this.description = description;
+        this.id = id;
+        if (nodes.length) {
+            this.sources = [{
+                    filePath: nodes[0].sourceSpan.start.file.url,
+                    startLine: nodes[0].sourceSpan.start.line + 1,
+                    startCol: nodes[0].sourceSpan.start.col + 1,
+                    endLine: nodes[nodes.length - 1].sourceSpan.end.line + 1,
+                    endCol: nodes[0].sourceSpan.start.col + 1
+                }];
+        }
+        else {
+            this.sources = [];
+        }
+    }
+}
+class Text {
+    constructor(value, sourceSpan) {
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+    }
+    visit(visitor, context) { return visitor.visitText(this, context); }
+}
+// TODO(vicb): do we really need this node (vs an array) ?
+class Container {
+    constructor(children, sourceSpan) {
+        this.children = children;
+        this.sourceSpan = sourceSpan;
+    }
+    visit(visitor, context) { return visitor.visitContainer(this, context); }
+}
+class Icu {
+    constructor(expression, type, cases, sourceSpan) {
+        this.expression = expression;
+        this.type = type;
+        this.cases = cases;
+        this.sourceSpan = sourceSpan;
+    }
+    visit(visitor, context) { return visitor.visitIcu(this, context); }
+}
+class TagPlaceholder {
+    constructor(tag, attrs, startName, closeName, children, isVoid, sourceSpan) {
+        this.tag = tag;
+        this.attrs = attrs;
+        this.startName = startName;
+        this.closeName = closeName;
+        this.children = children;
+        this.isVoid = isVoid;
+        this.sourceSpan = sourceSpan;
+    }
+    visit(visitor, context) { return visitor.visitTagPlaceholder(this, context); }
+}
+class Placeholder {
+    constructor(value, name, sourceSpan) {
+        this.value = value;
+        this.name = name;
+        this.sourceSpan = sourceSpan;
+    }
+    visit(visitor, context) { return visitor.visitPlaceholder(this, context); }
+}
+class IcuPlaceholder {
+    constructor(value, name, sourceSpan) {
+        this.value = value;
+        this.name = name;
+        this.sourceSpan = sourceSpan;
+    }
+    visit(visitor, context) { return visitor.visitIcuPlaceholder(this, context); }
+}
+// Clone the AST
+class CloneVisitor {
+    visitText(text, context) { return new Text(text.value, text.sourceSpan); }
+    visitContainer(container, context) {
+        const children = container.children.map(n => n.visit(this, context));
+        return new Container(children, container.sourceSpan);
+    }
+    visitIcu(icu, context) {
+        const cases = {};
+        Object.keys(icu.cases).forEach(key => cases[key] = icu.cases[key].visit(this, context));
+        const msg = new Icu(icu.expression, icu.type, cases, icu.sourceSpan);
+        msg.expressionPlaceholder = icu.expressionPlaceholder;
+        return msg;
+    }
+    visitTagPlaceholder(ph, context) {
+        const children = ph.children.map(n => n.visit(this, context));
+        return new TagPlaceholder(ph.tag, ph.attrs, ph.startName, ph.closeName, children, ph.isVoid, ph.sourceSpan);
+    }
+    visitPlaceholder(ph, context) {
+        return new Placeholder(ph.value, ph.name, ph.sourceSpan);
+    }
+    visitIcuPlaceholder(ph, context) {
+        return new IcuPlaceholder(ph.value, ph.name, ph.sourceSpan);
+    }
+}
+// Visit all the nodes recursively
+class RecurseVisitor {
+    visitText(text, context) { }
+    visitContainer(container, context) {
+        container.children.forEach(child => child.visit(this));
+    }
+    visitIcu(icu, context) {
+        Object.keys(icu.cases).forEach(k => { icu.cases[k].visit(this); });
+    }
+    visitTagPlaceholder(ph, context) {
+        ph.children.forEach(child => child.visit(this));
+    }
+    visitPlaceholder(ph, context) { }
+    visitIcuPlaceholder(ph, context) { }
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+function digest(message) {
+    return message.id || sha1(serializeNodes(message.nodes).join('') + `[${message.meaning}]`);
+}
+function decimalDigest(message) {
+    if (message.id) {
+        return message.id;
+    }
+    const visitor = new _SerializerIgnoreIcuExpVisitor();
+    const parts = message.nodes.map(a => a.visit(visitor, null));
+    return computeMsgId(parts.join(''), message.meaning);
+}
+/**
+ * Serialize the i18n ast to something xml-like in order to generate an UID.
+ *
+ * The visitor is also used in the i18n parser tests
+ *
+ * @internal
+ */
+class _SerializerVisitor {
+    visitText(text, context) { return text.value; }
+    visitContainer(container, context) {
+        return `[${container.children.map(child => child.visit(this)).join(', ')}]`;
+    }
+    visitIcu(icu, context) {
+        const strCases = Object.keys(icu.cases).map((k) => `${k} {${icu.cases[k].visit(this)}}`);
+        return `{${icu.expression}, ${icu.type}, ${strCases.join(', ')}}`;
+    }
+    visitTagPlaceholder(ph, context) {
+        return ph.isVoid ?
+            `<ph tag name="${ph.startName}"/>` :
+            `<ph tag name="${ph.startName}">${ph.children.map(child => child.visit(this)).join(', ')}</ph name="${ph.closeName}">`;
+    }
+    visitPlaceholder(ph, context) {
+        return ph.value ? `<ph name="${ph.name}">${ph.value}</ph>` : `<ph name="${ph.name}"/>`;
+    }
+    visitIcuPlaceholder(ph, context) {
+        return `<ph icu name="${ph.name}">${ph.value.visit(this)}</ph>`;
+    }
+}
+const serializerVisitor = new _SerializerVisitor();
+function serializeNodes(nodes) {
+    return nodes.map(a => a.visit(serializerVisitor, null));
+}
+/**
+ * Serialize the i18n ast to something xml-like in order to generate an UID.
+ *
+ * Ignore the ICU expressions so that message IDs stays identical if only the expression changes.
+ *
+ * @internal
+ */
+class _SerializerIgnoreIcuExpVisitor extends _SerializerVisitor {
+    visitIcu(icu, context) {
+        let strCases = Object.keys(icu.cases).map((k) => `${k} {${icu.cases[k].visit(this)}}`);
+        // Do not take the expression into account
+        return `{${icu.type}, ${strCases.join(', ')}}`;
+    }
+}
+/**
+ * Compute the SHA1 of the given string
+ *
+ * see http://csrc.nist.gov/publications/fips/fips180-4/fips-180-4.pdf
+ *
+ * WARNING: this function has not been designed not tested with security in mind.
+ *          DO NOT USE IT IN A SECURITY SENSITIVE CONTEXT.
+ */
+function sha1(str) {
+    const utf8 = utf8Encode(str);
+    const words32 = stringToWords32(utf8, Endian.Big);
+    const len = utf8.length * 8;
+    const w = new Array(80);
+    let [a, b, c, d, e] = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0];
+    words32[len >> 5] |= 0x80 << (24 - len % 32);
+    words32[((len + 64 >> 9) << 4) + 15] = len;
+    for (let i = 0; i < words32.length; i += 16) {
+        const [h0, h1, h2, h3, h4] = [a, b, c, d, e];
+        for (let j = 0; j < 80; j++) {
+            if (j < 16) {
+                w[j] = words32[i + j];
+            }
+            else {
+                w[j] = rol32(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
+            }
+            const [f, k] = fk(j, b, c, d);
+            const temp = [rol32(a, 5), f, e, k, w[j]].reduce(add32);
+            [e, d, c, b, a] = [d, c, rol32(b, 30), a, temp];
+        }
+        [a, b, c, d, e] = [add32(a, h0), add32(b, h1), add32(c, h2), add32(d, h3), add32(e, h4)];
+    }
+    return byteStringToHexString(words32ToByteString([a, b, c, d, e]));
+}
+function fk(index, b, c, d) {
+    if (index < 20) {
+        return [(b & c) | (~b & d), 0x5a827999];
+    }
+    if (index < 40) {
+        return [b ^ c ^ d, 0x6ed9eba1];
+    }
+    if (index < 60) {
+        return [(b & c) | (b & d) | (c & d), 0x8f1bbcdc];
+    }
+    return [b ^ c ^ d, 0xca62c1d6];
+}
+/**
+ * Compute the fingerprint of the given string
+ *
+ * The output is 64 bit number encoded as a decimal string
+ *
+ * based on:
+ * https://github.com/google/closure-compiler/blob/master/src/com/google/javascript/jscomp/GoogleJsMessageIdGenerator.java
+ */
+function fingerprint(str) {
+    const utf8 = utf8Encode(str);
+    let [hi, lo] = [hash32(utf8, 0), hash32(utf8, 102072)];
+    if (hi == 0 && (lo == 0 || lo == 1)) {
+        hi = hi ^ 0x130f9bef;
+        lo = lo ^ -0x6b5f56d8;
+    }
+    return [hi, lo];
+}
+function computeMsgId(msg, meaning) {
+    let [hi, lo] = fingerprint(msg);
+    if (meaning) {
+        const [him, lom] = fingerprint(meaning);
+        [hi, lo] = add64(rol64([hi, lo], 1), [him, lom]);
+    }
+    return byteStringToDecString(words32ToByteString([hi & 0x7fffffff, lo]));
+}
+function hash32(str, c) {
+    let [a, b] = [0x9e3779b9, 0x9e3779b9];
+    let i;
+    const len = str.length;
+    for (i = 0; i + 12 <= len; i += 12) {
+        a = add32(a, wordAt(str, i, Endian.Little));
+        b = add32(b, wordAt(str, i + 4, Endian.Little));
+        c = add32(c, wordAt(str, i + 8, Endian.Little));
+        [a, b, c] = mix([a, b, c]);
+    }
+    a = add32(a, wordAt(str, i, Endian.Little));
+    b = add32(b, wordAt(str, i + 4, Endian.Little));
+    // the first byte of c is reserved for the length
+    c = add32(c, len);
+    c = add32(c, wordAt(str, i + 8, Endian.Little) << 8);
+    return mix([a, b, c])[2];
+}
+// clang-format off
+function mix([a, b, c]) {
+    a = sub32(a, b);
+    a = sub32(a, c);
+    a ^= c >>> 13;
+    b = sub32(b, c);
+    b = sub32(b, a);
+    b ^= a << 8;
+    c = sub32(c, a);
+    c = sub32(c, b);
+    c ^= b >>> 13;
+    a = sub32(a, b);
+    a = sub32(a, c);
+    a ^= c >>> 12;
+    b = sub32(b, c);
+    b = sub32(b, a);
+    b ^= a << 16;
+    c = sub32(c, a);
+    c = sub32(c, b);
+    c ^= b >>> 5;
+    a = sub32(a, b);
+    a = sub32(a, c);
+    a ^= c >>> 3;
+    b = sub32(b, c);
+    b = sub32(b, a);
+    b ^= a << 10;
+    c = sub32(c, a);
+    c = sub32(c, b);
+    c ^= b >>> 15;
+    return [a, b, c];
+}
+// clang-format on
+// Utils
+var Endian;
+(function (Endian) {
+    Endian[Endian["Little"] = 0] = "Little";
+    Endian[Endian["Big"] = 1] = "Big";
+})(Endian || (Endian = {}));
+function add32(a, b) {
+    return add32to64(a, b)[1];
+}
+function add32to64(a, b) {
+    const low = (a & 0xffff) + (b & 0xffff);
+    const high = (a >>> 16) + (b >>> 16) + (low >>> 16);
+    return [high >>> 16, (high << 16) | (low & 0xffff)];
+}
+function add64([ah, al], [bh, bl]) {
+    const [carry, l] = add32to64(al, bl);
+    const h = add32(add32(ah, bh), carry);
+    return [h, l];
+}
+function sub32(a, b) {
+    const low = (a & 0xffff) - (b & 0xffff);
+    const high = (a >> 16) - (b >> 16) + (low >> 16);
+    return (high << 16) | (low & 0xffff);
+}
+// Rotate a 32b number left `count` position
+function rol32(a, count) {
+    return (a << count) | (a >>> (32 - count));
+}
+// Rotate a 64b number left `count` position
+function rol64([hi, lo], count) {
+    const h = (hi << count) | (lo >>> (32 - count));
+    const l = (lo << count) | (hi >>> (32 - count));
+    return [h, l];
+}
+function stringToWords32(str, endian) {
+    const words32 = Array((str.length + 3) >>> 2);
+    for (let i = 0; i < words32.length; i++) {
+        words32[i] = wordAt(str, i * 4, endian);
+    }
+    return words32;
+}
+function byteAt(str, index) {
+    return index >= str.length ? 0 : str.charCodeAt(index) & 0xff;
+}
+function wordAt(str, index, endian) {
+    let word = 0;
+    if (endian === Endian.Big) {
+        for (let i = 0; i < 4; i++) {
+            word += byteAt(str, index + i) << (24 - 8 * i);
+        }
+    }
+    else {
+        for (let i = 0; i < 4; i++) {
+            word += byteAt(str, index + i) << 8 * i;
+        }
+    }
+    return word;
+}
+function words32ToByteString(words32) {
+    return words32.reduce((str, word) => str + word32ToByteString(word), '');
+}
+function word32ToByteString(word) {
+    let str = '';
+    for (let i = 0; i < 4; i++) {
+        str += String.fromCharCode((word >>> 8 * (3 - i)) & 0xff);
+    }
+    return str;
+}
+function byteStringToHexString(str) {
+    let hex = '';
+    for (let i = 0; i < str.length; i++) {
+        const b = byteAt(str, i);
+        hex += (b >>> 4).toString(16) + (b & 0x0f).toString(16);
+    }
+    return hex.toLowerCase();
+}
+// based on http://www.danvk.org/hex2dec.html (JS can not handle more than 56b)
+function byteStringToDecString(str) {
+    let decimal = '';
+    let toThePower = '1';
+    for (let i = str.length - 1; i >= 0; i--) {
+        decimal = addBigInt(decimal, numberTimesBigInt(byteAt(str, i), toThePower));
+        toThePower = numberTimesBigInt(256, toThePower);
+    }
+    return decimal.split('').reverse().join('');
+}
+// x and y decimal, lowest significant digit first
+function addBigInt(x, y) {
+    let sum = '';
+    const len = Math.max(x.length, y.length);
+    for (let i = 0, carry = 0; i < len || carry; i++) {
+        const tmpSum = carry + +(x[i] || 0) + +(y[i] || 0);
+        if (tmpSum >= 10) {
+            carry = 1;
+            sum += tmpSum - 10;
+        }
+        else {
+            carry = 0;
+            sum += tmpSum;
+        }
+    }
+    return sum;
+}
+function numberTimesBigInt(num, b) {
+    let product = '';
+    let bToThePower = b;
+    for (; num !== 0; num = num >>> 1) {
+        if (num & 1)
+            product = addBigInt(product, bToThePower);
+        bToThePower = addBigInt(bToThePower, bToThePower);
+    }
+    return product;
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+class Serializer {
+    // Creates a name mapper, see `PlaceholderMapper`
+    // Returning `null` means that no name mapping is used.
+    createNameMapper(message) { return null; }
+}
+/**
+ * A simple mapper that take a function to transform an internal name to a public name
+ */
+class SimplePlaceholderMapper extends RecurseVisitor {
+    // create a mapping from the message
+    constructor(message, mapName) {
+        super();
+        this.mapName = mapName;
+        this.internalToPublic = {};
+        this.publicToNextId = {};
+        this.publicToInternal = {};
+        message.nodes.forEach(node => node.visit(this));
+    }
+    toPublicName(internalName) {
+        return this.internalToPublic.hasOwnProperty(internalName) ?
+            this.internalToPublic[internalName] :
+            null;
+    }
+    toInternalName(publicName) {
+        return this.publicToInternal.hasOwnProperty(publicName) ? this.publicToInternal[publicName] :
+            null;
+    }
+    visitText(text, context) { return null; }
+    visitTagPlaceholder(ph, context) {
+        this.visitPlaceholderName(ph.startName);
+        super.visitTagPlaceholder(ph, context);
+        this.visitPlaceholderName(ph.closeName);
+    }
+    visitPlaceholder(ph, context) { this.visitPlaceholderName(ph.name); }
+    visitIcuPlaceholder(ph, context) {
+        this.visitPlaceholderName(ph.name);
+    }
+    // XMB placeholders could only contains A-Z, 0-9 and _
+    visitPlaceholderName(internalName) {
+        if (!internalName || this.internalToPublic.hasOwnProperty(internalName)) {
+            return;
+        }
+        let publicName = this.mapName(internalName);
+        if (this.publicToInternal.hasOwnProperty(publicName)) {
+            // Create a new XMB when it has already been used
+            const nextId = this.publicToNextId[publicName];
+            this.publicToNextId[publicName] = nextId + 1;
+            publicName = `${publicName}_${nextId}`;
+        }
+        else {
+            this.publicToNextId[publicName] = 1;
+        }
+        this.internalToPublic[internalName] = publicName;
+        this.publicToInternal[publicName] = internalName;
+    }
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+class _Visitor {
+    visitTag(tag) {
+        const strAttrs = this._serializeAttributes(tag.attrs);
+        if (tag.children.length == 0) {
+            return `<${tag.name}${strAttrs}/>`;
+        }
+        const strChildren = tag.children.map(node => node.visit(this));
+        return `<${tag.name}${strAttrs}>${strChildren.join('')}</${tag.name}>`;
+    }
+    visitText(text) { return text.value; }
+    visitDeclaration(decl) {
+        return `<?xml${this._serializeAttributes(decl.attrs)} ?>`;
+    }
+    _serializeAttributes(attrs) {
+        const strAttrs = Object.keys(attrs).map((name) => `${name}="${attrs[name]}"`).join(' ');
+        return strAttrs.length > 0 ? ' ' + strAttrs : '';
+    }
+    visitDoctype(doctype) {
+        return `<!DOCTYPE ${doctype.rootTag} [\n${doctype.dtd}\n]>`;
+    }
+}
+const _visitor = new _Visitor();
+function serialize(nodes) {
+    return nodes.map((node) => node.visit(_visitor)).join('');
+}
+class Declaration {
+    constructor(unescapedAttrs) {
+        this.attrs = {};
+        Object.keys(unescapedAttrs).forEach((k) => {
+            this.attrs[k] = escapeXml(unescapedAttrs[k]);
+        });
+    }
+    visit(visitor) { return visitor.visitDeclaration(this); }
+}
+class Doctype {
+    constructor(rootTag, dtd) {
+        this.rootTag = rootTag;
+        this.dtd = dtd;
+    }
+    visit(visitor) { return visitor.visitDoctype(this); }
+}
+class Tag {
+    constructor(name, unescapedAttrs = {}, children = []) {
+        this.name = name;
+        this.children = children;
+        this.attrs = {};
+        Object.keys(unescapedAttrs).forEach((k) => {
+            this.attrs[k] = escapeXml(unescapedAttrs[k]);
+        });
+    }
+    visit(visitor) { return visitor.visitTag(this); }
+}
+class Text$1 {
+    constructor(unescapedValue) { this.value = escapeXml(unescapedValue); }
+    visit(visitor) { return visitor.visitText(this); }
+}
+class CR extends Text$1 {
+    constructor(ws = 0) { super(`\n${new Array(ws + 1).join(' ')}`); }
+}
+const _ESCAPED_CHARS = [
+    [/&/g, '&amp;'],
+    [/"/g, '&quot;'],
+    [/'/g, '&apos;'],
+    [/</g, '&lt;'],
+    [/>/g, '&gt;'],
+];
+// Escape `_ESCAPED_CHARS` characters in the given text with encoded entities
+function escapeXml(text) {
+    return _ESCAPED_CHARS.reduce((text, entry) => text.replace(entry[0], entry[1]), text);
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const _MESSAGES_TAG = 'messagebundle';
+const _MESSAGE_TAG = 'msg';
+const _PLACEHOLDER_TAG = 'ph';
+const _EXAMPLE_TAG = 'ex';
+const _SOURCE_TAG = 'source';
+const _DOCTYPE = `<!ELEMENT messagebundle (msg)*>
+<!ATTLIST messagebundle class CDATA #IMPLIED>
+
+<!ELEMENT msg (#PCDATA|ph|source)*>
+<!ATTLIST msg id CDATA #IMPLIED>
+<!ATTLIST msg seq CDATA #IMPLIED>
+<!ATTLIST msg name CDATA #IMPLIED>
+<!ATTLIST msg desc CDATA #IMPLIED>
+<!ATTLIST msg meaning CDATA #IMPLIED>
+<!ATTLIST msg obsolete (obsolete) #IMPLIED>
+<!ATTLIST msg xml:space (default|preserve) "default">
+<!ATTLIST msg is_hidden CDATA #IMPLIED>
+
+<!ELEMENT source (#PCDATA)>
+
+<!ELEMENT ph (#PCDATA|ex)*>
+<!ATTLIST ph name CDATA #REQUIRED>
+
+<!ELEMENT ex (#PCDATA)>`;
+class Xmb extends Serializer {
+    write(messages, locale) {
+        const exampleVisitor = new ExampleVisitor();
+        const visitor = new _Visitor$1();
+        let rootNode = new Tag(_MESSAGES_TAG);
+        messages.forEach(message => {
+            const attrs = { id: message.id };
+            if (message.description) {
+                attrs['desc'] = message.description;
+            }
+            if (message.meaning) {
+                attrs['meaning'] = message.meaning;
+            }
+            let sourceTags = [];
+            message.sources.forEach((source) => {
+                sourceTags.push(new Tag(_SOURCE_TAG, {}, [
+                    new Text$1(`${source.filePath}:${source.startLine}${source.endLine !== source.startLine ? ',' + source.endLine : ''}`)
+                ]));
+            });
+            rootNode.children.push(new CR(2), new Tag(_MESSAGE_TAG, attrs, [...sourceTags, ...visitor.serialize(message.nodes)]));
+        });
+        rootNode.children.push(new CR());
+        return serialize([
+            new Declaration({ version: '1.0', encoding: 'UTF-8' }),
+            new CR(),
+            new Doctype(_MESSAGES_TAG, _DOCTYPE),
+            new CR(),
+            exampleVisitor.addDefaultExamples(rootNode),
+            new CR(),
+        ]);
+    }
+    load(content, url) {
+        throw new Error('Unsupported');
+    }
+    digest(message) { return digest$1(message); }
+    createNameMapper(message) {
+        return new SimplePlaceholderMapper(message, toPublicName);
+    }
+}
+class _Visitor$1 {
+    visitText(text, context) { return [new Text$1(text.value)]; }
+    visitContainer(container, context) {
+        const nodes = [];
+        container.children.forEach((node) => nodes.push(...node.visit(this)));
+        return nodes;
+    }
+    visitIcu(icu, context) {
+        const nodes = [new Text$1(`{${icu.expressionPlaceholder}, ${icu.type}, `)];
+        Object.keys(icu.cases).forEach((c) => {
+            nodes.push(new Text$1(`${c} {`), ...icu.cases[c].visit(this), new Text$1(`} `));
+        });
+        nodes.push(new Text$1(`}`));
+        return nodes;
+    }
+    visitTagPlaceholder(ph, context) {
+        const startTagAsText = new Text$1(`<${ph.tag}>`);
+        const startEx = new Tag(_EXAMPLE_TAG, {}, [startTagAsText]);
+        // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
+        const startTagPh = new Tag(_PLACEHOLDER_TAG, { name: ph.startName }, [startEx, startTagAsText]);
+        if (ph.isVoid) {
+            // void tags have no children nor closing tags
+            return [startTagPh];
+        }
+        const closeTagAsText = new Text$1(`</${ph.tag}>`);
+        const closeEx = new Tag(_EXAMPLE_TAG, {}, [closeTagAsText]);
+        // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
+        const closeTagPh = new Tag(_PLACEHOLDER_TAG, { name: ph.closeName }, [closeEx, closeTagAsText]);
+        return [startTagPh, ...this.serialize(ph.children), closeTagPh];
+    }
+    visitPlaceholder(ph, context) {
+        const interpolationAsText = new Text$1(`{{${ph.value}}}`);
+        // Example tag needs to be not-empty for TC.
+        const exTag = new Tag(_EXAMPLE_TAG, {}, [interpolationAsText]);
+        return [
+            // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
+            new Tag(_PLACEHOLDER_TAG, { name: ph.name }, [exTag, interpolationAsText])
+        ];
+    }
+    visitIcuPlaceholder(ph, context) {
+        const icuExpression = ph.value.expression;
+        const icuType = ph.value.type;
+        const icuCases = Object.keys(ph.value.cases).map((value) => value + ' {...}').join(' ');
+        const icuAsText = new Text$1(`{${icuExpression}, ${icuType}, ${icuCases}}`);
+        const exTag = new Tag(_EXAMPLE_TAG, {}, [icuAsText]);
+        return [
+            // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
+            new Tag(_PLACEHOLDER_TAG, { name: ph.name }, [exTag, icuAsText])
+        ];
+    }
+    serialize(nodes) {
+        return [].concat(...nodes.map(node => node.visit(this)));
+    }
+}
+function digest$1(message) {
+    return decimalDigest(message);
+}
+// TC requires at least one non-empty example on placeholders
+class ExampleVisitor {
+    addDefaultExamples(node) {
+        node.visit(this);
+        return node;
+    }
+    visitTag(tag) {
+        if (tag.name === _PLACEHOLDER_TAG) {
+            if (!tag.children || tag.children.length == 0) {
+                const exText = new Text$1(tag.attrs['name'] || '...');
+                tag.children = [new Tag(_EXAMPLE_TAG, {}, [exText])];
+            }
+        }
+        else if (tag.children) {
+            tag.children.forEach(node => node.visit(this));
+        }
+    }
+    visitText(text) { }
+    visitDeclaration(decl) { }
+    visitDoctype(doctype) { }
+}
+// XMB/XTB placeholders can only contain A-Z, 0-9 and _
+function toPublicName(internalName) {
+    return internalName.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+function mapLiteral(obj, quoted = false) {
+    return literalMap(Object.keys(obj).map(key => ({
+        key,
+        quoted,
+        value: obj[key],
+    })));
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/* Closure variables holding messages must be named `MSG_[A-Z0-9]+` */
+const TRANSLATION_PREFIX = 'MSG_';
+/** Closure uses `goog.getMsg(message)` to lookup translations */
+const GOOG_GET_MSG = 'goog.getMsg';
+/** String key that is used to provide backup id of translatable message in Closure */
+const BACKUP_MESSAGE_ID = 'BACKUP_MESSAGE_ID';
+/** Regexp to identify whether backup id already provided in description */
+const BACKUP_MESSAGE_ID_REGEXP = new RegExp(BACKUP_MESSAGE_ID);
+/** I18n separators for metadata **/
+const I18N_MEANING_SEPARATOR = '|';
+const I18N_ID_SEPARATOR = '@@';
+/** Name of the i18n attributes **/
+const I18N_ATTR = 'i18n';
+const I18N_ATTR_PREFIX = 'i18n-';
+/** Prefix of var expressions used in ICUs */
+const I18N_ICU_VAR_PREFIX = 'VAR_';
+/** Prefix of ICU expressions for post processing */
+const I18N_ICU_MAPPING_PREFIX = 'I18N_EXP_';
+/** Placeholder wrapper for i18n expressions **/
+const I18N_PLACEHOLDER_SYMBOL = '�';
+function i18nTranslationToDeclStmt(variable$$1, message, params) {
+    const args = [literal(message)];
+    if (params && Object.keys(params).length) {
+        args.push(mapLiteral(params, true));
+    }
+    const fnCall = variable(GOOG_GET_MSG).callFn(args);
+    return variable$$1.set(fnCall).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]);
+}
+// Converts i18n meta informations for a message (id, description, meaning)
+// to a JsDoc statement formatted as expected by the Closure compiler.
+function i18nMetaToDocStmt(meta) {
+    const tags = [];
+    const { id, description, meaning } = meta;
+    if (id || description) {
+        const hasBackupId = !!description && BACKUP_MESSAGE_ID_REGEXP.test(description);
+        const text = id && !hasBackupId ? `[${BACKUP_MESSAGE_ID}:${id}] ${description || ''}` : description;
+        tags.push({ tagName: "desc" /* Desc */, text: text.trim() });
+    }
+    if (meaning) {
+        tags.push({ tagName: "meaning" /* Meaning */, text: meaning });
+    }
+    return tags.length == 0 ? null : new JSDocCommentStmt(tags);
+}
+function isI18nAttribute(name) {
+    return name === I18N_ATTR || name.startsWith(I18N_ATTR_PREFIX);
+}
+function isI18nRootNode(meta) {
+    return meta instanceof Message;
+}
+function isSingleI18nIcu(meta) {
+    return isI18nRootNode(meta) && meta.nodes.length === 1 && meta.nodes[0] instanceof Icu;
+}
+function hasI18nAttrs(element) {
+    return element.attrs.some((attr) => isI18nAttribute(attr.name));
+}
+function metaFromI18nMessage(message) {
+    return {
+        id: message.id || '',
+        meaning: message.meaning || '',
+        description: message.description || ''
+    };
+}
+function icuFromI18nMessage(message) {
+    return message.nodes[0];
+}
+function wrapI18nPlaceholder(content, contextId = 0) {
+    const blockId = contextId > 0 ? `:${contextId}` : '';
+    return `${I18N_PLACEHOLDER_SYMBOL}${content}${blockId}${I18N_PLACEHOLDER_SYMBOL}`;
+}
+function assembleI18nBoundString(strings, bindingStartIndex = 0, contextId = 0) {
+    if (!strings.length)
+        return '';
+    let acc = '';
+    const lastIdx = strings.length - 1;
+    for (let i = 0; i < lastIdx; i++) {
+        acc += `${strings[i]}${wrapI18nPlaceholder(bindingStartIndex + i, contextId)}`;
+    }
+    acc += strings[lastIdx];
+    return acc;
+}
+function getSeqNumberGenerator(startsAt = 0) {
+    let current = startsAt;
+    return () => current++;
+}
+function placeholdersToParams(placeholders) {
+    const params = {};
+    placeholders.forEach((values, key) => {
+        params[key] = literal(values.length > 1 ? `[${values.join('|')}]` : values[0]);
+    });
+    return params;
+}
+function updatePlaceholderMap(map, name, ...values) {
+    const current = map.get(name) || [];
+    current.push(...values);
+    map.set(name, current);
+}
+function assembleBoundTextPlaceholders(meta, bindingStartIndex = 0, contextId = 0) {
+    const startIdx = bindingStartIndex;
+    const placeholders = new Map();
+    const node = meta instanceof Message ? meta.nodes.find(node => node instanceof Container) : meta;
+    if (node) {
+        node
+            .children.filter((child) => child instanceof Placeholder)
+            .forEach((child, idx) => {
+            const content = wrapI18nPlaceholder(startIdx + idx, contextId);
+            updatePlaceholderMap(placeholders, child.name, content);
+        });
+    }
+    return placeholders;
+}
+function findIndex(items, callback) {
+    for (let i = 0; i < items.length; i++) {
+        if (callback(items[i])) {
+            return i;
+        }
+    }
+    return -1;
+}
+/**
+ * Parses i18n metas like:
+ *  - "@@id",
+ *  - "description[@@id]",
+ *  - "meaning|description[@@id]"
+ * and returns an object with parsed output.
+ *
+ * @param meta String that represents i18n meta
+ * @returns Object with id, meaning and description fields
+ */
+function parseI18nMeta(meta) {
+    let id;
+    let meaning;
+    let description;
+    if (meta) {
+        const idIndex = meta.indexOf(I18N_ID_SEPARATOR);
+        const descIndex = meta.indexOf(I18N_MEANING_SEPARATOR);
+        let meaningAndDesc;
+        [meaningAndDesc, id] =
+            (idIndex > -1) ? [meta.slice(0, idIndex), meta.slice(idIndex + 2)] : [meta, ''];
+        [meaning, description] = (descIndex > -1) ?
+            [meaningAndDesc.slice(0, descIndex), meaningAndDesc.slice(descIndex + 1)] :
+            ['', meaningAndDesc];
+    }
+    return { id, meaning, description };
+}
+/**
+ * Converts internal placeholder names to public-facing format
+ * (for example to use in goog.getMsg call).
+ * Example: `START_TAG_DIV_1` is converted to `startTagDiv_1`.
+ *
+ * @param name The placeholder name that should be formatted
+ * @returns Formatted placeholder name
+ */
+function formatI18nPlaceholderName(name) {
+    const chunks = toPublicName(name).split('_');
+    if (chunks.length === 1) {
+        // if no "_" found - just lowercase the value
+        return name.toLowerCase();
+    }
+    let postfix;
+    // eject last element if it's a number
+    if (/^\d+$/.test(chunks[chunks.length - 1])) {
+        postfix = chunks.pop();
+    }
+    let raw = chunks.shift().toLowerCase();
+    if (chunks.length) {
+        raw += chunks.map(c => c.charAt(0).toUpperCase() + c.slice(1).toLowerCase()).join('');
+    }
+    return postfix ? `${raw}_${postfix}` : raw;
+}
+function getTranslationConstPrefix(fileBasedSuffix) {
+    return `${TRANSLATION_PREFIX}${fileBasedSuffix}`.toUpperCase();
+}
+/**
+ * Generates translation declaration statements.
+ *
+ * @param variable Translation value reference
+ * @param message Text message to be translated
+ * @param meta Object that contains meta information (id, meaning and description)
+ * @param params Object with placeholders key-value pairs
+ * @param transformFn Optional transformation (post processing) function reference
+ * @returns Array of Statements that represent a given translation
+ */
+function getTranslationDeclStmts(variable$$1, message, meta, params = {}, transformFn) {
+    const statements = [];
+    const docStatements = i18nMetaToDocStmt(meta);
+    if (docStatements) {
+        statements.push(docStatements);
+    }
+    if (transformFn) {
+        const raw = variable(`${variable$$1.name}_RAW`);
+        statements.push(i18nTranslationToDeclStmt(raw, message, params));
+        statements.push(variable$$1.set(transformFn(raw)).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
+    }
+    else {
+        statements.push(i18nTranslationToDeclStmt(variable$$1, message, params));
+    }
+    return statements;
+}
 
 /**
  * @license
@@ -3508,7 +4269,7 @@ class DefinitionMap {
 function getAttrsForDirectiveMatching(elOrTpl) {
     const attributesMap = {};
     elOrTpl.attributes.forEach(a => {
-        if (!isI18NAttribute(a.name)) {
+        if (!isI18nAttribute(a.name)) {
             attributesMap[a.name] = a.value;
         }
     });
@@ -4749,21 +5510,6 @@ function jitExpression(def, context, sourceUrl, preStatements) {
     ];
     const res = jitStatements(sourceUrl, statements, new R3JitReflector(context), false);
     return res['$def'];
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-function mapLiteral(obj) {
-    return literalMap(Object.keys(obj).map(key => ({
-        key,
-        quoted: false,
-        value: obj[key],
-    })));
 }
 
 /**
@@ -8294,20 +9040,22 @@ class AstPath {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-class Text {
-    constructor(value, sourceSpan) {
+class Text$2 {
+    constructor(value, sourceSpan, i18n) {
         this.value = value;
         this.sourceSpan = sourceSpan;
+        this.i18n = i18n;
     }
     visit(visitor, context) { return visitor.visitText(this, context); }
 }
 class Expansion {
-    constructor(switchValue, type, cases, sourceSpan, switchValueSourceSpan) {
+    constructor(switchValue, type, cases, sourceSpan, switchValueSourceSpan, i18n) {
         this.switchValue = switchValue;
         this.type = type;
         this.cases = cases;
         this.sourceSpan = sourceSpan;
         this.switchValueSourceSpan = switchValueSourceSpan;
+        this.i18n = i18n;
     }
     visit(visitor, context) { return visitor.visitExpansion(this, context); }
 }
@@ -8322,22 +9070,24 @@ class ExpansionCase {
     visit(visitor, context) { return visitor.visitExpansionCase(this, context); }
 }
 class Attribute {
-    constructor(name, value, sourceSpan, valueSpan) {
+    constructor(name, value, sourceSpan, valueSpan, i18n) {
         this.name = name;
         this.value = value;
         this.sourceSpan = sourceSpan;
         this.valueSpan = valueSpan;
+        this.i18n = i18n;
     }
     visit(visitor, context) { return visitor.visitAttribute(this, context); }
 }
 class Element {
-    constructor(name, attrs, children, sourceSpan, startSourceSpan = null, endSourceSpan = null) {
+    constructor(name, attrs, children, sourceSpan, startSourceSpan = null, endSourceSpan = null, i18n) {
         this.name = name;
         this.attrs = attrs;
         this.children = children;
         this.sourceSpan = sourceSpan;
         this.startSourceSpan = startSourceSpan;
         this.endSourceSpan = endSourceSpan;
+        this.i18n = i18n;
     }
     visit(visitor, context) { return visitor.visitElement(this, context); }
 }
@@ -9240,7 +9990,7 @@ class _TreeBuilder {
             }
         }
         if (text.length > 0) {
-            this._addToParent(new Text(text, token.sourceSpan));
+            this._addToParent(new Text$2(text, token.sourceSpan));
         }
     }
     _closeVoidElement() {
@@ -9460,9 +10210,9 @@ class WhitespaceVisitor {
         if (SKIP_WS_TRIM_TAGS.has(element.name) || hasPreserveWhitespacesAttr(element.attrs)) {
             // don't descent into elements where we need to preserve whitespaces
             // but still visit all attributes to eliminate one used as a market to preserve WS
-            return new Element(element.name, visitAll(this, element.attrs), element.children, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+            return new Element(element.name, visitAll(this, element.attrs), element.children, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
         }
-        return new Element(element.name, element.attrs, visitAll(this, element.children), element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+        return new Element(element.name, element.attrs, visitAll(this, element.children), element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
     }
     visitAttribute(attribute, context) {
         return attribute.name !== PRESERVE_WS_ATTR_NAME ? attribute : null;
@@ -9470,7 +10220,7 @@ class WhitespaceVisitor {
     visitText(text, context) {
         const isNotBlank = text.value.match(NO_WS_REGEXP);
         if (isNotBlank) {
-            return new Text(replaceNgsp(text.value).replace(WS_REPLACE_REGEXP, ' '), text.sourceSpan);
+            return new Text$2(replaceNgsp(text.value).replace(WS_REPLACE_REGEXP, ' '), text.sourceSpan, text.i18n);
         }
         return null;
     }
@@ -10315,7 +11065,7 @@ function calcPossibleSecurityContexts(registry, selector, propName, isAttribute)
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-class Text$1 {
+class Text$3 {
     constructor(value, sourceSpan) {
         this.value = value;
         this.sourceSpan = sourceSpan;
@@ -10323,32 +11073,35 @@ class Text$1 {
     visit(visitor) { return visitor.visitText(this); }
 }
 class BoundText {
-    constructor(value, sourceSpan) {
+    constructor(value, sourceSpan, i18n) {
         this.value = value;
         this.sourceSpan = sourceSpan;
+        this.i18n = i18n;
     }
     visit(visitor) { return visitor.visitBoundText(this); }
 }
 class TextAttribute {
-    constructor(name, value, sourceSpan, valueSpan) {
+    constructor(name, value, sourceSpan, valueSpan, i18n) {
         this.name = name;
         this.value = value;
         this.sourceSpan = sourceSpan;
         this.valueSpan = valueSpan;
+        this.i18n = i18n;
     }
     visit(visitor) { return visitor.visitTextAttribute(this); }
 }
 class BoundAttribute {
-    constructor(name, type, securityContext, value, unit, sourceSpan) {
+    constructor(name, type, securityContext, value, unit, sourceSpan, i18n) {
         this.name = name;
         this.type = type;
         this.securityContext = securityContext;
         this.value = value;
         this.unit = unit;
         this.sourceSpan = sourceSpan;
+        this.i18n = i18n;
     }
-    static fromBoundElementProperty(prop) {
-        return new BoundAttribute(prop.name, prop.type, prop.securityContext, prop.value, prop.unit, prop.sourceSpan);
+    static fromBoundElementProperty(prop, i18n) {
+        return new BoundAttribute(prop.name, prop.type, prop.securityContext, prop.value, prop.unit, prop.sourceSpan, i18n);
     }
     visit(visitor) { return visitor.visitBoundAttribute(this); }
 }
@@ -10368,7 +11121,7 @@ class BoundEvent {
     visit(visitor) { return visitor.visitBoundEvent(this); }
 }
 class Element$1 {
-    constructor(name, attributes, inputs, outputs, children, references, sourceSpan, startSourceSpan, endSourceSpan) {
+    constructor(name, attributes, inputs, outputs, children, references, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
         this.name = name;
         this.attributes = attributes;
         this.inputs = inputs;
@@ -10378,11 +11131,12 @@ class Element$1 {
         this.sourceSpan = sourceSpan;
         this.startSourceSpan = startSourceSpan;
         this.endSourceSpan = endSourceSpan;
+        this.i18n = i18n;
     }
     visit(visitor) { return visitor.visitElement(this); }
 }
 class Template {
-    constructor(attributes, inputs, outputs, children, references, variables, sourceSpan, startSourceSpan, endSourceSpan) {
+    constructor(attributes, inputs, outputs, children, references, variables, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
         this.attributes = attributes;
         this.inputs = inputs;
         this.outputs = outputs;
@@ -10392,14 +11146,16 @@ class Template {
         this.sourceSpan = sourceSpan;
         this.startSourceSpan = startSourceSpan;
         this.endSourceSpan = endSourceSpan;
+        this.i18n = i18n;
     }
     visit(visitor) { return visitor.visitTemplate(this); }
 }
 class Content {
-    constructor(selectorIndex, attributes, sourceSpan) {
+    constructor(selectorIndex, attributes, sourceSpan, i18n) {
         this.selectorIndex = selectorIndex;
         this.attributes = attributes;
         this.sourceSpan = sourceSpan;
+        this.i18n = i18n;
     }
     visit(visitor) { return visitor.visitContent(this); }
 }
@@ -10418,6 +11174,15 @@ class Reference {
         this.sourceSpan = sourceSpan;
     }
     visit(visitor) { return visitor.visitReference(this); }
+}
+class Icu$1 {
+    constructor(vars, placeholders, sourceSpan, i18n) {
+        this.vars = vars;
+        this.placeholders = placeholders;
+        this.sourceSpan = sourceSpan;
+        this.i18n = i18n;
+    }
+    visit(visitor) { return visitor.visitIcu(this); }
 }
 function visitAll$1(visitor, nodes) {
     const result = [];
@@ -10642,6 +11407,7 @@ class HtmlAstToIvyAst {
         const variables = [];
         const references = [];
         const attributes = [];
+        const i18nAttrsMeta = {};
         const templateParsedProperties = [];
         const templateVariables = [];
         // Whether the element has any *-attribute
@@ -10651,6 +11417,9 @@ class HtmlAstToIvyAst {
             const normalizedName = normalizeAttributeName(attribute.name);
             // `*attr` defines template bindings
             let isTemplateBinding = false;
+            if (attribute.i18n) {
+                i18nAttrsMeta[attribute.name] = attribute.i18n;
+            }
             if (normalizedName.startsWith(TEMPLATE_ATTR_PREFIX)) {
                 // *-attributes
                 if (elementHasInlineTemplate) {
@@ -10684,46 +11453,68 @@ class HtmlAstToIvyAst {
             const selector = preparsedElement.selectAttr;
             let attributes = element.attrs.map(attribute => this.visitAttribute(attribute));
             const selectorIndex = selector === DEFAULT_CONTENT_SELECTOR ? 0 : this.ngContentSelectors.push(selector);
-            parsedElement = new Content(selectorIndex, attributes, element.sourceSpan);
+            parsedElement = new Content(selectorIndex, attributes, element.sourceSpan, element.i18n);
         }
         else if (isTemplateElement) {
             // `<ng-template>`
-            const attrs = this.extractAttributes(element.name, parsedProperties);
-            parsedElement = new Template(attributes, attrs.bound, boundEvents, children, references, variables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+            const attrs = this.extractAttributes(element.name, parsedProperties, i18nAttrsMeta);
+            parsedElement = new Template(attributes, attrs.bound, boundEvents, children, references, variables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
         }
         else {
-            const attrs = this.extractAttributes(element.name, parsedProperties);
-            parsedElement = new Element$1(element.name, attributes, attrs.bound, boundEvents, children, references, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+            const attrs = this.extractAttributes(element.name, parsedProperties, i18nAttrsMeta);
+            parsedElement = new Element$1(element.name, attributes, attrs.bound, boundEvents, children, references, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
         }
         if (elementHasInlineTemplate) {
-            const attrs = this.extractAttributes('ng-template', templateParsedProperties);
+            const attrs = this.extractAttributes('ng-template', templateParsedProperties, i18nAttrsMeta);
             // TODO(pk): test for this case
-            parsedElement = new Template(attrs.literal, attrs.bound, [], [parsedElement], [], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+            parsedElement = new Template(attrs.literal, attrs.bound, [], [parsedElement], [], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
         }
         return parsedElement;
     }
     visitAttribute(attribute) {
-        return new TextAttribute(attribute.name, attribute.value, attribute.sourceSpan, attribute.valueSpan);
+        return new TextAttribute(attribute.name, attribute.value, attribute.sourceSpan, attribute.valueSpan, attribute.i18n);
     }
     visitText(text) {
-        const valueNoNgsp = replaceNgsp(text.value);
-        const expr = this.bindingParser.parseInterpolation(valueNoNgsp, text.sourceSpan);
-        return expr ? new BoundText(expr, text.sourceSpan) : new Text$1(valueNoNgsp, text.sourceSpan);
+        return this._visitTextWithInterpolation(text.value, text.sourceSpan, text.i18n);
     }
-    visitComment(comment) { return null; }
-    visitExpansion(expansion) { return null; }
+    visitExpansion(expansion) {
+        const meta = expansion.i18n;
+        // do not generate Icu in case it was created
+        // outside of i18n block in a template
+        if (!meta) {
+            return null;
+        }
+        const vars = {};
+        const placeholders = {};
+        // extract VARs from ICUs - we process them separately while
+        // assembling resulting message via goog.getMsg function, since
+        // we need to pass them to top-level goog.getMsg call
+        Object.keys(meta.placeholders).forEach(key => {
+            const value = meta.placeholders[key];
+            if (key.startsWith(I18N_ICU_VAR_PREFIX)) {
+                vars[key] =
+                    this._visitTextWithInterpolation(`{{${value}}}`, expansion.sourceSpan);
+            }
+            else {
+                placeholders[key] = this._visitTextWithInterpolation(value, expansion.sourceSpan);
+            }
+        });
+        return new Icu$1(vars, placeholders, expansion.sourceSpan, meta);
+    }
     visitExpansionCase(expansionCase) { return null; }
+    visitComment(comment) { return null; }
     // convert view engine `ParsedProperty` to a format suitable for IVY
-    extractAttributes(elementName, properties) {
+    extractAttributes(elementName, properties, i18nPropsMeta) {
         const bound = [];
         const literal = [];
         properties.forEach(prop => {
+            const i18n = i18nPropsMeta[prop.name];
             if (prop.isLiteral) {
-                literal.push(new TextAttribute(prop.name, prop.expression.source || '', prop.sourceSpan));
+                literal.push(new TextAttribute(prop.name, prop.expression.source || '', prop.sourceSpan, undefined, i18n));
             }
             else {
                 const bep = this.bindingParser.createBoundElementProperty(elementName, prop);
-                bound.push(BoundAttribute.fromBoundElementProperty(bep));
+                bound.push(BoundAttribute.fromBoundElementProperty(bep, i18n));
             }
         });
         return { bound, literal };
@@ -10782,6 +11573,11 @@ class HtmlAstToIvyAst {
         }
         return hasBinding;
     }
+    _visitTextWithInterpolation(value, sourceSpan, i18n) {
+        const valueNoNgsp = replaceNgsp(value);
+        const expr = this.bindingParser.parseInterpolation(valueNoNgsp, sourceSpan);
+        return expr ? new BoundText(expr, sourceSpan, i18n) : new Text$3(valueNoNgsp, sourceSpan);
+    }
     parseVariable(identifier, value, sourceSpan, variables) {
         if (identifier.indexOf('-') > -1) {
             this.reportError(`"-" is not allowed in variable names`, sourceSpan);
@@ -10820,9 +11616,9 @@ class NonBindableVisitor {
     }
     visitComment(comment) { return null; }
     visitAttribute(attribute) {
-        return new TextAttribute(attribute.name, attribute.value, attribute.sourceSpan);
+        return new TextAttribute(attribute.name, attribute.value, attribute.sourceSpan, undefined, attribute.i18n);
     }
-    visitText(text) { return new Text$1(text.value, text.sourceSpan); }
+    visitText(text) { return new Text$3(text.value, text.sourceSpan); }
     visitExpansion(expansion) { return null; }
     visitExpansionCase(expansionCase) { return null; }
 }
@@ -10834,7 +11630,555 @@ function addEvents(events, boundEvents) {
     boundEvents.push(...events.map(e => BoundEvent.fromParsedEvent(e)));
 }
 function isEmptyTextNode(node) {
-    return node instanceof Text && node.value.trim().length == 0;
+    return node instanceof Text$2 && node.value.trim().length == 0;
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var TagType;
+(function (TagType) {
+    TagType[TagType["ELEMENT"] = 0] = "ELEMENT";
+    TagType[TagType["TEMPLATE"] = 1] = "TEMPLATE";
+})(TagType || (TagType = {}));
+/**
+ * Generates an object that is used as a shared state between parent and all child contexts.
+ */
+function setupRegistry() {
+    return { getUniqueId: getSeqNumberGenerator(), icus: new Map() };
+}
+/**
+ * I18nContext is a helper class which keeps track of all i18n-related aspects
+ * (accumulates placeholders, bindings, etc) between i18nStart and i18nEnd instructions.
+ *
+ * When we enter a nested template, the top-level context is being passed down
+ * to the nested component, which uses this context to generate a child instance
+ * of I18nContext class (to handle nested template) and at the end, reconciles it back
+ * with the parent context.
+ *
+ * @param index Instruction index of i18nStart, which initiates this context
+ * @param ref Reference to a translation const that represents the content if thus context
+ * @param level Nestng level defined for child contexts
+ * @param templateIndex Instruction index of a template which this context belongs to
+ * @param meta Meta information (id, meaning, description, etc) associated with this context
+ */
+class I18nContext {
+    constructor(index, ref, level = 0, templateIndex = null, meta, registry) {
+        this.index = index;
+        this.ref = ref;
+        this.level = level;
+        this.templateIndex = templateIndex;
+        this.meta = meta;
+        this.registry = registry;
+        this.bindings = new Set();
+        this.placeholders = new Map();
+        this._unresolvedCtxCount = 0;
+        this._registry = registry || setupRegistry();
+        this.id = this._registry.getUniqueId();
+    }
+    appendTag(type, node, index, closed) {
+        if (node.isVoid && closed) {
+            return; // ignore "close" for void tags
+        }
+        const ph = node.isVoid || !closed ? node.startName : node.closeName;
+        const content = { type, index, ctx: this.id, isVoid: node.isVoid, closed };
+        updatePlaceholderMap(this.placeholders, ph, content);
+    }
+    get icus() { return this._registry.icus; }
+    get isRoot() { return this.level === 0; }
+    get isResolved() { return this._unresolvedCtxCount === 0; }
+    getSerializedPlaceholders() {
+        const result = new Map();
+        this.placeholders.forEach((values, key) => result.set(key, values.map(serializePlaceholderValue)));
+        return result;
+    }
+    // public API to accumulate i18n-related content
+    appendBinding(binding) { this.bindings.add(binding); }
+    appendIcu(name, ref) {
+        updatePlaceholderMap(this._registry.icus, name, ref);
+    }
+    appendBoundText(node) {
+        const phs = assembleBoundTextPlaceholders(node, this.bindings.size, this.id);
+        phs.forEach((values, key) => updatePlaceholderMap(this.placeholders, key, ...values));
+    }
+    appendTemplate(node, index) {
+        // add open and close tags at the same time,
+        // since we process nested templates separately
+        this.appendTag(TagType.TEMPLATE, node, index, false);
+        this.appendTag(TagType.TEMPLATE, node, index, true);
+        this._unresolvedCtxCount++;
+    }
+    appendElement(node, index, closed) {
+        this.appendTag(TagType.ELEMENT, node, index, closed);
+    }
+    /**
+     * Generates an instance of a child context based on the root one,
+     * when we enter a nested template within I18n section.
+     *
+     * @param index Instruction index of corresponding i18nStart, which initiates this context
+     * @param templateIndex Instruction index of a template which this context belongs to
+     * @param meta Meta information (id, meaning, description, etc) associated with this context
+     *
+     * @returns I18nContext instance
+     */
+    forkChildContext(index, templateIndex, meta) {
+        return new I18nContext(index, this.ref, this.level + 1, templateIndex, meta, this._registry);
+    }
+    /**
+     * Reconciles child context into parent one once the end of the i18n block is reached (i18nEnd).
+     *
+     * @param context Child I18nContext instance to be reconciled with parent context.
+     */
+    reconcileChildContext(context) {
+        // set the right context id for open and close
+        // template tags, so we can use it as sub-block ids
+        ['start', 'close'].forEach((op) => {
+            const key = context.meta[`${op}Name`];
+            const phs = this.placeholders.get(key) || [];
+            const tag = phs.find(findTemplateFn(this.id, context.templateIndex));
+            if (tag) {
+                tag.ctx = context.id;
+            }
+        });
+        // reconcile placeholders
+        const childPhs = context.placeholders;
+        childPhs.forEach((values, key) => {
+            const phs = this.placeholders.get(key);
+            if (!phs) {
+                this.placeholders.set(key, values);
+                return;
+            }
+            // try to find matching template...
+            const tmplIdx = findIndex(phs, findTemplateFn(context.id, context.templateIndex));
+            if (tmplIdx >= 0) {
+                // ... if found - replace it with nested template content
+                const isCloseTag = key.startsWith('CLOSE');
+                const isTemplateTag = key.endsWith('NG-TEMPLATE');
+                if (isTemplateTag) {
+                    // current template's content is placed before or after
+                    // parent template tag, depending on the open/close atrribute
+                    phs.splice(tmplIdx + (isCloseTag ? 0 : 1), 0, ...values);
+                }
+                else {
+                    const idx = isCloseTag ? values.length - 1 : 0;
+                    values[idx].tmpl = phs[tmplIdx];
+                    phs.splice(tmplIdx, 1, ...values);
+                }
+            }
+            else {
+                // ... otherwise just append content to placeholder value
+                phs.push(...values);
+            }
+            this.placeholders.set(key, phs);
+        });
+        this._unresolvedCtxCount--;
+    }
+}
+//
+// Helper methods
+//
+function wrap(symbol, index, contextId, closed) {
+    const state = closed ? '/' : '';
+    return wrapI18nPlaceholder(`${state}${symbol}${index}`, contextId);
+}
+function wrapTag(symbol, { index, ctx, isVoid }, closed) {
+    return isVoid ? wrap(symbol, index, ctx) + wrap(symbol, index, ctx, true) :
+        wrap(symbol, index, ctx, closed);
+}
+function findTemplateFn(ctx, templateIndex) {
+    return (token) => typeof token === 'object' && token.type === TagType.TEMPLATE &&
+        token.index === templateIndex && token.ctx === ctx;
+}
+function serializePlaceholderValue(value) {
+    const element = (data, closed) => wrapTag('#', data, closed);
+    const template = (data, closed) => wrapTag('*', data, closed);
+    switch (value.type) {
+        case TagType.ELEMENT:
+            // close element tag
+            if (value.closed) {
+                return element(value, true) + (value.tmpl ? template(value.tmpl, true) : '');
+            }
+            // open element tag that also initiates a template
+            if (value.tmpl) {
+                return template(value.tmpl) + element(value) +
+                    (value.isVoid ? template(value.tmpl, true) : '');
+            }
+            return element(value);
+        case TagType.TEMPLATE:
+            return template(value, value.closed);
+        default:
+            return value;
+    }
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const TAG_TO_PLACEHOLDER_NAMES = {
+    'A': 'LINK',
+    'B': 'BOLD_TEXT',
+    'BR': 'LINE_BREAK',
+    'EM': 'EMPHASISED_TEXT',
+    'H1': 'HEADING_LEVEL1',
+    'H2': 'HEADING_LEVEL2',
+    'H3': 'HEADING_LEVEL3',
+    'H4': 'HEADING_LEVEL4',
+    'H5': 'HEADING_LEVEL5',
+    'H6': 'HEADING_LEVEL6',
+    'HR': 'HORIZONTAL_RULE',
+    'I': 'ITALIC_TEXT',
+    'LI': 'LIST_ITEM',
+    'LINK': 'MEDIA_LINK',
+    'OL': 'ORDERED_LIST',
+    'P': 'PARAGRAPH',
+    'Q': 'QUOTATION',
+    'S': 'STRIKETHROUGH_TEXT',
+    'SMALL': 'SMALL_TEXT',
+    'SUB': 'SUBSTRIPT',
+    'SUP': 'SUPERSCRIPT',
+    'TBODY': 'TABLE_BODY',
+    'TD': 'TABLE_CELL',
+    'TFOOT': 'TABLE_FOOTER',
+    'TH': 'TABLE_HEADER_CELL',
+    'THEAD': 'TABLE_HEADER',
+    'TR': 'TABLE_ROW',
+    'TT': 'MONOSPACED_TEXT',
+    'U': 'UNDERLINED_TEXT',
+    'UL': 'UNORDERED_LIST',
+};
+/**
+ * Creates unique names for placeholder with different content.
+ *
+ * Returns the same placeholder name when the content is identical.
+ */
+class PlaceholderRegistry {
+    constructor() {
+        // Count the occurrence of the base name top generate a unique name
+        this._placeHolderNameCounts = {};
+        // Maps signature to placeholder names
+        this._signatureToName = {};
+    }
+    getStartTagPlaceholderName(tag, attrs, isVoid) {
+        const signature = this._hashTag(tag, attrs, isVoid);
+        if (this._signatureToName[signature]) {
+            return this._signatureToName[signature];
+        }
+        const upperTag = tag.toUpperCase();
+        const baseName = TAG_TO_PLACEHOLDER_NAMES[upperTag] || `TAG_${upperTag}`;
+        const name = this._generateUniqueName(isVoid ? baseName : `START_${baseName}`);
+        this._signatureToName[signature] = name;
+        return name;
+    }
+    getCloseTagPlaceholderName(tag) {
+        const signature = this._hashClosingTag(tag);
+        if (this._signatureToName[signature]) {
+            return this._signatureToName[signature];
+        }
+        const upperTag = tag.toUpperCase();
+        const baseName = TAG_TO_PLACEHOLDER_NAMES[upperTag] || `TAG_${upperTag}`;
+        const name = this._generateUniqueName(`CLOSE_${baseName}`);
+        this._signatureToName[signature] = name;
+        return name;
+    }
+    getPlaceholderName(name, content) {
+        const upperName = name.toUpperCase();
+        const signature = `PH: ${upperName}=${content}`;
+        if (this._signatureToName[signature]) {
+            return this._signatureToName[signature];
+        }
+        const uniqueName = this._generateUniqueName(upperName);
+        this._signatureToName[signature] = uniqueName;
+        return uniqueName;
+    }
+    getUniquePlaceholder(name) {
+        return this._generateUniqueName(name.toUpperCase());
+    }
+    // Generate a hash for a tag - does not take attribute order into account
+    _hashTag(tag, attrs, isVoid) {
+        const start = `<${tag}`;
+        const strAttrs = Object.keys(attrs).sort().map((name) => ` ${name}=${attrs[name]}`).join('');
+        const end = isVoid ? '/>' : `></${tag}>`;
+        return start + strAttrs + end;
+    }
+    _hashClosingTag(tag) { return this._hashTag(`/${tag}`, {}, false); }
+    _generateUniqueName(base) {
+        const seen = this._placeHolderNameCounts.hasOwnProperty(base);
+        if (!seen) {
+            this._placeHolderNameCounts[base] = 1;
+            return base;
+        }
+        const id = this._placeHolderNameCounts[base];
+        this._placeHolderNameCounts[base] = id + 1;
+        return `${base}_${id}`;
+    }
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const _expParser = new Parser(new Lexer());
+/**
+ * Returns a function converting html nodes to an i18n Message given an interpolationConfig
+ */
+function createI18nMessageFactory(interpolationConfig) {
+    const visitor = new _I18nVisitor(_expParser, interpolationConfig);
+    return (nodes, meaning, description, id, visitNodeFn) => visitor.toI18nMessage(nodes, meaning, description, id, visitNodeFn);
+}
+class _I18nVisitor {
+    constructor(_expressionParser, _interpolationConfig) {
+        this._expressionParser = _expressionParser;
+        this._interpolationConfig = _interpolationConfig;
+    }
+    toI18nMessage(nodes, meaning, description, id, visitNodeFn) {
+        this._isIcu = nodes.length == 1 && nodes[0] instanceof Expansion;
+        this._icuDepth = 0;
+        this._placeholderRegistry = new PlaceholderRegistry();
+        this._placeholderToContent = {};
+        this._placeholderToMessage = {};
+        this._visitNodeFn = visitNodeFn;
+        const i18nodes = visitAll(this, nodes, {});
+        return new Message(i18nodes, this._placeholderToContent, this._placeholderToMessage, meaning, description, id);
+    }
+    _visitNode(html, i18n) {
+        if (this._visitNodeFn) {
+            this._visitNodeFn(html, i18n);
+        }
+        return i18n;
+    }
+    visitElement(el, context) {
+        const children = visitAll(this, el.children);
+        const attrs = {};
+        el.attrs.forEach(attr => {
+            // Do not visit the attributes, translatable ones are top-level ASTs
+            attrs[attr.name] = attr.value;
+        });
+        const isVoid = getHtmlTagDefinition(el.name).isVoid;
+        const startPhName = this._placeholderRegistry.getStartTagPlaceholderName(el.name, attrs, isVoid);
+        this._placeholderToContent[startPhName] = el.sourceSpan.toString();
+        let closePhName = '';
+        if (!isVoid) {
+            closePhName = this._placeholderRegistry.getCloseTagPlaceholderName(el.name);
+            this._placeholderToContent[closePhName] = `</${el.name}>`;
+        }
+        const node = new TagPlaceholder(el.name, attrs, startPhName, closePhName, children, isVoid, el.sourceSpan);
+        return this._visitNode(el, node);
+    }
+    visitAttribute(attribute, context) {
+        const node = this._visitTextWithInterpolation(attribute.value, attribute.sourceSpan);
+        return this._visitNode(attribute, node);
+    }
+    visitText(text, context) {
+        const node = this._visitTextWithInterpolation(text.value, text.sourceSpan);
+        return this._visitNode(text, node);
+    }
+    visitComment(comment, context) { return null; }
+    visitExpansion(icu, context) {
+        this._icuDepth++;
+        const i18nIcuCases = {};
+        const i18nIcu = new Icu(icu.switchValue, icu.type, i18nIcuCases, icu.sourceSpan);
+        icu.cases.forEach((caze) => {
+            i18nIcuCases[caze.value] = new Container(caze.expression.map((node) => node.visit(this, {})), caze.expSourceSpan);
+        });
+        this._icuDepth--;
+        if (this._isIcu || this._icuDepth > 0) {
+            // Returns an ICU node when:
+            // - the message (vs a part of the message) is an ICU message, or
+            // - the ICU message is nested.
+            const expPh = this._placeholderRegistry.getUniquePlaceholder(`VAR_${icu.type}`);
+            i18nIcu.expressionPlaceholder = expPh;
+            this._placeholderToContent[expPh] = icu.switchValue;
+            return this._visitNode(icu, i18nIcu);
+        }
+        // Else returns a placeholder
+        // ICU placeholders should not be replaced with their original content but with the their
+        // translations. We need to create a new visitor (they are not re-entrant) to compute the
+        // message id.
+        // TODO(vicb): add a html.Node -> i18n.Message cache to avoid having to re-create the msg
+        const phName = this._placeholderRegistry.getPlaceholderName('ICU', icu.sourceSpan.toString());
+        const visitor = new _I18nVisitor(this._expressionParser, this._interpolationConfig);
+        this._placeholderToMessage[phName] = visitor.toI18nMessage([icu], '', '', '');
+        const node = new IcuPlaceholder(i18nIcu, phName, icu.sourceSpan);
+        return this._visitNode(icu, node);
+    }
+    visitExpansionCase(icuCase, context) {
+        throw new Error('Unreachable code');
+    }
+    _visitTextWithInterpolation(text, sourceSpan) {
+        const splitInterpolation = this._expressionParser.splitInterpolation(text, sourceSpan.start.toString(), this._interpolationConfig);
+        if (!splitInterpolation) {
+            // No expression, return a single text
+            return new Text(text, sourceSpan);
+        }
+        // Return a group of text + expressions
+        const nodes = [];
+        const container = new Container(nodes, sourceSpan);
+        const { start: sDelimiter, end: eDelimiter } = this._interpolationConfig;
+        for (let i = 0; i < splitInterpolation.strings.length - 1; i++) {
+            const expression = splitInterpolation.expressions[i];
+            const baseName = _extractPlaceholderName(expression) || 'INTERPOLATION';
+            const phName = this._placeholderRegistry.getPlaceholderName(baseName, expression);
+            if (splitInterpolation.strings[i].length) {
+                // No need to add empty strings
+                nodes.push(new Text(splitInterpolation.strings[i], sourceSpan));
+            }
+            nodes.push(new Placeholder(expression, phName, sourceSpan));
+            this._placeholderToContent[phName] = sDelimiter + expression + eDelimiter;
+        }
+        // The last index contains no expression
+        const lastStringIdx = splitInterpolation.strings.length - 1;
+        if (splitInterpolation.strings[lastStringIdx].length) {
+            nodes.push(new Text(splitInterpolation.strings[lastStringIdx], sourceSpan));
+        }
+        return container;
+    }
+}
+const _CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*("|')([\s\S]*?)\1[\s\S]*\)/g;
+function _extractPlaceholderName(input) {
+    return input.split(_CUSTOM_PH_EXP)[2];
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+function setI18nRefs(html, i18n) {
+    html.i18n = i18n;
+}
+/**
+ * This visitor walks over HTML parse tree and converts information stored in
+ * i18n-related attributes ("i18n" and "i18n-*") into i18n meta object that is
+ * stored with other element's and attribute's information.
+ */
+class I18nMetaVisitor {
+    constructor(config) {
+        this.config = config;
+        // i18n message generation factory
+        this._createI18nMessage = createI18nMessageFactory(DEFAULT_INTERPOLATION_CONFIG);
+    }
+    _generateI18nMessage(nodes, meta = '', visitNodeFn) {
+        const parsed = typeof meta === 'string' ? parseI18nMeta(meta) : metaFromI18nMessage(meta);
+        const message = this._createI18nMessage(nodes, parsed.meaning || '', parsed.description || '', parsed.id || '', visitNodeFn);
+        if (!message.id) {
+            // generate (or restore) message id if not specified in template
+            message.id = typeof meta !== 'string' && meta.id || decimalDigest(message);
+        }
+        return message;
+    }
+    visitElement(element, context) {
+        if (hasI18nAttrs(element)) {
+            const attrs = [];
+            const attrsMeta = {};
+            for (const attr of element.attrs) {
+                if (attr.name === I18N_ATTR) {
+                    // root 'i18n' node attribute
+                    const i18n = element.i18n || attr.value;
+                    const message = this._generateI18nMessage(element.children, i18n, setI18nRefs);
+                    // do not assign empty i18n meta
+                    if (message.nodes.length) {
+                        element.i18n = message;
+                    }
+                }
+                else if (attr.name.startsWith(I18N_ATTR_PREFIX)) {
+                    // 'i18n-*' attributes
+                    const key = attr.name.slice(I18N_ATTR_PREFIX.length);
+                    attrsMeta[key] = attr.value;
+                }
+                else {
+                    // non-i18n attributes
+                    attrs.push(attr);
+                }
+            }
+            // set i18n meta for attributes
+            if (Object.keys(attrsMeta).length) {
+                for (const attr of attrs) {
+                    const meta = attrsMeta[attr.name];
+                    // do not create translation for empty attributes
+                    if (meta !== undefined && attr.value) {
+                        attr.i18n = this._generateI18nMessage([attr], attr.i18n || meta);
+                    }
+                }
+            }
+            if (!this.config.keepI18nAttrs) {
+                // update element's attributes,
+                // keeping only non-i18n related ones
+                element.attrs = attrs;
+            }
+        }
+        visitAll(this, element.children);
+        return element;
+    }
+    visitExpansion(expansion, context) {
+        let message;
+        const meta = expansion.i18n;
+        if (meta instanceof IcuPlaceholder) {
+            // set ICU placeholder name (e.g. "ICU_1"),
+            // generated while processing root element contents,
+            // so we can reference it when we output translation
+            const name = meta.name;
+            message = this._generateI18nMessage([expansion], meta);
+            const icu = icuFromI18nMessage(message);
+            icu.name = name;
+        }
+        else {
+            // when ICU is a root level translation
+            message = this._generateI18nMessage([expansion], meta);
+        }
+        expansion.i18n = message;
+        return expansion;
+    }
+    visitText(text, context) { return text; }
+    visitAttribute(attribute, context) { return attribute; }
+    visitComment(comment, context) { return comment; }
+    visitExpansionCase(expansionCase, context) { return expansionCase; }
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const formatPh = (value) => `{$${formatI18nPlaceholderName(value)}}`;
+/**
+ * This visitor walks over i18n tree and generates its string representation,
+ * including ICUs and placeholders in {$PLACEHOLDER} format.
+ */
+class SerializerVisitor {
+    visitText(text, context) { return text.value; }
+    visitContainer(container, context) {
+        return container.children.map(child => child.visit(this)).join('');
+    }
+    visitIcu(icu, context) {
+        const strCases = Object.keys(icu.cases).map((k) => `${k} {${icu.cases[k].visit(this)}}`);
+        return `{${icu.expressionPlaceholder}, ${icu.type}, ${strCases.join(' ')}}`;
+    }
+    visitTagPlaceholder(ph, context) {
+        return ph.isVoid ?
+            formatPh(ph.startName) :
+            `${formatPh(ph.startName)}${ph.children.map(child => child.visit(this)).join('')}${formatPh(ph.closeName)}`;
+    }
+    visitPlaceholder(ph, context) { return formatPh(ph.name); }
+    visitIcuPlaceholder(ph, context) { return formatPh(ph.name); }
+}
+const serializerVisitor$1 = new SerializerVisitor();
+function getSerializedI18nContent(message) {
+    return message.nodes.map(node => node.visit(serializerVisitor$1, null)).join('');
 }
 
 /**
@@ -11294,7 +12638,7 @@ class TemplateDefinitionBuilder {
             return [lhs.set(rhs.prop(variable$$1.value || IMPLICIT_REFERENCE)).toConstDecl()];
         });
     }
-    buildTemplateFunction(nodes, variables, hasNgContent = false, ngContentSelectors = []) {
+    buildTemplateFunction(nodes, variables, hasNgContent = false, ngContentSelectors = [], i18n) {
         if (this._namespace !== Identifiers$1.namespaceHTML) {
             this.creationInstruction(null, this._namespace);
         }
@@ -11313,8 +12657,15 @@ class TemplateDefinitionBuilder {
             }
             this.creationInstruction(null, Identifiers$1.projectionDef, parameters);
         }
-        if (this.i18nContext) {
-            this.i18nStart();
+        // Initiate i18n context in case:
+        // - this template has parent i18n context
+        // - or the template has i18n meta associated with it,
+        //   but it's not initiated by the Element (e.g. <ng-template i18n>)
+        const initI18nContext = this.i18nContext ||
+            (isI18nRootNode(i18n) && !(isSingleElementTemplate(nodes) && nodes[0].i18n === i18n));
+        const selfClosingI18nInstruction = hasTextChildrenOnly(nodes);
+        if (initI18nContext) {
+            this.i18nStart(null, i18n, selfClosingI18nInstruction);
         }
         // This is the initial pass through the nodes of this template. In this pass, we
         // queue all creation mode and update mode instructions for generation in the second
@@ -11331,8 +12682,8 @@ class TemplateDefinitionBuilder {
         // Nested templates must be processed before creation instructions so template()
         // instructions can be generated with the correct internal const count.
         this._nestedTemplateFns.forEach(buildTemplateFn => buildTemplateFn());
-        if (this.i18nContext) {
-            this.i18nEnd();
+        if (initI18nContext) {
+            this.i18nEnd(null, selfClosingI18nInstruction);
         }
         // Generate all the creation mode instructions (e.g. resolve bindings in listeners)
         const creationStatements = this._creationCodeFns.map((fn$$1) => fn$$1());
@@ -11362,38 +12713,114 @@ class TemplateDefinitionBuilder {
     }
     // LocalResolver
     getLocal(name) { return this._bindingScope.get(name); }
-    i18nTranslate(label, meta = '') {
-        return this.constantPool.getTranslation(label, meta, this.fileBasedI18nSuffix);
+    i18nTranslate(message, params = {}, ref, transformFn) {
+        const _ref = ref || this.i18nAllocateRef();
+        const _params = {};
+        if (params && Object.keys(params).length) {
+            Object.keys(params).forEach(key => _params[formatI18nPlaceholderName(key)] = params[key]);
+        }
+        const meta = metaFromI18nMessage(message);
+        const content = getSerializedI18nContent(message);
+        const statements = getTranslationDeclStmts(_ref, content, meta, _params, transformFn);
+        this.constantPool.statements.push(...statements);
+        return _ref;
     }
-    i18nAppendTranslationMeta(meta = '') { this.constantPool.appendTranslationMeta(meta); }
+    i18nAppendBindings(expressions) {
+        if (!this.i18n || !expressions.length)
+            return;
+        const implicit = variable(CONTEXT_NAME);
+        expressions.forEach(expression => {
+            const binding = this.convertExpressionBinding(implicit, expression);
+            this.i18n.appendBinding(binding);
+        });
+    }
+    i18nBindProps(props) {
+        const bound = {};
+        Object.keys(props).forEach(key => {
+            const prop = props[key];
+            if (prop instanceof Text$3) {
+                bound[key] = literal(prop.value);
+            }
+            else {
+                const value = prop.value.visit(this._valueConverter);
+                if (value instanceof Interpolation) {
+                    const { strings, expressions } = value;
+                    const { id, bindings } = this.i18n;
+                    const label = assembleI18nBoundString(strings, bindings.size, id);
+                    this.i18nAppendBindings(expressions);
+                    bound[key] = literal(label);
+                }
+            }
+        });
+        return bound;
+    }
     i18nAllocateRef() {
-        return this.constantPool.getDeferredTranslationConst(this.fileBasedI18nSuffix);
+        const prefix = getTranslationConstPrefix(this.fileBasedI18nSuffix);
+        return variable(this.constantPool.uniqueName(prefix));
     }
     i18nUpdateRef(context) {
-        if (context.isRoot() && context.isResolved()) {
-            this.constantPool.setDeferredTranslationConst(context.getRef(), context.getContent());
+        const { icus, meta, isRoot, isResolved } = context;
+        if (isRoot && isResolved && !isSingleI18nIcu(meta)) {
+            const placeholders = context.getSerializedPlaceholders();
+            let icuMapping = {};
+            let params = placeholders.size ? placeholdersToParams(placeholders) : {};
+            if (icus.size) {
+                icus.forEach((refs, key) => {
+                    if (refs.length === 1) {
+                        // if we have one ICU defined for a given
+                        // placeholder - just output its reference
+                        params[key] = refs[0];
+                    }
+                    else {
+                        // ... otherwise we need to activate post-processing
+                        // to replace ICU placeholders with proper values
+                        const placeholder = wrapI18nPlaceholder(`${I18N_ICU_MAPPING_PREFIX}${key}`);
+                        params[key] = literal(placeholder);
+                        icuMapping[key] = literalArr(refs);
+                    }
+                });
+            }
+            // translation requires post processing in 2 cases:
+            // - if we have placeholders with multiple values (ex. `START_DIV`: [�#1�, �#2�, ...])
+            // - if we have multiple ICUs that refer to the same placeholder name
+            const needsPostprocessing = Array.from(placeholders.values()).some((value) => value.length > 1) ||
+                Object.keys(icuMapping).length;
+            let transformFn;
+            if (needsPostprocessing) {
+                transformFn = (raw) => {
+                    const args = [raw];
+                    if (Object.keys(icuMapping).length) {
+                        args.push(mapLiteral(icuMapping, true));
+                    }
+                    return instruction(null, Identifiers$1.i18nPostprocess, args);
+                };
+            }
+            this.i18nTranslate(meta, params, context.ref, transformFn);
         }
     }
-    i18nStart(span = null, meta) {
+    i18nStart(span = null, meta, selfClosing) {
         const index = this.allocateDataSlot();
         if (this.i18nContext) {
-            this.i18n = this.i18nContext.forkChildContext(index, this.templateIndex);
+            this.i18n = this.i18nContext.forkChildContext(index, this.templateIndex, meta);
         }
         else {
-            this.i18nAppendTranslationMeta(meta);
             const ref = this.i18nAllocateRef();
-            this.i18n = new I18nContext(index, this.templateIndex, ref);
+            this.i18n = new I18nContext(index, ref, 0, this.templateIndex, meta);
         }
         // generate i18nStart instruction
-        const params = [literal(index), this.i18n.getRef()];
-        if (this.i18n.getId() > 0) {
+        const { id, ref } = this.i18n;
+        const params = [literal(index), ref];
+        if (id > 0) {
             // do not push 3rd argument (sub-block id)
             // into i18nStart call for top level i18n context
-            params.push(literal(this.i18n.getId()));
+            params.push(literal(id));
         }
-        this.creationInstruction(span, Identifiers$1.i18nStart, params);
+        this.creationInstruction(span, selfClosing ? Identifiers$1.i18n : Identifiers$1.i18nStart, params);
     }
-    i18nEnd(span = null) {
+    i18nEnd(span = null, selfClosing) {
+        if (!this.i18n) {
+            throw new Error('i18nEnd is executed with no i18n context present');
+        }
         if (this.i18nContext) {
             this.i18nContext.reconcileChildContext(this.i18n);
             this.i18nUpdateRef(this.i18nContext);
@@ -11402,13 +12829,14 @@ class TemplateDefinitionBuilder {
             this.i18nUpdateRef(this.i18n);
         }
         // setup accumulated bindings
-        const bindings = this.i18n.getBindings();
+        const { index, bindings } = this.i18n;
         if (bindings.size) {
-            bindings.forEach(binding => { this.updateInstruction(span, Identifiers$1.i18nExp, [binding]); });
-            const index = literal(this.i18n.getIndex());
-            this.updateInstruction(span, Identifiers$1.i18nApply, [index]);
+            bindings.forEach(binding => this.updateInstruction(span, Identifiers$1.i18nExp, [binding]));
+            this.updateInstruction(span, Identifiers$1.i18nApply, [literal(index)]);
         }
-        this.creationInstruction(span, Identifiers$1.i18nEnd);
+        if (!selfClosing) {
+            this.creationInstruction(span, Identifiers$1.i18nEnd);
+        }
         this.i18n = null; // reset local i18n context
     }
     visitContent(ngContent) {
@@ -11448,28 +12876,19 @@ class TemplateDefinitionBuilder {
         const elementIndex = this.allocateDataSlot();
         const stylingBuilder = new StylingBuilder(elementIndex);
         let isNonBindableMode = false;
-        let isI18nRootElement = false;
-        const outputAttrs = {};
-        const attrI18nMetas = {};
-        let i18nMeta = '';
+        const isI18nRootElement = isI18nRootNode(element.i18n);
+        if (isI18nRootElement && this.i18n) {
+            throw new Error(`Could not mark an element as translatable inside of a translatable section`);
+        }
+        const i18nAttrs = [];
+        const outputAttrs = [];
         const [namespaceKey, elementName] = splitNsName(element.name);
         const isNgContainer$$1 = isNgContainer(element.name);
-        // Handle i18n and ngNonBindable attributes
+        // Handle styling, i18n, ngNonBindable attributes
         for (const attr of element.attributes) {
-            const name = attr.name;
-            const value = attr.value;
+            const { name, value } = attr;
             if (name === NON_BINDABLE_ATTR) {
                 isNonBindableMode = true;
-            }
-            else if (name === I18N_ATTR) {
-                if (this.i18n) {
-                    throw new Error(`Could not mark an element as translatable inside of a translatable section`);
-                }
-                isI18nRootElement = true;
-                i18nMeta = value;
-            }
-            else if (name.startsWith(I18N_ATTR_PREFIX)) {
-                attrI18nMetas[name.slice(I18N_ATTR_PREFIX.length)] = value;
             }
             else if (name == 'style') {
                 stylingBuilder.registerStyleAttr(value);
@@ -11477,8 +12896,11 @@ class TemplateDefinitionBuilder {
             else if (name == 'class') {
                 stylingBuilder.registerClassAttr(value);
             }
+            else if (attr.i18n) {
+                i18nAttrs.push(attr);
+            }
             else {
-                outputAttrs[name] = value;
+                outputAttrs.push(attr);
             }
         }
         // Match directives on non i18n attributes
@@ -11491,12 +12913,11 @@ class TemplateDefinitionBuilder {
         // Add the attributes
         const attributes = [];
         const allOtherInputs = [];
-        const i18nAttrs = [];
         element.inputs.forEach((input) => {
             if (!stylingBuilder.registerInput(input)) {
                 if (input.type == 0 /* Property */) {
-                    if (attrI18nMetas.hasOwnProperty(input.name)) {
-                        i18nAttrs.push({ name: input.name, value: input.value });
+                    if (input.i18n) {
+                        i18nAttrs.push(input);
                     }
                     else {
                         allOtherInputs.push(input);
@@ -11507,15 +12928,7 @@ class TemplateDefinitionBuilder {
                 }
             }
         });
-        Object.getOwnPropertyNames(outputAttrs).forEach(name => {
-            const value = outputAttrs[name];
-            if (attrI18nMetas.hasOwnProperty(name)) {
-                i18nAttrs.push({ name, value });
-            }
-            else {
-                attributes.push(literal(name), literal(value));
-            }
-        });
+        outputAttrs.forEach(attr => attributes.push(literal(attr.name), literal(attr.value)));
         // this will build the instructions so that they fall into the following syntax
         // add attributes for directive matching purposes
         attributes.push(...this.prepareSyntheticAndSelectOnlyAttrs(allOtherInputs, element.outputs));
@@ -11531,18 +12944,19 @@ class TemplateDefinitionBuilder {
         }
         const implicit = variable(CONTEXT_NAME);
         if (this.i18n) {
-            this.i18n.appendElement(elementIndex);
+            this.i18n.appendElement(element.i18n, elementIndex);
         }
         const hasChildren = () => {
             if (!isI18nRootElement && this.i18n) {
-                // we do not append text node instructions inside i18n section, so we
-                // exclude them while calculating whether current element has children
-                return element.children.find(child => !(child instanceof Text$1 || child instanceof BoundText));
+                // we do not append text node instructions and ICUs inside i18n section,
+                // so we exclude them while calculating whether current element has children
+                return !hasTextChildrenOnly(element.children);
             }
             return element.children.length > 0;
         };
         const createSelfClosingInstruction = !stylingBuilder.hasBindingsOrInitialValues &&
             !isNgContainer$$1 && element.outputs.length === 0 && i18nAttrs.length === 0 && !hasChildren();
+        const createSelfClosingI18nInstruction = !createSelfClosingInstruction && hasTextChildrenOnly(element.children);
         if (createSelfClosingInstruction) {
             this.creationInstruction(element.sourceSpan, Identifiers$1.element, trimTrailingNulls(parameters));
         }
@@ -11552,26 +12966,24 @@ class TemplateDefinitionBuilder {
                 this.creationInstruction(element.sourceSpan, Identifiers$1.disableBindings);
             }
             if (isI18nRootElement) {
-                this.i18nStart(element.sourceSpan, i18nMeta);
+                this.i18nStart(element.sourceSpan, element.i18n, createSelfClosingI18nInstruction);
             }
             // process i18n element attributes
             if (i18nAttrs.length) {
                 let hasBindings = false;
                 const i18nAttrArgs = [];
-                i18nAttrs.forEach(({ name, value }) => {
-                    const meta = attrI18nMetas[name];
-                    if (typeof value === 'string') {
-                        // in case of static string value, 3rd argument is 0 declares
-                        // that there are no expressions defined in this translation
-                        i18nAttrArgs.push(literal(name), this.i18nTranslate(value, meta), literal(0));
+                i18nAttrs.forEach(attr => {
+                    const message = attr.i18n;
+                    if (attr instanceof TextAttribute) {
+                        i18nAttrArgs.push(literal(attr.name), this.i18nTranslate(message));
                     }
                     else {
-                        const converted = value.visit(this._valueConverter);
+                        const converted = attr.value.visit(this._valueConverter);
                         if (converted instanceof Interpolation) {
-                            const { strings, expressions } = converted;
-                            const label = assembleI18nBoundString(strings);
-                            i18nAttrArgs.push(literal(name), this.i18nTranslate(label, meta), literal(expressions.length));
-                            expressions.forEach(expression => {
+                            const placeholders = assembleBoundTextPlaceholders(message);
+                            const params = placeholdersToParams(placeholders);
+                            i18nAttrArgs.push(literal(attr.name), this.i18nTranslate(message, params));
+                            converted.expressions.forEach(expression => {
                                 hasBindings = true;
                                 const binding = this.convertExpressionBinding(implicit, expression);
                                 this.updateInstruction(element.sourceSpan, Identifiers$1.i18nExp, [binding]);
@@ -11635,13 +13047,13 @@ class TemplateDefinitionBuilder {
         // Traverse element child nodes
         visitAll$1(this, element.children);
         if (!isI18nRootElement && this.i18n) {
-            this.i18n.appendElement(elementIndex, true);
+            this.i18n.appendElement(element.i18n, elementIndex, true);
         }
         if (!createSelfClosingInstruction) {
             // Finish element construction mode.
             const span = element.endSourceSpan || element.sourceSpan;
             if (isI18nRootElement) {
-                this.i18nEnd(span);
+                this.i18nEnd(span, createSelfClosingI18nInstruction);
             }
             if (isNonBindableMode) {
                 this.creationInstruction(span, Identifiers$1.enableBindings);
@@ -11652,10 +13064,10 @@ class TemplateDefinitionBuilder {
     visitTemplate(template) {
         const templateIndex = this.allocateDataSlot();
         if (this.i18n) {
-            this.i18n.appendTemplate(templateIndex);
+            this.i18n.appendTemplate(template.i18n, templateIndex);
         }
         let elName = '';
-        if (template.children.length === 1 && template.children[0] instanceof Element$1) {
+        if (isSingleElementTemplate(template.children)) {
             // When the template as a single child, derive the context name from the tag
             elName = sanitizeIdentifier(template.children[0].name);
         }
@@ -11697,7 +13109,7 @@ class TemplateDefinitionBuilder {
         // be able to support bindings in nested templates to local refs that occur after the
         // template definition. e.g. <div *ngIf="showing"> {{ foo }} </div>  <div #foo></div>
         this._nestedTemplateFns.push(() => {
-            const templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables);
+            const templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables, false, [], template.i18n);
             this.constantPool.statements.push(templateFunctionExpr.toDeclStmt(templateName, null));
         });
         // e.g. template(1, MyComp_Template_1)
@@ -11714,14 +13126,8 @@ class TemplateDefinitionBuilder {
         if (this.i18n) {
             const value = text.value.visit(this._valueConverter);
             if (value instanceof Interpolation) {
-                const { strings, expressions } = value;
-                const label = assembleI18nBoundString(strings, this.i18n.getBindings().size, this.i18n.getId());
-                const implicit = variable(CONTEXT_NAME);
-                expressions.forEach(expression => {
-                    const binding = this.convertExpressionBinding(implicit, expression);
-                    this.i18n.appendBinding(binding);
-                });
-                this.i18n.appendText(label);
+                this.i18n.appendBoundText(text.i18n);
+                this.i18nAppendBindings(value.expressions);
             }
             return;
         }
@@ -11732,11 +13138,43 @@ class TemplateDefinitionBuilder {
         this.updateInstruction(text.sourceSpan, Identifiers$1.textBinding, () => [literal(nodeIndex), this.convertPropertyBinding(variable(CONTEXT_NAME), value)]);
     }
     visitText(text) {
-        if (this.i18n) {
-            this.i18n.appendText(text.value);
-            return;
+        // when a text element is located within a translatable
+        // block, we exclude this text element from instructions set,
+        // since it will be captured in i18n content and processed at runtime
+        if (!this.i18n) {
+            this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(this.allocateDataSlot()), literal(text.value)]);
         }
-        this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(this.allocateDataSlot()), literal(text.value)]);
+    }
+    visitIcu(icu) {
+        let initWasInvoked = false;
+        // if an ICU was created outside of i18n block, we still treat
+        // it as a translatable entity and invoke i18nStart and i18nEnd
+        // to generate i18n context and the necessary instructions
+        if (!this.i18n) {
+            initWasInvoked = true;
+            this.i18nStart(null, icu.i18n, true);
+        }
+        const i18n = this.i18n;
+        const vars = this.i18nBindProps(icu.vars);
+        const placeholders = this.i18nBindProps(icu.placeholders);
+        // output ICU directly and keep ICU reference in context
+        const message = icu.i18n;
+        const transformFn = (raw) => instruction(null, Identifiers$1.i18nPostprocess, [raw, mapLiteral(vars, true)]);
+        // in case the whole i18n message is a single ICU - we do not need to
+        // create a separate top-level translation, we can use the root ref instead
+        // and make this ICU a top-level translation
+        if (isSingleI18nIcu(i18n.meta)) {
+            this.i18nTranslate(message, placeholders, i18n.ref, transformFn);
+        }
+        else {
+            // output ICU directly and keep ICU reference in context
+            const ref = this.i18nTranslate(message, placeholders, undefined, transformFn);
+            i18n.appendIcu(icuFromI18nMessage(message).name, ref);
+        }
+        if (initWasInvoked) {
+            this.i18nEnd(null, true);
+        }
+        return null;
     }
     allocateDataSlot() { return this._dataIndex++; }
     getConstCount() { return this._dataIndex; }
@@ -12184,7 +13622,7 @@ function interpolate(args) {
 function parseTemplate(template, templateUrl, options = {}, relativeContextFilePath) {
     const bindingParser = makeBindingParser();
     const htmlParser = new HtmlParser();
-    const parseResult = htmlParser.parse(template, templateUrl);
+    const parseResult = htmlParser.parse(template, templateUrl, true);
     if (parseResult.errors && parseResult.errors.length > 0) {
         return {
             errors: parseResult.errors,
@@ -12194,8 +13632,19 @@ function parseTemplate(template, templateUrl, options = {}, relativeContextFileP
         };
     }
     let rootNodes = parseResult.rootNodes;
+    // process i18n meta information (scan attributes, generate ids)
+    // before we run whitespace removal process, because existing i18n
+    // extraction process (ng xi18n) relies on a raw content to generate
+    // message ids
+    const i18nConfig = { keepI18nAttrs: !options.preserveWhitespaces };
+    rootNodes = visitAll(new I18nMetaVisitor(i18nConfig), rootNodes);
     if (!options.preserveWhitespaces) {
         rootNodes = visitAll(new WhitespaceVisitor(), rootNodes);
+        // run i18n meta visitor again in case we remove whitespaces, because
+        // that might affect generated i18n message content. During this pass
+        // i18n IDs generated at the first pass will be preserved, so we can mimic
+        // existing extraction process (ng xi18n)
+        rootNodes = visitAll(new I18nMetaVisitor({ keepI18nAttrs: false }), rootNodes);
     }
     const { nodes, hasNgContent, ngContentSelectors, errors } = htmlAstToRender3Ast(rootNodes, bindingParser);
     if (errors && errors.length > 0) {
@@ -12235,6 +13684,12 @@ function resolveSanitizationFn(input, context) {
 }
 function prepareSyntheticAttributeName(name) {
     return '@' + name;
+}
+function isSingleElementTemplate(children) {
+    return children.length === 1 && children[0] instanceof Element$1;
+}
+function hasTextChildrenOnly(children) {
+    return !children.find(child => !(child instanceof Text$3 || child instanceof BoundText || child instanceof Icu$1));
 }
 
 /**
@@ -12988,7 +14443,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.1.0-rc.0+11.sha-a4934a7');
+const VERSION$1 = new Version('7.1.0-rc.0+12.sha-92e80af');
 
 /**
  * @license
@@ -13516,7 +14971,7 @@ class TemplatePreparseVisitor {
             case PreparsedElementType.STYLE:
                 let textContent = '';
                 ast.children.forEach(child => {
-                    if (child instanceof Text) {
+                    if (child instanceof Text$2) {
                         textContent += child.value;
                     }
                 });
@@ -13719,656 +15174,6 @@ function findLast(arr, condition) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-function digest(message) {
-    return message.id || sha1(serializeNodes(message.nodes).join('') + `[${message.meaning}]`);
-}
-function decimalDigest(message) {
-    if (message.id) {
-        return message.id;
-    }
-    const visitor = new _SerializerIgnoreIcuExpVisitor();
-    const parts = message.nodes.map(a => a.visit(visitor, null));
-    return computeMsgId(parts.join(''), message.meaning);
-}
-/**
- * Serialize the i18n ast to something xml-like in order to generate an UID.
- *
- * The visitor is also used in the i18n parser tests
- *
- * @internal
- */
-class _SerializerVisitor {
-    visitText(text, context) { return text.value; }
-    visitContainer(container, context) {
-        return `[${container.children.map(child => child.visit(this)).join(', ')}]`;
-    }
-    visitIcu(icu, context) {
-        const strCases = Object.keys(icu.cases).map((k) => `${k} {${icu.cases[k].visit(this)}}`);
-        return `{${icu.expression}, ${icu.type}, ${strCases.join(', ')}}`;
-    }
-    visitTagPlaceholder(ph, context) {
-        return ph.isVoid ?
-            `<ph tag name="${ph.startName}"/>` :
-            `<ph tag name="${ph.startName}">${ph.children.map(child => child.visit(this)).join(', ')}</ph name="${ph.closeName}">`;
-    }
-    visitPlaceholder(ph, context) {
-        return ph.value ? `<ph name="${ph.name}">${ph.value}</ph>` : `<ph name="${ph.name}"/>`;
-    }
-    visitIcuPlaceholder(ph, context) {
-        return `<ph icu name="${ph.name}">${ph.value.visit(this)}</ph>`;
-    }
-}
-const serializerVisitor = new _SerializerVisitor();
-function serializeNodes(nodes) {
-    return nodes.map(a => a.visit(serializerVisitor, null));
-}
-/**
- * Serialize the i18n ast to something xml-like in order to generate an UID.
- *
- * Ignore the ICU expressions so that message IDs stays identical if only the expression changes.
- *
- * @internal
- */
-class _SerializerIgnoreIcuExpVisitor extends _SerializerVisitor {
-    visitIcu(icu, context) {
-        let strCases = Object.keys(icu.cases).map((k) => `${k} {${icu.cases[k].visit(this)}}`);
-        // Do not take the expression into account
-        return `{${icu.type}, ${strCases.join(', ')}}`;
-    }
-}
-/**
- * Compute the SHA1 of the given string
- *
- * see http://csrc.nist.gov/publications/fips/fips180-4/fips-180-4.pdf
- *
- * WARNING: this function has not been designed not tested with security in mind.
- *          DO NOT USE IT IN A SECURITY SENSITIVE CONTEXT.
- */
-function sha1(str) {
-    const utf8 = utf8Encode(str);
-    const words32 = stringToWords32(utf8, Endian.Big);
-    const len = utf8.length * 8;
-    const w = new Array(80);
-    let [a, b, c, d, e] = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0];
-    words32[len >> 5] |= 0x80 << (24 - len % 32);
-    words32[((len + 64 >> 9) << 4) + 15] = len;
-    for (let i = 0; i < words32.length; i += 16) {
-        const [h0, h1, h2, h3, h4] = [a, b, c, d, e];
-        for (let j = 0; j < 80; j++) {
-            if (j < 16) {
-                w[j] = words32[i + j];
-            }
-            else {
-                w[j] = rol32(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
-            }
-            const [f, k] = fk(j, b, c, d);
-            const temp = [rol32(a, 5), f, e, k, w[j]].reduce(add32);
-            [e, d, c, b, a] = [d, c, rol32(b, 30), a, temp];
-        }
-        [a, b, c, d, e] = [add32(a, h0), add32(b, h1), add32(c, h2), add32(d, h3), add32(e, h4)];
-    }
-    return byteStringToHexString(words32ToByteString([a, b, c, d, e]));
-}
-function fk(index, b, c, d) {
-    if (index < 20) {
-        return [(b & c) | (~b & d), 0x5a827999];
-    }
-    if (index < 40) {
-        return [b ^ c ^ d, 0x6ed9eba1];
-    }
-    if (index < 60) {
-        return [(b & c) | (b & d) | (c & d), 0x8f1bbcdc];
-    }
-    return [b ^ c ^ d, 0xca62c1d6];
-}
-/**
- * Compute the fingerprint of the given string
- *
- * The output is 64 bit number encoded as a decimal string
- *
- * based on:
- * https://github.com/google/closure-compiler/blob/master/src/com/google/javascript/jscomp/GoogleJsMessageIdGenerator.java
- */
-function fingerprint(str) {
-    const utf8 = utf8Encode(str);
-    let [hi, lo] = [hash32(utf8, 0), hash32(utf8, 102072)];
-    if (hi == 0 && (lo == 0 || lo == 1)) {
-        hi = hi ^ 0x130f9bef;
-        lo = lo ^ -0x6b5f56d8;
-    }
-    return [hi, lo];
-}
-function computeMsgId(msg, meaning) {
-    let [hi, lo] = fingerprint(msg);
-    if (meaning) {
-        const [him, lom] = fingerprint(meaning);
-        [hi, lo] = add64(rol64([hi, lo], 1), [him, lom]);
-    }
-    return byteStringToDecString(words32ToByteString([hi & 0x7fffffff, lo]));
-}
-function hash32(str, c) {
-    let [a, b] = [0x9e3779b9, 0x9e3779b9];
-    let i;
-    const len = str.length;
-    for (i = 0; i + 12 <= len; i += 12) {
-        a = add32(a, wordAt(str, i, Endian.Little));
-        b = add32(b, wordAt(str, i + 4, Endian.Little));
-        c = add32(c, wordAt(str, i + 8, Endian.Little));
-        [a, b, c] = mix([a, b, c]);
-    }
-    a = add32(a, wordAt(str, i, Endian.Little));
-    b = add32(b, wordAt(str, i + 4, Endian.Little));
-    // the first byte of c is reserved for the length
-    c = add32(c, len);
-    c = add32(c, wordAt(str, i + 8, Endian.Little) << 8);
-    return mix([a, b, c])[2];
-}
-// clang-format off
-function mix([a, b, c]) {
-    a = sub32(a, b);
-    a = sub32(a, c);
-    a ^= c >>> 13;
-    b = sub32(b, c);
-    b = sub32(b, a);
-    b ^= a << 8;
-    c = sub32(c, a);
-    c = sub32(c, b);
-    c ^= b >>> 13;
-    a = sub32(a, b);
-    a = sub32(a, c);
-    a ^= c >>> 12;
-    b = sub32(b, c);
-    b = sub32(b, a);
-    b ^= a << 16;
-    c = sub32(c, a);
-    c = sub32(c, b);
-    c ^= b >>> 5;
-    a = sub32(a, b);
-    a = sub32(a, c);
-    a ^= c >>> 3;
-    b = sub32(b, c);
-    b = sub32(b, a);
-    b ^= a << 10;
-    c = sub32(c, a);
-    c = sub32(c, b);
-    c ^= b >>> 15;
-    return [a, b, c];
-}
-// clang-format on
-// Utils
-var Endian;
-(function (Endian) {
-    Endian[Endian["Little"] = 0] = "Little";
-    Endian[Endian["Big"] = 1] = "Big";
-})(Endian || (Endian = {}));
-function add32(a, b) {
-    return add32to64(a, b)[1];
-}
-function add32to64(a, b) {
-    const low = (a & 0xffff) + (b & 0xffff);
-    const high = (a >>> 16) + (b >>> 16) + (low >>> 16);
-    return [high >>> 16, (high << 16) | (low & 0xffff)];
-}
-function add64([ah, al], [bh, bl]) {
-    const [carry, l] = add32to64(al, bl);
-    const h = add32(add32(ah, bh), carry);
-    return [h, l];
-}
-function sub32(a, b) {
-    const low = (a & 0xffff) - (b & 0xffff);
-    const high = (a >> 16) - (b >> 16) + (low >> 16);
-    return (high << 16) | (low & 0xffff);
-}
-// Rotate a 32b number left `count` position
-function rol32(a, count) {
-    return (a << count) | (a >>> (32 - count));
-}
-// Rotate a 64b number left `count` position
-function rol64([hi, lo], count) {
-    const h = (hi << count) | (lo >>> (32 - count));
-    const l = (lo << count) | (hi >>> (32 - count));
-    return [h, l];
-}
-function stringToWords32(str, endian) {
-    const words32 = Array((str.length + 3) >>> 2);
-    for (let i = 0; i < words32.length; i++) {
-        words32[i] = wordAt(str, i * 4, endian);
-    }
-    return words32;
-}
-function byteAt(str, index) {
-    return index >= str.length ? 0 : str.charCodeAt(index) & 0xff;
-}
-function wordAt(str, index, endian) {
-    let word = 0;
-    if (endian === Endian.Big) {
-        for (let i = 0; i < 4; i++) {
-            word += byteAt(str, index + i) << (24 - 8 * i);
-        }
-    }
-    else {
-        for (let i = 0; i < 4; i++) {
-            word += byteAt(str, index + i) << 8 * i;
-        }
-    }
-    return word;
-}
-function words32ToByteString(words32) {
-    return words32.reduce((str, word) => str + word32ToByteString(word), '');
-}
-function word32ToByteString(word) {
-    let str = '';
-    for (let i = 0; i < 4; i++) {
-        str += String.fromCharCode((word >>> 8 * (3 - i)) & 0xff);
-    }
-    return str;
-}
-function byteStringToHexString(str) {
-    let hex = '';
-    for (let i = 0; i < str.length; i++) {
-        const b = byteAt(str, i);
-        hex += (b >>> 4).toString(16) + (b & 0x0f).toString(16);
-    }
-    return hex.toLowerCase();
-}
-// based on http://www.danvk.org/hex2dec.html (JS can not handle more than 56b)
-function byteStringToDecString(str) {
-    let decimal = '';
-    let toThePower = '1';
-    for (let i = str.length - 1; i >= 0; i--) {
-        decimal = addBigInt(decimal, numberTimesBigInt(byteAt(str, i), toThePower));
-        toThePower = numberTimesBigInt(256, toThePower);
-    }
-    return decimal.split('').reverse().join('');
-}
-// x and y decimal, lowest significant digit first
-function addBigInt(x, y) {
-    let sum = '';
-    const len = Math.max(x.length, y.length);
-    for (let i = 0, carry = 0; i < len || carry; i++) {
-        const tmpSum = carry + +(x[i] || 0) + +(y[i] || 0);
-        if (tmpSum >= 10) {
-            carry = 1;
-            sum += tmpSum - 10;
-        }
-        else {
-            carry = 0;
-            sum += tmpSum;
-        }
-    }
-    return sum;
-}
-function numberTimesBigInt(num, b) {
-    let product = '';
-    let bToThePower = b;
-    for (; num !== 0; num = num >>> 1) {
-        if (num & 1)
-            product = addBigInt(product, bToThePower);
-        bToThePower = addBigInt(bToThePower, bToThePower);
-    }
-    return product;
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-class Message {
-    /**
-     * @param nodes message AST
-     * @param placeholders maps placeholder names to static content
-     * @param placeholderToMessage maps placeholder names to messages (used for nested ICU messages)
-     * @param meaning
-     * @param description
-     * @param id
-     */
-    constructor(nodes, placeholders, placeholderToMessage, meaning, description, id) {
-        this.nodes = nodes;
-        this.placeholders = placeholders;
-        this.placeholderToMessage = placeholderToMessage;
-        this.meaning = meaning;
-        this.description = description;
-        this.id = id;
-        if (nodes.length) {
-            this.sources = [{
-                    filePath: nodes[0].sourceSpan.start.file.url,
-                    startLine: nodes[0].sourceSpan.start.line + 1,
-                    startCol: nodes[0].sourceSpan.start.col + 1,
-                    endLine: nodes[nodes.length - 1].sourceSpan.end.line + 1,
-                    endCol: nodes[0].sourceSpan.start.col + 1
-                }];
-        }
-        else {
-            this.sources = [];
-        }
-    }
-}
-class Text$2 {
-    constructor(value, sourceSpan) {
-        this.value = value;
-        this.sourceSpan = sourceSpan;
-    }
-    visit(visitor, context) { return visitor.visitText(this, context); }
-}
-// TODO(vicb): do we really need this node (vs an array) ?
-class Container {
-    constructor(children, sourceSpan) {
-        this.children = children;
-        this.sourceSpan = sourceSpan;
-    }
-    visit(visitor, context) { return visitor.visitContainer(this, context); }
-}
-class Icu {
-    constructor(expression, type, cases, sourceSpan) {
-        this.expression = expression;
-        this.type = type;
-        this.cases = cases;
-        this.sourceSpan = sourceSpan;
-    }
-    visit(visitor, context) { return visitor.visitIcu(this, context); }
-}
-class TagPlaceholder {
-    constructor(tag, attrs, startName, closeName, children, isVoid, sourceSpan) {
-        this.tag = tag;
-        this.attrs = attrs;
-        this.startName = startName;
-        this.closeName = closeName;
-        this.children = children;
-        this.isVoid = isVoid;
-        this.sourceSpan = sourceSpan;
-    }
-    visit(visitor, context) { return visitor.visitTagPlaceholder(this, context); }
-}
-class Placeholder {
-    constructor(value, name, sourceSpan) {
-        this.value = value;
-        this.name = name;
-        this.sourceSpan = sourceSpan;
-    }
-    visit(visitor, context) { return visitor.visitPlaceholder(this, context); }
-}
-class IcuPlaceholder {
-    constructor(value, name, sourceSpan) {
-        this.value = value;
-        this.name = name;
-        this.sourceSpan = sourceSpan;
-    }
-    visit(visitor, context) { return visitor.visitIcuPlaceholder(this, context); }
-}
-// Clone the AST
-class CloneVisitor {
-    visitText(text, context) { return new Text$2(text.value, text.sourceSpan); }
-    visitContainer(container, context) {
-        const children = container.children.map(n => n.visit(this, context));
-        return new Container(children, container.sourceSpan);
-    }
-    visitIcu(icu, context) {
-        const cases = {};
-        Object.keys(icu.cases).forEach(key => cases[key] = icu.cases[key].visit(this, context));
-        const msg = new Icu(icu.expression, icu.type, cases, icu.sourceSpan);
-        msg.expressionPlaceholder = icu.expressionPlaceholder;
-        return msg;
-    }
-    visitTagPlaceholder(ph, context) {
-        const children = ph.children.map(n => n.visit(this, context));
-        return new TagPlaceholder(ph.tag, ph.attrs, ph.startName, ph.closeName, children, ph.isVoid, ph.sourceSpan);
-    }
-    visitPlaceholder(ph, context) {
-        return new Placeholder(ph.value, ph.name, ph.sourceSpan);
-    }
-    visitIcuPlaceholder(ph, context) {
-        return new IcuPlaceholder(ph.value, ph.name, ph.sourceSpan);
-    }
-}
-// Visit all the nodes recursively
-class RecurseVisitor {
-    visitText(text, context) { }
-    visitContainer(container, context) {
-        container.children.forEach(child => child.visit(this));
-    }
-    visitIcu(icu, context) {
-        Object.keys(icu.cases).forEach(k => { icu.cases[k].visit(this); });
-    }
-    visitTagPlaceholder(ph, context) {
-        ph.children.forEach(child => child.visit(this));
-    }
-    visitPlaceholder(ph, context) { }
-    visitIcuPlaceholder(ph, context) { }
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-const TAG_TO_PLACEHOLDER_NAMES = {
-    'A': 'LINK',
-    'B': 'BOLD_TEXT',
-    'BR': 'LINE_BREAK',
-    'EM': 'EMPHASISED_TEXT',
-    'H1': 'HEADING_LEVEL1',
-    'H2': 'HEADING_LEVEL2',
-    'H3': 'HEADING_LEVEL3',
-    'H4': 'HEADING_LEVEL4',
-    'H5': 'HEADING_LEVEL5',
-    'H6': 'HEADING_LEVEL6',
-    'HR': 'HORIZONTAL_RULE',
-    'I': 'ITALIC_TEXT',
-    'LI': 'LIST_ITEM',
-    'LINK': 'MEDIA_LINK',
-    'OL': 'ORDERED_LIST',
-    'P': 'PARAGRAPH',
-    'Q': 'QUOTATION',
-    'S': 'STRIKETHROUGH_TEXT',
-    'SMALL': 'SMALL_TEXT',
-    'SUB': 'SUBSTRIPT',
-    'SUP': 'SUPERSCRIPT',
-    'TBODY': 'TABLE_BODY',
-    'TD': 'TABLE_CELL',
-    'TFOOT': 'TABLE_FOOTER',
-    'TH': 'TABLE_HEADER_CELL',
-    'THEAD': 'TABLE_HEADER',
-    'TR': 'TABLE_ROW',
-    'TT': 'MONOSPACED_TEXT',
-    'U': 'UNDERLINED_TEXT',
-    'UL': 'UNORDERED_LIST',
-};
-/**
- * Creates unique names for placeholder with different content.
- *
- * Returns the same placeholder name when the content is identical.
- */
-class PlaceholderRegistry {
-    constructor() {
-        // Count the occurrence of the base name top generate a unique name
-        this._placeHolderNameCounts = {};
-        // Maps signature to placeholder names
-        this._signatureToName = {};
-    }
-    getStartTagPlaceholderName(tag, attrs, isVoid) {
-        const signature = this._hashTag(tag, attrs, isVoid);
-        if (this._signatureToName[signature]) {
-            return this._signatureToName[signature];
-        }
-        const upperTag = tag.toUpperCase();
-        const baseName = TAG_TO_PLACEHOLDER_NAMES[upperTag] || `TAG_${upperTag}`;
-        const name = this._generateUniqueName(isVoid ? baseName : `START_${baseName}`);
-        this._signatureToName[signature] = name;
-        return name;
-    }
-    getCloseTagPlaceholderName(tag) {
-        const signature = this._hashClosingTag(tag);
-        if (this._signatureToName[signature]) {
-            return this._signatureToName[signature];
-        }
-        const upperTag = tag.toUpperCase();
-        const baseName = TAG_TO_PLACEHOLDER_NAMES[upperTag] || `TAG_${upperTag}`;
-        const name = this._generateUniqueName(`CLOSE_${baseName}`);
-        this._signatureToName[signature] = name;
-        return name;
-    }
-    getPlaceholderName(name, content) {
-        const upperName = name.toUpperCase();
-        const signature = `PH: ${upperName}=${content}`;
-        if (this._signatureToName[signature]) {
-            return this._signatureToName[signature];
-        }
-        const uniqueName = this._generateUniqueName(upperName);
-        this._signatureToName[signature] = uniqueName;
-        return uniqueName;
-    }
-    getUniquePlaceholder(name) {
-        return this._generateUniqueName(name.toUpperCase());
-    }
-    // Generate a hash for a tag - does not take attribute order into account
-    _hashTag(tag, attrs, isVoid) {
-        const start = `<${tag}`;
-        const strAttrs = Object.keys(attrs).sort().map((name) => ` ${name}=${attrs[name]}`).join('');
-        const end = isVoid ? '/>' : `></${tag}>`;
-        return start + strAttrs + end;
-    }
-    _hashClosingTag(tag) { return this._hashTag(`/${tag}`, {}, false); }
-    _generateUniqueName(base) {
-        const seen = this._placeHolderNameCounts.hasOwnProperty(base);
-        if (!seen) {
-            this._placeHolderNameCounts[base] = 1;
-            return base;
-        }
-        const id = this._placeHolderNameCounts[base];
-        this._placeHolderNameCounts[base] = id + 1;
-        return `${base}_${id}`;
-    }
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-const _expParser = new Parser(new Lexer());
-/**
- * Returns a function converting html nodes to an i18n Message given an interpolationConfig
- */
-function createI18nMessageFactory(interpolationConfig) {
-    const visitor = new _I18nVisitor(_expParser, interpolationConfig);
-    return (nodes, meaning, description, id) => visitor.toI18nMessage(nodes, meaning, description, id);
-}
-class _I18nVisitor {
-    constructor(_expressionParser, _interpolationConfig) {
-        this._expressionParser = _expressionParser;
-        this._interpolationConfig = _interpolationConfig;
-    }
-    toI18nMessage(nodes, meaning, description, id) {
-        this._isIcu = nodes.length == 1 && nodes[0] instanceof Expansion;
-        this._icuDepth = 0;
-        this._placeholderRegistry = new PlaceholderRegistry();
-        this._placeholderToContent = {};
-        this._placeholderToMessage = {};
-        const i18nodes = visitAll(this, nodes, {});
-        return new Message(i18nodes, this._placeholderToContent, this._placeholderToMessage, meaning, description, id);
-    }
-    visitElement(el, context) {
-        const children = visitAll(this, el.children);
-        const attrs = {};
-        el.attrs.forEach(attr => {
-            // Do not visit the attributes, translatable ones are top-level ASTs
-            attrs[attr.name] = attr.value;
-        });
-        const isVoid = getHtmlTagDefinition(el.name).isVoid;
-        const startPhName = this._placeholderRegistry.getStartTagPlaceholderName(el.name, attrs, isVoid);
-        this._placeholderToContent[startPhName] = el.sourceSpan.toString();
-        let closePhName = '';
-        if (!isVoid) {
-            closePhName = this._placeholderRegistry.getCloseTagPlaceholderName(el.name);
-            this._placeholderToContent[closePhName] = `</${el.name}>`;
-        }
-        return new TagPlaceholder(el.name, attrs, startPhName, closePhName, children, isVoid, el.sourceSpan);
-    }
-    visitAttribute(attribute, context) {
-        return this._visitTextWithInterpolation(attribute.value, attribute.sourceSpan);
-    }
-    visitText(text, context) {
-        return this._visitTextWithInterpolation(text.value, text.sourceSpan);
-    }
-    visitComment(comment, context) { return null; }
-    visitExpansion(icu, context) {
-        this._icuDepth++;
-        const i18nIcuCases = {};
-        const i18nIcu = new Icu(icu.switchValue, icu.type, i18nIcuCases, icu.sourceSpan);
-        icu.cases.forEach((caze) => {
-            i18nIcuCases[caze.value] = new Container(caze.expression.map((node) => node.visit(this, {})), caze.expSourceSpan);
-        });
-        this._icuDepth--;
-        if (this._isIcu || this._icuDepth > 0) {
-            // Returns an ICU node when:
-            // - the message (vs a part of the message) is an ICU message, or
-            // - the ICU message is nested.
-            const expPh = this._placeholderRegistry.getUniquePlaceholder(`VAR_${icu.type}`);
-            i18nIcu.expressionPlaceholder = expPh;
-            this._placeholderToContent[expPh] = icu.switchValue;
-            return i18nIcu;
-        }
-        // Else returns a placeholder
-        // ICU placeholders should not be replaced with their original content but with the their
-        // translations. We need to create a new visitor (they are not re-entrant) to compute the
-        // message id.
-        // TODO(vicb): add a html.Node -> i18n.Message cache to avoid having to re-create the msg
-        const phName = this._placeholderRegistry.getPlaceholderName('ICU', icu.sourceSpan.toString());
-        const visitor = new _I18nVisitor(this._expressionParser, this._interpolationConfig);
-        this._placeholderToMessage[phName] = visitor.toI18nMessage([icu], '', '', '');
-        return new IcuPlaceholder(i18nIcu, phName, icu.sourceSpan);
-    }
-    visitExpansionCase(icuCase, context) {
-        throw new Error('Unreachable code');
-    }
-    _visitTextWithInterpolation(text, sourceSpan) {
-        const splitInterpolation = this._expressionParser.splitInterpolation(text, sourceSpan.start.toString(), this._interpolationConfig);
-        if (!splitInterpolation) {
-            // No expression, return a single text
-            return new Text$2(text, sourceSpan);
-        }
-        // Return a group of text + expressions
-        const nodes = [];
-        const container = new Container(nodes, sourceSpan);
-        const { start: sDelimiter, end: eDelimiter } = this._interpolationConfig;
-        for (let i = 0; i < splitInterpolation.strings.length - 1; i++) {
-            const expression = splitInterpolation.expressions[i];
-            const baseName = _extractPlaceholderName(expression) || 'INTERPOLATION';
-            const phName = this._placeholderRegistry.getPlaceholderName(baseName, expression);
-            if (splitInterpolation.strings[i].length) {
-                // No need to add empty strings
-                nodes.push(new Text$2(splitInterpolation.strings[i], sourceSpan));
-            }
-            nodes.push(new Placeholder(expression, phName, sourceSpan));
-            this._placeholderToContent[phName] = sDelimiter + expression + eDelimiter;
-        }
-        // The last index contains no expression
-        const lastStringIdx = splitInterpolation.strings.length - 1;
-        if (splitInterpolation.strings[lastStringIdx].length) {
-            nodes.push(new Text$2(splitInterpolation.strings[lastStringIdx], sourceSpan));
-        }
-        return container;
-    }
-}
-const _CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*("|')([\s\S]*?)\1[\s\S]*\)/g;
-function _extractPlaceholderName(input) {
-    return input.split(_CUSTOM_PH_EXP)[2];
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * An i18n error.
  */
@@ -14393,11 +15198,11 @@ let i18nCommentsWarned = false;
  * Extract translatable messages from an html AST
  */
 function extractMessages(nodes, interpolationConfig, implicitTags, implicitAttrs) {
-    const visitor = new _Visitor(implicitTags, implicitAttrs);
+    const visitor = new _Visitor$2(implicitTags, implicitAttrs);
     return visitor.extract(nodes, interpolationConfig);
 }
 function mergeTranslations(nodes, translations, interpolationConfig, implicitTags, implicitAttrs) {
-    const visitor = new _Visitor(implicitTags, implicitAttrs);
+    const visitor = new _Visitor$2(implicitTags, implicitAttrs);
     return visitor.merge(nodes, translations, interpolationConfig);
 }
 class ExtractionResult {
@@ -14418,7 +15223,7 @@ var _VisitorMode;
  *
  * @internal
  */
-class _Visitor {
+class _Visitor$2 {
     constructor(_implicitTags, _implicitAttrs) {
         this._implicitTags = _implicitTags;
         this._implicitAttrs = _implicitAttrs;
@@ -14666,7 +15471,7 @@ class _Visitor {
                     if (nodes.length == 0) {
                         translatedAttributes.push(new Attribute(attr.name, '', attr.sourceSpan));
                     }
-                    else if (nodes[0] instanceof Text) {
+                    else if (nodes[0] instanceof Text$2) {
                         const value = nodes[0].value;
                         translatedAttributes.push(new Attribute(attr.name, value, attr.sourceSpan));
                     }
@@ -14740,7 +15545,7 @@ class _Visitor {
         if (significantChildren == 1) {
             for (let i = this._messages.length - 1; i >= startIndex; i--) {
                 const ast = this._messages[i].nodes;
-                if (!(ast.length == 1 && ast[0] instanceof Text$2)) {
+                if (!(ast.length == 1 && ast[0] instanceof Text)) {
                     this._messages.splice(i, 1);
                     break;
                 }
@@ -14817,156 +15622,14 @@ class XmlParser extends Parser$1 {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-class Serializer {
-    // Creates a name mapper, see `PlaceholderMapper`
-    // Returning `null` means that no name mapping is used.
-    createNameMapper(message) { return null; }
-}
-/**
- * A simple mapper that take a function to transform an internal name to a public name
- */
-class SimplePlaceholderMapper extends RecurseVisitor {
-    // create a mapping from the message
-    constructor(message, mapName) {
-        super();
-        this.mapName = mapName;
-        this.internalToPublic = {};
-        this.publicToNextId = {};
-        this.publicToInternal = {};
-        message.nodes.forEach(node => node.visit(this));
-    }
-    toPublicName(internalName) {
-        return this.internalToPublic.hasOwnProperty(internalName) ?
-            this.internalToPublic[internalName] :
-            null;
-    }
-    toInternalName(publicName) {
-        return this.publicToInternal.hasOwnProperty(publicName) ? this.publicToInternal[publicName] :
-            null;
-    }
-    visitText(text, context) { return null; }
-    visitTagPlaceholder(ph, context) {
-        this.visitPlaceholderName(ph.startName);
-        super.visitTagPlaceholder(ph, context);
-        this.visitPlaceholderName(ph.closeName);
-    }
-    visitPlaceholder(ph, context) { this.visitPlaceholderName(ph.name); }
-    visitIcuPlaceholder(ph, context) {
-        this.visitPlaceholderName(ph.name);
-    }
-    // XMB placeholders could only contains A-Z, 0-9 and _
-    visitPlaceholderName(internalName) {
-        if (!internalName || this.internalToPublic.hasOwnProperty(internalName)) {
-            return;
-        }
-        let publicName = this.mapName(internalName);
-        if (this.publicToInternal.hasOwnProperty(publicName)) {
-            // Create a new XMB when it has already been used
-            const nextId = this.publicToNextId[publicName];
-            this.publicToNextId[publicName] = nextId + 1;
-            publicName = `${publicName}_${nextId}`;
-        }
-        else {
-            this.publicToNextId[publicName] = 1;
-        }
-        this.internalToPublic[internalName] = publicName;
-        this.publicToInternal[publicName] = internalName;
-    }
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-class _Visitor$1 {
-    visitTag(tag) {
-        const strAttrs = this._serializeAttributes(tag.attrs);
-        if (tag.children.length == 0) {
-            return `<${tag.name}${strAttrs}/>`;
-        }
-        const strChildren = tag.children.map(node => node.visit(this));
-        return `<${tag.name}${strAttrs}>${strChildren.join('')}</${tag.name}>`;
-    }
-    visitText(text) { return text.value; }
-    visitDeclaration(decl) {
-        return `<?xml${this._serializeAttributes(decl.attrs)} ?>`;
-    }
-    _serializeAttributes(attrs) {
-        const strAttrs = Object.keys(attrs).map((name) => `${name}="${attrs[name]}"`).join(' ');
-        return strAttrs.length > 0 ? ' ' + strAttrs : '';
-    }
-    visitDoctype(doctype) {
-        return `<!DOCTYPE ${doctype.rootTag} [\n${doctype.dtd}\n]>`;
-    }
-}
-const _visitor = new _Visitor$1();
-function serialize(nodes) {
-    return nodes.map((node) => node.visit(_visitor)).join('');
-}
-class Declaration {
-    constructor(unescapedAttrs) {
-        this.attrs = {};
-        Object.keys(unescapedAttrs).forEach((k) => {
-            this.attrs[k] = escapeXml(unescapedAttrs[k]);
-        });
-    }
-    visit(visitor) { return visitor.visitDeclaration(this); }
-}
-class Doctype {
-    constructor(rootTag, dtd) {
-        this.rootTag = rootTag;
-        this.dtd = dtd;
-    }
-    visit(visitor) { return visitor.visitDoctype(this); }
-}
-class Tag {
-    constructor(name, unescapedAttrs = {}, children = []) {
-        this.name = name;
-        this.children = children;
-        this.attrs = {};
-        Object.keys(unescapedAttrs).forEach((k) => {
-            this.attrs[k] = escapeXml(unescapedAttrs[k]);
-        });
-    }
-    visit(visitor) { return visitor.visitTag(this); }
-}
-class Text$3 {
-    constructor(unescapedValue) { this.value = escapeXml(unescapedValue); }
-    visit(visitor) { return visitor.visitText(this); }
-}
-class CR extends Text$3 {
-    constructor(ws = 0) { super(`\n${new Array(ws + 1).join(' ')}`); }
-}
-const _ESCAPED_CHARS = [
-    [/&/g, '&amp;'],
-    [/"/g, '&quot;'],
-    [/'/g, '&apos;'],
-    [/</g, '&lt;'],
-    [/>/g, '&gt;'],
-];
-// Escape `_ESCAPED_CHARS` characters in the given text with encoded entities
-function escapeXml(text) {
-    return _ESCAPED_CHARS.reduce((text, entry) => text.replace(entry[0], entry[1]), text);
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const _VERSION = '1.2';
 const _XMLNS = 'urn:oasis:names:tc:xliff:document:1.2';
 // TODO(vicb): make this a param (s/_/-/)
 const _DEFAULT_SOURCE_LANG = 'en';
-const _PLACEHOLDER_TAG = 'x';
+const _PLACEHOLDER_TAG$1 = 'x';
 const _MARKER_TAG = 'mrk';
 const _FILE_TAG = 'file';
-const _SOURCE_TAG = 'source';
+const _SOURCE_TAG$1 = 'source';
 const _SEGMENT_SOURCE_TAG = 'seg-source';
 const _TARGET_TAG = 'target';
 const _UNIT_TAG = 'trans-unit';
@@ -14982,16 +15645,16 @@ class Xliff extends Serializer {
             let contextTags = [];
             message.sources.forEach((source) => {
                 let contextGroupTag = new Tag(_CONTEXT_GROUP_TAG, { purpose: 'location' });
-                contextGroupTag.children.push(new CR(10), new Tag(_CONTEXT_TAG, { 'context-type': 'sourcefile' }, [new Text$3(source.filePath)]), new CR(10), new Tag(_CONTEXT_TAG, { 'context-type': 'linenumber' }, [new Text$3(`${source.startLine}`)]), new CR(8));
+                contextGroupTag.children.push(new CR(10), new Tag(_CONTEXT_TAG, { 'context-type': 'sourcefile' }, [new Text$1(source.filePath)]), new CR(10), new Tag(_CONTEXT_TAG, { 'context-type': 'linenumber' }, [new Text$1(`${source.startLine}`)]), new CR(8));
                 contextTags.push(new CR(8), contextGroupTag);
             });
             const transUnit = new Tag(_UNIT_TAG, { id: message.id, datatype: 'html' });
-            transUnit.children.push(new CR(8), new Tag(_SOURCE_TAG, {}, visitor.serialize(message.nodes)), ...contextTags);
+            transUnit.children.push(new CR(8), new Tag(_SOURCE_TAG$1, {}, visitor.serialize(message.nodes)), ...contextTags);
             if (message.description) {
-                transUnit.children.push(new CR(8), new Tag('note', { priority: '1', from: 'description' }, [new Text$3(message.description)]));
+                transUnit.children.push(new CR(8), new Tag('note', { priority: '1', from: 'description' }, [new Text$1(message.description)]));
             }
             if (message.meaning) {
-                transUnit.children.push(new CR(8), new Tag('note', { priority: '1', from: 'meaning' }, [new Text$3(message.meaning)]));
+                transUnit.children.push(new CR(8), new Tag('note', { priority: '1', from: 'meaning' }, [new Text$1(message.meaning)]));
             }
             transUnit.children.push(new CR(6));
             transUnits.push(new CR(6), transUnit);
@@ -15027,36 +15690,36 @@ class Xliff extends Serializer {
     digest(message) { return digest(message); }
 }
 class _WriteVisitor {
-    visitText(text, context) { return [new Text$3(text.value)]; }
+    visitText(text, context) { return [new Text$1(text.value)]; }
     visitContainer(container, context) {
         const nodes = [];
         container.children.forEach((node) => nodes.push(...node.visit(this)));
         return nodes;
     }
     visitIcu(icu, context) {
-        const nodes = [new Text$3(`{${icu.expressionPlaceholder}, ${icu.type}, `)];
+        const nodes = [new Text$1(`{${icu.expressionPlaceholder}, ${icu.type}, `)];
         Object.keys(icu.cases).forEach((c) => {
-            nodes.push(new Text$3(`${c} {`), ...icu.cases[c].visit(this), new Text$3(`} `));
+            nodes.push(new Text$1(`${c} {`), ...icu.cases[c].visit(this), new Text$1(`} `));
         });
-        nodes.push(new Text$3(`}`));
+        nodes.push(new Text$1(`}`));
         return nodes;
     }
     visitTagPlaceholder(ph, context) {
         const ctype = getCtypeForTag(ph.tag);
         if (ph.isVoid) {
             // void tags have no children nor closing tags
-            return [new Tag(_PLACEHOLDER_TAG, { id: ph.startName, ctype, 'equiv-text': `<${ph.tag}/>` })];
+            return [new Tag(_PLACEHOLDER_TAG$1, { id: ph.startName, ctype, 'equiv-text': `<${ph.tag}/>` })];
         }
-        const startTagPh = new Tag(_PLACEHOLDER_TAG, { id: ph.startName, ctype, 'equiv-text': `<${ph.tag}>` });
-        const closeTagPh = new Tag(_PLACEHOLDER_TAG, { id: ph.closeName, ctype, 'equiv-text': `</${ph.tag}>` });
+        const startTagPh = new Tag(_PLACEHOLDER_TAG$1, { id: ph.startName, ctype, 'equiv-text': `<${ph.tag}>` });
+        const closeTagPh = new Tag(_PLACEHOLDER_TAG$1, { id: ph.closeName, ctype, 'equiv-text': `</${ph.tag}>` });
         return [startTagPh, ...this.serialize(ph.children), closeTagPh];
     }
     visitPlaceholder(ph, context) {
-        return [new Tag(_PLACEHOLDER_TAG, { id: ph.name, 'equiv-text': `{{${ph.value}}}` })];
+        return [new Tag(_PLACEHOLDER_TAG$1, { id: ph.name, 'equiv-text': `{{${ph.value}}}` })];
     }
     visitIcuPlaceholder(ph, context) {
         const equivText = `{${ph.value.expression}, ${ph.value.type}, ${Object.keys(ph.value.cases).map((value) => value + ' {...}').join(' ')}}`;
-        return [new Tag(_PLACEHOLDER_TAG, { id: ph.name, 'equiv-text': equivText })];
+        return [new Tag(_PLACEHOLDER_TAG$1, { id: ph.name, 'equiv-text': equivText })];
     }
     serialize(nodes) {
         return [].concat(...nodes.map(node => node.visit(this)));
@@ -15105,7 +15768,7 @@ class XliffParser {
                 }
                 break;
             // ignore those tags
-            case _SOURCE_TAG:
+            case _SOURCE_TAG$1:
             case _SEGMENT_SOURCE_TAG:
                 break;
             case _TARGET_TAG:
@@ -15150,14 +15813,14 @@ class XmlToI18n {
             errors: this._errors,
         };
     }
-    visitText(text, context) { return new Text$2(text.value, text.sourceSpan); }
+    visitText(text, context) { return new Text(text.value, text.sourceSpan); }
     visitElement(el, context) {
-        if (el.name === _PLACEHOLDER_TAG) {
+        if (el.name === _PLACEHOLDER_TAG$1) {
             const nameAttr = el.attrs.find((attr) => attr.name === 'id');
             if (nameAttr) {
                 return new Placeholder('', nameAttr.value, el.sourceSpan);
             }
-            this._addError(el, `<${_PLACEHOLDER_TAG}> misses the "id" attribute`);
+            this._addError(el, `<${_PLACEHOLDER_TAG$1}> misses the "id" attribute`);
             return null;
         }
         if (el.name === _MARKER_TAG) {
@@ -15207,11 +15870,11 @@ const _VERSION$1 = '2.0';
 const _XMLNS$1 = 'urn:oasis:names:tc:xliff:document:2.0';
 // TODO(vicb): make this a param (s/_/-/)
 const _DEFAULT_SOURCE_LANG$1 = 'en';
-const _PLACEHOLDER_TAG$1 = 'ph';
+const _PLACEHOLDER_TAG$2 = 'ph';
 const _PLACEHOLDER_SPANNING_TAG = 'pc';
 const _MARKER_TAG$1 = 'mrk';
 const _XLIFF_TAG = 'xliff';
-const _SOURCE_TAG$1 = 'source';
+const _SOURCE_TAG$2 = 'source';
 const _TARGET_TAG$1 = 'target';
 const _UNIT_TAG$1 = 'unit';
 // http://docs.oasis-open.org/xliff/xliff-core/v2.0/os/xliff-core-v2.0-os.html
@@ -15224,21 +15887,21 @@ class Xliff2 extends Serializer {
             const notes = new Tag('notes');
             if (message.description || message.meaning) {
                 if (message.description) {
-                    notes.children.push(new CR(8), new Tag('note', { category: 'description' }, [new Text$3(message.description)]));
+                    notes.children.push(new CR(8), new Tag('note', { category: 'description' }, [new Text$1(message.description)]));
                 }
                 if (message.meaning) {
-                    notes.children.push(new CR(8), new Tag('note', { category: 'meaning' }, [new Text$3(message.meaning)]));
+                    notes.children.push(new CR(8), new Tag('note', { category: 'meaning' }, [new Text$1(message.meaning)]));
                 }
             }
             message.sources.forEach((source) => {
                 notes.children.push(new CR(8), new Tag('note', { category: 'location' }, [
-                    new Text$3(`${source.filePath}:${source.startLine}${source.endLine !== source.startLine ? ',' + source.endLine : ''}`)
+                    new Text$1(`${source.filePath}:${source.startLine}${source.endLine !== source.startLine ? ',' + source.endLine : ''}`)
                 ]));
             });
             notes.children.push(new CR(6));
             unit.children.push(new CR(6), notes);
             const segment = new Tag('segment');
-            segment.children.push(new CR(8), new Tag(_SOURCE_TAG$1, {}, visitor.serialize(message.nodes)), new CR(6));
+            segment.children.push(new CR(8), new Tag(_SOURCE_TAG$2, {}, visitor.serialize(message.nodes)), new CR(6));
             unit.children.push(new CR(6), segment, new CR(4));
             units.push(new CR(4), unit);
         });
@@ -15268,24 +15931,24 @@ class Xliff2 extends Serializer {
     digest(message) { return decimalDigest(message); }
 }
 class _WriteVisitor$1 {
-    visitText(text, context) { return [new Text$3(text.value)]; }
+    visitText(text, context) { return [new Text$1(text.value)]; }
     visitContainer(container, context) {
         const nodes = [];
         container.children.forEach((node) => nodes.push(...node.visit(this)));
         return nodes;
     }
     visitIcu(icu, context) {
-        const nodes = [new Text$3(`{${icu.expressionPlaceholder}, ${icu.type}, `)];
+        const nodes = [new Text$1(`{${icu.expressionPlaceholder}, ${icu.type}, `)];
         Object.keys(icu.cases).forEach((c) => {
-            nodes.push(new Text$3(`${c} {`), ...icu.cases[c].visit(this), new Text$3(`} `));
+            nodes.push(new Text$1(`${c} {`), ...icu.cases[c].visit(this), new Text$1(`} `));
         });
-        nodes.push(new Text$3(`}`));
+        nodes.push(new Text$1(`}`));
         return nodes;
     }
     visitTagPlaceholder(ph, context) {
         const type = getTypeForTag(ph.tag);
         if (ph.isVoid) {
-            const tagPh = new Tag(_PLACEHOLDER_TAG$1, {
+            const tagPh = new Tag(_PLACEHOLDER_TAG$2, {
                 id: (this._nextPlaceholderId++).toString(),
                 equiv: ph.startName,
                 type: type,
@@ -15306,13 +15969,13 @@ class _WriteVisitor$1 {
             nodes.forEach((node) => tagPc.children.push(node));
         }
         else {
-            tagPc.children.push(new Text$3(''));
+            tagPc.children.push(new Text$1(''));
         }
         return [tagPc];
     }
     visitPlaceholder(ph, context) {
         const idStr = (this._nextPlaceholderId++).toString();
-        return [new Tag(_PLACEHOLDER_TAG$1, {
+        return [new Tag(_PLACEHOLDER_TAG$2, {
                 id: idStr,
                 equiv: ph.name,
                 disp: `{{${ph.value}}}`,
@@ -15321,7 +15984,7 @@ class _WriteVisitor$1 {
     visitIcuPlaceholder(ph, context) {
         const cases = Object.keys(ph.value.cases).map((value) => value + ' {...}').join(' ');
         const idStr = (this._nextPlaceholderId++).toString();
-        return [new Tag(_PLACEHOLDER_TAG$1, { id: idStr, equiv: ph.name, disp: `{${ph.value.expression}, ${ph.value.type}, ${cases}}` })];
+        return [new Tag(_PLACEHOLDER_TAG$2, { id: idStr, equiv: ph.name, disp: `{${ph.value.expression}, ${ph.value.type}, ${cases}}` })];
     }
     serialize(nodes) {
         this._nextPlaceholderId = 0;
@@ -15369,7 +16032,7 @@ class Xliff2Parser {
                     }
                 }
                 break;
-            case _SOURCE_TAG$1:
+            case _SOURCE_TAG$2:
                 // ignore source message
                 break;
             case _TARGET_TAG$1:
@@ -15421,24 +16084,24 @@ class XmlToI18n$1 {
             errors: this._errors,
         };
     }
-    visitText(text, context) { return new Text$2(text.value, text.sourceSpan); }
+    visitText(text, context) { return new Text(text.value, text.sourceSpan); }
     visitElement(el, context) {
         switch (el.name) {
-            case _PLACEHOLDER_TAG$1:
+            case _PLACEHOLDER_TAG$2:
                 const nameAttr = el.attrs.find((attr) => attr.name === 'equiv');
                 if (nameAttr) {
                     return [new Placeholder('', nameAttr.value, el.sourceSpan)];
                 }
-                this._addError(el, `<${_PLACEHOLDER_TAG$1}> misses the "equiv" attribute`);
+                this._addError(el, `<${_PLACEHOLDER_TAG$2}> misses the "equiv" attribute`);
                 break;
             case _PLACEHOLDER_SPANNING_TAG:
                 const startAttr = el.attrs.find((attr) => attr.name === 'equivStart');
                 const endAttr = el.attrs.find((attr) => attr.name === 'equivEnd');
                 if (!startAttr) {
-                    this._addError(el, `<${_PLACEHOLDER_TAG$1}> misses the "equivStart" attribute`);
+                    this._addError(el, `<${_PLACEHOLDER_TAG$2}> misses the "equivStart" attribute`);
                 }
                 else if (!endAttr) {
-                    this._addError(el, `<${_PLACEHOLDER_TAG$1}> misses the "equivEnd" attribute`);
+                    this._addError(el, `<${_PLACEHOLDER_TAG$2}> misses the "equivEnd" attribute`);
                 }
                 else {
                     const startId = startAttr.value;
@@ -15487,159 +16150,6 @@ function getTypeForTag(tag) {
         default:
             return 'other';
     }
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-const _MESSAGES_TAG = 'messagebundle';
-const _MESSAGE_TAG = 'msg';
-const _PLACEHOLDER_TAG$2 = 'ph';
-const _EXAMPLE_TAG = 'ex';
-const _SOURCE_TAG$2 = 'source';
-const _DOCTYPE = `<!ELEMENT messagebundle (msg)*>
-<!ATTLIST messagebundle class CDATA #IMPLIED>
-
-<!ELEMENT msg (#PCDATA|ph|source)*>
-<!ATTLIST msg id CDATA #IMPLIED>
-<!ATTLIST msg seq CDATA #IMPLIED>
-<!ATTLIST msg name CDATA #IMPLIED>
-<!ATTLIST msg desc CDATA #IMPLIED>
-<!ATTLIST msg meaning CDATA #IMPLIED>
-<!ATTLIST msg obsolete (obsolete) #IMPLIED>
-<!ATTLIST msg xml:space (default|preserve) "default">
-<!ATTLIST msg is_hidden CDATA #IMPLIED>
-
-<!ELEMENT source (#PCDATA)>
-
-<!ELEMENT ph (#PCDATA|ex)*>
-<!ATTLIST ph name CDATA #REQUIRED>
-
-<!ELEMENT ex (#PCDATA)>`;
-class Xmb extends Serializer {
-    write(messages, locale) {
-        const exampleVisitor = new ExampleVisitor();
-        const visitor = new _Visitor$2();
-        let rootNode = new Tag(_MESSAGES_TAG);
-        messages.forEach(message => {
-            const attrs = { id: message.id };
-            if (message.description) {
-                attrs['desc'] = message.description;
-            }
-            if (message.meaning) {
-                attrs['meaning'] = message.meaning;
-            }
-            let sourceTags = [];
-            message.sources.forEach((source) => {
-                sourceTags.push(new Tag(_SOURCE_TAG$2, {}, [
-                    new Text$3(`${source.filePath}:${source.startLine}${source.endLine !== source.startLine ? ',' + source.endLine : ''}`)
-                ]));
-            });
-            rootNode.children.push(new CR(2), new Tag(_MESSAGE_TAG, attrs, [...sourceTags, ...visitor.serialize(message.nodes)]));
-        });
-        rootNode.children.push(new CR());
-        return serialize([
-            new Declaration({ version: '1.0', encoding: 'UTF-8' }),
-            new CR(),
-            new Doctype(_MESSAGES_TAG, _DOCTYPE),
-            new CR(),
-            exampleVisitor.addDefaultExamples(rootNode),
-            new CR(),
-        ]);
-    }
-    load(content, url) {
-        throw new Error('Unsupported');
-    }
-    digest(message) { return digest$1(message); }
-    createNameMapper(message) {
-        return new SimplePlaceholderMapper(message, toPublicName);
-    }
-}
-class _Visitor$2 {
-    visitText(text, context) { return [new Text$3(text.value)]; }
-    visitContainer(container, context) {
-        const nodes = [];
-        container.children.forEach((node) => nodes.push(...node.visit(this)));
-        return nodes;
-    }
-    visitIcu(icu, context) {
-        const nodes = [new Text$3(`{${icu.expressionPlaceholder}, ${icu.type}, `)];
-        Object.keys(icu.cases).forEach((c) => {
-            nodes.push(new Text$3(`${c} {`), ...icu.cases[c].visit(this), new Text$3(`} `));
-        });
-        nodes.push(new Text$3(`}`));
-        return nodes;
-    }
-    visitTagPlaceholder(ph, context) {
-        const startTagAsText = new Text$3(`<${ph.tag}>`);
-        const startEx = new Tag(_EXAMPLE_TAG, {}, [startTagAsText]);
-        // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
-        const startTagPh = new Tag(_PLACEHOLDER_TAG$2, { name: ph.startName }, [startEx, startTagAsText]);
-        if (ph.isVoid) {
-            // void tags have no children nor closing tags
-            return [startTagPh];
-        }
-        const closeTagAsText = new Text$3(`</${ph.tag}>`);
-        const closeEx = new Tag(_EXAMPLE_TAG, {}, [closeTagAsText]);
-        // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
-        const closeTagPh = new Tag(_PLACEHOLDER_TAG$2, { name: ph.closeName }, [closeEx, closeTagAsText]);
-        return [startTagPh, ...this.serialize(ph.children), closeTagPh];
-    }
-    visitPlaceholder(ph, context) {
-        const interpolationAsText = new Text$3(`{{${ph.value}}}`);
-        // Example tag needs to be not-empty for TC.
-        const exTag = new Tag(_EXAMPLE_TAG, {}, [interpolationAsText]);
-        return [
-            // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
-            new Tag(_PLACEHOLDER_TAG$2, { name: ph.name }, [exTag, interpolationAsText])
-        ];
-    }
-    visitIcuPlaceholder(ph, context) {
-        const icuExpression = ph.value.expression;
-        const icuType = ph.value.type;
-        const icuCases = Object.keys(ph.value.cases).map((value) => value + ' {...}').join(' ');
-        const icuAsText = new Text$3(`{${icuExpression}, ${icuType}, ${icuCases}}`);
-        const exTag = new Tag(_EXAMPLE_TAG, {}, [icuAsText]);
-        return [
-            // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
-            new Tag(_PLACEHOLDER_TAG$2, { name: ph.name }, [exTag, icuAsText])
-        ];
-    }
-    serialize(nodes) {
-        return [].concat(...nodes.map(node => node.visit(this)));
-    }
-}
-function digest$1(message) {
-    return decimalDigest(message);
-}
-// TC requires at least one non-empty example on placeholders
-class ExampleVisitor {
-    addDefaultExamples(node) {
-        node.visit(this);
-        return node;
-    }
-    visitTag(tag) {
-        if (tag.name === _PLACEHOLDER_TAG$2) {
-            if (!tag.children || tag.children.length == 0) {
-                const exText = new Text$3(tag.attrs['name'] || '...');
-                tag.children = [new Tag(_EXAMPLE_TAG, {}, [exText])];
-            }
-        }
-        else if (tag.children) {
-            tag.children.forEach(node => node.visit(this));
-        }
-    }
-    visitText(text) { }
-    visitDeclaration(decl) { }
-    visitDoctype(doctype) { }
-}
-// XMB/XTB placeholders can only contain A-Z, 0-9 and _
-function toPublicName(internalName) {
-    return internalName.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
 }
 
 /**
@@ -15774,7 +16284,7 @@ class XmlToI18n$2 {
             errors: this._errors,
         };
     }
-    visitText(text, context) { return new Text$2(text.value, text.sourceSpan); }
+    visitText(text, context) { return new Text(text.value, text.sourceSpan); }
     visitExpansion(icu, context) {
         const caseMap = {};
         visitAll(this, icu.cases).forEach(c => {
@@ -19138,7 +19648,7 @@ function createElementCssSelector(elementName, attributes) {
 const EMPTY_ELEMENT_CONTEXT = new ElementContext(true, new SelectorMatcher(), null, null);
 const NON_BINDABLE_VISITOR$1 = new NonBindableVisitor$1();
 function _isEmptyTextNode(node) {
-    return node instanceof Text && node.value.trim().length == 0;
+    return node instanceof Text$2 && node.value.trim().length == 0;
 }
 function removeSummaryDuplicates(items) {
     const map = new Map();
@@ -24289,6 +24799,7 @@ class Scope {
     visitBoundText(text) { }
     visitText(text) { }
     visitTextAttribute(attr) { }
+    visitIcu(icu) { }
     maybeDeclare(thing) {
         // Declare something with a name, as long as that name isn't taken.
         if (!this.namedEntities.has(thing.name)) {
@@ -24446,6 +24957,7 @@ class DirectiveBinder {
     visitBoundAttributeOrEvent(node) { }
     visitText(text) { }
     visitBoundText(text) { }
+    visitIcu(icu) { }
 }
 /**
  * Processes a template and extract metadata about expressions and symbols within.
@@ -24538,6 +25050,7 @@ class TemplateBinder extends RecursiveAstVisitor$1 {
     visitText(text) { }
     visitContent(content) { }
     visitTextAttribute(attribute) { }
+    visitIcu(icu) { }
     // The remaining visitors are concerned with processing AST expressions within template bindings
     visitBoundAttribute(attribute) { attribute.value.visit(this); }
     visitBoundEvent(event) { event.handler.visit(this); }
@@ -24653,5 +25166,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, TypeofExpr, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element$1 as TmplAstElement, Reference as TmplAstReference, Template as TmplAstTemplate, Text$1 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, jitExpression, R3ResolvedDependencyType, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileBaseDefFromMetadata, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, publishFacade, VERSION$1 as VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor$1 as RecursiveAstVisitor, AstTransformer$1 as AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, HOST_ATTR, CONTENT_ATTR, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, compileInjectable, R3TargetBinder, R3BoundTarget };
+export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, TypeofExpr, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element$1 as TmplAstElement, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, jitExpression, R3ResolvedDependencyType, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileBaseDefFromMetadata, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, publishFacade, VERSION$1 as VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor$1 as RecursiveAstVisitor, AstTransformer$1 as AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text$2 as Text, Expansion, ExpansionCase, Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, HOST_ATTR, CONTENT_ATTR, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, compileInjectable, R3TargetBinder, R3BoundTarget };
 //# sourceMappingURL=compiler.js.map

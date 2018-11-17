@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import * as o from './output/output_ast';
-import { I18nMeta } from './render3/view/i18n';
 import { OutputContext } from './util';
 export declare const enum DefinitionKind {
     Injector = 0,
@@ -21,8 +20,6 @@ export declare const enum DefinitionKind {
  */
 export declare class ConstantPool {
     statements: o.Statement[];
-    private translations;
-    private deferredTranslations;
     private literals;
     private literalFactories;
     private injectorDefinitions;
@@ -31,11 +28,6 @@ export declare class ConstantPool {
     private pipeDefinitions;
     private nextNameIndex;
     getConstLiteral(literal: o.Expression, forceShared?: boolean): o.Expression;
-    getDeferredTranslationConst(suffix: string): o.ReadVarExpr;
-    setDeferredTranslationConst(variable: o.ReadVarExpr, message: string): void;
-    getTranslationDeclStmt(variable: o.ReadVarExpr, message: string): o.DeclareVarStmt;
-    appendTranslationMeta(meta: string | I18nMeta): void;
-    getTranslation(message: string, meta: string, suffix: string): o.Expression;
     getDefinition(type: any, kind: DefinitionKind, ctx: OutputContext, forceShared?: boolean): o.Expression;
     getLiteralFactory(literal: o.LiteralArrayExpr | o.LiteralMapExpr): {
         literalFactory: o.Expression;
@@ -53,6 +45,5 @@ export declare class ConstantPool {
     private definitionsOf;
     propertyNameOf(kind: DefinitionKind): string;
     private freshName;
-    private freshTranslationName;
     private keyOf;
 }
