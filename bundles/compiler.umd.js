@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-rc.0+21.sha-859da3a.with-local-changes
+ * @license Angular v7.1.0-rc.0+24.sha-391767f.with-local-changes
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -14867,6 +14867,9 @@
             }
             definitionMap.set('pipes', pipesExpr);
         }
+        if (meta.encapsulation === null) {
+            meta.encapsulation = ViewEncapsulation.Emulated;
+        }
         // e.g. `styles: [str1, str2]`
         if (meta.styles && meta.styles.length) {
             var styleValues = meta.encapsulation == ViewEncapsulation.Emulated ?
@@ -14875,8 +14878,12 @@
             var strings = styleValues.map(function (str) { return literal(str); });
             definitionMap.set('styles', literalArr(strings));
         }
+        else if (meta.encapsulation === ViewEncapsulation.Emulated) {
+            // If there is no style, don't generate css selectors on elements
+            meta.encapsulation = ViewEncapsulation.None;
+        }
         // Only set view encapsulation if it's not the default value
-        if (meta.encapsulation !== null && meta.encapsulation !== ViewEncapsulation.Emulated) {
+        if (meta.encapsulation !== ViewEncapsulation.Emulated) {
             definitionMap.set('encapsulation', literal(meta.encapsulation));
         }
         // e.g. `animations: [trigger('123', [])]`
@@ -15522,7 +15529,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('7.1.0-rc.0+21.sha-859da3a.with-local-changes');
+    var VERSION$1 = new Version('7.1.0-rc.0+24.sha-391767f.with-local-changes');
 
     /**
      * @license
