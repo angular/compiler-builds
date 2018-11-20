@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-rc.0+23.sha-bf3beb5.with-local-changes
+ * @license Angular v7.1.0-rc.0+20.sha-a43998c.with-local-changes
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -14810,9 +14810,6 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
         }
         definitionMap.set('pipes', pipesExpr);
     }
-    if (meta.encapsulation === null) {
-        meta.encapsulation = ViewEncapsulation.Emulated;
-    }
     // e.g. `styles: [str1, str2]`
     if (meta.styles && meta.styles.length) {
         var styleValues = meta.encapsulation == ViewEncapsulation.Emulated ?
@@ -14821,12 +14818,8 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
         var strings = styleValues.map(function (str) { return literal(str); });
         definitionMap.set('styles', literalArr(strings));
     }
-    else if (meta.encapsulation === ViewEncapsulation.Emulated) {
-        // If there is no style, don't generate css selectors on elements
-        meta.encapsulation = ViewEncapsulation.None;
-    }
     // Only set view encapsulation if it's not the default value
-    if (meta.encapsulation !== ViewEncapsulation.Emulated) {
+    if (meta.encapsulation !== null && meta.encapsulation !== ViewEncapsulation.Emulated) {
         definitionMap.set('encapsulation', literal(meta.encapsulation));
     }
     // e.g. `animations: [trigger('123', [])]`
@@ -15472,7 +15465,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.1.0-rc.0+23.sha-bf3beb5.with-local-changes');
+var VERSION$1 = new Version('7.1.0-rc.0+20.sha-a43998c.with-local-changes');
 
 /**
  * @license
