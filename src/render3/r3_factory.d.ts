@@ -37,10 +37,6 @@ export interface R3ConstructorFactoryMetadata {
      * function could be different, and other options control how it will be invoked.
      */
     injectFn: o.ExternalReference;
-    /**
-     * Function that allows extra statements to be inserted into factory function.
-     */
-    extraStatementFn: ((instance: o.Expression) => o.Statement[]) | null;
 }
 export declare enum R3FactoryDelegateType {
     Class = 0,

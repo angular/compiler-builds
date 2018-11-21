@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0
+ * @license Angular v7.1.0+1.sha-dc300c5
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -4374,20 +4374,8 @@ function compileFactoryFunction(meta) {
         // TODO(alxhub): decide whether to lower the value here or in the caller
         retExpr = makeConditionalFactory(meta.expression);
     }
-    else if (meta.extraStatementFn) {
-        // if extraStatementsFn is specified and the 'makeConditionalFactory' function
-        // was not invoked, we need to create a reference to the instance, so we can
-        // pass it as an argument to the 'extraStatementFn' function while calling it
-        const variable$$1 = variable('f');
-        body.push(variable$$1.set(ctorExpr).toDeclStmt());
-        retExpr = variable$$1;
-    }
     else {
         retExpr = ctorExpr;
-    }
-    if (meta.extraStatementFn) {
-        const extraStmts = meta.extraStatementFn(retExpr);
-        body.push(...extraStmts);
     }
     return {
         factory: fn([new FnParam('t', DYNAMIC_TYPE)], [...body, new ReturnStatement(retExpr)], INFERRED_TYPE, undefined, `${meta.name}_Factory`),
@@ -4521,7 +4509,6 @@ function compileInjectable(meta) {
         type: meta.type,
         deps: meta.ctorDeps,
         injectFn: Identifiers.inject,
-        extraStatementFn: null,
     };
     if (meta.useClass !== undefined) {
         // meta.useClass has two modes of operation. Either deps are specified, in which case `new` is
@@ -5544,7 +5531,6 @@ function compileInjector(meta) {
         type: meta.type,
         deps: meta.deps,
         injectFn: Identifiers$1.inject,
-        extraStatementFn: null,
     });
     const expression = importExpr(Identifiers$1.defineInjector).callFn([mapToMapExpression({
             factory: result.factory,
@@ -5600,7 +5586,6 @@ function compilePipeFromMetadata(metadata) {
         type: metadata.type,
         deps: metadata.deps,
         injectFn: Identifiers$1.directiveInject,
-        extraStatementFn: null,
     });
     definitionMapValues.push({ key: 'factory', value: templateFactory.factory, quoted: false });
     // e.g. `pure: true`
@@ -7967,9 +7952,9 @@ function hyphenate(value) {
  * The creation/update methods within the builder class produce these instructions.
  */
 class StylingBuilder {
-    constructor(_elementIndexExpr, _directiveIndexExpr) {
+    constructor(_elementIndexExpr, _directiveExpr) {
         this._elementIndexExpr = _elementIndexExpr;
-        this._directiveIndexExpr = _directiveIndexExpr;
+        this._directiveExpr = _directiveExpr;
         this.hasBindingsOrInitialValues = false;
         this._classMapInput = null;
         this._styleMapInput = null;
@@ -8107,14 +8092,14 @@ class StylingBuilder {
                 // a constant because the inital style values do not change (since they're static).
                 params.push(constantPool.getConstLiteral(initialStyles, true));
             }
-            else if (useSanitizer || this._directiveIndexExpr) {
+            else if (useSanitizer || this._directiveExpr) {
                 // no point in having an extra `null` value unless there are follow-up params
                 params.push(NULL_EXPR);
             }
-            if (useSanitizer || this._directiveIndexExpr) {
+            if (useSanitizer || this._directiveExpr) {
                 params.push(useSanitizer ? importExpr(Identifiers$1.defaultStyleSanitizer) : NULL_EXPR);
-                if (this._directiveIndexExpr) {
-                    params.push(this._directiveIndexExpr);
+                if (this._directiveExpr) {
+                    params.push(this._directiveExpr);
                 }
             }
             return { sourceSpan, reference: Identifiers$1.elementStyling, buildParams: () => params };
@@ -8143,11 +8128,11 @@ class StylingBuilder {
                     if (mapBasedStyleValue) {
                         params.push(convertFn(mapBasedStyleValue));
                     }
-                    else if (this._directiveIndexExpr) {
+                    else if (this._directiveExpr) {
                         params.push(NULL_EXPR);
                     }
-                    if (this._directiveIndexExpr) {
-                        params.push(this._directiveIndexExpr);
+                    if (this._directiveExpr) {
+                        params.push(this._directiveExpr);
                     }
                     return params;
                 }
@@ -8168,12 +8153,12 @@ class StylingBuilder {
                         if (input.unit) {
                             params.push(literal(input.unit));
                         }
-                        else if (this._directiveIndexExpr) {
+                        else if (this._directiveExpr) {
                             params.push(NULL_EXPR);
                         }
                     }
-                    if (this._directiveIndexExpr) {
-                        params.push(this._directiveIndexExpr);
+                    if (this._directiveExpr) {
+                        params.push(this._directiveExpr);
                     }
                     return params;
                 }
@@ -8198,8 +8183,8 @@ class StylingBuilder {
             reference: Identifiers$1.elementStylingApply,
             buildParams: () => {
                 const params = [this._elementIndexExpr];
-                if (this._directiveIndexExpr) {
-                    params.push(this._directiveIndexExpr);
+                if (this._directiveExpr) {
+                    params.push(this._directiveExpr);
                 }
                 return params;
             }
@@ -13758,7 +13743,6 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
         type: meta.type,
         deps: meta.deps,
         injectFn: Identifiers$1.directiveInject,
-        extraStatementFn: createFactoryExtraStatementsFn(meta, bindingParser)
     });
     definitionMap.set('factory', result.factory);
     definitionMap.set('contentQueries', createContentQueriesFunction(meta, constantPool));
@@ -13766,8 +13750,8 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     // Initialize hostVars to number of bound host properties (interpolations illegal)
     let hostVars = Object.keys(meta.host.properties).length;
     const elVarExp = variable('elIndex');
-    const dirVarExp = variable('dirIndex');
-    const styleBuilder = new StylingBuilder(elVarExp, dirVarExp);
+    const contextVarExp = variable(CONTEXT_NAME);
+    const styleBuilder = new StylingBuilder(elVarExp, contextVarExp);
     const allOtherAttributes = {};
     const attrNames = Object.getOwnPropertyNames(meta.host.attributes);
     for (let i = 0; i < attrNames.length; i++) {
@@ -13789,8 +13773,8 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     }
     // e.g. `attributes: ['role', 'listbox']`
     definitionMap.set('attributes', createHostAttributesArray(allOtherAttributes));
-    // e.g. `hostBindings: (dirIndex, elIndex) => { ... }
-    definitionMap.set('hostBindings', createHostBindingsFunction(meta, elVarExp, dirVarExp, styleBuilder, bindingParser, constantPool, (slots) => {
+    // e.g. `hostBindings: (rf, ctx, elIndex) => { ... }
+    definitionMap.set('hostBindings', createHostBindingsFunction(meta, elVarExp, contextVarExp, styleBuilder, bindingParser, constantPool, (slots) => {
         const originalSlots = hostVars;
         hostVars += slots;
         return originalSlots;
@@ -14198,13 +14182,19 @@ function createViewQueriesFunction(meta, constantPool) {
     ], INFERRED_TYPE, null, viewQueryFnName);
 }
 // Return a host binding function or null if one is not necessary.
-function createHostBindingsFunction(meta, elVarExp, dirVarExp, styleBuilder, bindingParser, constantPool, allocatePureFunctionSlots) {
-    const statements = [];
+function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder, bindingParser, constantPool, allocatePureFunctionSlots) {
+    const createStatements = [];
+    const updateStatements = [];
     const hostBindingSourceSpan = meta.typeSourceSpan;
     const directiveSummary = metadataAsSummary(meta);
+    // Calculate host event bindings
+    const eventBindings = bindingParser.createDirectiveHostEventAsts(directiveSummary, hostBindingSourceSpan);
+    if (eventBindings && eventBindings.length) {
+        const listeners = createHostListeners(bindingContext, eventBindings, meta);
+        createStatements.push(...listeners);
+    }
     // Calculate the host property bindings
     const bindings = bindingParser.createBoundHostProperties(directiveSummary, hostBindingSourceSpan);
-    const bindingContext = importExpr(Identifiers$1.load).callFn([dirVarExp]);
     const bindingFn = (implicit, value) => {
         return convertPropertyBinding(null, implicit, value, 'b', BindingForm.TrySimple, () => error('Unexpected interpolation'));
     };
@@ -14227,8 +14217,8 @@ function createHostBindingsFunction(meta, elVarExp, dirVarExp, styleBuilder, bin
                 const value = binding.expression.visit(valueConverter);
                 const bindingExpr = bindingFn(bindingContext, value);
                 const { bindingName, instruction } = getBindingNameAndInstruction(name);
-                statements.push(...bindingExpr.stmts);
-                statements.push(importExpr(instruction)
+                updateStatements.push(...bindingExpr.stmts);
+                updateStatements.push(importExpr(instruction)
                     .callFn([
                     elVarExp,
                     literal(bindingName),
@@ -14241,20 +14231,27 @@ function createHostBindingsFunction(meta, elVarExp, dirVarExp, styleBuilder, bin
             const createInstruction = styleBuilder.buildCreateLevelInstruction(null, constantPool);
             if (createInstruction) {
                 const createStmt = createStylingStmt(createInstruction, bindingContext, bindingFn);
-                statements.push(createStmt);
+                createStatements.push(createStmt);
             }
             styleBuilder.buildUpdateLevelInstructions(valueConverter).forEach(instruction => {
                 const updateStmt = createStylingStmt(instruction, bindingContext, bindingFn);
-                statements.push(updateStmt);
+                updateStatements.push(updateStmt);
             });
         }
     }
-    if (statements.length > 0) {
-        const typeName = meta.name;
+    if (createStatements.length > 0 || updateStatements.length > 0) {
+        const hostBindingsFnName = meta.name ? `${meta.name}_HostBindings` : null;
+        const statements = [];
+        if (createStatements.length > 0) {
+            statements.push(renderFlagCheckIfStmt(1 /* Create */, createStatements));
+        }
+        if (updateStatements.length > 0) {
+            statements.push(renderFlagCheckIfStmt(2 /* Update */, updateStatements));
+        }
         return fn([
-            new FnParam(dirVarExp.name, NUMBER_TYPE),
-            new FnParam(elVarExp.name, NUMBER_TYPE),
-        ], statements, INFERRED_TYPE, null, typeName ? `${typeName}_HostBindings` : null);
+            new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null),
+            new FnParam(elVarExp.name, NUMBER_TYPE)
+        ], statements, INFERRED_TYPE, null, hostBindingsFnName);
     }
     return null;
 }
@@ -14276,12 +14273,6 @@ function getBindingNameAndInstruction(bindingName) {
         instruction = Identifiers$1.elementProperty;
     }
     return { bindingName, instruction };
-}
-function createFactoryExtraStatementsFn(meta, bindingParser) {
-    const eventBindings = bindingParser.createDirectiveHostEventAsts(metadataAsSummary(meta), meta.typeSourceSpan);
-    return eventBindings && eventBindings.length ?
-        (instance) => createHostListeners(instance, eventBindings, meta) :
-        null;
 }
 function createHostListeners(bindingContext, eventBindings, meta) {
     return eventBindings.map(binding => {
@@ -14561,7 +14552,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.1.0');
+const VERSION$1 = new Version('7.1.0+1.sha-dc300c5');
 
 /**
  * @license
