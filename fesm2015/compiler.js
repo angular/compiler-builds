@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0+13.sha-d767e0b
+ * @license Angular v7.1.0+14.sha-c2f3054
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -868,8 +868,7 @@ function parserSelectorToR3Selector(selector) {
     return positive.concat(...negative);
 }
 function parseSelectorToR3Selector(selector) {
-    const selectors = CssSelector.parse(selector);
-    return selectors.map(parserSelectorToR3Selector);
+    return selector ? CssSelector.parse(selector).map(parserSelectorToR3Selector) : [];
 }
 
 var core = /*#__PURE__*/Object.freeze({
@@ -14353,6 +14352,7 @@ function parseNamedProperty(name) {
 class CompilerFacadeImpl {
     constructor() {
         this.R3ResolvedDependencyType = R3ResolvedDependencyType;
+        this.elementSchemaRegistry = new DomElementSchemaRegistry();
     }
     compilePipe(angularCoreEnv, sourceMapUrl, facade) {
         const res = compilePipeFromMetadata({
@@ -14422,7 +14422,7 @@ class CompilerFacadeImpl {
         }
         // Compile the component metadata, including template, into an expression.
         // TODO(alxhub): implement inputs, outputs, queries, etc.
-        const res = compileComponentFromMetadata(Object.assign({}, facade, convertDirectiveFacadeToMetadata(facade), { template, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), wrapDirectivesAndPipesInClosure: false, styles: facade.styles || [], encapsulation: facade.encapsulation, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
+        const res = compileComponentFromMetadata(Object.assign({}, facade, convertDirectiveFacadeToMetadata(facade), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), wrapDirectivesAndPipesInClosure: false, styles: facade.styles || [], encapsulation: facade.encapsulation, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
                 null }), constantPool, makeBindingParser());
         const preStatements = [...constantPool.statements, ...res.statements];
         return jitExpression(res.expression, angularCoreEnv, sourceMapUrl, preStatements);
@@ -14552,7 +14552,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.1.0+13.sha-d767e0b');
+const VERSION$1 = new Version('7.1.0+14.sha-c2f3054');
 
 /**
  * @license
