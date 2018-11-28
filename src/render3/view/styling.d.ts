@@ -55,7 +55,7 @@ interface BoundStylingEntry {
  */
 export declare class StylingBuilder {
     private _elementIndexExpr;
-    private _directiveIndexExpr;
+    private _directiveExpr;
     readonly hasBindingsOrInitialValues = false;
     private _classMapInput;
     private _styleMapInput;
@@ -68,7 +68,7 @@ export declare class StylingBuilder {
     private _initialClassValues;
     private _useDefaultSanitizer;
     private _applyFnRequired;
-    constructor(_elementIndexExpr: o.Expression, _directiveIndexExpr: o.Expression | null);
+    constructor(_elementIndexExpr: o.Expression, _directiveExpr: o.Expression | null);
     registerBoundInput(input: t.BoundAttribute): boolean;
     registerStyleInput(propertyName: string | null, value: AST, unit: string | null, sourceSpan: ParseSourceSpan): BoundStylingEntry;
     registerClassInput(className: string | null, value: AST, sourceSpan: ParseSourceSpan): BoundStylingEntry;
