@@ -1,10 +1,10 @@
 /**
- * @license Angular v7.1.0+75.sha-1b84b11
+ * @license Angular v7.1.0+99.sha-01fd0cd
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __extends, __assign, __spread, __values, __read } from 'tslib';
+import { __extends, __assign, __spread, __read, __values } from 'tslib';
 
 /**
  * @license
@@ -3389,6 +3389,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.bind = { name: 'ɵbind', moduleName: CORE$1 };
     Identifiers.enableBindings = { name: 'ɵenableBindings', moduleName: CORE$1 };
     Identifiers.disableBindings = { name: 'ɵdisableBindings', moduleName: CORE$1 };
+    Identifiers.allocHostVars = { name: 'ɵallocHostVars', moduleName: CORE$1 };
     Identifiers.getCurrentView = { name: 'ɵgetCurrentView', moduleName: CORE$1 };
     Identifiers.restoreView = { name: 'ɵrestoreView', moduleName: CORE$1 };
     Identifiers.interpolation1 = { name: 'ɵinterpolation1', moduleName: CORE$1 };
@@ -13610,6 +13611,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             }
             else {
                 var value = prop.value.visit(_this._valueConverter);
+                _this.allocateBindingSlots(value);
                 if (value instanceof Interpolation) {
                     var strings = value.strings, expressions = value.expressions;
                     var _a = _this.i18n, id = _a.id, bindings = _a.bindings;
@@ -13846,7 +13848,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         };
         var createSelfClosingInstruction = !stylingBuilder.hasBindingsOrInitialValues &&
             !isNgContainer$$1 && element.outputs.length === 0 && i18nAttrs.length === 0 && !hasChildren();
-        var createSelfClosingI18nInstruction = !createSelfClosingInstruction && hasTextChildrenOnly(element.children);
+        var createSelfClosingI18nInstruction = !createSelfClosingInstruction &&
+            !stylingBuilder.hasBindingsOrInitialValues && hasTextChildrenOnly(element.children);
         if (createSelfClosingInstruction) {
             this.creationInstruction(element.sourceSpan, Identifiers$1.element, trimTrailingNulls(parameters));
         }
@@ -13869,6 +13872,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                     }
                     else {
                         var converted = attr.value.visit(_this._valueConverter);
+                        _this.allocateBindingSlots(converted);
                         if (converted instanceof Interpolation) {
                             var placeholders = assembleBoundTextPlaceholders(message);
                             var params = placeholdersToParams(placeholders);
@@ -14017,6 +14021,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var _this = this;
         if (this.i18n) {
             var value_3 = text.value.visit(this._valueConverter);
+            this.allocateBindingSlots(value_3);
             if (value_3 instanceof Interpolation) {
                 this.i18n.appendBoundText(text.i18n);
                 this.i18nAppendBindings(value_3.expressions);
@@ -14623,8 +14628,8 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     definitionMap.set('factory', result.factory);
     definitionMap.set('contentQueries', createContentQueriesFunction(meta, constantPool));
     definitionMap.set('contentQueriesRefresh', createContentQueriesRefreshFunction(meta));
-    // Initialize hostVars to number of bound host properties (interpolations illegal)
-    var hostVars = Object.keys(meta.host.properties).length;
+    // Initialize hostVarsCount to number of bound host properties (interpolations illegal)
+    var hostVarsCount = Object.keys(meta.host.properties).length;
     var elVarExp = variable('elIndex');
     var contextVarExp = variable(CONTEXT_NAME);
     var styleBuilder = new StylingBuilder(elVarExp, contextVarExp);
@@ -14650,15 +14655,7 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     // e.g. `attributes: ['role', 'listbox']`
     definitionMap.set('attributes', createHostAttributesArray(allOtherAttributes));
     // e.g. `hostBindings: (rf, ctx, elIndex) => { ... }
-    definitionMap.set('hostBindings', createHostBindingsFunction(meta, elVarExp, contextVarExp, styleBuilder, bindingParser, constantPool, function (slots) {
-        var originalSlots = hostVars;
-        hostVars += slots;
-        return originalSlots;
-    }));
-    if (hostVars) {
-        // e.g. `hostVars: 2
-        definitionMap.set('hostVars', literal(hostVars));
-    }
+    definitionMap.set('hostBindings', createHostBindingsFunction(meta, elVarExp, contextVarExp, styleBuilder, bindingParser, constantPool, hostVarsCount));
     // e.g 'inputs: {a: 'a'}`
     definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs));
     // e.g 'outputs: {a: 'a'}`
@@ -15079,10 +15076,11 @@ function createViewQueriesFunction(meta, constantPool) {
     ], INFERRED_TYPE, null, viewQueryFnName);
 }
 // Return a host binding function or null if one is not necessary.
-function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder, bindingParser, constantPool, allocatePureFunctionSlots) {
+function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder, bindingParser, constantPool, hostVarsCount) {
     var e_3, _a;
     var createStatements = [];
     var updateStatements = [];
+    var totalHostVarsCount = hostVarsCount;
     var hostBindingSourceSpan = meta.typeSourceSpan;
     var directiveSummary = metadataAsSummary(meta);
     // Calculate host event bindings
@@ -15097,8 +15095,12 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder
         return convertPropertyBinding(null, implicit, value, 'b', BindingForm.TrySimple, function () { return error('Unexpected interpolation'); });
     };
     if (bindings) {
+        var hostVarsCountFn = function (numSlots) {
+            totalHostVarsCount += numSlots;
+            return hostVarsCount;
+        };
         var valueConverter = new ValueConverter(constantPool, 
-        /* new nodes are illegal here */ function () { return error('Unexpected node'); }, allocatePureFunctionSlots, 
+        /* new nodes are illegal here */ function () { return error('Unexpected node'); }, hostVarsCountFn, 
         /* pipes are illegal here */ function () { return error('Unexpected pipe'); });
         try {
             for (var bindings_1 = __values(bindings), bindings_1_1 = bindings_1.next(); !bindings_1_1.done; bindings_1_1 = bindings_1.next()) {
@@ -15146,6 +15148,9 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder
                 updateStatements.push(updateStmt);
             });
         }
+    }
+    if (totalHostVarsCount) {
+        createStatements.unshift(importExpr(Identifiers$1.allocHostVars).callFn([literal(totalHostVarsCount)]).toStmt());
     }
     if (createStatements.length > 0 || updateStatements.length > 0) {
         var hostBindingsFnName = meta.name ? meta.name + "_HostBindings" : null;
@@ -15471,7 +15476,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.1.0+75.sha-1b84b11');
+var VERSION$1 = new Version('7.1.0+99.sha-01fd0cd');
 
 /**
  * @license
