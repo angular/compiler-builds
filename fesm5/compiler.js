@@ -1,10 +1,10 @@
 /**
- * @license Angular v7.1.0+67.sha-2389a68
+ * @license Angular v7.1.0+69.sha-412e47d
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __extends, __assign, __spread, __read, __values } from 'tslib';
+import { __extends, __assign, __spread, __values, __read } from 'tslib';
 
 /**
  * @license
@@ -14739,7 +14739,8 @@ function compileBaseDefFromMetadata(meta) {
  * Compile a component for the render3 runtime as defined by the `R3ComponentMetadata`.
  */
 function compileComponentFromMetadata(meta, constantPool, bindingParser) {
-    var _a = baseDirectiveFields(meta, constantPool, bindingParser), definitionMap = _a.definitionMap, statements = _a.statements;
+    var e_1, _a;
+    var _b = baseDirectiveFields(meta, constantPool, bindingParser), definitionMap = _b.definitionMap, statements = _b.statements;
     addFeatures(definitionMap, meta);
     var selector = meta.selector && CssSelector.parse(meta.selector);
     var firstSelector = selector && selector[0];
@@ -14754,12 +14755,22 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     }
     // Generate the CSS matcher that recognize directive
     var directiveMatcher = null;
-    if (meta.directives.size) {
-        var matcher_1 = new SelectorMatcher();
-        meta.directives.forEach(function (expression, selector) {
-            matcher_1.addSelectables(CssSelector.parse(selector), expression);
-        });
-        directiveMatcher = matcher_1;
+    if (meta.directives.length > 0) {
+        var matcher = new SelectorMatcher();
+        try {
+            for (var _c = __values(meta.directives), _d = _c.next(); !_d.done; _d = _c.next()) {
+                var _e = _d.value, selector_1 = _e.selector, expression_1 = _e.expression;
+                matcher.addSelectables(CssSelector.parse(selector_1), expression_1);
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+        directiveMatcher = matcher;
     }
     if (meta.viewQueries.length) {
         definitionMap.set('viewQuery', createViewQueriesFunction(meta, constantPool));
@@ -14857,7 +14868,7 @@ function compileComponentFromRender2(outputCtx, component, render3Ast, reflector
             hasNgContent: render3Ast.hasNgContent,
             ngContentSelectors: render3Ast.ngContentSelectors,
             relativeContextFilePath: '',
-        }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null });
+        }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null });
     var res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
     // Create the partial class to be merged with the actual class.
     outputCtx.statements.push(new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []));
@@ -14947,7 +14958,7 @@ function createDirectiveSelector(selector) {
     return asLiteral(parseSelectorToR3Selector(selector));
 }
 function createHostAttributesArray(attributes) {
-    var e_1, _a;
+    var e_2, _a;
     var values = [];
     try {
         for (var _b = __values(Object.getOwnPropertyNames(attributes)), _c = _b.next(); !_c.done; _c = _b.next()) {
@@ -14956,12 +14967,12 @@ function createHostAttributesArray(attributes) {
             values.push(literal(key), literal(value));
         }
     }
-    catch (e_1_1) { e_1 = { error: e_1_1 }; }
+    catch (e_2_1) { e_2 = { error: e_2_1 }; }
     finally {
         try {
             if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
         }
-        finally { if (e_1) throw e_1.error; }
+        finally { if (e_2) throw e_2.error; }
     }
     if (values.length > 0) {
         return literalArr(values);
@@ -15072,7 +15083,7 @@ function createViewQueriesFunction(meta, constantPool) {
 }
 // Return a host binding function or null if one is not necessary.
 function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder, bindingParser, constantPool, allocatePureFunctionSlots) {
-    var e_2, _a;
+    var e_3, _a;
     var createStatements = [];
     var updateStatements = [];
     var hostBindingSourceSpan = meta.typeSourceSpan;
@@ -15120,12 +15131,12 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder
                 }
             }
         }
-        catch (e_2_1) { e_2 = { error: e_2_1 }; }
+        catch (e_3_1) { e_3 = { error: e_3_1 }; }
         finally {
             try {
                 if (bindings_1_1 && !bindings_1_1.done && (_a = bindings_1.return)) _a.call(bindings_1);
             }
-            finally { if (e_2) throw e_2.error; }
+            finally { if (e_3) throw e_3.error; }
         }
         if (styleBuilder.hasBindingsOrInitialValues) {
             var createInstruction = styleBuilder.buildCreateLevelInstruction(null, constantPool);
@@ -15463,7 +15474,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.1.0+67.sha-2389a68');
+var VERSION$1 = new Version('7.1.0+69.sha-412e47d');
 
 /**
  * @license

@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0+67.sha-2389a68
+ * @license Angular v7.1.0+69.sha-412e47d
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -13875,11 +13875,11 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     }
     // Generate the CSS matcher that recognize directive
     let directiveMatcher = null;
-    if (meta.directives.size) {
+    if (meta.directives.length > 0) {
         const matcher = new SelectorMatcher();
-        meta.directives.forEach((expression, selector) => {
+        for (const { selector, expression } of meta.directives) {
             matcher.addSelectables(CssSelector.parse(selector), expression);
-        });
+        }
         directiveMatcher = matcher;
     }
     if (meta.viewQueries.length) {
@@ -13978,7 +13978,7 @@ function compileComponentFromRender2(outputCtx, component, render3Ast, reflector
             hasNgContent: render3Ast.hasNgContent,
             ngContentSelectors: render3Ast.ngContentSelectors,
             relativeContextFilePath: '',
-        }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null });
+        }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null });
     const res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
     // Create the partial class to be merged with the actual class.
     outputCtx.statements.push(new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []));
@@ -14552,7 +14552,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.1.0+67.sha-2389a68');
+const VERSION$1 = new Version('7.1.0+69.sha-412e47d');
 
 /**
  * @license
