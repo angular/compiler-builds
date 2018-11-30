@@ -26,7 +26,7 @@ export declare function isI18nAttribute(name: string): boolean;
 export declare function isI18nRootNode(meta?: i18n.AST): meta is i18n.Message;
 export declare function isSingleI18nIcu(meta?: i18n.AST): boolean;
 export declare function hasI18nAttrs(element: html.Element): boolean;
-export declare function metaFromI18nMessage(message: i18n.Message): I18nMeta;
+export declare function metaFromI18nMessage(message: i18n.Message, id?: string | null): I18nMeta;
 export declare function icuFromI18nMessage(message: i18n.Message): i18n.IcuPlaceholder;
 export declare function wrapI18nPlaceholder(content: string | number, contextId?: number): string;
 export declare function assembleI18nBoundString(strings: string[], bindingStartIndex?: number, contextId?: number): string;
@@ -57,7 +57,13 @@ export declare function parseI18nMeta(meta?: string): I18nMeta;
  * @returns Formatted placeholder name
  */
 export declare function formatI18nPlaceholderName(name: string): string;
-export declare function getTranslationConstPrefix(fileBasedSuffix: string): string;
+/**
+ * Generates a prefix for translation const name.
+ *
+ * @param extra Additional local prefix that should be injected into translation var name
+ * @returns Complete translation const prefix
+ */
+export declare function getTranslationConstPrefix(extra: string): string;
 /**
  * Generates translation declaration statements.
  *

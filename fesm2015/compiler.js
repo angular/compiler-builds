@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0+70.sha-9129f9a
+ * @license Angular v7.1.0+71.sha-aedc343
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -3967,10 +3967,6 @@ function mapLiteral(obj, quoted = false) {
 const TRANSLATION_PREFIX = 'MSG_';
 /** Closure uses `goog.getMsg(message)` to lookup translations */
 const GOOG_GET_MSG = 'goog.getMsg';
-/** String key that is used to provide backup id of translatable message in Closure */
-const BACKUP_MESSAGE_ID = 'BACKUP_MESSAGE_ID';
-/** Regexp to identify whether backup id already provided in description */
-const BACKUP_MESSAGE_ID_REGEXP = new RegExp(BACKUP_MESSAGE_ID);
 /** I18n separators for metadata **/
 const I18N_MEANING_SEPARATOR = '|';
 const I18N_ID_SEPARATOR = '@@';
@@ -3995,14 +3991,11 @@ function i18nTranslationToDeclStmt(variable$$1, message, params) {
 // to a JsDoc statement formatted as expected by the Closure compiler.
 function i18nMetaToDocStmt(meta) {
     const tags = [];
-    const { id, description, meaning } = meta;
-    if (id || description) {
-        const hasBackupId = !!description && BACKUP_MESSAGE_ID_REGEXP.test(description);
-        const text = id && !hasBackupId ? `[${BACKUP_MESSAGE_ID}:${id}] ${description || ''}` : description;
-        tags.push({ tagName: "desc" /* Desc */, text: text.trim() });
+    if (meta.description) {
+        tags.push({ tagName: "desc" /* Desc */, text: meta.description });
     }
-    if (meaning) {
-        tags.push({ tagName: "meaning" /* Meaning */, text: meaning });
+    if (meta.meaning) {
+        tags.push({ tagName: "meaning" /* Meaning */, text: meta.meaning });
     }
     return tags.length == 0 ? null : new JSDocCommentStmt(tags);
 }
@@ -4018,9 +4011,9 @@ function isSingleI18nIcu(meta) {
 function hasI18nAttrs(element) {
     return element.attrs.some((attr) => isI18nAttribute(attr.name));
 }
-function metaFromI18nMessage(message) {
+function metaFromI18nMessage(message, id = null) {
     return {
-        id: message.id || '',
+        id: typeof id === 'string' ? id : message.id || '',
         meaning: message.meaning || '',
         description: message.description || ''
     };
@@ -4132,8 +4125,14 @@ function formatI18nPlaceholderName(name) {
     }
     return postfix ? `${raw}_${postfix}` : raw;
 }
-function getTranslationConstPrefix(fileBasedSuffix) {
-    return `${TRANSLATION_PREFIX}${fileBasedSuffix}`.toUpperCase();
+/**
+ * Generates a prefix for translation const name.
+ *
+ * @param extra Additional local prefix that should be injected into translation var name
+ * @returns Complete translation const prefix
+ */
+function getTranslationConstPrefix(extra) {
+    return `${TRANSLATION_PREFIX}${extra}`.toUpperCase();
 }
 /**
  * Generates translation declaration statements.
@@ -4152,7 +4151,7 @@ function getTranslationDeclStmts(variable$$1, message, meta, params = {}, transf
         statements.push(docStatements);
     }
     if (transformFn) {
-        const raw = variable(`${variable$$1.name}_RAW`);
+        const raw = variable(`${variable$$1.name}$$RAW`);
         statements.push(i18nTranslationToDeclStmt(raw, message, params));
         statements.push(variable$$1.set(transformFn(raw)).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
     }
@@ -12579,7 +12578,7 @@ function renderFlagCheckIfStmt(flags, statements) {
     return ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(flags), null, false), statements);
 }
 class TemplateDefinitionBuilder {
-    constructor(constantPool, parentBindingScope, level = 0, contextName, i18nContext, templateIndex, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace, relativeContextFilePath) {
+    constructor(constantPool, parentBindingScope, level = 0, contextName, i18nContext, templateIndex, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace, relativeContextFilePath, i18nUseExternalIds) {
         this.constantPool = constantPool;
         this.level = level;
         this.contextName = contextName;
@@ -12593,6 +12592,7 @@ class TemplateDefinitionBuilder {
         this.pipes = pipes;
         this._namespace = _namespace;
         this.relativeContextFilePath = relativeContextFilePath;
+        this.i18nUseExternalIds = i18nUseExternalIds;
         this._dataIndex = 0;
         this._bindingContext = 0;
         this._prefixCode = [];
@@ -12688,8 +12688,8 @@ class TemplateDefinitionBuilder {
         // - this template has parent i18n context
         // - or the template has i18n meta associated with it,
         //   but it's not initiated by the Element (e.g. <ng-template i18n>)
-        const initI18nContext = this.i18nContext ||
-            (isI18nRootNode(i18n) && !(isSingleElementTemplate(nodes) && nodes[0].i18n === i18n));
+        const initI18nContext = this.i18nContext || (isI18nRootNode(i18n) && !isSingleI18nIcu(i18n) &&
+            !(isSingleElementTemplate(nodes) && nodes[0].i18n === i18n));
         const selfClosingI18nInstruction = hasTextChildrenOnly(nodes);
         if (initI18nContext) {
             this.i18nStart(null, i18n, selfClosingI18nInstruction);
@@ -12741,7 +12741,7 @@ class TemplateDefinitionBuilder {
     // LocalResolver
     getLocal(name) { return this._bindingScope.get(name); }
     i18nTranslate(message, params = {}, ref, transformFn) {
-        const _ref = ref || this.i18nAllocateRef();
+        const _ref = ref || this.i18nAllocateRef(message.id);
         const _params = {};
         if (params && Object.keys(params).length) {
             Object.keys(params).forEach(key => _params[formatI18nPlaceholderName(key)] = params[key]);
@@ -12781,9 +12781,17 @@ class TemplateDefinitionBuilder {
         });
         return bound;
     }
-    i18nAllocateRef() {
-        const prefix = getTranslationConstPrefix(this.fileBasedI18nSuffix);
-        return variable(this.constantPool.uniqueName(prefix));
+    i18nAllocateRef(messageId) {
+        let name;
+        if (this.i18nUseExternalIds) {
+            const prefix = getTranslationConstPrefix(`EXTERNAL_`);
+            name = `${prefix}${messageId}`;
+        }
+        else {
+            const prefix = getTranslationConstPrefix(this.fileBasedI18nSuffix);
+            name = this.constantPool.uniqueName(prefix);
+        }
+        return variable(name);
     }
     i18nUpdateRef(context) {
         const { icus, meta, isRoot, isResolved } = context;
@@ -12831,7 +12839,7 @@ class TemplateDefinitionBuilder {
             this.i18n = this.i18nContext.forkChildContext(index, this.templateIndex, meta);
         }
         else {
-            const ref = this.i18nAllocateRef();
+            const ref = this.i18nAllocateRef(meta.id);
             this.i18n = new I18nContext(index, ref, 0, this.templateIndex, meta);
         }
         // generate i18nStart instruction
@@ -12903,7 +12911,7 @@ class TemplateDefinitionBuilder {
         const elementIndex = this.allocateDataSlot();
         const stylingBuilder = new StylingBuilder(literal(elementIndex), null);
         let isNonBindableMode = false;
-        const isI18nRootElement = isI18nRootNode(element.i18n);
+        const isI18nRootElement = isI18nRootNode(element.i18n) && !isSingleI18nIcu(element.i18n);
         if (isI18nRootElement && this.i18n) {
             throw new Error(`Could not mark an element as translatable inside of a translatable section`);
         }
@@ -13130,7 +13138,7 @@ class TemplateDefinitionBuilder {
             });
         });
         // Create the template function
-        const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, this._bindingScope, this.level + 1, contextName, this.i18n, templateIndex, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes, this._namespace, this.fileBasedI18nSuffix);
+        const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, this._bindingScope, this.level + 1, contextName, this.i18n, templateIndex, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes, this._namespace, this.fileBasedI18nSuffix, this.i18nUseExternalIds);
         // Nested templates must not be visited until after their parent templates have completed
         // processing, so they are queued here until after the initial pass. Otherwise, we wouldn't
         // be able to support bindings in nested templates to local refs that occur after the
@@ -13646,17 +13654,12 @@ function interpolate(args) {
  * @param template text of the template to parse
  * @param templateUrl URL to use for source mapping of the parsed template
  */
-function parseTemplate(template, templateUrl, options = {}, relativeContextFilePath) {
+function parseTemplate(template, templateUrl, options) {
     const bindingParser = makeBindingParser();
     const htmlParser = new HtmlParser();
     const parseResult = htmlParser.parse(template, templateUrl, true);
     if (parseResult.errors && parseResult.errors.length > 0) {
-        return {
-            errors: parseResult.errors,
-            nodes: [],
-            hasNgContent: false,
-            ngContentSelectors: [], relativeContextFilePath
-        };
+        return { errors: parseResult.errors, nodes: [], hasNgContent: false, ngContentSelectors: [] };
     }
     let rootNodes = parseResult.rootNodes;
     // process i18n meta information (scan attributes, generate ids)
@@ -13675,14 +13678,9 @@ function parseTemplate(template, templateUrl, options = {}, relativeContextFileP
     }
     const { nodes, hasNgContent, ngContentSelectors, errors } = htmlAstToRender3Ast(rootNodes, bindingParser);
     if (errors && errors.length > 0) {
-        return {
-            errors,
-            nodes: [],
-            hasNgContent: false,
-            ngContentSelectors: [], relativeContextFilePath
-        };
+        return { errors, nodes: [], hasNgContent: false, ngContentSelectors: [] };
     }
-    return { nodes, hasNgContent, ngContentSelectors, relativeContextFilePath };
+    return { nodes, hasNgContent, ngContentSelectors };
 }
 /**
  * Construct a `BindingParser` with a default configuration.
@@ -13891,7 +13889,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     const directivesUsed = new Set();
     const pipesUsed = new Set();
     const template = meta.template;
-    const templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, null, null, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML, meta.template.relativeContextFilePath);
+    const templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, null, null, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML, meta.relativeContextFilePath, meta.i18nUseExternalIds);
     const templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, [], template.hasNgContent, template.ngContentSelectors);
     // e.g. `consts: 2`
     definitionMap.set('consts', literal(templateBuilder.getConstCount()));
@@ -13977,8 +13975,7 @@ function compileComponentFromRender2(outputCtx, component, render3Ast, reflector
             nodes: render3Ast.nodes,
             hasNgContent: render3Ast.hasNgContent,
             ngContentSelectors: render3Ast.ngContentSelectors,
-            relativeContextFilePath: '',
-        }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null });
+        }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null, relativeContextFilePath: '', i18nUseExternalIds: true });
     const res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
     // Create the partial class to be merged with the actual class.
     outputCtx.statements.push(new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []));
@@ -14415,7 +14412,7 @@ class CompilerFacadeImpl {
         // Parse the template and check for errors.
         const template = parseTemplate(facade.template, sourceMapUrl, {
             preserveWhitespaces: facade.preserveWhitespaces || false,
-        }, '');
+        });
         if (template.errors !== undefined) {
             const errors = template.errors.map(err => err.toString()).join(', ');
             throw new Error(`Errors during JIT compilation of template for ${facade.name}: ${errors}`);
@@ -14423,7 +14420,7 @@ class CompilerFacadeImpl {
         // Compile the component metadata, including template, into an expression.
         // TODO(alxhub): implement inputs, outputs, queries, etc.
         const res = compileComponentFromMetadata(Object.assign({}, facade, convertDirectiveFacadeToMetadata(facade), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), wrapDirectivesAndPipesInClosure: false, styles: facade.styles || [], encapsulation: facade.encapsulation, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
-                null }), constantPool, makeBindingParser());
+                null, relativeContextFilePath: '', i18nUseExternalIds: true }), constantPool, makeBindingParser());
         const preStatements = [...constantPool.statements, ...res.statements];
         return jitExpression(res.expression, angularCoreEnv, sourceMapUrl, preStatements);
     }
@@ -14552,7 +14549,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.1.0+70.sha-9129f9a');
+const VERSION$1 = new Version('7.1.0+71.sha-aedc343');
 
 /**
  * @license
