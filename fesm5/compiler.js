@@ -1,10 +1,10 @@
 /**
- * @license Angular v7.1.0+97.sha-a088b8c
+ * @license Angular v7.1.0+98.sha-973ebdc
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __extends, __assign, __spread, __read, __values } from 'tslib';
+import { __extends, __assign, __spread, __values, __read } from 'tslib';
 
 /**
  * @license
@@ -13847,7 +13847,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         };
         var createSelfClosingInstruction = !stylingBuilder.hasBindingsOrInitialValues &&
             !isNgContainer$$1 && element.outputs.length === 0 && i18nAttrs.length === 0 && !hasChildren();
-        var createSelfClosingI18nInstruction = !createSelfClosingInstruction && hasTextChildrenOnly(element.children);
+        var createSelfClosingI18nInstruction = !createSelfClosingInstruction &&
+            !stylingBuilder.hasBindingsOrInitialValues && hasTextChildrenOnly(element.children);
         if (createSelfClosingInstruction) {
             this.creationInstruction(element.sourceSpan, Identifiers$1.element, trimTrailingNulls(parameters));
         }
@@ -15472,7 +15473,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.1.0+97.sha-a088b8c');
+var VERSION$1 = new Version('7.1.0+98.sha-973ebdc');
 
 /**
  * @license
