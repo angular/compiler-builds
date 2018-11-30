@@ -33,6 +33,7 @@ export declare class Identifiers {
     static bind: o.ExternalReference;
     static enableBindings: o.ExternalReference;
     static disableBindings: o.ExternalReference;
+    static allocHostVars: o.ExternalReference;
     static getCurrentView: o.ExternalReference;
     static restoreView: o.ExternalReference;
     static interpolation1: o.ExternalReference;
