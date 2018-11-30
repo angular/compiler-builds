@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0+98.sha-973ebdc
+ * @license Angular v7.1.0+99.sha-01fd0cd
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -13611,6 +13611,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             }
             else {
                 var value = prop.value.visit(_this._valueConverter);
+                _this.allocateBindingSlots(value);
                 if (value instanceof Interpolation) {
                     var strings = value.strings, expressions = value.expressions;
                     var _a = _this.i18n, id = _a.id, bindings = _a.bindings;
@@ -13871,6 +13872,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                     }
                     else {
                         var converted = attr.value.visit(_this._valueConverter);
+                        _this.allocateBindingSlots(converted);
                         if (converted instanceof Interpolation) {
                             var placeholders = assembleBoundTextPlaceholders(message);
                             var params = placeholdersToParams(placeholders);
@@ -14019,6 +14021,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var _this = this;
         if (this.i18n) {
             var value_3 = text.value.visit(this._valueConverter);
+            this.allocateBindingSlots(value_3);
             if (value_3 instanceof Interpolation) {
                 this.i18n.appendBoundText(text.i18n);
                 this.i18nAppendBindings(value_3.expressions);
@@ -15473,7 +15476,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.1.0+98.sha-973ebdc');
+var VERSION$1 = new Version('7.1.0+99.sha-01fd0cd');
 
 /**
  * @license
