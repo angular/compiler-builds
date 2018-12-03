@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0-rc.0+17.sha-e201a67.with-local-changes
+ * @license Angular v7.1.0+103.sha-4fd3402
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -868,8 +868,7 @@ function parserSelectorToR3Selector(selector) {
     return positive.concat(...negative);
 }
 function parseSelectorToR3Selector(selector) {
-    const selectors = CssSelector.parse(selector);
-    return selectors.map(parserSelectorToR3Selector);
+    return selector ? CssSelector.parse(selector).map(parserSelectorToR3Selector) : [];
 }
 
 var core = /*#__PURE__*/Object.freeze({
@@ -3121,6 +3120,7 @@ Identifiers$1.textBinding = { name: 'ɵtextBinding', moduleName: CORE$1 };
 Identifiers$1.bind = { name: 'ɵbind', moduleName: CORE$1 };
 Identifiers$1.enableBindings = { name: 'ɵenableBindings', moduleName: CORE$1 };
 Identifiers$1.disableBindings = { name: 'ɵdisableBindings', moduleName: CORE$1 };
+Identifiers$1.allocHostVars = { name: 'ɵallocHostVars', moduleName: CORE$1 };
 Identifiers$1.getCurrentView = { name: 'ɵgetCurrentView', moduleName: CORE$1 };
 Identifiers$1.restoreView = { name: 'ɵrestoreView', moduleName: CORE$1 };
 Identifiers$1.interpolation1 = { name: 'ɵinterpolation1', moduleName: CORE$1 };
@@ -3968,10 +3968,6 @@ function mapLiteral(obj, quoted = false) {
 const TRANSLATION_PREFIX = 'MSG_';
 /** Closure uses `goog.getMsg(message)` to lookup translations */
 const GOOG_GET_MSG = 'goog.getMsg';
-/** String key that is used to provide backup id of translatable message in Closure */
-const BACKUP_MESSAGE_ID = 'BACKUP_MESSAGE_ID';
-/** Regexp to identify whether backup id already provided in description */
-const BACKUP_MESSAGE_ID_REGEXP = new RegExp(BACKUP_MESSAGE_ID);
 /** I18n separators for metadata **/
 const I18N_MEANING_SEPARATOR = '|';
 const I18N_ID_SEPARATOR = '@@';
@@ -3996,14 +3992,11 @@ function i18nTranslationToDeclStmt(variable$$1, message, params) {
 // to a JsDoc statement formatted as expected by the Closure compiler.
 function i18nMetaToDocStmt(meta) {
     const tags = [];
-    const { id, description, meaning } = meta;
-    if (id || description) {
-        const hasBackupId = !!description && BACKUP_MESSAGE_ID_REGEXP.test(description);
-        const text = id && !hasBackupId ? `[${BACKUP_MESSAGE_ID}:${id}] ${description || ''}` : description;
-        tags.push({ tagName: "desc" /* Desc */, text: text.trim() });
+    if (meta.description) {
+        tags.push({ tagName: "desc" /* Desc */, text: meta.description });
     }
-    if (meaning) {
-        tags.push({ tagName: "meaning" /* Meaning */, text: meaning });
+    if (meta.meaning) {
+        tags.push({ tagName: "meaning" /* Meaning */, text: meta.meaning });
     }
     return tags.length == 0 ? null : new JSDocCommentStmt(tags);
 }
@@ -4019,9 +4012,9 @@ function isSingleI18nIcu(meta) {
 function hasI18nAttrs(element) {
     return element.attrs.some((attr) => isI18nAttribute(attr.name));
 }
-function metaFromI18nMessage(message) {
+function metaFromI18nMessage(message, id = null) {
     return {
-        id: message.id || '',
+        id: typeof id === 'string' ? id : message.id || '',
         meaning: message.meaning || '',
         description: message.description || ''
     };
@@ -4133,8 +4126,14 @@ function formatI18nPlaceholderName(name) {
     }
     return postfix ? `${raw}_${postfix}` : raw;
 }
-function getTranslationConstPrefix(fileBasedSuffix) {
-    return `${TRANSLATION_PREFIX}${fileBasedSuffix}`.toUpperCase();
+/**
+ * Generates a prefix for translation const name.
+ *
+ * @param extra Additional local prefix that should be injected into translation var name
+ * @returns Complete translation const prefix
+ */
+function getTranslationConstPrefix(extra) {
+    return `${TRANSLATION_PREFIX}${extra}`.toUpperCase();
 }
 /**
  * Generates translation declaration statements.
@@ -4153,7 +4152,7 @@ function getTranslationDeclStmts(variable$$1, message, meta, params = {}, transf
         statements.push(docStatements);
     }
     if (transformFn) {
-        const raw = variable(`${variable$$1.name}_RAW`);
+        const raw = variable(`${variable$$1.name}$$RAW`);
         statements.push(i18nTranslationToDeclStmt(raw, message, params));
         statements.push(variable$$1.set(transformFn(raw)).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
     }
@@ -4374,20 +4373,8 @@ function compileFactoryFunction(meta) {
         // TODO(alxhub): decide whether to lower the value here or in the caller
         retExpr = makeConditionalFactory(meta.expression);
     }
-    else if (meta.extraStatementFn) {
-        // if extraStatementsFn is specified and the 'makeConditionalFactory' function
-        // was not invoked, we need to create a reference to the instance, so we can
-        // pass it as an argument to the 'extraStatementFn' function while calling it
-        const variable$$1 = variable('f');
-        body.push(variable$$1.set(ctorExpr).toDeclStmt());
-        retExpr = variable$$1;
-    }
     else {
         retExpr = ctorExpr;
-    }
-    if (meta.extraStatementFn) {
-        const extraStmts = meta.extraStatementFn(retExpr);
-        body.push(...extraStmts);
     }
     return {
         factory: fn([new FnParam('t', DYNAMIC_TYPE)], [...body, new ReturnStatement(retExpr)], INFERRED_TYPE, undefined, `${meta.name}_Factory`),
@@ -4521,7 +4508,6 @@ function compileInjectable(meta) {
         type: meta.type,
         deps: meta.ctorDeps,
         injectFn: Identifiers.inject,
-        extraStatementFn: null,
     };
     if (meta.useClass !== undefined) {
         // meta.useClass has two modes of operation. Either deps are specified, in which case `new` is
@@ -5544,7 +5530,6 @@ function compileInjector(meta) {
         type: meta.type,
         deps: meta.deps,
         injectFn: Identifiers$1.inject,
-        extraStatementFn: null,
     });
     const expression = importExpr(Identifiers$1.defineInjector).callFn([mapToMapExpression({
             factory: result.factory,
@@ -5600,7 +5585,6 @@ function compilePipeFromMetadata(metadata) {
         type: metadata.type,
         deps: metadata.deps,
         injectFn: Identifiers$1.directiveInject,
-        extraStatementFn: null,
     });
     definitionMapValues.push({ key: 'factory', value: templateFactory.factory, quoted: false });
     // e.g. `pure: true`
@@ -7967,9 +7951,9 @@ function hyphenate(value) {
  * The creation/update methods within the builder class produce these instructions.
  */
 class StylingBuilder {
-    constructor(_elementIndexExpr, _directiveIndexExpr) {
+    constructor(_elementIndexExpr, _directiveExpr) {
         this._elementIndexExpr = _elementIndexExpr;
-        this._directiveIndexExpr = _directiveIndexExpr;
+        this._directiveExpr = _directiveExpr;
         this.hasBindingsOrInitialValues = false;
         this._classMapInput = null;
         this._styleMapInput = null;
@@ -8107,14 +8091,14 @@ class StylingBuilder {
                 // a constant because the inital style values do not change (since they're static).
                 params.push(constantPool.getConstLiteral(initialStyles, true));
             }
-            else if (useSanitizer || this._directiveIndexExpr) {
+            else if (useSanitizer || this._directiveExpr) {
                 // no point in having an extra `null` value unless there are follow-up params
                 params.push(NULL_EXPR);
             }
-            if (useSanitizer || this._directiveIndexExpr) {
+            if (useSanitizer || this._directiveExpr) {
                 params.push(useSanitizer ? importExpr(Identifiers$1.defaultStyleSanitizer) : NULL_EXPR);
-                if (this._directiveIndexExpr) {
-                    params.push(this._directiveIndexExpr);
+                if (this._directiveExpr) {
+                    params.push(this._directiveExpr);
                 }
             }
             return { sourceSpan, reference: Identifiers$1.elementStyling, buildParams: () => params };
@@ -8143,11 +8127,11 @@ class StylingBuilder {
                     if (mapBasedStyleValue) {
                         params.push(convertFn(mapBasedStyleValue));
                     }
-                    else if (this._directiveIndexExpr) {
+                    else if (this._directiveExpr) {
                         params.push(NULL_EXPR);
                     }
-                    if (this._directiveIndexExpr) {
-                        params.push(this._directiveIndexExpr);
+                    if (this._directiveExpr) {
+                        params.push(this._directiveExpr);
                     }
                     return params;
                 }
@@ -8168,12 +8152,12 @@ class StylingBuilder {
                         if (input.unit) {
                             params.push(literal(input.unit));
                         }
-                        else if (this._directiveIndexExpr) {
+                        else if (this._directiveExpr) {
                             params.push(NULL_EXPR);
                         }
                     }
-                    if (this._directiveIndexExpr) {
-                        params.push(this._directiveIndexExpr);
+                    if (this._directiveExpr) {
+                        params.push(this._directiveExpr);
                     }
                     return params;
                 }
@@ -8198,8 +8182,8 @@ class StylingBuilder {
             reference: Identifiers$1.elementStylingApply,
             buildParams: () => {
                 const params = [this._elementIndexExpr];
-                if (this._directiveIndexExpr) {
-                    params.push(this._directiveIndexExpr);
+                if (this._directiveExpr) {
+                    params.push(this._directiveExpr);
                 }
                 return params;
             }
@@ -12595,7 +12579,7 @@ function renderFlagCheckIfStmt(flags, statements) {
     return ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(flags), null, false), statements);
 }
 class TemplateDefinitionBuilder {
-    constructor(constantPool, parentBindingScope, level = 0, contextName, i18nContext, templateIndex, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace, relativeContextFilePath) {
+    constructor(constantPool, parentBindingScope, level = 0, contextName, i18nContext, templateIndex, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace, relativeContextFilePath, i18nUseExternalIds) {
         this.constantPool = constantPool;
         this.level = level;
         this.contextName = contextName;
@@ -12609,6 +12593,7 @@ class TemplateDefinitionBuilder {
         this.pipes = pipes;
         this._namespace = _namespace;
         this.relativeContextFilePath = relativeContextFilePath;
+        this.i18nUseExternalIds = i18nUseExternalIds;
         this._dataIndex = 0;
         this._bindingContext = 0;
         this._prefixCode = [];
@@ -12704,8 +12689,8 @@ class TemplateDefinitionBuilder {
         // - this template has parent i18n context
         // - or the template has i18n meta associated with it,
         //   but it's not initiated by the Element (e.g. <ng-template i18n>)
-        const initI18nContext = this.i18nContext ||
-            (isI18nRootNode(i18n) && !(isSingleElementTemplate(nodes) && nodes[0].i18n === i18n));
+        const initI18nContext = this.i18nContext || (isI18nRootNode(i18n) && !isSingleI18nIcu(i18n) &&
+            !(isSingleElementTemplate(nodes) && nodes[0].i18n === i18n));
         const selfClosingI18nInstruction = hasTextChildrenOnly(nodes);
         if (initI18nContext) {
             this.i18nStart(null, i18n, selfClosingI18nInstruction);
@@ -12757,7 +12742,7 @@ class TemplateDefinitionBuilder {
     // LocalResolver
     getLocal(name) { return this._bindingScope.get(name); }
     i18nTranslate(message, params = {}, ref, transformFn) {
-        const _ref = ref || this.i18nAllocateRef();
+        const _ref = ref || this.i18nAllocateRef(message.id);
         const _params = {};
         if (params && Object.keys(params).length) {
             Object.keys(params).forEach(key => _params[formatI18nPlaceholderName(key)] = params[key]);
@@ -12786,6 +12771,7 @@ class TemplateDefinitionBuilder {
             }
             else {
                 const value = prop.value.visit(this._valueConverter);
+                this.allocateBindingSlots(value);
                 if (value instanceof Interpolation) {
                     const { strings, expressions } = value;
                     const { id, bindings } = this.i18n;
@@ -12797,9 +12783,17 @@ class TemplateDefinitionBuilder {
         });
         return bound;
     }
-    i18nAllocateRef() {
-        const prefix = getTranslationConstPrefix(this.fileBasedI18nSuffix);
-        return variable(this.constantPool.uniqueName(prefix));
+    i18nAllocateRef(messageId) {
+        let name;
+        if (this.i18nUseExternalIds) {
+            const prefix = getTranslationConstPrefix(`EXTERNAL_`);
+            name = `${prefix}${messageId}`;
+        }
+        else {
+            const prefix = getTranslationConstPrefix(this.fileBasedI18nSuffix);
+            name = this.constantPool.uniqueName(prefix);
+        }
+        return variable(name);
     }
     i18nUpdateRef(context) {
         const { icus, meta, isRoot, isResolved } = context;
@@ -12847,7 +12841,7 @@ class TemplateDefinitionBuilder {
             this.i18n = this.i18nContext.forkChildContext(index, this.templateIndex, meta);
         }
         else {
-            const ref = this.i18nAllocateRef();
+            const ref = this.i18nAllocateRef(meta.id);
             this.i18n = new I18nContext(index, ref, 0, this.templateIndex, meta);
         }
         // generate i18nStart instruction
@@ -12919,7 +12913,7 @@ class TemplateDefinitionBuilder {
         const elementIndex = this.allocateDataSlot();
         const stylingBuilder = new StylingBuilder(literal(elementIndex), null);
         let isNonBindableMode = false;
-        const isI18nRootElement = isI18nRootNode(element.i18n);
+        const isI18nRootElement = isI18nRootNode(element.i18n) && !isSingleI18nIcu(element.i18n);
         if (isI18nRootElement && this.i18n) {
             throw new Error(`Could not mark an element as translatable inside of a translatable section`);
         }
@@ -12999,7 +12993,8 @@ class TemplateDefinitionBuilder {
         };
         const createSelfClosingInstruction = !stylingBuilder.hasBindingsOrInitialValues &&
             !isNgContainer$$1 && element.outputs.length === 0 && i18nAttrs.length === 0 && !hasChildren();
-        const createSelfClosingI18nInstruction = !createSelfClosingInstruction && hasTextChildrenOnly(element.children);
+        const createSelfClosingI18nInstruction = !createSelfClosingInstruction &&
+            !stylingBuilder.hasBindingsOrInitialValues && hasTextChildrenOnly(element.children);
         if (createSelfClosingInstruction) {
             this.creationInstruction(element.sourceSpan, Identifiers$1.element, trimTrailingNulls(parameters));
         }
@@ -13022,6 +13017,7 @@ class TemplateDefinitionBuilder {
                     }
                     else {
                         const converted = attr.value.visit(this._valueConverter);
+                        this.allocateBindingSlots(converted);
                         if (converted instanceof Interpolation) {
                             const placeholders = assembleBoundTextPlaceholders(message);
                             const params = placeholdersToParams(placeholders);
@@ -13146,7 +13142,7 @@ class TemplateDefinitionBuilder {
             });
         });
         // Create the template function
-        const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, this._bindingScope, this.level + 1, contextName, this.i18n, templateIndex, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes, this._namespace, this.fileBasedI18nSuffix);
+        const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, this._bindingScope, this.level + 1, contextName, this.i18n, templateIndex, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes, this._namespace, this.fileBasedI18nSuffix, this.i18nUseExternalIds);
         // Nested templates must not be visited until after their parent templates have completed
         // processing, so they are queued here until after the initial pass. Otherwise, we wouldn't
         // be able to support bindings in nested templates to local refs that occur after the
@@ -13168,6 +13164,7 @@ class TemplateDefinitionBuilder {
     visitBoundText(text) {
         if (this.i18n) {
             const value = text.value.visit(this._valueConverter);
+            this.allocateBindingSlots(value);
             if (value instanceof Interpolation) {
                 this.i18n.appendBoundText(text.i18n);
                 this.i18nAppendBindings(value.expressions);
@@ -13662,17 +13659,12 @@ function interpolate(args) {
  * @param template text of the template to parse
  * @param templateUrl URL to use for source mapping of the parsed template
  */
-function parseTemplate(template, templateUrl, options = {}, relativeContextFilePath) {
+function parseTemplate(template, templateUrl, options) {
     const bindingParser = makeBindingParser();
     const htmlParser = new HtmlParser();
     const parseResult = htmlParser.parse(template, templateUrl, true);
     if (parseResult.errors && parseResult.errors.length > 0) {
-        return {
-            errors: parseResult.errors,
-            nodes: [],
-            hasNgContent: false,
-            ngContentSelectors: [], relativeContextFilePath
-        };
+        return { errors: parseResult.errors, nodes: [], hasNgContent: false, ngContentSelectors: [] };
     }
     let rootNodes = parseResult.rootNodes;
     // process i18n meta information (scan attributes, generate ids)
@@ -13691,14 +13683,9 @@ function parseTemplate(template, templateUrl, options = {}, relativeContextFileP
     }
     const { nodes, hasNgContent, ngContentSelectors, errors } = htmlAstToRender3Ast(rootNodes, bindingParser);
     if (errors && errors.length > 0) {
-        return {
-            errors,
-            nodes: [],
-            hasNgContent: false,
-            ngContentSelectors: [], relativeContextFilePath
-        };
+        return { errors, nodes: [], hasNgContent: false, ngContentSelectors: [] };
     }
-    return { nodes, hasNgContent, ngContentSelectors, relativeContextFilePath };
+    return { nodes, hasNgContent, ngContentSelectors };
 }
 /**
  * Construct a `BindingParser` with a default configuration.
@@ -13758,16 +13745,15 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
         type: meta.type,
         deps: meta.deps,
         injectFn: Identifiers$1.directiveInject,
-        extraStatementFn: createFactoryExtraStatementsFn(meta, bindingParser)
     });
     definitionMap.set('factory', result.factory);
     definitionMap.set('contentQueries', createContentQueriesFunction(meta, constantPool));
     definitionMap.set('contentQueriesRefresh', createContentQueriesRefreshFunction(meta));
-    // Initialize hostVars to number of bound host properties (interpolations illegal)
-    let hostVars = Object.keys(meta.host.properties).length;
+    // Initialize hostVarsCount to number of bound host properties (interpolations illegal)
+    const hostVarsCount = Object.keys(meta.host.properties).length;
     const elVarExp = variable('elIndex');
-    const dirVarExp = variable('dirIndex');
-    const styleBuilder = new StylingBuilder(elVarExp, dirVarExp);
+    const contextVarExp = variable(CONTEXT_NAME);
+    const styleBuilder = new StylingBuilder(elVarExp, contextVarExp);
     const allOtherAttributes = {};
     const attrNames = Object.getOwnPropertyNames(meta.host.attributes);
     for (let i = 0; i < attrNames.length; i++) {
@@ -13789,16 +13775,8 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     }
     // e.g. `attributes: ['role', 'listbox']`
     definitionMap.set('attributes', createHostAttributesArray(allOtherAttributes));
-    // e.g. `hostBindings: (dirIndex, elIndex) => { ... }
-    definitionMap.set('hostBindings', createHostBindingsFunction(meta, elVarExp, dirVarExp, styleBuilder, bindingParser, constantPool, (slots) => {
-        const originalSlots = hostVars;
-        hostVars += slots;
-        return originalSlots;
-    }));
-    if (hostVars) {
-        // e.g. `hostVars: 2
-        definitionMap.set('hostVars', literal(hostVars));
-    }
+    // e.g. `hostBindings: (rf, ctx, elIndex) => { ... }
+    definitionMap.set('hostBindings', createHostBindingsFunction(meta, elVarExp, contextVarExp, styleBuilder, bindingParser, constantPool, hostVarsCount));
     // e.g 'inputs: {a: 'a'}`
     definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs));
     // e.g 'outputs: {a: 'a'}`
@@ -13892,11 +13870,11 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     }
     // Generate the CSS matcher that recognize directive
     let directiveMatcher = null;
-    if (meta.directives.size) {
+    if (meta.directives.length > 0) {
         const matcher = new SelectorMatcher();
-        meta.directives.forEach((expression, selector) => {
+        for (const { selector, expression } of meta.directives) {
             matcher.addSelectables(CssSelector.parse(selector), expression);
-        });
+        }
         directiveMatcher = matcher;
     }
     if (meta.viewQueries.length) {
@@ -13908,7 +13886,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     const directivesUsed = new Set();
     const pipesUsed = new Set();
     const template = meta.template;
-    const templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, null, null, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML, meta.template.relativeContextFilePath);
+    const templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, null, null, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML, meta.relativeContextFilePath, meta.i18nUseExternalIds);
     const templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, [], template.hasNgContent, template.ngContentSelectors);
     // e.g. `consts: 2`
     definitionMap.set('consts', literal(templateBuilder.getConstCount()));
@@ -13931,6 +13909,9 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
         }
         definitionMap.set('pipes', pipesExpr);
     }
+    if (meta.encapsulation === null) {
+        meta.encapsulation = ViewEncapsulation.Emulated;
+    }
     // e.g. `styles: [str1, str2]`
     if (meta.styles && meta.styles.length) {
         const styleValues = meta.encapsulation == ViewEncapsulation.Emulated ?
@@ -13939,8 +13920,12 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
         const strings = styleValues.map(str => literal(str));
         definitionMap.set('styles', literalArr(strings));
     }
+    else if (meta.encapsulation === ViewEncapsulation.Emulated) {
+        // If there is no style, don't generate css selectors on elements
+        meta.encapsulation = ViewEncapsulation.None;
+    }
     // Only set view encapsulation if it's not the default value
-    if (meta.encapsulation !== null && meta.encapsulation !== ViewEncapsulation.Emulated) {
+    if (meta.encapsulation !== ViewEncapsulation.Emulated) {
         definitionMap.set('encapsulation', literal(meta.encapsulation));
     }
     // e.g. `animations: [trigger('123', [])]`
@@ -13987,8 +13972,7 @@ function compileComponentFromRender2(outputCtx, component, render3Ast, reflector
             nodes: render3Ast.nodes,
             hasNgContent: render3Ast.hasNgContent,
             ngContentSelectors: render3Ast.ngContentSelectors,
-            relativeContextFilePath: '',
-        }, directives: typeMapToExpressionMap(directiveTypeBySel, outputCtx), pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null });
+        }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null, relativeContextFilePath: '', i18nUseExternalIds: true });
     const res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
     // Create the partial class to be merged with the actual class.
     outputCtx.statements.push(new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []));
@@ -14191,19 +14175,30 @@ function createViewQueriesFunction(meta, constantPool) {
     ], INFERRED_TYPE, null, viewQueryFnName);
 }
 // Return a host binding function or null if one is not necessary.
-function createHostBindingsFunction(meta, elVarExp, dirVarExp, styleBuilder, bindingParser, constantPool, allocatePureFunctionSlots) {
-    const statements = [];
+function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder, bindingParser, constantPool, hostVarsCount) {
+    const createStatements = [];
+    const updateStatements = [];
+    let totalHostVarsCount = hostVarsCount;
     const hostBindingSourceSpan = meta.typeSourceSpan;
     const directiveSummary = metadataAsSummary(meta);
+    // Calculate host event bindings
+    const eventBindings = bindingParser.createDirectiveHostEventAsts(directiveSummary, hostBindingSourceSpan);
+    if (eventBindings && eventBindings.length) {
+        const listeners = createHostListeners(bindingContext, eventBindings, meta);
+        createStatements.push(...listeners);
+    }
     // Calculate the host property bindings
     const bindings = bindingParser.createBoundHostProperties(directiveSummary, hostBindingSourceSpan);
-    const bindingContext = importExpr(Identifiers$1.load).callFn([dirVarExp]);
     const bindingFn = (implicit, value) => {
         return convertPropertyBinding(null, implicit, value, 'b', BindingForm.TrySimple, () => error('Unexpected interpolation'));
     };
     if (bindings) {
+        const hostVarsCountFn = (numSlots) => {
+            totalHostVarsCount += numSlots;
+            return hostVarsCount;
+        };
         const valueConverter = new ValueConverter(constantPool, 
-        /* new nodes are illegal here */ () => error('Unexpected node'), allocatePureFunctionSlots, 
+        /* new nodes are illegal here */ () => error('Unexpected node'), hostVarsCountFn, 
         /* pipes are illegal here */ () => error('Unexpected pipe'));
         for (const binding of bindings) {
             const name = binding.name;
@@ -14220,8 +14215,8 @@ function createHostBindingsFunction(meta, elVarExp, dirVarExp, styleBuilder, bin
                 const value = binding.expression.visit(valueConverter);
                 const bindingExpr = bindingFn(bindingContext, value);
                 const { bindingName, instruction } = getBindingNameAndInstruction(name);
-                statements.push(...bindingExpr.stmts);
-                statements.push(importExpr(instruction)
+                updateStatements.push(...bindingExpr.stmts);
+                updateStatements.push(importExpr(instruction)
                     .callFn([
                     elVarExp,
                     literal(bindingName),
@@ -14234,20 +14229,30 @@ function createHostBindingsFunction(meta, elVarExp, dirVarExp, styleBuilder, bin
             const createInstruction = styleBuilder.buildCreateLevelInstruction(null, constantPool);
             if (createInstruction) {
                 const createStmt = createStylingStmt(createInstruction, bindingContext, bindingFn);
-                statements.push(createStmt);
+                createStatements.push(createStmt);
             }
             styleBuilder.buildUpdateLevelInstructions(valueConverter).forEach(instruction => {
                 const updateStmt = createStylingStmt(instruction, bindingContext, bindingFn);
-                statements.push(updateStmt);
+                updateStatements.push(updateStmt);
             });
         }
     }
-    if (statements.length > 0) {
-        const typeName = meta.name;
+    if (totalHostVarsCount) {
+        createStatements.unshift(importExpr(Identifiers$1.allocHostVars).callFn([literal(totalHostVarsCount)]).toStmt());
+    }
+    if (createStatements.length > 0 || updateStatements.length > 0) {
+        const hostBindingsFnName = meta.name ? `${meta.name}_HostBindings` : null;
+        const statements = [];
+        if (createStatements.length > 0) {
+            statements.push(renderFlagCheckIfStmt(1 /* Create */, createStatements));
+        }
+        if (updateStatements.length > 0) {
+            statements.push(renderFlagCheckIfStmt(2 /* Update */, updateStatements));
+        }
         return fn([
-            new FnParam(dirVarExp.name, NUMBER_TYPE),
-            new FnParam(elVarExp.name, NUMBER_TYPE),
-        ], statements, INFERRED_TYPE, null, typeName ? `${typeName}_HostBindings` : null);
+            new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null),
+            new FnParam(elVarExp.name, NUMBER_TYPE)
+        ], statements, INFERRED_TYPE, null, hostBindingsFnName);
     }
     return null;
 }
@@ -14269,12 +14274,6 @@ function getBindingNameAndInstruction(bindingName) {
         instruction = Identifiers$1.elementProperty;
     }
     return { bindingName, instruction };
-}
-function createFactoryExtraStatementsFn(meta, bindingParser) {
-    const eventBindings = bindingParser.createDirectiveHostEventAsts(metadataAsSummary(meta), meta.typeSourceSpan);
-    return eventBindings && eventBindings.length ?
-        (instance) => createHostListeners(instance, eventBindings, meta) :
-        null;
 }
 function createHostListeners(bindingContext, eventBindings, meta) {
     return eventBindings.map(binding => {
@@ -14355,6 +14354,7 @@ function parseNamedProperty(name) {
 class CompilerFacadeImpl {
     constructor() {
         this.R3ResolvedDependencyType = R3ResolvedDependencyType;
+        this.elementSchemaRegistry = new DomElementSchemaRegistry();
     }
     compilePipe(angularCoreEnv, sourceMapUrl, facade) {
         const res = compilePipeFromMetadata({
@@ -14417,15 +14417,15 @@ class CompilerFacadeImpl {
         // Parse the template and check for errors.
         const template = parseTemplate(facade.template, sourceMapUrl, {
             preserveWhitespaces: facade.preserveWhitespaces || false,
-        }, '');
+        });
         if (template.errors !== undefined) {
             const errors = template.errors.map(err => err.toString()).join(', ');
             throw new Error(`Errors during JIT compilation of template for ${facade.name}: ${errors}`);
         }
         // Compile the component metadata, including template, into an expression.
         // TODO(alxhub): implement inputs, outputs, queries, etc.
-        const res = compileComponentFromMetadata(Object.assign({}, facade, convertDirectiveFacadeToMetadata(facade), { template, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), wrapDirectivesAndPipesInClosure: false, styles: facade.styles || [], encapsulation: facade.encapsulation, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
-                null }), constantPool, makeBindingParser());
+        const res = compileComponentFromMetadata(Object.assign({}, facade, convertDirectiveFacadeToMetadata(facade), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), wrapDirectivesAndPipesInClosure: false, styles: facade.styles || [], encapsulation: facade.encapsulation, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
+                null, relativeContextFilePath: '', i18nUseExternalIds: true }), constantPool, makeBindingParser());
         const preStatements = [...constantPool.statements, ...res.statements];
         return jitExpression(res.expression, angularCoreEnv, sourceMapUrl, preStatements);
     }
@@ -14554,7 +14554,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.1.0-rc.0+17.sha-e201a67.with-local-changes');
+const VERSION$1 = new Version('7.1.0+103.sha-4fd3402');
 
 /**
  * @license

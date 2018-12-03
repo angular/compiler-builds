@@ -258,7 +258,7 @@ export declare const enum SelectorFlags {
 }
 export declare type R3CssSelector = (string | SelectorFlags)[];
 export declare type R3CssSelectorList = R3CssSelector[];
-export declare function parseSelectorToR3Selector(selector: string): R3CssSelectorList;
+export declare function parseSelectorToR3Selector(selector: string | null): R3CssSelectorList;
 /**
  * Flags passed into template functions to determine which blocks (i.e. creation, update)
  * should be executed.

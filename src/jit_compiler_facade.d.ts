@@ -8,6 +8,7 @@
 import { CompilerFacade, CoreEnvironment, R3ComponentMetadataFacade, R3DirectiveMetadataFacade, R3InjectableMetadataFacade, R3InjectorMetadataFacade, R3NgModuleMetadataFacade, R3PipeMetadataFacade } from './compiler_facade_interface';
 export declare class CompilerFacadeImpl implements CompilerFacade {
     R3ResolvedDependencyType: any;
+    private elementSchemaRegistry;
     compilePipe(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, facade: R3PipeMetadataFacade): any;
     compileInjectable(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, facade: R3InjectableMetadataFacade): any;
     compileInjector(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, facade: R3InjectorMetadataFacade): any;

@@ -33,6 +33,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private pipes;
     private _namespace;
     private relativeContextFilePath;
+    private i18nUseExternalIds;
     private _dataIndex;
     private _bindingContext;
     private _prefixCode;
@@ -68,20 +69,20 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private _pureFunctionSlots;
     private _bindingSlots;
     private fileBasedI18nSuffix;
-    constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, i18nContext: I18nContext | null, templateIndex: number | null, templateName: string | null, viewQueries: R3QueryMetadata[], directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference, relativeContextFilePath: string);
+    constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, i18nContext: I18nContext | null, templateIndex: number | null, templateName: string | null, viewQueries: R3QueryMetadata[], directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference, relativeContextFilePath: string, i18nUseExternalIds: boolean);
     registerContextVariables(variable: t.Variable): void;
     buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], hasNgContent?: boolean, ngContentSelectors?: string[], i18n?: i18n.AST): o.FunctionExpr;
     getLocal(name: string): o.Expression | null;
     i18nTranslate(message: i18n.Message, params?: {
         [name: string]: o.Expression;
-    }, ref?: o.ReadVarExpr, transformFn?: (raw: o.ReadVarExpr) => o.Expression): o.Expression;
+    }, ref?: o.ReadVarExpr, transformFn?: (raw: o.ReadVarExpr) => o.Expression): o.ReadVarExpr;
     i18nAppendBindings(expressions: AST[]): void;
     i18nBindProps(props: {
         [key: string]: t.Text | t.BoundText;
     }): {
         [key: string]: o.Expression;
     };
-    i18nAllocateRef(): o.ReadVarExpr;
+    i18nAllocateRef(messageId: string): o.ReadVarExpr;
     i18nUpdateRef(context: I18nContext): void;
     i18nStart(span: ParseSourceSpan | null | undefined, meta: i18n.AST, selfClosing?: boolean): void;
     i18nEnd(span?: ParseSourceSpan | null, selfClosing?: boolean): void;
@@ -199,13 +200,12 @@ export declare class BindingScope implements LocalResolver {
  * @param templateUrl URL to use for source mapping of the parsed template
  */
 export declare function parseTemplate(template: string, templateUrl: string, options: {
-    preserveWhitespaces?: boolean | undefined;
-} | undefined, relativeContextFilePath: string): {
+    preserveWhitespaces?: boolean;
+}): {
     errors?: ParseError[];
     nodes: t.Node[];
     hasNgContent: boolean;
     ngContentSelectors: string[];
-    relativeContextFilePath: string;
 };
 /**
  * Construct a `BindingParser` with a default configuration.
