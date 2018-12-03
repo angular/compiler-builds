@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0+110.sha-2a39425
+ * @license Angular v7.1.0+112.sha-7ec05b4
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -13733,6 +13733,9 @@ const EMPTY_ARRAY = [];
 // This regex matches any binding names that contain the "attr." prefix, e.g. "attr.required"
 // If there is a match, the first matching group will contain the attribute name to bind.
 const ATTR_REGEX = /attr\.([^\]]+)/;
+function getStylingPrefix(propName) {
+    return propName.substring(0, 5).toLowerCase();
+}
 function baseDirectiveFields(meta, constantPool, bindingParser) {
     const definitionMap = new DefinitionMap();
     // e.g. `type: MyDirective`
@@ -13749,8 +13752,14 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     definitionMap.set('factory', result.factory);
     definitionMap.set('contentQueries', createContentQueriesFunction(meta, constantPool));
     definitionMap.set('contentQueriesRefresh', createContentQueriesRefreshFunction(meta));
-    // Initialize hostVarsCount to number of bound host properties (interpolations illegal)
-    const hostVarsCount = Object.keys(meta.host.properties).length;
+    // Initialize hostVarsCount to number of bound host properties (interpolations illegal),
+    // except 'style' and 'class' properties, since they should *not* allocate host var slots
+    const hostVarsCount = Object.keys(meta.host.properties)
+        .filter(name => {
+        const prefix = getStylingPrefix(name);
+        return prefix !== 'style' && prefix !== 'class';
+    })
+        .length;
     const elVarExp = variable('elIndex');
     const contextVarExp = variable(CONTEXT_NAME);
     const styleBuilder = new StylingBuilder(elVarExp, contextVarExp);
@@ -14202,7 +14211,7 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder
         /* pipes are illegal here */ () => error('Unexpected pipe'));
         for (const binding of bindings) {
             const name = binding.name;
-            const stylePrefix = name.substring(0, 5).toLowerCase();
+            const stylePrefix = getStylingPrefix(name);
             if (stylePrefix === 'style') {
                 const { propertyName, unit } = parseNamedProperty(name);
                 styleBuilder.registerStyleInput(propertyName, binding.expression, unit, binding.sourceSpan);
@@ -14554,7 +14563,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.1.0+110.sha-2a39425');
+const VERSION$1 = new Version('7.1.0+112.sha-7ec05b4');
 
 /**
  * @license
