@@ -10,7 +10,6 @@ import { ConstantPool } from '../../constant_pool';
 import * as core from '../../core';
 import { AST, AstMemoryEfficientTransformer, BindingPipe, LiteralArray, LiteralMap } from '../../expression_parser/ast';
 import * as i18n from '../../i18n/i18n_ast';
-import { InterpolationConfig } from '../../ml_parser/interpolation_config';
 import * as o from '../../output/output_ast';
 import { ParseError, ParseSourceSpan } from '../../parse_util';
 import { SelectorMatcher } from '../../selector';
@@ -200,9 +199,8 @@ export declare class BindingScope implements LocalResolver {
  * @param template text of the template to parse
  * @param templateUrl URL to use for source mapping of the parsed template
  */
-export declare function parseTemplate(template: string, templateUrl: string, options?: {
+export declare function parseTemplate(template: string, templateUrl: string, options: {
     preserveWhitespaces?: boolean;
-    interpolationConfig?: InterpolationConfig;
 }): {
     errors?: ParseError[];
     nodes: t.Node[];
@@ -212,5 +210,5 @@ export declare function parseTemplate(template: string, templateUrl: string, opt
 /**
  * Construct a `BindingParser` with a default configuration.
  */
-export declare function makeBindingParser(interpolationConfig?: InterpolationConfig): BindingParser;
+export declare function makeBindingParser(): BindingParser;
 export {};
