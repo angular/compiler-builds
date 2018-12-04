@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ViewEncapsulation } from '../../core';
-import { InterpolationConfig } from '../../ml_parser/interpolation_config';
 import * as o from '../../output/output_ast';
 import { ParseSourceSpan } from '../../parse_util';
 import * as t from '../r3_ast';
@@ -180,10 +179,6 @@ export interface R3ComponentMetadata extends R3DirectiveMetadata {
      * (used by Closure Compiler's output of `goog.getMsg` for transition period)
      */
     i18nUseExternalIds: boolean;
-    /**
-     * Overrides the default interpolation start and end delimiters ({{ and }})
-     */
-    interpolation: InterpolationConfig;
 }
 /**
  * Information needed to compile a query (view or content).

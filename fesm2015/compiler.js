@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0+128.sha-8e644d9
+ * @license Angular v7.1.0+127.sha-1597886
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -4560,71 +4560,6 @@ function compileInjectable(meta) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-function assertArrayOfStrings(identifier, value) {
-    if (value == null) {
-        return;
-    }
-    if (!Array.isArray(value)) {
-        throw new Error(`Expected '${identifier}' to be an array of strings.`);
-    }
-    for (let i = 0; i < value.length; i += 1) {
-        if (typeof value[i] !== 'string') {
-            throw new Error(`Expected '${identifier}' to be an array of strings.`);
-        }
-    }
-}
-const INTERPOLATION_BLACKLIST_REGEXPS = [
-    /^\s*$/,
-    /[<>]/,
-    /^[{}]$/,
-    /&(#|[a-z])/i,
-    /^\/\//,
-];
-function assertInterpolationSymbols(identifier, value) {
-    if (value != null && !(Array.isArray(value) && value.length == 2)) {
-        throw new Error(`Expected '${identifier}' to be an array, [start, end].`);
-    }
-    else if (value != null) {
-        const start = value[0];
-        const end = value[1];
-        // black list checking
-        INTERPOLATION_BLACKLIST_REGEXPS.forEach(regexp => {
-            if (regexp.test(start) || regexp.test(end)) {
-                throw new Error(`['${start}', '${end}'] contains unusable interpolation symbol.`);
-            }
-        });
-    }
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-class InterpolationConfig {
-    constructor(start, end) {
-        this.start = start;
-        this.end = end;
-    }
-    static fromArray(markers) {
-        if (!markers) {
-            return DEFAULT_INTERPOLATION_CONFIG;
-        }
-        assertInterpolationSymbols('interpolation', markers);
-        return new InterpolationConfig(markers[0], markers[1]);
-    }
-}
-const DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 // https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit
 const VERSION = 3;
 const JS_B64_PREFIX = '# sourceMappingURL=data:application/json;base64,';
@@ -8637,6 +8572,71 @@ function parseIntAutoRadix(text) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+function assertArrayOfStrings(identifier, value) {
+    if (value == null) {
+        return;
+    }
+    if (!Array.isArray(value)) {
+        throw new Error(`Expected '${identifier}' to be an array of strings.`);
+    }
+    for (let i = 0; i < value.length; i += 1) {
+        if (typeof value[i] !== 'string') {
+            throw new Error(`Expected '${identifier}' to be an array of strings.`);
+        }
+    }
+}
+const INTERPOLATION_BLACKLIST_REGEXPS = [
+    /^\s*$/,
+    /[<>]/,
+    /^[{}]$/,
+    /&(#|[a-z])/i,
+    /^\/\//,
+];
+function assertInterpolationSymbols(identifier, value) {
+    if (value != null && !(Array.isArray(value) && value.length == 2)) {
+        throw new Error(`Expected '${identifier}' to be an array, [start, end].`);
+    }
+    else if (value != null) {
+        const start = value[0];
+        const end = value[1];
+        // black list checking
+        INTERPOLATION_BLACKLIST_REGEXPS.forEach(regexp => {
+            if (regexp.test(start) || regexp.test(end)) {
+                throw new Error(`['${start}', '${end}'] contains unusable interpolation symbol.`);
+            }
+        });
+    }
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+class InterpolationConfig {
+    constructor(start, end) {
+        this.start = start;
+        this.end = end;
+    }
+    static fromArray(markers) {
+        if (!markers) {
+            return DEFAULT_INTERPOLATION_CONFIG;
+        }
+        assertInterpolationSymbols('interpolation', markers);
+        return new InterpolationConfig(markers[0], markers[1]);
+    }
+}
+const DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class SplitInterpolation {
     constructor(strings, expressions, offsets) {
         this.strings = strings;
@@ -11113,7 +11113,6 @@ class BindingParser {
             this.pipesByName = pipesByName;
         }
     }
-    get interpolationConfig() { return this._interpolationConfig; }
     getUsedPipes() { return Array.from(this._usedPipes.values()); }
     createBoundHostProperties(dirMeta, sourceSpan) {
         if (dirMeta.hostProperties) {
@@ -11866,11 +11865,8 @@ class HtmlAstToIvyAst {
         Object.keys(meta.placeholders).forEach(key => {
             const value = meta.placeholders[key];
             if (key.startsWith(I18N_ICU_VAR_PREFIX)) {
-                const config = this.bindingParser.interpolationConfig;
-                // ICU expression is a plain string, not wrapped into start
-                // and end tags, so we wrap it before passing to binding parser
-                const wrapped = `${config.start}${value}${config.end}`;
-                vars[key] = this._visitTextWithInterpolation(wrapped, expansion.sourceSpan);
+                vars[key] =
+                    this._visitTextWithInterpolation(`{{${value}}}`, expansion.sourceSpan);
             }
             else {
                 placeholders[key] = this._visitTextWithInterpolation(value, expansion.sourceSpan);
@@ -12442,11 +12438,10 @@ function setI18nRefs(html, i18n) {
  * stored with other element's and attribute's information.
  */
 class I18nMetaVisitor {
-    constructor(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG, keepI18nAttrs = false) {
-        this.interpolationConfig = interpolationConfig;
-        this.keepI18nAttrs = keepI18nAttrs;
+    constructor(config) {
+        this.config = config;
         // i18n message generation factory
-        this._createI18nMessage = createI18nMessageFactory(interpolationConfig);
+        this._createI18nMessage = createI18nMessageFactory(DEFAULT_INTERPOLATION_CONFIG);
     }
     _generateI18nMessage(nodes, meta = '', visitNodeFn) {
         const parsed = typeof meta === 'string' ? parseI18nMeta(meta) : metaFromI18nMessage(meta);
@@ -12491,7 +12486,7 @@ class I18nMetaVisitor {
                     }
                 }
             }
-            if (!this.keepI18nAttrs) {
+            if (!this.config.keepI18nAttrs) {
                 // update element's attributes,
                 // keeping only non-i18n related ones
                 element.attrs = attrs;
@@ -13664,11 +13659,10 @@ function interpolate(args) {
  * @param template text of the template to parse
  * @param templateUrl URL to use for source mapping of the parsed template
  */
-function parseTemplate(template, templateUrl, options = {}) {
-    const { interpolationConfig, preserveWhitespaces } = options;
-    const bindingParser = makeBindingParser(interpolationConfig);
+function parseTemplate(template, templateUrl, options) {
+    const bindingParser = makeBindingParser();
     const htmlParser = new HtmlParser();
-    const parseResult = htmlParser.parse(template, templateUrl, true, interpolationConfig);
+    const parseResult = htmlParser.parse(template, templateUrl, true);
     if (parseResult.errors && parseResult.errors.length > 0) {
         return { errors: parseResult.errors, nodes: [], hasNgContent: false, ngContentSelectors: [] };
     }
@@ -13677,15 +13671,15 @@ function parseTemplate(template, templateUrl, options = {}) {
     // before we run whitespace removal process, because existing i18n
     // extraction process (ng xi18n) relies on a raw content to generate
     // message ids
-    rootNodes =
-        visitAll(new I18nMetaVisitor(interpolationConfig, !preserveWhitespaces), rootNodes);
-    if (!preserveWhitespaces) {
+    const i18nConfig = { keepI18nAttrs: !options.preserveWhitespaces };
+    rootNodes = visitAll(new I18nMetaVisitor(i18nConfig), rootNodes);
+    if (!options.preserveWhitespaces) {
         rootNodes = visitAll(new WhitespaceVisitor(), rootNodes);
         // run i18n meta visitor again in case we remove whitespaces, because
         // that might affect generated i18n message content. During this pass
         // i18n IDs generated at the first pass will be preserved, so we can mimic
         // existing extraction process (ng xi18n)
-        rootNodes = visitAll(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), rootNodes);
+        rootNodes = visitAll(new I18nMetaVisitor({ keepI18nAttrs: false }), rootNodes);
     }
     const { nodes, hasNgContent, ngContentSelectors, errors } = htmlAstToRender3Ast(rootNodes, bindingParser);
     if (errors && errors.length > 0) {
@@ -13696,8 +13690,8 @@ function parseTemplate(template, templateUrl, options = {}) {
 /**
  * Construct a `BindingParser` with a default configuration.
  */
-function makeBindingParser(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-    return new BindingParser(new Parser(new Lexer()), interpolationConfig, new DomElementSchemaRegistry(), null, []);
+function makeBindingParser() {
+    return new BindingParser(new Parser(new Lexer()), DEFAULT_INTERPOLATION_CONFIG, new DomElementSchemaRegistry(), null, []);
 }
 function resolveSanitizationFn(input, context) {
     switch (context) {
@@ -13987,7 +13981,7 @@ function compileComponentFromRender2(outputCtx, component, render3Ast, reflector
             nodes: render3Ast.nodes,
             hasNgContent: render3Ast.hasNgContent,
             ngContentSelectors: render3Ast.ngContentSelectors,
-        }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, interpolation: DEFAULT_INTERPOLATION_CONFIG, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null, relativeContextFilePath: '', i18nUseExternalIds: true });
+        }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null, relativeContextFilePath: '', i18nUseExternalIds: true });
     const res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
     // Create the partial class to be merged with the actual class.
     outputCtx.statements.push(new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []));
@@ -14429,19 +14423,18 @@ class CompilerFacadeImpl {
     compileComponent(angularCoreEnv, sourceMapUrl, facade) {
         // The ConstantPool is a requirement of the JIT'er.
         const constantPool = new ConstantPool();
-        const interpolationConfig = facade.interpolation ?
-            InterpolationConfig.fromArray(facade.interpolation) :
-            DEFAULT_INTERPOLATION_CONFIG;
         // Parse the template and check for errors.
-        const template = parseTemplate(facade.template, sourceMapUrl, { preserveWhitespaces: facade.preserveWhitespaces || false, interpolationConfig });
+        const template = parseTemplate(facade.template, sourceMapUrl, {
+            preserveWhitespaces: facade.preserveWhitespaces || false,
+        });
         if (template.errors !== undefined) {
             const errors = template.errors.map(err => err.toString()).join(', ');
             throw new Error(`Errors during JIT compilation of template for ${facade.name}: ${errors}`);
         }
         // Compile the component metadata, including template, into an expression.
         // TODO(alxhub): implement inputs, outputs, queries, etc.
-        const res = compileComponentFromMetadata(Object.assign({}, facade, convertDirectiveFacadeToMetadata(facade), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), wrapDirectivesAndPipesInClosure: false, styles: facade.styles || [], encapsulation: facade.encapsulation, interpolation: interpolationConfig, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
-                null, relativeContextFilePath: '', i18nUseExternalIds: true }), constantPool, makeBindingParser(interpolationConfig));
+        const res = compileComponentFromMetadata(Object.assign({}, facade, convertDirectiveFacadeToMetadata(facade), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), wrapDirectivesAndPipesInClosure: false, styles: facade.styles || [], encapsulation: facade.encapsulation, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
+                null, relativeContextFilePath: '', i18nUseExternalIds: true }), constantPool, makeBindingParser());
         const preStatements = [...constantPool.statements, ...res.statements];
         return jitExpression(res.expression, angularCoreEnv, sourceMapUrl, preStatements);
     }
@@ -14570,7 +14563,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.1.0+128.sha-8e644d9');
+const VERSION$1 = new Version('7.1.0+127.sha-1597886');
 
 /**
  * @license
