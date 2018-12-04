@@ -1,10 +1,10 @@
 /**
- * @license Angular v7.1.0+109.sha-7d89cff
+ * @license Angular v7.1.0+115.sha-6552471
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __extends, __assign, __spread, __values, __read } from 'tslib';
+import { __extends, __assign, __spread, __read, __values } from 'tslib';
 
 /**
  * @license
@@ -14612,6 +14612,9 @@ var EMPTY_ARRAY = [];
 // This regex matches any binding names that contain the "attr." prefix, e.g. "attr.required"
 // If there is a match, the first matching group will contain the attribute name to bind.
 var ATTR_REGEX = /attr\.([^\]]+)/;
+function getStylingPrefix(propName) {
+    return propName.substring(0, 5).toLowerCase();
+}
 function baseDirectiveFields(meta, constantPool, bindingParser) {
     var definitionMap = new DefinitionMap();
     // e.g. `type: MyDirective`
@@ -14628,8 +14631,14 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     definitionMap.set('factory', result.factory);
     definitionMap.set('contentQueries', createContentQueriesFunction(meta, constantPool));
     definitionMap.set('contentQueriesRefresh', createContentQueriesRefreshFunction(meta));
-    // Initialize hostVarsCount to number of bound host properties (interpolations illegal)
-    var hostVarsCount = Object.keys(meta.host.properties).length;
+    // Initialize hostVarsCount to number of bound host properties (interpolations illegal),
+    // except 'style' and 'class' properties, since they should *not* allocate host var slots
+    var hostVarsCount = Object.keys(meta.host.properties)
+        .filter(function (name) {
+        var prefix = getStylingPrefix(name);
+        return prefix !== 'style' && prefix !== 'class';
+    })
+        .length;
     var elVarExp = variable('elIndex');
     var contextVarExp = variable(CONTEXT_NAME);
     var styleBuilder = new StylingBuilder(elVarExp, contextVarExp);
@@ -15106,7 +15115,7 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder
             for (var bindings_1 = __values(bindings), bindings_1_1 = bindings_1.next(); !bindings_1_1.done; bindings_1_1 = bindings_1.next()) {
                 var binding = bindings_1_1.value;
                 var name_1 = binding.name;
-                var stylePrefix = name_1.substring(0, 5).toLowerCase();
+                var stylePrefix = getStylingPrefix(name_1);
                 if (stylePrefix === 'style') {
                     var _b = parseNamedProperty(name_1), propertyName = _b.propertyName, unit = _b.unit;
                     styleBuilder.registerStyleInput(propertyName, binding.expression, unit, binding.sourceSpan);
@@ -15476,7 +15485,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.1.0+109.sha-7d89cff');
+var VERSION$1 = new Version('7.1.0+115.sha-6552471');
 
 /**
  * @license
