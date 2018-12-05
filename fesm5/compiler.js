@@ -1,10 +1,10 @@
 /**
- * @license Angular v7.1.0+131.sha-c61a8b7
+ * @license Angular v7.1.0+148.sha-a3ee089
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __extends, __assign, __spread, __read, __values } from 'tslib';
+import { __extends, __assign, __spread, __values, __read } from 'tslib';
 
 /**
  * @license
@@ -8738,7 +8738,7 @@ var StylingBuilder = /** @class */ (function () {
                 // a constant because the inital class values do not change (since they're static).
                 params_1.push(constantPool.getConstLiteral(initialClasses, true));
             }
-            else if (initialStyles || useSanitizer) {
+            else if (initialStyles || useSanitizer || this._directiveExpr) {
                 // no point in having an extra `null` value unless there are follow-up params
                 params_1.push(NULL_EXPR);
             }
@@ -15497,7 +15497,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.1.0+131.sha-c61a8b7');
+var VERSION$1 = new Version('7.1.0+148.sha-a3ee089');
 
 /**
  * @license
