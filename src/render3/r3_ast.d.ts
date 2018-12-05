@@ -86,11 +86,11 @@ export declare class Template implements Node {
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 export declare class Content implements Node {
-    selectorIndex: number;
+    selector: string;
     attributes: TextAttribute[];
     sourceSpan: ParseSourceSpan;
     i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined;
-    constructor(selectorIndex: number, attributes: TextAttribute[], sourceSpan: ParseSourceSpan, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
+    constructor(selector: string, attributes: TextAttribute[], sourceSpan: ParseSourceSpan, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 export declare class Variable implements Node {
