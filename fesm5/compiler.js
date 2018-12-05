@@ -1,10 +1,10 @@
 /**
- * @license Angular v7.1.0+153.sha-20cef50
+ * @license Angular v7.1.0+155.sha-2bc3986
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __extends, __assign, __spread, __values, __read } from 'tslib';
+import { __extends, __assign, __spread, __read, __values } from 'tslib';
 
 /**
  * @license
@@ -4561,9 +4561,13 @@ function conditionallyCreateMapObjectLiteral(keys) {
     }
     return null;
 }
-function mapToExpression(map, quoted) {
-    if (quoted === void 0) { quoted = false; }
-    return literalMap(Object.getOwnPropertyNames(map).map(function (key) { return ({ key: key, quoted: quoted, value: asLiteral(map[key]) }); }));
+function mapToExpression(map) {
+    return literalMap(Object.getOwnPropertyNames(map).map(function (key) {
+        // canonical syntax: `dirProp: elProp`
+        // if there is no `:`, use dirProp = elProp
+        var parts = splitAtColon(key, [key, map[key]]);
+        return { key: parts[0], quoted: false, value: asLiteral(parts[1]) };
+    }));
 }
 /**
  *  Remove trailing null nodes as they are implied.
@@ -15497,7 +15501,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.1.0+153.sha-20cef50');
+var VERSION$1 = new Version('7.1.0+155.sha-2bc3986');
 
 /**
  * @license
