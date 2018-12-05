@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import * as html from '../../../ml_parser/ast';
+import { InterpolationConfig } from '../../../ml_parser/interpolation_config';
 import { ParseTreeResult } from '../../../ml_parser/parser';
 /**
  * This visitor walks over HTML parse tree and converts information stored in
@@ -13,11 +14,10 @@ import { ParseTreeResult } from '../../../ml_parser/parser';
  * stored with other element's and attribute's information.
  */
 export declare class I18nMetaVisitor implements html.Visitor {
-    private config;
+    private interpolationConfig;
+    private keepI18nAttrs;
     private _createI18nMessage;
-    constructor(config: {
-        keepI18nAttrs: boolean;
-    });
+    constructor(interpolationConfig?: InterpolationConfig, keepI18nAttrs?: boolean);
     private _generateI18nMessage;
     visitElement(element: html.Element, context: any): any;
     visitExpansion(expansion: html.Expansion, context: any): any;
@@ -26,4 +26,4 @@ export declare class I18nMetaVisitor implements html.Visitor {
     visitComment(comment: html.Comment, context: any): any;
     visitExpansionCase(expansionCase: html.ExpansionCase, context: any): any;
 }
-export declare function processI18nMeta(htmlAstWithErrors: ParseTreeResult): ParseTreeResult;
+export declare function processI18nMeta(htmlAstWithErrors: ParseTreeResult, interpolationConfig?: InterpolationConfig): ParseTreeResult;
