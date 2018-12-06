@@ -33,9 +33,6 @@ export declare function asLiteral(value: any): o.Expression;
 export declare function conditionallyCreateMapObjectLiteral(keys: {
     [key: string]: string | string[];
 }): o.Expression | null;
-export declare function mapToExpression(map: {
-    [key: string]: any;
-}, quoted?: boolean): o.Expression;
 /**
  *  Remove trailing null nodes as they are implied.
  */

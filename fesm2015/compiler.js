@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0+115.sha-6552471
+ * @license Angular v7.1.0+196.sha-091a504
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -4217,8 +4217,13 @@ function conditionallyCreateMapObjectLiteral(keys) {
     }
     return null;
 }
-function mapToExpression(map, quoted = false) {
-    return literalMap(Object.getOwnPropertyNames(map).map(key => ({ key, quoted, value: asLiteral(map[key]) })));
+function mapToExpression(map) {
+    return literalMap(Object.getOwnPropertyNames(map).map(key => {
+        // canonical syntax: `dirProp: elProp`
+        // if there is no `:`, use dirProp = elProp
+        const parts = splitAtColon(key, [key, map[key]]);
+        return { key: parts[0], quoted: false, value: asLiteral(parts[1]) };
+    }));
 }
 /**
  *  Remove trailing null nodes as they are implied.
@@ -4552,6 +4557,71 @@ function compileInjectable(meta) {
         statements: result.statements,
     };
 }
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+function assertArrayOfStrings(identifier, value) {
+    if (value == null) {
+        return;
+    }
+    if (!Array.isArray(value)) {
+        throw new Error(`Expected '${identifier}' to be an array of strings.`);
+    }
+    for (let i = 0; i < value.length; i += 1) {
+        if (typeof value[i] !== 'string') {
+            throw new Error(`Expected '${identifier}' to be an array of strings.`);
+        }
+    }
+}
+const INTERPOLATION_BLACKLIST_REGEXPS = [
+    /^\s*$/,
+    /[<>]/,
+    /^[{}]$/,
+    /&(#|[a-z])/i,
+    /^\/\//,
+];
+function assertInterpolationSymbols(identifier, value) {
+    if (value != null && !(Array.isArray(value) && value.length == 2)) {
+        throw new Error(`Expected '${identifier}' to be an array, [start, end].`);
+    }
+    else if (value != null) {
+        const start = value[0];
+        const end = value[1];
+        // black list checking
+        INTERPOLATION_BLACKLIST_REGEXPS.forEach(regexp => {
+            if (regexp.test(start) || regexp.test(end)) {
+                throw new Error(`['${start}', '${end}'] contains unusable interpolation symbol.`);
+            }
+        });
+    }
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+class InterpolationConfig {
+    constructor(start, end) {
+        this.start = start;
+        this.end = end;
+    }
+    static fromArray(markers) {
+        if (!markers) {
+            return DEFAULT_INTERPOLATION_CONFIG;
+        }
+        assertInterpolationSymbols('interpolation', markers);
+        return new InterpolationConfig(markers[0], markers[1]);
+    }
+}
+const DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
 
 /**
  * @license
@@ -8080,7 +8150,7 @@ class StylingBuilder {
                 // a constant because the inital class values do not change (since they're static).
                 params.push(constantPool.getConstLiteral(initialClasses, true));
             }
-            else if (initialStyles || useSanitizer) {
+            else if (initialStyles || useSanitizer || this._directiveExpr) {
                 // no point in having an extra `null` value unless there are follow-up params
                 params.push(NULL_EXPR);
             }
@@ -8564,71 +8634,6 @@ function parseIntAutoRadix(text) {
     }
     return result;
 }
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-function assertArrayOfStrings(identifier, value) {
-    if (value == null) {
-        return;
-    }
-    if (!Array.isArray(value)) {
-        throw new Error(`Expected '${identifier}' to be an array of strings.`);
-    }
-    for (let i = 0; i < value.length; i += 1) {
-        if (typeof value[i] !== 'string') {
-            throw new Error(`Expected '${identifier}' to be an array of strings.`);
-        }
-    }
-}
-const INTERPOLATION_BLACKLIST_REGEXPS = [
-    /^\s*$/,
-    /[<>]/,
-    /^[{}]$/,
-    /&(#|[a-z])/i,
-    /^\/\//,
-];
-function assertInterpolationSymbols(identifier, value) {
-    if (value != null && !(Array.isArray(value) && value.length == 2)) {
-        throw new Error(`Expected '${identifier}' to be an array, [start, end].`);
-    }
-    else if (value != null) {
-        const start = value[0];
-        const end = value[1];
-        // black list checking
-        INTERPOLATION_BLACKLIST_REGEXPS.forEach(regexp => {
-            if (regexp.test(start) || regexp.test(end)) {
-                throw new Error(`['${start}', '${end}'] contains unusable interpolation symbol.`);
-            }
-        });
-    }
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-class InterpolationConfig {
-    constructor(start, end) {
-        this.start = start;
-        this.end = end;
-    }
-    static fromArray(markers) {
-        if (!markers) {
-            return DEFAULT_INTERPOLATION_CONFIG;
-        }
-        assertInterpolationSymbols('interpolation', markers);
-        return new InterpolationConfig(markers[0], markers[1]);
-    }
-}
-const DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
 
 /**
  * @license
@@ -11113,6 +11118,7 @@ class BindingParser {
             this.pipesByName = pipesByName;
         }
     }
+    get interpolationConfig() { return this._interpolationConfig; }
     getUsedPipes() { return Array.from(this._usedPipes.values()); }
     createBoundHostProperties(dirMeta, sourceSpan) {
         if (dirMeta.hostProperties) {
@@ -11524,8 +11530,8 @@ class Template {
     visit(visitor) { return visitor.visitTemplate(this); }
 }
 class Content {
-    constructor(selectorIndex, attributes, sourceSpan, i18n) {
-        this.selectorIndex = selectorIndex;
+    constructor(selector, attributes, sourceSpan, i18n) {
+        this.selector = selector;
         this.attributes = attributes;
         this.sourceSpan = sourceSpan;
         this.i18n = i18n;
@@ -11729,8 +11735,6 @@ const IDENT_PROPERTY_IDX = 9;
 // Group 10 = identifier inside ()
 const IDENT_EVENT_IDX = 10;
 const TEMPLATE_ATTR_PREFIX = '*';
-// Default selector used by `<ng-content>` if none specified
-const DEFAULT_CONTENT_SELECTOR = '*';
 function htmlAstToRender3Ast(htmlNodes, bindingParser) {
     const transformer = new HtmlAstToIvyAst(bindingParser);
     const ivyNodes = visitAll(transformer, htmlNodes);
@@ -11744,18 +11748,12 @@ function htmlAstToRender3Ast(htmlNodes, bindingParser) {
     return {
         nodes: ivyNodes,
         errors: allErrors,
-        ngContentSelectors: transformer.ngContentSelectors,
-        hasNgContent: transformer.hasNgContent,
     };
 }
 class HtmlAstToIvyAst {
     constructor(bindingParser) {
         this.bindingParser = bindingParser;
         this.errors = [];
-        // Selectors for the `ng-content` tags. Only non `*` selectors are recorded here
-        this.ngContentSelectors = [];
-        // Any `<ng-content>` in the template ?
-        this.hasNgContent = false;
     }
     // HTML visitor
     visitElement(element) {
@@ -11819,14 +11817,12 @@ class HtmlAstToIvyAst {
         let parsedElement;
         if (preparsedElement.type === PreparsedElementType.NG_CONTENT) {
             // `<ng-content>`
-            this.hasNgContent = true;
             if (element.children && !element.children.every(isEmptyTextNode)) {
                 this.reportError(`<ng-content> element cannot have content.`, element.sourceSpan);
             }
             const selector = preparsedElement.selectAttr;
-            let attributes = element.attrs.map(attribute => this.visitAttribute(attribute));
-            const selectorIndex = selector === DEFAULT_CONTENT_SELECTOR ? 0 : this.ngContentSelectors.push(selector);
-            parsedElement = new Content(selectorIndex, attributes, element.sourceSpan, element.i18n);
+            const attrs = element.attrs.map(attr => this.visitAttribute(attr));
+            parsedElement = new Content(selector, attrs, element.sourceSpan, element.i18n);
         }
         else if (isTemplateElement) {
             // `<ng-template>`
@@ -11865,8 +11861,11 @@ class HtmlAstToIvyAst {
         Object.keys(meta.placeholders).forEach(key => {
             const value = meta.placeholders[key];
             if (key.startsWith(I18N_ICU_VAR_PREFIX)) {
-                vars[key] =
-                    this._visitTextWithInterpolation(`{{${value}}}`, expansion.sourceSpan);
+                const config = this.bindingParser.interpolationConfig;
+                // ICU expression is a plain string, not wrapped into start
+                // and end tags, so we wrap it before passing to binding parser
+                const wrapped = `${config.start}${value}${config.end}`;
+                vars[key] = this._visitTextWithInterpolation(wrapped, expansion.sourceSpan);
             }
             else {
                 placeholders[key] = this._visitTextWithInterpolation(value, expansion.sourceSpan);
@@ -12438,10 +12437,11 @@ function setI18nRefs(html, i18n) {
  * stored with other element's and attribute's information.
  */
 class I18nMetaVisitor {
-    constructor(config) {
-        this.config = config;
+    constructor(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG, keepI18nAttrs = false) {
+        this.interpolationConfig = interpolationConfig;
+        this.keepI18nAttrs = keepI18nAttrs;
         // i18n message generation factory
-        this._createI18nMessage = createI18nMessageFactory(DEFAULT_INTERPOLATION_CONFIG);
+        this._createI18nMessage = createI18nMessageFactory(interpolationConfig);
     }
     _generateI18nMessage(nodes, meta = '', visitNodeFn) {
         const parsed = typeof meta === 'string' ? parseI18nMeta(meta) : metaFromI18nMessage(meta);
@@ -12486,7 +12486,7 @@ class I18nMetaVisitor {
                     }
                 }
             }
-            if (!this.config.keepI18nAttrs) {
+            if (!this.keepI18nAttrs) {
                 // update element's attributes,
                 // keeping only non-i18n related ones
                 element.attrs = attrs;
@@ -12578,6 +12578,8 @@ function mapBindingToInstruction(type) {
 function renderFlagCheckIfStmt(flags, statements) {
     return ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(flags), null, false), statements);
 }
+// Default selector used by `<ng-content>` if none specified
+const DEFAULT_CONTENT_SELECTOR = '*';
 class TemplateDefinitionBuilder {
     constructor(constantPool, parentBindingScope, level = 0, contextName, i18nContext, templateIndex, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace, relativeContextFilePath, i18nUseExternalIds) {
         this.constantPool = constantPool;
@@ -12625,6 +12627,10 @@ class TemplateDefinitionBuilder {
         this._pureFunctionSlots = 0;
         // Number of binding slots
         this._bindingSlots = 0;
+        // Whether the template includes <ng-content> tags.
+        this._hasNgContent = false;
+        // Selectors found in the <ng-content> tags in the template.
+        this._ngContentSelectors = [];
         // These should be handled in the template or element directly.
         this.visitReference = invalid$1;
         this.visitVariable = invalid$1;
@@ -12666,25 +12672,12 @@ class TemplateDefinitionBuilder {
             return [lhs.set(rhs.prop(variable$$1.value || IMPLICIT_REFERENCE)).toConstDecl()];
         });
     }
-    buildTemplateFunction(nodes, variables, hasNgContent = false, ngContentSelectors = [], i18n) {
+    buildTemplateFunction(nodes, variables, i18n) {
         if (this._namespace !== Identifiers$1.namespaceHTML) {
             this.creationInstruction(null, this._namespace);
         }
         // Create variable bindings
         variables.forEach(v => this.registerContextVariables(v));
-        // Output a `ProjectionDef` instruction when some `<ng-content>` are present
-        if (hasNgContent) {
-            const parameters = [];
-            // Only selectors with a non-default value are generated
-            if (ngContentSelectors.length > 1) {
-                const r3Selectors = ngContentSelectors.map(s => parseSelectorToR3Selector(s));
-                // `projectionDef` needs both the parsed and raw value of the selectors
-                const parsed = this.constantPool.getConstLiteral(asLiteral(r3Selectors), true);
-                const unParsed = this.constantPool.getConstLiteral(asLiteral(ngContentSelectors), true);
-                parameters.push(parsed, unParsed);
-            }
-            this.creationInstruction(null, Identifiers$1.projectionDef, parameters);
-        }
         // Initiate i18n context in case:
         // - this template has parent i18n context
         // - or the template has i18n meta associated with it,
@@ -12700,6 +12693,22 @@ class TemplateDefinitionBuilder {
         // pass. It's necessary to separate the passes to ensure local refs are defined before
         // resolving bindings. We also count bindings in this pass as we walk bound expressions.
         visitAll$1(this, nodes);
+        // Output a `ProjectionDef` instruction when some `<ng-content>` are present
+        if (this._hasNgContent) {
+            const parameters = [];
+            // Only selectors with a non-default value are generated
+            if (this._ngContentSelectors.length) {
+                const r3Selectors = this._ngContentSelectors.map(s => parseSelectorToR3Selector(s));
+                // `projectionDef` needs both the parsed and raw value of the selectors
+                const parsed = this.constantPool.getConstLiteral(asLiteral(r3Selectors), true);
+                const unParsed = this.constantPool.getConstLiteral(asLiteral(this._ngContentSelectors), true);
+                parameters.push(parsed, unParsed);
+            }
+            // Since we accumulate ngContent selectors while processing template elements,
+            // we *prepend* `projectionDef` to creation instructions block, to put it before
+            // any `projection` instructions
+            this.creationInstruction(null, Identifiers$1.projectionDef, parameters, /* prepend */ true);
+        }
         // Add total binding count to pure function count so pure function instructions are
         // generated with the correct slot offset when update instructions are processed.
         this._pureFunctionSlots += this._bindingSlots;
@@ -12877,8 +12886,11 @@ class TemplateDefinitionBuilder {
         this.i18n = null; // reset local i18n context
     }
     visitContent(ngContent) {
+        this._hasNgContent = true;
         const slot = this.allocateDataSlot();
-        const selectorIndex = ngContent.selectorIndex;
+        let selectorIndex = ngContent.selector === DEFAULT_CONTENT_SELECTOR ?
+            0 :
+            this._ngContentSelectors.push(ngContent.selector);
         const parameters = [literal(slot)];
         const attributeAsList = [];
         ngContent.attributes.forEach((attribute) => {
@@ -13148,7 +13160,7 @@ class TemplateDefinitionBuilder {
         // be able to support bindings in nested templates to local refs that occur after the
         // template definition. e.g. <div *ngIf="showing"> {{ foo }} </div>  <div #foo></div>
         this._nestedTemplateFns.push(() => {
-            const templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables, false, [], template.i18n);
+            const templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables, template.i18n);
             this.constantPool.statements.push(templateFunctionExpr.toDeclStmt(templateName, null));
         });
         // e.g. template(1, MyComp_Template_1)
@@ -13224,8 +13236,8 @@ class TemplateDefinitionBuilder {
     // instructions are queued in callbacks that execute once the initial pass has completed.
     // Otherwise, we wouldn't be able to support local refs that are defined after their
     // bindings. e.g. {{ foo }} <div #foo></div>
-    instructionFn(fns, span, reference, paramsOrFn) {
-        fns.push(() => {
+    instructionFn(fns, span, reference, paramsOrFn, prepend = false) {
+        fns[prepend ? 'unshift' : 'push'](() => {
             const params = Array.isArray(paramsOrFn) ? paramsOrFn : paramsOrFn();
             return instruction(span, reference, params).toStmt();
         });
@@ -13241,8 +13253,8 @@ class TemplateDefinitionBuilder {
             }
         }
     }
-    creationInstruction(span, reference, paramsOrFn) {
-        this.instructionFn(this._creationCodeFns, span, reference, paramsOrFn || []);
+    creationInstruction(span, reference, paramsOrFn, prepend) {
+        this.instructionFn(this._creationCodeFns, span, reference, paramsOrFn || [], prepend);
     }
     updateInstruction(span, reference, paramsOrFn) {
         this.instructionFn(this._updateCodeFns, span, reference, paramsOrFn || []);
@@ -13659,39 +13671,40 @@ function interpolate(args) {
  * @param template text of the template to parse
  * @param templateUrl URL to use for source mapping of the parsed template
  */
-function parseTemplate(template, templateUrl, options) {
-    const bindingParser = makeBindingParser();
+function parseTemplate(template, templateUrl, options = {}) {
+    const { interpolationConfig, preserveWhitespaces } = options;
+    const bindingParser = makeBindingParser(interpolationConfig);
     const htmlParser = new HtmlParser();
-    const parseResult = htmlParser.parse(template, templateUrl, true);
+    const parseResult = htmlParser.parse(template, templateUrl, true, interpolationConfig);
     if (parseResult.errors && parseResult.errors.length > 0) {
-        return { errors: parseResult.errors, nodes: [], hasNgContent: false, ngContentSelectors: [] };
+        return { errors: parseResult.errors, nodes: [] };
     }
     let rootNodes = parseResult.rootNodes;
     // process i18n meta information (scan attributes, generate ids)
     // before we run whitespace removal process, because existing i18n
     // extraction process (ng xi18n) relies on a raw content to generate
     // message ids
-    const i18nConfig = { keepI18nAttrs: !options.preserveWhitespaces };
-    rootNodes = visitAll(new I18nMetaVisitor(i18nConfig), rootNodes);
-    if (!options.preserveWhitespaces) {
+    rootNodes =
+        visitAll(new I18nMetaVisitor(interpolationConfig, !preserveWhitespaces), rootNodes);
+    if (!preserveWhitespaces) {
         rootNodes = visitAll(new WhitespaceVisitor(), rootNodes);
         // run i18n meta visitor again in case we remove whitespaces, because
         // that might affect generated i18n message content. During this pass
         // i18n IDs generated at the first pass will be preserved, so we can mimic
         // existing extraction process (ng xi18n)
-        rootNodes = visitAll(new I18nMetaVisitor({ keepI18nAttrs: false }), rootNodes);
+        rootNodes = visitAll(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), rootNodes);
     }
-    const { nodes, hasNgContent, ngContentSelectors, errors } = htmlAstToRender3Ast(rootNodes, bindingParser);
+    const { nodes, errors } = htmlAstToRender3Ast(rootNodes, bindingParser);
     if (errors && errors.length > 0) {
-        return { errors, nodes: [], hasNgContent: false, ngContentSelectors: [] };
+        return { errors, nodes: [] };
     }
-    return { nodes, hasNgContent, ngContentSelectors };
+    return { nodes };
 }
 /**
  * Construct a `BindingParser` with a default configuration.
  */
-function makeBindingParser() {
-    return new BindingParser(new Parser(new Lexer()), DEFAULT_INTERPOLATION_CONFIG, new DomElementSchemaRegistry(), null, []);
+function makeBindingParser(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+    return new BindingParser(new Parser(new Lexer()), interpolationConfig, new DomElementSchemaRegistry(), null, []);
 }
 function resolveSanitizationFn(input, context) {
     switch (context) {
@@ -13896,7 +13909,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     const pipesUsed = new Set();
     const template = meta.template;
     const templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, null, null, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML, meta.relativeContextFilePath, meta.i18nUseExternalIds);
-    const templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, [], template.hasNgContent, template.ngContentSelectors);
+    const templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, []);
     // e.g. `consts: 2`
     definitionMap.set('consts', literal(templateBuilder.getConstCount()));
     // e.g. `vars: 2`
@@ -13977,11 +13990,7 @@ function compileComponentFromRender2(outputCtx, component, render3Ast, reflector
     const definitionField = outputCtx.constantPool.propertyNameOf(2 /* Component */);
     const summary = component.toSummary();
     // Compute the R3ComponentMetadata from the CompileDirectiveMetadata
-    const meta = Object.assign({}, directiveMetadataFromGlobalMetadata(component, outputCtx, reflector), { selector: component.selector, template: {
-            nodes: render3Ast.nodes,
-            hasNgContent: render3Ast.hasNgContent,
-            ngContentSelectors: render3Ast.ngContentSelectors,
-        }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null, relativeContextFilePath: '', i18nUseExternalIds: true });
+    const meta = Object.assign({}, directiveMetadataFromGlobalMetadata(component, outputCtx, reflector), { selector: component.selector, template: { nodes: render3Ast.nodes }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, interpolation: DEFAULT_INTERPOLATION_CONFIG, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null, relativeContextFilePath: '', i18nUseExternalIds: true });
     const res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
     // Create the partial class to be merged with the actual class.
     outputCtx.statements.push(new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []));
@@ -14423,18 +14432,19 @@ class CompilerFacadeImpl {
     compileComponent(angularCoreEnv, sourceMapUrl, facade) {
         // The ConstantPool is a requirement of the JIT'er.
         const constantPool = new ConstantPool();
+        const interpolationConfig = facade.interpolation ?
+            InterpolationConfig.fromArray(facade.interpolation) :
+            DEFAULT_INTERPOLATION_CONFIG;
         // Parse the template and check for errors.
-        const template = parseTemplate(facade.template, sourceMapUrl, {
-            preserveWhitespaces: facade.preserveWhitespaces || false,
-        });
+        const template = parseTemplate(facade.template, sourceMapUrl, { preserveWhitespaces: facade.preserveWhitespaces || false, interpolationConfig });
         if (template.errors !== undefined) {
             const errors = template.errors.map(err => err.toString()).join(', ');
             throw new Error(`Errors during JIT compilation of template for ${facade.name}: ${errors}`);
         }
         // Compile the component metadata, including template, into an expression.
         // TODO(alxhub): implement inputs, outputs, queries, etc.
-        const res = compileComponentFromMetadata(Object.assign({}, facade, convertDirectiveFacadeToMetadata(facade), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), wrapDirectivesAndPipesInClosure: false, styles: facade.styles || [], encapsulation: facade.encapsulation, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
-                null, relativeContextFilePath: '', i18nUseExternalIds: true }), constantPool, makeBindingParser());
+        const res = compileComponentFromMetadata(Object.assign({}, facade, convertDirectiveFacadeToMetadata(facade), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), wrapDirectivesAndPipesInClosure: false, styles: facade.styles || [], encapsulation: facade.encapsulation, interpolation: interpolationConfig, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
+                null, relativeContextFilePath: '', i18nUseExternalIds: true }), constantPool, makeBindingParser(interpolationConfig));
         const preStatements = [...constantPool.statements, ...res.statements];
         return jitExpression(res.expression, angularCoreEnv, sourceMapUrl, preStatements);
     }
@@ -14563,7 +14573,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.1.0+115.sha-6552471');
+const VERSION$1 = new Version('7.1.0+196.sha-091a504');
 
 /**
  * @license
