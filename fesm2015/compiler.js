@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0+201.sha-7f221d8
+ * @license Angular v7.1.0+202.sha-159ab1c
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -4550,7 +4550,7 @@ function compileInjectable(meta) {
     const token = meta.type;
     const providedIn = meta.providedIn;
     const expression = importExpr(Identifiers.defineInjectable).callFn([mapToMapExpression({ token, factory: result.factory, providedIn })]);
-    const type = new ExpressionType(importExpr(Identifiers.InjectableDef, [new ExpressionType(meta.type)]));
+    const type = new ExpressionType(importExpr(Identifiers.InjectableDef, [typeWithParameters(meta.type, meta.typeArgumentCount)]));
     return {
         expression,
         type,
@@ -14388,6 +14388,7 @@ class CompilerFacadeImpl {
         const { expression, statements } = compileInjectable({
             name: facade.name,
             type: new WrappedNodeExpr(facade.type),
+            typeArgumentCount: facade.typeArgumentCount,
             providedIn: computeProvidedIn(facade.providedIn),
             useClass: wrapExpression(facade, USE_CLASS),
             useFactory: wrapExpression(facade, USE_FACTORY),
@@ -14573,7 +14574,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.1.0+201.sha-7f221d8');
+const VERSION$1 = new Version('7.1.0+202.sha-159ab1c');
 
 /**
  * @license
