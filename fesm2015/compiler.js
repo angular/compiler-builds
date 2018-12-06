@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0+205.sha-4da739a
+ * @license Angular v7.1.0+206.sha-c71d7b5
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12564,11 +12564,11 @@ function getSerializedI18nContent(message) {
 function mapBindingToInstruction(type) {
     switch (type) {
         case 0 /* Property */:
+        case 4 /* Animation */:
             return Identifiers$1.elementProperty;
         case 2 /* Class */:
             return Identifiers$1.elementClassProp;
         case 1 /* Attribute */:
-        case 4 /* Animation */:
             return Identifiers$1.elementAttribute;
         default:
             return undefined;
@@ -13066,10 +13066,11 @@ class TemplateDefinitionBuilder {
             const instruction = mapBindingToInstruction(input.type);
             if (input.type === 4 /* Animation */) {
                 const value = input.value.visit(this._valueConverter);
-                // setAttribute without a value doesn't make any sense
+                // setProperty without a value doesn't make any sense
                 if (value.name || value.value) {
+                    this.allocateBindingSlots(value);
                     const name = prepareSyntheticAttributeName(input.name);
-                    this.updateInstruction(input.sourceSpan, Identifiers$1.elementAttribute, () => {
+                    this.updateInstruction(input.sourceSpan, Identifiers$1.elementProperty, () => {
                         return [
                             literal(elementIndex), literal(name), this.convertPropertyBinding(implicit, value)
                         ];
@@ -13950,9 +13951,9 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     if (meta.encapsulation !== ViewEncapsulation.Emulated) {
         definitionMap.set('encapsulation', literal(meta.encapsulation));
     }
-    // e.g. `animations: [trigger('123', [])]`
+    // e.g. `animation: [trigger('123', [])]`
     if (meta.animations !== null) {
-        definitionMap.set('data', literalMap([{ key: 'animations', value: meta.animations, quoted: false }]));
+        definitionMap.set('data', literalMap([{ key: 'animation', value: meta.animations, quoted: false }]));
     }
     // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
     // string literal, which must be on one line.
@@ -14574,7 +14575,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.1.0+205.sha-4da739a');
+const VERSION$1 = new Version('7.1.0+206.sha-c71d7b5');
 
 /**
  * @license
