@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0+196.sha-091a504
+ * @license Angular v7.1.0+209.sha-913563a
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -4966,7 +4966,7 @@
         var token = meta.type;
         var providedIn = meta.providedIn;
         var expression = importExpr(Identifiers.defineInjectable).callFn([mapToMapExpression({ token: token, factory: result.factory, providedIn: providedIn })]);
-        var type = new ExpressionType(importExpr(Identifiers.InjectableDef, [new ExpressionType(meta.type)]));
+        var type = new ExpressionType(importExpr(Identifiers.InjectableDef, [typeWithParameters(meta.type, meta.typeArgumentCount)]));
         return {
             expression: expression,
             type: type,
@@ -13464,11 +13464,11 @@
     function mapBindingToInstruction(type) {
         switch (type) {
             case 0 /* Property */:
+            case 4 /* Animation */:
                 return Identifiers$1.elementProperty;
             case 2 /* Class */:
                 return Identifiers$1.elementClassProp;
             case 1 /* Attribute */:
-            case 4 /* Animation */:
                 return Identifiers$1.elementAttribute;
             default:
                 return undefined;
@@ -13479,7 +13479,9 @@
         return ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(flags), null, false), statements);
     }
     // Default selector used by `<ng-content>` if none specified
-    var DEFAULT_CONTENT_SELECTOR = '*';
+    var DEFAULT_NG_CONTENT_SELECTOR = '*';
+    // Selector attribute name of `<ng-content>`
+    var NG_CONTENT_SELECT_ATTR$1 = 'select';
     var TemplateDefinitionBuilder = /** @class */ (function () {
         function TemplateDefinitionBuilder(constantPool, parentBindingScope, level, contextName, i18nContext, templateIndex, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace, relativeContextFilePath, i18nUseExternalIds) {
             if (level === void 0) { level = 0; }
@@ -13791,15 +13793,15 @@
         TemplateDefinitionBuilder.prototype.visitContent = function (ngContent) {
             this._hasNgContent = true;
             var slot = this.allocateDataSlot();
-            var selectorIndex = ngContent.selector === DEFAULT_CONTENT_SELECTOR ?
+            var selectorIndex = ngContent.selector === DEFAULT_NG_CONTENT_SELECTOR ?
                 0 :
                 this._ngContentSelectors.push(ngContent.selector);
             var parameters = [literal(slot)];
             var attributeAsList = [];
             ngContent.attributes.forEach(function (attribute) {
-                var name = attribute.name;
-                if (name !== 'select') {
-                    attributeAsList.push(name, attribute.value);
+                var name = attribute.name, value = attribute.value;
+                if (name.toLowerCase() !== NG_CONTENT_SELECT_ATTR$1) {
+                    attributeAsList.push(name, value);
                 }
             });
             if (attributeAsList.length > 0) {
@@ -13981,10 +13983,11 @@
                 var instruction = mapBindingToInstruction(input.type);
                 if (input.type === 4 /* Animation */) {
                     var value_1 = input.value.visit(_this._valueConverter);
-                    // setAttribute without a value doesn't make any sense
+                    // setProperty without a value doesn't make any sense
                     if (value_1.name || value_1.value) {
+                        _this.allocateBindingSlots(value_1);
                         var name_2 = prepareSyntheticAttributeName(input.name);
-                        _this.updateInstruction(input.sourceSpan, Identifiers$1.elementAttribute, function () {
+                        _this.updateInstruction(input.sourceSpan, Identifiers$1.elementProperty, function () {
                             return [
                                 literal(elementIndex), literal(name_2), _this.convertPropertyBinding(implicit, value_1)
                             ];
@@ -14903,9 +14906,9 @@
         if (meta.encapsulation !== ViewEncapsulation.Emulated) {
             definitionMap.set('encapsulation', literal(meta.encapsulation));
         }
-        // e.g. `animations: [trigger('123', [])]`
+        // e.g. `animation: [trigger('123', [])]`
         if (meta.animations !== null) {
-            definitionMap.set('data', literalMap([{ key: 'animations', value: meta.animations, quoted: false }]));
+            definitionMap.set('data', literalMap([{ key: 'animation', value: meta.animations, quoted: false }]));
         }
         // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
         // string literal, which must be on one line.
@@ -15366,6 +15369,7 @@
             var _a = compileInjectable({
                 name: facade.name,
                 type: new WrappedNodeExpr(facade.type),
+                typeArgumentCount: facade.typeArgumentCount,
                 providedIn: computeProvidedIn(facade.providedIn),
                 useClass: wrapExpression(facade, USE_CLASS),
                 useFactory: wrapExpression(facade, USE_FACTORY),
@@ -15558,7 +15562,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('7.1.0+196.sha-091a504');
+    var VERSION$1 = new Version('7.1.0+209.sha-913563a');
 
     /**
      * @license

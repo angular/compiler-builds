@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0+196.sha-091a504
+ * @license Angular v7.1.0+209.sha-913563a
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -4550,7 +4550,7 @@ function compileInjectable(meta) {
     const token = meta.type;
     const providedIn = meta.providedIn;
     const expression = importExpr(Identifiers.defineInjectable).callFn([mapToMapExpression({ token, factory: result.factory, providedIn })]);
-    const type = new ExpressionType(importExpr(Identifiers.InjectableDef, [new ExpressionType(meta.type)]));
+    const type = new ExpressionType(importExpr(Identifiers.InjectableDef, [typeWithParameters(meta.type, meta.typeArgumentCount)]));
     return {
         expression,
         type,
@@ -12564,11 +12564,11 @@ function getSerializedI18nContent(message) {
 function mapBindingToInstruction(type) {
     switch (type) {
         case 0 /* Property */:
+        case 4 /* Animation */:
             return Identifiers$1.elementProperty;
         case 2 /* Class */:
             return Identifiers$1.elementClassProp;
         case 1 /* Attribute */:
-        case 4 /* Animation */:
             return Identifiers$1.elementAttribute;
         default:
             return undefined;
@@ -12579,7 +12579,9 @@ function renderFlagCheckIfStmt(flags, statements) {
     return ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(flags), null, false), statements);
 }
 // Default selector used by `<ng-content>` if none specified
-const DEFAULT_CONTENT_SELECTOR = '*';
+const DEFAULT_NG_CONTENT_SELECTOR = '*';
+// Selector attribute name of `<ng-content>`
+const NG_CONTENT_SELECT_ATTR$1 = 'select';
 class TemplateDefinitionBuilder {
     constructor(constantPool, parentBindingScope, level = 0, contextName, i18nContext, templateIndex, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace, relativeContextFilePath, i18nUseExternalIds) {
         this.constantPool = constantPool;
@@ -12888,15 +12890,15 @@ class TemplateDefinitionBuilder {
     visitContent(ngContent) {
         this._hasNgContent = true;
         const slot = this.allocateDataSlot();
-        let selectorIndex = ngContent.selector === DEFAULT_CONTENT_SELECTOR ?
+        let selectorIndex = ngContent.selector === DEFAULT_NG_CONTENT_SELECTOR ?
             0 :
             this._ngContentSelectors.push(ngContent.selector);
         const parameters = [literal(slot)];
         const attributeAsList = [];
         ngContent.attributes.forEach((attribute) => {
-            const name = attribute.name;
-            if (name !== 'select') {
-                attributeAsList.push(name, attribute.value);
+            const { name, value } = attribute;
+            if (name.toLowerCase() !== NG_CONTENT_SELECT_ATTR$1) {
+                attributeAsList.push(name, value);
             }
         });
         if (attributeAsList.length > 0) {
@@ -13066,10 +13068,11 @@ class TemplateDefinitionBuilder {
             const instruction = mapBindingToInstruction(input.type);
             if (input.type === 4 /* Animation */) {
                 const value = input.value.visit(this._valueConverter);
-                // setAttribute without a value doesn't make any sense
+                // setProperty without a value doesn't make any sense
                 if (value.name || value.value) {
+                    this.allocateBindingSlots(value);
                     const name = prepareSyntheticAttributeName(input.name);
-                    this.updateInstruction(input.sourceSpan, Identifiers$1.elementAttribute, () => {
+                    this.updateInstruction(input.sourceSpan, Identifiers$1.elementProperty, () => {
                         return [
                             literal(elementIndex), literal(name), this.convertPropertyBinding(implicit, value)
                         ];
@@ -13950,9 +13953,9 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     if (meta.encapsulation !== ViewEncapsulation.Emulated) {
         definitionMap.set('encapsulation', literal(meta.encapsulation));
     }
-    // e.g. `animations: [trigger('123', [])]`
+    // e.g. `animation: [trigger('123', [])]`
     if (meta.animations !== null) {
-        definitionMap.set('data', literalMap([{ key: 'animations', value: meta.animations, quoted: false }]));
+        definitionMap.set('data', literalMap([{ key: 'animation', value: meta.animations, quoted: false }]));
     }
     // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
     // string literal, which must be on one line.
@@ -14388,6 +14391,7 @@ class CompilerFacadeImpl {
         const { expression, statements } = compileInjectable({
             name: facade.name,
             type: new WrappedNodeExpr(facade.type),
+            typeArgumentCount: facade.typeArgumentCount,
             providedIn: computeProvidedIn(facade.providedIn),
             useClass: wrapExpression(facade, USE_CLASS),
             useFactory: wrapExpression(facade, USE_FACTORY),
@@ -14573,7 +14577,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.1.0+196.sha-091a504');
+const VERSION$1 = new Version('7.1.0+209.sha-913563a');
 
 /**
  * @license
