@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0+206.sha-c71d7b5
+ * @license Angular v7.1.0+210.sha-f013c57
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12579,7 +12579,9 @@ function renderFlagCheckIfStmt(flags, statements) {
     return ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(flags), null, false), statements);
 }
 // Default selector used by `<ng-content>` if none specified
-const DEFAULT_CONTENT_SELECTOR = '*';
+const DEFAULT_NG_CONTENT_SELECTOR = '*';
+// Selector attribute name of `<ng-content>`
+const NG_CONTENT_SELECT_ATTR$1 = 'select';
 class TemplateDefinitionBuilder {
     constructor(constantPool, parentBindingScope, level = 0, contextName, i18nContext, templateIndex, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace, relativeContextFilePath, i18nUseExternalIds) {
         this.constantPool = constantPool;
@@ -12888,15 +12890,15 @@ class TemplateDefinitionBuilder {
     visitContent(ngContent) {
         this._hasNgContent = true;
         const slot = this.allocateDataSlot();
-        let selectorIndex = ngContent.selector === DEFAULT_CONTENT_SELECTOR ?
+        let selectorIndex = ngContent.selector === DEFAULT_NG_CONTENT_SELECTOR ?
             0 :
             this._ngContentSelectors.push(ngContent.selector);
         const parameters = [literal(slot)];
         const attributeAsList = [];
         ngContent.attributes.forEach((attribute) => {
-            const name = attribute.name;
-            if (name !== 'select') {
-                attributeAsList.push(name, attribute.value);
+            const { name, value } = attribute;
+            if (name.toLowerCase() !== NG_CONTENT_SELECT_ATTR$1) {
+                attributeAsList.push(name, value);
             }
         });
         if (attributeAsList.length > 0) {
@@ -14575,7 +14577,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.1.0+206.sha-c71d7b5');
+const VERSION$1 = new Version('7.1.0+210.sha-f013c57');
 
 /**
  * @license
