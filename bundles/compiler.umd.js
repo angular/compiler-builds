@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0+209.sha-913563a
+ * @license Angular v7.2.0-beta.1+12.sha-b0c7561
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12278,8 +12278,9 @@
         return BoundAttribute;
     }());
     var BoundEvent = /** @class */ (function () {
-        function BoundEvent(name, handler, target, phase, sourceSpan) {
+        function BoundEvent(name, type, handler, target, phase, sourceSpan) {
             this.name = name;
+            this.type = type;
             this.handler = handler;
             this.target = target;
             this.phase = phase;
@@ -12288,7 +12289,7 @@
         BoundEvent.fromParsedEvent = function (event) {
             var target = event.type === 0 /* Regular */ ? event.targetOrPhase : null;
             var phase = event.type === 1 /* Animation */ ? event.targetOrPhase : null;
-            return new BoundEvent(event.name, event.handler, target, phase, event.sourceSpan);
+            return new BoundEvent(event.name, event.type, event.handler, target, phase, event.sourceSpan);
         };
         BoundEvent.prototype.visit = function (visitor) { return visitor.visitBoundEvent(this); };
         return BoundEvent;
@@ -14268,7 +14269,11 @@
         };
         TemplateDefinitionBuilder.prototype.prepareListenerParameter = function (tagName, outputAst) {
             var _this = this;
-            var evNameSanitized = sanitizeIdentifier(outputAst.name);
+            var eventName = outputAst.name;
+            if (outputAst.type === 1 /* Animation */) {
+                eventName = prepareSyntheticAttributeName(outputAst.name + "." + outputAst.phase);
+            }
+            var evNameSanitized = sanitizeIdentifier(eventName);
             var tagNameSanitized = sanitizeIdentifier(tagName);
             var functionName = this.templateName + "_" + tagNameSanitized + "_" + evNameSanitized + "_listener";
             return function () {
@@ -14276,7 +14281,7 @@
                 var bindingExpr = convertActionBinding(listenerScope, variable(CONTEXT_NAME), outputAst.handler, 'b', function () { return error('Unexpected interpolation'); });
                 var statements = __spread(listenerScope.restoreViewStatement(), listenerScope.variableDeclarations(), bindingExpr.render3Stmts);
                 var handler = fn([new FnParam('$event', DYNAMIC_TYPE)], statements, INFERRED_TYPE, null, functionName);
-                return [literal(outputAst.name), handler];
+                return [literal(eventName), handler];
             };
         };
         return TemplateDefinitionBuilder;
@@ -15562,7 +15567,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('7.1.0+209.sha-913563a');
+    var VERSION$1 = new Version('7.2.0-beta.1+12.sha-b0c7561');
 
     /**
      * @license

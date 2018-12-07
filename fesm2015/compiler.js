@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0+209.sha-913563a
+ * @license Angular v7.2.0-beta.1+12.sha-b0c7561
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -11485,8 +11485,9 @@ class BoundAttribute {
     visit(visitor) { return visitor.visitBoundAttribute(this); }
 }
 class BoundEvent {
-    constructor(name, handler, target, phase, sourceSpan) {
+    constructor(name, type, handler, target, phase, sourceSpan) {
         this.name = name;
+        this.type = type;
         this.handler = handler;
         this.target = target;
         this.phase = phase;
@@ -11495,7 +11496,7 @@ class BoundEvent {
     static fromParsedEvent(event) {
         const target = event.type === 0 /* Regular */ ? event.targetOrPhase : null;
         const phase = event.type === 1 /* Animation */ ? event.targetOrPhase : null;
-        return new BoundEvent(event.name, event.handler, target, phase, event.sourceSpan);
+        return new BoundEvent(event.name, event.type, event.handler, target, phase, event.sourceSpan);
     }
     visit(visitor) { return visitor.visitBoundEvent(this); }
 }
@@ -13341,7 +13342,11 @@ class TemplateDefinitionBuilder {
         return this.constantPool.getConstLiteral(asLiteral(refsParam), true);
     }
     prepareListenerParameter(tagName, outputAst) {
-        const evNameSanitized = sanitizeIdentifier(outputAst.name);
+        let eventName = outputAst.name;
+        if (outputAst.type === 1 /* Animation */) {
+            eventName = prepareSyntheticAttributeName(`${outputAst.name}.${outputAst.phase}`);
+        }
+        const evNameSanitized = sanitizeIdentifier(eventName);
         const tagNameSanitized = sanitizeIdentifier(tagName);
         const functionName = `${this.templateName}_${tagNameSanitized}_${evNameSanitized}_listener`;
         return () => {
@@ -13352,7 +13357,7 @@ class TemplateDefinitionBuilder {
                 ...bindingExpr.render3Stmts
             ];
             const handler = fn([new FnParam('$event', DYNAMIC_TYPE)], statements, INFERRED_TYPE, null, functionName);
-            return [literal(outputAst.name), handler];
+            return [literal(eventName), handler];
         };
     }
 }
@@ -14577,7 +14582,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.1.0+209.sha-913563a');
+const VERSION$1 = new Version('7.2.0-beta.1+12.sha-b0c7561');
 
 /**
  * @license
