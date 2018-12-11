@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0-beta.1+28.sha-3cb6dad
+ * @license Angular v7.2.0-beta.1+32.sha-053b43d
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -14220,8 +14220,9 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder
     };
     if (bindings) {
         const hostVarsCountFn = (numSlots) => {
+            const originalVarsCount = totalHostVarsCount;
             totalHostVarsCount += numSlots;
-            return hostVarsCount;
+            return originalVarsCount;
         };
         const valueConverter = new ValueConverter(constantPool, 
         /* new nodes are illegal here */ () => error('Unexpected node'), hostVarsCountFn, 
@@ -14240,15 +14241,12 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder
                 // resolve literal arrays and literal objects
                 const value = binding.expression.visit(valueConverter);
                 const bindingExpr = bindingFn(bindingContext, value);
-                const { bindingName, instruction } = getBindingNameAndInstruction(name);
+                const { bindingName, instruction, extraParams } = getBindingNameAndInstruction(name);
+                const instructionParams = [
+                    elVarExp, literal(bindingName), importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr])
+                ];
                 updateStatements.push(...bindingExpr.stmts);
-                updateStatements.push(importExpr(instruction)
-                    .callFn([
-                    elVarExp,
-                    literal(bindingName),
-                    importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr]),
-                ])
-                    .toStmt());
+                updateStatements.push(importExpr(instruction).callFn(instructionParams.concat(extraParams)).toStmt());
             }
         }
         if (styleBuilder.hasBindingsOrInitialValues) {
@@ -14290,6 +14288,7 @@ function createStylingStmt(instruction, bindingContext, bindingFn) {
 }
 function getBindingNameAndInstruction(bindingName) {
     let instruction;
+    const extraParams = [];
     // Check to see if this is an attr binding or a property binding
     const attrMatches = bindingName.match(ATTR_REGEX);
     if (attrMatches) {
@@ -14298,8 +14297,11 @@ function getBindingNameAndInstruction(bindingName) {
     }
     else {
         instruction = Identifiers$1.elementProperty;
+        extraParams.push(literal(null), // TODO: This should be a sanitizer fn (FW-785)
+        literal(true) // host bindings must have nativeOnly prop set to true
+        );
     }
-    return { bindingName, instruction };
+    return { bindingName, instruction, extraParams };
 }
 function createHostListeners(bindingContext, eventBindings, meta) {
     return eventBindings.map(binding => {
@@ -14582,7 +14584,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.0-beta.1+28.sha-3cb6dad');
+const VERSION$1 = new Version('7.2.0-beta.1+32.sha-053b43d');
 
 /**
  * @license
