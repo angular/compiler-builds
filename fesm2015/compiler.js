@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0-beta.1+27.sha-fb6a31c
+ * @license Angular v7.2.0-beta.1+29.sha-ceb14de
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -14220,8 +14220,9 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder
     };
     if (bindings) {
         const hostVarsCountFn = (numSlots) => {
+            const originalVarsCount = totalHostVarsCount;
             totalHostVarsCount += numSlots;
-            return hostVarsCount;
+            return originalVarsCount;
         };
         const valueConverter = new ValueConverter(constantPool, 
         /* new nodes are illegal here */ () => error('Unexpected node'), hostVarsCountFn, 
@@ -14582,7 +14583,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.0-beta.1+27.sha-fb6a31c');
+const VERSION$1 = new Version('7.2.0-beta.1+29.sha-ceb14de');
 
 /**
  * @license
