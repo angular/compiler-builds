@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0-beta.1+26.sha-3290fc3
+ * @license Angular v7.2.0-beta.2+10.sha-7fabe44
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { ResourceLoader, core, DirectiveResolver, NgModuleResolver, PipeResolver
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes,extraRequire,uselessCode} checked by tsc
+ * @suppress {checkTypes,extraRequire,missingReturn,uselessCode} checked by tsc
  */
 /**
  * A mock implementation of {\@link ResourceLoader} that allows outgoing requests to be mocked
@@ -70,7 +70,7 @@ class MockResourceLoader extends ResourceLoader {
             throw new Error('No pending requests to flush');
         }
         do {
-            this._processRequest(/** @type {?} */ ((this._requests.shift())));
+            this._processRequest((/** @type {?} */ (this._requests.shift())));
         } while (this._requests.length > 0);
         this.verifyNoOutstandingExpectations();
     }
@@ -169,7 +169,7 @@ function remove(list, el) {
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes,extraRequire,uselessCode} checked by tsc
+ * @suppress {checkTypes,extraRequire,missingReturn,uselessCode} checked by tsc
  */
 class MockSchemaRegistry {
     /**
@@ -268,13 +268,13 @@ class MockSchemaRegistry {
      * @return {?}
      */
     normalizeAnimationStyleValue(camelCaseProp, userProvidedProp, val) {
-        return { error: /** @type {?} */ ((null)), value: val.toString() };
+        return { error: (/** @type {?} */ (null)), value: val.toString() };
     }
 }
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes,extraRequire,uselessCode} checked by tsc
+ * @suppress {checkTypes,extraRequire,missingReturn,uselessCode} checked by tsc
  */
 /**
  * An implementation of {\@link DirectiveResolver} that allows overriding
@@ -309,7 +309,7 @@ class MockDirectiveResolver extends DirectiveResolver {
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes,extraRequire,uselessCode} checked by tsc
+ * @suppress {checkTypes,extraRequire,missingReturn,uselessCode} checked by tsc
  */
 class MockNgModuleResolver extends NgModuleResolver {
     /**
@@ -338,13 +338,13 @@ class MockNgModuleResolver extends NgModuleResolver {
      * @return {?}
      */
     resolve(type, throwIfNotFound = true) {
-        return this._ngModules.get(type) || /** @type {?} */ ((super.resolve(type, throwIfNotFound)));
+        return this._ngModules.get(type) || (/** @type {?} */ (super.resolve(type, throwIfNotFound)));
     }
 }
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes,extraRequire,uselessCode} checked by tsc
+ * @suppress {checkTypes,extraRequire,missingReturn,uselessCode} checked by tsc
  */
 class MockPipeResolver extends PipeResolver {
     /**
@@ -374,7 +374,7 @@ class MockPipeResolver extends PipeResolver {
         /** @type {?} */
         let metadata = this._pipes.get(type);
         if (!metadata) {
-            metadata = /** @type {?} */ ((super.resolve(type, throwIfNotFound)));
+            metadata = (/** @type {?} */ (super.resolve(type, throwIfNotFound)));
         }
         return metadata;
     }
@@ -382,18 +382,17 @@ class MockPipeResolver extends PipeResolver {
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes,extraRequire,uselessCode} checked by tsc
+ * @suppress {checkTypes,extraRequire,missingReturn,uselessCode} checked by tsc
  */
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes,extraRequire,uselessCode} checked by tsc
+ * @suppress {checkTypes,extraRequire,missingReturn,uselessCode} checked by tsc
  */
-// This file only reexports content of the `src` folder. Keep it that way.
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes,extraRequire,uselessCode} checked by tsc
+ * @suppress {checkTypes,extraRequire,missingReturn,uselessCode} checked by tsc
  */
 
 /**
