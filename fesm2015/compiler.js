@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0-beta.2+19.sha-e269274
+ * @license Angular v7.2.0-beta.2+27.sha-5902a46
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -3965,7 +3965,10 @@ function mapLiteral(obj, quoted = false) {
  * found in the LICENSE file at https://angular.io/license
  */
 /* Closure variables holding messages must be named `MSG_[A-Z0-9]+` */
-const TRANSLATION_PREFIX = 'MSG_';
+const CLOSURE_TRANSLATION_PREFIX = 'MSG_';
+const CLOSURE_TRANSLATION_MATCHER_REGEXP = new RegExp(`^${CLOSURE_TRANSLATION_PREFIX}`);
+/* Prefix for non-`goog.getMsg` i18n-related vars */
+const TRANSLATION_PREFIX = 'I18N_';
 /** Closure uses `goog.getMsg(message)` to lookup translations */
 const GOOG_GET_MSG = 'goog.getMsg';
 /** I18n separators for metadata **/
@@ -4133,7 +4136,7 @@ function formatI18nPlaceholderName(name) {
  * @returns Complete translation const prefix
  */
 function getTranslationConstPrefix(extra) {
-    return `${TRANSLATION_PREFIX}${extra}`.toUpperCase();
+    return `${CLOSURE_TRANSLATION_PREFIX}${extra}`.toUpperCase();
 }
 /**
  * Generates translation declaration statements.
@@ -4152,8 +4155,12 @@ function getTranslationDeclStmts(variable$$1, message, meta, params = {}, transf
         statements.push(docStatements);
     }
     if (transformFn) {
-        const raw = variable(`${variable$$1.name}$$RAW`);
-        statements.push(i18nTranslationToDeclStmt(raw, message, params));
+        statements.push(i18nTranslationToDeclStmt(variable$$1, message, params));
+        // Closure Compiler doesn't allow non-goo.getMsg const names to start with `MSG_`,
+        // so we update variable name prefix in case post processing is required, so we can
+        // assign the result of post-processing function to the var that starts with `I18N_`
+        const raw = variable(variable$$1.name);
+        variable$$1.name = variable$$1.name.replace(CLOSURE_TRANSLATION_MATCHER_REGEXP, TRANSLATION_PREFIX);
         statements.push(variable$$1.set(transformFn(raw)).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
     }
     else {
@@ -12797,12 +12804,14 @@ class TemplateDefinitionBuilder {
     }
     i18nAllocateRef(messageId) {
         let name;
+        const suffix = this.fileBasedI18nSuffix.toUpperCase();
         if (this.i18nUseExternalIds) {
             const prefix = getTranslationConstPrefix(`EXTERNAL_`);
-            name = `${prefix}${messageId}`;
+            const uniqueSuffix = this.constantPool.uniqueName(suffix);
+            name = `${prefix}${messageId}$$${uniqueSuffix}`;
         }
         else {
-            const prefix = getTranslationConstPrefix(this.fileBasedI18nSuffix);
+            const prefix = getTranslationConstPrefix(suffix);
             name = this.constantPool.uniqueName(prefix);
         }
         return variable(name);
@@ -14584,7 +14593,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.0-beta.2+19.sha-e269274');
+const VERSION$1 = new Version('7.2.0-beta.2+27.sha-5902a46');
 
 /**
  * @license
