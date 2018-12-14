@@ -1,10 +1,10 @@
 /**
- * @license Angular v7.2.0-beta.2+10.sha-7fabe44
+ * @license Angular v7.2.0-beta.2+26.sha-ad26cd6
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __extends, __assign, __spread, __read, __values } from 'tslib';
+import { __extends, __assign, __spread, __values, __read } from 'tslib';
 
 /**
  * @license
@@ -4297,7 +4297,10 @@ function mapLiteral(obj, quoted) {
  * found in the LICENSE file at https://angular.io/license
  */
 /* Closure variables holding messages must be named `MSG_[A-Z0-9]+` */
-var TRANSLATION_PREFIX = 'MSG_';
+var CLOSURE_TRANSLATION_PREFIX = 'MSG_';
+var CLOSURE_TRANSLATION_MATCHER_REGEXP = new RegExp("^" + CLOSURE_TRANSLATION_PREFIX);
+/* Prefix for non-`goog.getMsg` i18n-related vars */
+var TRANSLATION_PREFIX = 'I18N_';
 /** Closure uses `goog.getMsg(message)` to lookup translations */
 var GOOG_GET_MSG = 'goog.getMsg';
 /** I18n separators for metadata **/
@@ -4476,7 +4479,7 @@ function formatI18nPlaceholderName(name) {
  * @returns Complete translation const prefix
  */
 function getTranslationConstPrefix(extra) {
-    return ("" + TRANSLATION_PREFIX + extra).toUpperCase();
+    return ("" + CLOSURE_TRANSLATION_PREFIX + extra).toUpperCase();
 }
 /**
  * Generates translation declaration statements.
@@ -4496,8 +4499,12 @@ function getTranslationDeclStmts(variable$$1, message, meta, params, transformFn
         statements.push(docStatements);
     }
     if (transformFn) {
-        var raw = variable(variable$$1.name + "$$RAW");
-        statements.push(i18nTranslationToDeclStmt(raw, message, params));
+        statements.push(i18nTranslationToDeclStmt(variable$$1, message, params));
+        // Closure Compiler doesn't allow non-goo.getMsg const names to start with `MSG_`,
+        // so we update variable name prefix in case post processing is required, so we can
+        // assign the result of post-processing function to the var that starts with `I18N_`
+        var raw = variable(variable$$1.name);
+        variable$$1.name = variable$$1.name.replace(CLOSURE_TRANSLATION_MATCHER_REGEXP, TRANSLATION_PREFIX);
         statements.push(variable$$1.set(transformFn(raw)).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
     }
     else {
@@ -13640,12 +13647,14 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     };
     TemplateDefinitionBuilder.prototype.i18nAllocateRef = function (messageId) {
         var name;
+        var suffix = this.fileBasedI18nSuffix.toUpperCase();
         if (this.i18nUseExternalIds) {
             var prefix = getTranslationConstPrefix("EXTERNAL_");
-            name = "" + prefix + messageId;
+            var uniqueSuffix = this.constantPool.uniqueName(suffix);
+            name = "" + prefix + messageId + "$$" + uniqueSuffix;
         }
         else {
-            var prefix = getTranslationConstPrefix(this.fileBasedI18nSuffix);
+            var prefix = getTranslationConstPrefix(suffix);
             name = this.constantPool.uniqueName(prefix);
         }
         return variable(name);
@@ -15512,7 +15521,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.2.0-beta.2+10.sha-7fabe44');
+var VERSION$1 = new Version('7.2.0-beta.2+26.sha-ad26cd6');
 
 /**
  * @license
