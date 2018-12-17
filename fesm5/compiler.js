@@ -1,10 +1,10 @@
 /**
- * @license Angular v7.2.0-beta.2+53.sha-ea10a3a
+ * @license Angular v7.2.0-beta.2+62.sha-94f17e9
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __extends, __assign, __spread, __values, __read } from 'tslib';
+import { __extends, __assign, __spread, __read, __values } from 'tslib';
 
 /**
  * @license
@@ -12261,7 +12261,8 @@ var Element$1 = /** @class */ (function () {
     return Element;
 }());
 var Template = /** @class */ (function () {
-    function Template(attributes, inputs, outputs, children, references, variables, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
+    function Template(tagName, attributes, inputs, outputs, children, references, variables, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
+        this.tagName = tagName;
         this.attributes = attributes;
         this.inputs = inputs;
         this.outputs = outputs;
@@ -12617,7 +12618,7 @@ var HtmlAstToIvyAst = /** @class */ (function () {
         else if (isTemplateElement) {
             // `<ng-template>`
             var attrs = this.extractAttributes(element.name, parsedProperties, i18nAttrsMeta);
-            parsedElement = new Template(attributes, attrs.bound, boundEvents, children, references, variables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+            parsedElement = new Template(element.name, attributes, attrs.bound, boundEvents, children, references, variables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
         }
         else {
             var attrs = this.extractAttributes(element.name, parsedProperties, i18nAttrsMeta);
@@ -12626,7 +12627,7 @@ var HtmlAstToIvyAst = /** @class */ (function () {
         if (elementHasInlineTemplate) {
             var attrs = this.extractAttributes('ng-template', templateParsedProperties, i18nAttrsMeta);
             // TODO(pk): test for this case
-            parsedElement = new Template(attrs.literal, attrs.bound, [], [parsedElement], [], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+            parsedElement = new Template(parsedElement.name, attrs.literal, attrs.bound, [], [parsedElement], [], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
         }
         return parsedElement;
     };
@@ -13989,17 +13990,13 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         if (this.i18n) {
             this.i18n.appendTemplate(template.i18n, templateIndex);
         }
-        var elName = '';
-        if (isSingleElementTemplate(template.children)) {
-            // When the template as a single child, derive the context name from the tag
-            elName = sanitizeIdentifier(template.children[0].name);
-        }
-        var contextName = elName ? this.contextName + "_" + elName : '';
+        var tagName = sanitizeIdentifier(template.tagName || '');
+        var contextName = tagName ? this.contextName + "_" + tagName : '';
         var templateName = contextName ? contextName + "_Template_" + templateIndex : "Template_" + templateIndex;
         var parameters = [
             literal(templateIndex),
             variable(templateName),
-            TYPED_NULL_EXPR,
+            literal(template.tagName),
         ];
         // find directives matching on a given <ng-template> node
         this.matchDirectives('ng-template', template);
@@ -15521,7 +15518,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.2.0-beta.2+53.sha-ea10a3a');
+var VERSION$1 = new Version('7.2.0-beta.2+62.sha-94f17e9');
 
 /**
  * @license
