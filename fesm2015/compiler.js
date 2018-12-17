@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.1.0+202.sha-3fa2a5f
+ * @license Angular v7.2.0-beta.2+63.sha-19508c4
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -3965,7 +3965,10 @@ function mapLiteral(obj, quoted = false) {
  * found in the LICENSE file at https://angular.io/license
  */
 /* Closure variables holding messages must be named `MSG_[A-Z0-9]+` */
-const TRANSLATION_PREFIX = 'MSG_';
+const CLOSURE_TRANSLATION_PREFIX = 'MSG_';
+const CLOSURE_TRANSLATION_MATCHER_REGEXP = new RegExp(`^${CLOSURE_TRANSLATION_PREFIX}`);
+/* Prefix for non-`goog.getMsg` i18n-related vars */
+const TRANSLATION_PREFIX = 'I18N_';
 /** Closure uses `goog.getMsg(message)` to lookup translations */
 const GOOG_GET_MSG = 'goog.getMsg';
 /** I18n separators for metadata **/
@@ -4133,7 +4136,7 @@ function formatI18nPlaceholderName(name) {
  * @returns Complete translation const prefix
  */
 function getTranslationConstPrefix(extra) {
-    return `${TRANSLATION_PREFIX}${extra}`.toUpperCase();
+    return `${CLOSURE_TRANSLATION_PREFIX}${extra}`.toUpperCase();
 }
 /**
  * Generates translation declaration statements.
@@ -4152,8 +4155,12 @@ function getTranslationDeclStmts(variable$$1, message, meta, params = {}, transf
         statements.push(docStatements);
     }
     if (transformFn) {
-        const raw = variable(`${variable$$1.name}$$RAW`);
-        statements.push(i18nTranslationToDeclStmt(raw, message, params));
+        statements.push(i18nTranslationToDeclStmt(variable$$1, message, params));
+        // Closure Compiler doesn't allow non-goo.getMsg const names to start with `MSG_`,
+        // so we update variable name prefix in case post processing is required, so we can
+        // assign the result of post-processing function to the var that starts with `I18N_`
+        const raw = variable(variable$$1.name);
+        variable$$1.name = variable$$1.name.replace(CLOSURE_TRANSLATION_MATCHER_REGEXP, TRANSLATION_PREFIX);
         statements.push(variable$$1.set(transformFn(raw)).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
     }
     else {
@@ -4550,7 +4557,7 @@ function compileInjectable(meta) {
     const token = meta.type;
     const providedIn = meta.providedIn;
     const expression = importExpr(Identifiers.defineInjectable).callFn([mapToMapExpression({ token, factory: result.factory, providedIn })]);
-    const type = new ExpressionType(importExpr(Identifiers.InjectableDef, [new ExpressionType(meta.type)]));
+    const type = new ExpressionType(importExpr(Identifiers.InjectableDef, [typeWithParameters(meta.type, meta.typeArgumentCount)]));
     return {
         expression,
         type,
@@ -11485,8 +11492,9 @@ class BoundAttribute {
     visit(visitor) { return visitor.visitBoundAttribute(this); }
 }
 class BoundEvent {
-    constructor(name, handler, target, phase, sourceSpan) {
+    constructor(name, type, handler, target, phase, sourceSpan) {
         this.name = name;
+        this.type = type;
         this.handler = handler;
         this.target = target;
         this.phase = phase;
@@ -11495,7 +11503,7 @@ class BoundEvent {
     static fromParsedEvent(event) {
         const target = event.type === 0 /* Regular */ ? event.targetOrPhase : null;
         const phase = event.type === 1 /* Animation */ ? event.targetOrPhase : null;
-        return new BoundEvent(event.name, event.handler, target, phase, event.sourceSpan);
+        return new BoundEvent(event.name, event.type, event.handler, target, phase, event.sourceSpan);
     }
     visit(visitor) { return visitor.visitBoundEvent(this); }
 }
@@ -11515,7 +11523,8 @@ class Element$1 {
     visit(visitor) { return visitor.visitElement(this); }
 }
 class Template {
-    constructor(attributes, inputs, outputs, children, references, variables, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
+    constructor(tagName, attributes, inputs, outputs, children, references, variables, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
+        this.tagName = tagName;
         this.attributes = attributes;
         this.inputs = inputs;
         this.outputs = outputs;
@@ -11827,7 +11836,7 @@ class HtmlAstToIvyAst {
         else if (isTemplateElement) {
             // `<ng-template>`
             const attrs = this.extractAttributes(element.name, parsedProperties, i18nAttrsMeta);
-            parsedElement = new Template(attributes, attrs.bound, boundEvents, children, references, variables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+            parsedElement = new Template(element.name, attributes, attrs.bound, boundEvents, children, references, variables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
         }
         else {
             const attrs = this.extractAttributes(element.name, parsedProperties, i18nAttrsMeta);
@@ -11836,7 +11845,7 @@ class HtmlAstToIvyAst {
         if (elementHasInlineTemplate) {
             const attrs = this.extractAttributes('ng-template', templateParsedProperties, i18nAttrsMeta);
             // TODO(pk): test for this case
-            parsedElement = new Template(attrs.literal, attrs.bound, [], [parsedElement], [], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+            parsedElement = new Template(parsedElement.name, attrs.literal, attrs.bound, [], [parsedElement], [], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
         }
         return parsedElement;
     }
@@ -12564,11 +12573,11 @@ function getSerializedI18nContent(message) {
 function mapBindingToInstruction(type) {
     switch (type) {
         case 0 /* Property */:
+        case 4 /* Animation */:
             return Identifiers$1.elementProperty;
         case 2 /* Class */:
             return Identifiers$1.elementClassProp;
         case 1 /* Attribute */:
-        case 4 /* Animation */:
             return Identifiers$1.elementAttribute;
         default:
             return undefined;
@@ -12579,7 +12588,9 @@ function renderFlagCheckIfStmt(flags, statements) {
     return ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(flags), null, false), statements);
 }
 // Default selector used by `<ng-content>` if none specified
-const DEFAULT_CONTENT_SELECTOR = '*';
+const DEFAULT_NG_CONTENT_SELECTOR = '*';
+// Selector attribute name of `<ng-content>`
+const NG_CONTENT_SELECT_ATTR$1 = 'select';
 class TemplateDefinitionBuilder {
     constructor(constantPool, parentBindingScope, level = 0, contextName, i18nContext, templateIndex, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace, relativeContextFilePath, i18nUseExternalIds) {
         this.constantPool = constantPool;
@@ -12794,12 +12805,14 @@ class TemplateDefinitionBuilder {
     }
     i18nAllocateRef(messageId) {
         let name;
+        const suffix = this.fileBasedI18nSuffix.toUpperCase();
         if (this.i18nUseExternalIds) {
             const prefix = getTranslationConstPrefix(`EXTERNAL_`);
-            name = `${prefix}${messageId}`;
+            const uniqueSuffix = this.constantPool.uniqueName(suffix);
+            name = `${prefix}${messageId}$$${uniqueSuffix}`;
         }
         else {
-            const prefix = getTranslationConstPrefix(this.fileBasedI18nSuffix);
+            const prefix = getTranslationConstPrefix(suffix);
             name = this.constantPool.uniqueName(prefix);
         }
         return variable(name);
@@ -12888,15 +12901,15 @@ class TemplateDefinitionBuilder {
     visitContent(ngContent) {
         this._hasNgContent = true;
         const slot = this.allocateDataSlot();
-        let selectorIndex = ngContent.selector === DEFAULT_CONTENT_SELECTOR ?
+        let selectorIndex = ngContent.selector === DEFAULT_NG_CONTENT_SELECTOR ?
             0 :
             this._ngContentSelectors.push(ngContent.selector);
         const parameters = [literal(slot)];
         const attributeAsList = [];
         ngContent.attributes.forEach((attribute) => {
-            const name = attribute.name;
-            if (name !== 'select') {
-                attributeAsList.push(name, attribute.value);
+            const { name, value } = attribute;
+            if (name.toLowerCase() !== NG_CONTENT_SELECT_ATTR$1) {
+                attributeAsList.push(name, value);
             }
         });
         if (attributeAsList.length > 0) {
@@ -13066,10 +13079,11 @@ class TemplateDefinitionBuilder {
             const instruction = mapBindingToInstruction(input.type);
             if (input.type === 4 /* Animation */) {
                 const value = input.value.visit(this._valueConverter);
-                // setAttribute without a value doesn't make any sense
+                // setProperty without a value doesn't make any sense
                 if (value.name || value.value) {
+                    this.allocateBindingSlots(value);
                     const name = prepareSyntheticAttributeName(input.name);
-                    this.updateInstruction(input.sourceSpan, Identifiers$1.elementAttribute, () => {
+                    this.updateInstruction(input.sourceSpan, Identifiers$1.elementProperty, () => {
                         return [
                             literal(elementIndex), literal(name), this.convertPropertyBinding(implicit, value)
                         ];
@@ -13117,17 +13131,13 @@ class TemplateDefinitionBuilder {
         if (this.i18n) {
             this.i18n.appendTemplate(template.i18n, templateIndex);
         }
-        let elName = '';
-        if (isSingleElementTemplate(template.children)) {
-            // When the template as a single child, derive the context name from the tag
-            elName = sanitizeIdentifier(template.children[0].name);
-        }
-        const contextName = elName ? `${this.contextName}_${elName}` : '';
+        const tagName = sanitizeIdentifier(template.tagName || '');
+        const contextName = tagName ? `${this.contextName}_${tagName}` : '';
         const templateName = contextName ? `${contextName}_Template_${templateIndex}` : `Template_${templateIndex}`;
         const parameters = [
             literal(templateIndex),
             variable(templateName),
-            TYPED_NULL_EXPR,
+            literal(template.tagName),
         ];
         // find directives matching on a given <ng-template> node
         this.matchDirectives('ng-template', template);
@@ -13338,7 +13348,11 @@ class TemplateDefinitionBuilder {
         return this.constantPool.getConstLiteral(asLiteral(refsParam), true);
     }
     prepareListenerParameter(tagName, outputAst) {
-        const evNameSanitized = sanitizeIdentifier(outputAst.name);
+        let eventName = outputAst.name;
+        if (outputAst.type === 1 /* Animation */) {
+            eventName = prepareSyntheticAttributeName(`${outputAst.name}.${outputAst.phase}`);
+        }
+        const evNameSanitized = sanitizeIdentifier(eventName);
         const tagNameSanitized = sanitizeIdentifier(tagName);
         const functionName = `${this.templateName}_${tagNameSanitized}_${evNameSanitized}_listener`;
         return () => {
@@ -13349,7 +13363,7 @@ class TemplateDefinitionBuilder {
                 ...bindingExpr.render3Stmts
             ];
             const handler = fn([new FnParam('$event', DYNAMIC_TYPE)], statements, INFERRED_TYPE, null, functionName);
-            return [literal(outputAst.name), handler];
+            return [literal(eventName), handler];
         };
     }
 }
@@ -13950,9 +13964,9 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     if (meta.encapsulation !== ViewEncapsulation.Emulated) {
         definitionMap.set('encapsulation', literal(meta.encapsulation));
     }
-    // e.g. `animations: [trigger('123', [])]`
+    // e.g. `animation: [trigger('123', [])]`
     if (meta.animations !== null) {
-        definitionMap.set('data', literalMap([{ key: 'animations', value: meta.animations, quoted: false }]));
+        definitionMap.set('data', literalMap([{ key: 'animation', value: meta.animations, quoted: false }]));
     }
     // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
     // string literal, which must be on one line.
@@ -14212,8 +14226,9 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder
     };
     if (bindings) {
         const hostVarsCountFn = (numSlots) => {
+            const originalVarsCount = totalHostVarsCount;
             totalHostVarsCount += numSlots;
-            return hostVarsCount;
+            return originalVarsCount;
         };
         const valueConverter = new ValueConverter(constantPool, 
         /* new nodes are illegal here */ () => error('Unexpected node'), hostVarsCountFn, 
@@ -14232,15 +14247,12 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder
                 // resolve literal arrays and literal objects
                 const value = binding.expression.visit(valueConverter);
                 const bindingExpr = bindingFn(bindingContext, value);
-                const { bindingName, instruction } = getBindingNameAndInstruction(name);
+                const { bindingName, instruction, extraParams } = getBindingNameAndInstruction(name);
+                const instructionParams = [
+                    elVarExp, literal(bindingName), importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr])
+                ];
                 updateStatements.push(...bindingExpr.stmts);
-                updateStatements.push(importExpr(instruction)
-                    .callFn([
-                    elVarExp,
-                    literal(bindingName),
-                    importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr]),
-                ])
-                    .toStmt());
+                updateStatements.push(importExpr(instruction).callFn(instructionParams.concat(extraParams)).toStmt());
             }
         }
         if (styleBuilder.hasBindingsOrInitialValues) {
@@ -14282,6 +14294,7 @@ function createStylingStmt(instruction, bindingContext, bindingFn) {
 }
 function getBindingNameAndInstruction(bindingName) {
     let instruction;
+    const extraParams = [];
     // Check to see if this is an attr binding or a property binding
     const attrMatches = bindingName.match(ATTR_REGEX);
     if (attrMatches) {
@@ -14290,8 +14303,11 @@ function getBindingNameAndInstruction(bindingName) {
     }
     else {
         instruction = Identifiers$1.elementProperty;
+        extraParams.push(literal(null), // TODO: This should be a sanitizer fn (FW-785)
+        literal(true) // host bindings must have nativeOnly prop set to true
+        );
     }
-    return { bindingName, instruction };
+    return { bindingName, instruction, extraParams };
 }
 function createHostListeners(bindingContext, eventBindings, meta) {
     return eventBindings.map(binding => {
@@ -14388,6 +14404,7 @@ class CompilerFacadeImpl {
         const { expression, statements } = compileInjectable({
             name: facade.name,
             type: new WrappedNodeExpr(facade.type),
+            typeArgumentCount: facade.typeArgumentCount,
             providedIn: computeProvidedIn(facade.providedIn),
             useClass: wrapExpression(facade, USE_CLASS),
             useFactory: wrapExpression(facade, USE_FACTORY),
@@ -14573,7 +14590,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.1.0+202.sha-3fa2a5f');
+const VERSION$1 = new Version('7.2.0-beta.2+63.sha-19508c4');
 
 /**
  * @license

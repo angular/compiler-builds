@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { SecurityContext } from '../core';
-import { AST, BindingType, BoundElementProperty, ParsedEvent } from '../expression_parser/ast';
+import { AST, BindingType, BoundElementProperty, ParsedEvent, ParsedEventType } from '../expression_parser/ast';
 import { AST as I18nAST } from '../i18n/i18n_ast';
 import { ParseSourceSpan } from '../parse_util';
 export interface Node {
@@ -49,11 +49,12 @@ export declare class BoundAttribute implements Node {
 }
 export declare class BoundEvent implements Node {
     name: string;
+    type: ParsedEventType;
     handler: AST;
     target: string | null;
     phase: string | null;
     sourceSpan: ParseSourceSpan;
-    constructor(name: string, handler: AST, target: string | null, phase: string | null, sourceSpan: ParseSourceSpan);
+    constructor(name: string, type: ParsedEventType, handler: AST, target: string | null, phase: string | null, sourceSpan: ParseSourceSpan);
     static fromParsedEvent(event: ParsedEvent): BoundEvent;
     visit<Result>(visitor: Visitor<Result>): Result;
 }
@@ -72,6 +73,7 @@ export declare class Element implements Node {
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 export declare class Template implements Node {
+    tagName: string;
     attributes: TextAttribute[];
     inputs: BoundAttribute[];
     outputs: BoundEvent[];
@@ -82,7 +84,7 @@ export declare class Template implements Node {
     startSourceSpan: ParseSourceSpan | null;
     endSourceSpan: ParseSourceSpan | null;
     i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined;
-    constructor(attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], children: Node[], references: Reference[], variables: Variable[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan | null, endSourceSpan: ParseSourceSpan | null, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
+    constructor(tagName: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], children: Node[], references: Reference[], variables: Variable[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan | null, endSourceSpan: ParseSourceSpan | null, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 export declare class Content implements Node {
