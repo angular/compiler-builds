@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0-beta.2+83.sha-b04bc5d
+ * @license Angular v7.2.0-beta.2+89.sha-69198ba
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { ResourceLoader, core, DirectiveResolver, NgModuleResolver, PipeResolver
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes,extraRequire,missingReturn,uselessCode} checked by tsc
+ * @suppress {checkTypes,extraRequire,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
  */
 /**
  * A mock implementation of {\@link ResourceLoader} that allows outgoing requests to be mocked
@@ -91,6 +91,7 @@ class MockResourceLoader extends ResourceLoader {
         throw new Error(`Unsatisfied requests: ${urls.join(', ')}`);
     }
     /**
+     * @private
      * @param {?} request
      * @return {?}
      */
@@ -169,7 +170,7 @@ function remove(list, el) {
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes,extraRequire,missingReturn,uselessCode} checked by tsc
+ * @suppress {checkTypes,extraRequire,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
  */
 class MockSchemaRegistry {
     /**
@@ -274,7 +275,7 @@ class MockSchemaRegistry {
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes,extraRequire,missingReturn,uselessCode} checked by tsc
+ * @suppress {checkTypes,extraRequire,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
  */
 /**
  * An implementation of {\@link DirectiveResolver} that allows overriding
@@ -309,7 +310,7 @@ class MockDirectiveResolver extends DirectiveResolver {
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes,extraRequire,missingReturn,uselessCode} checked by tsc
+ * @suppress {checkTypes,extraRequire,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
  */
 class MockNgModuleResolver extends NgModuleResolver {
     /**
@@ -344,7 +345,7 @@ class MockNgModuleResolver extends NgModuleResolver {
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes,extraRequire,missingReturn,uselessCode} checked by tsc
+ * @suppress {checkTypes,extraRequire,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
  */
 class MockPipeResolver extends PipeResolver {
     /**
@@ -382,17 +383,17 @@ class MockPipeResolver extends PipeResolver {
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes,extraRequire,missingReturn,uselessCode} checked by tsc
+ * @suppress {checkTypes,extraRequire,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
  */
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes,extraRequire,missingReturn,uselessCode} checked by tsc
+ * @suppress {checkTypes,extraRequire,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
  */
 
 /**
  * @fileoverview added by tsickle
- * @suppress {checkTypes,extraRequire,missingReturn,uselessCode} checked by tsc
+ * @suppress {checkTypes,extraRequire,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
  */
 
 /**
