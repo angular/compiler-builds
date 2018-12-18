@@ -32,7 +32,7 @@ export declare function invalid<T>(arg: o.Expression | o.Statement | t.Node): ne
 export declare function asLiteral(value: any): o.Expression;
 export declare function conditionallyCreateMapObjectLiteral(keys: {
     [key: string]: string | string[];
-}): o.Expression | null;
+}, keepDeclared?: boolean): o.Expression | null;
 /**
  *  Remove trailing null nodes as they are implied.
  */

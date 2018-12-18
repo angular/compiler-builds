@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0-beta.2+66.sha-c986d3d
+ * @license Angular v7.2.0-beta.2+82.sha-1c93afe
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -4218,18 +4218,34 @@ function asLiteral(value) {
     }
     return literal(value, INFERRED_TYPE);
 }
-function conditionallyCreateMapObjectLiteral(keys) {
+function conditionallyCreateMapObjectLiteral(keys, keepDeclared) {
     if (Object.getOwnPropertyNames(keys).length > 0) {
-        return mapToExpression(keys);
+        return mapToExpression(keys, keepDeclared);
     }
     return null;
 }
-function mapToExpression(map) {
+function mapToExpression(map, keepDeclared) {
     return literalMap(Object.getOwnPropertyNames(map).map(key => {
-        // canonical syntax: `dirProp: elProp`
+        // canonical syntax: `dirProp: publicProp`
         // if there is no `:`, use dirProp = elProp
-        const parts = splitAtColon(key, [key, map[key]]);
-        return { key: parts[0], quoted: false, value: asLiteral(parts[1]) };
+        const value = map[key];
+        let declaredName;
+        let publicName;
+        let minifiedName;
+        if (Array.isArray(value)) {
+            [publicName, declaredName] = value;
+        }
+        else {
+            [declaredName, publicName] = splitAtColon(key, [key, value]);
+        }
+        minifiedName = declaredName;
+        return {
+            key: minifiedName,
+            quoted: false,
+            value: (keepDeclared && publicName !== declaredName) ?
+                literalArr([asLiteral(publicName), asLiteral(declaredName)]) :
+                asLiteral(publicName)
+        };
     }));
 }
 /**
@@ -13814,7 +13830,7 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     // e.g. `hostBindings: (rf, ctx, elIndex) => { ... }
     definitionMap.set('hostBindings', createHostBindingsFunction(meta, elVarExp, contextVarExp, styleBuilder, bindingParser, constantPool, hostVarsCount));
     // e.g 'inputs: {a: 'a'}`
-    definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs));
+    definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs, true));
     // e.g 'outputs: {a: 'a'}`
     definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
     if (meta.exportAs !== null) {
@@ -14590,7 +14606,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.0-beta.2+66.sha-c986d3d');
+const VERSION$1 = new Version('7.2.0-beta.2+82.sha-1c93afe');
 
 /**
  * @license

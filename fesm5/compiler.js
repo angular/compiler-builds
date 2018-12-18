@@ -1,10 +1,10 @@
 /**
- * @license Angular v7.2.0-beta.2+66.sha-c986d3d
+ * @license Angular v7.2.0-beta.2+82.sha-1c93afe
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __extends, __assign, __spread, __read, __values } from 'tslib';
+import { __extends, __assign, __spread, __values, __read } from 'tslib';
 
 /**
  * @license
@@ -4562,18 +4562,35 @@ function asLiteral(value) {
     }
     return literal(value, INFERRED_TYPE);
 }
-function conditionallyCreateMapObjectLiteral(keys) {
+function conditionallyCreateMapObjectLiteral(keys, keepDeclared) {
     if (Object.getOwnPropertyNames(keys).length > 0) {
-        return mapToExpression(keys);
+        return mapToExpression(keys, keepDeclared);
     }
     return null;
 }
-function mapToExpression(map) {
+function mapToExpression(map, keepDeclared) {
     return literalMap(Object.getOwnPropertyNames(map).map(function (key) {
-        // canonical syntax: `dirProp: elProp`
+        var _a, _b;
+        // canonical syntax: `dirProp: publicProp`
         // if there is no `:`, use dirProp = elProp
-        var parts = splitAtColon(key, [key, map[key]]);
-        return { key: parts[0], quoted: false, value: asLiteral(parts[1]) };
+        var value = map[key];
+        var declaredName;
+        var publicName;
+        var minifiedName;
+        if (Array.isArray(value)) {
+            _a = __read(value, 2), publicName = _a[0], declaredName = _a[1];
+        }
+        else {
+            _b = __read(splitAtColon(key, [key, value]), 2), declaredName = _b[0], publicName = _b[1];
+        }
+        minifiedName = declaredName;
+        return {
+            key: minifiedName,
+            quoted: false,
+            value: (keepDeclared && publicName !== declaredName) ?
+                literalArr([asLiteral(publicName), asLiteral(declaredName)]) :
+                asLiteral(publicName)
+        };
     }));
 }
 /**
@@ -14699,7 +14716,7 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     // e.g. `hostBindings: (rf, ctx, elIndex) => { ... }
     definitionMap.set('hostBindings', createHostBindingsFunction(meta, elVarExp, contextVarExp, styleBuilder, bindingParser, constantPool, hostVarsCount));
     // e.g 'inputs: {a: 'a'}`
-    definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs));
+    definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs, true));
     // e.g 'outputs: {a: 'a'}`
     definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
     if (meta.exportAs !== null) {
@@ -15518,7 +15535,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.2.0-beta.2+66.sha-c986d3d');
+var VERSION$1 = new Version('7.2.0-beta.2+82.sha-1c93afe');
 
 /**
  * @license
