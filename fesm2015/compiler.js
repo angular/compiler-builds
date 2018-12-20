@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0-rc.0+10.sha-4b70a4e
+ * @license Angular v7.2.0-rc.0+12.sha-a0585c9
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12658,6 +12658,9 @@ class TemplateDefinitionBuilder {
         this._hasNgContent = false;
         // Selectors found in the <ng-content> tags in the template.
         this._ngContentSelectors = [];
+        // Number of non-default selectors found in all parent templates of this template. We need to
+        // track it to properly adjust projection bucket index in the `projection` instruction.
+        this._ngContentSelectorsOffset = 0;
         // These should be handled in the template or element directly.
         this.visitReference = invalid$1;
         this.visitVariable = invalid$1;
@@ -12699,7 +12702,8 @@ class TemplateDefinitionBuilder {
             return [lhs.set(rhs.prop(variable$$1.value || IMPLICIT_REFERENCE)).toConstDecl()];
         });
     }
-    buildTemplateFunction(nodes, variables, i18n) {
+    buildTemplateFunction(nodes, variables, ngContentSelectorsOffset = 0, i18n) {
+        this._ngContentSelectorsOffset = ngContentSelectorsOffset;
         if (this._namespace !== Identifiers$1.namespaceHTML) {
             this.creationInstruction(null, this._namespace);
         }
@@ -12720,8 +12724,20 @@ class TemplateDefinitionBuilder {
         // pass. It's necessary to separate the passes to ensure local refs are defined before
         // resolving bindings. We also count bindings in this pass as we walk bound expressions.
         visitAll$1(this, nodes);
-        // Output a `ProjectionDef` instruction when some `<ng-content>` are present
-        if (this._hasNgContent) {
+        // Add total binding count to pure function count so pure function instructions are
+        // generated with the correct slot offset when update instructions are processed.
+        this._pureFunctionSlots += this._bindingSlots;
+        // Pipes are walked in the first pass (to enqueue `pipe()` creation instructions and
+        // `pipeBind` update instructions), so we have to update the slot offsets manually
+        // to account for bindings.
+        this._valueConverter.updatePipeSlotOffsets(this._bindingSlots);
+        // Nested templates must be processed before creation instructions so template()
+        // instructions can be generated with the correct internal const count.
+        this._nestedTemplateFns.forEach(buildTemplateFn => buildTemplateFn());
+        // Output the `projectionDef` instruction when some `<ng-content>` are present.
+        // The `projectionDef` instruction only emitted for the component template and it is skipped for
+        // nested templates (<ng-template> tags).
+        if (this.level === 0 && this._hasNgContent) {
             const parameters = [];
             // Only selectors with a non-default value are generated
             if (this._ngContentSelectors.length) {
@@ -12736,16 +12752,6 @@ class TemplateDefinitionBuilder {
             // any `projection` instructions
             this.creationInstruction(null, Identifiers$1.projectionDef, parameters, /* prepend */ true);
         }
-        // Add total binding count to pure function count so pure function instructions are
-        // generated with the correct slot offset when update instructions are processed.
-        this._pureFunctionSlots += this._bindingSlots;
-        // Pipes are walked in the first pass (to enqueue `pipe()` creation instructions and
-        // `pipeBind` update instructions), so we have to update the slot offsets manually
-        // to account for bindings.
-        this._valueConverter.updatePipeSlotOffsets(this._bindingSlots);
-        // Nested templates must be processed before creation instructions so template()
-        // instructions can be generated with the correct internal const count.
-        this._nestedTemplateFns.forEach(buildTemplateFn => buildTemplateFn());
         if (initI18nContext) {
             this.i18nEnd(null, selfClosingI18nInstruction);
         }
@@ -12919,7 +12925,7 @@ class TemplateDefinitionBuilder {
         const slot = this.allocateDataSlot();
         let selectorIndex = ngContent.selector === DEFAULT_NG_CONTENT_SELECTOR ?
             0 :
-            this._ngContentSelectors.push(ngContent.selector);
+            this._ngContentSelectors.push(ngContent.selector) + this._ngContentSelectorsOffset;
         const parameters = [literal(slot)];
         const attributeAsList = [];
         ngContent.attributes.forEach((attribute) => {
@@ -13186,8 +13192,12 @@ class TemplateDefinitionBuilder {
         // be able to support bindings in nested templates to local refs that occur after the
         // template definition. e.g. <div *ngIf="showing"> {{ foo }} </div>  <div #foo></div>
         this._nestedTemplateFns.push(() => {
-            const templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables, template.i18n);
+            const templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables, this._ngContentSelectors.length + this._ngContentSelectorsOffset, template.i18n);
             this.constantPool.statements.push(templateFunctionExpr.toDeclStmt(templateName, null));
+            if (templateVisitor._hasNgContent) {
+                this._hasNgContent = true;
+                this._ngContentSelectors.push(...templateVisitor._ngContentSelectors);
+            }
         });
         // e.g. template(1, MyComp_Template_1)
         this.creationInstruction(template.sourceSpan, Identifiers$1.templateCreate, () => {
@@ -13937,6 +13947,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     const templateName = templateTypeName ? `${templateTypeName}_Template` : null;
     const directivesUsed = new Set();
     const pipesUsed = new Set();
+    const changeDetection = meta.changeDetection;
     const template = meta.template;
     const templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, null, null, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML, meta.relativeContextFilePath, meta.i18nUseExternalIds);
     const templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, []);
@@ -13983,6 +13994,10 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     // e.g. `animation: [trigger('123', [])]`
     if (meta.animations !== null) {
         definitionMap.set('data', literalMap([{ key: 'animation', value: meta.animations, quoted: false }]));
+    }
+    // Only set the change detection flag if it's defined and it's not the default.
+    if (changeDetection != null && changeDetection !== ChangeDetectionStrategy.Default) {
+        definitionMap.set('changeDetection', literal(changeDetection));
     }
     // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
     // string literal, which must be on one line.
@@ -14476,7 +14491,7 @@ class CompilerFacadeImpl {
         }
         // Compile the component metadata, including template, into an expression.
         // TODO(alxhub): implement inputs, outputs, queries, etc.
-        const res = compileComponentFromMetadata(Object.assign({}, facade, convertDirectiveFacadeToMetadata(facade), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), wrapDirectivesAndPipesInClosure: false, styles: facade.styles || [], encapsulation: facade.encapsulation, interpolation: interpolationConfig, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
+        const res = compileComponentFromMetadata(Object.assign({}, facade, convertDirectiveFacadeToMetadata(facade), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), wrapDirectivesAndPipesInClosure: false, styles: facade.styles || [], encapsulation: facade.encapsulation, interpolation: interpolationConfig, changeDetection: facade.changeDetection, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
                 null, relativeContextFilePath: '', i18nUseExternalIds: true }), constantPool, makeBindingParser(interpolationConfig));
         const preStatements = [...constantPool.statements, ...res.statements];
         return jitExpression(res.expression, angularCoreEnv, sourceMapUrl, preStatements);
@@ -14606,7 +14621,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.0-rc.0+10.sha-4b70a4e');
+const VERSION$1 = new Version('7.2.0-rc.0+12.sha-a0585c9');
 
 /**
  * @license
