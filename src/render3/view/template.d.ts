@@ -72,10 +72,9 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private fileBasedI18nSuffix;
     private _hasNgContent;
     private _ngContentSelectors;
-    private _ngContentSelectorsOffset;
     constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, i18nContext: I18nContext | null, templateIndex: number | null, templateName: string | null, viewQueries: R3QueryMetadata[], directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference, relativeContextFilePath: string, i18nUseExternalIds: boolean);
     registerContextVariables(variable: t.Variable): void;
-    buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], ngContentSelectorsOffset?: number, i18n?: i18n.AST): o.FunctionExpr;
+    buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], i18n?: i18n.AST): o.FunctionExpr;
     getLocal(name: string): o.Expression | null;
     i18nTranslate(message: i18n.Message, params?: {
         [name: string]: o.Expression;
