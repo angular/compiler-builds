@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ViewEncapsulation, ChangeDetectionStrategy } from '../../core';
+import { ChangeDetectionStrategy, ViewEncapsulation } from '../../core';
 import { InterpolationConfig } from '../../ml_parser/interpolation_config';
 import * as o from '../../output/output_ast';
 import { ParseSourceSpan } from '../../parse_util';
