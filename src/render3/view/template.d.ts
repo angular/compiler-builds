@@ -72,9 +72,10 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private fileBasedI18nSuffix;
     private _hasNgContent;
     private _ngContentSelectors;
+    private _ngContentSelectorsOffset;
     constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, i18nContext: I18nContext | null, templateIndex: number | null, templateName: string | null, viewQueries: R3QueryMetadata[], directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference, relativeContextFilePath: string, i18nUseExternalIds: boolean);
     registerContextVariables(variable: t.Variable): void;
-    buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], i18n?: i18n.AST): o.FunctionExpr;
+    buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], ngContentSelectorsOffset?: number, i18n?: i18n.AST): o.FunctionExpr;
     getLocal(name: string): o.Expression | null;
     i18nTranslate(message: i18n.Message, params?: {
         [name: string]: o.Expression;
@@ -115,6 +116,23 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private convertExpressionBinding;
     private convertPropertyBinding;
     private matchDirectives;
+    /**
+     * Prepares all attribute expression values for the `TAttributes` array.
+     *
+     * The purpose of this function is to properly construct an attributes array that
+     * is passed into the `elementStart` (or just `element`) functions. Because there
+     * are many different types of attributes, the array needs to be constructed in a
+     * special way so that `elementStart` can properly evaluate them.
+     *
+     * The format looks like this:
+     *
+     * ```
+     * attrs = [prop, value, prop2, value2,
+     *   CLASSES, class1, class2,
+     *   STYLES, style1, value1, style2, value2,
+     *   SELECT_ONLY, name1, name2, name2, ...]
+     * ```
+     */
     private prepareSyntheticAndSelectOnlyAttrs;
     private toAttrsParam;
     private prepareRefsParameter;
