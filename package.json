@@ -1,6 +1,6 @@
 {
   "name": "@angular/compiler",
-  "version": "7.2.0-rc.0+48.sha-880b4aa",
+  "version": "7.2.0-rc.0+46.sha-1e6c9be",
   "description": "Angular - the compiler library",
   "main": "./bundles/compiler.umd.js",
   "module": "./fesm5/compiler.js",
