@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0-rc.0+28.sha-eea2b0f
+ * @license Angular v7.2.0-rc.0+61.sha-0bd9deb
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -13070,10 +13070,10 @@ class TemplateDefinitionBuilder {
             if (name === NON_BINDABLE_ATTR) {
                 isNonBindableMode = true;
             }
-            else if (name == 'style') {
+            else if (name === 'style') {
                 stylingBuilder.registerStyleAttr(value);
             }
-            else if (name == 'class') {
+            else if (name === 'class') {
                 stylingBuilder.registerClassAttr(value);
             }
             else if (attr.i18n) {
@@ -13095,7 +13095,7 @@ class TemplateDefinitionBuilder {
         const allOtherInputs = [];
         element.inputs.forEach((input) => {
             if (!stylingBuilder.registerBoundInput(input)) {
-                if (input.type == 0 /* Property */) {
+                if (input.type === 0 /* Property */) {
                     if (input.i18n) {
                         i18nAttrs.push(input);
                     }
@@ -13191,7 +13191,7 @@ class TemplateDefinitionBuilder {
             this.processStylingInstruction(implicit, stylingBuilder.buildElementStylingInstruction(element.sourceSpan, this.constantPool), true);
             // Generate Listeners (outputs)
             element.outputs.forEach((outputAst) => {
-                this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter(element.name, outputAst));
+                this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter(element.name, outputAst, elementIndex));
             });
         }
         // the code here will collect all update-level styling instructions and add them to the
@@ -13259,8 +13259,8 @@ class TemplateDefinitionBuilder {
             this.i18n.appendTemplate(template.i18n, templateIndex);
         }
         const tagName = sanitizeIdentifier(template.tagName || '');
-        const contextName = tagName ? `${this.contextName}_${tagName}` : '';
-        const templateName = contextName ? `${contextName}_Template_${templateIndex}` : `Template_${templateIndex}`;
+        const contextName = `${tagName ? this.contextName + '_' + tagName : ''}_${templateIndex}`;
+        const templateName = `${contextName}_Template`;
         const parameters = [
             literal(templateIndex),
             variable(templateName),
@@ -13278,7 +13278,7 @@ class TemplateDefinitionBuilder {
             parameters.push(this.prepareRefsParameter(template.references));
             parameters.push(importExpr(Identifiers$1.templateRefExtractor));
         }
-        // handle property bindings e.g. p(1, 'forOf', ɵbind(ctx.items));
+        // handle property bindings e.g. p(1, 'ngForOf', ɵbind(ctx.items));
         const context = variable(CONTEXT_NAME);
         template.inputs.forEach(input => {
             const value = input.value.visit(this._valueConverter);
@@ -13295,7 +13295,7 @@ class TemplateDefinitionBuilder {
         // Nested templates must not be visited until after their parent templates have completed
         // processing, so they are queued here until after the initial pass. Otherwise, we wouldn't
         // be able to support bindings in nested templates to local refs that occur after the
-        // template definition. e.g. <div *ngIf="showing"> {{ foo }} </div>  <div #foo></div>
+        // template definition. e.g. <div *ngIf="showing">{{ foo }}</div>  <div #foo></div>
         this._nestedTemplateFns.push(() => {
             const templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables, this._ngContentSelectors.length + this._ngContentSelectorsOffset, template.i18n);
             this.constantPool.statements.push(templateFunctionExpr.toDeclStmt(templateName, null));
@@ -13311,7 +13311,7 @@ class TemplateDefinitionBuilder {
         });
         // Generate listeners for directive output
         template.outputs.forEach((outputAst) => {
-            this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter('ng_template', outputAst));
+            this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter('ng_template', outputAst, templateIndex));
         });
     }
     visitBoundText(text) {
@@ -13447,6 +13447,27 @@ class TemplateDefinitionBuilder {
     prepareSyntheticAndSelectOnlyAttrs(inputs, outputs, styles) {
         const attrExprs = [];
         const nonSyntheticInputs = [];
+        const alreadySeen = new Set();
+        function isASTWithSource(ast) {
+            return ast instanceof ASTWithSource;
+        }
+        function isLiteralPrimitive(ast) {
+            return ast instanceof LiteralPrimitive;
+        }
+        function addAttrExpr(key, value) {
+            if (typeof key === 'string') {
+                if (!alreadySeen.has(key)) {
+                    attrExprs.push(literal(key));
+                    if (value !== undefined) {
+                        attrExprs.push(value);
+                    }
+                    alreadySeen.add(key);
+                }
+            }
+            else {
+                attrExprs.push(literal(key));
+            }
+        }
         if (inputs.length) {
             const EMPTY_STRING_EXPR = asLiteral('');
             inputs.forEach(input => {
@@ -13455,7 +13476,13 @@ class TemplateDefinitionBuilder {
                     // may be supported differently in future versions of angular. However,
                     // @triggers should always just be treated as regular attributes (it's up
                     // to the renderer to detect and use them in a special way).
-                    attrExprs.push(asLiteral(prepareSyntheticAttributeName(input.name)), EMPTY_STRING_EXPR);
+                    const valueExp = input.value;
+                    if (isASTWithSource(valueExp)) {
+                        const literal$$1 = valueExp.ast;
+                        if (isLiteralPrimitive(literal$$1) && literal$$1.value === undefined) {
+                            addAttrExpr(prepareSyntheticAttributeName(input.name), EMPTY_STRING_EXPR);
+                        }
+                    }
                 }
                 else {
                     nonSyntheticInputs.push(input);
@@ -13469,9 +13496,9 @@ class TemplateDefinitionBuilder {
             styles.populateInitialStylingAttrs(attrExprs);
         }
         if (nonSyntheticInputs.length || outputs.length) {
-            attrExprs.push(literal(3 /* SelectOnly */));
-            nonSyntheticInputs.forEach((i) => attrExprs.push(asLiteral(i.name)));
-            outputs.forEach((o) => attrExprs.push(asLiteral(o.name)));
+            addAttrExpr(3 /* SelectOnly */);
+            nonSyntheticInputs.forEach((i) => addAttrExpr(i.name));
+            outputs.forEach((o) => addAttrExpr(o.name));
         }
         return attrExprs;
     }
@@ -13501,14 +13528,14 @@ class TemplateDefinitionBuilder {
         }));
         return this.constantPool.getConstLiteral(asLiteral(refsParam), true);
     }
-    prepareListenerParameter(tagName, outputAst) {
+    prepareListenerParameter(tagName, outputAst, index) {
         let eventName = outputAst.name;
         if (outputAst.type === 1 /* Animation */) {
             eventName = prepareSyntheticAttributeName(`${outputAst.name}.${outputAst.phase}`);
         }
         const evNameSanitized = sanitizeIdentifier(eventName);
         const tagNameSanitized = sanitizeIdentifier(tagName);
-        const functionName = `${this.templateName}_${tagNameSanitized}_${evNameSanitized}_listener`;
+        const functionName = `${this.templateName}_${tagNameSanitized}_${evNameSanitized}_${index}_listener`;
         return () => {
             const listenerScope = this._bindingScope.nestedScope(this._bindingScope.bindingLevel);
             const bindingExpr = convertActionBinding(listenerScope, variable(CONTEXT_NAME), outputAst.handler, 'b', () => error('Unexpected interpolation'));
@@ -13803,7 +13830,7 @@ function createCssSelector(tag, attributes) {
         const value = attributes[name];
         cssSelector.addAttribute(name, value);
         if (name.toLowerCase() === 'class') {
-            const classes = value.trim().split(/\s+/g);
+            const classes = value.trim().split(/\s+/);
             classes.forEach(className => cssSelector.addClassName(className));
         }
     });
@@ -13899,8 +13926,11 @@ function prepareSyntheticAttributeName(name) {
 function isSingleElementTemplate(children) {
     return children.length === 1 && children[0] instanceof Element$1;
 }
+function isTextNode(node) {
+    return node instanceof Text$3 || node instanceof BoundText || node instanceof Icu$1;
+}
 function hasTextChildrenOnly(children) {
-    return !children.find(child => !(child instanceof Text$3 || child instanceof BoundText || child instanceof Icu$1));
+    return children.every(isTextNode);
 }
 
 /**
@@ -14764,7 +14794,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.0-rc.0+28.sha-eea2b0f');
+const VERSION$1 = new Version('7.2.0-rc.0+61.sha-0bd9deb');
 
 /**
  * @license
