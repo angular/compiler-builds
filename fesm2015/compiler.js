@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0-rc.0+61.sha-0bd9deb
+ * @license Angular v7.2.0-rc.0+62.sha-5d3dcfc
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -3104,6 +3104,7 @@ Identifiers$1.element = { name: 'ɵelement', moduleName: CORE$1 };
 Identifiers$1.elementStart = { name: 'ɵelementStart', moduleName: CORE$1 };
 Identifiers$1.elementEnd = { name: 'ɵelementEnd', moduleName: CORE$1 };
 Identifiers$1.elementProperty = { name: 'ɵelementProperty', moduleName: CORE$1 };
+Identifiers$1.componentHostSyntheticProperty = { name: 'ɵcomponentHostSyntheticProperty', moduleName: CORE$1 };
 Identifiers$1.elementAttribute = { name: 'ɵelementAttribute', moduleName: CORE$1 };
 Identifiers$1.elementClassProp = { name: 'ɵelementClassProp', moduleName: CORE$1 };
 Identifiers$1.elementContainerStart = { name: 'ɵelementContainerStart', moduleName: CORE$1 };
@@ -4521,6 +4522,26 @@ function typeWithParameters(type, numParams) {
         }
     }
     return expressionType(type, null, params);
+}
+const ANIMATE_SYMBOL_PREFIX = '@';
+function prepareSyntheticPropertyName(name) {
+    return `${ANIMATE_SYMBOL_PREFIX}${name}`;
+}
+function prepareSyntheticListenerName(name, phase) {
+    return `${ANIMATE_SYMBOL_PREFIX}${name}.${phase}`;
+}
+function getSyntheticPropertyName(name) {
+    // this will strip out listener phase values...
+    // @foo.start => @foo
+    const i = name.indexOf('.');
+    name = i > 0 ? name.substring(0, i) : name;
+    if (name.charAt(0) !== ANIMATE_SYMBOL_PREFIX) {
+        name = ANIMATE_SYMBOL_PREFIX + name;
+    }
+    return name;
+}
+function prepareSyntheticListenerFunctionName(name, phase) {
+    return `animation_${name}_${phase}`;
 }
 
 /**
@@ -13208,11 +13229,12 @@ class TemplateDefinitionBuilder {
                 const value = input.value.visit(this._valueConverter);
                 // setProperty without a value doesn't make any sense
                 if (value.name || value.value) {
+                    const bindingName = prepareSyntheticPropertyName(input.name);
                     this.allocateBindingSlots(value);
-                    const name = prepareSyntheticAttributeName(input.name);
                     this.updateInstruction(input.sourceSpan, Identifiers$1.elementProperty, () => {
                         return [
-                            literal(elementIndex), literal(name), this.convertPropertyBinding(implicit, value)
+                            literal(elementIndex), literal(bindingName),
+                            this.convertPropertyBinding(implicit, value)
                         ];
                     });
                 }
@@ -13480,7 +13502,7 @@ class TemplateDefinitionBuilder {
                     if (isASTWithSource(valueExp)) {
                         const literal$$1 = valueExp.ast;
                         if (isLiteralPrimitive(literal$$1) && literal$$1.value === undefined) {
-                            addAttrExpr(prepareSyntheticAttributeName(input.name), EMPTY_STRING_EXPR);
+                            addAttrExpr(prepareSyntheticPropertyName(input.name), EMPTY_STRING_EXPR);
                         }
                     }
                 }
@@ -13498,7 +13520,10 @@ class TemplateDefinitionBuilder {
         if (nonSyntheticInputs.length || outputs.length) {
             addAttrExpr(3 /* SelectOnly */);
             nonSyntheticInputs.forEach((i) => addAttrExpr(i.name));
-            outputs.forEach((o) => addAttrExpr(o.name));
+            outputs.forEach((o) => {
+                const name = o.type === 1 /* Animation */ ? getSyntheticPropertyName(o.name) : o.name;
+                addAttrExpr(name);
+            });
         }
         return attrExprs;
     }
@@ -13530,12 +13555,17 @@ class TemplateDefinitionBuilder {
     }
     prepareListenerParameter(tagName, outputAst, index) {
         let eventName = outputAst.name;
+        let bindingFnName;
         if (outputAst.type === 1 /* Animation */) {
-            eventName = prepareSyntheticAttributeName(`${outputAst.name}.${outputAst.phase}`);
+            // synthetic @listener.foo values are treated the exact same as are standard listeners
+            bindingFnName = prepareSyntheticListenerFunctionName(eventName, outputAst.phase);
+            eventName = prepareSyntheticListenerName(eventName, outputAst.phase);
         }
-        const evNameSanitized = sanitizeIdentifier(eventName);
+        else {
+            bindingFnName = sanitizeIdentifier(eventName);
+        }
         const tagNameSanitized = sanitizeIdentifier(tagName);
-        const functionName = `${this.templateName}_${tagNameSanitized}_${evNameSanitized}_${index}_listener`;
+        const functionName = `${this.templateName}_${tagNameSanitized}_${bindingFnName}_${index}_listener`;
         return () => {
             const listenerScope = this._bindingScope.nestedScope(this._bindingScope.bindingLevel);
             const bindingExpr = convertActionBinding(listenerScope, variable(CONTEXT_NAME), outputAst.handler, 'b', () => error('Unexpected interpolation'));
@@ -13919,9 +13949,6 @@ function resolveSanitizationFn(input, context) {
         default:
             return null;
     }
-}
-function prepareSyntheticAttributeName(name) {
-    return '@' + name;
 }
 function isSingleElementTemplate(children) {
     return children.length === 1 && children[0] instanceof Element$1;
@@ -14436,7 +14463,7 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder
                 // resolve literal arrays and literal objects
                 const value = binding.expression.visit(valueConverter);
                 const bindingExpr = bindingFn(bindingContext, value);
-                const { bindingName, instruction, extraParams } = getBindingNameAndInstruction(name);
+                const { bindingName, instruction, extraParams } = getBindingNameAndInstruction(binding);
                 const instructionParams = [
                     elVarExp, literal(bindingName), importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr])
                 ];
@@ -14496,7 +14523,8 @@ function createStylingStmt(instruction, bindingContext, bindingFn) {
         .callFn(params, instruction.sourceSpan)
         .toStmt();
 }
-function getBindingNameAndInstruction(bindingName) {
+function getBindingNameAndInstruction(binding) {
+    let bindingName = binding.name;
     let instruction;
     const extraParams = [];
     // Check to see if this is an attr binding or a property binding
@@ -14506,7 +14534,16 @@ function getBindingNameAndInstruction(bindingName) {
         instruction = Identifiers$1.elementAttribute;
     }
     else {
-        instruction = Identifiers$1.elementProperty;
+        if (binding.isAnimation) {
+            bindingName = prepareSyntheticPropertyName(bindingName);
+            // host bindings that have a synthetic property (e.g. @foo) should always be rendered
+            // in the context of the component and not the parent. Therefore there is a special
+            // compatibility instruction available for this purpose.
+            instruction = Identifiers$1.componentHostSyntheticProperty;
+        }
+        else {
+            instruction = Identifiers$1.elementProperty;
+        }
         extraParams.push(literal(null), // TODO: This should be a sanitizer fn (FW-785)
         literal(true) // host bindings must have nativeOnly prop set to true
         );
@@ -14516,11 +14553,16 @@ function getBindingNameAndInstruction(bindingName) {
 function createHostListeners(bindingContext, eventBindings, meta) {
     return eventBindings.map(binding => {
         const bindingExpr = convertActionBinding(null, bindingContext, binding.handler, 'b', () => error('Unexpected interpolation'));
-        const bindingName = binding.name && sanitizeIdentifier(binding.name);
+        let bindingName = binding.name && sanitizeIdentifier(binding.name);
+        let bindingFnName = bindingName;
+        if (binding.type === 1 /* Animation */) {
+            bindingFnName = prepareSyntheticListenerFunctionName(bindingName, binding.targetOrPhase);
+            bindingName = prepareSyntheticListenerName(bindingName, binding.targetOrPhase);
+        }
         const typeName = meta.name;
-        const functionName = typeName && bindingName ? `${typeName}_${bindingName}_HostBindingHandler` : null;
+        const functionName = typeName && bindingName ? `${typeName}_${bindingFnName}_HostBindingHandler` : null;
         const handler = fn([new FnParam('$event', DYNAMIC_TYPE)], [...bindingExpr.render3Stmts], INFERRED_TYPE, null, functionName);
-        return importExpr(Identifiers$1.listener).callFn([literal(binding.name), handler]).toStmt();
+        return importExpr(Identifiers$1.listener).callFn([literal(bindingName), handler]).toStmt();
     });
 }
 function metadataAsSummary(meta) {
@@ -14537,12 +14579,11 @@ function typeMapToExpressionMap(map, outputCtx) {
     const entries = Array.from(map).map(([key, type]) => [key, outputCtx.importExpr(type)]);
     return new Map(entries);
 }
-const HOST_REG_EXP$1 = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
+const HOST_REG_EXP$1 = /^(?:\[([^\]]+)\])|(?:\(([^\)]+)\))$/;
 function parseHostBindings(host) {
     const attributes = {};
     const listeners = {};
     const properties = {};
-    const animations = {};
     Object.keys(host).forEach(key => {
         const value = host[key];
         const matches = key.match(HOST_REG_EXP$1);
@@ -14550,16 +14591,16 @@ function parseHostBindings(host) {
             attributes[key] = value;
         }
         else if (matches[1 /* Binding */] != null) {
+            // synthetic properties (the ones that have a `@` as a prefix)
+            // are still treated the same as regular properties. Therefore
+            // there is no point in storing them in a separate map.
             properties[matches[1 /* Binding */]] = value;
         }
         else if (matches[2 /* Event */] != null) {
             listeners[matches[2 /* Event */]] = value;
         }
-        else if (matches[3 /* Animation */] != null) {
-            animations[matches[3 /* Animation */]] = value;
-        }
     });
-    return { attributes, listeners, properties, animations };
+    return { attributes, listeners, properties };
 }
 function compileStyles(styles, selector, hostSelector) {
     const shadowCss = new ShadowCss();
@@ -14744,10 +14785,7 @@ function convertR3DependencyMetadataArray(facades) {
 }
 function extractHostBindings(host, propMetadata) {
     // First parse the declarations from the metadata.
-    const { attributes, listeners, properties, animations } = parseHostBindings(host || {});
-    if (Object.keys(animations).length > 0) {
-        throw new Error(`Animation bindings are as-of-yet unsupported in Ivy`);
-    }
+    const { attributes, listeners, properties } = parseHostBindings(host || {});
     // Next, loop over the properties of the object, looking for @HostBinding and @HostListener.
     for (const field in propMetadata) {
         if (propMetadata.hasOwnProperty(field)) {
@@ -14794,7 +14832,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.0-rc.0+61.sha-0bd9deb');
+const VERSION$1 = new Version('7.2.0-rc.0+62.sha-5d3dcfc');
 
 /**
  * @license
