@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0-rc.0+46.sha-1e6c9be
+ * @license Angular v7.2.0-rc.0+52.sha-51a0bd2
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -14318,6 +14318,27 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     TemplateDefinitionBuilder.prototype.prepareSyntheticAndSelectOnlyAttrs = function (inputs, outputs, styles) {
         var attrExprs = [];
         var nonSyntheticInputs = [];
+        var alreadySeen = new Set();
+        function isASTWithSource(ast) {
+            return ast instanceof ASTWithSource;
+        }
+        function isLiteralPrimitive(ast) {
+            return ast instanceof LiteralPrimitive;
+        }
+        function addAttrExpr(key, value) {
+            if (typeof key === 'string') {
+                if (!alreadySeen.has(key)) {
+                    attrExprs.push(literal(key));
+                    if (value !== undefined) {
+                        attrExprs.push(value);
+                    }
+                    alreadySeen.add(key);
+                }
+            }
+            else {
+                attrExprs.push(literal(key));
+            }
+        }
         if (inputs.length) {
             var EMPTY_STRING_EXPR_1 = asLiteral('');
             inputs.forEach(function (input) {
@@ -14326,7 +14347,13 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                     // may be supported differently in future versions of angular. However,
                     // @triggers should always just be treated as regular attributes (it's up
                     // to the renderer to detect and use them in a special way).
-                    attrExprs.push(asLiteral(prepareSyntheticAttributeName(input.name)), EMPTY_STRING_EXPR_1);
+                    var valueExp = input.value;
+                    if (isASTWithSource(valueExp)) {
+                        var literal$$1 = valueExp.ast;
+                        if (isLiteralPrimitive(literal$$1) && literal$$1.value === undefined) {
+                            addAttrExpr(prepareSyntheticAttributeName(input.name), EMPTY_STRING_EXPR_1);
+                        }
+                    }
                 }
                 else {
                     nonSyntheticInputs.push(input);
@@ -14340,9 +14367,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             styles.populateInitialStylingAttrs(attrExprs);
         }
         if (nonSyntheticInputs.length || outputs.length) {
-            attrExprs.push(literal(3 /* SelectOnly */));
-            nonSyntheticInputs.forEach(function (i) { return attrExprs.push(asLiteral(i.name)); });
-            outputs.forEach(function (o) { return attrExprs.push(asLiteral(o.name)); });
+            addAttrExpr(3 /* SelectOnly */);
+            nonSyntheticInputs.forEach(function (i) { return addAttrExpr(i.name); });
+            outputs.forEach(function (o) { return addAttrExpr(o.name); });
         }
         return attrExprs;
     };
@@ -15695,7 +15722,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.2.0-rc.0+46.sha-1e6c9be');
+var VERSION$1 = new Version('7.2.0-rc.0+52.sha-51a0bd2');
 
 /**
  * @license
