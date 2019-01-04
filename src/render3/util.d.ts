@@ -24,3 +24,8 @@ export interface R3Reference {
     value: o.Expression;
     type: o.Expression;
 }
+export declare function prepareSyntheticPropertyName(name: string): string;
+export declare function prepareSyntheticListenerName(name: string, phase: string): string;
+export declare function isSyntheticPropertyOrListener(name: string): boolean;
+export declare function getSyntheticPropertyName(name: string): string;
+export declare function prepareSyntheticListenerFunctionName(name: string, phase: string): string;
