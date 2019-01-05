@@ -65,7 +65,4 @@ export declare function parseHostBindings(host: {
     properties: {
         [key: string]: string;
     };
-    animations: {
-        [key: string]: string;
-    };
 };
