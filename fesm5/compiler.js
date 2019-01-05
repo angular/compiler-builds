@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0-rc.0+64.sha-929334b
+ * @license Angular v7.2.0-rc.0+65.sha-b61dafa
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -10655,7 +10655,7 @@ var _Tokenizer = /** @class */ (function () {
                 var charCode = parseInt(strNum, isHex ? 16 : 10);
                 return String.fromCharCode(charCode);
             }
-            catch (e) {
+            catch (_a) {
                 var entity = this._input.substring(start.offset + 1, this._index - 1);
                 throw this._createError(_unknownEntityErrorMsg(entity), this._getSpan(start));
             }
@@ -15761,7 +15761,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.2.0-rc.0+64.sha-929334b');
+var VERSION$1 = new Version('7.2.0-rc.0+65.sha-b61dafa');
 
 /**
  * @license
