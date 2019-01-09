@@ -20,6 +20,7 @@ import { R3QueryMetadata } from './api';
 import { I18nContext } from './i18n/context';
 import { invalid } from './util';
 export declare function renderFlagCheckIfStmt(flags: core.RenderFlags, statements: o.Statement[]): o.IfStmt;
+export declare function prepareEventListenerParameters(eventAst: t.BoundEvent, bindingContext: o.Expression, handlerName?: string | null, scope?: BindingScope | null): o.Expression[];
 export declare class TemplateDefinitionBuilder implements t.Visitor<void>, LocalResolver {
     private constantPool;
     private level;
@@ -231,4 +232,5 @@ export declare function parseTemplate(template: string, templateUrl: string, opt
  * Construct a `BindingParser` with a default configuration.
  */
 export declare function makeBindingParser(interpolationConfig?: InterpolationConfig): BindingParser;
+export declare function resolveSanitizationFn(context: core.SecurityContext, isAttribute?: boolean): o.ExternalExpr | null;
 export {};
