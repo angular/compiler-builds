@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0+55.sha-1de4031
+ * @license Angular v7.2.0+56.sha-c3aa24c
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -3224,6 +3224,7 @@ Identifiers$1.defaultStyleSanitizer = { name: 'ɵdefaultStyleSanitizer', moduleN
 Identifiers$1.sanitizeResourceUrl = { name: 'ɵsanitizeResourceUrl', moduleName: CORE$1 };
 Identifiers$1.sanitizeScript = { name: 'ɵsanitizeScript', moduleName: CORE$1 };
 Identifiers$1.sanitizeUrl = { name: 'ɵsanitizeUrl', moduleName: CORE$1 };
+Identifiers$1.sanitizeUrlOrResourceUrl = { name: 'ɵsanitizeUrlOrResourceUrl', moduleName: CORE$1 };
 
 /**
  * @license
@@ -11614,6 +11615,10 @@ class BindingParser {
             this._parseRegularEvent(name, expression, sourceSpan, targetMatchableAttrs, targetEvents);
         }
     }
+    calcPossibleSecurityContexts(selector, propName, isAttribute) {
+        const prop = this._schemaRegistry.getMappedPropName(propName);
+        return calcPossibleSecurityContexts(this._schemaRegistry, selector, prop, isAttribute);
+    }
     _parseAnimationEvent(name, expression, sourceSpan, targetEvents) {
         const matches = splitAtPeriod(name, [name, '']);
         const eventName = matches[0];
@@ -13270,7 +13275,8 @@ class TemplateDefinitionBuilder {
             }
             else if (instruction) {
                 const params = [];
-                const sanitizationRef = resolveSanitizationFn(input, input.securityContext);
+                const isAttributeBinding = input.type === 1 /* Attribute */;
+                const sanitizationRef = resolveSanitizationFn(input.securityContext, isAttributeBinding);
                 if (sanitizationRef)
                     params.push(sanitizationRef);
                 // TODO(chuckj): runtime: security context
@@ -13949,7 +13955,7 @@ function parseTemplate(template, templateUrl, options = {}) {
 function makeBindingParser(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
     return new BindingParser(new Parser(new Lexer()), interpolationConfig, new DomElementSchemaRegistry(), null, []);
 }
-function resolveSanitizationFn(input, context) {
+function resolveSanitizationFn(context, isAttribute) {
     switch (context) {
         case SecurityContext.HTML:
             return importExpr(Identifiers$1.sanitizeHtml);
@@ -13959,7 +13965,7 @@ function resolveSanitizationFn(input, context) {
             // the compiler does not fill in an instruction for [style.prop?] binding
             // values because the style algorithm knows internally what props are subject
             // to sanitization (only [attr.style] values are explicitly sanitized)
-            return input.type === 1 /* Attribute */ ? importExpr(Identifiers$1.sanitizeStyle) : null;
+            return isAttribute ? importExpr(Identifiers$1.sanitizeStyle) : null;
         case SecurityContext.URL:
             return importExpr(Identifiers$1.sanitizeUrl);
         case SecurityContext.RESOURCE_URL:
@@ -14481,12 +14487,41 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder
                 // resolve literal arrays and literal objects
                 const value = binding.expression.visit(valueConverter);
                 const bindingExpr = bindingFn(bindingContext, value);
-                const { bindingName, instruction, extraParams } = getBindingNameAndInstruction(binding);
+                const { bindingName, instruction, isAttribute } = getBindingNameAndInstruction(binding);
+                const securityContexts = bindingParser
+                    .calcPossibleSecurityContexts(meta.selector || '', bindingName, isAttribute)
+                    .filter(context => context !== SecurityContext.NONE);
+                let sanitizerFn = null;
+                if (securityContexts.length) {
+                    if (securityContexts.length === 2 &&
+                        securityContexts.indexOf(SecurityContext.URL) > -1 &&
+                        securityContexts.indexOf(SecurityContext.RESOURCE_URL) > -1) {
+                        // Special case for some URL attributes (such as "src" and "href") that may be a part of
+                        // different security contexts. In this case we use special santitization function and
+                        // select the actual sanitizer at runtime based on a tag name that is provided while
+                        // invoking sanitization function.
+                        sanitizerFn = importExpr(Identifiers$1.sanitizeUrlOrResourceUrl);
+                    }
+                    else {
+                        sanitizerFn = resolveSanitizationFn(securityContexts[0], isAttribute);
+                    }
+                }
                 const instructionParams = [
                     elVarExp, literal(bindingName), importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr])
                 ];
+                if (sanitizerFn) {
+                    instructionParams.push(sanitizerFn);
+                }
+                if (!isAttribute) {
+                    if (!sanitizerFn) {
+                        // append `null` in front of `nativeOnly` flag if no sanitizer fn defined
+                        instructionParams.push(literal(null));
+                    }
+                    // host bindings must have nativeOnly prop set to true
+                    instructionParams.push(literal(true));
+                }
                 updateStatements.push(...bindingExpr.stmts);
-                updateStatements.push(importExpr(instruction).callFn(instructionParams.concat(extraParams)).toStmt());
+                updateStatements.push(importExpr(instruction).callFn(instructionParams).toStmt());
             }
         }
         if (styleBuilder.hasBindingsOrInitialValues()) {
@@ -14544,7 +14579,6 @@ function createStylingStmt(instruction, bindingContext, bindingFn) {
 function getBindingNameAndInstruction(binding) {
     let bindingName = binding.name;
     let instruction;
-    const extraParams = [];
     // Check to see if this is an attr binding or a property binding
     const attrMatches = bindingName.match(ATTR_REGEX);
     if (attrMatches) {
@@ -14562,11 +14596,8 @@ function getBindingNameAndInstruction(binding) {
         else {
             instruction = Identifiers$1.elementProperty;
         }
-        extraParams.push(literal(null), // TODO: This should be a sanitizer fn (FW-785)
-        literal(true) // host bindings must have nativeOnly prop set to true
-        );
     }
-    return { bindingName, instruction, extraParams };
+    return { bindingName, instruction, isAttribute: !!attrMatches };
 }
 function createHostListeners(bindingContext, eventBindings, meta) {
     return eventBindings.map(binding => {
@@ -14846,7 +14877,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.0+55.sha-1de4031');
+const VERSION$1 = new Version('7.2.0+56.sha-c3aa24c');
 
 /**
  * @license

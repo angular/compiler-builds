@@ -1,10 +1,10 @@
 /**
- * @license Angular v7.2.0+55.sha-1de4031
+ * @license Angular v7.2.0+56.sha-c3aa24c
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __extends, __assign, __spread, __read, __values } from 'tslib';
+import { __extends, __assign, __spread, __values, __read } from 'tslib';
 
 /**
  * @license
@@ -3493,6 +3493,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.sanitizeResourceUrl = { name: 'ɵsanitizeResourceUrl', moduleName: CORE$1 };
     Identifiers.sanitizeScript = { name: 'ɵsanitizeScript', moduleName: CORE$1 };
     Identifiers.sanitizeUrl = { name: 'ɵsanitizeUrl', moduleName: CORE$1 };
+    Identifiers.sanitizeUrlOrResourceUrl = { name: 'ɵsanitizeUrlOrResourceUrl', moduleName: CORE$1 };
     return Identifiers;
 }());
 
@@ -12362,6 +12363,10 @@ var BindingParser = /** @class */ (function () {
             this._parseRegularEvent(name, expression, sourceSpan, targetMatchableAttrs, targetEvents);
         }
     };
+    BindingParser.prototype.calcPossibleSecurityContexts = function (selector, propName, isAttribute) {
+        var prop = this._schemaRegistry.getMappedPropName(propName);
+        return calcPossibleSecurityContexts(this._schemaRegistry, selector, prop, isAttribute);
+    };
     BindingParser.prototype._parseAnimationEvent = function (name, expression, sourceSpan, targetEvents) {
         var matches = splitAtPeriod(name, [name, '']);
         var eventName = matches[0];
@@ -14131,7 +14136,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             }
             else if (instruction) {
                 var params_2 = [];
-                var sanitizationRef = resolveSanitizationFn(input, input.securityContext);
+                var isAttributeBinding = input.type === 1 /* Attribute */;
+                var sanitizationRef = resolveSanitizationFn(input.securityContext, isAttributeBinding);
                 if (sanitizationRef)
                     params_2.push(sanitizationRef);
                 // TODO(chuckj): runtime: security context
@@ -14839,7 +14845,7 @@ function makeBindingParser(interpolationConfig) {
     if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
     return new BindingParser(new Parser(new Lexer()), interpolationConfig, new DomElementSchemaRegistry(), null, []);
 }
-function resolveSanitizationFn(input, context) {
+function resolveSanitizationFn(context, isAttribute) {
     switch (context) {
         case SecurityContext.HTML:
             return importExpr(Identifiers$1.sanitizeHtml);
@@ -14849,7 +14855,7 @@ function resolveSanitizationFn(input, context) {
             // the compiler does not fill in an instruction for [style.prop?] binding
             // values because the style algorithm knows internally what props are subject
             // to sanitization (only [attr.style] values are explicitly sanitized)
-            return input.type === 1 /* Attribute */ ? importExpr(Identifiers$1.sanitizeStyle) : null;
+            return isAttribute ? importExpr(Identifiers$1.sanitizeStyle) : null;
         case SecurityContext.URL:
             return importExpr(Identifiers$1.sanitizeUrl);
         case SecurityContext.RESOURCE_URL:
@@ -15396,12 +15402,41 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder
                     // resolve literal arrays and literal objects
                     var value = binding.expression.visit(valueConverter);
                     var bindingExpr = bindingFn(bindingContext, value);
-                    var _c = getBindingNameAndInstruction(binding), bindingName = _c.bindingName, instruction = _c.instruction, extraParams = _c.extraParams;
+                    var _c = getBindingNameAndInstruction(binding), bindingName = _c.bindingName, instruction = _c.instruction, isAttribute = _c.isAttribute;
+                    var securityContexts = bindingParser
+                        .calcPossibleSecurityContexts(meta.selector || '', bindingName, isAttribute)
+                        .filter(function (context) { return context !== SecurityContext.NONE; });
+                    var sanitizerFn = null;
+                    if (securityContexts.length) {
+                        if (securityContexts.length === 2 &&
+                            securityContexts.indexOf(SecurityContext.URL) > -1 &&
+                            securityContexts.indexOf(SecurityContext.RESOURCE_URL) > -1) {
+                            // Special case for some URL attributes (such as "src" and "href") that may be a part of
+                            // different security contexts. In this case we use special santitization function and
+                            // select the actual sanitizer at runtime based on a tag name that is provided while
+                            // invoking sanitization function.
+                            sanitizerFn = importExpr(Identifiers$1.sanitizeUrlOrResourceUrl);
+                        }
+                        else {
+                            sanitizerFn = resolveSanitizationFn(securityContexts[0], isAttribute);
+                        }
+                    }
                     var instructionParams = [
                         elVarExp, literal(bindingName), importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr])
                     ];
+                    if (sanitizerFn) {
+                        instructionParams.push(sanitizerFn);
+                    }
+                    if (!isAttribute) {
+                        if (!sanitizerFn) {
+                            // append `null` in front of `nativeOnly` flag if no sanitizer fn defined
+                            instructionParams.push(literal(null));
+                        }
+                        // host bindings must have nativeOnly prop set to true
+                        instructionParams.push(literal(true));
+                    }
                     updateStatements.push.apply(updateStatements, __spread(bindingExpr.stmts));
-                    updateStatements.push(importExpr(instruction).callFn(instructionParams.concat(extraParams)).toStmt());
+                    updateStatements.push(importExpr(instruction).callFn(instructionParams).toStmt());
                 }
             }
         }
@@ -15467,7 +15502,6 @@ function createStylingStmt(instruction, bindingContext, bindingFn) {
 function getBindingNameAndInstruction(binding) {
     var bindingName = binding.name;
     var instruction;
-    var extraParams = [];
     // Check to see if this is an attr binding or a property binding
     var attrMatches = bindingName.match(ATTR_REGEX);
     if (attrMatches) {
@@ -15485,11 +15519,8 @@ function getBindingNameAndInstruction(binding) {
         else {
             instruction = Identifiers$1.elementProperty;
         }
-        extraParams.push(literal(null), // TODO: This should be a sanitizer fn (FW-785)
-        literal(true) // host bindings must have nativeOnly prop set to true
-        );
     }
-    return { bindingName: bindingName, instruction: instruction, extraParams: extraParams };
+    return { bindingName: bindingName, instruction: instruction, isAttribute: !!attrMatches };
 }
 function createHostListeners(bindingContext, eventBindings, meta) {
     return eventBindings.map(function (binding) {
@@ -15779,7 +15810,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.2.0+55.sha-1de4031');
+var VERSION$1 = new Version('7.2.0+56.sha-c3aa24c');
 
 /**
  * @license
