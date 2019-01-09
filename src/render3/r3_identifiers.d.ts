@@ -109,4 +109,5 @@ export declare class Identifiers {
     static sanitizeResourceUrl: o.ExternalReference;
     static sanitizeScript: o.ExternalReference;
     static sanitizeUrl: o.ExternalReference;
+    static sanitizeUrlOrResourceUrl: o.ExternalReference;
 }

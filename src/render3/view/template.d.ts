@@ -232,4 +232,5 @@ export declare function parseTemplate(template: string, templateUrl: string, opt
  * Construct a `BindingParser` with a default configuration.
  */
 export declare function makeBindingParser(interpolationConfig?: InterpolationConfig): BindingParser;
+export declare function resolveSanitizationFn(context: core.SecurityContext, isAttribute?: boolean): o.ExternalExpr | null;
 export {};
