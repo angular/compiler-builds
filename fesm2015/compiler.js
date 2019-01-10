@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0+74.sha-9b2b9b3
+ * @license Angular v7.2.0+101.sha-ad6569c
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -13261,10 +13261,19 @@ class TemplateDefinitionBuilder {
             const instruction = mapBindingToInstruction(input.type);
             if (input.type === 4 /* Animation */) {
                 const value = input.value.visit(this._valueConverter);
-                // setProperty without a value doesn't make any sense
-                if (value.name || value.value) {
-                    const bindingName = prepareSyntheticPropertyName(input.name);
+                // animation bindings can be presented in the following formats:
+                // 1j [@binding]="fooExp"
+                // 2. [@binding]="{value:fooExp, params:{...}}"
+                // 3. [@binding]
+                // 4. @binding
+                // only formats 1. and 2. include the actual binding of a value to
+                // an expression and therefore only those should be the only two that
+                // are allowed. The check below ensures that a binding with no expression
+                // does not get an empty `elementProperty` instruction created for it.
+                const hasValue = value && (value instanceof LiteralPrimitive) ? !!value.value : true;
+                if (hasValue) {
                     this.allocateBindingSlots(value);
+                    const bindingName = prepareSyntheticPropertyName(input.name);
                     this.updateInstruction(input.sourceSpan, Identifiers$1.elementProperty, () => {
                         return [
                             literal(elementIndex), literal(bindingName),
@@ -13429,6 +13438,11 @@ class TemplateDefinitionBuilder {
     allocateDataSlot() { return this._dataIndex++; }
     getConstCount() { return this._dataIndex; }
     getVarCount() { return this._pureFunctionSlots; }
+    getNgContentSelectors() {
+        return this._hasNgContent ?
+            this.constantPool.getConstLiteral(asLiteral(this._ngContentSelectors), true) :
+            null;
+    }
     bindingContext() { return `${this._bindingContext++}`; }
     // Bindings must only be resolved after all local refs have been visited, so all
     // instructions are queued in callbacks that execute once the initial pass has completed.
@@ -14053,7 +14067,9 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     // e.g 'outputs: {a: 'a'}`
     definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
     if (meta.exportAs !== null) {
-        definitionMap.set('exportAs', literal(meta.exportAs));
+        // TODO: handle multiple exportAs values (currently only the first is taken).
+        const [exportAs] = meta.exportAs;
+        definitionMap.set('exportAs', literal(exportAs));
     }
     return { definitionMap, statements: result.statements };
 }
@@ -14089,9 +14105,9 @@ function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
     const { definitionMap, statements } = baseDirectiveFields(meta, constantPool, bindingParser);
     addFeatures(definitionMap, meta);
     const expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()]);
-    // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
-    // string literal, which must be on one line.
-    const selectorForType = (meta.selector || '').replace(/\n/g, '');
+    if (!meta.selector) {
+        throw new Error(`Directive ${meta.name} has no selector, please add it!`);
+    }
     const type = createTypeForDef(meta, Identifiers$1.DirectiveDefWithMeta);
     return { expression, type, statements };
 }
@@ -14160,6 +14176,12 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     const template = meta.template;
     const templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, null, null, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML, meta.relativeContextFilePath, meta.i18nUseExternalIds);
     const templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, []);
+    // We need to provide this so that dynamically generated components know what
+    // projected content blocks to pass through to the component when it is instantiated.
+    const ngContentSelectors = templateBuilder.getNgContentSelectors();
+    if (ngContentSelectors) {
+        definitionMap.set('ngContentSelectors', ngContentSelectors);
+    }
     // e.g. `consts: 2`
     definitionMap.set('consts', literal(templateBuilder.getConstCount()));
     // e.g. `vars: 2`
@@ -14415,7 +14437,8 @@ function createTypeForDef(meta, typeBase) {
     return expressionType(importExpr(typeBase, [
         typeWithParameters(meta.type, meta.typeArgumentCount),
         stringAsType(selectorForType),
-        meta.exportAs !== null ? stringAsType(meta.exportAs) : NONE_TYPE,
+        // TODO: handle multiple exportAs values (currently only the first is taken).
+        meta.exportAs !== null ? stringArrayAsType(meta.exportAs) : NONE_TYPE,
         stringMapAsType(meta.inputs),
         stringMapAsType(meta.outputs),
         stringArrayAsType(meta.queries.map(q => q.propertyName)),
@@ -14877,7 +14900,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.0+74.sha-9b2b9b3');
+const VERSION$1 = new Version('7.2.0+101.sha-ad6569c');
 
 /**
  * @license
@@ -25341,7 +25364,9 @@ class DirectiveBinder {
             }
             else {
                 // This is a reference to a directive exported via exportAs. One should exist.
-                dirTarget = directives.find(dir => dir.exportAs === ref.value) || null;
+                dirTarget =
+                    directives.find(dir => dir.exportAs !== null && dir.exportAs.some(value => value === ref.value)) ||
+                        null;
                 // Check if a matching directive was found, and error if it wasn't.
                 if (dirTarget === null) {
                     // TODO(alxhub): Return an error value here that can be used for template validation.

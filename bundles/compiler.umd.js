@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0+74.sha-9b2b9b3
+ * @license Angular v7.2.0+101.sha-ad6569c
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -14179,10 +14179,19 @@
                 var instruction = mapBindingToInstruction(input.type);
                 if (input.type === 4 /* Animation */) {
                     var value_1 = input.value.visit(_this._valueConverter);
-                    // setProperty without a value doesn't make any sense
-                    if (value_1.name || value_1.value) {
-                        var bindingName_1 = prepareSyntheticPropertyName(input.name);
+                    // animation bindings can be presented in the following formats:
+                    // 1j [@binding]="fooExp"
+                    // 2. [@binding]="{value:fooExp, params:{...}}"
+                    // 3. [@binding]
+                    // 4. @binding
+                    // only formats 1. and 2. include the actual binding of a value to
+                    // an expression and therefore only those should be the only two that
+                    // are allowed. The check below ensures that a binding with no expression
+                    // does not get an empty `elementProperty` instruction created for it.
+                    var hasValue = value_1 && (value_1 instanceof LiteralPrimitive) ? !!value_1.value : true;
+                    if (hasValue) {
                         _this.allocateBindingSlots(value_1);
+                        var bindingName_1 = prepareSyntheticPropertyName(input.name);
                         _this.updateInstruction(input.sourceSpan, Identifiers$1.elementProperty, function () {
                             return [
                                 literal(elementIndex), literal(bindingName_1),
@@ -14352,6 +14361,11 @@
         TemplateDefinitionBuilder.prototype.allocateDataSlot = function () { return this._dataIndex++; };
         TemplateDefinitionBuilder.prototype.getConstCount = function () { return this._dataIndex; };
         TemplateDefinitionBuilder.prototype.getVarCount = function () { return this._pureFunctionSlots; };
+        TemplateDefinitionBuilder.prototype.getNgContentSelectors = function () {
+            return this._hasNgContent ?
+                this.constantPool.getConstLiteral(asLiteral(this._ngContentSelectors), true) :
+                null;
+        };
         TemplateDefinitionBuilder.prototype.bindingContext = function () { return "" + this._bindingContext++; };
         // Bindings must only be resolved after all local refs have been visited, so all
         // instructions are queued in callbacks that execute once the initial pass has completed.
@@ -15000,7 +15014,9 @@
         // e.g 'outputs: {a: 'a'}`
         definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
         if (meta.exportAs !== null) {
-            definitionMap.set('exportAs', literal(meta.exportAs));
+            // TODO: handle multiple exportAs values (currently only the first is taken).
+            var _a = __read(meta.exportAs, 1), exportAs = _a[0];
+            definitionMap.set('exportAs', literal(exportAs));
         }
         return { definitionMap: definitionMap, statements: result.statements };
     }
@@ -15036,9 +15052,9 @@
         var _a = baseDirectiveFields(meta, constantPool, bindingParser), definitionMap = _a.definitionMap, statements = _a.statements;
         addFeatures(definitionMap, meta);
         var expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()]);
-        // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
-        // string literal, which must be on one line.
-        var selectorForType = (meta.selector || '').replace(/\n/g, '');
+        if (!meta.selector) {
+            throw new Error("Directive " + meta.name + " has no selector, please add it!");
+        }
         var type = createTypeForDef(meta, Identifiers$1.DirectiveDefWithMeta);
         return { expression: expression, type: type, statements: statements };
     }
@@ -15118,6 +15134,12 @@
         var template = meta.template;
         var templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, null, null, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML, meta.relativeContextFilePath, meta.i18nUseExternalIds);
         var templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, []);
+        // We need to provide this so that dynamically generated components know what
+        // projected content blocks to pass through to the component when it is instantiated.
+        var ngContentSelectors = templateBuilder.getNgContentSelectors();
+        if (ngContentSelectors) {
+            definitionMap.set('ngContentSelectors', ngContentSelectors);
+        }
         // e.g. `consts: 2`
         definitionMap.set('consts', literal(templateBuilder.getConstCount()));
         // e.g. `vars: 2`
@@ -15384,7 +15406,8 @@
         return expressionType(importExpr(typeBase, [
             typeWithParameters(meta.type, meta.typeArgumentCount),
             stringAsType(selectorForType),
-            meta.exportAs !== null ? stringAsType(meta.exportAs) : NONE_TYPE,
+            // TODO: handle multiple exportAs values (currently only the first is taken).
+            meta.exportAs !== null ? stringArrayAsType(meta.exportAs) : NONE_TYPE,
             stringMapAsType(meta.inputs),
             stringMapAsType(meta.outputs),
             stringArrayAsType(meta.queries.map(function (q) { return q.propertyName; })),
@@ -15867,7 +15890,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('7.2.0+74.sha-9b2b9b3');
+    var VERSION$1 = new Version('7.2.0+101.sha-ad6569c');
 
     /**
      * @license
@@ -26932,7 +26955,9 @@
                 }
                 else {
                     // This is a reference to a directive exported via exportAs. One should exist.
-                    dirTarget = directives.find(function (dir) { return dir.exportAs === ref.value; }) || null;
+                    dirTarget =
+                        directives.find(function (dir) { return dir.exportAs !== null && dir.exportAs.some(function (value) { return value === ref.value; }); }) ||
+                            null;
                     // Check if a matching directive was found, and error if it wasn't.
                     if (dirTarget === null) {
                         // TODO(alxhub): Return an error value here that can be used for template validation.
