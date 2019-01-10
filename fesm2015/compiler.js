@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0+90.sha-7374dfd
+ * @license Angular v7.2.0+92.sha-65e72e9
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -14100,9 +14100,9 @@ function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
     const { definitionMap, statements } = baseDirectiveFields(meta, constantPool, bindingParser);
     addFeatures(definitionMap, meta);
     const expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()]);
-    // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
-    // string literal, which must be on one line.
-    const selectorForType = (meta.selector || '').replace(/\n/g, '');
+    if (!meta.selector) {
+        throw new Error(`Directive ${meta.name} has no selector, please add it!`);
+    }
     const type = createTypeForDef(meta, Identifiers$1.DirectiveDefWithMeta);
     return { expression, type, statements };
 }
@@ -14889,7 +14889,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.0+90.sha-7374dfd');
+const VERSION$1 = new Version('7.2.0+92.sha-65e72e9');
 
 /**
  * @license
