@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0+98.sha-a6ba789
+ * @license Angular v7.2.0+100.sha-feebe03
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -13438,6 +13438,11 @@ class TemplateDefinitionBuilder {
     allocateDataSlot() { return this._dataIndex++; }
     getConstCount() { return this._dataIndex; }
     getVarCount() { return this._pureFunctionSlots; }
+    getNgContentSelectors() {
+        return this._hasNgContent ?
+            this.constantPool.getConstLiteral(asLiteral(this._ngContentSelectors), true) :
+            null;
+    }
     bindingContext() { return `${this._bindingContext++}`; }
     // Bindings must only be resolved after all local refs have been visited, so all
     // instructions are queued in callbacks that execute once the initial pass has completed.
@@ -14171,6 +14176,12 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     const template = meta.template;
     const templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, null, null, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML, meta.relativeContextFilePath, meta.i18nUseExternalIds);
     const templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, []);
+    // We need to provide this so that dynamically generated components know what
+    // projected content blocks to pass through to the component when it is instantiated.
+    const ngContentSelectors = templateBuilder.getNgContentSelectors();
+    if (ngContentSelectors) {
+        definitionMap.set('ngContentSelectors', ngContentSelectors);
+    }
     // e.g. `consts: 2`
     definitionMap.set('consts', literal(templateBuilder.getConstCount()));
     // e.g. `vars: 2`
@@ -14889,7 +14900,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.0+98.sha-a6ba789');
+const VERSION$1 = new Version('7.2.0+100.sha-feebe03');
 
 /**
  * @license

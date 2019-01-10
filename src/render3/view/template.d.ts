@@ -107,6 +107,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private allocateDataSlot;
     getConstCount(): number;
     getVarCount(): number;
+    getNgContentSelectors(): o.Expression | null;
     private bindingContext;
     private instructionFn;
     private processStylingInstruction;
