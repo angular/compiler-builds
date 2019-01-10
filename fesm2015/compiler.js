@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0+87.sha-6003145
+ * @license Angular v7.2.0+88.sha-142553a
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -14062,7 +14062,9 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     // e.g 'outputs: {a: 'a'}`
     definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
     if (meta.exportAs !== null) {
-        definitionMap.set('exportAs', literal(meta.exportAs));
+        // TODO: handle multiple exportAs values (currently only the first is taken).
+        const [exportAs] = meta.exportAs;
+        definitionMap.set('exportAs', literal(exportAs));
     }
     return { definitionMap, statements: result.statements };
 }
@@ -14424,7 +14426,8 @@ function createTypeForDef(meta, typeBase) {
     return expressionType(importExpr(typeBase, [
         typeWithParameters(meta.type, meta.typeArgumentCount),
         stringAsType(selectorForType),
-        meta.exportAs !== null ? stringAsType(meta.exportAs) : NONE_TYPE,
+        // TODO: handle multiple exportAs values (currently only the first is taken).
+        meta.exportAs !== null ? stringArrayAsType(meta.exportAs) : NONE_TYPE,
         stringMapAsType(meta.inputs),
         stringMapAsType(meta.outputs),
         stringArrayAsType(meta.queries.map(q => q.propertyName)),
@@ -14886,7 +14889,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.0+87.sha-6003145');
+const VERSION$1 = new Version('7.2.0+88.sha-142553a');
 
 /**
  * @license
@@ -25350,7 +25353,9 @@ class DirectiveBinder {
             }
             else {
                 // This is a reference to a directive exported via exportAs. One should exist.
-                dirTarget = directives.find(dir => dir.exportAs === ref.value) || null;
+                dirTarget =
+                    directives.find(dir => dir.exportAs !== null && dir.exportAs.some(value => value === ref.value)) ||
+                        null;
                 // Check if a matching directive was found, and error if it wasn't.
                 if (dirTarget === null) {
                     // TODO(alxhub): Return an error value here that can be used for template validation.
