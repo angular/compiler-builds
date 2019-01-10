@@ -1,10 +1,10 @@
 /**
- * @license Angular v7.2.0+90.sha-7374dfd
+ * @license Angular v7.2.0+94.sha-ee60c76
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __extends, __assign, __spread, __values, __read } from 'tslib';
+import { __extends, __assign, __spread, __read, __values } from 'tslib';
 
 /**
  * @license
@@ -14990,9 +14990,9 @@ function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
     var _a = baseDirectiveFields(meta, constantPool, bindingParser), definitionMap = _a.definitionMap, statements = _a.statements;
     addFeatures(definitionMap, meta);
     var expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()]);
-    // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
-    // string literal, which must be on one line.
-    var selectorForType = (meta.selector || '').replace(/\n/g, '');
+    if (!meta.selector) {
+        throw new Error("Directive " + meta.name + " has no selector, please add it!");
+    }
     var type = createTypeForDef(meta, Identifiers$1.DirectiveDefWithMeta);
     return { expression: expression, type: type, statements: statements };
 }
@@ -15822,7 +15822,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.2.0+90.sha-7374dfd');
+var VERSION$1 = new Version('7.2.0+94.sha-ee60c76');
 
 /**
  * @license
