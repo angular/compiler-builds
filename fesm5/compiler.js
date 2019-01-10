@@ -1,10 +1,10 @@
 /**
- * @license Angular v7.2.0+98.sha-a6ba789
+ * @license Angular v7.2.0+100.sha-feebe03
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 
-import { __extends, __assign, __spread, __read, __values } from 'tslib';
+import { __extends, __assign, __spread, __values, __read } from 'tslib';
 
 /**
  * @license
@@ -14304,6 +14304,11 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     TemplateDefinitionBuilder.prototype.allocateDataSlot = function () { return this._dataIndex++; };
     TemplateDefinitionBuilder.prototype.getConstCount = function () { return this._dataIndex; };
     TemplateDefinitionBuilder.prototype.getVarCount = function () { return this._pureFunctionSlots; };
+    TemplateDefinitionBuilder.prototype.getNgContentSelectors = function () {
+        return this._hasNgContent ?
+            this.constantPool.getConstLiteral(asLiteral(this._ngContentSelectors), true) :
+            null;
+    };
     TemplateDefinitionBuilder.prototype.bindingContext = function () { return "" + this._bindingContext++; };
     // Bindings must only be resolved after all local refs have been visited, so all
     // instructions are queued in callbacks that execute once the initial pass has completed.
@@ -15072,6 +15077,12 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     var template = meta.template;
     var templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, null, null, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML, meta.relativeContextFilePath, meta.i18nUseExternalIds);
     var templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, []);
+    // We need to provide this so that dynamically generated components know what
+    // projected content blocks to pass through to the component when it is instantiated.
+    var ngContentSelectors = templateBuilder.getNgContentSelectors();
+    if (ngContentSelectors) {
+        definitionMap.set('ngContentSelectors', ngContentSelectors);
+    }
     // e.g. `consts: 2`
     definitionMap.set('consts', literal(templateBuilder.getConstCount()));
     // e.g. `vars: 2`
@@ -15822,7 +15833,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.2.0+98.sha-a6ba789');
+var VERSION$1 = new Version('7.2.0+100.sha-feebe03');
 
 /**
  * @license
