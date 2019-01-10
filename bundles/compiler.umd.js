@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0+81.sha-8934b73
+ * @license Angular v7.2.0+83.sha-94c0b7a
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -14179,10 +14179,19 @@
                 var instruction = mapBindingToInstruction(input.type);
                 if (input.type === 4 /* Animation */) {
                     var value_1 = input.value.visit(_this._valueConverter);
-                    // setProperty without a value doesn't make any sense
-                    if (value_1.name || value_1.value) {
-                        var bindingName_1 = prepareSyntheticPropertyName(input.name);
+                    // animation bindings can be presented in the following formats:
+                    // 1j [@binding]="fooExp"
+                    // 2. [@binding]="{value:fooExp, params:{...}}"
+                    // 3. [@binding]
+                    // 4. @binding
+                    // only formats 1. and 2. include the actual binding of a value to
+                    // an expression and therefore only those should be the only two that
+                    // are allowed. The check below ensures that a binding with no expression
+                    // does not get an empty `elementProperty` instruction created for it.
+                    var hasValue = value_1 && (value_1 instanceof LiteralPrimitive) ? !!value_1.value : true;
+                    if (hasValue) {
                         _this.allocateBindingSlots(value_1);
+                        var bindingName_1 = prepareSyntheticPropertyName(input.name);
                         _this.updateInstruction(input.sourceSpan, Identifiers$1.elementProperty, function () {
                             return [
                                 literal(elementIndex), literal(bindingName_1),
@@ -15867,7 +15876,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('7.2.0+81.sha-8934b73');
+    var VERSION$1 = new Version('7.2.0+83.sha-94c0b7a');
 
     /**
      * @license

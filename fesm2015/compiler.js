@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0+81.sha-8934b73
+ * @license Angular v7.2.0+83.sha-94c0b7a
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -13261,10 +13261,19 @@ class TemplateDefinitionBuilder {
             const instruction = mapBindingToInstruction(input.type);
             if (input.type === 4 /* Animation */) {
                 const value = input.value.visit(this._valueConverter);
-                // setProperty without a value doesn't make any sense
-                if (value.name || value.value) {
-                    const bindingName = prepareSyntheticPropertyName(input.name);
+                // animation bindings can be presented in the following formats:
+                // 1j [@binding]="fooExp"
+                // 2. [@binding]="{value:fooExp, params:{...}}"
+                // 3. [@binding]
+                // 4. @binding
+                // only formats 1. and 2. include the actual binding of a value to
+                // an expression and therefore only those should be the only two that
+                // are allowed. The check below ensures that a binding with no expression
+                // does not get an empty `elementProperty` instruction created for it.
+                const hasValue = value && (value instanceof LiteralPrimitive) ? !!value.value : true;
+                if (hasValue) {
                     this.allocateBindingSlots(value);
+                    const bindingName = prepareSyntheticPropertyName(input.name);
                     this.updateInstruction(input.sourceSpan, Identifiers$1.elementProperty, () => {
                         return [
                             literal(elementIndex), literal(bindingName),
@@ -14877,7 +14886,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.0+81.sha-8934b73');
+const VERSION$1 = new Version('7.2.0+83.sha-94c0b7a');
 
 /**
  * @license
