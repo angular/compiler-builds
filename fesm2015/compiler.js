@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0+136.sha-9a128a8
+ * @license Angular v7.2.0+137.sha-9260b5e
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13225,20 +13225,21 @@ class TemplateDefinitionBuilder {
                 }
             }
             else if (instruction) {
-                const params = [];
-                const isAttributeBinding = input.type === 1 /* Attribute */;
-                const sanitizationRef = resolveSanitizationFn(input.securityContext, isAttributeBinding);
-                if (sanitizationRef)
-                    params.push(sanitizationRef);
-                // TODO(chuckj): runtime: security context
                 const value = input.value.visit(this._valueConverter);
-                this.allocateBindingSlots(value);
-                this.updateInstruction(input.sourceSpan, instruction, () => {
-                    return [
-                        literal(elementIndex), literal(input.name),
-                        this.convertPropertyBinding(implicit, value), ...params
-                    ];
-                });
+                if (value !== undefined) {
+                    const params = [];
+                    const isAttributeBinding = input.type === 1 /* Attribute */;
+                    const sanitizationRef = resolveSanitizationFn(input.securityContext, isAttributeBinding);
+                    if (sanitizationRef)
+                        params.push(sanitizationRef);
+                    this.allocateBindingSlots(value);
+                    this.updateInstruction(input.sourceSpan, instruction, () => {
+                        return [
+                            literal(elementIndex), literal(input.name),
+                            this.convertPropertyBinding(implicit, value), ...params
+                        ];
+                    });
+                }
             }
             else {
                 this._unsupported(`binding type ${input.type}`);
@@ -14832,7 +14833,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.0+136.sha-9a128a8');
+const VERSION$1 = new Version('7.2.0+137.sha-9260b5e');
 
 /**
  * @license

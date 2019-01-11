@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0+136.sha-9a128a8
+ * @license Angular v7.2.0+137.sha-9260b5e
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -14086,20 +14086,21 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 }
             }
             else if (instruction) {
-                var params_2 = [];
-                var isAttributeBinding = input.type === 1 /* Attribute */;
-                var sanitizationRef = resolveSanitizationFn(input.securityContext, isAttributeBinding);
-                if (sanitizationRef)
-                    params_2.push(sanitizationRef);
-                // TODO(chuckj): runtime: security context
                 var value_2 = input.value.visit(_this._valueConverter);
-                _this.allocateBindingSlots(value_2);
-                _this.updateInstruction(input.sourceSpan, instruction, function () {
-                    return __spread([
-                        literal(elementIndex), literal(input.name),
-                        _this.convertPropertyBinding(implicit, value_2)
-                    ], params_2);
-                });
+                if (value_2 !== undefined) {
+                    var params_2 = [];
+                    var isAttributeBinding = input.type === 1 /* Attribute */;
+                    var sanitizationRef = resolveSanitizationFn(input.securityContext, isAttributeBinding);
+                    if (sanitizationRef)
+                        params_2.push(sanitizationRef);
+                    _this.allocateBindingSlots(value_2);
+                    _this.updateInstruction(input.sourceSpan, instruction, function () {
+                        return __spread([
+                            literal(elementIndex), literal(input.name),
+                            _this.convertPropertyBinding(implicit, value_2)
+                        ], params_2);
+                    });
+                }
             }
             else {
                 _this._unsupported("binding type " + input.type);
@@ -15765,7 +15766,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.2.0+136.sha-9a128a8');
+var VERSION$1 = new Version('7.2.0+137.sha-9260b5e');
 
 /**
  * @license
