@@ -10,10 +10,9 @@
  *
  * @param value string representation of style as used in the `style` attribute in HTML.
  *   Example: `color: red; height: auto`.
- * @returns an object literal. `{ color: 'red', height: 'auto'}`.
+ * @returns An array of style property name and value pairs, e.g. `['color', 'red', 'height',
+ * 'auto']`
  */
-export declare function parse(value: string): {
-    [key: string]: any;
-};
+export declare function parse(value: string): string[];
 export declare function stripUnnecessaryQuotes(value: string): string;
 export declare function hyphenate(value: string): string;

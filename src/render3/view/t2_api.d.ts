@@ -47,7 +47,7 @@ export interface DirectiveMeta {
      *
      * Null otherwise
      */
-    exportAs: string | null;
+    exportAs: string[] | null;
 }
 /**
  * Interface to the binding API, which processes a template and returns an object similar to the

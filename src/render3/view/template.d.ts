@@ -20,6 +20,7 @@ import { R3QueryMetadata } from './api';
 import { I18nContext } from './i18n/context';
 import { invalid } from './util';
 export declare function renderFlagCheckIfStmt(flags: core.RenderFlags, statements: o.Statement[]): o.IfStmt;
+export declare function prepareEventListenerParameters(eventAst: t.BoundEvent, bindingContext: o.Expression, handlerName?: string | null, scope?: BindingScope | null): o.Expression[];
 export declare class TemplateDefinitionBuilder implements t.Visitor<void>, LocalResolver {
     private constantPool;
     private level;
@@ -106,6 +107,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private allocateDataSlot;
     getConstCount(): number;
     getVarCount(): number;
+    getNgContentSelectors(): o.Expression | null;
     private bindingContext;
     private instructionFn;
     private processStylingInstruction;
@@ -116,6 +118,23 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private convertExpressionBinding;
     private convertPropertyBinding;
     private matchDirectives;
+    /**
+     * Prepares all attribute expression values for the `TAttributes` array.
+     *
+     * The purpose of this function is to properly construct an attributes array that
+     * is passed into the `elementStart` (or just `element`) functions. Because there
+     * are many different types of attributes, the array needs to be constructed in a
+     * special way so that `elementStart` can properly evaluate them.
+     *
+     * The format looks like this:
+     *
+     * ```
+     * attrs = [prop, value, prop2, value2,
+     *   CLASSES, class1, class2,
+     *   STYLES, style1, value1, style2, value2,
+     *   SELECT_ONLY, name1, name2, name2, ...]
+     * ```
+     */
     private prepareSyntheticAndSelectOnlyAttrs;
     private toAttrsParam;
     private prepareRefsParameter;
@@ -214,4 +233,5 @@ export declare function parseTemplate(template: string, templateUrl: string, opt
  * Construct a `BindingParser` with a default configuration.
  */
 export declare function makeBindingParser(interpolationConfig?: InterpolationConfig): BindingParser;
+export declare function resolveSanitizationFn(context: core.SecurityContext, isAttribute?: boolean): o.ExternalExpr | null;
 export {};

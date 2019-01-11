@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0-rc.0+20.sha-1c0ac25
+ * @license Angular v7.2.0+103.sha-7de7e1b
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -3104,11 +3104,13 @@ Identifiers$1.element = { name: 'ɵelement', moduleName: CORE$1 };
 Identifiers$1.elementStart = { name: 'ɵelementStart', moduleName: CORE$1 };
 Identifiers$1.elementEnd = { name: 'ɵelementEnd', moduleName: CORE$1 };
 Identifiers$1.elementProperty = { name: 'ɵelementProperty', moduleName: CORE$1 };
+Identifiers$1.componentHostSyntheticProperty = { name: 'ɵcomponentHostSyntheticProperty', moduleName: CORE$1 };
 Identifiers$1.elementAttribute = { name: 'ɵelementAttribute', moduleName: CORE$1 };
 Identifiers$1.elementClassProp = { name: 'ɵelementClassProp', moduleName: CORE$1 };
 Identifiers$1.elementContainerStart = { name: 'ɵelementContainerStart', moduleName: CORE$1 };
 Identifiers$1.elementContainerEnd = { name: 'ɵelementContainerEnd', moduleName: CORE$1 };
 Identifiers$1.elementStyling = { name: 'ɵelementStyling', moduleName: CORE$1 };
+Identifiers$1.elementHostAttrs = { name: 'ɵelementHostAttrs', moduleName: CORE$1 };
 Identifiers$1.elementStylingMap = { name: 'ɵelementStylingMap', moduleName: CORE$1 };
 Identifiers$1.elementStyleProp = { name: 'ɵelementStyleProp', moduleName: CORE$1 };
 Identifiers$1.elementStylingApply = { name: 'ɵelementStylingApply', moduleName: CORE$1 };
@@ -3164,6 +3166,9 @@ Identifiers$1.inject = { name: 'inject', moduleName: CORE$1 };
 Identifiers$1.injectAttribute = { name: 'ɵinjectAttribute', moduleName: CORE$1 };
 Identifiers$1.directiveInject = { name: 'ɵdirectiveInject', moduleName: CORE$1 };
 Identifiers$1.templateRefExtractor = { name: 'ɵtemplateRefExtractor', moduleName: CORE$1 };
+Identifiers$1.resolveWindow = { name: 'ɵresolveWindow', moduleName: CORE$1 };
+Identifiers$1.resolveDocument = { name: 'ɵresolveDocument', moduleName: CORE$1 };
+Identifiers$1.resolveBody = { name: 'ɵresolveBody', moduleName: CORE$1 };
 Identifiers$1.defineBase = { name: 'ɵdefineBase', moduleName: CORE$1 };
 Identifiers$1.BaseDef = {
     name: 'ɵBaseDef',
@@ -3219,6 +3224,7 @@ Identifiers$1.defaultStyleSanitizer = { name: 'ɵdefaultStyleSanitizer', moduleN
 Identifiers$1.sanitizeResourceUrl = { name: 'ɵsanitizeResourceUrl', moduleName: CORE$1 };
 Identifiers$1.sanitizeScript = { name: 'ɵsanitizeScript', moduleName: CORE$1 };
 Identifiers$1.sanitizeUrl = { name: 'ɵsanitizeUrl', moduleName: CORE$1 };
+Identifiers$1.sanitizeUrlOrResourceUrl = { name: 'ɵsanitizeUrlOrResourceUrl', moduleName: CORE$1 };
 
 /**
  * @license
@@ -4520,6 +4526,26 @@ function typeWithParameters(type, numParams) {
         }
     }
     return expressionType(type, null, params);
+}
+const ANIMATE_SYMBOL_PREFIX = '@';
+function prepareSyntheticPropertyName(name) {
+    return `${ANIMATE_SYMBOL_PREFIX}${name}`;
+}
+function prepareSyntheticListenerName(name, phase) {
+    return `${ANIMATE_SYMBOL_PREFIX}${name}.${phase}`;
+}
+function getSyntheticPropertyName(name) {
+    // this will strip out listener phase values...
+    // @foo.start => @foo
+    const i = name.indexOf('.');
+    name = i > 0 ? name.substring(0, i) : name;
+    if (name.charAt(0) !== ANIMATE_SYMBOL_PREFIX) {
+        name = ANIMATE_SYMBOL_PREFIX + name;
+    }
+    return name;
+}
+function prepareSyntheticListenerFunctionName(name, phase) {
+    return `animation_${name}_${phase}`;
 }
 
 /**
@@ -7929,15 +7955,166 @@ function getStylesVarName(component) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+class Text$2 {
+    constructor(value, sourceSpan) {
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+    }
+    visit(visitor) { return visitor.visitText(this); }
+}
+class BoundText {
+    constructor(value, sourceSpan, i18n) {
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+        this.i18n = i18n;
+    }
+    visit(visitor) { return visitor.visitBoundText(this); }
+}
+class TextAttribute {
+    constructor(name, value, sourceSpan, valueSpan, i18n) {
+        this.name = name;
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+        this.valueSpan = valueSpan;
+        this.i18n = i18n;
+    }
+    visit(visitor) { return visitor.visitTextAttribute(this); }
+}
+class BoundAttribute {
+    constructor(name, type, securityContext, value, unit, sourceSpan, i18n) {
+        this.name = name;
+        this.type = type;
+        this.securityContext = securityContext;
+        this.value = value;
+        this.unit = unit;
+        this.sourceSpan = sourceSpan;
+        this.i18n = i18n;
+    }
+    static fromBoundElementProperty(prop, i18n) {
+        return new BoundAttribute(prop.name, prop.type, prop.securityContext, prop.value, prop.unit, prop.sourceSpan, i18n);
+    }
+    visit(visitor) { return visitor.visitBoundAttribute(this); }
+}
+class BoundEvent {
+    constructor(name, type, handler, target, phase, sourceSpan) {
+        this.name = name;
+        this.type = type;
+        this.handler = handler;
+        this.target = target;
+        this.phase = phase;
+        this.sourceSpan = sourceSpan;
+    }
+    static fromParsedEvent(event) {
+        const target = event.type === 0 /* Regular */ ? event.targetOrPhase : null;
+        const phase = event.type === 1 /* Animation */ ? event.targetOrPhase : null;
+        return new BoundEvent(event.name, event.type, event.handler, target, phase, event.sourceSpan);
+    }
+    visit(visitor) { return visitor.visitBoundEvent(this); }
+}
+class Element {
+    constructor(name, attributes, inputs, outputs, children, references, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
+        this.name = name;
+        this.attributes = attributes;
+        this.inputs = inputs;
+        this.outputs = outputs;
+        this.children = children;
+        this.references = references;
+        this.sourceSpan = sourceSpan;
+        this.startSourceSpan = startSourceSpan;
+        this.endSourceSpan = endSourceSpan;
+        this.i18n = i18n;
+    }
+    visit(visitor) { return visitor.visitElement(this); }
+}
+class Template {
+    constructor(tagName, attributes, inputs, outputs, children, references, variables, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
+        this.tagName = tagName;
+        this.attributes = attributes;
+        this.inputs = inputs;
+        this.outputs = outputs;
+        this.children = children;
+        this.references = references;
+        this.variables = variables;
+        this.sourceSpan = sourceSpan;
+        this.startSourceSpan = startSourceSpan;
+        this.endSourceSpan = endSourceSpan;
+        this.i18n = i18n;
+    }
+    visit(visitor) { return visitor.visitTemplate(this); }
+}
+class Content {
+    constructor(selector, attributes, sourceSpan, i18n) {
+        this.selector = selector;
+        this.attributes = attributes;
+        this.sourceSpan = sourceSpan;
+        this.i18n = i18n;
+    }
+    visit(visitor) { return visitor.visitContent(this); }
+}
+class Variable {
+    constructor(name, value, sourceSpan) {
+        this.name = name;
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+    }
+    visit(visitor) { return visitor.visitVariable(this); }
+}
+class Reference {
+    constructor(name, value, sourceSpan) {
+        this.name = name;
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+    }
+    visit(visitor) { return visitor.visitReference(this); }
+}
+class Icu$1 {
+    constructor(vars, placeholders, sourceSpan, i18n) {
+        this.vars = vars;
+        this.placeholders = placeholders;
+        this.sourceSpan = sourceSpan;
+        this.i18n = i18n;
+    }
+    visit(visitor) { return visitor.visitIcu(this); }
+}
+function visitAll(visitor, nodes) {
+    const result = [];
+    if (visitor.visit) {
+        for (const node of nodes) {
+            const newNode = visitor.visit(node) || node.visit(visitor);
+        }
+    }
+    else {
+        for (const node of nodes) {
+            const newNode = node.visit(visitor);
+            if (newNode) {
+                result.push(newNode);
+            }
+        }
+    }
+    return result;
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * Parses string representation of a style and converts it into object literal.
  *
  * @param value string representation of style as used in the `style` attribute in HTML.
  *   Example: `color: red; height: auto`.
- * @returns an object literal. `{ color: 'red', height: 'auto'}`.
+ * @returns An array of style property name and value pairs, e.g. `['color', 'red', 'height',
+ * 'auto']`
  */
 function parse(value) {
-    const styles = {};
+    // we use a string array here instead of a string map
+    // because a string-map is not guaranteed to retain the
+    // order of the entries whereas a string array can be
+    // construted in a [key, value, key, value] format.
+    const styles = [];
     let i = 0;
     let parenDepth = 0;
     let quote = 0 /* QuoteNone */;
@@ -7984,7 +8161,7 @@ function parse(value) {
             case 59 /* Semicolon */:
                 if (currentProp && valueStart > 0 && parenDepth === 0 && quote === 0 /* QuoteNone */) {
                     const styleVal = value.substring(valueStart, i - 1).trim();
-                    styles[currentProp] = valueHasQuotes ? stripUnnecessaryQuotes(styleVal) : styleVal;
+                    styles.push(currentProp, valueHasQuotes ? stripUnnecessaryQuotes(styleVal) : styleVal);
                     propStart = i;
                     valueStart = 0;
                     currentProp = null;
@@ -7995,7 +8172,7 @@ function parse(value) {
     }
     if (currentProp && valueStart) {
         const styleVal = value.substr(valueStart).trim();
-        styles[currentProp] = valueHasQuotes ? stripUnnecessaryQuotes(styleVal) : styleVal;
+        styles.push(currentProp, valueHasQuotes ? stripUnnecessaryQuotes(styleVal) : styleVal);
     }
     return styles;
 }
@@ -8020,6 +8197,10 @@ function hyphenate(value) {
 
 /**
  * Produces creation/update instructions for all styling bindings (class and style)
+ *
+ * It also produces the creation instruction to register all initial styling values
+ * (which are all the static class="..." and style="..." attribute values that exist
+ * on an element within a template).
  *
  * The builder class below handles producing instructions for the following cases:
  *
@@ -8047,21 +8228,49 @@ class StylingBuilder {
     constructor(_elementIndexExpr, _directiveExpr) {
         this._elementIndexExpr = _elementIndexExpr;
         this._directiveExpr = _directiveExpr;
-        this.hasBindingsOrInitialValues = false;
+        /** Whether or not there are any static styling values present */
+        this._hasInitialValues = false;
+        /**
+         *  Whether or not there are any styling bindings present
+         *  (i.e. `[style]`, `[class]`, `[style.prop]` or `[class.name]`)
+         */
+        this._hasBindings = false;
+        /** the input for [class] (if it exists) */
         this._classMapInput = null;
+        /** the input for [style] (if it exists) */
         this._styleMapInput = null;
+        /** an array of each [style.prop] input */
         this._singleStyleInputs = null;
+        /** an array of each [class.name] input */
         this._singleClassInputs = null;
         this._lastStylingInput = null;
         // maps are used instead of hash maps because a Map will
         // retain the ordering of the keys
+        /**
+         * Represents the location of each style binding in the template
+         * (e.g. `<div [style.width]="w" [style.height]="h">` implies
+         * that `width=0` and `height=1`)
+         */
         this._stylesIndex = new Map();
+        /**
+         * Represents the location of each class binding in the template
+         * (e.g. `<div [class.big]="b" [class.hidden]="h">` implies
+         * that `big=0` and `hidden=1`)
+         */
         this._classesIndex = new Map();
-        this._initialStyleValues = {};
-        this._initialClassValues = {};
+        this._initialStyleValues = [];
+        this._initialClassValues = [];
+        // certain style properties ALWAYS need sanitization
+        // this is checked each time new styles are encountered
         this._useDefaultSanitizer = false;
-        this._applyFnRequired = false;
     }
+    hasBindingsOrInitialValues() { return this._hasBindings || this._hasInitialValues; }
+    /**
+     * Registers a given input to the styling builder to be later used when producing AOT code.
+     *
+     * The code below will only accept the input if it is somehow tied to styling (whether it be
+     * style/class bindings or static style/class attributes).
+     */
     registerBoundInput(input) {
         // [attr.style] or [attr.class] are skipped in the code below,
         // they should not be treated as styling-based bindings since
@@ -8095,110 +8304,147 @@ class StylingBuilder {
             (this._singleStyleInputs = this._singleStyleInputs || []).push(entry);
             this._useDefaultSanitizer = this._useDefaultSanitizer || isStyleSanitizable(propertyName);
             registerIntoMap(this._stylesIndex, propertyName);
-            this.hasBindingsOrInitialValues = true;
         }
         else {
             this._useDefaultSanitizer = true;
             this._styleMapInput = entry;
         }
         this._lastStylingInput = entry;
-        this.hasBindingsOrInitialValues = true;
-        this._applyFnRequired = true;
+        this._hasBindings = true;
         return entry;
     }
     registerClassInput(className, value, sourceSpan) {
         const entry = { name: className, value, sourceSpan };
         if (className) {
             (this._singleClassInputs = this._singleClassInputs || []).push(entry);
-            this.hasBindingsOrInitialValues = true;
             registerIntoMap(this._classesIndex, className);
         }
         else {
             this._classMapInput = entry;
         }
         this._lastStylingInput = entry;
-        this.hasBindingsOrInitialValues = true;
-        this._applyFnRequired = true;
+        this._hasBindings = true;
         return entry;
     }
+    /**
+     * Registers the element's static style string value to the builder.
+     *
+     * @param value the style string (e.g. `width:100px; height:200px;`)
+     */
     registerStyleAttr(value) {
         this._initialStyleValues = parse(value);
-        Object.keys(this._initialStyleValues).forEach(prop => {
-            registerIntoMap(this._stylesIndex, prop);
-            this.hasBindingsOrInitialValues = true;
-        });
+        this._hasInitialValues = true;
     }
+    /**
+     * Registers the element's static class string value to the builder.
+     *
+     * @param value the className string (e.g. `disabled gold zoom`)
+     */
     registerClassAttr(value) {
-        this._initialClassValues = {};
-        value.split(/\s+/g).forEach(className => {
-            this._initialClassValues[className] = true;
-            registerIntoMap(this._classesIndex, className);
-            this.hasBindingsOrInitialValues = true;
-        });
+        this._initialClassValues = value.trim().split(/\s+/g);
+        this._hasInitialValues = true;
     }
-    _buildInitExpr(registry, initialValues) {
-        const exprs = [];
-        const nameAndValueExprs = [];
-        // _c0 = [prop, prop2, prop3, ...]
-        registry.forEach((value, key) => {
-            const keyLiteral = literal(key);
-            exprs.push(keyLiteral);
-            const initialValue = initialValues[key];
-            if (initialValue) {
-                nameAndValueExprs.push(keyLiteral, literal(initialValue));
+    /**
+     * Appends all styling-related expressions to the provided attrs array.
+     *
+     * @param attrs an existing array where each of the styling expressions
+     * will be inserted into.
+     */
+    populateInitialStylingAttrs(attrs) {
+        // [CLASS_MARKER, 'foo', 'bar', 'baz' ...]
+        if (this._initialClassValues.length) {
+            attrs.push(literal(1 /* Classes */));
+            for (let i = 0; i < this._initialClassValues.length; i++) {
+                attrs.push(literal(this._initialClassValues[i]));
             }
-        });
-        if (nameAndValueExprs.length) {
-            // _c0 = [... MARKER ...]
-            exprs.push(literal(1 /* VALUES_MODE */));
-            // _c0 = [prop, VALUE, prop2, VALUE2, ...]
-            exprs.push(...nameAndValueExprs);
         }
-        return exprs.length ? literalArr(exprs) : null;
+        // [STYLE_MARKER, 'width', '200px', 'height', '100px', ...]
+        if (this._initialStyleValues.length) {
+            attrs.push(literal(2 /* Styles */));
+            for (let i = 0; i < this._initialStyleValues.length; i += 2) {
+                attrs.push(literal(this._initialStyleValues[i]), literal(this._initialStyleValues[i + 1]));
+            }
+        }
     }
-    buildCreateLevelInstruction(sourceSpan, constantPool) {
-        if (this.hasBindingsOrInitialValues) {
-            const initialClasses = this._buildInitExpr(this._classesIndex, this._initialClassValues);
-            const initialStyles = this._buildInitExpr(this._stylesIndex, this._initialStyleValues);
-            // in the event that a [style] binding is used then sanitization will
-            // always be imported because it is not possible to know ahead of time
-            // whether style bindings will use or not use any sanitizable properties
-            // that isStyleSanitizable() will detect
-            const useSanitizer = this._useDefaultSanitizer;
-            const params = [];
-            if (initialClasses) {
-                // the template compiler handles initial class styling (e.g. class="foo") values
-                // in a special command called `elementClass` so that the initial class
-                // can be processed during runtime. These initial class values are bound to
-                // a constant because the inital class values do not change (since they're static).
-                params.push(constantPool.getConstLiteral(initialClasses, true));
-            }
-            else if (initialStyles || useSanitizer || this._directiveExpr) {
-                // no point in having an extra `null` value unless there are follow-up params
-                params.push(NULL_EXPR);
-            }
-            if (initialStyles) {
-                // the template compiler handles initial style (e.g. style="foo") values
-                // in a special command called `elementStyle` so that the initial styles
-                // can be processed during runtime. These initial styles values are bound to
-                // a constant because the inital style values do not change (since they're static).
-                params.push(constantPool.getConstLiteral(initialStyles, true));
-            }
-            else if (useSanitizer || this._directiveExpr) {
-                // no point in having an extra `null` value unless there are follow-up params
-                params.push(NULL_EXPR);
-            }
-            if (useSanitizer || this._directiveExpr) {
-                params.push(useSanitizer ? importExpr(Identifiers$1.defaultStyleSanitizer) : NULL_EXPR);
-                if (this._directiveExpr) {
-                    params.push(this._directiveExpr);
+    /**
+     * Builds an instruction with all the expressions and parameters for `elementHostAttrs`.
+     *
+     * The instruction generation code below is used for producing the AOT statement code which is
+     * responsible for registering initial styles (within a directive hostBindings' creation block)
+     * to the directive host element.
+     */
+    buildDirectiveHostAttrsInstruction(sourceSpan, constantPool) {
+        if (this._hasInitialValues && this._directiveExpr) {
+            return {
+                sourceSpan,
+                reference: Identifiers$1.elementHostAttrs,
+                buildParams: () => {
+                    const attrs = [];
+                    this.populateInitialStylingAttrs(attrs);
+                    return [this._directiveExpr, getConstantLiteralFromArray(constantPool, attrs)];
                 }
-            }
-            return { sourceSpan, reference: Identifiers$1.elementStyling, buildParams: () => params };
+            };
         }
         return null;
     }
-    _buildStylingMap(valueConverter) {
+    /**
+     * Builds an instruction with all the expressions and parameters for `elementStyling`.
+     *
+     * The instruction generation code below is used for producing the AOT statement code which is
+     * responsible for registering style/class bindings to an element.
+     */
+    buildElementStylingInstruction(sourceSpan, constantPool) {
+        if (this._hasBindings) {
+            return {
+                sourceSpan,
+                reference: Identifiers$1.elementStyling,
+                buildParams: () => {
+                    // a string array of every style-based binding
+                    const styleBindingProps = this._singleStyleInputs ? this._singleStyleInputs.map(i => literal(i.name)) : [];
+                    // a string array of every class-based binding
+                    const classBindingNames = this._singleClassInputs ? this._singleClassInputs.map(i => literal(i.name)) : [];
+                    // to salvage space in the AOT generated code, there is no point in passing
+                    // in `null` into a param if any follow-up params are not used. Therefore,
+                    // only when a trailing param is used then it will be filled with nulls in between
+                    // (otherwise a shorter amount of params will be filled). The code below helps
+                    // determine how many params are required in the expression code.
+                    //
+                    // min params => elementStyling()
+                    // max params => elementStyling(classBindings, styleBindings, sanitizer, directive)
+                    let expectedNumberOfArgs = 0;
+                    if (this._directiveExpr) {
+                        expectedNumberOfArgs = 4;
+                    }
+                    else if (this._useDefaultSanitizer) {
+                        expectedNumberOfArgs = 3;
+                    }
+                    else if (styleBindingProps.length) {
+                        expectedNumberOfArgs = 2;
+                    }
+                    else if (classBindingNames.length) {
+                        expectedNumberOfArgs = 1;
+                    }
+                    const params = [];
+                    addParam(params, classBindingNames.length > 0, getConstantLiteralFromArray(constantPool, classBindingNames), 1, expectedNumberOfArgs);
+                    addParam(params, styleBindingProps.length > 0, getConstantLiteralFromArray(constantPool, styleBindingProps), 2, expectedNumberOfArgs);
+                    addParam(params, this._useDefaultSanitizer, importExpr(Identifiers$1.defaultStyleSanitizer), 3, expectedNumberOfArgs);
+                    if (this._directiveExpr) {
+                        params.push(this._directiveExpr);
+                    }
+                    return params;
+                }
+            };
+        }
+        return null;
+    }
+    /**
+     * Builds an instruction with all the expressions and parameters for `elementStylingMap`.
+     *
+     * The instruction data will contain all expressions for `elementStylingMap` to function
+     * which include the `[style]` and `[class]` expression params (if they exist) as well as
+     * the sanitizer and directive reference expression.
+     */
+    buildElementStylingMapInstruction(valueConverter) {
         if (this._classMapInput || this._styleMapInput) {
             const stylingInput = this._classMapInput || this._styleMapInput;
             // these values must be outside of the update block so that they can
@@ -8282,18 +8528,20 @@ class StylingBuilder {
             }
         };
     }
+    /**
+     * Constructs all instructions which contain the expressions that will be placed
+     * into the update block of a template function or a directive hostBindings function.
+     */
     buildUpdateLevelInstructions(valueConverter) {
         const instructions = [];
-        if (this.hasBindingsOrInitialValues) {
-            const mapInstruction = this._buildStylingMap(valueConverter);
+        if (this._hasBindings) {
+            const mapInstruction = this.buildElementStylingMapInstruction(valueConverter);
             if (mapInstruction) {
                 instructions.push(mapInstruction);
             }
             instructions.push(...this._buildStyleInputs(valueConverter));
             instructions.push(...this._buildClassInputs(valueConverter));
-            if (this._applyFnRequired) {
-                instructions.push(this._buildApplyFn());
-            }
+            instructions.push(this._buildApplyFn());
         }
         return instructions;
     }
@@ -8309,6 +8557,25 @@ function registerIntoMap(map, key) {
 function isStyleSanitizable(prop) {
     return prop === 'background-image' || prop === 'background' || prop === 'border-image' ||
         prop === 'filter' || prop === 'list-style' || prop === 'list-style-image';
+}
+/**
+ * Simple helper function to either provide the constant literal that will house the value
+ * here or a null value if the provided values are empty.
+ */
+function getConstantLiteralFromArray(constantPool, values) {
+    return values.length ? constantPool.getConstLiteral(literalArr(values), true) : NULL_EXPR;
+}
+/**
+ * Simple helper function that adds a parameter or does nothing at all depending on the provided
+ * predicate and totalExpectedArgs values
+ */
+function addParam(params, predicate, value, argNumber, totalExpectedArgs) {
+    if (predicate) {
+        params.push(value);
+    }
+    else if (argNumber < totalExpectedArgs) {
+        params.push(NULL_EXPR);
+    }
 }
 
 /**
@@ -9441,7 +9708,7 @@ class AstPath {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-class Text$2 {
+class Text$3 {
     constructor(value, sourceSpan, i18n) {
         this.value = value;
         this.sourceSpan = sourceSpan;
@@ -9480,7 +9747,7 @@ class Attribute {
     }
     visit(visitor, context) { return visitor.visitAttribute(this, context); }
 }
-class Element {
+class Element$1 {
     constructor(name, attrs, children, sourceSpan, startSourceSpan = null, endSourceSpan = null, i18n) {
         this.name = name;
         this.attrs = attrs;
@@ -9499,7 +9766,7 @@ class Comment {
     }
     visit(visitor, context) { return visitor.visitComment(this, context); }
 }
-function visitAll(visitor, nodes, context = null) {
+function visitAll$1(visitor, nodes, context = null) {
     const result = [];
     const visit = visitor.visit ?
         (ast) => visitor.visit(ast, context) || ast.visit(visitor, context) :
@@ -9512,7 +9779,7 @@ function visitAll(visitor, nodes, context = null) {
     });
     return result;
 }
-class RecursiveVisitor {
+class RecursiveVisitor$1 {
     constructor() { }
     visitElement(ast, context) {
         this.visitChildren(context, visit => {
@@ -9532,7 +9799,7 @@ class RecursiveVisitor {
         let t = this;
         function visit(children) {
             if (children)
-                results.push(visitAll(t, children, context));
+                results.push(visitAll$1(t, children, context));
         }
         cb(visit);
         return [].concat.apply([], results);
@@ -9541,7 +9808,7 @@ class RecursiveVisitor {
 function spanOf(ast) {
     const start = ast.sourceSpan.start.offset;
     let end = ast.sourceSpan.end.offset;
-    if (ast instanceof Element) {
+    if (ast instanceof Element$1) {
         if (ast.endSourceSpan) {
             end = ast.endSourceSpan.end.offset;
         }
@@ -9553,7 +9820,7 @@ function spanOf(ast) {
 }
 function findNode(nodes, position) {
     const path = [];
-    const visitor = new class extends RecursiveVisitor {
+    const visitor = new class extends RecursiveVisitor$1 {
         visit(ast, context) {
             const span = spanOf(ast);
             if (span.start <= position && position < span.end) {
@@ -9565,7 +9832,7 @@ function findNode(nodes, position) {
             }
         }
     };
-    visitAll(visitor, nodes);
+    visitAll$1(visitor, nodes);
     return new AstPath(path, position);
 }
 
@@ -9869,7 +10136,7 @@ class _Tokenizer {
                 const charCode = parseInt(strNum, isHex ? 16 : 10);
                 return String.fromCharCode(charCode);
             }
-            catch (e) {
+            catch (_a) {
                 const entity = this._input.substring(start.offset + 1, this._index - 1);
                 throw this._createError(_unknownEntityErrorMsg(entity), this._getSpan(start));
             }
@@ -10391,7 +10658,7 @@ class _TreeBuilder {
             }
         }
         if (text.length > 0) {
-            this._addToParent(new Text$2(text, token.sourceSpan));
+            this._addToParent(new Text$3(text, token.sourceSpan));
         }
     }
     _closeVoidElement() {
@@ -10425,7 +10692,7 @@ class _TreeBuilder {
         }
         const end = this._peek.sourceSpan.start;
         const span = new ParseSourceSpan(startTagToken.sourceSpan.start, end);
-        const el = new Element(fullName, attrs, [], span, span, undefined);
+        const el = new Element$1(fullName, attrs, [], span, span, undefined);
         this._pushElement(el);
         if (selfClosing) {
             this._popElement(fullName);
@@ -10440,7 +10707,7 @@ class _TreeBuilder {
         const tagDef = this.getTagDefinition(el.name);
         const { parent, container } = this._getParentElementSkippingContainers();
         if (parent && tagDef.requireExtraParent(parent.name)) {
-            const newParent = new Element(tagDef.parentToAdd, [], [], el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
+            const newParent = new Element$1(tagDef.parentToAdd, [], [], el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
             this._insertBeforeContainer(parent, container, newParent);
         }
         this._addToParent(el);
@@ -10611,9 +10878,9 @@ class WhitespaceVisitor {
         if (SKIP_WS_TRIM_TAGS.has(element.name) || hasPreserveWhitespacesAttr(element.attrs)) {
             // don't descent into elements where we need to preserve whitespaces
             // but still visit all attributes to eliminate one used as a market to preserve WS
-            return new Element(element.name, visitAll(this, element.attrs), element.children, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+            return new Element$1(element.name, visitAll$1(this, element.attrs), element.children, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
         }
-        return new Element(element.name, element.attrs, visitAll(this, element.children), element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+        return new Element$1(element.name, element.attrs, visitAll$1(this, element.children), element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
     }
     visitAttribute(attribute, context) {
         return attribute.name !== PRESERVE_WS_ATTR_NAME ? attribute : null;
@@ -10621,7 +10888,7 @@ class WhitespaceVisitor {
     visitText(text, context) {
         const isNotBlank = text.value.match(NO_WS_REGEXP);
         if (isNotBlank) {
-            return new Text$2(replaceNgsp(text.value).replace(WS_REPLACE_REGEXP, ' '), text.sourceSpan, text.i18n);
+            return new Text$3(replaceNgsp(text.value).replace(WS_REPLACE_REGEXP, ' '), text.sourceSpan, text.i18n);
         }
         return null;
     }
@@ -10630,7 +10897,7 @@ class WhitespaceVisitor {
     visitExpansionCase(expansionCase, context) { return expansionCase; }
 }
 function removeWhitespaces(htmlAstWithErrors) {
-    return new ParseTreeResult(visitAll(new WhitespaceVisitor(), htmlAstWithErrors.rootNodes), htmlAstWithErrors.errors);
+    return new ParseTreeResult(visitAll$1(new WhitespaceVisitor(), htmlAstWithErrors.rootNodes), htmlAstWithErrors.errors);
 }
 
 /**
@@ -11348,6 +11615,10 @@ class BindingParser {
             this._parseRegularEvent(name, expression, sourceSpan, targetMatchableAttrs, targetEvents);
         }
     }
+    calcPossibleSecurityContexts(selector, propName, isAttribute) {
+        const prop = this._schemaRegistry.getMappedPropName(propName);
+        return calcPossibleSecurityContexts(this._schemaRegistry, selector, prop, isAttribute);
+    }
     _parseAnimationEvent(name, expression, sourceSpan, targetEvents) {
         const matches = splitAtPeriod(name, [name, '']);
         const eventName = matches[0];
@@ -11458,152 +11729,6 @@ function calcPossibleSecurityContexts(registry, selector, propName, isAttribute)
         ctxs.push(...possibleElementNames.map(elementName => registry.securityContext(elementName, propName, isAttribute)));
     });
     return ctxs.length === 0 ? [SecurityContext.NONE] : Array.from(new Set(ctxs)).sort();
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-class Text$3 {
-    constructor(value, sourceSpan) {
-        this.value = value;
-        this.sourceSpan = sourceSpan;
-    }
-    visit(visitor) { return visitor.visitText(this); }
-}
-class BoundText {
-    constructor(value, sourceSpan, i18n) {
-        this.value = value;
-        this.sourceSpan = sourceSpan;
-        this.i18n = i18n;
-    }
-    visit(visitor) { return visitor.visitBoundText(this); }
-}
-class TextAttribute {
-    constructor(name, value, sourceSpan, valueSpan, i18n) {
-        this.name = name;
-        this.value = value;
-        this.sourceSpan = sourceSpan;
-        this.valueSpan = valueSpan;
-        this.i18n = i18n;
-    }
-    visit(visitor) { return visitor.visitTextAttribute(this); }
-}
-class BoundAttribute {
-    constructor(name, type, securityContext, value, unit, sourceSpan, i18n) {
-        this.name = name;
-        this.type = type;
-        this.securityContext = securityContext;
-        this.value = value;
-        this.unit = unit;
-        this.sourceSpan = sourceSpan;
-        this.i18n = i18n;
-    }
-    static fromBoundElementProperty(prop, i18n) {
-        return new BoundAttribute(prop.name, prop.type, prop.securityContext, prop.value, prop.unit, prop.sourceSpan, i18n);
-    }
-    visit(visitor) { return visitor.visitBoundAttribute(this); }
-}
-class BoundEvent {
-    constructor(name, type, handler, target, phase, sourceSpan) {
-        this.name = name;
-        this.type = type;
-        this.handler = handler;
-        this.target = target;
-        this.phase = phase;
-        this.sourceSpan = sourceSpan;
-    }
-    static fromParsedEvent(event) {
-        const target = event.type === 0 /* Regular */ ? event.targetOrPhase : null;
-        const phase = event.type === 1 /* Animation */ ? event.targetOrPhase : null;
-        return new BoundEvent(event.name, event.type, event.handler, target, phase, event.sourceSpan);
-    }
-    visit(visitor) { return visitor.visitBoundEvent(this); }
-}
-class Element$1 {
-    constructor(name, attributes, inputs, outputs, children, references, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
-        this.name = name;
-        this.attributes = attributes;
-        this.inputs = inputs;
-        this.outputs = outputs;
-        this.children = children;
-        this.references = references;
-        this.sourceSpan = sourceSpan;
-        this.startSourceSpan = startSourceSpan;
-        this.endSourceSpan = endSourceSpan;
-        this.i18n = i18n;
-    }
-    visit(visitor) { return visitor.visitElement(this); }
-}
-class Template {
-    constructor(tagName, attributes, inputs, outputs, children, references, variables, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
-        this.tagName = tagName;
-        this.attributes = attributes;
-        this.inputs = inputs;
-        this.outputs = outputs;
-        this.children = children;
-        this.references = references;
-        this.variables = variables;
-        this.sourceSpan = sourceSpan;
-        this.startSourceSpan = startSourceSpan;
-        this.endSourceSpan = endSourceSpan;
-        this.i18n = i18n;
-    }
-    visit(visitor) { return visitor.visitTemplate(this); }
-}
-class Content {
-    constructor(selector, attributes, sourceSpan, i18n) {
-        this.selector = selector;
-        this.attributes = attributes;
-        this.sourceSpan = sourceSpan;
-        this.i18n = i18n;
-    }
-    visit(visitor) { return visitor.visitContent(this); }
-}
-class Variable {
-    constructor(name, value, sourceSpan) {
-        this.name = name;
-        this.value = value;
-        this.sourceSpan = sourceSpan;
-    }
-    visit(visitor) { return visitor.visitVariable(this); }
-}
-class Reference {
-    constructor(name, value, sourceSpan) {
-        this.name = name;
-        this.value = value;
-        this.sourceSpan = sourceSpan;
-    }
-    visit(visitor) { return visitor.visitReference(this); }
-}
-class Icu$1 {
-    constructor(vars, placeholders, sourceSpan, i18n) {
-        this.vars = vars;
-        this.placeholders = placeholders;
-        this.sourceSpan = sourceSpan;
-        this.i18n = i18n;
-    }
-    visit(visitor) { return visitor.visitIcu(this); }
-}
-function visitAll$1(visitor, nodes) {
-    const result = [];
-    if (visitor.visit) {
-        for (const node of nodes) {
-            const newNode = visitor.visit(node) || node.visit(visitor);
-        }
-    }
-    else {
-        for (const node of nodes) {
-            const newNode = node.visit(visitor);
-            if (newNode) {
-                result.push(newNode);
-            }
-        }
-    }
-    return result;
 }
 
 /**
@@ -11762,7 +11887,7 @@ const IDENT_EVENT_IDX = 10;
 const TEMPLATE_ATTR_PREFIX = '*';
 function htmlAstToRender3Ast(htmlNodes, bindingParser) {
     const transformer = new HtmlAstToIvyAst(bindingParser);
-    const ivyNodes = visitAll(transformer, htmlNodes);
+    const ivyNodes = visitAll$1(transformer, htmlNodes);
     // Errors might originate in either the binding parser or the html to ivy transformer
     const allErrors = bindingParser.errors.concat(transformer.errors);
     const errors = allErrors.filter(e => e.level === ParseErrorLevel.ERROR);
@@ -11838,7 +11963,7 @@ class HtmlAstToIvyAst {
                 attributes.push(this.visitAttribute(attribute));
             }
         }
-        const children = visitAll(preparsedElement.nonBindable ? NON_BINDABLE_VISITOR : this, element.children);
+        const children = visitAll$1(preparsedElement.nonBindable ? NON_BINDABLE_VISITOR : this, element.children);
         let parsedElement;
         if (preparsedElement.type === PreparsedElementType.NG_CONTENT) {
             // `<ng-content>`
@@ -11856,7 +11981,7 @@ class HtmlAstToIvyAst {
         }
         else {
             const attrs = this.extractAttributes(element.name, parsedProperties, i18nAttrsMeta);
-            parsedElement = new Element$1(element.name, attributes, attrs.bound, boundEvents, children, references, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+            parsedElement = new Element(element.name, attributes, attrs.bound, boundEvents, children, references, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
         }
         if (elementHasInlineTemplate) {
             const attrs = this.extractAttributes('ng-template', templateParsedProperties, i18nAttrsMeta);
@@ -11973,7 +12098,7 @@ class HtmlAstToIvyAst {
     _visitTextWithInterpolation(value, sourceSpan, i18n) {
         const valueNoNgsp = replaceNgsp(value);
         const expr = this.bindingParser.parseInterpolation(valueNoNgsp, sourceSpan);
-        return expr ? new BoundText(expr, sourceSpan, i18n) : new Text$3(valueNoNgsp, sourceSpan);
+        return expr ? new BoundText(expr, sourceSpan, i18n) : new Text$2(valueNoNgsp, sourceSpan);
     }
     parseVariable(identifier, value, sourceSpan, variables) {
         if (identifier.indexOf('-') > -1) {
@@ -12007,15 +12132,15 @@ class NonBindableVisitor {
             // in the StyleCompiler
             return null;
         }
-        const children = visitAll(this, ast.children, null);
-        return new Element$1(ast.name, visitAll(this, ast.attrs), 
+        const children = visitAll$1(this, ast.children, null);
+        return new Element(ast.name, visitAll$1(this, ast.attrs), 
         /* inputs */ [], /* outputs */ [], children, /* references */ [], ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
     }
     visitComment(comment) { return null; }
     visitAttribute(attribute) {
         return new TextAttribute(attribute.name, attribute.value, attribute.sourceSpan, undefined, attribute.i18n);
     }
-    visitText(text) { return new Text$3(text.value, text.sourceSpan); }
+    visitText(text) { return new Text$2(text.value, text.sourceSpan); }
     visitExpansion(expansion) { return null; }
     visitExpansionCase(expansionCase) { return null; }
 }
@@ -12027,7 +12152,7 @@ function addEvents(events, boundEvents) {
     boundEvents.push(...events.map(e => BoundEvent.fromParsedEvent(e)));
 }
 function isEmptyTextNode(node) {
-    return node instanceof Text$2 && node.value.trim().length == 0;
+    return node instanceof Text$3 && node.value.trim().length == 0;
 }
 
 /**
@@ -12345,7 +12470,7 @@ class _I18nVisitor {
         this._placeholderToContent = {};
         this._placeholderToMessage = {};
         this._visitNodeFn = visitNodeFn;
-        const i18nodes = visitAll(this, nodes, {});
+        const i18nodes = visitAll$1(this, nodes, {});
         return new Message(i18nodes, this._placeholderToContent, this._placeholderToMessage, meaning, description, id);
     }
     _visitNode(html, i18n) {
@@ -12355,7 +12480,7 @@ class _I18nVisitor {
         return i18n;
     }
     visitElement(el, context) {
-        const children = visitAll(this, el.children);
+        const children = visitAll$1(this, el.children);
         const attrs = {};
         el.attrs.forEach(attr => {
             // Do not visit the attributes, translatable ones are top-level ASTs
@@ -12517,7 +12642,7 @@ class I18nMetaVisitor {
                 element.attrs = attrs;
             }
         }
-        visitAll(this, element.children);
+        visitAll$1(this, element.children);
         return element;
     }
     visitExpansion(expansion, context) {
@@ -12586,6 +12711,12 @@ function getSerializedI18nContent(message) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+// Default selector used by `<ng-content>` if none specified
+const DEFAULT_NG_CONTENT_SELECTOR = '*';
+// Selector attribute name of `<ng-content>`
+const NG_CONTENT_SELECT_ATTR$1 = 'select';
+// List of supported global targets for event listeners
+const GLOBAL_TARGET_RESOLVERS = new Map([['window', Identifiers$1.resolveWindow], ['document', Identifiers$1.resolveDocument], ['body', Identifiers$1.resolveBody]]);
 function mapBindingToInstruction(type) {
     switch (type) {
         case 0 /* Property */:
@@ -12603,10 +12734,30 @@ function mapBindingToInstruction(type) {
 function renderFlagCheckIfStmt(flags, statements) {
     return ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(flags), null, false), statements);
 }
-// Default selector used by `<ng-content>` if none specified
-const DEFAULT_NG_CONTENT_SELECTOR = '*';
-// Selector attribute name of `<ng-content>`
-const NG_CONTENT_SELECT_ATTR$1 = 'select';
+function prepareEventListenerParameters(eventAst, bindingContext, handlerName = null, scope = null) {
+    const { type, name, target, phase, handler } = eventAst;
+    if (target && !GLOBAL_TARGET_RESOLVERS.has(target)) {
+        throw new Error(`Unexpected global target '${target}' defined for '${name}' event.
+        Supported list of global targets: ${Array.from(GLOBAL_TARGET_RESOLVERS.keys())}.`);
+    }
+    const bindingExpr = convertActionBinding(scope, bindingContext, handler, 'b', () => error('Unexpected interpolation'));
+    const statements = [];
+    if (scope) {
+        statements.push(...scope.restoreViewStatement());
+        statements.push(...scope.variableDeclarations());
+    }
+    statements.push(...bindingExpr.render3Stmts);
+    const eventName = type === 1 /* Animation */ ? prepareSyntheticListenerName(name, phase) : name;
+    const fnName = handlerName && sanitizeIdentifier(handlerName);
+    const fnArgs = [new FnParam('$event', DYNAMIC_TYPE)];
+    const handlerFn = fn(fnArgs, statements, INFERRED_TYPE, null, fnName);
+    const params = [literal(eventName), handlerFn];
+    if (target) {
+        params.push(literal(false), // `useCapture` flag, defaults to `false`
+        importExpr(GLOBAL_TARGET_RESOLVERS.get(target)));
+    }
+    return params;
+}
 class TemplateDefinitionBuilder {
     constructor(constantPool, parentBindingScope, level = 0, contextName, i18nContext, templateIndex, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace, relativeContextFilePath, i18nUseExternalIds) {
         this.constantPool = constantPool;
@@ -12723,7 +12874,7 @@ class TemplateDefinitionBuilder {
         // queue all creation mode and update mode instructions for generation in the second
         // pass. It's necessary to separate the passes to ensure local refs are defined before
         // resolving bindings. We also count bindings in this pass as we walk bound expressions.
-        visitAll$1(this, nodes);
+        visitAll(this, nodes);
         // Add total binding count to pure function count so pure function instructions are
         // generated with the correct slot offset when update instructions are processed.
         this._pureFunctionSlots += this._bindingSlots;
@@ -12808,7 +12959,7 @@ class TemplateDefinitionBuilder {
         const bound = {};
         Object.keys(props).forEach(key => {
             const prop = props[key];
-            if (prop instanceof Text$3) {
+            if (prop instanceof Text$2) {
                 bound[key] = literal(prop.value);
             }
             else {
@@ -12974,10 +13125,10 @@ class TemplateDefinitionBuilder {
             if (name === NON_BINDABLE_ATTR) {
                 isNonBindableMode = true;
             }
-            else if (name == 'style') {
+            else if (name === 'style') {
                 stylingBuilder.registerStyleAttr(value);
             }
-            else if (name == 'class') {
+            else if (name === 'class') {
                 stylingBuilder.registerClassAttr(value);
             }
             else if (attr.i18n) {
@@ -12999,7 +13150,7 @@ class TemplateDefinitionBuilder {
         const allOtherInputs = [];
         element.inputs.forEach((input) => {
             if (!stylingBuilder.registerBoundInput(input)) {
-                if (input.type == 0 /* Property */) {
+                if (input.type === 0 /* Property */) {
                     if (input.i18n) {
                         i18nAttrs.push(input);
                     }
@@ -13015,7 +13166,7 @@ class TemplateDefinitionBuilder {
         outputAttrs.forEach(attr => attributes.push(literal(attr.name), literal(attr.value)));
         // this will build the instructions so that they fall into the following syntax
         // add attributes for directive matching purposes
-        attributes.push(...this.prepareSyntheticAndSelectOnlyAttrs(allOtherInputs, element.outputs));
+        attributes.push(...this.prepareSyntheticAndSelectOnlyAttrs(allOtherInputs, element.outputs, stylingBuilder));
         parameters.push(this.toAttrsParam(attributes));
         // local refs (ex.: <div #foo #bar="baz">)
         parameters.push(this.prepareRefsParameter(element.references));
@@ -13038,10 +13189,10 @@ class TemplateDefinitionBuilder {
             }
             return element.children.length > 0;
         };
-        const createSelfClosingInstruction = !stylingBuilder.hasBindingsOrInitialValues &&
+        const createSelfClosingInstruction = !stylingBuilder.hasBindingsOrInitialValues() &&
             !isNgContainer$$1 && element.outputs.length === 0 && i18nAttrs.length === 0 && !hasChildren();
         const createSelfClosingI18nInstruction = !createSelfClosingInstruction &&
-            !stylingBuilder.hasBindingsOrInitialValues && hasTextChildrenOnly(element.children);
+            !stylingBuilder.hasBindingsOrInitialValues() && hasTextChildrenOnly(element.children);
         if (createSelfClosingInstruction) {
             this.creationInstruction(element.sourceSpan, Identifiers$1.element, trimTrailingNulls(parameters));
         }
@@ -13086,13 +13237,22 @@ class TemplateDefinitionBuilder {
                     }
                 }
             }
-            // initial styling for static style="..." and class="..." attributes
-            this.processStylingInstruction(implicit, stylingBuilder.buildCreateLevelInstruction(element.sourceSpan, this.constantPool), true);
+            // The style bindings code is placed into two distinct blocks within the template function AOT
+            // code: creation and update. The creation code contains the `elementStyling` instructions
+            // which will apply the collected binding values to the element. `elementStyling` is
+            // designed to run inside of `elementStart` and `elementEnd`. The update instructions
+            // (things like `elementStyleProp`, `elementClassProp`, etc..) are applied later on in this
+            // file
+            this.processStylingInstruction(implicit, stylingBuilder.buildElementStylingInstruction(element.sourceSpan, this.constantPool), true);
             // Generate Listeners (outputs)
             element.outputs.forEach((outputAst) => {
-                this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter(element.name, outputAst));
+                this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter(element.name, outputAst, elementIndex));
             });
         }
+        // the code here will collect all update-level styling instructions and add them to the
+        // update block of the template function AOT code. Instructions like `elementStyleProp`,
+        // `elementStylingMap`, `elementClassProp` and `elementStylingApply` are all generated
+        // and assign in the code below.
         stylingBuilder.buildUpdateLevelInstructions(this._valueConverter).forEach(instruction => {
             this.processStylingInstruction(implicit, instruction, false);
         });
@@ -13101,20 +13261,31 @@ class TemplateDefinitionBuilder {
             const instruction = mapBindingToInstruction(input.type);
             if (input.type === 4 /* Animation */) {
                 const value = input.value.visit(this._valueConverter);
-                // setProperty without a value doesn't make any sense
-                if (value.name || value.value) {
+                // animation bindings can be presented in the following formats:
+                // 1j [@binding]="fooExp"
+                // 2. [@binding]="{value:fooExp, params:{...}}"
+                // 3. [@binding]
+                // 4. @binding
+                // only formats 1. and 2. include the actual binding of a value to
+                // an expression and therefore only those should be the only two that
+                // are allowed. The check below ensures that a binding with no expression
+                // does not get an empty `elementProperty` instruction created for it.
+                const hasValue = value && (value instanceof LiteralPrimitive) ? !!value.value : true;
+                if (hasValue) {
                     this.allocateBindingSlots(value);
-                    const name = prepareSyntheticAttributeName(input.name);
+                    const bindingName = prepareSyntheticPropertyName(input.name);
                     this.updateInstruction(input.sourceSpan, Identifiers$1.elementProperty, () => {
                         return [
-                            literal(elementIndex), literal(name), this.convertPropertyBinding(implicit, value)
+                            literal(elementIndex), literal(bindingName),
+                            this.convertPropertyBinding(implicit, value)
                         ];
                     });
                 }
             }
             else if (instruction) {
                 const params = [];
-                const sanitizationRef = resolveSanitizationFn(input, input.securityContext);
+                const isAttributeBinding = input.type === 1 /* Attribute */;
+                const sanitizationRef = resolveSanitizationFn(input.securityContext, isAttributeBinding);
                 if (sanitizationRef)
                     params.push(sanitizationRef);
                 // TODO(chuckj): runtime: security context
@@ -13132,7 +13303,7 @@ class TemplateDefinitionBuilder {
             }
         });
         // Traverse element child nodes
-        visitAll$1(this, element.children);
+        visitAll(this, element.children);
         if (!isI18nRootElement && this.i18n) {
             this.i18n.appendElement(element.i18n, elementIndex, true);
         }
@@ -13154,8 +13325,8 @@ class TemplateDefinitionBuilder {
             this.i18n.appendTemplate(template.i18n, templateIndex);
         }
         const tagName = sanitizeIdentifier(template.tagName || '');
-        const contextName = tagName ? `${this.contextName}_${tagName}` : '';
-        const templateName = contextName ? `${contextName}_Template_${templateIndex}` : `Template_${templateIndex}`;
+        const contextName = `${tagName ? this.contextName + '_' + tagName : ''}_${templateIndex}`;
+        const templateName = `${contextName}_Template`;
         const parameters = [
             literal(templateIndex),
             variable(templateName),
@@ -13173,7 +13344,7 @@ class TemplateDefinitionBuilder {
             parameters.push(this.prepareRefsParameter(template.references));
             parameters.push(importExpr(Identifiers$1.templateRefExtractor));
         }
-        // handle property bindings e.g. p(1, 'forOf', ɵbind(ctx.items));
+        // handle property bindings e.g. p(1, 'ngForOf', ɵbind(ctx.items));
         const context = variable(CONTEXT_NAME);
         template.inputs.forEach(input => {
             const value = input.value.visit(this._valueConverter);
@@ -13190,7 +13361,7 @@ class TemplateDefinitionBuilder {
         // Nested templates must not be visited until after their parent templates have completed
         // processing, so they are queued here until after the initial pass. Otherwise, we wouldn't
         // be able to support bindings in nested templates to local refs that occur after the
-        // template definition. e.g. <div *ngIf="showing"> {{ foo }} </div>  <div #foo></div>
+        // template definition. e.g. <div *ngIf="showing">{{ foo }}</div>  <div #foo></div>
         this._nestedTemplateFns.push(() => {
             const templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables, this._ngContentSelectors.length + this._ngContentSelectorsOffset, template.i18n);
             this.constantPool.statements.push(templateFunctionExpr.toDeclStmt(templateName, null));
@@ -13206,7 +13377,7 @@ class TemplateDefinitionBuilder {
         });
         // Generate listeners for directive output
         template.outputs.forEach((outputAst) => {
-            this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter('ng_template', outputAst));
+            this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter('ng_template', outputAst, templateIndex));
         });
     }
     visitBoundText(text) {
@@ -13267,6 +13438,11 @@ class TemplateDefinitionBuilder {
     allocateDataSlot() { return this._dataIndex++; }
     getConstCount() { return this._dataIndex; }
     getVarCount() { return this._pureFunctionSlots; }
+    getNgContentSelectors() {
+        return this._hasNgContent ?
+            this.constantPool.getConstLiteral(asLiteral(this._ngContentSelectors), true) :
+            null;
+    }
     bindingContext() { return `${this._bindingContext++}`; }
     // Bindings must only be resolved after all local refs have been visited, so all
     // instructions are queued in callbacks that execute once the initial pass has completed.
@@ -13322,9 +13498,47 @@ class TemplateDefinitionBuilder {
             this.directiveMatcher.match(selector, (cssSelector, staticType) => { this.directives.add(staticType); });
         }
     }
-    prepareSyntheticAndSelectOnlyAttrs(inputs, outputs) {
+    /**
+     * Prepares all attribute expression values for the `TAttributes` array.
+     *
+     * The purpose of this function is to properly construct an attributes array that
+     * is passed into the `elementStart` (or just `element`) functions. Because there
+     * are many different types of attributes, the array needs to be constructed in a
+     * special way so that `elementStart` can properly evaluate them.
+     *
+     * The format looks like this:
+     *
+     * ```
+     * attrs = [prop, value, prop2, value2,
+     *   CLASSES, class1, class2,
+     *   STYLES, style1, value1, style2, value2,
+     *   SELECT_ONLY, name1, name2, name2, ...]
+     * ```
+     */
+    prepareSyntheticAndSelectOnlyAttrs(inputs, outputs, styles) {
         const attrExprs = [];
         const nonSyntheticInputs = [];
+        const alreadySeen = new Set();
+        function isASTWithSource(ast) {
+            return ast instanceof ASTWithSource;
+        }
+        function isLiteralPrimitive(ast) {
+            return ast instanceof LiteralPrimitive;
+        }
+        function addAttrExpr(key, value) {
+            if (typeof key === 'string') {
+                if (!alreadySeen.has(key)) {
+                    attrExprs.push(literal(key));
+                    if (value !== undefined) {
+                        attrExprs.push(value);
+                    }
+                    alreadySeen.add(key);
+                }
+            }
+            else {
+                attrExprs.push(literal(key));
+            }
+        }
         if (inputs.length) {
             const EMPTY_STRING_EXPR = asLiteral('');
             inputs.forEach(input => {
@@ -13333,17 +13547,32 @@ class TemplateDefinitionBuilder {
                     // may be supported differently in future versions of angular. However,
                     // @triggers should always just be treated as regular attributes (it's up
                     // to the renderer to detect and use them in a special way).
-                    attrExprs.push(asLiteral(prepareSyntheticAttributeName(input.name)), EMPTY_STRING_EXPR);
+                    const valueExp = input.value;
+                    if (isASTWithSource(valueExp)) {
+                        const literal$$1 = valueExp.ast;
+                        if (isLiteralPrimitive(literal$$1) && literal$$1.value === undefined) {
+                            addAttrExpr(prepareSyntheticPropertyName(input.name), EMPTY_STRING_EXPR);
+                        }
+                    }
                 }
                 else {
                     nonSyntheticInputs.push(input);
                 }
             });
         }
+        // it's important that this occurs before SelectOnly because once `elementStart`
+        // comes across the SelectOnly marker then it will continue reading each value as
+        // as single property value cell by cell.
+        if (styles) {
+            styles.populateInitialStylingAttrs(attrExprs);
+        }
         if (nonSyntheticInputs.length || outputs.length) {
-            attrExprs.push(literal(1 /* SelectOnly */));
-            nonSyntheticInputs.forEach((i) => attrExprs.push(asLiteral(i.name)));
-            outputs.forEach((o) => attrExprs.push(asLiteral(o.name)));
+            addAttrExpr(3 /* SelectOnly */);
+            nonSyntheticInputs.forEach((i) => addAttrExpr(i.name));
+            outputs.forEach((o) => {
+                const name = o.type === 1 /* Animation */ ? getSyntheticPropertyName(o.name) : o.name;
+                addAttrExpr(name);
+            });
         }
         return attrExprs;
     }
@@ -13373,23 +13602,17 @@ class TemplateDefinitionBuilder {
         }));
         return this.constantPool.getConstLiteral(asLiteral(refsParam), true);
     }
-    prepareListenerParameter(tagName, outputAst) {
-        let eventName = outputAst.name;
-        if (outputAst.type === 1 /* Animation */) {
-            eventName = prepareSyntheticAttributeName(`${outputAst.name}.${outputAst.phase}`);
-        }
-        const evNameSanitized = sanitizeIdentifier(eventName);
-        const tagNameSanitized = sanitizeIdentifier(tagName);
-        const functionName = `${this.templateName}_${tagNameSanitized}_${evNameSanitized}_listener`;
+    prepareListenerParameter(tagName, outputAst, index) {
         return () => {
-            const listenerScope = this._bindingScope.nestedScope(this._bindingScope.bindingLevel);
-            const bindingExpr = convertActionBinding(listenerScope, variable(CONTEXT_NAME), outputAst.handler, 'b', () => error('Unexpected interpolation'));
-            const statements = [
-                ...listenerScope.restoreViewStatement(), ...listenerScope.variableDeclarations(),
-                ...bindingExpr.render3Stmts
-            ];
-            const handler = fn([new FnParam('$event', DYNAMIC_TYPE)], statements, INFERRED_TYPE, null, functionName);
-            return [literal(eventName), handler];
+            const eventName = outputAst.name;
+            const bindingFnName = outputAst.type === 1 /* Animation */ ?
+                // synthetic @listener.foo values are treated the exact same as are standard listeners
+                prepareSyntheticListenerFunctionName(eventName, outputAst.phase) :
+                sanitizeIdentifier(eventName);
+            const handlerName = `${this.templateName}_${tagName}_${bindingFnName}_${index}_listener`;
+            const scope = this._bindingScope.nestedScope(this._bindingScope.bindingLevel);
+            const context = variable(CONTEXT_NAME);
+            return prepareEventListenerParameters(outputAst, context, handlerName, scope);
         };
     }
 }
@@ -13675,7 +13898,7 @@ function createCssSelector(tag, attributes) {
         const value = attributes[name];
         cssSelector.addAttribute(name, value);
         if (name.toLowerCase() === 'class') {
-            const classes = value.trim().split(/\s+/g);
+            const classes = value.trim().split(/\s+/);
             classes.forEach(className => cssSelector.addClassName(className));
         }
     });
@@ -13725,14 +13948,14 @@ function parseTemplate(template, templateUrl, options = {}) {
     // extraction process (ng xi18n) relies on a raw content to generate
     // message ids
     rootNodes =
-        visitAll(new I18nMetaVisitor(interpolationConfig, !preserveWhitespaces), rootNodes);
+        visitAll$1(new I18nMetaVisitor(interpolationConfig, !preserveWhitespaces), rootNodes);
     if (!preserveWhitespaces) {
-        rootNodes = visitAll(new WhitespaceVisitor(), rootNodes);
+        rootNodes = visitAll$1(new WhitespaceVisitor(), rootNodes);
         // run i18n meta visitor again in case we remove whitespaces, because
         // that might affect generated i18n message content. During this pass
         // i18n IDs generated at the first pass will be preserved, so we can mimic
         // existing extraction process (ng xi18n)
-        rootNodes = visitAll(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), rootNodes);
+        rootNodes = visitAll$1(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), rootNodes);
     }
     const { nodes, errors } = htmlAstToRender3Ast(rootNodes, bindingParser);
     if (errors && errors.length > 0) {
@@ -13746,7 +13969,7 @@ function parseTemplate(template, templateUrl, options = {}) {
 function makeBindingParser(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
     return new BindingParser(new Parser(new Lexer()), interpolationConfig, new DomElementSchemaRegistry(), null, []);
 }
-function resolveSanitizationFn(input, context) {
+function resolveSanitizationFn(context, isAttribute) {
     switch (context) {
         case SecurityContext.HTML:
             return importExpr(Identifiers$1.sanitizeHtml);
@@ -13756,7 +13979,7 @@ function resolveSanitizationFn(input, context) {
             // the compiler does not fill in an instruction for [style.prop?] binding
             // values because the style algorithm knows internally what props are subject
             // to sanitization (only [attr.style] values are explicitly sanitized)
-            return input.type === 1 /* Attribute */ ? importExpr(Identifiers$1.sanitizeStyle) : null;
+            return isAttribute ? importExpr(Identifiers$1.sanitizeStyle) : null;
         case SecurityContext.URL:
             return importExpr(Identifiers$1.sanitizeUrl);
         case SecurityContext.RESOURCE_URL:
@@ -13765,14 +13988,14 @@ function resolveSanitizationFn(input, context) {
             return null;
     }
 }
-function prepareSyntheticAttributeName(name) {
-    return '@' + name;
-}
 function isSingleElementTemplate(children) {
-    return children.length === 1 && children[0] instanceof Element$1;
+    return children.length === 1 && children[0] instanceof Element;
+}
+function isTextNode(node) {
+    return node instanceof Text$2 || node instanceof BoundText || node instanceof Icu$1;
 }
 function hasTextChildrenOnly(children) {
-    return !children.find(child => !(child instanceof Text$3 || child instanceof BoundText || child instanceof Icu$1));
+    return children.every(isTextNode);
 }
 
 /**
@@ -13844,7 +14067,9 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     // e.g 'outputs: {a: 'a'}`
     definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
     if (meta.exportAs !== null) {
-        definitionMap.set('exportAs', literal(meta.exportAs));
+        // TODO: handle multiple exportAs values (currently only the first is taken).
+        const [exportAs] = meta.exportAs;
+        definitionMap.set('exportAs', literal(exportAs));
     }
     return { definitionMap, statements: result.statements };
 }
@@ -13880,9 +14105,9 @@ function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
     const { definitionMap, statements } = baseDirectiveFields(meta, constantPool, bindingParser);
     addFeatures(definitionMap, meta);
     const expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()]);
-    // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
-    // string literal, which must be on one line.
-    const selectorForType = (meta.selector || '').replace(/\n/g, '');
+    if (!meta.selector) {
+        throw new Error(`Directive ${meta.name} has no selector, please add it!`);
+    }
     const type = createTypeForDef(meta, Identifiers$1.DirectiveDefWithMeta);
     return { expression, type, statements };
 }
@@ -13951,6 +14176,12 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     const template = meta.template;
     const templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, null, null, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML, meta.relativeContextFilePath, meta.i18nUseExternalIds);
     const templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, []);
+    // We need to provide this so that dynamically generated components know what
+    // projected content blocks to pass through to the component when it is instantiated.
+    const ngContentSelectors = templateBuilder.getNgContentSelectors();
+    if (ngContentSelectors) {
+        definitionMap.set('ngContentSelectors', ngContentSelectors);
+    }
     // e.g. `consts: 2`
     definitionMap.set('consts', literal(templateBuilder.getConstCount()));
     // e.g. `vars: 2`
@@ -14206,7 +14437,8 @@ function createTypeForDef(meta, typeBase) {
     return expressionType(importExpr(typeBase, [
         typeWithParameters(meta.type, meta.typeArgumentCount),
         stringAsType(selectorForType),
-        meta.exportAs !== null ? stringAsType(meta.exportAs) : NONE_TYPE,
+        // TODO: handle multiple exportAs values (currently only the first is taken).
+        meta.exportAs !== null ? stringArrayAsType(meta.exportAs) : NONE_TYPE,
         stringMapAsType(meta.inputs),
         stringMapAsType(meta.outputs),
         stringArrayAsType(meta.queries.map(q => q.propertyName)),
@@ -14278,23 +14510,67 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder
                 // resolve literal arrays and literal objects
                 const value = binding.expression.visit(valueConverter);
                 const bindingExpr = bindingFn(bindingContext, value);
-                const { bindingName, instruction, extraParams } = getBindingNameAndInstruction(name);
+                const { bindingName, instruction, isAttribute } = getBindingNameAndInstruction(binding);
+                const securityContexts = bindingParser
+                    .calcPossibleSecurityContexts(meta.selector || '', bindingName, isAttribute)
+                    .filter(context => context !== SecurityContext.NONE);
+                let sanitizerFn = null;
+                if (securityContexts.length) {
+                    if (securityContexts.length === 2 &&
+                        securityContexts.indexOf(SecurityContext.URL) > -1 &&
+                        securityContexts.indexOf(SecurityContext.RESOURCE_URL) > -1) {
+                        // Special case for some URL attributes (such as "src" and "href") that may be a part of
+                        // different security contexts. In this case we use special santitization function and
+                        // select the actual sanitizer at runtime based on a tag name that is provided while
+                        // invoking sanitization function.
+                        sanitizerFn = importExpr(Identifiers$1.sanitizeUrlOrResourceUrl);
+                    }
+                    else {
+                        sanitizerFn = resolveSanitizationFn(securityContexts[0], isAttribute);
+                    }
+                }
                 const instructionParams = [
                     elVarExp, literal(bindingName), importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr])
                 ];
+                if (sanitizerFn) {
+                    instructionParams.push(sanitizerFn);
+                }
+                if (!isAttribute) {
+                    if (!sanitizerFn) {
+                        // append `null` in front of `nativeOnly` flag if no sanitizer fn defined
+                        instructionParams.push(literal(null));
+                    }
+                    // host bindings must have nativeOnly prop set to true
+                    instructionParams.push(literal(true));
+                }
                 updateStatements.push(...bindingExpr.stmts);
-                updateStatements.push(importExpr(instruction).callFn(instructionParams.concat(extraParams)).toStmt());
+                updateStatements.push(importExpr(instruction).callFn(instructionParams).toStmt());
             }
         }
-        if (styleBuilder.hasBindingsOrInitialValues) {
-            const createInstruction = styleBuilder.buildCreateLevelInstruction(null, constantPool);
-            if (createInstruction) {
-                const createStmt = createStylingStmt(createInstruction, bindingContext, bindingFn);
-                createStatements.push(createStmt);
+        if (styleBuilder.hasBindingsOrInitialValues()) {
+            // since we're dealing with directives here and directives have a hostBinding
+            // function, we need to generate special instructions that deal with styling
+            // (both bindings and initial values). The instruction below will instruct
+            // all initial styling (styling that is inside of a host binding within a
+            // directive) to be attached to the host element of the directive.
+            const hostAttrsInstruction = styleBuilder.buildDirectiveHostAttrsInstruction(null, constantPool);
+            if (hostAttrsInstruction) {
+                createStatements.push(createStylingStmt(hostAttrsInstruction, bindingContext, bindingFn));
             }
+            // singular style/class bindings (things like `[style.prop]` and `[class.name]`)
+            // MUST be registered on a given element within the component/directive
+            // templateFn/hostBindingsFn functions. The instruction below will figure out
+            // what all the bindings are and then generate the statements required to register
+            // those bindings to the element via `elementStyling`.
+            const elementStylingInstruction = styleBuilder.buildElementStylingInstruction(null, constantPool);
+            if (elementStylingInstruction) {
+                createStatements.push(createStylingStmt(elementStylingInstruction, bindingContext, bindingFn));
+            }
+            // finally each binding that was registered in the statement above will need to be added to
+            // the update block of a component/directive templateFn/hostBindingsFn so that the bindings
+            // are evaluated and updated for the element.
             styleBuilder.buildUpdateLevelInstructions(valueConverter).forEach(instruction => {
-                const updateStmt = createStylingStmt(instruction, bindingContext, bindingFn);
-                updateStatements.push(updateStmt);
+                updateStatements.push(createStylingStmt(instruction, bindingContext, bindingFn));
             });
         }
     }
@@ -14323,9 +14599,9 @@ function createStylingStmt(instruction, bindingContext, bindingFn) {
         .callFn(params, instruction.sourceSpan)
         .toStmt();
 }
-function getBindingNameAndInstruction(bindingName) {
+function getBindingNameAndInstruction(binding) {
+    let bindingName = binding.name;
     let instruction;
-    const extraParams = [];
     // Check to see if this is an attr binding or a property binding
     const attrMatches = bindingName.match(ATTR_REGEX);
     if (attrMatches) {
@@ -14333,21 +14609,28 @@ function getBindingNameAndInstruction(bindingName) {
         instruction = Identifiers$1.elementAttribute;
     }
     else {
-        instruction = Identifiers$1.elementProperty;
-        extraParams.push(literal(null), // TODO: This should be a sanitizer fn (FW-785)
-        literal(true) // host bindings must have nativeOnly prop set to true
-        );
+        if (binding.isAnimation) {
+            bindingName = prepareSyntheticPropertyName(bindingName);
+            // host bindings that have a synthetic property (e.g. @foo) should always be rendered
+            // in the context of the component and not the parent. Therefore there is a special
+            // compatibility instruction available for this purpose.
+            instruction = Identifiers$1.componentHostSyntheticProperty;
+        }
+        else {
+            instruction = Identifiers$1.elementProperty;
+        }
     }
-    return { bindingName, instruction, extraParams };
+    return { bindingName, instruction, isAttribute: !!attrMatches };
 }
 function createHostListeners(bindingContext, eventBindings, meta) {
     return eventBindings.map(binding => {
-        const bindingExpr = convertActionBinding(null, bindingContext, binding.handler, 'b', () => error('Unexpected interpolation'));
-        const bindingName = binding.name && sanitizeIdentifier(binding.name);
-        const typeName = meta.name;
-        const functionName = typeName && bindingName ? `${typeName}_${bindingName}_HostBindingHandler` : null;
-        const handler = fn([new FnParam('$event', DYNAMIC_TYPE)], [...bindingExpr.render3Stmts], INFERRED_TYPE, null, functionName);
-        return importExpr(Identifiers$1.listener).callFn([literal(binding.name), handler]).toStmt();
+        let bindingName = binding.name && sanitizeIdentifier(binding.name);
+        const bindingFnName = binding.type === 1 /* Animation */ ?
+            prepareSyntheticListenerFunctionName(bindingName, binding.targetOrPhase) :
+            bindingName;
+        const handlerName = meta.name && bindingName ? `${meta.name}_${bindingFnName}_HostBindingHandler` : null;
+        const params = prepareEventListenerParameters(BoundEvent.fromParsedEvent(binding), bindingContext, handlerName);
+        return importExpr(Identifiers$1.listener).callFn(params).toStmt();
     });
 }
 function metadataAsSummary(meta) {
@@ -14364,12 +14647,11 @@ function typeMapToExpressionMap(map, outputCtx) {
     const entries = Array.from(map).map(([key, type]) => [key, outputCtx.importExpr(type)]);
     return new Map(entries);
 }
-const HOST_REG_EXP$1 = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
+const HOST_REG_EXP$1 = /^(?:\[([^\]]+)\])|(?:\(([^\)]+)\))$/;
 function parseHostBindings(host) {
     const attributes = {};
     const listeners = {};
     const properties = {};
-    const animations = {};
     Object.keys(host).forEach(key => {
         const value = host[key];
         const matches = key.match(HOST_REG_EXP$1);
@@ -14377,16 +14659,16 @@ function parseHostBindings(host) {
             attributes[key] = value;
         }
         else if (matches[1 /* Binding */] != null) {
+            // synthetic properties (the ones that have a `@` as a prefix)
+            // are still treated the same as regular properties. Therefore
+            // there is no point in storing them in a separate map.
             properties[matches[1 /* Binding */]] = value;
         }
         else if (matches[2 /* Event */] != null) {
             listeners[matches[2 /* Event */]] = value;
         }
-        else if (matches[3 /* Animation */] != null) {
-            animations[matches[3 /* Animation */]] = value;
-        }
     });
-    return { attributes, listeners, properties, animations };
+    return { attributes, listeners, properties };
 }
 function compileStyles(styles, selector, hostSelector) {
     const shadowCss = new ShadowCss();
@@ -14571,10 +14853,7 @@ function convertR3DependencyMetadataArray(facades) {
 }
 function extractHostBindings(host, propMetadata) {
     // First parse the declarations from the metadata.
-    const { attributes, listeners, properties, animations } = parseHostBindings(host || {});
-    if (Object.keys(animations).length > 0) {
-        throw new Error(`Animation bindings are as-of-yet unsupported in Ivy`);
-    }
+    const { attributes, listeners, properties } = parseHostBindings(host || {});
     // Next, loop over the properties of the object, looking for @HostBinding and @HostListener.
     for (const field in propMetadata) {
         if (propMetadata.hasOwnProperty(field)) {
@@ -14621,7 +14900,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.0-rc.0+20.sha-1c0ac25');
+const VERSION$1 = new Version('7.2.0+103.sha-7de7e1b');
 
 /**
  * @license
@@ -15050,7 +15329,7 @@ class DirectiveNormalizer {
         }
         const templateMetadataStyles = this._normalizeStylesheet(new CompileStylesheetMetadata({ styles: prenormData.styles, moduleUrl: prenormData.moduleUrl }));
         const visitor = new TemplatePreparseVisitor();
-        visitAll(visitor, rootNodesAndErrors.rootNodes);
+        visitAll$1(visitor, rootNodesAndErrors.rootNodes);
         const templateStyles = this._normalizeStylesheet(new CompileStylesheetMetadata({ styles: visitor.styles, styleUrls: visitor.styleUrls, moduleUrl: templateAbsUrl }));
         const styles = templateMetadataStyles.styles.concat(templateStyles.styles);
         const inlineStyleUrls = templateMetadataStyles.styleUrls.concat(templateStyles.styleUrls);
@@ -15149,7 +15428,7 @@ class TemplatePreparseVisitor {
             case PreparsedElementType.STYLE:
                 let textContent = '';
                 ast.children.forEach(child => {
-                    if (child instanceof Text$2) {
+                    if (child instanceof Text$3) {
                         textContent += child.value;
                     }
                 });
@@ -15164,15 +15443,15 @@ class TemplatePreparseVisitor {
         if (preparsedElement.nonBindable) {
             this.ngNonBindableStackCount++;
         }
-        visitAll(this, ast.children);
+        visitAll$1(this, ast.children);
         if (preparsedElement.nonBindable) {
             this.ngNonBindableStackCount--;
         }
         return null;
     }
-    visitExpansion(ast, context) { visitAll(this, ast.cases); }
+    visitExpansion(ast, context) { visitAll$1(this, ast.cases); }
     visitExpansionCase(ast, context) {
-        visitAll(this, ast.expression);
+        visitAll$1(this, ast.expression);
     }
     visitComment(ast, context) { return null; }
     visitAttribute(ast, context) { return null; }
@@ -15424,7 +15703,7 @@ class _Visitor$2 {
         this._init(_VisitorMode.Merge, interpolationConfig);
         this._translations = translations;
         // Construct a single fake root element
-        const wrapper = new Element('wrapper', [], nodes, undefined, undefined, undefined);
+        const wrapper = new Element$1('wrapper', [], nodes, undefined, undefined, undefined);
         const translatedNode = wrapper.visit(this, null);
         if (this._inI18nBlock) {
             this._reportError(nodes[nodes.length - 1], 'Unclosed block');
@@ -15433,7 +15712,7 @@ class _Visitor$2 {
     }
     visitExpansionCase(icuCase, context) {
         // Parse cases for translatable html attributes
-        const expression = visitAll(this, icuCase.expression, context);
+        const expression = visitAll$1(this, icuCase.expression, context);
         if (this._mode === _VisitorMode.Merge) {
             return new ExpansionCase(icuCase.value, expression, icuCase.sourceSpan, icuCase.valueSourceSpan, icuCase.expSourceSpan);
         }
@@ -15448,7 +15727,7 @@ class _Visitor$2 {
             }
             this._inIcu = true;
         }
-        const cases = visitAll(this, icu.cases, context);
+        const cases = visitAll$1(this, icu.cases, context);
         if (this._mode === _VisitorMode.Merge) {
             icu = new Expansion(icu.switchValue, icu.type, cases, icu.sourceSpan, icu.switchValueSourceSpan);
         }
@@ -15492,7 +15771,7 @@ class _Visitor$2 {
                         const message = this._addMessage(this._blockChildren, this._blockMeaningAndDesc);
                         // merge attributes in sections
                         const nodes = this._translateMessage(comment, message);
-                        return visitAll(this, nodes);
+                        return visitAll$1(this, nodes);
                     }
                     else {
                         this._reportError(comment, 'I18N blocks should not cross element boundaries');
@@ -15534,7 +15813,7 @@ class _Visitor$2 {
                 const isTranslatable = i18nAttr || isTopLevelImplicit;
                 if (isTranslatable)
                     this._openTranslatableSection(el);
-                visitAll(this, el.children);
+                visitAll$1(this, el.children);
                 if (isTranslatable)
                     this._closeTranslatableSection(el, el.children);
             }
@@ -15545,7 +15824,7 @@ class _Visitor$2 {
             }
             if (this._mode == _VisitorMode.Extract) {
                 // Descend into child nodes for extraction
-                visitAll(this, el.children);
+                visitAll$1(this, el.children);
             }
         }
         if (this._mode === _VisitorMode.Merge) {
@@ -15565,7 +15844,7 @@ class _Visitor$2 {
         this._inImplicitNode = wasInImplicitNode;
         if (this._mode === _VisitorMode.Merge) {
             const translatedAttrs = this._translateAttributes(el);
-            return new Element(el.name, translatedAttrs, childNodes, el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
+            return new Element$1(el.name, translatedAttrs, childNodes, el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
         }
         return null;
     }
@@ -15649,7 +15928,7 @@ class _Visitor$2 {
                     if (nodes.length == 0) {
                         translatedAttributes.push(new Attribute(attr.name, '', attr.sourceSpan));
                     }
-                    else if (nodes[0] instanceof Text$2) {
+                    else if (nodes[0] instanceof Text$3) {
                         const value = nodes[0].value;
                         translatedAttributes.push(new Attribute(attr.name, value, attr.sourceSpan));
                     }
@@ -15914,7 +16193,7 @@ class XliffParser {
         this._msgIdToHtml = {};
         const xml = new XmlParser().parse(xliff, url, false);
         this._errors = xml.errors;
-        visitAll(this, xml.rootNodes, null);
+        visitAll$1(this, xml.rootNodes, null);
         return {
             msgIdToHtml: this._msgIdToHtml,
             errors: this._errors,
@@ -15935,7 +16214,7 @@ class XliffParser {
                         this._addError(element, `Duplicated translations for msg ${id}`);
                     }
                     else {
-                        visitAll(this, element.children, null);
+                        visitAll$1(this, element.children, null);
                         if (typeof this._unitMlString === 'string') {
                             this._msgIdToHtml[id] = this._unitMlString;
                         }
@@ -15961,12 +16240,12 @@ class XliffParser {
                 if (localeAttr) {
                     this._locale = localeAttr.value;
                 }
-                visitAll(this, element.children, null);
+                visitAll$1(this, element.children, null);
                 break;
             default:
                 // TODO(vicb): assert file structure, xliff version
                 // For now only recurse on unhandled nodes
-                visitAll(this, element.children, null);
+                visitAll$1(this, element.children, null);
         }
     }
     visitAttribute(attribute, context) { }
@@ -15985,7 +16264,7 @@ class XmlToI18n {
         this._errors = xmlIcu.errors;
         const i18nNodes = this._errors.length > 0 || xmlIcu.rootNodes.length == 0 ?
             [] :
-            [].concat(...visitAll(this, xmlIcu.rootNodes));
+            [].concat(...visitAll$1(this, xmlIcu.rootNodes));
         return {
             i18nNodes: i18nNodes,
             errors: this._errors,
@@ -16002,14 +16281,14 @@ class XmlToI18n {
             return null;
         }
         if (el.name === _MARKER_TAG) {
-            return [].concat(...visitAll(this, el.children));
+            return [].concat(...visitAll$1(this, el.children));
         }
         this._addError(el, `Unexpected tag`);
         return null;
     }
     visitExpansion(icu, context) {
         const caseMap = {};
-        visitAll(this, icu.cases).forEach((c) => {
+        visitAll$1(this, icu.cases).forEach((c) => {
             caseMap[c.value] = new Container(c.nodes, icu.sourceSpan);
         });
         return new Icu(icu.switchValue, icu.type, caseMap, icu.sourceSpan);
@@ -16017,7 +16296,7 @@ class XmlToI18n {
     visitExpansionCase(icuCase, context) {
         return {
             value: icuCase.value,
-            nodes: visitAll(this, icuCase.expression),
+            nodes: visitAll$1(this, icuCase.expression),
         };
     }
     visitComment(comment, context) { }
@@ -16179,7 +16458,7 @@ class Xliff2Parser {
         this._msgIdToHtml = {};
         const xml = new XmlParser().parse(xliff, url, false);
         this._errors = xml.errors;
-        visitAll(this, xml.rootNodes, null);
+        visitAll$1(this, xml.rootNodes, null);
         return {
             msgIdToHtml: this._msgIdToHtml,
             errors: this._errors,
@@ -16200,7 +16479,7 @@ class Xliff2Parser {
                         this._addError(element, `Duplicated translations for msg ${id}`);
                     }
                     else {
-                        visitAll(this, element.children, null);
+                        visitAll$1(this, element.children, null);
                         if (typeof this._unitMlString === 'string') {
                             this._msgIdToHtml[id] = this._unitMlString;
                         }
@@ -16232,12 +16511,12 @@ class Xliff2Parser {
                         this._addError(element, `The XLIFF file version ${version} is not compatible with XLIFF 2.0 serializer`);
                     }
                     else {
-                        visitAll(this, element.children, null);
+                        visitAll$1(this, element.children, null);
                     }
                 }
                 break;
             default:
-                visitAll(this, element.children, null);
+                visitAll$1(this, element.children, null);
         }
     }
     visitAttribute(attribute, context) { }
@@ -16256,7 +16535,7 @@ class XmlToI18n$1 {
         this._errors = xmlIcu.errors;
         const i18nNodes = this._errors.length > 0 || xmlIcu.rootNodes.length == 0 ?
             [] :
-            [].concat(...visitAll(this, xmlIcu.rootNodes));
+            [].concat(...visitAll$1(this, xmlIcu.rootNodes));
         return {
             i18nNodes,
             errors: this._errors,
@@ -16289,7 +16568,7 @@ class XmlToI18n$1 {
                 }
                 break;
             case _MARKER_TAG$1:
-                return [].concat(...visitAll(this, el.children));
+                return [].concat(...visitAll$1(this, el.children));
             default:
                 this._addError(el, `Unexpected tag`);
         }
@@ -16297,7 +16576,7 @@ class XmlToI18n$1 {
     }
     visitExpansion(icu, context) {
         const caseMap = {};
-        visitAll(this, icu.cases).forEach((c) => {
+        visitAll$1(this, icu.cases).forEach((c) => {
             caseMap[c.value] = new Container(c.nodes, icu.sourceSpan);
         });
         return new Icu(icu.switchValue, icu.type, caseMap, icu.sourceSpan);
@@ -16305,7 +16584,7 @@ class XmlToI18n$1 {
     visitExpansionCase(icuCase, context) {
         return {
             value: icuCase.value,
-            nodes: [].concat(...visitAll(this, icuCase.expression)),
+            nodes: [].concat(...visitAll$1(this, icuCase.expression)),
         };
     }
     visitComment(comment, context) { }
@@ -16396,7 +16675,7 @@ class XtbParser {
         // from Angular that could not be lex'd.
         const xml = new XmlParser().parse(xtb, url, false);
         this._errors = xml.errors;
-        visitAll(this, xml.rootNodes);
+        visitAll$1(this, xml.rootNodes);
         return {
             msgIdToHtml: this._msgIdToHtml,
             errors: this._errors,
@@ -16414,7 +16693,7 @@ class XtbParser {
                 if (langAttr) {
                     this._locale = langAttr.value;
                 }
-                visitAll(this, element.children, null);
+                visitAll$1(this, element.children, null);
                 this._bundleDepth--;
                 break;
             case _TRANSLATION_TAG:
@@ -16456,7 +16735,7 @@ class XmlToI18n$2 {
         this._errors = xmlIcu.errors;
         const i18nNodes = this._errors.length > 0 || xmlIcu.rootNodes.length == 0 ?
             [] :
-            visitAll(this, xmlIcu.rootNodes);
+            visitAll$1(this, xmlIcu.rootNodes);
         return {
             i18nNodes,
             errors: this._errors,
@@ -16465,7 +16744,7 @@ class XmlToI18n$2 {
     visitText(text, context) { return new Text(text.value, text.sourceSpan); }
     visitExpansion(icu, context) {
         const caseMap = {};
-        visitAll(this, icu.cases).forEach(c => {
+        visitAll$1(this, icu.cases).forEach(c => {
             caseMap[c.value] = new Container(c.nodes, icu.sourceSpan);
         });
         return new Icu(icu.switchValue, icu.type, caseMap, icu.sourceSpan);
@@ -16473,7 +16752,7 @@ class XmlToI18n$2 {
     visitExpansionCase(icuCase, context) {
         return {
             value: icuCase.value,
-            nodes: visitAll(this, icuCase.expression),
+            nodes: visitAll$1(this, icuCase.expression),
         };
     }
     visitElement(el, context) {
@@ -19111,7 +19390,7 @@ const PLURAL_CASES = ['zero', 'one', 'two', 'few', 'many', 'other'];
  */
 function expandNodes(nodes) {
     const expander = new _Expander();
-    return new ExpansionResult(visitAll(expander, nodes), expander.isExpanded, expander.errors);
+    return new ExpansionResult(visitAll$1(expander, nodes), expander.isExpanded, expander.errors);
 }
 class ExpansionResult {
     constructor(nodes, expanded, errors) {
@@ -19134,7 +19413,7 @@ class _Expander {
         this.errors = [];
     }
     visitElement(element, context) {
-        return new Element(element.name, element.attrs, visitAll(this, element.children), element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+        return new Element$1(element.name, element.attrs, visitAll$1(this, element.children), element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
     }
     visitAttribute(attribute, context) { return attribute; }
     visitText(text, context) { return text; }
@@ -19156,10 +19435,10 @@ function _expandPluralForm(ast, errors) {
         }
         const expansionResult = expandNodes(c.expression);
         errors.push(...expansionResult.errors);
-        return new Element(`ng-template`, [new Attribute('ngPluralCase', `${c.value}`, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+        return new Element$1(`ng-template`, [new Attribute('ngPluralCase', `${c.value}`, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
     });
     const switchAttr = new Attribute('[ngPlural]', ast.switchValue, ast.switchValueSourceSpan);
-    return new Element('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
+    return new Element$1('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
 }
 // ICU messages (excluding plural form) are expanded to `NgSwitch`  and `NgSwitchCase`s
 function _expandDefaultForm(ast, errors) {
@@ -19168,12 +19447,12 @@ function _expandDefaultForm(ast, errors) {
         errors.push(...expansionResult.errors);
         if (c.value === 'other') {
             // other is the default case when no values match
-            return new Element(`ng-template`, [new Attribute('ngSwitchDefault', '', c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+            return new Element$1(`ng-template`, [new Attribute('ngSwitchDefault', '', c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
         }
-        return new Element(`ng-template`, [new Attribute('ngSwitchCase', `${c.value}`, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+        return new Element$1(`ng-template`, [new Attribute('ngSwitchCase', `${c.value}`, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
     });
     const switchAttr = new Attribute('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan);
-    return new Element('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
+    return new Element$1('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
 }
 
 /**
@@ -19275,7 +19554,7 @@ class TemplateParser {
             }
             const bindingParser = new BindingParser(this._exprParser, interpolationConfig, this._schemaRegistry, uniqPipes, errors);
             const parseVisitor = new TemplateParseVisitor(this._reflector, this._config, providerViewContext, uniqDirectives, bindingParser, this._schemaRegistry, schemas, errors);
-            result = visitAll(parseVisitor, htmlAstWithErrors.rootNodes, EMPTY_ELEMENT_CONTEXT);
+            result = visitAll$1(parseVisitor, htmlAstWithErrors.rootNodes, EMPTY_ELEMENT_CONTEXT);
             errors.push(...providerViewContext.errors);
             usedPipes.push(...bindingParser.getUsedPipes());
         }
@@ -19419,7 +19698,7 @@ class TemplateParseVisitor {
         const elementProps = this._createElementPropertyAsts(element.name, elementOrDirectiveProps, boundDirectivePropNames);
         const isViewRoot = parent.isTemplateElement || hasInlineTemplates;
         const providerContext = new ProviderElementContext(this.providerViewContext, parent.providerContext, isViewRoot, directiveAsts, attrs, references, isTemplateElement, queryStartIndex, element.sourceSpan);
-        const children = visitAll(preparsedElement.nonBindable ? NON_BINDABLE_VISITOR$1 : this, element.children, ElementContext.create(isTemplateElement, directiveAsts, isTemplateElement ? parent.providerContext : providerContext));
+        const children = visitAll$1(preparsedElement.nonBindable ? NON_BINDABLE_VISITOR$1 : this, element.children, ElementContext.create(isTemplateElement, directiveAsts, isTemplateElement ? parent.providerContext : providerContext));
         providerContext.afterElement();
         // Override the actual selector when the `ngProjectAs` attribute is provided
         const projectionSelector = preparsedElement.projectAs != '' ?
@@ -19733,8 +20012,8 @@ class NonBindableVisitor$1 {
         const attrNameAndValues = ast.attrs.map((attr) => [attr.name, attr.value]);
         const selector = createElementCssSelector(ast.name, attrNameAndValues);
         const ngContentIndex = parent.findNgContentIndex(selector);
-        const children = visitAll(this, ast.children, EMPTY_ELEMENT_CONTEXT);
-        return new ElementAst(ast.name, visitAll(this, ast.attrs), [], [], [], [], [], false, [], children, ngContentIndex, ast.sourceSpan, ast.endSourceSpan);
+        const children = visitAll$1(this, ast.children, EMPTY_ELEMENT_CONTEXT);
+        return new ElementAst(ast.name, visitAll$1(this, ast.attrs), [], [], [], [], [], false, [], children, ngContentIndex, ast.sourceSpan, ast.endSourceSpan);
     }
     visitComment(comment, context) { return null; }
     visitAttribute(attribute, context) {
@@ -19826,7 +20105,7 @@ function createElementCssSelector(elementName, attributes) {
 const EMPTY_ELEMENT_CONTEXT = new ElementContext(true, new SelectorMatcher(), null, null);
 const NON_BINDABLE_VISITOR$1 = new NonBindableVisitor$1();
 function _isEmptyTextNode(node) {
-    return node instanceof Text$2 && node.value.trim().length == 0;
+    return node instanceof Text$3 && node.value.trim().length == 0;
 }
 function removeSummaryDuplicates(items) {
     const map = new Map();
@@ -25085,7 +25364,9 @@ class DirectiveBinder {
             }
             else {
                 // This is a reference to a directive exported via exportAs. One should exist.
-                dirTarget = directives.find(dir => dir.exportAs === ref.value) || null;
+                dirTarget =
+                    directives.find(dir => dir.exportAs !== null && dir.exportAs.some(value => value === ref.value)) ||
+                        null;
                 // Check if a matching directive was found, and error if it wasn't.
                 if (dirTarget === null) {
                     // TODO(alxhub): Return an error value here that can be used for template validation.
@@ -25344,5 +25625,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, TypeofExpr, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element$1 as TmplAstElement, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, jitExpression, R3ResolvedDependencyType, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileBaseDefFromMetadata, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, publishFacade, VERSION$1 as VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor$1 as RecursiveAstVisitor, AstTransformer$1 as AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text$2 as Text, Expansion, ExpansionCase, Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, HOST_ATTR, CONTENT_ATTR, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, compileInjectable, R3TargetBinder, R3BoundTarget };
+export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, TypeofExpr, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Reference as TmplAstReference, Template as TmplAstTemplate, Text$2 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, jitExpression, R3ResolvedDependencyType, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileBaseDefFromMetadata, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, publishFacade, VERSION$1 as VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor$1 as RecursiveAstVisitor, AstTransformer$1 as AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text$3 as Text, Expansion, ExpansionCase, Attribute, Element$1 as Element, Comment, visitAll$1 as visitAll, RecursiveVisitor$1 as RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, HOST_ATTR, CONTENT_ATTR, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, compileInjectable, R3TargetBinder, R3BoundTarget };
 //# sourceMappingURL=compiler.js.map

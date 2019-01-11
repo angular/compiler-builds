@@ -17,11 +17,13 @@ export declare class Identifiers {
     static elementStart: o.ExternalReference;
     static elementEnd: o.ExternalReference;
     static elementProperty: o.ExternalReference;
+    static componentHostSyntheticProperty: o.ExternalReference;
     static elementAttribute: o.ExternalReference;
     static elementClassProp: o.ExternalReference;
     static elementContainerStart: o.ExternalReference;
     static elementContainerEnd: o.ExternalReference;
     static elementStyling: o.ExternalReference;
+    static elementHostAttrs: o.ExternalReference;
     static elementStylingMap: o.ExternalReference;
     static elementStyleProp: o.ExternalReference;
     static elementStylingApply: o.ExternalReference;
@@ -77,6 +79,9 @@ export declare class Identifiers {
     static injectAttribute: o.ExternalReference;
     static directiveInject: o.ExternalReference;
     static templateRefExtractor: o.ExternalReference;
+    static resolveWindow: o.ExternalReference;
+    static resolveDocument: o.ExternalReference;
+    static resolveBody: o.ExternalReference;
     static defineBase: o.ExternalReference;
     static BaseDef: o.ExternalReference;
     static defineComponent: o.ExternalReference;
@@ -104,4 +109,5 @@ export declare class Identifiers {
     static sanitizeResourceUrl: o.ExternalReference;
     static sanitizeScript: o.ExternalReference;
     static sanitizeUrl: o.ExternalReference;
+    static sanitizeUrlOrResourceUrl: o.ExternalReference;
 }

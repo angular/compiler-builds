@@ -39,6 +39,7 @@ export declare class BindingParser {
     private _parseBinding;
     createBoundElementProperty(elementSelector: string, boundProp: ParsedProperty): BoundElementProperty;
     parseEvent(name: string, expression: string, sourceSpan: ParseSourceSpan, targetMatchableAttrs: string[][], targetEvents: ParsedEvent[]): void;
+    calcPossibleSecurityContexts(selector: string, propName: string, isAttribute: boolean): SecurityContext[];
     private _parseAnimationEvent;
     private _parseRegularEvent;
     private _parseAction;
