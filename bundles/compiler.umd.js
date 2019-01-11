@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0+104.sha-b78351c
+ * @license Angular v7.2.0+105.sha-9277142
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -15014,9 +15014,7 @@
         // e.g 'outputs: {a: 'a'}`
         definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
         if (meta.exportAs !== null) {
-            // TODO: handle multiple exportAs values (currently only the first is taken).
-            var _a = __read(meta.exportAs, 1), exportAs = _a[0];
-            definitionMap.set('exportAs', literal(exportAs));
+            definitionMap.set('exportAs', literalArr(meta.exportAs.map(function (e) { return literal(e); })));
         }
         return { definitionMap: definitionMap, statements: result.statements };
     }
@@ -15406,7 +15404,6 @@
         return expressionType(importExpr(typeBase, [
             typeWithParameters(meta.type, meta.typeArgumentCount),
             stringAsType(selectorForType),
-            // TODO: handle multiple exportAs values (currently only the first is taken).
             meta.exportAs !== null ? stringArrayAsType(meta.exportAs) : NONE_TYPE,
             stringMapAsType(meta.inputs),
             stringMapAsType(meta.outputs),
@@ -15890,7 +15887,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('7.2.0+104.sha-b78351c');
+    var VERSION$1 = new Version('7.2.0+105.sha-9277142');
 
     /**
      * @license

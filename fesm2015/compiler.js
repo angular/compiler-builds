@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0+104.sha-b78351c
+ * @license Angular v7.2.0+105.sha-9277142
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -14067,9 +14067,7 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     // e.g 'outputs: {a: 'a'}`
     definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
     if (meta.exportAs !== null) {
-        // TODO: handle multiple exportAs values (currently only the first is taken).
-        const [exportAs] = meta.exportAs;
-        definitionMap.set('exportAs', literal(exportAs));
+        definitionMap.set('exportAs', literalArr(meta.exportAs.map(e => literal(e))));
     }
     return { definitionMap, statements: result.statements };
 }
@@ -14437,7 +14435,6 @@ function createTypeForDef(meta, typeBase) {
     return expressionType(importExpr(typeBase, [
         typeWithParameters(meta.type, meta.typeArgumentCount),
         stringAsType(selectorForType),
-        // TODO: handle multiple exportAs values (currently only the first is taken).
         meta.exportAs !== null ? stringArrayAsType(meta.exportAs) : NONE_TYPE,
         stringMapAsType(meta.inputs),
         stringMapAsType(meta.outputs),
@@ -14900,7 +14897,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.0+104.sha-b78351c');
+const VERSION$1 = new Version('7.2.0+105.sha-9277142');
 
 /**
  * @license
