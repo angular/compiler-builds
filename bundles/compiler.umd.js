@@ -1,14 +1,14 @@
 /**
- * @license Angular v7.2.0+101.sha-ad6569c
- * (c) 2010-2018 Google, Inc. https://angular.io/
+ * @license Angular v7.2.0+128.sha-091a8a6
+ * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
 
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define('@angular/compiler', ['exports'], factory) :
-    (factory((global.ng = global.ng || {}, global.ng.compiler = {})));
-}(this, (function (exports) { 'use strict';
+    (global = global || self, factory((global.ng = global.ng || {}, global.ng.compiler = {})));
+}(this, function (exports) { 'use strict';
 
     /*! *****************************************************************************
     Copyright (c) Microsoft Corporation. All rights reserved.
@@ -15014,9 +15014,7 @@
         // e.g 'outputs: {a: 'a'}`
         definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
         if (meta.exportAs !== null) {
-            // TODO: handle multiple exportAs values (currently only the first is taken).
-            var _a = __read(meta.exportAs, 1), exportAs = _a[0];
-            definitionMap.set('exportAs', literal(exportAs));
+            definitionMap.set('exportAs', literalArr(meta.exportAs.map(function (e) { return literal(e); })));
         }
         return { definitionMap: definitionMap, statements: result.statements };
     }
@@ -15406,7 +15404,6 @@
         return expressionType(importExpr(typeBase, [
             typeWithParameters(meta.type, meta.typeArgumentCount),
             stringAsType(selectorForType),
-            // TODO: handle multiple exportAs values (currently only the first is taken).
             meta.exportAs !== null ? stringArrayAsType(meta.exportAs) : NONE_TYPE,
             stringMapAsType(meta.inputs),
             stringMapAsType(meta.outputs),
@@ -15890,7 +15887,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('7.2.0+101.sha-ad6569c');
+    var VERSION$1 = new Version('7.2.0+128.sha-091a8a6');
 
     /**
      * @license
@@ -27480,5 +27477,5 @@
 
     Object.defineProperty(exports, '__esModule', { value: true });
 
-})));
+}));
 //# sourceMappingURL=compiler.umd.js.map
