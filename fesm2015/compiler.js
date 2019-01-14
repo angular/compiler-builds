@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0+161.sha-e8495b4
+ * @license Angular v7.2.0+169.sha-d12db4e
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -11504,7 +11504,7 @@ class BindingParser {
             return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo);
         }
     }
-    createBoundElementProperty(elementSelector, boundProp) {
+    createBoundElementProperty(elementSelector, boundProp, skipValidation = false) {
         if (boundProp.isAnimation) {
             return new BoundElementProperty(boundProp.name, 4 /* Animation */, SecurityContext.NONE, boundProp.expression, null, boundProp.sourceSpan);
         }
@@ -11513,11 +11513,13 @@ class BindingParser {
         let boundPropertyName = null;
         const parts = boundProp.name.split(PROPERTY_PARTS_SEPARATOR);
         let securityContexts = undefined;
-        // Check check for special cases (prefix style, attr, class)
+        // Check for special cases (prefix style, attr, class)
         if (parts.length > 1) {
             if (parts[0] == ATTRIBUTE_PREFIX) {
                 boundPropertyName = parts[1];
-                this._validatePropertyOrAttributeName(boundPropertyName, boundProp.sourceSpan, true);
+                if (!skipValidation) {
+                    this._validatePropertyOrAttributeName(boundPropertyName, boundProp.sourceSpan, true);
+                }
                 securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, boundPropertyName, true);
                 const nsSeparatorIdx = boundPropertyName.indexOf(':');
                 if (nsSeparatorIdx > -1) {
@@ -11544,7 +11546,9 @@ class BindingParser {
             boundPropertyName = this._schemaRegistry.getMappedPropName(boundProp.name);
             securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, boundPropertyName, false);
             bindingType = 0 /* Property */;
-            this._validatePropertyOrAttributeName(boundPropertyName, boundProp.sourceSpan, false);
+            if (!skipValidation) {
+                this._validatePropertyOrAttributeName(boundPropertyName, boundProp.sourceSpan, false);
+            }
         }
         return new BoundElementProperty(boundPropertyName, bindingType, securityContexts[0], boundProp.expression, unit, boundProp.sourceSpan);
     }
@@ -11977,7 +11981,10 @@ class HtmlAstToIvyAst {
                 literal.push(new TextAttribute(prop.name, prop.expression.source || '', prop.sourceSpan, undefined, i18n));
             }
             else {
-                const bep = this.bindingParser.createBoundElementProperty(elementName, prop);
+                // we skip validation here, since we do this check at runtime due to the fact that we need
+                // to make sure a given prop is not an input of some Directive (thus should not be a subject
+                // of this check) and Directive matching happens at runtime
+                const bep = this.bindingParser.createBoundElementProperty(elementName, prop, /* skipValidation */ true);
                 bound.push(BoundAttribute.fromBoundElementProperty(bep, i18n));
             }
         });
@@ -14833,7 +14840,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.0+161.sha-e8495b4');
+const VERSION$1 = new Version('7.2.0+169.sha-d12db4e');
 
 /**
  * @license
