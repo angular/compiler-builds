@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0+128.sha-091a8a6
+ * @license Angular v7.2.0+170.sha-f1fb62d
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3474,7 +3474,6 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.query = { name: 'ɵquery', moduleName: CORE$1 };
     Identifiers.queryRefresh = { name: 'ɵqueryRefresh', moduleName: CORE$1 };
     Identifiers.registerContentQuery = { name: 'ɵregisterContentQuery', moduleName: CORE$1 };
-    Identifiers.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
     Identifiers.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
     Identifiers.ProvidersFeature = { name: 'ɵProvidersFeature', moduleName: CORE$1 };
     Identifiers.listener = { name: 'ɵlistener', moduleName: CORE$1 };
@@ -7584,63 +7583,6 @@ var BuiltinFunctionCall = /** @class */ (function (_super) {
     }
     return BuiltinFunctionCall;
 }(FunctionCall));
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-var LifecycleHooks;
-(function (LifecycleHooks) {
-    LifecycleHooks[LifecycleHooks["OnInit"] = 0] = "OnInit";
-    LifecycleHooks[LifecycleHooks["OnDestroy"] = 1] = "OnDestroy";
-    LifecycleHooks[LifecycleHooks["DoCheck"] = 2] = "DoCheck";
-    LifecycleHooks[LifecycleHooks["OnChanges"] = 3] = "OnChanges";
-    LifecycleHooks[LifecycleHooks["AfterContentInit"] = 4] = "AfterContentInit";
-    LifecycleHooks[LifecycleHooks["AfterContentChecked"] = 5] = "AfterContentChecked";
-    LifecycleHooks[LifecycleHooks["AfterViewInit"] = 6] = "AfterViewInit";
-    LifecycleHooks[LifecycleHooks["AfterViewChecked"] = 7] = "AfterViewChecked";
-})(LifecycleHooks || (LifecycleHooks = {}));
-var LIFECYCLE_HOOKS_VALUES = [
-    LifecycleHooks.OnInit, LifecycleHooks.OnDestroy, LifecycleHooks.DoCheck, LifecycleHooks.OnChanges,
-    LifecycleHooks.AfterContentInit, LifecycleHooks.AfterContentChecked, LifecycleHooks.AfterViewInit,
-    LifecycleHooks.AfterViewChecked
-];
-function hasLifecycleHook(reflector, hook, token) {
-    return reflector.hasLifecycleHook(token, getHookName(hook));
-}
-function getAllLifecycleHooks(reflector, token) {
-    return LIFECYCLE_HOOKS_VALUES.filter(function (hook) { return hasLifecycleHook(reflector, hook, token); });
-}
-function getHookName(hook) {
-    switch (hook) {
-        case LifecycleHooks.OnInit:
-            return 'ngOnInit';
-        case LifecycleHooks.OnDestroy:
-            return 'ngOnDestroy';
-        case LifecycleHooks.DoCheck:
-            return 'ngDoCheck';
-        case LifecycleHooks.OnChanges:
-            return 'ngOnChanges';
-        case LifecycleHooks.AfterContentInit:
-            return 'ngAfterContentInit';
-        case LifecycleHooks.AfterContentChecked:
-            return 'ngAfterContentChecked';
-        case LifecycleHooks.AfterViewInit:
-            return 'ngAfterViewInit';
-        case LifecycleHooks.AfterViewChecked:
-            return 'ngAfterViewChecked';
-        default:
-            // This default case is not needed by TypeScript compiler, as the switch is exhaustive.
-            // However Closure Compiler does not understand that and reports an error in typed mode.
-            // The `throw new Error` below works around the problem, and the unexpected: never variable
-            // makes sure tsc still checks this code is unreachable.
-            var unexpected = hook;
-            throw new Error("unexpected " + unexpected);
-    }
-}
 
 /**
  * @license
@@ -12310,7 +12252,8 @@ var BindingParser = /** @class */ (function () {
             return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo);
         }
     };
-    BindingParser.prototype.createBoundElementProperty = function (elementSelector, boundProp) {
+    BindingParser.prototype.createBoundElementProperty = function (elementSelector, boundProp, skipValidation) {
+        if (skipValidation === void 0) { skipValidation = false; }
         if (boundProp.isAnimation) {
             return new BoundElementProperty(boundProp.name, 4 /* Animation */, SecurityContext.NONE, boundProp.expression, null, boundProp.sourceSpan);
         }
@@ -12319,11 +12262,13 @@ var BindingParser = /** @class */ (function () {
         var boundPropertyName = null;
         var parts = boundProp.name.split(PROPERTY_PARTS_SEPARATOR);
         var securityContexts = undefined;
-        // Check check for special cases (prefix style, attr, class)
+        // Check for special cases (prefix style, attr, class)
         if (parts.length > 1) {
             if (parts[0] == ATTRIBUTE_PREFIX) {
                 boundPropertyName = parts[1];
-                this._validatePropertyOrAttributeName(boundPropertyName, boundProp.sourceSpan, true);
+                if (!skipValidation) {
+                    this._validatePropertyOrAttributeName(boundPropertyName, boundProp.sourceSpan, true);
+                }
                 securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, boundPropertyName, true);
                 var nsSeparatorIdx = boundPropertyName.indexOf(':');
                 if (nsSeparatorIdx > -1) {
@@ -12350,7 +12295,9 @@ var BindingParser = /** @class */ (function () {
             boundPropertyName = this._schemaRegistry.getMappedPropName(boundProp.name);
             securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, boundPropertyName, false);
             bindingType = 0 /* Property */;
-            this._validatePropertyOrAttributeName(boundPropertyName, boundProp.sourceSpan, false);
+            if (!skipValidation) {
+                this._validatePropertyOrAttributeName(boundPropertyName, boundProp.sourceSpan, false);
+            }
         }
         return new BoundElementProperty(boundPropertyName, bindingType, securityContexts[0], boundProp.expression, unit, boundProp.sourceSpan);
     };
@@ -12820,7 +12767,10 @@ var HtmlAstToIvyAst = /** @class */ (function () {
                 literal.push(new TextAttribute(prop.name, prop.expression.source || '', prop.sourceSpan, undefined, i18n));
             }
             else {
-                var bep = _this.bindingParser.createBoundElementProperty(elementName, prop);
+                // we skip validation here, since we do this check at runtime due to the fact that we need
+                // to make sure a given prop is not an input of some Directive (thus should not be a subject
+                // of this check) and Directive matching happens at runtime
+                var bep = _this.bindingParser.createBoundElementProperty(elementName, prop, /* skipValidation */ true);
                 bound.push(BoundAttribute.fromBoundElementProperty(bep, i18n));
             }
         });
@@ -14144,20 +14094,21 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 }
             }
             else if (instruction) {
-                var params_2 = [];
-                var isAttributeBinding = input.type === 1 /* Attribute */;
-                var sanitizationRef = resolveSanitizationFn(input.securityContext, isAttributeBinding);
-                if (sanitizationRef)
-                    params_2.push(sanitizationRef);
-                // TODO(chuckj): runtime: security context
                 var value_2 = input.value.visit(_this._valueConverter);
-                _this.allocateBindingSlots(value_2);
-                _this.updateInstruction(input.sourceSpan, instruction, function () {
-                    return __spread([
-                        literal(elementIndex), literal(input.name),
-                        _this.convertPropertyBinding(implicit, value_2)
-                    ], params_2);
-                });
+                if (value_2 !== undefined) {
+                    var params_2 = [];
+                    var isAttributeBinding = input.type === 1 /* Attribute */;
+                    var sanitizationRef = resolveSanitizationFn(input.securityContext, isAttributeBinding);
+                    if (sanitizationRef)
+                        params_2.push(sanitizationRef);
+                    _this.allocateBindingSlots(value_2);
+                    _this.updateInstruction(input.sourceSpan, instruction, function () {
+                        return __spread([
+                            literal(elementIndex), literal(input.name),
+                            _this.convertPropertyBinding(implicit, value_2)
+                        ], params_2);
+                    });
+                }
             }
             else {
                 _this._unsupported("binding type " + input.type);
@@ -14965,7 +14916,6 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
  * Add features to the definition map.
  */
 function addFeatures(definitionMap, meta) {
-    // e.g. `features: [NgOnChangesFeature]`
     var features = [];
     var providers = meta.providers;
     var viewProviders = meta.viewProviders;
@@ -14978,9 +14928,6 @@ function addFeatures(definitionMap, meta) {
     }
     if (meta.usesInheritance) {
         features.push(importExpr(Identifiers$1.InheritDefinitionFeature));
-    }
-    if (meta.lifecycle.usesOnChanges) {
-        features.push(importExpr(Identifiers$1.NgOnChangesFeature));
     }
     if (features.length) {
         definitionMap.set('features', literalArr(features));
@@ -15185,9 +15132,6 @@ function directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector) {
         selector: directive.selector,
         deps: dependenciesFromGlobalMetadata(directive.type, outputCtx, reflector),
         queries: queriesFromGlobalMetadata(directive.queries, outputCtx),
-        lifecycle: {
-            usesOnChanges: directive.type.lifecycleHooks.some(function (lifecycle) { return lifecycle == LifecycleHooks.OnChanges; }),
-        },
         host: {
             attributes: directive.hostAttributes,
             listeners: summary.hostListeners,
@@ -15830,7 +15774,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.2.0+128.sha-091a8a6');
+var VERSION$1 = new Version('7.2.0+170.sha-f1fb62d');
 
 /**
  * @license
@@ -18232,6 +18176,63 @@ function isLoweredSymbol(name) {
 }
 function createLoweredSymbol(id) {
     return "\u0275" + id;
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var LifecycleHooks;
+(function (LifecycleHooks) {
+    LifecycleHooks[LifecycleHooks["OnInit"] = 0] = "OnInit";
+    LifecycleHooks[LifecycleHooks["OnDestroy"] = 1] = "OnDestroy";
+    LifecycleHooks[LifecycleHooks["DoCheck"] = 2] = "DoCheck";
+    LifecycleHooks[LifecycleHooks["OnChanges"] = 3] = "OnChanges";
+    LifecycleHooks[LifecycleHooks["AfterContentInit"] = 4] = "AfterContentInit";
+    LifecycleHooks[LifecycleHooks["AfterContentChecked"] = 5] = "AfterContentChecked";
+    LifecycleHooks[LifecycleHooks["AfterViewInit"] = 6] = "AfterViewInit";
+    LifecycleHooks[LifecycleHooks["AfterViewChecked"] = 7] = "AfterViewChecked";
+})(LifecycleHooks || (LifecycleHooks = {}));
+var LIFECYCLE_HOOKS_VALUES = [
+    LifecycleHooks.OnInit, LifecycleHooks.OnDestroy, LifecycleHooks.DoCheck, LifecycleHooks.OnChanges,
+    LifecycleHooks.AfterContentInit, LifecycleHooks.AfterContentChecked, LifecycleHooks.AfterViewInit,
+    LifecycleHooks.AfterViewChecked
+];
+function hasLifecycleHook(reflector, hook, token) {
+    return reflector.hasLifecycleHook(token, getHookName(hook));
+}
+function getAllLifecycleHooks(reflector, token) {
+    return LIFECYCLE_HOOKS_VALUES.filter(function (hook) { return hasLifecycleHook(reflector, hook, token); });
+}
+function getHookName(hook) {
+    switch (hook) {
+        case LifecycleHooks.OnInit:
+            return 'ngOnInit';
+        case LifecycleHooks.OnDestroy:
+            return 'ngOnDestroy';
+        case LifecycleHooks.DoCheck:
+            return 'ngDoCheck';
+        case LifecycleHooks.OnChanges:
+            return 'ngOnChanges';
+        case LifecycleHooks.AfterContentInit:
+            return 'ngAfterContentInit';
+        case LifecycleHooks.AfterContentChecked:
+            return 'ngAfterContentChecked';
+        case LifecycleHooks.AfterViewInit:
+            return 'ngAfterViewInit';
+        case LifecycleHooks.AfterViewChecked:
+            return 'ngAfterViewChecked';
+        default:
+            // This default case is not needed by TypeScript compiler, as the switch is exhaustive.
+            // However Closure Compiler does not understand that and reports an error in typed mode.
+            // The `throw new Error` below works around the problem, and the unexpected: never variable
+            // makes sure tsc still checks this code is unreachable.
+            var unexpected = hook;
+            throw new Error("unexpected " + unexpected);
+    }
 }
 
 /**
