@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0+178.sha-e62eeed
+ * @license Angular v7.2.0+179.sha-6930451
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8935,17 +8935,16 @@ var StylingBuilder = /** @class */ (function () {
      * Builds an instruction with all the expressions and parameters for `elementHostAttrs`.
      *
      * The instruction generation code below is used for producing the AOT statement code which is
-     * responsible for registering initial styles (within a directive hostBindings' creation block)
-     * to the directive host element.
+     * responsible for registering initial styles (within a directive hostBindings' creation block),
+     * as well as any of the provided attribute values, to the directive host element.
      */
-    StylingBuilder.prototype.buildDirectiveHostAttrsInstruction = function (sourceSpan, constantPool) {
+    StylingBuilder.prototype.buildHostAttrsInstruction = function (sourceSpan, attrs, constantPool) {
         var _this = this;
-        if (this._hasInitialValues && this._directiveExpr) {
+        if (this._directiveExpr && (attrs.length || this._hasInitialValues)) {
             return {
                 sourceSpan: sourceSpan,
                 reference: Identifiers$1.elementHostAttrs,
                 buildParams: function () {
-                    var attrs = [];
                     _this.populateInitialStylingAttrs(attrs);
                     return [_this._directiveExpr, getConstantLiteralFromArray(constantPool, attrs)];
                 }
@@ -14073,7 +14072,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             if (input.type === 4 /* Animation */) {
                 var value_1 = input.value.visit(_this._valueConverter);
                 // animation bindings can be presented in the following formats:
-                // 1j [@binding]="fooExp"
+                // 1. [@binding]="fooExp"
                 // 2. [@binding]="{value:fooExp, params:{...}}"
                 // 3. [@binding]
                 // 4. @binding
@@ -14899,10 +14898,8 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
                 break;
         }
     }
-    // e.g. `attributes: ['role', 'listbox']`
-    definitionMap.set('attributes', createHostAttributesArray(allOtherAttributes));
     // e.g. `hostBindings: (rf, ctx, elIndex) => { ... }
-    definitionMap.set('hostBindings', createHostBindingsFunction(meta, elVarExp, contextVarExp, styleBuilder, bindingParser, constantPool, hostVarsCount));
+    definitionMap.set('hostBindings', createHostBindingsFunction(meta, elVarExp, contextVarExp, allOtherAttributes, styleBuilder, bindingParser, constantPool, hostVarsCount));
     // e.g 'inputs: {a: 'a'}`
     definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs, true));
     // e.g 'outputs: {a: 'a'}`
@@ -15198,7 +15195,7 @@ function createQueryDefinition(query, constantPool, idx) {
 function createDirectiveSelector(selector) {
     return asLiteral(parseSelectorToR3Selector(selector));
 }
-function createHostAttributesArray(attributes) {
+function convertAttributesToExpressions(attributes) {
     var e_2, _a;
     var values = [];
     try {
@@ -15215,10 +15212,7 @@ function createHostAttributesArray(attributes) {
         }
         finally { if (e_2) throw e_2.error; }
     }
-    if (values.length > 0) {
-        return literalArr(values);
-    }
-    return null;
+    return values;
 }
 // Return a contentQueries function or null if one is not necessary.
 function createContentQueriesFunction(meta, constantPool) {
@@ -15323,7 +15317,7 @@ function createViewQueriesFunction(meta, constantPool) {
     ], INFERRED_TYPE, null, viewQueryFnName);
 }
 // Return a host binding function or null if one is not necessary.
-function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder, bindingParser, constantPool, hostVarsCount) {
+function createHostBindingsFunction(meta, elVarExp, bindingContext, staticAttributesAndValues, styleBuilder, bindingParser, constantPool, hostVarsCount) {
     var e_3, _a;
     var createStatements = [];
     var updateStatements = [];
@@ -15411,16 +15405,19 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder
             }
             finally { if (e_3) throw e_3.error; }
         }
+        // since we're dealing with directives/components and both have hostBinding
+        // functions, we need to generate a special hostAttrs instruction that deals
+        // with both the assignment of styling as well as static attributes to the host
+        // element. The instruction below will instruct all initial styling (styling
+        // that is inside of a host binding within a directive/component) to be attached
+        // to the host element alongside any of the provided host attributes that were
+        // collected earlier.
+        var hostAttrs = convertAttributesToExpressions(staticAttributesAndValues);
+        var hostInstruction = styleBuilder.buildHostAttrsInstruction(null, hostAttrs, constantPool);
+        if (hostInstruction) {
+            createStatements.push(createStylingStmt(hostInstruction, bindingContext, bindingFn));
+        }
         if (styleBuilder.hasBindingsOrInitialValues()) {
-            // since we're dealing with directives here and directives have a hostBinding
-            // function, we need to generate special instructions that deal with styling
-            // (both bindings and initial values). The instruction below will instruct
-            // all initial styling (styling that is inside of a host binding within a
-            // directive) to be attached to the host element of the directive.
-            var hostAttrsInstruction = styleBuilder.buildDirectiveHostAttrsInstruction(null, constantPool);
-            if (hostAttrsInstruction) {
-                createStatements.push(createStylingStmt(hostAttrsInstruction, bindingContext, bindingFn));
-            }
             // singular style/class bindings (things like `[style.prop]` and `[class.name]`)
             // MUST be registered on a given element within the component/directive
             // templateFn/hostBindingsFn functions. The instruction below will figure out
@@ -15774,7 +15771,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.2.0+178.sha-e62eeed');
+var VERSION$1 = new Version('7.2.0+179.sha-6930451');
 
 /**
  * @license
