@@ -14,7 +14,7 @@ import { ValueConverter } from './template';
 /**
  * A styling expression summary that is to be processed by the compiler
  */
-export interface StylingInstruction {
+export interface Instruction {
     sourceSpan: ParseSourceSpan | null;
     reference: o.ExternalReference;
     buildParams(convertFn: (value: any) => o.Expression): o.Expression[];
@@ -125,17 +125,17 @@ export declare class StylingBuilder {
      * Builds an instruction with all the expressions and parameters for `elementHostAttrs`.
      *
      * The instruction generation code below is used for producing the AOT statement code which is
-     * responsible for registering initial styles (within a directive hostBindings' creation block)
-     * to the directive host element.
+     * responsible for registering initial styles (within a directive hostBindings' creation block),
+     * as well as any of the provided attribute values, to the directive host element.
      */
-    buildDirectiveHostAttrsInstruction(sourceSpan: ParseSourceSpan | null, constantPool: ConstantPool): StylingInstruction | null;
+    buildHostAttrsInstruction(sourceSpan: ParseSourceSpan | null, attrs: o.Expression[], constantPool: ConstantPool): Instruction | null;
     /**
      * Builds an instruction with all the expressions and parameters for `elementStyling`.
      *
      * The instruction generation code below is used for producing the AOT statement code which is
      * responsible for registering style/class bindings to an element.
      */
-    buildElementStylingInstruction(sourceSpan: ParseSourceSpan | null, constantPool: ConstantPool): StylingInstruction | null;
+    buildElementStylingInstruction(sourceSpan: ParseSourceSpan | null, constantPool: ConstantPool): Instruction | null;
     /**
      * Builds an instruction with all the expressions and parameters for `elementStylingMap`.
      *
@@ -143,7 +143,7 @@ export declare class StylingBuilder {
      * which include the `[style]` and `[class]` expression params (if they exist) as well as
      * the sanitizer and directive reference expression.
      */
-    buildElementStylingMapInstruction(valueConverter: ValueConverter): StylingInstruction | null;
+    buildElementStylingMapInstruction(valueConverter: ValueConverter): Instruction | null;
     private _buildSingleInputs;
     private _buildClassInputs;
     private _buildStyleInputs;
@@ -152,6 +152,6 @@ export declare class StylingBuilder {
      * Constructs all instructions which contain the expressions that will be placed
      * into the update block of a template function or a directive hostBindings function.
      */
-    buildUpdateLevelInstructions(valueConverter: ValueConverter): StylingInstruction[];
+    buildUpdateLevelInstructions(valueConverter: ValueConverter): Instruction[];
 }
 export {};
