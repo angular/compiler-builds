@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0+192.sha-f983e99
+ * @license Angular v7.2.0+193.sha-3b7a571
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15771,7 +15771,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('7.2.0+192.sha-f983e99');
+var VERSION$1 = new Version('7.2.0+193.sha-3b7a571');
 
 /**
  * @license
