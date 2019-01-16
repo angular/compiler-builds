@@ -17,11 +17,13 @@ export declare class Identifiers {
     static elementStart: o.ExternalReference;
     static elementEnd: o.ExternalReference;
     static elementProperty: o.ExternalReference;
+    static componentHostSyntheticProperty: o.ExternalReference;
     static elementAttribute: o.ExternalReference;
     static elementClassProp: o.ExternalReference;
     static elementContainerStart: o.ExternalReference;
     static elementContainerEnd: o.ExternalReference;
     static elementStyling: o.ExternalReference;
+    static elementHostAttrs: o.ExternalReference;
     static elementStylingMap: o.ExternalReference;
     static elementStyleProp: o.ExternalReference;
     static elementStylingApply: o.ExternalReference;
