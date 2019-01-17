@@ -134,8 +134,11 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
      *   STYLES, style1, value1, style2, value2,
      *   SELECT_ONLY, name1, name2, name2, ...]
      * ```
+     *
+     * Note that this function will fully ignore all synthetic (@foo) attribute values
+     * because those values are intended to always be generated as property instructions.
      */
-    private prepareSyntheticAndSelectOnlyAttrs;
+    private prepareSelectOnlyAttrs;
     private toAttrsParam;
     private prepareRefsParameter;
     private prepareListenerParameter;
