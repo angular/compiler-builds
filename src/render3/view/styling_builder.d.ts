@@ -17,6 +17,7 @@ import { ValueConverter } from './template';
 export interface Instruction {
     sourceSpan: ParseSourceSpan | null;
     reference: o.ExternalReference;
+    allocateBindingSlots: number;
     buildParams(convertFn: (value: any) => o.Expression): o.Expression[];
 }
 /**
@@ -66,7 +67,7 @@ export declare class StylingBuilder {
      *  Whether or not there are any styling bindings present
      *  (i.e. `[style]`, `[class]`, `[style.prop]` or `[class.name]`)
      */
-    private _hasBindings;
+    hasBindings: boolean;
     /** the input for [class] (if it exists) */
     private _classMapInput;
     /** the input for [style] (if it exists) */
@@ -92,7 +93,6 @@ export declare class StylingBuilder {
     private _initialClassValues;
     private _useDefaultSanitizer;
     constructor(_elementIndexExpr: o.Expression, _directiveExpr: o.Expression | null);
-    hasBindingsOrInitialValues(): boolean;
     /**
      * Registers a given input to the styling builder to be later used when producing AOT code.
      *

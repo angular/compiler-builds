@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.0+3.sha-808898d
+ * @license Angular v8.0.0-beta.0+21.sha-45bf911
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3105,6 +3105,7 @@ Identifiers$1.elementStart = { name: 'ɵelementStart', moduleName: CORE$1 };
 Identifiers$1.elementEnd = { name: 'ɵelementEnd', moduleName: CORE$1 };
 Identifiers$1.elementProperty = { name: 'ɵelementProperty', moduleName: CORE$1 };
 Identifiers$1.componentHostSyntheticProperty = { name: 'ɵcomponentHostSyntheticProperty', moduleName: CORE$1 };
+Identifiers$1.componentHostSyntheticListener = { name: 'ɵcomponentHostSyntheticListener', moduleName: CORE$1 };
 Identifiers$1.elementAttribute = { name: 'ɵelementAttribute', moduleName: CORE$1 };
 Identifiers$1.elementClassProp = { name: 'ɵelementClassProp', moduleName: CORE$1 };
 Identifiers$1.elementContainerStart = { name: 'ɵelementContainerStart', moduleName: CORE$1 };
@@ -4532,16 +4533,6 @@ function prepareSyntheticPropertyName(name) {
 }
 function prepareSyntheticListenerName(name, phase) {
     return `${ANIMATE_SYMBOL_PREFIX}${name}.${phase}`;
-}
-function getSyntheticPropertyName(name) {
-    // this will strip out listener phase values...
-    // @foo.start => @foo
-    const i = name.indexOf('.');
-    name = i > 0 ? name.substring(0, i) : name;
-    if (name.charAt(0) !== ANIMATE_SYMBOL_PREFIX) {
-        name = ANIMATE_SYMBOL_PREFIX + name;
-    }
-    return name;
 }
 function prepareSyntheticListenerFunctionName(name, phase) {
     return `animation_${name}_${phase}`;
@@ -8176,7 +8167,7 @@ class StylingBuilder {
          *  Whether or not there are any styling bindings present
          *  (i.e. `[style]`, `[class]`, `[style.prop]` or `[class.name]`)
          */
-        this._hasBindings = false;
+        this.hasBindings = false;
         /** the input for [class] (if it exists) */
         this._classMapInput = null;
         /** the input for [style] (if it exists) */
@@ -8206,7 +8197,6 @@ class StylingBuilder {
         // this is checked each time new styles are encountered
         this._useDefaultSanitizer = false;
     }
-    hasBindingsOrInitialValues() { return this._hasBindings || this._hasInitialValues; }
     /**
      * Registers a given input to the styling builder to be later used when producing AOT code.
      *
@@ -8252,7 +8242,7 @@ class StylingBuilder {
             this._styleMapInput = entry;
         }
         this._lastStylingInput = entry;
-        this._hasBindings = true;
+        this.hasBindings = true;
         return entry;
     }
     registerClassInput(className, value, sourceSpan) {
@@ -8265,7 +8255,7 @@ class StylingBuilder {
             this._classMapInput = entry;
         }
         this._lastStylingInput = entry;
-        this._hasBindings = true;
+        this.hasBindings = true;
         return entry;
     }
     /**
@@ -8320,6 +8310,7 @@ class StylingBuilder {
             return {
                 sourceSpan,
                 reference: Identifiers$1.elementHostAttrs,
+                allocateBindingSlots: 0,
                 buildParams: () => {
                     this.populateInitialStylingAttrs(attrs);
                     return [this._directiveExpr, getConstantLiteralFromArray(constantPool, attrs)];
@@ -8335,9 +8326,10 @@ class StylingBuilder {
      * responsible for registering style/class bindings to an element.
      */
     buildElementStylingInstruction(sourceSpan, constantPool) {
-        if (this._hasBindings) {
+        if (this.hasBindings) {
             return {
                 sourceSpan,
+                allocateBindingSlots: 0,
                 reference: Identifiers$1.elementStyling,
                 buildParams: () => {
                     // a string array of every style-based binding
@@ -8388,14 +8380,22 @@ class StylingBuilder {
     buildElementStylingMapInstruction(valueConverter) {
         if (this._classMapInput || this._styleMapInput) {
             const stylingInput = this._classMapInput || this._styleMapInput;
+            let totalBindingSlotsRequired = 0;
             // these values must be outside of the update block so that they can
             // be evaluted (the AST visit call) during creation time so that any
             // pipes can be picked up in time before the template is built
             const mapBasedClassValue = this._classMapInput ? this._classMapInput.value.visit(valueConverter) : null;
+            if (mapBasedClassValue instanceof Interpolation) {
+                totalBindingSlotsRequired += mapBasedClassValue.expressions.length;
+            }
             const mapBasedStyleValue = this._styleMapInput ? this._styleMapInput.value.visit(valueConverter) : null;
+            if (mapBasedStyleValue instanceof Interpolation) {
+                totalBindingSlotsRequired += mapBasedStyleValue.expressions.length;
+            }
             return {
                 sourceSpan: stylingInput.sourceSpan,
                 reference: Identifiers$1.elementStylingMap,
+                allocateBindingSlots: totalBindingSlotsRequired,
                 buildParams: (convertFn) => {
                     const params = [this._elementIndexExpr];
                     if (mapBasedClassValue) {
@@ -8420,12 +8420,14 @@ class StylingBuilder {
         return null;
     }
     _buildSingleInputs(reference, inputs, mapIndex, allowUnits, valueConverter) {
+        let totalBindingSlotsRequired = 0;
         return inputs.map(input => {
             const bindingIndex = mapIndex.get(input.name);
             const value = input.value.visit(valueConverter);
+            totalBindingSlotsRequired += (value instanceof Interpolation) ? value.expressions.length : 0;
             return {
                 sourceSpan: input.sourceSpan,
-                reference,
+                allocateBindingSlots: totalBindingSlotsRequired, reference,
                 buildParams: (convertFn) => {
                     const params = [this._elementIndexExpr, literal(bindingIndex), convertFn(value)];
                     if (allowUnits) {
@@ -8460,6 +8462,7 @@ class StylingBuilder {
         return {
             sourceSpan: this._lastStylingInput ? this._lastStylingInput.sourceSpan : null,
             reference: Identifiers$1.elementStylingApply,
+            allocateBindingSlots: 0,
             buildParams: () => {
                 const params = [this._elementIndexExpr];
                 if (this._directiveExpr) {
@@ -8475,7 +8478,7 @@ class StylingBuilder {
      */
     buildUpdateLevelInstructions(valueConverter) {
         const instructions = [];
-        if (this._hasBindings) {
+        if (this.hasBindings) {
             const mapInstruction = this.buildElementStylingMapInstruction(valueConverter);
             if (mapInstruction) {
                 instructions.push(mapInstruction);
@@ -13114,7 +13117,7 @@ class TemplateDefinitionBuilder {
         outputAttrs.forEach(attr => attributes.push(literal(attr.name), literal(attr.value)));
         // this will build the instructions so that they fall into the following syntax
         // add attributes for directive matching purposes
-        attributes.push(...this.prepareSyntheticAndSelectOnlyAttrs(allOtherInputs, element.outputs, stylingBuilder));
+        attributes.push(...this.prepareSelectOnlyAttrs(allOtherInputs, element.outputs, stylingBuilder));
         parameters.push(this.toAttrsParam(attributes));
         // local refs (ex.: <div #foo #bar="baz">)
         parameters.push(this.prepareRefsParameter(element.references));
@@ -13137,10 +13140,10 @@ class TemplateDefinitionBuilder {
             }
             return element.children.length > 0;
         };
-        const createSelfClosingInstruction = !stylingBuilder.hasBindingsOrInitialValues() &&
-            !isNgContainer$$1 && element.outputs.length === 0 && i18nAttrs.length === 0 && !hasChildren();
+        const createSelfClosingInstruction = !stylingBuilder.hasBindings && !isNgContainer$$1 &&
+            element.outputs.length === 0 && i18nAttrs.length === 0 && !hasChildren();
         const createSelfClosingI18nInstruction = !createSelfClosingInstruction &&
-            !stylingBuilder.hasBindingsOrInitialValues() && hasTextChildrenOnly(element.children);
+            !stylingBuilder.hasBindings && hasTextChildrenOnly(element.children);
         if (createSelfClosingInstruction) {
             this.creationInstruction(element.sourceSpan, Identifiers$1.element, trimTrailingNulls(parameters));
         }
@@ -13204,8 +13207,13 @@ class TemplateDefinitionBuilder {
         // `elementStylingMap`, `elementClassProp` and `elementStylingApply` are all generated
         // and assign in the code below.
         stylingBuilder.buildUpdateLevelInstructions(this._valueConverter).forEach(instruction => {
+            this._bindingSlots += instruction.allocateBindingSlots;
             this.processStylingInstruction(implicit, instruction, false);
         });
+        // the reason why `undefined` is used is because the renderer understands this as a
+        // special value to symbolize that there is no RHS to this binding
+        // TODO (matsko): revisit this once FW-959 is approached
+        const emptyValueBindInstruction = importExpr(Identifiers$1.bind).callFn([literal(undefined)]);
         // Generate element input bindings
         allOtherInputs.forEach((input) => {
             const instruction = mapBindingToInstruction(input.type);
@@ -13216,21 +13224,19 @@ class TemplateDefinitionBuilder {
                 // 2. [@binding]="{value:fooExp, params:{...}}"
                 // 3. [@binding]
                 // 4. @binding
-                // only formats 1. and 2. include the actual binding of a value to
-                // an expression and therefore only those should be the only two that
-                // are allowed. The check below ensures that a binding with no expression
-                // does not get an empty `elementProperty` instruction created for it.
-                const hasValue = value && (value instanceof LiteralPrimitive) ? !!value.value : true;
-                if (hasValue) {
-                    this.allocateBindingSlots(value);
-                    const bindingName = prepareSyntheticPropertyName(input.name);
-                    this.updateInstruction(input.sourceSpan, Identifiers$1.elementProperty, () => {
-                        return [
-                            literal(elementIndex), literal(bindingName),
-                            this.convertPropertyBinding(implicit, value)
-                        ];
-                    });
-                }
+                // All formats will be valid for when a synthetic binding is created.
+                // The reasoning for this is because the renderer should get each
+                // synthetic binding value in the order of the array that they are
+                // defined in...
+                const hasValue = value instanceof LiteralPrimitive ? !!value.value : true;
+                this.allocateBindingSlots(value);
+                const bindingName = prepareSyntheticPropertyName(input.name);
+                this.updateInstruction(input.sourceSpan, Identifiers$1.elementProperty, () => {
+                    return [
+                        literal(elementIndex), literal(bindingName),
+                        (hasValue ? this.convertPropertyBinding(implicit, value) : emptyValueBindInstruction)
+                    ];
+                });
             }
             else if (instruction) {
                 const value = input.value.visit(this._valueConverter);
@@ -13288,7 +13294,7 @@ class TemplateDefinitionBuilder {
         // prepare attributes parameter (including attributes used for directive matching)
         const attrsExprs = [];
         template.attributes.forEach((a) => { attrsExprs.push(asLiteral(a.name), asLiteral(a.value)); });
-        attrsExprs.push(...this.prepareSyntheticAndSelectOnlyAttrs(template.inputs, template.outputs));
+        attrsExprs.push(...this.prepareSelectOnlyAttrs(template.inputs, template.outputs));
         parameters.push(this.toAttrsParam(attrsExprs));
         // local refs (ex.: <ng-template #foo>)
         if (template.references && template.references.length) {
@@ -13465,17 +13471,13 @@ class TemplateDefinitionBuilder {
      *   STYLES, style1, value1, style2, value2,
      *   SELECT_ONLY, name1, name2, name2, ...]
      * ```
+     *
+     * Note that this function will fully ignore all synthetic (@foo) attribute values
+     * because those values are intended to always be generated as property instructions.
      */
-    prepareSyntheticAndSelectOnlyAttrs(inputs, outputs, styles) {
-        const attrExprs = [];
-        const nonSyntheticInputs = [];
+    prepareSelectOnlyAttrs(inputs, outputs, styles) {
         const alreadySeen = new Set();
-        function isASTWithSource(ast) {
-            return ast instanceof ASTWithSource;
-        }
-        function isLiteralPrimitive(ast) {
-            return ast instanceof LiteralPrimitive;
-        }
+        const attrExprs = [];
         function addAttrExpr(key, value) {
             if (typeof key === 'string') {
                 if (!alreadySeen.has(key)) {
@@ -13490,40 +13492,33 @@ class TemplateDefinitionBuilder {
                 attrExprs.push(literal(key));
             }
         }
-        if (inputs.length) {
-            const EMPTY_STRING_EXPR = asLiteral('');
-            inputs.forEach(input => {
-                if (input.type === 4 /* Animation */) {
-                    // @attributes are for Renderer2 animation @triggers, but this feature
-                    // may be supported differently in future versions of angular. However,
-                    // @triggers should always just be treated as regular attributes (it's up
-                    // to the renderer to detect and use them in a special way).
-                    const valueExp = input.value;
-                    if (isASTWithSource(valueExp)) {
-                        const literal$$1 = valueExp.ast;
-                        if (isLiteralPrimitive(literal$$1) && literal$$1.value === undefined) {
-                            addAttrExpr(prepareSyntheticPropertyName(input.name), EMPTY_STRING_EXPR);
-                        }
-                    }
-                }
-                else {
-                    nonSyntheticInputs.push(input);
-                }
-            });
-        }
         // it's important that this occurs before SelectOnly because once `elementStart`
         // comes across the SelectOnly marker then it will continue reading each value as
         // as single property value cell by cell.
         if (styles) {
             styles.populateInitialStylingAttrs(attrExprs);
         }
-        if (nonSyntheticInputs.length || outputs.length) {
-            addAttrExpr(3 /* SelectOnly */);
-            nonSyntheticInputs.forEach((i) => addAttrExpr(i.name));
-            outputs.forEach((o) => {
-                const name = o.type === 1 /* Animation */ ? getSyntheticPropertyName(o.name) : o.name;
-                addAttrExpr(name);
-            });
+        if (inputs.length || outputs.length) {
+            const attrsStartIndex = attrExprs.length;
+            for (let i = 0; i < inputs.length; i++) {
+                const input = inputs[i];
+                if (input.type !== 4 /* Animation */) {
+                    addAttrExpr(input.name);
+                }
+            }
+            for (let i = 0; i < outputs.length; i++) {
+                const output = outputs[i];
+                if (output.type !== 1 /* Animation */) {
+                    addAttrExpr(output.name);
+                }
+            }
+            // this is a cheap way of adding the marker only after all the input/output
+            // values have been filtered (by not including the animation ones) and added
+            // to the expressions. The marker is important because it tells the runtime
+            // code that this is where attributes without values start...
+            if (attrExprs.length) {
+                attrExprs.splice(attrsStartIndex, 0, literal(3 /* SelectOnly */));
+            }
         }
         return attrExprs;
     }
@@ -14495,7 +14490,7 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, staticAttrib
         if (hostInstruction) {
             createStatements.push(createStylingStmt(hostInstruction, bindingContext, bindingFn));
         }
-        if (styleBuilder.hasBindingsOrInitialValues()) {
+        if (styleBuilder.hasBindings) {
             // singular style/class bindings (things like `[style.prop]` and `[class.name]`)
             // MUST be registered on a given element within the component/directive
             // templateFn/hostBindingsFn functions. The instruction below will figure out
@@ -14569,7 +14564,8 @@ function createHostListeners(bindingContext, eventBindings, meta) {
             bindingName;
         const handlerName = meta.name && bindingName ? `${meta.name}_${bindingFnName}_HostBindingHandler` : null;
         const params = prepareEventListenerParameters(BoundEvent.fromParsedEvent(binding), bindingContext, handlerName);
-        return importExpr(Identifiers$1.listener).callFn(params).toStmt();
+        const instruction = binding.type == 1 /* Animation */ ? Identifiers$1.componentHostSyntheticListener : Identifiers$1.listener;
+        return importExpr(instruction).callFn(params).toStmt();
     });
 }
 function metadataAsSummary(meta) {
@@ -14839,7 +14835,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.0+3.sha-808898d');
+const VERSION$1 = new Version('8.0.0-beta.0+21.sha-45bf911');
 
 /**
  * @license
