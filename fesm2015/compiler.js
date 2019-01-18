@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.0+170.sha-f1fb62d
+ * @license Angular v8.0.0-beta.0+3.sha-808898d
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8312,16 +8312,15 @@ class StylingBuilder {
      * Builds an instruction with all the expressions and parameters for `elementHostAttrs`.
      *
      * The instruction generation code below is used for producing the AOT statement code which is
-     * responsible for registering initial styles (within a directive hostBindings' creation block)
-     * to the directive host element.
+     * responsible for registering initial styles (within a directive hostBindings' creation block),
+     * as well as any of the provided attribute values, to the directive host element.
      */
-    buildDirectiveHostAttrsInstruction(sourceSpan, constantPool) {
-        if (this._hasInitialValues && this._directiveExpr) {
+    buildHostAttrsInstruction(sourceSpan, attrs, constantPool) {
+        if (this._directiveExpr && (attrs.length || this._hasInitialValues)) {
             return {
                 sourceSpan,
                 reference: Identifiers$1.elementHostAttrs,
                 buildParams: () => {
-                    const attrs = [];
                     this.populateInitialStylingAttrs(attrs);
                     return [this._directiveExpr, getConstantLiteralFromArray(constantPool, attrs)];
                 }
@@ -13150,9 +13149,6 @@ class TemplateDefinitionBuilder {
             if (isNonBindableMode) {
                 this.creationInstruction(element.sourceSpan, Identifiers$1.disableBindings);
             }
-            if (isI18nRootElement) {
-                this.i18nStart(element.sourceSpan, element.i18n, createSelfClosingI18nInstruction);
-            }
             // process i18n element attributes
             if (i18nAttrs.length) {
                 let hasBindings = false;
@@ -13186,6 +13182,11 @@ class TemplateDefinitionBuilder {
                     }
                 }
             }
+            // Note: it's important to keep i18n/i18nStart instructions after i18nAttributes ones,
+            // to make sure i18nAttributes instruction targets current element at runtime.
+            if (isI18nRootElement) {
+                this.i18nStart(element.sourceSpan, element.i18n, createSelfClosingI18nInstruction);
+            }
             // The style bindings code is placed into two distinct blocks within the template function AOT
             // code: creation and update. The creation code contains the `elementStyling` instructions
             // which will apply the collected binding values to the element. `elementStyling` is
@@ -13211,7 +13212,7 @@ class TemplateDefinitionBuilder {
             if (input.type === 4 /* Animation */) {
                 const value = input.value.visit(this._valueConverter);
                 // animation bindings can be presented in the following formats:
-                // 1j [@binding]="fooExp"
+                // 1. [@binding]="fooExp"
                 // 2. [@binding]="{value:fooExp, params:{...}}"
                 // 3. [@binding]
                 // 4. @binding
@@ -14008,10 +14009,8 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
                 break;
         }
     }
-    // e.g. `attributes: ['role', 'listbox']`
-    definitionMap.set('attributes', createHostAttributesArray(allOtherAttributes));
     // e.g. `hostBindings: (rf, ctx, elIndex) => { ... }
-    definitionMap.set('hostBindings', createHostBindingsFunction(meta, elVarExp, contextVarExp, styleBuilder, bindingParser, constantPool, hostVarsCount));
+    definitionMap.set('hostBindings', createHostBindingsFunction(meta, elVarExp, contextVarExp, allOtherAttributes, styleBuilder, bindingParser, constantPool, hostVarsCount));
     // e.g 'inputs: {a: 'a'}`
     definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs, true));
     // e.g 'outputs: {a: 'a'}`
@@ -14296,16 +14295,13 @@ function createQueryDefinition(query, constantPool, idx) {
 function createDirectiveSelector(selector) {
     return asLiteral(parseSelectorToR3Selector(selector));
 }
-function createHostAttributesArray(attributes) {
+function convertAttributesToExpressions(attributes) {
     const values = [];
     for (let key of Object.getOwnPropertyNames(attributes)) {
         const value = attributes[key];
         values.push(literal(key), literal(value));
     }
-    if (values.length > 0) {
-        return literalArr(values);
-    }
-    return null;
+    return values;
 }
 // Return a contentQueries function or null if one is not necessary.
 function createContentQueriesFunction(meta, constantPool) {
@@ -14410,7 +14406,7 @@ function createViewQueriesFunction(meta, constantPool) {
     ], INFERRED_TYPE, null, viewQueryFnName);
 }
 // Return a host binding function or null if one is not necessary.
-function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder, bindingParser, constantPool, hostVarsCount) {
+function createHostBindingsFunction(meta, elVarExp, bindingContext, staticAttributesAndValues, styleBuilder, bindingParser, constantPool, hostVarsCount) {
     const createStatements = [];
     const updateStatements = [];
     let totalHostVarsCount = hostVarsCount;
@@ -14487,16 +14483,19 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, styleBuilder
                 updateStatements.push(importExpr(instruction).callFn(instructionParams).toStmt());
             }
         }
+        // since we're dealing with directives/components and both have hostBinding
+        // functions, we need to generate a special hostAttrs instruction that deals
+        // with both the assignment of styling as well as static attributes to the host
+        // element. The instruction below will instruct all initial styling (styling
+        // that is inside of a host binding within a directive/component) to be attached
+        // to the host element alongside any of the provided host attributes that were
+        // collected earlier.
+        const hostAttrs = convertAttributesToExpressions(staticAttributesAndValues);
+        const hostInstruction = styleBuilder.buildHostAttrsInstruction(null, hostAttrs, constantPool);
+        if (hostInstruction) {
+            createStatements.push(createStylingStmt(hostInstruction, bindingContext, bindingFn));
+        }
         if (styleBuilder.hasBindingsOrInitialValues()) {
-            // since we're dealing with directives here and directives have a hostBinding
-            // function, we need to generate special instructions that deal with styling
-            // (both bindings and initial values). The instruction below will instruct
-            // all initial styling (styling that is inside of a host binding within a
-            // directive) to be attached to the host element of the directive.
-            const hostAttrsInstruction = styleBuilder.buildDirectiveHostAttrsInstruction(null, constantPool);
-            if (hostAttrsInstruction) {
-                createStatements.push(createStylingStmt(hostAttrsInstruction, bindingContext, bindingFn));
-            }
             // singular style/class bindings (things like `[style.prop]` and `[class.name]`)
             // MUST be registered on a given element within the component/directive
             // templateFn/hostBindingsFn functions. The instruction below will figure out
@@ -14840,7 +14839,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.0+170.sha-f1fb62d');
+const VERSION$1 = new Version('8.0.0-beta.0+3.sha-808898d');
 
 /**
  * @license
