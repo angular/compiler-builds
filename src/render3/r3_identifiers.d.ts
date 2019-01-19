@@ -18,6 +18,7 @@ export declare class Identifiers {
     static elementEnd: o.ExternalReference;
     static elementProperty: o.ExternalReference;
     static componentHostSyntheticProperty: o.ExternalReference;
+    static componentHostSyntheticListener: o.ExternalReference;
     static elementAttribute: o.ExternalReference;
     static elementClassProp: o.ExternalReference;
     static elementContainerStart: o.ExternalReference;
