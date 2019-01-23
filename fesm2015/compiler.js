@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.1+2.sha-d8f2318
+ * @license Angular v8.0.0-beta.1+11.sha-03c8528
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3206,6 +3206,7 @@ Identifiers$1.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
 Identifiers$1.query = { name: 'ɵquery', moduleName: CORE$1 };
 Identifiers$1.queryRefresh = { name: 'ɵqueryRefresh', moduleName: CORE$1 };
 Identifiers$1.registerContentQuery = { name: 'ɵregisterContentQuery', moduleName: CORE$1 };
+Identifiers$1.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
 Identifiers$1.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
 Identifiers$1.ProvidersFeature = { name: 'ɵProvidersFeature', moduleName: CORE$1 };
 Identifiers$1.listener = { name: 'ɵlistener', moduleName: CORE$1 };
@@ -7026,6 +7027,63 @@ class BuiltinFunctionCall extends FunctionCall {
         super(span, null, args);
         this.args = args;
         this.converter = converter;
+    }
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var LifecycleHooks;
+(function (LifecycleHooks) {
+    LifecycleHooks[LifecycleHooks["OnInit"] = 0] = "OnInit";
+    LifecycleHooks[LifecycleHooks["OnDestroy"] = 1] = "OnDestroy";
+    LifecycleHooks[LifecycleHooks["DoCheck"] = 2] = "DoCheck";
+    LifecycleHooks[LifecycleHooks["OnChanges"] = 3] = "OnChanges";
+    LifecycleHooks[LifecycleHooks["AfterContentInit"] = 4] = "AfterContentInit";
+    LifecycleHooks[LifecycleHooks["AfterContentChecked"] = 5] = "AfterContentChecked";
+    LifecycleHooks[LifecycleHooks["AfterViewInit"] = 6] = "AfterViewInit";
+    LifecycleHooks[LifecycleHooks["AfterViewChecked"] = 7] = "AfterViewChecked";
+})(LifecycleHooks || (LifecycleHooks = {}));
+const LIFECYCLE_HOOKS_VALUES = [
+    LifecycleHooks.OnInit, LifecycleHooks.OnDestroy, LifecycleHooks.DoCheck, LifecycleHooks.OnChanges,
+    LifecycleHooks.AfterContentInit, LifecycleHooks.AfterContentChecked, LifecycleHooks.AfterViewInit,
+    LifecycleHooks.AfterViewChecked
+];
+function hasLifecycleHook(reflector, hook, token) {
+    return reflector.hasLifecycleHook(token, getHookName(hook));
+}
+function getAllLifecycleHooks(reflector, token) {
+    return LIFECYCLE_HOOKS_VALUES.filter(hook => hasLifecycleHook(reflector, hook, token));
+}
+function getHookName(hook) {
+    switch (hook) {
+        case LifecycleHooks.OnInit:
+            return 'ngOnInit';
+        case LifecycleHooks.OnDestroy:
+            return 'ngOnDestroy';
+        case LifecycleHooks.DoCheck:
+            return 'ngDoCheck';
+        case LifecycleHooks.OnChanges:
+            return 'ngOnChanges';
+        case LifecycleHooks.AfterContentInit:
+            return 'ngAfterContentInit';
+        case LifecycleHooks.AfterContentChecked:
+            return 'ngAfterContentChecked';
+        case LifecycleHooks.AfterViewInit:
+            return 'ngAfterViewInit';
+        case LifecycleHooks.AfterViewChecked:
+            return 'ngAfterViewChecked';
+        default:
+            // This default case is not needed by TypeScript compiler, as the switch is exhaustive.
+            // However Closure Compiler does not understand that and reports an error in typed mode.
+            // The `throw new Error` below works around the problem, and the unexpected: never variable
+            // makes sure tsc still checks this code is unreachable.
+            const unexpected = hook;
+            throw new Error(`unexpected ${unexpected}`);
     }
 }
 
@@ -14021,6 +14079,7 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
  * Add features to the definition map.
  */
 function addFeatures(definitionMap, meta) {
+    // e.g. `features: [NgOnChangesFeature()]`
     const features = [];
     const providers = meta.providers;
     const viewProviders = meta.viewProviders;
@@ -14033,6 +14092,9 @@ function addFeatures(definitionMap, meta) {
     }
     if (meta.usesInheritance) {
         features.push(importExpr(Identifiers$1.InheritDefinitionFeature));
+    }
+    if (meta.lifecycle.usesOnChanges) {
+        features.push(importExpr(Identifiers$1.NgOnChangesFeature).callFn(EMPTY_ARRAY));
     }
     if (features.length) {
         definitionMap.set('features', literalArr(features));
@@ -14226,6 +14288,9 @@ function directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector) {
         selector: directive.selector,
         deps: dependenciesFromGlobalMetadata(directive.type, outputCtx, reflector),
         queries: queriesFromGlobalMetadata(directive.queries, outputCtx),
+        lifecycle: {
+            usesOnChanges: directive.type.lifecycleHooks.some(lifecycle => lifecycle == LifecycleHooks.OnChanges),
+        },
         host: {
             attributes: directive.hostAttributes,
             listeners: summary.hostListeners,
@@ -14837,7 +14902,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.1+2.sha-d8f2318');
+const VERSION$1 = new Version('8.0.0-beta.1+11.sha-03c8528');
 
 /**
  * @license
@@ -17119,63 +17184,6 @@ function isLoweredSymbol(name) {
 }
 function createLoweredSymbol(id) {
     return `\u0275${id}`;
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-var LifecycleHooks;
-(function (LifecycleHooks) {
-    LifecycleHooks[LifecycleHooks["OnInit"] = 0] = "OnInit";
-    LifecycleHooks[LifecycleHooks["OnDestroy"] = 1] = "OnDestroy";
-    LifecycleHooks[LifecycleHooks["DoCheck"] = 2] = "DoCheck";
-    LifecycleHooks[LifecycleHooks["OnChanges"] = 3] = "OnChanges";
-    LifecycleHooks[LifecycleHooks["AfterContentInit"] = 4] = "AfterContentInit";
-    LifecycleHooks[LifecycleHooks["AfterContentChecked"] = 5] = "AfterContentChecked";
-    LifecycleHooks[LifecycleHooks["AfterViewInit"] = 6] = "AfterViewInit";
-    LifecycleHooks[LifecycleHooks["AfterViewChecked"] = 7] = "AfterViewChecked";
-})(LifecycleHooks || (LifecycleHooks = {}));
-const LIFECYCLE_HOOKS_VALUES = [
-    LifecycleHooks.OnInit, LifecycleHooks.OnDestroy, LifecycleHooks.DoCheck, LifecycleHooks.OnChanges,
-    LifecycleHooks.AfterContentInit, LifecycleHooks.AfterContentChecked, LifecycleHooks.AfterViewInit,
-    LifecycleHooks.AfterViewChecked
-];
-function hasLifecycleHook(reflector, hook, token) {
-    return reflector.hasLifecycleHook(token, getHookName(hook));
-}
-function getAllLifecycleHooks(reflector, token) {
-    return LIFECYCLE_HOOKS_VALUES.filter(hook => hasLifecycleHook(reflector, hook, token));
-}
-function getHookName(hook) {
-    switch (hook) {
-        case LifecycleHooks.OnInit:
-            return 'ngOnInit';
-        case LifecycleHooks.OnDestroy:
-            return 'ngOnDestroy';
-        case LifecycleHooks.DoCheck:
-            return 'ngDoCheck';
-        case LifecycleHooks.OnChanges:
-            return 'ngOnChanges';
-        case LifecycleHooks.AfterContentInit:
-            return 'ngAfterContentInit';
-        case LifecycleHooks.AfterContentChecked:
-            return 'ngAfterContentChecked';
-        case LifecycleHooks.AfterViewInit:
-            return 'ngAfterViewInit';
-        case LifecycleHooks.AfterViewChecked:
-            return 'ngAfterViewChecked';
-        default:
-            // This default case is not needed by TypeScript compiler, as the switch is exhaustive.
-            // However Closure Compiler does not understand that and reports an error in typed mode.
-            // The `throw new Error` below works around the problem, and the unexpected: never variable
-            // makes sure tsc still checks this code is unreachable.
-            const unexpected = hook;
-            throw new Error(`unexpected ${unexpected}`);
-    }
 }
 
 /**
