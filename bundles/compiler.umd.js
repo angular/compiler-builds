@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.1+7.sha-030350f
+ * @license Angular v8.0.0-beta.1+12.sha-9f9024b
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3544,6 +3544,7 @@
         Identifiers.query = { name: 'ɵquery', moduleName: CORE$1 };
         Identifiers.queryRefresh = { name: 'ɵqueryRefresh', moduleName: CORE$1 };
         Identifiers.registerContentQuery = { name: 'ɵregisterContentQuery', moduleName: CORE$1 };
+        Identifiers.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
         Identifiers.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
         Identifiers.ProvidersFeature = { name: 'ɵProvidersFeature', moduleName: CORE$1 };
         Identifiers.listener = { name: 'ɵlistener', moduleName: CORE$1 };
@@ -7633,6 +7634,63 @@
         }
         return BuiltinFunctionCall;
     }(FunctionCall));
+
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    var LifecycleHooks;
+    (function (LifecycleHooks) {
+        LifecycleHooks[LifecycleHooks["OnInit"] = 0] = "OnInit";
+        LifecycleHooks[LifecycleHooks["OnDestroy"] = 1] = "OnDestroy";
+        LifecycleHooks[LifecycleHooks["DoCheck"] = 2] = "DoCheck";
+        LifecycleHooks[LifecycleHooks["OnChanges"] = 3] = "OnChanges";
+        LifecycleHooks[LifecycleHooks["AfterContentInit"] = 4] = "AfterContentInit";
+        LifecycleHooks[LifecycleHooks["AfterContentChecked"] = 5] = "AfterContentChecked";
+        LifecycleHooks[LifecycleHooks["AfterViewInit"] = 6] = "AfterViewInit";
+        LifecycleHooks[LifecycleHooks["AfterViewChecked"] = 7] = "AfterViewChecked";
+    })(LifecycleHooks || (LifecycleHooks = {}));
+    var LIFECYCLE_HOOKS_VALUES = [
+        LifecycleHooks.OnInit, LifecycleHooks.OnDestroy, LifecycleHooks.DoCheck, LifecycleHooks.OnChanges,
+        LifecycleHooks.AfterContentInit, LifecycleHooks.AfterContentChecked, LifecycleHooks.AfterViewInit,
+        LifecycleHooks.AfterViewChecked
+    ];
+    function hasLifecycleHook(reflector, hook, token) {
+        return reflector.hasLifecycleHook(token, getHookName(hook));
+    }
+    function getAllLifecycleHooks(reflector, token) {
+        return LIFECYCLE_HOOKS_VALUES.filter(function (hook) { return hasLifecycleHook(reflector, hook, token); });
+    }
+    function getHookName(hook) {
+        switch (hook) {
+            case LifecycleHooks.OnInit:
+                return 'ngOnInit';
+            case LifecycleHooks.OnDestroy:
+                return 'ngOnDestroy';
+            case LifecycleHooks.DoCheck:
+                return 'ngDoCheck';
+            case LifecycleHooks.OnChanges:
+                return 'ngOnChanges';
+            case LifecycleHooks.AfterContentInit:
+                return 'ngAfterContentInit';
+            case LifecycleHooks.AfterContentChecked:
+                return 'ngAfterContentChecked';
+            case LifecycleHooks.AfterViewInit:
+                return 'ngAfterViewInit';
+            case LifecycleHooks.AfterViewChecked:
+                return 'ngAfterViewChecked';
+            default:
+                // This default case is not needed by TypeScript compiler, as the switch is exhaustive.
+                // However Closure Compiler does not understand that and reports an error in typed mode.
+                // The `throw new Error` below works around the problem, and the unexpected: never variable
+                // makes sure tsc still checks this code is unreachable.
+                var unexpected = hook;
+                throw new Error("unexpected " + unexpected);
+        }
+    }
 
     /**
      * @license
@@ -14033,7 +14091,9 @@
                     }
                 }
             });
-            outputAttrs.forEach(function (attr) { return attributes.push(literal(attr.name), literal(attr.value)); });
+            outputAttrs.forEach(function (attr) {
+                attributes.push.apply(attributes, __spread(getAttributeNameLiterals(attr.name), [literal(attr.value)]));
+            });
             // this will build the instructions so that they fall into the following syntax
             // add attributes for directive matching purposes
             attributes.push.apply(attributes, __spread(this.prepareSelectOnlyAttrs(allOtherInputs, element.outputs, stylingBuilder)));
@@ -14161,14 +14221,26 @@
                     var value_2 = input.value.visit(_this._valueConverter);
                     if (value_2 !== undefined) {
                         var params_2 = [];
+                        var _a = __read(splitNsName(input.name), 2), attrNamespace = _a[0], attrName_1 = _a[1];
                         var isAttributeBinding = input.type === 1 /* Attribute */;
                         var sanitizationRef = resolveSanitizationFn(input.securityContext, isAttributeBinding);
                         if (sanitizationRef)
                             params_2.push(sanitizationRef);
+                        if (attrNamespace) {
+                            var namespaceLiteral = literal(attrNamespace);
+                            if (sanitizationRef) {
+                                params_2.push(namespaceLiteral);
+                            }
+                            else {
+                                // If there wasn't a sanitization ref, we need to add
+                                // an extra param so that we can pass in the namespace.
+                                params_2.push(literal(null), namespaceLiteral);
+                            }
+                        }
                         _this.allocateBindingSlots(value_2);
                         _this.updateInstruction(input.sourceSpan, instruction, function () {
                             return __spread([
-                                literal(elementIndex), literal(input.name),
+                                literal(elementIndex), literal(attrName_1),
                                 _this.convertPropertyBinding(implicit, value_2)
                             ], params_2);
                         });
@@ -14413,10 +14485,8 @@
             function addAttrExpr(key, value) {
                 if (typeof key === 'string') {
                     if (!alreadySeen.has(key)) {
-                        attrExprs.push(literal(key));
-                        if (value !== undefined) {
-                            attrExprs.push(value);
-                        }
+                        attrExprs.push.apply(attrExprs, __spread(getAttributeNameLiterals(key)));
+                        value !== undefined && attrExprs.push(value);
                         alreadySeen.add(key);
                     }
                 }
@@ -14607,6 +14677,23 @@
             args.push.apply(args, __spread(literalFactoryArguments));
         }
         return importExpr(identifier).callFn(args);
+    }
+    /**
+     * Gets an array of literals that can be added to an expression
+     * to represent the name and namespace of an attribute. E.g.
+     * `:xlink:href` turns into `[AttributeMarker.NamespaceURI, 'xlink', 'href']`.
+     *
+     * @param name Name of the attribute, including the namespace.
+     */
+    function getAttributeNameLiterals(name) {
+        var _a = __read(splitNsName(name), 2), attributeNamespace = _a[0], attributeName = _a[1];
+        var nameLiteral = literal(attributeName);
+        if (attributeNamespace) {
+            return [
+                literal(0 /* NamespaceURI */), literal(attributeNamespace), nameLiteral
+            ];
+        }
+        return [nameLiteral];
     }
     /** The prefix used to get a shared context in BindingScope's map. */
     var SHARED_CONTEXT_KEY = '$$shared_ctx$$';
@@ -14969,6 +15056,7 @@
      * Add features to the definition map.
      */
     function addFeatures(definitionMap, meta) {
+        // e.g. `features: [NgOnChangesFeature()]`
         var features = [];
         var providers = meta.providers;
         var viewProviders = meta.viewProviders;
@@ -14981,6 +15069,9 @@
         }
         if (meta.usesInheritance) {
             features.push(importExpr(Identifiers$1.InheritDefinitionFeature));
+        }
+        if (meta.lifecycle.usesOnChanges) {
+            features.push(importExpr(Identifiers$1.NgOnChangesFeature).callFn(EMPTY_ARRAY));
         }
         if (features.length) {
             definitionMap.set('features', literalArr(features));
@@ -15185,6 +15276,9 @@
             selector: directive.selector,
             deps: dependenciesFromGlobalMetadata(directive.type, outputCtx, reflector),
             queries: queriesFromGlobalMetadata(directive.queries, outputCtx),
+            lifecycle: {
+                usesOnChanges: directive.type.lifecycleHooks.some(function (lifecycle) { return lifecycle == LifecycleHooks.OnChanges; }),
+            },
             host: {
                 attributes: directive.hostAttributes,
                 listeners: summary.hostListeners,
@@ -15828,7 +15922,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-beta.1+7.sha-030350f');
+    var VERSION$1 = new Version('8.0.0-beta.1+12.sha-9f9024b');
 
     /**
      * @license
@@ -18229,63 +18323,6 @@
     }
     function createLoweredSymbol(id) {
         return "\u0275" + id;
-    }
-
-    /**
-     * @license
-     * Copyright Google Inc. All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    var LifecycleHooks;
-    (function (LifecycleHooks) {
-        LifecycleHooks[LifecycleHooks["OnInit"] = 0] = "OnInit";
-        LifecycleHooks[LifecycleHooks["OnDestroy"] = 1] = "OnDestroy";
-        LifecycleHooks[LifecycleHooks["DoCheck"] = 2] = "DoCheck";
-        LifecycleHooks[LifecycleHooks["OnChanges"] = 3] = "OnChanges";
-        LifecycleHooks[LifecycleHooks["AfterContentInit"] = 4] = "AfterContentInit";
-        LifecycleHooks[LifecycleHooks["AfterContentChecked"] = 5] = "AfterContentChecked";
-        LifecycleHooks[LifecycleHooks["AfterViewInit"] = 6] = "AfterViewInit";
-        LifecycleHooks[LifecycleHooks["AfterViewChecked"] = 7] = "AfterViewChecked";
-    })(LifecycleHooks || (LifecycleHooks = {}));
-    var LIFECYCLE_HOOKS_VALUES = [
-        LifecycleHooks.OnInit, LifecycleHooks.OnDestroy, LifecycleHooks.DoCheck, LifecycleHooks.OnChanges,
-        LifecycleHooks.AfterContentInit, LifecycleHooks.AfterContentChecked, LifecycleHooks.AfterViewInit,
-        LifecycleHooks.AfterViewChecked
-    ];
-    function hasLifecycleHook(reflector, hook, token) {
-        return reflector.hasLifecycleHook(token, getHookName(hook));
-    }
-    function getAllLifecycleHooks(reflector, token) {
-        return LIFECYCLE_HOOKS_VALUES.filter(function (hook) { return hasLifecycleHook(reflector, hook, token); });
-    }
-    function getHookName(hook) {
-        switch (hook) {
-            case LifecycleHooks.OnInit:
-                return 'ngOnInit';
-            case LifecycleHooks.OnDestroy:
-                return 'ngOnDestroy';
-            case LifecycleHooks.DoCheck:
-                return 'ngDoCheck';
-            case LifecycleHooks.OnChanges:
-                return 'ngOnChanges';
-            case LifecycleHooks.AfterContentInit:
-                return 'ngAfterContentInit';
-            case LifecycleHooks.AfterContentChecked:
-                return 'ngAfterContentChecked';
-            case LifecycleHooks.AfterViewInit:
-                return 'ngAfterViewInit';
-            case LifecycleHooks.AfterViewChecked:
-                return 'ngAfterViewChecked';
-            default:
-                // This default case is not needed by TypeScript compiler, as the switch is exhaustive.
-                // However Closure Compiler does not understand that and reports an error in typed mode.
-                // The `throw new Error` below works around the problem, and the unexpected: never variable
-                // makes sure tsc still checks this code is unreachable.
-                var unexpected = hook;
-                throw new Error("unexpected " + unexpected);
-        }
     }
 
     /**
