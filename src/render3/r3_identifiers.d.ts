@@ -97,6 +97,8 @@ export declare class Identifiers {
     static definePipe: o.ExternalReference;
     static query: o.ExternalReference;
     static queryRefresh: o.ExternalReference;
+    static viewQuery: o.ExternalReference;
+    static loadViewQuery: o.ExternalReference;
     static registerContentQuery: o.ExternalReference;
     static NgOnChangesFeature: o.ExternalReference;
     static InheritDefinitionFeature: o.ExternalReference;

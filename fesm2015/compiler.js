@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.1+12.sha-9f9024b
+ * @license Angular v8.0.0-beta.1+13.sha-9098225
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3205,6 +3205,8 @@ Identifiers$1.PipeDefWithMeta = { name: 'ɵPipeDefWithMeta', moduleName: CORE$1 
 Identifiers$1.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
 Identifiers$1.query = { name: 'ɵquery', moduleName: CORE$1 };
 Identifiers$1.queryRefresh = { name: 'ɵqueryRefresh', moduleName: CORE$1 };
+Identifiers$1.viewQuery = { name: 'ɵviewQuery', moduleName: CORE$1 };
+Identifiers$1.loadViewQuery = { name: 'ɵloadViewQuery', moduleName: CORE$1 };
 Identifiers$1.registerContentQuery = { name: 'ɵregisterContentQuery', moduleName: CORE$1 };
 Identifiers$1.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
 Identifiers$1.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
@@ -12768,14 +12770,13 @@ function prepareEventListenerParameters(eventAst, bindingContext, handlerName = 
     return params;
 }
 class TemplateDefinitionBuilder {
-    constructor(constantPool, parentBindingScope, level = 0, contextName, i18nContext, templateIndex, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace, relativeContextFilePath, i18nUseExternalIds) {
+    constructor(constantPool, parentBindingScope, level = 0, contextName, i18nContext, templateIndex, templateName, directiveMatcher, directives, pipeTypeByName, pipes, _namespace, relativeContextFilePath, i18nUseExternalIds) {
         this.constantPool = constantPool;
         this.level = level;
         this.contextName = contextName;
         this.i18nContext = i18nContext;
         this.templateIndex = templateIndex;
         this.templateName = templateName;
-        this.viewQueries = viewQueries;
         this.directiveMatcher = directiveMatcher;
         this.directives = directives;
         this.pipeTypeByName = pipeTypeByName;
@@ -12827,9 +12828,6 @@ class TemplateDefinitionBuilder {
         this.visitTextAttribute = invalid$1;
         this.visitBoundAttribute = invalid$1;
         this.visitBoundEvent = invalid$1;
-        // view queries can take up space in data and allocation happens earlier (in the "viewQuery"
-        // function)
-        this._dataIndex = viewQueries.length;
         this._bindingScope = parentBindingScope.nestedScope(level);
         // Turn the relative context file path into an identifier by replacing non-alphanumeric
         // characters with underscores.
@@ -13388,7 +13386,7 @@ class TemplateDefinitionBuilder {
             });
         });
         // Create the template function
-        const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, this._bindingScope, this.level + 1, contextName, this.i18n, templateIndex, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes, this._namespace, this.fileBasedI18nSuffix, this.i18nUseExternalIds);
+        const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, this._bindingScope, this.level + 1, contextName, this.i18n, templateIndex, templateName, this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes, this._namespace, this.fileBasedI18nSuffix, this.i18nUseExternalIds);
         // Nested templates must not be visited until after their parent templates have completed
         // processing, so they are queued here until after the initial pass. Otherwise, we wouldn't
         // be able to support bindings in nested templates to local refs that occur after the
@@ -14205,7 +14203,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     const pipesUsed = new Set();
     const changeDetection = meta.changeDetection;
     const template = meta.template;
-    const templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, null, null, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML, meta.relativeContextFilePath, meta.i18nUseExternalIds);
+    const templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, null, null, templateName, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML, meta.relativeContextFilePath, meta.i18nUseExternalIds);
     const templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, []);
     // We need to provide this so that dynamically generated components know what
     // projected content blocks to pass through to the component when it is instantiated.
@@ -14369,18 +14367,18 @@ function selectorsFromGlobalMetadata(selectors, outputCtx) {
     error('Unexpected query form');
     return NULL_EXPR;
 }
-function createQueryDefinition(query, constantPool, idx) {
-    const predicate = getQueryPredicate(query, constantPool);
-    // e.g. r3.query(null, somePredicate, false) or r3.query(0, ['div'], false)
+function prepareQueryParams(query, constantPool) {
     const parameters = [
-        literal(idx, INFERRED_TYPE),
-        predicate,
+        getQueryPredicate(query, constantPool),
         literal(query.descendants),
     ];
     if (query.read) {
         parameters.push(query.read);
     }
-    return importExpr(Identifiers$1.query).callFn(parameters);
+    return parameters;
+}
+function createQueryDefinition(query, constantPool) {
+    return importExpr(Identifiers$1.query).callFn(prepareQueryParams(query, constantPool));
 }
 // Turn a directive selector into an R3-compatible selector for directive def
 function createDirectiveSelector(selector) {
@@ -14398,7 +14396,7 @@ function convertAttributesToExpressions(attributes) {
 function createContentQueriesFunction(meta, constantPool) {
     if (meta.queries.length) {
         const statements = meta.queries.map((query) => {
-            const queryDefinition = createQueryDefinition(query, constantPool, null);
+            const queryDefinition = createQueryDefinition(query, constantPool);
             return importExpr(Identifiers$1.registerContentQuery)
                 .callFn([queryDefinition, variable('dirIndex')])
                 .toStmt();
@@ -14476,20 +14474,19 @@ function createViewQueriesFunction(meta, constantPool) {
     const createStatements = [];
     const updateStatements = [];
     const tempAllocator = temporaryAllocator(updateStatements, TEMPORARY_NAME);
-    for (let i = 0; i < meta.viewQueries.length; i++) {
-        const query = meta.viewQueries[i];
-        // creation, e.g. r3.Q(0, somePredicate, true);
-        const queryDefinition = createQueryDefinition(query, constantPool, i);
+    meta.viewQueries.forEach((query) => {
+        // creation, e.g. r3.viewQuery(somePredicate, true);
+        const queryDefinition = importExpr(Identifiers$1.viewQuery).callFn(prepareQueryParams(query, constantPool));
         createStatements.push(queryDefinition.toStmt());
-        // update, e.g. (r3.qR(tmp = r3.ɵload(0)) && (ctx.someDir = tmp));
+        // update, e.g. (r3.queryRefresh(tmp = r3.loadViewQuery()) && (ctx.someDir = tmp));
         const temporary = tempAllocator();
-        const getQueryList = importExpr(Identifiers$1.load).callFn([literal(i)]);
+        const getQueryList = importExpr(Identifiers$1.loadViewQuery).callFn([]);
         const refresh = importExpr(Identifiers$1.queryRefresh).callFn([temporary.set(getQueryList)]);
         const updateDirective = variable(CONTEXT_NAME)
             .prop(query.propertyName)
             .set(query.first ? temporary.prop('first') : temporary);
         updateStatements.push(refresh.and(updateDirective).toStmt());
-    }
+    });
     const viewQueryFnName = meta.name ? `${meta.name}_Query` : null;
     return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null)], [
         renderFlagCheckIfStmt(1 /* Create */, createStatements),
@@ -14931,7 +14928,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.1+12.sha-9f9024b');
+const VERSION$1 = new Version('8.0.0-beta.1+13.sha-9098225');
 
 /**
  * @license
