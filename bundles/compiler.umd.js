@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.1+6.sha-583061d
+ * @license Angular v8.0.0-beta.1+1.sha-1fd6735
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -14207,9 +14207,7 @@
             var parameters = [
                 literal(templateIndex),
                 variable(templateName),
-                // We don't care about the tag's namespace here, because we infer
-                // it based on the parent nodes inside the template instruction.
-                literal(template.tagName ? splitNsName(template.tagName)[1] : template.tagName),
+                literal(template.tagName),
             ];
             // find directives matching on a given <ng-template> node
             this.matchDirectives('ng-template', template);
@@ -15828,7 +15826,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-beta.1+6.sha-583061d');
+    var VERSION$1 = new Version('8.0.0-beta.1+1.sha-1fd6735');
 
     /**
      * @license
