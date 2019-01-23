@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.1+7.sha-030350f
+ * @license Angular v8.0.0-beta.1+12.sha-9f9024b
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3206,6 +3206,7 @@ Identifiers$1.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
 Identifiers$1.query = { name: 'ɵquery', moduleName: CORE$1 };
 Identifiers$1.queryRefresh = { name: 'ɵqueryRefresh', moduleName: CORE$1 };
 Identifiers$1.registerContentQuery = { name: 'ɵregisterContentQuery', moduleName: CORE$1 };
+Identifiers$1.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
 Identifiers$1.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
 Identifiers$1.ProvidersFeature = { name: 'ɵProvidersFeature', moduleName: CORE$1 };
 Identifiers$1.listener = { name: 'ɵlistener', moduleName: CORE$1 };
@@ -7026,6 +7027,63 @@ class BuiltinFunctionCall extends FunctionCall {
         super(span, null, args);
         this.args = args;
         this.converter = converter;
+    }
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var LifecycleHooks;
+(function (LifecycleHooks) {
+    LifecycleHooks[LifecycleHooks["OnInit"] = 0] = "OnInit";
+    LifecycleHooks[LifecycleHooks["OnDestroy"] = 1] = "OnDestroy";
+    LifecycleHooks[LifecycleHooks["DoCheck"] = 2] = "DoCheck";
+    LifecycleHooks[LifecycleHooks["OnChanges"] = 3] = "OnChanges";
+    LifecycleHooks[LifecycleHooks["AfterContentInit"] = 4] = "AfterContentInit";
+    LifecycleHooks[LifecycleHooks["AfterContentChecked"] = 5] = "AfterContentChecked";
+    LifecycleHooks[LifecycleHooks["AfterViewInit"] = 6] = "AfterViewInit";
+    LifecycleHooks[LifecycleHooks["AfterViewChecked"] = 7] = "AfterViewChecked";
+})(LifecycleHooks || (LifecycleHooks = {}));
+const LIFECYCLE_HOOKS_VALUES = [
+    LifecycleHooks.OnInit, LifecycleHooks.OnDestroy, LifecycleHooks.DoCheck, LifecycleHooks.OnChanges,
+    LifecycleHooks.AfterContentInit, LifecycleHooks.AfterContentChecked, LifecycleHooks.AfterViewInit,
+    LifecycleHooks.AfterViewChecked
+];
+function hasLifecycleHook(reflector, hook, token) {
+    return reflector.hasLifecycleHook(token, getHookName(hook));
+}
+function getAllLifecycleHooks(reflector, token) {
+    return LIFECYCLE_HOOKS_VALUES.filter(hook => hasLifecycleHook(reflector, hook, token));
+}
+function getHookName(hook) {
+    switch (hook) {
+        case LifecycleHooks.OnInit:
+            return 'ngOnInit';
+        case LifecycleHooks.OnDestroy:
+            return 'ngOnDestroy';
+        case LifecycleHooks.DoCheck:
+            return 'ngDoCheck';
+        case LifecycleHooks.OnChanges:
+            return 'ngOnChanges';
+        case LifecycleHooks.AfterContentInit:
+            return 'ngAfterContentInit';
+        case LifecycleHooks.AfterContentChecked:
+            return 'ngAfterContentChecked';
+        case LifecycleHooks.AfterViewInit:
+            return 'ngAfterViewInit';
+        case LifecycleHooks.AfterViewChecked:
+            return 'ngAfterViewChecked';
+        default:
+            // This default case is not needed by TypeScript compiler, as the switch is exhaustive.
+            // However Closure Compiler does not understand that and reports an error in typed mode.
+            // The `throw new Error` below works around the problem, and the unexpected: never variable
+            // makes sure tsc still checks this code is unreachable.
+            const unexpected = hook;
+            throw new Error(`unexpected ${unexpected}`);
     }
 }
 
@@ -13114,7 +13172,9 @@ class TemplateDefinitionBuilder {
                 }
             }
         });
-        outputAttrs.forEach(attr => attributes.push(literal(attr.name), literal(attr.value)));
+        outputAttrs.forEach(attr => {
+            attributes.push(...getAttributeNameLiterals(attr.name), literal(attr.value));
+        });
         // this will build the instructions so that they fall into the following syntax
         // add attributes for directive matching purposes
         attributes.push(...this.prepareSelectOnlyAttrs(allOtherInputs, element.outputs, stylingBuilder));
@@ -13242,14 +13302,26 @@ class TemplateDefinitionBuilder {
                 const value = input.value.visit(this._valueConverter);
                 if (value !== undefined) {
                     const params = [];
+                    const [attrNamespace, attrName] = splitNsName(input.name);
                     const isAttributeBinding = input.type === 1 /* Attribute */;
                     const sanitizationRef = resolveSanitizationFn(input.securityContext, isAttributeBinding);
                     if (sanitizationRef)
                         params.push(sanitizationRef);
+                    if (attrNamespace) {
+                        const namespaceLiteral = literal(attrNamespace);
+                        if (sanitizationRef) {
+                            params.push(namespaceLiteral);
+                        }
+                        else {
+                            // If there wasn't a sanitization ref, we need to add
+                            // an extra param so that we can pass in the namespace.
+                            params.push(literal(null), namespaceLiteral);
+                        }
+                    }
                     this.allocateBindingSlots(value);
                     this.updateInstruction(input.sourceSpan, instruction, () => {
                         return [
-                            literal(elementIndex), literal(input.name),
+                            literal(elementIndex), literal(attrName),
                             this.convertPropertyBinding(implicit, value), ...params
                         ];
                     });
@@ -13483,10 +13555,8 @@ class TemplateDefinitionBuilder {
         function addAttrExpr(key, value) {
             if (typeof key === 'string') {
                 if (!alreadySeen.has(key)) {
-                    attrExprs.push(literal(key));
-                    if (value !== undefined) {
-                        attrExprs.push(value);
-                    }
+                    attrExprs.push(...getAttributeNameLiterals(key));
+                    value !== undefined && attrExprs.push(value);
                     alreadySeen.add(key);
                 }
             }
@@ -13670,6 +13740,23 @@ function getLiteralFactory(constantPool, literal$$1, allocateSlots) {
         args.push(...literalFactoryArguments);
     }
     return importExpr(identifier).callFn(args);
+}
+/**
+ * Gets an array of literals that can be added to an expression
+ * to represent the name and namespace of an attribute. E.g.
+ * `:xlink:href` turns into `[AttributeMarker.NamespaceURI, 'xlink', 'href']`.
+ *
+ * @param name Name of the attribute, including the namespace.
+ */
+function getAttributeNameLiterals(name) {
+    const [attributeNamespace, attributeName] = splitNsName(name);
+    const nameLiteral = literal(attributeName);
+    if (attributeNamespace) {
+        return [
+            literal(0 /* NamespaceURI */), literal(attributeNamespace), nameLiteral
+        ];
+    }
+    return [nameLiteral];
 }
 /** The prefix used to get a shared context in BindingScope's map. */
 const SHARED_CONTEXT_KEY = '$$shared_ctx$$';
@@ -14021,6 +14108,7 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
  * Add features to the definition map.
  */
 function addFeatures(definitionMap, meta) {
+    // e.g. `features: [NgOnChangesFeature()]`
     const features = [];
     const providers = meta.providers;
     const viewProviders = meta.viewProviders;
@@ -14033,6 +14121,9 @@ function addFeatures(definitionMap, meta) {
     }
     if (meta.usesInheritance) {
         features.push(importExpr(Identifiers$1.InheritDefinitionFeature));
+    }
+    if (meta.lifecycle.usesOnChanges) {
+        features.push(importExpr(Identifiers$1.NgOnChangesFeature).callFn(EMPTY_ARRAY));
     }
     if (features.length) {
         definitionMap.set('features', literalArr(features));
@@ -14226,6 +14317,9 @@ function directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector) {
         selector: directive.selector,
         deps: dependenciesFromGlobalMetadata(directive.type, outputCtx, reflector),
         queries: queriesFromGlobalMetadata(directive.queries, outputCtx),
+        lifecycle: {
+            usesOnChanges: directive.type.lifecycleHooks.some(lifecycle => lifecycle == LifecycleHooks.OnChanges),
+        },
         host: {
             attributes: directive.hostAttributes,
             listeners: summary.hostListeners,
@@ -14837,7 +14931,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.1+7.sha-030350f');
+const VERSION$1 = new Version('8.0.0-beta.1+12.sha-9f9024b');
 
 /**
  * @license
@@ -17119,63 +17213,6 @@ function isLoweredSymbol(name) {
 }
 function createLoweredSymbol(id) {
     return `\u0275${id}`;
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-var LifecycleHooks;
-(function (LifecycleHooks) {
-    LifecycleHooks[LifecycleHooks["OnInit"] = 0] = "OnInit";
-    LifecycleHooks[LifecycleHooks["OnDestroy"] = 1] = "OnDestroy";
-    LifecycleHooks[LifecycleHooks["DoCheck"] = 2] = "DoCheck";
-    LifecycleHooks[LifecycleHooks["OnChanges"] = 3] = "OnChanges";
-    LifecycleHooks[LifecycleHooks["AfterContentInit"] = 4] = "AfterContentInit";
-    LifecycleHooks[LifecycleHooks["AfterContentChecked"] = 5] = "AfterContentChecked";
-    LifecycleHooks[LifecycleHooks["AfterViewInit"] = 6] = "AfterViewInit";
-    LifecycleHooks[LifecycleHooks["AfterViewChecked"] = 7] = "AfterViewChecked";
-})(LifecycleHooks || (LifecycleHooks = {}));
-const LIFECYCLE_HOOKS_VALUES = [
-    LifecycleHooks.OnInit, LifecycleHooks.OnDestroy, LifecycleHooks.DoCheck, LifecycleHooks.OnChanges,
-    LifecycleHooks.AfterContentInit, LifecycleHooks.AfterContentChecked, LifecycleHooks.AfterViewInit,
-    LifecycleHooks.AfterViewChecked
-];
-function hasLifecycleHook(reflector, hook, token) {
-    return reflector.hasLifecycleHook(token, getHookName(hook));
-}
-function getAllLifecycleHooks(reflector, token) {
-    return LIFECYCLE_HOOKS_VALUES.filter(hook => hasLifecycleHook(reflector, hook, token));
-}
-function getHookName(hook) {
-    switch (hook) {
-        case LifecycleHooks.OnInit:
-            return 'ngOnInit';
-        case LifecycleHooks.OnDestroy:
-            return 'ngOnDestroy';
-        case LifecycleHooks.DoCheck:
-            return 'ngDoCheck';
-        case LifecycleHooks.OnChanges:
-            return 'ngOnChanges';
-        case LifecycleHooks.AfterContentInit:
-            return 'ngAfterContentInit';
-        case LifecycleHooks.AfterContentChecked:
-            return 'ngAfterContentChecked';
-        case LifecycleHooks.AfterViewInit:
-            return 'ngAfterViewInit';
-        case LifecycleHooks.AfterViewChecked:
-            return 'ngAfterViewChecked';
-        default:
-            // This default case is not needed by TypeScript compiler, as the switch is exhaustive.
-            // However Closure Compiler does not understand that and reports an error in typed mode.
-            // The `throw new Error` below works around the problem, and the unexpected: never variable
-            // makes sure tsc still checks this code is unreachable.
-            const unexpected = hook;
-            throw new Error(`unexpected ${unexpected}`);
-    }
 }
 
 /**

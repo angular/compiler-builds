@@ -98,6 +98,7 @@ export declare class Identifiers {
     static query: o.ExternalReference;
     static queryRefresh: o.ExternalReference;
     static registerContentQuery: o.ExternalReference;
+    static NgOnChangesFeature: o.ExternalReference;
     static InheritDefinitionFeature: o.ExternalReference;
     static ProvidersFeature: o.ExternalReference;
     static listener: o.ExternalReference;
