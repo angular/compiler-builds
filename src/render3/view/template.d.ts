@@ -16,7 +16,6 @@ import { ParseError, ParseSourceSpan } from '../../parse_util';
 import { SelectorMatcher } from '../../selector';
 import { BindingParser } from '../../template_parser/binding_parser';
 import * as t from '../r3_ast';
-import { R3QueryMetadata } from './api';
 import { I18nContext } from './i18n/context';
 import { invalid } from './util';
 export declare function renderFlagCheckIfStmt(flags: core.RenderFlags, statements: o.Statement[]): o.IfStmt;
@@ -28,7 +27,6 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private i18nContext;
     private templateIndex;
     private templateName;
-    private viewQueries;
     private directiveMatcher;
     private directives;
     private pipeTypeByName;
@@ -74,7 +72,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private _hasNgContent;
     private _ngContentSelectors;
     private _ngContentSelectorsOffset;
-    constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, i18nContext: I18nContext | null, templateIndex: number | null, templateName: string | null, viewQueries: R3QueryMetadata[], directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference, relativeContextFilePath: string, i18nUseExternalIds: boolean);
+    constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, i18nContext: I18nContext | null, templateIndex: number | null, templateName: string | null, directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference, relativeContextFilePath: string, i18nUseExternalIds: boolean);
     registerContextVariables(variable: t.Variable): void;
     buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], ngContentSelectorsOffset?: number, i18n?: i18n.AST): o.FunctionExpr;
     getLocal(name: string): o.Expression | null;
