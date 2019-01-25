@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.0+21.sha-45bf911
+ * @license Angular v8.0.0-beta.1+43.sha-3d5a919
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3205,7 +3205,10 @@ Identifiers$1.PipeDefWithMeta = { name: 'ɵPipeDefWithMeta', moduleName: CORE$1 
 Identifiers$1.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
 Identifiers$1.query = { name: 'ɵquery', moduleName: CORE$1 };
 Identifiers$1.queryRefresh = { name: 'ɵqueryRefresh', moduleName: CORE$1 };
+Identifiers$1.viewQuery = { name: 'ɵviewQuery', moduleName: CORE$1 };
+Identifiers$1.loadViewQuery = { name: 'ɵloadViewQuery', moduleName: CORE$1 };
 Identifiers$1.registerContentQuery = { name: 'ɵregisterContentQuery', moduleName: CORE$1 };
+Identifiers$1.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
 Identifiers$1.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
 Identifiers$1.ProvidersFeature = { name: 'ɵProvidersFeature', moduleName: CORE$1 };
 Identifiers$1.listener = { name: 'ɵlistener', moduleName: CORE$1 };
@@ -7026,6 +7029,63 @@ class BuiltinFunctionCall extends FunctionCall {
         super(span, null, args);
         this.args = args;
         this.converter = converter;
+    }
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var LifecycleHooks;
+(function (LifecycleHooks) {
+    LifecycleHooks[LifecycleHooks["OnInit"] = 0] = "OnInit";
+    LifecycleHooks[LifecycleHooks["OnDestroy"] = 1] = "OnDestroy";
+    LifecycleHooks[LifecycleHooks["DoCheck"] = 2] = "DoCheck";
+    LifecycleHooks[LifecycleHooks["OnChanges"] = 3] = "OnChanges";
+    LifecycleHooks[LifecycleHooks["AfterContentInit"] = 4] = "AfterContentInit";
+    LifecycleHooks[LifecycleHooks["AfterContentChecked"] = 5] = "AfterContentChecked";
+    LifecycleHooks[LifecycleHooks["AfterViewInit"] = 6] = "AfterViewInit";
+    LifecycleHooks[LifecycleHooks["AfterViewChecked"] = 7] = "AfterViewChecked";
+})(LifecycleHooks || (LifecycleHooks = {}));
+const LIFECYCLE_HOOKS_VALUES = [
+    LifecycleHooks.OnInit, LifecycleHooks.OnDestroy, LifecycleHooks.DoCheck, LifecycleHooks.OnChanges,
+    LifecycleHooks.AfterContentInit, LifecycleHooks.AfterContentChecked, LifecycleHooks.AfterViewInit,
+    LifecycleHooks.AfterViewChecked
+];
+function hasLifecycleHook(reflector, hook, token) {
+    return reflector.hasLifecycleHook(token, getHookName(hook));
+}
+function getAllLifecycleHooks(reflector, token) {
+    return LIFECYCLE_HOOKS_VALUES.filter(hook => hasLifecycleHook(reflector, hook, token));
+}
+function getHookName(hook) {
+    switch (hook) {
+        case LifecycleHooks.OnInit:
+            return 'ngOnInit';
+        case LifecycleHooks.OnDestroy:
+            return 'ngOnDestroy';
+        case LifecycleHooks.DoCheck:
+            return 'ngDoCheck';
+        case LifecycleHooks.OnChanges:
+            return 'ngOnChanges';
+        case LifecycleHooks.AfterContentInit:
+            return 'ngAfterContentInit';
+        case LifecycleHooks.AfterContentChecked:
+            return 'ngAfterContentChecked';
+        case LifecycleHooks.AfterViewInit:
+            return 'ngAfterViewInit';
+        case LifecycleHooks.AfterViewChecked:
+            return 'ngAfterViewChecked';
+        default:
+            // This default case is not needed by TypeScript compiler, as the switch is exhaustive.
+            // However Closure Compiler does not understand that and reports an error in typed mode.
+            // The `throw new Error` below works around the problem, and the unexpected: never variable
+            // makes sure tsc still checks this code is unreachable.
+            const unexpected = hook;
+            throw new Error(`unexpected ${unexpected}`);
     }
 }
 
@@ -12710,14 +12770,13 @@ function prepareEventListenerParameters(eventAst, bindingContext, handlerName = 
     return params;
 }
 class TemplateDefinitionBuilder {
-    constructor(constantPool, parentBindingScope, level = 0, contextName, i18nContext, templateIndex, templateName, viewQueries, directiveMatcher, directives, pipeTypeByName, pipes, _namespace, relativeContextFilePath, i18nUseExternalIds) {
+    constructor(constantPool, parentBindingScope, level = 0, contextName, i18nContext, templateIndex, templateName, directiveMatcher, directives, pipeTypeByName, pipes, _namespace, relativeContextFilePath, i18nUseExternalIds) {
         this.constantPool = constantPool;
         this.level = level;
         this.contextName = contextName;
         this.i18nContext = i18nContext;
         this.templateIndex = templateIndex;
         this.templateName = templateName;
-        this.viewQueries = viewQueries;
         this.directiveMatcher = directiveMatcher;
         this.directives = directives;
         this.pipeTypeByName = pipeTypeByName;
@@ -12769,9 +12828,6 @@ class TemplateDefinitionBuilder {
         this.visitTextAttribute = invalid$1;
         this.visitBoundAttribute = invalid$1;
         this.visitBoundEvent = invalid$1;
-        // view queries can take up space in data and allocation happens earlier (in the "viewQuery"
-        // function)
-        this._dataIndex = viewQueries.length;
         this._bindingScope = parentBindingScope.nestedScope(level);
         // Turn the relative context file path into an identifier by replacing non-alphanumeric
         // characters with underscores.
@@ -13114,7 +13170,9 @@ class TemplateDefinitionBuilder {
                 }
             }
         });
-        outputAttrs.forEach(attr => attributes.push(literal(attr.name), literal(attr.value)));
+        outputAttrs.forEach(attr => {
+            attributes.push(...getAttributeNameLiterals(attr.name), literal(attr.value));
+        });
         // this will build the instructions so that they fall into the following syntax
         // add attributes for directive matching purposes
         attributes.push(...this.prepareSelectOnlyAttrs(allOtherInputs, element.outputs, stylingBuilder));
@@ -13242,14 +13300,26 @@ class TemplateDefinitionBuilder {
                 const value = input.value.visit(this._valueConverter);
                 if (value !== undefined) {
                     const params = [];
+                    const [attrNamespace, attrName] = splitNsName(input.name);
                     const isAttributeBinding = input.type === 1 /* Attribute */;
                     const sanitizationRef = resolveSanitizationFn(input.securityContext, isAttributeBinding);
                     if (sanitizationRef)
                         params.push(sanitizationRef);
+                    if (attrNamespace) {
+                        const namespaceLiteral = literal(attrNamespace);
+                        if (sanitizationRef) {
+                            params.push(namespaceLiteral);
+                        }
+                        else {
+                            // If there wasn't a sanitization ref, we need to add
+                            // an extra param so that we can pass in the namespace.
+                            params.push(literal(null), namespaceLiteral);
+                        }
+                    }
                     this.allocateBindingSlots(value);
                     this.updateInstruction(input.sourceSpan, instruction, () => {
                         return [
-                            literal(elementIndex), literal(input.name),
+                            literal(elementIndex), literal(attrName),
                             this.convertPropertyBinding(implicit, value), ...params
                         ];
                     });
@@ -13287,7 +13357,9 @@ class TemplateDefinitionBuilder {
         const parameters = [
             literal(templateIndex),
             variable(templateName),
-            literal(template.tagName),
+            // We don't care about the tag's namespace here, because we infer
+            // it based on the parent nodes inside the template instruction.
+            literal(template.tagName ? splitNsName(template.tagName)[1] : template.tagName),
         ];
         // find directives matching on a given <ng-template> node
         this.matchDirectives('ng-template', template);
@@ -13314,7 +13386,7 @@ class TemplateDefinitionBuilder {
             });
         });
         // Create the template function
-        const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, this._bindingScope, this.level + 1, contextName, this.i18n, templateIndex, templateName, [], this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes, this._namespace, this.fileBasedI18nSuffix, this.i18nUseExternalIds);
+        const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, this._bindingScope, this.level + 1, contextName, this.i18n, templateIndex, templateName, this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes, this._namespace, this.fileBasedI18nSuffix, this.i18nUseExternalIds);
         // Nested templates must not be visited until after their parent templates have completed
         // processing, so they are queued here until after the initial pass. Otherwise, we wouldn't
         // be able to support bindings in nested templates to local refs that occur after the
@@ -13481,10 +13553,8 @@ class TemplateDefinitionBuilder {
         function addAttrExpr(key, value) {
             if (typeof key === 'string') {
                 if (!alreadySeen.has(key)) {
-                    attrExprs.push(literal(key));
-                    if (value !== undefined) {
-                        attrExprs.push(value);
-                    }
+                    attrExprs.push(...getAttributeNameLiterals(key));
+                    value !== undefined && attrExprs.push(value);
                     alreadySeen.add(key);
                 }
             }
@@ -13668,6 +13738,23 @@ function getLiteralFactory(constantPool, literal$$1, allocateSlots) {
         args.push(...literalFactoryArguments);
     }
     return importExpr(identifier).callFn(args);
+}
+/**
+ * Gets an array of literals that can be added to an expression
+ * to represent the name and namespace of an attribute. E.g.
+ * `:xlink:href` turns into `[AttributeMarker.NamespaceURI, 'xlink', 'href']`.
+ *
+ * @param name Name of the attribute, including the namespace.
+ */
+function getAttributeNameLiterals(name) {
+    const [attributeNamespace, attributeName] = splitNsName(name);
+    const nameLiteral = literal(attributeName);
+    if (attributeNamespace) {
+        return [
+            literal(0 /* NamespaceURI */), literal(attributeNamespace), nameLiteral
+        ];
+    }
+    return [nameLiteral];
 }
 /** The prefix used to get a shared context in BindingScope's map. */
 const SHARED_CONTEXT_KEY = '$$shared_ctx$$';
@@ -14019,6 +14106,7 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
  * Add features to the definition map.
  */
 function addFeatures(definitionMap, meta) {
+    // e.g. `features: [NgOnChangesFeature()]`
     const features = [];
     const providers = meta.providers;
     const viewProviders = meta.viewProviders;
@@ -14031,6 +14119,9 @@ function addFeatures(definitionMap, meta) {
     }
     if (meta.usesInheritance) {
         features.push(importExpr(Identifiers$1.InheritDefinitionFeature));
+    }
+    if (meta.lifecycle.usesOnChanges) {
+        features.push(importExpr(Identifiers$1.NgOnChangesFeature).callFn(EMPTY_ARRAY));
     }
     if (features.length) {
         definitionMap.set('features', literalArr(features));
@@ -14112,7 +14203,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     const pipesUsed = new Set();
     const changeDetection = meta.changeDetection;
     const template = meta.template;
-    const templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, null, null, templateName, meta.viewQueries, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML, meta.relativeContextFilePath, meta.i18nUseExternalIds);
+    const templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.ROOT_SCOPE, 0, templateTypeName, null, null, templateName, directiveMatcher, directivesUsed, meta.pipes, pipesUsed, Identifiers$1.namespaceHTML, meta.relativeContextFilePath, meta.i18nUseExternalIds);
     const templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, []);
     // We need to provide this so that dynamically generated components know what
     // projected content blocks to pass through to the component when it is instantiated.
@@ -14224,6 +14315,9 @@ function directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector) {
         selector: directive.selector,
         deps: dependenciesFromGlobalMetadata(directive.type, outputCtx, reflector),
         queries: queriesFromGlobalMetadata(directive.queries, outputCtx),
+        lifecycle: {
+            usesOnChanges: directive.type.lifecycleHooks.some(lifecycle => lifecycle == LifecycleHooks.OnChanges),
+        },
         host: {
             attributes: directive.hostAttributes,
             listeners: summary.hostListeners,
@@ -14273,18 +14367,18 @@ function selectorsFromGlobalMetadata(selectors, outputCtx) {
     error('Unexpected query form');
     return NULL_EXPR;
 }
-function createQueryDefinition(query, constantPool, idx) {
-    const predicate = getQueryPredicate(query, constantPool);
-    // e.g. r3.query(null, somePredicate, false) or r3.query(0, ['div'], false)
+function prepareQueryParams(query, constantPool) {
     const parameters = [
-        literal(idx, INFERRED_TYPE),
-        predicate,
+        getQueryPredicate(query, constantPool),
         literal(query.descendants),
     ];
     if (query.read) {
         parameters.push(query.read);
     }
-    return importExpr(Identifiers$1.query).callFn(parameters);
+    return parameters;
+}
+function createQueryDefinition(query, constantPool) {
+    return importExpr(Identifiers$1.query).callFn(prepareQueryParams(query, constantPool));
 }
 // Turn a directive selector into an R3-compatible selector for directive def
 function createDirectiveSelector(selector) {
@@ -14302,7 +14396,7 @@ function convertAttributesToExpressions(attributes) {
 function createContentQueriesFunction(meta, constantPool) {
     if (meta.queries.length) {
         const statements = meta.queries.map((query) => {
-            const queryDefinition = createQueryDefinition(query, constantPool, null);
+            const queryDefinition = createQueryDefinition(query, constantPool);
             return importExpr(Identifiers$1.registerContentQuery)
                 .callFn([queryDefinition, variable('dirIndex')])
                 .toStmt();
@@ -14380,20 +14474,19 @@ function createViewQueriesFunction(meta, constantPool) {
     const createStatements = [];
     const updateStatements = [];
     const tempAllocator = temporaryAllocator(updateStatements, TEMPORARY_NAME);
-    for (let i = 0; i < meta.viewQueries.length; i++) {
-        const query = meta.viewQueries[i];
-        // creation, e.g. r3.Q(0, somePredicate, true);
-        const queryDefinition = createQueryDefinition(query, constantPool, i);
+    meta.viewQueries.forEach((query) => {
+        // creation, e.g. r3.viewQuery(somePredicate, true);
+        const queryDefinition = importExpr(Identifiers$1.viewQuery).callFn(prepareQueryParams(query, constantPool));
         createStatements.push(queryDefinition.toStmt());
-        // update, e.g. (r3.qR(tmp = r3.ɵload(0)) && (ctx.someDir = tmp));
+        // update, e.g. (r3.queryRefresh(tmp = r3.loadViewQuery()) && (ctx.someDir = tmp));
         const temporary = tempAllocator();
-        const getQueryList = importExpr(Identifiers$1.load).callFn([literal(i)]);
+        const getQueryList = importExpr(Identifiers$1.loadViewQuery).callFn([]);
         const refresh = importExpr(Identifiers$1.queryRefresh).callFn([temporary.set(getQueryList)]);
         const updateDirective = variable(CONTEXT_NAME)
             .prop(query.propertyName)
             .set(query.first ? temporary.prop('first') : temporary);
         updateStatements.push(refresh.and(updateDirective).toStmt());
-    }
+    });
     const viewQueryFnName = meta.name ? `${meta.name}_Query` : null;
     return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null)], [
         renderFlagCheckIfStmt(1 /* Create */, createStatements),
@@ -14835,7 +14928,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.0+21.sha-45bf911');
+const VERSION$1 = new Version('8.0.0-beta.1+43.sha-3d5a919');
 
 /**
  * @license
@@ -17117,63 +17210,6 @@ function isLoweredSymbol(name) {
 }
 function createLoweredSymbol(id) {
     return `\u0275${id}`;
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-var LifecycleHooks;
-(function (LifecycleHooks) {
-    LifecycleHooks[LifecycleHooks["OnInit"] = 0] = "OnInit";
-    LifecycleHooks[LifecycleHooks["OnDestroy"] = 1] = "OnDestroy";
-    LifecycleHooks[LifecycleHooks["DoCheck"] = 2] = "DoCheck";
-    LifecycleHooks[LifecycleHooks["OnChanges"] = 3] = "OnChanges";
-    LifecycleHooks[LifecycleHooks["AfterContentInit"] = 4] = "AfterContentInit";
-    LifecycleHooks[LifecycleHooks["AfterContentChecked"] = 5] = "AfterContentChecked";
-    LifecycleHooks[LifecycleHooks["AfterViewInit"] = 6] = "AfterViewInit";
-    LifecycleHooks[LifecycleHooks["AfterViewChecked"] = 7] = "AfterViewChecked";
-})(LifecycleHooks || (LifecycleHooks = {}));
-const LIFECYCLE_HOOKS_VALUES = [
-    LifecycleHooks.OnInit, LifecycleHooks.OnDestroy, LifecycleHooks.DoCheck, LifecycleHooks.OnChanges,
-    LifecycleHooks.AfterContentInit, LifecycleHooks.AfterContentChecked, LifecycleHooks.AfterViewInit,
-    LifecycleHooks.AfterViewChecked
-];
-function hasLifecycleHook(reflector, hook, token) {
-    return reflector.hasLifecycleHook(token, getHookName(hook));
-}
-function getAllLifecycleHooks(reflector, token) {
-    return LIFECYCLE_HOOKS_VALUES.filter(hook => hasLifecycleHook(reflector, hook, token));
-}
-function getHookName(hook) {
-    switch (hook) {
-        case LifecycleHooks.OnInit:
-            return 'ngOnInit';
-        case LifecycleHooks.OnDestroy:
-            return 'ngOnDestroy';
-        case LifecycleHooks.DoCheck:
-            return 'ngDoCheck';
-        case LifecycleHooks.OnChanges:
-            return 'ngOnChanges';
-        case LifecycleHooks.AfterContentInit:
-            return 'ngAfterContentInit';
-        case LifecycleHooks.AfterContentChecked:
-            return 'ngAfterContentChecked';
-        case LifecycleHooks.AfterViewInit:
-            return 'ngAfterViewInit';
-        case LifecycleHooks.AfterViewChecked:
-            return 'ngAfterViewChecked';
-        default:
-            // This default case is not needed by TypeScript compiler, as the switch is exhaustive.
-            // However Closure Compiler does not understand that and reports an error in typed mode.
-            // The `throw new Error` below works around the problem, and the unexpected: never variable
-            // makes sure tsc still checks this code is unreachable.
-            const unexpected = hook;
-            throw new Error(`unexpected ${unexpected}`);
-    }
 }
 
 /**
