@@ -86,6 +86,7 @@ export declare class Identifiers {
     static defineBase: o.ExternalReference;
     static BaseDef: o.ExternalReference;
     static defineComponent: o.ExternalReference;
+    static setComponentScope: o.ExternalReference;
     static ComponentDefWithMeta: o.ExternalReference;
     static defineDirective: o.ExternalReference;
     static DirectiveDefWithMeta: o.ExternalReference;

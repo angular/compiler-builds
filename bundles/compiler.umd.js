@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.1+56.sha-fd8dbd5
+ * @license Angular v8.0.0-beta.1+68.sha-6e16338
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3514,6 +3514,7 @@
             moduleName: CORE$1,
         };
         Identifiers.defineComponent = { name: 'ɵdefineComponent', moduleName: CORE$1 };
+        Identifiers.setComponentScope = { name: 'ɵsetComponentScope', moduleName: CORE$1 };
         Identifiers.ComponentDefWithMeta = {
             name: 'ɵComponentDefWithMeta',
             moduleName: CORE$1,
@@ -15919,7 +15920,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-beta.1+56.sha-fd8dbd5');
+    var VERSION$1 = new Version('8.0.0-beta.1+68.sha-6e16338');
 
     /**
      * @license
@@ -27323,6 +27324,7 @@
     exports.TmplAstText = Text$2;
     exports.TmplAstTextAttribute = TextAttribute;
     exports.TmplAstVariable = Variable;
+    exports.R3Identifiers = Identifiers$1;
     exports.jitExpression = jitExpression;
     exports.compileInjector = compileInjector;
     exports.compileNgModule = compileNgModule;
