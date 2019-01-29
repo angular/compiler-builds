@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.1+68.sha-6e16338
+ * @license Angular v8.0.0-beta.1+83.sha-e18a52e
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3158,7 +3158,6 @@ Identifiers$1.i18nEnd = { name: 'ɵi18nEnd', moduleName: CORE$1 };
 Identifiers$1.i18nApply = { name: 'ɵi18nApply', moduleName: CORE$1 };
 Identifiers$1.i18nPostprocess = { name: 'ɵi18nPostprocess', moduleName: CORE$1 };
 Identifiers$1.load = { name: 'ɵload', moduleName: CORE$1 };
-Identifiers$1.loadQueryList = { name: 'ɵloadQueryList', moduleName: CORE$1 };
 Identifiers$1.pipe = { name: 'ɵpipe', moduleName: CORE$1 };
 Identifiers$1.projection = { name: 'ɵprojection', moduleName: CORE$1 };
 Identifiers$1.projectionDef = { name: 'ɵprojectionDef', moduleName: CORE$1 };
@@ -3204,11 +3203,11 @@ Identifiers$1.NgModuleDefWithMeta = {
 Identifiers$1.defineNgModule = { name: 'ɵdefineNgModule', moduleName: CORE$1 };
 Identifiers$1.PipeDefWithMeta = { name: 'ɵPipeDefWithMeta', moduleName: CORE$1 };
 Identifiers$1.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
-Identifiers$1.query = { name: 'ɵquery', moduleName: CORE$1 };
 Identifiers$1.queryRefresh = { name: 'ɵqueryRefresh', moduleName: CORE$1 };
 Identifiers$1.viewQuery = { name: 'ɵviewQuery', moduleName: CORE$1 };
 Identifiers$1.loadViewQuery = { name: 'ɵloadViewQuery', moduleName: CORE$1 };
-Identifiers$1.registerContentQuery = { name: 'ɵregisterContentQuery', moduleName: CORE$1 };
+Identifiers$1.contentQuery = { name: 'ɵcontentQuery', moduleName: CORE$1 };
+Identifiers$1.loadContentQuery = { name: 'ɵloadContentQuery', moduleName: CORE$1 };
 Identifiers$1.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
 Identifiers$1.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
 Identifiers$1.ProvidersFeature = { name: 'ɵProvidersFeature', moduleName: CORE$1 };
@@ -5623,13 +5622,23 @@ function jitExpression(def, context, sourceUrl, preStatements) {
  */
 function compileNgModule(meta) {
     const { type: moduleType, bootstrap, declarations, imports, exports } = meta;
-    const expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression({
-            type: moduleType,
-            bootstrap: literalArr(bootstrap.map(ref => ref.value)),
-            declarations: literalArr(declarations.map(ref => ref.value)),
-            imports: literalArr(imports.map(ref => ref.value)),
-            exports: literalArr(exports.map(ref => ref.value)),
-        })]);
+    const definitionMap = {
+        type: moduleType
+    };
+    // Only generate the keys in the metadata if the arrays have values.
+    if (bootstrap.length) {
+        definitionMap.bootstrap = literalArr(bootstrap.map(ref => ref.value));
+    }
+    if (declarations.length) {
+        definitionMap.declarations = literalArr(declarations.map(ref => ref.value));
+    }
+    if (imports.length) {
+        definitionMap.imports = literalArr(imports.map(ref => ref.value));
+    }
+    if (exports.length) {
+        definitionMap.exports = literalArr(exports.map(ref => ref.value));
+    }
+    const expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression(definitionMap)]);
     const type = new ExpressionType(importExpr(Identifiers$1.NgModuleDefWithMeta, [
         new ExpressionType(moduleType), tupleTypeOf(declarations), tupleTypeOf(imports),
         tupleTypeOf(exports)
@@ -14378,9 +14387,6 @@ function prepareQueryParams(query, constantPool) {
     }
     return parameters;
 }
-function createQueryDefinition(query, constantPool) {
-    return importExpr(Identifiers$1.query).callFn(prepareQueryParams(query, constantPool));
-}
 // Turn a directive selector into an R3-compatible selector for directive def
 function createDirectiveSelector(selector) {
     return asLiteral(parseSelectorToR3Selector(selector));
@@ -14397,10 +14403,8 @@ function convertAttributesToExpressions(attributes) {
 function createContentQueriesFunction(meta, constantPool) {
     if (meta.queries.length) {
         const statements = meta.queries.map((query) => {
-            const queryDefinition = createQueryDefinition(query, constantPool);
-            return importExpr(Identifiers$1.registerContentQuery)
-                .callFn([queryDefinition, variable('dirIndex')])
-                .toStmt();
+            const args = [variable('dirIndex'), ...prepareQueryParams(query, constantPool)];
+            return importExpr(Identifiers$1.contentQuery).callFn(args).toStmt();
         });
         const typeName = meta.name;
         const parameters = [new FnParam('dirIndex', NUMBER_TYPE)];
@@ -14413,21 +14417,15 @@ function createContentQueriesRefreshFunction(meta) {
     if (meta.queries.length > 0) {
         const statements = [];
         const typeName = meta.name;
-        const parameters = [
-            new FnParam('dirIndex', NUMBER_TYPE),
-            new FnParam('queryStartIndex', NUMBER_TYPE),
-        ];
+        const parameters = [new FnParam('dirIndex', NUMBER_TYPE)];
         const directiveInstanceVar = variable('instance');
         // var $tmp$: any;
         const temporary = temporaryAllocator(statements, TEMPORARY_NAME);
         // const $instance$ = $r3$.ɵload(dirIndex);
         statements.push(directiveInstanceVar.set(importExpr(Identifiers$1.load).callFn([variable('dirIndex')]))
             .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
-        meta.queries.forEach((query, idx) => {
-            const loadQLArg = variable('queryStartIndex');
-            const getQueryList = importExpr(Identifiers$1.loadQueryList).callFn([
-                idx > 0 ? loadQLArg.plus(literal(idx)) : loadQLArg
-            ]);
+        meta.queries.forEach((query) => {
+            const getQueryList = importExpr(Identifiers$1.loadContentQuery).callFn([]);
             const assignToTemporary = temporary().set(getQueryList);
             const callQueryRefresh = importExpr(Identifiers$1.queryRefresh).callFn([assignToTemporary]);
             const updateDirective = directiveInstanceVar.prop(query.propertyName)
@@ -14929,7 +14927,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.1+68.sha-6e16338');
+const VERSION$1 = new Version('8.0.0-beta.1+83.sha-e18a52e');
 
 /**
  * @license

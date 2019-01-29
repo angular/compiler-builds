@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.1+68.sha-6e16338
+ * @license Angular v8.0.0-beta.1+83.sha-e18a52e
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3496,7 +3496,6 @@
         Identifiers.i18nApply = { name: 'ɵi18nApply', moduleName: CORE$1 };
         Identifiers.i18nPostprocess = { name: 'ɵi18nPostprocess', moduleName: CORE$1 };
         Identifiers.load = { name: 'ɵload', moduleName: CORE$1 };
-        Identifiers.loadQueryList = { name: 'ɵloadQueryList', moduleName: CORE$1 };
         Identifiers.pipe = { name: 'ɵpipe', moduleName: CORE$1 };
         Identifiers.projection = { name: 'ɵprojection', moduleName: CORE$1 };
         Identifiers.projectionDef = { name: 'ɵprojectionDef', moduleName: CORE$1 };
@@ -3542,11 +3541,11 @@
         Identifiers.defineNgModule = { name: 'ɵdefineNgModule', moduleName: CORE$1 };
         Identifiers.PipeDefWithMeta = { name: 'ɵPipeDefWithMeta', moduleName: CORE$1 };
         Identifiers.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
-        Identifiers.query = { name: 'ɵquery', moduleName: CORE$1 };
         Identifiers.queryRefresh = { name: 'ɵqueryRefresh', moduleName: CORE$1 };
         Identifiers.viewQuery = { name: 'ɵviewQuery', moduleName: CORE$1 };
         Identifiers.loadViewQuery = { name: 'ɵloadViewQuery', moduleName: CORE$1 };
-        Identifiers.registerContentQuery = { name: 'ɵregisterContentQuery', moduleName: CORE$1 };
+        Identifiers.contentQuery = { name: 'ɵcontentQuery', moduleName: CORE$1 };
+        Identifiers.loadContentQuery = { name: 'ɵloadContentQuery', moduleName: CORE$1 };
         Identifiers.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
         Identifiers.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
         Identifiers.ProvidersFeature = { name: 'ɵProvidersFeature', moduleName: CORE$1 };
@@ -6083,13 +6082,23 @@
      */
     function compileNgModule(meta) {
         var moduleType = meta.type, bootstrap = meta.bootstrap, declarations = meta.declarations, imports = meta.imports, exports = meta.exports;
-        var expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression({
-                type: moduleType,
-                bootstrap: literalArr(bootstrap.map(function (ref) { return ref.value; })),
-                declarations: literalArr(declarations.map(function (ref) { return ref.value; })),
-                imports: literalArr(imports.map(function (ref) { return ref.value; })),
-                exports: literalArr(exports.map(function (ref) { return ref.value; })),
-            })]);
+        var definitionMap = {
+            type: moduleType
+        };
+        // Only generate the keys in the metadata if the arrays have values.
+        if (bootstrap.length) {
+            definitionMap.bootstrap = literalArr(bootstrap.map(function (ref) { return ref.value; }));
+        }
+        if (declarations.length) {
+            definitionMap.declarations = literalArr(declarations.map(function (ref) { return ref.value; }));
+        }
+        if (imports.length) {
+            definitionMap.imports = literalArr(imports.map(function (ref) { return ref.value; }));
+        }
+        if (exports.length) {
+            definitionMap.exports = literalArr(exports.map(function (ref) { return ref.value; }));
+        }
+        var expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression(definitionMap)]);
         var type = new ExpressionType(importExpr(Identifiers$1.NgModuleDefWithMeta, [
             new ExpressionType(moduleType), tupleTypeOf(declarations), tupleTypeOf(imports),
             tupleTypeOf(exports)
@@ -15337,9 +15346,6 @@
         }
         return parameters;
     }
-    function createQueryDefinition(query, constantPool) {
-        return importExpr(Identifiers$1.query).callFn(prepareQueryParams(query, constantPool));
-    }
     // Turn a directive selector into an R3-compatible selector for directive def
     function createDirectiveSelector(selector) {
         return asLiteral(parseSelectorToR3Selector(selector));
@@ -15367,10 +15373,8 @@
     function createContentQueriesFunction(meta, constantPool) {
         if (meta.queries.length) {
             var statements = meta.queries.map(function (query) {
-                var queryDefinition = createQueryDefinition(query, constantPool);
-                return importExpr(Identifiers$1.registerContentQuery)
-                    .callFn([queryDefinition, variable('dirIndex')])
-                    .toStmt();
+                var args = __spread([variable('dirIndex')], prepareQueryParams(query, constantPool));
+                return importExpr(Identifiers$1.contentQuery).callFn(args).toStmt();
             });
             var typeName = meta.name;
             var parameters = [new FnParam('dirIndex', NUMBER_TYPE)];
@@ -15383,21 +15387,15 @@
         if (meta.queries.length > 0) {
             var statements_1 = [];
             var typeName = meta.name;
-            var parameters = [
-                new FnParam('dirIndex', NUMBER_TYPE),
-                new FnParam('queryStartIndex', NUMBER_TYPE),
-            ];
+            var parameters = [new FnParam('dirIndex', NUMBER_TYPE)];
             var directiveInstanceVar_1 = variable('instance');
             // var $tmp$: any;
             var temporary_1 = temporaryAllocator(statements_1, TEMPORARY_NAME);
             // const $instance$ = $r3$.ɵload(dirIndex);
             statements_1.push(directiveInstanceVar_1.set(importExpr(Identifiers$1.load).callFn([variable('dirIndex')]))
                 .toDeclStmt(INFERRED_TYPE, [exports.StmtModifier.Final]));
-            meta.queries.forEach(function (query, idx) {
-                var loadQLArg = variable('queryStartIndex');
-                var getQueryList = importExpr(Identifiers$1.loadQueryList).callFn([
-                    idx > 0 ? loadQLArg.plus(literal(idx)) : loadQLArg
-                ]);
+            meta.queries.forEach(function (query) {
+                var getQueryList = importExpr(Identifiers$1.loadContentQuery).callFn([]);
                 var assignToTemporary = temporary_1().set(getQueryList);
                 var callQueryRefresh = importExpr(Identifiers$1.queryRefresh).callFn([assignToTemporary]);
                 var updateDirective = directiveInstanceVar_1.prop(query.propertyName)
@@ -15920,7 +15918,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-beta.1+68.sha-6e16338');
+    var VERSION$1 = new Version('8.0.0-beta.1+83.sha-e18a52e');
 
     /**
      * @license
