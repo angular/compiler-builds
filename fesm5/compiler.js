@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.1+43.sha-3d5a919
+ * @license Angular v8.0.0-beta.1+109.sha-a227c52
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3427,7 +3427,6 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.i18nApply = { name: 'ɵi18nApply', moduleName: CORE$1 };
     Identifiers.i18nPostprocess = { name: 'ɵi18nPostprocess', moduleName: CORE$1 };
     Identifiers.load = { name: 'ɵload', moduleName: CORE$1 };
-    Identifiers.loadQueryList = { name: 'ɵloadQueryList', moduleName: CORE$1 };
     Identifiers.pipe = { name: 'ɵpipe', moduleName: CORE$1 };
     Identifiers.projection = { name: 'ɵprojection', moduleName: CORE$1 };
     Identifiers.projectionDef = { name: 'ɵprojectionDef', moduleName: CORE$1 };
@@ -3445,6 +3444,7 @@ var Identifiers$1 = /** @class */ (function () {
         moduleName: CORE$1,
     };
     Identifiers.defineComponent = { name: 'ɵdefineComponent', moduleName: CORE$1 };
+    Identifiers.setComponentScope = { name: 'ɵsetComponentScope', moduleName: CORE$1 };
     Identifiers.ComponentDefWithMeta = {
         name: 'ɵComponentDefWithMeta',
         moduleName: CORE$1,
@@ -3472,11 +3472,11 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.defineNgModule = { name: 'ɵdefineNgModule', moduleName: CORE$1 };
     Identifiers.PipeDefWithMeta = { name: 'ɵPipeDefWithMeta', moduleName: CORE$1 };
     Identifiers.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
-    Identifiers.query = { name: 'ɵquery', moduleName: CORE$1 };
     Identifiers.queryRefresh = { name: 'ɵqueryRefresh', moduleName: CORE$1 };
     Identifiers.viewQuery = { name: 'ɵviewQuery', moduleName: CORE$1 };
     Identifiers.loadViewQuery = { name: 'ɵloadViewQuery', moduleName: CORE$1 };
-    Identifiers.registerContentQuery = { name: 'ɵregisterContentQuery', moduleName: CORE$1 };
+    Identifiers.contentQuery = { name: 'ɵcontentQuery', moduleName: CORE$1 };
+    Identifiers.loadContentQuery = { name: 'ɵloadContentQuery', moduleName: CORE$1 };
     Identifiers.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
     Identifiers.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
     Identifiers.ProvidersFeature = { name: 'ɵProvidersFeature', moduleName: CORE$1 };
@@ -5030,6 +5030,235 @@ var DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+var $EOF = 0;
+var $TAB = 9;
+var $LF = 10;
+var $VTAB = 11;
+var $FF = 12;
+var $CR = 13;
+var $SPACE = 32;
+var $BANG = 33;
+var $DQ = 34;
+var $HASH = 35;
+var $$ = 36;
+var $PERCENT = 37;
+var $AMPERSAND = 38;
+var $SQ = 39;
+var $LPAREN = 40;
+var $RPAREN = 41;
+var $STAR = 42;
+var $PLUS = 43;
+var $COMMA = 44;
+var $MINUS = 45;
+var $PERIOD = 46;
+var $SLASH = 47;
+var $COLON = 58;
+var $SEMICOLON = 59;
+var $LT = 60;
+var $EQ = 61;
+var $GT = 62;
+var $QUESTION = 63;
+var $0 = 48;
+var $9 = 57;
+var $A = 65;
+var $E = 69;
+var $F = 70;
+var $X = 88;
+var $Z = 90;
+var $LBRACKET = 91;
+var $BACKSLASH = 92;
+var $RBRACKET = 93;
+var $CARET = 94;
+var $_ = 95;
+var $a = 97;
+var $e = 101;
+var $f = 102;
+var $n = 110;
+var $r = 114;
+var $t = 116;
+var $u = 117;
+var $v = 118;
+var $x = 120;
+var $z = 122;
+var $LBRACE = 123;
+var $BAR = 124;
+var $RBRACE = 125;
+var $NBSP = 160;
+var $BT = 96;
+function isWhitespace(code) {
+    return (code >= $TAB && code <= $SPACE) || (code == $NBSP);
+}
+function isDigit(code) {
+    return $0 <= code && code <= $9;
+}
+function isAsciiLetter(code) {
+    return code >= $a && code <= $z || code >= $A && code <= $Z;
+}
+function isAsciiHexDigit(code) {
+    return code >= $a && code <= $f || code >= $A && code <= $F || isDigit(code);
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var ParseLocation = /** @class */ (function () {
+    function ParseLocation(file, offset, line, col) {
+        this.file = file;
+        this.offset = offset;
+        this.line = line;
+        this.col = col;
+    }
+    ParseLocation.prototype.toString = function () {
+        return this.offset != null ? this.file.url + "@" + this.line + ":" + this.col : this.file.url;
+    };
+    ParseLocation.prototype.moveBy = function (delta) {
+        var source = this.file.content;
+        var len = source.length;
+        var offset = this.offset;
+        var line = this.line;
+        var col = this.col;
+        while (offset > 0 && delta < 0) {
+            offset--;
+            delta++;
+            var ch = source.charCodeAt(offset);
+            if (ch == $LF) {
+                line--;
+                var priorLine = source.substr(0, offset - 1).lastIndexOf(String.fromCharCode($LF));
+                col = priorLine > 0 ? offset - priorLine : offset;
+            }
+            else {
+                col--;
+            }
+        }
+        while (offset < len && delta > 0) {
+            var ch = source.charCodeAt(offset);
+            offset++;
+            delta--;
+            if (ch == $LF) {
+                line++;
+                col = 0;
+            }
+            else {
+                col++;
+            }
+        }
+        return new ParseLocation(this.file, offset, line, col);
+    };
+    // Return the source around the location
+    // Up to `maxChars` or `maxLines` on each side of the location
+    ParseLocation.prototype.getContext = function (maxChars, maxLines) {
+        var content = this.file.content;
+        var startOffset = this.offset;
+        if (startOffset != null) {
+            if (startOffset > content.length - 1) {
+                startOffset = content.length - 1;
+            }
+            var endOffset = startOffset;
+            var ctxChars = 0;
+            var ctxLines = 0;
+            while (ctxChars < maxChars && startOffset > 0) {
+                startOffset--;
+                ctxChars++;
+                if (content[startOffset] == '\n') {
+                    if (++ctxLines == maxLines) {
+                        break;
+                    }
+                }
+            }
+            ctxChars = 0;
+            ctxLines = 0;
+            while (ctxChars < maxChars && endOffset < content.length - 1) {
+                endOffset++;
+                ctxChars++;
+                if (content[endOffset] == '\n') {
+                    if (++ctxLines == maxLines) {
+                        break;
+                    }
+                }
+            }
+            return {
+                before: content.substring(startOffset, this.offset),
+                after: content.substring(this.offset, endOffset + 1),
+            };
+        }
+        return null;
+    };
+    return ParseLocation;
+}());
+var ParseSourceFile = /** @class */ (function () {
+    function ParseSourceFile(content, url) {
+        this.content = content;
+        this.url = url;
+    }
+    return ParseSourceFile;
+}());
+var ParseSourceSpan = /** @class */ (function () {
+    function ParseSourceSpan(start, end, details) {
+        if (details === void 0) { details = null; }
+        this.start = start;
+        this.end = end;
+        this.details = details;
+    }
+    ParseSourceSpan.prototype.toString = function () {
+        return this.start.file.content.substring(this.start.offset, this.end.offset);
+    };
+    return ParseSourceSpan;
+}());
+var ParseErrorLevel;
+(function (ParseErrorLevel) {
+    ParseErrorLevel[ParseErrorLevel["WARNING"] = 0] = "WARNING";
+    ParseErrorLevel[ParseErrorLevel["ERROR"] = 1] = "ERROR";
+})(ParseErrorLevel || (ParseErrorLevel = {}));
+var ParseError = /** @class */ (function () {
+    function ParseError(span, msg, level) {
+        if (level === void 0) { level = ParseErrorLevel.ERROR; }
+        this.span = span;
+        this.msg = msg;
+        this.level = level;
+    }
+    ParseError.prototype.contextualMessage = function () {
+        var ctx = this.span.start.getContext(100, 3);
+        return ctx ? this.msg + " (\"" + ctx.before + "[" + ParseErrorLevel[this.level] + " ->]" + ctx.after + "\")" :
+            this.msg;
+    };
+    ParseError.prototype.toString = function () {
+        var details = this.span.details ? ", " + this.span.details : '';
+        return this.contextualMessage() + ": " + this.span.start + details;
+    };
+    return ParseError;
+}());
+function typeSourceSpan(kind, type) {
+    var moduleUrl = identifierModuleUrl(type);
+    var sourceFileName = moduleUrl != null ? "in " + kind + " " + identifierName(type) + " in " + moduleUrl :
+        "in " + kind + " " + identifierName(type);
+    var sourceFile = new ParseSourceFile('', sourceFileName);
+    return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
+}
+/**
+ * Generates Source Span object for a given R3 Type for JIT mode.
+ *
+ * @param kind Component or Directive.
+ * @param typeName name of the Component or Directive.
+ * @param sourceUrl reference to Component or Directive source.
+ * @returns instance of ParseSourceSpan that represent a given Component or Directive.
+ */
+function r3JitTypeSourceSpan(kind, typeName, sourceUrl) {
+    var sourceFileName = "in " + kind + " " + typeName + " in " + sourceUrl;
+    var sourceFile = new ParseSourceFile('', sourceFileName);
+    return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 // https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit
 var VERSION = 3;
 var JS_B64_PREFIX = '# sourceMappingURL=data:application/json;base64,';
@@ -6022,13 +6251,23 @@ function jitExpression(def, context, sourceUrl, preStatements) {
  */
 function compileNgModule(meta) {
     var moduleType = meta.type, bootstrap = meta.bootstrap, declarations = meta.declarations, imports = meta.imports, exports = meta.exports;
-    var expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression({
-            type: moduleType,
-            bootstrap: literalArr(bootstrap.map(function (ref) { return ref.value; })),
-            declarations: literalArr(declarations.map(function (ref) { return ref.value; })),
-            imports: literalArr(imports.map(function (ref) { return ref.value; })),
-            exports: literalArr(exports.map(function (ref) { return ref.value; })),
-        })]);
+    var definitionMap = {
+        type: moduleType
+    };
+    // Only generate the keys in the metadata if the arrays have values.
+    if (bootstrap.length) {
+        definitionMap.bootstrap = literalArr(bootstrap.map(function (ref) { return ref.value; }));
+    }
+    if (declarations.length) {
+        definitionMap.declarations = literalArr(declarations.map(function (ref) { return ref.value; }));
+    }
+    if (imports.length) {
+        definitionMap.imports = literalArr(imports.map(function (ref) { return ref.value; }));
+    }
+    if (exports.length) {
+        definitionMap.exports = literalArr(exports.map(function (ref) { return ref.value; }));
+    }
+    var expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression(definitionMap)]);
     var type = new ExpressionType(importExpr(Identifiers$1.NgModuleDefWithMeta, [
         new ExpressionType(moduleType), tupleTypeOf(declarations), tupleTypeOf(imports),
         tupleTypeOf(exports)
@@ -7633,222 +7872,6 @@ function getHookName(hook) {
             var unexpected = hook;
             throw new Error("unexpected " + unexpected);
     }
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-var $EOF = 0;
-var $TAB = 9;
-var $LF = 10;
-var $VTAB = 11;
-var $FF = 12;
-var $CR = 13;
-var $SPACE = 32;
-var $BANG = 33;
-var $DQ = 34;
-var $HASH = 35;
-var $$ = 36;
-var $PERCENT = 37;
-var $AMPERSAND = 38;
-var $SQ = 39;
-var $LPAREN = 40;
-var $RPAREN = 41;
-var $STAR = 42;
-var $PLUS = 43;
-var $COMMA = 44;
-var $MINUS = 45;
-var $PERIOD = 46;
-var $SLASH = 47;
-var $COLON = 58;
-var $SEMICOLON = 59;
-var $LT = 60;
-var $EQ = 61;
-var $GT = 62;
-var $QUESTION = 63;
-var $0 = 48;
-var $9 = 57;
-var $A = 65;
-var $E = 69;
-var $F = 70;
-var $X = 88;
-var $Z = 90;
-var $LBRACKET = 91;
-var $BACKSLASH = 92;
-var $RBRACKET = 93;
-var $CARET = 94;
-var $_ = 95;
-var $a = 97;
-var $e = 101;
-var $f = 102;
-var $n = 110;
-var $r = 114;
-var $t = 116;
-var $u = 117;
-var $v = 118;
-var $x = 120;
-var $z = 122;
-var $LBRACE = 123;
-var $BAR = 124;
-var $RBRACE = 125;
-var $NBSP = 160;
-var $BT = 96;
-function isWhitespace(code) {
-    return (code >= $TAB && code <= $SPACE) || (code == $NBSP);
-}
-function isDigit(code) {
-    return $0 <= code && code <= $9;
-}
-function isAsciiLetter(code) {
-    return code >= $a && code <= $z || code >= $A && code <= $Z;
-}
-function isAsciiHexDigit(code) {
-    return code >= $a && code <= $f || code >= $A && code <= $F || isDigit(code);
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-var ParseLocation = /** @class */ (function () {
-    function ParseLocation(file, offset, line, col) {
-        this.file = file;
-        this.offset = offset;
-        this.line = line;
-        this.col = col;
-    }
-    ParseLocation.prototype.toString = function () {
-        return this.offset != null ? this.file.url + "@" + this.line + ":" + this.col : this.file.url;
-    };
-    ParseLocation.prototype.moveBy = function (delta) {
-        var source = this.file.content;
-        var len = source.length;
-        var offset = this.offset;
-        var line = this.line;
-        var col = this.col;
-        while (offset > 0 && delta < 0) {
-            offset--;
-            delta++;
-            var ch = source.charCodeAt(offset);
-            if (ch == $LF) {
-                line--;
-                var priorLine = source.substr(0, offset - 1).lastIndexOf(String.fromCharCode($LF));
-                col = priorLine > 0 ? offset - priorLine : offset;
-            }
-            else {
-                col--;
-            }
-        }
-        while (offset < len && delta > 0) {
-            var ch = source.charCodeAt(offset);
-            offset++;
-            delta--;
-            if (ch == $LF) {
-                line++;
-                col = 0;
-            }
-            else {
-                col++;
-            }
-        }
-        return new ParseLocation(this.file, offset, line, col);
-    };
-    // Return the source around the location
-    // Up to `maxChars` or `maxLines` on each side of the location
-    ParseLocation.prototype.getContext = function (maxChars, maxLines) {
-        var content = this.file.content;
-        var startOffset = this.offset;
-        if (startOffset != null) {
-            if (startOffset > content.length - 1) {
-                startOffset = content.length - 1;
-            }
-            var endOffset = startOffset;
-            var ctxChars = 0;
-            var ctxLines = 0;
-            while (ctxChars < maxChars && startOffset > 0) {
-                startOffset--;
-                ctxChars++;
-                if (content[startOffset] == '\n') {
-                    if (++ctxLines == maxLines) {
-                        break;
-                    }
-                }
-            }
-            ctxChars = 0;
-            ctxLines = 0;
-            while (ctxChars < maxChars && endOffset < content.length - 1) {
-                endOffset++;
-                ctxChars++;
-                if (content[endOffset] == '\n') {
-                    if (++ctxLines == maxLines) {
-                        break;
-                    }
-                }
-            }
-            return {
-                before: content.substring(startOffset, this.offset),
-                after: content.substring(this.offset, endOffset + 1),
-            };
-        }
-        return null;
-    };
-    return ParseLocation;
-}());
-var ParseSourceFile = /** @class */ (function () {
-    function ParseSourceFile(content, url) {
-        this.content = content;
-        this.url = url;
-    }
-    return ParseSourceFile;
-}());
-var ParseSourceSpan = /** @class */ (function () {
-    function ParseSourceSpan(start, end, details) {
-        if (details === void 0) { details = null; }
-        this.start = start;
-        this.end = end;
-        this.details = details;
-    }
-    ParseSourceSpan.prototype.toString = function () {
-        return this.start.file.content.substring(this.start.offset, this.end.offset);
-    };
-    return ParseSourceSpan;
-}());
-var ParseErrorLevel;
-(function (ParseErrorLevel) {
-    ParseErrorLevel[ParseErrorLevel["WARNING"] = 0] = "WARNING";
-    ParseErrorLevel[ParseErrorLevel["ERROR"] = 1] = "ERROR";
-})(ParseErrorLevel || (ParseErrorLevel = {}));
-var ParseError = /** @class */ (function () {
-    function ParseError(span, msg, level) {
-        if (level === void 0) { level = ParseErrorLevel.ERROR; }
-        this.span = span;
-        this.msg = msg;
-        this.level = level;
-    }
-    ParseError.prototype.contextualMessage = function () {
-        var ctx = this.span.start.getContext(100, 3);
-        return ctx ? this.msg + " (\"" + ctx.before + "[" + ParseErrorLevel[this.level] + " ->]" + ctx.after + "\")" :
-            this.msg;
-    };
-    ParseError.prototype.toString = function () {
-        var details = this.span.details ? ", " + this.span.details : '';
-        return this.contextualMessage() + ": " + this.span.start + details;
-    };
-    return ParseError;
-}());
-function typeSourceSpan(kind, type) {
-    var moduleUrl = identifierModuleUrl(type);
-    var sourceFileName = moduleUrl != null ? "in " + kind + " " + identifierName(type) + " in " + moduleUrl :
-        "in " + kind + " " + identifierName(type);
-    var sourceFile = new ParseSourceFile('', sourceFileName);
-    return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
 }
 
 /**
@@ -15279,9 +15302,6 @@ function prepareQueryParams(query, constantPool) {
     }
     return parameters;
 }
-function createQueryDefinition(query, constantPool) {
-    return importExpr(Identifiers$1.query).callFn(prepareQueryParams(query, constantPool));
-}
 // Turn a directive selector into an R3-compatible selector for directive def
 function createDirectiveSelector(selector) {
     return asLiteral(parseSelectorToR3Selector(selector));
@@ -15309,10 +15329,8 @@ function convertAttributesToExpressions(attributes) {
 function createContentQueriesFunction(meta, constantPool) {
     if (meta.queries.length) {
         var statements = meta.queries.map(function (query) {
-            var queryDefinition = createQueryDefinition(query, constantPool);
-            return importExpr(Identifiers$1.registerContentQuery)
-                .callFn([queryDefinition, variable('dirIndex')])
-                .toStmt();
+            var args = __spread([variable('dirIndex')], prepareQueryParams(query, constantPool));
+            return importExpr(Identifiers$1.contentQuery).callFn(args).toStmt();
         });
         var typeName = meta.name;
         var parameters = [new FnParam('dirIndex', NUMBER_TYPE)];
@@ -15325,21 +15343,15 @@ function createContentQueriesRefreshFunction(meta) {
     if (meta.queries.length > 0) {
         var statements_1 = [];
         var typeName = meta.name;
-        var parameters = [
-            new FnParam('dirIndex', NUMBER_TYPE),
-            new FnParam('queryStartIndex', NUMBER_TYPE),
-        ];
+        var parameters = [new FnParam('dirIndex', NUMBER_TYPE)];
         var directiveInstanceVar_1 = variable('instance');
         // var $tmp$: any;
         var temporary_1 = temporaryAllocator(statements_1, TEMPORARY_NAME);
         // const $instance$ = $r3$.ɵload(dirIndex);
         statements_1.push(directiveInstanceVar_1.set(importExpr(Identifiers$1.load).callFn([variable('dirIndex')]))
             .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
-        meta.queries.forEach(function (query, idx) {
-            var loadQLArg = variable('queryStartIndex');
-            var getQueryList = importExpr(Identifiers$1.loadQueryList).callFn([
-                idx > 0 ? loadQLArg.plus(literal(idx)) : loadQLArg
-            ]);
+        meta.queries.forEach(function (query) {
+            var getQueryList = importExpr(Identifiers$1.loadContentQuery).callFn([]);
             var assignToTemporary = temporary_1().set(getQueryList);
             var callQueryRefresh = importExpr(Identifiers$1.queryRefresh).callFn([assignToTemporary]);
             var updateDirective = directiveInstanceVar_1.prop(query.propertyName)
@@ -15408,12 +15420,24 @@ function createViewQueriesFunction(meta, constantPool) {
 }
 // Return a host binding function or null if one is not necessary.
 function createHostBindingsFunction(meta, elVarExp, bindingContext, staticAttributesAndValues, styleBuilder, bindingParser, constantPool, hostVarsCount) {
-    var e_3, _a;
     var createStatements = [];
     var updateStatements = [];
     var totalHostVarsCount = hostVarsCount;
     var hostBindingSourceSpan = meta.typeSourceSpan;
     var directiveSummary = metadataAsSummary(meta);
+    var valueConverter;
+    var getValueConverter = function () {
+        if (!valueConverter) {
+            var hostVarsCountFn = function (numSlots) {
+                var originalVarsCount = totalHostVarsCount;
+                totalHostVarsCount += numSlots;
+                return originalVarsCount;
+            };
+            valueConverter = new ValueConverter(constantPool, function () { return error('Unexpected node'); }, // new nodes are illegal here
+            hostVarsCountFn, function () { return error('Unexpected pipe'); }); // pipes are illegal here
+        }
+        return valueConverter;
+    };
     // Calculate host event bindings
     var eventBindings = bindingParser.createDirectiveHostEventAsts(directiveSummary, hostBindingSourceSpan);
     if (eventBindings && eventBindings.length) {
@@ -15422,108 +15446,84 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, staticAttrib
     }
     // Calculate the host property bindings
     var bindings = bindingParser.createBoundHostProperties(directiveSummary, hostBindingSourceSpan);
-    var bindingFn = function (implicit, value) {
-        return convertPropertyBinding(null, implicit, value, 'b', BindingForm.TrySimple, function () { return error('Unexpected interpolation'); });
-    };
-    if (bindings) {
-        var hostVarsCountFn = function (numSlots) {
-            var originalVarsCount = totalHostVarsCount;
-            totalHostVarsCount += numSlots;
-            return originalVarsCount;
-        };
-        var valueConverter = new ValueConverter(constantPool, 
-        /* new nodes are illegal here */ function () { return error('Unexpected node'); }, hostVarsCountFn, 
-        /* pipes are illegal here */ function () { return error('Unexpected pipe'); });
-        try {
-            for (var bindings_1 = __values(bindings), bindings_1_1 = bindings_1.next(); !bindings_1_1.done; bindings_1_1 = bindings_1.next()) {
-                var binding = bindings_1_1.value;
-                var name_1 = binding.name;
-                var stylePrefix = getStylingPrefix(name_1);
-                if (stylePrefix === 'style') {
-                    var _b = parseNamedProperty(name_1), propertyName = _b.propertyName, unit = _b.unit;
-                    styleBuilder.registerStyleInput(propertyName, binding.expression, unit, binding.sourceSpan);
-                }
-                else if (stylePrefix === 'class') {
-                    styleBuilder.registerClassInput(parseNamedProperty(name_1).propertyName, binding.expression, binding.sourceSpan);
+    (bindings || []).forEach(function (binding) {
+        var name = binding.name;
+        var stylePrefix = getStylingPrefix(name);
+        if (stylePrefix === 'style') {
+            var _a = parseNamedProperty(name), propertyName = _a.propertyName, unit = _a.unit;
+            styleBuilder.registerStyleInput(propertyName, binding.expression, unit, binding.sourceSpan);
+        }
+        else if (stylePrefix === 'class') {
+            styleBuilder.registerClassInput(parseNamedProperty(name).propertyName, binding.expression, binding.sourceSpan);
+        }
+        else {
+            // resolve literal arrays and literal objects
+            var value = binding.expression.visit(getValueConverter());
+            var bindingExpr = bindingFn(bindingContext, value);
+            var _b = getBindingNameAndInstruction(binding), bindingName = _b.bindingName, instruction = _b.instruction, isAttribute = _b.isAttribute;
+            var securityContexts = bindingParser.calcPossibleSecurityContexts(meta.selector || '', bindingName, isAttribute)
+                .filter(function (context) { return context !== SecurityContext.NONE; });
+            var sanitizerFn = null;
+            if (securityContexts.length) {
+                if (securityContexts.length === 2 &&
+                    securityContexts.indexOf(SecurityContext.URL) > -1 &&
+                    securityContexts.indexOf(SecurityContext.RESOURCE_URL) > -1) {
+                    // Special case for some URL attributes (such as "src" and "href") that may be a part
+                    // of different security contexts. In this case we use special santitization function and
+                    // select the actual sanitizer at runtime based on a tag name that is provided while
+                    // invoking sanitization function.
+                    sanitizerFn = importExpr(Identifiers$1.sanitizeUrlOrResourceUrl);
                 }
                 else {
-                    // resolve literal arrays and literal objects
-                    var value = binding.expression.visit(valueConverter);
-                    var bindingExpr = bindingFn(bindingContext, value);
-                    var _c = getBindingNameAndInstruction(binding), bindingName = _c.bindingName, instruction = _c.instruction, isAttribute = _c.isAttribute;
-                    var securityContexts = bindingParser
-                        .calcPossibleSecurityContexts(meta.selector || '', bindingName, isAttribute)
-                        .filter(function (context) { return context !== SecurityContext.NONE; });
-                    var sanitizerFn = null;
-                    if (securityContexts.length) {
-                        if (securityContexts.length === 2 &&
-                            securityContexts.indexOf(SecurityContext.URL) > -1 &&
-                            securityContexts.indexOf(SecurityContext.RESOURCE_URL) > -1) {
-                            // Special case for some URL attributes (such as "src" and "href") that may be a part of
-                            // different security contexts. In this case we use special santitization function and
-                            // select the actual sanitizer at runtime based on a tag name that is provided while
-                            // invoking sanitization function.
-                            sanitizerFn = importExpr(Identifiers$1.sanitizeUrlOrResourceUrl);
-                        }
-                        else {
-                            sanitizerFn = resolveSanitizationFn(securityContexts[0], isAttribute);
-                        }
-                    }
-                    var instructionParams = [
-                        elVarExp, literal(bindingName), importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr])
-                    ];
-                    if (sanitizerFn) {
-                        instructionParams.push(sanitizerFn);
-                    }
-                    if (!isAttribute) {
-                        if (!sanitizerFn) {
-                            // append `null` in front of `nativeOnly` flag if no sanitizer fn defined
-                            instructionParams.push(literal(null));
-                        }
-                        // host bindings must have nativeOnly prop set to true
-                        instructionParams.push(literal(true));
-                    }
-                    updateStatements.push.apply(updateStatements, __spread(bindingExpr.stmts));
-                    updateStatements.push(importExpr(instruction).callFn(instructionParams).toStmt());
+                    sanitizerFn = resolveSanitizationFn(securityContexts[0], isAttribute);
                 }
             }
-        }
-        catch (e_3_1) { e_3 = { error: e_3_1 }; }
-        finally {
-            try {
-                if (bindings_1_1 && !bindings_1_1.done && (_a = bindings_1.return)) _a.call(bindings_1);
+            var instructionParams = [
+                elVarExp, literal(bindingName), importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr])
+            ];
+            if (sanitizerFn) {
+                instructionParams.push(sanitizerFn);
             }
-            finally { if (e_3) throw e_3.error; }
-        }
-        // since we're dealing with directives/components and both have hostBinding
-        // functions, we need to generate a special hostAttrs instruction that deals
-        // with both the assignment of styling as well as static attributes to the host
-        // element. The instruction below will instruct all initial styling (styling
-        // that is inside of a host binding within a directive/component) to be attached
-        // to the host element alongside any of the provided host attributes that were
-        // collected earlier.
-        var hostAttrs = convertAttributesToExpressions(staticAttributesAndValues);
-        var hostInstruction = styleBuilder.buildHostAttrsInstruction(null, hostAttrs, constantPool);
-        if (hostInstruction) {
-            createStatements.push(createStylingStmt(hostInstruction, bindingContext, bindingFn));
-        }
-        if (styleBuilder.hasBindings) {
-            // singular style/class bindings (things like `[style.prop]` and `[class.name]`)
-            // MUST be registered on a given element within the component/directive
-            // templateFn/hostBindingsFn functions. The instruction below will figure out
-            // what all the bindings are and then generate the statements required to register
-            // those bindings to the element via `elementStyling`.
-            var elementStylingInstruction = styleBuilder.buildElementStylingInstruction(null, constantPool);
-            if (elementStylingInstruction) {
-                createStatements.push(createStylingStmt(elementStylingInstruction, bindingContext, bindingFn));
+            if (!isAttribute) {
+                if (!sanitizerFn) {
+                    // append `null` in front of `nativeOnly` flag if no sanitizer fn defined
+                    instructionParams.push(literal(null));
+                }
+                // host bindings must have nativeOnly prop set to true
+                instructionParams.push(literal(true));
             }
-            // finally each binding that was registered in the statement above will need to be added to
-            // the update block of a component/directive templateFn/hostBindingsFn so that the bindings
-            // are evaluated and updated for the element.
-            styleBuilder.buildUpdateLevelInstructions(valueConverter).forEach(function (instruction) {
-                updateStatements.push(createStylingStmt(instruction, bindingContext, bindingFn));
-            });
+            updateStatements.push.apply(updateStatements, __spread(bindingExpr.stmts));
+            updateStatements.push(importExpr(instruction).callFn(instructionParams).toStmt());
         }
+    });
+    // since we're dealing with directives/components and both have hostBinding
+    // functions, we need to generate a special hostAttrs instruction that deals
+    // with both the assignment of styling as well as static attributes to the host
+    // element. The instruction below will instruct all initial styling (styling
+    // that is inside of a host binding within a directive/component) to be attached
+    // to the host element alongside any of the provided host attributes that were
+    // collected earlier.
+    var hostAttrs = convertAttributesToExpressions(staticAttributesAndValues);
+    var hostInstruction = styleBuilder.buildHostAttrsInstruction(null, hostAttrs, constantPool);
+    if (hostInstruction) {
+        createStatements.push(createStylingStmt(hostInstruction, bindingContext, bindingFn));
+    }
+    if (styleBuilder.hasBindings) {
+        // singular style/class bindings (things like `[style.prop]` and `[class.name]`)
+        // MUST be registered on a given element within the component/directive
+        // templateFn/hostBindingsFn functions. The instruction below will figure out
+        // what all the bindings are and then generate the statements required to register
+        // those bindings to the element via `elementStyling`.
+        var elementStylingInstruction = styleBuilder.buildElementStylingInstruction(null, constantPool);
+        if (elementStylingInstruction) {
+            createStatements.push(createStylingStmt(elementStylingInstruction, bindingContext, bindingFn));
+        }
+        // finally each binding that was registered in the statement above will need to be added to
+        // the update block of a component/directive templateFn/hostBindingsFn so that the bindings
+        // are evaluated and updated for the element.
+        styleBuilder.buildUpdateLevelInstructions(getValueConverter()).forEach(function (instruction) {
+            updateStatements.push(createStylingStmt(instruction, bindingContext, bindingFn));
+        });
     }
     if (totalHostVarsCount) {
         createStatements.unshift(importExpr(Identifiers$1.allocHostVars).callFn([literal(totalHostVarsCount)]).toStmt());
@@ -15543,6 +15543,9 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, staticAttrib
         ], statements, INFERRED_TYPE, null, hostBindingsFnName);
     }
     return null;
+}
+function bindingFn(implicit, value) {
+    return convertPropertyBinding(null, implicit, value, 'b', BindingForm.TrySimple, function () { return error('Unexpected interpolation'); });
 }
 function createStylingStmt(instruction, bindingContext, bindingFn) {
     var params = instruction.buildParams(function (value) { return bindingFn(bindingContext, value).currValExpr; });
@@ -15624,6 +15627,23 @@ function parseHostBindings(host) {
         }
     });
     return { attributes: attributes, listeners: listeners, properties: properties };
+}
+/**
+ * Verifies host bindings and returns the list of errors (if any). Empty array indicates that a
+ * given set of host bindings has no errors.
+ *
+ * @param bindings set of host bindings to verify.
+ * @param sourceSpan source span where host bindings were defined.
+ * @returns array of errors associated with a given set of host bindings.
+ */
+function verifyHostBindings(bindings, sourceSpan) {
+    var summary = metadataAsSummary({ host: bindings });
+    // TODO: abstract out host bindings verification logic and use it instead of
+    // creating events and properties ASTs to detect errors (FW-996)
+    var bindingParser = makeBindingParser();
+    bindingParser.createDirectiveHostEventAsts(summary, sourceSpan);
+    bindingParser.createBoundHostProperties(summary, sourceSpan);
+    return bindingParser.errors;
 }
 function compileStyles(styles, selector, hostSelector) {
     var shadowCss = new ShadowCss();
@@ -15733,6 +15753,9 @@ var CompilerFacadeImpl = /** @class */ (function () {
         var preStatements = __spread(constantPool.statements, res.statements);
         return jitExpression(res.expression, angularCoreEnv, sourceMapUrl, preStatements);
     };
+    CompilerFacadeImpl.prototype.createParseSourceSpan = function (kind, typeName, sourceUrl) {
+        return r3JitTypeSourceSpan(kind, typeName, sourceUrl);
+    };
     return CompilerFacadeImpl;
 }());
 var USE_CLASS = Object.keys({ useClass: null })[0];
@@ -15769,7 +15792,7 @@ function convertDirectiveFacadeToMetadata(facade) {
     for (var field in propMetadata) {
         _loop_1(field);
     }
-    return __assign({}, facade, { typeSourceSpan: null, type: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.host, facade.propMetadata), inputs: __assign({}, inputsFromMetadata, inputsFromType), outputs: __assign({}, outputsFromMetadata, outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null });
+    return __assign({}, facade, { typeSourceSpan: facade.typeSourceSpan, type: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.host, facade.propMetadata, facade.typeSourceSpan), inputs: __assign({}, inputsFromMetadata, inputsFromType), outputs: __assign({}, outputsFromMetadata, outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null });
 }
 function wrapExpression(obj, property) {
     if (obj.hasOwnProperty(property)) {
@@ -15810,17 +15833,22 @@ function convertR3DependencyMetadata(facade) {
 function convertR3DependencyMetadataArray(facades) {
     return facades == null ? null : facades.map(convertR3DependencyMetadata);
 }
-function extractHostBindings(host, propMetadata) {
+function extractHostBindings(host, propMetadata, sourceSpan) {
     // First parse the declarations from the metadata.
-    var _a = parseHostBindings(host || {}), attributes = _a.attributes, listeners = _a.listeners, properties = _a.properties;
+    var bindings = parseHostBindings(host || {});
+    // After that check host bindings for errors
+    var errors = verifyHostBindings(bindings, sourceSpan);
+    if (errors.length) {
+        throw new Error(errors.map(function (error) { return error.msg; }).join('\n'));
+    }
     var _loop_2 = function (field) {
         if (propMetadata.hasOwnProperty(field)) {
             propMetadata[field].forEach(function (ann) {
                 if (isHostBinding(ann)) {
-                    properties[ann.hostPropertyName || field] = field;
+                    bindings.properties[ann.hostPropertyName || field] = field;
                 }
                 else if (isHostListener(ann)) {
-                    listeners[ann.eventName || field] = field + "(" + (ann.args || []).join(',') + ")";
+                    bindings.listeners[ann.eventName || field] = field + "(" + (ann.args || []).join(',') + ")";
                 }
             });
         }
@@ -15829,7 +15857,7 @@ function extractHostBindings(host, propMetadata) {
     for (var field in propMetadata) {
         _loop_2(field);
     }
-    return { attributes: attributes, listeners: listeners, properties: properties };
+    return bindings;
 }
 function isHostBinding(value) {
     return value.ngMetadataName === 'HostBinding';
@@ -15862,7 +15890,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-beta.1+43.sha-3d5a919');
+var VERSION$1 = new Version('8.0.0-beta.1+109.sha-a227c52');
 
 /**
  * @license
@@ -27194,5 +27222,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, TypeofExpr, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Reference as TmplAstReference, Template as TmplAstTemplate, Text$2 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, jitExpression, R3ResolvedDependencyType, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileBaseDefFromMetadata, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, publishFacade, VERSION$1 as VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor$1 as RecursiveAstVisitor, AstTransformer$1 as AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text$3 as Text, Expansion, ExpansionCase, Attribute, Element$1 as Element, Comment, visitAll$1 as visitAll, RecursiveVisitor$1 as RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, HOST_ATTR, CONTENT_ATTR, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, compileInjectable, R3TargetBinder, R3BoundTarget };
+export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, TypeofExpr, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Reference as TmplAstReference, Template as TmplAstTemplate, Text$2 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Identifiers$1 as R3Identifiers, jitExpression, R3ResolvedDependencyType, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileBaseDefFromMetadata, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, verifyHostBindings, publishFacade, VERSION$1 as VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor$1 as RecursiveAstVisitor, AstTransformer$1 as AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text$3 as Text, Expansion, ExpansionCase, Attribute, Element$1 as Element, Comment, visitAll$1 as visitAll, RecursiveVisitor$1 as RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, r3JitTypeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, HOST_ATTR, CONTENT_ATTR, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, compileInjectable, R3TargetBinder, R3BoundTarget };
 //# sourceMappingURL=compiler.js.map

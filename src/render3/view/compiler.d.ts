@@ -9,6 +9,7 @@ import { CompileDirectiveMetadata } from '../../compile_metadata';
 import { CompileReflector } from '../../compile_reflector';
 import { ConstantPool } from '../../constant_pool';
 import * as o from '../../output/output_ast';
+import { ParseError, ParseSourceSpan } from '../../parse_util';
 import { BindingParser } from '../../template_parser/binding_parser';
 import { OutputContext } from '../../util';
 import { Render3ParseResult } from '../r3_template_transform';
@@ -53,9 +54,7 @@ export declare function compileDirectiveFromRender2(outputCtx: OutputContext, di
  * information.
  */
 export declare function compileComponentFromRender2(outputCtx: OutputContext, component: CompileDirectiveMetadata, render3Ast: Render3ParseResult, reflector: CompileReflector, bindingParser: BindingParser, directiveTypeBySel: Map<string, any>, pipeTypeByName: Map<string, any>): void;
-export declare function parseHostBindings(host: {
-    [key: string]: string;
-}): {
+export interface ParsedHostBindings {
     attributes: {
         [key: string]: string;
     };
@@ -65,4 +64,16 @@ export declare function parseHostBindings(host: {
     properties: {
         [key: string]: string;
     };
-};
+}
+export declare function parseHostBindings(host: {
+    [key: string]: string;
+}): ParsedHostBindings;
+/**
+ * Verifies host bindings and returns the list of errors (if any). Empty array indicates that a
+ * given set of host bindings has no errors.
+ *
+ * @param bindings set of host bindings to verify.
+ * @param sourceSpan source span where host bindings were defined.
+ * @returns array of errors associated with a given set of host bindings.
+ */
+export declare function verifyHostBindings(bindings: ParsedHostBindings, sourceSpan: ParseSourceSpan): ParseError[];

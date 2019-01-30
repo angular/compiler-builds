@@ -71,7 +71,6 @@ export declare class Identifiers {
     static i18nApply: o.ExternalReference;
     static i18nPostprocess: o.ExternalReference;
     static load: o.ExternalReference;
-    static loadQueryList: o.ExternalReference;
     static pipe: o.ExternalReference;
     static projection: o.ExternalReference;
     static projectionDef: o.ExternalReference;
@@ -86,6 +85,7 @@ export declare class Identifiers {
     static defineBase: o.ExternalReference;
     static BaseDef: o.ExternalReference;
     static defineComponent: o.ExternalReference;
+    static setComponentScope: o.ExternalReference;
     static ComponentDefWithMeta: o.ExternalReference;
     static defineDirective: o.ExternalReference;
     static DirectiveDefWithMeta: o.ExternalReference;
@@ -95,11 +95,11 @@ export declare class Identifiers {
     static defineNgModule: o.ExternalReference;
     static PipeDefWithMeta: o.ExternalReference;
     static definePipe: o.ExternalReference;
-    static query: o.ExternalReference;
     static queryRefresh: o.ExternalReference;
     static viewQuery: o.ExternalReference;
     static loadViewQuery: o.ExternalReference;
-    static registerContentQuery: o.ExternalReference;
+    static contentQuery: o.ExternalReference;
+    static loadContentQuery: o.ExternalReference;
     static NgOnChangesFeature: o.ExternalReference;
     static InheritDefinitionFeature: o.ExternalReference;
     static ProvidersFeature: o.ExternalReference;

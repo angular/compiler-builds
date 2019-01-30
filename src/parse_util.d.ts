@@ -37,3 +37,12 @@ export declare class ParseError {
     toString(): string;
 }
 export declare function typeSourceSpan(kind: string, type: CompileIdentifierMetadata): ParseSourceSpan;
+/**
+ * Generates Source Span object for a given R3 Type for JIT mode.
+ *
+ * @param kind Component or Directive.
+ * @param typeName name of the Component or Directive.
+ * @param sourceUrl reference to Component or Directive source.
+ * @returns instance of ParseSourceSpan that represent a given Component or Directive.
+ */
+export declare function r3JitTypeSourceSpan(kind: string, typeName: string, sourceUrl: string): ParseSourceSpan;
