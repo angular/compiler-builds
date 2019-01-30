@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { CompilerFacade, CoreEnvironment, R3ComponentMetadataFacade, R3DirectiveMetadataFacade, R3InjectableMetadataFacade, R3InjectorMetadataFacade, R3NgModuleMetadataFacade, R3PipeMetadataFacade } from './compiler_facade_interface';
+import { ParseSourceSpan } from './parse_util';
 export declare class CompilerFacadeImpl implements CompilerFacade {
     R3ResolvedDependencyType: any;
     private elementSchemaRegistry;
@@ -15,5 +16,6 @@ export declare class CompilerFacadeImpl implements CompilerFacade {
     compileNgModule(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, facade: R3NgModuleMetadataFacade): any;
     compileDirective(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, facade: R3DirectiveMetadataFacade): any;
     compileComponent(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, facade: R3ComponentMetadataFacade): any;
+    createParseSourceSpan(kind: string, typeName: string, sourceUrl: string): ParseSourceSpan;
 }
 export declare function publishFacade(global: any): void;
