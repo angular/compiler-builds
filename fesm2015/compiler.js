@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.2+58.sha-fe4d811
+ * @license Angular v8.0.0-beta.3+16.sha-62a13e7
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13012,7 +13012,7 @@ class TemplateDefinitionBuilder {
         if (this.i18nUseExternalIds) {
             const prefix = getTranslationConstPrefix(`EXTERNAL_`);
             const uniqueSuffix = this.constantPool.uniqueName(suffix);
-            name = `${prefix}${messageId}$$${uniqueSuffix}`;
+            name = `${prefix}${sanitizeIdentifier(messageId)}$$${uniqueSuffix}`;
         }
         else {
             const prefix = getTranslationConstPrefix(suffix);
@@ -14967,7 +14967,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.2+58.sha-fe4d811');
+const VERSION$1 = new Version('8.0.0-beta.3+16.sha-62a13e7');
 
 /**
  * @license
