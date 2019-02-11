@@ -13,7 +13,7 @@ import { ResolvedStaticSymbol, StaticSymbolResolver } from './static_symbol_reso
 export declare function serializeSummaries(srcFileName: string, forJitCtx: OutputContext | null, summaryResolver: SummaryResolver<StaticSymbol>, symbolResolver: StaticSymbolResolver, symbols: ResolvedStaticSymbol[], types: {
     summary: CompileTypeSummary;
     metadata: CompileNgModuleMetadata | CompileDirectiveMetadata | CompilePipeMetadata | CompileTypeMetadata;
-}[]): {
+}[], createExternalSymbolReexports?: boolean): {
     json: string;
     exportAs: {
         symbol: StaticSymbol;
