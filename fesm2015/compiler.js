@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.4+44.sha-2f73c55
+ * @license Angular v7.2.4+45.sha-aa163be
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -14832,7 +14832,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.4+44.sha-2f73c55');
+const VERSION$1 = new Version('7.2.4+45.sha-aa163be');
 
 /**
  * @license
@@ -21848,7 +21848,7 @@ function unwrapResolvedMetadata(metadata) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-function serializeSummaries(srcFileName, forJitCtx, summaryResolver, symbolResolver, symbols, types) {
+function serializeSummaries(srcFileName, forJitCtx, summaryResolver, symbolResolver, symbols, types, createExternalSymbolReexports = true) {
     const toJsonSerializer = new ToJsonSerializer(symbolResolver, summaryResolver, srcFileName);
     // for symbols, we use everything except for the class metadata itself
     // (we keep the statics though), as the class metadata is contained in the
@@ -21858,7 +21858,7 @@ function serializeSummaries(srcFileName, forJitCtx, summaryResolver, symbolResol
     types.forEach(({ summary, metadata }) => {
         toJsonSerializer.addSummary({ symbol: summary.type.reference, metadata: undefined, type: summary });
     });
-    const { json, exportAs } = toJsonSerializer.serialize();
+    const { json, exportAs } = toJsonSerializer.serialize(createExternalSymbolReexports);
     if (forJitCtx) {
         const forJitSerializer = new ForJitSerializer(forJitCtx, symbolResolver, summaryResolver);
         types.forEach(({ summary, metadata }) => { forJitSerializer.addSourceType(summary, metadata); });
@@ -21980,7 +21980,13 @@ class ToJsonSerializer extends ValueTransformer {
             }
         }
     }
-    serialize() {
+    /**
+     * @param createExternalSymbolReexports Whether external static symbols should be re-exported.
+     * This can be enabled if external symbols should be re-exported by the current module in
+     * order to avoid dynamically generated module dependencies which can break strict dependency
+     * enforcements (as in Google3). Read more here: https://github.com/angular/angular/issues/25644
+     */
+    serialize(createExternalSymbolReexports) {
         const exportAs = [];
         const json = JSON.stringify({
             moduleName: this.moduleName,
@@ -21991,9 +21997,19 @@ class ToJsonSerializer extends ValueTransformer {
                 if (this.summaryResolver.isLibraryFile(symbol.filePath)) {
                     const reexportSymbol = this.reexportedBy.get(symbol);
                     if (reexportSymbol) {
+                        // In case the given external static symbol is already manually exported by the
+                        // user, we just proxy the external static symbol reference to the manual export.
+                        // This ensures that the AOT compiler imports the external symbol through the
+                        // user export and does not introduce another dependency which is not needed.
                         importAs = this.indexBySymbol.get(reexportSymbol);
                     }
-                    else {
+                    else if (createExternalSymbolReexports) {
+                        // In this case, the given external static symbol is *not* manually exported by
+                        // the user, and we manually create a re-export in the factory file so that we
+                        // don't introduce another module dependency. This is useful when running within
+                        // Bazel so that the AOT compiler does not introduce any module dependencies
+                        // which can break the strict dependency enforcement. (e.g. as in Google3)
+                        // Read more about this here: https://github.com/angular/angular/issues/25644
                         const summary = this.unprocessedSymbolSummariesBySymbol.get(symbol);
                         if (!summary || !summary.metadata || summary.metadata.__symbolic !== 'interface') {
                             importAs = `${symbol.name}_${index}`;
@@ -22628,7 +22644,7 @@ class AotCompiler {
         const forJitOutputCtx = this._options.enableSummariesForJit ?
             this._createOutputContext(summaryForJitFileName(srcFileName, true)) :
             null;
-        const { json, exportAs } = serializeSummaries(srcFileName, forJitOutputCtx, this._summaryResolver, this._symbolResolver, symbolSummaries, typeData);
+        const { json, exportAs } = serializeSummaries(srcFileName, forJitOutputCtx, this._summaryResolver, this._symbolResolver, symbolSummaries, typeData, this._options.createExternalSymbolFactoryReexports);
         exportAs.forEach((entry) => {
             ngFactoryCtx.statements.push(variable(entry.exportAs).set(ngFactoryCtx.importExpr(entry.symbol)).toDeclStmt(null, [
                 StmtModifier.Exported
