@@ -24,7 +24,8 @@ export interface Instruction {
  * An internal record of the input data for a styling binding
  */
 interface BoundStylingEntry {
-    name: string;
+    hasOverrideFlag: boolean;
+    name: string | null;
     unit: string | null;
     sourceSpan: ParseSourceSpan;
     value: AST;
@@ -100,8 +101,9 @@ export declare class StylingBuilder {
      * style/class bindings or static style/class attributes).
      */
     registerBoundInput(input: t.BoundAttribute): boolean;
-    registerStyleInput(propertyName: string | null, value: AST, unit: string | null, sourceSpan: ParseSourceSpan): BoundStylingEntry;
-    registerClassInput(className: string | null, value: AST, sourceSpan: ParseSourceSpan): BoundStylingEntry;
+    registerInputBasedOnName(name: string, expression: AST, sourceSpan: ParseSourceSpan): BoundStylingEntry | null;
+    registerStyleInput(name: string, isMapBased: boolean, value: AST, sourceSpan: ParseSourceSpan, unit?: string | null): BoundStylingEntry;
+    registerClassInput(name: string, isMapBased: boolean, value: AST, sourceSpan: ParseSourceSpan): BoundStylingEntry;
     /**
      * Registers the element's static style string value to the builder.
      *
@@ -154,4 +156,9 @@ export declare class StylingBuilder {
      */
     buildUpdateLevelInstructions(valueConverter: ValueConverter): Instruction[];
 }
+export declare function parseProperty(name: string): {
+    property: string;
+    unit: string;
+    hasOverrideFlag: boolean;
+};
 export {};
