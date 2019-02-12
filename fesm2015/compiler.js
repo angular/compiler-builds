@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.3+92.sha-1e64f37
+ * @license Angular v8.0.0-beta.3+107.sha-0cb02d9
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -6496,7 +6496,7 @@ class AstMemoryEfficientTransformer {
         const condition = ast.condition.visit(this);
         const trueExp = ast.trueExp.visit(this);
         const falseExp = ast.falseExp.visit(this);
-        if (condition !== ast.condition || trueExp !== ast.trueExp || falseExp !== falseExp) {
+        if (condition !== ast.condition || trueExp !== ast.trueExp || falseExp !== ast.falseExp) {
             return new Conditional(ast.span, condition, trueExp, falseExp);
         }
         return ast;
@@ -8211,6 +8211,7 @@ function hyphenate(value) {
     }).toLowerCase();
 }
 
+const IMPORTANT_FLAG = '!important';
 /**
  * Produces creation/update instructions for all styling bindings (class and style)
  *
@@ -8293,49 +8294,66 @@ class StylingBuilder {
         // will therefore skip all style/class resolution that is present
         // with style="", [style]="" and [style.prop]="", class="",
         // [class.prop]="". [class]="" assignments
-        const name = input.name;
         let binding = null;
+        let name = input.name;
         switch (input.type) {
             case 0 /* Property */:
-                if (name == 'style') {
-                    binding = this.registerStyleInput(null, input.value, '', input.sourceSpan);
-                }
-                else if (isClassBinding(input.name)) {
-                    binding = this.registerClassInput(null, input.value, input.sourceSpan);
-                }
+                binding = this.registerInputBasedOnName(name, input.value, input.sourceSpan);
                 break;
             case 3 /* Style */:
-                binding = this.registerStyleInput(input.name, input.value, input.unit, input.sourceSpan);
+                binding = this.registerStyleInput(name, false, input.value, input.sourceSpan, input.unit);
                 break;
             case 2 /* Class */:
-                binding = this.registerClassInput(input.name, input.value, input.sourceSpan);
+                binding = this.registerClassInput(name, false, input.value, input.sourceSpan);
                 break;
         }
         return binding ? true : false;
     }
-    registerStyleInput(propertyName, value, unit, sourceSpan) {
-        const entry = { name: propertyName, unit, value, sourceSpan };
-        if (propertyName) {
-            (this._singleStyleInputs = this._singleStyleInputs || []).push(entry);
-            this._useDefaultSanitizer = this._useDefaultSanitizer || isStyleSanitizable(propertyName);
-            registerIntoMap(this._stylesIndex, propertyName);
+    registerInputBasedOnName(name, expression, sourceSpan) {
+        let binding = null;
+        const nameToMatch = name.substring(0, 5); // class | style
+        const isStyle = nameToMatch === 'style';
+        const isClass = isStyle ? false : (nameToMatch === 'class');
+        if (isStyle || isClass) {
+            const isMapBased = name.charAt(5) !== '.'; // style.prop or class.prop makes this a no
+            const property = name.substr(isMapBased ? 5 : 6); // the dot explains why there's a +1
+            if (isStyle) {
+                binding = this.registerStyleInput(property, isMapBased, expression, sourceSpan);
+            }
+            else {
+                binding = this.registerClassInput(property, isMapBased, expression, sourceSpan);
+            }
         }
-        else {
+        return binding;
+    }
+    registerStyleInput(name, isMapBased, value, sourceSpan, unit) {
+        const { property, hasOverrideFlag, unit: bindingUnit } = parseProperty(name);
+        const entry = {
+            name: property,
+            unit: unit || bindingUnit, value, sourceSpan, hasOverrideFlag
+        };
+        if (isMapBased) {
             this._useDefaultSanitizer = true;
             this._styleMapInput = entry;
+        }
+        else {
+            (this._singleStyleInputs = this._singleStyleInputs || []).push(entry);
+            this._useDefaultSanitizer = this._useDefaultSanitizer || isStyleSanitizable(name);
+            registerIntoMap(this._stylesIndex, property);
         }
         this._lastStylingInput = entry;
         this.hasBindings = true;
         return entry;
     }
-    registerClassInput(className, value, sourceSpan) {
-        const entry = { name: className, value, sourceSpan };
-        if (className) {
-            (this._singleClassInputs = this._singleClassInputs || []).push(entry);
-            registerIntoMap(this._classesIndex, className);
+    registerClassInput(name, isMapBased, value, sourceSpan) {
+        const { property, hasOverrideFlag } = parseProperty(name);
+        const entry = { name: property, value, sourceSpan, hasOverrideFlag, unit: null };
+        if (isMapBased) {
+            this._classMapInput = entry;
         }
         else {
-            this._classMapInput = entry;
+            (this._singleClassInputs = this._singleClassInputs || []).push(entry);
+            registerIntoMap(this._classesIndex, property);
         }
         this._lastStylingInput = entry;
         this.hasBindings = true;
@@ -8395,6 +8413,7 @@ class StylingBuilder {
                 reference: Identifiers$1.elementHostAttrs,
                 allocateBindingSlots: 0,
                 buildParams: () => {
+                    // params => elementHostAttrs(directive, attrs)
                     this.populateInitialStylingAttrs(attrs);
                     return [this._directiveExpr, getConstantLiteralFromArray(constantPool, attrs)];
                 }
@@ -8480,22 +8499,23 @@ class StylingBuilder {
                 reference: Identifiers$1.elementStylingMap,
                 allocateBindingSlots: totalBindingSlotsRequired,
                 buildParams: (convertFn) => {
-                    const params = [this._elementIndexExpr];
-                    if (mapBasedClassValue) {
-                        params.push(convertFn(mapBasedClassValue));
-                    }
-                    else if (this._styleMapInput) {
-                        params.push(NULL_EXPR);
-                    }
-                    if (mapBasedStyleValue) {
-                        params.push(convertFn(mapBasedStyleValue));
-                    }
-                    else if (this._directiveExpr) {
-                        params.push(NULL_EXPR);
-                    }
+                    // min params => elementStylingMap(index, classMap)
+                    // max params => elementStylingMap(index, classMap, styleMap, directive)
+                    let expectedNumberOfArgs = 0;
                     if (this._directiveExpr) {
-                        params.push(this._directiveExpr);
+                        expectedNumberOfArgs = 4;
                     }
+                    else if (mapBasedStyleValue) {
+                        expectedNumberOfArgs = 3;
+                    }
+                    else if (mapBasedClassValue) {
+                        // index and class = 2
+                        expectedNumberOfArgs = 2;
+                    }
+                    const params = [this._elementIndexExpr];
+                    addParam(params, mapBasedClassValue, mapBasedClassValue ? convertFn(mapBasedClassValue) : null, 2, expectedNumberOfArgs);
+                    addParam(params, mapBasedStyleValue, mapBasedStyleValue ? convertFn(mapBasedStyleValue) : null, 3, expectedNumberOfArgs);
+                    addParam(params, this._directiveExpr, this._directiveExpr, 4, expectedNumberOfArgs);
                     return params;
                 }
             };
@@ -8512,6 +8532,8 @@ class StylingBuilder {
                 sourceSpan: input.sourceSpan,
                 allocateBindingSlots: totalBindingSlotsRequired, reference,
                 buildParams: (convertFn) => {
+                    // min params => elementStlyingProp(elmIndex, bindingIndex, value)
+                    // max params => elementStlyingProp(elmIndex, bindingIndex, value, overrideFlag)
                     const params = [this._elementIndexExpr, literal(bindingIndex), convertFn(value)];
                     if (allowUnits) {
                         if (input.unit) {
@@ -8523,6 +8545,12 @@ class StylingBuilder {
                     }
                     if (this._directiveExpr) {
                         params.push(this._directiveExpr);
+                    }
+                    else if (input.hasOverrideFlag) {
+                        params.push(NULL_EXPR);
+                    }
+                    if (input.hasOverrideFlag) {
+                        params.push(literal(true));
                     }
                     return params;
                 }
@@ -8547,6 +8575,8 @@ class StylingBuilder {
             reference: Identifiers$1.elementStylingApply,
             allocateBindingSlots: 0,
             buildParams: () => {
+                // min params => elementStylingApply(elmIndex)
+                // max params => elementStylingApply(elmIndex, directive)
                 const params = [this._elementIndexExpr];
                 if (this._directiveExpr) {
                     params.push(this._directiveExpr);
@@ -8573,9 +8603,6 @@ class StylingBuilder {
         return instructions;
     }
 }
-function isClassBinding(name) {
-    return name == 'className' || name == 'class';
-}
 function registerIntoMap(map, key) {
     if (!map.has(key)) {
         map.set(key, map.size);
@@ -8597,12 +8624,28 @@ function getConstantLiteralFromArray(constantPool, values) {
  * predicate and totalExpectedArgs values
  */
 function addParam(params, predicate, value, argNumber, totalExpectedArgs) {
-    if (predicate) {
+    if (predicate && value) {
         params.push(value);
     }
     else if (argNumber < totalExpectedArgs) {
         params.push(NULL_EXPR);
     }
+}
+function parseProperty(name) {
+    let hasOverrideFlag = false;
+    const overrideIndex = name.indexOf(IMPORTANT_FLAG);
+    if (overrideIndex !== -1) {
+        name = overrideIndex > 0 ? name.substring(0, overrideIndex) : '';
+        hasOverrideFlag = true;
+    }
+    let unit = '';
+    let property = name;
+    const unitIndex = name.lastIndexOf('.');
+    if (unitIndex > 0) {
+        unit = name.substr(unitIndex + 1);
+        property = name.substring(0, unitIndex);
+    }
+    return { property, unit, hasOverrideFlag };
 }
 
 /**
@@ -13179,7 +13222,8 @@ class TemplateDefinitionBuilder {
         const attributes = [];
         const allOtherInputs = [];
         element.inputs.forEach((input) => {
-            if (!stylingBuilder.registerBoundInput(input)) {
+            const stylingInputWasSet = stylingBuilder.registerBoundInput(input);
+            if (!stylingInputWasSet) {
                 if (input.type === 0 /* Property */) {
                     if (input.i18n) {
                         i18nAttrs.push(input);
@@ -13841,8 +13885,14 @@ class BindingScope {
      * @param localRef Whether or not this is a local ref
      */
     set(retrievalLevel, name, lhs, priority = 0 /* DEFAULT */, declareLocalCallback, localRef) {
-        !this.map.has(name) ||
+        if (this.map.has(name)) {
+            if (localRef) {
+                // Do not throw an error if it's a local ref and do not update existing value,
+                // so the first defined ref is always returned.
+                return this;
+            }
             error(`The name ${name} is already defined in scope to be ${this.map.get(name)}`);
+        }
         this.map.set(name, {
             retrievalLevel: retrievalLevel,
             lhs: lhs,
@@ -14065,8 +14115,8 @@ const EMPTY_ARRAY = [];
 // This regex matches any binding names that contain the "attr." prefix, e.g. "attr.required"
 // If there is a match, the first matching group will contain the attribute name to bind.
 const ATTR_REGEX = /attr\.([^\]]+)/;
-function getStylingPrefix(propName) {
-    return propName.substring(0, 5).toLowerCase();
+function getStylingPrefix(name) {
+    return name.substring(0, 5); // style or class
 }
 function baseDirectiveFields(meta, constantPool, bindingParser) {
     const definitionMap = new DefinitionMap();
@@ -14535,15 +14585,8 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, staticAttrib
     const bindings = bindingParser.createBoundHostProperties(directiveSummary, hostBindingSourceSpan);
     (bindings || []).forEach((binding) => {
         const name = binding.name;
-        const stylePrefix = getStylingPrefix(name);
-        if (stylePrefix === 'style') {
-            const { propertyName, unit } = parseNamedProperty(name);
-            styleBuilder.registerStyleInput(propertyName, binding.expression, unit, binding.sourceSpan);
-        }
-        else if (stylePrefix === 'class') {
-            styleBuilder.registerClassInput(parseNamedProperty(name).propertyName, binding.expression, binding.sourceSpan);
-        }
-        else {
+        const stylingInputWasSet = styleBuilder.registerInputBasedOnName(name, binding.expression, binding.sourceSpan);
+        if (!stylingInputWasSet) {
             // resolve literal arrays and literal objects
             const value = binding.expression.visit(getValueConverter());
             const bindingExpr = bindingFn(bindingContext, value);
@@ -14732,22 +14775,6 @@ function verifyHostBindings(bindings, sourceSpan) {
 function compileStyles(styles, selector, hostSelector) {
     const shadowCss = new ShadowCss();
     return styles.map(style => { return shadowCss.shimCssText(style, selector, hostSelector); });
-}
-function parseNamedProperty(name) {
-    let unit = '';
-    let propertyName = '';
-    const index = name.indexOf('.');
-    if (index > 0) {
-        const unitIndex = name.lastIndexOf('.');
-        if (unitIndex !== index) {
-            unit = name.substring(unitIndex + 1, name.length);
-            propertyName = name.substring(index + 1, unitIndex);
-        }
-        else {
-            propertyName = name.substring(index + 1, name.length);
-        }
-    }
-    return { propertyName, unit };
 }
 
 /**
@@ -14967,7 +14994,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.3+92.sha-1e64f37');
+const VERSION$1 = new Version('8.0.0-beta.3+107.sha-0cb02d9');
 
 /**
  * @license
