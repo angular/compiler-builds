@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.3+128.sha-fc8f4f8
+ * @license Angular v8.0.0-beta.3+130.sha-06ec95f
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16231,7 +16231,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-beta.3+128.sha-fc8f4f8');
+    var VERSION$1 = new Version('8.0.0-beta.3+130.sha-06ec95f');
 
     /**
      * @license
@@ -23628,7 +23628,7 @@
     }
 
     function serializeSummaries(srcFileName, forJitCtx, summaryResolver, symbolResolver, symbols, types, createExternalSymbolReexports) {
-        if (createExternalSymbolReexports === void 0) { createExternalSymbolReexports = true; }
+        if (createExternalSymbolReexports === void 0) { createExternalSymbolReexports = false; }
         var toJsonSerializer = new ToJsonSerializer(symbolResolver, summaryResolver, srcFileName);
         // for symbols, we use everything except for the class metadata itself
         // (we keep the statics though), as the class metadata is contained in the
