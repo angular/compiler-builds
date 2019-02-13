@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.3+135.sha-644e7a2
+ * @license Angular v8.0.0-beta.3+136.sha-39d0311
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -14370,8 +14370,10 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
         injectFn: Identifiers$1.directiveInject,
     });
     definitionMap.set('factory', result.factory);
-    definitionMap.set('contentQueries', createContentQueriesFunction(meta, constantPool));
-    definitionMap.set('contentQueriesRefresh', createContentQueriesRefreshFunction(meta));
+    if (meta.queries.length > 0) {
+        // e.g. `contentQueries: (rf, ctx, dirIndex) => { ... }
+        definitionMap.set('contentQueries', createContentQueriesFunction(meta, constantPool));
+    }
     // Initialize hostVarsCount to number of bound host properties (interpolations illegal),
     // except 'style' and 'class' properties, since they should *not* allocate host var slots
     const hostVarsCount = Object.keys(meta.host.properties)
@@ -14700,43 +14702,32 @@ function convertAttributesToExpressions(attributes) {
     }
     return values;
 }
-// Return a contentQueries function or null if one is not necessary.
+// Define and update any content queries
 function createContentQueriesFunction(meta, constantPool) {
-    if (meta.queries.length) {
-        const statements = meta.queries.map((query) => {
-            const args = [variable('dirIndex'), ...prepareQueryParams(query, constantPool)];
-            return importExpr(Identifiers$1.contentQuery).callFn(args).toStmt();
-        });
-        const typeName = meta.name;
-        const parameters = [new FnParam('dirIndex', NUMBER_TYPE)];
-        return fn(parameters, statements, INFERRED_TYPE, null, typeName ? `${typeName}_ContentQueries` : null);
+    const createStatements = [];
+    const updateStatements = [];
+    const tempAllocator = temporaryAllocator(updateStatements, TEMPORARY_NAME);
+    for (const query of meta.queries) {
+        // creation, e.g. r3.contentQuery(dirIndex, somePredicate, true);
+        const args = [variable('dirIndex'), ...prepareQueryParams(query, constantPool)];
+        createStatements.push(importExpr(Identifiers$1.contentQuery).callFn(args).toStmt());
+        // update, e.g. (r3.queryRefresh(tmp = r3.loadContentQuery()) && (ctx.someDir = tmp));
+        const temporary = tempAllocator();
+        const getQueryList = importExpr(Identifiers$1.loadContentQuery).callFn([]);
+        const refresh = importExpr(Identifiers$1.queryRefresh).callFn([temporary.set(getQueryList)]);
+        const updateDirective = variable(CONTEXT_NAME)
+            .prop(query.propertyName)
+            .set(query.first ? temporary.prop('first') : temporary);
+        updateStatements.push(refresh.and(updateDirective).toStmt());
     }
-    return null;
-}
-// Return a contentQueriesRefresh function or null if one is not necessary.
-function createContentQueriesRefreshFunction(meta) {
-    if (meta.queries.length > 0) {
-        const statements = [];
-        const typeName = meta.name;
-        const parameters = [new FnParam('dirIndex', NUMBER_TYPE)];
-        const directiveInstanceVar = variable('instance');
-        // var $tmp$: any;
-        const temporary = temporaryAllocator(statements, TEMPORARY_NAME);
-        // const $instance$ = $r3$.ɵload(dirIndex);
-        statements.push(directiveInstanceVar.set(importExpr(Identifiers$1.load).callFn([variable('dirIndex')]))
-            .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
-        meta.queries.forEach((query) => {
-            const getQueryList = importExpr(Identifiers$1.loadContentQuery).callFn([]);
-            const assignToTemporary = temporary().set(getQueryList);
-            const callQueryRefresh = importExpr(Identifiers$1.queryRefresh).callFn([assignToTemporary]);
-            const updateDirective = directiveInstanceVar.prop(query.propertyName)
-                .set(query.first ? temporary().prop('first') : temporary());
-            const refreshQueryAndUpdateDirective = callQueryRefresh.and(updateDirective);
-            statements.push(refreshQueryAndUpdateDirective.toStmt());
-        });
-        return fn(parameters, statements, INFERRED_TYPE, null, typeName ? `${typeName}_ContentQueriesRefresh` : null);
-    }
-    return null;
+    const contentQueriesFnName = meta.name ? `${meta.name}_ContentQueries` : null;
+    return fn([
+        new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null),
+        new FnParam('dirIndex', null)
+    ], [
+        renderFlagCheckIfStmt(1 /* Create */, createStatements),
+        renderFlagCheckIfStmt(2 /* Update */, updateStatements)
+    ], INFERRED_TYPE, null, contentQueriesFnName);
 }
 function stringAsType(str) {
     return expressionType(literal(str));
@@ -15253,7 +15244,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.3+135.sha-644e7a2');
+const VERSION$1 = new Version('8.0.0-beta.3+136.sha-39d0311');
 
 /**
  * @license
