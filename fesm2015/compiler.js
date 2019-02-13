@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.3+124.sha-08de52b
+ * @license Angular v8.0.0-beta.3+130.sha-06ec95f
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13677,18 +13677,6 @@ class TemplateDefinitionBuilder {
             parameters.push(this.prepareRefsParameter(template.references));
             parameters.push(importExpr(Identifiers$1.templateRefExtractor));
         }
-        // handle property bindings e.g. p(1, 'ngForOf', ɵbind(ctx.items));
-        const context = variable(CONTEXT_NAME);
-        template.inputs.forEach(input => {
-            const value = input.value.visit(this._valueConverter);
-            this.allocateBindingSlots(value);
-            this.updateInstruction(template.sourceSpan, Identifiers$1.elementProperty, () => {
-                return [
-                    literal(templateIndex), literal(input.name),
-                    this.convertPropertyBinding(context, value)
-                ];
-            });
-        });
         // Create the template function
         const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, this._bindingScope, this.level + 1, contextName, this.i18n, templateIndex, templateName, this.directiveMatcher, this.directives, this.pipeTypeByName, this.pipes, this._namespace, this.fileBasedI18nSuffix, this.i18nUseExternalIds);
         // Nested templates must not be visited until after their parent templates have completed
@@ -13707,6 +13695,18 @@ class TemplateDefinitionBuilder {
         this.creationInstruction(template.sourceSpan, Identifiers$1.templateCreate, () => {
             parameters.splice(2, 0, literal(templateVisitor.getConstCount()), literal(templateVisitor.getVarCount()));
             return trimTrailingNulls(parameters);
+        });
+        // handle property bindings e.g. ɵelementProperty(1, 'ngForOf', ɵbind(ctx.items));
+        const context = variable(CONTEXT_NAME);
+        template.inputs.forEach(input => {
+            const value = input.value.visit(this._valueConverter);
+            this.allocateBindingSlots(value);
+            this.updateInstruction(template.sourceSpan, Identifiers$1.elementProperty, () => {
+                return [
+                    literal(templateIndex), literal(input.name),
+                    this.convertPropertyBinding(context, value)
+                ];
+            });
         });
         // Generate listeners for directive output
         template.outputs.forEach((outputAst) => {
@@ -15253,7 +15253,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.3+124.sha-08de52b');
+const VERSION$1 = new Version('8.0.0-beta.3+130.sha-06ec95f');
 
 /**
  * @license
@@ -22275,7 +22275,7 @@ function unwrapResolvedMetadata(metadata) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-function serializeSummaries(srcFileName, forJitCtx, summaryResolver, symbolResolver, symbols, types, createExternalSymbolReexports = true) {
+function serializeSummaries(srcFileName, forJitCtx, summaryResolver, symbolResolver, symbols, types, createExternalSymbolReexports = false) {
     const toJsonSerializer = new ToJsonSerializer(symbolResolver, summaryResolver, srcFileName);
     // for symbols, we use everything except for the class metadata itself
     // (we keep the statics though), as the class metadata is contained in the
