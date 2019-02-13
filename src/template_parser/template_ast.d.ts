@@ -87,9 +87,10 @@ export declare class BoundEventAst implements TemplateAst {
     phase: string | null;
     handler: AST;
     sourceSpan: ParseSourceSpan;
+    handlerSpan: ParseSourceSpan;
     readonly fullName: string;
     readonly isAnimation: boolean;
-    constructor(name: string, target: string | null, phase: string | null, handler: AST, sourceSpan: ParseSourceSpan);
+    constructor(name: string, target: string | null, phase: string | null, handler: AST, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan);
     static calcFullName(name: string, target: string | null, phase: string | null): string;
     static fromParsedEvent(event: ParsedEvent): BoundEventAst;
     visit(visitor: TemplateAstVisitor, context: any): any;
