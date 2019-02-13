@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.3+89.sha-872a365
+ * @license Angular v8.0.0-beta.3+124.sha-08de52b
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4672,229 +4672,6 @@ const DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const $EOF = 0;
-const $TAB = 9;
-const $LF = 10;
-const $VTAB = 11;
-const $FF = 12;
-const $CR = 13;
-const $SPACE = 32;
-const $BANG = 33;
-const $DQ = 34;
-const $HASH = 35;
-const $$ = 36;
-const $PERCENT = 37;
-const $AMPERSAND = 38;
-const $SQ = 39;
-const $LPAREN = 40;
-const $RPAREN = 41;
-const $STAR = 42;
-const $PLUS = 43;
-const $COMMA = 44;
-const $MINUS = 45;
-const $PERIOD = 46;
-const $SLASH = 47;
-const $COLON = 58;
-const $SEMICOLON = 59;
-const $LT = 60;
-const $EQ = 61;
-const $GT = 62;
-const $QUESTION = 63;
-const $0 = 48;
-const $9 = 57;
-const $A = 65;
-const $E = 69;
-const $F = 70;
-const $X = 88;
-const $Z = 90;
-const $LBRACKET = 91;
-const $BACKSLASH = 92;
-const $RBRACKET = 93;
-const $CARET = 94;
-const $_ = 95;
-const $a = 97;
-const $e = 101;
-const $f = 102;
-const $n = 110;
-const $r = 114;
-const $t = 116;
-const $u = 117;
-const $v = 118;
-const $x = 120;
-const $z = 122;
-const $LBRACE = 123;
-const $BAR = 124;
-const $RBRACE = 125;
-const $NBSP = 160;
-const $BT = 96;
-function isWhitespace(code) {
-    return (code >= $TAB && code <= $SPACE) || (code == $NBSP);
-}
-function isDigit(code) {
-    return $0 <= code && code <= $9;
-}
-function isAsciiLetter(code) {
-    return code >= $a && code <= $z || code >= $A && code <= $Z;
-}
-function isAsciiHexDigit(code) {
-    return code >= $a && code <= $f || code >= $A && code <= $F || isDigit(code);
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-class ParseLocation {
-    constructor(file, offset, line, col) {
-        this.file = file;
-        this.offset = offset;
-        this.line = line;
-        this.col = col;
-    }
-    toString() {
-        return this.offset != null ? `${this.file.url}@${this.line}:${this.col}` : this.file.url;
-    }
-    moveBy(delta) {
-        const source = this.file.content;
-        const len = source.length;
-        let offset = this.offset;
-        let line = this.line;
-        let col = this.col;
-        while (offset > 0 && delta < 0) {
-            offset--;
-            delta++;
-            const ch = source.charCodeAt(offset);
-            if (ch == $LF) {
-                line--;
-                const priorLine = source.substr(0, offset - 1).lastIndexOf(String.fromCharCode($LF));
-                col = priorLine > 0 ? offset - priorLine : offset;
-            }
-            else {
-                col--;
-            }
-        }
-        while (offset < len && delta > 0) {
-            const ch = source.charCodeAt(offset);
-            offset++;
-            delta--;
-            if (ch == $LF) {
-                line++;
-                col = 0;
-            }
-            else {
-                col++;
-            }
-        }
-        return new ParseLocation(this.file, offset, line, col);
-    }
-    // Return the source around the location
-    // Up to `maxChars` or `maxLines` on each side of the location
-    getContext(maxChars, maxLines) {
-        const content = this.file.content;
-        let startOffset = this.offset;
-        if (startOffset != null) {
-            if (startOffset > content.length - 1) {
-                startOffset = content.length - 1;
-            }
-            let endOffset = startOffset;
-            let ctxChars = 0;
-            let ctxLines = 0;
-            while (ctxChars < maxChars && startOffset > 0) {
-                startOffset--;
-                ctxChars++;
-                if (content[startOffset] == '\n') {
-                    if (++ctxLines == maxLines) {
-                        break;
-                    }
-                }
-            }
-            ctxChars = 0;
-            ctxLines = 0;
-            while (ctxChars < maxChars && endOffset < content.length - 1) {
-                endOffset++;
-                ctxChars++;
-                if (content[endOffset] == '\n') {
-                    if (++ctxLines == maxLines) {
-                        break;
-                    }
-                }
-            }
-            return {
-                before: content.substring(startOffset, this.offset),
-                after: content.substring(this.offset, endOffset + 1),
-            };
-        }
-        return null;
-    }
-}
-class ParseSourceFile {
-    constructor(content, url) {
-        this.content = content;
-        this.url = url;
-    }
-}
-class ParseSourceSpan {
-    constructor(start, end, details = null) {
-        this.start = start;
-        this.end = end;
-        this.details = details;
-    }
-    toString() {
-        return this.start.file.content.substring(this.start.offset, this.end.offset);
-    }
-}
-var ParseErrorLevel;
-(function (ParseErrorLevel) {
-    ParseErrorLevel[ParseErrorLevel["WARNING"] = 0] = "WARNING";
-    ParseErrorLevel[ParseErrorLevel["ERROR"] = 1] = "ERROR";
-})(ParseErrorLevel || (ParseErrorLevel = {}));
-class ParseError {
-    constructor(span, msg, level = ParseErrorLevel.ERROR) {
-        this.span = span;
-        this.msg = msg;
-        this.level = level;
-    }
-    contextualMessage() {
-        const ctx = this.span.start.getContext(100, 3);
-        return ctx ? `${this.msg} ("${ctx.before}[${ParseErrorLevel[this.level]} ->]${ctx.after}")` :
-            this.msg;
-    }
-    toString() {
-        const details = this.span.details ? `, ${this.span.details}` : '';
-        return `${this.contextualMessage()}: ${this.span.start}${details}`;
-    }
-}
-function typeSourceSpan(kind, type) {
-    const moduleUrl = identifierModuleUrl(type);
-    const sourceFileName = moduleUrl != null ? `in ${kind} ${identifierName(type)} in ${moduleUrl}` :
-        `in ${kind} ${identifierName(type)}`;
-    const sourceFile = new ParseSourceFile('', sourceFileName);
-    return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
-}
-/**
- * Generates Source Span object for a given R3 Type for JIT mode.
- *
- * @param kind Component or Directive.
- * @param typeName name of the Component or Directive.
- * @param sourceUrl reference to Component or Directive source.
- * @returns instance of ParseSourceSpan that represent a given Component or Directive.
- */
-function r3JitTypeSourceSpan(kind, typeName, sourceUrl) {
-    const sourceFileName = `in ${kind} ${typeName} in ${sourceUrl}`;
-    const sourceFile = new ParseSourceFile('', sourceFileName);
-    return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 // https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit
 const VERSION = 3;
 const JS_B64_PREFIX = '# sourceMappingURL=data:application/json;base64,';
@@ -5692,33 +5469,72 @@ class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-function evalExpression(sourceUrl, ctx, vars, createSourceMap) {
-    let fnBody = `${ctx.toSource()}\n//# sourceURL=${sourceUrl}`;
-    const fnArgNames = [];
-    const fnArgValues = [];
-    for (const argName in vars) {
-        fnArgNames.push(argName);
-        fnArgValues.push(vars[argName]);
+/**
+ * A helper class to manage the evaluation of JIT generated code.
+ */
+class JitEvaluator {
+    /**
+     *
+     * @param sourceUrl The URL of the generated code.
+     * @param statements An array of Angular statement AST nodes to be evaluated.
+     * @param reflector A helper used when converting the statements to executable code.
+     * @param createSourceMaps If true then create a source-map for the generated code and include it
+     * inline as a source-map comment.
+     * @returns A map of all the variables in the generated code.
+     */
+    evaluateStatements(sourceUrl, statements, reflector, createSourceMaps) {
+        const converter = new JitEmitterVisitor(reflector);
+        const ctx = EmitterVisitorContext.createRoot();
+        converter.visitAllStatements(statements, ctx);
+        converter.createReturnStmt(ctx);
+        return this.evaluateCode(sourceUrl, ctx, converter.getArgs(), createSourceMaps);
     }
-    if (createSourceMap) {
-        // using `new Function(...)` generates a header, 1 line of no arguments, 2 lines otherwise
-        // E.g. ```
-        // function anonymous(a,b,c
-        // /**/) { ... }```
-        // We don't want to hard code this fact, so we auto detect it via an empty function first.
-        const emptyFn = new Function(...fnArgNames.concat('return null;')).toString();
-        const headerLines = emptyFn.slice(0, emptyFn.indexOf('return null;')).split('\n').length - 1;
-        fnBody += `\n${ctx.toSourceMapGenerator(sourceUrl, headerLines).toJsComment()}`;
+    /**
+     * Evaluate a piece of JIT generated code.
+     * @param sourceUrl The URL of this generated code.
+     * @param ctx A context object that contains an AST of the code to be evaluated.
+     * @param vars A map containing the names and values of variables that the evaluated code might
+     * reference.
+     * @param createSourceMap If true then create a source-map for the generated code and include it
+     * inline as a source-map comment.
+     * @returns The result of evaluating the code.
+     */
+    evaluateCode(sourceUrl, ctx, vars, createSourceMap) {
+        let fnBody = `${ctx.toSource()}\n//# sourceURL=${sourceUrl}`;
+        const fnArgNames = [];
+        const fnArgValues = [];
+        for (const argName in vars) {
+            fnArgValues.push(vars[argName]);
+            fnArgNames.push(argName);
+        }
+        if (createSourceMap) {
+            // using `new Function(...)` generates a header, 1 line of no arguments, 2 lines otherwise
+            // E.g. ```
+            // function anonymous(a,b,c
+            // /**/) { ... }```
+            // We don't want to hard code this fact, so we auto detect it via an empty function first.
+            const emptyFn = new Function(...fnArgNames.concat('return null;')).toString();
+            const headerLines = emptyFn.slice(0, emptyFn.indexOf('return null;')).split('\n').length - 1;
+            fnBody += `\n${ctx.toSourceMapGenerator(sourceUrl, headerLines).toJsComment()}`;
+        }
+        const fn$$1 = new Function(...fnArgNames.concat(fnBody));
+        return this.executeFunction(fn$$1, fnArgValues);
     }
-    return new Function(...fnArgNames.concat(fnBody))(...fnArgValues);
+    /**
+     * Execute a JIT generated function by calling it.
+     *
+     * This method can be overridden in tests to capture the functions that are generated
+     * by this `JitEvaluator` class.
+     *
+     * @param fn A function to execute.
+     * @param args The arguments to pass to the function being executed.
+     * @returns The return value of the executed function.
+     */
+    executeFunction(fn$$1, args) { return fn$$1(...args); }
 }
-function jitStatements(sourceUrl, statements, reflector, createSourceMaps) {
-    const converter = new JitEmitterVisitor(reflector);
-    const ctx = EmitterVisitorContext.createRoot();
-    converter.visitAllStatements(statements, ctx);
-    converter.createReturnStmt(ctx);
-    return evalExpression(sourceUrl, ctx, converter.getArgs(), createSourceMaps);
-}
+/**
+ * An Angular AST visitor that converts AST nodes into executable JavaScript code.
+ */
 class JitEmitterVisitor extends AbstractJsEmitterVisitor {
     constructor(reflector) {
         super();
@@ -5783,6 +5599,238 @@ class JitEmitterVisitor extends AbstractJsEmitterVisitor {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+const $EOF = 0;
+const $BSPACE = 8;
+const $TAB = 9;
+const $LF = 10;
+const $VTAB = 11;
+const $FF = 12;
+const $CR = 13;
+const $SPACE = 32;
+const $BANG = 33;
+const $DQ = 34;
+const $HASH = 35;
+const $$ = 36;
+const $PERCENT = 37;
+const $AMPERSAND = 38;
+const $SQ = 39;
+const $LPAREN = 40;
+const $RPAREN = 41;
+const $STAR = 42;
+const $PLUS = 43;
+const $COMMA = 44;
+const $MINUS = 45;
+const $PERIOD = 46;
+const $SLASH = 47;
+const $COLON = 58;
+const $SEMICOLON = 59;
+const $LT = 60;
+const $EQ = 61;
+const $GT = 62;
+const $QUESTION = 63;
+const $0 = 48;
+const $7 = 55;
+const $9 = 57;
+const $A = 65;
+const $E = 69;
+const $F = 70;
+const $X = 88;
+const $Z = 90;
+const $LBRACKET = 91;
+const $BACKSLASH = 92;
+const $RBRACKET = 93;
+const $CARET = 94;
+const $_ = 95;
+const $a = 97;
+const $b = 98;
+const $e = 101;
+const $f = 102;
+const $n = 110;
+const $r = 114;
+const $t = 116;
+const $u = 117;
+const $v = 118;
+const $x = 120;
+const $z = 122;
+const $LBRACE = 123;
+const $BAR = 124;
+const $RBRACE = 125;
+const $NBSP = 160;
+const $BT = 96;
+function isWhitespace(code) {
+    return (code >= $TAB && code <= $SPACE) || (code == $NBSP);
+}
+function isDigit(code) {
+    return $0 <= code && code <= $9;
+}
+function isAsciiLetter(code) {
+    return code >= $a && code <= $z || code >= $A && code <= $Z;
+}
+function isAsciiHexDigit(code) {
+    return code >= $a && code <= $f || code >= $A && code <= $F || isDigit(code);
+}
+function isNewLine(code) {
+    return code === $LF || code === $CR;
+}
+function isOctalDigit(code) {
+    return $0 <= code && code <= $7;
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+class ParseLocation {
+    constructor(file, offset, line, col) {
+        this.file = file;
+        this.offset = offset;
+        this.line = line;
+        this.col = col;
+    }
+    toString() {
+        return this.offset != null ? `${this.file.url}@${this.line}:${this.col}` : this.file.url;
+    }
+    moveBy(delta) {
+        const source = this.file.content;
+        const len = source.length;
+        let offset = this.offset;
+        let line = this.line;
+        let col = this.col;
+        while (offset > 0 && delta < 0) {
+            offset--;
+            delta++;
+            const ch = source.charCodeAt(offset);
+            if (ch == $LF) {
+                line--;
+                const priorLine = source.substr(0, offset - 1).lastIndexOf(String.fromCharCode($LF));
+                col = priorLine > 0 ? offset - priorLine : offset;
+            }
+            else {
+                col--;
+            }
+        }
+        while (offset < len && delta > 0) {
+            const ch = source.charCodeAt(offset);
+            offset++;
+            delta--;
+            if (ch == $LF) {
+                line++;
+                col = 0;
+            }
+            else {
+                col++;
+            }
+        }
+        return new ParseLocation(this.file, offset, line, col);
+    }
+    // Return the source around the location
+    // Up to `maxChars` or `maxLines` on each side of the location
+    getContext(maxChars, maxLines) {
+        const content = this.file.content;
+        let startOffset = this.offset;
+        if (startOffset != null) {
+            if (startOffset > content.length - 1) {
+                startOffset = content.length - 1;
+            }
+            let endOffset = startOffset;
+            let ctxChars = 0;
+            let ctxLines = 0;
+            while (ctxChars < maxChars && startOffset > 0) {
+                startOffset--;
+                ctxChars++;
+                if (content[startOffset] == '\n') {
+                    if (++ctxLines == maxLines) {
+                        break;
+                    }
+                }
+            }
+            ctxChars = 0;
+            ctxLines = 0;
+            while (ctxChars < maxChars && endOffset < content.length - 1) {
+                endOffset++;
+                ctxChars++;
+                if (content[endOffset] == '\n') {
+                    if (++ctxLines == maxLines) {
+                        break;
+                    }
+                }
+            }
+            return {
+                before: content.substring(startOffset, this.offset),
+                after: content.substring(this.offset, endOffset + 1),
+            };
+        }
+        return null;
+    }
+}
+class ParseSourceFile {
+    constructor(content, url) {
+        this.content = content;
+        this.url = url;
+    }
+}
+class ParseSourceSpan {
+    constructor(start, end, details = null) {
+        this.start = start;
+        this.end = end;
+        this.details = details;
+    }
+    toString() {
+        return this.start.file.content.substring(this.start.offset, this.end.offset);
+    }
+}
+var ParseErrorLevel;
+(function (ParseErrorLevel) {
+    ParseErrorLevel[ParseErrorLevel["WARNING"] = 0] = "WARNING";
+    ParseErrorLevel[ParseErrorLevel["ERROR"] = 1] = "ERROR";
+})(ParseErrorLevel || (ParseErrorLevel = {}));
+class ParseError {
+    constructor(span, msg, level = ParseErrorLevel.ERROR) {
+        this.span = span;
+        this.msg = msg;
+        this.level = level;
+    }
+    contextualMessage() {
+        const ctx = this.span.start.getContext(100, 3);
+        return ctx ? `${this.msg} ("${ctx.before}[${ParseErrorLevel[this.level]} ->]${ctx.after}")` :
+            this.msg;
+    }
+    toString() {
+        const details = this.span.details ? `, ${this.span.details}` : '';
+        return `${this.contextualMessage()}: ${this.span.start}${details}`;
+    }
+}
+function typeSourceSpan(kind, type) {
+    const moduleUrl = identifierModuleUrl(type);
+    const sourceFileName = moduleUrl != null ? `in ${kind} ${identifierName(type)} in ${moduleUrl}` :
+        `in ${kind} ${identifierName(type)}`;
+    const sourceFile = new ParseSourceFile('', sourceFileName);
+    return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
+}
+/**
+ * Generates Source Span object for a given R3 Type for JIT mode.
+ *
+ * @param kind Component or Directive.
+ * @param typeName name of the Component or Directive.
+ * @param sourceUrl reference to Component or Directive source.
+ * @returns instance of ParseSourceSpan that represent a given Component or Directive.
+ */
+function r3JitTypeSourceSpan(kind, typeName, sourceUrl) {
+    const sourceFileName = `in ${kind} ${typeName} in ${sourceUrl}`;
+    const sourceFile = new ParseSourceFile('', sourceFileName);
+    return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * Implementation of `CompileReflector` which resolves references to @angular/core
  * symbols at runtime, according to a consumer-provided mapping.
@@ -5811,26 +5859,6 @@ class R3JitReflector {
     hasLifecycleHook(type, lcProperty) { throw new Error('Not implemented.'); }
     guards(typeOrFunc) { throw new Error('Not implemented.'); }
     componentModuleUrl(type, cmpMetadata) { throw new Error('Not implemented.'); }
-}
-/**
- * JIT compiles an expression and returns the result of executing that expression.
- *
- * @param def the definition which will be compiled and executed to get the value to patch
- * @param context an object map of @angular/core symbol names to symbols which will be available in
- * the context of the compiled expression
- * @param sourceUrl a URL to use for the source map of the compiled expression
- * @param constantPool an optional `ConstantPool` which contains constants used in the expression
- */
-function jitExpression(def, context, sourceUrl, preStatements) {
-    // The ConstantPool may contain Statements which declare variables used in the final expression.
-    // Therefore, its statements need to precede the actual JIT operation. The final statement is a
-    // declaration of $def which is set to the expression being compiled.
-    const statements = [
-        ...preStatements,
-        new DeclareVarStmt('$def', def, undefined, [StmtModifier.Exported]),
-    ];
-    const res = jitStatements(sourceUrl, statements, new R3JitReflector(context), false);
-    return res['$def'];
 }
 
 /**
@@ -6496,7 +6524,7 @@ class AstMemoryEfficientTransformer {
         const condition = ast.condition.visit(this);
         const trueExp = ast.trueExp.visit(this);
         const falseExp = ast.falseExp.visit(this);
-        if (condition !== ast.condition || trueExp !== ast.trueExp || falseExp !== falseExp) {
+        if (condition !== ast.condition || trueExp !== ast.trueExp || falseExp !== ast.falseExp) {
             return new Conditional(ast.span, condition, trueExp, falseExp);
         }
         return ast;
@@ -6625,12 +6653,13 @@ var ParsedPropertyType;
 class ParsedEvent {
     // Regular events have a target
     // Animation events have a phase
-    constructor(name, targetOrPhase, type, handler, sourceSpan) {
+    constructor(name, targetOrPhase, type, handler, sourceSpan, handlerSpan) {
         this.name = name;
         this.targetOrPhase = targetOrPhase;
         this.type = type;
         this.handler = handler;
         this.sourceSpan = sourceSpan;
+        this.handlerSpan = handlerSpan;
     }
 }
 class ParsedVariable {
@@ -6705,7 +6734,7 @@ class ConvertActionBindingResult {
  * Converts the given expression AST into an executable output AST, assuming the expression is
  * used in an action binding (e.g. an event handler).
  */
-function convertActionBinding(localResolver, implicitReceiver, action, bindingId, interpolationFunction) {
+function convertActionBinding(localResolver, implicitReceiver, action, bindingId, interpolationFunction, baseSourceSpan) {
     if (!localResolver) {
         localResolver = new DefaultLocalResolver();
     }
@@ -6729,7 +6758,7 @@ function convertActionBinding(localResolver, implicitReceiver, action, bindingId
             throw new Error(`Illegal State: Actions are not allowed to contain pipes. Pipe: ${name}`);
         }
     }, action);
-    const visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId, interpolationFunction);
+    const visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId, interpolationFunction, baseSourceSpan);
     const actionStmts = [];
     flattenStatements(actionWithoutBuiltins.visit(visitor, _Mode.Statement), actionStmts);
     prependTemporaryDecls(visitor.temporaryCount, bindingId, actionStmts);
@@ -6847,11 +6876,12 @@ class _BuiltinAstConverter extends AstTransformer$1 {
     }
 }
 class _AstToIrVisitor {
-    constructor(_localResolver, _implicitReceiver, bindingId, interpolationFunction) {
+    constructor(_localResolver, _implicitReceiver, bindingId, interpolationFunction, baseSourceSpan) {
         this._localResolver = _localResolver;
         this._implicitReceiver = _implicitReceiver;
         this.bindingId = bindingId;
         this.interpolationFunction = interpolationFunction;
+        this.baseSourceSpan = baseSourceSpan;
         this._nodeMap = new Map();
         this._resultMap = new Map();
         this._currentTemporary = 0;
@@ -6908,7 +6938,7 @@ class _AstToIrVisitor {
             default:
                 throw new Error(`Unsupported operation ${ast.operation}`);
         }
-        return convertToStatementIfNeeded(mode, new BinaryOperatorExpr(op, this._visit(ast.left, _Mode.Expression), this._visit(ast.right, _Mode.Expression)));
+        return convertToStatementIfNeeded(mode, new BinaryOperatorExpr(op, this._visit(ast.left, _Mode.Expression), this._visit(ast.right, _Mode.Expression), undefined, this.convertSourceSpan(ast.span)));
     }
     visitChain(ast, mode) {
         ensureStatementMode(mode, ast);
@@ -6916,7 +6946,7 @@ class _AstToIrVisitor {
     }
     visitConditional(ast, mode) {
         const value = this._visit(ast.condition, _Mode.Expression);
-        return convertToStatementIfNeeded(mode, value.conditional(this._visit(ast.trueExp, _Mode.Expression), this._visit(ast.falseExp, _Mode.Expression)));
+        return convertToStatementIfNeeded(mode, value.conditional(this._visit(ast.trueExp, _Mode.Expression), this._visit(ast.falseExp, _Mode.Expression), this.convertSourceSpan(ast.span)));
     }
     visitPipe(ast, mode) {
         throw new Error(`Illegal state: Pipes should have been converted into functions. Pipe: ${ast.name}`);
@@ -6928,7 +6958,8 @@ class _AstToIrVisitor {
             fnResult = ast.converter(convertedArgs);
         }
         else {
-            fnResult = this._visit(ast.target, _Mode.Expression).callFn(convertedArgs);
+            fnResult = this._visit(ast.target, _Mode.Expression)
+                .callFn(convertedArgs, this.convertSourceSpan(ast.span));
         }
         return convertToStatementIfNeeded(mode, fnResult);
     }
@@ -6949,7 +6980,9 @@ class _AstToIrVisitor {
         }
         return ast.expressions.length <= 9 ?
             importExpr(Identifiers.inlineInterpolate).callFn(args) :
-            importExpr(Identifiers.interpolate).callFn([args[0], literalArr(args.slice(1))]);
+            importExpr(Identifiers.interpolate).callFn([
+                args[0], literalArr(args.slice(1), undefined, this.convertSourceSpan(ast.span))
+            ]);
     }
     visitKeyedRead(ast, mode) {
         const leftMostSafe = this.leftMostSafeNode(ast);
@@ -6978,7 +7011,7 @@ class _AstToIrVisitor {
         const type = ast.value === null || ast.value === undefined || ast.value === true || ast.value === true ?
             INFERRED_TYPE :
             undefined;
-        return convertToStatementIfNeeded(mode, literal(ast.value, type));
+        return convertToStatementIfNeeded(mode, literal(ast.value, type, this.convertSourceSpan(ast.span)));
     }
     _getLocal(name) { return this._localResolver.getLocal(name); }
     visitMethodCall(ast, mode) {
@@ -6987,7 +7020,7 @@ class _AstToIrVisitor {
             if (args.length != 1) {
                 throw new Error(`Invalid call to $any, expected 1 argument but received ${args.length || 'none'}`);
             }
-            return args[0].cast(DYNAMIC_TYPE);
+            return args[0].cast(DYNAMIC_TYPE, this.convertSourceSpan(ast.span));
         }
         const leftMostSafe = this.leftMostSafeNode(ast);
         if (leftMostSafe) {
@@ -7004,7 +7037,7 @@ class _AstToIrVisitor {
                 }
             }
             if (result == null) {
-                result = receiver.callMethod(ast.name, args);
+                result = receiver.callMethod(ast.name, args, this.convertSourceSpan(ast.span));
             }
             return convertToStatementIfNeeded(mode, result);
         }
@@ -7223,6 +7256,27 @@ class _AstToIrVisitor {
         this._currentTemporary--;
         if (temporary.name != temporaryName(this.bindingId, this._currentTemporary)) {
             throw new Error(`Temporary ${temporary.name} released out of order`);
+        }
+    }
+    /**
+     * Creates an absolute `ParseSourceSpan` from the relative `ParseSpan`.
+     *
+     * `ParseSpan` objects are relative to the start of the expression.
+     * This method converts these to full `ParseSourceSpan` objects that
+     * show where the span is within the overall source file.
+     *
+     * @param span the relative span to convert.
+     * @returns a `ParseSourceSpan` for the the given span or null if no
+     * `baseSourceSpan` was provided to this class.
+     */
+    convertSourceSpan(span) {
+        if (this.baseSourceSpan) {
+            const start = this.baseSourceSpan.start.moveBy(span.start);
+            const end = this.baseSourceSpan.start.moveBy(span.end);
+            return new ParseSourceSpan(start, end);
+        }
+        else {
+            return null;
         }
     }
 }
@@ -8012,18 +8066,19 @@ class BoundAttribute {
     visit(visitor) { return visitor.visitBoundAttribute(this); }
 }
 class BoundEvent {
-    constructor(name, type, handler, target, phase, sourceSpan) {
+    constructor(name, type, handler, target, phase, sourceSpan, handlerSpan) {
         this.name = name;
         this.type = type;
         this.handler = handler;
         this.target = target;
         this.phase = phase;
         this.sourceSpan = sourceSpan;
+        this.handlerSpan = handlerSpan;
     }
     static fromParsedEvent(event) {
         const target = event.type === 0 /* Regular */ ? event.targetOrPhase : null;
         const phase = event.type === 1 /* Animation */ ? event.targetOrPhase : null;
-        return new BoundEvent(event.name, event.type, event.handler, target, phase, event.sourceSpan);
+        return new BoundEvent(event.name, event.type, event.handler, target, phase, event.sourceSpan, event.handlerSpan);
     }
     visit(visitor) { return visitor.visitBoundEvent(this); }
 }
@@ -8039,6 +8094,10 @@ class Element {
         this.startSourceSpan = startSourceSpan;
         this.endSourceSpan = endSourceSpan;
         this.i18n = i18n;
+        // If the element is empty then the source span should include any closing tag
+        if (children.length === 0 && startSourceSpan && endSourceSpan) {
+            this.sourceSpan = Object.assign({}, sourceSpan, { end: endSourceSpan.end });
+        }
     }
     visit(visitor) { return visitor.visitElement(this); }
 }
@@ -8211,6 +8270,7 @@ function hyphenate(value) {
     }).toLowerCase();
 }
 
+const IMPORTANT_FLAG = '!important';
 /**
  * Produces creation/update instructions for all styling bindings (class and style)
  *
@@ -8293,49 +8353,66 @@ class StylingBuilder {
         // will therefore skip all style/class resolution that is present
         // with style="", [style]="" and [style.prop]="", class="",
         // [class.prop]="". [class]="" assignments
-        const name = input.name;
         let binding = null;
+        let name = input.name;
         switch (input.type) {
             case 0 /* Property */:
-                if (name == 'style') {
-                    binding = this.registerStyleInput(null, input.value, '', input.sourceSpan);
-                }
-                else if (isClassBinding(input.name)) {
-                    binding = this.registerClassInput(null, input.value, input.sourceSpan);
-                }
+                binding = this.registerInputBasedOnName(name, input.value, input.sourceSpan);
                 break;
             case 3 /* Style */:
-                binding = this.registerStyleInput(input.name, input.value, input.unit, input.sourceSpan);
+                binding = this.registerStyleInput(name, false, input.value, input.sourceSpan, input.unit);
                 break;
             case 2 /* Class */:
-                binding = this.registerClassInput(input.name, input.value, input.sourceSpan);
+                binding = this.registerClassInput(name, false, input.value, input.sourceSpan);
                 break;
         }
         return binding ? true : false;
     }
-    registerStyleInput(propertyName, value, unit, sourceSpan) {
-        const entry = { name: propertyName, unit, value, sourceSpan };
-        if (propertyName) {
-            (this._singleStyleInputs = this._singleStyleInputs || []).push(entry);
-            this._useDefaultSanitizer = this._useDefaultSanitizer || isStyleSanitizable(propertyName);
-            registerIntoMap(this._stylesIndex, propertyName);
+    registerInputBasedOnName(name, expression, sourceSpan) {
+        let binding = null;
+        const nameToMatch = name.substring(0, 5); // class | style
+        const isStyle = nameToMatch === 'style';
+        const isClass = isStyle ? false : (nameToMatch === 'class');
+        if (isStyle || isClass) {
+            const isMapBased = name.charAt(5) !== '.'; // style.prop or class.prop makes this a no
+            const property = name.substr(isMapBased ? 5 : 6); // the dot explains why there's a +1
+            if (isStyle) {
+                binding = this.registerStyleInput(property, isMapBased, expression, sourceSpan);
+            }
+            else {
+                binding = this.registerClassInput(property, isMapBased, expression, sourceSpan);
+            }
         }
-        else {
+        return binding;
+    }
+    registerStyleInput(name, isMapBased, value, sourceSpan, unit) {
+        const { property, hasOverrideFlag, unit: bindingUnit } = parseProperty(name);
+        const entry = {
+            name: property,
+            unit: unit || bindingUnit, value, sourceSpan, hasOverrideFlag
+        };
+        if (isMapBased) {
             this._useDefaultSanitizer = true;
             this._styleMapInput = entry;
+        }
+        else {
+            (this._singleStyleInputs = this._singleStyleInputs || []).push(entry);
+            this._useDefaultSanitizer = this._useDefaultSanitizer || isStyleSanitizable(name);
+            registerIntoMap(this._stylesIndex, property);
         }
         this._lastStylingInput = entry;
         this.hasBindings = true;
         return entry;
     }
-    registerClassInput(className, value, sourceSpan) {
-        const entry = { name: className, value, sourceSpan };
-        if (className) {
-            (this._singleClassInputs = this._singleClassInputs || []).push(entry);
-            registerIntoMap(this._classesIndex, className);
+    registerClassInput(name, isMapBased, value, sourceSpan) {
+        const { property, hasOverrideFlag } = parseProperty(name);
+        const entry = { name: property, value, sourceSpan, hasOverrideFlag, unit: null };
+        if (isMapBased) {
+            this._classMapInput = entry;
         }
         else {
-            this._classMapInput = entry;
+            (this._singleClassInputs = this._singleClassInputs || []).push(entry);
+            registerIntoMap(this._classesIndex, property);
         }
         this._lastStylingInput = entry;
         this.hasBindings = true;
@@ -8395,6 +8472,7 @@ class StylingBuilder {
                 reference: Identifiers$1.elementHostAttrs,
                 allocateBindingSlots: 0,
                 buildParams: () => {
+                    // params => elementHostAttrs(directive, attrs)
                     this.populateInitialStylingAttrs(attrs);
                     return [this._directiveExpr, getConstantLiteralFromArray(constantPool, attrs)];
                 }
@@ -8480,22 +8558,23 @@ class StylingBuilder {
                 reference: Identifiers$1.elementStylingMap,
                 allocateBindingSlots: totalBindingSlotsRequired,
                 buildParams: (convertFn) => {
-                    const params = [this._elementIndexExpr];
-                    if (mapBasedClassValue) {
-                        params.push(convertFn(mapBasedClassValue));
-                    }
-                    else if (this._styleMapInput) {
-                        params.push(NULL_EXPR);
-                    }
-                    if (mapBasedStyleValue) {
-                        params.push(convertFn(mapBasedStyleValue));
-                    }
-                    else if (this._directiveExpr) {
-                        params.push(NULL_EXPR);
-                    }
+                    // min params => elementStylingMap(index, classMap)
+                    // max params => elementStylingMap(index, classMap, styleMap, directive)
+                    let expectedNumberOfArgs = 0;
                     if (this._directiveExpr) {
-                        params.push(this._directiveExpr);
+                        expectedNumberOfArgs = 4;
                     }
+                    else if (mapBasedStyleValue) {
+                        expectedNumberOfArgs = 3;
+                    }
+                    else if (mapBasedClassValue) {
+                        // index and class = 2
+                        expectedNumberOfArgs = 2;
+                    }
+                    const params = [this._elementIndexExpr];
+                    addParam(params, mapBasedClassValue, mapBasedClassValue ? convertFn(mapBasedClassValue) : null, 2, expectedNumberOfArgs);
+                    addParam(params, mapBasedStyleValue, mapBasedStyleValue ? convertFn(mapBasedStyleValue) : null, 3, expectedNumberOfArgs);
+                    addParam(params, this._directiveExpr, this._directiveExpr, 4, expectedNumberOfArgs);
                     return params;
                 }
             };
@@ -8512,6 +8591,8 @@ class StylingBuilder {
                 sourceSpan: input.sourceSpan,
                 allocateBindingSlots: totalBindingSlotsRequired, reference,
                 buildParams: (convertFn) => {
+                    // min params => elementStlyingProp(elmIndex, bindingIndex, value)
+                    // max params => elementStlyingProp(elmIndex, bindingIndex, value, overrideFlag)
                     const params = [this._elementIndexExpr, literal(bindingIndex), convertFn(value)];
                     if (allowUnits) {
                         if (input.unit) {
@@ -8523,6 +8604,12 @@ class StylingBuilder {
                     }
                     if (this._directiveExpr) {
                         params.push(this._directiveExpr);
+                    }
+                    else if (input.hasOverrideFlag) {
+                        params.push(NULL_EXPR);
+                    }
+                    if (input.hasOverrideFlag) {
+                        params.push(literal(true));
                     }
                     return params;
                 }
@@ -8547,6 +8634,8 @@ class StylingBuilder {
             reference: Identifiers$1.elementStylingApply,
             allocateBindingSlots: 0,
             buildParams: () => {
+                // min params => elementStylingApply(elmIndex)
+                // max params => elementStylingApply(elmIndex, directive)
                 const params = [this._elementIndexExpr];
                 if (this._directiveExpr) {
                     params.push(this._directiveExpr);
@@ -8573,9 +8662,6 @@ class StylingBuilder {
         return instructions;
     }
 }
-function isClassBinding(name) {
-    return name == 'className' || name == 'class';
-}
 function registerIntoMap(map, key) {
     if (!map.has(key)) {
         map.set(key, map.size);
@@ -8597,12 +8683,28 @@ function getConstantLiteralFromArray(constantPool, values) {
  * predicate and totalExpectedArgs values
  */
 function addParam(params, predicate, value, argNumber, totalExpectedArgs) {
-    if (predicate) {
+    if (predicate && value) {
         params.push(value);
     }
     else if (argNumber < totalExpectedArgs) {
         params.push(NULL_EXPR);
     }
+}
+function parseProperty(name) {
+    let hasOverrideFlag = false;
+    const overrideIndex = name.indexOf(IMPORTANT_FLAG);
+    if (overrideIndex !== -1) {
+        name = overrideIndex > 0 ? name.substring(0, overrideIndex) : '';
+        hasOverrideFlag = true;
+    }
+    let unit = '';
+    let property = name;
+    const unitIndex = name.lastIndexOf('.');
+    if (unitIndex > 0) {
+        unit = name.substr(unitIndex + 1);
+        property = name.substring(0, unitIndex);
+    }
+    return { property, unit, hasOverrideFlag };
 }
 
 /**
@@ -9884,14 +9986,15 @@ var TokenType$1;
     TokenType[TokenType["CDATA_START"] = 9] = "CDATA_START";
     TokenType[TokenType["CDATA_END"] = 10] = "CDATA_END";
     TokenType[TokenType["ATTR_NAME"] = 11] = "ATTR_NAME";
-    TokenType[TokenType["ATTR_VALUE"] = 12] = "ATTR_VALUE";
-    TokenType[TokenType["DOC_TYPE"] = 13] = "DOC_TYPE";
-    TokenType[TokenType["EXPANSION_FORM_START"] = 14] = "EXPANSION_FORM_START";
-    TokenType[TokenType["EXPANSION_CASE_VALUE"] = 15] = "EXPANSION_CASE_VALUE";
-    TokenType[TokenType["EXPANSION_CASE_EXP_START"] = 16] = "EXPANSION_CASE_EXP_START";
-    TokenType[TokenType["EXPANSION_CASE_EXP_END"] = 17] = "EXPANSION_CASE_EXP_END";
-    TokenType[TokenType["EXPANSION_FORM_END"] = 18] = "EXPANSION_FORM_END";
-    TokenType[TokenType["EOF"] = 19] = "EOF";
+    TokenType[TokenType["ATTR_QUOTE"] = 12] = "ATTR_QUOTE";
+    TokenType[TokenType["ATTR_VALUE"] = 13] = "ATTR_VALUE";
+    TokenType[TokenType["DOC_TYPE"] = 14] = "DOC_TYPE";
+    TokenType[TokenType["EXPANSION_FORM_START"] = 15] = "EXPANSION_FORM_START";
+    TokenType[TokenType["EXPANSION_CASE_VALUE"] = 16] = "EXPANSION_CASE_VALUE";
+    TokenType[TokenType["EXPANSION_CASE_EXP_START"] = 17] = "EXPANSION_CASE_EXP_START";
+    TokenType[TokenType["EXPANSION_CASE_EXP_END"] = 18] = "EXPANSION_CASE_EXP_END";
+    TokenType[TokenType["EXPANSION_FORM_END"] = 19] = "EXPANSION_FORM_END";
+    TokenType[TokenType["EOF"] = 20] = "EOF";
 })(TokenType$1 || (TokenType$1 = {}));
 class Token$1 {
     constructor(type, parts, sourceSpan) {
@@ -9912,9 +10015,8 @@ class TokenizeResult {
         this.errors = errors;
     }
 }
-function tokenize(source, url, getTagDefinition, tokenizeExpansionForms = false, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-    return new _Tokenizer(new ParseSourceFile(source, url), getTagDefinition, tokenizeExpansionForms, interpolationConfig)
-        .tokenize();
+function tokenize(source, url, getTagDefinition, options = {}) {
+    return new _Tokenizer(new ParseSourceFile(source, url), getTagDefinition, options).tokenize();
 }
 const _CR_OR_CRLF_REGEXP = /\r\n?/g;
 function _unexpectedCharacterErrorMsg(charCode) {
@@ -9937,24 +10039,44 @@ class _Tokenizer {
      * @param _tokenizeIcu Whether to tokenize ICU messages (considered as text nodes when false)
      * @param _interpolationConfig
      */
-    constructor(_file, _getTagDefinition, _tokenizeIcu, _interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+    constructor(_file, _getTagDefinition, options) {
         this._file = _file;
         this._getTagDefinition = _getTagDefinition;
-        this._tokenizeIcu = _tokenizeIcu;
-        this._interpolationConfig = _interpolationConfig;
-        // Note: this is always lowercase!
         this._peek = -1;
         this._nextPeek = -1;
-        this._index = -1;
-        this._line = 0;
-        this._column = -1;
+        this._currentTokenStart = null;
+        this._currentTokenType = null;
         this._expansionCaseStack = [];
         this._inInterpolation = false;
         this.tokens = [];
         this.errors = [];
+        this._tokenizeIcu = options.tokenizeExpansionForms || false;
+        this._interpolationConfig = options.interpolationConfig || DEFAULT_INTERPOLATION_CONFIG;
+        this._escapedString = options.escapedString || false;
         this._input = _file.content;
-        this._length = _file.content.length;
-        this._advance();
+        if (options.range) {
+            this._end = options.range.endPos;
+            this._index = options.range.startPos;
+            this._line = options.range.startLine;
+            this._column = options.range.startCol;
+        }
+        else {
+            this._end = this._input.length;
+            this._index = 0;
+            this._line = 0;
+            this._column = 0;
+        }
+        try {
+            this._initPeek();
+        }
+        catch (e) {
+            if (e instanceof _ControlFlowError) {
+                this.errors.push(e.error);
+            }
+            else {
+                throw e;
+            }
+        }
     }
     _processCarriageReturns(content) {
         // http://www.w3.org/TR/html5/syntax.html#preprocessing-the-input-stream
@@ -10039,6 +10161,12 @@ class _Tokenizer {
         this._currentTokenType = type;
     }
     _endToken(parts, end = this._getLocation()) {
+        if (this._currentTokenStart === null) {
+            throw new TokenError('Programming error - attempted to end a token when there was no start to the token', this._currentTokenType, this._getSpan(end, end));
+        }
+        if (this._currentTokenType === null) {
+            throw new TokenError('Programming error - attempted to end a token which has no token type', null, this._getSpan(this._currentTokenStart, end));
+        }
         const token = new Token$1(this._currentTokenType, parts, new ParseSourceSpan(this._currentTokenStart, end));
         this.tokens.push(token);
         this._currentTokenStart = null;
@@ -10054,21 +10182,46 @@ class _Tokenizer {
         this._currentTokenType = null;
         return new _ControlFlowError(error);
     }
-    _advance() {
-        if (this._index >= this._length) {
+    _advance(processingEscapeSequence) {
+        if (this._index >= this._end) {
             throw this._createError(_unexpectedCharacterErrorMsg($EOF), this._getSpan());
         }
-        if (this._peek === $LF) {
+        // The actual character in the input might be different to the _peek if we are processing
+        // escape characters. We only want to track "real" new lines.
+        const actualChar = this._input.charCodeAt(this._index);
+        if (actualChar === $LF) {
             this._line++;
             this._column = 0;
         }
-        else if (this._peek !== $LF && this._peek !== $CR) {
+        else if (!isNewLine(actualChar)) {
             this._column++;
         }
         this._index++;
-        this._peek = this._index >= this._length ? $EOF : this._input.charCodeAt(this._index);
+        this._initPeek(processingEscapeSequence);
+    }
+    /**
+     * Initialize the _peek and _nextPeek properties based on the current _index.
+     * @param processingEscapeSequence whether we are in the middle of processing an escape sequence.
+     */
+    _initPeek(processingEscapeSequence) {
+        this._peek = this._index >= this._end ? $EOF : this._input.charCodeAt(this._index);
         this._nextPeek =
-            this._index + 1 >= this._length ? $EOF : this._input.charCodeAt(this._index + 1);
+            this._index + 1 >= this._end ? $EOF : this._input.charCodeAt(this._index + 1);
+        if (this._peek === $BACKSLASH && processingEscapeSequence !== true &&
+            this._escapedString) {
+            this._processEscapeSequence();
+        }
+    }
+    /**
+     * Advance the specific number of characters.
+     * @param count The number of characters to advance.
+     * @param processingEscapeSequence Whether we want `advance()` to process escape sequences.
+     */
+    _advanceN(count, processingEscapeSequence) {
+        while (count) {
+            this._advance(processingEscapeSequence);
+            count--;
+        }
     }
     _attemptCharCode(charCode) {
         if (this._peek === charCode) {
@@ -10092,7 +10245,7 @@ class _Tokenizer {
     }
     _attemptStr(chars) {
         const len = chars.length;
-        if (this._index + len > this._length) {
+        if (this._index + len > this._end) {
             return false;
         }
         const initialPosition = this._savePosition();
@@ -10142,9 +10295,11 @@ class _Tokenizer {
             return this._decodeEntity();
         }
         else {
-            const index = this._index;
+            // Don't rely upon reading directly from `_input` as the actual char value
+            // may have been generated from an escape sequence.
+            const char = String.fromCodePoint(this._peek);
             this._advance();
-            return this._input[index];
+            return char;
         }
     }
     _decodeEntity() {
@@ -10184,6 +10339,117 @@ class _Tokenizer {
             return char;
         }
     }
+    /**
+     * Process the escape sequence that starts at the current position in the text.
+     *
+     * This method is called from `_advance()` to ensure that escape sequences are
+     * always processed correctly however tokens are being consumed.
+     *
+     * But note that this method also calls `_advance()` (re-entering) to move through
+     * the characters within an escape sequence. In that case it tells `_advance()` not
+     * to attempt to process further escape sequences by passing `true` as its first
+     * argument.
+     */
+    _processEscapeSequence() {
+        this._advance(true); // advance past the backslash
+        // First check for standard control char sequences
+        if (this._peekChar() === $n) {
+            this._peek = $LF;
+        }
+        else if (this._peekChar() === $r) {
+            this._peek = $CR;
+        }
+        else if (this._peekChar() === $v) {
+            this._peek = $VTAB;
+        }
+        else if (this._peekChar() === $t) {
+            this._peek = $TAB;
+        }
+        else if (this._peekChar() === $b) {
+            this._peek = $BSPACE;
+        }
+        else if (this._peekChar() === $f) {
+            this._peek = $FF;
+        }
+        // Now consider more complex sequences
+        else if (this._peekChar() === $u) {
+            // Unicode code-point sequence
+            this._advance(true); // advance past the `u` char
+            if (this._peekChar() === $LBRACE) {
+                // Variable length Unicode, e.g. `\x{123}`
+                this._advance(true); // advance past the `{` char
+                // Advance past the variable number of hex digits until we hit a `}` char
+                const start = this._getLocation();
+                while (this._peekChar() !== $RBRACE) {
+                    this._advance(true);
+                }
+                this._decodeHexDigits(start, this._index - start.offset);
+            }
+            else {
+                // Fixed length Unicode, e.g. `\u1234`
+                this._parseFixedHexSequence(4);
+            }
+        }
+        else if (this._peekChar() === $x) {
+            // Hex char code, e.g. `\x2F`
+            this._advance(true); // advance past the `x` char
+            this._parseFixedHexSequence(2);
+        }
+        else if (isOctalDigit(this._peekChar())) {
+            // Octal char code, e.g. `\012`,
+            const start = this._index;
+            let length = 1;
+            // Note that we work with `_nextPeek` because, although we check the next character
+            // after the sequence to find the end of the sequence,
+            // we do not want to advance that far to check the character, otherwise we will
+            // have to back up.
+            while (isOctalDigit(this._nextPeek) && length < 3) {
+                this._advance(true);
+                length++;
+            }
+            const octal = this._input.substr(start, length);
+            this._peek = parseInt(octal, 8);
+        }
+        else if (isNewLine(this._peekChar())) {
+            // Line continuation `\` followed by a new line
+            this._advance(true); // advance over the newline
+        }
+        // If none of the `if` blocks were executed then we just have an escaped normal character.
+        // In that case we just, effectively, skip the backslash from the character.
+    }
+    _parseFixedHexSequence(length) {
+        const start = this._getLocation();
+        this._advanceN(length - 1, true);
+        this._decodeHexDigits(start, length);
+    }
+    _decodeHexDigits(start, length) {
+        const hex = this._input.substr(start.offset, length);
+        const charCode = parseInt(hex, 16);
+        if (!isNaN(charCode)) {
+            this._peek = charCode;
+        }
+        else {
+            throw this._createError('Invalid hexadecimal escape sequence', this._getSpan(start, this._getLocation()));
+        }
+    }
+    /**
+     * This little helper is to solve a problem where the TS compiler will narrow
+     * the type of `_peek` after an `if` statment, even if there is a call to a
+     * method that might mutate the `_peek`.
+     *
+     * For example:
+     *
+     * ```
+     * if (this._peek === 10) {
+     *   this._advance(); // mutates _peek
+     *   if (this._peek === 20) {
+     *     ...
+     * ```
+     *
+     * The second if statement fails TS compilation because the compiler has determined
+     * that `_peek` is `10` and so can never be equal to `20`.
+     */
+    _peekChar() { return this._peek; }
     _consumeRawText(decodeEntities, firstCharOfEnd, attemptEndRest) {
         let tagCloseStart;
         const textStart = this._getLocation();
@@ -10312,24 +10578,30 @@ class _Tokenizer {
         this._endToken(prefixAndName);
     }
     _consumeAttributeValue() {
-        this._beginToken(TokenType$1.ATTR_VALUE);
         let value;
         if (this._peek === $SQ || this._peek === $DQ) {
+            this._beginToken(TokenType$1.ATTR_QUOTE);
             const quoteChar = this._peek;
             this._advance();
+            this._endToken([String.fromCodePoint(quoteChar)]);
+            this._beginToken(TokenType$1.ATTR_VALUE);
             const parts = [];
             while (this._peek !== quoteChar) {
                 parts.push(this._readChar(true));
             }
             value = parts.join('');
+            this._endToken([this._processCarriageReturns(value)]);
+            this._beginToken(TokenType$1.ATTR_QUOTE);
             this._advance();
+            this._endToken([String.fromCodePoint(quoteChar)]);
         }
         else {
+            this._beginToken(TokenType$1.ATTR_VALUE);
             const valueStart = this._index;
             this._requireCharCodeUntilFn(isNameEnd, 1);
             value = this._input.substring(valueStart, this._index);
+            this._endToken([this._processCarriageReturns(value)]);
         }
-        this._endToken([this._processCarriageReturns(value)]);
     }
     _consumeTagOpenEnd() {
         const tokenType = this._attemptCharCode($SLASH) ? TokenType$1.TAG_OPEN_END_VOID : TokenType$1.TAG_OPEN_END;
@@ -10524,8 +10796,8 @@ class Parser$1 {
     constructor(getTagDefinition) {
         this.getTagDefinition = getTagDefinition;
     }
-    parse(source, url, parseExpansionForms = false, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        const tokensAndErrors = tokenize(source, url, this.getTagDefinition, parseExpansionForms, interpolationConfig);
+    parse(source, url, options) {
+        const tokensAndErrors = tokenize(source, url, this.getTagDefinition, options);
         const treeAndErrors = new _TreeBuilder(tokensAndErrors.tokens, this.getTagDefinition).build();
         return new ParseTreeResult(treeAndErrors.rootNodes, tokensAndErrors.errors.concat(treeAndErrors.errors));
     }
@@ -10771,11 +11043,18 @@ class _TreeBuilder {
         let end = attrName.sourceSpan.end;
         let value = '';
         let valueSpan = undefined;
+        if (this._peek.type === TokenType$1.ATTR_QUOTE) {
+            this._advance();
+        }
         if (this._peek.type === TokenType$1.ATTR_VALUE) {
             const valueToken = this._advance();
             value = valueToken.parts[0];
             end = valueToken.sourceSpan.end;
             valueSpan = valueToken.sourceSpan;
+        }
+        if (this._peek.type === TokenType$1.ATTR_QUOTE) {
+            const quoteToken = this._advance();
+            end = quoteToken.sourceSpan.end;
         }
         return new Attribute(fullName, value, new ParseSourceSpan(attrName.sourceSpan.start, end), valueSpan);
     }
@@ -10854,8 +11133,8 @@ function lastOnStack(stack, element) {
  */
 class HtmlParser extends Parser$1 {
     constructor() { super(getHtmlTagDefinition); }
-    parse(source, url, parseExpansionForms = false, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        return super.parse(source, url, parseExpansionForms, interpolationConfig);
+    parse(source, url, options) {
+        return super.parse(source, url, options);
     }
 }
 
@@ -11464,7 +11743,8 @@ class BindingParser {
             Object.keys(dirMeta.hostListeners).forEach(propName => {
                 const expression = dirMeta.hostListeners[propName];
                 if (typeof expression === 'string') {
-                    this.parseEvent(propName, expression, sourceSpan, [], targetEvents);
+                    // TODO: pass a more accurate handlerSpan for this event.
+                    this.parseEvent(propName, expression, sourceSpan, sourceSpan, [], targetEvents);
                 }
                 else {
                     this._reportError(`Value of the host listener "${propName}" needs to be a string representing an expression but got "${expression}" (${typeof expression})`, sourceSpan);
@@ -11637,20 +11917,20 @@ class BindingParser {
         }
         return new BoundElementProperty(boundPropertyName, bindingType, securityContexts[0], boundProp.expression, unit, boundProp.sourceSpan);
     }
-    parseEvent(name, expression, sourceSpan, targetMatchableAttrs, targetEvents) {
+    parseEvent(name, expression, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents) {
         if (isAnimationLabel(name)) {
             name = name.substr(1);
-            this._parseAnimationEvent(name, expression, sourceSpan, targetEvents);
+            this._parseAnimationEvent(name, expression, sourceSpan, handlerSpan, targetEvents);
         }
         else {
-            this._parseRegularEvent(name, expression, sourceSpan, targetMatchableAttrs, targetEvents);
+            this._parseRegularEvent(name, expression, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents);
         }
     }
     calcPossibleSecurityContexts(selector, propName, isAttribute) {
         const prop = this._schemaRegistry.getMappedPropName(propName);
         return calcPossibleSecurityContexts(this._schemaRegistry, selector, prop, isAttribute);
     }
-    _parseAnimationEvent(name, expression, sourceSpan, targetEvents) {
+    _parseAnimationEvent(name, expression, sourceSpan, handlerSpan, targetEvents) {
         const matches = splitAtPeriod(name, [name, '']);
         const eventName = matches[0];
         const phase = matches[1].toLowerCase();
@@ -11658,8 +11938,8 @@ class BindingParser {
             switch (phase) {
                 case 'start':
                 case 'done':
-                    const ast = this._parseAction(expression, sourceSpan);
-                    targetEvents.push(new ParsedEvent(eventName, phase, 1 /* Animation */, ast, sourceSpan));
+                    const ast = this._parseAction(expression, handlerSpan);
+                    targetEvents.push(new ParsedEvent(eventName, phase, 1 /* Animation */, ast, sourceSpan, handlerSpan));
                     break;
                 default:
                     this._reportError(`The provided animation output phase value "${phase}" for "@${eventName}" is not supported (use start or done)`, sourceSpan);
@@ -11670,12 +11950,12 @@ class BindingParser {
             this._reportError(`The animation trigger output event (@${eventName}) is missing its phase value name (start or done are currently supported)`, sourceSpan);
         }
     }
-    _parseRegularEvent(name, expression, sourceSpan, targetMatchableAttrs, targetEvents) {
+    _parseRegularEvent(name, expression, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents) {
         // long format: 'target: eventName'
         const [target, eventName] = splitAtColon(name, [null, name]);
-        const ast = this._parseAction(expression, sourceSpan);
+        const ast = this._parseAction(expression, handlerSpan);
         targetMatchableAttrs.push([name, ast.source]);
-        targetEvents.push(new ParsedEvent(eventName, target, 0 /* Regular */, ast, sourceSpan));
+        targetEvents.push(new ParsedEvent(eventName, target, 0 /* Regular */, ast, sourceSpan, handlerSpan));
         // Don't detect directives for event names for now,
         // so don't add the event name to the matchableAttrs
     }
@@ -12101,26 +12381,26 @@ class HtmlAstToIvyAst {
             }
             else if (bindParts[KW_ON_IDX]) {
                 const events = [];
-                this.bindingParser.parseEvent(bindParts[IDENT_KW_IDX], value, srcSpan, matchableAttributes, events);
+                this.bindingParser.parseEvent(bindParts[IDENT_KW_IDX], value, srcSpan, attribute.valueSpan || srcSpan, matchableAttributes, events);
                 addEvents(events, boundEvents);
             }
             else if (bindParts[KW_BINDON_IDX]) {
                 this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX], value, false, srcSpan, matchableAttributes, parsedProperties);
-                this.parseAssignmentEvent(bindParts[IDENT_KW_IDX], value, srcSpan, matchableAttributes, boundEvents);
+                this.parseAssignmentEvent(bindParts[IDENT_KW_IDX], value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents);
             }
             else if (bindParts[KW_AT_IDX]) {
                 this.bindingParser.parseLiteralAttr(name, value, srcSpan, matchableAttributes, parsedProperties);
             }
             else if (bindParts[IDENT_BANANA_BOX_IDX]) {
                 this.bindingParser.parsePropertyBinding(bindParts[IDENT_BANANA_BOX_IDX], value, false, srcSpan, matchableAttributes, parsedProperties);
-                this.parseAssignmentEvent(bindParts[IDENT_BANANA_BOX_IDX], value, srcSpan, matchableAttributes, boundEvents);
+                this.parseAssignmentEvent(bindParts[IDENT_BANANA_BOX_IDX], value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents);
             }
             else if (bindParts[IDENT_PROPERTY_IDX]) {
                 this.bindingParser.parsePropertyBinding(bindParts[IDENT_PROPERTY_IDX], value, false, srcSpan, matchableAttributes, parsedProperties);
             }
             else if (bindParts[IDENT_EVENT_IDX]) {
                 const events = [];
-                this.bindingParser.parseEvent(bindParts[IDENT_EVENT_IDX], value, srcSpan, matchableAttributes, events);
+                this.bindingParser.parseEvent(bindParts[IDENT_EVENT_IDX], value, srcSpan, attribute.valueSpan || srcSpan, matchableAttributes, events);
                 addEvents(events, boundEvents);
             }
         }
@@ -12146,9 +12426,9 @@ class HtmlAstToIvyAst {
         }
         references.push(new Reference(identifier, value, sourceSpan));
     }
-    parseAssignmentEvent(name, expression, sourceSpan, targetMatchableAttrs, boundEvents) {
+    parseAssignmentEvent(name, expression, sourceSpan, valueSpan, targetMatchableAttrs, boundEvents) {
         const events = [];
-        this.bindingParser.parseEvent(`${name}Change`, `${expression}=$event`, sourceSpan, targetMatchableAttrs, events);
+        this.bindingParser.parseEvent(`${name}Change`, `${expression}=$event`, sourceSpan, valueSpan || sourceSpan, targetMatchableAttrs, events);
         addEvents(events, boundEvents);
     }
     reportError(message, sourceSpan, level = ParseErrorLevel.ERROR) {
@@ -12774,7 +13054,7 @@ function prepareEventListenerParameters(eventAst, bindingContext, handlerName = 
         throw new Error(`Unexpected global target '${target}' defined for '${name}' event.
         Supported list of global targets: ${Array.from(GLOBAL_TARGET_RESOLVERS.keys())}.`);
     }
-    const bindingExpr = convertActionBinding(scope, bindingContext, handler, 'b', () => error('Unexpected interpolation'));
+    const bindingExpr = convertActionBinding(scope, bindingContext, handler, 'b', () => error('Unexpected interpolation'), eventAst.handlerSpan);
     const statements = [];
     if (scope) {
         statements.push(...scope.restoreViewStatement());
@@ -13179,7 +13459,8 @@ class TemplateDefinitionBuilder {
         const attributes = [];
         const allOtherInputs = [];
         element.inputs.forEach((input) => {
-            if (!stylingBuilder.registerBoundInput(input)) {
+            const stylingInputWasSet = stylingBuilder.registerBoundInput(input);
+            if (!stylingInputWasSet) {
                 if (input.type === 0 /* Property */) {
                     if (input.i18n) {
                         i18nAttrs.push(input);
@@ -13841,8 +14122,14 @@ class BindingScope {
      * @param localRef Whether or not this is a local ref
      */
     set(retrievalLevel, name, lhs, priority = 0 /* DEFAULT */, declareLocalCallback, localRef) {
-        !this.map.has(name) ||
+        if (this.map.has(name)) {
+            if (localRef) {
+                // Do not throw an error if it's a local ref and do not update existing value,
+                // so the first defined ref is always returned.
+                return this;
+            }
             error(`The name ${name} is already defined in scope to be ${this.map.get(name)}`);
+        }
         this.map.set(name, {
             retrievalLevel: retrievalLevel,
             lhs: lhs,
@@ -13989,12 +14276,13 @@ function interpolate(args) {
  *
  * @param template text of the template to parse
  * @param templateUrl URL to use for source mapping of the parsed template
+ * @param options options to modify how the template is parsed
  */
 function parseTemplate(template, templateUrl, options = {}) {
     const { interpolationConfig, preserveWhitespaces } = options;
     const bindingParser = makeBindingParser(interpolationConfig);
     const htmlParser = new HtmlParser();
-    const parseResult = htmlParser.parse(template, templateUrl, true, interpolationConfig);
+    const parseResult = htmlParser.parse(template, templateUrl, Object.assign({}, options, { tokenizeExpansionForms: true }));
     if (parseResult.errors && parseResult.errors.length > 0) {
         return { errors: parseResult.errors, nodes: [] };
     }
@@ -14065,8 +14353,8 @@ const EMPTY_ARRAY = [];
 // This regex matches any binding names that contain the "attr." prefix, e.g. "attr.required"
 // If there is a match, the first matching group will contain the attribute name to bind.
 const ATTR_REGEX = /attr\.([^\]]+)/;
-function getStylingPrefix(propName) {
-    return propName.substring(0, 5).toLowerCase();
+function getStylingPrefix(name) {
+    return name.substring(0, 5); // style or class
 }
 function baseDirectiveFields(meta, constantPool, bindingParser) {
     const definitionMap = new DefinitionMap();
@@ -14535,15 +14823,8 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, staticAttrib
     const bindings = bindingParser.createBoundHostProperties(directiveSummary, hostBindingSourceSpan);
     (bindings || []).forEach((binding) => {
         const name = binding.name;
-        const stylePrefix = getStylingPrefix(name);
-        if (stylePrefix === 'style') {
-            const { propertyName, unit } = parseNamedProperty(name);
-            styleBuilder.registerStyleInput(propertyName, binding.expression, unit, binding.sourceSpan);
-        }
-        else if (stylePrefix === 'class') {
-            styleBuilder.registerClassInput(parseNamedProperty(name).propertyName, binding.expression, binding.sourceSpan);
-        }
-        else {
+        const stylingInputWasSet = styleBuilder.registerInputBasedOnName(name, binding.expression, binding.sourceSpan);
+        if (!stylingInputWasSet) {
             // resolve literal arrays and literal objects
             const value = binding.expression.visit(getValueConverter());
             const bindingExpr = bindingFn(bindingContext, value);
@@ -14733,22 +15014,6 @@ function compileStyles(styles, selector, hostSelector) {
     const shadowCss = new ShadowCss();
     return styles.map(style => { return shadowCss.shimCssText(style, selector, hostSelector); });
 }
-function parseNamedProperty(name) {
-    let unit = '';
-    let propertyName = '';
-    const index = name.indexOf('.');
-    if (index > 0) {
-        const unitIndex = name.lastIndexOf('.');
-        if (unitIndex !== index) {
-            unit = name.substring(unitIndex + 1, name.length);
-            propertyName = name.substring(index + 1, unitIndex);
-        }
-        else {
-            propertyName = name.substring(index + 1, name.length);
-        }
-    }
-    return { propertyName, unit };
-}
 
 /**
  * @license
@@ -14758,7 +15023,8 @@ function parseNamedProperty(name) {
  * found in the LICENSE file at https://angular.io/license
  */
 class CompilerFacadeImpl {
-    constructor() {
+    constructor(jitEvaluator = new JitEvaluator()) {
+        this.jitEvaluator = jitEvaluator;
         this.R3ResolvedDependencyType = R3ResolvedDependencyType;
         this.elementSchemaRegistry = new DomElementSchemaRegistry();
     }
@@ -14770,7 +15036,7 @@ class CompilerFacadeImpl {
             pipeName: facade.pipeName,
             pure: facade.pure,
         });
-        return jitExpression(res.expression, angularCoreEnv, sourceMapUrl, res.statements);
+        return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, res.statements);
     }
     compileInjectable(angularCoreEnv, sourceMapUrl, facade) {
         const { expression, statements } = compileInjectable({
@@ -14785,7 +15051,7 @@ class CompilerFacadeImpl {
             ctorDeps: convertR3DependencyMetadataArray(facade.ctorDeps),
             userDeps: convertR3DependencyMetadataArray(facade.userDeps) || undefined,
         });
-        return jitExpression(expression, angularCoreEnv, sourceMapUrl, statements);
+        return this.jitExpression(expression, angularCoreEnv, sourceMapUrl, statements);
     }
     compileInjector(angularCoreEnv, sourceMapUrl, facade) {
         const meta = {
@@ -14796,7 +15062,7 @@ class CompilerFacadeImpl {
             imports: new WrappedNodeExpr(facade.imports),
         };
         const res = compileInjector(meta);
-        return jitExpression(res.expression, angularCoreEnv, sourceMapUrl, res.statements);
+        return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, res.statements);
     }
     compileNgModule(angularCoreEnv, sourceMapUrl, facade) {
         const meta = {
@@ -14808,7 +15074,7 @@ class CompilerFacadeImpl {
             emitInline: true,
         };
         const res = compileNgModule(meta);
-        return jitExpression(res.expression, angularCoreEnv, sourceMapUrl, []);
+        return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, []);
     }
     compileDirective(angularCoreEnv, sourceMapUrl, facade) {
         const constantPool = new ConstantPool();
@@ -14816,7 +15082,7 @@ class CompilerFacadeImpl {
         const meta = convertDirectiveFacadeToMetadata(facade);
         const res = compileDirectiveFromMetadata(meta, constantPool, bindingParser);
         const preStatements = [...constantPool.statements, ...res.statements];
-        return jitExpression(res.expression, angularCoreEnv, sourceMapUrl, preStatements);
+        return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, preStatements);
     }
     compileComponent(angularCoreEnv, sourceMapUrl, facade) {
         // The ConstantPool is a requirement of the JIT'er.
@@ -14825,7 +15091,7 @@ class CompilerFacadeImpl {
             InterpolationConfig.fromArray(facade.interpolation) :
             DEFAULT_INTERPOLATION_CONFIG;
         // Parse the template and check for errors.
-        const template = parseTemplate(facade.template, sourceMapUrl, { preserveWhitespaces: facade.preserveWhitespaces || false, interpolationConfig });
+        const template = parseTemplate(facade.template, sourceMapUrl, { preserveWhitespaces: facade.preserveWhitespaces, interpolationConfig });
         if (template.errors !== undefined) {
             const errors = template.errors.map(err => err.toString()).join(', ');
             throw new Error(`Errors during JIT compilation of template for ${facade.name}: ${errors}`);
@@ -14835,10 +15101,30 @@ class CompilerFacadeImpl {
         const res = compileComponentFromMetadata(Object.assign({}, facade, convertDirectiveFacadeToMetadata(facade), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), wrapDirectivesAndPipesInClosure: false, styles: facade.styles || [], encapsulation: facade.encapsulation, interpolation: interpolationConfig, changeDetection: facade.changeDetection, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
                 null, relativeContextFilePath: '', i18nUseExternalIds: true }), constantPool, makeBindingParser(interpolationConfig));
         const preStatements = [...constantPool.statements, ...res.statements];
-        return jitExpression(res.expression, angularCoreEnv, sourceMapUrl, preStatements);
+        return this.jitExpression(res.expression, angularCoreEnv, `ng:///${facade.name}.js`, preStatements);
     }
     createParseSourceSpan(kind, typeName, sourceUrl) {
         return r3JitTypeSourceSpan(kind, typeName, sourceUrl);
+    }
+    /**
+     * JIT compiles an expression and returns the result of executing that expression.
+     *
+     * @param def the definition which will be compiled and executed to get the value to patch
+     * @param context an object map of @angular/core symbol names to symbols which will be available
+     * in the context of the compiled expression
+     * @param sourceUrl a URL to use for the source map of the compiled expression
+     * @param preStatements a collection of statements that should be evaluated before the expression.
+     */
+    jitExpression(def, context, sourceUrl, preStatements) {
+        // The ConstantPool may contain Statements which declare variables used in the final expression.
+        // Therefore, its statements need to precede the actual JIT operation. The final statement is a
+        // declaration of $def which is set to the expression being compiled.
+        const statements = [
+            ...preStatements,
+            new DeclareVarStmt('$def', def, undefined, [StmtModifier.Exported]),
+        ];
+        const res = this.jitEvaluator.evaluateStatements(sourceUrl, statements, new R3JitReflector(context), /* enableSourceMaps */ true);
+        return res['$def'];
     }
 }
 const USE_CLASS = Object.keys({ useClass: null })[0];
@@ -14967,7 +15253,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.3+89.sha-872a365');
+const VERSION$1 = new Version('8.0.0-beta.3+124.sha-08de52b');
 
 /**
  * @license
@@ -15045,12 +15331,13 @@ class BoundElementPropertyAst {
  * `(@trigger.phase)="callback($event)"`).
  */
 class BoundEventAst {
-    constructor(name, target, phase, handler, sourceSpan) {
+    constructor(name, target, phase, handler, sourceSpan, handlerSpan) {
         this.name = name;
         this.target = target;
         this.phase = phase;
         this.handler = handler;
         this.sourceSpan = sourceSpan;
+        this.handlerSpan = handlerSpan;
         this.fullName = BoundEventAst.calcFullName(this.name, this.target, this.phase);
         this.isAnimation = !!this.phase;
     }
@@ -15066,7 +15353,7 @@ class BoundEventAst {
     static fromParsedEvent(event) {
         const target = event.type === 0 /* Regular */ ? event.targetOrPhase : null;
         const phase = event.type === 1 /* Animation */ ? event.targetOrPhase : null;
-        return new BoundEventAst(event.name, target, phase, event.handler, event.sourceSpan);
+        return new BoundEventAst(event.name, target, phase, event.handler, event.sourceSpan, event.handlerSpan);
     }
     visit(visitor, context) {
         return visitor.visitEvent(this, context);
@@ -15389,7 +15676,8 @@ class DirectiveNormalizer {
     _preparseLoadedTemplate(prenormData, template, templateAbsUrl) {
         const isInline = !!prenormData.template;
         const interpolationConfig = InterpolationConfig.fromArray(prenormData.interpolation);
-        const rootNodesAndErrors = this._htmlParser.parse(template, templateSourceUrl({ reference: prenormData.ngModuleType }, { type: { reference: prenormData.componentType } }, { isInline, templateUrl: templateAbsUrl }), true, interpolationConfig);
+        const templateUrl = templateSourceUrl({ reference: prenormData.ngModuleType }, { type: { reference: prenormData.componentType } }, { isInline, templateUrl: templateAbsUrl });
+        const rootNodesAndErrors = this._htmlParser.parse(template, templateUrl, { tokenizeExpansionForms: true, interpolationConfig });
         if (rootNodesAndErrors.errors.length > 0) {
             const errorString = rootNodesAndErrors.errors.join('\n');
             throw syntaxError(`Template parse errors:\n${errorString}`);
@@ -16134,8 +16422,8 @@ function getXmlTagDefinition(tagName) {
  */
 class XmlParser extends Parser$1 {
     constructor() { super(getXmlTagDefinition); }
-    parse(source, url, parseExpansionForms = false) {
-        return super.parse(source, url, parseExpansionForms);
+    parse(source, url, options) {
+        return super.parse(source, url, options);
     }
 }
 
@@ -16258,7 +16546,7 @@ class XliffParser {
     parse(xliff, url) {
         this._unitMlString = null;
         this._msgIdToHtml = {};
-        const xml = new XmlParser().parse(xliff, url, false);
+        const xml = new XmlParser().parse(xliff, url);
         this._errors = xml.errors;
         visitAll$1(this, xml.rootNodes, null);
         return {
@@ -16327,7 +16615,7 @@ class XliffParser {
 // Convert ml nodes (xliff syntax) to i18n nodes
 class XmlToI18n {
     convert(message, url) {
-        const xmlIcu = new XmlParser().parse(message, url, true);
+        const xmlIcu = new XmlParser().parse(message, url, { tokenizeExpansionForms: true });
         this._errors = xmlIcu.errors;
         const i18nNodes = this._errors.length > 0 || xmlIcu.rootNodes.length == 0 ?
             [] :
@@ -16523,7 +16811,7 @@ class Xliff2Parser {
     parse(xliff, url) {
         this._unitMlString = null;
         this._msgIdToHtml = {};
-        const xml = new XmlParser().parse(xliff, url, false);
+        const xml = new XmlParser().parse(xliff, url);
         this._errors = xml.errors;
         visitAll$1(this, xml.rootNodes, null);
         return {
@@ -16598,7 +16886,7 @@ class Xliff2Parser {
 // Convert ml nodes (xliff syntax) to i18n nodes
 class XmlToI18n$1 {
     convert(message, url) {
-        const xmlIcu = new XmlParser().parse(message, url, true);
+        const xmlIcu = new XmlParser().parse(message, url, { tokenizeExpansionForms: true });
         this._errors = xmlIcu.errors;
         const i18nNodes = this._errors.length > 0 || xmlIcu.rootNodes.length == 0 ?
             [] :
@@ -16740,7 +17028,7 @@ class XtbParser {
         this._msgIdToHtml = {};
         // We can not parse the ICU messages at this point as some messages might not originate
         // from Angular that could not be lex'd.
-        const xml = new XmlParser().parse(xtb, url, false);
+        const xml = new XmlParser().parse(xtb, url);
         this._errors = xml.errors;
         visitAll$1(this, xml.rootNodes);
         return {
@@ -16798,7 +17086,7 @@ class XtbParser {
 // Convert ml nodes (xtb syntax) to i18n nodes
 class XmlToI18n$2 {
     convert(message, url) {
-        const xmlIcu = new XmlParser().parse(message, url, true);
+        const xmlIcu = new XmlParser().parse(message, url, { tokenizeExpansionForms: true });
         this._errors = xmlIcu.errors;
         const i18nNodes = this._errors.length > 0 || xmlIcu.rootNodes.length == 0 ?
             [] :
@@ -16894,7 +17182,7 @@ class I18nToHtmlVisitor {
         const text = this._convertToText(srcMsg);
         // text to html
         const url = srcMsg.nodes[0].sourceSpan.start.file.url;
-        const html = new HtmlParser().parse(text, url, true);
+        const html = new HtmlParser().parse(text, url, { tokenizeExpansionForms: true });
         return {
             nodes: html.rootNodes,
             errors: [...this._errors, ...html.errors],
@@ -17013,8 +17301,9 @@ class I18NHtmlParser {
                 new TranslationBundle({}, null, digest, undefined, missingTranslation, console);
         }
     }
-    parse(source, url, parseExpansionForms = false, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        const parseResult = this._htmlParser.parse(source, url, parseExpansionForms, interpolationConfig);
+    parse(source, url, options = {}) {
+        const interpolationConfig = options.interpolationConfig || DEFAULT_INTERPOLATION_CONFIG;
+        const parseResult = this._htmlParser.parse(source, url, Object.assign({ interpolationConfig }, options));
         if (parseResult.errors.length) {
             return new ParseTreeResult(parseResult.rootNodes, parseResult.errors);
         }
@@ -19597,7 +19886,10 @@ class TemplateParser {
     }
     tryParse(component, template, directives, pipes, schemas, templateUrl, preserveWhitespaces) {
         let htmlParseResult = typeof template === 'string' ?
-            this._htmlParser.parse(template, templateUrl, true, this.getInterpolationConfig(component)) :
+            this._htmlParser.parse(template, templateUrl, {
+                tokenizeExpansionForms: true,
+                interpolationConfig: this.getInterpolationConfig(component)
+            }) :
             template;
         if (!preserveWhitespaces) {
             htmlParseResult = removeWhitespaces(htmlParseResult);
@@ -19834,24 +20126,24 @@ class TemplateParseVisitor {
                 this._parseReference(identifier, value, srcSpan, targetRefs);
             }
             else if (bindParts[KW_ON_IDX$1]) {
-                this._bindingParser.parseEvent(bindParts[IDENT_KW_IDX$1], value, srcSpan, targetMatchableAttrs, boundEvents);
+                this._bindingParser.parseEvent(bindParts[IDENT_KW_IDX$1], value, srcSpan, attr.valueSpan || srcSpan, targetMatchableAttrs, boundEvents);
             }
             else if (bindParts[KW_BINDON_IDX$1]) {
                 this._bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX$1], value, false, srcSpan, targetMatchableAttrs, targetProps);
-                this._parseAssignmentEvent(bindParts[IDENT_KW_IDX$1], value, srcSpan, targetMatchableAttrs, boundEvents);
+                this._parseAssignmentEvent(bindParts[IDENT_KW_IDX$1], value, srcSpan, attr.valueSpan || srcSpan, targetMatchableAttrs, boundEvents);
             }
             else if (bindParts[KW_AT_IDX$1]) {
                 this._bindingParser.parseLiteralAttr(name, value, srcSpan, targetMatchableAttrs, targetProps);
             }
             else if (bindParts[IDENT_BANANA_BOX_IDX$1]) {
                 this._bindingParser.parsePropertyBinding(bindParts[IDENT_BANANA_BOX_IDX$1], value, false, srcSpan, targetMatchableAttrs, targetProps);
-                this._parseAssignmentEvent(bindParts[IDENT_BANANA_BOX_IDX$1], value, srcSpan, targetMatchableAttrs, boundEvents);
+                this._parseAssignmentEvent(bindParts[IDENT_BANANA_BOX_IDX$1], value, srcSpan, attr.valueSpan || srcSpan, targetMatchableAttrs, boundEvents);
             }
             else if (bindParts[IDENT_PROPERTY_IDX$1]) {
                 this._bindingParser.parsePropertyBinding(bindParts[IDENT_PROPERTY_IDX$1], value, false, srcSpan, targetMatchableAttrs, targetProps);
             }
             else if (bindParts[IDENT_EVENT_IDX$1]) {
-                this._bindingParser.parseEvent(bindParts[IDENT_EVENT_IDX$1], value, srcSpan, targetMatchableAttrs, boundEvents);
+                this._bindingParser.parseEvent(bindParts[IDENT_EVENT_IDX$1], value, srcSpan, attr.valueSpan || srcSpan, targetMatchableAttrs, boundEvents);
             }
         }
         else {
@@ -19878,8 +20170,8 @@ class TemplateParseVisitor {
         }
         targetRefs.push(new ElementOrDirectiveRef(identifier, value, sourceSpan));
     }
-    _parseAssignmentEvent(name, expression, sourceSpan, targetMatchableAttrs, targetEvents) {
-        this._bindingParser.parseEvent(`${name}Change`, `${expression}=$event`, sourceSpan, targetMatchableAttrs, targetEvents);
+    _parseAssignmentEvent(name, expression, sourceSpan, valueSpan, targetMatchableAttrs, targetEvents) {
+        this._bindingParser.parseEvent(`${name}Change`, `${expression}=$event`, sourceSpan, valueSpan, targetMatchableAttrs, targetEvents);
     }
     _parseDirectives(selectorMatcher, elementCssSelector) {
         // Need to sort the directives so that we get consistent results throughout,
@@ -21347,7 +21639,7 @@ class MessageBundle {
         this._messages = [];
     }
     updateFromTemplate(html, url, interpolationConfig) {
-        const htmlParserResult = this._htmlParser.parse(html, url, true, interpolationConfig);
+        const htmlParserResult = this._htmlParser.parse(html, url, { tokenizeExpansionForms: true, interpolationConfig });
         if (htmlParserResult.errors.length) {
             return htmlParserResult.errors;
         }
@@ -24571,7 +24863,7 @@ const CATCH_STACK_VAR$2 = 'stack';
  * application to XSS risks.  For more detail, see the [Security Guide](http://g.co/ng/security).
  */
 class JitCompiler {
-    constructor(_metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _summaryResolver, _reflector, _compilerConfig, _console, getExtraNgModuleProviders) {
+    constructor(_metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _summaryResolver, _reflector, _jitEvaluator, _compilerConfig, _console, getExtraNgModuleProviders) {
         this._metadataResolver = _metadataResolver;
         this._templateParser = _templateParser;
         this._styleCompiler = _styleCompiler;
@@ -24579,6 +24871,7 @@ class JitCompiler {
         this._ngModuleCompiler = _ngModuleCompiler;
         this._summaryResolver = _summaryResolver;
         this._reflector = _reflector;
+        this._jitEvaluator = _jitEvaluator;
         this._compilerConfig = _compilerConfig;
         this._console = _console;
         this.getExtraNgModuleProviders = getExtraNgModuleProviders;
@@ -24805,7 +25098,7 @@ class JitCompiler {
             return interpretStatements(statements, this._reflector);
         }
         else {
-            return jitStatements(sourceUrl, statements, this._reflector, this._compilerConfig.jitDevMode);
+            return this._jitEvaluator.evaluateStatements(sourceUrl, statements, this._reflector, this._compilerConfig.jitDevMode);
         }
     }
 }
@@ -25708,5 +26001,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, TypeofExpr, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Reference as TmplAstReference, Template as TmplAstTemplate, Text$2 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Identifiers$1 as R3Identifiers, jitExpression, R3ResolvedDependencyType, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileBaseDefFromMetadata, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, verifyHostBindings, publishFacade, VERSION$1 as VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor$1 as RecursiveAstVisitor, AstTransformer$1 as AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text$3 as Text, Expansion, ExpansionCase, Attribute, Element$1 as Element, Comment, visitAll$1 as visitAll, RecursiveVisitor$1 as RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, r3JitTypeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, HOST_ATTR, CONTENT_ATTR, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, compileInjectable, R3TargetBinder, R3BoundTarget };
+export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, TypeofExpr, collectExternalReferences, EmitterVisitorContext, JitEvaluator, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Reference as TmplAstReference, Template as TmplAstTemplate, Text$2 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileBaseDefFromMetadata, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, verifyHostBindings, publishFacade, VERSION$1 as VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor$1 as RecursiveAstVisitor, AstTransformer$1 as AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text$3 as Text, Expansion, ExpansionCase, Attribute, Element$1 as Element, Comment, visitAll$1 as visitAll, RecursiveVisitor$1 as RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, r3JitTypeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, HOST_ATTR, CONTENT_ATTR, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, compileInjectable, R3TargetBinder, R3BoundTarget };
 //# sourceMappingURL=compiler.js.map

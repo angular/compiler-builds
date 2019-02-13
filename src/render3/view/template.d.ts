@@ -11,6 +11,7 @@ import * as core from '../../core';
 import { AST, AstMemoryEfficientTransformer, BindingPipe, LiteralArray, LiteralMap } from '../../expression_parser/ast';
 import * as i18n from '../../i18n/i18n_ast';
 import { InterpolationConfig } from '../../ml_parser/interpolation_config';
+import { LexerRange } from '../../ml_parser/lexer';
 import * as o from '../../output/output_ast';
 import { ParseError, ParseSourceSpan } from '../../parse_util';
 import { SelectorMatcher } from '../../selector';
@@ -218,15 +219,55 @@ export declare class BindingScope implements LocalResolver {
     freshReferenceName(): string;
 }
 /**
+ * Options that can be used to modify how a template is parsed by `parseTemplate()`.
+ */
+export interface ParseTemplateOptions {
+    /**
+     * Include whitespace nodes in the parsed output.
+     */
+    preserveWhitespaces?: boolean;
+    /**
+     * How to parse interpolation markers.
+     */
+    interpolationConfig?: InterpolationConfig;
+    /**
+     * The start and end point of the text to parse within the `source` string.
+     * The entire `source` string is parsed if this is not provided.
+     * */
+    range?: LexerRange;
+    /**
+     * If this text is stored in a JavaScript string, then we have to deal with escape sequences.
+     *
+     * **Example 1:**
+     *
+     * ```
+     * "abc\"def\nghi"
+     * ```
+     *
+     * - The `\"` must be converted to `"`.
+     * - The `\n` must be converted to a new line character in a token,
+     *   but it should not increment the current line for source mapping.
+     *
+     * **Example 2:**
+     *
+     * ```
+     * "abc\
+     *  def"
+     * ```
+     *
+     * The line continuation (`\` followed by a newline) should be removed from a token
+     * but the new line should increment the current line for source mapping.
+     */
+    escapedString?: boolean;
+}
+/**
  * Parse a template into render3 `Node`s and additional metadata, with no other dependencies.
  *
  * @param template text of the template to parse
  * @param templateUrl URL to use for source mapping of the parsed template
+ * @param options options to modify how the template is parsed
  */
-export declare function parseTemplate(template: string, templateUrl: string, options?: {
-    preserveWhitespaces?: boolean;
-    interpolationConfig?: InterpolationConfig;
-}): {
+export declare function parseTemplate(template: string, templateUrl: string, options?: ParseTemplateOptions): {
     errors?: ParseError[];
     nodes: t.Node[];
 };

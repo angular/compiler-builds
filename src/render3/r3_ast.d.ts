@@ -54,7 +54,8 @@ export declare class BoundEvent implements Node {
     target: string | null;
     phase: string | null;
     sourceSpan: ParseSourceSpan;
-    constructor(name: string, type: ParsedEventType, handler: AST, target: string | null, phase: string | null, sourceSpan: ParseSourceSpan);
+    handlerSpan: ParseSourceSpan;
+    constructor(name: string, type: ParsedEventType, handler: AST, target: string | null, phase: string | null, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan);
     static fromParsedEvent(event: ParsedEvent): BoundEvent;
     visit<Result>(visitor: Visitor<Result>): Result;
 }

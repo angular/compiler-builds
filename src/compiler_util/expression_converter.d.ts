@@ -7,6 +7,7 @@
  */
 import * as cdAst from '../expression_parser/ast';
 import * as o from '../output/output_ast';
+import { ParseSourceSpan } from '../parse_util';
 export declare class EventHandlerVars {
     static event: o.ReadVarExpr;
 }
@@ -41,7 +42,7 @@ export declare type InterpolationFunction = (args: o.Expression[]) => o.Expressi
  * Converts the given expression AST into an executable output AST, assuming the expression is
  * used in an action binding (e.g. an event handler).
  */
-export declare function convertActionBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, action: cdAst.AST, bindingId: string, interpolationFunction?: InterpolationFunction): ConvertActionBindingResult;
+export declare function convertActionBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, action: cdAst.AST, bindingId: string, interpolationFunction?: InterpolationFunction, baseSourceSpan?: ParseSourceSpan): ConvertActionBindingResult;
 export interface BuiltinConverter {
     (args: o.Expression[]): o.Expression;
 }

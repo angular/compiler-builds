@@ -21,28 +21,73 @@ export declare enum TokenType {
     CDATA_START = 9,
     CDATA_END = 10,
     ATTR_NAME = 11,
-    ATTR_VALUE = 12,
-    DOC_TYPE = 13,
-    EXPANSION_FORM_START = 14,
-    EXPANSION_CASE_VALUE = 15,
-    EXPANSION_CASE_EXP_START = 16,
-    EXPANSION_CASE_EXP_END = 17,
-    EXPANSION_FORM_END = 18,
-    EOF = 19
+    ATTR_QUOTE = 12,
+    ATTR_VALUE = 13,
+    DOC_TYPE = 14,
+    EXPANSION_FORM_START = 15,
+    EXPANSION_CASE_VALUE = 16,
+    EXPANSION_CASE_EXP_START = 17,
+    EXPANSION_CASE_EXP_END = 18,
+    EXPANSION_FORM_END = 19,
+    EOF = 20
 }
 export declare class Token {
-    type: TokenType;
+    type: TokenType | null;
     parts: string[];
     sourceSpan: ParseSourceSpan;
-    constructor(type: TokenType, parts: string[], sourceSpan: ParseSourceSpan);
+    constructor(type: TokenType | null, parts: string[], sourceSpan: ParseSourceSpan);
 }
 export declare class TokenError extends ParseError {
-    tokenType: TokenType;
-    constructor(errorMsg: string, tokenType: TokenType, span: ParseSourceSpan);
+    tokenType: TokenType | null;
+    constructor(errorMsg: string, tokenType: TokenType | null, span: ParseSourceSpan);
 }
 export declare class TokenizeResult {
     tokens: Token[];
     errors: TokenError[];
     constructor(tokens: Token[], errors: TokenError[]);
 }
-export declare function tokenize(source: string, url: string, getTagDefinition: (tagName: string) => TagDefinition, tokenizeExpansionForms?: boolean, interpolationConfig?: InterpolationConfig): TokenizeResult;
+export interface LexerRange {
+    startPos: number;
+    startLine: number;
+    startCol: number;
+    endPos: number;
+}
+/**
+ * Options that modify how the text is tokenized.
+ */
+export interface TokenizeOptions {
+    /** Whether to tokenize ICU messages (considered as text nodes when false). */
+    tokenizeExpansionForms?: boolean;
+    /** How to tokenize interpolation markers. */
+    interpolationConfig?: InterpolationConfig;
+    /**
+     * The start and end point of the text to parse within the `source` string.
+     * The entire `source` string is parsed if this is not provided.
+     * */
+    range?: LexerRange;
+    /**
+     * If this text is stored in a JavaScript string, then we have to deal with escape sequences.
+     *
+     * **Example 1:**
+     *
+     * ```
+     * "abc\"def\nghi"
+     * ```
+     *
+     * - The `\"` must be converted to `"`.
+     * - The `\n` must be converted to a new line character in a token,
+     *   but it should not increment the current line for source mapping.
+     *
+     * **Example 2:**
+     *
+     * ```
+     * "abc\
+     *  def"
+     * ```
+     *
+     * The line continuation (`\` followed by a newline) should be removed from a token
+     * but the new line should increment the current line for source mapping.
+     */
+    escapedString?: boolean;
+}
+export declare function tokenize(source: string, url: string, getTagDefinition: (tagName: string) => TagDefinition, options?: TokenizeOptions): TokenizeResult;

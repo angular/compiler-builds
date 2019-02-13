@@ -325,7 +325,8 @@ export declare class ParsedEvent {
     type: ParsedEventType;
     handler: AST;
     sourceSpan: ParseSourceSpan;
-    constructor(name: string, targetOrPhase: string, type: ParsedEventType, handler: AST, sourceSpan: ParseSourceSpan);
+    handlerSpan: ParseSourceSpan;
+    constructor(name: string, targetOrPhase: string, type: ParsedEventType, handler: AST, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan);
 }
 export declare class ParsedVariable {
     name: string;
