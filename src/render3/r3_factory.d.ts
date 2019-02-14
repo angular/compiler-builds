@@ -29,9 +29,11 @@ export interface R3ConstructorFactoryMetadata {
      * Regardless of whether `fnOrClass` is a constructor function or a user-defined factory, it
      * may have 0 or more parameters, which will be injected according to the `R3DependencyMetadata`
      * for those parameters. If this is `null`, then the type's constructor is nonexistent and will
-     * be inherited from `fnOrClass` which is interpreted as the current type.
+     * be inherited from `fnOrClass` which is interpreted as the current type. If this is `'invalid'`,
+     * then one or more of the parameters wasn't resolvable and any attempt to use these deps will
+     * result in a runtime error.
      */
-    deps: R3DependencyMetadata[] | null;
+    deps: R3DependencyMetadata[] | 'invalid' | null;
     /**
      * An expression for the function which will be used to inject dependencies. The API of this
      * function could be different, and other options control how it will be invoked.
