@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.3+146.sha-6fa4235
+ * @license Angular v8.0.0-beta.3+160.sha-2c6a6f1
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4769,7 +4769,9 @@
         var ctorExpr = null;
         if (meta.deps !== null) {
             // There is a constructor (either explicitly or implicitly defined).
-            ctorExpr = new InstantiateExpr(typeForCtor, injectDependencies(meta.deps, meta.injectFn));
+            if (meta.deps !== 'invalid') {
+                ctorExpr = new InstantiateExpr(typeForCtor, injectDependencies(meta.deps, meta.injectFn));
+            }
         }
         else {
             var baseFactory = variable("\u0275" + meta.name + "_BaseFactory");
@@ -4787,7 +4789,14 @@
         function makeConditionalFactory(nonCtorExpr) {
             var r = variable('r');
             body.push(r.set(NULL_EXPR).toDeclStmt());
-            body.push(ifStmt(t, [r.set(ctorExprFinal).toStmt()], [r.set(nonCtorExpr).toStmt()]));
+            var ctorStmt = null;
+            if (ctorExprFinal !== null) {
+                ctorStmt = r.set(ctorExprFinal).toStmt();
+            }
+            else {
+                ctorStmt = makeErrorStmt(meta.name);
+            }
+            body.push(ifStmt(t, [ctorStmt], [r.set(nonCtorExpr).toStmt()]));
             return r;
         }
         if (isDelegatedMetadata(meta) && meta.delegateType === R3FactoryDelegateType.Factory) {
@@ -4819,8 +4828,14 @@
         else {
             retExpr = ctorExpr;
         }
+        if (retExpr !== null) {
+            body.push(new ReturnStatement(retExpr));
+        }
+        else {
+            body.push(makeErrorStmt(meta.name));
+        }
         return {
-            factory: fn([new FnParam('t', DYNAMIC_TYPE)], __spread(body, [new ReturnStatement(retExpr)]), INFERRED_TYPE, undefined, meta.name + "_Factory"),
+            factory: fn([new FnParam('t', DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, meta.name + "_Factory"),
             statements: statements,
         };
     }
@@ -4898,6 +4913,11 @@
             finally { if (e_1) throw e_1.error; }
         }
         return deps;
+    }
+    function makeErrorStmt(name) {
+        return new ThrowStmt(new InstantiateExpr(new ReadVarExpr('Error'), [
+            literal(name + " has a constructor which is not compatible with Dependency Injection. It should probably not be @Injectable().")
+        ]));
     }
     function isDelegatedMetadata(meta) {
         return meta.delegateType !== undefined;
@@ -4978,13 +4998,19 @@
             // used to instantiate the class with dependencies injected, or deps are not specified and
             // the factory of the class is used to instantiate it.
             //
-            // A special case exists for useClass: Type where Type is the injectable type itself, in which
-            // case omitting deps just uses the constructor dependencies instead.
+            // A special case exists for useClass: Type where Type is the injectable type itself and no
+            // deps are specified, in which case 'useClass' is effectively ignored.
             var useClassOnSelf = meta.useClass.isEquivalent(meta.type);
-            var deps = meta.userDeps || (useClassOnSelf && meta.ctorDeps) || undefined;
+            var deps = undefined;
+            if (meta.userDeps !== undefined) {
+                deps = meta.userDeps;
+            }
             if (deps !== undefined) {
                 // factory: () => new meta.useClass(...deps)
                 result = compileFactoryFunction(__assign({}, factoryMeta, { delegate: meta.useClass, delegateDeps: deps, delegateType: R3FactoryDelegateType.Class }));
+            }
+            else if (useClassOnSelf) {
+                result = compileFactoryFunction(factoryMeta);
             }
             else {
                 result = compileFactoryFunction(__assign({}, factoryMeta, { delegate: meta.useClass, delegateType: R3FactoryDelegateType.Factory }));
@@ -7051,8 +7077,9 @@
         };
         AstMemoryEfficientTransformer.prototype.visitMethodCall = function (ast, context) {
             var receiver = ast.receiver.visit(this);
-            if (receiver !== ast.receiver) {
-                return new MethodCall(ast.span, receiver, ast.name, this.visitAll(ast.args));
+            var args = this.visitAll(ast.args);
+            if (receiver !== ast.receiver || args !== ast.args) {
+                return new MethodCall(ast.span, receiver, ast.name, args);
             }
             return ast;
         };
@@ -16233,7 +16260,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-beta.3+146.sha-6fa4235');
+    var VERSION$1 = new Version('8.0.0-beta.3+160.sha-2c6a6f1');
 
     /**
      * @license
