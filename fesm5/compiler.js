@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.3+168.sha-b0afc4c
+ * @license Angular v8.0.0-beta.3+181.sha-8accc98
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -6308,7 +6308,7 @@ var R3JitReflector = /** @class */ (function () {
  * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
  */
 function compileNgModule(meta) {
-    var moduleType = meta.type, bootstrap = meta.bootstrap, declarations = meta.declarations, imports = meta.imports, exports = meta.exports;
+    var moduleType = meta.type, bootstrap = meta.bootstrap, declarations = meta.declarations, imports = meta.imports, exports = meta.exports, schemas = meta.schemas;
     var definitionMap = {
         type: moduleType
     };
@@ -6324,6 +6324,9 @@ function compileNgModule(meta) {
     }
     if (exports.length) {
         definitionMap.exports = literalArr(exports.map(function (ref) { return ref.value; }));
+    }
+    if (schemas && schemas.length) {
+        definitionMap.schemas = literalArr(schemas.map(function (ref) { return ref.value; }));
     }
     var expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression(definitionMap)]);
     var type = new ExpressionType(importExpr(Identifiers$1.NgModuleDefWithMeta, [
@@ -16016,6 +16019,7 @@ var CompilerFacadeImpl = /** @class */ (function () {
             imports: facade.imports.map(wrapReference),
             exports: facade.exports.map(wrapReference),
             emitInline: true,
+            schemas: facade.schemas ? facade.schemas.map(wrapReference) : null,
         };
         var res = compileNgModule(meta);
         return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, []);
@@ -16203,7 +16207,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-beta.3+168.sha-b0afc4c');
+var VERSION$1 = new Version('8.0.0-beta.3+181.sha-8accc98');
 
 /**
  * @license

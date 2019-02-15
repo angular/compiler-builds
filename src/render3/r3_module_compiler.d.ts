@@ -46,6 +46,10 @@ export interface R3NgModuleMetadata {
      * does not allow components to be tree-shaken, but is useful for JIT mode.
      */
     emitInline: boolean;
+    /**
+     * The set of schemas that declare elements to be allowed in the NgModule.
+     */
+    schemas: R3Reference[] | null;
 }
 /**
  * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.

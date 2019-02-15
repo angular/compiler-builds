@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.3+168.sha-b0afc4c
+ * @license Angular v8.0.0-beta.3+181.sha-8accc98
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5898,7 +5898,7 @@ class R3JitReflector {
  * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
  */
 function compileNgModule(meta) {
-    const { type: moduleType, bootstrap, declarations, imports, exports } = meta;
+    const { type: moduleType, bootstrap, declarations, imports, exports, schemas } = meta;
     const definitionMap = {
         type: moduleType
     };
@@ -5914,6 +5914,9 @@ function compileNgModule(meta) {
     }
     if (exports.length) {
         definitionMap.exports = literalArr(exports.map(ref => ref.value));
+    }
+    if (schemas && schemas.length) {
+        definitionMap.schemas = literalArr(schemas.map(ref => ref.value));
     }
     const expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression(definitionMap)]);
     const type = new ExpressionType(importExpr(Identifiers$1.NgModuleDefWithMeta, [
@@ -15090,6 +15093,7 @@ class CompilerFacadeImpl {
             imports: facade.imports.map(wrapReference),
             exports: facade.exports.map(wrapReference),
             emitInline: true,
+            schemas: facade.schemas ? facade.schemas.map(wrapReference) : null,
         };
         const res = compileNgModule(meta);
         return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, []);
@@ -15271,7 +15275,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.3+168.sha-b0afc4c');
+const VERSION$1 = new Version('8.0.0-beta.3+181.sha-8accc98');
 
 /**
  * @license
