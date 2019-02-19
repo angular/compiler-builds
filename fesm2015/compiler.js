@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.4+27.sha-5e68e35
+ * @license Angular v8.0.0-beta.4+28.sha-19afb79
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15275,7 +15275,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.4+27.sha-5e68e35');
+const VERSION$1 = new Version('8.0.0-beta.4+28.sha-19afb79');
 
 /**
  * @license
@@ -18530,7 +18530,8 @@ class CompileMetadataResolver {
             selectors,
             first: q.first,
             descendants: q.descendants, propertyName,
-            read: q.read ? this._getTokenMetadata(q.read) : null
+            read: q.read ? this._getTokenMetadata(q.read) : null,
+            static: q.static
         };
     }
     _reportError(error$$1, type, otherType) {
@@ -20878,7 +20879,7 @@ class ViewBuilder$1 {
                 // Note: queries start with id 1 so we can use the number in a Bloom filter!
                 const queryId = queryIndex + 1;
                 const bindingType = query.first ? 0 /* First */ : 1 /* All */;
-                const flags = 134217728 /* TypeViewQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
+                const flags = 134217728 /* TypeViewQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query);
                 this.nodes.push(() => ({
                     sourceSpan: null,
                     nodeFlags: flags,
@@ -21156,7 +21157,7 @@ class ViewBuilder$1 {
         this.nodes.push(null);
         dirAst.directive.queries.forEach((query, queryIndex) => {
             const queryId = dirAst.contentQueryStartId + queryIndex;
-            const flags = 67108864 /* TypeContentQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
+            const flags = 67108864 /* TypeContentQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query);
             const bindingType = query.first ? 0 /* First */ : 1 /* All */;
             this.nodes.push(() => ({
                 sourceSpan: dirAst.sourceSpan,
@@ -21626,17 +21627,25 @@ function elementEventNameAndTarget(eventAst, dirAst) {
         return eventAst;
     }
 }
-function calcStaticDynamicQueryFlags(queryIds, queryId, isFirst) {
+function calcStaticDynamicQueryFlags(queryIds, queryId, query) {
     let flags = 0 /* None */;
     // Note: We only make queries static that query for a single item.
     // This is because of backwards compatibility with the old view compiler...
-    if (isFirst && (queryIds.staticQueryIds.has(queryId) || !queryIds.dynamicQueryIds.has(queryId))) {
+    if (query.first && shouldResolveAsStaticQuery(queryIds, queryId, query)) {
         flags |= 268435456 /* StaticQuery */;
     }
     else {
         flags |= 536870912 /* DynamicQuery */;
     }
     return flags;
+}
+function shouldResolveAsStaticQuery(queryIds, queryId, query) {
+    // If query.static has been set by the user, use that value to determine whether
+    // the query is static. If none has been set, sort the query into static/dynamic
+    // based on query results (i.e. dynamic if CD needs to run to get all results).
+    return query.static ||
+        query.static == null &&
+            (queryIds.staticQueryIds.has(queryId) || !queryIds.dynamicQueryIds.has(queryId));
 }
 function elementEventFullName(target, name) {
     return target ? `${target}:${name}` : name;
