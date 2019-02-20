@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.4+28.sha-19afb79
+ * @license Angular v8.0.0-beta.4+56.sha-a7e1c0c
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3205,6 +3205,8 @@ Identifiers$1.PipeDefWithMeta = { name: 'ɵPipeDefWithMeta', moduleName: CORE$1 
 Identifiers$1.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
 Identifiers$1.queryRefresh = { name: 'ɵqueryRefresh', moduleName: CORE$1 };
 Identifiers$1.viewQuery = { name: 'ɵviewQuery', moduleName: CORE$1 };
+Identifiers$1.staticViewQuery = { name: 'ɵstaticViewQuery', moduleName: CORE$1 };
+Identifiers$1.staticContentQuery = { name: 'ɵstaticContentQuery', moduleName: CORE$1 };
 Identifiers$1.loadViewQuery = { name: 'ɵloadViewQuery', moduleName: CORE$1 };
 Identifiers$1.contentQuery = { name: 'ɵcontentQuery', moduleName: CORE$1 };
 Identifiers$1.loadContentQuery = { name: 'ɵloadContentQuery', moduleName: CORE$1 };
@@ -14687,6 +14689,7 @@ function queriesFromGlobalMetadata(queries, outputCtx) {
             first: query.first,
             predicate: selectorsFromGlobalMetadata(query.selectors, outputCtx),
             descendants: query.descendants, read,
+            static: !!query.static
         };
     });
 }
@@ -14714,10 +14717,8 @@ function prepareQueryParams(query, constantPool) {
     const parameters = [
         getQueryPredicate(query, constantPool),
         literal(query.descendants),
+        query.read || literal(null),
     ];
-    if (query.read) {
-        parameters.push(query.read);
-    }
     return parameters;
 }
 // Turn a directive selector into an R3-compatible selector for directive def
@@ -14738,9 +14739,10 @@ function createContentQueriesFunction(meta, constantPool) {
     const updateStatements = [];
     const tempAllocator = temporaryAllocator(updateStatements, TEMPORARY_NAME);
     for (const query of meta.queries) {
-        // creation, e.g. r3.contentQuery(dirIndex, somePredicate, true);
+        // creation, e.g. r3.contentQuery(dirIndex, somePredicate, true, null);
         const args = [variable('dirIndex'), ...prepareQueryParams(query, constantPool)];
-        createStatements.push(importExpr(Identifiers$1.contentQuery).callFn(args).toStmt());
+        const queryInstruction = query.static ? Identifiers$1.staticContentQuery : Identifiers$1.contentQuery;
+        createStatements.push(importExpr(queryInstruction).callFn(args).toStmt());
         // update, e.g. (r3.queryRefresh(tmp = r3.loadContentQuery()) && (ctx.someDir = tmp));
         const temporary = tempAllocator();
         const getQueryList = importExpr(Identifiers$1.loadContentQuery).callFn([]);
@@ -14796,8 +14798,9 @@ function createViewQueriesFunction(meta, constantPool) {
     const updateStatements = [];
     const tempAllocator = temporaryAllocator(updateStatements, TEMPORARY_NAME);
     meta.viewQueries.forEach((query) => {
+        const queryInstruction = query.static ? Identifiers$1.staticViewQuery : Identifiers$1.viewQuery;
         // creation, e.g. r3.viewQuery(somePredicate, true);
-        const queryDefinition = importExpr(Identifiers$1.viewQuery).callFn(prepareQueryParams(query, constantPool));
+        const queryDefinition = importExpr(queryInstruction).callFn(prepareQueryParams(query, constantPool));
         createStatements.push(queryDefinition.toStmt());
         // update, e.g. (r3.queryRefresh(tmp = r3.loadViewQuery()) && (ctx.someDir = tmp));
         const temporary = tempAllocator();
@@ -15159,7 +15162,7 @@ const wrapReference = function (value) {
 };
 function convertToR3QueryMetadata(facade) {
     return Object.assign({}, facade, { predicate: Array.isArray(facade.predicate) ? facade.predicate :
-            new WrappedNodeExpr(facade.predicate), read: facade.read ? new WrappedNodeExpr(facade.read) : null });
+            new WrappedNodeExpr(facade.predicate), read: facade.read ? new WrappedNodeExpr(facade.read) : null, static: facade.static });
 }
 function convertDirectiveFacadeToMetadata(facade) {
     const inputsFromMetadata = parseInputOutputs(facade.inputs || []);
@@ -15275,7 +15278,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.4+28.sha-19afb79');
+const VERSION$1 = new Version('8.0.0-beta.4+56.sha-a7e1c0c');
 
 /**
  * @license
