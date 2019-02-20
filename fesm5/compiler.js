@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.4+8.sha-6b511a3
+ * @license Angular v8.0.0-beta.4+28.sha-19afb79
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16207,7 +16207,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-beta.4+8.sha-6b511a3');
+var VERSION$1 = new Version('8.0.0-beta.4+28.sha-19afb79');
 
 /**
  * @license
@@ -19600,7 +19600,8 @@ var CompileMetadataResolver = /** @class */ (function () {
             selectors: selectors,
             first: q.first,
             descendants: q.descendants, propertyName: propertyName,
-            read: q.read ? this._getTokenMetadata(q.read) : null
+            read: q.read ? this._getTokenMetadata(q.read) : null,
+            static: q.static
         };
     };
     CompileMetadataResolver.prototype._reportError = function (error$$1, type, otherType) {
@@ -22090,7 +22091,7 @@ var ViewBuilder$1 = /** @class */ (function () {
                 // Note: queries start with id 1 so we can use the number in a Bloom filter!
                 var queryId = queryIndex + 1;
                 var bindingType = query.first ? 0 /* First */ : 1 /* All */;
-                var flags = 134217728 /* TypeViewQuery */ | calcStaticDynamicQueryFlags(queryIds_1, queryId, query.first);
+                var flags = 134217728 /* TypeViewQuery */ | calcStaticDynamicQueryFlags(queryIds_1, queryId, query);
                 _this.nodes.push(function () { return ({
                     sourceSpan: null,
                     nodeFlags: flags,
@@ -22377,7 +22378,7 @@ var ViewBuilder$1 = /** @class */ (function () {
         this.nodes.push(null);
         dirAst.directive.queries.forEach(function (query, queryIndex) {
             var queryId = dirAst.contentQueryStartId + queryIndex;
-            var flags = 67108864 /* TypeContentQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
+            var flags = 67108864 /* TypeContentQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query);
             var bindingType = query.first ? 0 /* First */ : 1 /* All */;
             _this.nodes.push(function () { return ({
                 sourceSpan: dirAst.sourceSpan,
@@ -22858,17 +22859,25 @@ function elementEventNameAndTarget(eventAst, dirAst) {
         return eventAst;
     }
 }
-function calcStaticDynamicQueryFlags(queryIds, queryId, isFirst) {
+function calcStaticDynamicQueryFlags(queryIds, queryId, query) {
     var flags = 0 /* None */;
     // Note: We only make queries static that query for a single item.
     // This is because of backwards compatibility with the old view compiler...
-    if (isFirst && (queryIds.staticQueryIds.has(queryId) || !queryIds.dynamicQueryIds.has(queryId))) {
+    if (query.first && shouldResolveAsStaticQuery(queryIds, queryId, query)) {
         flags |= 268435456 /* StaticQuery */;
     }
     else {
         flags |= 536870912 /* DynamicQuery */;
     }
     return flags;
+}
+function shouldResolveAsStaticQuery(queryIds, queryId, query) {
+    // If query.static has been set by the user, use that value to determine whether
+    // the query is static. If none has been set, sort the query into static/dynamic
+    // based on query results (i.e. dynamic if CD needs to run to get all results).
+    return query.static ||
+        query.static == null &&
+            (queryIds.staticQueryIds.has(queryId) || !queryIds.dynamicQueryIds.has(queryId));
 }
 function elementEventFullName(target, name) {
     return target ? target + ":" + name : name;
