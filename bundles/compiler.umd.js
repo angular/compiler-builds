@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.5+12.sha-df627e6
+ * @license Angular v8.0.0-beta.5+14.sha-9ae14db
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13149,7 +13149,8 @@
             var parsedElement;
             if (preparsedElement.type === PreparsedElementType.NG_CONTENT) {
                 // `<ng-content>`
-                if (element.children && !element.children.every(isEmptyTextNode)) {
+                if (element.children &&
+                    !element.children.every(function (node) { return isEmptyTextNode(node) || isCommentNode(node); })) {
                     this.reportError("<ng-content> element cannot have content.", element.sourceSpan);
                 }
                 var selector = preparsedElement.selectAttr;
@@ -13345,6 +13346,9 @@
     }
     function isEmptyTextNode(node) {
         return node instanceof Text$3 && node.value.trim().length == 0;
+    }
+    function isCommentNode(node) {
+        return node instanceof Comment;
     }
 
     /**
@@ -16267,7 +16271,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-beta.5+12.sha-df627e6');
+    var VERSION$1 = new Version('8.0.0-beta.5+14.sha-9ae14db');
 
     /**
      * @license
