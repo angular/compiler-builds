@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.5+11.sha-72d043f
+ * @license Angular v8.0.0-beta.5+16.sha-0ea216b
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -860,14 +860,18 @@ var MissingTranslationStrategy;
     MissingTranslationStrategy[MissingTranslationStrategy["Ignore"] = 2] = "Ignore";
 })(MissingTranslationStrategy || (MissingTranslationStrategy = {}));
 function makeMetadataFactory(name, props) {
-    var factory = function () {
+    // This must be declared as a function, not a fat arrow, so that ES2015 devmode produces code
+    // that works with the static_reflector.ts in the ViewEngine compiler.
+    // In particular, `_registerDecoratorOrConstructor` assumes that the value returned here can be
+    // new'ed.
+    function factory() {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
         var values = props ? props.apply(void 0, __spread(args)) : {};
         return __assign({ ngMetadataName: name }, values);
-    };
+    }
     factory.isTypeOf = function (obj) { return obj && obj.ngMetadataName === name; };
     factory.ngMetadataName = name;
     return factory;
@@ -13092,7 +13096,8 @@ var HtmlAstToIvyAst = /** @class */ (function () {
         var parsedElement;
         if (preparsedElement.type === PreparsedElementType.NG_CONTENT) {
             // `<ng-content>`
-            if (element.children && !element.children.every(isEmptyTextNode)) {
+            if (element.children &&
+                !element.children.every(function (node) { return isEmptyTextNode(node) || isCommentNode(node); })) {
                 this.reportError("<ng-content> element cannot have content.", element.sourceSpan);
             }
             var selector = preparsedElement.selectAttr;
@@ -13288,6 +13293,9 @@ function addEvents(events, boundEvents) {
 }
 function isEmptyTextNode(node) {
     return node instanceof Text$3 && node.value.trim().length == 0;
+}
+function isCommentNode(node) {
+    return node instanceof Comment;
 }
 
 /**
@@ -16210,7 +16218,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-beta.5+11.sha-72d043f');
+var VERSION$1 = new Version('8.0.0-beta.5+16.sha-0ea216b');
 
 /**
  * @license
