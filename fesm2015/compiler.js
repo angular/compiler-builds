@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.5+13.sha-95d9aa2
+ * @license Angular v8.0.0-beta.5+11.sha-72d043f
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -12310,8 +12310,7 @@ class HtmlAstToIvyAst {
         let parsedElement;
         if (preparsedElement.type === PreparsedElementType.NG_CONTENT) {
             // `<ng-content>`
-            if (element.children &&
-                !element.children.every((node) => isEmptyTextNode(node) || isCommentNode(node))) {
+            if (element.children && !element.children.every(isEmptyTextNode)) {
                 this.reportError(`<ng-content> element cannot have content.`, element.sourceSpan);
             }
             const selector = preparsedElement.selectAttr;
@@ -12500,9 +12499,6 @@ function addEvents(events, boundEvents) {
 }
 function isEmptyTextNode(node) {
     return node instanceof Text$3 && node.value.trim().length == 0;
-}
-function isCommentNode(node) {
-    return node instanceof Comment;
 }
 
 /**
@@ -15282,7 +15278,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.5+13.sha-95d9aa2');
+const VERSION$1 = new Version('8.0.0-beta.5+11.sha-72d043f');
 
 /**
  * @license
