@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.5+24.sha-9defc00.with-local-changes
+ * @license Angular v8.0.0-beta.5+26.sha-32ae84d.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -11905,7 +11905,7 @@ class BindingParser {
             return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo);
         }
     }
-    createBoundElementProperty(elementSelector, boundProp, skipValidation = false) {
+    createBoundElementProperty(elementSelector, boundProp, skipValidation = false, mapPropertyName = true) {
         if (boundProp.isAnimation) {
             return new BoundElementProperty(boundProp.name, 4 /* Animation */, SecurityContext.NONE, boundProp.expression, null, boundProp.sourceSpan);
         }
@@ -11944,11 +11944,12 @@ class BindingParser {
         }
         // If not a special case, use the full property name
         if (boundPropertyName === null) {
-            boundPropertyName = this._schemaRegistry.getMappedPropName(boundProp.name);
-            securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, boundPropertyName, false);
+            const mappedPropName = this._schemaRegistry.getMappedPropName(boundProp.name);
+            boundPropertyName = mapPropertyName ? mappedPropName : boundProp.name;
+            securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, mappedPropName, false);
             bindingType = 0 /* Property */;
             if (!skipValidation) {
-                this._validatePropertyOrAttributeName(boundPropertyName, boundProp.sourceSpan, false);
+                this._validatePropertyOrAttributeName(mappedPropName, boundProp.sourceSpan, false);
             }
         }
         return new BoundElementProperty(boundPropertyName, bindingType, securityContexts[0], boundProp.expression, unit, boundProp.sourceSpan);
@@ -12383,10 +12384,10 @@ class HtmlAstToIvyAst {
                 literal.push(new TextAttribute(prop.name, prop.expression.source || '', prop.sourceSpan, undefined, i18n));
             }
             else {
-                // we skip validation here, since we do this check at runtime due to the fact that we need
-                // to make sure a given prop is not an input of some Directive (thus should not be a subject
-                // of this check) and Directive matching happens at runtime
-                const bep = this.bindingParser.createBoundElementProperty(elementName, prop, /* skipValidation */ true);
+                // Note that validation is skipped and property mapping is disabled
+                // due to the fact that we need to make sure a given prop is not an
+                // input of a directive and directive matching happens at runtime.
+                const bep = this.bindingParser.createBoundElementProperty(elementName, prop, /* skipValidation */ true, /* mapPropertyName */ false);
                 bound.push(BoundAttribute.fromBoundElementProperty(bep, i18n));
             }
         });
@@ -15286,7 +15287,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.5+24.sha-9defc00.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.5+26.sha-32ae84d.with-local-changes');
 
 /**
  * @license
