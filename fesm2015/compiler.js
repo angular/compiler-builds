@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.6+23.sha-d0018e6.with-local-changes
+ * @license Angular v7.2.6+26.sha-b686449.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -827,10 +827,14 @@ var MissingTranslationStrategy;
     MissingTranslationStrategy[MissingTranslationStrategy["Ignore"] = 2] = "Ignore";
 })(MissingTranslationStrategy || (MissingTranslationStrategy = {}));
 function makeMetadataFactory(name, props) {
-    const factory = (...args) => {
+    // This must be declared as a function, not a fat arrow, so that ES2015 devmode produces code
+    // that works with the static_reflector.ts in the ViewEngine compiler.
+    // In particular, `_registerDecoratorOrConstructor` assumes that the value returned here can be
+    // new'ed.
+    function factory(...args) {
         const values = props ? props(...args) : {};
         return Object.assign({ ngMetadataName: name }, values);
-    };
+    }
     factory.isTypeOf = (obj) => obj && obj.ngMetadataName === name;
     factory.ngMetadataName = name;
     return factory;
@@ -14832,7 +14836,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.6+23.sha-d0018e6.with-local-changes');
+const VERSION$1 = new Version('7.2.6+26.sha-b686449.with-local-changes');
 
 /**
  * @license
