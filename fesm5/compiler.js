@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.5+57.sha-c64b13e.with-local-changes
+ * @license Angular v8.0.0-beta.5+67.sha-22880ea.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4569,7 +4569,7 @@ function unsupported(feature) {
     throw new Error("Feature " + feature + " is not supported yet");
 }
 function invalid$1(arg) {
-    throw new Error("Invalid state: Visitor " + this.constructor.name + " doesn't handle " + undefined);
+    throw new Error("Invalid state: Visitor " + this.constructor.name + " doesn't handle " + arg.constructor.name);
 }
 function asLiteral(value) {
     if (Array.isArray(value)) {
@@ -16220,7 +16220,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-beta.5+57.sha-c64b13e.with-local-changes');
+var VERSION$1 = new Version('8.0.0-beta.5+67.sha-22880ea.with-local-changes');
 
 /**
  * @license
