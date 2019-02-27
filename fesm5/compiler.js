@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.6+13.sha-40833ba.with-local-changes
+ * @license Angular v8.0.0-beta.6+15.sha-a6ae759.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13017,29 +13017,35 @@ function htmlAstToRender3Ast(htmlNodes, bindingParser) {
     return {
         nodes: ivyNodes,
         errors: allErrors,
+        styleUrls: transformer.styleUrls,
+        styles: transformer.styles,
     };
 }
 var HtmlAstToIvyAst = /** @class */ (function () {
     function HtmlAstToIvyAst(bindingParser) {
         this.bindingParser = bindingParser;
         this.errors = [];
+        this.styles = [];
+        this.styleUrls = [];
     }
     // HTML visitor
     HtmlAstToIvyAst.prototype.visitElement = function (element) {
         var _this = this;
         var e_1, _a;
         var preparsedElement = preparseElement(element);
-        if (preparsedElement.type === PreparsedElementType.SCRIPT ||
-            preparsedElement.type === PreparsedElementType.STYLE) {
-            // Skipping <script> for security reasons
-            // Skipping <style> as we already processed them
-            // in the StyleCompiler
+        if (preparsedElement.type === PreparsedElementType.SCRIPT) {
             return null;
         }
-        if (preparsedElement.type === PreparsedElementType.STYLESHEET &&
+        else if (preparsedElement.type === PreparsedElementType.STYLE) {
+            var contents = textContents(element);
+            if (contents !== null) {
+                this.styles.push(contents);
+            }
+            return null;
+        }
+        else if (preparsedElement.type === PreparsedElementType.STYLESHEET &&
             isStyleUrlResolvable(preparsedElement.hrefAttr)) {
-            // Skipping stylesheets with either relative urls or package scheme as we already processed
-            // them in the StyleCompiler
+            this.styleUrls.push(preparsedElement.hrefAttr);
             return null;
         }
         // Whether the element is a `<ng-template>`
@@ -13298,6 +13304,14 @@ function isEmptyTextNode(node) {
 }
 function isCommentNode(node) {
     return node instanceof Comment;
+}
+function textContents(node) {
+    if (node.children.length !== 1 || !(node.children[0] instanceof Text$3)) {
+        return null;
+    }
+    else {
+        return node.children[0].value;
+    }
 }
 
 /**
@@ -15215,7 +15229,7 @@ function parseTemplate(template, templateUrl, options) {
     var htmlParser = new HtmlParser();
     var parseResult = htmlParser.parse(template, templateUrl, __assign({}, options, { tokenizeExpansionForms: true }));
     if (parseResult.errors && parseResult.errors.length > 0) {
-        return { errors: parseResult.errors, nodes: [] };
+        return { errors: parseResult.errors, nodes: [], styleUrls: [], styles: [] };
     }
     var rootNodes = parseResult.rootNodes;
     // process i18n meta information (scan attributes, generate ids)
@@ -15232,11 +15246,11 @@ function parseTemplate(template, templateUrl, options) {
         // existing extraction process (ng xi18n)
         rootNodes = visitAll$1(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), rootNodes);
     }
-    var _a = htmlAstToRender3Ast(rootNodes, bindingParser), nodes = _a.nodes, errors = _a.errors;
+    var _a = htmlAstToRender3Ast(rootNodes, bindingParser), nodes = _a.nodes, errors = _a.errors, styleUrls = _a.styleUrls, styles = _a.styles;
     if (errors && errors.length > 0) {
-        return { errors: errors, nodes: [] };
+        return { errors: errors, nodes: [], styleUrls: [], styles: [] };
     }
-    return { nodes: nodes };
+    return { nodes: nodes, styleUrls: styleUrls, styles: styles };
 }
 /**
  * Construct a `BindingParser` with a default configuration.
@@ -16221,7 +16235,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-beta.6+13.sha-40833ba.with-local-changes');
+var VERSION$1 = new Version('8.0.0-beta.6+15.sha-a6ae759.with-local-changes');
 
 /**
  * @license
