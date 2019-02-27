@@ -270,6 +270,8 @@ export interface ParseTemplateOptions {
 export declare function parseTemplate(template: string, templateUrl: string, options?: ParseTemplateOptions): {
     errors?: ParseError[];
     nodes: t.Node[];
+    styleUrls: string[];
+    styles: string[];
 };
 /**
  * Construct a `BindingParser` with a default configuration.
