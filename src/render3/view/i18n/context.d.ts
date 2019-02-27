@@ -32,6 +32,7 @@ export declare class I18nContext {
     readonly id: number;
     bindings: Set<o.Expression>;
     placeholders: Map<string, any[]>;
+    isEmitted: boolean;
     private _registry;
     private _unresolvedCtxCount;
     constructor(index: number, ref: o.ReadVarExpr, level: number, templateIndex: number | null, meta: i18n.AST, registry?: any);

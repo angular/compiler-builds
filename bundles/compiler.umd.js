@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.6+10.sha-2dd44d7.with-local-changes
+ * @license Angular v8.0.0-beta.6+11.sha-034de06.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13402,6 +13402,7 @@
             this.registry = registry;
             this.bindings = new Set();
             this.placeholders = new Map();
+            this.isEmitted = false;
             this._unresolvedCtxCount = 0;
             this._registry = registry || setupRegistry();
             this.id = this._registry.getUniqueId();
@@ -14245,8 +14246,9 @@
             return variable(name);
         };
         TemplateDefinitionBuilder.prototype.i18nUpdateRef = function (context) {
-            var icus = context.icus, meta = context.meta, isRoot = context.isRoot, isResolved = context.isResolved;
-            if (isRoot && isResolved && !isSingleI18nIcu(meta)) {
+            var icus = context.icus, meta = context.meta, isRoot = context.isRoot, isResolved = context.isResolved, isEmitted = context.isEmitted;
+            if (isRoot && isResolved && !isEmitted && !isSingleI18nIcu(meta)) {
+                context.isEmitted = true;
                 var placeholders = context.getSerializedPlaceholders();
                 var icuMapping_1 = {};
                 var params_1 = placeholders.size ? placeholdersToParams(placeholders) : {};
@@ -16278,7 +16280,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-beta.6+10.sha-2dd44d7.with-local-changes');
+    var VERSION$1 = new Version('8.0.0-beta.6+11.sha-034de06.with-local-changes');
 
     /**
      * @license
