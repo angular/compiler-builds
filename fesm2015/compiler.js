@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.5+82.sha-25a2fef.with-local-changes
+ * @license Angular v8.0.0-beta.6+7.sha-d127d05.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -14193,7 +14193,8 @@ class BindingScope {
         return sharedCtxObj && sharedCtxObj.declare ? sharedCtxObj.lhs : null;
     }
     maybeGenerateSharedContextVar(value) {
-        if (value.priority === 1 /* CONTEXT */) {
+        if (value.priority === 1 /* CONTEXT */ &&
+            value.retrievalLevel < this.bindingLevel) {
             const sharedCtxObj = this.map.get(SHARED_CONTEXT_KEY + value.retrievalLevel);
             if (sharedCtxObj) {
                 sharedCtxObj.declare = true;
@@ -15287,7 +15288,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.5+82.sha-25a2fef.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.6+7.sha-d127d05.with-local-changes');
 
 /**
  * @license
