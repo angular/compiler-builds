@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.6+12.sha-34bdebc.with-local-changes
+ * @license Angular v8.0.0-beta.6+13.sha-40833ba.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13299,13 +13299,9 @@ class TemplateDefinitionBuilder {
         return _ref;
     }
     i18nAppendBindings(expressions) {
-        if (!this.i18n || !expressions.length)
-            return;
-        const implicit = variable(CONTEXT_NAME);
-        expressions.forEach(expression => {
-            const binding = this.convertExpressionBinding(implicit, expression);
-            this.i18n.appendBinding(binding);
-        });
+        if (expressions.length > 0) {
+            expressions.forEach(expression => this.i18n.appendBinding(expression));
+        }
     }
     i18nBindProps(props) {
         const bound = {};
@@ -13416,7 +13412,9 @@ class TemplateDefinitionBuilder {
         // setup accumulated bindings
         const { index, bindings } = this.i18n;
         if (bindings.size) {
-            bindings.forEach(binding => this.updateInstruction(span, Identifiers$1.i18nExp, [binding]));
+            bindings.forEach(binding => {
+                this.updateInstruction(span, Identifiers$1.i18nExp, () => [this.convertPropertyBinding(variable(CONTEXT_NAME), binding)]);
+            });
             this.updateInstruction(span, Identifiers$1.i18nApply, [literal(index)]);
         }
         if (!selfClosing) {
@@ -15290,7 +15288,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.6+12.sha-34bdebc.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.6+13.sha-40833ba.with-local-changes');
 
 /**
  * @license

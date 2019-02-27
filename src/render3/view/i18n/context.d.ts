@@ -5,6 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import { AST } from '../../../expression_parser/ast';
 import * as i18n from '../../../i18n/i18n_ast';
 import * as o from '../../../output/output_ast';
 /**
@@ -30,7 +31,7 @@ export declare class I18nContext {
     readonly meta: i18n.AST;
     private registry?;
     readonly id: number;
-    bindings: Set<o.Expression>;
+    bindings: Set<AST>;
     placeholders: Map<string, any[]>;
     isEmitted: boolean;
     private _registry;
@@ -41,7 +42,7 @@ export declare class I18nContext {
     readonly isRoot: boolean;
     readonly isResolved: boolean;
     getSerializedPlaceholders(): Map<string, any[]>;
-    appendBinding(binding: o.Expression): void;
+    appendBinding(binding: AST): void;
     appendIcu(name: string, ref: o.Expression): void;
     appendBoundText(node: i18n.AST): void;
     appendTemplate(node: i18n.AST, index: number): void;
