@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.7+5.sha-a54a752.with-local-changes
+ * @license Angular v7.2.7+6.sha-b06847f.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -14836,7 +14836,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.7+5.sha-a54a752.with-local-changes');
+const VERSION$1 = new Version('7.2.7+6.sha-b06847f.with-local-changes');
 
 /**
  * @license
@@ -21724,16 +21724,16 @@ class StaticSymbolResolver {
                             return {
                                 __symbolic: 'error',
                                 message: `Could not resolve ${module} relative to ${self.host.getMetadataFor(sourceSymbol.filePath)}.`,
-                                line: map.line,
-                                character: map.character,
+                                line: map['line'],
+                                character: map['character'],
                                 fileName: getOriginalName()
                             };
                         }
                         return {
                             __symbolic: 'resolved',
                             symbol: self.getStaticSymbol(filePath, name),
-                            line: map.line,
-                            character: map.character,
+                            line: map['line'],
+                            character: map['character'],
                             fileName: getOriginalName()
                         };
                     }
@@ -22050,7 +22050,7 @@ class ToJsonSerializer extends ValueTransformer {
      */
     visitStringMap(map, context) {
         if (map['__symbolic'] === 'resolved') {
-            return visitValue(map.symbol, this, context);
+            return visitValue(map['symbol'], this, context);
         }
         if (map['__symbolic'] === 'error') {
             delete map['line'];
