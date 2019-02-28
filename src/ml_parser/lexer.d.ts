@@ -91,3 +91,32 @@ export interface TokenizeOptions {
     escapedString?: boolean;
 }
 export declare function tokenize(source: string, url: string, getTagDefinition: (tagName: string) => TagDefinition, options?: TokenizeOptions): TokenizeResult;
+/**
+ * The _Tokenizer uses objects of this type to move through the input text,
+ * extracting "parsed characters". These could be more than one actual character
+ * if the text contains escape sequences.
+ */
+interface CharacterCursor {
+    /** Initialize the cursor. */
+    init(): void;
+    /** The parsed character at the current cursor position. */
+    peek(): number;
+    /** Advance the cursor by one parsed character. */
+    advance(): void;
+    /** Get a span from the marked start point to the current point. */
+    getSpan(start?: this): ParseSourceSpan;
+    /** Get the parsed characters from the marked start point to the current point. */
+    getChars(start: this): string;
+    /** The number of characters left before the end of the cursor. */
+    charsLeft(): number;
+    /** The number of characters between `this` cursor and `other` cursor. */
+    diff(other: this): number;
+    /** Make a copy of this cursor */
+    clone(): CharacterCursor;
+}
+export declare class CursorError {
+    msg: string;
+    cursor: CharacterCursor;
+    constructor(msg: string, cursor: CharacterCursor);
+}
+export {};

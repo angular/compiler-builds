@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.6+19.sha-772b24c.with-local-changes
+ * @license Angular v8.0.0-beta.6+24.sha-2b974d4.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10826,16 +10826,12 @@
     // See http://www.w3.org/TR/html51/syntax.html#writing
     var _Tokenizer = /** @class */ (function () {
         /**
-         * @param _file The html source
-         * @param _getTagDefinition
-         * @param _tokenizeIcu Whether to tokenize ICU messages (considered as text nodes when false)
-         * @param _interpolationConfig
+         * @param _file The html source file being tokenized.
+         * @param _getTagDefinition A function that will retrieve a tag definition for a given tag name.
+         * @param options Configuration of the tokenization.
          */
         function _Tokenizer(_file, _getTagDefinition, options) {
-            this._file = _file;
             this._getTagDefinition = _getTagDefinition;
-            this._peek = -1;
-            this._nextPeek = -1;
             this._currentTokenStart = null;
             this._currentTokenType = null;
             this._expansionCaseStack = [];
@@ -10844,30 +10840,14 @@
             this.errors = [];
             this._tokenizeIcu = options.tokenizeExpansionForms || false;
             this._interpolationConfig = options.interpolationConfig || DEFAULT_INTERPOLATION_CONFIG;
-            this._escapedString = options.escapedString || false;
-            this._input = _file.content;
-            if (options.range) {
-                this._end = options.range.endPos;
-                this._index = options.range.startPos;
-                this._line = options.range.startLine;
-                this._column = options.range.startCol;
-            }
-            else {
-                this._end = this._input.length;
-                this._index = 0;
-                this._line = 0;
-                this._column = 0;
-            }
+            var range = options.range || { endPos: _file.content.length, startPos: 0, startLine: 0, startCol: 0 };
+            this._cursor = options.escapedString ? new EscapedCharacterCursor(_file, range) :
+                new PlainCharacterCursor(_file, range);
             try {
-                this._initPeek();
+                this._cursor.init();
             }
             catch (e) {
-                if (e instanceof _ControlFlowError) {
-                    this.errors.push(e.error);
-                }
-                else {
-                    throw e;
-                }
+                this.handleError(e);
             }
         }
         _Tokenizer.prototype._processCarriageReturns = function (content) {
@@ -10878,8 +10858,8 @@
             return content.replace(_CR_OR_CRLF_REGEXP, '\n');
         };
         _Tokenizer.prototype.tokenize = function () {
-            while (this._peek !== $EOF) {
-                var start = this._getLocation();
+            while (this._cursor.peek() !== $EOF) {
+                var start = this._cursor.clone();
                 try {
                     if (this._attemptCharCode($LT)) {
                         if (this._attemptCharCode($BANG)) {
@@ -10905,12 +10885,7 @@
                     }
                 }
                 catch (e) {
-                    if (e instanceof _ControlFlowError) {
-                        this.errors.push(e.error);
-                    }
-                    else {
-                        throw e;
-                    }
+                    this.handleError(e);
                 }
             }
             this._beginToken(TokenType.EOF);
@@ -10922,15 +10897,15 @@
          * @internal
          */
         _Tokenizer.prototype._tokenizeExpansionForm = function () {
-            if (isExpansionFormStart(this._input, this._index, this._interpolationConfig)) {
+            if (this.isExpansionFormStart()) {
                 this._consumeExpansionFormStart();
                 return true;
             }
-            if (isExpansionCaseStart(this._peek) && this._isInExpansionForm()) {
+            if (isExpansionCaseStart(this._cursor.peek()) && this._isInExpansionForm()) {
                 this._consumeExpansionCaseStart();
                 return true;
             }
-            if (this._peek === $RBRACE) {
+            if (this._cursor.peek() === $RBRACE) {
                 if (this._isInExpansionCase()) {
                     this._consumeExpansionCaseEnd();
                     return true;
@@ -10942,28 +10917,20 @@
             }
             return false;
         };
-        _Tokenizer.prototype._getLocation = function () {
-            return new ParseLocation(this._file, this._index, this._line, this._column);
-        };
-        _Tokenizer.prototype._getSpan = function (start, end) {
-            if (start === void 0) { start = this._getLocation(); }
-            if (end === void 0) { end = this._getLocation(); }
-            return new ParseSourceSpan(start, end);
-        };
         _Tokenizer.prototype._beginToken = function (type, start) {
-            if (start === void 0) { start = this._getLocation(); }
+            if (start === void 0) { start = this._cursor.clone(); }
             this._currentTokenStart = start;
             this._currentTokenType = type;
         };
         _Tokenizer.prototype._endToken = function (parts, end) {
-            if (end === void 0) { end = this._getLocation(); }
+            if (end === void 0) { end = this._cursor.clone(); }
             if (this._currentTokenStart === null) {
-                throw new TokenError('Programming error - attempted to end a token when there was no start to the token', this._currentTokenType, this._getSpan(end, end));
+                throw new TokenError('Programming error - attempted to end a token when there was no start to the token', this._currentTokenType, this._cursor.getSpan(end));
             }
             if (this._currentTokenType === null) {
-                throw new TokenError('Programming error - attempted to end a token which has no token type', null, this._getSpan(this._currentTokenStart, end));
+                throw new TokenError('Programming error - attempted to end a token which has no token type', null, this._cursor.getSpan(this._currentTokenStart));
             }
-            var token = new Token$1(this._currentTokenType, parts, new ParseSourceSpan(this._currentTokenStart, end));
+            var token = new Token$1(this._currentTokenType, parts, this._cursor.getSpan(this._currentTokenStart));
             this.tokens.push(token);
             this._currentTokenStart = null;
             this._currentTokenType = null;
@@ -10978,78 +10945,48 @@
             this._currentTokenType = null;
             return new _ControlFlowError(error);
         };
-        _Tokenizer.prototype._advance = function (processingEscapeSequence) {
-            if (this._index >= this._end) {
-                throw this._createError(_unexpectedCharacterErrorMsg($EOF), this._getSpan());
+        _Tokenizer.prototype.handleError = function (e) {
+            if (e instanceof CursorError) {
+                e = this._createError(e.msg, this._cursor.getSpan(e.cursor));
             }
-            // The actual character in the input might be different to the _peek if we are processing
-            // escape characters. We only want to track "real" new lines.
-            var actualChar = this._input.charCodeAt(this._index);
-            if (actualChar === $LF) {
-                this._line++;
-                this._column = 0;
+            if (e instanceof _ControlFlowError) {
+                this.errors.push(e.error);
             }
-            else if (!isNewLine(actualChar)) {
-                this._column++;
-            }
-            this._index++;
-            this._initPeek(processingEscapeSequence);
-        };
-        /**
-         * Initialize the _peek and _nextPeek properties based on the current _index.
-         * @param processingEscapeSequence whether we are in the middle of processing an escape sequence.
-         */
-        _Tokenizer.prototype._initPeek = function (processingEscapeSequence) {
-            this._peek = this._index >= this._end ? $EOF : this._input.charCodeAt(this._index);
-            this._nextPeek =
-                this._index + 1 >= this._end ? $EOF : this._input.charCodeAt(this._index + 1);
-            if (this._peek === $BACKSLASH && processingEscapeSequence !== true &&
-                this._escapedString) {
-                this._processEscapeSequence();
-            }
-        };
-        /**
-         * Advance the specific number of characters.
-         * @param count The number of characters to advance.
-         * @param processingEscapeSequence Whether we want `advance()` to process escape sequences.
-         */
-        _Tokenizer.prototype._advanceN = function (count, processingEscapeSequence) {
-            while (count) {
-                this._advance(processingEscapeSequence);
-                count--;
+            else {
+                throw e;
             }
         };
         _Tokenizer.prototype._attemptCharCode = function (charCode) {
-            if (this._peek === charCode) {
-                this._advance();
+            if (this._cursor.peek() === charCode) {
+                this._cursor.advance();
                 return true;
             }
             return false;
         };
         _Tokenizer.prototype._attemptCharCodeCaseInsensitive = function (charCode) {
-            if (compareCharCodeCaseInsensitive(this._peek, charCode)) {
-                this._advance();
+            if (compareCharCodeCaseInsensitive(this._cursor.peek(), charCode)) {
+                this._cursor.advance();
                 return true;
             }
             return false;
         };
         _Tokenizer.prototype._requireCharCode = function (charCode) {
-            var location = this._getLocation();
+            var location = this._cursor.clone();
             if (!this._attemptCharCode(charCode)) {
-                throw this._createError(_unexpectedCharacterErrorMsg(this._peek), this._getSpan(location, location));
+                throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(location));
             }
         };
         _Tokenizer.prototype._attemptStr = function (chars) {
             var len = chars.length;
-            if (this._index + len > this._end) {
+            if (this._cursor.charsLeft() < len) {
                 return false;
             }
-            var initialPosition = this._savePosition();
+            var initialPosition = this._cursor.clone();
             for (var i = 0; i < len; i++) {
                 if (!this._attemptCharCode(chars.charCodeAt(i))) {
                     // If attempting to parse the string fails, we want to reset the parser
                     // to where it was before the attempt
-                    this._restorePosition(initialPosition);
+                    this._cursor = initialPosition;
                     return false;
                 }
             }
@@ -11064,215 +11001,99 @@
             return true;
         };
         _Tokenizer.prototype._requireStr = function (chars) {
-            var location = this._getLocation();
+            var location = this._cursor.clone();
             if (!this._attemptStr(chars)) {
-                throw this._createError(_unexpectedCharacterErrorMsg(this._peek), this._getSpan(location));
+                throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(location));
             }
         };
         _Tokenizer.prototype._attemptCharCodeUntilFn = function (predicate) {
-            while (!predicate(this._peek)) {
-                this._advance();
+            while (!predicate(this._cursor.peek())) {
+                this._cursor.advance();
             }
         };
         _Tokenizer.prototype._requireCharCodeUntilFn = function (predicate, len) {
-            var start = this._getLocation();
+            var start = this._cursor.clone();
             this._attemptCharCodeUntilFn(predicate);
-            if (this._index - start.offset < len) {
-                throw this._createError(_unexpectedCharacterErrorMsg(this._peek), this._getSpan(start, start));
+            var end = this._cursor.clone();
+            if (end.diff(start) < len) {
+                throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(start));
             }
         };
         _Tokenizer.prototype._attemptUntilChar = function (char) {
-            while (this._peek !== char) {
-                this._advance();
+            while (this._cursor.peek() !== char) {
+                this._cursor.advance();
             }
         };
         _Tokenizer.prototype._readChar = function (decodeEntities) {
-            if (decodeEntities && this._peek === $AMPERSAND) {
+            if (decodeEntities && this._cursor.peek() === $AMPERSAND) {
                 return this._decodeEntity();
             }
             else {
                 // Don't rely upon reading directly from `_input` as the actual char value
                 // may have been generated from an escape sequence.
-                var char = String.fromCodePoint(this._peek);
-                this._advance();
+                var char = String.fromCodePoint(this._cursor.peek());
+                this._cursor.advance();
                 return char;
             }
         };
         _Tokenizer.prototype._decodeEntity = function () {
-            var start = this._getLocation();
-            this._advance();
+            var start = this._cursor.clone();
+            this._cursor.advance();
             if (this._attemptCharCode($HASH)) {
                 var isHex = this._attemptCharCode($x) || this._attemptCharCode($X);
-                var numberStart = this._getLocation().offset;
+                var codeStart = this._cursor.clone();
                 this._attemptCharCodeUntilFn(isDigitEntityEnd);
-                if (this._peek != $SEMICOLON) {
-                    throw this._createError(_unexpectedCharacterErrorMsg(this._peek), this._getSpan());
+                if (this._cursor.peek() != $SEMICOLON) {
+                    throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan());
                 }
-                this._advance();
-                var strNum = this._input.substring(numberStart, this._index - 1);
+                var strNum = this._cursor.getChars(codeStart);
+                this._cursor.advance();
                 try {
                     var charCode = parseInt(strNum, isHex ? 16 : 10);
                     return String.fromCharCode(charCode);
                 }
                 catch (_a) {
-                    var entity = this._input.substring(start.offset + 1, this._index - 1);
-                    throw this._createError(_unknownEntityErrorMsg(entity), this._getSpan(start));
+                    throw this._createError(_unknownEntityErrorMsg(this._cursor.getChars(start)), this._cursor.getSpan());
                 }
             }
             else {
-                var startPosition = this._savePosition();
+                var nameStart = this._cursor.clone();
                 this._attemptCharCodeUntilFn(isNamedEntityEnd);
-                if (this._peek != $SEMICOLON) {
-                    this._restorePosition(startPosition);
+                if (this._cursor.peek() != $SEMICOLON) {
+                    this._cursor = nameStart;
                     return '&';
                 }
-                this._advance();
-                var name_1 = this._input.substring(start.offset + 1, this._index - 1);
+                var name_1 = this._cursor.getChars(nameStart);
+                this._cursor.advance();
                 var char = NAMED_ENTITIES[name_1];
                 if (!char) {
-                    throw this._createError(_unknownEntityErrorMsg(name_1), this._getSpan(start));
+                    throw this._createError(_unknownEntityErrorMsg(name_1), this._cursor.getSpan(start));
                 }
                 return char;
             }
         };
-        /**
-         * Process the escape sequence that starts at the current position in the text.
-         *
-         * This method is called from `_advance()` to ensure that escape sequences are
-         * always processed correctly however tokens are being consumed.
-         *
-         * But note that this method also calls `_advance()` (re-entering) to move through
-         * the characters within an escape sequence. In that case it tells `_advance()` not
-         * to attempt to process further escape sequences by passing `true` as its first
-         * argument.
-         */
-        _Tokenizer.prototype._processEscapeSequence = function () {
-            this._advance(true); // advance past the backslash
-            // First check for standard control char sequences
-            if (this._peekChar() === $n) {
-                this._peek = $LF;
-            }
-            else if (this._peekChar() === $r) {
-                this._peek = $CR;
-            }
-            else if (this._peekChar() === $v) {
-                this._peek = $VTAB;
-            }
-            else if (this._peekChar() === $t) {
-                this._peek = $TAB;
-            }
-            else if (this._peekChar() === $b) {
-                this._peek = $BSPACE;
-            }
-            else if (this._peekChar() === $f) {
-                this._peek = $FF;
-            }
-            // Now consider more complex sequences
-            else if (this._peekChar() === $u) {
-                // Unicode code-point sequence
-                this._advance(true); // advance past the `u` char
-                if (this._peekChar() === $LBRACE) {
-                    // Variable length Unicode, e.g. `\x{123}`
-                    this._advance(true); // advance past the `{` char
-                    // Advance past the variable number of hex digits until we hit a `}` char
-                    var start = this._getLocation();
-                    while (this._peekChar() !== $RBRACE) {
-                        this._advance(true);
-                    }
-                    this._decodeHexDigits(start, this._index - start.offset);
-                }
-                else {
-                    // Fixed length Unicode, e.g. `\u1234`
-                    this._parseFixedHexSequence(4);
-                }
-            }
-            else if (this._peekChar() === $x) {
-                // Hex char code, e.g. `\x2F`
-                this._advance(true); // advance past the `x` char
-                this._parseFixedHexSequence(2);
-            }
-            else if (isOctalDigit(this._peekChar())) {
-                // Octal char code, e.g. `\012`,
-                var start = this._index;
-                var length_1 = 1;
-                // Note that we work with `_nextPeek` because, although we check the next character
-                // after the sequence to find the end of the sequence,
-                // we do not want to advance that far to check the character, otherwise we will
-                // have to back up.
-                while (isOctalDigit(this._nextPeek) && length_1 < 3) {
-                    this._advance(true);
-                    length_1++;
-                }
-                var octal = this._input.substr(start, length_1);
-                this._peek = parseInt(octal, 8);
-            }
-            else if (isNewLine(this._peekChar())) {
-                // Line continuation `\` followed by a new line
-                this._advance(true); // advance over the newline
-            }
-            // If none of the `if` blocks were executed then we just have an escaped normal character.
-            // In that case we just, effectively, skip the backslash from the character.
-        };
-        _Tokenizer.prototype._parseFixedHexSequence = function (length) {
-            var start = this._getLocation();
-            this._advanceN(length - 1, true);
-            this._decodeHexDigits(start, length);
-        };
-        _Tokenizer.prototype._decodeHexDigits = function (start, length) {
-            var hex = this._input.substr(start.offset, length);
-            var charCode = parseInt(hex, 16);
-            if (!isNaN(charCode)) {
-                this._peek = charCode;
-            }
-            else {
-                throw this._createError('Invalid hexadecimal escape sequence', this._getSpan(start, this._getLocation()));
-            }
-        };
-        /**
-         * This little helper is to solve a problem where the TS compiler will narrow
-         * the type of `_peek` after an `if` statment, even if there is a call to a
-         * method that might mutate the `_peek`.
-         *
-         * For example:
-         *
-         * ```
-         * if (this._peek === 10) {
-         *   this._advance(); // mutates _peek
-         *   if (this._peek === 20) {
-         *     ...
-         * ```
-         *
-         * The second if statement fails TS compilation because the compiler has determined
-         * that `_peek` is `10` and so can never be equal to `20`.
-         */
-        _Tokenizer.prototype._peekChar = function () { return this._peek; };
-        _Tokenizer.prototype._consumeRawText = function (decodeEntities, firstCharOfEnd, attemptEndRest) {
-            var tagCloseStart;
-            var textStart = this._getLocation();
-            this._beginToken(decodeEntities ? TokenType.ESCAPABLE_RAW_TEXT : TokenType.RAW_TEXT, textStart);
+        _Tokenizer.prototype._consumeRawText = function (decodeEntities, endMarkerPredicate) {
+            this._beginToken(decodeEntities ? TokenType.ESCAPABLE_RAW_TEXT : TokenType.RAW_TEXT);
             var parts = [];
             while (true) {
-                tagCloseStart = this._getLocation();
-                if (this._attemptCharCode(firstCharOfEnd) && attemptEndRest()) {
+                var tagCloseStart = this._cursor.clone();
+                var foundEndMarker = endMarkerPredicate();
+                this._cursor = tagCloseStart;
+                if (foundEndMarker) {
                     break;
                 }
-                if (this._index > tagCloseStart.offset) {
-                    // add the characters consumed by the previous if statement to the output
-                    parts.push(this._input.substring(tagCloseStart.offset, this._index));
-                }
-                while (this._peek !== firstCharOfEnd) {
-                    parts.push(this._readChar(decodeEntities));
-                }
+                parts.push(this._readChar(decodeEntities));
             }
-            return this._endToken([this._processCarriageReturns(parts.join(''))], tagCloseStart);
+            return this._endToken([this._processCarriageReturns(parts.join(''))]);
         };
         _Tokenizer.prototype._consumeComment = function (start) {
             var _this = this;
             this._beginToken(TokenType.COMMENT_START, start);
             this._requireCharCode($MINUS);
             this._endToken([]);
-            var textToken = this._consumeRawText(false, $MINUS, function () { return _this._attemptStr('->'); });
-            this._beginToken(TokenType.COMMENT_END, textToken.sourceSpan.end);
+            this._consumeRawText(false, function () { return _this._attemptStr('-->'); });
+            this._beginToken(TokenType.COMMENT_END);
+            this._requireStr('-->');
             this._endToken([]);
         };
         _Tokenizer.prototype._consumeCdata = function (start) {
@@ -11280,49 +11101,52 @@
             this._beginToken(TokenType.CDATA_START, start);
             this._requireStr('CDATA[');
             this._endToken([]);
-            var textToken = this._consumeRawText(false, $RBRACKET, function () { return _this._attemptStr(']>'); });
-            this._beginToken(TokenType.CDATA_END, textToken.sourceSpan.end);
+            this._consumeRawText(false, function () { return _this._attemptStr(']]>'); });
+            this._beginToken(TokenType.CDATA_END);
+            this._requireStr(']]>');
             this._endToken([]);
         };
         _Tokenizer.prototype._consumeDocType = function (start) {
             this._beginToken(TokenType.DOC_TYPE, start);
+            var contentStart = this._cursor.clone();
             this._attemptUntilChar($GT);
-            this._advance();
-            this._endToken([this._input.substring(start.offset + 2, this._index - 1)]);
+            var content = this._cursor.getChars(contentStart);
+            this._cursor.advance();
+            this._endToken([content]);
         };
         _Tokenizer.prototype._consumePrefixAndName = function () {
-            var nameOrPrefixStart = this._index;
-            var prefix = null;
-            while (this._peek !== $COLON && !isPrefixEnd(this._peek)) {
-                this._advance();
+            var nameOrPrefixStart = this._cursor.clone();
+            var prefix = '';
+            while (this._cursor.peek() !== $COLON && !isPrefixEnd(this._cursor.peek())) {
+                this._cursor.advance();
             }
             var nameStart;
-            if (this._peek === $COLON) {
-                this._advance();
-                prefix = this._input.substring(nameOrPrefixStart, this._index - 1);
-                nameStart = this._index;
+            if (this._cursor.peek() === $COLON) {
+                prefix = this._cursor.getChars(nameOrPrefixStart);
+                this._cursor.advance();
+                nameStart = this._cursor.clone();
             }
             else {
                 nameStart = nameOrPrefixStart;
             }
-            this._requireCharCodeUntilFn(isNameEnd, this._index === nameStart ? 1 : 0);
-            var name = this._input.substring(nameStart, this._index);
+            this._requireCharCodeUntilFn(isNameEnd, prefix === '' ? 0 : 1);
+            var name = this._cursor.getChars(nameStart);
             return [prefix, name];
         };
         _Tokenizer.prototype._consumeTagOpen = function (start) {
-            var savedPos = this._savePosition();
             var tagName;
-            var lowercaseTagName;
+            var prefix;
+            var openTagToken;
+            var innerStart = this._cursor.clone();
             try {
-                if (!isAsciiLetter(this._peek)) {
-                    throw this._createError(_unexpectedCharacterErrorMsg(this._peek), this._getSpan());
+                if (!isAsciiLetter(this._cursor.peek())) {
+                    throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(start));
                 }
-                var nameStart = this._index;
-                this._consumeTagOpenStart(start);
-                tagName = this._input.substring(nameStart, this._index);
-                lowercaseTagName = tagName.toLowerCase();
+                openTagToken = this._consumeTagOpenStart(start);
+                prefix = openTagToken.parts[0];
+                tagName = openTagToken.parts[1];
                 this._attemptCharCodeUntilFn(isNotWhitespace);
-                while (this._peek !== $SLASH && this._peek !== $GT) {
+                while (this._cursor.peek() !== $SLASH && this._cursor.peek() !== $GT) {
                     this._consumeAttributeName();
                     this._attemptCharCodeUntilFn(isNotWhitespace);
                     if (this._attemptCharCode($EQ)) {
@@ -11336,7 +11160,10 @@
             catch (e) {
                 if (e instanceof _ControlFlowError) {
                     // When the start tag is invalid, assume we want a "<"
-                    this._restorePosition(savedPos);
+                    this._cursor = innerStart;
+                    if (openTagToken) {
+                        this.tokens.pop();
+                    }
                     // Back to back text tokens are merged at the end
                     this._beginToken(TokenType.TEXT, start);
                     this._endToken(['<']);
@@ -11346,30 +11173,34 @@
             }
             var contentTokenType = this._getTagDefinition(tagName).contentType;
             if (contentTokenType === exports.TagContentType.RAW_TEXT) {
-                this._consumeRawTextWithTagClose(lowercaseTagName, false);
+                this._consumeRawTextWithTagClose(prefix, tagName, false);
             }
             else if (contentTokenType === exports.TagContentType.ESCAPABLE_RAW_TEXT) {
-                this._consumeRawTextWithTagClose(lowercaseTagName, true);
+                this._consumeRawTextWithTagClose(prefix, tagName, true);
             }
         };
-        _Tokenizer.prototype._consumeRawTextWithTagClose = function (lowercaseTagName, decodeEntities) {
+        _Tokenizer.prototype._consumeRawTextWithTagClose = function (prefix, tagName, decodeEntities) {
             var _this = this;
-            var textToken = this._consumeRawText(decodeEntities, $LT, function () {
+            var textToken = this._consumeRawText(decodeEntities, function () {
+                if (!_this._attemptCharCode($LT))
+                    return false;
                 if (!_this._attemptCharCode($SLASH))
                     return false;
                 _this._attemptCharCodeUntilFn(isNotWhitespace);
-                if (!_this._attemptStrCaseInsensitive(lowercaseTagName))
+                if (!_this._attemptStrCaseInsensitive(tagName))
                     return false;
                 _this._attemptCharCodeUntilFn(isNotWhitespace);
                 return _this._attemptCharCode($GT);
             });
-            this._beginToken(TokenType.TAG_CLOSE, textToken.sourceSpan.end);
-            this._endToken([null, lowercaseTagName]);
+            this._beginToken(TokenType.TAG_CLOSE);
+            this._requireCharCodeUntilFn(function (code) { return code === $GT; }, 3);
+            this._cursor.advance(); // Consume the `>`
+            this._endToken([prefix, tagName]);
         };
         _Tokenizer.prototype._consumeTagOpenStart = function (start) {
             this._beginToken(TokenType.TAG_OPEN_START, start);
             var parts = this._consumePrefixAndName();
-            this._endToken(parts);
+            return this._endToken(parts);
         };
         _Tokenizer.prototype._consumeAttributeName = function () {
             this._beginToken(TokenType.ATTR_NAME);
@@ -11378,27 +11209,27 @@
         };
         _Tokenizer.prototype._consumeAttributeValue = function () {
             var value;
-            if (this._peek === $SQ || this._peek === $DQ) {
+            if (this._cursor.peek() === $SQ || this._cursor.peek() === $DQ) {
                 this._beginToken(TokenType.ATTR_QUOTE);
-                var quoteChar = this._peek;
-                this._advance();
+                var quoteChar = this._cursor.peek();
+                this._cursor.advance();
                 this._endToken([String.fromCodePoint(quoteChar)]);
                 this._beginToken(TokenType.ATTR_VALUE);
                 var parts = [];
-                while (this._peek !== quoteChar) {
+                while (this._cursor.peek() !== quoteChar) {
                     parts.push(this._readChar(true));
                 }
                 value = parts.join('');
                 this._endToken([this._processCarriageReturns(value)]);
                 this._beginToken(TokenType.ATTR_QUOTE);
-                this._advance();
+                this._cursor.advance();
                 this._endToken([String.fromCodePoint(quoteChar)]);
             }
             else {
                 this._beginToken(TokenType.ATTR_VALUE);
-                var valueStart = this._index;
+                var valueStart = this._cursor.clone();
                 this._requireCharCodeUntilFn(isNameEnd, 1);
-                value = this._input.substring(valueStart, this._index);
+                value = this._cursor.getChars(valueStart);
                 this._endToken([this._processCarriageReturns(value)]);
             }
         };
@@ -11417,47 +11248,47 @@
             this._endToken(prefixAndName);
         };
         _Tokenizer.prototype._consumeExpansionFormStart = function () {
-            this._beginToken(TokenType.EXPANSION_FORM_START, this._getLocation());
+            this._beginToken(TokenType.EXPANSION_FORM_START);
             this._requireCharCode($LBRACE);
             this._endToken([]);
             this._expansionCaseStack.push(TokenType.EXPANSION_FORM_START);
-            this._beginToken(TokenType.RAW_TEXT, this._getLocation());
+            this._beginToken(TokenType.RAW_TEXT);
             var condition = this._readUntil($COMMA);
-            this._endToken([condition], this._getLocation());
+            this._endToken([condition]);
             this._requireCharCode($COMMA);
             this._attemptCharCodeUntilFn(isNotWhitespace);
-            this._beginToken(TokenType.RAW_TEXT, this._getLocation());
+            this._beginToken(TokenType.RAW_TEXT);
             var type = this._readUntil($COMMA);
-            this._endToken([type], this._getLocation());
+            this._endToken([type]);
             this._requireCharCode($COMMA);
             this._attemptCharCodeUntilFn(isNotWhitespace);
         };
         _Tokenizer.prototype._consumeExpansionCaseStart = function () {
-            this._beginToken(TokenType.EXPANSION_CASE_VALUE, this._getLocation());
+            this._beginToken(TokenType.EXPANSION_CASE_VALUE);
             var value = this._readUntil($LBRACE).trim();
-            this._endToken([value], this._getLocation());
+            this._endToken([value]);
             this._attemptCharCodeUntilFn(isNotWhitespace);
-            this._beginToken(TokenType.EXPANSION_CASE_EXP_START, this._getLocation());
+            this._beginToken(TokenType.EXPANSION_CASE_EXP_START);
             this._requireCharCode($LBRACE);
-            this._endToken([], this._getLocation());
+            this._endToken([]);
             this._attemptCharCodeUntilFn(isNotWhitespace);
             this._expansionCaseStack.push(TokenType.EXPANSION_CASE_EXP_START);
         };
         _Tokenizer.prototype._consumeExpansionCaseEnd = function () {
-            this._beginToken(TokenType.EXPANSION_CASE_EXP_END, this._getLocation());
+            this._beginToken(TokenType.EXPANSION_CASE_EXP_END);
             this._requireCharCode($RBRACE);
-            this._endToken([], this._getLocation());
+            this._endToken([]);
             this._attemptCharCodeUntilFn(isNotWhitespace);
             this._expansionCaseStack.pop();
         };
         _Tokenizer.prototype._consumeExpansionFormEnd = function () {
-            this._beginToken(TokenType.EXPANSION_FORM_END, this._getLocation());
+            this._beginToken(TokenType.EXPANSION_FORM_END);
             this._requireCharCode($RBRACE);
             this._endToken([]);
             this._expansionCaseStack.pop();
         };
         _Tokenizer.prototype._consumeText = function () {
-            var start = this._getLocation();
+            var start = this._cursor.clone();
             this._beginToken(TokenType.TEXT, start);
             var parts = [];
             do {
@@ -11477,39 +11308,25 @@
             this._endToken([this._processCarriageReturns(parts.join(''))]);
         };
         _Tokenizer.prototype._isTextEnd = function () {
-            if (this._peek === $LT || this._peek === $EOF) {
+            if (this._cursor.peek() === $LT || this._cursor.peek() === $EOF) {
                 return true;
             }
             if (this._tokenizeIcu && !this._inInterpolation) {
-                if (isExpansionFormStart(this._input, this._index, this._interpolationConfig)) {
+                if (this.isExpansionFormStart()) {
                     // start of an expansion form
                     return true;
                 }
-                if (this._peek === $RBRACE && this._isInExpansionCase()) {
+                if (this._cursor.peek() === $RBRACE && this._isInExpansionCase()) {
                     // end of and expansion case
                     return true;
                 }
             }
             return false;
         };
-        _Tokenizer.prototype._savePosition = function () {
-            return [this._peek, this._index, this._column, this._line, this.tokens.length];
-        };
         _Tokenizer.prototype._readUntil = function (char) {
-            var start = this._index;
+            var start = this._cursor.clone();
             this._attemptUntilChar(char);
-            return this._input.substring(start, this._index);
-        };
-        _Tokenizer.prototype._restorePosition = function (position) {
-            this._peek = position[0];
-            this._index = position[1];
-            this._column = position[2];
-            this._line = position[3];
-            var nbTokens = position[4];
-            if (nbTokens < this.tokens.length) {
-                // remove any extra tokens
-                this.tokens = this.tokens.slice(0, nbTokens);
-            }
+            return this._cursor.getChars(start);
         };
         _Tokenizer.prototype._isInExpansionCase = function () {
             return this._expansionCaseStack.length > 0 &&
@@ -11520,6 +11337,18 @@
             return this._expansionCaseStack.length > 0 &&
                 this._expansionCaseStack[this._expansionCaseStack.length - 1] ===
                     TokenType.EXPANSION_FORM_START;
+        };
+        _Tokenizer.prototype.isExpansionFormStart = function () {
+            if (this._cursor.peek() !== $LBRACE) {
+                return false;
+            }
+            if (this._interpolationConfig) {
+                var start = this._cursor.clone();
+                var isInterpolation = this._attemptStr(this._interpolationConfig.start);
+                this._cursor = start;
+                return !isInterpolation;
+            }
+            return true;
         };
         return _Tokenizer;
     }());
@@ -11539,10 +11368,6 @@
     }
     function isNamedEntityEnd(code) {
         return code == $SEMICOLON || code == $EOF || !isAsciiLetter(code);
-    }
-    function isExpansionFormStart(input, offset, interpolationConfig) {
-        var isInterpolationStart = interpolationConfig ? input.indexOf(interpolationConfig.start, offset) == offset : false;
-        return input.charCodeAt(offset) == $LBRACE && !isInterpolationStart;
     }
     function isExpansionCaseStart(peek) {
         return peek === $EQ || isAsciiLetter(peek) || isDigit(peek);
@@ -11569,6 +11394,209 @@
         }
         return dstTokens;
     }
+    var PlainCharacterCursor = /** @class */ (function () {
+        function PlainCharacterCursor(fileOrCursor, range) {
+            if (fileOrCursor instanceof PlainCharacterCursor) {
+                this.file = fileOrCursor.file;
+                this.input = fileOrCursor.input;
+                this.end = fileOrCursor.end;
+                this.state = __assign({}, fileOrCursor.state);
+            }
+            else {
+                if (!range) {
+                    throw new Error('Programming error: the range argument must be provided with a file argument.');
+                }
+                this.file = fileOrCursor;
+                this.input = fileOrCursor.content;
+                this.end = range.endPos;
+                this.state = {
+                    peek: -1,
+                    offset: range.startPos,
+                    line: range.startLine,
+                    column: range.startCol,
+                };
+            }
+        }
+        PlainCharacterCursor.prototype.clone = function () { return new PlainCharacterCursor(this); };
+        PlainCharacterCursor.prototype.peek = function () { return this.state.peek; };
+        PlainCharacterCursor.prototype.charsLeft = function () { return this.end - this.state.offset; };
+        PlainCharacterCursor.prototype.diff = function (other) { return this.state.offset - other.state.offset; };
+        PlainCharacterCursor.prototype.advance = function () { this.advanceState(this.state); };
+        PlainCharacterCursor.prototype.init = function () { this.updatePeek(this.state); };
+        PlainCharacterCursor.prototype.getSpan = function (start) {
+            start = start || this;
+            return new ParseSourceSpan(new ParseLocation(start.file, start.state.offset, start.state.line, start.state.column), new ParseLocation(this.file, this.state.offset, this.state.line, this.state.column));
+        };
+        PlainCharacterCursor.prototype.getChars = function (start) {
+            return this.input.substring(start.state.offset, this.state.offset);
+        };
+        PlainCharacterCursor.prototype.charAt = function (pos) { return this.input.charCodeAt(pos); };
+        PlainCharacterCursor.prototype.advanceState = function (state) {
+            if (state.offset >= this.end) {
+                this.state = state;
+                throw new CursorError('Unexpected character "EOF"', this);
+            }
+            var currentChar = this.charAt(state.offset);
+            if (currentChar === $LF) {
+                state.line++;
+                state.column = 0;
+            }
+            else if (!isNewLine(currentChar)) {
+                state.column++;
+            }
+            state.offset++;
+            this.updatePeek(state);
+        };
+        PlainCharacterCursor.prototype.updatePeek = function (state) {
+            state.peek = state.offset >= this.end ? $EOF : this.charAt(state.offset);
+        };
+        return PlainCharacterCursor;
+    }());
+    var EscapedCharacterCursor = /** @class */ (function (_super) {
+        __extends(EscapedCharacterCursor, _super);
+        function EscapedCharacterCursor(fileOrCursor, range) {
+            var _this = this;
+            if (fileOrCursor instanceof EscapedCharacterCursor) {
+                _this = _super.call(this, fileOrCursor) || this;
+                _this.internalState = __assign({}, fileOrCursor.internalState);
+            }
+            else {
+                _this = _super.call(this, fileOrCursor, range) || this;
+                _this.internalState = _this.state;
+            }
+            return _this;
+        }
+        EscapedCharacterCursor.prototype.advance = function () {
+            this.state = this.internalState;
+            _super.prototype.advance.call(this);
+            this.processEscapeSequence();
+        };
+        EscapedCharacterCursor.prototype.init = function () {
+            _super.prototype.init.call(this);
+            this.processEscapeSequence();
+        };
+        EscapedCharacterCursor.prototype.clone = function () { return new EscapedCharacterCursor(this); };
+        EscapedCharacterCursor.prototype.getChars = function (start) {
+            var cursor = start.clone();
+            var chars = '';
+            while (cursor.internalState.offset < this.internalState.offset) {
+                chars += String.fromCodePoint(cursor.peek());
+                cursor.advance();
+            }
+            return chars;
+        };
+        /**
+         * Process the escape sequence that starts at the current position in the text.
+         *
+         * This method is called to ensure that `peek` has the unescaped value of escape sequences.
+         */
+        EscapedCharacterCursor.prototype.processEscapeSequence = function () {
+            var _this = this;
+            var peek = function () { return _this.internalState.peek; };
+            if (peek() === $BACKSLASH) {
+                // We have hit an escape sequence so we need the internal state to become independent
+                // of the external state.
+                this.internalState = __assign({}, this.state);
+                // Move past the backslash
+                this.advanceState(this.internalState);
+                // First check for standard control char sequences
+                if (peek() === $n) {
+                    this.state.peek = $LF;
+                }
+                else if (peek() === $r) {
+                    this.state.peek = $CR;
+                }
+                else if (peek() === $v) {
+                    this.state.peek = $VTAB;
+                }
+                else if (peek() === $t) {
+                    this.state.peek = $TAB;
+                }
+                else if (peek() === $b) {
+                    this.state.peek = $BSPACE;
+                }
+                else if (peek() === $f) {
+                    this.state.peek = $FF;
+                }
+                // Now consider more complex sequences
+                else if (peek() === $u) {
+                    // Unicode code-point sequence
+                    this.advanceState(this.internalState); // advance past the `u` char
+                    if (peek() === $LBRACE) {
+                        // Variable length Unicode, e.g. `\x{123}`
+                        this.advanceState(this.internalState); // advance past the `{` char
+                        // Advance past the variable number of hex digits until we hit a `}` char
+                        var digitStart = this.clone();
+                        var length_1 = 0;
+                        while (peek() !== $RBRACE) {
+                            this.advanceState(this.internalState);
+                            length_1++;
+                        }
+                        this.state.peek = this.decodeHexDigits(digitStart, length_1);
+                    }
+                    else {
+                        // Fixed length Unicode, e.g. `\u1234`
+                        var digitStart = this.clone();
+                        this.advanceState(this.internalState);
+                        this.advanceState(this.internalState);
+                        this.advanceState(this.internalState);
+                        this.state.peek = this.decodeHexDigits(digitStart, 4);
+                    }
+                }
+                else if (peek() === $x) {
+                    // Hex char code, e.g. `\x2F`
+                    this.advanceState(this.internalState); // advance past the `x` char
+                    var digitStart = this.clone();
+                    this.advanceState(this.internalState);
+                    this.state.peek = this.decodeHexDigits(digitStart, 2);
+                }
+                else if (isOctalDigit(peek())) {
+                    // Octal char code, e.g. `\012`,
+                    var octal = '';
+                    var length_2 = 0;
+                    var previous = this.clone();
+                    while (isOctalDigit(peek()) && length_2 < 3) {
+                        previous = this.clone();
+                        octal += String.fromCodePoint(peek());
+                        this.advanceState(this.internalState);
+                        length_2++;
+                    }
+                    this.state.peek = parseInt(octal, 8);
+                    // Backup one char
+                    this.internalState = previous.internalState;
+                }
+                else if (isNewLine(this.internalState.peek)) {
+                    // Line continuation `\` followed by a new line
+                    this.advanceState(this.internalState); // advance over the newline
+                    this.state = this.internalState;
+                }
+                else {
+                    // If none of the `if` blocks were executed then we just have an escaped normal character.
+                    // In that case we just, effectively, skip the backslash from the character.
+                    this.state.peek = this.internalState.peek;
+                }
+            }
+        };
+        EscapedCharacterCursor.prototype.decodeHexDigits = function (start, length) {
+            var hex = this.input.substr(start.internalState.offset, length);
+            var charCode = parseInt(hex, 16);
+            if (!isNaN(charCode)) {
+                return charCode;
+            }
+            else {
+                start.state = start.internalState;
+                throw new CursorError('Invalid hexadecimal escape sequence', start);
+            }
+        };
+        return EscapedCharacterCursor;
+    }(PlainCharacterCursor));
+    var CursorError = /** @class */ (function () {
+        function CursorError(msg, cursor) {
+            this.msg = msg;
+            this.cursor = cursor;
+        }
+        return CursorError;
+    }());
 
     /**
      * @license
@@ -11916,9 +11944,9 @@
             }
         };
         _TreeBuilder.prototype._getElementFullName = function (prefix, localName, parentElement) {
-            if (prefix == null) {
-                prefix = this.getTagDefinition(localName).implicitNamespacePrefix;
-                if (prefix == null && parentElement != null) {
+            if (prefix === '') {
+                prefix = this.getTagDefinition(localName).implicitNamespacePrefix || '';
+                if (prefix === '' && parentElement != null) {
                     prefix = getNsPrefix(parentElement.name);
                 }
             }
@@ -16292,7 +16320,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-beta.6+19.sha-772b24c.with-local-changes');
+    var VERSION$1 = new Version('8.0.0-beta.6+24.sha-2b974d4.with-local-changes');
 
     /**
      * @license
