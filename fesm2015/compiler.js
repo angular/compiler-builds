@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.6+22.sha-cb20b3b.with-local-changes
+ * @license Angular v8.0.0-beta.6+25.sha-03d2e5c.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15325,7 +15325,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.6+22.sha-cb20b3b.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.6+25.sha-03d2e5c.with-local-changes');
 
 /**
  * @license
@@ -22228,16 +22228,16 @@ class StaticSymbolResolver {
                             return {
                                 __symbolic: 'error',
                                 message: `Could not resolve ${module} relative to ${self.host.getMetadataFor(sourceSymbol.filePath)}.`,
-                                line: map.line,
-                                character: map.character,
+                                line: map['line'],
+                                character: map['character'],
                                 fileName: getOriginalName()
                             };
                         }
                         return {
                             __symbolic: 'resolved',
                             symbol: self.getStaticSymbol(filePath, name),
-                            line: map.line,
-                            character: map.character,
+                            line: map['line'],
+                            character: map['character'],
                             fileName: getOriginalName()
                         };
                     }
@@ -22554,7 +22554,7 @@ class ToJsonSerializer extends ValueTransformer {
      */
     visitStringMap(map, context) {
         if (map['__symbolic'] === 'resolved') {
-            return visitValue(map.symbol, this, context);
+            return visitValue(map['symbol'], this, context);
         }
         if (map['__symbolic'] === 'error') {
             delete map['line'];
