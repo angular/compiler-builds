@@ -56,7 +56,7 @@ export declare function compileDirectiveFromRender2(outputCtx: OutputContext, di
 export declare function compileComponentFromRender2(outputCtx: OutputContext, component: CompileDirectiveMetadata, render3Ast: Render3ParseResult, reflector: CompileReflector, bindingParser: BindingParser, directiveTypeBySel: Map<string, any>, pipeTypeByName: Map<string, any>): void;
 export interface ParsedHostBindings {
     attributes: {
-        [key: string]: string;
+        [key: string]: o.Expression;
     };
     listeners: {
         [key: string]: string;
@@ -64,9 +64,13 @@ export interface ParsedHostBindings {
     properties: {
         [key: string]: string;
     };
+    specialAttributes: {
+        styleAttr?: string;
+        classAttr?: string;
+    };
 }
 export declare function parseHostBindings(host: {
-    [key: string]: string;
+    [key: string]: string | o.Expression;
 }): ParsedHostBindings;
 /**
  * Verifies host bindings and returns the list of errors (if any). Empty array indicates that a

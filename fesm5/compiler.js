@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.6+42.sha-ff8e4dd.with-local-changes
+ * @license Angular v8.0.0-beta.6+45.sha-b50283e.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7918,63 +7918,6 @@ var BuiltinFunctionCall = /** @class */ (function (_super) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var LifecycleHooks;
-(function (LifecycleHooks) {
-    LifecycleHooks[LifecycleHooks["OnInit"] = 0] = "OnInit";
-    LifecycleHooks[LifecycleHooks["OnDestroy"] = 1] = "OnDestroy";
-    LifecycleHooks[LifecycleHooks["DoCheck"] = 2] = "DoCheck";
-    LifecycleHooks[LifecycleHooks["OnChanges"] = 3] = "OnChanges";
-    LifecycleHooks[LifecycleHooks["AfterContentInit"] = 4] = "AfterContentInit";
-    LifecycleHooks[LifecycleHooks["AfterContentChecked"] = 5] = "AfterContentChecked";
-    LifecycleHooks[LifecycleHooks["AfterViewInit"] = 6] = "AfterViewInit";
-    LifecycleHooks[LifecycleHooks["AfterViewChecked"] = 7] = "AfterViewChecked";
-})(LifecycleHooks || (LifecycleHooks = {}));
-var LIFECYCLE_HOOKS_VALUES = [
-    LifecycleHooks.OnInit, LifecycleHooks.OnDestroy, LifecycleHooks.DoCheck, LifecycleHooks.OnChanges,
-    LifecycleHooks.AfterContentInit, LifecycleHooks.AfterContentChecked, LifecycleHooks.AfterViewInit,
-    LifecycleHooks.AfterViewChecked
-];
-function hasLifecycleHook(reflector, hook, token) {
-    return reflector.hasLifecycleHook(token, getHookName(hook));
-}
-function getAllLifecycleHooks(reflector, token) {
-    return LIFECYCLE_HOOKS_VALUES.filter(function (hook) { return hasLifecycleHook(reflector, hook, token); });
-}
-function getHookName(hook) {
-    switch (hook) {
-        case LifecycleHooks.OnInit:
-            return 'ngOnInit';
-        case LifecycleHooks.OnDestroy:
-            return 'ngOnDestroy';
-        case LifecycleHooks.DoCheck:
-            return 'ngDoCheck';
-        case LifecycleHooks.OnChanges:
-            return 'ngOnChanges';
-        case LifecycleHooks.AfterContentInit:
-            return 'ngAfterContentInit';
-        case LifecycleHooks.AfterContentChecked:
-            return 'ngAfterContentChecked';
-        case LifecycleHooks.AfterViewInit:
-            return 'ngAfterViewInit';
-        case LifecycleHooks.AfterViewChecked:
-            return 'ngAfterViewChecked';
-        default:
-            // This default case is not needed by TypeScript compiler, as the switch is exhaustive.
-            // However Closure Compiler does not understand that and reports an error in typed mode.
-            // The `throw new Error` below works around the problem, and the unexpected: never variable
-            // makes sure tsc still checks this code is unreachable.
-            var unexpected = hook;
-            throw new Error("unexpected " + unexpected);
-    }
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * This file is a port of shadowCSS from webcomponents.js to TypeScript.
  *
@@ -9138,7 +9081,10 @@ var StylingBuilder = /** @class */ (function () {
                 buildParams: function () {
                     // params => elementHostAttrs(directive, attrs)
                     _this.populateInitialStylingAttrs(attrs);
-                    return [_this._directiveExpr, getConstantLiteralFromArray(constantPool, attrs)];
+                    var attrArray = !attrs.some(function (attr) { return attr instanceof WrappedNodeExpr; }) ?
+                        getConstantLiteralFromArray(constantPool, attrs) :
+                        literalArr(attrs);
+                    return [_this._directiveExpr, attrArray];
                 }
             };
         }
@@ -15359,27 +15305,15 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     var elVarExp = variable('elIndex');
     var contextVarExp = variable(CONTEXT_NAME);
     var styleBuilder = new StylingBuilder(elVarExp, contextVarExp);
-    var allOtherAttributes = {};
-    var attrNames = Object.getOwnPropertyNames(meta.host.attributes);
-    for (var i = 0; i < attrNames.length; i++) {
-        var attr = attrNames[i];
-        var value = meta.host.attributes[attr];
-        switch (attr) {
-            // style attributes are handled in the styling context
-            case 'style':
-                styleBuilder.registerStyleAttr(value);
-                break;
-            // class attributes are handled in the styling context
-            case 'class':
-                styleBuilder.registerClassAttr(value);
-                break;
-            default:
-                allOtherAttributes[attr] = value;
-                break;
-        }
+    var _a = meta.host.specialAttributes, styleAttr = _a.styleAttr, classAttr = _a.classAttr;
+    if (styleAttr !== undefined) {
+        styleBuilder.registerStyleAttr(styleAttr);
+    }
+    if (classAttr !== undefined) {
+        styleBuilder.registerClassAttr(classAttr);
     }
     // e.g. `hostBindings: (rf, ctx, elIndex) => { ... }
-    definitionMap.set('hostBindings', createHostBindingsFunction(meta, elVarExp, contextVarExp, allOtherAttributes, styleBuilder, bindingParser, constantPool, hostVarsCount));
+    definitionMap.set('hostBindings', createHostBindingsFunction(meta, elVarExp, contextVarExp, meta.host.attributes, styleBuilder, bindingParser, constantPool, hostVarsCount));
     // e.g 'inputs: {a: 'a'}`
     definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs, true));
     // e.g 'outputs: {a: 'a'}`
@@ -15602,31 +15536,8 @@ function compileComponentFromRender2(outputCtx, component, render3Ast, reflector
  * Compute `R3DirectiveMetadata` given `CompileDirectiveMetadata` and a `CompileReflector`.
  */
 function directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector) {
-    var summary = directive.toSummary();
-    var name = identifierName(directive.type);
-    name || error("Cannot resolver the name of " + directive.type);
-    return {
-        name: name,
-        type: outputCtx.importExpr(directive.type.reference),
-        typeArgumentCount: 0,
-        typeSourceSpan: typeSourceSpan(directive.isComponent ? 'Component' : 'Directive', directive.type),
-        selector: directive.selector,
-        deps: dependenciesFromGlobalMetadata(directive.type, outputCtx, reflector),
-        queries: queriesFromGlobalMetadata(directive.queries, outputCtx),
-        lifecycle: {
-            usesOnChanges: directive.type.lifecycleHooks.some(function (lifecycle) { return lifecycle == LifecycleHooks.OnChanges; }),
-        },
-        host: {
-            attributes: directive.hostAttributes,
-            listeners: summary.hostListeners,
-            properties: summary.hostProperties,
-        },
-        inputs: directive.inputs,
-        outputs: directive.outputs,
-        usesInheritance: false,
-        exportAs: null,
-        providers: directive.providers.length > 0 ? new WrappedNodeExpr(directive.providers) : null
-    };
+    // The global-analysis based Ivy mode in ngc is no longer utilized/supported.
+    throw new Error('unsupported');
 }
 /**
  * Convert `CompileQueryMetadata` into `R3QueryMetadata`.
@@ -15685,7 +15596,7 @@ function convertAttributesToExpressions(attributes) {
         for (var _b = __values(Object.getOwnPropertyNames(attributes)), _c = _b.next(); !_c.done; _c = _b.next()) {
             var key = _c.value;
             var value = attributes[key];
-            values.push(literal(key), literal(value));
+            values.push(literal(key), value);
         }
     }
     catch (e_2_1) { e_2 = { error: e_2_1 }; }
@@ -15958,7 +15869,9 @@ function createHostListeners(bindingContext, eventBindings, meta) {
 function metadataAsSummary(meta) {
     // clang-format off
     return {
-        hostAttributes: meta.host.attributes,
+        // This is used by the BindingParser, which only deals with listeners and properties. There's no
+        // need to pass attributes to it.
+        hostAttributes: {},
         hostListeners: meta.host.listeners,
         hostProperties: meta.host.properties,
     };
@@ -15974,26 +15887,68 @@ function typeMapToExpressionMap(map, outputCtx) {
 }
 var HOST_REG_EXP$1 = /^(?:\[([^\]]+)\])|(?:\(([^\)]+)\))$/;
 function parseHostBindings(host) {
+    var e_4, _a;
     var attributes = {};
     var listeners = {};
     var properties = {};
-    Object.keys(host).forEach(function (key) {
-        var value = host[key];
-        var matches = key.match(HOST_REG_EXP$1);
-        if (matches === null) {
-            attributes[key] = value;
+    var specialAttributes = {};
+    try {
+        for (var _b = __values(Object.keys(host)), _c = _b.next(); !_c.done; _c = _b.next()) {
+            var key = _c.value;
+            var value = host[key];
+            var matches = key.match(HOST_REG_EXP$1);
+            if (matches === null) {
+                switch (key) {
+                    case 'class':
+                        if (typeof value !== 'string') {
+                            // TODO(alxhub): make this a diagnostic.
+                            throw new Error("Class binding must be string");
+                        }
+                        specialAttributes.classAttr = value;
+                        break;
+                    case 'style':
+                        if (typeof value !== 'string') {
+                            // TODO(alxhub): make this a diagnostic.
+                            throw new Error("Style binding must be string");
+                        }
+                        specialAttributes.styleAttr = value;
+                        break;
+                    default:
+                        if (typeof value === 'string') {
+                            attributes[key] = literal(value);
+                        }
+                        else {
+                            attributes[key] = value;
+                        }
+                }
+            }
+            else if (matches[1 /* Binding */] != null) {
+                if (typeof value !== 'string') {
+                    // TODO(alxhub): make this a diagnostic.
+                    throw new Error("Property binding must be string");
+                }
+                // synthetic properties (the ones that have a `@` as a prefix)
+                // are still treated the same as regular properties. Therefore
+                // there is no point in storing them in a separate map.
+                properties[matches[1 /* Binding */]] = value;
+            }
+            else if (matches[2 /* Event */] != null) {
+                if (typeof value !== 'string') {
+                    // TODO(alxhub): make this a diagnostic.
+                    throw new Error("Event binding must be string");
+                }
+                listeners[matches[2 /* Event */]] = value;
+            }
         }
-        else if (matches[1 /* Binding */] != null) {
-            // synthetic properties (the ones that have a `@` as a prefix)
-            // are still treated the same as regular properties. Therefore
-            // there is no point in storing them in a separate map.
-            properties[matches[1 /* Binding */]] = value;
+    }
+    catch (e_4_1) { e_4 = { error: e_4_1 }; }
+    finally {
+        try {
+            if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
         }
-        else if (matches[2 /* Event */] != null) {
-            listeners[matches[2 /* Event */]] = value;
-        }
-    });
-    return { attributes: attributes, listeners: listeners, properties: properties };
+        finally { if (e_4) throw e_4.error; }
+    }
+    return { attributes: attributes, listeners: listeners, properties: properties, specialAttributes: specialAttributes };
 }
 /**
  * Verifies host bindings and returns the list of errors (if any). Empty array indicates that a
@@ -16263,7 +16218,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-beta.6+42.sha-ff8e4dd.with-local-changes');
+var VERSION$1 = new Version('8.0.0-beta.6+45.sha-b50283e.with-local-changes');
 
 /**
  * @license
@@ -18666,6 +18621,63 @@ function isLoweredSymbol(name) {
 }
 function createLoweredSymbol(id) {
     return "\u0275" + id;
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var LifecycleHooks;
+(function (LifecycleHooks) {
+    LifecycleHooks[LifecycleHooks["OnInit"] = 0] = "OnInit";
+    LifecycleHooks[LifecycleHooks["OnDestroy"] = 1] = "OnDestroy";
+    LifecycleHooks[LifecycleHooks["DoCheck"] = 2] = "DoCheck";
+    LifecycleHooks[LifecycleHooks["OnChanges"] = 3] = "OnChanges";
+    LifecycleHooks[LifecycleHooks["AfterContentInit"] = 4] = "AfterContentInit";
+    LifecycleHooks[LifecycleHooks["AfterContentChecked"] = 5] = "AfterContentChecked";
+    LifecycleHooks[LifecycleHooks["AfterViewInit"] = 6] = "AfterViewInit";
+    LifecycleHooks[LifecycleHooks["AfterViewChecked"] = 7] = "AfterViewChecked";
+})(LifecycleHooks || (LifecycleHooks = {}));
+var LIFECYCLE_HOOKS_VALUES = [
+    LifecycleHooks.OnInit, LifecycleHooks.OnDestroy, LifecycleHooks.DoCheck, LifecycleHooks.OnChanges,
+    LifecycleHooks.AfterContentInit, LifecycleHooks.AfterContentChecked, LifecycleHooks.AfterViewInit,
+    LifecycleHooks.AfterViewChecked
+];
+function hasLifecycleHook(reflector, hook, token) {
+    return reflector.hasLifecycleHook(token, getHookName(hook));
+}
+function getAllLifecycleHooks(reflector, token) {
+    return LIFECYCLE_HOOKS_VALUES.filter(function (hook) { return hasLifecycleHook(reflector, hook, token); });
+}
+function getHookName(hook) {
+    switch (hook) {
+        case LifecycleHooks.OnInit:
+            return 'ngOnInit';
+        case LifecycleHooks.OnDestroy:
+            return 'ngOnDestroy';
+        case LifecycleHooks.DoCheck:
+            return 'ngDoCheck';
+        case LifecycleHooks.OnChanges:
+            return 'ngOnChanges';
+        case LifecycleHooks.AfterContentInit:
+            return 'ngAfterContentInit';
+        case LifecycleHooks.AfterContentChecked:
+            return 'ngAfterContentChecked';
+        case LifecycleHooks.AfterViewInit:
+            return 'ngAfterViewInit';
+        case LifecycleHooks.AfterViewChecked:
+            return 'ngAfterViewChecked';
+        default:
+            // This default case is not needed by TypeScript compiler, as the switch is exhaustive.
+            // However Closure Compiler does not understand that and reports an error in typed mode.
+            // The `throw new Error` below works around the problem, and the unexpected: never variable
+            // makes sure tsc still checks this code is unreachable.
+            var unexpected = hook;
+            throw new Error("unexpected " + unexpected);
+    }
 }
 
 /**
