@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.7+9.sha-d629f2c.with-local-changes
+ * @license Angular v7.2.7+14.sha-5e38ec8.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15822,7 +15822,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('7.2.7+9.sha-d629f2c.with-local-changes');
+    var VERSION$1 = new Version('7.2.7+14.sha-5e38ec8.with-local-changes');
 
     /**
      * @license
