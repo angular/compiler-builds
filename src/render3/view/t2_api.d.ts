@@ -119,4 +119,8 @@ export interface BoundTarget<DirectiveT extends DirectiveMeta> {
      * Get a list of all the directives used by the target.
      */
     getUsedDirectives(): DirectiveT[];
+    /**
+     * Get a list of all the pipes used by the target.
+     */
+    getUsedPipes(): string[];
 }

@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.6+45.sha-b50283e.with-local-changes
+ * @license Angular v8.0.0-beta.6+46.sha-3e5c1bc.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15269,7 +15269,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.6+45.sha-b50283e.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.6+46.sha-3e5c1bc.with-local-changes');
 
 /**
  * @license
@@ -25637,8 +25637,8 @@ class R3TargetBinder {
         const { directives, bindings, references } = DirectiveBinder.apply(target.template, this.directiveMatcher);
         // Finally, run the TemplateBinder to bind references, variables, and other entities within the
         // template. This extracts all the metadata that doesn't depend on directive matching.
-        const { expressions, symbols, nestingLevel } = TemplateBinder.apply(target.template, scope);
-        return new R3BoundTarget(target, directives, bindings, references, expressions, symbols, nestingLevel);
+        const { expressions, symbols, nestingLevel, usedPipes } = TemplateBinder.apply(target.template, scope);
+        return new R3BoundTarget(target, directives, bindings, references, expressions, symbols, nestingLevel, usedPipes);
     }
 }
 /**
@@ -25886,14 +25886,16 @@ class DirectiveBinder {
  * by overridden methods from that visitor.
  */
 class TemplateBinder extends RecursiveAstVisitor$1 {
-    constructor(bindings, symbols, nestingLevel, scope, template, level) {
+    constructor(bindings, symbols, usedPipes, nestingLevel, scope, template, level) {
         super();
         this.bindings = bindings;
         this.symbols = symbols;
+        this.usedPipes = usedPipes;
         this.nestingLevel = nestingLevel;
         this.scope = scope;
         this.template = template;
         this.level = level;
+        this.pipesUsed = [];
         // Save a bit of processing time by constructing this closure in advance.
         this.visitNode = (node) => node.visit(this);
     }
@@ -25913,10 +25915,11 @@ class TemplateBinder extends RecursiveAstVisitor$1 {
         const expressions = new Map();
         const symbols = new Map();
         const nestingLevel = new Map();
+        const usedPipes = new Set();
         // The top-level template has nesting level 0.
-        const binder = new TemplateBinder(expressions, symbols, nestingLevel, scope, template instanceof Template ? template : null, 0);
+        const binder = new TemplateBinder(expressions, symbols, usedPipes, nestingLevel, scope, template instanceof Template ? template : null, 0);
         binder.ingest(template);
-        return { expressions, symbols, nestingLevel };
+        return { expressions, symbols, nestingLevel, usedPipes };
     }
     ingest(template) {
         if (template instanceof Template) {
@@ -25948,7 +25951,7 @@ class TemplateBinder extends RecursiveAstVisitor$1 {
         template.references.forEach(this.visitNode);
         // Next, recurse into the template using its scope, and bumping the nesting level up by one.
         const childScope = this.scope.getChildScope(template);
-        const binder = new TemplateBinder(this.bindings, this.symbols, this.nestingLevel, childScope, template, this.level + 1);
+        const binder = new TemplateBinder(this.bindings, this.symbols, this.usedPipes, this.nestingLevel, childScope, template, this.level + 1);
         binder.ingest(template);
     }
     visitVariable(variable) {
@@ -25972,6 +25975,10 @@ class TemplateBinder extends RecursiveAstVisitor$1 {
     visitBoundAttribute(attribute) { attribute.value.visit(this); }
     visitBoundEvent(event) { event.handler.visit(this); }
     visitBoundText(text) { text.value.visit(this); }
+    visitPipe(ast, context) {
+        this.usedPipes.add(ast.name);
+        return super.visitPipe(ast, context);
+    }
     // These five types of AST expressions can refer to expression roots, which could be variables
     // or references in the current scope.
     visitPropertyRead(ast, context) {
@@ -26014,7 +26021,7 @@ class TemplateBinder extends RecursiveAstVisitor$1 {
  * See `BoundTarget` for documentation on the individual methods.
  */
 class R3BoundTarget {
-    constructor(target, directives, bindings, references, exprTargets, symbols, nestingLevel) {
+    constructor(target, directives, bindings, references, exprTargets, symbols, nestingLevel, usedPipes) {
         this.target = target;
         this.directives = directives;
         this.bindings = bindings;
@@ -26022,6 +26029,7 @@ class R3BoundTarget {
         this.exprTargets = exprTargets;
         this.symbols = symbols;
         this.nestingLevel = nestingLevel;
+        this.usedPipes = usedPipes;
     }
     getDirectivesOfNode(node) {
         return this.directives.get(node) || null;
@@ -26044,6 +26052,7 @@ class R3BoundTarget {
         this.directives.forEach(dirs => dirs.forEach(dir => set.add(dir)));
         return Array.from(set.values());
     }
+    getUsedPipes() { return Array.from(this.usedPipes); }
 }
 
 /**

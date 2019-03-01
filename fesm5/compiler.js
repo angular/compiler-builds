@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.6+45.sha-b50283e.with-local-changes
+ * @license Angular v8.0.0-beta.6+46.sha-3e5c1bc.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16218,7 +16218,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-beta.6+45.sha-b50283e.with-local-changes');
+var VERSION$1 = new Version('8.0.0-beta.6+46.sha-3e5c1bc.with-local-changes');
 
 /**
  * @license
@@ -27178,8 +27178,8 @@ var R3TargetBinder = /** @class */ (function () {
         var _a = DirectiveBinder.apply(target.template, this.directiveMatcher), directives = _a.directives, bindings = _a.bindings, references = _a.references;
         // Finally, run the TemplateBinder to bind references, variables, and other entities within the
         // template. This extracts all the metadata that doesn't depend on directive matching.
-        var _b = TemplateBinder.apply(target.template, scope), expressions = _b.expressions, symbols = _b.symbols, nestingLevel = _b.nestingLevel;
-        return new R3BoundTarget(target, directives, bindings, references, expressions, symbols, nestingLevel);
+        var _b = TemplateBinder.apply(target.template, scope), expressions = _b.expressions, symbols = _b.symbols, nestingLevel = _b.nestingLevel, usedPipes = _b.usedPipes;
+        return new R3BoundTarget(target, directives, bindings, references, expressions, symbols, nestingLevel, usedPipes);
     };
     return R3TargetBinder;
 }());
@@ -27438,14 +27438,16 @@ var DirectiveBinder = /** @class */ (function () {
  */
 var TemplateBinder = /** @class */ (function (_super) {
     __extends(TemplateBinder, _super);
-    function TemplateBinder(bindings, symbols, nestingLevel, scope, template, level) {
+    function TemplateBinder(bindings, symbols, usedPipes, nestingLevel, scope, template, level) {
         var _this = _super.call(this) || this;
         _this.bindings = bindings;
         _this.symbols = symbols;
+        _this.usedPipes = usedPipes;
         _this.nestingLevel = nestingLevel;
         _this.scope = scope;
         _this.template = template;
         _this.level = level;
+        _this.pipesUsed = [];
         // Save a bit of processing time by constructing this closure in advance.
         _this.visitNode = function (node) { return node.visit(_this); };
         return _this;
@@ -27466,10 +27468,11 @@ var TemplateBinder = /** @class */ (function (_super) {
         var expressions = new Map();
         var symbols = new Map();
         var nestingLevel = new Map();
+        var usedPipes = new Set();
         // The top-level template has nesting level 0.
-        var binder = new TemplateBinder(expressions, symbols, nestingLevel, scope, template instanceof Template ? template : null, 0);
+        var binder = new TemplateBinder(expressions, symbols, usedPipes, nestingLevel, scope, template instanceof Template ? template : null, 0);
         binder.ingest(template);
-        return { expressions: expressions, symbols: symbols, nestingLevel: nestingLevel };
+        return { expressions: expressions, symbols: symbols, nestingLevel: nestingLevel, usedPipes: usedPipes };
     };
     TemplateBinder.prototype.ingest = function (template) {
         if (template instanceof Template) {
@@ -27501,7 +27504,7 @@ var TemplateBinder = /** @class */ (function (_super) {
         template.references.forEach(this.visitNode);
         // Next, recurse into the template using its scope, and bumping the nesting level up by one.
         var childScope = this.scope.getChildScope(template);
-        var binder = new TemplateBinder(this.bindings, this.symbols, this.nestingLevel, childScope, template, this.level + 1);
+        var binder = new TemplateBinder(this.bindings, this.symbols, this.usedPipes, this.nestingLevel, childScope, template, this.level + 1);
         binder.ingest(template);
     };
     TemplateBinder.prototype.visitVariable = function (variable) {
@@ -27525,6 +27528,10 @@ var TemplateBinder = /** @class */ (function (_super) {
     TemplateBinder.prototype.visitBoundAttribute = function (attribute) { attribute.value.visit(this); };
     TemplateBinder.prototype.visitBoundEvent = function (event) { event.handler.visit(this); };
     TemplateBinder.prototype.visitBoundText = function (text) { text.value.visit(this); };
+    TemplateBinder.prototype.visitPipe = function (ast, context) {
+        this.usedPipes.add(ast.name);
+        return _super.prototype.visitPipe.call(this, ast, context);
+    };
     // These five types of AST expressions can refer to expression roots, which could be variables
     // or references in the current scope.
     TemplateBinder.prototype.visitPropertyRead = function (ast, context) {
@@ -27568,7 +27575,7 @@ var TemplateBinder = /** @class */ (function (_super) {
  * See `BoundTarget` for documentation on the individual methods.
  */
 var R3BoundTarget = /** @class */ (function () {
-    function R3BoundTarget(target, directives, bindings, references, exprTargets, symbols, nestingLevel) {
+    function R3BoundTarget(target, directives, bindings, references, exprTargets, symbols, nestingLevel, usedPipes) {
         this.target = target;
         this.directives = directives;
         this.bindings = bindings;
@@ -27576,6 +27583,7 @@ var R3BoundTarget = /** @class */ (function () {
         this.exprTargets = exprTargets;
         this.symbols = symbols;
         this.nestingLevel = nestingLevel;
+        this.usedPipes = usedPipes;
     }
     R3BoundTarget.prototype.getDirectivesOfNode = function (node) {
         return this.directives.get(node) || null;
@@ -27598,6 +27606,7 @@ var R3BoundTarget = /** @class */ (function () {
         this.directives.forEach(function (dirs) { return dirs.forEach(function (dir) { return set.add(dir); }); });
         return Array.from(set.values());
     };
+    R3BoundTarget.prototype.getUsedPipes = function () { return Array.from(this.usedPipes); };
     return R3BoundTarget;
 }());
 
