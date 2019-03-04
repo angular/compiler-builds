@@ -31,27 +31,18 @@ export declare enum TokenType {
     EOF = 19
 }
 export declare class Token {
-    type: TokenType | null;
+    type: TokenType;
     parts: string[];
     sourceSpan: ParseSourceSpan;
-    constructor(type: TokenType | null, parts: string[], sourceSpan: ParseSourceSpan);
+    constructor(type: TokenType, parts: string[], sourceSpan: ParseSourceSpan);
 }
 export declare class TokenError extends ParseError {
-    tokenType: TokenType | null;
-    constructor(errorMsg: string, tokenType: TokenType | null, span: ParseSourceSpan);
+    tokenType: TokenType;
+    constructor(errorMsg: string, tokenType: TokenType, span: ParseSourceSpan);
 }
 export declare class TokenizeResult {
     tokens: Token[];
     errors: TokenError[];
     constructor(tokens: Token[], errors: TokenError[]);
 }
-/**
- * Options that modify how the text is tokenized.
- */
-export interface TokenizeOptions {
-    /** Whether to tokenize ICU messages (considered as text nodes when false). */
-    tokenizeExpansionForms?: boolean;
-    /** How to tokenize interpolation markers. */
-    interpolationConfig?: InterpolationConfig;
-}
-export declare function tokenize(source: string, url: string, getTagDefinition: (tagName: string) => TagDefinition, options?: TokenizeOptions): TokenizeResult;
+export declare function tokenize(source: string, url: string, getTagDefinition: (tagName: string) => TagDefinition, tokenizeExpansionForms?: boolean, interpolationConfig?: InterpolationConfig): TokenizeResult;

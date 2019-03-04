@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.7+23.sha-cf916a0.with-local-changes
+ * @license Angular v7.2.7+18.sha-a0119b1.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9739,8 +9739,9 @@ class TokenizeResult {
         this.errors = errors;
     }
 }
-function tokenize(source, url, getTagDefinition, options = {}) {
-    return new _Tokenizer(new ParseSourceFile(source, url), getTagDefinition, options).tokenize();
+function tokenize(source, url, getTagDefinition, tokenizeExpansionForms = false, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+    return new _Tokenizer(new ParseSourceFile(source, url), getTagDefinition, tokenizeExpansionForms, interpolationConfig)
+        .tokenize();
 }
 const _CR_OR_CRLF_REGEXP = /\r\n?/g;
 function _unexpectedCharacterErrorMsg(charCode) {
@@ -9763,22 +9764,21 @@ class _Tokenizer {
      * @param _tokenizeIcu Whether to tokenize ICU messages (considered as text nodes when false)
      * @param _interpolationConfig
      */
-    constructor(_file, _getTagDefinition, options) {
+    constructor(_file, _getTagDefinition, _tokenizeIcu, _interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
         this._file = _file;
         this._getTagDefinition = _getTagDefinition;
+        this._tokenizeIcu = _tokenizeIcu;
+        this._interpolationConfig = _interpolationConfig;
+        // Note: this is always lowercase!
         this._peek = -1;
         this._nextPeek = -1;
         this._index = -1;
         this._line = 0;
         this._column = -1;
-        this._currentTokenStart = null;
-        this._currentTokenType = null;
         this._expansionCaseStack = [];
         this._inInterpolation = false;
         this.tokens = [];
         this.errors = [];
-        this._tokenizeIcu = options.tokenizeExpansionForms || false;
-        this._interpolationConfig = options.interpolationConfig || DEFAULT_INTERPOLATION_CONFIG;
         this._input = _file.content;
         this._length = _file.content.length;
         this._advance();
@@ -9866,12 +9866,6 @@ class _Tokenizer {
         this._currentTokenType = type;
     }
     _endToken(parts, end = this._getLocation()) {
-        if (this._currentTokenStart === null) {
-            throw new TokenError('Programming error - attempted to end a token when there was no start to the token', this._currentTokenType, this._getSpan(end, end));
-        }
-        if (this._currentTokenType === null) {
-            throw new TokenError('Programming error - attempted to end a token which has no token type', null, this._getSpan(this._currentTokenStart, end));
-        }
         const token = new Token$1(this._currentTokenType, parts, new ParseSourceSpan(this._currentTokenStart, end));
         this.tokens.push(token);
         this._currentTokenStart = null;
@@ -10357,8 +10351,8 @@ class Parser$1 {
     constructor(getTagDefinition) {
         this.getTagDefinition = getTagDefinition;
     }
-    parse(source, url, options) {
-        const tokensAndErrors = tokenize(source, url, this.getTagDefinition, options);
+    parse(source, url, parseExpansionForms = false, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+        const tokensAndErrors = tokenize(source, url, this.getTagDefinition, parseExpansionForms, interpolationConfig);
         const treeAndErrors = new _TreeBuilder(tokensAndErrors.tokens, this.getTagDefinition).build();
         return new ParseTreeResult(treeAndErrors.rootNodes, tokensAndErrors.errors.concat(treeAndErrors.errors));
     }
@@ -10687,8 +10681,8 @@ function lastOnStack(stack, element) {
  */
 class HtmlParser extends Parser$1 {
     constructor() { super(getHtmlTagDefinition); }
-    parse(source, url, options) {
-        return super.parse(source, url, options);
+    parse(source, url, parseExpansionForms = false, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+        return super.parse(source, url, parseExpansionForms, interpolationConfig);
     }
 }
 
@@ -13905,13 +13899,12 @@ function interpolate(args) {
  *
  * @param template text of the template to parse
  * @param templateUrl URL to use for source mapping of the parsed template
- * @param options options to modify how the template is parsed
  */
 function parseTemplate(template, templateUrl, options = {}) {
     const { interpolationConfig, preserveWhitespaces } = options;
     const bindingParser = makeBindingParser(interpolationConfig);
     const htmlParser = new HtmlParser();
-    const parseResult = htmlParser.parse(template, templateUrl, Object.assign({}, options, { tokenizeExpansionForms: true }));
+    const parseResult = htmlParser.parse(template, templateUrl, true, interpolationConfig);
     if (parseResult.errors && parseResult.errors.length > 0) {
         return { errors: parseResult.errors, nodes: [] };
     }
@@ -14709,7 +14702,7 @@ class CompilerFacadeImpl {
             InterpolationConfig.fromArray(facade.interpolation) :
             DEFAULT_INTERPOLATION_CONFIG;
         // Parse the template and check for errors.
-        const template = parseTemplate(facade.template, sourceMapUrl, { preserveWhitespaces: facade.preserveWhitespaces, interpolationConfig });
+        const template = parseTemplate(facade.template, sourceMapUrl, { preserveWhitespaces: facade.preserveWhitespaces || false, interpolationConfig });
         if (template.errors !== undefined) {
             const errors = template.errors.map(err => err.toString()).join(', ');
             throw new Error(`Errors during JIT compilation of template for ${facade.name}: ${errors}`);
@@ -14843,7 +14836,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.7+23.sha-cf916a0.with-local-changes');
+const VERSION$1 = new Version('7.2.7+18.sha-a0119b1.with-local-changes');
 
 /**
  * @license
@@ -15265,8 +15258,7 @@ class DirectiveNormalizer {
     _preparseLoadedTemplate(prenormData, template, templateAbsUrl) {
         const isInline = !!prenormData.template;
         const interpolationConfig = InterpolationConfig.fromArray(prenormData.interpolation);
-        const templateUrl = templateSourceUrl({ reference: prenormData.ngModuleType }, { type: { reference: prenormData.componentType } }, { isInline, templateUrl: templateAbsUrl });
-        const rootNodesAndErrors = this._htmlParser.parse(template, templateUrl, { tokenizeExpansionForms: true, interpolationConfig });
+        const rootNodesAndErrors = this._htmlParser.parse(template, templateSourceUrl({ reference: prenormData.ngModuleType }, { type: { reference: prenormData.componentType } }, { isInline, templateUrl: templateAbsUrl }), true, interpolationConfig);
         if (rootNodesAndErrors.errors.length > 0) {
             const errorString = rootNodesAndErrors.errors.join('\n');
             throw syntaxError(`Template parse errors:\n${errorString}`);
@@ -16011,8 +16003,8 @@ function getXmlTagDefinition(tagName) {
  */
 class XmlParser extends Parser$1 {
     constructor() { super(getXmlTagDefinition); }
-    parse(source, url, options) {
-        return super.parse(source, url, options);
+    parse(source, url, parseExpansionForms = false) {
+        return super.parse(source, url, parseExpansionForms);
     }
 }
 
@@ -16135,7 +16127,7 @@ class XliffParser {
     parse(xliff, url) {
         this._unitMlString = null;
         this._msgIdToHtml = {};
-        const xml = new XmlParser().parse(xliff, url);
+        const xml = new XmlParser().parse(xliff, url, false);
         this._errors = xml.errors;
         visitAll(this, xml.rootNodes, null);
         return {
@@ -16204,7 +16196,7 @@ class XliffParser {
 // Convert ml nodes (xliff syntax) to i18n nodes
 class XmlToI18n {
     convert(message, url) {
-        const xmlIcu = new XmlParser().parse(message, url, { tokenizeExpansionForms: true });
+        const xmlIcu = new XmlParser().parse(message, url, true);
         this._errors = xmlIcu.errors;
         const i18nNodes = this._errors.length > 0 || xmlIcu.rootNodes.length == 0 ?
             [] :
@@ -16400,7 +16392,7 @@ class Xliff2Parser {
     parse(xliff, url) {
         this._unitMlString = null;
         this._msgIdToHtml = {};
-        const xml = new XmlParser().parse(xliff, url);
+        const xml = new XmlParser().parse(xliff, url, false);
         this._errors = xml.errors;
         visitAll(this, xml.rootNodes, null);
         return {
@@ -16475,7 +16467,7 @@ class Xliff2Parser {
 // Convert ml nodes (xliff syntax) to i18n nodes
 class XmlToI18n$1 {
     convert(message, url) {
-        const xmlIcu = new XmlParser().parse(message, url, { tokenizeExpansionForms: true });
+        const xmlIcu = new XmlParser().parse(message, url, true);
         this._errors = xmlIcu.errors;
         const i18nNodes = this._errors.length > 0 || xmlIcu.rootNodes.length == 0 ?
             [] :
@@ -16617,7 +16609,7 @@ class XtbParser {
         this._msgIdToHtml = {};
         // We can not parse the ICU messages at this point as some messages might not originate
         // from Angular that could not be lex'd.
-        const xml = new XmlParser().parse(xtb, url);
+        const xml = new XmlParser().parse(xtb, url, false);
         this._errors = xml.errors;
         visitAll(this, xml.rootNodes);
         return {
@@ -16675,7 +16667,7 @@ class XtbParser {
 // Convert ml nodes (xtb syntax) to i18n nodes
 class XmlToI18n$2 {
     convert(message, url) {
-        const xmlIcu = new XmlParser().parse(message, url, { tokenizeExpansionForms: true });
+        const xmlIcu = new XmlParser().parse(message, url, true);
         this._errors = xmlIcu.errors;
         const i18nNodes = this._errors.length > 0 || xmlIcu.rootNodes.length == 0 ?
             [] :
@@ -16771,7 +16763,7 @@ class I18nToHtmlVisitor {
         const text = this._convertToText(srcMsg);
         // text to html
         const url = srcMsg.nodes[0].sourceSpan.start.file.url;
-        const html = new HtmlParser().parse(text, url, { tokenizeExpansionForms: true });
+        const html = new HtmlParser().parse(text, url, true);
         return {
             nodes: html.rootNodes,
             errors: [...this._errors, ...html.errors],
@@ -16890,9 +16882,8 @@ class I18NHtmlParser {
                 new TranslationBundle({}, null, digest, undefined, missingTranslation, console);
         }
     }
-    parse(source, url, options = {}) {
-        const interpolationConfig = options.interpolationConfig || DEFAULT_INTERPOLATION_CONFIG;
-        const parseResult = this._htmlParser.parse(source, url, Object.assign({ interpolationConfig }, options));
+    parse(source, url, parseExpansionForms = false, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+        const parseResult = this._htmlParser.parse(source, url, parseExpansionForms, interpolationConfig);
         if (parseResult.errors.length) {
             return new ParseTreeResult(parseResult.rootNodes, parseResult.errors);
         }
@@ -19475,10 +19466,7 @@ class TemplateParser {
     }
     tryParse(component, template, directives, pipes, schemas, templateUrl, preserveWhitespaces) {
         let htmlParseResult = typeof template === 'string' ?
-            this._htmlParser.parse(template, templateUrl, {
-                tokenizeExpansionForms: true,
-                interpolationConfig: this.getInterpolationConfig(component)
-            }) :
+            this._htmlParser.parse(template, templateUrl, true, this.getInterpolationConfig(component)) :
             template;
         if (!preserveWhitespaces) {
             htmlParseResult = removeWhitespaces(htmlParseResult);
@@ -21228,7 +21216,7 @@ class MessageBundle {
         this._messages = [];
     }
     updateFromTemplate(html, url, interpolationConfig) {
-        const htmlParserResult = this._htmlParser.parse(html, url, { tokenizeExpansionForms: true, interpolationConfig });
+        const htmlParserResult = this._htmlParser.parse(html, url, true, interpolationConfig);
         if (htmlParserResult.errors.length) {
             return htmlParserResult.errors;
         }
