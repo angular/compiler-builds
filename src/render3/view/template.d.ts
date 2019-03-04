@@ -215,15 +215,26 @@ export declare class BindingScope implements LocalResolver {
     freshReferenceName(): string;
 }
 /**
+ * Options that can be used to modify how a template is parsed by `parseTemplate()`.
+ */
+export interface ParseTemplateOptions {
+    /**
+     * Include whitespace nodes in the parsed output.
+     */
+    preserveWhitespaces?: boolean;
+    /**
+     * How to parse interpolation markers.
+     */
+    interpolationConfig?: InterpolationConfig;
+}
+/**
  * Parse a template into render3 `Node`s and additional metadata, with no other dependencies.
  *
  * @param template text of the template to parse
  * @param templateUrl URL to use for source mapping of the parsed template
+ * @param options options to modify how the template is parsed
  */
-export declare function parseTemplate(template: string, templateUrl: string, options?: {
-    preserveWhitespaces?: boolean;
-    interpolationConfig?: InterpolationConfig;
-}): {
+export declare function parseTemplate(template: string, templateUrl: string, options?: ParseTemplateOptions): {
     errors?: ParseError[];
     nodes: t.Node[];
 };
