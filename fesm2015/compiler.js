@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.6+63.sha-95989a1.with-local-changes
+ * @license Angular v8.0.0-beta.6+68.sha-866d500.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4191,6 +4191,15 @@ function getTranslationDeclStmts(variable$$1, message, meta, params = {}, transf
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/**
+ * Checks whether an object key contains potentially unsafe chars, thus the key should be wrapped in
+ * quotes. Note: we do not wrap all keys into quotes, as it may have impact on minification and may
+ * bot work in some cases when object keys are mangled by minifier.
+ *
+ * TODO(FW-1136): this is a temporary solution, we need to come up with a better way of working with
+ * inputs that contain potentially unsafe chars.
+ */
+const UNSAFE_OBJECT_KEY_NAME_REGEXP = /-/g;
 /** Name of the temporary to use during data binding */
 const TEMPORARY_NAME = '_t';
 /** Name of the context parameter passed into a template function */
@@ -4256,7 +4265,8 @@ function mapToExpression(map, keepDeclared) {
         minifiedName = declaredName;
         return {
             key: minifiedName,
-            quoted: false,
+            // put quotes around keys that contain potentially unsafe characters
+            quoted: UNSAFE_OBJECT_KEY_NAME_REGEXP.test(minifiedName),
             value: (keepDeclared && publicName !== declaredName) ?
                 literalArr([asLiteral(publicName), asLiteral(declaredName)]) :
                 asLiteral(publicName)
@@ -15269,7 +15279,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.6+63.sha-95989a1.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.6+68.sha-866d500.with-local-changes');
 
 /**
  * @license
