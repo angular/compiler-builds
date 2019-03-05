@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.6+83.sha-6215799.with-local-changes
+ * @license Angular v8.0.0-beta.6+84.sha-25166d4.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3377,6 +3377,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.elementStart = { name: 'ɵelementStart', moduleName: CORE$1 };
     Identifiers.elementEnd = { name: 'ɵelementEnd', moduleName: CORE$1 };
     Identifiers.elementProperty = { name: 'ɵelementProperty', moduleName: CORE$1 };
+    Identifiers.flushHooksUpTo = { name: 'ɵflushHooksUpTo', moduleName: CORE$1 };
     Identifiers.componentHostSyntheticProperty = { name: 'ɵcomponentHostSyntheticProperty', moduleName: CORE$1 };
     Identifiers.componentHostSyntheticListener = { name: 'ɵcomponentHostSyntheticListener', moduleName: CORE$1 };
     Identifiers.elementAttribute = { name: 'ɵelementAttribute', moduleName: CORE$1 };
@@ -13989,6 +13990,11 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
          * all local refs and context variables are available for matching.
          */
         this._updateCodeFns = [];
+        /**
+         * Memorizes the last node index for which a flushHooksUpTo instruction has been generated.
+         * Initialized to 0 to avoid generating a useless flushHooksUpTo(0).
+         */
+        this._lastNodeIndexWithFlush = 0;
         /** Temporary variable declarations generated from visiting pipes, literals, etc. */
         this._tempVariables = [];
         /**
@@ -14260,9 +14266,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var _a = this.i18n, index = _a.index, bindings = _a.bindings;
         if (bindings.size) {
             bindings.forEach(function (binding) {
-                _this.updateInstruction(span, Identifiers$1.i18nExp, function () { return [_this.convertPropertyBinding(variable(CONTEXT_NAME), binding)]; });
+                _this.updateInstruction(index, span, Identifiers$1.i18nExp, function () { return [_this.convertPropertyBinding(variable(CONTEXT_NAME), binding)]; });
             });
-            this.updateInstruction(span, Identifiers$1.i18nApply, [literal(index)]);
+            this.updateInstruction(index, span, Identifiers$1.i18nApply, [literal(index)]);
         }
         if (!selfClosing) {
             this.creationInstruction(span, Identifiers$1.i18nEnd);
@@ -14433,7 +14439,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                             converted.expressions.forEach(function (expression) {
                                 hasBindings_1 = true;
                                 var binding = _this.convertExpressionBinding(implicit, expression);
-                                _this.updateInstruction(element.sourceSpan, Identifiers$1.i18nExp, [binding]);
+                                _this.updateInstruction(elementIndex, element.sourceSpan, Identifiers$1.i18nExp, [binding]);
                             });
                         }
                     }
@@ -14443,7 +14449,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                     var args = this.constantPool.getConstLiteral(literalArr(i18nAttrArgs_1), true);
                     this.creationInstruction(element.sourceSpan, Identifiers$1.i18nAttributes, [index, args]);
                     if (hasBindings_1) {
-                        this.updateInstruction(element.sourceSpan, Identifiers$1.i18nApply, [index]);
+                        this.updateInstruction(elementIndex, element.sourceSpan, Identifiers$1.i18nApply, [index]);
                     }
                 }
             }
@@ -14493,7 +14499,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 var hasValue_1 = value_1 instanceof LiteralPrimitive ? !!value_1.value : true;
                 _this.allocateBindingSlots(value_1);
                 var bindingName_1 = prepareSyntheticPropertyName(input.name);
-                _this.updateInstruction(input.sourceSpan, Identifiers$1.elementProperty, function () {
+                _this.updateInstruction(elementIndex, input.sourceSpan, Identifiers$1.elementProperty, function () {
                     return [
                         literal(elementIndex), literal(bindingName_1),
                         (hasValue_1 ? _this.convertPropertyBinding(implicit, value_1) : emptyValueBindInstruction)
@@ -14521,7 +14527,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                         }
                     }
                     _this.allocateBindingSlots(value_2);
-                    _this.updateInstruction(input.sourceSpan, instruction, function () {
+                    _this.updateInstruction(elementIndex, input.sourceSpan, instruction, function () {
                         return __spread([
                             literal(elementIndex), literal(attrName_1),
                             _this.convertPropertyBinding(implicit, value_2)
@@ -14603,7 +14609,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         template.inputs.forEach(function (input) {
             var value = input.value.visit(_this._valueConverter);
             _this.allocateBindingSlots(value);
-            _this.updateInstruction(template.sourceSpan, Identifiers$1.elementProperty, function () {
+            _this.updateInstruction(templateIndex, template.sourceSpan, Identifiers$1.elementProperty, function () {
                 return [
                     literal(templateIndex), literal(input.name),
                     _this.convertPropertyBinding(context, value)
@@ -14630,7 +14636,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(nodeIndex)]);
         var value = text.value.visit(this._valueConverter);
         this.allocateBindingSlots(value);
-        this.updateInstruction(text.sourceSpan, Identifiers$1.textBinding, function () { return [literal(nodeIndex), _this.convertPropertyBinding(variable(CONTEXT_NAME), value)]; });
+        this.updateInstruction(nodeIndex, text.sourceSpan, Identifiers$1.textBinding, function () { return [literal(nodeIndex), _this.convertPropertyBinding(variable(CONTEXT_NAME), value)]; });
     };
     TemplateDefinitionBuilder.prototype.visitText = function (text) {
         // when a text element is located within a translatable
@@ -14703,14 +14709,18 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 this.creationInstruction(instruction.sourceSpan, instruction.reference, paramsFn);
             }
             else {
-                this.updateInstruction(instruction.sourceSpan, instruction.reference, paramsFn);
+                this.updateInstruction(-1, instruction.sourceSpan, instruction.reference, paramsFn);
             }
         }
     };
     TemplateDefinitionBuilder.prototype.creationInstruction = function (span, reference, paramsOrFn, prepend) {
         this.instructionFn(this._creationCodeFns, span, reference, paramsOrFn || [], prepend);
     };
-    TemplateDefinitionBuilder.prototype.updateInstruction = function (span, reference, paramsOrFn) {
+    TemplateDefinitionBuilder.prototype.updateInstruction = function (nodeIndex, span, reference, paramsOrFn) {
+        if (this._lastNodeIndexWithFlush < nodeIndex) {
+            this.instructionFn(this._updateCodeFns, span, Identifiers$1.flushHooksUpTo, [literal(nodeIndex)]);
+            this._lastNodeIndexWithFlush = nodeIndex;
+        }
         this.instructionFn(this._updateCodeFns, span, reference, paramsOrFn || []);
     };
     TemplateDefinitionBuilder.prototype.allocatePureFunctionSlots = function (numSlots) {
@@ -16228,7 +16238,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-beta.6+83.sha-6215799.with-local-changes');
+var VERSION$1 = new Version('8.0.0-beta.6+84.sha-25166d4.with-local-changes');
 
 /**
  * @license
