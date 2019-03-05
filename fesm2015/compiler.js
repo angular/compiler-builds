@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.6+71.sha-79e2ca0.with-local-changes
+ * @license Angular v8.0.0-beta.6+70.sha-586234b.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15279,7 +15279,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.6+71.sha-79e2ca0.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.6+70.sha-586234b.with-local-changes');
 
 /**
  * @license
