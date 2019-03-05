@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.6+83.sha-6215799.with-local-changes
+ * @license Angular v8.0.0-beta.6+84.sha-25166d4.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3108,6 +3108,7 @@ Identifiers$1.element = { name: 'ɵelement', moduleName: CORE$1 };
 Identifiers$1.elementStart = { name: 'ɵelementStart', moduleName: CORE$1 };
 Identifiers$1.elementEnd = { name: 'ɵelementEnd', moduleName: CORE$1 };
 Identifiers$1.elementProperty = { name: 'ɵelementProperty', moduleName: CORE$1 };
+Identifiers$1.flushHooksUpTo = { name: 'ɵflushHooksUpTo', moduleName: CORE$1 };
 Identifiers$1.componentHostSyntheticProperty = { name: 'ɵcomponentHostSyntheticProperty', moduleName: CORE$1 };
 Identifiers$1.componentHostSyntheticListener = { name: 'ɵcomponentHostSyntheticListener', moduleName: CORE$1 };
 Identifiers$1.elementAttribute = { name: 'ɵelementAttribute', moduleName: CORE$1 };
@@ -13137,6 +13138,11 @@ class TemplateDefinitionBuilder {
          * all local refs and context variables are available for matching.
          */
         this._updateCodeFns = [];
+        /**
+         * Memorizes the last node index for which a flushHooksUpTo instruction has been generated.
+         * Initialized to 0 to avoid generating a useless flushHooksUpTo(0).
+         */
+        this._lastNodeIndexWithFlush = 0;
         /** Temporary variable declarations generated from visiting pipes, literals, etc. */
         this._tempVariables = [];
         /**
@@ -13406,9 +13412,9 @@ class TemplateDefinitionBuilder {
         const { index, bindings } = this.i18n;
         if (bindings.size) {
             bindings.forEach(binding => {
-                this.updateInstruction(span, Identifiers$1.i18nExp, () => [this.convertPropertyBinding(variable(CONTEXT_NAME), binding)]);
+                this.updateInstruction(index, span, Identifiers$1.i18nExp, () => [this.convertPropertyBinding(variable(CONTEXT_NAME), binding)]);
             });
-            this.updateInstruction(span, Identifiers$1.i18nApply, [literal(index)]);
+            this.updateInstruction(index, span, Identifiers$1.i18nApply, [literal(index)]);
         }
         if (!selfClosing) {
             this.creationInstruction(span, Identifiers$1.i18nEnd);
@@ -13567,7 +13573,7 @@ class TemplateDefinitionBuilder {
                             converted.expressions.forEach(expression => {
                                 hasBindings = true;
                                 const binding = this.convertExpressionBinding(implicit, expression);
-                                this.updateInstruction(element.sourceSpan, Identifiers$1.i18nExp, [binding]);
+                                this.updateInstruction(elementIndex, element.sourceSpan, Identifiers$1.i18nExp, [binding]);
                             });
                         }
                     }
@@ -13577,7 +13583,7 @@ class TemplateDefinitionBuilder {
                     const args = this.constantPool.getConstLiteral(literalArr(i18nAttrArgs), true);
                     this.creationInstruction(element.sourceSpan, Identifiers$1.i18nAttributes, [index, args]);
                     if (hasBindings) {
-                        this.updateInstruction(element.sourceSpan, Identifiers$1.i18nApply, [index]);
+                        this.updateInstruction(elementIndex, element.sourceSpan, Identifiers$1.i18nApply, [index]);
                     }
                 }
             }
@@ -13627,7 +13633,7 @@ class TemplateDefinitionBuilder {
                 const hasValue = value instanceof LiteralPrimitive ? !!value.value : true;
                 this.allocateBindingSlots(value);
                 const bindingName = prepareSyntheticPropertyName(input.name);
-                this.updateInstruction(input.sourceSpan, Identifiers$1.elementProperty, () => {
+                this.updateInstruction(elementIndex, input.sourceSpan, Identifiers$1.elementProperty, () => {
                     return [
                         literal(elementIndex), literal(bindingName),
                         (hasValue ? this.convertPropertyBinding(implicit, value) : emptyValueBindInstruction)
@@ -13655,7 +13661,7 @@ class TemplateDefinitionBuilder {
                         }
                     }
                     this.allocateBindingSlots(value);
-                    this.updateInstruction(input.sourceSpan, instruction, () => {
+                    this.updateInstruction(elementIndex, input.sourceSpan, instruction, () => {
                         return [
                             literal(elementIndex), literal(attrName),
                             this.convertPropertyBinding(implicit, value), ...params
@@ -13735,7 +13741,7 @@ class TemplateDefinitionBuilder {
         template.inputs.forEach(input => {
             const value = input.value.visit(this._valueConverter);
             this.allocateBindingSlots(value);
-            this.updateInstruction(template.sourceSpan, Identifiers$1.elementProperty, () => {
+            this.updateInstruction(templateIndex, template.sourceSpan, Identifiers$1.elementProperty, () => {
                 return [
                     literal(templateIndex), literal(input.name),
                     this.convertPropertyBinding(context, value)
@@ -13761,7 +13767,7 @@ class TemplateDefinitionBuilder {
         this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(nodeIndex)]);
         const value = text.value.visit(this._valueConverter);
         this.allocateBindingSlots(value);
-        this.updateInstruction(text.sourceSpan, Identifiers$1.textBinding, () => [literal(nodeIndex), this.convertPropertyBinding(variable(CONTEXT_NAME), value)]);
+        this.updateInstruction(nodeIndex, text.sourceSpan, Identifiers$1.textBinding, () => [literal(nodeIndex), this.convertPropertyBinding(variable(CONTEXT_NAME), value)]);
     }
     visitText(text) {
         // when a text element is located within a translatable
@@ -13828,14 +13834,18 @@ class TemplateDefinitionBuilder {
                 this.creationInstruction(instruction.sourceSpan, instruction.reference, paramsFn);
             }
             else {
-                this.updateInstruction(instruction.sourceSpan, instruction.reference, paramsFn);
+                this.updateInstruction(-1, instruction.sourceSpan, instruction.reference, paramsFn);
             }
         }
     }
     creationInstruction(span, reference, paramsOrFn, prepend) {
         this.instructionFn(this._creationCodeFns, span, reference, paramsOrFn || [], prepend);
     }
-    updateInstruction(span, reference, paramsOrFn) {
+    updateInstruction(nodeIndex, span, reference, paramsOrFn) {
+        if (this._lastNodeIndexWithFlush < nodeIndex) {
+            this.instructionFn(this._updateCodeFns, span, Identifiers$1.flushHooksUpTo, [literal(nodeIndex)]);
+            this._lastNodeIndexWithFlush = nodeIndex;
+        }
         this.instructionFn(this._updateCodeFns, span, reference, paramsOrFn || []);
     }
     allocatePureFunctionSlots(numSlots) {
@@ -15279,7 +15289,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.6+83.sha-6215799.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.6+84.sha-25166d4.with-local-changes');
 
 /**
  * @license
