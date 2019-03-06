@@ -50,6 +50,11 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
      * all local refs and context variables are available for matching.
      */
     private _updateCodeFns;
+    /**
+     * Memorizes the last node index for which a flushHooksUpTo instruction has been generated.
+     * Initialized to 0 to avoid generating a useless flushHooksUpTo(0).
+     */
+    private _lastNodeIndexWithFlush;
     /** Temporary variable declarations generated from visiting pipes, literals, etc. */
     private _tempVariables;
     /**
