@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.6+84.sha-25166d4.with-local-changes
+ * @license Angular v8.0.0-beta.7+7.sha-22ddbf4.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4613,7 +4613,7 @@
      * TODO(FW-1136): this is a temporary solution, we need to come up with a better way of working with
      * inputs that contain potentially unsafe chars.
      */
-    var UNSAFE_OBJECT_KEY_NAME_REGEXP = /-/g;
+    var UNSAFE_OBJECT_KEY_NAME_REGEXP = /-/;
     /** Name of the temporary to use during data binding */
     var TEMPORARY_NAME = '_t';
     /** Name of the context parameter passed into a template function */
@@ -16295,7 +16295,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-beta.6+84.sha-25166d4.with-local-changes');
+    var VERSION$1 = new Version('8.0.0-beta.7+7.sha-22ddbf4.with-local-changes');
 
     /**
      * @license
@@ -27755,6 +27755,7 @@
     exports.ExpressionType = ExpressionType;
     exports.ExternalExpr = ExternalExpr;
     exports.ExternalReference = ExternalReference;
+    exports.literalMap = literalMap;
     exports.FunctionExpr = FunctionExpr;
     exports.IfStmt = IfStmt;
     exports.InstantiateExpr = InstantiateExpr;
