@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.7+22.sha-9a19592.with-local-changes
+ * @license Angular v8.0.0-beta.7+29.sha-5ad2097.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3243,6 +3243,158 @@ Identifiers$1.sanitizeUrlOrResourceUrl = { name: 'ɵsanitizeUrlOrResourceUrl', m
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+class Text {
+    constructor(value, sourceSpan) {
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+    }
+    visit(visitor) { return visitor.visitText(this); }
+}
+class BoundText {
+    constructor(value, sourceSpan, i18n) {
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+        this.i18n = i18n;
+    }
+    visit(visitor) { return visitor.visitBoundText(this); }
+}
+class TextAttribute {
+    constructor(name, value, sourceSpan, valueSpan, i18n) {
+        this.name = name;
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+        this.valueSpan = valueSpan;
+        this.i18n = i18n;
+    }
+    visit(visitor) { return visitor.visitTextAttribute(this); }
+}
+class BoundAttribute {
+    constructor(name, type, securityContext, value, unit, sourceSpan, i18n) {
+        this.name = name;
+        this.type = type;
+        this.securityContext = securityContext;
+        this.value = value;
+        this.unit = unit;
+        this.sourceSpan = sourceSpan;
+        this.i18n = i18n;
+    }
+    static fromBoundElementProperty(prop, i18n) {
+        return new BoundAttribute(prop.name, prop.type, prop.securityContext, prop.value, prop.unit, prop.sourceSpan, i18n);
+    }
+    visit(visitor) { return visitor.visitBoundAttribute(this); }
+}
+class BoundEvent {
+    constructor(name, type, handler, target, phase, sourceSpan, handlerSpan) {
+        this.name = name;
+        this.type = type;
+        this.handler = handler;
+        this.target = target;
+        this.phase = phase;
+        this.sourceSpan = sourceSpan;
+        this.handlerSpan = handlerSpan;
+    }
+    static fromParsedEvent(event) {
+        const target = event.type === 0 /* Regular */ ? event.targetOrPhase : null;
+        const phase = event.type === 1 /* Animation */ ? event.targetOrPhase : null;
+        return new BoundEvent(event.name, event.type, event.handler, target, phase, event.sourceSpan, event.handlerSpan);
+    }
+    visit(visitor) { return visitor.visitBoundEvent(this); }
+}
+class Element {
+    constructor(name, attributes, inputs, outputs, children, references, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
+        this.name = name;
+        this.attributes = attributes;
+        this.inputs = inputs;
+        this.outputs = outputs;
+        this.children = children;
+        this.references = references;
+        this.sourceSpan = sourceSpan;
+        this.startSourceSpan = startSourceSpan;
+        this.endSourceSpan = endSourceSpan;
+        this.i18n = i18n;
+        // If the element is empty then the source span should include any closing tag
+        if (children.length === 0 && startSourceSpan && endSourceSpan) {
+            this.sourceSpan = Object.assign({}, sourceSpan, { end: endSourceSpan.end });
+        }
+    }
+    visit(visitor) { return visitor.visitElement(this); }
+}
+class Template {
+    constructor(tagName, attributes, inputs, outputs, templateAttrs, children, references, variables, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
+        this.tagName = tagName;
+        this.attributes = attributes;
+        this.inputs = inputs;
+        this.outputs = outputs;
+        this.templateAttrs = templateAttrs;
+        this.children = children;
+        this.references = references;
+        this.variables = variables;
+        this.sourceSpan = sourceSpan;
+        this.startSourceSpan = startSourceSpan;
+        this.endSourceSpan = endSourceSpan;
+        this.i18n = i18n;
+    }
+    visit(visitor) { return visitor.visitTemplate(this); }
+}
+class Content {
+    constructor(selector, attributes, sourceSpan, i18n) {
+        this.selector = selector;
+        this.attributes = attributes;
+        this.sourceSpan = sourceSpan;
+        this.i18n = i18n;
+    }
+    visit(visitor) { return visitor.visitContent(this); }
+}
+class Variable {
+    constructor(name, value, sourceSpan) {
+        this.name = name;
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+    }
+    visit(visitor) { return visitor.visitVariable(this); }
+}
+class Reference {
+    constructor(name, value, sourceSpan) {
+        this.name = name;
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+    }
+    visit(visitor) { return visitor.visitReference(this); }
+}
+class Icu {
+    constructor(vars, placeholders, sourceSpan, i18n) {
+        this.vars = vars;
+        this.placeholders = placeholders;
+        this.sourceSpan = sourceSpan;
+        this.i18n = i18n;
+    }
+    visit(visitor) { return visitor.visitIcu(this); }
+}
+function visitAll(visitor, nodes) {
+    const result = [];
+    if (visitor.visit) {
+        for (const node of nodes) {
+            const newNode = visitor.visit(node) || node.visit(visitor);
+        }
+    }
+    else {
+        for (const node of nodes) {
+            const newNode = node.visit(visitor);
+            if (newNode) {
+                result.push(newNode);
+            }
+        }
+    }
+    return result;
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class Message {
     /**
      * @param nodes message AST
@@ -3273,7 +3425,7 @@ class Message {
         }
     }
 }
-class Text {
+class Text$1 {
     constructor(value, sourceSpan) {
         this.value = value;
         this.sourceSpan = sourceSpan;
@@ -3288,7 +3440,7 @@ class Container {
     }
     visit(visitor, context) { return visitor.visitContainer(this, context); }
 }
-class Icu {
+class Icu$1 {
     constructor(expression, type, cases, sourceSpan) {
         this.expression = expression;
         this.type = type;
@@ -3327,7 +3479,7 @@ class IcuPlaceholder {
 }
 // Clone the AST
 class CloneVisitor {
-    visitText(text, context) { return new Text(text.value, text.sourceSpan); }
+    visitText(text, context) { return new Text$1(text.value, text.sourceSpan); }
     visitContainer(container, context) {
         const children = container.children.map(n => n.visit(this, context));
         return new Container(children, container.sourceSpan);
@@ -3335,7 +3487,7 @@ class CloneVisitor {
     visitIcu(icu, context) {
         const cases = {};
         Object.keys(icu.cases).forEach(key => cases[key] = icu.cases[key].visit(this, context));
-        const msg = new Icu(icu.expression, icu.type, cases, icu.sourceSpan);
+        const msg = new Icu$1(icu.expression, icu.type, cases, icu.sourceSpan);
         msg.expressionPlaceholder = icu.expressionPlaceholder;
         return msg;
     }
@@ -3786,11 +3938,11 @@ class Tag {
     }
     visit(visitor) { return visitor.visitTag(this); }
 }
-class Text$1 {
+class Text$2 {
     constructor(unescapedValue) { this.value = escapeXml(unescapedValue); }
     visit(visitor) { return visitor.visitText(this); }
 }
-class CR extends Text$1 {
+class CR extends Text$2 {
     constructor(ws = 0) { super(`\n${new Array(ws + 1).join(' ')}`); }
 }
 const _ESCAPED_CHARS = [
@@ -3852,7 +4004,7 @@ class Xmb extends Serializer {
             let sourceTags = [];
             message.sources.forEach((source) => {
                 sourceTags.push(new Tag(_SOURCE_TAG, {}, [
-                    new Text$1(`${source.filePath}:${source.startLine}${source.endLine !== source.startLine ? ',' + source.endLine : ''}`)
+                    new Text$2(`${source.filePath}:${source.startLine}${source.endLine !== source.startLine ? ',' + source.endLine : ''}`)
                 ]));
             });
             rootNode.children.push(new CR(2), new Tag(_MESSAGE_TAG, attrs, [...sourceTags, ...visitor.serialize(message.nodes)]));
@@ -3876,22 +4028,22 @@ class Xmb extends Serializer {
     }
 }
 class _Visitor$1 {
-    visitText(text, context) { return [new Text$1(text.value)]; }
+    visitText(text, context) { return [new Text$2(text.value)]; }
     visitContainer(container, context) {
         const nodes = [];
         container.children.forEach((node) => nodes.push(...node.visit(this)));
         return nodes;
     }
     visitIcu(icu, context) {
-        const nodes = [new Text$1(`{${icu.expressionPlaceholder}, ${icu.type}, `)];
+        const nodes = [new Text$2(`{${icu.expressionPlaceholder}, ${icu.type}, `)];
         Object.keys(icu.cases).forEach((c) => {
-            nodes.push(new Text$1(`${c} {`), ...icu.cases[c].visit(this), new Text$1(`} `));
+            nodes.push(new Text$2(`${c} {`), ...icu.cases[c].visit(this), new Text$2(`} `));
         });
-        nodes.push(new Text$1(`}`));
+        nodes.push(new Text$2(`}`));
         return nodes;
     }
     visitTagPlaceholder(ph, context) {
-        const startTagAsText = new Text$1(`<${ph.tag}>`);
+        const startTagAsText = new Text$2(`<${ph.tag}>`);
         const startEx = new Tag(_EXAMPLE_TAG, {}, [startTagAsText]);
         // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
         const startTagPh = new Tag(_PLACEHOLDER_TAG, { name: ph.startName }, [startEx, startTagAsText]);
@@ -3899,14 +4051,14 @@ class _Visitor$1 {
             // void tags have no children nor closing tags
             return [startTagPh];
         }
-        const closeTagAsText = new Text$1(`</${ph.tag}>`);
+        const closeTagAsText = new Text$2(`</${ph.tag}>`);
         const closeEx = new Tag(_EXAMPLE_TAG, {}, [closeTagAsText]);
         // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
         const closeTagPh = new Tag(_PLACEHOLDER_TAG, { name: ph.closeName }, [closeEx, closeTagAsText]);
         return [startTagPh, ...this.serialize(ph.children), closeTagPh];
     }
     visitPlaceholder(ph, context) {
-        const interpolationAsText = new Text$1(`{{${ph.value}}}`);
+        const interpolationAsText = new Text$2(`{{${ph.value}}}`);
         // Example tag needs to be not-empty for TC.
         const exTag = new Tag(_EXAMPLE_TAG, {}, [interpolationAsText]);
         return [
@@ -3918,7 +4070,7 @@ class _Visitor$1 {
         const icuExpression = ph.value.expression;
         const icuType = ph.value.type;
         const icuCases = Object.keys(ph.value.cases).map((value) => value + ' {...}').join(' ');
-        const icuAsText = new Text$1(`{${icuExpression}, ${icuType}, ${icuCases}}`);
+        const icuAsText = new Text$2(`{${icuExpression}, ${icuType}, ${icuCases}}`);
         const exTag = new Tag(_EXAMPLE_TAG, {}, [icuAsText]);
         return [
             // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
@@ -3941,7 +4093,7 @@ class ExampleVisitor {
     visitTag(tag) {
         if (tag.name === _PLACEHOLDER_TAG) {
             if (!tag.children || tag.children.length == 0) {
-                const exText = new Text$1(tag.attrs['name'] || '...');
+                const exText = new Text$2(tag.attrs['name'] || '...');
                 tag.children = [new Tag(_EXAMPLE_TAG, {}, [exText])];
             }
         }
@@ -4026,7 +4178,7 @@ function isI18nRootNode(meta) {
     return meta instanceof Message;
 }
 function isSingleI18nIcu(meta) {
-    return isI18nRootNode(meta) && meta.nodes.length === 1 && meta.nodes[0] instanceof Icu;
+    return isI18nRootNode(meta) && meta.nodes.length === 1 && meta.nodes[0] instanceof Icu$1;
 }
 function hasI18nAttrs(element) {
     return element.attrs.some((attr) => isI18nAttribute(attr.name));
@@ -4328,6 +4480,9 @@ function getAttrsForDirectiveMatching(elOrTpl) {
     });
     elOrTpl.inputs.forEach(i => { attributesMap[i.name] = ''; });
     elOrTpl.outputs.forEach(o => { attributesMap[o.name] = ''; });
+    if (elOrTpl instanceof Template) {
+        elOrTpl.templateAttrs.forEach(a => attributesMap[a.name] = '');
+    }
     return attributesMap;
 }
 
@@ -8004,157 +8159,6 @@ function getStylesVarName(component) {
     let result = `styles`;
     if (component) {
         result += `_${identifierName(component.type)}`;
-    }
-    return result;
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-class Text$2 {
-    constructor(value, sourceSpan) {
-        this.value = value;
-        this.sourceSpan = sourceSpan;
-    }
-    visit(visitor) { return visitor.visitText(this); }
-}
-class BoundText {
-    constructor(value, sourceSpan, i18n) {
-        this.value = value;
-        this.sourceSpan = sourceSpan;
-        this.i18n = i18n;
-    }
-    visit(visitor) { return visitor.visitBoundText(this); }
-}
-class TextAttribute {
-    constructor(name, value, sourceSpan, valueSpan, i18n) {
-        this.name = name;
-        this.value = value;
-        this.sourceSpan = sourceSpan;
-        this.valueSpan = valueSpan;
-        this.i18n = i18n;
-    }
-    visit(visitor) { return visitor.visitTextAttribute(this); }
-}
-class BoundAttribute {
-    constructor(name, type, securityContext, value, unit, sourceSpan, i18n) {
-        this.name = name;
-        this.type = type;
-        this.securityContext = securityContext;
-        this.value = value;
-        this.unit = unit;
-        this.sourceSpan = sourceSpan;
-        this.i18n = i18n;
-    }
-    static fromBoundElementProperty(prop, i18n) {
-        return new BoundAttribute(prop.name, prop.type, prop.securityContext, prop.value, prop.unit, prop.sourceSpan, i18n);
-    }
-    visit(visitor) { return visitor.visitBoundAttribute(this); }
-}
-class BoundEvent {
-    constructor(name, type, handler, target, phase, sourceSpan, handlerSpan) {
-        this.name = name;
-        this.type = type;
-        this.handler = handler;
-        this.target = target;
-        this.phase = phase;
-        this.sourceSpan = sourceSpan;
-        this.handlerSpan = handlerSpan;
-    }
-    static fromParsedEvent(event) {
-        const target = event.type === 0 /* Regular */ ? event.targetOrPhase : null;
-        const phase = event.type === 1 /* Animation */ ? event.targetOrPhase : null;
-        return new BoundEvent(event.name, event.type, event.handler, target, phase, event.sourceSpan, event.handlerSpan);
-    }
-    visit(visitor) { return visitor.visitBoundEvent(this); }
-}
-class Element {
-    constructor(name, attributes, inputs, outputs, children, references, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
-        this.name = name;
-        this.attributes = attributes;
-        this.inputs = inputs;
-        this.outputs = outputs;
-        this.children = children;
-        this.references = references;
-        this.sourceSpan = sourceSpan;
-        this.startSourceSpan = startSourceSpan;
-        this.endSourceSpan = endSourceSpan;
-        this.i18n = i18n;
-        // If the element is empty then the source span should include any closing tag
-        if (children.length === 0 && startSourceSpan && endSourceSpan) {
-            this.sourceSpan = Object.assign({}, sourceSpan, { end: endSourceSpan.end });
-        }
-    }
-    visit(visitor) { return visitor.visitElement(this); }
-}
-class Template {
-    constructor(tagName, attributes, inputs, outputs, children, references, variables, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
-        this.tagName = tagName;
-        this.attributes = attributes;
-        this.inputs = inputs;
-        this.outputs = outputs;
-        this.children = children;
-        this.references = references;
-        this.variables = variables;
-        this.sourceSpan = sourceSpan;
-        this.startSourceSpan = startSourceSpan;
-        this.endSourceSpan = endSourceSpan;
-        this.i18n = i18n;
-    }
-    visit(visitor) { return visitor.visitTemplate(this); }
-}
-class Content {
-    constructor(selector, attributes, sourceSpan, i18n) {
-        this.selector = selector;
-        this.attributes = attributes;
-        this.sourceSpan = sourceSpan;
-        this.i18n = i18n;
-    }
-    visit(visitor) { return visitor.visitContent(this); }
-}
-class Variable {
-    constructor(name, value, sourceSpan) {
-        this.name = name;
-        this.value = value;
-        this.sourceSpan = sourceSpan;
-    }
-    visit(visitor) { return visitor.visitVariable(this); }
-}
-class Reference {
-    constructor(name, value, sourceSpan) {
-        this.name = name;
-        this.value = value;
-        this.sourceSpan = sourceSpan;
-    }
-    visit(visitor) { return visitor.visitReference(this); }
-}
-class Icu$1 {
-    constructor(vars, placeholders, sourceSpan, i18n) {
-        this.vars = vars;
-        this.placeholders = placeholders;
-        this.sourceSpan = sourceSpan;
-        this.i18n = i18n;
-    }
-    visit(visitor) { return visitor.visitIcu(this); }
-}
-function visitAll(visitor, nodes) {
-    const result = [];
-    if (visitor.visit) {
-        for (const node of nodes) {
-            const newNode = visitor.visit(node) || node.visit(visitor);
-        }
-    }
-    else {
-        for (const node of nodes) {
-            const newNode = node.visit(visitor);
-            if (newNode) {
-                result.push(newNode);
-            }
-        }
     }
     return result;
 }
@@ -12312,16 +12316,30 @@ class HtmlAstToIvyAst {
         else if (isTemplateElement) {
             // `<ng-template>`
             const attrs = this.extractAttributes(element.name, parsedProperties, i18nAttrsMeta);
-            parsedElement = new Template(element.name, attributes, attrs.bound, boundEvents, children, references, variables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+            parsedElement = new Template(element.name, attributes, attrs.bound, boundEvents, [ /* no template attributes */], children, references, variables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
         }
         else {
             const attrs = this.extractAttributes(element.name, parsedProperties, i18nAttrsMeta);
             parsedElement = new Element(element.name, attributes, attrs.bound, boundEvents, children, references, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
         }
         if (elementHasInlineTemplate) {
+            // If this node is an inline-template (e.g. has *ngFor) then we need to create a template
+            // node that contains this node.
+            // Moreover, if the node is an element, then we need to hoist its attributes to the template
+            // node for matching against content projection selectors.
             const attrs = this.extractAttributes('ng-template', templateParsedProperties, i18nAttrsMeta);
+            const templateAttrs = [];
+            attrs.literal.forEach(attr => templateAttrs.push(attr));
+            attrs.bound.forEach(attr => templateAttrs.push(attr));
+            const hoistedAttrs = parsedElement instanceof Element ?
+                {
+                    attributes: parsedElement.attributes,
+                    inputs: parsedElement.inputs,
+                    outputs: parsedElement.outputs,
+                } :
+                { attributes: [], inputs: [], outputs: [] };
             // TODO(pk): test for this case
-            parsedElement = new Template(parsedElement.name, attrs.literal, attrs.bound, [], [parsedElement], [], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+            parsedElement = new Template(parsedElement.name, hoistedAttrs.attributes, hoistedAttrs.inputs, hoistedAttrs.outputs, templateAttrs, [parsedElement], [ /* no references */], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
         }
         return parsedElement;
     }
@@ -12356,7 +12374,7 @@ class HtmlAstToIvyAst {
                 placeholders[key] = this._visitTextWithInterpolation(value, expansion.sourceSpan);
             }
         });
-        return new Icu$1(vars, placeholders, expansion.sourceSpan, meta);
+        return new Icu(vars, placeholders, expansion.sourceSpan, meta);
     }
     visitExpansionCase(expansionCase) { return null; }
     visitComment(comment) { return null; }
@@ -12436,7 +12454,7 @@ class HtmlAstToIvyAst {
     _visitTextWithInterpolation(value, sourceSpan, i18n) {
         const valueNoNgsp = replaceNgsp(value);
         const expr = this.bindingParser.parseInterpolation(valueNoNgsp, sourceSpan);
-        return expr ? new BoundText(expr, sourceSpan, i18n) : new Text$2(valueNoNgsp, sourceSpan);
+        return expr ? new BoundText(expr, sourceSpan, i18n) : new Text(valueNoNgsp, sourceSpan);
     }
     parseVariable(identifier, value, sourceSpan, variables) {
         if (identifier.indexOf('-') > -1) {
@@ -12478,7 +12496,7 @@ class NonBindableVisitor {
     visitAttribute(attribute) {
         return new TextAttribute(attribute.name, attribute.value, attribute.sourceSpan, undefined, attribute.i18n);
     }
-    visitText(text) { return new Text$2(text.value, text.sourceSpan); }
+    visitText(text) { return new Text(text.value, text.sourceSpan); }
     visitExpansion(expansion) { return null; }
     visitExpansionCase(expansionCase) { return null; }
 }
@@ -12859,7 +12877,7 @@ class _I18nVisitor {
     visitExpansion(icu, context) {
         this._icuDepth++;
         const i18nIcuCases = {};
-        const i18nIcu = new Icu(icu.switchValue, icu.type, i18nIcuCases, icu.sourceSpan);
+        const i18nIcu = new Icu$1(icu.switchValue, icu.type, i18nIcuCases, icu.sourceSpan);
         icu.cases.forEach((caze) => {
             i18nIcuCases[caze.value] = new Container(caze.expression.map((node) => node.visit(this, {})), caze.expSourceSpan);
         });
@@ -12891,7 +12909,7 @@ class _I18nVisitor {
         const splitInterpolation = this._expressionParser.splitInterpolation(text, sourceSpan.start.toString(), this._interpolationConfig);
         if (!splitInterpolation) {
             // No expression, return a single text
-            return new Text(text, sourceSpan);
+            return new Text$1(text, sourceSpan);
         }
         // Return a group of text + expressions
         const nodes = [];
@@ -12903,7 +12921,7 @@ class _I18nVisitor {
             const phName = this._placeholderRegistry.getPlaceholderName(baseName, expression);
             if (splitInterpolation.strings[i].length) {
                 // No need to add empty strings
-                nodes.push(new Text(splitInterpolation.strings[i], sourceSpan));
+                nodes.push(new Text$1(splitInterpolation.strings[i], sourceSpan));
             }
             nodes.push(new Placeholder(expression, phName, sourceSpan));
             this._placeholderToContent[phName] = sDelimiter + expression + eDelimiter;
@@ -12911,7 +12929,7 @@ class _I18nVisitor {
         // The last index contains no expression
         const lastStringIdx = splitInterpolation.strings.length - 1;
         if (splitInterpolation.strings[lastStringIdx].length) {
-            nodes.push(new Text(splitInterpolation.strings[lastStringIdx], sourceSpan));
+            nodes.push(new Text$1(splitInterpolation.strings[lastStringIdx], sourceSpan));
         }
         return container;
     }
@@ -13306,7 +13324,7 @@ class TemplateDefinitionBuilder {
         const bound = {};
         Object.keys(props).forEach(key => {
             const prop = props[key];
-            if (prop instanceof Text$2) {
+            if (prop instanceof Text) {
                 bound[key] = literal(prop.value);
             }
             else {
@@ -13517,9 +13535,8 @@ class TemplateDefinitionBuilder {
         outputAttrs.forEach(attr => {
             attributes.push(...getAttributeNameLiterals(attr.name), literal(attr.value));
         });
-        // this will build the instructions so that they fall into the following syntax
-        // add attributes for directive matching purposes
-        attributes.push(...this.prepareSelectOnlyAttrs(allOtherInputs, element.outputs, stylingBuilder));
+        // add attributes for directive and projection matching purposes
+        attributes.push(...this.prepareNonRenderAttrs(allOtherInputs, element.outputs, stylingBuilder));
         parameters.push(this.toAttrsParam(attributes));
         // local refs (ex.: <div #foo #bar="baz">)
         parameters.push(this.prepareRefsParameter(element.references));
@@ -13691,6 +13708,7 @@ class TemplateDefinitionBuilder {
         }
     }
     visitTemplate(template) {
+        const NG_TEMPLATE_TAG_NAME = 'ng-template';
         const templateIndex = this.allocateDataSlot();
         if (this.i18n) {
             this.i18n.appendTemplate(template.i18n, templateIndex);
@@ -13706,11 +13724,11 @@ class TemplateDefinitionBuilder {
             literal(template.tagName ? splitNsName(template.tagName)[1] : template.tagName),
         ];
         // find directives matching on a given <ng-template> node
-        this.matchDirectives('ng-template', template);
+        this.matchDirectives(NG_TEMPLATE_TAG_NAME, template);
         // prepare attributes parameter (including attributes used for directive matching)
         const attrsExprs = [];
         template.attributes.forEach((a) => { attrsExprs.push(asLiteral(a.name), asLiteral(a.value)); });
-        attrsExprs.push(...this.prepareSelectOnlyAttrs(template.inputs, template.outputs));
+        attrsExprs.push(...this.prepareNonRenderAttrs(template.inputs, template.outputs, undefined, template.templateAttrs));
         parameters.push(this.toAttrsParam(attrsExprs));
         // local refs (ex.: <ng-template #foo>)
         if (template.references && template.references.length) {
@@ -13738,20 +13756,16 @@ class TemplateDefinitionBuilder {
         });
         // handle property bindings e.g. ɵelementProperty(1, 'ngForOf', ɵbind(ctx.items));
         const context = variable(CONTEXT_NAME);
-        template.inputs.forEach(input => {
-            const value = input.value.visit(this._valueConverter);
-            this.allocateBindingSlots(value);
-            this.updateInstruction(templateIndex, template.sourceSpan, Identifiers$1.elementProperty, () => {
-                return [
-                    literal(templateIndex), literal(input.name),
-                    this.convertPropertyBinding(context, value)
-                ];
+        this.templatePropertyBindings(template, templateIndex, context, template.templateAttrs);
+        // Only add normal input/output binding instructions on explicit ng-template elements.
+        if (template.tagName === NG_TEMPLATE_TAG_NAME) {
+            // Add the input bindings
+            this.templatePropertyBindings(template, templateIndex, context, template.inputs);
+            // Generate listeners for directive output
+            template.outputs.forEach((outputAst) => {
+                this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter('ng_template', outputAst, templateIndex));
             });
-        });
-        // Generate listeners for directive output
-        template.outputs.forEach((outputAst) => {
-            this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter('ng_template', outputAst, templateIndex));
-        });
+        }
     }
     visitBoundText(text) {
         if (this.i18n) {
@@ -13817,6 +13831,20 @@ class TemplateDefinitionBuilder {
             null;
     }
     bindingContext() { return `${this._bindingContext++}`; }
+    templatePropertyBindings(template, templateIndex, context, attrs) {
+        attrs.forEach(input => {
+            if (input instanceof BoundAttribute) {
+                const value = input.value.visit(this._valueConverter);
+                this.allocateBindingSlots(value);
+                this.updateInstruction(templateIndex, template.sourceSpan, Identifiers$1.elementProperty, () => {
+                    return [
+                        literal(templateIndex), literal(input.name),
+                        this.convertPropertyBinding(context, value)
+                    ];
+                });
+            }
+        });
+    }
     // Bindings must only be resolved after all local refs have been visited, so all
     // instructions are queued in callbacks that execute once the initial pass has completed.
     // Otherwise, we wouldn't be able to support local refs that are defined after their
@@ -13889,13 +13917,14 @@ class TemplateDefinitionBuilder {
      * attrs = [prop, value, prop2, value2,
      *   CLASSES, class1, class2,
      *   STYLES, style1, value1, style2, value2,
-     *   SELECT_ONLY, name1, name2, name2, ...]
+     *   BINDINGS, name1, name2, name3,
+     *   TEMPLATE, name4, name5, ...]
      * ```
      *
      * Note that this function will fully ignore all synthetic (@foo) attribute values
      * because those values are intended to always be generated as property instructions.
      */
-    prepareSelectOnlyAttrs(inputs, outputs, styles) {
+    prepareNonRenderAttrs(inputs, outputs, styles, templateAttrs = []) {
         const alreadySeen = new Set();
         const attrExprs = [];
         function addAttrExpr(key, value) {
@@ -13910,8 +13939,8 @@ class TemplateDefinitionBuilder {
                 attrExprs.push(literal(key));
             }
         }
-        // it's important that this occurs before SelectOnly because once `elementStart`
-        // comes across the SelectOnly marker then it will continue reading each value as
+        // it's important that this occurs before BINDINGS and TEMPLATE because once `elementStart`
+        // comes across the BINDINGS or TEMPLATE markers then it will continue reading each value as
         // as single property value cell by cell.
         if (styles) {
             styles.populateInitialStylingAttrs(attrExprs);
@@ -13935,8 +13964,12 @@ class TemplateDefinitionBuilder {
             // to the expressions. The marker is important because it tells the runtime
             // code that this is where attributes without values start...
             if (attrExprs.length) {
-                attrExprs.splice(attrsStartIndex, 0, literal(3 /* SelectOnly */));
+                attrExprs.splice(attrsStartIndex, 0, literal(3 /* Bindings */));
             }
+        }
+        if (templateAttrs.length) {
+            attrExprs.push(literal(4 /* Template */));
+            templateAttrs.forEach(attr => addAttrExpr(attr.name));
         }
         return attrExprs;
     }
@@ -14381,7 +14414,7 @@ function isSingleElementTemplate(children) {
     return children.length === 1 && children[0] instanceof Element;
 }
 function isTextNode(node) {
-    return node instanceof Text$2 || node instanceof BoundText || node instanceof Icu$1;
+    return node instanceof Text || node instanceof BoundText || node instanceof Icu;
 }
 function hasTextChildrenOnly(children) {
     return children.every(isTextNode);
@@ -15289,7 +15322,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.7+22.sha-9a19592.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.7+29.sha-5ad2097.with-local-changes');
 
 /**
  * @license
@@ -16393,7 +16426,7 @@ class _Visitor$2 {
         if (significantChildren == 1) {
             for (let i = this._messages.length - 1; i >= startIndex; i--) {
                 const ast = this._messages[i].nodes;
-                if (!(ast.length == 1 && ast[0] instanceof Text)) {
+                if (!(ast.length == 1 && ast[0] instanceof Text$1)) {
                     this._messages.splice(i, 1);
                     break;
                 }
@@ -16493,16 +16526,16 @@ class Xliff extends Serializer {
             let contextTags = [];
             message.sources.forEach((source) => {
                 let contextGroupTag = new Tag(_CONTEXT_GROUP_TAG, { purpose: 'location' });
-                contextGroupTag.children.push(new CR(10), new Tag(_CONTEXT_TAG, { 'context-type': 'sourcefile' }, [new Text$1(source.filePath)]), new CR(10), new Tag(_CONTEXT_TAG, { 'context-type': 'linenumber' }, [new Text$1(`${source.startLine}`)]), new CR(8));
+                contextGroupTag.children.push(new CR(10), new Tag(_CONTEXT_TAG, { 'context-type': 'sourcefile' }, [new Text$2(source.filePath)]), new CR(10), new Tag(_CONTEXT_TAG, { 'context-type': 'linenumber' }, [new Text$2(`${source.startLine}`)]), new CR(8));
                 contextTags.push(new CR(8), contextGroupTag);
             });
             const transUnit = new Tag(_UNIT_TAG, { id: message.id, datatype: 'html' });
             transUnit.children.push(new CR(8), new Tag(_SOURCE_TAG$1, {}, visitor.serialize(message.nodes)), ...contextTags);
             if (message.description) {
-                transUnit.children.push(new CR(8), new Tag('note', { priority: '1', from: 'description' }, [new Text$1(message.description)]));
+                transUnit.children.push(new CR(8), new Tag('note', { priority: '1', from: 'description' }, [new Text$2(message.description)]));
             }
             if (message.meaning) {
-                transUnit.children.push(new CR(8), new Tag('note', { priority: '1', from: 'meaning' }, [new Text$1(message.meaning)]));
+                transUnit.children.push(new CR(8), new Tag('note', { priority: '1', from: 'meaning' }, [new Text$2(message.meaning)]));
             }
             transUnit.children.push(new CR(6));
             transUnits.push(new CR(6), transUnit);
@@ -16538,18 +16571,18 @@ class Xliff extends Serializer {
     digest(message) { return digest(message); }
 }
 class _WriteVisitor {
-    visitText(text, context) { return [new Text$1(text.value)]; }
+    visitText(text, context) { return [new Text$2(text.value)]; }
     visitContainer(container, context) {
         const nodes = [];
         container.children.forEach((node) => nodes.push(...node.visit(this)));
         return nodes;
     }
     visitIcu(icu, context) {
-        const nodes = [new Text$1(`{${icu.expressionPlaceholder}, ${icu.type}, `)];
+        const nodes = [new Text$2(`{${icu.expressionPlaceholder}, ${icu.type}, `)];
         Object.keys(icu.cases).forEach((c) => {
-            nodes.push(new Text$1(`${c} {`), ...icu.cases[c].visit(this), new Text$1(`} `));
+            nodes.push(new Text$2(`${c} {`), ...icu.cases[c].visit(this), new Text$2(`} `));
         });
-        nodes.push(new Text$1(`}`));
+        nodes.push(new Text$2(`}`));
         return nodes;
     }
     visitTagPlaceholder(ph, context) {
@@ -16661,7 +16694,7 @@ class XmlToI18n {
             errors: this._errors,
         };
     }
-    visitText(text, context) { return new Text(text.value, text.sourceSpan); }
+    visitText(text, context) { return new Text$1(text.value, text.sourceSpan); }
     visitElement(el, context) {
         if (el.name === _PLACEHOLDER_TAG$1) {
             const nameAttr = el.attrs.find((attr) => attr.name === 'id');
@@ -16682,7 +16715,7 @@ class XmlToI18n {
         visitAll$1(this, icu.cases).forEach((c) => {
             caseMap[c.value] = new Container(c.nodes, icu.sourceSpan);
         });
-        return new Icu(icu.switchValue, icu.type, caseMap, icu.sourceSpan);
+        return new Icu$1(icu.switchValue, icu.type, caseMap, icu.sourceSpan);
     }
     visitExpansionCase(icuCase, context) {
         return {
@@ -16735,15 +16768,15 @@ class Xliff2 extends Serializer {
             const notes = new Tag('notes');
             if (message.description || message.meaning) {
                 if (message.description) {
-                    notes.children.push(new CR(8), new Tag('note', { category: 'description' }, [new Text$1(message.description)]));
+                    notes.children.push(new CR(8), new Tag('note', { category: 'description' }, [new Text$2(message.description)]));
                 }
                 if (message.meaning) {
-                    notes.children.push(new CR(8), new Tag('note', { category: 'meaning' }, [new Text$1(message.meaning)]));
+                    notes.children.push(new CR(8), new Tag('note', { category: 'meaning' }, [new Text$2(message.meaning)]));
                 }
             }
             message.sources.forEach((source) => {
                 notes.children.push(new CR(8), new Tag('note', { category: 'location' }, [
-                    new Text$1(`${source.filePath}:${source.startLine}${source.endLine !== source.startLine ? ',' + source.endLine : ''}`)
+                    new Text$2(`${source.filePath}:${source.startLine}${source.endLine !== source.startLine ? ',' + source.endLine : ''}`)
                 ]));
             });
             notes.children.push(new CR(6));
@@ -16779,18 +16812,18 @@ class Xliff2 extends Serializer {
     digest(message) { return decimalDigest(message); }
 }
 class _WriteVisitor$1 {
-    visitText(text, context) { return [new Text$1(text.value)]; }
+    visitText(text, context) { return [new Text$2(text.value)]; }
     visitContainer(container, context) {
         const nodes = [];
         container.children.forEach((node) => nodes.push(...node.visit(this)));
         return nodes;
     }
     visitIcu(icu, context) {
-        const nodes = [new Text$1(`{${icu.expressionPlaceholder}, ${icu.type}, `)];
+        const nodes = [new Text$2(`{${icu.expressionPlaceholder}, ${icu.type}, `)];
         Object.keys(icu.cases).forEach((c) => {
-            nodes.push(new Text$1(`${c} {`), ...icu.cases[c].visit(this), new Text$1(`} `));
+            nodes.push(new Text$2(`${c} {`), ...icu.cases[c].visit(this), new Text$2(`} `));
         });
-        nodes.push(new Text$1(`}`));
+        nodes.push(new Text$2(`}`));
         return nodes;
     }
     visitTagPlaceholder(ph, context) {
@@ -16817,7 +16850,7 @@ class _WriteVisitor$1 {
             nodes.forEach((node) => tagPc.children.push(node));
         }
         else {
-            tagPc.children.push(new Text$1(''));
+            tagPc.children.push(new Text$2(''));
         }
         return [tagPc];
     }
@@ -16932,7 +16965,7 @@ class XmlToI18n$1 {
             errors: this._errors,
         };
     }
-    visitText(text, context) { return new Text(text.value, text.sourceSpan); }
+    visitText(text, context) { return new Text$1(text.value, text.sourceSpan); }
     visitElement(el, context) {
         switch (el.name) {
             case _PLACEHOLDER_TAG$2:
@@ -16970,7 +17003,7 @@ class XmlToI18n$1 {
         visitAll$1(this, icu.cases).forEach((c) => {
             caseMap[c.value] = new Container(c.nodes, icu.sourceSpan);
         });
-        return new Icu(icu.switchValue, icu.type, caseMap, icu.sourceSpan);
+        return new Icu$1(icu.switchValue, icu.type, caseMap, icu.sourceSpan);
     }
     visitExpansionCase(icuCase, context) {
         return {
@@ -17132,13 +17165,13 @@ class XmlToI18n$2 {
             errors: this._errors,
         };
     }
-    visitText(text, context) { return new Text(text.value, text.sourceSpan); }
+    visitText(text, context) { return new Text$1(text.value, text.sourceSpan); }
     visitExpansion(icu, context) {
         const caseMap = {};
         visitAll$1(this, icu.cases).forEach(c => {
             caseMap[c.value] = new Container(c.nodes, icu.sourceSpan);
         });
-        return new Icu(icu.switchValue, icu.type, caseMap, icu.sourceSpan);
+        return new Icu$1(icu.switchValue, icu.type, caseMap, icu.sourceSpan);
     }
     visitExpansionCase(icuCase, context) {
         return {
@@ -25860,27 +25893,22 @@ class DirectiveBinder {
                 this.references.set(ref, node);
             }
         });
-        // Associate bindings on the node with directives or with the node itself.
-        // Inputs:
-        [...node.attributes, ...node.inputs].forEach(binding => {
-            let dir = directives.find(dir => dir.inputs.hasOwnProperty(binding.name));
+        // Associate attributes/bindings on the node with directives or with the node itself.
+        const processAttribute = (attribute) => {
+            let dir = directives.find(dir => dir.inputs.hasOwnProperty(attribute.name));
             if (dir !== undefined) {
-                this.bindings.set(binding, dir);
+                this.bindings.set(attribute, dir);
             }
             else {
-                this.bindings.set(binding, node);
+                this.bindings.set(attribute, node);
             }
-        });
-        // Outputs:
-        node.outputs.forEach(binding => {
-            let dir = directives.find(dir => dir.outputs.hasOwnProperty(binding.name));
-            if (dir !== undefined) {
-                this.bindings.set(binding, dir);
-            }
-            else {
-                this.bindings.set(binding, node);
-            }
-        });
+        };
+        node.attributes.forEach(processAttribute);
+        node.inputs.forEach(processAttribute);
+        node.outputs.forEach(processAttribute);
+        if (node instanceof Template) {
+            node.templateAttrs.forEach(processAttribute);
+        }
         // Recurse into the node's children.
         node.children.forEach(child => child.visit(this));
     }
@@ -25943,10 +25971,12 @@ class TemplateBinder extends RecursiveAstVisitor$1 {
     }
     ingest(template) {
         if (template instanceof Template) {
-            // For <ng-template>s, process inputs, outputs, variables, and child nodes. References were
-            // processed in the scope of the containing template.
+            // For <ng-template>s, process inputs, outputs, template attributes,
+            // variables, and child nodes.
+            // References were processed in the scope of the containing template.
             template.inputs.forEach(this.visitNode);
             template.outputs.forEach(this.visitNode);
+            template.templateAttrs.forEach(this.visitNode);
             template.variables.forEach(this.visitNode);
             template.children.forEach(this.visitNode);
             // Set the nesting level.
@@ -25958,15 +25988,16 @@ class TemplateBinder extends RecursiveAstVisitor$1 {
         }
     }
     visitElement(element) {
-        // Vist the inputs, outputs, and children of the element.
+        // Visit the inputs, outputs, and children of the element.
         element.inputs.forEach(this.visitNode);
         element.outputs.forEach(this.visitNode);
         element.children.forEach(this.visitNode);
     }
     visitTemplate(template) {
-        // First, visit the inputs, outputs of the template node.
+        // First, visit inputs, outputs and template attributes of the template node.
         template.inputs.forEach(this.visitNode);
         template.outputs.forEach(this.visitNode);
+        template.templateAttrs.forEach(this.visitNode);
         // References are also evaluated in the outer context.
         template.references.forEach(this.visitNode);
         // Next, recurse into the template using its scope, and bumping the nesting level up by one.
@@ -26112,5 +26143,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, literalMap, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, TypeofExpr, collectExternalReferences, EmitterVisitorContext, JitEvaluator, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Reference as TmplAstReference, Template as TmplAstTemplate, Text$2 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileBaseDefFromMetadata, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, verifyHostBindings, publishFacade, VERSION$1 as VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor$1 as RecursiveAstVisitor, AstTransformer$1 as AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text$3 as Text, Expansion, ExpansionCase, Attribute, Element$1 as Element, Comment, visitAll$1 as visitAll, RecursiveVisitor$1 as RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, r3JitTypeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, HOST_ATTR, CONTENT_ATTR, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, compileInjectable, R3TargetBinder, R3BoundTarget };
+export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, literalMap, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, TypeofExpr, collectExternalReferences, EmitterVisitorContext, JitEvaluator, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileBaseDefFromMetadata, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, verifyHostBindings, publishFacade, VERSION$1 as VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor$1 as RecursiveAstVisitor, AstTransformer$1 as AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text$3 as Text, Expansion, ExpansionCase, Attribute, Element$1 as Element, Comment, visitAll$1 as visitAll, RecursiveVisitor$1 as RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, r3JitTypeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, HOST_ATTR, CONTENT_ATTR, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, compileInjectable, R3TargetBinder, R3BoundTarget };
 //# sourceMappingURL=compiler.js.map
