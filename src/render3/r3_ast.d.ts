@@ -78,6 +78,7 @@ export declare class Template implements Node {
     attributes: TextAttribute[];
     inputs: BoundAttribute[];
     outputs: BoundEvent[];
+    templateAttrs: (BoundAttribute | TextAttribute)[];
     children: Node[];
     references: Reference[];
     variables: Variable[];
@@ -85,7 +86,7 @@ export declare class Template implements Node {
     startSourceSpan: ParseSourceSpan | null;
     endSourceSpan: ParseSourceSpan | null;
     i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined;
-    constructor(tagName: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], children: Node[], references: Reference[], variables: Variable[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan | null, endSourceSpan: ParseSourceSpan | null, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
+    constructor(tagName: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], templateAttrs: (BoundAttribute | TextAttribute)[], children: Node[], references: Reference[], variables: Variable[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan | null, endSourceSpan: ParseSourceSpan | null, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 export declare class Content implements Node {
