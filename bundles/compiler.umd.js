@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.7+29.sha-5ad2097.with-local-changes
+ * @license Angular v8.0.0-beta.7+38.sha-fd5cd10.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -14527,11 +14527,6 @@
                         }
                     }
                 }
-                // Note: it's important to keep i18n/i18nStart instructions after i18nAttributes ones,
-                // to make sure i18nAttributes instruction targets current element at runtime.
-                if (isI18nRootElement) {
-                    this.i18nStart(element.sourceSpan, element.i18n, createSelfClosingI18nInstruction);
-                }
                 // The style bindings code is placed into two distinct blocks within the template function AOT
                 // code: creation and update. The creation code contains the `elementStyling` instructions
                 // which will apply the collected binding values to the element. `elementStyling` is
@@ -14543,6 +14538,11 @@
                 element.outputs.forEach(function (outputAst) {
                     _this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, _this.prepareListenerParameter(element.name, outputAst, elementIndex));
                 });
+                // Note: it's important to keep i18n/i18nStart instructions after i18nAttributes and
+                // listeners, to make sure i18nAttributes instruction targets current element at runtime.
+                if (isI18nRootElement) {
+                    this.i18nStart(element.sourceSpan, element.i18n, createSelfClosingI18nInstruction);
+                }
             }
             // the code here will collect all update-level styling instructions and add them to the
             // update block of the template function AOT code. Instructions like `elementStyleProp`,
@@ -16330,7 +16330,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-beta.7+29.sha-5ad2097.with-local-changes');
+    var VERSION$1 = new Version('8.0.0-beta.7+38.sha-fd5cd10.with-local-changes');
 
     /**
      * @license
