@@ -8,9 +8,11 @@
 import { CompilerFacade, CoreEnvironment, R3ComponentMetadataFacade, R3DirectiveMetadataFacade, R3InjectableMetadataFacade, R3InjectorMetadataFacade, R3NgModuleMetadataFacade, R3PipeMetadataFacade } from './compiler_facade_interface';
 import { JitEvaluator } from './output/output_jit';
 import { ParseSourceSpan } from './parse_util';
+import { ResourceLoader } from './resource_loader';
 export declare class CompilerFacadeImpl implements CompilerFacade {
     private jitEvaluator;
     R3ResolvedDependencyType: any;
+    ResourceLoader: typeof ResourceLoader;
     private elementSchemaRegistry;
     constructor(jitEvaluator?: JitEvaluator);
     compilePipe(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, facade: R3PipeMetadataFacade): any;

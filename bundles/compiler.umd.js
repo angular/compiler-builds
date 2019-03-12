@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.7+74.sha-7315a68.with-local-changes
+ * @license Angular v8.0.0-beta.7+79.sha-c09d0ed.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16091,11 +16091,30 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
+    /**
+     * An interface for retrieving documents by URL that the compiler uses
+     * to load templates.
+     */
+    var ResourceLoader = /** @class */ (function () {
+        function ResourceLoader() {
+        }
+        ResourceLoader.prototype.get = function (url) { return ''; };
+        return ResourceLoader;
+    }());
+
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
     var CompilerFacadeImpl = /** @class */ (function () {
         function CompilerFacadeImpl(jitEvaluator) {
             if (jitEvaluator === void 0) { jitEvaluator = new JitEvaluator(); }
             this.jitEvaluator = jitEvaluator;
             this.R3ResolvedDependencyType = exports.R3ResolvedDependencyType;
+            this.ResourceLoader = ResourceLoader;
             this.elementSchemaRegistry = new DomElementSchemaRegistry();
         }
         CompilerFacadeImpl.prototype.compilePipe = function (angularCoreEnv, sourceMapUrl, facade) {
@@ -16330,7 +16349,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-beta.7+74.sha-7315a68.with-local-changes');
+    var VERSION$1 = new Version('8.0.0-beta.7+79.sha-c09d0ed.with-local-changes');
 
     /**
      * @license
@@ -27162,24 +27181,6 @@
         parts[_ComponentIndex.Path] = path;
         return _joinAndCanonicalizePath(parts);
     }
-
-    /**
-     * @license
-     * Copyright Google Inc. All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    /**
-     * An interface for retrieving documents by URL that the compiler uses
-     * to load templates.
-     */
-    var ResourceLoader = /** @class */ (function () {
-        function ResourceLoader() {
-        }
-        ResourceLoader.prototype.get = function (url) { return ''; };
-        return ResourceLoader;
-    }());
 
     /**
      * @license
