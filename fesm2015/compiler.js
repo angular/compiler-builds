@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.7+60.sha-1d88c2b.with-local-changes
+ * @license Angular v8.0.0-beta.7+83.sha-c5daaa9.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15090,10 +15090,26 @@ function compileStyles(styles, selector, hostSelector) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/**
+ * An interface for retrieving documents by URL that the compiler uses
+ * to load templates.
+ */
+class ResourceLoader {
+    get(url) { return ''; }
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class CompilerFacadeImpl {
     constructor(jitEvaluator = new JitEvaluator()) {
         this.jitEvaluator = jitEvaluator;
         this.R3ResolvedDependencyType = R3ResolvedDependencyType;
+        this.ResourceLoader = ResourceLoader;
         this.elementSchemaRegistry = new DomElementSchemaRegistry();
     }
     compilePipe(angularCoreEnv, sourceMapUrl, facade) {
@@ -15322,7 +15338,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.7+60.sha-1d88c2b.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.7+83.sha-c5daaa9.with-local-changes');
 
 /**
  * @license
@@ -25567,21 +25583,6 @@ function _resolveUrl(base, url) {
     path = path.substring(0, index + 1) + parts[_ComponentIndex.Path];
     parts[_ComponentIndex.Path] = path;
     return _joinAndCanonicalizePath(parts);
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * An interface for retrieving documents by URL that the compiler uses
- * to load templates.
- */
-class ResourceLoader {
-    get(url) { return ''; }
 }
 
 /**
