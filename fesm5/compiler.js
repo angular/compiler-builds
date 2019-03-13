@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.8+5.sha-1625d86.with-local-changes
+ * @license Angular v8.0.0-beta.8+6.sha-73da279.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -6512,22 +6512,22 @@ var R3JitReflector = /** @class */ (function () {
  * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
  */
 function compileNgModule(meta) {
-    var moduleType = meta.type, bootstrap = meta.bootstrap, declarations = meta.declarations, imports = meta.imports, exports = meta.exports, schemas = meta.schemas;
+    var moduleType = meta.type, bootstrap = meta.bootstrap, declarations = meta.declarations, imports = meta.imports, exports = meta.exports, schemas = meta.schemas, containsForwardDecls = meta.containsForwardDecls;
     var definitionMap = {
         type: moduleType
     };
     // Only generate the keys in the metadata if the arrays have values.
     if (bootstrap.length) {
-        definitionMap.bootstrap = literalArr(bootstrap.map(function (ref) { return ref.value; }));
+        definitionMap.bootstrap = refsToArray(bootstrap, containsForwardDecls);
     }
     if (declarations.length) {
-        definitionMap.declarations = literalArr(declarations.map(function (ref) { return ref.value; }));
+        definitionMap.declarations = refsToArray(declarations, containsForwardDecls);
     }
     if (imports.length) {
-        definitionMap.imports = literalArr(imports.map(function (ref) { return ref.value; }));
+        definitionMap.imports = refsToArray(imports, containsForwardDecls);
     }
     if (exports.length) {
-        definitionMap.exports = literalArr(exports.map(function (ref) { return ref.value; }));
+        definitionMap.exports = refsToArray(exports, containsForwardDecls);
     }
     if (schemas && schemas.length) {
         definitionMap.schemas = literalArr(schemas.map(function (ref) { return ref.value; }));
@@ -6581,6 +6581,10 @@ function compileNgModuleFromRender2(ctx, ngModule, injectableCompiler) {
 function tupleTypeOf(exp) {
     var types = exp.map(function (ref) { return typeofExpr(ref.type); });
     return exp.length > 0 ? expressionType(literalArr(types)) : NONE_TYPE;
+}
+function refsToArray(refs, shouldForwardDeclare) {
+    var values = literalArr(refs.map(function (ref) { return ref.value; }));
+    return shouldForwardDeclare ? fn([], [new ReturnStatement(values)]) : values;
 }
 
 /**
@@ -16104,6 +16108,7 @@ var CompilerFacadeImpl = /** @class */ (function () {
             imports: facade.imports.map(wrapReference),
             exports: facade.exports.map(wrapReference),
             emitInline: true,
+            containsForwardDecls: false,
             schemas: facade.schemas ? facade.schemas.map(wrapReference) : null,
         };
         var res = compileNgModule(meta);
@@ -16292,7 +16297,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-beta.8+5.sha-1625d86.with-local-changes');
+var VERSION$1 = new Version('8.0.0-beta.8+6.sha-73da279.with-local-changes');
 
 /**
  * @license

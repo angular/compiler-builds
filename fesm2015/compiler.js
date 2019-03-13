@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.8+5.sha-1625d86.with-local-changes
+ * @license Angular v8.0.0-beta.8+6.sha-73da279.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -6070,22 +6070,22 @@ class R3JitReflector {
  * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
  */
 function compileNgModule(meta) {
-    const { type: moduleType, bootstrap, declarations, imports, exports, schemas } = meta;
+    const { type: moduleType, bootstrap, declarations, imports, exports, schemas, containsForwardDecls } = meta;
     const definitionMap = {
         type: moduleType
     };
     // Only generate the keys in the metadata if the arrays have values.
     if (bootstrap.length) {
-        definitionMap.bootstrap = literalArr(bootstrap.map(ref => ref.value));
+        definitionMap.bootstrap = refsToArray(bootstrap, containsForwardDecls);
     }
     if (declarations.length) {
-        definitionMap.declarations = literalArr(declarations.map(ref => ref.value));
+        definitionMap.declarations = refsToArray(declarations, containsForwardDecls);
     }
     if (imports.length) {
-        definitionMap.imports = literalArr(imports.map(ref => ref.value));
+        definitionMap.imports = refsToArray(imports, containsForwardDecls);
     }
     if (exports.length) {
-        definitionMap.exports = literalArr(exports.map(ref => ref.value));
+        definitionMap.exports = refsToArray(exports, containsForwardDecls);
     }
     if (schemas && schemas.length) {
         definitionMap.schemas = literalArr(schemas.map(ref => ref.value));
@@ -6139,6 +6139,10 @@ function compileNgModuleFromRender2(ctx, ngModule, injectableCompiler) {
 function tupleTypeOf(exp) {
     const types = exp.map(ref => typeofExpr(ref.type));
     return exp.length > 0 ? expressionType(literalArr(types)) : NONE_TYPE;
+}
+function refsToArray(refs, shouldForwardDeclare) {
+    const values = literalArr(refs.map(ref => ref.value));
+    return shouldForwardDeclare ? fn([], [new ReturnStatement(values)]) : values;
 }
 
 /**
@@ -15156,6 +15160,7 @@ class CompilerFacadeImpl {
             imports: facade.imports.map(wrapReference),
             exports: facade.exports.map(wrapReference),
             emitInline: true,
+            containsForwardDecls: false,
             schemas: facade.schemas ? facade.schemas.map(wrapReference) : null,
         };
         const res = compileNgModule(meta);
@@ -15338,7 +15343,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.8+5.sha-1625d86.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.8+6.sha-73da279.with-local-changes');
 
 /**
  * @license
