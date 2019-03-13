@@ -47,6 +47,10 @@ export interface R3NgModuleMetadata {
      */
     emitInline: boolean;
     /**
+     * Whether to generate closure wrappers for bootstrap, declarations, imports, and exports.
+     */
+    containsForwardDecls: boolean;
+    /**
      * The set of schemas that declare elements to be allowed in the NgModule.
      */
     schemas: R3Reference[] | null;
