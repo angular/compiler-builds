@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.8+16.sha-1f0eadf.with-local-changes
+ * @license Angular v8.0.0-beta.8+14.sha-019e65a.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -317,7 +317,7 @@ NAMED_ENTITIES['ngsp'] = NGSP_UNICODE;
  * found in the LICENSE file at https://angular.io/license
  */
 class HtmlTagDefinition {
-    constructor({ closedByChildren, implicitNamespacePrefix, contentType = TagContentType.PARSABLE_DATA, closedByParent = false, isVoid = false, ignoreFirstLf = false } = {}) {
+    constructor({ closedByChildren, requiredParents, implicitNamespacePrefix, contentType = TagContentType.PARSABLE_DATA, closedByParent = false, isVoid = false, ignoreFirstLf = false } = {}) {
         this.closedByChildren = {};
         this.closedByParent = false;
         this.canSelfClose = false;
@@ -326,9 +326,26 @@ class HtmlTagDefinition {
         }
         this.isVoid = isVoid;
         this.closedByParent = closedByParent || isVoid;
+        if (requiredParents && requiredParents.length > 0) {
+            this.requiredParents = {};
+            // The first parent is the list is automatically when none of the listed parents are present
+            this.parentToAdd = requiredParents[0];
+            requiredParents.forEach(tagName => this.requiredParents[tagName] = true);
+        }
         this.implicitNamespacePrefix = implicitNamespacePrefix || null;
         this.contentType = contentType;
         this.ignoreFirstLf = ignoreFirstLf;
+    }
+    requireExtraParent(currentParent) {
+        if (!this.requiredParents) {
+            return false;
+        }
+        if (!currentParent) {
+            return true;
+        }
+        const lcParent = currentParent.toLowerCase();
+        const isParentTemplate = lcParent === 'template' || currentParent === 'ng-template';
+        return !isParentTemplate && this.requiredParents[lcParent] != true;
     }
     isClosedByChild(name) {
         return this.isVoid || name.toLowerCase() in this.closedByChildren;
@@ -367,10 +384,14 @@ function getHtmlTagDefinition(tagName) {
             'thead': new HtmlTagDefinition({ closedByChildren: ['tbody', 'tfoot'] }),
             'tbody': new HtmlTagDefinition({ closedByChildren: ['tbody', 'tfoot'], closedByParent: true }),
             'tfoot': new HtmlTagDefinition({ closedByChildren: ['tbody'], closedByParent: true }),
-            'tr': new HtmlTagDefinition({ closedByChildren: ['tr'], closedByParent: true }),
+            'tr': new HtmlTagDefinition({
+                closedByChildren: ['tr'],
+                requiredParents: ['tbody', 'tfoot', 'thead'],
+                closedByParent: true
+            }),
             'td': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
             'th': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
-            'col': new HtmlTagDefinition({ isVoid: true }),
+            'col': new HtmlTagDefinition({ requiredParents: ['colgroup'], isVoid: true }),
             'svg': new HtmlTagDefinition({ implicitNamespacePrefix: 'svg' }),
             'math': new HtmlTagDefinition({ implicitNamespacePrefix: 'math' }),
             'li': new HtmlTagDefinition({ closedByChildren: ['li'], closedByParent: true }),
@@ -11006,6 +11027,12 @@ class _TreeBuilder {
         if (parentEl && this.getTagDefinition(parentEl.name).isClosedByChild(el.name)) {
             this._elementStack.pop();
         }
+        const tagDef = this.getTagDefinition(el.name);
+        const { parent, container } = this._getParentElementSkippingContainers();
+        if (parent && tagDef.requireExtraParent(parent.name)) {
+            const newParent = new Element$1(tagDef.parentToAdd, [], [], el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
+            this._insertBeforeContainer(parent, container, newParent);
+        }
         this._addToParent(el);
         this._elementStack.push(el);
     }
@@ -15316,7 +15343,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.8+16.sha-1f0eadf.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.8+14.sha-019e65a.with-local-changes');
 
 /**
  * @license
