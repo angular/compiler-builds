@@ -31,10 +31,16 @@ export interface CompilerFacade {
     compileComponent(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, meta: R3ComponentMetadataFacade): any;
     createParseSourceSpan(kind: string, typeName: string, sourceUrl: string): ParseSourceSpan;
     R3ResolvedDependencyType: typeof R3ResolvedDependencyType;
+    ResourceLoader: {
+        new (): ResourceLoader;
+    };
 }
 export interface CoreEnvironment {
     [name: string]: Function;
 }
+export declare type ResourceLoader = {
+    get(url: string): Promise<string> | string;
+};
 export declare type StringMap = {
     [key: string]: string;
 };
@@ -113,12 +119,12 @@ export interface R3DirectiveMetadataFacade {
     usesInheritance: boolean;
     exportAs: string[] | null;
     providers: Provider[] | null;
+    viewQueries: R3QueryMetadataFacade[];
 }
 export interface R3ComponentMetadataFacade extends R3DirectiveMetadataFacade {
     template: string;
     preserveWhitespaces: boolean;
     animations: any[] | undefined;
-    viewQueries: R3QueryMetadataFacade[];
     pipes: Map<string, any>;
     directives: {
         selector: string;

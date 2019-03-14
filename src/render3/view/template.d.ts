@@ -113,6 +113,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     getVarCount(): number;
     getNgContentSelectors(): o.Expression | null;
     private bindingContext;
+    private templatePropertyBindings;
     private instructionFn;
     private processStylingInstruction;
     private creationInstruction;
@@ -136,13 +137,14 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
      * attrs = [prop, value, prop2, value2,
      *   CLASSES, class1, class2,
      *   STYLES, style1, value1, style2, value2,
-     *   SELECT_ONLY, name1, name2, name2, ...]
+     *   BINDINGS, name1, name2, name3,
+     *   TEMPLATE, name4, name5, ...]
      * ```
      *
      * Note that this function will fully ignore all synthetic (@foo) attribute values
      * because those values are intended to always be generated as property instructions.
      */
-    private prepareSelectOnlyAttrs;
+    private prepareNonRenderAttrs;
     private toAttrsParam;
     private prepareRefsParameter;
     private prepareListenerParameter;
