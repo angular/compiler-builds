@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.8+10.sha-eb00a37.with-local-changes
+ * @license Angular v8.0.0-beta.8+13.sha-0ffa2f2.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -14456,6 +14456,9 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
         // e.g. `contentQueries: (rf, ctx, dirIndex) => { ... }
         definitionMap.set('contentQueries', createContentQueriesFunction(meta, constantPool));
     }
+    if (meta.viewQueries.length) {
+        definitionMap.set('viewQuery', createViewQueriesFunction(meta, constantPool));
+    }
     // Initialize hostVarsCount to number of bound host properties (interpolations illegal),
     // except 'style' and 'class' properties, since they should *not* allocate host var slots
     const hostVarsCount = Object.keys(meta.host.properties)
@@ -14575,9 +14578,6 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
             matcher.addSelectables(CssSelector.parse(selector), expression);
         }
         directiveMatcher = matcher;
-    }
-    if (meta.viewQueries.length) {
-        definitionMap.set('viewQuery', createViewQueriesFunction(meta, constantPool));
     }
     // e.g. `template: function MyComponent_Template(_ctx, _cm) {...}`
     const templateTypeName = meta.name;
@@ -15188,7 +15188,7 @@ class CompilerFacadeImpl {
         }
         // Compile the component metadata, including template, into an expression.
         // TODO(alxhub): implement inputs, outputs, queries, etc.
-        const res = compileComponentFromMetadata(Object.assign({}, facade, convertDirectiveFacadeToMetadata(facade), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), wrapDirectivesAndPipesInClosure: false, styles: facade.styles || [], encapsulation: facade.encapsulation, interpolation: interpolationConfig, changeDetection: facade.changeDetection, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
+        const res = compileComponentFromMetadata(Object.assign({}, facade, convertDirectiveFacadeToMetadata(facade), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template, wrapDirectivesAndPipesInClosure: false, styles: facade.styles || [], encapsulation: facade.encapsulation, interpolation: interpolationConfig, changeDetection: facade.changeDetection, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
                 null, relativeContextFilePath: '', i18nUseExternalIds: true }), constantPool, makeBindingParser(interpolationConfig));
         const preStatements = [...constantPool.statements, ...res.statements];
         return this.jitExpression(res.expression, angularCoreEnv, `ng:///${facade.name}.js`, preStatements);
@@ -15248,7 +15248,7 @@ function convertDirectiveFacadeToMetadata(facade) {
             });
         }
     }
-    return Object.assign({}, facade, { typeSourceSpan: facade.typeSourceSpan, type: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.host, facade.propMetadata, facade.typeSourceSpan), inputs: Object.assign({}, inputsFromMetadata, inputsFromType), outputs: Object.assign({}, outputsFromMetadata, outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null });
+    return Object.assign({}, facade, { typeSourceSpan: facade.typeSourceSpan, type: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.host, facade.propMetadata, facade.typeSourceSpan), inputs: Object.assign({}, inputsFromMetadata, inputsFromType), outputs: Object.assign({}, outputsFromMetadata, outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata) });
 }
 function wrapExpression(obj, property) {
     if (obj.hasOwnProperty(property)) {
@@ -15343,7 +15343,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.8+10.sha-eb00a37.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.8+13.sha-0ffa2f2.with-local-changes');
 
 /**
  * @license
