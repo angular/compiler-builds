@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.8+13.sha-0ffa2f2.with-local-changes
+ * @license Angular v8.0.0-beta.8+16.sha-1f0eadf.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -320,7 +320,7 @@ NAMED_ENTITIES['ngsp'] = NGSP_UNICODE;
  */
 var HtmlTagDefinition = /** @class */ (function () {
     function HtmlTagDefinition(_a) {
-        var _b = _a === void 0 ? {} : _a, closedByChildren = _b.closedByChildren, requiredParents = _b.requiredParents, implicitNamespacePrefix = _b.implicitNamespacePrefix, _c = _b.contentType, contentType = _c === void 0 ? TagContentType.PARSABLE_DATA : _c, _d = _b.closedByParent, closedByParent = _d === void 0 ? false : _d, _e = _b.isVoid, isVoid = _e === void 0 ? false : _e, _f = _b.ignoreFirstLf, ignoreFirstLf = _f === void 0 ? false : _f;
+        var _b = _a === void 0 ? {} : _a, closedByChildren = _b.closedByChildren, implicitNamespacePrefix = _b.implicitNamespacePrefix, _c = _b.contentType, contentType = _c === void 0 ? TagContentType.PARSABLE_DATA : _c, _d = _b.closedByParent, closedByParent = _d === void 0 ? false : _d, _e = _b.isVoid, isVoid = _e === void 0 ? false : _e, _f = _b.ignoreFirstLf, ignoreFirstLf = _f === void 0 ? false : _f;
         var _this = this;
         this.closedByChildren = {};
         this.closedByParent = false;
@@ -330,27 +330,10 @@ var HtmlTagDefinition = /** @class */ (function () {
         }
         this.isVoid = isVoid;
         this.closedByParent = closedByParent || isVoid;
-        if (requiredParents && requiredParents.length > 0) {
-            this.requiredParents = {};
-            // The first parent is the list is automatically when none of the listed parents are present
-            this.parentToAdd = requiredParents[0];
-            requiredParents.forEach(function (tagName) { return _this.requiredParents[tagName] = true; });
-        }
         this.implicitNamespacePrefix = implicitNamespacePrefix || null;
         this.contentType = contentType;
         this.ignoreFirstLf = ignoreFirstLf;
     }
-    HtmlTagDefinition.prototype.requireExtraParent = function (currentParent) {
-        if (!this.requiredParents) {
-            return false;
-        }
-        if (!currentParent) {
-            return true;
-        }
-        var lcParent = currentParent.toLowerCase();
-        var isParentTemplate = lcParent === 'template' || currentParent === 'ng-template';
-        return !isParentTemplate && this.requiredParents[lcParent] != true;
-    };
     HtmlTagDefinition.prototype.isClosedByChild = function (name) {
         return this.isVoid || name.toLowerCase() in this.closedByChildren;
     };
@@ -389,14 +372,10 @@ function getHtmlTagDefinition(tagName) {
             'thead': new HtmlTagDefinition({ closedByChildren: ['tbody', 'tfoot'] }),
             'tbody': new HtmlTagDefinition({ closedByChildren: ['tbody', 'tfoot'], closedByParent: true }),
             'tfoot': new HtmlTagDefinition({ closedByChildren: ['tbody'], closedByParent: true }),
-            'tr': new HtmlTagDefinition({
-                closedByChildren: ['tr'],
-                requiredParents: ['tbody', 'tfoot', 'thead'],
-                closedByParent: true
-            }),
+            'tr': new HtmlTagDefinition({ closedByChildren: ['tr'], closedByParent: true }),
             'td': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
             'th': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
-            'col': new HtmlTagDefinition({ requiredParents: ['colgroup'], isVoid: true }),
+            'col': new HtmlTagDefinition({ isVoid: true }),
             'svg': new HtmlTagDefinition({ implicitNamespacePrefix: 'svg' }),
             'math': new HtmlTagDefinition({ implicitNamespacePrefix: 'math' }),
             'li': new HtmlTagDefinition({ closedByChildren: ['li'], closedByParent: true }),
@@ -11744,12 +11723,6 @@ var _TreeBuilder = /** @class */ (function () {
         if (parentEl && this.getTagDefinition(parentEl.name).isClosedByChild(el.name)) {
             this._elementStack.pop();
         }
-        var tagDef = this.getTagDefinition(el.name);
-        var _a = this._getParentElementSkippingContainers(), parent = _a.parent, container = _a.container;
-        if (parent && tagDef.requireExtraParent(parent.name)) {
-            var newParent = new Element$1(tagDef.parentToAdd, [], [], el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
-            this._insertBeforeContainer(parent, container, newParent);
-        }
         this._addToParent(el);
         this._elementStack.push(el);
     };
@@ -16297,7 +16270,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-beta.8+13.sha-0ffa2f2.with-local-changes');
+var VERSION$1 = new Version('8.0.0-beta.8+16.sha-1f0eadf.with-local-changes');
 
 /**
  * @license
