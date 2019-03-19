@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.8+80.sha-bc99b77.with-local-changes
+ * @license Angular v8.0.0-beta.8+82.sha-8714daf.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3433,10 +3433,15 @@
         Identifiers.elementContainerStart = { name: 'ɵelementContainerStart', moduleName: CORE$1 };
         Identifiers.elementContainerEnd = { name: 'ɵelementContainerEnd', moduleName: CORE$1 };
         Identifiers.elementStyling = { name: 'ɵelementStyling', moduleName: CORE$1 };
-        Identifiers.elementHostAttrs = { name: 'ɵelementHostAttrs', moduleName: CORE$1 };
         Identifiers.elementStylingMap = { name: 'ɵelementStylingMap', moduleName: CORE$1 };
         Identifiers.elementStyleProp = { name: 'ɵelementStyleProp', moduleName: CORE$1 };
         Identifiers.elementStylingApply = { name: 'ɵelementStylingApply', moduleName: CORE$1 };
+        Identifiers.elementHostAttrs = { name: 'ɵelementHostAttrs', moduleName: CORE$1 };
+        Identifiers.elementHostStyling = { name: 'ɵelementHostStyling', moduleName: CORE$1 };
+        Identifiers.elementHostStylingMap = { name: 'ɵelementHostStylingMap', moduleName: CORE$1 };
+        Identifiers.elementHostStyleProp = { name: 'ɵelementHostStyleProp', moduleName: CORE$1 };
+        Identifiers.elementHostClassProp = { name: 'ɵelementHostClassProp', moduleName: CORE$1 };
+        Identifiers.elementHostStylingApply = { name: 'ɵelementHostStylingApply', moduleName: CORE$1 };
         Identifiers.containerCreate = { name: 'ɵcontainer', moduleName: CORE$1 };
         Identifiers.nextContext = { name: 'ɵnextContext', moduleName: CORE$1 };
         Identifiers.templateCreate = { name: 'ɵtemplate', moduleName: CORE$1 };
@@ -9135,12 +9140,12 @@
                     reference: Identifiers$1.elementHostAttrs,
                     allocateBindingSlots: 0,
                     buildParams: function () {
-                        // params => elementHostAttrs(directive, attrs)
+                        // params => elementHostAttrs(agetDirectiveContext()ttrs)
                         _this.populateInitialStylingAttrs(attrs);
                         var attrArray = !attrs.some(function (attr) { return attr instanceof WrappedNodeExpr; }) ?
                             getConstantLiteralFromArray(constantPool, attrs) :
                             literalArr(attrs);
-                        return [_this._directiveExpr, attrArray];
+                        return [attrArray];
                     }
                 };
             }
@@ -9154,11 +9159,11 @@
          */
         StylingBuilder.prototype.buildElementStylingInstruction = function (sourceSpan, constantPool) {
             var _this = this;
+            var reference = this._directiveExpr ? Identifiers$1.elementHostStyling : Identifiers$1.elementStyling;
             if (this.hasBindings) {
                 return {
                     sourceSpan: sourceSpan,
-                    allocateBindingSlots: 0,
-                    reference: Identifiers$1.elementStyling,
+                    allocateBindingSlots: 0, reference: reference,
                     buildParams: function () {
                         // a string array of every style-based binding
                         var styleBindingProps = _this._singleStyleInputs ? _this._singleStyleInputs.map(function (i) { return literal(i.name); }) : [];
@@ -9170,13 +9175,17 @@
                         // (otherwise a shorter amount of params will be filled). The code below helps
                         // determine how many params are required in the expression code.
                         //
-                        // min params => elementStyling()
-                        // max params => elementStyling(classBindings, styleBindings, sanitizer, directive)
+                        // HOST:
+                        //   min params => elementHostStyling()
+                        //   max params => elementHostStyling(classBindings, styleBindings, sanitizer)
+                        //
+                        // Template:
+                        //   min params => elementStyling()
+                        //   max params => elementStyling(classBindings, styleBindings, sanitizer)
+                        //
+                        var params = [];
                         var expectedNumberOfArgs = 0;
-                        if (_this._directiveExpr) {
-                            expectedNumberOfArgs = 4;
-                        }
-                        else if (_this._useDefaultSanitizer) {
+                        if (_this._useDefaultSanitizer) {
                             expectedNumberOfArgs = 3;
                         }
                         else if (styleBindingProps.length) {
@@ -9185,13 +9194,9 @@
                         else if (classBindingNames.length) {
                             expectedNumberOfArgs = 1;
                         }
-                        var params = [];
                         addParam(params, classBindingNames.length > 0, getConstantLiteralFromArray(constantPool, classBindingNames), 1, expectedNumberOfArgs);
                         addParam(params, styleBindingProps.length > 0, getConstantLiteralFromArray(constantPool, styleBindingProps), 2, expectedNumberOfArgs);
                         addParam(params, _this._useDefaultSanitizer, importExpr(Identifiers$1.defaultStyleSanitizer), 3, expectedNumberOfArgs);
-                        if (_this._directiveExpr) {
-                            params.push(_this._directiveExpr);
-                        }
                         return params;
                     }
                 };
@@ -9221,35 +9226,40 @@
                 if (mapBasedStyleValue_1 instanceof Interpolation) {
                     totalBindingSlotsRequired += mapBasedStyleValue_1.expressions.length;
                 }
+                var isHostBinding_1 = this._directiveExpr;
+                var reference = isHostBinding_1 ? Identifiers$1.elementHostStylingMap : Identifiers$1.elementStylingMap;
                 return {
                     sourceSpan: stylingInput.sourceSpan,
-                    reference: Identifiers$1.elementStylingMap,
+                    reference: reference,
                     allocateBindingSlots: totalBindingSlotsRequired,
                     buildParams: function (convertFn) {
-                        // min params => elementStylingMap(index, classMap)
-                        // max params => elementStylingMap(index, classMap, styleMap, directive)
-                        var expectedNumberOfArgs = 0;
-                        if (_this._directiveExpr) {
-                            expectedNumberOfArgs = 4;
+                        // HOST:
+                        //   min params => elementHostStylingMap(classMap)
+                        //   max params => elementHostStylingMap(classMap, styleMap)
+                        // Template:
+                        //   min params => elementStylingMap(elmIndex, classMap)
+                        //   max params => elementStylingMap(elmIndex, classMap, styleMap)
+                        var params = [];
+                        if (!isHostBinding_1) {
+                            params.push(_this._elementIndexExpr);
                         }
-                        else if (mapBasedStyleValue_1) {
-                            expectedNumberOfArgs = 3;
+                        var expectedNumberOfArgs = 0;
+                        if (mapBasedStyleValue_1) {
+                            expectedNumberOfArgs = 2;
                         }
                         else if (mapBasedClassValue_1) {
                             // index and class = 2
-                            expectedNumberOfArgs = 2;
+                            expectedNumberOfArgs = 1;
                         }
-                        var params = [_this._elementIndexExpr];
-                        addParam(params, mapBasedClassValue_1, mapBasedClassValue_1 ? convertFn(mapBasedClassValue_1) : null, 2, expectedNumberOfArgs);
-                        addParam(params, mapBasedStyleValue_1, mapBasedStyleValue_1 ? convertFn(mapBasedStyleValue_1) : null, 3, expectedNumberOfArgs);
-                        addParam(params, _this._directiveExpr, _this._directiveExpr, 4, expectedNumberOfArgs);
+                        addParam(params, mapBasedClassValue_1, mapBasedClassValue_1 ? convertFn(mapBasedClassValue_1) : null, 1, expectedNumberOfArgs);
+                        addParam(params, mapBasedStyleValue_1, mapBasedStyleValue_1 ? convertFn(mapBasedStyleValue_1) : null, 2, expectedNumberOfArgs);
                         return params;
                     }
                 };
             }
             return null;
         };
-        StylingBuilder.prototype._buildSingleInputs = function (reference, inputs, mapIndex, allowUnits, valueConverter) {
+        StylingBuilder.prototype._buildSingleInputs = function (reference, isHostBinding, inputs, mapIndex, allowUnits, valueConverter) {
             var _this = this;
             var totalBindingSlotsRequired = 0;
             return inputs.map(function (input) {
@@ -9260,22 +9270,25 @@
                     sourceSpan: input.sourceSpan,
                     allocateBindingSlots: totalBindingSlotsRequired, reference: reference,
                     buildParams: function (convertFn) {
-                        // min params => elementStlyingProp(elmIndex, bindingIndex, value)
-                        // max params => elementStlyingProp(elmIndex, bindingIndex, value, overrideFlag)
-                        var params = [_this._elementIndexExpr, literal(bindingIndex), convertFn(value)];
+                        // HOST:
+                        //   min params => elementHostStylingProp(bindingIndex, value)
+                        //   max params => elementHostStylingProp(bindingIndex, value, overrideFlag)
+                        // Template:
+                        //   min params => elementStylingProp(elmIndex, bindingIndex, value)
+                        //   max params => elementStylingProp(elmIndex, bindingIndex, value, overrideFlag)
+                        var params = [];
+                        if (!isHostBinding) {
+                            params.push(_this._elementIndexExpr);
+                        }
+                        params.push(literal(bindingIndex));
+                        params.push(convertFn(value));
                         if (allowUnits) {
                             if (input.unit) {
                                 params.push(literal(input.unit));
                             }
-                            else if (_this._directiveExpr) {
+                            else if (input.hasOverrideFlag) {
                                 params.push(NULL_EXPR);
                             }
-                        }
-                        if (_this._directiveExpr) {
-                            params.push(_this._directiveExpr);
-                        }
-                        else if (input.hasOverrideFlag) {
-                            params.push(NULL_EXPR);
                         }
                         if (input.hasOverrideFlag) {
                             params.push(literal(true));
@@ -9287,30 +9300,34 @@
         };
         StylingBuilder.prototype._buildClassInputs = function (valueConverter) {
             if (this._singleClassInputs) {
-                return this._buildSingleInputs(Identifiers$1.elementClassProp, this._singleClassInputs, this._classesIndex, false, valueConverter);
+                var isHostBinding = !!this._directiveExpr;
+                var reference = isHostBinding ? Identifiers$1.elementHostClassProp : Identifiers$1.elementClassProp;
+                return this._buildSingleInputs(reference, isHostBinding, this._singleClassInputs, this._classesIndex, false, valueConverter);
             }
             return [];
         };
         StylingBuilder.prototype._buildStyleInputs = function (valueConverter) {
             if (this._singleStyleInputs) {
-                return this._buildSingleInputs(Identifiers$1.elementStyleProp, this._singleStyleInputs, this._stylesIndex, true, valueConverter);
+                var isHostBinding = !!this._directiveExpr;
+                var reference = isHostBinding ? Identifiers$1.elementHostStyleProp : Identifiers$1.elementStyleProp;
+                return this._buildSingleInputs(reference, isHostBinding, this._singleStyleInputs, this._stylesIndex, true, valueConverter);
             }
             return [];
         };
         StylingBuilder.prototype._buildApplyFn = function () {
             var _this = this;
+            var isHostBinding = this._directiveExpr;
+            var reference = isHostBinding ? Identifiers$1.elementHostStylingApply : Identifiers$1.elementStylingApply;
             return {
                 sourceSpan: this._lastStylingInput ? this._lastStylingInput.sourceSpan : null,
-                reference: Identifiers$1.elementStylingApply,
+                reference: reference,
                 allocateBindingSlots: 0,
                 buildParams: function () {
-                    // min params => elementStylingApply(elmIndex)
-                    // max params => elementStylingApply(elmIndex, directive)
-                    var params = [_this._elementIndexExpr];
-                    if (_this._directiveExpr) {
-                        params.push(_this._directiveExpr);
-                    }
-                    return params;
+                    // HOST:
+                    //   params => elementHostStylingApply()
+                    // Template:
+                    //   params => elementStylingApply(elmIndex)
+                    return isHostBinding ? [] : [_this._elementIndexExpr];
                 }
             };
         };
@@ -16327,7 +16344,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-beta.8+80.sha-bc99b77.with-local-changes');
+    var VERSION$1 = new Version('8.0.0-beta.8+82.sha-8714daf.with-local-changes');
 
     /**
      * @license
