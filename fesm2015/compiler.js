@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.8+79.sha-a3ec058.with-local-changes
+ * @license Angular v8.0.0-beta.8+83.sha-067657c.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3095,10 +3095,15 @@ Identifiers$1.elementClassProp = { name: 'ɵelementClassProp', moduleName: CORE$
 Identifiers$1.elementContainerStart = { name: 'ɵelementContainerStart', moduleName: CORE$1 };
 Identifiers$1.elementContainerEnd = { name: 'ɵelementContainerEnd', moduleName: CORE$1 };
 Identifiers$1.elementStyling = { name: 'ɵelementStyling', moduleName: CORE$1 };
-Identifiers$1.elementHostAttrs = { name: 'ɵelementHostAttrs', moduleName: CORE$1 };
 Identifiers$1.elementStylingMap = { name: 'ɵelementStylingMap', moduleName: CORE$1 };
 Identifiers$1.elementStyleProp = { name: 'ɵelementStyleProp', moduleName: CORE$1 };
 Identifiers$1.elementStylingApply = { name: 'ɵelementStylingApply', moduleName: CORE$1 };
+Identifiers$1.elementHostAttrs = { name: 'ɵelementHostAttrs', moduleName: CORE$1 };
+Identifiers$1.elementHostStyling = { name: 'ɵelementHostStyling', moduleName: CORE$1 };
+Identifiers$1.elementHostStylingMap = { name: 'ɵelementHostStylingMap', moduleName: CORE$1 };
+Identifiers$1.elementHostStyleProp = { name: 'ɵelementHostStyleProp', moduleName: CORE$1 };
+Identifiers$1.elementHostClassProp = { name: 'ɵelementHostClassProp', moduleName: CORE$1 };
+Identifiers$1.elementHostStylingApply = { name: 'ɵelementHostStylingApply', moduleName: CORE$1 };
 Identifiers$1.containerCreate = { name: 'ɵcontainer', moduleName: CORE$1 };
 Identifiers$1.nextContext = { name: 'ɵnextContext', moduleName: CORE$1 };
 Identifiers$1.templateCreate = { name: 'ɵtemplate', moduleName: CORE$1 };
@@ -8449,12 +8454,12 @@ class StylingBuilder {
                 reference: Identifiers$1.elementHostAttrs,
                 allocateBindingSlots: 0,
                 buildParams: () => {
-                    // params => elementHostAttrs(directive, attrs)
+                    // params => elementHostAttrs(agetDirectiveContext()ttrs)
                     this.populateInitialStylingAttrs(attrs);
                     const attrArray = !attrs.some(attr => attr instanceof WrappedNodeExpr) ?
                         getConstantLiteralFromArray(constantPool, attrs) :
                         literalArr(attrs);
-                    return [this._directiveExpr, attrArray];
+                    return [attrArray];
                 }
             };
         }
@@ -8467,11 +8472,11 @@ class StylingBuilder {
      * responsible for registering style/class bindings to an element.
      */
     buildElementStylingInstruction(sourceSpan, constantPool) {
+        const reference = this._directiveExpr ? Identifiers$1.elementHostStyling : Identifiers$1.elementStyling;
         if (this.hasBindings) {
             return {
                 sourceSpan,
-                allocateBindingSlots: 0,
-                reference: Identifiers$1.elementStyling,
+                allocateBindingSlots: 0, reference,
                 buildParams: () => {
                     // a string array of every style-based binding
                     const styleBindingProps = this._singleStyleInputs ? this._singleStyleInputs.map(i => literal(i.name)) : [];
@@ -8483,13 +8488,17 @@ class StylingBuilder {
                     // (otherwise a shorter amount of params will be filled). The code below helps
                     // determine how many params are required in the expression code.
                     //
-                    // min params => elementStyling()
-                    // max params => elementStyling(classBindings, styleBindings, sanitizer, directive)
+                    // HOST:
+                    //   min params => elementHostStyling()
+                    //   max params => elementHostStyling(classBindings, styleBindings, sanitizer)
+                    //
+                    // Template:
+                    //   min params => elementStyling()
+                    //   max params => elementStyling(classBindings, styleBindings, sanitizer)
+                    //
+                    const params = [];
                     let expectedNumberOfArgs = 0;
-                    if (this._directiveExpr) {
-                        expectedNumberOfArgs = 4;
-                    }
-                    else if (this._useDefaultSanitizer) {
+                    if (this._useDefaultSanitizer) {
                         expectedNumberOfArgs = 3;
                     }
                     else if (styleBindingProps.length) {
@@ -8498,13 +8507,9 @@ class StylingBuilder {
                     else if (classBindingNames.length) {
                         expectedNumberOfArgs = 1;
                     }
-                    const params = [];
                     addParam(params, classBindingNames.length > 0, getConstantLiteralFromArray(constantPool, classBindingNames), 1, expectedNumberOfArgs);
                     addParam(params, styleBindingProps.length > 0, getConstantLiteralFromArray(constantPool, styleBindingProps), 2, expectedNumberOfArgs);
                     addParam(params, this._useDefaultSanitizer, importExpr(Identifiers$1.defaultStyleSanitizer), 3, expectedNumberOfArgs);
-                    if (this._directiveExpr) {
-                        params.push(this._directiveExpr);
-                    }
                     return params;
                 }
             };
@@ -8533,35 +8538,40 @@ class StylingBuilder {
             if (mapBasedStyleValue instanceof Interpolation) {
                 totalBindingSlotsRequired += mapBasedStyleValue.expressions.length;
             }
+            const isHostBinding = this._directiveExpr;
+            const reference = isHostBinding ? Identifiers$1.elementHostStylingMap : Identifiers$1.elementStylingMap;
             return {
                 sourceSpan: stylingInput.sourceSpan,
-                reference: Identifiers$1.elementStylingMap,
+                reference,
                 allocateBindingSlots: totalBindingSlotsRequired,
                 buildParams: (convertFn) => {
-                    // min params => elementStylingMap(index, classMap)
-                    // max params => elementStylingMap(index, classMap, styleMap, directive)
-                    let expectedNumberOfArgs = 0;
-                    if (this._directiveExpr) {
-                        expectedNumberOfArgs = 4;
+                    // HOST:
+                    //   min params => elementHostStylingMap(classMap)
+                    //   max params => elementHostStylingMap(classMap, styleMap)
+                    // Template:
+                    //   min params => elementStylingMap(elmIndex, classMap)
+                    //   max params => elementStylingMap(elmIndex, classMap, styleMap)
+                    const params = [];
+                    if (!isHostBinding) {
+                        params.push(this._elementIndexExpr);
                     }
-                    else if (mapBasedStyleValue) {
-                        expectedNumberOfArgs = 3;
+                    let expectedNumberOfArgs = 0;
+                    if (mapBasedStyleValue) {
+                        expectedNumberOfArgs = 2;
                     }
                     else if (mapBasedClassValue) {
                         // index and class = 2
-                        expectedNumberOfArgs = 2;
+                        expectedNumberOfArgs = 1;
                     }
-                    const params = [this._elementIndexExpr];
-                    addParam(params, mapBasedClassValue, mapBasedClassValue ? convertFn(mapBasedClassValue) : null, 2, expectedNumberOfArgs);
-                    addParam(params, mapBasedStyleValue, mapBasedStyleValue ? convertFn(mapBasedStyleValue) : null, 3, expectedNumberOfArgs);
-                    addParam(params, this._directiveExpr, this._directiveExpr, 4, expectedNumberOfArgs);
+                    addParam(params, mapBasedClassValue, mapBasedClassValue ? convertFn(mapBasedClassValue) : null, 1, expectedNumberOfArgs);
+                    addParam(params, mapBasedStyleValue, mapBasedStyleValue ? convertFn(mapBasedStyleValue) : null, 2, expectedNumberOfArgs);
                     return params;
                 }
             };
         }
         return null;
     }
-    _buildSingleInputs(reference, inputs, mapIndex, allowUnits, valueConverter) {
+    _buildSingleInputs(reference, isHostBinding, inputs, mapIndex, allowUnits, valueConverter) {
         let totalBindingSlotsRequired = 0;
         return inputs.map(input => {
             const bindingIndex = mapIndex.get(input.name);
@@ -8571,22 +8581,25 @@ class StylingBuilder {
                 sourceSpan: input.sourceSpan,
                 allocateBindingSlots: totalBindingSlotsRequired, reference,
                 buildParams: (convertFn) => {
-                    // min params => elementStlyingProp(elmIndex, bindingIndex, value)
-                    // max params => elementStlyingProp(elmIndex, bindingIndex, value, overrideFlag)
-                    const params = [this._elementIndexExpr, literal(bindingIndex), convertFn(value)];
+                    // HOST:
+                    //   min params => elementHostStylingProp(bindingIndex, value)
+                    //   max params => elementHostStylingProp(bindingIndex, value, overrideFlag)
+                    // Template:
+                    //   min params => elementStylingProp(elmIndex, bindingIndex, value)
+                    //   max params => elementStylingProp(elmIndex, bindingIndex, value, overrideFlag)
+                    const params = [];
+                    if (!isHostBinding) {
+                        params.push(this._elementIndexExpr);
+                    }
+                    params.push(literal(bindingIndex));
+                    params.push(convertFn(value));
                     if (allowUnits) {
                         if (input.unit) {
                             params.push(literal(input.unit));
                         }
-                        else if (this._directiveExpr) {
+                        else if (input.hasOverrideFlag) {
                             params.push(NULL_EXPR);
                         }
-                    }
-                    if (this._directiveExpr) {
-                        params.push(this._directiveExpr);
-                    }
-                    else if (input.hasOverrideFlag) {
-                        params.push(NULL_EXPR);
                     }
                     if (input.hasOverrideFlag) {
                         params.push(literal(true));
@@ -8598,29 +8611,33 @@ class StylingBuilder {
     }
     _buildClassInputs(valueConverter) {
         if (this._singleClassInputs) {
-            return this._buildSingleInputs(Identifiers$1.elementClassProp, this._singleClassInputs, this._classesIndex, false, valueConverter);
+            const isHostBinding = !!this._directiveExpr;
+            const reference = isHostBinding ? Identifiers$1.elementHostClassProp : Identifiers$1.elementClassProp;
+            return this._buildSingleInputs(reference, isHostBinding, this._singleClassInputs, this._classesIndex, false, valueConverter);
         }
         return [];
     }
     _buildStyleInputs(valueConverter) {
         if (this._singleStyleInputs) {
-            return this._buildSingleInputs(Identifiers$1.elementStyleProp, this._singleStyleInputs, this._stylesIndex, true, valueConverter);
+            const isHostBinding = !!this._directiveExpr;
+            const reference = isHostBinding ? Identifiers$1.elementHostStyleProp : Identifiers$1.elementStyleProp;
+            return this._buildSingleInputs(reference, isHostBinding, this._singleStyleInputs, this._stylesIndex, true, valueConverter);
         }
         return [];
     }
     _buildApplyFn() {
+        const isHostBinding = this._directiveExpr;
+        const reference = isHostBinding ? Identifiers$1.elementHostStylingApply : Identifiers$1.elementStylingApply;
         return {
             sourceSpan: this._lastStylingInput ? this._lastStylingInput.sourceSpan : null,
-            reference: Identifiers$1.elementStylingApply,
+            reference,
             allocateBindingSlots: 0,
             buildParams: () => {
-                // min params => elementStylingApply(elmIndex)
-                // max params => elementStylingApply(elmIndex, directive)
-                const params = [this._elementIndexExpr];
-                if (this._directiveExpr) {
-                    params.push(this._directiveExpr);
-                }
-                return params;
+                // HOST:
+                //   params => elementHostStylingApply()
+                // Template:
+                //   params => elementStylingApply(elmIndex)
+                return isHostBinding ? [] : [this._elementIndexExpr];
             }
         };
     }
@@ -15316,7 +15333,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.8+79.sha-a3ec058.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.8+83.sha-067657c.with-local-changes');
 
 /**
  * @license
