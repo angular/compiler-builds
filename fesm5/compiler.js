@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.9+1.sha-d59f02d.with-local-changes
+ * @license Angular v8.0.0-beta.9+2.sha-dafbbf8.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -11041,6 +11041,7 @@ var _Tokenizer = /** @class */ (function () {
         var tagName;
         var prefix;
         var openTagToken;
+        var tokensBeforeTagOpen = this.tokens.length;
         var innerStart = this._cursor.clone();
         try {
             if (!isAsciiLetter(this._cursor.peek())) {
@@ -11063,10 +11064,10 @@ var _Tokenizer = /** @class */ (function () {
         }
         catch (e) {
             if (e instanceof _ControlFlowError) {
-                // When the start tag is invalid, assume we want a "<"
+                // When the start tag is invalid (including invalid "attributes"), assume we want a "<"
                 this._cursor = innerStart;
                 if (openTagToken) {
-                    this.tokens.pop();
+                    this.tokens.length = tokensBeforeTagOpen;
                 }
                 // Back to back text tokens are merged at the end
                 this._beginToken(TokenType$1.TEXT, start);
@@ -11107,6 +11108,10 @@ var _Tokenizer = /** @class */ (function () {
         return this._endToken(parts);
     };
     _Tokenizer.prototype._consumeAttributeName = function () {
+        var attrNameStart = this._cursor.peek();
+        if (attrNameStart === $SQ || attrNameStart === $DQ) {
+            throw this._createError(_unexpectedCharacterErrorMsg(attrNameStart), this._cursor.getSpan());
+        }
         this._beginToken(TokenType$1.ATTR_NAME);
         var prefixAndName = this._consumePrefixAndName();
         this._endToken(prefixAndName);
@@ -16287,7 +16292,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-beta.9+1.sha-d59f02d.with-local-changes');
+var VERSION$1 = new Version('8.0.0-beta.9+2.sha-dafbbf8.with-local-changes');
 
 /**
  * @license
