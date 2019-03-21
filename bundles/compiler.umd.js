@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.9+43.sha-17b3f11.with-local-changes
+ * @license Angular v8.0.0-beta.9+66.sha-2790352.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -6654,7 +6654,7 @@
         definitionMapValues.push({ key: 'pure', value: literal(metadata.pure), quoted: false });
         var expression = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]);
         var type = new ExpressionType(importExpr(Identifiers$1.PipeDefWithMeta, [
-            new ExpressionType(metadata.type),
+            typeWithParameters(metadata.type, metadata.typeArgumentCount),
             new ExpressionType(new LiteralExpr(metadata.pipeName)),
         ]));
         return { expression: expression, type: type, statements: templateFactory.statements };
@@ -6671,6 +6671,7 @@
             name: name,
             pipeName: pipe.name,
             type: outputCtx.importExpr(pipe.type.reference),
+            typeArgumentCount: 0,
             deps: dependenciesFromGlobalMetadata(pipe.type, outputCtx, reflector),
             pure: pipe.pure,
         };
@@ -16120,6 +16121,7 @@
             var res = compilePipeFromMetadata({
                 name: facade.name,
                 type: new WrappedNodeExpr(facade.type),
+                typeArgumentCount: facade.typeArgumentCount,
                 deps: convertR3DependencyMetadataArray(facade.deps),
                 pipeName: facade.pipeName,
                 pure: facade.pure,
@@ -16349,7 +16351,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-beta.9+43.sha-17b3f11.with-local-changes');
+    var VERSION$1 = new Version('8.0.0-beta.9+66.sha-2790352.with-local-changes');
 
     /**
      * @license

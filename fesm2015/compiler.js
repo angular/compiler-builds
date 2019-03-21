@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.9+43.sha-17b3f11.with-local-changes
+ * @license Angular v8.0.0-beta.9+66.sha-2790352.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -6153,7 +6153,7 @@ function compilePipeFromMetadata(metadata) {
     definitionMapValues.push({ key: 'pure', value: literal(metadata.pure), quoted: false });
     const expression = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]);
     const type = new ExpressionType(importExpr(Identifiers$1.PipeDefWithMeta, [
-        new ExpressionType(metadata.type),
+        typeWithParameters(metadata.type, metadata.typeArgumentCount),
         new ExpressionType(new LiteralExpr(metadata.pipeName)),
     ]));
     return { expression, type, statements: templateFactory.statements };
@@ -6170,6 +6170,7 @@ function compilePipeFromRender2(outputCtx, pipe, reflector) {
         name,
         pipeName: pipe.name,
         type: outputCtx.importExpr(pipe.type.reference),
+        typeArgumentCount: 0,
         deps: dependenciesFromGlobalMetadata(pipe.type, outputCtx, reflector),
         pure: pipe.pure,
     };
@@ -15115,6 +15116,7 @@ class CompilerFacadeImpl {
         const res = compilePipeFromMetadata({
             name: facade.name,
             type: new WrappedNodeExpr(facade.type),
+            typeArgumentCount: facade.typeArgumentCount,
             deps: convertR3DependencyMetadataArray(facade.deps),
             pipeName: facade.pipeName,
             pure: facade.pure,
@@ -15338,7 +15340,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.9+43.sha-17b3f11.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.9+66.sha-2790352.with-local-changes');
 
 /**
  * @license
