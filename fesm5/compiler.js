@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.10+1.sha-a28b3e3.with-local-changes
+ * @license Angular v8.0.0-beta.10+2.sha-a2f8f55.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3356,7 +3356,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.elementStart = { name: 'ɵelementStart', moduleName: CORE$1 };
     Identifiers.elementEnd = { name: 'ɵelementEnd', moduleName: CORE$1 };
     Identifiers.elementProperty = { name: 'ɵelementProperty', moduleName: CORE$1 };
-    Identifiers.flushHooksUpTo = { name: 'ɵflushHooksUpTo', moduleName: CORE$1 };
+    Identifiers.select = { name: 'ɵselect', moduleName: CORE$1 };
     Identifiers.componentHostSyntheticProperty = { name: 'ɵcomponentHostSyntheticProperty', moduleName: CORE$1 };
     Identifiers.componentHostSyntheticListener = { name: 'ɵcomponentHostSyntheticListener', moduleName: CORE$1 };
     Identifiers.elementAttribute = { name: 'ɵelementAttribute', moduleName: CORE$1 };
@@ -14009,8 +14009,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
          */
         this._updateCodeFns = [];
         /**
-         * Memorizes the last node index for which a flushHooksUpTo instruction has been generated.
-         * Initialized to 0 to avoid generating a useless flushHooksUpTo(0).
+         * Memorizes the last node index for which a select instruction has been generated.
+         * Initialized to 0 to avoid generating a useless select(0).
          */
         this._lastNodeIndexWithFlush = 0;
         /** Temporary variable declarations generated from visiting pipes, literals, etc. */
@@ -14747,7 +14747,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     };
     TemplateDefinitionBuilder.prototype.updateInstruction = function (nodeIndex, span, reference, paramsOrFn) {
         if (this._lastNodeIndexWithFlush < nodeIndex) {
-            this.instructionFn(this._updateCodeFns, span, Identifiers$1.flushHooksUpTo, [literal(nodeIndex)]);
+            this.instructionFn(this._updateCodeFns, span, Identifiers$1.select, [literal(nodeIndex)]);
             this._lastNodeIndexWithFlush = nodeIndex;
         }
         this.instructionFn(this._updateCodeFns, span, reference, paramsOrFn || []);
@@ -16294,7 +16294,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-beta.10+1.sha-a28b3e3.with-local-changes');
+var VERSION$1 = new Version('8.0.0-beta.10+2.sha-a2f8f55.with-local-changes');
 
 /**
  * @license
