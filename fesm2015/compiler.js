@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.10+16.sha-b17d1a9.with-local-changes
+ * @license Angular v8.0.0-beta.10+25.sha-9745f55.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13158,9 +13158,10 @@ class TemplateDefinitionBuilder {
         this._updateCodeFns = [];
         /**
          * Memorizes the last node index for which a select instruction has been generated.
-         * Initialized to 0 to avoid generating a useless select(0).
+         * We're initializing this to -1 to ensure the `select(0)` instruction is generated before any
+         * relevant update instructions.
          */
-        this._lastNodeIndexWithFlush = 0;
+        this._lastNodeIndexWithFlush = -1;
         /** Temporary variable declarations generated from visiting pipes, literals, etc. */
         this._tempVariables = [];
         /**
@@ -15340,7 +15341,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.10+16.sha-b17d1a9.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.10+25.sha-9745f55.with-local-changes');
 
 /**
  * @license
