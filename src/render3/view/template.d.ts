@@ -52,7 +52,8 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private _updateCodeFns;
     /**
      * Memorizes the last node index for which a select instruction has been generated.
-     * Initialized to 0 to avoid generating a useless select(0).
+     * We're initializing this to -1 to ensure the `select(0)` instruction is generated before any
+     * relevant update instructions.
      */
     private _lastNodeIndexWithFlush;
     /** Temporary variable declarations generated from visiting pipes, literals, etc. */
