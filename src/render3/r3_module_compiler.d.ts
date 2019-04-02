@@ -68,8 +68,8 @@ export interface R3InjectorMetadata {
     name: string;
     type: o.Expression;
     deps: R3DependencyMetadata[] | null;
-    providers: o.Expression;
-    imports: o.Expression;
+    providers: o.Expression | null;
+    imports: o.Expression[];
 }
 export declare function compileInjector(meta: R3InjectorMetadata): R3InjectorDef;
 export declare function compileNgModuleFromRender2(ctx: OutputContext, ngModule: CompileShallowModuleMetadata, injectableCompiler: InjectableCompiler): void;

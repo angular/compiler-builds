@@ -99,6 +99,7 @@ export declare class Identifiers {
     static defineInjector: o.ExternalReference;
     static NgModuleDefWithMeta: o.ExternalReference;
     static defineNgModule: o.ExternalReference;
+    static setNgModuleScope: o.ExternalReference;
     static PipeDefWithMeta: o.ExternalReference;
     static definePipe: o.ExternalReference;
     static queryRefresh: o.ExternalReference;
