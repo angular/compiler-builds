@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.11+53.sha-f6864cc.with-local-changes
+ * @license Angular v7.2.11+55.sha-c7075fe.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5044,7 +5044,7 @@
             }
         }
     }
-    var INTERPOLATION_BLACKLIST_REGEXPS = [
+    var UNUSABLE_INTERPOLATION_REGEXPS = [
         /^\s*$/,
         /[<>]/,
         /^[{}]$/,
@@ -5058,8 +5058,8 @@
         else if (value != null) {
             var start_1 = value[0];
             var end_1 = value[1];
-            // black list checking
-            INTERPOLATION_BLACKLIST_REGEXPS.forEach(function (regexp) {
+            // Check for unusable interpolation symbols
+            UNUSABLE_INTERPOLATION_REGEXPS.forEach(function (regexp) {
                 if (regexp.test(start_1) || regexp.test(end_1)) {
                     throw new Error("['" + start_1 + "', '" + end_1 + "'] contains unusable interpolation symbol.");
                 }
@@ -15823,7 +15823,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('7.2.11+53.sha-f6864cc.with-local-changes');
+    var VERSION$1 = new Version('7.2.11+55.sha-c7075fe.with-local-changes');
 
     /**
      * @license

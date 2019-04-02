@@ -1,5 +1,5 @@
 /**
- * @license Angular v7.2.11+53.sha-f6864cc.with-local-changes
+ * @license Angular v7.2.11+55.sha-c7075fe.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4627,7 +4627,7 @@ function assertArrayOfStrings(identifier, value) {
         }
     }
 }
-const INTERPOLATION_BLACKLIST_REGEXPS = [
+const UNUSABLE_INTERPOLATION_REGEXPS = [
     /^\s*$/,
     /[<>]/,
     /^[{}]$/,
@@ -4641,8 +4641,8 @@ function assertInterpolationSymbols(identifier, value) {
     else if (value != null) {
         const start = value[0];
         const end = value[1];
-        // black list checking
-        INTERPOLATION_BLACKLIST_REGEXPS.forEach(regexp => {
+        // Check for unusable interpolation symbols
+        UNUSABLE_INTERPOLATION_REGEXPS.forEach(regexp => {
             if (regexp.test(start) || regexp.test(end)) {
                 throw new Error(`['${start}', '${end}'] contains unusable interpolation symbol.`);
             }
@@ -14843,7 +14843,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('7.2.11+53.sha-f6864cc.with-local-changes');
+const VERSION$1 = new Version('7.2.11+55.sha-c7075fe.with-local-changes');
 
 /**
  * @license
