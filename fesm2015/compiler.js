@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.10+100.sha-1293da1.with-local-changes
+ * @license Angular v8.0.0-beta.10+106.sha-cbd5d28.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4802,7 +4802,7 @@ function assertArrayOfStrings(identifier, value) {
         }
     }
 }
-const INTERPOLATION_BLACKLIST_REGEXPS = [
+const UNUSABLE_INTERPOLATION_REGEXPS = [
     /^\s*$/,
     /[<>]/,
     /^[{}]$/,
@@ -4816,8 +4816,8 @@ function assertInterpolationSymbols(identifier, value) {
     else if (value != null) {
         const start = value[0];
         const end = value[1];
-        // black list checking
-        INTERPOLATION_BLACKLIST_REGEXPS.forEach(regexp => {
+        // Check for unusable interpolation symbols
+        UNUSABLE_INTERPOLATION_REGEXPS.forEach(regexp => {
             if (regexp.test(start) || regexp.test(end)) {
                 throw new Error(`['${start}', '${end}'] contains unusable interpolation symbol.`);
             }
@@ -11601,9 +11601,9 @@ class DomElementSchemaRegistry extends ElementSchemaRegistry {
      * Tag and property name are statically known and cannot change at runtime, i.e. it is not
      * possible to bind a value into a changing attribute or tag name.
      *
-     * The filtering is white list based. All attributes in the schema above are assumed to have the
-     * 'NONE' security context, i.e. that they are safe inert string values. Only specific well known
-     * attack vectors are assigned their appropriate context.
+     * The filtering is based on a list of allowed tags|attributes. All attributes in the schema
+     * above are assumed to have the 'NONE' security context, i.e. that they are safe inert
+     * string values. Only specific well known attack vectors are assigned their appropriate context.
      */
     securityContext(tagName, propName, isAttribute) {
         if (isAttribute) {
@@ -15341,7 +15341,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.10+100.sha-1293da1.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.10+106.sha-cbd5d28.with-local-changes');
 
 /**
  * @license
