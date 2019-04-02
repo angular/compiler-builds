@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.10+93.sha-63013f1.with-local-changes
+ * @license Angular v8.0.0-beta.10+108.sha-98f8b0f.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5191,7 +5191,7 @@ function assertArrayOfStrings(identifier, value) {
         }
     }
 }
-var INTERPOLATION_BLACKLIST_REGEXPS = [
+var UNUSABLE_INTERPOLATION_REGEXPS = [
     /^\s*$/,
     /[<>]/,
     /^[{}]$/,
@@ -5205,8 +5205,8 @@ function assertInterpolationSymbols(identifier, value) {
     else if (value != null) {
         var start_1 = value[0];
         var end_1 = value[1];
-        // black list checking
-        INTERPOLATION_BLACKLIST_REGEXPS.forEach(function (regexp) {
+        // Check for unusable interpolation symbols
+        UNUSABLE_INTERPOLATION_REGEXPS.forEach(function (regexp) {
             if (regexp.test(start_1) || regexp.test(end_1)) {
                 throw new Error("['" + start_1 + "', '" + end_1 + "'] contains unusable interpolation symbol.");
             }
@@ -12343,9 +12343,9 @@ var DomElementSchemaRegistry = /** @class */ (function (_super) {
      * Tag and property name are statically known and cannot change at runtime, i.e. it is not
      * possible to bind a value into a changing attribute or tag name.
      *
-     * The filtering is white list based. All attributes in the schema above are assumed to have the
-     * 'NONE' security context, i.e. that they are safe inert string values. Only specific well known
-     * attack vectors are assigned their appropriate context.
+     * The filtering is based on a list of allowed tags|attributes. All attributes in the schema
+     * above are assumed to have the 'NONE' security context, i.e. that they are safe inert
+     * string values. Only specific well known attack vectors are assigned their appropriate context.
      */
     DomElementSchemaRegistry.prototype.securityContext = function (tagName, propName, isAttribute) {
         if (isAttribute) {
@@ -16295,7 +16295,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-beta.10+93.sha-63013f1.with-local-changes');
+var VERSION$1 = new Version('8.0.0-beta.10+108.sha-98f8b0f.with-local-changes');
 
 /**
  * @license
