@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.10+108.sha-98f8b0f.with-local-changes
+ * @license Angular v8.0.0-beta.10+123.sha-a6809e0.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3190,6 +3190,7 @@ Identifiers$1.NgModuleDefWithMeta = {
     moduleName: CORE$1,
 };
 Identifiers$1.defineNgModule = { name: 'ɵdefineNgModule', moduleName: CORE$1 };
+Identifiers$1.setNgModuleScope = { name: 'ɵsetNgModuleScope', moduleName: CORE$1 };
 Identifiers$1.PipeDefWithMeta = { name: 'ɵPipeDefWithMeta', moduleName: CORE$1 };
 Identifiers$1.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
 Identifiers$1.queryRefresh = { name: 'ɵqueryRefresh', moduleName: CORE$1 };
@@ -6054,7 +6055,8 @@ class R3JitReflector {
  * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
  */
 function compileNgModule(meta) {
-    const { type: moduleType, bootstrap, declarations, imports, exports, schemas, containsForwardDecls } = meta;
+    const { type: moduleType, bootstrap, declarations, imports, exports, schemas, containsForwardDecls, emitInline } = meta;
+    const additionalStatements = [];
     const definitionMap = {
         type: moduleType
     };
@@ -6062,14 +6064,26 @@ function compileNgModule(meta) {
     if (bootstrap.length) {
         definitionMap.bootstrap = refsToArray(bootstrap, containsForwardDecls);
     }
-    if (declarations.length) {
-        definitionMap.declarations = refsToArray(declarations, containsForwardDecls);
+    // If requested to emit scope information inline, pass the declarations, imports and exports to
+    // the `defineNgModule` call. The JIT compilation uses this.
+    if (emitInline) {
+        if (declarations.length) {
+            definitionMap.declarations = refsToArray(declarations, containsForwardDecls);
+        }
+        if (imports.length) {
+            definitionMap.imports = refsToArray(imports, containsForwardDecls);
+        }
+        if (exports.length) {
+            definitionMap.exports = refsToArray(exports, containsForwardDecls);
+        }
     }
-    if (imports.length) {
-        definitionMap.imports = refsToArray(imports, containsForwardDecls);
-    }
-    if (exports.length) {
-        definitionMap.exports = refsToArray(exports, containsForwardDecls);
+    // If not emitting inline, the scope information is not passed into `defineNgModule` as it would
+    // prevent tree-shaking of the declarations, imports and exports references.
+    else {
+        const setNgModuleScopeCall = generateSetNgModuleScopeCall(meta);
+        if (setNgModuleScopeCall !== null) {
+            additionalStatements.push(setNgModuleScopeCall);
+        }
     }
     if (schemas && schemas.length) {
         definitionMap.schemas = literalArr(schemas.map(ref => ref.value));
@@ -6079,8 +6093,36 @@ function compileNgModule(meta) {
         new ExpressionType(moduleType), tupleTypeOf(declarations), tupleTypeOf(imports),
         tupleTypeOf(exports)
     ]));
-    const additionalStatements = [];
     return { expression, type, additionalStatements };
+}
+/**
+ * Generates a function call to `setNgModuleScope` with all necessary information so that the
+ * transitive module scope can be computed during runtime in JIT mode. This call is marked pure
+ * such that the references to declarations, imports and exports may be elided causing these
+ * symbols to become tree-shakeable.
+ */
+function generateSetNgModuleScopeCall(meta) {
+    const { type: moduleType, declarations, imports, exports, containsForwardDecls } = meta;
+    const scopeMap = {};
+    if (declarations.length) {
+        scopeMap.declarations = refsToArray(declarations, containsForwardDecls);
+    }
+    if (imports.length) {
+        scopeMap.imports = refsToArray(imports, containsForwardDecls);
+    }
+    if (exports.length) {
+        scopeMap.exports = refsToArray(exports, containsForwardDecls);
+    }
+    if (Object.keys(scopeMap).length === 0) {
+        return null;
+    }
+    const fnCall = new InvokeFunctionExpr(
+    /* fn */ importExpr(Identifiers$1.setNgModuleScope), 
+    /* args */ [moduleType, mapToMapExpression(scopeMap)], 
+    /* type */ undefined, 
+    /* sourceSpan */ undefined, 
+    /* pure */ true);
+    return fnCall.toStmt();
 }
 function compileInjector(meta) {
     const result = compileFactoryFunction({
@@ -6089,11 +6131,16 @@ function compileInjector(meta) {
         deps: meta.deps,
         injectFn: Identifiers$1.inject,
     });
-    const expression = importExpr(Identifiers$1.defineInjector).callFn([mapToMapExpression({
-            factory: result.factory,
-            providers: meta.providers,
-            imports: meta.imports,
-        })]);
+    const definitionMap = {
+        factory: result.factory,
+    };
+    if (meta.providers !== null) {
+        definitionMap.providers = meta.providers;
+    }
+    if (meta.imports.length > 0) {
+        definitionMap.imports = literalArr(meta.imports);
+    }
+    const expression = importExpr(Identifiers$1.defineInjector).callFn([mapToMapExpression(definitionMap)]);
     const type = new ExpressionType(importExpr(Identifiers$1.InjectorDef, [new ExpressionType(meta.type)]));
     return { expression, type, statements: result.statements };
 }
@@ -15145,7 +15192,7 @@ class CompilerFacadeImpl {
             type: new WrappedNodeExpr(facade.type),
             deps: convertR3DependencyMetadataArray(facade.deps),
             providers: new WrappedNodeExpr(facade.providers),
-            imports: new WrappedNodeExpr(facade.imports),
+            imports: facade.imports.map(i => new WrappedNodeExpr(i)),
         };
         const res = compileInjector(meta);
         return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, res.statements);
@@ -15341,7 +15388,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.10+108.sha-98f8b0f.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.10+123.sha-a6809e0.with-local-changes');
 
 /**
  * @license
