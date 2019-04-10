@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.11+57.sha-ef85336.with-local-changes
+ * @license Angular v8.0.0-beta.11+56.sha-138ca5a.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -397,8 +397,8 @@
      */
     var HtmlTagDefinition = /** @class */ (function () {
         function HtmlTagDefinition(_a) {
-            var _this = this;
             var _b = _a === void 0 ? {} : _a, closedByChildren = _b.closedByChildren, implicitNamespacePrefix = _b.implicitNamespacePrefix, _c = _b.contentType, contentType = _c === void 0 ? exports.TagContentType.PARSABLE_DATA : _c, _d = _b.closedByParent, closedByParent = _d === void 0 ? false : _d, _e = _b.isVoid, isVoid = _e === void 0 ? false : _e, _f = _b.ignoreFirstLf, ignoreFirstLf = _f === void 0 ? false : _f;
+            var _this = this;
             this.closedByChildren = {};
             this.closedByParent = false;
             this.canSelfClose = false;
@@ -4337,9 +4337,9 @@
     }());
     var Tag = /** @class */ (function () {
         function Tag(name, unescapedAttrs, children) {
-            var _this = this;
             if (unescapedAttrs === void 0) { unescapedAttrs = {}; }
             if (children === void 0) { children = []; }
+            var _this = this;
             this.name = name;
             this.children = children;
             this.attrs = {};
@@ -14082,8 +14082,8 @@
     }
     var TemplateDefinitionBuilder = /** @class */ (function () {
         function TemplateDefinitionBuilder(constantPool, parentBindingScope, level, contextName, i18nContext, templateIndex, templateName, directiveMatcher, directives, pipeTypeByName, pipes, _namespace, relativeContextFilePath, i18nUseExternalIds) {
-            var _this = this;
             if (level === void 0) { level = 0; }
+            var _this = this;
             this.constantPool = constantPool;
             this.level = level;
             this.contextName = contextName;
@@ -14256,8 +14256,8 @@
         // LocalResolver
         TemplateDefinitionBuilder.prototype.getLocal = function (name) { return this._bindingScope.get(name); };
         TemplateDefinitionBuilder.prototype.i18nTranslate = function (message, params, ref, transformFn) {
-            var _a;
             if (params === void 0) { params = {}; }
+            var _a;
             var _ref = ref || this.i18nAllocateRef(message.id);
             var _params = {};
             if (params && Object.keys(params).length) {
@@ -16399,7 +16399,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-beta.11+57.sha-ef85336.with-local-changes');
+    var VERSION$1 = new Version('8.0.0-beta.11+56.sha-138ca5a.with-local-changes');
 
     /**
      * @license
@@ -22044,8 +22044,8 @@
         };
         ViewBuilder.prototype.build = function (componentId, targetStatements) {
             var _this = this;
-            var e_3, _a;
             if (targetStatements === void 0) { targetStatements = []; }
+            var e_3, _a;
             this.children.forEach(function (child) { return child.build(componentId, targetStatements); });
             var viewStmts = [variable(DYNAMIC_VAR_NAME).set(NULL_EXPR).toDeclStmt(DYNAMIC_TYPE)];
             var bindingCount = 0;
@@ -23307,8 +23307,8 @@
         return allLazyRoutes;
     }
     function _collectLoadChildren(routes, target) {
-        var e_3, _a;
         if (target === void 0) { target = []; }
+        var e_3, _a;
         if (typeof routes === 'string') {
             target.push(routes);
         }
@@ -24888,9 +24888,9 @@
                 throw new Error("Either route or analyzedModules has to be specified!");
             }
             function visitLazyRoute(symbol, seenRoutes, allLazyRoutes) {
-                var e_4, _a;
                 if (seenRoutes === void 0) { seenRoutes = new Set(); }
                 if (allLazyRoutes === void 0) { allLazyRoutes = []; }
+                var e_4, _a;
                 // Support pointing to default exports, but stop recursing there,
                 // as the StaticReflector does not yet support default exports.
                 if (seenRoutes.has(symbol) || !symbol.name) {
@@ -25170,9 +25170,9 @@
      */
     var StaticReflector = /** @class */ (function () {
         function StaticReflector(summaryResolver, symbolResolver, knownMetadataClasses, knownMetadataFunctions, errorRecorder) {
-            var _this = this;
             if (knownMetadataClasses === void 0) { knownMetadataClasses = []; }
             if (knownMetadataFunctions === void 0) { knownMetadataFunctions = []; }
+            var _this = this;
             this.summaryResolver = summaryResolver;
             this.symbolResolver = symbolResolver;
             this.errorRecorder = errorRecorder;
