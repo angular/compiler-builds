@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.11+55.sha-db62ccf.with-local-changes
+ * @license Angular v8.0.0-beta.11+57.sha-ef85336.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2570,11 +2570,11 @@ Identifiers.RegisterModuleFactoryFn = {
     name: 'ɵregisterModuleFactory',
     moduleName: CORE,
 };
-Identifiers.inject = { name: 'inject', moduleName: CORE };
+Identifiers.inject = { name: 'Δinject', moduleName: CORE };
 Identifiers.INJECTOR = { name: 'INJECTOR', moduleName: CORE };
 Identifiers.Injector = { name: 'Injector', moduleName: CORE };
-Identifiers.defineInjectable = { name: 'defineInjectable', moduleName: CORE };
-Identifiers.InjectableDef = { name: 'ɵInjectableDef', moduleName: CORE };
+Identifiers.ΔdefineInjectable = { name: 'ΔdefineInjectable', moduleName: CORE };
+Identifiers.InjectableDef = { name: 'ΔInjectableDef', moduleName: CORE };
 Identifiers.ViewEncapsulation = {
     name: 'ViewEncapsulation',
     moduleName: CORE,
@@ -2596,7 +2596,7 @@ Identifiers.inlineInterpolate = {
     name: 'ɵinlineInterpolate',
     moduleName: CORE,
 };
-Identifiers.interpolate = { name: 'ɵinterpolate', moduleName: CORE };
+Identifiers.interpolate = { name: 'Δinterpolate', moduleName: CORE };
 Identifiers.EMPTY_ARRAY = { name: 'ɵEMPTY_ARRAY', moduleName: CORE };
 Identifiers.EMPTY_MAP = { name: 'ɵEMPTY_MAP', moduleName: CORE };
 Identifiers.Renderer = { name: 'Renderer', moduleName: CORE };
@@ -3080,146 +3080,146 @@ Identifiers$1.NEW_METHOD = 'factory';
 Identifiers$1.TRANSFORM_METHOD = 'transform';
 Identifiers$1.PATCH_DEPS = 'patchedDeps';
 /* Instructions */
-Identifiers$1.namespaceHTML = { name: 'ɵnamespaceHTML', moduleName: CORE$1 };
-Identifiers$1.namespaceMathML = { name: 'ɵnamespaceMathML', moduleName: CORE$1 };
-Identifiers$1.namespaceSVG = { name: 'ɵnamespaceSVG', moduleName: CORE$1 };
-Identifiers$1.element = { name: 'ɵelement', moduleName: CORE$1 };
-Identifiers$1.elementStart = { name: 'ɵelementStart', moduleName: CORE$1 };
-Identifiers$1.elementEnd = { name: 'ɵelementEnd', moduleName: CORE$1 };
-Identifiers$1.elementProperty = { name: 'ɵelementProperty', moduleName: CORE$1 };
-Identifiers$1.select = { name: 'ɵselect', moduleName: CORE$1 };
-Identifiers$1.componentHostSyntheticProperty = { name: 'ɵcomponentHostSyntheticProperty', moduleName: CORE$1 };
-Identifiers$1.componentHostSyntheticListener = { name: 'ɵcomponentHostSyntheticListener', moduleName: CORE$1 };
-Identifiers$1.elementAttribute = { name: 'ɵelementAttribute', moduleName: CORE$1 };
-Identifiers$1.elementClassProp = { name: 'ɵelementClassProp', moduleName: CORE$1 };
-Identifiers$1.elementContainerStart = { name: 'ɵelementContainerStart', moduleName: CORE$1 };
-Identifiers$1.elementContainerEnd = { name: 'ɵelementContainerEnd', moduleName: CORE$1 };
-Identifiers$1.elementStyling = { name: 'ɵelementStyling', moduleName: CORE$1 };
-Identifiers$1.elementStylingMap = { name: 'ɵelementStylingMap', moduleName: CORE$1 };
-Identifiers$1.elementStyleProp = { name: 'ɵelementStyleProp', moduleName: CORE$1 };
-Identifiers$1.elementStylingApply = { name: 'ɵelementStylingApply', moduleName: CORE$1 };
-Identifiers$1.elementHostAttrs = { name: 'ɵelementHostAttrs', moduleName: CORE$1 };
-Identifiers$1.elementHostStyling = { name: 'ɵelementHostStyling', moduleName: CORE$1 };
-Identifiers$1.elementHostStylingMap = { name: 'ɵelementHostStylingMap', moduleName: CORE$1 };
-Identifiers$1.elementHostStyleProp = { name: 'ɵelementHostStyleProp', moduleName: CORE$1 };
-Identifiers$1.elementHostClassProp = { name: 'ɵelementHostClassProp', moduleName: CORE$1 };
-Identifiers$1.elementHostStylingApply = { name: 'ɵelementHostStylingApply', moduleName: CORE$1 };
-Identifiers$1.containerCreate = { name: 'ɵcontainer', moduleName: CORE$1 };
-Identifiers$1.nextContext = { name: 'ɵnextContext', moduleName: CORE$1 };
-Identifiers$1.templateCreate = { name: 'ɵtemplate', moduleName: CORE$1 };
-Identifiers$1.text = { name: 'ɵtext', moduleName: CORE$1 };
-Identifiers$1.textBinding = { name: 'ɵtextBinding', moduleName: CORE$1 };
-Identifiers$1.bind = { name: 'ɵbind', moduleName: CORE$1 };
-Identifiers$1.enableBindings = { name: 'ɵenableBindings', moduleName: CORE$1 };
-Identifiers$1.disableBindings = { name: 'ɵdisableBindings', moduleName: CORE$1 };
-Identifiers$1.allocHostVars = { name: 'ɵallocHostVars', moduleName: CORE$1 };
-Identifiers$1.getCurrentView = { name: 'ɵgetCurrentView', moduleName: CORE$1 };
-Identifiers$1.restoreView = { name: 'ɵrestoreView', moduleName: CORE$1 };
-Identifiers$1.interpolation1 = { name: 'ɵinterpolation1', moduleName: CORE$1 };
-Identifiers$1.interpolation2 = { name: 'ɵinterpolation2', moduleName: CORE$1 };
-Identifiers$1.interpolation3 = { name: 'ɵinterpolation3', moduleName: CORE$1 };
-Identifiers$1.interpolation4 = { name: 'ɵinterpolation4', moduleName: CORE$1 };
-Identifiers$1.interpolation5 = { name: 'ɵinterpolation5', moduleName: CORE$1 };
-Identifiers$1.interpolation6 = { name: 'ɵinterpolation6', moduleName: CORE$1 };
-Identifiers$1.interpolation7 = { name: 'ɵinterpolation7', moduleName: CORE$1 };
-Identifiers$1.interpolation8 = { name: 'ɵinterpolation8', moduleName: CORE$1 };
-Identifiers$1.interpolationV = { name: 'ɵinterpolationV', moduleName: CORE$1 };
-Identifiers$1.pureFunction0 = { name: 'ɵpureFunction0', moduleName: CORE$1 };
-Identifiers$1.pureFunction1 = { name: 'ɵpureFunction1', moduleName: CORE$1 };
-Identifiers$1.pureFunction2 = { name: 'ɵpureFunction2', moduleName: CORE$1 };
-Identifiers$1.pureFunction3 = { name: 'ɵpureFunction3', moduleName: CORE$1 };
-Identifiers$1.pureFunction4 = { name: 'ɵpureFunction4', moduleName: CORE$1 };
-Identifiers$1.pureFunction5 = { name: 'ɵpureFunction5', moduleName: CORE$1 };
-Identifiers$1.pureFunction6 = { name: 'ɵpureFunction6', moduleName: CORE$1 };
-Identifiers$1.pureFunction7 = { name: 'ɵpureFunction7', moduleName: CORE$1 };
-Identifiers$1.pureFunction8 = { name: 'ɵpureFunction8', moduleName: CORE$1 };
-Identifiers$1.pureFunctionV = { name: 'ɵpureFunctionV', moduleName: CORE$1 };
-Identifiers$1.pipeBind1 = { name: 'ɵpipeBind1', moduleName: CORE$1 };
-Identifiers$1.pipeBind2 = { name: 'ɵpipeBind2', moduleName: CORE$1 };
-Identifiers$1.pipeBind3 = { name: 'ɵpipeBind3', moduleName: CORE$1 };
-Identifiers$1.pipeBind4 = { name: 'ɵpipeBind4', moduleName: CORE$1 };
-Identifiers$1.pipeBindV = { name: 'ɵpipeBindV', moduleName: CORE$1 };
-Identifiers$1.i18n = { name: 'ɵi18n', moduleName: CORE$1 };
-Identifiers$1.i18nAttributes = { name: 'ɵi18nAttributes', moduleName: CORE$1 };
-Identifiers$1.i18nExp = { name: 'ɵi18nExp', moduleName: CORE$1 };
-Identifiers$1.i18nStart = { name: 'ɵi18nStart', moduleName: CORE$1 };
-Identifiers$1.i18nEnd = { name: 'ɵi18nEnd', moduleName: CORE$1 };
-Identifiers$1.i18nApply = { name: 'ɵi18nApply', moduleName: CORE$1 };
-Identifiers$1.i18nPostprocess = { name: 'ɵi18nPostprocess', moduleName: CORE$1 };
-Identifiers$1.load = { name: 'ɵload', moduleName: CORE$1 };
-Identifiers$1.pipe = { name: 'ɵpipe', moduleName: CORE$1 };
-Identifiers$1.projection = { name: 'ɵprojection', moduleName: CORE$1 };
-Identifiers$1.projectionDef = { name: 'ɵprojectionDef', moduleName: CORE$1 };
-Identifiers$1.reference = { name: 'ɵreference', moduleName: CORE$1 };
-Identifiers$1.inject = { name: 'inject', moduleName: CORE$1 };
-Identifiers$1.injectAttribute = { name: 'ɵinjectAttribute', moduleName: CORE$1 };
-Identifiers$1.directiveInject = { name: 'ɵdirectiveInject', moduleName: CORE$1 };
-Identifiers$1.templateRefExtractor = { name: 'ɵtemplateRefExtractor', moduleName: CORE$1 };
-Identifiers$1.resolveWindow = { name: 'ɵresolveWindow', moduleName: CORE$1 };
-Identifiers$1.resolveDocument = { name: 'ɵresolveDocument', moduleName: CORE$1 };
-Identifiers$1.resolveBody = { name: 'ɵresolveBody', moduleName: CORE$1 };
-Identifiers$1.defineBase = { name: 'ɵdefineBase', moduleName: CORE$1 };
+Identifiers$1.namespaceHTML = { name: 'ΔnamespaceHTML', moduleName: CORE$1 };
+Identifiers$1.namespaceMathML = { name: 'ΔnamespaceMathML', moduleName: CORE$1 };
+Identifiers$1.namespaceSVG = { name: 'ΔnamespaceSVG', moduleName: CORE$1 };
+Identifiers$1.element = { name: 'Δelement', moduleName: CORE$1 };
+Identifiers$1.elementStart = { name: 'ΔelementStart', moduleName: CORE$1 };
+Identifiers$1.elementEnd = { name: 'ΔelementEnd', moduleName: CORE$1 };
+Identifiers$1.elementProperty = { name: 'ΔelementProperty', moduleName: CORE$1 };
+Identifiers$1.select = { name: 'Δselect', moduleName: CORE$1 };
+Identifiers$1.componentHostSyntheticProperty = { name: 'ΔcomponentHostSyntheticProperty', moduleName: CORE$1 };
+Identifiers$1.componentHostSyntheticListener = { name: 'ΔcomponentHostSyntheticListener', moduleName: CORE$1 };
+Identifiers$1.elementAttribute = { name: 'ΔelementAttribute', moduleName: CORE$1 };
+Identifiers$1.elementClassProp = { name: 'ΔelementClassProp', moduleName: CORE$1 };
+Identifiers$1.elementContainerStart = { name: 'ΔelementContainerStart', moduleName: CORE$1 };
+Identifiers$1.elementContainerEnd = { name: 'ΔelementContainerEnd', moduleName: CORE$1 };
+Identifiers$1.elementStyling = { name: 'ΔelementStyling', moduleName: CORE$1 };
+Identifiers$1.elementStylingMap = { name: 'ΔelementStylingMap', moduleName: CORE$1 };
+Identifiers$1.elementStyleProp = { name: 'ΔelementStyleProp', moduleName: CORE$1 };
+Identifiers$1.elementStylingApply = { name: 'ΔelementStylingApply', moduleName: CORE$1 };
+Identifiers$1.elementHostAttrs = { name: 'ΔelementHostAttrs', moduleName: CORE$1 };
+Identifiers$1.elementHostStyling = { name: 'ΔelementHostStyling', moduleName: CORE$1 };
+Identifiers$1.elementHostStylingMap = { name: 'ΔelementHostStylingMap', moduleName: CORE$1 };
+Identifiers$1.elementHostStyleProp = { name: 'ΔelementHostStyleProp', moduleName: CORE$1 };
+Identifiers$1.elementHostClassProp = { name: 'ΔelementHostClassProp', moduleName: CORE$1 };
+Identifiers$1.elementHostStylingApply = { name: 'ΔelementHostStylingApply', moduleName: CORE$1 };
+Identifiers$1.containerCreate = { name: 'Δcontainer', moduleName: CORE$1 };
+Identifiers$1.nextContext = { name: 'ΔnextContext', moduleName: CORE$1 };
+Identifiers$1.templateCreate = { name: 'Δtemplate', moduleName: CORE$1 };
+Identifiers$1.text = { name: 'Δtext', moduleName: CORE$1 };
+Identifiers$1.textBinding = { name: 'ΔtextBinding', moduleName: CORE$1 };
+Identifiers$1.bind = { name: 'Δbind', moduleName: CORE$1 };
+Identifiers$1.enableBindings = { name: 'ΔenableBindings', moduleName: CORE$1 };
+Identifiers$1.disableBindings = { name: 'ΔdisableBindings', moduleName: CORE$1 };
+Identifiers$1.allocHostVars = { name: 'ΔallocHostVars', moduleName: CORE$1 };
+Identifiers$1.getCurrentView = { name: 'ΔgetCurrentView', moduleName: CORE$1 };
+Identifiers$1.restoreView = { name: 'ΔrestoreView', moduleName: CORE$1 };
+Identifiers$1.interpolation1 = { name: 'Δinterpolation1', moduleName: CORE$1 };
+Identifiers$1.interpolation2 = { name: 'Δinterpolation2', moduleName: CORE$1 };
+Identifiers$1.interpolation3 = { name: 'Δinterpolation3', moduleName: CORE$1 };
+Identifiers$1.interpolation4 = { name: 'Δinterpolation4', moduleName: CORE$1 };
+Identifiers$1.interpolation5 = { name: 'Δinterpolation5', moduleName: CORE$1 };
+Identifiers$1.interpolation6 = { name: 'Δinterpolation6', moduleName: CORE$1 };
+Identifiers$1.interpolation7 = { name: 'Δinterpolation7', moduleName: CORE$1 };
+Identifiers$1.interpolation8 = { name: 'Δinterpolation8', moduleName: CORE$1 };
+Identifiers$1.interpolationV = { name: 'ΔinterpolationV', moduleName: CORE$1 };
+Identifiers$1.pureFunction0 = { name: 'ΔpureFunction0', moduleName: CORE$1 };
+Identifiers$1.pureFunction1 = { name: 'ΔpureFunction1', moduleName: CORE$1 };
+Identifiers$1.pureFunction2 = { name: 'ΔpureFunction2', moduleName: CORE$1 };
+Identifiers$1.pureFunction3 = { name: 'ΔpureFunction3', moduleName: CORE$1 };
+Identifiers$1.pureFunction4 = { name: 'ΔpureFunction4', moduleName: CORE$1 };
+Identifiers$1.pureFunction5 = { name: 'ΔpureFunction5', moduleName: CORE$1 };
+Identifiers$1.pureFunction6 = { name: 'ΔpureFunction6', moduleName: CORE$1 };
+Identifiers$1.pureFunction7 = { name: 'ΔpureFunction7', moduleName: CORE$1 };
+Identifiers$1.pureFunction8 = { name: 'ΔpureFunction8', moduleName: CORE$1 };
+Identifiers$1.pureFunctionV = { name: 'ΔpureFunctionV', moduleName: CORE$1 };
+Identifiers$1.pipeBind1 = { name: 'ΔpipeBind1', moduleName: CORE$1 };
+Identifiers$1.pipeBind2 = { name: 'ΔpipeBind2', moduleName: CORE$1 };
+Identifiers$1.pipeBind3 = { name: 'ΔpipeBind3', moduleName: CORE$1 };
+Identifiers$1.pipeBind4 = { name: 'ΔpipeBind4', moduleName: CORE$1 };
+Identifiers$1.pipeBindV = { name: 'ΔpipeBindV', moduleName: CORE$1 };
+Identifiers$1.i18n = { name: 'Δi18n', moduleName: CORE$1 };
+Identifiers$1.i18nAttributes = { name: 'Δi18nAttributes', moduleName: CORE$1 };
+Identifiers$1.i18nExp = { name: 'Δi18nExp', moduleName: CORE$1 };
+Identifiers$1.i18nStart = { name: 'Δi18nStart', moduleName: CORE$1 };
+Identifiers$1.i18nEnd = { name: 'Δi18nEnd', moduleName: CORE$1 };
+Identifiers$1.i18nApply = { name: 'Δi18nApply', moduleName: CORE$1 };
+Identifiers$1.i18nPostprocess = { name: 'Δi18nPostprocess', moduleName: CORE$1 };
+Identifiers$1.load = { name: 'Δload', moduleName: CORE$1 };
+Identifiers$1.pipe = { name: 'Δpipe', moduleName: CORE$1 };
+Identifiers$1.projection = { name: 'Δprojection', moduleName: CORE$1 };
+Identifiers$1.projectionDef = { name: 'ΔprojectionDef', moduleName: CORE$1 };
+Identifiers$1.reference = { name: 'Δreference', moduleName: CORE$1 };
+Identifiers$1.inject = { name: 'Δinject', moduleName: CORE$1 };
+Identifiers$1.injectAttribute = { name: 'ΔinjectAttribute', moduleName: CORE$1 };
+Identifiers$1.directiveInject = { name: 'ΔdirectiveInject', moduleName: CORE$1 };
+Identifiers$1.templateRefExtractor = { name: 'ΔtemplateRefExtractor', moduleName: CORE$1 };
+Identifiers$1.resolveWindow = { name: 'ΔresolveWindow', moduleName: CORE$1 };
+Identifiers$1.resolveDocument = { name: 'ΔresolveDocument', moduleName: CORE$1 };
+Identifiers$1.resolveBody = { name: 'ΔresolveBody', moduleName: CORE$1 };
+Identifiers$1.defineBase = { name: 'ΔdefineBase', moduleName: CORE$1 };
 Identifiers$1.BaseDef = {
-    name: 'ɵBaseDef',
+    name: 'ΔBaseDef',
     moduleName: CORE$1,
 };
-Identifiers$1.defineComponent = { name: 'ɵdefineComponent', moduleName: CORE$1 };
-Identifiers$1.setComponentScope = { name: 'ɵsetComponentScope', moduleName: CORE$1 };
+Identifiers$1.defineComponent = { name: 'ΔdefineComponent', moduleName: CORE$1 };
+Identifiers$1.setComponentScope = { name: 'ΔsetComponentScope', moduleName: CORE$1 };
 Identifiers$1.ComponentDefWithMeta = {
-    name: 'ɵComponentDefWithMeta',
+    name: 'ΔComponentDefWithMeta',
     moduleName: CORE$1,
 };
 Identifiers$1.defineDirective = {
-    name: 'ɵdefineDirective',
+    name: 'ΔdefineDirective',
     moduleName: CORE$1,
 };
 Identifiers$1.DirectiveDefWithMeta = {
-    name: 'ɵDirectiveDefWithMeta',
+    name: 'ΔDirectiveDefWithMeta',
     moduleName: CORE$1,
 };
 Identifiers$1.InjectorDef = {
-    name: 'ɵInjectorDef',
+    name: 'ΔInjectorDef',
     moduleName: CORE$1,
 };
 Identifiers$1.defineInjector = {
-    name: 'defineInjector',
+    name: 'ΔdefineInjector',
     moduleName: CORE$1,
 };
 Identifiers$1.NgModuleDefWithMeta = {
-    name: 'ɵNgModuleDefWithMeta',
+    name: 'ΔNgModuleDefWithMeta',
     moduleName: CORE$1,
 };
-Identifiers$1.defineNgModule = { name: 'ɵdefineNgModule', moduleName: CORE$1 };
-Identifiers$1.setNgModuleScope = { name: 'ɵsetNgModuleScope', moduleName: CORE$1 };
-Identifiers$1.PipeDefWithMeta = { name: 'ɵPipeDefWithMeta', moduleName: CORE$1 };
-Identifiers$1.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
-Identifiers$1.queryRefresh = { name: 'ɵqueryRefresh', moduleName: CORE$1 };
-Identifiers$1.viewQuery = { name: 'ɵviewQuery', moduleName: CORE$1 };
-Identifiers$1.staticViewQuery = { name: 'ɵstaticViewQuery', moduleName: CORE$1 };
-Identifiers$1.staticContentQuery = { name: 'ɵstaticContentQuery', moduleName: CORE$1 };
-Identifiers$1.loadViewQuery = { name: 'ɵloadViewQuery', moduleName: CORE$1 };
-Identifiers$1.contentQuery = { name: 'ɵcontentQuery', moduleName: CORE$1 };
-Identifiers$1.loadContentQuery = { name: 'ɵloadContentQuery', moduleName: CORE$1 };
-Identifiers$1.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
-Identifiers$1.InheritDefinitionFeature = { name: 'ɵInheritDefinitionFeature', moduleName: CORE$1 };
-Identifiers$1.ProvidersFeature = { name: 'ɵProvidersFeature', moduleName: CORE$1 };
-Identifiers$1.listener = { name: 'ɵlistener', moduleName: CORE$1 };
+Identifiers$1.defineNgModule = { name: 'ΔdefineNgModule', moduleName: CORE$1 };
+Identifiers$1.setNgModuleScope = { name: 'ΔsetNgModuleScope', moduleName: CORE$1 };
+Identifiers$1.PipeDefWithMeta = { name: 'ΔPipeDefWithMeta', moduleName: CORE$1 };
+Identifiers$1.definePipe = { name: 'ΔdefinePipe', moduleName: CORE$1 };
+Identifiers$1.queryRefresh = { name: 'ΔqueryRefresh', moduleName: CORE$1 };
+Identifiers$1.viewQuery = { name: 'ΔviewQuery', moduleName: CORE$1 };
+Identifiers$1.staticViewQuery = { name: 'ΔstaticViewQuery', moduleName: CORE$1 };
+Identifiers$1.staticContentQuery = { name: 'ΔstaticContentQuery', moduleName: CORE$1 };
+Identifiers$1.loadViewQuery = { name: 'ΔloadViewQuery', moduleName: CORE$1 };
+Identifiers$1.contentQuery = { name: 'ΔcontentQuery', moduleName: CORE$1 };
+Identifiers$1.loadContentQuery = { name: 'ΔloadContentQuery', moduleName: CORE$1 };
+Identifiers$1.NgOnChangesFeature = { name: 'ΔNgOnChangesFeature', moduleName: CORE$1 };
+Identifiers$1.InheritDefinitionFeature = { name: 'ΔInheritDefinitionFeature', moduleName: CORE$1 };
+Identifiers$1.ProvidersFeature = { name: 'ΔProvidersFeature', moduleName: CORE$1 };
+Identifiers$1.listener = { name: 'Δlistener', moduleName: CORE$1 };
 Identifiers$1.getFactoryOf = {
-    name: 'ɵgetFactoryOf',
+    name: 'ΔgetFactoryOf',
     moduleName: CORE$1,
 };
 Identifiers$1.getInheritedFactory = {
-    name: 'ɵgetInheritedFactory',
+    name: 'ΔgetInheritedFactory',
     moduleName: CORE$1,
 };
 // sanitization-related functions
-Identifiers$1.sanitizeHtml = { name: 'ɵsanitizeHtml', moduleName: CORE$1 };
-Identifiers$1.sanitizeStyle = { name: 'ɵsanitizeStyle', moduleName: CORE$1 };
-Identifiers$1.defaultStyleSanitizer = { name: 'ɵdefaultStyleSanitizer', moduleName: CORE$1 };
-Identifiers$1.sanitizeResourceUrl = { name: 'ɵsanitizeResourceUrl', moduleName: CORE$1 };
-Identifiers$1.sanitizeScript = { name: 'ɵsanitizeScript', moduleName: CORE$1 };
-Identifiers$1.sanitizeUrl = { name: 'ɵsanitizeUrl', moduleName: CORE$1 };
-Identifiers$1.sanitizeUrlOrResourceUrl = { name: 'ɵsanitizeUrlOrResourceUrl', moduleName: CORE$1 };
+Identifiers$1.sanitizeHtml = { name: 'ΔsanitizeHtml', moduleName: CORE$1 };
+Identifiers$1.sanitizeStyle = { name: 'ΔsanitizeStyle', moduleName: CORE$1 };
+Identifiers$1.defaultStyleSanitizer = { name: 'ΔdefaultStyleSanitizer', moduleName: CORE$1 };
+Identifiers$1.sanitizeResourceUrl = { name: 'ΔsanitizeResourceUrl', moduleName: CORE$1 };
+Identifiers$1.sanitizeScript = { name: 'ΔsanitizeScript', moduleName: CORE$1 };
+Identifiers$1.sanitizeUrl = { name: 'ΔsanitizeUrl', moduleName: CORE$1 };
+Identifiers$1.sanitizeUrlOrResourceUrl = { name: 'ΔsanitizeUrlOrResourceUrl', moduleName: CORE$1 };
 
 /**
  * @license
@@ -4774,7 +4774,7 @@ function compileInjectable(meta) {
     }
     const token = meta.type;
     const providedIn = meta.providedIn;
-    const expression = importExpr(Identifiers.defineInjectable).callFn([mapToMapExpression({ token, factory: result.factory, providedIn })]);
+    const expression = importExpr(Identifiers.ΔdefineInjectable).callFn([mapToMapExpression({ token, factory: result.factory, providedIn })]);
     const type = new ExpressionType(importExpr(Identifiers.InjectableDef, [typeWithParameters(meta.type, meta.typeArgumentCount)]));
     return {
         expression,
@@ -6065,7 +6065,7 @@ function compileNgModule(meta) {
         definitionMap.bootstrap = refsToArray(bootstrap, containsForwardDecls);
     }
     // If requested to emit scope information inline, pass the declarations, imports and exports to
-    // the `defineNgModule` call. The JIT compilation uses this.
+    // the `ΔdefineNgModule` call. The JIT compilation uses this.
     if (emitInline) {
         if (declarations.length) {
             definitionMap.declarations = refsToArray(declarations, containsForwardDecls);
@@ -6077,7 +6077,7 @@ function compileNgModule(meta) {
             definitionMap.exports = refsToArray(exports, containsForwardDecls);
         }
     }
-    // If not emitting inline, the scope information is not passed into `defineNgModule` as it would
+    // If not emitting inline, the scope information is not passed into `ΔdefineNgModule` as it would
     // prevent tree-shaking of the declarations, imports and exports references.
     else {
         const setNgModuleScopeCall = generateSetNgModuleScopeCall(meta);
@@ -6096,7 +6096,7 @@ function compileNgModule(meta) {
     return { expression, type, additionalStatements };
 }
 /**
- * Generates a function call to `setNgModuleScope` with all necessary information so that the
+ * Generates a function call to `ΔsetNgModuleScope` with all necessary information so that the
  * transitive module scope can be computed during runtime in JIT mode. This call is marked pure
  * such that the references to declarations, imports and exports may be elided causing these
  * symbols to become tree-shakeable.
@@ -13802,7 +13802,7 @@ class TemplateDefinitionBuilder {
             parameters.splice(2, 0, literal(templateVisitor.getConstCount()), literal(templateVisitor.getVarCount()));
             return trimTrailingNulls(parameters);
         });
-        // handle property bindings e.g. ɵelementProperty(1, 'ngForOf', ɵbind(ctx.items));
+        // handle property bindings e.g. ΔelementProperty(1, 'ngForOf', Δbind(ctx.items));
         const context = variable(CONTEXT_NAME);
         this.templatePropertyBindings(template, templateIndex, context, template.templateAttrs);
         // Only add normal input/output binding instructions on explicit ng-template elements.
@@ -15388,7 +15388,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.11+55.sha-db62ccf.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.11+57.sha-ef85336.with-local-changes');
 
 /**
  * @license
@@ -17603,7 +17603,7 @@ class InjectableCompiler {
             mapEntry('token', ctx.importExpr(injectable.type.reference)),
             mapEntry('providedIn', providedIn),
         ];
-        return importExpr(Identifiers.defineInjectable).callFn([literalMap(def)]);
+        return importExpr(Identifiers.ΔdefineInjectable).callFn([literalMap(def)]);
     }
     compile(injectable, ctx) {
         if (this.alwaysGenerateDef || injectable.providedIn !== undefined) {
