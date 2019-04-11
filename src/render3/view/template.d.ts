@@ -92,7 +92,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     }): {
         [key: string]: o.Expression;
     };
-    i18nAllocateRef(messageId: string): o.ReadVarExpr;
+    i18nGenerateClosureVar(messageId: string): o.ReadVarExpr;
     i18nUpdateRef(context: I18nContext): void;
     i18nStart(span: ParseSourceSpan | null | undefined, meta: i18n.AST, selfClosing?: boolean): void;
     i18nEnd(span?: ParseSourceSpan | null, selfClosing?: boolean): void;
