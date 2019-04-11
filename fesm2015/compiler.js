@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.11+75.sha-f98093a.with-local-changes
+ * @license Angular v8.0.0-beta.11+76.sha-def73a6.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13130,6 +13130,8 @@ function getSerializedI18nContent(message) {
 const DEFAULT_NG_CONTENT_SELECTOR = '*';
 // Selector attribute name of `<ng-content>`
 const NG_CONTENT_SELECT_ATTR$1 = 'select';
+// Attribute name of `ngProjectAs`.
+const NG_PROJECT_AS_ATTR_NAME = 'ngProjectAs';
 // List of supported global targets for event listeners
 const GLOBAL_TARGET_RESOLVERS = new Map([['window', Identifiers$1.resolveWindow], ['document', Identifiers$1.resolveDocument], ['body', Identifiers$1.resolveBody]]);
 function mapBindingToInstruction(type) {
@@ -13310,10 +13312,7 @@ class TemplateDefinitionBuilder {
             // Only selectors with a non-default value are generated
             if (this._ngContentSelectors.length) {
                 const r3Selectors = this._ngContentSelectors.map(s => parseSelectorToR3Selector(s));
-                // `projectionDef` needs both the parsed and raw value of the selectors
-                const parsed = this.constantPool.getConstLiteral(asLiteral(r3Selectors), true);
-                const unParsed = this.constantPool.getConstLiteral(asLiteral(this._ngContentSelectors), true);
-                parameters.push(parsed, unParsed);
+                parameters.push(this.constantPool.getConstLiteral(asLiteral(r3Selectors), true));
             }
             // Since we accumulate ngContent selectors while processing template elements,
             // we *prepend* `projectionDef` to creation instructions block, to put it before
@@ -13494,15 +13493,18 @@ class TemplateDefinitionBuilder {
             0 :
             this._ngContentSelectors.push(ngContent.selector) + this._ngContentSelectorsOffset;
         const parameters = [literal(slot)];
-        const attributeAsList = [];
+        const attributes = [];
         ngContent.attributes.forEach((attribute) => {
             const { name, value } = attribute;
-            if (name.toLowerCase() !== NG_CONTENT_SELECT_ATTR$1) {
-                attributeAsList.push(name, value);
+            if (name === NG_PROJECT_AS_ATTR_NAME) {
+                attributes.push(...getNgProjectAsLiteral(attribute));
+            }
+            else if (name.toLowerCase() !== NG_CONTENT_SELECT_ATTR$1) {
+                attributes.push(literal(name), literal(value));
             }
         });
-        if (attributeAsList.length > 0) {
-            parameters.push(literal(selectorIndex), asLiteral(attributeAsList));
+        if (attributes.length > 0) {
+            parameters.push(literal(selectorIndex), literalArr(attributes));
         }
         else if (selectorIndex !== 0) {
             parameters.push(literal(selectorIndex));
@@ -13581,7 +13583,12 @@ class TemplateDefinitionBuilder {
             }
         });
         outputAttrs.forEach(attr => {
-            attributes.push(...getAttributeNameLiterals(attr.name), literal(attr.value));
+            if (attr.name === NG_PROJECT_AS_ATTR_NAME) {
+                attributes.push(...getNgProjectAsLiteral(attr));
+            }
+            else {
+                attributes.push(...getAttributeNameLiterals(attr.name), literal(attr.value));
+            }
         });
         // add attributes for directive and projection matching purposes
         attributes.push(...this.prepareNonRenderAttrs(allOtherInputs, element.outputs, stylingBuilder));
@@ -14372,6 +14379,16 @@ function createCssSelector(tag, attributes) {
         }
     });
     return cssSelector;
+}
+/**
+ * Creates an array of expressions out of an `ngProjectAs` attributes
+ * which can be added to the instruction parameters.
+ */
+function getNgProjectAsLiteral(attribute) {
+    // Parse the attribute value into a CssSelectorList. Note that we only take the
+    // first selector, because we don't support multiple selectors in ngProjectAs.
+    const parsedR3Selector = parseSelectorToR3Selector(attribute.value)[0];
+    return [literal(5 /* ProjectAs */), asLiteral(parsedR3Selector)];
 }
 function interpolate(args) {
     args = args.slice(1); // Ignore the length prefix added for render2
@@ -15388,7 +15405,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.11+75.sha-f98093a.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.11+76.sha-def73a6.with-local-changes');
 
 /**
  * @license

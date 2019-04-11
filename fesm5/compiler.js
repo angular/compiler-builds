@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.11+75.sha-f98093a.with-local-changes
+ * @license Angular v8.0.0-beta.11+76.sha-def73a6.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13979,6 +13979,8 @@ function getSerializedI18nContent(message) {
 var DEFAULT_NG_CONTENT_SELECTOR = '*';
 // Selector attribute name of `<ng-content>`
 var NG_CONTENT_SELECT_ATTR$1 = 'select';
+// Attribute name of `ngProjectAs`.
+var NG_PROJECT_AS_ATTR_NAME = 'ngProjectAs';
 // List of supported global targets for event listeners
 var GLOBAL_TARGET_RESOLVERS = new Map([['window', Identifiers$1.resolveWindow], ['document', Identifiers$1.resolveDocument], ['body', Identifiers$1.resolveBody]]);
 function mapBindingToInstruction(type) {
@@ -14164,10 +14166,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             // Only selectors with a non-default value are generated
             if (this._ngContentSelectors.length) {
                 var r3Selectors = this._ngContentSelectors.map(function (s) { return parseSelectorToR3Selector(s); });
-                // `projectionDef` needs both the parsed and raw value of the selectors
-                var parsed = this.constantPool.getConstLiteral(asLiteral(r3Selectors), true);
-                var unParsed = this.constantPool.getConstLiteral(asLiteral(this._ngContentSelectors), true);
-                parameters.push(parsed, unParsed);
+                parameters.push(this.constantPool.getConstLiteral(asLiteral(r3Selectors), true));
             }
             // Since we accumulate ngContent selectors while processing template elements,
             // we *prepend* `projectionDef` to creation instructions block, to put it before
@@ -14348,15 +14347,18 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             0 :
             this._ngContentSelectors.push(ngContent.selector) + this._ngContentSelectorsOffset;
         var parameters = [literal(slot)];
-        var attributeAsList = [];
+        var attributes = [];
         ngContent.attributes.forEach(function (attribute) {
             var name = attribute.name, value = attribute.value;
-            if (name.toLowerCase() !== NG_CONTENT_SELECT_ATTR$1) {
-                attributeAsList.push(name, value);
+            if (name === NG_PROJECT_AS_ATTR_NAME) {
+                attributes.push.apply(attributes, __spread(getNgProjectAsLiteral(attribute)));
+            }
+            else if (name.toLowerCase() !== NG_CONTENT_SELECT_ATTR$1) {
+                attributes.push(literal(name), literal(value));
             }
         });
-        if (attributeAsList.length > 0) {
-            parameters.push(literal(selectorIndex), asLiteral(attributeAsList));
+        if (attributes.length > 0) {
+            parameters.push(literal(selectorIndex), literalArr(attributes));
         }
         else if (selectorIndex !== 0) {
             parameters.push(literal(selectorIndex));
@@ -14447,7 +14449,12 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             }
         });
         outputAttrs.forEach(function (attr) {
-            attributes.push.apply(attributes, __spread(getAttributeNameLiterals(attr.name), [literal(attr.value)]));
+            if (attr.name === NG_PROJECT_AS_ATTR_NAME) {
+                attributes.push.apply(attributes, __spread(getNgProjectAsLiteral(attr)));
+            }
+            else {
+                attributes.push.apply(attributes, __spread(getAttributeNameLiterals(attr.name), [literal(attr.value)]));
+            }
         });
         // add attributes for directive and projection matching purposes
         attributes.push.apply(attributes, __spread(this.prepareNonRenderAttrs(allOtherInputs, element.outputs, stylingBuilder)));
@@ -15267,6 +15274,16 @@ function createCssSelector(tag, attributes) {
         }
     });
     return cssSelector;
+}
+/**
+ * Creates an array of expressions out of an `ngProjectAs` attributes
+ * which can be added to the instruction parameters.
+ */
+function getNgProjectAsLiteral(attribute) {
+    // Parse the attribute value into a CssSelectorList. Note that we only take the
+    // first selector, because we don't support multiple selectors in ngProjectAs.
+    var parsedR3Selector = parseSelectorToR3Selector(attribute.value)[0];
+    return [literal(5 /* ProjectAs */), asLiteral(parsedR3Selector)];
 }
 function interpolate(args) {
     args = args.slice(1); // Ignore the length prefix added for render2
@@ -16342,7 +16359,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-beta.11+75.sha-f98093a.with-local-changes');
+var VERSION$1 = new Version('8.0.0-beta.11+76.sha-def73a6.with-local-changes');
 
 /**
  * @license
