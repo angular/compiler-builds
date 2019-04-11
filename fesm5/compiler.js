@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.11+82.sha-387fbb8.with-local-changes
+ * @license Angular v8.0.0-beta.11+83.sha-91c7b45.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3415,6 +3415,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.i18nEnd = { name: 'Δi18nEnd', moduleName: CORE$1 };
     Identifiers.i18nApply = { name: 'Δi18nApply', moduleName: CORE$1 };
     Identifiers.i18nPostprocess = { name: 'Δi18nPostprocess', moduleName: CORE$1 };
+    Identifiers.i18nLocalize = { name: 'Δi18nLocalize', moduleName: CORE$1 };
     Identifiers.load = { name: 'Δload', moduleName: CORE$1 };
     Identifiers.pipe = { name: 'Δpipe', moduleName: CORE$1 };
     Identifiers.projection = { name: 'Δprojection', moduleName: CORE$1 };
@@ -4483,11 +4484,12 @@ function mapLiteral(obj, quoted) {
  */
 /* Closure variables holding messages must be named `MSG_[A-Z0-9]+` */
 var CLOSURE_TRANSLATION_PREFIX = 'MSG_';
-var CLOSURE_TRANSLATION_MATCHER_REGEXP = new RegExp("^" + CLOSURE_TRANSLATION_PREFIX);
 /* Prefix for non-`goog.getMsg` i18n-related vars */
 var TRANSLATION_PREFIX = 'I18N_';
 /** Closure uses `goog.getMsg(message)` to lookup translations */
 var GOOG_GET_MSG = 'goog.getMsg';
+/** Name of the global variable that is used to determine if we use Closure translations or not */
+var NG_I18N_CLOSURE_MODE = 'ngI18nClosureMode';
 /** I18n separators for metadata **/
 var I18N_MEANING_SEPARATOR = '|';
 var I18N_ID_SEPARATOR = '@@';
@@ -4500,15 +4502,30 @@ var I18N_ICU_VAR_PREFIX = 'VAR_';
 var I18N_ICU_MAPPING_PREFIX = 'I18N_EXP_';
 /** Placeholder wrapper for i18n expressions **/
 var I18N_PLACEHOLDER_SYMBOL = '�';
-function i18nTranslationToDeclStmt(variable$1, message, params) {
+function i18nTranslationToDeclStmt(variable$1, closureVar, message, meta, params) {
+    var statements = [];
+    // var I18N_X;
+    statements.push(new DeclareVarStmt(variable$1.name, undefined, INFERRED_TYPE, null, variable$1.sourceSpan));
     var args = [literal(message)];
     if (params && Object.keys(params).length) {
         args.push(mapLiteral(params, true));
     }
-    var fnCall = variable(GOOG_GET_MSG).callFn(args);
-    return variable$1.set(fnCall).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]);
+    // Closure JSDoc comments
+    var docStatements = i18nMetaToDocStmt(meta);
+    var thenStatements = docStatements ? [docStatements] : [];
+    var googFnCall = variable(GOOG_GET_MSG).callFn(args);
+    // const MSG_... = goog.getMsg(..);
+    thenStatements.push(closureVar.set(googFnCall).toConstDecl());
+    // I18N_X = MSG_...;
+    thenStatements.push(new ExpressionStatement(variable$1.set(closureVar)));
+    var localizeFnCall = importExpr(Identifiers$1.i18nLocalize).callFn(args);
+    // I18N_X = i18nLocalize(...);
+    var elseStatements = [new ExpressionStatement(variable$1.set(localizeFnCall))];
+    // if(ngI18nClosureMode) { ... } else { ... }
+    statements.push(ifStmt(variable(NG_I18N_CLOSURE_MODE), thenStatements, elseStatements));
+    return statements;
 }
-// Converts i18n meta informations for a message (id, description, meaning)
+// Converts i18n meta information for a message (id, description, meaning)
 // to a JsDoc statement formatted as expected by the Closure compiler.
 function i18nMetaToDocStmt(meta) {
     var tags = [];
@@ -4670,30 +4687,19 @@ function getTranslationConstPrefix(extra) {
  * Generates translation declaration statements.
  *
  * @param variable Translation value reference
+ * @param closureVar Variable for Closure `goog.getMsg` calls
  * @param message Text message to be translated
  * @param meta Object that contains meta information (id, meaning and description)
  * @param params Object with placeholders key-value pairs
  * @param transformFn Optional transformation (post processing) function reference
  * @returns Array of Statements that represent a given translation
  */
-function getTranslationDeclStmts(variable$1, message, meta, params, transformFn) {
+function getTranslationDeclStmts(variable, closureVar, message, meta, params, transformFn) {
     if (params === void 0) { params = {}; }
     var statements = [];
-    var docStatements = i18nMetaToDocStmt(meta);
-    if (docStatements) {
-        statements.push(docStatements);
-    }
+    statements.push.apply(statements, __spread(i18nTranslationToDeclStmt(variable, closureVar, message, meta, params)));
     if (transformFn) {
-        statements.push(i18nTranslationToDeclStmt(variable$1, message, params));
-        // Closure Compiler doesn't allow non-goo.getMsg const names to start with `MSG_`,
-        // so we update variable name prefix in case post processing is required, so we can
-        // assign the result of post-processing function to the var that starts with `I18N_`
-        var raw = variable(variable$1.name);
-        variable$1.name = variable$1.name.replace(CLOSURE_TRANSLATION_MATCHER_REGEXP, TRANSLATION_PREFIX);
-        statements.push(variable$1.set(transformFn(raw)).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
-    }
-    else {
-        statements.push(i18nTranslationToDeclStmt(variable$1, message, params));
+        statements.push(new ExpressionStatement(variable.set(transformFn(variable))));
     }
     return statements;
 }
@@ -14200,14 +14206,17 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     TemplateDefinitionBuilder.prototype.i18nTranslate = function (message, params, ref, transformFn) {
         var _a;
         if (params === void 0) { params = {}; }
-        var _ref = ref || this.i18nAllocateRef(message.id);
+        var _ref = ref || variable(this.constantPool.uniqueName(TRANSLATION_PREFIX));
+        // Closure Compiler requires const names to start with `MSG_` but disallows any other const to
+        // start with `MSG_`. We define a variable starting with `MSG_` just for the `goog.getMsg` call
+        var closureVar = this.i18nGenerateClosureVar(message.id);
         var _params = {};
         if (params && Object.keys(params).length) {
             Object.keys(params).forEach(function (key) { return _params[formatI18nPlaceholderName(key)] = params[key]; });
         }
         var meta = metaFromI18nMessage(message);
         var content = getSerializedI18nContent(message);
-        var statements = getTranslationDeclStmts(_ref, content, meta, _params, transformFn);
+        var statements = getTranslationDeclStmts(_ref, closureVar, content, meta, _params, transformFn);
         (_a = this.constantPool.statements).push.apply(_a, __spread(statements));
         return _ref;
     };
@@ -14239,7 +14248,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         });
         return bound;
     };
-    TemplateDefinitionBuilder.prototype.i18nAllocateRef = function (messageId) {
+    TemplateDefinitionBuilder.prototype.i18nGenerateClosureVar = function (messageId) {
         var name;
         var suffix = this.fileBasedI18nSuffix.toUpperCase();
         if (this.i18nUseExternalIds) {
@@ -14301,7 +14310,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             this.i18n = this.i18nContext.forkChildContext(index, this.templateIndex, meta);
         }
         else {
-            var ref_1 = this.i18nAllocateRef(meta.id);
+            var ref_1 = variable(this.constantPool.uniqueName(TRANSLATION_PREFIX));
             this.i18n = new I18nContext(index, ref_1, 0, this.templateIndex, meta);
         }
         // generate i18nStart instruction
@@ -16359,7 +16368,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-beta.11+82.sha-387fbb8.with-local-changes');
+var VERSION$1 = new Version('8.0.0-beta.11+83.sha-91c7b45.with-local-changes');
 
 /**
  * @license
