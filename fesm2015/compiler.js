@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.11+90.sha-0aa0f11.with-local-changes
+ * @license Angular v8.0.0-beta.11+91.sha-6c01800.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13558,10 +13558,14 @@ class TemplateDefinitionBuilder {
             else if (name === 'class') {
                 stylingBuilder.registerClassAttr(value);
             }
-            else if (attr.i18n) {
-                i18nAttrs.push(attr);
-            }
             else {
+                if (attr.i18n) {
+                    // Place attributes into a separate array for i18n processing, but also keep such
+                    // attributes in the main list to make them available for directive matching at runtime.
+                    // TODO(FW-1248): prevent attributes duplication in `i18nAttributes` and `elementStart`
+                    // arguments
+                    i18nAttrs.push(attr);
+                }
                 outputAttrs.push(attr);
             }
         }
@@ -13578,17 +13582,14 @@ class TemplateDefinitionBuilder {
         element.inputs.forEach((input) => {
             const stylingInputWasSet = stylingBuilder.registerBoundInput(input);
             if (!stylingInputWasSet) {
-                if (input.type === 0 /* Property */) {
-                    if (input.i18n) {
-                        i18nAttrs.push(input);
-                    }
-                    else {
-                        allOtherInputs.push(input);
-                    }
+                if (input.type === 0 /* Property */ && input.i18n) {
+                    // Place attributes into a separate array for i18n processing, but also keep such
+                    // attributes in the main list to make them available for directive matching at runtime.
+                    // TODO(FW-1248): prevent attributes duplication in `i18nAttributes` and `elementStart`
+                    // arguments
+                    i18nAttrs.push(input);
                 }
-                else {
-                    allOtherInputs.push(input);
-                }
+                allOtherInputs.push(input);
             }
         });
         outputAttrs.forEach(attr => {
@@ -13722,6 +13723,10 @@ class TemplateDefinitionBuilder {
                 });
             }
             else if (instruction) {
+                // we must skip attributes with associated i18n context, since these attributes are handled
+                // separately and corresponding `i18nExp` and `i18nApply` instructions will be generated
+                if (input.i18n)
+                    return;
                 const value = input.value.visit(this._valueConverter);
                 if (value !== undefined) {
                     const params = [];
@@ -15414,7 +15419,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.11+90.sha-0aa0f11.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.11+91.sha-6c01800.with-local-changes');
 
 /**
  * @license
