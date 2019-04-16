@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.11+85.sha-b057806.with-local-changes
+ * @license Angular v8.0.0-beta.12+17.sha-9147092.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -14473,10 +14473,14 @@
                     else if (name_1 === 'class') {
                         stylingBuilder.registerClassAttr(value);
                     }
-                    else if (attr.i18n) {
-                        i18nAttrs.push(attr);
-                    }
                     else {
+                        if (attr.i18n) {
+                            // Place attributes into a separate array for i18n processing, but also keep such
+                            // attributes in the main list to make them available for directive matching at runtime.
+                            // TODO(FW-1248): prevent attributes duplication in `i18nAttributes` and `elementStart`
+                            // arguments
+                            i18nAttrs.push(attr);
+                        }
                         outputAttrs.push(attr);
                     }
                 }
@@ -14501,17 +14505,14 @@
             element.inputs.forEach(function (input) {
                 var stylingInputWasSet = stylingBuilder.registerBoundInput(input);
                 if (!stylingInputWasSet) {
-                    if (input.type === 0 /* Property */) {
-                        if (input.i18n) {
-                            i18nAttrs.push(input);
-                        }
-                        else {
-                            allOtherInputs.push(input);
-                        }
+                    if (input.type === 0 /* Property */ && input.i18n) {
+                        // Place attributes into a separate array for i18n processing, but also keep such
+                        // attributes in the main list to make them available for directive matching at runtime.
+                        // TODO(FW-1248): prevent attributes duplication in `i18nAttributes` and `elementStart`
+                        // arguments
+                        i18nAttrs.push(input);
                     }
-                    else {
-                        allOtherInputs.push(input);
-                    }
+                    allOtherInputs.push(input);
                 }
             });
             outputAttrs.forEach(function (attr) {
@@ -14645,6 +14646,10 @@
                     });
                 }
                 else if (instruction) {
+                    // we must skip attributes with associated i18n context, since these attributes are handled
+                    // separately and corresponding `i18nExp` and `i18nApply` instructions will be generated
+                    if (input.i18n)
+                        return;
                     var value_2 = input.value.visit(_this._valueConverter);
                     if (value_2 !== undefined) {
                         var params_2 = [];
@@ -16425,7 +16430,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-beta.11+85.sha-b057806.with-local-changes');
+    var VERSION$1 = new Version('8.0.0-beta.12+17.sha-9147092.with-local-changes');
 
     /**
      * @license
@@ -27894,6 +27899,8 @@
     exports.EmitterVisitorContext = EmitterVisitorContext;
     exports.JitEvaluator = JitEvaluator;
     exports.ViewCompiler = ViewCompiler;
+    exports.findStaticQueryIds = findStaticQueryIds;
+    exports.staticViewQueryIds = staticViewQueryIds;
     exports.getParseErrors = getParseErrors;
     exports.isSyntaxError = isSyntaxError;
     exports.syntaxError = syntaxError;
