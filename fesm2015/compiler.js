@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.13+55.sha-a181e8e.with-local-changes
+ * @license Angular v8.0.0-beta.13+57.sha-f348dea.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3139,6 +3139,7 @@ Identifiers$1.pipeBind2 = { name: 'ɵɵpipeBind2', moduleName: CORE$1 };
 Identifiers$1.pipeBind3 = { name: 'ɵɵpipeBind3', moduleName: CORE$1 };
 Identifiers$1.pipeBind4 = { name: 'ɵɵpipeBind4', moduleName: CORE$1 };
 Identifiers$1.pipeBindV = { name: 'ɵɵpipeBindV', moduleName: CORE$1 };
+Identifiers$1.property = { name: 'ɵɵproperty', moduleName: CORE$1 };
 Identifiers$1.i18n = { name: 'ɵɵi18n', moduleName: CORE$1 };
 Identifiers$1.i18nAttributes = { name: 'ɵɵi18nAttributes', moduleName: CORE$1 };
 Identifiers$1.i18nExp = { name: 'ɵɵi18nExp', moduleName: CORE$1 };
@@ -13143,19 +13144,6 @@ const NG_CONTENT_SELECT_ATTR$1 = 'select';
 const NG_PROJECT_AS_ATTR_NAME = 'ngProjectAs';
 // List of supported global targets for event listeners
 const GLOBAL_TARGET_RESOLVERS = new Map([['window', Identifiers$1.resolveWindow], ['document', Identifiers$1.resolveDocument], ['body', Identifiers$1.resolveBody]]);
-function mapBindingToInstruction(type) {
-    switch (type) {
-        case 0 /* Property */:
-        case 4 /* Animation */:
-            return Identifiers$1.elementProperty;
-        case 2 /* Class */:
-            return Identifiers$1.elementClassProp;
-        case 1 /* Attribute */:
-            return Identifiers$1.elementAttribute;
-        default:
-            return undefined;
-    }
-}
 //  if (rf & flags) { .. }
 function renderFlagCheckIfStmt(flags, statements) {
     return ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(flags), null, false), statements);
@@ -13700,11 +13688,11 @@ class TemplateDefinitionBuilder {
         // the reason why `undefined` is used is because the renderer understands this as a
         // special value to symbolize that there is no RHS to this binding
         // TODO (matsko): revisit this once FW-959 is approached
-        const emptyValueBindInstruction = importExpr(Identifiers$1.bind).callFn([literal(undefined)]);
+        const emptyValueBindInstruction = literal(undefined);
         // Generate element input bindings
         allOtherInputs.forEach((input) => {
-            const instruction = mapBindingToInstruction(input.type);
-            if (input.type === 4 /* Animation */) {
+            const inputType = input.type;
+            if (inputType === 4 /* Animation */) {
                 const value = input.value.visit(this._valueConverter);
                 // animation bindings can be presented in the following formats:
                 // 1. [@binding]="fooExp"
@@ -13718,14 +13706,15 @@ class TemplateDefinitionBuilder {
                 const hasValue = value instanceof LiteralPrimitive ? !!value.value : true;
                 this.allocateBindingSlots(value);
                 const bindingName = prepareSyntheticPropertyName(input.name);
-                this.updateInstruction(elementIndex, input.sourceSpan, Identifiers$1.elementProperty, () => {
+                this.updateInstruction(elementIndex, input.sourceSpan, Identifiers$1.property, () => {
                     return [
-                        literal(elementIndex), literal(bindingName),
-                        (hasValue ? this.convertPropertyBinding(implicit, value) : emptyValueBindInstruction)
+                        literal(bindingName),
+                        (hasValue ? this.convertPropertyBinding(implicit, value, /* skipBindFn */ true) :
+                            emptyValueBindInstruction),
                     ];
                 });
             }
-            else if (instruction) {
+            else {
                 // we must skip attributes with associated i18n context, since these attributes are handled
                 // separately and corresponding `i18nExp` and `i18nApply` instructions will be generated
                 if (input.i18n)
@@ -13734,7 +13723,7 @@ class TemplateDefinitionBuilder {
                 if (value !== undefined) {
                     const params = [];
                     const [attrNamespace, attrName] = splitNsName(input.name);
-                    const isAttributeBinding = input.type === 1 /* Attribute */;
+                    const isAttributeBinding = inputType === 1 /* Attribute */;
                     const sanitizationRef = resolveSanitizationFn(input.securityContext, isAttributeBinding);
                     if (sanitizationRef)
                         params.push(sanitizationRef);
@@ -13750,16 +13739,34 @@ class TemplateDefinitionBuilder {
                         }
                     }
                     this.allocateBindingSlots(value);
-                    this.updateInstruction(elementIndex, input.sourceSpan, instruction, () => {
-                        return [
-                            literal(elementIndex), literal(attrName),
-                            this.convertPropertyBinding(implicit, value), ...params
-                        ];
-                    });
+                    if (inputType === 0 /* Property */ && !(value instanceof Interpolation)) {
+                        // Bound, un-interpolated properties
+                        this.updateInstruction(elementIndex, input.sourceSpan, Identifiers$1.property, () => {
+                            return [
+                                literal(attrName), this.convertPropertyBinding(implicit, value, true), ...params
+                            ];
+                        });
+                    }
+                    else {
+                        let instruction;
+                        if (inputType === 0 /* Property */) {
+                            // Interpolated properties
+                            instruction = Identifiers$1.elementProperty;
+                        }
+                        else if (inputType === 2 /* Class */) {
+                            instruction = Identifiers$1.elementClassProp;
+                        }
+                        else {
+                            instruction = Identifiers$1.elementAttribute;
+                        }
+                        this.updateInstruction(elementIndex, input.sourceSpan, instruction, () => {
+                            return [
+                                literal(elementIndex), literal(attrName),
+                                this.convertPropertyBinding(implicit, value), ...params
+                            ];
+                        });
+                    }
                 }
-            }
-            else {
-                this._unsupported(`binding type ${input.type}`);
             }
         });
         // Traverse element child nodes
@@ -13826,7 +13833,7 @@ class TemplateDefinitionBuilder {
             parameters.splice(2, 0, literal(templateVisitor.getConstCount()), literal(templateVisitor.getVarCount()));
             return trimTrailingNulls(parameters);
         });
-        // handle property bindings e.g. ɵɵelementProperty(1, 'ngForOf', ɵɵbind(ctx.items));
+        // handle property bindings e.g. ɵɵproperty('ngForOf', ctx.items), et al;
         const context = variable(CONTEXT_NAME);
         this.templatePropertyBindings(template, templateIndex, context, template.templateAttrs);
         // Only add normal input/output binding instructions on explicit ng-template elements.
@@ -13908,12 +13915,7 @@ class TemplateDefinitionBuilder {
             if (input instanceof BoundAttribute) {
                 const value = input.value.visit(this._valueConverter);
                 this.allocateBindingSlots(value);
-                this.updateInstruction(templateIndex, template.sourceSpan, Identifiers$1.elementProperty, () => {
-                    return [
-                        literal(templateIndex), literal(input.name),
-                        this.convertPropertyBinding(context, value)
-                    ];
-                });
+                this.updateInstruction(templateIndex, template.sourceSpan, Identifiers$1.property, () => [literal(input.name), this.convertPropertyBinding(context, value, true)]);
             }
         });
     }
@@ -15422,7 +15424,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.13+55.sha-a181e8e.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.13+57.sha-f348dea.with-local-changes');
 
 /**
  * @license
