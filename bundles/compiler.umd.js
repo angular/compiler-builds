@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.13+38.sha-0df719a.with-local-changes
+ * @license Angular v8.0.0-beta.13+51.sha-d9ce8a4.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4912,15 +4912,17 @@
      */
     function getAttrsForDirectiveMatching(elOrTpl) {
         var attributesMap = {};
-        elOrTpl.attributes.forEach(function (a) {
-            if (!isI18nAttribute(a.name)) {
-                attributesMap[a.name] = a.value;
-            }
-        });
-        elOrTpl.inputs.forEach(function (i) { attributesMap[i.name] = ''; });
-        elOrTpl.outputs.forEach(function (o) { attributesMap[o.name] = ''; });
-        if (elOrTpl instanceof Template) {
+        if (elOrTpl instanceof Template && elOrTpl.tagName !== 'ng-template') {
             elOrTpl.templateAttrs.forEach(function (a) { return attributesMap[a.name] = ''; });
+        }
+        else {
+            elOrTpl.attributes.forEach(function (a) {
+                if (!isI18nAttribute(a.name)) {
+                    attributesMap[a.name] = a.value;
+                }
+            });
+            elOrTpl.inputs.forEach(function (i) { attributesMap[i.name] = ''; });
+            elOrTpl.outputs.forEach(function (o) { attributesMap[o.name] = ''; });
         }
         return attributesMap;
     }
@@ -16431,7 +16433,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-beta.13+38.sha-0df719a.with-local-changes');
+    var VERSION$1 = new Version('8.0.0-beta.13+51.sha-d9ce8a4.with-local-changes');
 
     /**
      * @license
@@ -27855,6 +27857,7 @@
     exports.NgModuleCompiler = NgModuleCompiler;
     exports.ArrayType = ArrayType;
     exports.AssertNotNull = AssertNotNull;
+    exports.DYNAMIC_TYPE = DYNAMIC_TYPE;
     exports.BinaryOperatorExpr = BinaryOperatorExpr;
     exports.BuiltinType = BuiltinType;
     exports.CastExpr = CastExpr;
