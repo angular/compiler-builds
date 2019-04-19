@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.13+36.sha-d7f7826.with-local-changes
+ * @license Angular v8.0.0-beta.13+38.sha-0df719a.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3213,6 +3213,7 @@ Identifiers$1.getInheritedFactory = {
     name: 'ɵɵgetInheritedFactory',
     moduleName: CORE$1,
 };
+Identifiers$1.registerNgModuleType = { name: 'ɵregisterNgModuleType', moduleName: CORE$1 };
 // sanitization-related functions
 Identifiers$1.sanitizeHtml = { name: 'ɵɵsanitizeHtml', moduleName: CORE$1 };
 Identifiers$1.sanitizeStyle = { name: 'ɵɵsanitizeStyle', moduleName: CORE$1 };
@@ -15419,7 +15420,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.13+36.sha-d7f7826.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.13+38.sha-0df719a.with-local-changes');
 
 /**
  * @license
