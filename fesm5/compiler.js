@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.13+78.sha-19dfadb.with-local-changes
+ * @license Angular v8.0.0-beta.13+79.sha-0f9230d.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -17571,9 +17571,17 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, staticAttrib
                     sanitizerFn = resolveSanitizationFn(securityContexts[0], isAttribute);
                 }
             }
-            var instructionParams = [
-                elVarExp, literal(bindingName), importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr])
-            ];
+            var isPropertyInstruction = instruction === Identifiers$1.property;
+            var instructionParams = isPropertyInstruction ?
+                [
+                    literal(bindingName),
+                    bindingExpr.currValExpr,
+                ] :
+                [
+                    elVarExp,
+                    literal(bindingName),
+                    importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr]),
+                ];
             if (sanitizerFn) {
                 instructionParams.push(sanitizerFn);
             }
@@ -17664,7 +17672,7 @@ function getBindingNameAndInstruction(binding) {
             instruction = Identifiers$1.componentHostSyntheticProperty;
         }
         else {
-            instruction = Identifiers$1.elementProperty;
+            instruction = Identifiers$1.property;
         }
     }
     return { bindingName: bindingName, instruction: instruction, isAttribute: !!attrMatches };
@@ -18054,7 +18062,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-beta.13+78.sha-19dfadb.with-local-changes');
+var VERSION$1 = new Version('8.0.0-beta.13+79.sha-0f9230d.with-local-changes');
 
 /**
  * @license
