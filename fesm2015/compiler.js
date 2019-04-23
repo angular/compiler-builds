@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.13+70.sha-63523f7.with-local-changes
+ * @license Angular v8.0.0-beta.13+80.sha-9873356.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3140,6 +3140,16 @@ Identifiers$1.pipeBind3 = { name: 'ɵɵpipeBind3', moduleName: CORE$1 };
 Identifiers$1.pipeBind4 = { name: 'ɵɵpipeBind4', moduleName: CORE$1 };
 Identifiers$1.pipeBindV = { name: 'ɵɵpipeBindV', moduleName: CORE$1 };
 Identifiers$1.property = { name: 'ɵɵproperty', moduleName: CORE$1 };
+Identifiers$1.propertyInterpolate = { name: 'ɵɵpropertyInterpolate', moduleName: CORE$1 };
+Identifiers$1.propertyInterpolate1 = { name: 'ɵɵpropertyInterpolate1', moduleName: CORE$1 };
+Identifiers$1.propertyInterpolate2 = { name: 'ɵɵpropertyInterpolate2', moduleName: CORE$1 };
+Identifiers$1.propertyInterpolate3 = { name: 'ɵɵpropertyInterpolate3', moduleName: CORE$1 };
+Identifiers$1.propertyInterpolate4 = { name: 'ɵɵpropertyInterpolate4', moduleName: CORE$1 };
+Identifiers$1.propertyInterpolate5 = { name: 'ɵɵpropertyInterpolate5', moduleName: CORE$1 };
+Identifiers$1.propertyInterpolate6 = { name: 'ɵɵpropertyInterpolate6', moduleName: CORE$1 };
+Identifiers$1.propertyInterpolate7 = { name: 'ɵɵpropertyInterpolate7', moduleName: CORE$1 };
+Identifiers$1.propertyInterpolate8 = { name: 'ɵɵpropertyInterpolate8', moduleName: CORE$1 };
+Identifiers$1.propertyInterpolateV = { name: 'ɵɵpropertyInterpolateV', moduleName: CORE$1 };
 Identifiers$1.i18n = { name: 'ɵɵi18n', moduleName: CORE$1 };
 Identifiers$1.i18nAttributes = { name: 'ɵɵi18nAttributes', moduleName: CORE$1 };
 Identifiers$1.i18nExp = { name: 'ɵɵi18nExp', moduleName: CORE$1 };
@@ -15280,21 +15290,33 @@ class TemplateDefinitionBuilder {
                         }
                     }
                     this.allocateBindingSlots(value);
-                    if (inputType === 0 /* Property */ && !(value instanceof Interpolation)) {
-                        // Bound, un-interpolated properties
-                        this.updateInstruction(elementIndex, input.sourceSpan, Identifiers$1.property, () => {
-                            return [
-                                literal(attrName), this.convertPropertyBinding(implicit, value, true), ...params
-                            ];
-                        });
+                    if (inputType === 0 /* Property */) {
+                        if (value instanceof Interpolation) {
+                            // Interpolated properties
+                            const { currValExpr } = convertPropertyBinding(this, implicit, value, this.bindingContext(), BindingForm.TrySimple);
+                            let args = currValExpr.args;
+                            args.shift(); // ViewEngine required a count, we don't need that.
+                            // For interpolations like attr="{{foo}}", we don't need ["", foo, ""], just [foo].
+                            if (args.length === 3 && isEmptyStringExpression(args[0]) &&
+                                isEmptyStringExpression(args[2])) {
+                                args = [args[1]];
+                            }
+                            this.updateInstruction(elementIndex, input.sourceSpan, propertyInterpolate(args.length), () => {
+                                return [literal(attrName), ...args, ...params];
+                            });
+                        }
+                        else {
+                            // Bound, un-interpolated properties
+                            this.updateInstruction(elementIndex, input.sourceSpan, Identifiers$1.property, () => {
+                                return [
+                                    literal(attrName), this.convertPropertyBinding(implicit, value, true), ...params
+                                ];
+                            });
+                        }
                     }
                     else {
                         let instruction;
-                        if (inputType === 0 /* Property */) {
-                            // Interpolated properties
-                            instruction = Identifiers$1.elementProperty;
-                        }
-                        else if (inputType === 2 /* Class */) {
+                        if (inputType === 2 /* Class */) {
                             instruction = Identifiers$1.elementClassProp;
                         }
                         else {
@@ -15334,7 +15356,7 @@ class TemplateDefinitionBuilder {
             this.i18n.appendTemplate(template.i18n, templateIndex);
         }
         const tagName = sanitizeIdentifier(template.tagName || '');
-        const contextName = `${tagName ? this.contextName + '_' + tagName : ''}_${templateIndex}`;
+        const contextName = `${this.contextName}${tagName ? '_' + tagName : ''}_${templateIndex}`;
         const templateName = `${contextName}_Template`;
         const parameters = [
             literal(templateIndex),
@@ -15974,6 +15996,36 @@ function interpolate(args) {
         error(`Invalid interpolation argument length ${args.length}`);
     return importExpr(Identifiers$1.interpolationV).callFn([literalArr(args)]);
 }
+function isEmptyStringExpression(exp) {
+    return exp instanceof LiteralExpr && exp.value === '';
+}
+function propertyInterpolate(argsLength) {
+    if (argsLength % 2 !== 1) {
+        error(`Invalid propertyInterpolate argument length ${argsLength}`);
+    }
+    switch (argsLength) {
+        case 1:
+            return Identifiers$1.propertyInterpolate;
+        case 3:
+            return Identifiers$1.propertyInterpolate1;
+        case 5:
+            return Identifiers$1.propertyInterpolate2;
+        case 7:
+            return Identifiers$1.propertyInterpolate3;
+        case 9:
+            return Identifiers$1.propertyInterpolate4;
+        case 11:
+            return Identifiers$1.propertyInterpolate5;
+        case 13:
+            return Identifiers$1.propertyInterpolate6;
+        case 15:
+            return Identifiers$1.propertyInterpolate7;
+        case 17:
+            return Identifiers$1.propertyInterpolate8;
+        default:
+            return Identifiers$1.propertyInterpolateV;
+    }
+}
 /**
  * Parse a template into render3 `Node`s and additional metadata, with no other dependencies.
  *
@@ -16506,9 +16558,17 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, staticAttrib
                     sanitizerFn = resolveSanitizationFn(securityContexts[0], isAttribute);
                 }
             }
-            const instructionParams = [
-                elVarExp, literal(bindingName), importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr])
-            ];
+            const isPropertyInstruction = instruction === Identifiers$1.property;
+            const instructionParams = isPropertyInstruction ?
+                [
+                    literal(bindingName),
+                    bindingExpr.currValExpr,
+                ] :
+                [
+                    elVarExp,
+                    literal(bindingName),
+                    importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr]),
+                ];
             if (sanitizerFn) {
                 instructionParams.push(sanitizerFn);
             }
@@ -16599,7 +16659,7 @@ function getBindingNameAndInstruction(binding) {
             instruction = Identifiers$1.componentHostSyntheticProperty;
         }
         else {
-            instruction = Identifiers$1.elementProperty;
+            instruction = Identifiers$1.property;
         }
     }
     return { bindingName, instruction, isAttribute: !!attrMatches };
@@ -16965,7 +17025,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.13+70.sha-63523f7.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.13+80.sha-9873356.with-local-changes');
 
 /**
  * @license
