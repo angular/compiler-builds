@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.13+77.sha-0bcb232.with-local-changes
+ * @license Angular v8.0.0-beta.13+78.sha-19dfadb.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15356,7 +15356,7 @@ class TemplateDefinitionBuilder {
             this.i18n.appendTemplate(template.i18n, templateIndex);
         }
         const tagName = sanitizeIdentifier(template.tagName || '');
-        const contextName = `${tagName ? this.contextName + '_' + tagName : ''}_${templateIndex}`;
+        const contextName = `${this.contextName}${tagName ? '_' + tagName : ''}_${templateIndex}`;
         const templateName = `${contextName}_Template`;
         const parameters = [
             literal(templateIndex),
@@ -17017,7 +17017,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.13+77.sha-0bcb232.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.13+78.sha-19dfadb.with-local-changes');
 
 /**
  * @license
