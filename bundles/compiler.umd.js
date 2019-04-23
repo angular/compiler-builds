@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.12+18.sha-1b7749d.with-local-changes
+ * @license Angular v8.0.0-beta.13+62.sha-5c8d156.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3477,6 +3477,7 @@
         Identifiers.pipeBind3 = { name: 'ɵɵpipeBind3', moduleName: CORE$1 };
         Identifiers.pipeBind4 = { name: 'ɵɵpipeBind4', moduleName: CORE$1 };
         Identifiers.pipeBindV = { name: 'ɵɵpipeBindV', moduleName: CORE$1 };
+        Identifiers.property = { name: 'ɵɵproperty', moduleName: CORE$1 };
         Identifiers.i18n = { name: 'ɵɵi18n', moduleName: CORE$1 };
         Identifiers.i18nAttributes = { name: 'ɵɵi18nAttributes', moduleName: CORE$1 };
         Identifiers.i18nExp = { name: 'ɵɵi18nExp', moduleName: CORE$1 };
@@ -3551,6 +3552,7 @@
             name: 'ɵɵgetInheritedFactory',
             moduleName: CORE$1,
         };
+        Identifiers.registerNgModuleType = { name: 'ɵregisterNgModuleType', moduleName: CORE$1 };
         // sanitization-related functions
         Identifiers.sanitizeHtml = { name: 'ɵɵsanitizeHtml', moduleName: CORE$1 };
         Identifiers.sanitizeStyle = { name: 'ɵɵsanitizeStyle', moduleName: CORE$1 };
@@ -4911,15 +4913,17 @@
      */
     function getAttrsForDirectiveMatching(elOrTpl) {
         var attributesMap = {};
-        elOrTpl.attributes.forEach(function (a) {
-            if (!isI18nAttribute(a.name)) {
-                attributesMap[a.name] = a.value;
-            }
-        });
-        elOrTpl.inputs.forEach(function (i) { attributesMap[i.name] = ''; });
-        elOrTpl.outputs.forEach(function (o) { attributesMap[o.name] = ''; });
-        if (elOrTpl instanceof Template) {
+        if (elOrTpl instanceof Template && elOrTpl.tagName !== 'ng-template') {
             elOrTpl.templateAttrs.forEach(function (a) { return attributesMap[a.name] = ''; });
+        }
+        else {
+            elOrTpl.attributes.forEach(function (a) {
+                if (!isI18nAttribute(a.name)) {
+                    attributesMap[a.name] = a.value;
+                }
+            });
+            elOrTpl.inputs.forEach(function (i) { attributesMap[i.name] = ''; });
+            elOrTpl.outputs.forEach(function (o) { attributesMap[o.name] = ''; });
         }
         return attributesMap;
     }
@@ -14046,19 +14050,6 @@
     var NG_PROJECT_AS_ATTR_NAME = 'ngProjectAs';
     // List of supported global targets for event listeners
     var GLOBAL_TARGET_RESOLVERS = new Map([['window', Identifiers$1.resolveWindow], ['document', Identifiers$1.resolveDocument], ['body', Identifiers$1.resolveBody]]);
-    function mapBindingToInstruction(type) {
-        switch (type) {
-            case 0 /* Property */:
-            case 4 /* Animation */:
-                return Identifiers$1.elementProperty;
-            case 2 /* Class */:
-                return Identifiers$1.elementClassProp;
-            case 1 /* Attribute */:
-                return Identifiers$1.elementAttribute;
-            default:
-                return undefined;
-        }
-    }
     //  if (rf & flags) { .. }
     function renderFlagCheckIfStmt(flags, statements) {
         return ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(flags), null, false), statements);
@@ -14620,11 +14611,11 @@
             // the reason why `undefined` is used is because the renderer understands this as a
             // special value to symbolize that there is no RHS to this binding
             // TODO (matsko): revisit this once FW-959 is approached
-            var emptyValueBindInstruction = importExpr(Identifiers$1.bind).callFn([literal(undefined)]);
+            var emptyValueBindInstruction = literal(undefined);
             // Generate element input bindings
             allOtherInputs.forEach(function (input) {
-                var instruction = mapBindingToInstruction(input.type);
-                if (input.type === 4 /* Animation */) {
+                var inputType = input.type;
+                if (inputType === 4 /* Animation */) {
                     var value_1 = input.value.visit(_this._valueConverter);
                     // animation bindings can be presented in the following formats:
                     // 1. [@binding]="fooExp"
@@ -14638,14 +14629,15 @@
                     var hasValue_1 = value_1 instanceof LiteralPrimitive ? !!value_1.value : true;
                     _this.allocateBindingSlots(value_1);
                     var bindingName_1 = prepareSyntheticPropertyName(input.name);
-                    _this.updateInstruction(elementIndex, input.sourceSpan, Identifiers$1.elementProperty, function () {
+                    _this.updateInstruction(elementIndex, input.sourceSpan, Identifiers$1.property, function () {
                         return [
-                            literal(elementIndex), literal(bindingName_1),
-                            (hasValue_1 ? _this.convertPropertyBinding(implicit, value_1) : emptyValueBindInstruction)
+                            literal(bindingName_1),
+                            (hasValue_1 ? _this.convertPropertyBinding(implicit, value_1, /* skipBindFn */ true) :
+                                emptyValueBindInstruction),
                         ];
                     });
                 }
-                else if (instruction) {
+                else {
                     // we must skip attributes with associated i18n context, since these attributes are handled
                     // separately and corresponding `i18nExp` and `i18nApply` instructions will be generated
                     if (input.i18n)
@@ -14654,7 +14646,7 @@
                     if (value_2 !== undefined) {
                         var params_2 = [];
                         var _a = __read(splitNsName(input.name), 2), attrNamespace = _a[0], attrName_1 = _a[1];
-                        var isAttributeBinding = input.type === 1 /* Attribute */;
+                        var isAttributeBinding = inputType === 1 /* Attribute */;
                         var sanitizationRef = resolveSanitizationFn(input.securityContext, isAttributeBinding);
                         if (sanitizationRef)
                             params_2.push(sanitizationRef);
@@ -14670,16 +14662,34 @@
                             }
                         }
                         _this.allocateBindingSlots(value_2);
-                        _this.updateInstruction(elementIndex, input.sourceSpan, instruction, function () {
-                            return __spread([
-                                literal(elementIndex), literal(attrName_1),
-                                _this.convertPropertyBinding(implicit, value_2)
-                            ], params_2);
-                        });
+                        if (inputType === 0 /* Property */ && !(value_2 instanceof Interpolation)) {
+                            // Bound, un-interpolated properties
+                            _this.updateInstruction(elementIndex, input.sourceSpan, Identifiers$1.property, function () {
+                                return __spread([
+                                    literal(attrName_1), _this.convertPropertyBinding(implicit, value_2, true)
+                                ], params_2);
+                            });
+                        }
+                        else {
+                            var instruction_1;
+                            if (inputType === 0 /* Property */) {
+                                // Interpolated properties
+                                instruction_1 = Identifiers$1.elementProperty;
+                            }
+                            else if (inputType === 2 /* Class */) {
+                                instruction_1 = Identifiers$1.elementClassProp;
+                            }
+                            else {
+                                instruction_1 = Identifiers$1.elementAttribute;
+                            }
+                            _this.updateInstruction(elementIndex, input.sourceSpan, instruction_1, function () {
+                                return __spread([
+                                    literal(elementIndex), literal(attrName_1),
+                                    _this.convertPropertyBinding(implicit, value_2)
+                                ], params_2);
+                            });
+                        }
                     }
-                }
-                else {
-                    _this._unsupported("binding type " + input.type);
                 }
             });
             // Traverse element child nodes
@@ -14748,7 +14758,7 @@
                 parameters.splice(2, 0, literal(templateVisitor.getConstCount()), literal(templateVisitor.getVarCount()));
                 return trimTrailingNulls(parameters);
             });
-            // handle property bindings e.g. ɵɵelementProperty(1, 'ngForOf', ɵɵbind(ctx.items));
+            // handle property bindings e.g. ɵɵproperty('ngForOf', ctx.items), et al;
             var context = variable(CONTEXT_NAME);
             this.templatePropertyBindings(template, templateIndex, context, template.templateAttrs);
             // Only add normal input/output binding instructions on explicit ng-template elements.
@@ -14834,12 +14844,7 @@
                 if (input instanceof BoundAttribute) {
                     var value_4 = input.value.visit(_this._valueConverter);
                     _this.allocateBindingSlots(value_4);
-                    _this.updateInstruction(templateIndex, template.sourceSpan, Identifiers$1.elementProperty, function () {
-                        return [
-                            literal(templateIndex), literal(input.name),
-                            _this.convertPropertyBinding(context, value_4)
-                        ];
-                    });
+                    _this.updateInstruction(templateIndex, template.sourceSpan, Identifiers$1.property, function () { return [literal(input.name), _this.convertPropertyBinding(context, value_4, true)]; });
                 }
             });
         };
@@ -16430,7 +16435,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-beta.12+18.sha-1b7749d.with-local-changes');
+    var VERSION$1 = new Version('8.0.0-beta.13+62.sha-5c8d156.with-local-changes');
 
     /**
      * @license
@@ -27854,6 +27859,7 @@
     exports.NgModuleCompiler = NgModuleCompiler;
     exports.ArrayType = ArrayType;
     exports.AssertNotNull = AssertNotNull;
+    exports.DYNAMIC_TYPE = DYNAMIC_TYPE;
     exports.BinaryOperatorExpr = BinaryOperatorExpr;
     exports.BuiltinType = BuiltinType;
     exports.CastExpr = CastExpr;

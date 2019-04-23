@@ -69,6 +69,7 @@ export declare class Identifiers {
     static pipeBind3: o.ExternalReference;
     static pipeBind4: o.ExternalReference;
     static pipeBindV: o.ExternalReference;
+    static property: o.ExternalReference;
     static i18n: o.ExternalReference;
     static i18nAttributes: o.ExternalReference;
     static i18nExp: o.ExternalReference;
@@ -116,6 +117,7 @@ export declare class Identifiers {
     static listener: o.ExternalReference;
     static getFactoryOf: o.ExternalReference;
     static getInheritedFactory: o.ExternalReference;
+    static registerNgModuleType: o.ExternalReference;
     static sanitizeHtml: o.ExternalReference;
     static sanitizeStyle: o.ExternalReference;
     static defaultStyleSanitizer: o.ExternalReference;
