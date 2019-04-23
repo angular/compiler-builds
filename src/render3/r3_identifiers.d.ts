@@ -70,6 +70,16 @@ export declare class Identifiers {
     static pipeBind4: o.ExternalReference;
     static pipeBindV: o.ExternalReference;
     static property: o.ExternalReference;
+    static propertyInterpolate: o.ExternalReference;
+    static propertyInterpolate1: o.ExternalReference;
+    static propertyInterpolate2: o.ExternalReference;
+    static propertyInterpolate3: o.ExternalReference;
+    static propertyInterpolate4: o.ExternalReference;
+    static propertyInterpolate5: o.ExternalReference;
+    static propertyInterpolate6: o.ExternalReference;
+    static propertyInterpolate7: o.ExternalReference;
+    static propertyInterpolate8: o.ExternalReference;
+    static propertyInterpolateV: o.ExternalReference;
     static i18n: o.ExternalReference;
     static i18nAttributes: o.ExternalReference;
     static i18nExp: o.ExternalReference;
