@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.14+5.sha-8ca208f.with-local-changes
+ * @license Angular v8.0.0-beta.14+6.sha-c7f1b0a.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -17107,10 +17107,10 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     definitionMap.set('factory', result.factory);
     if (meta.queries.length > 0) {
         // e.g. `contentQueries: (rf, ctx, dirIndex) => { ... }
-        definitionMap.set('contentQueries', createContentQueriesFunction(meta, constantPool));
+        definitionMap.set('contentQueries', createContentQueriesFunction(meta.queries, constantPool, meta.name));
     }
     if (meta.viewQueries.length) {
-        definitionMap.set('viewQuery', createViewQueriesFunction(meta, constantPool));
+        definitionMap.set('viewQuery', createViewQueriesFunction(meta.viewQueries, constantPool, meta.name));
     }
     // Initialize hostVarsCount to number of bound host properties (interpolations illegal),
     // except 'style' and 'class' properties, since they should *not* allocate host var slots
@@ -17183,7 +17183,7 @@ function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
  * Compile a base definition for the render3 runtime as defined by {@link R3BaseRefMetadata}
  * @param meta the metadata used for compilation.
  */
-function compileBaseDefFromMetadata(meta) {
+function compileBaseDefFromMetadata(meta, constantPool) {
     var definitionMap = new DefinitionMap();
     if (meta.inputs) {
         var inputs_1 = meta.inputs;
@@ -17201,6 +17201,12 @@ function compileBaseDefFromMetadata(meta) {
             return { key: key, value: value, quoted: false };
         });
         definitionMap.set('outputs', literalMap(outputsMap));
+    }
+    if (meta.viewQueries && meta.viewQueries.length > 0) {
+        definitionMap.set('viewQuery', createViewQueriesFunction(meta.viewQueries, constantPool));
+    }
+    if (meta.queries && meta.queries.length > 0) {
+        definitionMap.set('contentQueries', createContentQueriesFunction(meta.queries, constantPool));
     }
     var expression = importExpr(Identifiers$1.defineBase).callFn([definitionMap.toLiteralMap()]);
     var type = new ExpressionType(importExpr(Identifiers$1.BaseDef));
@@ -17424,14 +17430,14 @@ function convertAttributesToExpressions(attributes) {
     return values;
 }
 // Define and update any content queries
-function createContentQueriesFunction(meta, constantPool) {
+function createContentQueriesFunction(queries, constantPool, name) {
     var e_3, _a;
     var createStatements = [];
     var updateStatements = [];
     var tempAllocator = temporaryAllocator(updateStatements, TEMPORARY_NAME);
     try {
-        for (var _b = __values(meta.queries), _c = _b.next(); !_c.done; _c = _b.next()) {
-            var query = _c.value;
+        for (var queries_1 = __values(queries), queries_1_1 = queries_1.next(); !queries_1_1.done; queries_1_1 = queries_1.next()) {
+            var query = queries_1_1.value;
             // creation, e.g. r3.contentQuery(dirIndex, somePredicate, true, null);
             var args = __spread([variable('dirIndex')], prepareQueryParams(query, constantPool));
             var queryInstruction = query.static ? Identifiers$1.staticContentQuery : Identifiers$1.contentQuery;
@@ -17449,11 +17455,11 @@ function createContentQueriesFunction(meta, constantPool) {
     catch (e_3_1) { e_3 = { error: e_3_1 }; }
     finally {
         try {
-            if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+            if (queries_1_1 && !queries_1_1.done && (_a = queries_1.return)) _a.call(queries_1);
         }
         finally { if (e_3) throw e_3.error; }
     }
-    var contentQueriesFnName = meta.name ? meta.name + "_ContentQueries" : null;
+    var contentQueriesFnName = name ? name + "_ContentQueries" : null;
     return fn([
         new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null),
         new FnParam('dirIndex', null)
@@ -17494,11 +17500,11 @@ function createTypeForDef(meta, typeBase) {
     ]));
 }
 // Define and update any view queries
-function createViewQueriesFunction(meta, constantPool) {
+function createViewQueriesFunction(viewQueries, constantPool, name) {
     var createStatements = [];
     var updateStatements = [];
     var tempAllocator = temporaryAllocator(updateStatements, TEMPORARY_NAME);
-    meta.viewQueries.forEach(function (query) {
+    viewQueries.forEach(function (query) {
         var queryInstruction = query.static ? Identifiers$1.staticViewQuery : Identifiers$1.viewQuery;
         // creation, e.g. r3.viewQuery(somePredicate, true);
         var queryDefinition = importExpr(queryInstruction).callFn(prepareQueryParams(query, constantPool));
@@ -17512,7 +17518,7 @@ function createViewQueriesFunction(meta, constantPool) {
             .set(query.first ? temporary.prop('first') : temporary);
         updateStatements.push(refresh.and(updateDirective).toStmt());
     });
-    var viewQueryFnName = meta.name ? meta.name + "_Query" : null;
+    var viewQueryFnName = name ? name + "_Query" : null;
     return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null)], [
         renderFlagCheckIfStmt(1 /* Create */, createStatements),
         renderFlagCheckIfStmt(2 /* Update */, updateStatements)
@@ -17906,6 +17912,13 @@ var CompilerFacadeImpl = /** @class */ (function () {
         var preStatements = __spread(constantPool.statements, res.statements);
         return this.jitExpression(res.expression, angularCoreEnv, "ng:///" + facade.name + ".js", preStatements);
     };
+    CompilerFacadeImpl.prototype.compileBase = function (angularCoreEnv, sourceMapUrl, facade) {
+        var constantPool = new ConstantPool();
+        var meta = __assign({}, facade, { viewQueries: facade.viewQueries ? facade.viewQueries.map(convertToR3QueryMetadata) :
+                facade.viewQueries, queries: facade.queries ? facade.queries.map(convertToR3QueryMetadata) : facade.queries });
+        var res = compileBaseDefFromMetadata(meta, constantPool);
+        return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, constantPool.statements);
+    };
     CompilerFacadeImpl.prototype.createParseSourceSpan = function (kind, typeName, sourceUrl) {
         return r3JitTypeSourceSpan(kind, typeName, sourceUrl);
     };
@@ -18062,7 +18075,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-beta.14+5.sha-8ca208f.with-local-changes');
+var VERSION$1 = new Version('8.0.0-beta.14+6.sha-c7f1b0a.with-local-changes');
 
 /**
  * @license

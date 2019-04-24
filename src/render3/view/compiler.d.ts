@@ -13,7 +13,7 @@ import { ParseError, ParseSourceSpan } from '../../parse_util';
 import { BindingParser } from '../../template_parser/binding_parser';
 import { OutputContext } from '../../util';
 import { Render3ParseResult } from '../r3_template_transform';
-import { R3ComponentDef, R3ComponentMetadata, R3DirectiveDef, R3DirectiveMetadata } from './api';
+import { R3ComponentDef, R3ComponentMetadata, R3DirectiveDef, R3DirectiveMetadata, R3QueryMetadata } from './api';
 /**
  * Compile a directive for the render3 runtime as defined by the `R3DirectiveMetadata`.
  */
@@ -25,12 +25,14 @@ export interface R3BaseRefMetaData {
     outputs?: {
         [key: string]: string;
     };
+    viewQueries?: R3QueryMetadata[];
+    queries?: R3QueryMetadata[];
 }
 /**
  * Compile a base definition for the render3 runtime as defined by {@link R3BaseRefMetadata}
  * @param meta the metadata used for compilation.
  */
-export declare function compileBaseDefFromMetadata(meta: R3BaseRefMetaData): {
+export declare function compileBaseDefFromMetadata(meta: R3BaseRefMetaData, constantPool: ConstantPool): {
     expression: o.InvokeFunctionExpr;
     type: o.ExpressionType;
 };
