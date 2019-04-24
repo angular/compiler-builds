@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.14+3.sha-d92fb25.with-local-changes
+ * @license Angular v8.0.0-beta.14+19.sha-3938563.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16127,10 +16127,10 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     definitionMap.set('factory', result.factory);
     if (meta.queries.length > 0) {
         // e.g. `contentQueries: (rf, ctx, dirIndex) => { ... }
-        definitionMap.set('contentQueries', createContentQueriesFunction(meta, constantPool));
+        definitionMap.set('contentQueries', createContentQueriesFunction(meta.queries, constantPool, meta.name));
     }
     if (meta.viewQueries.length) {
-        definitionMap.set('viewQuery', createViewQueriesFunction(meta, constantPool));
+        definitionMap.set('viewQuery', createViewQueriesFunction(meta.viewQueries, constantPool, meta.name));
     }
     // Initialize hostVarsCount to number of bound host properties (interpolations illegal),
     // except 'style' and 'class' properties, since they should *not* allocate host var slots
@@ -16203,7 +16203,7 @@ function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
  * Compile a base definition for the render3 runtime as defined by {@link R3BaseRefMetadata}
  * @param meta the metadata used for compilation.
  */
-function compileBaseDefFromMetadata(meta) {
+function compileBaseDefFromMetadata(meta, constantPool) {
     const definitionMap = new DefinitionMap();
     if (meta.inputs) {
         const inputs = meta.inputs;
@@ -16221,6 +16221,12 @@ function compileBaseDefFromMetadata(meta) {
             return { key, value, quoted: false };
         });
         definitionMap.set('outputs', literalMap(outputsMap));
+    }
+    if (meta.viewQueries && meta.viewQueries.length > 0) {
+        definitionMap.set('viewQuery', createViewQueriesFunction(meta.viewQueries, constantPool));
+    }
+    if (meta.queries && meta.queries.length > 0) {
+        definitionMap.set('contentQueries', createContentQueriesFunction(meta.queries, constantPool));
     }
     const expression = importExpr(Identifiers$1.defineBase).callFn([definitionMap.toLiteralMap()]);
     const type = new ExpressionType(importExpr(Identifiers$1.BaseDef));
@@ -16422,11 +16428,11 @@ function convertAttributesToExpressions(attributes) {
     return values;
 }
 // Define and update any content queries
-function createContentQueriesFunction(meta, constantPool) {
+function createContentQueriesFunction(queries, constantPool, name) {
     const createStatements = [];
     const updateStatements = [];
     const tempAllocator = temporaryAllocator(updateStatements, TEMPORARY_NAME);
-    for (const query of meta.queries) {
+    for (const query of queries) {
         // creation, e.g. r3.contentQuery(dirIndex, somePredicate, true, null);
         const args = [variable('dirIndex'), ...prepareQueryParams(query, constantPool)];
         const queryInstruction = query.static ? Identifiers$1.staticContentQuery : Identifiers$1.contentQuery;
@@ -16440,7 +16446,7 @@ function createContentQueriesFunction(meta, constantPool) {
             .set(query.first ? temporary.prop('first') : temporary);
         updateStatements.push(refresh.and(updateDirective).toStmt());
     }
-    const contentQueriesFnName = meta.name ? `${meta.name}_ContentQueries` : null;
+    const contentQueriesFnName = name ? `${name}_ContentQueries` : null;
     return fn([
         new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null),
         new FnParam('dirIndex', null)
@@ -16481,11 +16487,11 @@ function createTypeForDef(meta, typeBase) {
     ]));
 }
 // Define and update any view queries
-function createViewQueriesFunction(meta, constantPool) {
+function createViewQueriesFunction(viewQueries, constantPool, name) {
     const createStatements = [];
     const updateStatements = [];
     const tempAllocator = temporaryAllocator(updateStatements, TEMPORARY_NAME);
-    meta.viewQueries.forEach((query) => {
+    viewQueries.forEach((query) => {
         const queryInstruction = query.static ? Identifiers$1.staticViewQuery : Identifiers$1.viewQuery;
         // creation, e.g. r3.viewQuery(somePredicate, true);
         const queryDefinition = importExpr(queryInstruction).callFn(prepareQueryParams(query, constantPool));
@@ -16499,7 +16505,7 @@ function createViewQueriesFunction(meta, constantPool) {
             .set(query.first ? temporary.prop('first') : temporary);
         updateStatements.push(refresh.and(updateDirective).toStmt());
     });
-    const viewQueryFnName = meta.name ? `${meta.name}_Query` : null;
+    const viewQueryFnName = name ? `${name}_Query` : null;
     return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null)], [
         renderFlagCheckIfStmt(1 /* Create */, createStatements),
         renderFlagCheckIfStmt(2 /* Update */, updateStatements)
@@ -16875,6 +16881,13 @@ class CompilerFacadeImpl {
         const preStatements = [...constantPool.statements, ...res.statements];
         return this.jitExpression(res.expression, angularCoreEnv, `ng:///${facade.name}.js`, preStatements);
     }
+    compileBase(angularCoreEnv, sourceMapUrl, facade) {
+        const constantPool = new ConstantPool();
+        const meta = Object.assign({}, facade, { viewQueries: facade.viewQueries ? facade.viewQueries.map(convertToR3QueryMetadata) :
+                facade.viewQueries, queries: facade.queries ? facade.queries.map(convertToR3QueryMetadata) : facade.queries });
+        const res = compileBaseDefFromMetadata(meta, constantPool);
+        return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, constantPool.statements);
+    }
     createParseSourceSpan(kind, typeName, sourceUrl) {
         return r3JitTypeSourceSpan(kind, typeName, sourceUrl);
     }
@@ -17025,7 +17038,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.14+3.sha-d92fb25.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.14+19.sha-3938563.with-local-changes');
 
 /**
  * @license
