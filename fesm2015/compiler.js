@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.14+62.sha-909557d.with-local-changes
+ * @license Angular v8.0.0-beta.14+70.sha-304a12f.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8484,6 +8484,8 @@ class _Tokenizer {
         this.errors = [];
         this._tokenizeIcu = options.tokenizeExpansionForms || false;
         this._interpolationConfig = options.interpolationConfig || DEFAULT_INTERPOLATION_CONFIG;
+        this._leadingTriviaCodePoints =
+            options.leadingTriviaChars && options.leadingTriviaChars.map(c => c.codePointAt(0) || 0);
         const range = options.range || { endPos: _file.content.length, startPos: 0, startLine: 0, startCol: 0 };
         this._cursor = options.escapedString ? new EscapedCharacterCursor(_file, range) :
             new PlainCharacterCursor(_file, range);
@@ -8572,7 +8574,7 @@ class _Tokenizer {
         if (this._currentTokenType === null) {
             throw new TokenError('Programming error - attempted to end a token which has no token type', null, this._cursor.getSpan(this._currentTokenStart));
         }
-        const token = new Token(this._currentTokenType, parts, this._cursor.getSpan(this._currentTokenStart));
+        const token = new Token(this._currentTokenType, parts, this._cursor.getSpan(this._currentTokenStart, this._leadingTriviaCodePoints));
         this.tokens.push(token);
         this._currentTokenStart = null;
         this._currentTokenType = null;
@@ -9066,8 +9068,14 @@ class PlainCharacterCursor {
     diff(other) { return this.state.offset - other.state.offset; }
     advance() { this.advanceState(this.state); }
     init() { this.updatePeek(this.state); }
-    getSpan(start) {
+    getSpan(start, leadingTriviaCodePoints) {
         start = start || this;
+        if (leadingTriviaCodePoints) {
+            start = start.clone();
+            while (this.diff(start) > 0 && leadingTriviaCodePoints.indexOf(start.peek()) !== -1) {
+                start.advance();
+            }
+        }
         return new ParseSourceSpan(new ParseLocation(start.file, start.state.offset, start.state.line, start.state.column), new ParseLocation(this.file, this.state.offset, this.state.line, this.state.column));
     }
     getChars(start) {
@@ -14695,6 +14703,7 @@ const NG_CONTENT_SELECT_ATTR$1 = 'select';
 const NG_PROJECT_AS_ATTR_NAME = 'ngProjectAs';
 // List of supported global targets for event listeners
 const GLOBAL_TARGET_RESOLVERS = new Map([['window', Identifiers$1.resolveWindow], ['document', Identifiers$1.resolveDocument], ['body', Identifiers$1.resolveBody]]);
+const LEADING_TRIVIA_CHARS = [' ', '\n', '\r', '\t'];
 //  if (rf & flags) { .. }
 function renderFlagCheckIfStmt(flags, statements) {
     return ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(flags), null, false), statements);
@@ -16037,7 +16046,7 @@ function parseTemplate(template, templateUrl, options = {}) {
     const { interpolationConfig, preserveWhitespaces } = options;
     const bindingParser = makeBindingParser(interpolationConfig);
     const htmlParser = new HtmlParser();
-    const parseResult = htmlParser.parse(template, templateUrl, Object.assign({}, options, { tokenizeExpansionForms: true }));
+    const parseResult = htmlParser.parse(template, templateUrl, Object.assign({}, options, { tokenizeExpansionForms: true, leadingTriviaChars: LEADING_TRIVIA_CHARS }));
     if (parseResult.errors && parseResult.errors.length > 0) {
         return { errors: parseResult.errors, nodes: [], styleUrls: [], styles: [] };
     }
@@ -17038,7 +17047,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.14+62.sha-909557d.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.14+70.sha-304a12f.with-local-changes');
 
 /**
  * @license

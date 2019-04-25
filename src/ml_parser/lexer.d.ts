@@ -89,6 +89,12 @@ export interface TokenizeOptions {
      * but the new line should increment the current line for source mapping.
      */
     escapedString?: boolean;
+    /**
+     * An array of characters that should be considered as leading trivia.
+     * Leading trivia are characters that are not important to the developer, and so should not be
+     * included in source-map segments.  A common example is whitespace.
+     */
+    leadingTriviaChars?: string[];
 }
 export declare function tokenize(source: string, url: string, getTagDefinition: (tagName: string) => TagDefinition, options?: TokenizeOptions): TokenizeResult;
 /**
@@ -104,7 +110,7 @@ interface CharacterCursor {
     /** Advance the cursor by one parsed character. */
     advance(): void;
     /** Get a span from the marked start point to the current point. */
-    getSpan(start?: this): ParseSourceSpan;
+    getSpan(start?: this, leadingTriviaCodePoints?: number[]): ParseSourceSpan;
     /** Get the parsed characters from the marked start point to the current point. */
     getChars(start: this): string;
     /** The number of characters left before the end of the cursor. */
