@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.14+39.sha-c61df39.with-local-changes
+ * @license Angular v8.0.0-beta.14+40.sha-28fd5ab.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -17038,7 +17038,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-beta.14+39.sha-c61df39.with-local-changes');
+const VERSION$1 = new Version('8.0.0-beta.14+40.sha-28fd5ab.with-local-changes');
 
 /**
  * @license
@@ -19833,7 +19833,7 @@ class CompileMetadataResolver {
             }
             if (token == null) {
                 hasUnknownDeps = true;
-                return null;
+                return {};
             }
             return {
                 isAttribute,
@@ -19845,7 +19845,7 @@ class CompileMetadataResolver {
             };
         });
         if (hasUnknownDeps) {
-            const depsTokens = dependenciesMetadata.map((dep) => dep ? stringifyType(dep.token) : '?').join(', ');
+            const depsTokens = dependenciesMetadata.map((dep) => dep.token ? stringifyType(dep.token) : '?').join(', ');
             const message = `Can't resolve all parameters for ${stringifyType(typeOrFunc)}: (${depsTokens}).`;
             if (throwOnUnknownDeps || this._config.strictInjectionParameters) {
                 this._reportError(syntaxError(message), typeOrFunc);
