@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.14+69.sha-acaf1aa.with-local-changes
+ * @license Angular v8.0.0-beta.14+71.sha-6200732.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9206,6 +9206,8 @@
             this.errors = [];
             this._tokenizeIcu = options.tokenizeExpansionForms || false;
             this._interpolationConfig = options.interpolationConfig || DEFAULT_INTERPOLATION_CONFIG;
+            this._leadingTriviaCodePoints =
+                options.leadingTriviaChars && options.leadingTriviaChars.map(function (c) { return c.codePointAt(0) || 0; });
             var range = options.range || { endPos: _file.content.length, startPos: 0, startLine: 0, startCol: 0 };
             this._cursor = options.escapedString ? new EscapedCharacterCursor(_file, range) :
                 new PlainCharacterCursor(_file, range);
@@ -9296,7 +9298,7 @@
             if (this._currentTokenType === null) {
                 throw new TokenError('Programming error - attempted to end a token which has no token type', null, this._cursor.getSpan(this._currentTokenStart));
             }
-            var token = new Token(this._currentTokenType, parts, this._cursor.getSpan(this._currentTokenStart));
+            var token = new Token(this._currentTokenType, parts, this._cursor.getSpan(this._currentTokenStart, this._leadingTriviaCodePoints));
             this.tokens.push(token);
             this._currentTokenStart = null;
             this._currentTokenType = null;
@@ -9794,8 +9796,14 @@
         PlainCharacterCursor.prototype.diff = function (other) { return this.state.offset - other.state.offset; };
         PlainCharacterCursor.prototype.advance = function () { this.advanceState(this.state); };
         PlainCharacterCursor.prototype.init = function () { this.updatePeek(this.state); };
-        PlainCharacterCursor.prototype.getSpan = function (start) {
+        PlainCharacterCursor.prototype.getSpan = function (start, leadingTriviaCodePoints) {
             start = start || this;
+            if (leadingTriviaCodePoints) {
+                start = start.clone();
+                while (this.diff(start) > 0 && leadingTriviaCodePoints.indexOf(start.peek()) !== -1) {
+                    start.advance();
+                }
+            }
             return new ParseSourceSpan(new ParseLocation(start.file, start.state.offset, start.state.line, start.state.column), new ParseLocation(this.file, this.state.offset, this.state.line, this.state.column));
         };
         PlainCharacterCursor.prototype.getChars = function (start) {
@@ -15683,6 +15691,7 @@
     var NG_PROJECT_AS_ATTR_NAME = 'ngProjectAs';
     // List of supported global targets for event listeners
     var GLOBAL_TARGET_RESOLVERS = new Map([['window', Identifiers$1.resolveWindow], ['document', Identifiers$1.resolveDocument], ['body', Identifiers$1.resolveBody]]);
+    var LEADING_TRIVIA_CHARS = [' ', '\n', '\r', '\t'];
     //  if (rf & flags) { .. }
     function renderFlagCheckIfStmt(flags, statements) {
         return ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(flags), null, false), statements);
@@ -17072,7 +17081,7 @@
         var interpolationConfig = options.interpolationConfig, preserveWhitespaces = options.preserveWhitespaces;
         var bindingParser = makeBindingParser(interpolationConfig);
         var htmlParser = new HtmlParser();
-        var parseResult = htmlParser.parse(template, templateUrl, __assign({}, options, { tokenizeExpansionForms: true }));
+        var parseResult = htmlParser.parse(template, templateUrl, __assign({}, options, { tokenizeExpansionForms: true, leadingTriviaChars: LEADING_TRIVIA_CHARS }));
         if (parseResult.errors && parseResult.errors.length > 0) {
             return { errors: parseResult.errors, nodes: [], styleUrls: [], styles: [] };
         }
@@ -18131,7 +18140,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-beta.14+69.sha-acaf1aa.with-local-changes');
+    var VERSION$1 = new Version('8.0.0-beta.14+71.sha-6200732.with-local-changes');
 
     /**
      * @license
