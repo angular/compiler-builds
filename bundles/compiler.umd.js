@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-beta.14+39.sha-c61df39.with-local-changes
+ * @license Angular v8.0.0-beta.14+40.sha-28fd5ab.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -18131,7 +18131,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-beta.14+39.sha-c61df39.with-local-changes');
+    var VERSION$1 = new Version('8.0.0-beta.14+40.sha-28fd5ab.with-local-changes');
 
     /**
      * @license
@@ -21038,7 +21038,7 @@
                 }
                 if (token == null) {
                     hasUnknownDeps = true;
-                    return null;
+                    return {};
                 }
                 return {
                     isAttribute: isAttribute,
@@ -21050,7 +21050,7 @@
                 };
             });
             if (hasUnknownDeps) {
-                var depsTokens = dependenciesMetadata.map(function (dep) { return dep ? stringifyType(dep.token) : '?'; }).join(', ');
+                var depsTokens = dependenciesMetadata.map(function (dep) { return dep.token ? stringifyType(dep.token) : '?'; }).join(', ');
                 var message = "Can't resolve all parameters for " + stringifyType(typeOrFunc) + ": (" + depsTokens + ").";
                 if (throwOnUnknownDeps || this._config.strictInjectionParameters) {
                     this._reportError(syntaxError(message), typeOrFunc);
