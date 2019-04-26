@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+8.sha-8d6d2c6.with-local-changes
+ * @license Angular v8.0.0-rc.0+10.sha-a50bfe5.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7634,19 +7634,59 @@ function convertPropertyBinding(localResolver, implicitReceiver, expressionWitho
         localResolver = new DefaultLocalResolver();
     }
     var currValExpr = createCurrValueExpr(bindingId);
-    var stmts = [];
     var visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId, interpolationFunction);
     var outputExpr = expressionWithoutBuiltins.visit(visitor, _Mode.Expression);
-    if (visitor.temporaryCount) {
-        for (var i = 0; i < visitor.temporaryCount; i++) {
-            stmts.push(temporaryDeclaration(bindingId, i));
-        }
-    }
-    else if (form == BindingForm.TrySimple) {
+    var stmts = getStatementsFromVisitor(visitor, bindingId);
+    if (visitor.temporaryCount === 0 && form == BindingForm.TrySimple) {
         return new ConvertPropertyBindingResult([], outputExpr);
     }
     stmts.push(currValExpr.set(outputExpr).toDeclStmt(DYNAMIC_TYPE, [StmtModifier.Final]));
     return new ConvertPropertyBindingResult(stmts, currValExpr);
+}
+/**
+ * Given some expression, such as a binding or interpolation expression, and a context expression to
+ * look values up on, visit each facet of the given expression resolving values from the context
+ * expression such that a list of arguments can be derived from the found values that can be used as
+ * arguments to an external update instruction.
+ *
+ * @param localResolver The resolver to use to look up expressions by name appropriately
+ * @param contextVariableExpression The expression representing the context variable used to create
+ * the final argument expressions
+ * @param expressionWithArgumentsToExtract The expression to visit to figure out what values need to
+ * be resolved and what arguments list to build.
+ * @param bindingId A name prefix used to create temporary variable names if they're needed for the
+ * arguments generated
+ * @returns An array of expressions that can be passed as arguments to instruction expressions like
+ * `o.importExpr(R3.propertyInterpolate).callFn(result)`
+ */
+function convertUpdateArguments(localResolver, contextVariableExpression, expressionWithArgumentsToExtract, bindingId) {
+    var visitor = new _AstToIrVisitor(localResolver, contextVariableExpression, bindingId, undefined);
+    var outputExpr = expressionWithArgumentsToExtract.visit(visitor, _Mode.Expression);
+    var stmts = getStatementsFromVisitor(visitor, bindingId);
+    // Removing the first argument, because it was a length for ViewEngine, not Ivy.
+    var args = outputExpr.args.slice(1);
+    if (expressionWithArgumentsToExtract instanceof Interpolation) {
+        // If we're dealing with an interpolation of 1 value with an empty prefix and suffix, reduce the
+        // args returned to just the value, because we're going to pass it to a special instruction.
+        var strings = expressionWithArgumentsToExtract.strings;
+        if (args.length === 3 && strings[0] === '' && strings[1] === '') {
+            // Single argument interpolate instructions.
+            args = [args[1]];
+        }
+        else if (args.length >= 19) {
+            // 19 or more arguments must be passed to the `interpolateV`-style instructions, which accept
+            // an array of arguments
+            args = [literalArr(args)];
+        }
+    }
+    return { stmts: stmts, args: args };
+}
+function getStatementsFromVisitor(visitor, bindingId) {
+    var stmts = [];
+    for (var i = 0; i < visitor.temporaryCount; i++) {
+        stmts.push(temporaryDeclaration(bindingId, i));
+    }
+    return stmts;
 }
 function convertBuiltins(converterFactory, ast) {
     var visitor = new _BuiltinAstConverter(converterFactory);
@@ -16250,17 +16290,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                     _this.allocateBindingSlots(value_2);
                     if (inputType === 0 /* Property */) {
                         if (value_2 instanceof Interpolation) {
-                            // Interpolated properties
-                            var currValExpr = convertPropertyBinding(_this, implicit, value_2, _this.bindingContext(), BindingForm.TrySimple).currValExpr;
-                            var args_1 = currValExpr.args;
-                            args_1.shift(); // ViewEngine required a count, we don't need that.
-                            // For interpolations like attr="{{foo}}", we don't need ["", foo, ""], just [foo].
-                            if (args_1.length === 3 && isEmptyStringExpression(args_1[0]) &&
-                                isEmptyStringExpression(args_1[2])) {
-                                args_1 = [args_1[1]];
-                            }
-                            _this.updateInstruction(elementIndex, input.sourceSpan, propertyInterpolate(args_1.length), function () {
-                                return __spread([literal(attrName_1)], args_1, params_2);
+                            _this.updateInstruction(elementIndex, input.sourceSpan, getPropertyInterpolationExpression(value_2), function () {
+                                return __spread([literal(attrName_1)], _this.getUpdateInstructionArguments(variable(CONTEXT_NAME), value_2), params_2);
                             });
                         }
                         else {
@@ -16502,6 +16533,19 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var valExpr = convertedPropertyBinding.currValExpr;
         return value instanceof Interpolation || skipBindFn ? valExpr :
             importExpr(Identifiers$1.bind).callFn([valExpr]);
+    };
+    /**
+     * Gets a list of argument expressions to pass to an update instruction expression. Also updates
+     * the temp variables state with temp variables that were identified as needing to be created
+     * while visiting the arguments.
+     * @param contextExpression The expression for the context variable used to create arguments
+     * @param value The original expression we will be resolving an arguments list from.
+     */
+    TemplateDefinitionBuilder.prototype.getUpdateInstructionArguments = function (contextExpression, value) {
+        var _a;
+        var _b = convertUpdateArguments(this, contextExpression, value, this.bindingContext()), args = _b.args, stmts = _b.stmts;
+        (_a = this._tempVariables).push.apply(_a, __spread(stmts));
+        return args;
     };
     TemplateDefinitionBuilder.prototype.matchDirectives = function (tagName, elOrTpl) {
         var _this = this;
@@ -16983,14 +17027,12 @@ function interpolate(args) {
         error("Invalid interpolation argument length " + args.length);
     return importExpr(Identifiers$1.interpolationV).callFn([literalArr(args)]);
 }
-function isEmptyStringExpression(exp) {
-    return exp instanceof LiteralExpr && exp.value === '';
-}
-function propertyInterpolate(argsLength) {
-    if (argsLength % 2 !== 1) {
-        error("Invalid propertyInterpolate argument length " + argsLength);
-    }
-    switch (argsLength) {
+/**
+ * Gets the instruction to generate for an interpolated property
+ * @param interpolation An Interpolation AST
+ */
+function getPropertyInterpolationExpression(interpolation) {
+    switch (getInterpolationArgsLength(interpolation)) {
         case 1:
             return Identifiers$1.propertyInterpolate;
         case 3:
@@ -17011,6 +17053,23 @@ function propertyInterpolate(argsLength) {
             return Identifiers$1.propertyInterpolate8;
         default:
             return Identifiers$1.propertyInterpolateV;
+    }
+}
+/**
+ * Gets the number of arguments expected to be passed to a generated instruction in the case of
+ * interpolation instructions.
+ * @param interpolation An interpolation ast
+ */
+function getInterpolationArgsLength(interpolation) {
+    var expressions = interpolation.expressions, strings = interpolation.strings;
+    if (expressions.length === 1 && strings.length === 2 && strings[0] === '' && strings[1] === '') {
+        // If the interpolation has one interpolated value, but the prefix and suffix are both empty
+        // strings, we only pass one argument, to a special instruction like `propertyInterpolate` or
+        // `textInterpolate`.
+        return 1;
+    }
+    else {
+        return expressions.length + strings.length;
     }
 }
 /**
@@ -18084,7 +18143,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-rc.0+8.sha-8d6d2c6.with-local-changes');
+var VERSION$1 = new Version('8.0.0-rc.0+10.sha-a50bfe5.with-local-changes');
 
 /**
  * @license
