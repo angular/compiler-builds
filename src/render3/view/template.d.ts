@@ -123,6 +123,14 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private allocateBindingSlots;
     private convertExpressionBinding;
     private convertPropertyBinding;
+    /**
+     * Gets a list of argument expressions to pass to an update instruction expression. Also updates
+     * the temp variables state with temp variables that were identified as needing to be created
+     * while visiting the arguments.
+     * @param contextExpression The expression for the context variable used to create arguments
+     * @param value The original expression we will be resolving an arguments list from.
+     */
+    private getUpdateInstructionArguments;
     private matchDirectives;
     /**
      * Prepares all attribute expression values for the `TAttributes` array.

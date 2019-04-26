@@ -70,6 +70,26 @@ export declare enum BindingForm {
  * `convertPropertyBindingBuiltins`.
  */
 export declare function convertPropertyBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, expressionWithoutBuiltins: cdAst.AST, bindingId: string, form: BindingForm, interpolationFunction?: InterpolationFunction): ConvertPropertyBindingResult;
+/**
+ * Given some expression, such as a binding or interpolation expression, and a context expression to
+ * look values up on, visit each facet of the given expression resolving values from the context
+ * expression such that a list of arguments can be derived from the found values that can be used as
+ * arguments to an external update instruction.
+ *
+ * @param localResolver The resolver to use to look up expressions by name appropriately
+ * @param contextVariableExpression The expression representing the context variable used to create
+ * the final argument expressions
+ * @param expressionWithArgumentsToExtract The expression to visit to figure out what values need to
+ * be resolved and what arguments list to build.
+ * @param bindingId A name prefix used to create temporary variable names if they're needed for the
+ * arguments generated
+ * @returns An array of expressions that can be passed as arguments to instruction expressions like
+ * `o.importExpr(R3.propertyInterpolate).callFn(result)`
+ */
+export declare function convertUpdateArguments(localResolver: LocalResolver, contextVariableExpression: o.Expression, expressionWithArgumentsToExtract: cdAst.AST, bindingId: string): {
+    stmts: o.Statement[];
+    args: o.Expression[];
+};
 export declare function temporaryDeclaration(bindingId: string, temporaryNumber: number): o.Statement;
 export declare class BuiltinFunctionCall extends cdAst.FunctionCall {
     args: cdAst.AST[];
