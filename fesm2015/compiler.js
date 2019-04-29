@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+11.sha-6c86ae7.with-local-changes
+ * @license Angular v8.0.0-rc.0+66.sha-68ff2cc.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16199,26 +16199,8 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     if (meta.viewQueries.length) {
         definitionMap.set('viewQuery', createViewQueriesFunction(meta.viewQueries, constantPool, meta.name));
     }
-    // Initialize hostVarsCount to number of bound host properties (interpolations illegal),
-    // except 'style' and 'class' properties, since they should *not* allocate host var slots
-    const hostVarsCount = Object.keys(meta.host.properties)
-        .filter(name => {
-        const prefix = getStylingPrefix(name);
-        return prefix !== 'style' && prefix !== 'class';
-    })
-        .length;
-    const elVarExp = variable('elIndex');
-    const contextVarExp = variable(CONTEXT_NAME);
-    const styleBuilder = new StylingBuilder(elVarExp, contextVarExp);
-    const { styleAttr, classAttr } = meta.host.specialAttributes;
-    if (styleAttr !== undefined) {
-        styleBuilder.registerStyleAttr(styleAttr);
-    }
-    if (classAttr !== undefined) {
-        styleBuilder.registerClassAttr(classAttr);
-    }
     // e.g. `hostBindings: (rf, ctx, elIndex) => { ... }
-    definitionMap.set('hostBindings', createHostBindingsFunction(meta, elVarExp, contextVarExp, meta.host.attributes, styleBuilder, bindingParser, constantPool, hostVarsCount));
+    definitionMap.set('hostBindings', createHostBindingsFunction(meta.host, meta.typeSourceSpan, bindingParser, constantPool, meta.selector || '', meta.name));
     // e.g 'inputs: {a: 'a'}`
     definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs, true));
     // e.g 'outputs: {a: 'a'}`
@@ -16270,7 +16252,7 @@ function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
  * Compile a base definition for the render3 runtime as defined by {@link R3BaseRefMetadata}
  * @param meta the metadata used for compilation.
  */
-function compileBaseDefFromMetadata(meta, constantPool) {
+function compileBaseDefFromMetadata(meta, constantPool, bindingParser) {
     const definitionMap = new DefinitionMap();
     if (meta.inputs) {
         const inputs = meta.inputs;
@@ -16294,6 +16276,9 @@ function compileBaseDefFromMetadata(meta, constantPool) {
     }
     if (meta.queries && meta.queries.length > 0) {
         definitionMap.set('contentQueries', createContentQueriesFunction(meta.queries, constantPool));
+    }
+    if (meta.host) {
+        definitionMap.set('hostBindings', createHostBindingsFunction(meta.host, meta.typeSourceSpan, bindingParser, constantPool, meta.name));
     }
     const expression = importExpr(Identifiers$1.defineBase).callFn([definitionMap.toLiteralMap()]);
     const type = new ExpressionType(importExpr(Identifiers$1.BaseDef));
@@ -16579,12 +16564,30 @@ function createViewQueriesFunction(viewQueries, constantPool, name) {
     ], INFERRED_TYPE, null, viewQueryFnName);
 }
 // Return a host binding function or null if one is not necessary.
-function createHostBindingsFunction(meta, elVarExp, bindingContext, staticAttributesAndValues, styleBuilder, bindingParser, constantPool, hostVarsCount) {
+function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindingParser, constantPool, selector, name) {
+    // Initialize hostVarsCount to number of bound host properties (interpolations illegal),
+    // except 'style' and 'class' properties, since they should *not* allocate host var slots
+    const hostVarsCount = Object.keys(hostBindingsMetadata.properties)
+        .filter(name => {
+        const prefix = getStylingPrefix(name);
+        return prefix !== 'style' && prefix !== 'class';
+    })
+        .length;
+    const elVarExp = variable('elIndex');
+    const bindingContext = variable(CONTEXT_NAME);
+    const styleBuilder = new StylingBuilder(elVarExp, bindingContext);
+    const { styleAttr, classAttr } = hostBindingsMetadata.specialAttributes;
+    if (styleAttr !== undefined) {
+        styleBuilder.registerStyleAttr(styleAttr);
+    }
+    if (classAttr !== undefined) {
+        styleBuilder.registerClassAttr(classAttr);
+    }
     const createStatements = [];
     const updateStatements = [];
     let totalHostVarsCount = hostVarsCount;
-    const hostBindingSourceSpan = meta.typeSourceSpan;
-    const directiveSummary = metadataAsSummary(meta);
+    const hostBindingSourceSpan = typeSourceSpan;
+    const directiveSummary = metadataAsSummary(hostBindingsMetadata);
     let valueConverter;
     const getValueConverter = () => {
         if (!valueConverter) {
@@ -16601,7 +16604,7 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, staticAttrib
     // Calculate host event bindings
     const eventBindings = bindingParser.createDirectiveHostEventAsts(directiveSummary, hostBindingSourceSpan);
     if (eventBindings && eventBindings.length) {
-        const listeners = createHostListeners(bindingContext, eventBindings, meta);
+        const listeners = createHostListeners(bindingContext, eventBindings, name);
         createStatements.push(...listeners);
     }
     // Calculate the host property bindings
@@ -16614,7 +16617,7 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, staticAttrib
             const value = binding.expression.visit(getValueConverter());
             const bindingExpr = bindingFn(bindingContext, value);
             const { bindingName, instruction, isAttribute } = getBindingNameAndInstruction(binding);
-            const securityContexts = bindingParser.calcPossibleSecurityContexts(meta.selector || '', bindingName, isAttribute)
+            const securityContexts = bindingParser.calcPossibleSecurityContexts(selector, bindingName, isAttribute)
                 .filter(context => context !== SecurityContext.NONE);
             let sanitizerFn = null;
             if (securityContexts.length) {
@@ -16664,7 +16667,7 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, staticAttrib
     // that is inside of a host binding within a directive/component) to be attached
     // to the host element alongside any of the provided host attributes that were
     // collected earlier.
-    const hostAttrs = convertAttributesToExpressions(staticAttributesAndValues);
+    const hostAttrs = convertAttributesToExpressions(hostBindingsMetadata.attributes);
     const hostInstruction = styleBuilder.buildHostAttrsInstruction(null, hostAttrs, constantPool);
     if (hostInstruction) {
         createStatements.push(createStylingStmt(hostInstruction, bindingContext, bindingFn));
@@ -16690,7 +16693,7 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, staticAttrib
         createStatements.unshift(importExpr(Identifiers$1.allocHostVars).callFn([literal(totalHostVarsCount)]).toStmt());
     }
     if (createStatements.length > 0 || updateStatements.length > 0) {
-        const hostBindingsFnName = meta.name ? `${meta.name}_HostBindings` : null;
+        const hostBindingsFnName = name ? `${name}_HostBindings` : null;
         const statements = [];
         if (createStatements.length > 0) {
             statements.push(renderFlagCheckIfStmt(1 /* Create */, createStatements));
@@ -16737,13 +16740,13 @@ function getBindingNameAndInstruction(binding) {
     }
     return { bindingName, instruction, isAttribute: !!attrMatches };
 }
-function createHostListeners(bindingContext, eventBindings, meta) {
+function createHostListeners(bindingContext, eventBindings, name) {
     return eventBindings.map(binding => {
         let bindingName = binding.name && sanitizeIdentifier(binding.name);
         const bindingFnName = binding.type === 1 /* Animation */ ?
             prepareSyntheticListenerFunctionName(bindingName, binding.targetOrPhase) :
             bindingName;
-        const handlerName = meta.name && bindingName ? `${meta.name}_${bindingFnName}_HostBindingHandler` : null;
+        const handlerName = name && bindingName ? `${name}_${bindingFnName}_HostBindingHandler` : null;
         const params = prepareEventListenerParameters(BoundEvent.fromParsedEvent(binding), bindingContext, handlerName);
         const instruction = binding.type == 1 /* Animation */ ? Identifiers$1.componentHostSyntheticListener : Identifiers$1.listener;
         return importExpr(instruction).callFn(params).toStmt();
@@ -16755,8 +16758,8 @@ function metadataAsSummary(meta) {
         // This is used by the BindingParser, which only deals with listeners and properties. There's no
         // need to pass attributes to it.
         hostAttributes: {},
-        hostListeners: meta.host.listeners,
-        hostProperties: meta.host.properties,
+        hostListeners: meta.listeners,
+        hostProperties: meta.properties,
     };
     // clang-format on
 }
@@ -16828,7 +16831,7 @@ function parseHostBindings(host) {
  * @returns array of errors associated with a given set of host bindings.
  */
 function verifyHostBindings(bindings, sourceSpan) {
-    const summary = metadataAsSummary({ host: bindings });
+    const summary = metadataAsSummary(bindings);
     // TODO: abstract out host bindings verification logic and use it instead of
     // creating events and properties ASTs to detect errors (FW-996)
     const bindingParser = makeBindingParser();
@@ -16950,9 +16953,10 @@ class CompilerFacadeImpl {
     }
     compileBase(angularCoreEnv, sourceMapUrl, facade) {
         const constantPool = new ConstantPool();
-        const meta = Object.assign({}, facade, { viewQueries: facade.viewQueries ? facade.viewQueries.map(convertToR3QueryMetadata) :
-                facade.viewQueries, queries: facade.queries ? facade.queries.map(convertToR3QueryMetadata) : facade.queries });
-        const res = compileBaseDefFromMetadata(meta, constantPool);
+        const typeSourceSpan = this.createParseSourceSpan('Base', facade.name, `ng:///${facade.name}.js`);
+        const meta = Object.assign({}, facade, { typeSourceSpan, viewQueries: facade.viewQueries ? facade.viewQueries.map(convertToR3QueryMetadata) :
+                facade.viewQueries, queries: facade.queries ? facade.queries.map(convertToR3QueryMetadata) : facade.queries, host: extractHostBindings(facade.propMetadata, typeSourceSpan) });
+        const res = compileBaseDefFromMetadata(meta, constantPool, makeBindingParser());
         return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, constantPool.statements);
     }
     createParseSourceSpan(kind, typeName, sourceUrl) {
@@ -17010,7 +17014,7 @@ function convertDirectiveFacadeToMetadata(facade) {
             });
         }
     }
-    return Object.assign({}, facade, { typeSourceSpan: facade.typeSourceSpan, type: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.host, facade.propMetadata, facade.typeSourceSpan), inputs: Object.assign({}, inputsFromMetadata, inputsFromType), outputs: Object.assign({}, outputsFromMetadata, outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata) });
+    return Object.assign({}, facade, { typeSourceSpan: facade.typeSourceSpan, type: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: Object.assign({}, inputsFromMetadata, inputsFromType), outputs: Object.assign({}, outputsFromMetadata, outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata) });
 }
 function wrapExpression(obj, property) {
     if (obj.hasOwnProperty(property)) {
@@ -17051,7 +17055,7 @@ function convertR3DependencyMetadata(facade) {
 function convertR3DependencyMetadataArray(facades) {
     return facades == null ? null : facades.map(convertR3DependencyMetadata);
 }
-function extractHostBindings(host, propMetadata, sourceSpan) {
+function extractHostBindings(propMetadata, sourceSpan, host) {
     // First parse the declarations from the metadata.
     const bindings = parseHostBindings(host || {});
     // After that check host bindings for errors
@@ -17105,7 +17109,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-rc.0+11.sha-6c86ae7.with-local-changes');
+const VERSION$1 = new Version('8.0.0-rc.0+66.sha-68ff2cc.with-local-changes');
 
 /**
  * @license
