@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+79.sha-b70d20b.with-local-changes
+ * @license Angular v8.0.0-rc.0+82.sha-bf73fb7.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2913,7 +2913,7 @@
             name: 'ɵinlineInterpolate',
             moduleName: CORE,
         };
-        Identifiers.interpolate = { name: 'ɵɵinterpolate', moduleName: CORE };
+        Identifiers.interpolate = { name: 'ɵinterpolate', moduleName: CORE };
         Identifiers.EMPTY_ARRAY = { name: 'ɵEMPTY_ARRAY', moduleName: CORE };
         Identifiers.EMPTY_MAP = { name: 'ɵEMPTY_MAP', moduleName: CORE };
         Identifiers.Renderer = { name: 'Renderer', moduleName: CORE };
@@ -18203,7 +18203,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-rc.0+79.sha-b70d20b.with-local-changes');
+    var VERSION$1 = new Version('8.0.0-rc.0+82.sha-bf73fb7.with-local-changes');
 
     /**
      * @license
