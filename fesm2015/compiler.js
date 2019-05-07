@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+91.sha-b40f6f3.with-local-changes
+ * @license Angular v8.0.0-rc.0+97.sha-be8fbac.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3095,12 +3095,14 @@ Identifiers$1.elementClassProp = { name: 'ɵɵelementClassProp', moduleName: COR
 Identifiers$1.elementContainerStart = { name: 'ɵɵelementContainerStart', moduleName: CORE$1 };
 Identifiers$1.elementContainerEnd = { name: 'ɵɵelementContainerEnd', moduleName: CORE$1 };
 Identifiers$1.elementStyling = { name: 'ɵɵelementStyling', moduleName: CORE$1 };
-Identifiers$1.elementStylingMap = { name: 'ɵɵelementStylingMap', moduleName: CORE$1 };
+Identifiers$1.elementStyleMap = { name: 'ɵɵelementStyleMap', moduleName: CORE$1 };
+Identifiers$1.elementClassMap = { name: 'ɵɵelementClassMap', moduleName: CORE$1 };
 Identifiers$1.elementStyleProp = { name: 'ɵɵelementStyleProp', moduleName: CORE$1 };
 Identifiers$1.elementStylingApply = { name: 'ɵɵelementStylingApply', moduleName: CORE$1 };
 Identifiers$1.elementHostAttrs = { name: 'ɵɵelementHostAttrs', moduleName: CORE$1 };
 Identifiers$1.elementHostStyling = { name: 'ɵɵelementHostStyling', moduleName: CORE$1 };
-Identifiers$1.elementHostStylingMap = { name: 'ɵɵelementHostStylingMap', moduleName: CORE$1 };
+Identifiers$1.elementHostStyleMap = { name: 'ɵɵelementHostStyleMap', moduleName: CORE$1 };
+Identifiers$1.elementHostClassMap = { name: 'ɵɵelementHostClassMap', moduleName: CORE$1 };
 Identifiers$1.elementHostStyleProp = { name: 'ɵɵelementHostStyleProp', moduleName: CORE$1 };
 Identifiers$1.elementHostClassProp = { name: 'ɵɵelementHostClassProp', moduleName: CORE$1 };
 Identifiers$1.elementHostStylingApply = { name: 'ɵɵelementHostStylingApply', moduleName: CORE$1 };
@@ -11855,7 +11857,8 @@ const IMPORTANT_FLAG = '!important';
  *   elementStyling(...)
  * }
  * if (updateMode) {
- *   elementStylingMap(...)
+ *   elementStyleMap(...)
+ *   elementClassMap(...)
  *   elementStyleProp(...)
  *   elementClassProp(...)
  *   elementStylingApp(...)
@@ -12104,59 +12107,59 @@ class StylingBuilder {
         return null;
     }
     /**
-     * Builds an instruction with all the expressions and parameters for `elementStylingMap`.
+     * Builds an instruction with all the expressions and parameters for `elementClassMap`.
      *
-     * The instruction data will contain all expressions for `elementStylingMap` to function
-     * which include the `[style]` and `[class]` expression params (if they exist) as well as
-     * the sanitizer and directive reference expression.
+     * The instruction data will contain all expressions for `elementClassMap` to function
+     * which includes the `[class]` expression params.
      */
-    buildElementStylingMapInstruction(valueConverter) {
-        if (this._classMapInput || this._styleMapInput) {
-            const stylingInput = this._classMapInput || this._styleMapInput;
-            let totalBindingSlotsRequired = 0;
-            // these values must be outside of the update block so that they can
-            // be evaluted (the AST visit call) during creation time so that any
-            // pipes can be picked up in time before the template is built
-            const mapBasedClassValue = this._classMapInput ? this._classMapInput.value.visit(valueConverter) : null;
-            if (mapBasedClassValue instanceof Interpolation) {
-                totalBindingSlotsRequired += mapBasedClassValue.expressions.length;
-            }
-            const mapBasedStyleValue = this._styleMapInput ? this._styleMapInput.value.visit(valueConverter) : null;
-            if (mapBasedStyleValue instanceof Interpolation) {
-                totalBindingSlotsRequired += mapBasedStyleValue.expressions.length;
-            }
-            const isHostBinding = this._directiveExpr;
-            const reference = isHostBinding ? Identifiers$1.elementHostStylingMap : Identifiers$1.elementStylingMap;
-            return {
-                sourceSpan: stylingInput.sourceSpan,
-                reference,
-                allocateBindingSlots: totalBindingSlotsRequired,
-                buildParams: (convertFn) => {
-                    // HOST:
-                    //   min params => elementHostStylingMap(classMap)
-                    //   max params => elementHostStylingMap(classMap, styleMap)
-                    // Template:
-                    //   min params => elementStylingMap(elmIndex, classMap)
-                    //   max params => elementStylingMap(elmIndex, classMap, styleMap)
-                    const params = [];
-                    if (!isHostBinding) {
-                        params.push(this._elementIndexExpr);
-                    }
-                    let expectedNumberOfArgs = 0;
-                    if (mapBasedStyleValue) {
-                        expectedNumberOfArgs = 2;
-                    }
-                    else if (mapBasedClassValue) {
-                        // index and class = 2
-                        expectedNumberOfArgs = 1;
-                    }
-                    addParam(params, mapBasedClassValue, mapBasedClassValue ? convertFn(mapBasedClassValue) : null, 1, expectedNumberOfArgs);
-                    addParam(params, mapBasedStyleValue, mapBasedStyleValue ? convertFn(mapBasedStyleValue) : null, 2, expectedNumberOfArgs);
-                    return params;
-                }
-            };
+    buildElementClassMapInstruction(valueConverter) {
+        if (this._classMapInput) {
+            return this._buildMapBasedInstruction(valueConverter, true, this._classMapInput);
         }
         return null;
+    }
+    /**
+     * Builds an instruction with all the expressions and parameters for `elementStyleMap`.
+     *
+     * The instruction data will contain all expressions for `elementStyleMap` to function
+     * which includes the `[style]` expression params.
+     */
+    buildElementStyleMapInstruction(valueConverter) {
+        if (this._styleMapInput) {
+            return this._buildMapBasedInstruction(valueConverter, false, this._styleMapInput);
+        }
+        return null;
+    }
+    _buildMapBasedInstruction(valueConverter, isClassBased, stylingInput) {
+        let totalBindingSlotsRequired = 0;
+        // these values must be outside of the update block so that they can
+        // be evaluated (the AST visit call) during creation time so that any
+        // pipes can be picked up in time before the template is built
+        const mapValue = stylingInput.value.visit(valueConverter);
+        if (mapValue instanceof Interpolation) {
+            totalBindingSlotsRequired += mapValue.expressions.length;
+        }
+        const isHostBinding = this._directiveExpr;
+        let reference;
+        if (isClassBased) {
+            reference = isHostBinding ? Identifiers$1.elementHostClassMap : Identifiers$1.elementClassMap;
+        }
+        else {
+            reference = isHostBinding ? Identifiers$1.elementHostStyleMap : Identifiers$1.elementStyleMap;
+        }
+        return {
+            sourceSpan: stylingInput.sourceSpan,
+            reference,
+            allocateBindingSlots: totalBindingSlotsRequired,
+            buildParams: (convertFn) => {
+                const params = [];
+                if (!isHostBinding) {
+                    params.push(this._elementIndexExpr);
+                }
+                params.push(convertFn(mapValue));
+                return params;
+            }
+        };
     }
     _buildSingleInputs(reference, isHostBinding, inputs, mapIndex, allowUnits, valueConverter) {
         let totalBindingSlotsRequired = 0;
@@ -12235,9 +12238,13 @@ class StylingBuilder {
     buildUpdateLevelInstructions(valueConverter) {
         const instructions = [];
         if (this.hasBindings) {
-            const mapInstruction = this.buildElementStylingMapInstruction(valueConverter);
-            if (mapInstruction) {
-                instructions.push(mapInstruction);
+            const styleMapInstruction = this.buildElementStyleMapInstruction(valueConverter);
+            if (styleMapInstruction) {
+                instructions.push(styleMapInstruction);
+            }
+            const classMapInstruction = this.buildElementClassMapInstruction(valueConverter);
+            if (classMapInstruction) {
+                instructions.push(classMapInstruction);
             }
             instructions.push(...this._buildStyleInputs(valueConverter));
             instructions.push(...this._buildClassInputs(valueConverter));
@@ -15279,8 +15286,8 @@ class TemplateDefinitionBuilder {
         }
         // the code here will collect all update-level styling instructions and add them to the
         // update block of the template function AOT code. Instructions like `elementStyleProp`,
-        // `elementStylingMap`, `elementClassProp` and `elementStylingApply` are all generated
-        // and assign in the code below.
+        // `elementStyleMap`, `elementClassMap`, `elementClassProp` and `elementStylingApply`
+        // are all generated and assigned in the code below.
         stylingBuilder.buildUpdateLevelInstructions(this._valueConverter).forEach(instruction => {
             this._bindingSlots += instruction.allocateBindingSlots;
             this.processStylingInstruction(implicit, instruction, false);
@@ -17109,7 +17116,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-rc.0+91.sha-b40f6f3.with-local-changes');
+const VERSION$1 = new Version('8.0.0-rc.0+97.sha-be8fbac.with-local-changes');
 
 /**
  * @license

@@ -25,12 +25,14 @@ export declare class Identifiers {
     static elementContainerStart: o.ExternalReference;
     static elementContainerEnd: o.ExternalReference;
     static elementStyling: o.ExternalReference;
-    static elementStylingMap: o.ExternalReference;
+    static elementStyleMap: o.ExternalReference;
+    static elementClassMap: o.ExternalReference;
     static elementStyleProp: o.ExternalReference;
     static elementStylingApply: o.ExternalReference;
     static elementHostAttrs: o.ExternalReference;
     static elementHostStyling: o.ExternalReference;
-    static elementHostStylingMap: o.ExternalReference;
+    static elementHostStyleMap: o.ExternalReference;
+    static elementHostClassMap: o.ExternalReference;
     static elementHostStyleProp: o.ExternalReference;
     static elementHostClassProp: o.ExternalReference;
     static elementHostStylingApply: o.ExternalReference;
