@@ -51,7 +51,8 @@ interface BoundStylingEntry {
  *   elementStyling(...)
  * }
  * if (updateMode) {
- *   elementStylingMap(...)
+ *   elementStyleMap(...)
+ *   elementClassMap(...)
  *   elementStyleProp(...)
  *   elementClassProp(...)
  *   elementStylingApp(...)
@@ -139,13 +140,20 @@ export declare class StylingBuilder {
      */
     buildElementStylingInstruction(sourceSpan: ParseSourceSpan | null, constantPool: ConstantPool): Instruction | null;
     /**
-     * Builds an instruction with all the expressions and parameters for `elementStylingMap`.
+     * Builds an instruction with all the expressions and parameters for `elementClassMap`.
      *
-     * The instruction data will contain all expressions for `elementStylingMap` to function
-     * which include the `[style]` and `[class]` expression params (if they exist) as well as
-     * the sanitizer and directive reference expression.
+     * The instruction data will contain all expressions for `elementClassMap` to function
+     * which includes the `[class]` expression params.
      */
-    buildElementStylingMapInstruction(valueConverter: ValueConverter): Instruction | null;
+    buildElementClassMapInstruction(valueConverter: ValueConverter): Instruction | null;
+    /**
+     * Builds an instruction with all the expressions and parameters for `elementStyleMap`.
+     *
+     * The instruction data will contain all expressions for `elementStyleMap` to function
+     * which includes the `[style]` expression params.
+     */
+    buildElementStyleMapInstruction(valueConverter: ValueConverter): Instruction | null;
+    private _buildMapBasedInstruction;
     private _buildSingleInputs;
     private _buildClassInputs;
     private _buildStyleInputs;
