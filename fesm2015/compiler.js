@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+106.sha-de65112.with-local-changes
+ * @license Angular v8.0.0-rc.0+107.sha-7c8a62d.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -12151,17 +12151,10 @@ class StylingBuilder {
             sourceSpan: stylingInput.sourceSpan,
             reference,
             allocateBindingSlots: totalBindingSlotsRequired,
-            buildParams: (convertFn) => {
-                const params = [];
-                if (!isHostBinding) {
-                    params.push(this._elementIndexExpr);
-                }
-                params.push(convertFn(mapValue));
-                return params;
-            }
+            buildParams: (convertFn) => { return [convertFn(mapValue)]; }
         };
     }
-    _buildSingleInputs(reference, isHostBinding, inputs, mapIndex, allowUnits, valueConverter) {
+    _buildSingleInputs(reference, inputs, mapIndex, allowUnits, valueConverter) {
         let totalBindingSlotsRequired = 0;
         return inputs.map(input => {
             const bindingIndex = mapIndex.get(input.name);
@@ -12178,9 +12171,6 @@ class StylingBuilder {
                     //   min params => elementStylingProp(elmIndex, bindingIndex, value)
                     //   max params => elementStylingProp(elmIndex, bindingIndex, value, overrideFlag)
                     const params = [];
-                    if (!isHostBinding) {
-                        params.push(this._elementIndexExpr);
-                    }
                     params.push(literal(bindingIndex));
                     params.push(convertFn(value));
                     if (allowUnits) {
@@ -12203,7 +12193,7 @@ class StylingBuilder {
         if (this._singleClassInputs) {
             const isHostBinding = !!this._directiveExpr;
             const reference = isHostBinding ? Identifiers$1.elementHostClassProp : Identifiers$1.elementClassProp;
-            return this._buildSingleInputs(reference, isHostBinding, this._singleClassInputs, this._classesIndex, false, valueConverter);
+            return this._buildSingleInputs(reference, this._singleClassInputs, this._classesIndex, false, valueConverter);
         }
         return [];
     }
@@ -12211,7 +12201,7 @@ class StylingBuilder {
         if (this._singleStyleInputs) {
             const isHostBinding = !!this._directiveExpr;
             const reference = isHostBinding ? Identifiers$1.elementHostStyleProp : Identifiers$1.elementStyleProp;
-            return this._buildSingleInputs(reference, isHostBinding, this._singleStyleInputs, this._stylesIndex, true, valueConverter);
+            return this._buildSingleInputs(reference, this._singleStyleInputs, this._stylesIndex, true, valueConverter);
         }
         return [];
     }
@@ -12222,13 +12212,7 @@ class StylingBuilder {
             sourceSpan: this._lastStylingInput ? this._lastStylingInput.sourceSpan : null,
             reference,
             allocateBindingSlots: 0,
-            buildParams: () => {
-                // HOST:
-                //   params => elementHostStylingApply()
-                // Template:
-                //   params => elementStylingApply(elmIndex)
-                return isHostBinding ? [] : [this._elementIndexExpr];
-            }
+            buildParams: () => { return []; }
         };
     }
     /**
@@ -17119,7 +17103,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-rc.0+106.sha-de65112.with-local-changes');
+const VERSION$1 = new Version('8.0.0-rc.0+107.sha-7c8a62d.with-local-changes');
 
 /**
  * @license
