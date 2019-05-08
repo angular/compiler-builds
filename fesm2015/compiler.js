@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+120.sha-452f121.with-local-changes
+ * @license Angular v8.0.0-rc.0+121.sha-c016e2c.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3100,12 +3100,6 @@ Identifiers$1.elementClassMap = { name: 'ɵɵelementClassMap', moduleName: CORE$
 Identifiers$1.elementStyleProp = { name: 'ɵɵelementStyleProp', moduleName: CORE$1 };
 Identifiers$1.elementStylingApply = { name: 'ɵɵelementStylingApply', moduleName: CORE$1 };
 Identifiers$1.elementHostAttrs = { name: 'ɵɵelementHostAttrs', moduleName: CORE$1 };
-Identifiers$1.elementHostStyling = { name: 'ɵɵelementHostStyling', moduleName: CORE$1 };
-Identifiers$1.elementHostStyleMap = { name: 'ɵɵelementHostStyleMap', moduleName: CORE$1 };
-Identifiers$1.elementHostClassMap = { name: 'ɵɵelementHostClassMap', moduleName: CORE$1 };
-Identifiers$1.elementHostStyleProp = { name: 'ɵɵelementHostStyleProp', moduleName: CORE$1 };
-Identifiers$1.elementHostClassProp = { name: 'ɵɵelementHostClassProp', moduleName: CORE$1 };
-Identifiers$1.elementHostStylingApply = { name: 'ɵɵelementHostStylingApply', moduleName: CORE$1 };
 Identifiers$1.containerCreate = { name: 'ɵɵcontainer', moduleName: CORE$1 };
 Identifiers$1.nextContext = { name: 'ɵɵnextContext', moduleName: CORE$1 };
 Identifiers$1.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE$1 };
@@ -12054,7 +12048,7 @@ class StylingBuilder {
                 reference: Identifiers$1.elementHostAttrs,
                 allocateBindingSlots: 0,
                 buildParams: () => {
-                    // params => elementHostAttrs(agetDirectiveContext()ttrs)
+                    // params => elementHostAttrs(attrs)
                     this.populateInitialStylingAttrs(attrs);
                     const attrArray = !attrs.some(attr => attr instanceof WrappedNodeExpr) ?
                         getConstantLiteralFromArray(constantPool, attrs) :
@@ -12072,11 +12066,11 @@ class StylingBuilder {
      * responsible for registering style/class bindings to an element.
      */
     buildElementStylingInstruction(sourceSpan, constantPool) {
-        const reference = this._directiveExpr ? Identifiers$1.elementHostStyling : Identifiers$1.elementStyling;
         if (this.hasBindings) {
             return {
                 sourceSpan,
-                allocateBindingSlots: 0, reference,
+                allocateBindingSlots: 0,
+                reference: Identifiers$1.elementStyling,
                 buildParams: () => {
                     // a string array of every style-based binding
                     const styleBindingProps = this._singleStyleInputs ? this._singleStyleInputs.map(i => literal(i.name)) : [];
@@ -12088,13 +12082,8 @@ class StylingBuilder {
                     // (otherwise a shorter amount of params will be filled). The code below helps
                     // determine how many params are required in the expression code.
                     //
-                    // HOST:
-                    //   min params => elementHostStyling()
-                    //   max params => elementHostStyling(classBindings, styleBindings, sanitizer)
-                    //
-                    // Template:
-                    //   min params => elementStyling()
-                    //   max params => elementStyling(classBindings, styleBindings, sanitizer)
+                    // min params => elementStyling()
+                    // max params => elementStyling(classBindings, styleBindings, sanitizer)
                     //
                     const params = [];
                     let expectedNumberOfArgs = 0;
@@ -12149,14 +12138,7 @@ class StylingBuilder {
         if (mapValue instanceof Interpolation) {
             totalBindingSlotsRequired += mapValue.expressions.length;
         }
-        const isHostBinding = this._directiveExpr;
-        let reference;
-        if (isClassBased) {
-            reference = isHostBinding ? Identifiers$1.elementHostClassMap : Identifiers$1.elementClassMap;
-        }
-        else {
-            reference = isHostBinding ? Identifiers$1.elementHostStyleMap : Identifiers$1.elementStyleMap;
-        }
+        const reference = isClassBased ? Identifiers$1.elementClassMap : Identifiers$1.elementStyleMap;
         return {
             sourceSpan: stylingInput.sourceSpan,
             reference,
@@ -12174,12 +12156,8 @@ class StylingBuilder {
                 sourceSpan: input.sourceSpan,
                 allocateBindingSlots: totalBindingSlotsRequired, reference,
                 buildParams: (convertFn) => {
-                    // HOST:
-                    //   min params => elementHostStylingProp(bindingIndex, value)
-                    //   max params => elementHostStylingProp(bindingIndex, value, overrideFlag)
-                    // Template:
-                    //   min params => elementStylingProp(elmIndex, bindingIndex, value)
-                    //   max params => elementStylingProp(elmIndex, bindingIndex, value, overrideFlag)
+                    // min params => elementStylingProp(elmIndex, bindingIndex, value)
+                    // max params => elementStylingProp(elmIndex, bindingIndex, value, overrideFlag)
                     const params = [];
                     params.push(literal(bindingIndex));
                     params.push(convertFn(value));
@@ -12201,26 +12179,20 @@ class StylingBuilder {
     }
     _buildClassInputs(valueConverter) {
         if (this._singleClassInputs) {
-            const isHostBinding = !!this._directiveExpr;
-            const reference = isHostBinding ? Identifiers$1.elementHostClassProp : Identifiers$1.elementClassProp;
-            return this._buildSingleInputs(reference, this._singleClassInputs, this._classesIndex, false, valueConverter);
+            return this._buildSingleInputs(Identifiers$1.elementClassProp, this._singleClassInputs, this._classesIndex, false, valueConverter);
         }
         return [];
     }
     _buildStyleInputs(valueConverter) {
         if (this._singleStyleInputs) {
-            const isHostBinding = !!this._directiveExpr;
-            const reference = isHostBinding ? Identifiers$1.elementHostStyleProp : Identifiers$1.elementStyleProp;
-            return this._buildSingleInputs(reference, this._singleStyleInputs, this._stylesIndex, true, valueConverter);
+            return this._buildSingleInputs(Identifiers$1.elementStyleProp, this._singleStyleInputs, this._stylesIndex, true, valueConverter);
         }
         return [];
     }
     _buildApplyFn() {
-        const isHostBinding = this._directiveExpr;
-        const reference = isHostBinding ? Identifiers$1.elementHostStylingApply : Identifiers$1.elementStylingApply;
         return {
             sourceSpan: this._lastStylingInput ? this._lastStylingInput.sourceSpan : null,
-            reference,
+            reference: Identifiers$1.elementStylingApply,
             allocateBindingSlots: 0,
             buildParams: () => { return []; }
         };
@@ -17117,7 +17089,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-rc.0+120.sha-452f121.with-local-changes');
+const VERSION$1 = new Version('8.0.0-rc.0+121.sha-c016e2c.with-local-changes');
 
 /**
  * @license
