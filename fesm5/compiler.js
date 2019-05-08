@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+119.sha-728db88.with-local-changes
+ * @license Angular v8.0.0-rc.0+120.sha-452f121.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -6121,6 +6121,12 @@ var JitEvaluator = /** @class */ (function () {
     JitEvaluator.prototype.evaluateStatements = function (sourceUrl, statements, reflector, createSourceMaps) {
         var converter = new JitEmitterVisitor(reflector);
         var ctx = EmitterVisitorContext.createRoot();
+        // Ensure generated code is in strict mode
+        if (statements.length > 0 && !isUseStrictStatement(statements[0])) {
+            statements = __spread([
+                literal('use strict').toStmt()
+            ], statements);
+        }
         converter.visitAllStatements(statements, ctx);
         converter.createReturnStmt(ctx);
         return this.evaluateCode(sourceUrl, ctx, converter.getArgs(), createSourceMaps);
@@ -6231,6 +6237,9 @@ var JitEmitterVisitor = /** @class */ (function (_super) {
     };
     return JitEmitterVisitor;
 }(AbstractJsEmitterVisitor));
+function isUseStrictStatement(statement) {
+    return statement.isEquivalent(literal('use strict').toStmt());
+}
 
 /**
  * @license
@@ -18142,7 +18151,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-rc.0+119.sha-728db88.with-local-changes');
+var VERSION$1 = new Version('8.0.0-rc.0+120.sha-452f121.with-local-changes');
 
 /**
  * @license
