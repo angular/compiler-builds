@@ -30,12 +30,6 @@ export declare class Identifiers {
     static elementStyleProp: o.ExternalReference;
     static elementStylingApply: o.ExternalReference;
     static elementHostAttrs: o.ExternalReference;
-    static elementHostStyling: o.ExternalReference;
-    static elementHostStyleMap: o.ExternalReference;
-    static elementHostClassMap: o.ExternalReference;
-    static elementHostStyleProp: o.ExternalReference;
-    static elementHostClassProp: o.ExternalReference;
-    static elementHostStylingApply: o.ExternalReference;
     static containerCreate: o.ExternalReference;
     static nextContext: o.ExternalReference;
     static templateCreate: o.ExternalReference;
