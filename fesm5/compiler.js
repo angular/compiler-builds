@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+97.sha-be8fbac.with-local-changes
+ * @license Angular v8.0.0-rc.0+102.sha-392473e.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16222,7 +16222,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             // designed to run inside of `elementStart` and `elementEnd`. The update instructions
             // (things like `elementStyleProp`, `elementClassProp`, etc..) are applied later on in this
             // file
-            this.processStylingInstruction(implicit, stylingBuilder.buildElementStylingInstruction(element.sourceSpan, this.constantPool), true);
+            this.processStylingInstruction(elementIndex, implicit, stylingBuilder.buildElementStylingInstruction(element.sourceSpan, this.constantPool), true);
             // Generate Listeners (outputs)
             element.outputs.forEach(function (outputAst) {
                 _this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, _this.prepareListenerParameter(element.name, outputAst, elementIndex));
@@ -16237,10 +16237,13 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // update block of the template function AOT code. Instructions like `elementStyleProp`,
         // `elementStyleMap`, `elementClassMap`, `elementClassProp` and `elementStylingApply`
         // are all generated and assigned in the code below.
-        stylingBuilder.buildUpdateLevelInstructions(this._valueConverter).forEach(function (instruction) {
-            _this._bindingSlots += instruction.allocateBindingSlots;
-            _this.processStylingInstruction(implicit, instruction, false);
-        });
+        var stylingInstructions = stylingBuilder.buildUpdateLevelInstructions(this._valueConverter);
+        var limit = stylingInstructions.length - 1;
+        for (var i = 0; i <= limit; i++) {
+            var instruction_1 = stylingInstructions[i];
+            this._bindingSlots += instruction_1.allocateBindingSlots;
+            this.processStylingInstruction(elementIndex, implicit, instruction_1, false);
+        }
         // the reason why `undefined` is used is because the renderer understands this as a
         // special value to symbolize that there is no RHS to this binding
         // TODO (matsko): revisit this once FW-959 is approached
@@ -16311,14 +16314,14 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                         }
                     }
                     else {
-                        var instruction_1;
+                        var instruction_2;
                         if (inputType === 2 /* Class */) {
-                            instruction_1 = Identifiers$1.elementClassProp;
+                            instruction_2 = Identifiers$1.elementClassProp;
                         }
                         else {
-                            instruction_1 = Identifiers$1.elementAttribute;
+                            instruction_2 = Identifiers$1.elementAttribute;
                         }
-                        _this.updateInstruction(elementIndex, input.sourceSpan, instruction_1, function () {
+                        _this.updateInstruction(elementIndex, input.sourceSpan, instruction_2, function () {
                             return __spread([
                                 literal(elementIndex), literal(attrName_1),
                                 _this.convertPropertyBinding(implicit, value_2)
@@ -16495,7 +16498,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             return instruction(span, reference, params).toStmt();
         });
     };
-    TemplateDefinitionBuilder.prototype.processStylingInstruction = function (implicit, instruction, createMode) {
+    TemplateDefinitionBuilder.prototype.processStylingInstruction = function (elementIndex, implicit, instruction, createMode) {
         var _this = this;
         if (instruction) {
             var paramsFn = function () {
@@ -16505,7 +16508,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 this.creationInstruction(instruction.sourceSpan, instruction.reference, paramsFn);
             }
             else {
-                this.updateInstruction(-1, instruction.sourceSpan, instruction.reference, paramsFn);
+                this.updateInstruction(elementIndex, instruction.sourceSpan, instruction.reference, paramsFn);
             }
         }
     };
@@ -18154,7 +18157,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-rc.0+97.sha-be8fbac.with-local-changes');
+var VERSION$1 = new Version('8.0.0-rc.0+102.sha-392473e.with-local-changes');
 
 /**
  * @license

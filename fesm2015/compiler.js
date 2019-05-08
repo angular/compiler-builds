@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+97.sha-be8fbac.with-local-changes
+ * @license Angular v8.0.0-rc.0+102.sha-392473e.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15273,7 +15273,7 @@ class TemplateDefinitionBuilder {
             // designed to run inside of `elementStart` and `elementEnd`. The update instructions
             // (things like `elementStyleProp`, `elementClassProp`, etc..) are applied later on in this
             // file
-            this.processStylingInstruction(implicit, stylingBuilder.buildElementStylingInstruction(element.sourceSpan, this.constantPool), true);
+            this.processStylingInstruction(elementIndex, implicit, stylingBuilder.buildElementStylingInstruction(element.sourceSpan, this.constantPool), true);
             // Generate Listeners (outputs)
             element.outputs.forEach((outputAst) => {
                 this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter(element.name, outputAst, elementIndex));
@@ -15288,10 +15288,13 @@ class TemplateDefinitionBuilder {
         // update block of the template function AOT code. Instructions like `elementStyleProp`,
         // `elementStyleMap`, `elementClassMap`, `elementClassProp` and `elementStylingApply`
         // are all generated and assigned in the code below.
-        stylingBuilder.buildUpdateLevelInstructions(this._valueConverter).forEach(instruction => {
+        const stylingInstructions = stylingBuilder.buildUpdateLevelInstructions(this._valueConverter);
+        const limit = stylingInstructions.length - 1;
+        for (let i = 0; i <= limit; i++) {
+            const instruction = stylingInstructions[i];
             this._bindingSlots += instruction.allocateBindingSlots;
-            this.processStylingInstruction(implicit, instruction, false);
-        });
+            this.processStylingInstruction(elementIndex, implicit, instruction, false);
+        }
         // the reason why `undefined` is used is because the renderer understands this as a
         // special value to symbolize that there is no RHS to this binding
         // TODO (matsko): revisit this once FW-959 is approached
@@ -15539,14 +15542,14 @@ class TemplateDefinitionBuilder {
             return instruction(span, reference, params).toStmt();
         });
     }
-    processStylingInstruction(implicit, instruction, createMode) {
+    processStylingInstruction(elementIndex, implicit, instruction, createMode) {
         if (instruction) {
             const paramsFn = () => instruction.buildParams(value => this.convertPropertyBinding(implicit, value, true));
             if (createMode) {
                 this.creationInstruction(instruction.sourceSpan, instruction.reference, paramsFn);
             }
             else {
-                this.updateInstruction(-1, instruction.sourceSpan, instruction.reference, paramsFn);
+                this.updateInstruction(elementIndex, instruction.sourceSpan, instruction.reference, paramsFn);
             }
         }
     }
@@ -17116,7 +17119,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-rc.0+97.sha-be8fbac.with-local-changes');
+const VERSION$1 = new Version('8.0.0-rc.0+102.sha-392473e.with-local-changes');
 
 /**
  * @license
