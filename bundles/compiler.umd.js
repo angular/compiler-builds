@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+116.sha-509352f.with-local-changes
+ * @license Angular v8.0.0-rc.0+122.sha-d8665e6.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3429,21 +3429,15 @@
         Identifiers.componentHostSyntheticProperty = { name: 'ɵɵcomponentHostSyntheticProperty', moduleName: CORE$1 };
         Identifiers.componentHostSyntheticListener = { name: 'ɵɵcomponentHostSyntheticListener', moduleName: CORE$1 };
         Identifiers.elementAttribute = { name: 'ɵɵelementAttribute', moduleName: CORE$1 };
-        Identifiers.elementClassProp = { name: 'ɵɵelementClassProp', moduleName: CORE$1 };
+        Identifiers.classProp = { name: 'ɵɵclassProp', moduleName: CORE$1 };
         Identifiers.elementContainerStart = { name: 'ɵɵelementContainerStart', moduleName: CORE$1 };
         Identifiers.elementContainerEnd = { name: 'ɵɵelementContainerEnd', moduleName: CORE$1 };
-        Identifiers.elementStyling = { name: 'ɵɵelementStyling', moduleName: CORE$1 };
-        Identifiers.elementStyleMap = { name: 'ɵɵelementStyleMap', moduleName: CORE$1 };
-        Identifiers.elementClassMap = { name: 'ɵɵelementClassMap', moduleName: CORE$1 };
-        Identifiers.elementStyleProp = { name: 'ɵɵelementStyleProp', moduleName: CORE$1 };
-        Identifiers.elementStylingApply = { name: 'ɵɵelementStylingApply', moduleName: CORE$1 };
+        Identifiers.styling = { name: 'ɵɵstyling', moduleName: CORE$1 };
+        Identifiers.styleMap = { name: 'ɵɵstyleMap', moduleName: CORE$1 };
+        Identifiers.classMap = { name: 'ɵɵclassMap', moduleName: CORE$1 };
+        Identifiers.styleProp = { name: 'ɵɵstyleProp', moduleName: CORE$1 };
+        Identifiers.stylingApply = { name: 'ɵɵstylingApply', moduleName: CORE$1 };
         Identifiers.elementHostAttrs = { name: 'ɵɵelementHostAttrs', moduleName: CORE$1 };
-        Identifiers.elementHostStyling = { name: 'ɵɵelementHostStyling', moduleName: CORE$1 };
-        Identifiers.elementHostStyleMap = { name: 'ɵɵelementHostStyleMap', moduleName: CORE$1 };
-        Identifiers.elementHostClassMap = { name: 'ɵɵelementHostClassMap', moduleName: CORE$1 };
-        Identifiers.elementHostStyleProp = { name: 'ɵɵelementHostStyleProp', moduleName: CORE$1 };
-        Identifiers.elementHostClassProp = { name: 'ɵɵelementHostClassProp', moduleName: CORE$1 };
-        Identifiers.elementHostStylingApply = { name: 'ɵɵelementHostStylingApply', moduleName: CORE$1 };
         Identifiers.containerCreate = { name: 'ɵɵcontainer', moduleName: CORE$1 };
         Identifiers.nextContext = { name: 'ɵɵnextContext', moduleName: CORE$1 };
         Identifiers.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE$1 };
@@ -6181,6 +6175,12 @@
         JitEvaluator.prototype.evaluateStatements = function (sourceUrl, statements, reflector, createSourceMaps) {
             var converter = new JitEmitterVisitor(reflector);
             var ctx = EmitterVisitorContext.createRoot();
+            // Ensure generated code is in strict mode
+            if (statements.length > 0 && !isUseStrictStatement(statements[0])) {
+                statements = __spread([
+                    literal('use strict').toStmt()
+                ], statements);
+            }
             converter.visitAllStatements(statements, ctx);
             converter.createReturnStmt(ctx);
             return this.evaluateCode(sourceUrl, ctx, converter.getArgs(), createSourceMaps);
@@ -6291,6 +6291,9 @@
         };
         return JitEmitterVisitor;
     }(AbstractJsEmitterVisitor));
+    function isUseStrictStatement(statement) {
+        return statement.isEquivalent(literal('use strict').toStmt());
+    }
 
     /**
      * @license
@@ -12717,14 +12720,14 @@
      * order which these must be generated is as follows:
      *
      * if (createMode) {
-     *   elementStyling(...)
+     *   styling(...)
      * }
      * if (updateMode) {
-     *   elementStyleMap(...)
-     *   elementClassMap(...)
-     *   elementStyleProp(...)
-     *   elementClassProp(...)
-     *   elementStylingApp(...)
+     *   styleMap(...)
+     *   classMap(...)
+     *   styleProp(...)
+     *   classProp(...)
+     *   stylingApp(...)
      * }
      *
      * The creation/update methods within the builder class produce these instructions.
@@ -12908,7 +12911,7 @@
                     reference: Identifiers$1.elementHostAttrs,
                     allocateBindingSlots: 0,
                     buildParams: function () {
-                        // params => elementHostAttrs(agetDirectiveContext()ttrs)
+                        // params => elementHostAttrs(attrs)
                         _this.populateInitialStylingAttrs(attrs);
                         var attrArray = !attrs.some(function (attr) { return attr instanceof WrappedNodeExpr; }) ?
                             getConstantLiteralFromArray(constantPool, attrs) :
@@ -12920,18 +12923,18 @@
             return null;
         };
         /**
-         * Builds an instruction with all the expressions and parameters for `elementStyling`.
+         * Builds an instruction with all the expressions and parameters for `styling`.
          *
          * The instruction generation code below is used for producing the AOT statement code which is
          * responsible for registering style/class bindings to an element.
          */
-        StylingBuilder.prototype.buildElementStylingInstruction = function (sourceSpan, constantPool) {
+        StylingBuilder.prototype.buildStylingInstruction = function (sourceSpan, constantPool) {
             var _this = this;
-            var reference = this._directiveExpr ? Identifiers$1.elementHostStyling : Identifiers$1.elementStyling;
             if (this.hasBindings) {
                 return {
                     sourceSpan: sourceSpan,
-                    allocateBindingSlots: 0, reference: reference,
+                    allocateBindingSlots: 0,
+                    reference: Identifiers$1.styling,
                     buildParams: function () {
                         // a string array of every style-based binding
                         var styleBindingProps = _this._singleStyleInputs ? _this._singleStyleInputs.map(function (i) { return literal(i.name); }) : [];
@@ -12943,13 +12946,8 @@
                         // (otherwise a shorter amount of params will be filled). The code below helps
                         // determine how many params are required in the expression code.
                         //
-                        // HOST:
-                        //   min params => elementHostStyling()
-                        //   max params => elementHostStyling(classBindings, styleBindings, sanitizer)
-                        //
-                        // Template:
-                        //   min params => elementStyling()
-                        //   max params => elementStyling(classBindings, styleBindings, sanitizer)
+                        // min params => styling()
+                        // max params => styling(classBindings, styleBindings, sanitizer)
                         //
                         var params = [];
                         var expectedNumberOfArgs = 0;
@@ -12972,24 +12970,24 @@
             return null;
         };
         /**
-         * Builds an instruction with all the expressions and parameters for `elementClassMap`.
+         * Builds an instruction with all the expressions and parameters for `classMap`.
          *
-         * The instruction data will contain all expressions for `elementClassMap` to function
+         * The instruction data will contain all expressions for `classMap` to function
          * which includes the `[class]` expression params.
          */
-        StylingBuilder.prototype.buildElementClassMapInstruction = function (valueConverter) {
+        StylingBuilder.prototype.buildClassMapInstruction = function (valueConverter) {
             if (this._classMapInput) {
                 return this._buildMapBasedInstruction(valueConverter, true, this._classMapInput);
             }
             return null;
         };
         /**
-         * Builds an instruction with all the expressions and parameters for `elementStyleMap`.
+         * Builds an instruction with all the expressions and parameters for `styleMap`.
          *
-         * The instruction data will contain all expressions for `elementStyleMap` to function
+         * The instruction data will contain all expressions for `styleMap` to function
          * which includes the `[style]` expression params.
          */
-        StylingBuilder.prototype.buildElementStyleMapInstruction = function (valueConverter) {
+        StylingBuilder.prototype.buildStyleMapInstruction = function (valueConverter) {
             if (this._styleMapInput) {
                 return this._buildMapBasedInstruction(valueConverter, false, this._styleMapInput);
             }
@@ -13004,14 +13002,7 @@
             if (mapValue instanceof Interpolation) {
                 totalBindingSlotsRequired += mapValue.expressions.length;
             }
-            var isHostBinding = this._directiveExpr;
-            var reference;
-            if (isClassBased) {
-                reference = isHostBinding ? Identifiers$1.elementHostClassMap : Identifiers$1.elementClassMap;
-            }
-            else {
-                reference = isHostBinding ? Identifiers$1.elementHostStyleMap : Identifiers$1.elementStyleMap;
-            }
+            var reference = isClassBased ? Identifiers$1.classMap : Identifiers$1.styleMap;
             return {
                 sourceSpan: stylingInput.sourceSpan,
                 reference: reference,
@@ -13029,12 +13020,8 @@
                     sourceSpan: input.sourceSpan,
                     allocateBindingSlots: totalBindingSlotsRequired, reference: reference,
                     buildParams: function (convertFn) {
-                        // HOST:
-                        //   min params => elementHostStylingProp(bindingIndex, value)
-                        //   max params => elementHostStylingProp(bindingIndex, value, overrideFlag)
-                        // Template:
-                        //   min params => elementStylingProp(elmIndex, bindingIndex, value)
-                        //   max params => elementStylingProp(elmIndex, bindingIndex, value, overrideFlag)
+                        // min params => stylingProp(elmIndex, bindingIndex, value)
+                        // max params => stylingProp(elmIndex, bindingIndex, value, overrideFlag)
                         var params = [];
                         params.push(literal(bindingIndex));
                         params.push(convertFn(value));
@@ -13056,26 +13043,20 @@
         };
         StylingBuilder.prototype._buildClassInputs = function (valueConverter) {
             if (this._singleClassInputs) {
-                var isHostBinding = !!this._directiveExpr;
-                var reference = isHostBinding ? Identifiers$1.elementHostClassProp : Identifiers$1.elementClassProp;
-                return this._buildSingleInputs(reference, this._singleClassInputs, this._classesIndex, false, valueConverter);
+                return this._buildSingleInputs(Identifiers$1.classProp, this._singleClassInputs, this._classesIndex, false, valueConverter);
             }
             return [];
         };
         StylingBuilder.prototype._buildStyleInputs = function (valueConverter) {
             if (this._singleStyleInputs) {
-                var isHostBinding = !!this._directiveExpr;
-                var reference = isHostBinding ? Identifiers$1.elementHostStyleProp : Identifiers$1.elementStyleProp;
-                return this._buildSingleInputs(reference, this._singleStyleInputs, this._stylesIndex, true, valueConverter);
+                return this._buildSingleInputs(Identifiers$1.styleProp, this._singleStyleInputs, this._stylesIndex, true, valueConverter);
             }
             return [];
         };
         StylingBuilder.prototype._buildApplyFn = function () {
-            var isHostBinding = this._directiveExpr;
-            var reference = isHostBinding ? Identifiers$1.elementHostStylingApply : Identifiers$1.elementStylingApply;
             return {
                 sourceSpan: this._lastStylingInput ? this._lastStylingInput.sourceSpan : null,
-                reference: reference,
+                reference: Identifiers$1.stylingApply,
                 allocateBindingSlots: 0,
                 buildParams: function () { return []; }
             };
@@ -13087,11 +13068,11 @@
         StylingBuilder.prototype.buildUpdateLevelInstructions = function (valueConverter) {
             var instructions = [];
             if (this.hasBindings) {
-                var styleMapInstruction = this.buildElementStyleMapInstruction(valueConverter);
+                var styleMapInstruction = this.buildStyleMapInstruction(valueConverter);
                 if (styleMapInstruction) {
                     instructions.push(styleMapInstruction);
                 }
-                var classMapInstruction = this.buildElementClassMapInstruction(valueConverter);
+                var classMapInstruction = this.buildClassMapInstruction(valueConverter);
                 if (classMapInstruction) {
                     instructions.push(classMapInstruction);
                 }
@@ -16258,12 +16239,12 @@
                     }
                 }
                 // The style bindings code is placed into two distinct blocks within the template function AOT
-                // code: creation and update. The creation code contains the `elementStyling` instructions
-                // which will apply the collected binding values to the element. `elementStyling` is
+                // code: creation and update. The creation code contains the `styling` instructions
+                // which will apply the collected binding values to the element. `styling` is
                 // designed to run inside of `elementStart` and `elementEnd`. The update instructions
-                // (things like `elementStyleProp`, `elementClassProp`, etc..) are applied later on in this
+                // (things like `styleProp`, `classProp`, etc..) are applied later on in this
                 // file
-                this.processStylingInstruction(elementIndex, implicit, stylingBuilder.buildElementStylingInstruction(element.sourceSpan, this.constantPool), true);
+                this.processStylingInstruction(elementIndex, implicit, stylingBuilder.buildStylingInstruction(element.sourceSpan, this.constantPool), true);
                 // Generate Listeners (outputs)
                 element.outputs.forEach(function (outputAst) {
                     _this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, _this.prepareListenerParameter(element.name, outputAst, elementIndex));
@@ -16275,8 +16256,8 @@
                 }
             }
             // the code here will collect all update-level styling instructions and add them to the
-            // update block of the template function AOT code. Instructions like `elementStyleProp`,
-            // `elementStyleMap`, `elementClassMap`, `elementClassProp` and `elementStylingApply`
+            // update block of the template function AOT code. Instructions like `styleProp`,
+            // `styleMap`, `classMap`, `classProp` and `stylingApply`
             // are all generated and assigned in the code below.
             var stylingInstructions = stylingBuilder.buildUpdateLevelInstructions(this._valueConverter);
             var limit = stylingInstructions.length - 1;
@@ -16357,7 +16338,7 @@
                         else {
                             var instruction_2;
                             if (inputType === 2 /* Class */) {
-                                instruction_2 = Identifiers$1.elementClassProp;
+                                instruction_2 = Identifiers$1.classProp;
                             }
                             else {
                                 instruction_2 = Identifiers$1.elementAttribute;
@@ -17742,10 +17723,10 @@
             // MUST be registered on a given element within the component/directive
             // templateFn/hostBindingsFn functions. The instruction below will figure out
             // what all the bindings are and then generate the statements required to register
-            // those bindings to the element via `elementStyling`.
-            var elementStylingInstruction = styleBuilder.buildElementStylingInstruction(null, constantPool);
-            if (elementStylingInstruction) {
-                createStatements.push(createStylingStmt(elementStylingInstruction, bindingContext, bindingFn));
+            // those bindings to the element via `styling`.
+            var stylingInstruction = styleBuilder.buildStylingInstruction(null, constantPool);
+            if (stylingInstruction) {
+                createStatements.push(createStylingStmt(stylingInstruction, bindingContext, bindingFn));
             }
             // finally each binding that was registered in the statement above will need to be added to
             // the update block of a component/directive templateFn/hostBindingsFn so that the bindings
@@ -18198,7 +18179,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-rc.0+116.sha-509352f.with-local-changes');
+    var VERSION$1 = new Version('8.0.0-rc.0+122.sha-d8665e6.with-local-changes');
 
     /**
      * @license
