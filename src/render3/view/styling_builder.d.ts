@@ -48,14 +48,14 @@ interface BoundStylingEntry {
  * order which these must be generated is as follows:
  *
  * if (createMode) {
- *   elementStyling(...)
+ *   styling(...)
  * }
  * if (updateMode) {
- *   elementStyleMap(...)
- *   elementClassMap(...)
- *   elementStyleProp(...)
- *   elementClassProp(...)
- *   elementStylingApp(...)
+ *   styleMap(...)
+ *   classMap(...)
+ *   styleProp(...)
+ *   classProp(...)
+ *   stylingApp(...)
  * }
  *
  * The creation/update methods within the builder class produce these instructions.
@@ -133,26 +133,26 @@ export declare class StylingBuilder {
      */
     buildHostAttrsInstruction(sourceSpan: ParseSourceSpan | null, attrs: o.Expression[], constantPool: ConstantPool): Instruction | null;
     /**
-     * Builds an instruction with all the expressions and parameters for `elementStyling`.
+     * Builds an instruction with all the expressions and parameters for `styling`.
      *
      * The instruction generation code below is used for producing the AOT statement code which is
      * responsible for registering style/class bindings to an element.
      */
-    buildElementStylingInstruction(sourceSpan: ParseSourceSpan | null, constantPool: ConstantPool): Instruction | null;
+    buildStylingInstruction(sourceSpan: ParseSourceSpan | null, constantPool: ConstantPool): Instruction | null;
     /**
-     * Builds an instruction with all the expressions and parameters for `elementClassMap`.
+     * Builds an instruction with all the expressions and parameters for `classMap`.
      *
-     * The instruction data will contain all expressions for `elementClassMap` to function
+     * The instruction data will contain all expressions for `classMap` to function
      * which includes the `[class]` expression params.
      */
-    buildElementClassMapInstruction(valueConverter: ValueConverter): Instruction | null;
+    buildClassMapInstruction(valueConverter: ValueConverter): Instruction | null;
     /**
-     * Builds an instruction with all the expressions and parameters for `elementStyleMap`.
+     * Builds an instruction with all the expressions and parameters for `styleMap`.
      *
-     * The instruction data will contain all expressions for `elementStyleMap` to function
+     * The instruction data will contain all expressions for `styleMap` to function
      * which includes the `[style]` expression params.
      */
-    buildElementStyleMapInstruction(valueConverter: ValueConverter): Instruction | null;
+    buildStyleMapInstruction(valueConverter: ValueConverter): Instruction | null;
     private _buildMapBasedInstruction;
     private _buildSingleInputs;
     private _buildClassInputs;
