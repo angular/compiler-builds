@@ -54,6 +54,8 @@ export interface R3NgModuleMetadata {
      * The set of schemas that declare elements to be allowed in the NgModule.
      */
     schemas: R3Reference[] | null;
+    /** Unique ID or expression representing the unique ID of an NgModule. */
+    id: o.Expression | null;
 }
 /**
  * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.

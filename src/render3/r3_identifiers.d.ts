@@ -123,7 +123,6 @@ export declare class Identifiers {
     static listener: o.ExternalReference;
     static getFactoryOf: o.ExternalReference;
     static getInheritedFactory: o.ExternalReference;
-    static registerNgModuleType: o.ExternalReference;
     static sanitizeHtml: o.ExternalReference;
     static sanitizeStyle: o.ExternalReference;
     static defaultStyleSanitizer: o.ExternalReference;
