@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+156.sha-2f35dbf.with-local-changes
+ * @license Angular v8.0.0-rc.0+157.sha-f74373f.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3558,7 +3558,6 @@
             name: 'ɵɵgetInheritedFactory',
             moduleName: CORE$1,
         };
-        Identifiers.registerNgModuleType = { name: 'ɵregisterNgModuleType', moduleName: CORE$1 };
         // sanitization-related functions
         Identifiers.sanitizeHtml = { name: 'ɵɵsanitizeHtml', moduleName: CORE$1 };
         Identifiers.sanitizeStyle = { name: 'ɵɵsanitizeStyle', moduleName: CORE$1 };
@@ -6581,7 +6580,7 @@
      * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
      */
     function compileNgModule(meta) {
-        var moduleType = meta.type, bootstrap = meta.bootstrap, declarations = meta.declarations, imports = meta.imports, exports = meta.exports, schemas = meta.schemas, containsForwardDecls = meta.containsForwardDecls, emitInline = meta.emitInline;
+        var moduleType = meta.type, bootstrap = meta.bootstrap, declarations = meta.declarations, imports = meta.imports, exports = meta.exports, schemas = meta.schemas, containsForwardDecls = meta.containsForwardDecls, emitInline = meta.emitInline, id = meta.id;
         var additionalStatements = [];
         var definitionMap = {
             type: moduleType
@@ -6613,6 +6612,9 @@
         }
         if (schemas && schemas.length) {
             definitionMap.schemas = literalArr(schemas.map(function (ref) { return ref.value; }));
+        }
+        if (id) {
+            definitionMap.id = id;
         }
         var expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression(definitionMap)]);
         var type = new ExpressionType(importExpr(Identifiers$1.NgModuleDefWithMeta, [
@@ -17984,6 +17986,7 @@
                 emitInline: true,
                 containsForwardDecls: false,
                 schemas: facade.schemas ? facade.schemas.map(wrapReference) : null,
+                id: facade.id ? new WrappedNodeExpr(facade.id) : null,
             };
             var res = compileNgModule(meta);
             return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, []);
@@ -18179,7 +18182,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-rc.0+156.sha-2f35dbf.with-local-changes');
+    var VERSION$1 = new Version('8.0.0-rc.0+157.sha-f74373f.with-local-changes');
 
     /**
      * @license
