@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+223.sha-73e3f56.with-local-changes
+ * @license Angular v8.0.0-rc.0+238.sha-98ded94.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13097,7 +13097,7 @@
         return prop === 'background-image' || prop === 'backgroundImage' || prop === 'background' ||
             prop === 'border-image' || prop === 'borderImage' || prop === 'filter' ||
             prop === 'list-style' || prop === 'listStyle' || prop === 'list-style-image' ||
-            prop === 'listStyleImage';
+            prop === 'listStyleImage' || prop === 'clip-path' || prop === 'clipPath';
     }
     /**
      * Simple helper function to either provide the constant literal that will house the value
@@ -18182,7 +18182,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-rc.0+223.sha-73e3f56.with-local-changes');
+    var VERSION$1 = new Version('8.0.0-rc.0+238.sha-98ded94.with-local-changes');
 
     /**
      * @license
