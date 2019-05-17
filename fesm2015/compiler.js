@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+238.sha-98ded94.with-local-changes
+ * @license Angular v8.0.0-rc.0+244.sha-eda09e6.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -11841,6 +11841,18 @@ function hyphenate(value) {
     }).toLowerCase();
 }
 
+/**
+* @license
+* Copyright Google Inc. All Rights Reserved.
+*
+* Use of this source code is governed by an MIT-style license that can be
+* found in the LICENSE file at https://angular.io/license
+*/
+let _stylingMode = 0;
+function compilerIsNewStylingInUse() {
+    return _stylingMode > 0 /* UseOld */;
+}
+
 const IMPORTANT_FLAG = '!important';
 /**
  * Produces creation/update instructions for all styling bindings (class and style)
@@ -12154,6 +12166,11 @@ class StylingBuilder {
             const bindingIndex = mapIndex.get(input.name);
             const value = input.value.visit(valueConverter);
             totalBindingSlotsRequired += (value instanceof Interpolation) ? value.expressions.length : 0;
+            if (compilerIsNewStylingInUse()) {
+                // the old implementation does not reserve slot values for
+                // binding entries. The new one does.
+                totalBindingSlotsRequired++;
+            }
             return {
                 sourceSpan: input.sourceSpan,
                 allocateBindingSlots: totalBindingSlotsRequired, reference,
@@ -16668,6 +16685,7 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
         // the update block of a component/directive templateFn/hostBindingsFn so that the bindings
         // are evaluated and updated for the element.
         styleBuilder.buildUpdateLevelInstructions(getValueConverter()).forEach(instruction => {
+            totalHostVarsCount += instruction.allocateBindingSlots;
             updateStatements.push(createStylingStmt(instruction, bindingContext, bindingFn));
         });
     }
@@ -17092,7 +17110,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-rc.0+238.sha-98ded94.with-local-changes');
+const VERSION$1 = new Version('8.0.0-rc.0+244.sha-eda09e6.with-local-changes');
 
 /**
  * @license
