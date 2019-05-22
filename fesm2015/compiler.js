@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+296.sha-70fd430.with-local-changes
+ * @license Angular v8.0.0-rc.0+304.sha-86c4690.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15241,8 +15241,7 @@ class TemplateDefinitionBuilder {
                             i18nAttrArgs.push(literal(attr.name), this.i18nTranslate(message, params));
                             converted.expressions.forEach(expression => {
                                 hasBindings = true;
-                                const binding = this.convertExpressionBinding(implicit, expression);
-                                this.updateInstruction(elementIndex, element.sourceSpan, Identifiers$1.i18nExp, [binding]);
+                                this.updateInstruction(elementIndex, element.sourceSpan, Identifiers$1.i18nExp, () => [this.convertExpressionBinding(implicit, expression)]);
                             });
                         }
                     }
@@ -17110,7 +17109,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-rc.0+296.sha-70fd430.with-local-changes');
+const VERSION$1 = new Version('8.0.0-rc.0+304.sha-86c4690.with-local-changes');
 
 /**
  * @license
