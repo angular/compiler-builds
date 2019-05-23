@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+305.sha-d4e6263.with-local-changes
+ * @license Angular v8.0.0-rc.0+311.sha-2cdbe9b.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3360,6 +3360,16 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.componentHostSyntheticProperty = { name: 'ɵɵcomponentHostSyntheticProperty', moduleName: CORE$1 };
     Identifiers.componentHostSyntheticListener = { name: 'ɵɵcomponentHostSyntheticListener', moduleName: CORE$1 };
     Identifiers.elementAttribute = { name: 'ɵɵelementAttribute', moduleName: CORE$1 };
+    Identifiers.attribute = { name: 'ɵɵattribute', moduleName: CORE$1 };
+    Identifiers.attributeInterpolate1 = { name: 'ɵɵattributeInterpolate1', moduleName: CORE$1 };
+    Identifiers.attributeInterpolate2 = { name: 'ɵɵattributeInterpolate2', moduleName: CORE$1 };
+    Identifiers.attributeInterpolate3 = { name: 'ɵɵattributeInterpolate3', moduleName: CORE$1 };
+    Identifiers.attributeInterpolate4 = { name: 'ɵɵattributeInterpolate4', moduleName: CORE$1 };
+    Identifiers.attributeInterpolate5 = { name: 'ɵɵattributeInterpolate5', moduleName: CORE$1 };
+    Identifiers.attributeInterpolate6 = { name: 'ɵɵattributeInterpolate6', moduleName: CORE$1 };
+    Identifiers.attributeInterpolate7 = { name: 'ɵɵattributeInterpolate7', moduleName: CORE$1 };
+    Identifiers.attributeInterpolate8 = { name: 'ɵɵattributeInterpolate8', moduleName: CORE$1 };
+    Identifiers.attributeInterpolateV = { name: 'ɵɵattributeInterpolateV', moduleName: CORE$1 };
     Identifiers.classProp = { name: 'ɵɵclassProp', moduleName: CORE$1 };
     Identifiers.elementContainerStart = { name: 'ɵɵelementContainerStart', moduleName: CORE$1 };
     Identifiers.elementContainerEnd = { name: 'ɵɵelementContainerEnd', moduleName: CORE$1 };
@@ -16284,28 +16294,28 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                     _this.allocateBindingSlots(value_2);
                     if (inputType === 0 /* Property */) {
                         if (value_2 instanceof Interpolation) {
-                            _this.updateInstruction(elementIndex, input.sourceSpan, getPropertyInterpolationExpression(value_2), function () {
-                                return __spread([literal(attrName_1)], _this.getUpdateInstructionArguments(variable(CONTEXT_NAME), value_2), params_2);
-                            });
+                            // prop="{{value}}" and friends
+                            _this.interpolatedUpdateInstruction(getPropertyInterpolationExpression(value_2), elementIndex, attrName_1, input, value_2, params_2);
                         }
                         else {
-                            // Bound, un-interpolated properties
-                            _this.updateInstruction(elementIndex, input.sourceSpan, Identifiers$1.property, function () {
-                                return __spread([
-                                    literal(attrName_1), _this.convertPropertyBinding(implicit, value_2, true)
-                                ], params_2);
-                            });
+                            // [prop]="value"
+                            _this.boundUpdateInstruction(Identifiers$1.property, elementIndex, attrName_1, input, implicit, value_2, params_2);
+                        }
+                    }
+                    else if (inputType === 1 /* Attribute */) {
+                        if (value_2 instanceof Interpolation && getInterpolationArgsLength(value_2) > 1) {
+                            // attr.name="text{{value}}" and friends
+                            _this.interpolatedUpdateInstruction(getAttributeInterpolationExpression(value_2), elementIndex, attrName_1, input, value_2, params_2);
+                        }
+                        else {
+                            var boundValue = value_2 instanceof Interpolation ? value_2.expressions[0] : value_2;
+                            // [attr.name]="value" or attr.name="{{value}}"
+                            _this.boundUpdateInstruction(Identifiers$1.attribute, elementIndex, attrName_1, input, implicit, boundValue, params_2);
                         }
                     }
                     else {
-                        var instruction_2;
-                        if (inputType === 2 /* Class */) {
-                            instruction_2 = Identifiers$1.classProp;
-                        }
-                        else {
-                            instruction_2 = Identifiers$1.elementAttribute;
-                        }
-                        _this.updateInstruction(elementIndex, input.sourceSpan, instruction_2, function () {
+                        // class prop
+                        _this.updateInstruction(elementIndex, input.sourceSpan, Identifiers$1.classProp, function () {
                             return __spread([
                                 literal(elementIndex), literal(attrName_1),
                                 _this.convertPropertyBinding(implicit, value_2)
@@ -16331,6 +16341,26 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             }
             this.creationInstruction(span, isNgContainer$1 ? Identifiers$1.elementContainerEnd : Identifiers$1.elementEnd);
         }
+    };
+    /**
+     * Adds an update instruction for a bound property or attribute, such as `[prop]="value"` or
+     * `[attr.title]="value"`
+     */
+    TemplateDefinitionBuilder.prototype.boundUpdateInstruction = function (instruction, elementIndex, attrName, input, implicit, value, params) {
+        var _this = this;
+        this.updateInstruction(elementIndex, input.sourceSpan, instruction, function () {
+            return __spread([literal(attrName), _this.convertPropertyBinding(implicit, value, true)], params);
+        });
+    };
+    /**
+     * Adds an update instruction for an interpolated property or attribute, such as
+     * `prop="{{value}}"` or `attr.title="{{value}}"`
+     */
+    TemplateDefinitionBuilder.prototype.interpolatedUpdateInstruction = function (instruction, elementIndex, attrName, input, value, params) {
+        var _this = this;
+        this.updateInstruction(elementIndex, input.sourceSpan, instruction, function () {
+            return __spread([literal(attrName)], _this.getUpdateInstructionArguments(variable(CONTEXT_NAME), value), params);
+        });
     };
     TemplateDefinitionBuilder.prototype.visitTemplate = function (template) {
         var _this = this;
@@ -17050,6 +17080,32 @@ function getPropertyInterpolationExpression(interpolation) {
     }
 }
 /**
+ * Gets the instruction to generate for an interpolated attribute
+ * @param interpolation An Interpolation AST
+ */
+function getAttributeInterpolationExpression(interpolation) {
+    switch (getInterpolationArgsLength(interpolation)) {
+        case 3:
+            return Identifiers$1.attributeInterpolate1;
+        case 5:
+            return Identifiers$1.attributeInterpolate2;
+        case 7:
+            return Identifiers$1.attributeInterpolate3;
+        case 9:
+            return Identifiers$1.attributeInterpolate4;
+        case 11:
+            return Identifiers$1.attributeInterpolate5;
+        case 13:
+            return Identifiers$1.attributeInterpolate6;
+        case 15:
+            return Identifiers$1.attributeInterpolate7;
+        case 17:
+            return Identifiers$1.attributeInterpolate8;
+        default:
+            return Identifiers$1.attributeInterpolateV;
+    }
+}
+/**
  * Gets the number of arguments expected to be passed to a generated instruction in the case of
  * interpolation instructions.
  * @param interpolation An interpolation ast
@@ -17642,8 +17698,8 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
                     sanitizerFn = resolveSanitizationFn(securityContexts[0], isAttribute);
                 }
             }
-            var isPropertyInstruction = instruction === Identifiers$1.property;
-            var instructionParams = isPropertyInstruction ?
+            var isInstructionWithoutElementIndex = instruction === Identifiers$1.property || instruction === Identifiers$1.attribute;
+            var instructionParams = isInstructionWithoutElementIndex ?
                 [
                     literal(bindingName),
                     bindingExpr.currValExpr,
@@ -17733,7 +17789,7 @@ function getBindingNameAndInstruction(binding) {
     var attrMatches = bindingName.match(ATTR_REGEX);
     if (attrMatches) {
         bindingName = attrMatches[1];
-        instruction = Identifiers$1.elementAttribute;
+        instruction = Identifiers$1.attribute;
     }
     else {
         if (binding.isAnimation) {
@@ -18143,7 +18199,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-rc.0+305.sha-d4e6263.with-local-changes');
+var VERSION$1 = new Version('8.0.0-rc.0+311.sha-2cdbe9b.with-local-changes');
 
 /**
  * @license

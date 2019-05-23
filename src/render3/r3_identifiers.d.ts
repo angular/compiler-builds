@@ -21,6 +21,16 @@ export declare class Identifiers {
     static componentHostSyntheticProperty: o.ExternalReference;
     static componentHostSyntheticListener: o.ExternalReference;
     static elementAttribute: o.ExternalReference;
+    static attribute: o.ExternalReference;
+    static attributeInterpolate1: o.ExternalReference;
+    static attributeInterpolate2: o.ExternalReference;
+    static attributeInterpolate3: o.ExternalReference;
+    static attributeInterpolate4: o.ExternalReference;
+    static attributeInterpolate5: o.ExternalReference;
+    static attributeInterpolate6: o.ExternalReference;
+    static attributeInterpolate7: o.ExternalReference;
+    static attributeInterpolate8: o.ExternalReference;
+    static attributeInterpolateV: o.ExternalReference;
     static classProp: o.ExternalReference;
     static elementContainerStart: o.ExternalReference;
     static elementContainerEnd: o.ExternalReference;
