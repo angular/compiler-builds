@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+326.sha-132c61d.with-local-changes
+ * @license Angular v8.0.0-rc.0+343.sha-dc6406e.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -12155,6 +12155,11 @@ class StylingBuilder {
     }
     _buildMapBasedInstruction(valueConverter, isClassBased, stylingInput) {
         let totalBindingSlotsRequired = 0;
+        if (compilerIsNewStylingInUse()) {
+            // the old implementation does not reserve slot values for
+            // binding entries. The new one does.
+            totalBindingSlotsRequired++;
+        }
         // these values must be outside of the update block so that they can
         // be evaluated (the AST visit call) during creation time so that any
         // pipes can be picked up in time before the template is built
@@ -17162,7 +17167,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-rc.0+326.sha-132c61d.with-local-changes');
+const VERSION$1 = new Version('8.0.0-rc.0+343.sha-dc6406e.with-local-changes');
 
 /**
  * @license
