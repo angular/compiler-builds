@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+354.sha-4809382.with-local-changes
+ * @license Angular v8.0.0-rc.0+355.sha-dd08150.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3458,6 +3458,16 @@
         Identifiers.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE$1 };
         Identifiers.allocHostVars = { name: 'ɵɵallocHostVars', moduleName: CORE$1 };
         Identifiers.getCurrentView = { name: 'ɵɵgetCurrentView', moduleName: CORE$1 };
+        Identifiers.textInterpolate = { name: 'ɵɵtextInterpolate', moduleName: CORE$1 };
+        Identifiers.textInterpolate1 = { name: 'ɵɵtextInterpolate1', moduleName: CORE$1 };
+        Identifiers.textInterpolate2 = { name: 'ɵɵtextInterpolate2', moduleName: CORE$1 };
+        Identifiers.textInterpolate3 = { name: 'ɵɵtextInterpolate3', moduleName: CORE$1 };
+        Identifiers.textInterpolate4 = { name: 'ɵɵtextInterpolate4', moduleName: CORE$1 };
+        Identifiers.textInterpolate5 = { name: 'ɵɵtextInterpolate5', moduleName: CORE$1 };
+        Identifiers.textInterpolate6 = { name: 'ɵɵtextInterpolate6', moduleName: CORE$1 };
+        Identifiers.textInterpolate7 = { name: 'ɵɵtextInterpolate7', moduleName: CORE$1 };
+        Identifiers.textInterpolate8 = { name: 'ɵɵtextInterpolate8', moduleName: CORE$1 };
+        Identifiers.textInterpolateV = { name: 'ɵɵtextInterpolateV', moduleName: CORE$1 };
         Identifiers.restoreView = { name: 'ɵɵrestoreView', moduleName: CORE$1 };
         Identifiers.interpolation1 = { name: 'ɵɵinterpolation1', moduleName: CORE$1 };
         Identifiers.interpolation2 = { name: 'ɵɵinterpolation2', moduleName: CORE$1 };
@@ -6205,7 +6215,7 @@
          * @returns The result of evaluating the code.
          */
         JitEvaluator.prototype.evaluateCode = function (sourceUrl, ctx, vars, createSourceMap) {
-            var fnBody = ctx.toSource() + "\n//# sourceURL=" + sourceUrl;
+            var fnBody = "\"use strict\";" + ctx.toSource() + "\n//# sourceURL=" + sourceUrl;
             var fnArgNames = [];
             var fnArgValues = [];
             for (var argName in vars) {
@@ -16500,7 +16510,14 @@
             this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(nodeIndex)]);
             var value = text.value.visit(this._valueConverter);
             this.allocateBindingSlots(value);
-            this.updateInstruction(nodeIndex, text.sourceSpan, Identifiers$1.textBinding, function () { return [literal(nodeIndex), _this.convertPropertyBinding(variable(CONTEXT_NAME), value)]; });
+            if (value instanceof Interpolation) {
+                this.updateInstruction(nodeIndex, text.sourceSpan, getTextInterpolationExpression(value), function () { return _this.getUpdateInstructionArguments(variable(CONTEXT_NAME), value); });
+            }
+            else {
+                this.updateInstruction(nodeIndex, text.sourceSpan, Identifiers$1.textBinding, function () {
+                    return [literal(nodeIndex), _this.convertPropertyBinding(variable(CONTEXT_NAME), value)];
+                });
+            }
         };
         TemplateDefinitionBuilder.prototype.visitText = function (text) {
             // when a text element is located within a translatable
@@ -17164,6 +17181,34 @@
                 return Identifiers$1.attributeInterpolate8;
             default:
                 return Identifiers$1.attributeInterpolateV;
+        }
+    }
+    /**
+     * Gets the instruction to generate for interpolated text.
+     * @param interpolation An Interpolation AST
+     */
+    function getTextInterpolationExpression(interpolation) {
+        switch (getInterpolationArgsLength(interpolation)) {
+            case 1:
+                return Identifiers$1.textInterpolate;
+            case 3:
+                return Identifiers$1.textInterpolate1;
+            case 5:
+                return Identifiers$1.textInterpolate2;
+            case 7:
+                return Identifiers$1.textInterpolate3;
+            case 9:
+                return Identifiers$1.textInterpolate4;
+            case 11:
+                return Identifiers$1.textInterpolate5;
+            case 13:
+                return Identifiers$1.textInterpolate6;
+            case 15:
+                return Identifiers$1.textInterpolate7;
+            case 17:
+                return Identifiers$1.textInterpolate8;
+            default:
+                return Identifiers$1.textInterpolateV;
         }
     }
     /**
@@ -18260,7 +18305,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-rc.0+354.sha-4809382.with-local-changes');
+    var VERSION$1 = new Version('8.0.0-rc.0+355.sha-dd08150.with-local-changes');
 
     /**
      * @license
