@@ -50,6 +50,16 @@ export declare class Identifiers {
     static disableBindings: o.ExternalReference;
     static allocHostVars: o.ExternalReference;
     static getCurrentView: o.ExternalReference;
+    static textInterpolate: o.ExternalReference;
+    static textInterpolate1: o.ExternalReference;
+    static textInterpolate2: o.ExternalReference;
+    static textInterpolate3: o.ExternalReference;
+    static textInterpolate4: o.ExternalReference;
+    static textInterpolate5: o.ExternalReference;
+    static textInterpolate6: o.ExternalReference;
+    static textInterpolate7: o.ExternalReference;
+    static textInterpolate8: o.ExternalReference;
+    static textInterpolateV: o.ExternalReference;
     static restoreView: o.ExternalReference;
     static interpolation1: o.ExternalReference;
     static interpolation2: o.ExternalReference;
