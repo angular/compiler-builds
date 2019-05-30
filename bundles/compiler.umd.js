@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+379.sha-7a0f8ac.with-local-changes
+ * @license Angular v8.0.0-rc.0+383.sha-41f372f.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -18320,7 +18320,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.0.0-rc.0+379.sha-7a0f8ac.with-local-changes');
+    var VERSION$1 = new Version('8.0.0-rc.0+383.sha-41f372f.with-local-changes');
 
     /**
      * @license
@@ -27937,12 +27937,8 @@
         };
         TemplateBinder.prototype.ingest = function (template) {
             if (template instanceof Template) {
-                // For <ng-template>s, process inputs, outputs, template attributes,
-                // variables, and child nodes.
-                // References were processed in the scope of the containing template.
-                template.inputs.forEach(this.visitNode);
-                template.outputs.forEach(this.visitNode);
-                template.templateAttrs.forEach(this.visitNode);
+                // For <ng-template>s, process only variables and child nodes. Inputs, outputs, templateAttrs,
+                // and references were all processed in the scope of the containing template.
                 template.variables.forEach(this.visitNode);
                 template.children.forEach(this.visitNode);
                 // Set the nesting level.
