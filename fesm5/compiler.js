@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+370.sha-6a5cc8f.with-local-changes
+ * @license Angular v8.0.0-rc.0+377.sha-f5b0c8a.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8040,7 +8040,7 @@ var _AstToIrVisitor = /** @class */ (function () {
         //      / \    / \
         //     .  c   .   e
         //    / \    / \
-        //   a   b  ,   d
+        //   a   b  .   d
         //         / \
         //        .   c
         //       / \
@@ -18264,7 +18264,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-rc.0+370.sha-6a5cc8f.with-local-changes');
+var VERSION$1 = new Version('8.0.0-rc.0+377.sha-f5b0c8a.with-local-changes');
 
 /**
  * @license
