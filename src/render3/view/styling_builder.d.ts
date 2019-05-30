@@ -79,6 +79,7 @@ export declare class StylingBuilder {
     /** an array of each [class.name] input */
     private _singleClassInputs;
     private _lastStylingInput;
+    private _firstStylingInput;
     /**
      * Represents the location of each style binding in the template
      * (e.g. `<div [style.width]="w" [style.height]="h">` implies
@@ -158,6 +159,7 @@ export declare class StylingBuilder {
     private _buildClassInputs;
     private _buildStyleInputs;
     private _buildApplyFn;
+    private _buildSanitizerFn;
     /**
      * Constructs all instructions which contain the expressions that will be placed
      * into the update block of a template function or a directive hostBindings function.

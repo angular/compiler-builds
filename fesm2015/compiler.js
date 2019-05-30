@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+356.sha-d72479b.with-local-changes
+ * @license Angular v8.0.0-rc.0+357.sha-82682bb.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3109,6 +3109,7 @@ Identifiers$1.styleMap = { name: 'ɵɵstyleMap', moduleName: CORE$1 };
 Identifiers$1.classMap = { name: 'ɵɵclassMap', moduleName: CORE$1 };
 Identifiers$1.styleProp = { name: 'ɵɵstyleProp', moduleName: CORE$1 };
 Identifiers$1.stylingApply = { name: 'ɵɵstylingApply', moduleName: CORE$1 };
+Identifiers$1.styleSanitizer = { name: 'ɵɵstyleSanitizer', moduleName: CORE$1 };
 Identifiers$1.elementHostAttrs = { name: 'ɵɵelementHostAttrs', moduleName: CORE$1 };
 Identifiers$1.containerCreate = { name: 'ɵɵcontainer', moduleName: CORE$1 };
 Identifiers$1.nextContext = { name: 'ɵɵnextContext', moduleName: CORE$1 };
@@ -11924,6 +11925,7 @@ class StylingBuilder {
         /** an array of each [class.name] input */
         this._singleClassInputs = null;
         this._lastStylingInput = null;
+        this._firstStylingInput = null;
         // maps are used instead of hash maps because a Map will
         // retain the ordering of the keys
         /**
@@ -12008,6 +12010,7 @@ class StylingBuilder {
             registerIntoMap(this._stylesIndex, property);
         }
         this._lastStylingInput = entry;
+        this._firstStylingInput = this._firstStylingInput || entry;
         this.hasBindings = true;
         return entry;
     }
@@ -12025,6 +12028,7 @@ class StylingBuilder {
             registerIntoMap(this._classesIndex, property);
         }
         this._lastStylingInput = entry;
+        this._firstStylingInput = this._firstStylingInput || entry;
         this.hasBindings = true;
         return entry;
     }
@@ -12241,6 +12245,14 @@ class StylingBuilder {
             buildParams: () => { return []; }
         };
     }
+    _buildSanitizerFn() {
+        return {
+            sourceSpan: this._firstStylingInput ? this._firstStylingInput.sourceSpan : null,
+            reference: Identifiers$1.styleSanitizer,
+            allocateBindingSlots: 0,
+            buildParams: () => [importExpr(Identifiers$1.defaultStyleSanitizer)]
+        };
+    }
     /**
      * Constructs all instructions which contain the expressions that will be placed
      * into the update block of a template function or a directive hostBindings function.
@@ -12248,6 +12260,9 @@ class StylingBuilder {
     buildUpdateLevelInstructions(valueConverter) {
         const instructions = [];
         if (this.hasBindings) {
+            if (compilerIsNewStylingInUse() && this._useDefaultSanitizer) {
+                instructions.push(this._buildSanitizerFn());
+            }
             const styleMapInstruction = this.buildStyleMapInstruction(valueConverter);
             if (styleMapInstruction) {
                 instructions.push(styleMapInstruction);
@@ -17210,7 +17225,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-rc.0+356.sha-d72479b.with-local-changes');
+const VERSION$1 = new Version('8.0.0-rc.0+357.sha-82682bb.with-local-changes');
 
 /**
  * @license
