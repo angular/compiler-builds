@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+343.sha-dc6406e.with-local-changes
+ * @license Angular v8.0.0-rc.0+376.sha-d2b0ac7.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3109,6 +3109,7 @@ Identifiers$1.styleMap = { name: 'ɵɵstyleMap', moduleName: CORE$1 };
 Identifiers$1.classMap = { name: 'ɵɵclassMap', moduleName: CORE$1 };
 Identifiers$1.styleProp = { name: 'ɵɵstyleProp', moduleName: CORE$1 };
 Identifiers$1.stylingApply = { name: 'ɵɵstylingApply', moduleName: CORE$1 };
+Identifiers$1.styleSanitizer = { name: 'ɵɵstyleSanitizer', moduleName: CORE$1 };
 Identifiers$1.elementHostAttrs = { name: 'ɵɵelementHostAttrs', moduleName: CORE$1 };
 Identifiers$1.containerCreate = { name: 'ɵɵcontainer', moduleName: CORE$1 };
 Identifiers$1.nextContext = { name: 'ɵɵnextContext', moduleName: CORE$1 };
@@ -3120,6 +3121,16 @@ Identifiers$1.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE$1 
 Identifiers$1.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE$1 };
 Identifiers$1.allocHostVars = { name: 'ɵɵallocHostVars', moduleName: CORE$1 };
 Identifiers$1.getCurrentView = { name: 'ɵɵgetCurrentView', moduleName: CORE$1 };
+Identifiers$1.textInterpolate = { name: 'ɵɵtextInterpolate', moduleName: CORE$1 };
+Identifiers$1.textInterpolate1 = { name: 'ɵɵtextInterpolate1', moduleName: CORE$1 };
+Identifiers$1.textInterpolate2 = { name: 'ɵɵtextInterpolate2', moduleName: CORE$1 };
+Identifiers$1.textInterpolate3 = { name: 'ɵɵtextInterpolate3', moduleName: CORE$1 };
+Identifiers$1.textInterpolate4 = { name: 'ɵɵtextInterpolate4', moduleName: CORE$1 };
+Identifiers$1.textInterpolate5 = { name: 'ɵɵtextInterpolate5', moduleName: CORE$1 };
+Identifiers$1.textInterpolate6 = { name: 'ɵɵtextInterpolate6', moduleName: CORE$1 };
+Identifiers$1.textInterpolate7 = { name: 'ɵɵtextInterpolate7', moduleName: CORE$1 };
+Identifiers$1.textInterpolate8 = { name: 'ɵɵtextInterpolate8', moduleName: CORE$1 };
+Identifiers$1.textInterpolateV = { name: 'ɵɵtextInterpolateV', moduleName: CORE$1 };
 Identifiers$1.restoreView = { name: 'ɵɵrestoreView', moduleName: CORE$1 };
 Identifiers$1.interpolation1 = { name: 'ɵɵinterpolation1', moduleName: CORE$1 };
 Identifiers$1.interpolation2 = { name: 'ɵɵinterpolation2', moduleName: CORE$1 };
@@ -5715,7 +5726,7 @@ class JitEvaluator {
      * @returns The result of evaluating the code.
      */
     evaluateCode(sourceUrl, ctx, vars, createSourceMap) {
-        let fnBody = `${ctx.toSource()}\n//# sourceURL=${sourceUrl}`;
+        let fnBody = `"use strict";${ctx.toSource()}\n//# sourceURL=${sourceUrl}`;
         const fnArgNames = [];
         const fnArgValues = [];
         for (const argName in vars) {
@@ -7451,7 +7462,7 @@ class _AstToIrVisitor {
         //      / \    / \
         //     .  c   .   e
         //    / \    / \
-        //   a   b  ,   d
+        //   a   b  .   d
         //         / \
         //        .   c
         //       / \
@@ -11914,6 +11925,7 @@ class StylingBuilder {
         /** an array of each [class.name] input */
         this._singleClassInputs = null;
         this._lastStylingInput = null;
+        this._firstStylingInput = null;
         // maps are used instead of hash maps because a Map will
         // retain the ordering of the keys
         /**
@@ -11998,6 +12010,7 @@ class StylingBuilder {
             registerIntoMap(this._stylesIndex, property);
         }
         this._lastStylingInput = entry;
+        this._firstStylingInput = this._firstStylingInput || entry;
         this.hasBindings = true;
         return entry;
     }
@@ -12015,6 +12028,7 @@ class StylingBuilder {
             registerIntoMap(this._classesIndex, property);
         }
         this._lastStylingInput = entry;
+        this._firstStylingInput = this._firstStylingInput || entry;
         this.hasBindings = true;
         return entry;
     }
@@ -12231,6 +12245,14 @@ class StylingBuilder {
             buildParams: () => { return []; }
         };
     }
+    _buildSanitizerFn() {
+        return {
+            sourceSpan: this._firstStylingInput ? this._firstStylingInput.sourceSpan : null,
+            reference: Identifiers$1.styleSanitizer,
+            allocateBindingSlots: 0,
+            buildParams: () => [importExpr(Identifiers$1.defaultStyleSanitizer)]
+        };
+    }
     /**
      * Constructs all instructions which contain the expressions that will be placed
      * into the update block of a template function or a directive hostBindings function.
@@ -12238,6 +12260,9 @@ class StylingBuilder {
     buildUpdateLevelInstructions(valueConverter) {
         const instructions = [];
         if (this.hasBindings) {
+            if (compilerIsNewStylingInUse() && this._useDefaultSanitizer) {
+                instructions.push(this._buildSanitizerFn());
+            }
             const styleMapInstruction = this.buildStyleMapInstruction(valueConverter);
             if (styleMapInstruction) {
                 instructions.push(styleMapInstruction);
@@ -15493,7 +15518,12 @@ class TemplateDefinitionBuilder {
         this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(nodeIndex)]);
         const value = text.value.visit(this._valueConverter);
         this.allocateBindingSlots(value);
-        this.updateInstruction(nodeIndex, text.sourceSpan, Identifiers$1.textBinding, () => [literal(nodeIndex), this.convertPropertyBinding(variable(CONTEXT_NAME), value)]);
+        if (value instanceof Interpolation) {
+            this.updateInstruction(nodeIndex, text.sourceSpan, getTextInterpolationExpression(value), () => this.getUpdateInstructionArguments(variable(CONTEXT_NAME), value));
+        }
+        else {
+            this.updateInstruction(nodeIndex, text.sourceSpan, Identifiers$1.textBinding, () => [literal(nodeIndex), this.convertPropertyBinding(variable(CONTEXT_NAME), value)]);
+        }
     }
     visitText(text) {
         // when a text element is located within a translatable
@@ -16130,6 +16160,34 @@ function getAttributeInterpolationExpression(interpolation) {
             return Identifiers$1.attributeInterpolate8;
         default:
             return Identifiers$1.attributeInterpolateV;
+    }
+}
+/**
+ * Gets the instruction to generate for interpolated text.
+ * @param interpolation An Interpolation AST
+ */
+function getTextInterpolationExpression(interpolation) {
+    switch (getInterpolationArgsLength(interpolation)) {
+        case 1:
+            return Identifiers$1.textInterpolate;
+        case 3:
+            return Identifiers$1.textInterpolate1;
+        case 5:
+            return Identifiers$1.textInterpolate2;
+        case 7:
+            return Identifiers$1.textInterpolate3;
+        case 9:
+            return Identifiers$1.textInterpolate4;
+        case 11:
+            return Identifiers$1.textInterpolate5;
+        case 13:
+            return Identifiers$1.textInterpolate6;
+        case 15:
+            return Identifiers$1.textInterpolate7;
+        case 17:
+            return Identifiers$1.textInterpolate8;
+        default:
+            return Identifiers$1.textInterpolateV;
     }
 }
 /**
@@ -17167,7 +17225,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-rc.0+343.sha-dc6406e.with-local-changes');
+const VERSION$1 = new Version('8.0.0-rc.0+376.sha-d2b0ac7.with-local-changes');
 
 /**
  * @license

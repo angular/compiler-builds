@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+343.sha-dc6406e.with-local-changes
+ * @license Angular v8.0.0-rc.0+376.sha-d2b0ac7.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3378,6 +3378,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.classMap = { name: 'ɵɵclassMap', moduleName: CORE$1 };
     Identifiers.styleProp = { name: 'ɵɵstyleProp', moduleName: CORE$1 };
     Identifiers.stylingApply = { name: 'ɵɵstylingApply', moduleName: CORE$1 };
+    Identifiers.styleSanitizer = { name: 'ɵɵstyleSanitizer', moduleName: CORE$1 };
     Identifiers.elementHostAttrs = { name: 'ɵɵelementHostAttrs', moduleName: CORE$1 };
     Identifiers.containerCreate = { name: 'ɵɵcontainer', moduleName: CORE$1 };
     Identifiers.nextContext = { name: 'ɵɵnextContext', moduleName: CORE$1 };
@@ -3389,6 +3390,16 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE$1 };
     Identifiers.allocHostVars = { name: 'ɵɵallocHostVars', moduleName: CORE$1 };
     Identifiers.getCurrentView = { name: 'ɵɵgetCurrentView', moduleName: CORE$1 };
+    Identifiers.textInterpolate = { name: 'ɵɵtextInterpolate', moduleName: CORE$1 };
+    Identifiers.textInterpolate1 = { name: 'ɵɵtextInterpolate1', moduleName: CORE$1 };
+    Identifiers.textInterpolate2 = { name: 'ɵɵtextInterpolate2', moduleName: CORE$1 };
+    Identifiers.textInterpolate3 = { name: 'ɵɵtextInterpolate3', moduleName: CORE$1 };
+    Identifiers.textInterpolate4 = { name: 'ɵɵtextInterpolate4', moduleName: CORE$1 };
+    Identifiers.textInterpolate5 = { name: 'ɵɵtextInterpolate5', moduleName: CORE$1 };
+    Identifiers.textInterpolate6 = { name: 'ɵɵtextInterpolate6', moduleName: CORE$1 };
+    Identifiers.textInterpolate7 = { name: 'ɵɵtextInterpolate7', moduleName: CORE$1 };
+    Identifiers.textInterpolate8 = { name: 'ɵɵtextInterpolate8', moduleName: CORE$1 };
+    Identifiers.textInterpolateV = { name: 'ɵɵtextInterpolateV', moduleName: CORE$1 };
     Identifiers.restoreView = { name: 'ɵɵrestoreView', moduleName: CORE$1 };
     Identifiers.interpolation1 = { name: 'ɵɵinterpolation1', moduleName: CORE$1 };
     Identifiers.interpolation2 = { name: 'ɵɵinterpolation2', moduleName: CORE$1 };
@@ -6145,7 +6156,7 @@ var JitEvaluator = /** @class */ (function () {
      * @returns The result of evaluating the code.
      */
     JitEvaluator.prototype.evaluateCode = function (sourceUrl, ctx, vars, createSourceMap) {
-        var fnBody = ctx.toSource() + "\n//# sourceURL=" + sourceUrl;
+        var fnBody = "\"use strict\";" + ctx.toSource() + "\n//# sourceURL=" + sourceUrl;
         var fnArgNames = [];
         var fnArgValues = [];
         for (var argName in vars) {
@@ -8029,7 +8040,7 @@ var _AstToIrVisitor = /** @class */ (function () {
         //      / \    / \
         //     .  c   .   e
         //    / \    / \
-        //   a   b  ,   d
+        //   a   b  .   d
         //         / \
         //        .   c
         //       / \
@@ -12719,6 +12730,7 @@ var StylingBuilder = /** @class */ (function () {
         /** an array of each [class.name] input */
         this._singleClassInputs = null;
         this._lastStylingInput = null;
+        this._firstStylingInput = null;
         // maps are used instead of hash maps because a Map will
         // retain the ordering of the keys
         /**
@@ -12803,6 +12815,7 @@ var StylingBuilder = /** @class */ (function () {
             registerIntoMap(this._stylesIndex, property);
         }
         this._lastStylingInput = entry;
+        this._firstStylingInput = this._firstStylingInput || entry;
         this.hasBindings = true;
         return entry;
     };
@@ -12820,6 +12833,7 @@ var StylingBuilder = /** @class */ (function () {
             registerIntoMap(this._classesIndex, property);
         }
         this._lastStylingInput = entry;
+        this._firstStylingInput = this._firstStylingInput || entry;
         this.hasBindings = true;
         return entry;
     };
@@ -13038,6 +13052,14 @@ var StylingBuilder = /** @class */ (function () {
             buildParams: function () { return []; }
         };
     };
+    StylingBuilder.prototype._buildSanitizerFn = function () {
+        return {
+            sourceSpan: this._firstStylingInput ? this._firstStylingInput.sourceSpan : null,
+            reference: Identifiers$1.styleSanitizer,
+            allocateBindingSlots: 0,
+            buildParams: function () { return [importExpr(Identifiers$1.defaultStyleSanitizer)]; }
+        };
+    };
     /**
      * Constructs all instructions which contain the expressions that will be placed
      * into the update block of a template function or a directive hostBindings function.
@@ -13045,6 +13067,9 @@ var StylingBuilder = /** @class */ (function () {
     StylingBuilder.prototype.buildUpdateLevelInstructions = function (valueConverter) {
         var instructions = [];
         if (this.hasBindings) {
+            if (compilerIsNewStylingInUse() && this._useDefaultSanitizer) {
+                instructions.push(this._buildSanitizerFn());
+            }
             var styleMapInstruction = this.buildStyleMapInstruction(valueConverter);
             if (styleMapInstruction) {
                 instructions.push(styleMapInstruction);
@@ -16444,7 +16469,14 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(nodeIndex)]);
         var value = text.value.visit(this._valueConverter);
         this.allocateBindingSlots(value);
-        this.updateInstruction(nodeIndex, text.sourceSpan, Identifiers$1.textBinding, function () { return [literal(nodeIndex), _this.convertPropertyBinding(variable(CONTEXT_NAME), value)]; });
+        if (value instanceof Interpolation) {
+            this.updateInstruction(nodeIndex, text.sourceSpan, getTextInterpolationExpression(value), function () { return _this.getUpdateInstructionArguments(variable(CONTEXT_NAME), value); });
+        }
+        else {
+            this.updateInstruction(nodeIndex, text.sourceSpan, Identifiers$1.textBinding, function () {
+                return [literal(nodeIndex), _this.convertPropertyBinding(variable(CONTEXT_NAME), value)];
+            });
+        }
     };
     TemplateDefinitionBuilder.prototype.visitText = function (text) {
         // when a text element is located within a translatable
@@ -17108,6 +17140,34 @@ function getAttributeInterpolationExpression(interpolation) {
             return Identifiers$1.attributeInterpolate8;
         default:
             return Identifiers$1.attributeInterpolateV;
+    }
+}
+/**
+ * Gets the instruction to generate for interpolated text.
+ * @param interpolation An Interpolation AST
+ */
+function getTextInterpolationExpression(interpolation) {
+    switch (getInterpolationArgsLength(interpolation)) {
+        case 1:
+            return Identifiers$1.textInterpolate;
+        case 3:
+            return Identifiers$1.textInterpolate1;
+        case 5:
+            return Identifiers$1.textInterpolate2;
+        case 7:
+            return Identifiers$1.textInterpolate3;
+        case 9:
+            return Identifiers$1.textInterpolate4;
+        case 11:
+            return Identifiers$1.textInterpolate5;
+        case 13:
+            return Identifiers$1.textInterpolate6;
+        case 15:
+            return Identifiers$1.textInterpolate7;
+        case 17:
+            return Identifiers$1.textInterpolate8;
+        default:
+            return Identifiers$1.textInterpolateV;
     }
 }
 /**
@@ -18204,7 +18264,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0-rc.0+343.sha-dc6406e.with-local-changes');
+var VERSION$1 = new Version('8.0.0-rc.0+376.sha-d2b0ac7.with-local-changes');
 
 /**
  * @license
