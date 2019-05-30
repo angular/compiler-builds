@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0-rc.0+383.sha-41f372f.with-local-changes
+ * @license Angular v8.0.0-rc.0+385.sha-53c6b78.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15193,7 +15193,9 @@ class TemplateDefinitionBuilder {
                     // arguments
                     i18nAttrs.push(attr);
                 }
-                outputAttrs.push(attr);
+                else {
+                    outputAttrs.push(attr);
+                }
             }
         }
         // Match directives on non i18n attributes
@@ -15216,7 +15218,9 @@ class TemplateDefinitionBuilder {
                     // arguments
                     i18nAttrs.push(input);
                 }
-                allOtherInputs.push(input);
+                else {
+                    allOtherInputs.push(input);
+                }
             }
         });
         outputAttrs.forEach(attr => {
@@ -15228,7 +15232,7 @@ class TemplateDefinitionBuilder {
             }
         });
         // add attributes for directive and projection matching purposes
-        attributes.push(...this.prepareNonRenderAttrs(allOtherInputs, element.outputs, stylingBuilder));
+        attributes.push(...this.prepareNonRenderAttrs(allOtherInputs, element.outputs, stylingBuilder, [], i18nAttrs));
         parameters.push(this.toAttrsParam(attributes));
         // local refs (ex.: <div #foo #bar="baz">)
         parameters.push(this.prepareRefsParameter(element.references));
@@ -15667,13 +15671,14 @@ class TemplateDefinitionBuilder {
      *   CLASSES, class1, class2,
      *   STYLES, style1, value1, style2, value2,
      *   BINDINGS, name1, name2, name3,
-     *   TEMPLATE, name4, name5, ...]
+     *   TEMPLATE, name4, name5, name6,
+     *   I18N, name7, name8, ...]
      * ```
      *
      * Note that this function will fully ignore all synthetic (@foo) attribute values
      * because those values are intended to always be generated as property instructions.
      */
-    prepareNonRenderAttrs(inputs, outputs, styles, templateAttrs = []) {
+    prepareNonRenderAttrs(inputs, outputs, styles, templateAttrs = [], i18nAttrs = []) {
         const alreadySeen = new Set();
         const attrExprs = [];
         function addAttrExpr(key, value) {
@@ -15719,6 +15724,10 @@ class TemplateDefinitionBuilder {
         if (templateAttrs.length) {
             attrExprs.push(literal(4 /* Template */));
             templateAttrs.forEach(attr => addAttrExpr(attr.name));
+        }
+        if (i18nAttrs.length) {
+            attrExprs.push(literal(6 /* I18n */));
+            i18nAttrs.forEach(attr => addAttrExpr(attr.name));
         }
         return attrExprs;
     }
@@ -17225,7 +17234,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0-rc.0+383.sha-41f372f.with-local-changes');
+const VERSION$1 = new Version('8.0.0-rc.0+385.sha-53c6b78.with-local-changes');
 
 /**
  * @license
