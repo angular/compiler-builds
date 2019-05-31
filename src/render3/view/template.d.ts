@@ -76,8 +76,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private _pureFunctionSlots;
     private _bindingSlots;
     private fileBasedI18nSuffix;
-    private _hasNgContent;
-    private _ngContentSelectors;
+    private _ngContentReservedSlots;
     private _ngContentSelectorsOffset;
     constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, i18nContext: I18nContext | null, templateIndex: number | null, templateName: string | null, directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference, relativeContextFilePath: string, i18nUseExternalIds: boolean);
     registerContextVariables(variable: t.Variable): void;
