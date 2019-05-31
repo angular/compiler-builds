@@ -76,8 +76,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private _pureFunctionSlots;
     private _bindingSlots;
     private fileBasedI18nSuffix;
-    private _hasNgContent;
-    private _ngContentSelectors;
+    private _ngContentReservedSlots;
     private _ngContentSelectorsOffset;
     constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, i18nContext: I18nContext | null, templateIndex: number | null, templateName: string | null, directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference, relativeContextFilePath: string, i18nUseExternalIds: boolean);
     registerContextVariables(variable: t.Variable): void;
@@ -157,7 +156,8 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
      *   CLASSES, class1, class2,
      *   STYLES, style1, value1, style2, value2,
      *   BINDINGS, name1, name2, name3,
-     *   TEMPLATE, name4, name5, ...]
+     *   TEMPLATE, name4, name5, name6,
+     *   I18N, name7, name8, ...]
      * ```
      *
      * Note that this function will fully ignore all synthetic (@foo) attribute values
