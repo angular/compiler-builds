@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-beta.0+20.sha-680d385.with-local-changes
+ * @license Angular v8.1.0-beta.0+21.sha-b4e6802.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3357,7 +3357,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.elementEnd = { name: 'ɵɵelementEnd', moduleName: CORE$1 };
     Identifiers.elementProperty = { name: 'ɵɵelementProperty', moduleName: CORE$1 };
     Identifiers.select = { name: 'ɵɵselect', moduleName: CORE$1 };
-    Identifiers.componentHostSyntheticProperty = { name: 'ɵɵcomponentHostSyntheticProperty', moduleName: CORE$1 };
+    Identifiers.updateSyntheticHostBinding = { name: 'ɵɵupdateSyntheticHostBinding', moduleName: CORE$1 };
     Identifiers.componentHostSyntheticListener = { name: 'ɵɵcomponentHostSyntheticListener', moduleName: CORE$1 };
     Identifiers.elementAttribute = { name: 'ɵɵelementAttribute', moduleName: CORE$1 };
     Identifiers.attribute = { name: 'ɵɵattribute', moduleName: CORE$1 };
@@ -17770,17 +17770,7 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
                     sanitizerFn = resolveSanitizationFn(securityContexts[0], isAttribute);
                 }
             }
-            var isInstructionWithoutElementIndex = instruction === Identifiers$1.property || instruction === Identifiers$1.attribute;
-            var instructionParams = isInstructionWithoutElementIndex ?
-                [
-                    literal(bindingName),
-                    bindingExpr.currValExpr,
-                ] :
-                [
-                    elVarExp,
-                    literal(bindingName),
-                    importExpr(Identifiers$1.bind).callFn([bindingExpr.currValExpr]),
-                ];
+            var instructionParams = [literal(bindingName), bindingExpr.currValExpr];
             if (sanitizerFn) {
                 instructionParams.push(sanitizerFn);
             }
@@ -17869,7 +17859,7 @@ function getBindingNameAndInstruction(binding) {
             // host bindings that have a synthetic property (e.g. @foo) should always be rendered
             // in the context of the component and not the parent. Therefore there is a special
             // compatibility instruction available for this purpose.
-            instruction = Identifiers$1.componentHostSyntheticProperty;
+            instruction = Identifiers$1.updateSyntheticHostBinding;
         }
         else {
             instruction = Identifiers$1.property;
@@ -18271,7 +18261,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.1.0-beta.0+20.sha-680d385.with-local-changes');
+var VERSION$1 = new Version('8.1.0-beta.0+21.sha-b4e6802.with-local-changes');
 
 /**
  * @license
