@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0+29.sha-06ffed5.with-local-changes
+ * @license Angular v8.0.0+33.sha-97268b9.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15676,8 +15676,6 @@ function getSerializedI18nContent(message) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-// Default selector used by `<ng-content>` if none specified
-var DEFAULT_NG_CONTENT_SELECTOR = '*';
 // Selector attribute name of `<ng-content>`
 var NG_CONTENT_SELECT_ATTR$1 = 'select';
 // Attribute name of `ngProjectAs`.
@@ -15768,12 +15766,12 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this._pureFunctionSlots = 0;
         // Number of binding slots
         this._bindingSlots = 0;
-        // Whether the template includes <ng-content> tags.
-        this._hasNgContent = false;
-        // Selectors found in the <ng-content> tags in the template.
-        this._ngContentSelectors = [];
+        // Projection slots found in the template. Projection slots can distribute projected
+        // nodes based on a selector, or can just use the wildcard selector to match
+        // all nodes which aren't matching any selector.
+        this._ngContentReservedSlots = [];
         // Number of non-default selectors found in all parent templates of this template. We need to
-        // track it to properly adjust projection bucket index in the `projection` instruction.
+        // track it to properly adjust projection slot index in the `projection` instruction.
         this._ngContentSelectorsOffset = 0;
         // These should be handled in the template or element directly.
         this.visitReference = invalid$1;
@@ -15847,15 +15845,17 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // Nested templates must be processed before creation instructions so template()
         // instructions can be generated with the correct internal const count.
         this._nestedTemplateFns.forEach(function (buildTemplateFn) { return buildTemplateFn(); });
-        // Output the `projectionDef` instruction when some `<ng-content>` are present.
-        // The `projectionDef` instruction only emitted for the component template and it is skipped for
-        // nested templates (<ng-template> tags).
-        if (this.level === 0 && this._hasNgContent) {
+        // Output the `projectionDef` instruction when some `<ng-content>` tags are present.
+        // The `projectionDef` instruction is only emitted for the component template and
+        // is skipped for nested templates (<ng-template> tags).
+        if (this.level === 0 && this._ngContentReservedSlots.length) {
             var parameters = [];
-            // Only selectors with a non-default value are generated
-            if (this._ngContentSelectors.length) {
-                var r3Selectors = this._ngContentSelectors.map(function (s) { return parseSelectorToR3Selector(s); });
-                parameters.push(this.constantPool.getConstLiteral(asLiteral(r3Selectors), true));
+            // By default the `projectionDef` instructions creates one slot for the wildcard
+            // selector if no parameters are passed. Therefore we only want to allocate a new
+            // array for the projection slots if the default projection slot is not sufficient.
+            if (this._ngContentReservedSlots.length > 1 || this._ngContentReservedSlots[0] !== '*') {
+                var r3ReservedSlots = this._ngContentReservedSlots.map(function (s) { return s !== '*' ? parseSelectorToR3Selector(s) : s; });
+                parameters.push(this.constantPool.getConstLiteral(asLiteral(r3ReservedSlots), true));
             }
             // Since we accumulate ngContent selectors while processing template elements,
             // we *prepend* `projectionDef` to creation instructions block, to put it before
@@ -16033,13 +16033,11 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this.i18n = null; // reset local i18n context
     };
     TemplateDefinitionBuilder.prototype.visitContent = function (ngContent) {
-        this._hasNgContent = true;
         var slot = this.allocateDataSlot();
-        var selectorIndex = ngContent.selector === DEFAULT_NG_CONTENT_SELECTOR ?
-            0 :
-            this._ngContentSelectors.push(ngContent.selector) + this._ngContentSelectorsOffset;
+        var projectionSlotIdx = this._ngContentSelectorsOffset + this._ngContentReservedSlots.length;
         var parameters = [literal(slot)];
         var attributes = [];
+        this._ngContentReservedSlots.push(ngContent.selector);
         ngContent.attributes.forEach(function (attribute) {
             var name = attribute.name, value = attribute.value;
             if (name === NG_PROJECT_AS_ATTR_NAME) {
@@ -16050,10 +16048,10 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             }
         });
         if (attributes.length > 0) {
-            parameters.push(literal(selectorIndex), literalArr(attributes));
+            parameters.push(literal(projectionSlotIdx), literalArr(attributes));
         }
-        else if (selectorIndex !== 0) {
-            parameters.push(literal(selectorIndex));
+        else if (projectionSlotIdx !== 0) {
+            parameters.push(literal(projectionSlotIdx));
         }
         this.creationInstruction(ngContent.sourceSpan, Identifiers$1.projection, parameters);
     };
@@ -16384,11 +16382,10 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // template definition. e.g. <div *ngIf="showing">{{ foo }}</div>  <div #foo></div>
         this._nestedTemplateFns.push(function () {
             var _a;
-            var templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables, _this._ngContentSelectors.length + _this._ngContentSelectorsOffset, template.i18n);
+            var templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables, _this._ngContentReservedSlots.length + _this._ngContentSelectorsOffset, template.i18n);
             _this.constantPool.statements.push(templateFunctionExpr.toDeclStmt(templateName, null));
-            if (templateVisitor._hasNgContent) {
-                _this._hasNgContent = true;
-                (_a = _this._ngContentSelectors).push.apply(_a, __spread(templateVisitor._ngContentSelectors));
+            if (templateVisitor._ngContentReservedSlots.length) {
+                (_a = _this._ngContentReservedSlots).push.apply(_a, __spread(templateVisitor._ngContentReservedSlots));
             }
         });
         // e.g. template(1, MyComp_Template_1)
@@ -16471,8 +16468,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     TemplateDefinitionBuilder.prototype.getConstCount = function () { return this._dataIndex; };
     TemplateDefinitionBuilder.prototype.getVarCount = function () { return this._pureFunctionSlots; };
     TemplateDefinitionBuilder.prototype.getNgContentSelectors = function () {
-        return this._hasNgContent ?
-            this.constantPool.getConstLiteral(asLiteral(this._ngContentSelectors), true) :
+        return this._ngContentReservedSlots.length ?
+            this.constantPool.getConstLiteral(asLiteral(this._ngContentReservedSlots), true) :
             null;
     };
     TemplateDefinitionBuilder.prototype.bindingContext = function () { return "" + this._bindingContext++; };
@@ -18152,7 +18149,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.0.0+29.sha-06ffed5.with-local-changes');
+var VERSION$1 = new Version('8.0.0+33.sha-97268b9.with-local-changes');
 
 /**
  * @license
