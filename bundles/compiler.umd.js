@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-beta.0+35.sha-0d4f8c7.with-local-changes
+ * @license Angular v8.1.0-beta.0+39.sha-d1df0a9.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3424,7 +3424,6 @@
         Identifiers.element = { name: 'ɵɵelement', moduleName: CORE$1 };
         Identifiers.elementStart = { name: 'ɵɵelementStart', moduleName: CORE$1 };
         Identifiers.elementEnd = { name: 'ɵɵelementEnd', moduleName: CORE$1 };
-        Identifiers.elementProperty = { name: 'ɵɵelementProperty', moduleName: CORE$1 };
         Identifiers.select = { name: 'ɵɵselect', moduleName: CORE$1 };
         Identifiers.updateSyntheticHostBinding = { name: 'ɵɵupdateSyntheticHostBinding', moduleName: CORE$1 };
         Identifiers.componentHostSyntheticListener = { name: 'ɵɵcomponentHostSyntheticListener', moduleName: CORE$1 };
@@ -15155,6 +15154,7 @@
     (function (TagType) {
         TagType[TagType["ELEMENT"] = 0] = "ELEMENT";
         TagType[TagType["TEMPLATE"] = 1] = "TEMPLATE";
+        TagType[TagType["PROJECTION"] = 2] = "PROJECTION";
     })(TagType || (TagType = {}));
     /**
      * Generates an object that is used as a shared state between parent and all child contexts.
@@ -15242,6 +15242,12 @@
         I18nContext.prototype.appendElement = function (node, index, closed) {
             this.appendTag(TagType.ELEMENT, node, index, closed);
         };
+        I18nContext.prototype.appendProjection = function (node, index) {
+            // add open and close tags at the same time,
+            // since we process projected content separately
+            this.appendTag(TagType.PROJECTION, node, index, false);
+            this.appendTag(TagType.PROJECTION, node, index, true);
+        };
         /**
          * Generates an instance of a child context based on the root one,
          * when we enter a nested template within I18n section.
@@ -15326,6 +15332,7 @@
     function serializePlaceholderValue(value) {
         var element = function (data, closed) { return wrapTag('#', data, closed); };
         var template = function (data, closed) { return wrapTag('*', data, closed); };
+        var projection = function (data, closed) { return wrapTag('!', data, closed); };
         switch (value.type) {
             case TagType.ELEMENT:
                 // close element tag
@@ -15340,6 +15347,8 @@
                 return element(value);
             case TagType.TEMPLATE:
                 return template(value, value.closed);
+            case TagType.PROJECTION:
+                return projection(value, value.closed);
             default:
                 return value;
         }
@@ -16133,6 +16142,9 @@
                 parameters.push(literal(projectionSlotIdx));
             }
             this.creationInstruction(ngContent.sourceSpan, Identifiers$1.projection, parameters);
+            if (this.i18n) {
+                this.i18n.appendProjection(ngContent.i18n, slot);
+            }
         };
         TemplateDefinitionBuilder.prototype.getNamespaceInstruction = function (namespaceKey) {
             switch (namespaceKey) {
@@ -18317,7 +18329,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.1.0-beta.0+35.sha-0d4f8c7.with-local-changes');
+    var VERSION$1 = new Version('8.1.0-beta.0+39.sha-d1df0a9.with-local-changes');
 
     /**
      * @license

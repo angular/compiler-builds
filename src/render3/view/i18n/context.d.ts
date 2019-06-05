@@ -47,6 +47,7 @@ export declare class I18nContext {
     appendBoundText(node: i18n.AST): void;
     appendTemplate(node: i18n.AST, index: number): void;
     appendElement(node: i18n.AST, index: number, closed?: boolean): void;
+    appendProjection(node: i18n.AST, index: number): void;
     /**
      * Generates an instance of a child context based on the root one,
      * when we enter a nested template within I18n section.
