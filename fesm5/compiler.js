@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-beta.0+39.sha-d1df0a9.with-local-changes
+ * @license Angular v8.1.0-beta.0+38.sha-00cc905.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3355,6 +3355,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.element = { name: 'ɵɵelement', moduleName: CORE$1 };
     Identifiers.elementStart = { name: 'ɵɵelementStart', moduleName: CORE$1 };
     Identifiers.elementEnd = { name: 'ɵɵelementEnd', moduleName: CORE$1 };
+    Identifiers.elementProperty = { name: 'ɵɵelementProperty', moduleName: CORE$1 };
     Identifiers.select = { name: 'ɵɵselect', moduleName: CORE$1 };
     Identifiers.updateSyntheticHostBinding = { name: 'ɵɵupdateSyntheticHostBinding', moduleName: CORE$1 };
     Identifiers.componentHostSyntheticListener = { name: 'ɵɵcomponentHostSyntheticListener', moduleName: CORE$1 };
@@ -18273,7 +18274,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.1.0-beta.0+39.sha-d1df0a9.with-local-changes');
+var VERSION$1 = new Version('8.1.0-beta.0+38.sha-00cc905.with-local-changes');
 
 /**
  * @license
