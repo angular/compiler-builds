@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.1+4.sha-05a43ca.with-local-changes
+ * @license Angular v8.1.0-next.1+6.sha-3859bcc.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3089,7 +3089,6 @@ Identifiers$1.elementEnd = { name: 'ɵɵelementEnd', moduleName: CORE$1 };
 Identifiers$1.select = { name: 'ɵɵselect', moduleName: CORE$1 };
 Identifiers$1.updateSyntheticHostBinding = { name: 'ɵɵupdateSyntheticHostBinding', moduleName: CORE$1 };
 Identifiers$1.componentHostSyntheticListener = { name: 'ɵɵcomponentHostSyntheticListener', moduleName: CORE$1 };
-Identifiers$1.elementAttribute = { name: 'ɵɵelementAttribute', moduleName: CORE$1 };
 Identifiers$1.attribute = { name: 'ɵɵattribute', moduleName: CORE$1 };
 Identifiers$1.attributeInterpolate1 = { name: 'ɵɵattributeInterpolate1', moduleName: CORE$1 };
 Identifiers$1.attributeInterpolate2 = { name: 'ɵɵattributeInterpolate2', moduleName: CORE$1 };
@@ -17235,7 +17234,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.1.0-next.1+4.sha-05a43ca.with-local-changes');
+const VERSION$1 = new Version('8.1.0-next.1+6.sha-3859bcc.with-local-changes');
 
 /**
  * @license

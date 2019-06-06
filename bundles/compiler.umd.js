@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.1+4.sha-05a43ca.with-local-changes
+ * @license Angular v8.1.0-next.1+6.sha-3859bcc.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3427,7 +3427,6 @@
         Identifiers.select = { name: 'ɵɵselect', moduleName: CORE$1 };
         Identifiers.updateSyntheticHostBinding = { name: 'ɵɵupdateSyntheticHostBinding', moduleName: CORE$1 };
         Identifiers.componentHostSyntheticListener = { name: 'ɵɵcomponentHostSyntheticListener', moduleName: CORE$1 };
-        Identifiers.elementAttribute = { name: 'ɵɵelementAttribute', moduleName: CORE$1 };
         Identifiers.attribute = { name: 'ɵɵattribute', moduleName: CORE$1 };
         Identifiers.attributeInterpolate1 = { name: 'ɵɵattributeInterpolate1', moduleName: CORE$1 };
         Identifiers.attributeInterpolate2 = { name: 'ɵɵattributeInterpolate2', moduleName: CORE$1 };
@@ -18331,7 +18330,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.1.0-next.1+4.sha-05a43ca.with-local-changes');
+    var VERSION$1 = new Version('8.1.0-next.1+6.sha-3859bcc.with-local-changes');
 
     /**
      * @license
