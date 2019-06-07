@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.1+10.sha-11a4454.with-local-changes
+ * @license Angular v8.1.0-next.1+18.sha-c038675.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15622,7 +15622,9 @@ class TemplateDefinitionBuilder {
     }
     updateInstruction(nodeIndex, span, reference, paramsOrFn) {
         if (this._lastNodeIndexWithFlush < nodeIndex) {
-            this.instructionFn(this._updateCodeFns, span, Identifiers$1.select, [literal(nodeIndex)]);
+            if (nodeIndex > 0) {
+                this.instructionFn(this._updateCodeFns, span, Identifiers$1.select, [literal(nodeIndex)]);
+            }
             this._lastNodeIndexWithFlush = nodeIndex;
         }
         this.instructionFn(this._updateCodeFns, span, reference, paramsOrFn || []);
@@ -17234,7 +17236,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.1.0-next.1+10.sha-11a4454.with-local-changes');
+const VERSION$1 = new Version('8.1.0-next.1+18.sha-c038675.with-local-changes');
 
 /**
  * @license
