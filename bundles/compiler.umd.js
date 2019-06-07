@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.1+15.sha-81c2a94.with-local-changes
+ * @license Angular v8.1.0-next.1+18.sha-c038675.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16638,7 +16638,9 @@
         };
         TemplateDefinitionBuilder.prototype.updateInstruction = function (nodeIndex, span, reference, paramsOrFn) {
             if (this._lastNodeIndexWithFlush < nodeIndex) {
-                this.instructionFn(this._updateCodeFns, span, Identifiers$1.select, [literal(nodeIndex)]);
+                if (nodeIndex > 0) {
+                    this.instructionFn(this._updateCodeFns, span, Identifiers$1.select, [literal(nodeIndex)]);
+                }
                 this._lastNodeIndexWithFlush = nodeIndex;
             }
             this.instructionFn(this._updateCodeFns, span, reference, paramsOrFn || []);
@@ -18330,7 +18332,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.1.0-next.1+15.sha-81c2a94.with-local-changes');
+    var VERSION$1 = new Version('8.1.0-next.1+18.sha-c038675.with-local-changes');
 
     /**
      * @license
