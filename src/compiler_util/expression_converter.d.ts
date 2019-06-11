@@ -13,6 +13,7 @@ export declare class EventHandlerVars {
 }
 export interface LocalResolver {
     getLocal(name: string): o.Expression | null;
+    notifyImplicitReceiverUse(): void;
 }
 export declare class ConvertActionBindingResult {
     /**
