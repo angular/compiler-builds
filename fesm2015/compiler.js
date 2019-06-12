@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.0.0+64.sha-49307f0.with-local-changes
+ * @license Angular v8.0.0+65.sha-3dcd5eb.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7030,6 +7030,9 @@ function convertActionBinding(localResolver, implicitReceiver, action, bindingId
     const actionStmts = [];
     flattenStatements(actionWithoutBuiltins.visit(visitor, _Mode.Statement), actionStmts);
     prependTemporaryDecls(visitor.temporaryCount, bindingId, actionStmts);
+    if (visitor.usesImplicitReceiver) {
+        localResolver.notifyImplicitReceiverUse();
+    }
     const lastIndex = actionStmts.length - 1;
     let preventDefaultVar = null;
     if (lastIndex >= 0) {
@@ -7076,6 +7079,9 @@ function convertPropertyBinding(localResolver, implicitReceiver, expressionWitho
     const visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId, interpolationFunction);
     const outputExpr = expressionWithoutBuiltins.visit(visitor, _Mode.Expression);
     const stmts = getStatementsFromVisitor(visitor, bindingId);
+    if (visitor.usesImplicitReceiver) {
+        localResolver.notifyImplicitReceiverUse();
+    }
     if (visitor.temporaryCount === 0 && form == BindingForm.TrySimple) {
         return new ConvertPropertyBindingResult([], outputExpr);
     }
@@ -7101,6 +7107,9 @@ function convertPropertyBinding(localResolver, implicitReceiver, expressionWitho
 function convertUpdateArguments(localResolver, contextVariableExpression, expressionWithArgumentsToExtract, bindingId) {
     const visitor = new _AstToIrVisitor(localResolver, contextVariableExpression, bindingId, undefined);
     const outputExpr = expressionWithArgumentsToExtract.visit(visitor, _Mode.Expression);
+    if (visitor.usesImplicitReceiver) {
+        localResolver.notifyImplicitReceiverUse();
+    }
     const stmts = getStatementsFromVisitor(visitor, bindingId);
     // Removing the first argument, because it was a length for ViewEngine, not Ivy.
     let args = outputExpr.args.slice(1);
@@ -7194,6 +7203,7 @@ class _AstToIrVisitor {
         this._resultMap = new Map();
         this._currentTemporary = 0;
         this.temporaryCount = 0;
+        this.usesImplicitReceiver = false;
     }
     visitBinary(ast, mode) {
         let op;
@@ -7273,6 +7283,7 @@ class _AstToIrVisitor {
     }
     visitImplicitReceiver(ast, mode) {
         ensureExpressionMode(mode, ast);
+        this.usesImplicitReceiver = true;
         return this._implicitReceiver;
     }
     visitInterpolation(ast, mode) {
@@ -7336,11 +7347,15 @@ class _AstToIrVisitor {
         }
         else {
             const args = this.visitAll(ast.args, _Mode.Expression);
+            const prevUsesImplicitReceiver = this.usesImplicitReceiver;
             let result = null;
             const receiver = this._visit(ast.receiver, _Mode.Expression);
             if (receiver === this._implicitReceiver) {
                 const varExpr = this._getLocal(ast.name);
                 if (varExpr) {
+                    // Restore the previous "usesImplicitReceiver" state since the implicit
+                    // receiver has been replaced with a resolved local expression.
+                    this.usesImplicitReceiver = prevUsesImplicitReceiver;
                     result = varExpr.callFn(args);
                 }
             }
@@ -7363,9 +7378,15 @@ class _AstToIrVisitor {
         }
         else {
             let result = null;
+            const prevUsesImplicitReceiver = this.usesImplicitReceiver;
             const receiver = this._visit(ast.receiver, _Mode.Expression);
             if (receiver === this._implicitReceiver) {
                 result = this._getLocal(ast.name);
+                if (result) {
+                    // Restore the previous "usesImplicitReceiver" state since the implicit
+                    // receiver has been replaced with a resolved local expression.
+                    this.usesImplicitReceiver = prevUsesImplicitReceiver;
+                }
             }
             if (result == null) {
                 result = receiver.prop(ast.name);
@@ -7375,6 +7396,7 @@ class _AstToIrVisitor {
     }
     visitPropertyWrite(ast, mode) {
         const receiver = this._visit(ast.receiver, _Mode.Expression);
+        const prevUsesImplicitReceiver = this.usesImplicitReceiver;
         let varExpr = null;
         if (receiver === this._implicitReceiver) {
             const localExpr = this._getLocal(ast.name);
@@ -7384,6 +7406,9 @@ class _AstToIrVisitor {
                     // to a 'context.property' value and will be used as the target of the
                     // write expression.
                     varExpr = localExpr;
+                    // Restore the previous "usesImplicitReceiver" state since the implicit
+                    // receiver has been replaced with a resolved local expression.
+                    this.usesImplicitReceiver = prevUsesImplicitReceiver;
                 }
                 else {
                     // Otherwise it's an error.
@@ -7597,6 +7622,7 @@ function flattenStatements(arg, output) {
     }
 }
 class DefaultLocalResolver {
+    notifyImplicitReceiverUse() { }
     getLocal(name) {
         if (name === EventHandlerVars.event.name) {
             return EventHandlerVars.event;
@@ -14756,13 +14782,16 @@ const LEADING_TRIVIA_CHARS = [' ', '\n', '\r', '\t'];
 function renderFlagCheckIfStmt(flags, statements) {
     return ifStmt(variable(RENDER_FLAGS).bitwiseAnd(literal(flags), null, false), statements);
 }
-function prepareEventListenerParameters(eventAst, bindingContext, handlerName = null, scope = null) {
+function prepareEventListenerParameters(eventAst, handlerName = null, scope = null) {
     const { type, name, target, phase, handler } = eventAst;
     if (target && !GLOBAL_TARGET_RESOLVERS.has(target)) {
         throw new Error(`Unexpected global target '${target}' defined for '${name}' event.
         Supported list of global targets: ${Array.from(GLOBAL_TARGET_RESOLVERS.keys())}.`);
     }
-    const bindingExpr = convertActionBinding(scope, bindingContext, handler, 'b', () => error('Unexpected interpolation'), eventAst.handlerSpan);
+    const implicitReceiverExpr = (scope === null || scope.bindingLevel === 0) ?
+        variable(CONTEXT_NAME) :
+        scope.getOrCreateSharedContextVar(0);
+    const bindingExpr = convertActionBinding(scope, implicitReceiverExpr, handler, 'b', () => error('Unexpected interpolation'), eventAst.handlerSpan);
     const statements = [];
     if (scope) {
         statements.push(...scope.restoreViewStatement());
@@ -14839,6 +14868,9 @@ class TemplateDefinitionBuilder {
         // Number of non-default selectors found in all parent templates of this template. We need to
         // track it to properly adjust projection slot index in the `projection` instruction.
         this._ngContentSelectorsOffset = 0;
+        // Expression that should be used as implicit receiver when converting template
+        // expressions to output AST.
+        this._implicitReceiverExpr = null;
         // These should be handled in the template or element directly.
         this.visitReference = invalid$1;
         this.visitVariable = invalid$1;
@@ -14957,6 +14989,8 @@ class TemplateDefinitionBuilder {
     }
     // LocalResolver
     getLocal(name) { return this._bindingScope.get(name); }
+    // LocalResolver
+    notifyImplicitReceiverUse() { this._bindingScope.notifyImplicitReceiverUse(); }
     i18nTranslate(message, params = {}, ref, transformFn) {
         const _ref = ref || variable(this.constantPool.uniqueName(TRANSLATION_PREFIX));
         // Closure Compiler requires const names to start with `MSG_` but disallows any other const to
@@ -15087,7 +15121,7 @@ class TemplateDefinitionBuilder {
         const { index, bindings } = this.i18n;
         if (bindings.size) {
             bindings.forEach(binding => {
-                this.updateInstruction(index, span, Identifiers$1.i18nExp, () => [this.convertPropertyBinding(variable(CONTEXT_NAME), binding)]);
+                this.updateInstruction(index, span, Identifiers$1.i18nExp, () => [this.convertPropertyBinding(binding)]);
             });
             this.updateInstruction(index, span, Identifiers$1.i18nApply, [literal(index)]);
         }
@@ -15211,7 +15245,6 @@ class TemplateDefinitionBuilder {
         if (currentNamespace !== wasInNamespace) {
             this.addNamespaceInstruction(currentNamespace, element);
         }
-        const implicit = variable(CONTEXT_NAME);
         if (this.i18n) {
             this.i18n.appendElement(element.i18n, elementIndex);
         }
@@ -15253,7 +15286,7 @@ class TemplateDefinitionBuilder {
                             i18nAttrArgs.push(literal(attr.name), this.i18nTranslate(message, params));
                             converted.expressions.forEach(expression => {
                                 hasBindings = true;
-                                const binding = this.convertExpressionBinding(implicit, expression);
+                                const binding = this.convertExpressionBinding(expression);
                                 this.updateInstruction(elementIndex, element.sourceSpan, Identifiers$1.i18nExp, [binding]);
                             });
                         }
@@ -15274,7 +15307,7 @@ class TemplateDefinitionBuilder {
             // designed to run inside of `elementStart` and `elementEnd`. The update instructions
             // (things like `elementStyleProp`, `elementClassProp`, etc..) are applied later on in this
             // file
-            this.processStylingInstruction(implicit, stylingBuilder.buildElementStylingInstruction(element.sourceSpan, this.constantPool), true);
+            this.processStylingInstruction(stylingBuilder.buildElementStylingInstruction(element.sourceSpan, this.constantPool), true);
             // Generate Listeners (outputs)
             element.outputs.forEach((outputAst) => {
                 this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter(element.name, outputAst, elementIndex));
@@ -15291,7 +15324,7 @@ class TemplateDefinitionBuilder {
         // and assign in the code below.
         stylingBuilder.buildUpdateLevelInstructions(this._valueConverter).forEach(instruction => {
             this._bindingSlots += instruction.allocateBindingSlots;
-            this.processStylingInstruction(implicit, instruction, false);
+            this.processStylingInstruction(instruction, false);
         });
         // the reason why `undefined` is used is because the renderer understands this as a
         // special value to symbolize that there is no RHS to this binding
@@ -15317,7 +15350,7 @@ class TemplateDefinitionBuilder {
                 this.updateInstruction(elementIndex, input.sourceSpan, Identifiers$1.property, () => {
                     return [
                         literal(bindingName),
-                        (hasValue ? this.convertPropertyBinding(implicit, value, /* skipBindFn */ true) :
+                        (hasValue ? this.convertPropertyBinding(value, /* skipBindFn */ true) :
                             emptyValueBindInstruction),
                     ];
                 });
@@ -15349,16 +15382,13 @@ class TemplateDefinitionBuilder {
                     this.allocateBindingSlots(value);
                     if (inputType === 0 /* Property */) {
                         if (value instanceof Interpolation) {
-                            this.updateInstruction(elementIndex, input.sourceSpan, getPropertyInterpolationExpression(value), () => [literal(attrName),
-                                ...this.getUpdateInstructionArguments(variable(CONTEXT_NAME), value),
+                            this.updateInstruction(elementIndex, input.sourceSpan, getPropertyInterpolationExpression(value), () => [literal(attrName), ...this.getUpdateInstructionArguments(value),
                                 ...params]);
                         }
                         else {
                             // Bound, un-interpolated properties
                             this.updateInstruction(elementIndex, input.sourceSpan, Identifiers$1.property, () => {
-                                return [
-                                    literal(attrName), this.convertPropertyBinding(implicit, value, true), ...params
-                                ];
+                                return [literal(attrName), this.convertPropertyBinding(value, true), ...params];
                             });
                         }
                     }
@@ -15372,8 +15402,8 @@ class TemplateDefinitionBuilder {
                         }
                         this.updateInstruction(elementIndex, input.sourceSpan, instruction, () => {
                             return [
-                                literal(elementIndex), literal(attrName),
-                                this.convertPropertyBinding(implicit, value), ...params
+                                literal(elementIndex), literal(attrName), this.convertPropertyBinding(value),
+                                ...params
                             ];
                         });
                     }
@@ -15444,12 +15474,11 @@ class TemplateDefinitionBuilder {
             return trimTrailingNulls(parameters);
         });
         // handle property bindings e.g. ɵɵproperty('ngForOf', ctx.items), et al;
-        const context = variable(CONTEXT_NAME);
-        this.templatePropertyBindings(template, templateIndex, context, template.templateAttrs);
+        this.templatePropertyBindings(template, templateIndex, template.templateAttrs);
         // Only add normal input/output binding instructions on explicit ng-template elements.
         if (template.tagName === NG_TEMPLATE_TAG_NAME) {
             // Add the input bindings
-            this.templatePropertyBindings(template, templateIndex, context, template.inputs);
+            this.templatePropertyBindings(template, templateIndex, template.inputs);
             // Generate listeners for directive output
             template.outputs.forEach((outputAst) => {
                 this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter('ng_template', outputAst, templateIndex));
@@ -15470,7 +15499,7 @@ class TemplateDefinitionBuilder {
         this.creationInstruction(text.sourceSpan, Identifiers$1.text, [literal(nodeIndex)]);
         const value = text.value.visit(this._valueConverter);
         this.allocateBindingSlots(value);
-        this.updateInstruction(nodeIndex, text.sourceSpan, Identifiers$1.textBinding, () => [literal(nodeIndex), this.convertPropertyBinding(variable(CONTEXT_NAME), value)]);
+        this.updateInstruction(nodeIndex, text.sourceSpan, Identifiers$1.textBinding, () => [literal(nodeIndex), this.convertPropertyBinding(value)]);
     }
     visitText(text) {
         // when a text element is located within a translatable
@@ -15520,12 +15549,12 @@ class TemplateDefinitionBuilder {
             null;
     }
     bindingContext() { return `${this._bindingContext++}`; }
-    templatePropertyBindings(template, templateIndex, context, attrs) {
+    templatePropertyBindings(template, templateIndex, attrs) {
         attrs.forEach(input => {
             if (input instanceof BoundAttribute) {
                 const value = input.value.visit(this._valueConverter);
                 this.allocateBindingSlots(value);
-                this.updateInstruction(templateIndex, template.sourceSpan, Identifiers$1.property, () => [literal(input.name), this.convertPropertyBinding(context, value, true)]);
+                this.updateInstruction(templateIndex, template.sourceSpan, Identifiers$1.property, () => [literal(input.name), this.convertPropertyBinding(value, true)]);
             }
         });
     }
@@ -15539,9 +15568,9 @@ class TemplateDefinitionBuilder {
             return instruction(span, reference, params).toStmt();
         });
     }
-    processStylingInstruction(implicit, instruction, createMode) {
+    processStylingInstruction(instruction, createMode) {
         if (instruction) {
-            const paramsFn = () => instruction.buildParams(value => this.convertPropertyBinding(implicit, value, true));
+            const paramsFn = () => instruction.buildParams(value => this.convertPropertyBinding(value, true));
             if (createMode) {
                 this.creationInstruction(instruction.sourceSpan, instruction.reference, paramsFn);
             }
@@ -15568,16 +15597,28 @@ class TemplateDefinitionBuilder {
     allocateBindingSlots(value) {
         this._bindingSlots += value instanceof Interpolation ? value.expressions.length : 1;
     }
-    convertExpressionBinding(implicit, value) {
-        const convertedPropertyBinding = convertPropertyBinding(this, implicit, value, this.bindingContext(), BindingForm.TrySimple);
+    /**
+     * Gets an expression that refers to the implicit receiver. The implicit
+     * receiver is always the root level context.
+     */
+    getImplicitReceiverExpr() {
+        if (this._implicitReceiverExpr) {
+            return this._implicitReceiverExpr;
+        }
+        return this._implicitReceiverExpr = this.level === 0 ?
+            variable(CONTEXT_NAME) :
+            this._bindingScope.getOrCreateSharedContextVar(0);
+    }
+    convertExpressionBinding(value) {
+        const convertedPropertyBinding = convertPropertyBinding(this, this.getImplicitReceiverExpr(), value, this.bindingContext(), BindingForm.TrySimple);
         const valExpr = convertedPropertyBinding.currValExpr;
         return importExpr(Identifiers$1.bind).callFn([valExpr]);
     }
-    convertPropertyBinding(implicit, value, skipBindFn) {
+    convertPropertyBinding(value, skipBindFn) {
         const interpolationFn = value instanceof Interpolation ? interpolate : () => error('Unexpected interpolation');
-        const convertedPropertyBinding = convertPropertyBinding(this, implicit, value, this.bindingContext(), BindingForm.TrySimple, interpolationFn);
-        this._tempVariables.push(...convertedPropertyBinding.stmts);
+        const convertedPropertyBinding = convertPropertyBinding(this, this.getImplicitReceiverExpr(), value, this.bindingContext(), BindingForm.TrySimple, interpolationFn);
         const valExpr = convertedPropertyBinding.currValExpr;
+        this._tempVariables.push(...convertedPropertyBinding.stmts);
         return value instanceof Interpolation || skipBindFn ? valExpr :
             importExpr(Identifiers$1.bind).callFn([valExpr]);
     }
@@ -15585,11 +15626,10 @@ class TemplateDefinitionBuilder {
      * Gets a list of argument expressions to pass to an update instruction expression. Also updates
      * the temp variables state with temp variables that were identified as needing to be created
      * while visiting the arguments.
-     * @param contextExpression The expression for the context variable used to create arguments
      * @param value The original expression we will be resolving an arguments list from.
      */
-    getUpdateInstructionArguments(contextExpression, value) {
-        const { args, stmts } = convertUpdateArguments(this, contextExpression, value, this.bindingContext());
+    getUpdateInstructionArguments(value) {
+        const { args, stmts } = convertUpdateArguments(this, this.getImplicitReceiverExpr(), value, this.bindingContext());
         this._tempVariables.push(...stmts);
         return args;
     }
@@ -15704,8 +15744,7 @@ class TemplateDefinitionBuilder {
                 sanitizeIdentifier(eventName);
             const handlerName = `${this.templateName}_${tagName}_${bindingFnName}_${index}_listener`;
             const scope = this._bindingScope.nestedScope(this._bindingScope.bindingLevel);
-            const context = variable(CONTEXT_NAME);
-            return prepareEventListenerParameters(outputAst, context, handlerName, scope);
+            return prepareEventListenerParameters(outputAst, handlerName, scope);
         };
     }
 }
@@ -15913,12 +15952,34 @@ class BindingScope {
         });
         return this;
     }
+    // Implemented as part of LocalResolver.
     getLocal(name) { return this.get(name); }
+    // Implemented as part of LocalResolver.
+    notifyImplicitReceiverUse() {
+        if (this.bindingLevel !== 0) {
+            // Since the implicit receiver is accessed in an embedded view, we need to
+            // ensure that we declare a shared context variable for the current template
+            // in the update variables.
+            this.map.get(SHARED_CONTEXT_KEY + 0).declare = true;
+        }
+    }
     nestedScope(level) {
         const newScope = new BindingScope(level, this);
         if (level > 0)
             newScope.generateSharedContextVar(0);
         return newScope;
+    }
+    /**
+     * Gets or creates a shared context variable and returns its expression. Note that
+     * this does not mean that the shared variable will be declared. Variables in the
+     * binding scope will be only declared if they are used.
+     */
+    getOrCreateSharedContextVar(retrievalLevel) {
+        const bindingKey = SHARED_CONTEXT_KEY + retrievalLevel;
+        if (!this.map.has(bindingKey)) {
+            this.generateSharedContextVar(retrievalLevel);
+        }
+        return this.map.get(bindingKey).lhs;
     }
     getSharedContextName(retrievalLevel) {
         const sharedCtxObj = this.map.get(SHARED_CONTEXT_KEY + retrievalLevel);
@@ -16608,7 +16669,7 @@ function createHostBindingsFunction(meta, elVarExp, bindingContext, staticAttrib
     // Calculate host event bindings
     const eventBindings = bindingParser.createDirectiveHostEventAsts(directiveSummary, hostBindingSourceSpan);
     if (eventBindings && eventBindings.length) {
-        const listeners = createHostListeners(bindingContext, eventBindings, meta);
+        const listeners = createHostListeners(eventBindings, meta);
         createStatements.push(...listeners);
     }
     // Calculate the host property bindings
@@ -16744,14 +16805,14 @@ function getBindingNameAndInstruction(binding) {
     }
     return { bindingName, instruction, isAttribute: !!attrMatches };
 }
-function createHostListeners(bindingContext, eventBindings, meta) {
+function createHostListeners(eventBindings, meta) {
     return eventBindings.map(binding => {
         let bindingName = binding.name && sanitizeIdentifier(binding.name);
         const bindingFnName = binding.type === 1 /* Animation */ ?
             prepareSyntheticListenerFunctionName(bindingName, binding.targetOrPhase) :
             bindingName;
         const handlerName = meta.name && bindingName ? `${meta.name}_${bindingFnName}_HostBindingHandler` : null;
-        const params = prepareEventListenerParameters(BoundEvent.fromParsedEvent(binding), bindingContext, handlerName);
+        const params = prepareEventListenerParameters(BoundEvent.fromParsedEvent(binding), handlerName);
         const instruction = binding.type == 1 /* Animation */ ? Identifiers$1.componentHostSyntheticListener : Identifiers$1.listener;
         return importExpr(instruction).callFn(params).toStmt();
     });
@@ -17112,7 +17173,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.0.0+64.sha-49307f0.with-local-changes');
+const VERSION$1 = new Version('8.0.0+65.sha-3dcd5eb.with-local-changes');
 
 /**
  * @license
@@ -20902,6 +20963,7 @@ class TypeCheckCompiler {
 }
 const DYNAMIC_VAR_NAME = '_any';
 class TypeCheckLocalResolver {
+    notifyImplicitReceiverUse() { }
     getLocal(name) {
         if (name === EventHandlerVars.event.name) {
             // References to the event should not be type-checked.
@@ -21071,6 +21133,7 @@ class ViewBuilder {
             }));
         }
     }
+    notifyImplicitReceiverUse() { }
     getLocal(name) {
         if (name == EventHandlerVars.event.name) {
             return variable(this.getOutputVar(BuiltinTypeName.Dynamic));
@@ -21668,6 +21731,11 @@ class ViewBuilder$1 {
             }
         }
         return null;
+    }
+    notifyImplicitReceiverUse() {
+        // Not needed in View Engine as View Engine walks through the generated
+        // expressions to figure out if the implicit receiver is used and needs
+        // to be generated as part of the pre-update statements.
     }
     _createLiteralArrayConverter(sourceSpan, argCount) {
         if (argCount === 0) {
