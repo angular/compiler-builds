@@ -20,7 +20,7 @@ import * as t from '../r3_ast';
 import { I18nContext } from './i18n/context';
 import { invalid } from './util';
 export declare function renderFlagCheckIfStmt(flags: core.RenderFlags, statements: o.Statement[]): o.IfStmt;
-export declare function prepareEventListenerParameters(eventAst: t.BoundEvent, bindingContext: o.Expression, handlerName?: string | null, scope?: BindingScope | null): o.Expression[];
+export declare function prepareEventListenerParameters(eventAst: t.BoundEvent, handlerName?: string | null, scope?: BindingScope | null): o.Expression[];
 export declare class TemplateDefinitionBuilder implements t.Visitor<void>, LocalResolver {
     private constantPool;
     private level;
@@ -78,10 +78,12 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private fileBasedI18nSuffix;
     private _ngContentReservedSlots;
     private _ngContentSelectorsOffset;
+    private _implicitReceiverExpr;
     constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, i18nContext: I18nContext | null, templateIndex: number | null, templateName: string | null, directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference, relativeContextFilePath: string, i18nUseExternalIds: boolean);
     registerContextVariables(variable: t.Variable): void;
     buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], ngContentSelectorsOffset?: number, i18n?: i18n.AST): o.FunctionExpr;
     getLocal(name: string): o.Expression | null;
+    notifyImplicitReceiverUse(): void;
     i18nTranslate(message: i18n.Message, params?: {
         [name: string]: o.Expression;
     }, ref?: o.ReadVarExpr, transformFn?: (raw: o.ReadVarExpr) => o.Expression): o.ReadVarExpr;
@@ -103,7 +105,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
      * Adds an update instruction for a bound property or attribute, such as `[prop]="value"` or
      * `[attr.title]="value"`
      */
-    boundUpdateInstruction(instruction: o.ExternalReference, elementIndex: number, attrName: string, input: t.BoundAttribute, implicit: o.ReadVarExpr, value: any, params: any[]): void;
+    boundUpdateInstruction(instruction: o.ExternalReference, elementIndex: number, attrName: string, input: t.BoundAttribute, value: any, params: any[]): void;
     /**
      * Adds an update instruction for an interpolated property or attribute, such as
      * `prop="{{value}}"` or `attr.title="{{value}}"`
@@ -130,13 +132,17 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private updateInstruction;
     private allocatePureFunctionSlots;
     private allocateBindingSlots;
+    /**
+     * Gets an expression that refers to the implicit receiver. The implicit
+     * receiver is always the root level context.
+     */
+    private getImplicitReceiverExpr;
     private convertExpressionBinding;
     private convertPropertyBinding;
     /**
      * Gets a list of argument expressions to pass to an update instruction expression. Also updates
      * the temp variables state with temp variables that were identified as needing to be created
      * while visiting the arguments.
-     * @param contextExpression The expression for the context variable used to create arguments
      * @param value The original expression we will be resolving an arguments list from.
      */
     private getUpdateInstructionArguments;
@@ -232,7 +238,14 @@ export declare class BindingScope implements LocalResolver {
      */
     set(retrievalLevel: number, name: string, lhs: o.ReadVarExpr, priority?: number, declareLocalCallback?: DeclareLocalVarCallback, localRef?: true): BindingScope;
     getLocal(name: string): (o.Expression | null);
+    notifyImplicitReceiverUse(): void;
     nestedScope(level: number): BindingScope;
+    /**
+     * Gets or creates a shared context variable and returns its expression. Note that
+     * this does not mean that the shared variable will be declared. Variables in the
+     * binding scope will be only declared if they are used.
+     */
+    getOrCreateSharedContextVar(retrievalLevel: number): o.ReadVarExpr;
     getSharedContextName(retrievalLevel: number): o.ReadVarExpr | null;
     maybeGenerateSharedContextVar(value: BindingData): void;
     generateSharedContextVar(retrievalLevel: number): void;
