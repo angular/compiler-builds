@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.2+17.sha-2c2135d.with-local-changes
+ * @license Angular v8.1.0-next.2+18.sha-e2fd628.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -18391,7 +18391,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.1.0-next.2+17.sha-2c2135d.with-local-changes');
+    var VERSION$1 = new Version('8.1.0-next.2+18.sha-e2fd628.with-local-changes');
 
     /**
      * @license
