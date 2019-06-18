@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.2+35.sha-65544ac.with-local-changes
+ * @license Angular v8.1.0-next.2+37.sha-beaab27.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15155,7 +15155,7 @@ class TemplateDefinitionBuilder {
         const { index, bindings } = this.i18n;
         if (bindings.size) {
             bindings.forEach(binding => {
-                this.updateInstruction(index, span, Identifiers$1.i18nExp, () => [this.convertPropertyBinding(binding)]);
+                this.updateInstruction(index, span, Identifiers$1.i18nExp, () => [this.convertPropertyBinding(binding, /* skipBindFn */ true)]);
             });
             this.updateInstruction(index, span, Identifiers$1.i18nApply, [literal(index)]);
         }
@@ -15327,7 +15327,7 @@ class TemplateDefinitionBuilder {
                             i18nAttrArgs.push(literal(attr.name), this.i18nTranslate(message, params));
                             converted.expressions.forEach(expression => {
                                 hasBindings = true;
-                                this.updateInstruction(elementIndex, element.sourceSpan, Identifiers$1.i18nExp, () => [this.convertExpressionBinding(expression)]);
+                                this.updateInstruction(elementIndex, element.sourceSpan, Identifiers$1.i18nExp, () => [this.convertExpressionBinding(expression, /* skipBindFn */ true)]);
                             });
                         }
                     }
@@ -15479,7 +15479,9 @@ class TemplateDefinitionBuilder {
      */
     boundUpdateInstruction(instruction, elementIndex, attrName, input, value, params) {
         this.updateInstruction(elementIndex, input.sourceSpan, instruction, () => {
-            return [literal(attrName), this.convertPropertyBinding(value, true), ...params];
+            return [
+                literal(attrName), this.convertPropertyBinding(value, /* skipBindFn */ true), ...params
+            ];
         });
     }
     /**
@@ -15622,7 +15624,8 @@ class TemplateDefinitionBuilder {
                 const value = input.value.visit(this._valueConverter);
                 if (value !== undefined) {
                     this.allocateBindingSlots(value);
-                    this.updateInstruction(templateIndex, template.sourceSpan, Identifiers$1.property, () => [literal(input.name), this.convertPropertyBinding(value, true)]);
+                    this.updateInstruction(templateIndex, template.sourceSpan, Identifiers$1.property, () => [literal(input.name),
+                        this.convertPropertyBinding(value, /* skipBindFn */ true)]);
                 }
             }
         });
@@ -15639,7 +15642,7 @@ class TemplateDefinitionBuilder {
     }
     processStylingInstruction(elementIndex, instruction, createMode) {
         if (instruction) {
-            const paramsFn = () => instruction.buildParams(value => this.convertPropertyBinding(value, true));
+            const paramsFn = () => instruction.buildParams(value => this.convertPropertyBinding(value, /* skipBindFn */ true));
             if (createMode) {
                 this.creationInstruction(instruction.sourceSpan, instruction.reference, paramsFn);
             }
@@ -15680,10 +15683,10 @@ class TemplateDefinitionBuilder {
             variable(CONTEXT_NAME) :
             this._bindingScope.getOrCreateSharedContextVar(0);
     }
-    convertExpressionBinding(value) {
+    convertExpressionBinding(value, skipBindFn) {
         const convertedPropertyBinding = convertPropertyBinding(this, this.getImplicitReceiverExpr(), value, this.bindingContext(), BindingForm.TrySimple);
         const valExpr = convertedPropertyBinding.currValExpr;
-        return importExpr(Identifiers$1.bind).callFn([valExpr]);
+        return skipBindFn ? valExpr : importExpr(Identifiers$1.bind).callFn([valExpr]);
     }
     convertPropertyBinding(value, skipBindFn) {
         const interpolationFn = value instanceof Interpolation ? interpolate : () => error('Unexpected interpolation');
@@ -17299,7 +17302,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.1.0-next.2+35.sha-65544ac.with-local-changes');
+const VERSION$1 = new Version('8.1.0-next.2+37.sha-beaab27.with-local-changes');
 
 /**
  * @license
