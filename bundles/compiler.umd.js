@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.2+14.sha-4ad323a.with-local-changes
+ * @license Angular v8.1.0-next.2+37.sha-beaab27.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16144,7 +16144,7 @@
             var _a = this.i18n, index = _a.index, bindings = _a.bindings;
             if (bindings.size) {
                 bindings.forEach(function (binding) {
-                    _this.updateInstruction(index, span, Identifiers$1.i18nExp, function () { return [_this.convertPropertyBinding(binding)]; });
+                    _this.updateInstruction(index, span, Identifiers$1.i18nExp, function () { return [_this.convertPropertyBinding(binding, /* skipBindFn */ true)]; });
                 });
                 this.updateInstruction(index, span, Identifiers$1.i18nApply, [literal(index)]);
             }
@@ -16328,7 +16328,7 @@
                                 i18nAttrArgs_1.push(literal(attr.name), _this.i18nTranslate(message, params));
                                 converted.expressions.forEach(function (expression) {
                                     hasBindings_1 = true;
-                                    _this.updateInstruction(elementIndex, element.sourceSpan, Identifiers$1.i18nExp, function () { return [_this.convertExpressionBinding(expression)]; });
+                                    _this.updateInstruction(elementIndex, element.sourceSpan, Identifiers$1.i18nExp, function () { return [_this.convertExpressionBinding(expression, /* skipBindFn */ true)]; });
                                 });
                             }
                         }
@@ -16480,7 +16480,9 @@
         TemplateDefinitionBuilder.prototype.boundUpdateInstruction = function (instruction, elementIndex, attrName, input, value, params) {
             var _this = this;
             this.updateInstruction(elementIndex, input.sourceSpan, instruction, function () {
-                return __spread([literal(attrName), _this.convertPropertyBinding(value, true)], params);
+                return __spread([
+                    literal(attrName), _this.convertPropertyBinding(value, /* skipBindFn */ true)
+                ], params);
             });
         };
         /**
@@ -16570,7 +16572,7 @@
                 this.updateInstruction(nodeIndex, text.sourceSpan, getTextInterpolationExpression(value), function () { return _this.getUpdateInstructionArguments(value); });
             }
             else {
-                this.updateInstruction(nodeIndex, text.sourceSpan, Identifiers$1.textBinding, function () { return [literal(nodeIndex), _this.convertPropertyBinding(value)]; });
+                this.updateInstruction(nodeIndex, text.sourceSpan, Identifiers$1.textBinding, function () { return [_this.convertPropertyBinding(value)]; });
             }
         };
         TemplateDefinitionBuilder.prototype.visitText = function (text) {
@@ -16630,7 +16632,10 @@
                     var value_4 = input.value.visit(_this._valueConverter);
                     if (value_4 !== undefined) {
                         _this.allocateBindingSlots(value_4);
-                        _this.updateInstruction(templateIndex, template.sourceSpan, Identifiers$1.property, function () { return [literal(input.name), _this.convertPropertyBinding(value_4, true)]; });
+                        _this.updateInstruction(templateIndex, template.sourceSpan, Identifiers$1.property, function () {
+                            return [literal(input.name),
+                                _this.convertPropertyBinding(value_4, /* skipBindFn */ true)];
+                        });
                     }
                 }
             });
@@ -16649,9 +16654,7 @@
         TemplateDefinitionBuilder.prototype.processStylingInstruction = function (elementIndex, instruction, createMode) {
             var _this = this;
             if (instruction) {
-                var paramsFn = function () {
-                    return instruction.buildParams(function (value) { return _this.convertPropertyBinding(value, true); });
-                };
+                var paramsFn = function () { return instruction.buildParams(function (value) { return _this.convertPropertyBinding(value, /* skipBindFn */ true); }); };
                 if (createMode) {
                     this.creationInstruction(instruction.sourceSpan, instruction.reference, paramsFn);
                 }
@@ -16692,10 +16695,10 @@
                 variable(CONTEXT_NAME) :
                 this._bindingScope.getOrCreateSharedContextVar(0);
         };
-        TemplateDefinitionBuilder.prototype.convertExpressionBinding = function (value) {
+        TemplateDefinitionBuilder.prototype.convertExpressionBinding = function (value, skipBindFn) {
             var convertedPropertyBinding = convertPropertyBinding(this, this.getImplicitReceiverExpr(), value, this.bindingContext(), BindingForm.TrySimple);
             var valExpr = convertedPropertyBinding.currValExpr;
-            return importExpr(Identifiers$1.bind).callFn([valExpr]);
+            return skipBindFn ? valExpr : importExpr(Identifiers$1.bind).callFn([valExpr]);
         };
         TemplateDefinitionBuilder.prototype.convertPropertyBinding = function (value, skipBindFn) {
             var _a;
@@ -18391,7 +18394,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.1.0-next.2+14.sha-4ad323a.with-local-changes');
+    var VERSION$1 = new Version('8.1.0-next.2+37.sha-beaab27.with-local-changes');
 
     /**
      * @license
