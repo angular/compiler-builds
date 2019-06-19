@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.2+37.sha-beaab27.with-local-changes
+ * @license Angular v8.1.0-next.3+6.sha-f039583.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16374,6 +16374,7 @@
             // special value to symbolize that there is no RHS to this binding
             // TODO (matsko): revisit this once FW-959 is approached
             var emptyValueBindInstruction = literal(undefined);
+            var propertyBindings = [];
             // Generate element input bindings
             allOtherInputs.forEach(function (input) {
                 var inputType = input.type;
@@ -16390,13 +16391,11 @@
                     // defined in...
                     var hasValue_1 = value_1 instanceof LiteralPrimitive ? !!value_1.value : true;
                     _this.allocateBindingSlots(value_1);
-                    var bindingName_1 = prepareSyntheticPropertyName(input.name);
-                    _this.updateInstruction(elementIndex, input.sourceSpan, Identifiers$1.property, function () {
-                        return [
-                            literal(bindingName_1),
-                            (hasValue_1 ? _this.convertPropertyBinding(value_1, /* skipBindFn */ true) :
-                                emptyValueBindInstruction),
-                        ];
+                    propertyBindings.push({
+                        name: prepareSyntheticPropertyName(input.name),
+                        input: input,
+                        value: function () { return hasValue_1 ? _this.convertPropertyBinding(value_1, /* skipBindFn */ true) :
+                            emptyValueBindInstruction; }
                     });
                 }
                 else {
@@ -16431,7 +16430,12 @@
                             }
                             else {
                                 // [prop]="value"
-                                _this.boundUpdateInstruction(Identifiers$1.property, elementIndex, attrName_1, input, value_2, params_2);
+                                // Collect all the properties so that we can chain into a single function at the end.
+                                propertyBindings.push({
+                                    name: attrName_1,
+                                    input: input,
+                                    value: function () { return _this.convertPropertyBinding(value_2, true); }, params: params_2
+                                });
                             }
                         }
                         else if (inputType === 1 /* Attribute */) {
@@ -16456,6 +16460,9 @@
                     }
                 }
             });
+            if (propertyBindings.length > 0) {
+                this.propertyInstructionChain(elementIndex, propertyBindings);
+            }
             // Traverse element child nodes
             visitAll(this, element.children);
             if (!isI18nRootElement && this.i18n) {
@@ -16542,11 +16549,11 @@
                 return trimTrailingNulls(parameters);
             });
             // handle property bindings e.g. ɵɵproperty('ngForOf', ctx.items), et al;
-            this.templatePropertyBindings(template, templateIndex, template.templateAttrs);
+            this.templatePropertyBindings(templateIndex, template.templateAttrs);
             // Only add normal input/output binding instructions on explicit ng-template elements.
             if (template.tagName === NG_TEMPLATE_TAG_NAME) {
                 // Add the input bindings
-                this.templatePropertyBindings(template, templateIndex, template.inputs);
+                this.templatePropertyBindings(templateIndex, template.inputs);
                 // Generate listeners for directive output
                 template.outputs.forEach(function (outputAst) {
                     _this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, _this.prepareListenerParameter('ng_template', outputAst, templateIndex));
@@ -16625,20 +16632,25 @@
                 null;
         };
         TemplateDefinitionBuilder.prototype.bindingContext = function () { return "" + this._bindingContext++; };
-        TemplateDefinitionBuilder.prototype.templatePropertyBindings = function (template, templateIndex, attrs) {
+        TemplateDefinitionBuilder.prototype.templatePropertyBindings = function (templateIndex, attrs) {
             var _this = this;
+            var propertyBindings = [];
             attrs.forEach(function (input) {
                 if (input instanceof BoundAttribute) {
                     var value_4 = input.value.visit(_this._valueConverter);
                     if (value_4 !== undefined) {
                         _this.allocateBindingSlots(value_4);
-                        _this.updateInstruction(templateIndex, template.sourceSpan, Identifiers$1.property, function () {
-                            return [literal(input.name),
-                                _this.convertPropertyBinding(value_4, /* skipBindFn */ true)];
+                        propertyBindings.push({
+                            name: input.name,
+                            input: input,
+                            value: function () { return _this.convertPropertyBinding(value_4, /* skipBindFn */ true); }
                         });
                     }
                 }
             });
+            if (propertyBindings.length > 0) {
+                this.propertyInstructionChain(templateIndex, propertyBindings);
+            }
         };
         // Bindings must only be resolved after all local refs have been visited, so all
         // instructions are queued in callbacks that execute once the initial pass has completed.
@@ -16667,13 +16679,28 @@
             this.instructionFn(this._creationCodeFns, span, reference, paramsOrFn || [], prepend);
         };
         TemplateDefinitionBuilder.prototype.updateInstruction = function (nodeIndex, span, reference, paramsOrFn) {
+            this.addSelectInstructionIfNecessary(nodeIndex, span);
+            this.instructionFn(this._updateCodeFns, span, reference, paramsOrFn || []);
+        };
+        TemplateDefinitionBuilder.prototype.updateInstructionChain = function (nodeIndex, span, reference, callsOrFn) {
+            this.addSelectInstructionIfNecessary(nodeIndex, span);
+            this._updateCodeFns.push(function () {
+                var calls = typeof callsOrFn === 'function' ? callsOrFn() : callsOrFn;
+                return chainedInstruction(span, reference, calls || []).toStmt();
+            });
+        };
+        TemplateDefinitionBuilder.prototype.propertyInstructionChain = function (nodeIndex, propertyBindings) {
+            this.updateInstructionChain(nodeIndex, propertyBindings.length ? propertyBindings[0].input.sourceSpan : null, Identifiers$1.property, function () {
+                return propertyBindings.map(function (property) { return __spread([literal(property.name), property.value()], (property.params || [])); });
+            });
+        };
+        TemplateDefinitionBuilder.prototype.addSelectInstructionIfNecessary = function (nodeIndex, span) {
             if (this._lastNodeIndexWithFlush < nodeIndex) {
                 if (nodeIndex > 0) {
                     this.instructionFn(this._updateCodeFns, span, Identifiers$1.select, [literal(nodeIndex)]);
                 }
                 this._lastNodeIndexWithFlush = nodeIndex;
             }
-            this.instructionFn(this._updateCodeFns, span, reference, paramsOrFn || []);
         };
         TemplateDefinitionBuilder.prototype.allocatePureFunctionSlots = function (numSlots) {
             var originalSlots = this._pureFunctionSlots;
@@ -16932,6 +16959,19 @@
     }
     function instruction(span, reference, params) {
         return importExpr(reference, null, span).callFn(params, span);
+    }
+    function chainedInstruction(span, reference, calls) {
+        var expression = importExpr(reference, null, span);
+        if (calls.length > 0) {
+            for (var i = 0; i < calls.length; i++) {
+                expression = expression.callFn(calls[i], span);
+            }
+        }
+        else {
+            // Add a blank invocation, in case the `calls` array is empty.
+            expression = expression.callFn([], span);
+        }
+        return expression;
     }
     // e.g. x(2);
     function generateNextContextExpr(relativeLevelDiff) {
@@ -18394,7 +18434,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.1.0-next.2+37.sha-beaab27.with-local-changes');
+    var VERSION$1 = new Version('8.1.0-next.3+6.sha-f039583.with-local-changes');
 
     /**
      * @license

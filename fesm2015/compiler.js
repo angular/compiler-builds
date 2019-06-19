@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.2+37.sha-beaab27.with-local-changes
+ * @license Angular v8.1.0-next.3+6.sha-f039583.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15373,6 +15373,7 @@ class TemplateDefinitionBuilder {
         // special value to symbolize that there is no RHS to this binding
         // TODO (matsko): revisit this once FW-959 is approached
         const emptyValueBindInstruction = literal(undefined);
+        const propertyBindings = [];
         // Generate element input bindings
         allOtherInputs.forEach((input) => {
             const inputType = input.type;
@@ -15389,13 +15390,11 @@ class TemplateDefinitionBuilder {
                 // defined in...
                 const hasValue = value instanceof LiteralPrimitive ? !!value.value : true;
                 this.allocateBindingSlots(value);
-                const bindingName = prepareSyntheticPropertyName(input.name);
-                this.updateInstruction(elementIndex, input.sourceSpan, Identifiers$1.property, () => {
-                    return [
-                        literal(bindingName),
-                        (hasValue ? this.convertPropertyBinding(value, /* skipBindFn */ true) :
-                            emptyValueBindInstruction),
-                    ];
+                propertyBindings.push({
+                    name: prepareSyntheticPropertyName(input.name),
+                    input,
+                    value: () => hasValue ? this.convertPropertyBinding(value, /* skipBindFn */ true) :
+                        emptyValueBindInstruction
                 });
             }
             else {
@@ -15430,7 +15429,12 @@ class TemplateDefinitionBuilder {
                         }
                         else {
                             // [prop]="value"
-                            this.boundUpdateInstruction(Identifiers$1.property, elementIndex, attrName, input, value, params);
+                            // Collect all the properties so that we can chain into a single function at the end.
+                            propertyBindings.push({
+                                name: attrName,
+                                input,
+                                value: () => this.convertPropertyBinding(value, true), params
+                            });
                         }
                     }
                     else if (inputType === 1 /* Attribute */) {
@@ -15456,6 +15460,9 @@ class TemplateDefinitionBuilder {
                 }
             }
         });
+        if (propertyBindings.length > 0) {
+            this.propertyInstructionChain(elementIndex, propertyBindings);
+        }
         // Traverse element child nodes
         visitAll(this, element.children);
         if (!isI18nRootElement && this.i18n) {
@@ -15538,11 +15545,11 @@ class TemplateDefinitionBuilder {
             return trimTrailingNulls(parameters);
         });
         // handle property bindings e.g. ɵɵproperty('ngForOf', ctx.items), et al;
-        this.templatePropertyBindings(template, templateIndex, template.templateAttrs);
+        this.templatePropertyBindings(templateIndex, template.templateAttrs);
         // Only add normal input/output binding instructions on explicit ng-template elements.
         if (template.tagName === NG_TEMPLATE_TAG_NAME) {
             // Add the input bindings
-            this.templatePropertyBindings(template, templateIndex, template.inputs);
+            this.templatePropertyBindings(templateIndex, template.inputs);
             // Generate listeners for directive output
             template.outputs.forEach((outputAst) => {
                 this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter('ng_template', outputAst, templateIndex));
@@ -15618,17 +15625,24 @@ class TemplateDefinitionBuilder {
             null;
     }
     bindingContext() { return `${this._bindingContext++}`; }
-    templatePropertyBindings(template, templateIndex, attrs) {
+    templatePropertyBindings(templateIndex, attrs) {
+        const propertyBindings = [];
         attrs.forEach(input => {
             if (input instanceof BoundAttribute) {
                 const value = input.value.visit(this._valueConverter);
                 if (value !== undefined) {
                     this.allocateBindingSlots(value);
-                    this.updateInstruction(templateIndex, template.sourceSpan, Identifiers$1.property, () => [literal(input.name),
-                        this.convertPropertyBinding(value, /* skipBindFn */ true)]);
+                    propertyBindings.push({
+                        name: input.name,
+                        input,
+                        value: () => this.convertPropertyBinding(value, /* skipBindFn */ true)
+                    });
                 }
             }
         });
+        if (propertyBindings.length > 0) {
+            this.propertyInstructionChain(templateIndex, propertyBindings);
+        }
     }
     // Bindings must only be resolved after all local refs have been visited, so all
     // instructions are queued in callbacks that execute once the initial pass has completed.
@@ -15655,13 +15669,28 @@ class TemplateDefinitionBuilder {
         this.instructionFn(this._creationCodeFns, span, reference, paramsOrFn || [], prepend);
     }
     updateInstruction(nodeIndex, span, reference, paramsOrFn) {
+        this.addSelectInstructionIfNecessary(nodeIndex, span);
+        this.instructionFn(this._updateCodeFns, span, reference, paramsOrFn || []);
+    }
+    updateInstructionChain(nodeIndex, span, reference, callsOrFn) {
+        this.addSelectInstructionIfNecessary(nodeIndex, span);
+        this._updateCodeFns.push(() => {
+            const calls = typeof callsOrFn === 'function' ? callsOrFn() : callsOrFn;
+            return chainedInstruction(span, reference, calls || []).toStmt();
+        });
+    }
+    propertyInstructionChain(nodeIndex, propertyBindings) {
+        this.updateInstructionChain(nodeIndex, propertyBindings.length ? propertyBindings[0].input.sourceSpan : null, Identifiers$1.property, () => {
+            return propertyBindings.map(property => [literal(property.name), property.value(), ...(property.params || [])]);
+        });
+    }
+    addSelectInstructionIfNecessary(nodeIndex, span) {
         if (this._lastNodeIndexWithFlush < nodeIndex) {
             if (nodeIndex > 0) {
                 this.instructionFn(this._updateCodeFns, span, Identifiers$1.select, [literal(nodeIndex)]);
             }
             this._lastNodeIndexWithFlush = nodeIndex;
         }
-        this.instructionFn(this._updateCodeFns, span, reference, paramsOrFn || []);
     }
     allocatePureFunctionSlots(numSlots) {
         const originalSlots = this._pureFunctionSlots;
@@ -15908,6 +15937,19 @@ function pureFunctionCallInfo(args) {
 }
 function instruction(span, reference, params) {
     return importExpr(reference, null, span).callFn(params, span);
+}
+function chainedInstruction(span, reference, calls) {
+    let expression = importExpr(reference, null, span);
+    if (calls.length > 0) {
+        for (let i = 0; i < calls.length; i++) {
+            expression = expression.callFn(calls[i], span);
+        }
+    }
+    else {
+        // Add a blank invocation, in case the `calls` array is empty.
+        expression = expression.callFn([], span);
+    }
+    return expression;
 }
 // e.g. x(2);
 function generateNextContextExpr(relativeLevelDiff) {
@@ -17302,7 +17344,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.1.0-next.2+37.sha-beaab27.with-local-changes');
+const VERSION$1 = new Version('8.1.0-next.3+6.sha-f039583.with-local-changes');
 
 /**
  * @license
