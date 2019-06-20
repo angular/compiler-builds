@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.3+8.sha-029f1be.with-local-changes
+ * @license Angular v8.1.0-next.3+16.sha-f221908.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4369,7 +4369,7 @@ function getTranslationDeclStmts(variable, closureVar, message, meta, params = {
  * TODO(FW-1136): this is a temporary solution, we need to come up with a better way of working with
  * inputs that contain potentially unsafe chars.
  */
-const UNSAFE_OBJECT_KEY_NAME_REGEXP = /-/;
+const UNSAFE_OBJECT_KEY_NAME_REGEXP = /[-.]/;
 /** Name of the temporary to use during data binding */
 const TEMPORARY_NAME = '_t';
 /** Name of the context parameter passed into a template function */
@@ -6569,24 +6569,24 @@ class NullAstVisitor {
 }
 class RecursiveAstVisitor$1 {
     visitBinary(ast, context) {
-        ast.left.visit(this);
-        ast.right.visit(this);
+        ast.left.visit(this, context);
+        ast.right.visit(this, context);
         return null;
     }
     visitChain(ast, context) { return this.visitAll(ast.expressions, context); }
     visitConditional(ast, context) {
-        ast.condition.visit(this);
-        ast.trueExp.visit(this);
-        ast.falseExp.visit(this);
+        ast.condition.visit(this, context);
+        ast.trueExp.visit(this, context);
+        ast.falseExp.visit(this, context);
         return null;
     }
     visitPipe(ast, context) {
-        ast.exp.visit(this);
+        ast.exp.visit(this, context);
         this.visitAll(ast.args, context);
         return null;
     }
     visitFunctionCall(ast, context) {
-        ast.target.visit(this);
+        ast.target.visit(this, context);
         this.visitAll(ast.args, context);
         return null;
     }
@@ -6595,14 +6595,14 @@ class RecursiveAstVisitor$1 {
         return this.visitAll(ast.expressions, context);
     }
     visitKeyedRead(ast, context) {
-        ast.obj.visit(this);
-        ast.key.visit(this);
+        ast.obj.visit(this, context);
+        ast.key.visit(this, context);
         return null;
     }
     visitKeyedWrite(ast, context) {
-        ast.obj.visit(this);
-        ast.key.visit(this);
-        ast.value.visit(this);
+        ast.obj.visit(this, context);
+        ast.key.visit(this, context);
+        ast.value.visit(this, context);
         return null;
     }
     visitLiteralArray(ast, context) {
@@ -6611,32 +6611,32 @@ class RecursiveAstVisitor$1 {
     visitLiteralMap(ast, context) { return this.visitAll(ast.values, context); }
     visitLiteralPrimitive(ast, context) { return null; }
     visitMethodCall(ast, context) {
-        ast.receiver.visit(this);
+        ast.receiver.visit(this, context);
         return this.visitAll(ast.args, context);
     }
     visitPrefixNot(ast, context) {
-        ast.expression.visit(this);
+        ast.expression.visit(this, context);
         return null;
     }
     visitNonNullAssert(ast, context) {
-        ast.expression.visit(this);
+        ast.expression.visit(this, context);
         return null;
     }
     visitPropertyRead(ast, context) {
-        ast.receiver.visit(this);
+        ast.receiver.visit(this, context);
         return null;
     }
     visitPropertyWrite(ast, context) {
-        ast.receiver.visit(this);
-        ast.value.visit(this);
+        ast.receiver.visit(this, context);
+        ast.value.visit(this, context);
         return null;
     }
     visitSafePropertyRead(ast, context) {
-        ast.receiver.visit(this);
+        ast.receiver.visit(this, context);
         return null;
     }
     visitSafeMethodCall(ast, context) {
-        ast.receiver.visit(this);
+        ast.receiver.visit(this, context);
         return this.visitAll(ast.args, context);
     }
     visitAll(asts, context) {
@@ -16347,7 +16347,7 @@ function parseTemplate(template, templateUrl, options = {}) {
     const { interpolationConfig, preserveWhitespaces } = options;
     const bindingParser = makeBindingParser(interpolationConfig);
     const htmlParser = new HtmlParser();
-    const parseResult = htmlParser.parse(template, templateUrl, Object.assign({}, options, { tokenizeExpansionForms: true, leadingTriviaChars: LEADING_TRIVIA_CHARS }));
+    const parseResult = htmlParser.parse(template, templateUrl, Object.assign({ leadingTriviaChars: LEADING_TRIVIA_CHARS }, options, { tokenizeExpansionForms: true }));
     if (parseResult.errors && parseResult.errors.length > 0) {
         return { errors: parseResult.errors, nodes: [], styleUrls: [], styles: [] };
     }
@@ -17344,7 +17344,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.1.0-next.3+8.sha-029f1be.with-local-changes');
+const VERSION$1 = new Version('8.1.0-next.3+16.sha-f221908.with-local-changes');
 
 /**
  * @license
