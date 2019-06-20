@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.3+14.sha-75ac724.with-local-changes
+ * @license Angular v8.1.0-next.3+16.sha-f221908.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7122,24 +7122,24 @@ var RecursiveAstVisitor$1 = /** @class */ (function () {
     function RecursiveAstVisitor() {
     }
     RecursiveAstVisitor.prototype.visitBinary = function (ast, context) {
-        ast.left.visit(this);
-        ast.right.visit(this);
+        ast.left.visit(this, context);
+        ast.right.visit(this, context);
         return null;
     };
     RecursiveAstVisitor.prototype.visitChain = function (ast, context) { return this.visitAll(ast.expressions, context); };
     RecursiveAstVisitor.prototype.visitConditional = function (ast, context) {
-        ast.condition.visit(this);
-        ast.trueExp.visit(this);
-        ast.falseExp.visit(this);
+        ast.condition.visit(this, context);
+        ast.trueExp.visit(this, context);
+        ast.falseExp.visit(this, context);
         return null;
     };
     RecursiveAstVisitor.prototype.visitPipe = function (ast, context) {
-        ast.exp.visit(this);
+        ast.exp.visit(this, context);
         this.visitAll(ast.args, context);
         return null;
     };
     RecursiveAstVisitor.prototype.visitFunctionCall = function (ast, context) {
-        ast.target.visit(this);
+        ast.target.visit(this, context);
         this.visitAll(ast.args, context);
         return null;
     };
@@ -7148,14 +7148,14 @@ var RecursiveAstVisitor$1 = /** @class */ (function () {
         return this.visitAll(ast.expressions, context);
     };
     RecursiveAstVisitor.prototype.visitKeyedRead = function (ast, context) {
-        ast.obj.visit(this);
-        ast.key.visit(this);
+        ast.obj.visit(this, context);
+        ast.key.visit(this, context);
         return null;
     };
     RecursiveAstVisitor.prototype.visitKeyedWrite = function (ast, context) {
-        ast.obj.visit(this);
-        ast.key.visit(this);
-        ast.value.visit(this);
+        ast.obj.visit(this, context);
+        ast.key.visit(this, context);
+        ast.value.visit(this, context);
         return null;
     };
     RecursiveAstVisitor.prototype.visitLiteralArray = function (ast, context) {
@@ -7164,32 +7164,32 @@ var RecursiveAstVisitor$1 = /** @class */ (function () {
     RecursiveAstVisitor.prototype.visitLiteralMap = function (ast, context) { return this.visitAll(ast.values, context); };
     RecursiveAstVisitor.prototype.visitLiteralPrimitive = function (ast, context) { return null; };
     RecursiveAstVisitor.prototype.visitMethodCall = function (ast, context) {
-        ast.receiver.visit(this);
+        ast.receiver.visit(this, context);
         return this.visitAll(ast.args, context);
     };
     RecursiveAstVisitor.prototype.visitPrefixNot = function (ast, context) {
-        ast.expression.visit(this);
+        ast.expression.visit(this, context);
         return null;
     };
     RecursiveAstVisitor.prototype.visitNonNullAssert = function (ast, context) {
-        ast.expression.visit(this);
+        ast.expression.visit(this, context);
         return null;
     };
     RecursiveAstVisitor.prototype.visitPropertyRead = function (ast, context) {
-        ast.receiver.visit(this);
+        ast.receiver.visit(this, context);
         return null;
     };
     RecursiveAstVisitor.prototype.visitPropertyWrite = function (ast, context) {
-        ast.receiver.visit(this);
-        ast.value.visit(this);
+        ast.receiver.visit(this, context);
+        ast.value.visit(this, context);
         return null;
     };
     RecursiveAstVisitor.prototype.visitSafePropertyRead = function (ast, context) {
-        ast.receiver.visit(this);
+        ast.receiver.visit(this, context);
         return null;
     };
     RecursiveAstVisitor.prototype.visitSafeMethodCall = function (ast, context) {
-        ast.receiver.visit(this);
+        ast.receiver.visit(this, context);
         return this.visitAll(ast.args, context);
     };
     RecursiveAstVisitor.prototype.visitAll = function (asts, context) {
@@ -17323,7 +17323,7 @@ function parseTemplate(template, templateUrl, options) {
     var interpolationConfig = options.interpolationConfig, preserveWhitespaces = options.preserveWhitespaces;
     var bindingParser = makeBindingParser(interpolationConfig);
     var htmlParser = new HtmlParser();
-    var parseResult = htmlParser.parse(template, templateUrl, __assign({}, options, { tokenizeExpansionForms: true, leadingTriviaChars: LEADING_TRIVIA_CHARS }));
+    var parseResult = htmlParser.parse(template, templateUrl, __assign({ leadingTriviaChars: LEADING_TRIVIA_CHARS }, options, { tokenizeExpansionForms: true }));
     if (parseResult.errors && parseResult.errors.length > 0) {
         return { errors: parseResult.errors, nodes: [], styleUrls: [], styles: [] };
     }
@@ -18378,7 +18378,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.1.0-next.3+14.sha-75ac724.with-local-changes');
+var VERSION$1 = new Version('8.1.0-next.3+16.sha-f221908.with-local-changes');
 
 /**
  * @license
