@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.3+16.sha-f221908.with-local-changes
+ * @license Angular v8.1.0-next.3+15.sha-70ad91e.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -17379,7 +17379,7 @@
         var interpolationConfig = options.interpolationConfig, preserveWhitespaces = options.preserveWhitespaces;
         var bindingParser = makeBindingParser(interpolationConfig);
         var htmlParser = new HtmlParser();
-        var parseResult = htmlParser.parse(template, templateUrl, __assign({ leadingTriviaChars: LEADING_TRIVIA_CHARS }, options, { tokenizeExpansionForms: true }));
+        var parseResult = htmlParser.parse(template, templateUrl, __assign({}, options, { tokenizeExpansionForms: true, leadingTriviaChars: LEADING_TRIVIA_CHARS }));
         if (parseResult.errors && parseResult.errors.length > 0) {
             return { errors: parseResult.errors, nodes: [], styleUrls: [], styles: [] };
         }
@@ -18434,7 +18434,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.1.0-next.3+16.sha-f221908.with-local-changes');
+    var VERSION$1 = new Version('8.1.0-next.3+15.sha-70ad91e.with-local-changes');
 
     /**
      * @license
