@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.3+13.sha-4c45aa3.with-local-changes
+ * @license Angular v8.1.0-next.3+14.sha-75ac724.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4369,7 +4369,7 @@ function getTranslationDeclStmts(variable, closureVar, message, meta, params = {
  * TODO(FW-1136): this is a temporary solution, we need to come up with a better way of working with
  * inputs that contain potentially unsafe chars.
  */
-const UNSAFE_OBJECT_KEY_NAME_REGEXP = /-/;
+const UNSAFE_OBJECT_KEY_NAME_REGEXP = /[-.]/;
 /** Name of the temporary to use during data binding */
 const TEMPORARY_NAME = '_t';
 /** Name of the context parameter passed into a template function */
@@ -17344,7 +17344,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.1.0-next.3+13.sha-4c45aa3.with-local-changes');
+const VERSION$1 = new Version('8.1.0-next.3+14.sha-75ac724.with-local-changes');
 
 /**
  * @license
