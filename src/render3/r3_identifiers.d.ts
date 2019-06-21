@@ -44,7 +44,6 @@ export declare class Identifiers {
     static templateCreate: o.ExternalReference;
     static text: o.ExternalReference;
     static textBinding: o.ExternalReference;
-    static bind: o.ExternalReference;
     static enableBindings: o.ExternalReference;
     static disableBindings: o.ExternalReference;
     static allocHostVars: o.ExternalReference;
