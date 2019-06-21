@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.3+22.sha-fad03c3.with-local-changes
+ * @license Angular v8.1.0-next.3+24.sha-3fb78aa.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2471,6 +2471,9 @@ function stringify(token) {
     }
     if (token.name) {
         return "" + token.name;
+    }
+    if (!token.toString) {
+        return 'object';
     }
     // WARNING: do not try to `JSON.stringify(token)` here
     // see https://github.com/angular/angular/issues/23440
@@ -18378,7 +18381,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.1.0-next.3+22.sha-fad03c3.with-local-changes');
+var VERSION$1 = new Version('8.1.0-next.3+24.sha-3fb78aa.with-local-changes');
 
 /**
  * @license
