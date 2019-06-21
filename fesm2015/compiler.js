@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.3+24.sha-3fb78aa.with-local-changes
+ * @license Angular v8.1.0-next.3+34.sha-a950288.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3117,7 +3117,6 @@ Identifiers$1.nextContext = { name: 'ɵɵnextContext', moduleName: CORE$1 };
 Identifiers$1.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE$1 };
 Identifiers$1.text = { name: 'ɵɵtext', moduleName: CORE$1 };
 Identifiers$1.textBinding = { name: 'ɵɵtextBinding', moduleName: CORE$1 };
-Identifiers$1.bind = { name: 'ɵɵbind', moduleName: CORE$1 };
 Identifiers$1.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE$1 };
 Identifiers$1.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE$1 };
 Identifiers$1.allocHostVars = { name: 'ɵɵallocHostVars', moduleName: CORE$1 };
@@ -15158,7 +15157,7 @@ class TemplateDefinitionBuilder {
         const { index, bindings } = this.i18n;
         if (bindings.size) {
             bindings.forEach(binding => {
-                this.updateInstruction(index, span, Identifiers$1.i18nExp, () => [this.convertPropertyBinding(binding, /* skipBindFn */ true)]);
+                this.updateInstruction(index, span, Identifiers$1.i18nExp, () => [this.convertPropertyBinding(binding)]);
             });
             this.updateInstruction(index, span, Identifiers$1.i18nApply, [literal(index)]);
         }
@@ -15330,7 +15329,7 @@ class TemplateDefinitionBuilder {
                             i18nAttrArgs.push(literal(attr.name), this.i18nTranslate(message, params));
                             converted.expressions.forEach(expression => {
                                 hasBindings = true;
-                                this.updateInstruction(elementIndex, element.sourceSpan, Identifiers$1.i18nExp, () => [this.convertExpressionBinding(expression, /* skipBindFn */ true)]);
+                                this.updateInstruction(elementIndex, element.sourceSpan, Identifiers$1.i18nExp, () => [this.convertExpressionBinding(expression)]);
                             });
                         }
                     }
@@ -15396,8 +15395,7 @@ class TemplateDefinitionBuilder {
                 propertyBindings.push({
                     name: prepareSyntheticPropertyName(input.name),
                     input,
-                    value: () => hasValue ? this.convertPropertyBinding(value, /* skipBindFn */ true) :
-                        emptyValueBindInstruction
+                    value: () => hasValue ? this.convertPropertyBinding(value) : emptyValueBindInstruction
                 });
             }
             else {
@@ -15433,11 +15431,7 @@ class TemplateDefinitionBuilder {
                         else {
                             // [prop]="value"
                             // Collect all the properties so that we can chain into a single function at the end.
-                            propertyBindings.push({
-                                name: attrName,
-                                input,
-                                value: () => this.convertPropertyBinding(value, true), params
-                            });
+                            propertyBindings.push({ name: attrName, input, value: () => this.convertPropertyBinding(value), params });
                         }
                     }
                     else if (inputType === 1 /* Attribute */) {
@@ -15489,9 +15483,7 @@ class TemplateDefinitionBuilder {
      */
     boundUpdateInstruction(instruction, elementIndex, attrName, input, value, params) {
         this.updateInstruction(elementIndex, input.sourceSpan, instruction, () => {
-            return [
-                literal(attrName), this.convertPropertyBinding(value, /* skipBindFn */ true), ...params
-            ];
+            return [literal(attrName), this.convertPropertyBinding(value), ...params];
         });
     }
     /**
@@ -15635,11 +15627,7 @@ class TemplateDefinitionBuilder {
                 const value = input.value.visit(this._valueConverter);
                 if (value !== undefined) {
                     this.allocateBindingSlots(value);
-                    propertyBindings.push({
-                        name: input.name,
-                        input,
-                        value: () => this.convertPropertyBinding(value, /* skipBindFn */ true)
-                    });
+                    propertyBindings.push({ name: input.name, input, value: () => this.convertPropertyBinding(value) });
                 }
             }
         });
@@ -15659,7 +15647,7 @@ class TemplateDefinitionBuilder {
     }
     processStylingInstruction(elementIndex, instruction, createMode) {
         if (instruction) {
-            const paramsFn = () => instruction.buildParams(value => this.convertPropertyBinding(value, /* skipBindFn */ true));
+            const paramsFn = () => instruction.buildParams(value => this.convertPropertyBinding(value));
             if (createMode) {
                 this.creationInstruction(instruction.sourceSpan, instruction.reference, paramsFn);
             }
@@ -15715,18 +15703,16 @@ class TemplateDefinitionBuilder {
             variable(CONTEXT_NAME) :
             this._bindingScope.getOrCreateSharedContextVar(0);
     }
-    convertExpressionBinding(value, skipBindFn) {
+    convertExpressionBinding(value) {
         const convertedPropertyBinding = convertPropertyBinding(this, this.getImplicitReceiverExpr(), value, this.bindingContext(), BindingForm.TrySimple);
-        const valExpr = convertedPropertyBinding.currValExpr;
-        return skipBindFn ? valExpr : importExpr(Identifiers$1.bind).callFn([valExpr]);
+        return convertedPropertyBinding.currValExpr;
     }
-    convertPropertyBinding(value, skipBindFn) {
+    convertPropertyBinding(value) {
         const interpolationFn = value instanceof Interpolation ? interpolate : () => error('Unexpected interpolation');
         const convertedPropertyBinding = convertPropertyBinding(this, this.getImplicitReceiverExpr(), value, this.bindingContext(), BindingForm.TrySimple, interpolationFn);
         const valExpr = convertedPropertyBinding.currValExpr;
         this._tempVariables.push(...convertedPropertyBinding.stmts);
-        return value instanceof Interpolation || skipBindFn ? valExpr :
-            importExpr(Identifiers$1.bind).callFn([valExpr]);
+        return valExpr;
     }
     /**
      * Gets a list of argument expressions to pass to an update instruction expression. Also updates
@@ -17347,7 +17333,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.1.0-next.3+24.sha-3fb78aa.with-local-changes');
+const VERSION$1 = new Version('8.1.0-next.3+34.sha-a950288.with-local-changes');
 
 /**
  * @license
