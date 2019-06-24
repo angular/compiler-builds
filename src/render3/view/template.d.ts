@@ -131,7 +131,6 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private creationInstruction;
     private updateInstruction;
     private updateInstructionChain;
-    private propertyInstructionChain;
     private addSelectInstructionIfNecessary;
     private allocatePureFunctionSlots;
     private allocateBindingSlots;

@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.3+44.sha-fcb03ab.with-local-changes
+ * @license Angular v8.1.0-next.3+45.sha-23c0171.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16321,6 +16321,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // TODO (matsko): revisit this once FW-959 is approached
         var emptyValueBindInstruction = literal(undefined);
         var propertyBindings = [];
+        var attributeBindings = [];
         // Generate element input bindings
         allOtherInputs.forEach(function (input) {
             var inputType = input.type;
@@ -16385,9 +16386,14 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                             _this.interpolatedUpdateInstruction(getAttributeInterpolationExpression(value_2), elementIndex, attrName_1, input, value_2, params_2);
                         }
                         else {
-                            var boundValue = value_2 instanceof Interpolation ? value_2.expressions[0] : value_2;
+                            var boundValue_1 = value_2 instanceof Interpolation ? value_2.expressions[0] : value_2;
                             // [attr.name]="value" or attr.name="{{value}}"
-                            _this.boundUpdateInstruction(Identifiers$1.attribute, elementIndex, attrName_1, input, boundValue, params_2);
+                            // Collect the attribute bindings so that they can be chained at the end.
+                            attributeBindings.push({
+                                name: attrName_1,
+                                input: input,
+                                value: function () { return _this.convertPropertyBinding(boundValue_1); }, params: params_2
+                            });
                         }
                     }
                     else {
@@ -16402,7 +16408,10 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             }
         });
         if (propertyBindings.length > 0) {
-            this.propertyInstructionChain(elementIndex, propertyBindings);
+            this.updateInstructionChain(elementIndex, Identifiers$1.property, propertyBindings);
+        }
+        if (attributeBindings.length > 0) {
+            this.updateInstructionChain(elementIndex, Identifiers$1.attribute, attributeBindings);
         }
         // Traverse element child nodes
         visitAll(this, element.children);
@@ -16584,7 +16593,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             }
         });
         if (propertyBindings.length > 0) {
-            this.propertyInstructionChain(templateIndex, propertyBindings);
+            this.updateInstructionChain(templateIndex, Identifiers$1.property, propertyBindings);
         }
     };
     // Bindings must only be resolved after all local refs have been visited, so all
@@ -16617,16 +16626,12 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this.addSelectInstructionIfNecessary(nodeIndex, span);
         this.instructionFn(this._updateCodeFns, span, reference, paramsOrFn || []);
     };
-    TemplateDefinitionBuilder.prototype.updateInstructionChain = function (nodeIndex, span, reference, callsOrFn) {
+    TemplateDefinitionBuilder.prototype.updateInstructionChain = function (nodeIndex, reference, bindings) {
+        var span = bindings.length ? bindings[0].input.sourceSpan : null;
         this.addSelectInstructionIfNecessary(nodeIndex, span);
         this._updateCodeFns.push(function () {
-            var calls = typeof callsOrFn === 'function' ? callsOrFn() : callsOrFn;
-            return chainedInstruction(span, reference, calls || []).toStmt();
-        });
-    };
-    TemplateDefinitionBuilder.prototype.propertyInstructionChain = function (nodeIndex, propertyBindings) {
-        this.updateInstructionChain(nodeIndex, propertyBindings.length ? propertyBindings[0].input.sourceSpan : null, Identifiers$1.property, function () {
-            return propertyBindings.map(function (property) { return __spread([literal(property.name), property.value()], (property.params || [])); });
+            var calls = bindings.map(function (property) { return __spread([literal(property.name), property.value()], (property.params || [])); });
+            return chainedInstruction(span, reference, calls).toStmt();
         });
     };
     TemplateDefinitionBuilder.prototype.addSelectInstructionIfNecessary = function (nodeIndex, span) {
@@ -18367,7 +18372,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.1.0-next.3+44.sha-fcb03ab.with-local-changes');
+var VERSION$1 = new Version('8.1.0-next.3+45.sha-23c0171.with-local-changes');
 
 /**
  * @license

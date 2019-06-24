@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.3+44.sha-fcb03ab.with-local-changes
+ * @license Angular v8.1.0-next.3+45.sha-23c0171.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15376,6 +15376,7 @@ class TemplateDefinitionBuilder {
         // TODO (matsko): revisit this once FW-959 is approached
         const emptyValueBindInstruction = literal(undefined);
         const propertyBindings = [];
+        const attributeBindings = [];
         // Generate element input bindings
         allOtherInputs.forEach((input) => {
             const inputType = input.type;
@@ -15442,7 +15443,12 @@ class TemplateDefinitionBuilder {
                         else {
                             const boundValue = value instanceof Interpolation ? value.expressions[0] : value;
                             // [attr.name]="value" or attr.name="{{value}}"
-                            this.boundUpdateInstruction(Identifiers$1.attribute, elementIndex, attrName, input, boundValue, params);
+                            // Collect the attribute bindings so that they can be chained at the end.
+                            attributeBindings.push({
+                                name: attrName,
+                                input,
+                                value: () => this.convertPropertyBinding(boundValue), params
+                            });
                         }
                     }
                     else {
@@ -15458,7 +15464,10 @@ class TemplateDefinitionBuilder {
             }
         });
         if (propertyBindings.length > 0) {
-            this.propertyInstructionChain(elementIndex, propertyBindings);
+            this.updateInstructionChain(elementIndex, Identifiers$1.property, propertyBindings);
+        }
+        if (attributeBindings.length > 0) {
+            this.updateInstructionChain(elementIndex, Identifiers$1.attribute, attributeBindings);
         }
         // Traverse element child nodes
         visitAll(this, element.children);
@@ -15632,7 +15641,7 @@ class TemplateDefinitionBuilder {
             }
         });
         if (propertyBindings.length > 0) {
-            this.propertyInstructionChain(templateIndex, propertyBindings);
+            this.updateInstructionChain(templateIndex, Identifiers$1.property, propertyBindings);
         }
     }
     // Bindings must only be resolved after all local refs have been visited, so all
@@ -15663,16 +15672,12 @@ class TemplateDefinitionBuilder {
         this.addSelectInstructionIfNecessary(nodeIndex, span);
         this.instructionFn(this._updateCodeFns, span, reference, paramsOrFn || []);
     }
-    updateInstructionChain(nodeIndex, span, reference, callsOrFn) {
+    updateInstructionChain(nodeIndex, reference, bindings) {
+        const span = bindings.length ? bindings[0].input.sourceSpan : null;
         this.addSelectInstructionIfNecessary(nodeIndex, span);
         this._updateCodeFns.push(() => {
-            const calls = typeof callsOrFn === 'function' ? callsOrFn() : callsOrFn;
-            return chainedInstruction(span, reference, calls || []).toStmt();
-        });
-    }
-    propertyInstructionChain(nodeIndex, propertyBindings) {
-        this.updateInstructionChain(nodeIndex, propertyBindings.length ? propertyBindings[0].input.sourceSpan : null, Identifiers$1.property, () => {
-            return propertyBindings.map(property => [literal(property.name), property.value(), ...(property.params || [])]);
+            const calls = bindings.map(property => [literal(property.name), property.value(), ...(property.params || [])]);
+            return chainedInstruction(span, reference, calls).toStmt();
         });
     }
     addSelectInstructionIfNecessary(nodeIndex, span) {
@@ -17333,7 +17338,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.1.0-next.3+44.sha-fcb03ab.with-local-changes');
+const VERSION$1 = new Version('8.1.0-next.3+45.sha-23c0171.with-local-changes');
 
 /**
  * @license
