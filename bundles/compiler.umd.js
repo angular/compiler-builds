@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.3+50.sha-74f4f5d.with-local-changes
+ * @license Angular v8.1.0-next.3+80.sha-280e856.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16145,9 +16145,14 @@
             // setup accumulated bindings
             var _a = this.i18n, index = _a.index, bindings = _a.bindings;
             if (bindings.size) {
+                var chainBindings_1 = [];
                 bindings.forEach(function (binding) {
-                    _this.updateInstruction(index, span, Identifiers$1.i18nExp, function () { return [_this.convertPropertyBinding(binding)]; });
+                    chainBindings_1.push({
+                        sourceSpan: span,
+                        value: function () { return _this.convertPropertyBinding(binding); }
+                    });
                 });
+                this.updateInstructionChain(index, Identifiers$1.i18nExp, chainBindings_1);
                 this.updateInstruction(index, span, Identifiers$1.i18nApply, [literal(index)]);
             }
             if (!selfClosing) {
@@ -16316,6 +16321,7 @@
                 if (i18nAttrs.length) {
                     var hasBindings_1 = false;
                     var i18nAttrArgs_1 = [];
+                    var bindings_1 = [];
                     i18nAttrs.forEach(function (attr) {
                         var message = attr.i18n;
                         if (attr instanceof TextAttribute) {
@@ -16330,11 +16336,17 @@
                                 i18nAttrArgs_1.push(literal(attr.name), _this.i18nTranslate(message, params));
                                 converted.expressions.forEach(function (expression) {
                                     hasBindings_1 = true;
-                                    _this.updateInstruction(elementIndex, element.sourceSpan, Identifiers$1.i18nExp, function () { return [_this.convertExpressionBinding(expression)]; });
+                                    bindings_1.push({
+                                        sourceSpan: element.sourceSpan,
+                                        value: function () { return _this.convertExpressionBinding(expression); }
+                                    });
                                 });
                             }
                         }
                     });
+                    if (bindings_1.length) {
+                        this.updateInstructionChain(elementIndex, Identifiers$1.i18nExp, bindings_1);
+                    }
                     if (i18nAttrArgs_1.length) {
                         var index = literal(this.allocateDataSlot());
                         var args = this.constantPool.getConstLiteral(literalArr(i18nAttrArgs_1), true);
@@ -16396,7 +16408,7 @@
                     _this.allocateBindingSlots(value_1);
                     propertyBindings.push({
                         name: prepareSyntheticPropertyName(input.name),
-                        input: input,
+                        sourceSpan: input.sourceSpan,
                         value: function () { return hasValue_1 ? _this.convertPropertyBinding(value_1) : emptyValueBindInstruction; }
                     });
                 }
@@ -16433,7 +16445,7 @@
                             else {
                                 // [prop]="value"
                                 // Collect all the properties so that we can chain into a single function at the end.
-                                propertyBindings.push({ name: attrName_1, input: input, value: function () { return _this.convertPropertyBinding(value_2); }, params: params_2 });
+                                propertyBindings.push({ name: attrName_1, sourceSpan: input.sourceSpan, value: function () { return _this.convertPropertyBinding(value_2); }, params: params_2 });
                             }
                         }
                         else if (inputType === 1 /* Attribute */) {
@@ -16447,7 +16459,7 @@
                                 // Collect the attribute bindings so that they can be chained at the end.
                                 attributeBindings.push({
                                     name: attrName_1,
-                                    input: input,
+                                    sourceSpan: input.sourceSpan,
                                     value: function () { return _this.convertPropertyBinding(boundValue_1); }, params: params_2
                                 });
                             }
@@ -16485,16 +16497,6 @@
                 }
                 this.creationInstruction(span, isNgContainer$1 ? Identifiers$1.elementContainerEnd : Identifiers$1.elementEnd);
             }
-        };
-        /**
-         * Adds an update instruction for a bound property or attribute, such as `[prop]="value"` or
-         * `[attr.title]="value"`
-         */
-        TemplateDefinitionBuilder.prototype.boundUpdateInstruction = function (instruction, elementIndex, attrName, input, value, params) {
-            var _this = this;
-            this.updateInstruction(elementIndex, input.sourceSpan, instruction, function () {
-                return __spread([literal(attrName), _this.convertPropertyBinding(value)], params);
-            });
         };
         /**
          * Adds an update instruction for an interpolated property or attribute, such as
@@ -16644,7 +16646,7 @@
                     var value_4 = input.value.visit(_this._valueConverter);
                     if (value_4 !== undefined) {
                         _this.allocateBindingSlots(value_4);
-                        propertyBindings.push({ name: input.name, input: input, value: function () { return _this.convertPropertyBinding(value_4); } });
+                        propertyBindings.push({ name: input.name, sourceSpan: input.sourceSpan, value: function () { return _this.convertPropertyBinding(value_4); } });
                     }
                 }
             });
@@ -16683,10 +16685,16 @@
             this.instructionFn(this._updateCodeFns, span, reference, paramsOrFn || []);
         };
         TemplateDefinitionBuilder.prototype.updateInstructionChain = function (nodeIndex, reference, bindings) {
-            var span = bindings.length ? bindings[0].input.sourceSpan : null;
+            var span = bindings.length ? bindings[0].sourceSpan : null;
             this.addSelectInstructionIfNecessary(nodeIndex, span);
             this._updateCodeFns.push(function () {
-                var calls = bindings.map(function (property) { return __spread([literal(property.name), property.value()], (property.params || [])); });
+                var calls = bindings.map(function (property) {
+                    var fnParams = __spread([property.value()], (property.params || []));
+                    if (property.name) {
+                        fnParams.unshift(literal(property.name));
+                    }
+                    return fnParams;
+                });
                 return chainedInstruction(span, reference, calls).toStmt();
             });
         };
@@ -18428,7 +18436,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.1.0-next.3+50.sha-74f4f5d.with-local-changes');
+    var VERSION$1 = new Version('8.1.0-next.3+80.sha-280e856.with-local-changes');
 
     /**
      * @license
