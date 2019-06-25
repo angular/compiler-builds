@@ -102,11 +102,6 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     addNamespaceInstruction(nsInstruction: o.ExternalReference, element: t.Element): void;
     visitElement(element: t.Element): void;
     /**
-     * Adds an update instruction for a bound property or attribute, such as `[prop]="value"` or
-     * `[attr.title]="value"`
-     */
-    boundUpdateInstruction(instruction: o.ExternalReference, elementIndex: number, attrName: string, input: t.BoundAttribute, value: any, params: any[]): void;
-    /**
      * Adds an update instruction for an interpolated property or attribute, such as
      * `prop="{{value}}"` or `attr.title="{{value}}"`
      */

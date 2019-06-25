@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.3+68.sha-a1d436e.with-local-changes
+ * @license Angular v8.1.0-next.3+72.sha-98685e6.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15156,9 +15156,14 @@ class TemplateDefinitionBuilder {
         // setup accumulated bindings
         const { index, bindings } = this.i18n;
         if (bindings.size) {
+            const chainBindings = [];
             bindings.forEach(binding => {
-                this.updateInstruction(index, span, Identifiers$1.i18nExp, () => [this.convertPropertyBinding(binding)]);
+                chainBindings.push({
+                    sourceSpan: span,
+                    value: () => this.convertPropertyBinding(binding)
+                });
             });
+            this.updateInstructionChain(index, Identifiers$1.i18nExp, chainBindings);
             this.updateInstruction(index, span, Identifiers$1.i18nApply, [literal(index)]);
         }
         if (!selfClosing) {
@@ -15315,6 +15320,7 @@ class TemplateDefinitionBuilder {
             if (i18nAttrs.length) {
                 let hasBindings = false;
                 const i18nAttrArgs = [];
+                const bindings = [];
                 i18nAttrs.forEach(attr => {
                     const message = attr.i18n;
                     if (attr instanceof TextAttribute) {
@@ -15329,11 +15335,17 @@ class TemplateDefinitionBuilder {
                             i18nAttrArgs.push(literal(attr.name), this.i18nTranslate(message, params));
                             converted.expressions.forEach(expression => {
                                 hasBindings = true;
-                                this.updateInstruction(elementIndex, element.sourceSpan, Identifiers$1.i18nExp, () => [this.convertExpressionBinding(expression)]);
+                                bindings.push({
+                                    sourceSpan: element.sourceSpan,
+                                    value: () => this.convertExpressionBinding(expression)
+                                });
                             });
                         }
                     }
                 });
+                if (bindings.length) {
+                    this.updateInstructionChain(elementIndex, Identifiers$1.i18nExp, bindings);
+                }
                 if (i18nAttrArgs.length) {
                     const index = literal(this.allocateDataSlot());
                     const args = this.constantPool.getConstLiteral(literalArr(i18nAttrArgs), true);
@@ -15395,7 +15407,7 @@ class TemplateDefinitionBuilder {
                 this.allocateBindingSlots(value);
                 propertyBindings.push({
                     name: prepareSyntheticPropertyName(input.name),
-                    input,
+                    sourceSpan: input.sourceSpan,
                     value: () => hasValue ? this.convertPropertyBinding(value) : emptyValueBindInstruction
                 });
             }
@@ -15432,7 +15444,7 @@ class TemplateDefinitionBuilder {
                         else {
                             // [prop]="value"
                             // Collect all the properties so that we can chain into a single function at the end.
-                            propertyBindings.push({ name: attrName, input, value: () => this.convertPropertyBinding(value), params });
+                            propertyBindings.push({ name: attrName, sourceSpan: input.sourceSpan, value: () => this.convertPropertyBinding(value), params });
                         }
                     }
                     else if (inputType === 1 /* Attribute */) {
@@ -15446,7 +15458,7 @@ class TemplateDefinitionBuilder {
                             // Collect the attribute bindings so that they can be chained at the end.
                             attributeBindings.push({
                                 name: attrName,
-                                input,
+                                sourceSpan: input.sourceSpan,
                                 value: () => this.convertPropertyBinding(boundValue), params
                             });
                         }
@@ -15485,15 +15497,6 @@ class TemplateDefinitionBuilder {
             }
             this.creationInstruction(span, isNgContainer$1 ? Identifiers$1.elementContainerEnd : Identifiers$1.elementEnd);
         }
-    }
-    /**
-     * Adds an update instruction for a bound property or attribute, such as `[prop]="value"` or
-     * `[attr.title]="value"`
-     */
-    boundUpdateInstruction(instruction, elementIndex, attrName, input, value, params) {
-        this.updateInstruction(elementIndex, input.sourceSpan, instruction, () => {
-            return [literal(attrName), this.convertPropertyBinding(value), ...params];
-        });
     }
     /**
      * Adds an update instruction for an interpolated property or attribute, such as
@@ -15636,7 +15639,7 @@ class TemplateDefinitionBuilder {
                 const value = input.value.visit(this._valueConverter);
                 if (value !== undefined) {
                     this.allocateBindingSlots(value);
-                    propertyBindings.push({ name: input.name, input, value: () => this.convertPropertyBinding(value) });
+                    propertyBindings.push({ name: input.name, sourceSpan: input.sourceSpan, value: () => this.convertPropertyBinding(value) });
                 }
             }
         });
@@ -15673,10 +15676,16 @@ class TemplateDefinitionBuilder {
         this.instructionFn(this._updateCodeFns, span, reference, paramsOrFn || []);
     }
     updateInstructionChain(nodeIndex, reference, bindings) {
-        const span = bindings.length ? bindings[0].input.sourceSpan : null;
+        const span = bindings.length ? bindings[0].sourceSpan : null;
         this.addSelectInstructionIfNecessary(nodeIndex, span);
         this._updateCodeFns.push(() => {
-            const calls = bindings.map(property => [literal(property.name), property.value(), ...(property.params || [])]);
+            const calls = bindings.map(property => {
+                const fnParams = [property.value(), ...(property.params || [])];
+                if (property.name) {
+                    fnParams.unshift(literal(property.name));
+                }
+                return fnParams;
+            });
             return chainedInstruction(span, reference, calls).toStmt();
         });
     }
@@ -17338,7 +17347,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.1.0-next.3+68.sha-a1d436e.with-local-changes');
+const VERSION$1 = new Version('8.1.0-next.3+72.sha-98685e6.with-local-changes');
 
 /**
  * @license
