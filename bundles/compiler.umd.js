@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.3+101.sha-e01d697.with-local-changes
+ * @license Angular v8.1.0-next.3+106.sha-2be061a.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16147,10 +16147,7 @@
             if (bindings.size) {
                 var chainBindings_1 = [];
                 bindings.forEach(function (binding) {
-                    chainBindings_1.push({
-                        sourceSpan: span,
-                        value: function () { return _this.convertPropertyBinding(binding); }
-                    });
+                    chainBindings_1.push({ sourceSpan: span, value: function () { return _this.convertPropertyBinding(binding); } });
                 });
                 this.updateInstructionChain(index, Identifiers$1.i18nExp, chainBindings_1);
                 this.updateInstruction(index, span, Identifiers$1.i18nApply, [literal(index)]);
@@ -16445,7 +16442,11 @@
                             else {
                                 // [prop]="value"
                                 // Collect all the properties so that we can chain into a single function at the end.
-                                propertyBindings.push({ name: attrName_1, sourceSpan: input.sourceSpan, value: function () { return _this.convertPropertyBinding(value_2); }, params: params_2 });
+                                propertyBindings.push({
+                                    name: attrName_1,
+                                    sourceSpan: input.sourceSpan,
+                                    value: function () { return _this.convertPropertyBinding(value_2); }, params: params_2
+                                });
                             }
                         }
                         else if (inputType === 1 /* Attribute */) {
@@ -16646,7 +16647,11 @@
                     var value_4 = input.value.visit(_this._valueConverter);
                     if (value_4 !== undefined) {
                         _this.allocateBindingSlots(value_4);
-                        propertyBindings.push({ name: input.name, sourceSpan: input.sourceSpan, value: function () { return _this.convertPropertyBinding(value_4); } });
+                        propertyBindings.push({
+                            name: input.name,
+                            sourceSpan: input.sourceSpan,
+                            value: function () { return _this.convertPropertyBinding(value_4); }
+                        });
                     }
                 }
             });
@@ -18436,7 +18441,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.1.0-next.3+101.sha-e01d697.with-local-changes');
+    var VERSION$1 = new Version('8.1.0-next.3+106.sha-2be061a.with-local-changes');
 
     /**
      * @license
