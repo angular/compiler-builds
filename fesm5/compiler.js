@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.3+86.sha-4fe0e75.with-local-changes
+ * @license Angular v8.1.0-rc.0+2.sha-f2360aa.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16091,10 +16091,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         if (bindings.size) {
             var chainBindings_1 = [];
             bindings.forEach(function (binding) {
-                chainBindings_1.push({
-                    sourceSpan: span,
-                    value: function () { return _this.convertPropertyBinding(binding); }
-                });
+                chainBindings_1.push({ sourceSpan: span, value: function () { return _this.convertPropertyBinding(binding); } });
             });
             this.updateInstructionChain(index, Identifiers$1.i18nExp, chainBindings_1);
             this.updateInstruction(index, span, Identifiers$1.i18nApply, [literal(index)]);
@@ -16389,7 +16386,11 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                         else {
                             // [prop]="value"
                             // Collect all the properties so that we can chain into a single function at the end.
-                            propertyBindings.push({ name: attrName_1, sourceSpan: input.sourceSpan, value: function () { return _this.convertPropertyBinding(value_2); }, params: params_2 });
+                            propertyBindings.push({
+                                name: attrName_1,
+                                sourceSpan: input.sourceSpan,
+                                value: function () { return _this.convertPropertyBinding(value_2); }, params: params_2
+                            });
                         }
                     }
                     else if (inputType === 1 /* Attribute */) {
@@ -16590,7 +16591,11 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 var value_4 = input.value.visit(_this._valueConverter);
                 if (value_4 !== undefined) {
                     _this.allocateBindingSlots(value_4);
-                    propertyBindings.push({ name: input.name, sourceSpan: input.sourceSpan, value: function () { return _this.convertPropertyBinding(value_4); } });
+                    propertyBindings.push({
+                        name: input.name,
+                        sourceSpan: input.sourceSpan,
+                        value: function () { return _this.convertPropertyBinding(value_4); }
+                    });
                 }
             }
         });
@@ -18380,7 +18385,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.1.0-next.3+86.sha-4fe0e75.with-local-changes');
+var VERSION$1 = new Version('8.1.0-rc.0+2.sha-f2360aa.with-local-changes');
 
 /**
  * @license

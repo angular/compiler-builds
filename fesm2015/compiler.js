@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-next.3+86.sha-4fe0e75.with-local-changes
+ * @license Angular v8.1.0-rc.0+2.sha-f2360aa.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15158,10 +15158,7 @@ class TemplateDefinitionBuilder {
         if (bindings.size) {
             const chainBindings = [];
             bindings.forEach(binding => {
-                chainBindings.push({
-                    sourceSpan: span,
-                    value: () => this.convertPropertyBinding(binding)
-                });
+                chainBindings.push({ sourceSpan: span, value: () => this.convertPropertyBinding(binding) });
             });
             this.updateInstructionChain(index, Identifiers$1.i18nExp, chainBindings);
             this.updateInstruction(index, span, Identifiers$1.i18nApply, [literal(index)]);
@@ -15444,7 +15441,11 @@ class TemplateDefinitionBuilder {
                         else {
                             // [prop]="value"
                             // Collect all the properties so that we can chain into a single function at the end.
-                            propertyBindings.push({ name: attrName, sourceSpan: input.sourceSpan, value: () => this.convertPropertyBinding(value), params });
+                            propertyBindings.push({
+                                name: attrName,
+                                sourceSpan: input.sourceSpan,
+                                value: () => this.convertPropertyBinding(value), params
+                            });
                         }
                     }
                     else if (inputType === 1 /* Attribute */) {
@@ -15639,7 +15640,11 @@ class TemplateDefinitionBuilder {
                 const value = input.value.visit(this._valueConverter);
                 if (value !== undefined) {
                     this.allocateBindingSlots(value);
-                    propertyBindings.push({ name: input.name, sourceSpan: input.sourceSpan, value: () => this.convertPropertyBinding(value) });
+                    propertyBindings.push({
+                        name: input.name,
+                        sourceSpan: input.sourceSpan,
+                        value: () => this.convertPropertyBinding(value)
+                    });
                 }
             }
         });
@@ -17347,7 +17352,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.1.0-next.3+86.sha-4fe0e75.with-local-changes');
+const VERSION$1 = new Version('8.1.0-rc.0+2.sha-f2360aa.with-local-changes');
 
 /**
  * @license
