@@ -7,6 +7,7 @@
  */
 import { ConstantPool } from '../../constant_pool';
 import * as o from '../../output/output_ast';
+import { ParseSourceSpan } from '../../parse_util';
 import * as t from '../r3_ast';
 import { R3QueryMetadata } from './api';
 /** Name of the temporary to use during data binding */
@@ -60,3 +61,5 @@ export declare class DefinitionMap {
 export declare function getAttrsForDirectiveMatching(elOrTpl: t.Element | t.Template): {
     [name: string]: string;
 };
+/** Returns a call expression to a chained instruction, e.g. `property(params[0])(params[1])`. */
+export declare function chainedInstruction(reference: o.ExternalReference, calls: o.Expression[][], span?: ParseSourceSpan | null): o.Expression;
