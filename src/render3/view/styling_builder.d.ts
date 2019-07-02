@@ -14,11 +14,12 @@ import { ValueConverter } from './template';
 /**
  * A styling expression summary that is to be processed by the compiler
  */
-export interface Instruction {
+export interface StylingInstruction {
     sourceSpan: ParseSourceSpan | null;
     reference: o.ExternalReference;
     allocateBindingSlots: number;
-    buildParams(convertFn: (value: any) => o.Expression): o.Expression[];
+    supportsInterpolation?: boolean;
+    params: ((convertFn: (value: any) => o.Expression | o.Expression[]) => o.Expression[]);
 }
 /**
  * An internal record of the input data for a styling binding
@@ -132,28 +133,28 @@ export declare class StylingBuilder {
      * responsible for registering initial styles (within a directive hostBindings' creation block),
      * as well as any of the provided attribute values, to the directive host element.
      */
-    buildHostAttrsInstruction(sourceSpan: ParseSourceSpan | null, attrs: o.Expression[], constantPool: ConstantPool): Instruction | null;
+    buildHostAttrsInstruction(sourceSpan: ParseSourceSpan | null, attrs: o.Expression[], constantPool: ConstantPool): StylingInstruction | null;
     /**
      * Builds an instruction with all the expressions and parameters for `styling`.
      *
      * The instruction generation code below is used for producing the AOT statement code which is
      * responsible for registering style/class bindings to an element.
      */
-    buildStylingInstruction(sourceSpan: ParseSourceSpan | null, constantPool: ConstantPool): Instruction | null;
+    buildStylingInstruction(sourceSpan: ParseSourceSpan | null, constantPool: ConstantPool): StylingInstruction | null;
     /**
      * Builds an instruction with all the expressions and parameters for `classMap`.
      *
      * The instruction data will contain all expressions for `classMap` to function
      * which includes the `[class]` expression params.
      */
-    buildClassMapInstruction(valueConverter: ValueConverter): Instruction | null;
+    buildClassMapInstruction(valueConverter: ValueConverter): StylingInstruction | null;
     /**
      * Builds an instruction with all the expressions and parameters for `styleMap`.
      *
      * The instruction data will contain all expressions for `styleMap` to function
      * which includes the `[style]` expression params.
      */
-    buildStyleMapInstruction(valueConverter: ValueConverter): Instruction | null;
+    buildStyleMapInstruction(valueConverter: ValueConverter): StylingInstruction | null;
     private _buildMapBasedInstruction;
     private _buildSingleInputs;
     private _buildClassInputs;
@@ -164,7 +165,7 @@ export declare class StylingBuilder {
      * Constructs all instructions which contain the expressions that will be placed
      * into the update block of a template function or a directive hostBindings function.
      */
-    buildUpdateLevelInstructions(valueConverter: ValueConverter): Instruction[];
+    buildUpdateLevelInstructions(valueConverter: ValueConverter): StylingInstruction[];
 }
 export declare function parseProperty(name: string): {
     property: string;
