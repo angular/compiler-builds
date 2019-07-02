@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-rc.0+39.sha-dca713c.with-local-changes
+ * @license Angular v8.1.0-rc.0+41.sha-1db3ac4.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3108,7 +3108,25 @@ Identifiers$1.elementContainerEnd = { name: 'ɵɵelementContainerEnd', moduleNam
 Identifiers$1.styling = { name: 'ɵɵstyling', moduleName: CORE$1 };
 Identifiers$1.styleMap = { name: 'ɵɵstyleMap', moduleName: CORE$1 };
 Identifiers$1.classMap = { name: 'ɵɵclassMap', moduleName: CORE$1 };
+Identifiers$1.classMapInterpolate1 = { name: 'ɵɵclassMapInterpolate1', moduleName: CORE$1 };
+Identifiers$1.classMapInterpolate2 = { name: 'ɵɵclassMapInterpolate2', moduleName: CORE$1 };
+Identifiers$1.classMapInterpolate3 = { name: 'ɵɵclassMapInterpolate3', moduleName: CORE$1 };
+Identifiers$1.classMapInterpolate4 = { name: 'ɵɵclassMapInterpolate4', moduleName: CORE$1 };
+Identifiers$1.classMapInterpolate5 = { name: 'ɵɵclassMapInterpolate5', moduleName: CORE$1 };
+Identifiers$1.classMapInterpolate6 = { name: 'ɵɵclassMapInterpolate6', moduleName: CORE$1 };
+Identifiers$1.classMapInterpolate7 = { name: 'ɵɵclassMapInterpolate7', moduleName: CORE$1 };
+Identifiers$1.classMapInterpolate8 = { name: 'ɵɵclassMapInterpolate8', moduleName: CORE$1 };
+Identifiers$1.classMapInterpolateV = { name: 'ɵɵclassMapInterpolateV', moduleName: CORE$1 };
 Identifiers$1.styleProp = { name: 'ɵɵstyleProp', moduleName: CORE$1 };
+Identifiers$1.stylePropInterpolate1 = { name: 'ɵɵstylePropInterpolate1', moduleName: CORE$1 };
+Identifiers$1.stylePropInterpolate2 = { name: 'ɵɵstylePropInterpolate2', moduleName: CORE$1 };
+Identifiers$1.stylePropInterpolate3 = { name: 'ɵɵstylePropInterpolate3', moduleName: CORE$1 };
+Identifiers$1.stylePropInterpolate4 = { name: 'ɵɵstylePropInterpolate4', moduleName: CORE$1 };
+Identifiers$1.stylePropInterpolate5 = { name: 'ɵɵstylePropInterpolate5', moduleName: CORE$1 };
+Identifiers$1.stylePropInterpolate6 = { name: 'ɵɵstylePropInterpolate6', moduleName: CORE$1 };
+Identifiers$1.stylePropInterpolate7 = { name: 'ɵɵstylePropInterpolate7', moduleName: CORE$1 };
+Identifiers$1.stylePropInterpolate8 = { name: 'ɵɵstylePropInterpolate8', moduleName: CORE$1 };
+Identifiers$1.stylePropInterpolateV = { name: 'ɵɵstylePropInterpolateV', moduleName: CORE$1 };
 Identifiers$1.stylingApply = { name: 'ɵɵstylingApply', moduleName: CORE$1 };
 Identifiers$1.styleSanitizer = { name: 'ɵɵstyleSanitizer', moduleName: CORE$1 };
 Identifiers$1.elementHostAttrs = { name: 'ɵɵelementHostAttrs', moduleName: CORE$1 };
@@ -4751,6 +4769,23 @@ function chainedInstruction(reference, calls, span) {
         expression = expression.callFn([], span);
     }
     return expression;
+}
+/**
+ * Gets the number of arguments expected to be passed to a generated instruction in the case of
+ * interpolation instructions.
+ * @param interpolation An interpolation ast
+ */
+function getInterpolationArgsLength(interpolation) {
+    const { expressions, strings } = interpolation;
+    if (expressions.length === 1 && strings.length === 2 && strings[0] === '' && strings[1] === '') {
+        // If the interpolation has one interpolated value, but the prefix and suffix are both empty
+        // strings, we only pass one argument, to a special instruction like `propertyInterpolate` or
+        // `textInterpolate`.
+        return 1;
+    }
+    else {
+        return expressions.length + strings.length;
+    }
 }
 
 /**
@@ -12125,7 +12160,7 @@ class StylingBuilder {
                 sourceSpan,
                 reference: Identifiers$1.elementHostAttrs,
                 allocateBindingSlots: 0,
-                buildParams: () => {
+                params: () => {
                     // params => elementHostAttrs(attrs)
                     this.populateInitialStylingAttrs(attrs);
                     const attrArray = !attrs.some(attr => attr instanceof WrappedNodeExpr) ?
@@ -12149,7 +12184,7 @@ class StylingBuilder {
                 sourceSpan,
                 allocateBindingSlots: 0,
                 reference: Identifiers$1.styling,
-                buildParams: () => {
+                params: () => {
                     // a string array of every style-based binding
                     const styleBindingProps = this._singleStyleInputs ? this._singleStyleInputs.map(i => literal(i.name)) : [];
                     // a string array of every class-based binding
@@ -12218,23 +12253,36 @@ class StylingBuilder {
         // be evaluated (the AST visit call) during creation time so that any
         // pipes can be picked up in time before the template is built
         const mapValue = stylingInput.value.visit(valueConverter);
-        if (mapValue instanceof Interpolation) {
+        let reference;
+        if (mapValue instanceof Interpolation && isClassBased) {
             totalBindingSlotsRequired += mapValue.expressions.length;
+            reference = getClassMapInterpolationExpression(mapValue);
         }
-        const reference = isClassBased ? Identifiers$1.classMap : Identifiers$1.styleMap;
+        else {
+            reference = isClassBased ? Identifiers$1.classMap : Identifiers$1.styleMap;
+        }
         return {
             sourceSpan: stylingInput.sourceSpan,
             reference,
             allocateBindingSlots: totalBindingSlotsRequired,
-            buildParams: (convertFn) => { return [convertFn(mapValue)]; }
+            supportsInterpolation: isClassBased,
+            params: (convertFn) => {
+                const convertResult = convertFn(mapValue);
+                return Array.isArray(convertResult) ? convertResult : [convertResult];
+            }
         };
     }
-    _buildSingleInputs(reference, inputs, mapIndex, allowUnits, valueConverter) {
+    _buildSingleInputs(reference, inputs, mapIndex, allowUnits, valueConverter, getInterpolationExpressionFn) {
         let totalBindingSlotsRequired = 0;
         return inputs.map(input => {
             const bindingIndex = mapIndex.get(input.name);
             const value = input.value.visit(valueConverter);
-            totalBindingSlotsRequired += (value instanceof Interpolation) ? value.expressions.length : 0;
+            if (value instanceof Interpolation) {
+                totalBindingSlotsRequired += value.expressions.length;
+                if (getInterpolationExpressionFn) {
+                    reference = getInterpolationExpressionFn(value);
+                }
+            }
             if (compilerIsNewStylingInUse()) {
                 // the old implementation does not reserve slot values for
                 // binding entries. The new one does.
@@ -12242,13 +12290,19 @@ class StylingBuilder {
             }
             return {
                 sourceSpan: input.sourceSpan,
+                supportsInterpolation: !!getInterpolationExpressionFn,
                 allocateBindingSlots: totalBindingSlotsRequired, reference,
-                buildParams: (convertFn) => {
+                params: (convertFn) => {
                     // min params => stylingProp(elmIndex, bindingIndex, value)
                     // max params => stylingProp(elmIndex, bindingIndex, value, overrideFlag)
-                    const params = [];
-                    params.push(literal(bindingIndex));
-                    params.push(convertFn(value));
+                    const params = [literal(bindingIndex)];
+                    const convertResult = convertFn(value);
+                    if (Array.isArray(convertResult)) {
+                        params.push(...convertResult);
+                    }
+                    else {
+                        params.push(convertResult);
+                    }
                     if (allowUnits) {
                         if (input.unit) {
                             params.push(literal(input.unit));
@@ -12273,7 +12327,7 @@ class StylingBuilder {
     }
     _buildStyleInputs(valueConverter) {
         if (this._singleStyleInputs) {
-            return this._buildSingleInputs(Identifiers$1.styleProp, this._singleStyleInputs, this._stylesIndex, true, valueConverter);
+            return this._buildSingleInputs(Identifiers$1.styleProp, this._singleStyleInputs, this._stylesIndex, true, valueConverter, getStylePropInterpolationExpression);
         }
         return [];
     }
@@ -12282,7 +12336,7 @@ class StylingBuilder {
             sourceSpan: this._lastStylingInput ? this._lastStylingInput.sourceSpan : null,
             reference: Identifiers$1.stylingApply,
             allocateBindingSlots: 0,
-            buildParams: () => { return []; }
+            params: () => { return []; }
         };
     }
     _buildSanitizerFn() {
@@ -12290,7 +12344,7 @@ class StylingBuilder {
             sourceSpan: this._firstStylingInput ? this._firstStylingInput.sourceSpan : null,
             reference: Identifiers$1.styleSanitizer,
             allocateBindingSlots: 0,
-            buildParams: () => [importExpr(Identifiers$1.defaultStyleSanitizer)]
+            params: () => [importExpr(Identifiers$1.defaultStyleSanitizer)]
         };
     }
     /**
@@ -12365,6 +12419,62 @@ function parseProperty(name) {
         property = name.substring(0, unitIndex);
     }
     return { property, unit, hasOverrideFlag };
+}
+/**
+ * Gets the instruction to generate for an interpolated class map.
+ * @param interpolation An Interpolation AST
+ */
+function getClassMapInterpolationExpression(interpolation) {
+    switch (getInterpolationArgsLength(interpolation)) {
+        case 1:
+            return Identifiers$1.classMap;
+        case 3:
+            return Identifiers$1.classMapInterpolate1;
+        case 5:
+            return Identifiers$1.classMapInterpolate2;
+        case 7:
+            return Identifiers$1.classMapInterpolate3;
+        case 9:
+            return Identifiers$1.classMapInterpolate4;
+        case 11:
+            return Identifiers$1.classMapInterpolate5;
+        case 13:
+            return Identifiers$1.classMapInterpolate6;
+        case 15:
+            return Identifiers$1.classMapInterpolate7;
+        case 17:
+            return Identifiers$1.classMapInterpolate8;
+        default:
+            return Identifiers$1.classMapInterpolateV;
+    }
+}
+/**
+ * Gets the instruction to generate for an interpolated style prop.
+ * @param interpolation An Interpolation AST
+ */
+function getStylePropInterpolationExpression(interpolation) {
+    switch (getInterpolationArgsLength(interpolation)) {
+        case 1:
+            return Identifiers$1.styleProp;
+        case 3:
+            return Identifiers$1.stylePropInterpolate1;
+        case 5:
+            return Identifiers$1.stylePropInterpolate2;
+        case 7:
+            return Identifiers$1.stylePropInterpolate3;
+        case 9:
+            return Identifiers$1.stylePropInterpolate4;
+        case 11:
+            return Identifiers$1.stylePropInterpolate5;
+        case 13:
+            return Identifiers$1.stylePropInterpolate6;
+        case 15:
+            return Identifiers$1.stylePropInterpolate7;
+        case 17:
+            return Identifiers$1.stylePropInterpolate8;
+        default:
+            return Identifiers$1.stylePropInterpolateV;
+    }
 }
 
 /**
@@ -15678,12 +15788,20 @@ class TemplateDefinitionBuilder {
     }
     processStylingInstruction(elementIndex, instruction, createMode) {
         if (instruction) {
-            const paramsFn = () => instruction.buildParams(value => this.convertPropertyBinding(value));
             if (createMode) {
-                this.creationInstruction(instruction.sourceSpan, instruction.reference, paramsFn);
+                this.creationInstruction(instruction.sourceSpan, instruction.reference, () => {
+                    return instruction.params(value => this.convertPropertyBinding(value));
+                });
             }
             else {
-                this.updateInstruction(elementIndex, instruction.sourceSpan, instruction.reference, paramsFn);
+                this.updateInstruction(elementIndex, instruction.sourceSpan, instruction.reference, () => {
+                    return instruction
+                        .params(value => {
+                        return (instruction.supportsInterpolation && value instanceof Interpolation) ?
+                            this.getUpdateInstructionArguments(value) :
+                            this.convertPropertyBinding(value);
+                    });
+                });
             }
         }
     }
@@ -15741,8 +15859,7 @@ class TemplateDefinitionBuilder {
         return convertedPropertyBinding.currValExpr;
     }
     convertPropertyBinding(value) {
-        const interpolationFn = value instanceof Interpolation ? interpolate : () => error('Unexpected interpolation');
-        const convertedPropertyBinding = convertPropertyBinding(this, this.getImplicitReceiverExpr(), value, this.bindingContext(), BindingForm.TrySimple, interpolationFn);
+        const convertedPropertyBinding = convertPropertyBinding(this, this.getImplicitReceiverExpr(), value, this.bindingContext(), BindingForm.TrySimple, () => error('Unexpected interpolation'));
         const valExpr = convertedPropertyBinding.currValExpr;
         this._tempVariables.push(...convertedPropertyBinding.stmts);
         return valExpr;
@@ -16222,30 +16339,6 @@ function getNgProjectAsLiteral(attribute) {
     const parsedR3Selector = parseSelectorToR3Selector(attribute.value)[0];
     return [literal(5 /* ProjectAs */), asLiteral(parsedR3Selector)];
 }
-function interpolate(args) {
-    args = args.slice(1); // Ignore the length prefix added for render2
-    switch (args.length) {
-        case 3:
-            return importExpr(Identifiers$1.interpolation1).callFn(args);
-        case 5:
-            return importExpr(Identifiers$1.interpolation2).callFn(args);
-        case 7:
-            return importExpr(Identifiers$1.interpolation3).callFn(args);
-        case 9:
-            return importExpr(Identifiers$1.interpolation4).callFn(args);
-        case 11:
-            return importExpr(Identifiers$1.interpolation5).callFn(args);
-        case 13:
-            return importExpr(Identifiers$1.interpolation6).callFn(args);
-        case 15:
-            return importExpr(Identifiers$1.interpolation7).callFn(args);
-        case 17:
-            return importExpr(Identifiers$1.interpolation8).callFn(args);
-    }
-    (args.length >= 19 && args.length % 2 == 1) ||
-        error(`Invalid interpolation argument length ${args.length}`);
-    return importExpr(Identifiers$1.interpolationV).callFn([literalArr(args)]);
-}
 /**
  * Gets the instruction to generate for an interpolated property
  * @param interpolation An Interpolation AST
@@ -16326,23 +16419,6 @@ function getTextInterpolationExpression(interpolation) {
             return Identifiers$1.textInterpolate8;
         default:
             return Identifiers$1.textInterpolateV;
-    }
-}
-/**
- * Gets the number of arguments expected to be passed to a generated instruction in the case of
- * interpolation instructions.
- * @param interpolation An interpolation ast
- */
-function getInterpolationArgsLength(interpolation) {
-    const { expressions, strings } = interpolation;
-    if (expressions.length === 1 && strings.length === 2 && strings[0] === '' && strings[1] === '') {
-        // If the interpolation has one interpolated value, but the prefix and suffix are both empty
-        // strings, we only pass one argument, to a special instruction like `propertyInterpolate` or
-        // `textInterpolate`.
-        return 1;
-    }
-    else {
-        return expressions.length + strings.length;
     }
 }
 /**
@@ -16978,7 +17054,7 @@ function bindingFn(implicit, value) {
     return convertPropertyBinding(null, implicit, value, 'b', BindingForm.TrySimple, () => error('Unexpected interpolation'));
 }
 function createStylingStmt(instruction, bindingContext, bindingFn) {
-    const params = instruction.buildParams(value => bindingFn(bindingContext, value).currValExpr);
+    const params = instruction.params(value => bindingFn(bindingContext, value).currValExpr);
     return importExpr(instruction.reference, null, instruction.sourceSpan)
         .callFn(params, instruction.sourceSpan)
         .toStmt();
@@ -17376,7 +17452,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.1.0-rc.0+39.sha-dca713c.with-local-changes');
+const VERSION$1 = new Version('8.1.0-rc.0+41.sha-1db3ac4.with-local-changes');
 
 /**
  * @license
