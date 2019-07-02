@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ConstantPool } from '../../constant_pool';
-import { Interpolation } from '../../expression_parser/ast';
 import * as o from '../../output/output_ast';
 import { ParseSourceSpan } from '../../parse_util';
 import * as t from '../r3_ast';
@@ -64,9 +63,3 @@ export declare function getAttrsForDirectiveMatching(elOrTpl: t.Element | t.Temp
 };
 /** Returns a call expression to a chained instruction, e.g. `property(params[0])(params[1])`. */
 export declare function chainedInstruction(reference: o.ExternalReference, calls: o.Expression[][], span?: ParseSourceSpan | null): o.Expression;
-/**
- * Gets the number of arguments expected to be passed to a generated instruction in the case of
- * interpolation instructions.
- * @param interpolation An interpolation ast
- */
-export declare function getInterpolationArgsLength(interpolation: Interpolation): number;
