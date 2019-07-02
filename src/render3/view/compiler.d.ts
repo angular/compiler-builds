@@ -20,6 +20,7 @@ import { R3ComponentDef, R3ComponentMetadata, R3DirectiveDef, R3DirectiveMetadat
 export declare function compileDirectiveFromMetadata(meta: R3DirectiveMetadata, constantPool: ConstantPool, bindingParser: BindingParser): R3DirectiveDef;
 export interface R3BaseRefMetaData {
     name: string;
+    type: o.Expression;
     typeSourceSpan: ParseSourceSpan;
     inputs?: {
         [key: string]: string | [string, string];
