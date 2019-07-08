@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.0-next.0+9.sha-9a2d1fa.with-local-changes
+ * @license Angular v8.2.0-next.0+11.sha-6aaca21.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -6575,7 +6575,12 @@ class ASTWithSource extends AST {
         this.location = location;
         this.errors = errors;
     }
-    visit(visitor, context = null) { return this.ast.visit(visitor, context); }
+    visit(visitor, context = null) {
+        if (visitor.visitASTWithSource) {
+            return visitor.visitASTWithSource(this, context);
+        }
+        return this.ast.visit(visitor, context);
+    }
     toString() { return `${this.source} in ${this.location}`; }
 }
 class TemplateBinding {
@@ -17443,7 +17448,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.2.0-next.0+9.sha-9a2d1fa.with-local-changes');
+const VERSION$1 = new Version('8.2.0-next.0+11.sha-6aaca21.with-local-changes');
 
 /**
  * @license
