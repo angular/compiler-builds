@@ -77,15 +77,6 @@ export declare class Identifiers {
     static textInterpolate8: o.ExternalReference;
     static textInterpolateV: o.ExternalReference;
     static restoreView: o.ExternalReference;
-    static interpolation1: o.ExternalReference;
-    static interpolation2: o.ExternalReference;
-    static interpolation3: o.ExternalReference;
-    static interpolation4: o.ExternalReference;
-    static interpolation5: o.ExternalReference;
-    static interpolation6: o.ExternalReference;
-    static interpolation7: o.ExternalReference;
-    static interpolation8: o.ExternalReference;
-    static interpolationV: o.ExternalReference;
     static pureFunction0: o.ExternalReference;
     static pureFunction1: o.ExternalReference;
     static pureFunction2: o.ExternalReference;
