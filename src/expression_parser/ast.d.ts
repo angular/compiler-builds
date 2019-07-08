@@ -207,6 +207,7 @@ export interface AstVisitor {
     visitQuote(ast: Quote, context: any): any;
     visitSafeMethodCall(ast: SafeMethodCall, context: any): any;
     visitSafePropertyRead(ast: SafePropertyRead, context: any): any;
+    visitASTWithSource?(ast: ASTWithSource, context: any): any;
     visit?(ast: AST, context?: any): any;
 }
 export declare class NullAstVisitor implements AstVisitor {

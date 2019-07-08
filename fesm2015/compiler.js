@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-rc.0+44.sha-95a9d67.with-local-changes
+ * @license Angular v8.2.0-next.0+11.sha-6aaca21.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3150,15 +3150,6 @@ Identifiers$1.textInterpolate7 = { name: 'ɵɵtextInterpolate7', moduleName: COR
 Identifiers$1.textInterpolate8 = { name: 'ɵɵtextInterpolate8', moduleName: CORE$1 };
 Identifiers$1.textInterpolateV = { name: 'ɵɵtextInterpolateV', moduleName: CORE$1 };
 Identifiers$1.restoreView = { name: 'ɵɵrestoreView', moduleName: CORE$1 };
-Identifiers$1.interpolation1 = { name: 'ɵɵinterpolation1', moduleName: CORE$1 };
-Identifiers$1.interpolation2 = { name: 'ɵɵinterpolation2', moduleName: CORE$1 };
-Identifiers$1.interpolation3 = { name: 'ɵɵinterpolation3', moduleName: CORE$1 };
-Identifiers$1.interpolation4 = { name: 'ɵɵinterpolation4', moduleName: CORE$1 };
-Identifiers$1.interpolation5 = { name: 'ɵɵinterpolation5', moduleName: CORE$1 };
-Identifiers$1.interpolation6 = { name: 'ɵɵinterpolation6', moduleName: CORE$1 };
-Identifiers$1.interpolation7 = { name: 'ɵɵinterpolation7', moduleName: CORE$1 };
-Identifiers$1.interpolation8 = { name: 'ɵɵinterpolation8', moduleName: CORE$1 };
-Identifiers$1.interpolationV = { name: 'ɵɵinterpolationV', moduleName: CORE$1 };
 Identifiers$1.pureFunction0 = { name: 'ɵɵpureFunction0', moduleName: CORE$1 };
 Identifiers$1.pureFunction1 = { name: 'ɵɵpureFunction1', moduleName: CORE$1 };
 Identifiers$1.pureFunction2 = { name: 'ɵɵpureFunction2', moduleName: CORE$1 };
@@ -6584,7 +6575,12 @@ class ASTWithSource extends AST {
         this.location = location;
         this.errors = errors;
     }
-    visit(visitor, context = null) { return this.ast.visit(visitor, context); }
+    visit(visitor, context = null) {
+        if (visitor.visitASTWithSource) {
+            return visitor.visitASTWithSource(this, context);
+        }
+        return this.ast.visit(visitor, context);
+    }
     toString() { return `${this.source} in ${this.location}`; }
 }
 class TemplateBinding {
@@ -17452,7 +17448,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.1.0-rc.0+44.sha-95a9d67.with-local-changes');
+const VERSION$1 = new Version('8.2.0-next.0+11.sha-6aaca21.with-local-changes');
 
 /**
  * @license

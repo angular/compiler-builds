@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.1.0-rc.0+44.sha-95a9d67.with-local-changes
+ * @license Angular v8.2.0-next.0+11.sha-6aaca21.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3419,15 +3419,6 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.textInterpolate8 = { name: 'ɵɵtextInterpolate8', moduleName: CORE$1 };
     Identifiers.textInterpolateV = { name: 'ɵɵtextInterpolateV', moduleName: CORE$1 };
     Identifiers.restoreView = { name: 'ɵɵrestoreView', moduleName: CORE$1 };
-    Identifiers.interpolation1 = { name: 'ɵɵinterpolation1', moduleName: CORE$1 };
-    Identifiers.interpolation2 = { name: 'ɵɵinterpolation2', moduleName: CORE$1 };
-    Identifiers.interpolation3 = { name: 'ɵɵinterpolation3', moduleName: CORE$1 };
-    Identifiers.interpolation4 = { name: 'ɵɵinterpolation4', moduleName: CORE$1 };
-    Identifiers.interpolation5 = { name: 'ɵɵinterpolation5', moduleName: CORE$1 };
-    Identifiers.interpolation6 = { name: 'ɵɵinterpolation6', moduleName: CORE$1 };
-    Identifiers.interpolation7 = { name: 'ɵɵinterpolation7', moduleName: CORE$1 };
-    Identifiers.interpolation8 = { name: 'ɵɵinterpolation8', moduleName: CORE$1 };
-    Identifiers.interpolationV = { name: 'ɵɵinterpolationV', moduleName: CORE$1 };
     Identifiers.pureFunction0 = { name: 'ɵɵpureFunction0', moduleName: CORE$1 };
     Identifiers.pureFunction1 = { name: 'ɵɵpureFunction1', moduleName: CORE$1 };
     Identifiers.pureFunction2 = { name: 'ɵɵpureFunction2', moduleName: CORE$1 };
@@ -7129,6 +7120,9 @@ var ASTWithSource = /** @class */ (function (_super) {
     }
     ASTWithSource.prototype.visit = function (visitor, context) {
         if (context === void 0) { context = null; }
+        if (visitor.visitASTWithSource) {
+            return visitor.visitASTWithSource(this, context);
+        }
         return this.ast.visit(visitor, context);
     };
     ASTWithSource.prototype.toString = function () { return this.source + " in " + this.location; };
@@ -18485,7 +18479,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.1.0-rc.0+44.sha-95a9d67.with-local-changes');
+var VERSION$1 = new Version('8.2.0-next.0+11.sha-6aaca21.with-local-changes');
 
 /**
  * @license
