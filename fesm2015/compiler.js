@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.0-next.0+17.sha-7f2330a.with-local-changes
+ * @license Angular v8.2.0-next.0+23.sha-989ebcb.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3105,6 +3105,7 @@ Identifiers$1.attributeInterpolateV = { name: 'ɵɵattributeInterpolateV', modul
 Identifiers$1.classProp = { name: 'ɵɵclassProp', moduleName: CORE$1 };
 Identifiers$1.elementContainerStart = { name: 'ɵɵelementContainerStart', moduleName: CORE$1 };
 Identifiers$1.elementContainerEnd = { name: 'ɵɵelementContainerEnd', moduleName: CORE$1 };
+Identifiers$1.elementContainer = { name: 'ɵɵelementContainer', moduleName: CORE$1 };
 Identifiers$1.styling = { name: 'ɵɵstyling', moduleName: CORE$1 };
 Identifiers$1.styleMap = { name: 'ɵɵstyleMap', moduleName: CORE$1 };
 Identifiers$1.classMap = { name: 'ɵɵclassMap', moduleName: CORE$1 };
@@ -15413,20 +15414,16 @@ class TemplateDefinitionBuilder {
         if (this.i18n) {
             this.i18n.appendElement(element.i18n, elementIndex);
         }
-        const hasChildren = () => {
-            if (!isI18nRootElement && this.i18n) {
-                // we do not append text node instructions and ICUs inside i18n section,
-                // so we exclude them while calculating whether current element has children
-                return !hasTextChildrenOnly(element.children);
-            }
-            return element.children.length > 0;
-        };
-        const createSelfClosingInstruction = !stylingBuilder.hasBindings && !isNgContainer$1 &&
-            element.outputs.length === 0 && i18nAttrs.length === 0 && !hasChildren();
+        // Note that we do not append text node instructions and ICUs inside i18n section,
+        // so we exclude them while calculating whether current element has children
+        const hasChildren = (!isI18nRootElement && this.i18n) ? !hasTextChildrenOnly(element.children) :
+            element.children.length > 0;
+        const createSelfClosingInstruction = !stylingBuilder.hasBindings &&
+            element.outputs.length === 0 && i18nAttrs.length === 0 && !hasChildren;
         const createSelfClosingI18nInstruction = !createSelfClosingInstruction &&
             !stylingBuilder.hasBindings && hasTextChildrenOnly(element.children);
         if (createSelfClosingInstruction) {
-            this.creationInstruction(element.sourceSpan, Identifiers$1.element, trimTrailingNulls(parameters));
+            this.creationInstruction(element.sourceSpan, isNgContainer$1 ? Identifiers$1.elementContainer : Identifiers$1.element, trimTrailingNulls(parameters));
         }
         else {
             this.creationInstruction(element.sourceSpan, isNgContainer$1 ? Identifiers$1.elementContainerStart : Identifiers$1.elementStart, trimTrailingNulls(parameters));
@@ -17448,7 +17445,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.2.0-next.0+17.sha-7f2330a.with-local-changes');
+const VERSION$1 = new Version('8.2.0-next.0+23.sha-989ebcb.with-local-changes');
 
 /**
  * @license
