@@ -32,6 +32,7 @@ export declare class Identifiers {
     static classProp: o.ExternalReference;
     static elementContainerStart: o.ExternalReference;
     static elementContainerEnd: o.ExternalReference;
+    static elementContainer: o.ExternalReference;
     static styling: o.ExternalReference;
     static styleMap: o.ExternalReference;
     static classMap: o.ExternalReference;
