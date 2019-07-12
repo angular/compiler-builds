@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.0-next.1+35.sha-d545bbe.with-local-changes
+ * @license Angular v8.2.0-next.1+36.sha-63e458d.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -14905,28 +14905,29 @@ class I18nMetaVisitor {
 class SerializerVisitor {
     constructor() {
         /**
-         * Flag that indicates that we are processing elements of an ICU.
+         * Keeps track of ICU nesting level, allowing to detect that we are processing elements of an ICU.
          *
-         * This flag is needed due to the fact that placeholders in ICUs and in other messages are
-         * represented differently in Closure:
+         * This is needed due to the fact that placeholders in ICUs and in other messages are represented
+         * differently in Closure:
          * - {$placeholder} in non-ICU case
          * - {PLACEHOLDER} inside ICU
          */
-        this.insideIcu = false;
+        this.icuNestingLevel = 0;
     }
     formatPh(value) {
-        const formatted = formatI18nPlaceholderName(value, /* useCamelCase */ !this.insideIcu);
-        return this.insideIcu ? `{${formatted}}` : `{$${formatted}}`;
+        const isInsideIcu = this.icuNestingLevel > 0;
+        const formatted = formatI18nPlaceholderName(value, /* useCamelCase */ !isInsideIcu);
+        return isInsideIcu ? `{${formatted}}` : `{$${formatted}}`;
     }
     visitText(text, context) { return text.value; }
     visitContainer(container, context) {
         return container.children.map(child => child.visit(this)).join('');
     }
     visitIcu(icu, context) {
-        this.insideIcu = true;
+        this.icuNestingLevel++;
         const strCases = Object.keys(icu.cases).map((k) => `${k} {${icu.cases[k].visit(this)}}`);
         const result = `{${icu.expressionPlaceholder}, ${icu.type}, ${strCases.join(' ')}}`;
-        this.insideIcu = false;
+        this.icuNestingLevel--;
         return result;
     }
     visitTagPlaceholder(ph, context) {
@@ -17483,7 +17484,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.2.0-next.1+35.sha-d545bbe.with-local-changes');
+const VERSION$1 = new Version('8.2.0-next.1+36.sha-63e458d.with-local-changes');
 
 /**
  * @license
