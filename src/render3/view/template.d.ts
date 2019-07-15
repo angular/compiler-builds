@@ -87,6 +87,11 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     i18nTranslate(message: i18n.Message, params?: {
         [name: string]: o.Expression;
     }, ref?: o.ReadVarExpr, transformFn?: (raw: o.ReadVarExpr) => o.Expression): o.ReadVarExpr;
+    i18nFormatPlaceholderNames(params: {
+        [name: string]: o.Expression;
+    } | undefined, useCamelCase: boolean): {
+        [key: string]: o.Expression;
+    };
     i18nAppendBindings(expressions: AST[]): void;
     i18nBindProps(props: {
         [key: string]: t.Text | t.BoundText;

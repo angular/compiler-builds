@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.0-next.0+23.sha-989ebcb.with-local-changes
+ * @license Angular v8.2.0-next.1+52.sha-31ea254.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4552,8 +4552,12 @@ function parseI18nMeta(meta) {
  * @param name The placeholder name that should be formatted
  * @returns Formatted placeholder name
  */
-function formatI18nPlaceholderName(name) {
-    const chunks = toPublicName(name).split('_');
+function formatI18nPlaceholderName(name, useCamelCase = true) {
+    const publicName = toPublicName(name);
+    if (!useCamelCase) {
+        return publicName;
+    }
+    const chunks = publicName.split('_');
     if (chunks.length === 1) {
         // if no "_" found - just lowercase the value
         return name.toLowerCase();
@@ -14894,27 +14898,47 @@ class I18nMetaVisitor {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const formatPh = (value) => `{$${formatI18nPlaceholderName(value)}}`;
 /**
- * This visitor walks over i18n tree and generates its string representation,
- * including ICUs and placeholders in {$PLACEHOLDER} format.
+ * This visitor walks over i18n tree and generates its string representation, including ICUs and
+ * placeholders in `{$placeholder}` (for plain messages) or `{PLACEHOLDER}` (inside ICUs) format.
  */
 class SerializerVisitor {
+    constructor() {
+        /**
+         * Keeps track of ICU nesting level, allowing to detect that we are processing elements of an ICU.
+         *
+         * This is needed due to the fact that placeholders in ICUs and in other messages are represented
+         * differently in Closure:
+         * - {$placeholder} in non-ICU case
+         * - {PLACEHOLDER} inside ICU
+         */
+        this.icuNestingLevel = 0;
+    }
+    formatPh(value) {
+        const isInsideIcu = this.icuNestingLevel > 0;
+        const formatted = formatI18nPlaceholderName(value, /* useCamelCase */ !isInsideIcu);
+        return isInsideIcu ? `{${formatted}}` : `{$${formatted}}`;
+    }
     visitText(text, context) { return text.value; }
     visitContainer(container, context) {
         return container.children.map(child => child.visit(this)).join('');
     }
     visitIcu(icu, context) {
+        this.icuNestingLevel++;
         const strCases = Object.keys(icu.cases).map((k) => `${k} {${icu.cases[k].visit(this)}}`);
-        return `{${icu.expressionPlaceholder}, ${icu.type}, ${strCases.join(' ')}}`;
+        const result = `{${icu.expressionPlaceholder}, ${icu.type}, ${strCases.join(' ')}}`;
+        this.icuNestingLevel--;
+        return result;
     }
     visitTagPlaceholder(ph, context) {
         return ph.isVoid ?
-            formatPh(ph.startName) :
-            `${formatPh(ph.startName)}${ph.children.map(child => child.visit(this)).join('')}${formatPh(ph.closeName)}`;
+            this.formatPh(ph.startName) :
+            `${this.formatPh(ph.startName)}${ph.children.map(child => child.visit(this)).join('')}${this.formatPh(ph.closeName)}`;
     }
-    visitPlaceholder(ph, context) { return formatPh(ph.name); }
-    visitIcuPlaceholder(ph, context) { return formatPh(ph.name); }
+    visitPlaceholder(ph, context) { return this.formatPh(ph.name); }
+    visitIcuPlaceholder(ph, context) {
+        return this.formatPh(ph.name);
+    }
 }
 const serializerVisitor$1 = new SerializerVisitor();
 function getSerializedI18nContent(message) {
@@ -15153,15 +15177,19 @@ class TemplateDefinitionBuilder {
         // Closure Compiler requires const names to start with `MSG_` but disallows any other const to
         // start with `MSG_`. We define a variable starting with `MSG_` just for the `goog.getMsg` call
         const closureVar = this.i18nGenerateClosureVar(message.id);
-        const _params = {};
-        if (params && Object.keys(params).length) {
-            Object.keys(params).forEach(key => _params[formatI18nPlaceholderName(key)] = params[key]);
-        }
+        const formattedParams = this.i18nFormatPlaceholderNames(params, /* useCamelCase */ true);
         const meta = metaFromI18nMessage(message);
         const content = getSerializedI18nContent(message);
-        const statements = getTranslationDeclStmts(_ref, closureVar, content, meta, _params, transformFn);
+        const statements = getTranslationDeclStmts(_ref, closureVar, content, meta, formattedParams, transformFn);
         this.constantPool.statements.push(...statements);
         return _ref;
+    }
+    i18nFormatPlaceholderNames(params = {}, useCamelCase) {
+        const _params = {};
+        if (params && Object.keys(params).length) {
+            Object.keys(params).forEach(key => _params[formatI18nPlaceholderName(key, useCamelCase)] = params[key]);
+        }
+        return _params;
     }
     i18nAppendBindings(expressions) {
         if (expressions.length > 0) {
@@ -15724,16 +15752,27 @@ class TemplateDefinitionBuilder {
         const placeholders = this.i18nBindProps(icu.placeholders);
         // output ICU directly and keep ICU reference in context
         const message = icu.i18n;
-        const transformFn = (raw) => instruction(null, Identifiers$1.i18nPostprocess, [raw, mapLiteral(vars, true)]);
+        // we always need post-processing function for ICUs, to make sure that:
+        // - all placeholders in a form of {PLACEHOLDER} are replaced with actual values (note:
+        // `goog.getMsg` does not process ICUs and uses the `{PLACEHOLDER}` format for placeholders
+        // inside ICUs)
+        // - all ICU vars (such as `VAR_SELECT` or `VAR_PLURAL`) are replaced with correct values
+        const transformFn = (raw) => {
+            const params = Object.assign({}, vars, placeholders);
+            const formatted = this.i18nFormatPlaceholderNames(params, /* useCamelCase */ false);
+            return instruction(null, Identifiers$1.i18nPostprocess, [raw, mapLiteral(formatted, true)]);
+        };
         // in case the whole i18n message is a single ICU - we do not need to
         // create a separate top-level translation, we can use the root ref instead
         // and make this ICU a top-level translation
+        // note: ICU placeholders are replaced with actual values in `i18nPostprocess` function
+        // separately, so we do not pass placeholders into `i18nTranslate` function.
         if (isSingleI18nIcu(i18n.meta)) {
-            this.i18nTranslate(message, placeholders, i18n.ref, transformFn);
+            this.i18nTranslate(message, /* placeholders */ {}, i18n.ref, transformFn);
         }
         else {
             // output ICU directly and keep ICU reference in context
-            const ref = this.i18nTranslate(message, placeholders, undefined, transformFn);
+            const ref = this.i18nTranslate(message, /* placeholders */ {}, /* ref */ undefined, transformFn);
             i18n.appendIcu(icuFromI18nMessage(message).name, ref);
         }
         if (initWasInvoked) {
@@ -17445,7 +17484,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.2.0-next.0+23.sha-989ebcb.with-local-changes');
+const VERSION$1 = new Version('8.2.0-next.1+52.sha-31ea254.with-local-changes');
 
 /**
  * @license
