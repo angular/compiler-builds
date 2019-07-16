@@ -93,6 +93,7 @@ export declare class Identifiers {
     static pipeBind3: o.ExternalReference;
     static pipeBind4: o.ExternalReference;
     static pipeBindV: o.ExternalReference;
+    static hostProperty: o.ExternalReference;
     static property: o.ExternalReference;
     static propertyInterpolate: o.ExternalReference;
     static propertyInterpolate1: o.ExternalReference;
