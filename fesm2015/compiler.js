@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.0-next.1+52.sha-31ea254.with-local-changes
+ * @license Angular v8.2.0-next.1+60.sha-09576e9.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3166,6 +3166,7 @@ Identifiers$1.pipeBind2 = { name: 'ɵɵpipeBind2', moduleName: CORE$1 };
 Identifiers$1.pipeBind3 = { name: 'ɵɵpipeBind3', moduleName: CORE$1 };
 Identifiers$1.pipeBind4 = { name: 'ɵɵpipeBind4', moduleName: CORE$1 };
 Identifiers$1.pipeBindV = { name: 'ɵɵpipeBindV', moduleName: CORE$1 };
+Identifiers$1.hostProperty = { name: 'ɵɵhostProperty', moduleName: CORE$1 };
 Identifiers$1.property = { name: 'ɵɵproperty', moduleName: CORE$1 };
 Identifiers$1.propertyInterpolate = { name: 'ɵɵpropertyInterpolate', moduleName: CORE$1 };
 Identifiers$1.propertyInterpolate1 = { name: 'ɵɵpropertyInterpolate1', moduleName: CORE$1 };
@@ -16972,7 +16973,7 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
     const propertyBindings = [];
     const attributeBindings = [];
     const syntheticHostBindings = [];
-    (bindings || []).forEach((binding) => {
+    bindings && bindings.forEach((binding) => {
         const name = binding.name;
         const stylingInputWasSet = styleBuilder.registerInputBasedOnName(name, binding.expression, binding.sourceSpan);
         if (!stylingInputWasSet) {
@@ -17001,16 +17002,8 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
             if (sanitizerFn) {
                 instructionParams.push(sanitizerFn);
             }
-            if (!isAttribute) {
-                if (!sanitizerFn) {
-                    // append `null` in front of `nativeOnly` flag if no sanitizer fn defined
-                    instructionParams.push(literal(null));
-                }
-                // host bindings must have nativeOnly prop set to true
-                instructionParams.push(literal(true));
-            }
             updateStatements.push(...bindingExpr.stmts);
-            if (instruction === Identifiers$1.property) {
+            if (instruction === Identifiers$1.hostProperty) {
                 propertyBindings.push(instructionParams);
             }
             else if (instruction === Identifiers$1.attribute) {
@@ -17025,7 +17018,7 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
         }
     });
     if (propertyBindings.length > 0) {
-        updateStatements.push(chainedInstruction(Identifiers$1.property, propertyBindings).toStmt());
+        updateStatements.push(chainedInstruction(Identifiers$1.hostProperty, propertyBindings).toStmt());
     }
     if (attributeBindings.length > 0) {
         updateStatements.push(chainedInstruction(Identifiers$1.attribute, attributeBindings).toStmt());
@@ -17109,7 +17102,7 @@ function getBindingNameAndInstruction(binding) {
             instruction = Identifiers$1.updateSyntheticHostBinding;
         }
         else {
-            instruction = Identifiers$1.property;
+            instruction = Identifiers$1.hostProperty;
         }
     }
     return { bindingName, instruction, isAttribute: !!attrMatches };
@@ -17484,7 +17477,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.2.0-next.1+52.sha-31ea254.with-local-changes');
+const VERSION$1 = new Version('8.2.0-next.1+60.sha-09576e9.with-local-changes');
 
 /**
  * @license
