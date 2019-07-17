@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.0-next.1+66.sha-9e83822.with-local-changes
+ * @license Angular v8.2.0-next.1+67.sha-12fd069.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15958,10 +15958,12 @@ class TemplateDefinitionBuilder {
             styles.populateInitialStylingAttrs(attrExprs);
         }
         if (inputs.length || outputs.length) {
-            const attrsStartIndex = attrExprs.length;
+            const attrsLengthBeforeInputs = attrExprs.length;
             for (let i = 0; i < inputs.length; i++) {
                 const input = inputs[i];
-                if (input.type !== 4 /* Animation */) {
+                // We don't want the animation and attribute bindings in the
+                // attributes array since they aren't used for directive matching.
+                if (input.type !== 4 /* Animation */ && input.type !== 1 /* Attribute */) {
                     addAttrExpr(input.name);
                 }
             }
@@ -15975,8 +15977,8 @@ class TemplateDefinitionBuilder {
             // values have been filtered (by not including the animation ones) and added
             // to the expressions. The marker is important because it tells the runtime
             // code that this is where attributes without values start...
-            if (attrExprs.length) {
-                attrExprs.splice(attrsStartIndex, 0, literal(3 /* Bindings */));
+            if (attrExprs.length !== attrsLengthBeforeInputs) {
+                attrExprs.splice(attrsLengthBeforeInputs, 0, literal(3 /* Bindings */));
             }
         }
         if (templateAttrs.length) {
@@ -17477,7 +17479,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.2.0-next.1+66.sha-9e83822.with-local-changes');
+const VERSION$1 = new Version('8.2.0-next.1+67.sha-12fd069.with-local-changes');
 
 /**
  * @license
