@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.0-next.2+22.sha-60f58bf.with-local-changes
+ * @license Angular v8.2.0-next.2+24.sha-376ad9c.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3982,6 +3982,31 @@
         }
         Icu.prototype.visit = function (visitor) { return visitor.visitIcu(this); };
         return Icu;
+    }());
+    var RecursiveVisitor = /** @class */ (function () {
+        function RecursiveVisitor() {
+        }
+        RecursiveVisitor.prototype.visitElement = function (element) {
+            visitAll(this, element.attributes);
+            visitAll(this, element.children);
+            visitAll(this, element.references);
+        };
+        RecursiveVisitor.prototype.visitTemplate = function (template) {
+            visitAll(this, template.attributes);
+            visitAll(this, template.children);
+            visitAll(this, template.references);
+            visitAll(this, template.variables);
+        };
+        RecursiveVisitor.prototype.visitContent = function (content) { };
+        RecursiveVisitor.prototype.visitVariable = function (variable) { };
+        RecursiveVisitor.prototype.visitReference = function (reference) { };
+        RecursiveVisitor.prototype.visitTextAttribute = function (attribute) { };
+        RecursiveVisitor.prototype.visitBoundAttribute = function (attribute) { };
+        RecursiveVisitor.prototype.visitBoundEvent = function (attribute) { };
+        RecursiveVisitor.prototype.visitText = function (text) { };
+        RecursiveVisitor.prototype.visitBoundText = function (text) { };
+        RecursiveVisitor.prototype.visitIcu = function (icu) { };
+        return RecursiveVisitor;
     }());
     function visitAll(visitor, nodes) {
         var e_1, _a, e_2, _b;
@@ -9197,7 +9222,7 @@
         });
         return result;
     }
-    var RecursiveVisitor = /** @class */ (function () {
+    var RecursiveVisitor$1 = /** @class */ (function () {
         function RecursiveVisitor() {
         }
         RecursiveVisitor.prototype.visitElement = function (ast, context) {
@@ -9256,7 +9281,7 @@
                 }
             };
             return class_1;
-        }(RecursiveVisitor));
+        }(RecursiveVisitor$1));
         visitAll$1(visitor, nodes);
         return new AstPath(path, position);
     }
@@ -18568,7 +18593,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.2.0-next.2+22.sha-60f58bf.with-local-changes');
+    var VERSION$1 = new Version('8.2.0-next.2+24.sha-376ad9c.with-local-changes');
 
     /**
      * @license
@@ -28420,6 +28445,7 @@
     exports.WritePropExpr = WritePropExpr;
     exports.WriteVarExpr = WriteVarExpr;
     exports.Statement = Statement;
+    exports.STRING_TYPE = STRING_TYPE;
     exports.TypeofExpr = TypeofExpr;
     exports.collectExternalReferences = collectExternalReferences;
     exports.EmitterVisitorContext = EmitterVisitorContext;
@@ -28436,6 +28462,7 @@
     exports.TmplAstBoundText = BoundText;
     exports.TmplAstContent = Content;
     exports.TmplAstElement = Element;
+    exports.TmplAstRecursiveVisitor = RecursiveVisitor;
     exports.TmplAstReference = Reference;
     exports.TmplAstTemplate = Template;
     exports.TmplAstText = Text;
@@ -28584,7 +28611,7 @@
     exports.Element = Element$1;
     exports.Comment = Comment;
     exports.visitAll = visitAll$1;
-    exports.RecursiveVisitor = RecursiveVisitor;
+    exports.RecursiveVisitor = RecursiveVisitor$1;
     exports.findNode = findNode;
     exports.HtmlParser = HtmlParser;
     exports.ParseTreeResult = ParseTreeResult;
