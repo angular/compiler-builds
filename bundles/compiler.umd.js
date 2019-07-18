@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.0-next.2+8.sha-78e7fdd.with-local-changes
+ * @license Angular v8.2.0-next.2+22.sha-60f58bf.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4952,7 +4952,8 @@
         var node = meta instanceof Message ? meta.nodes.find(function (node) { return node instanceof Container; }) : meta;
         if (node) {
             node
-                .children.filter(function (child) { return child instanceof Placeholder; })
+                .children
+                .filter(function (child) { return child instanceof Placeholder; })
                 .forEach(function (child, idx) {
                 var content = wrapI18nPlaceholder(startIdx + idx, contextId);
                 updatePlaceholderMap(placeholders, child.name, content);
@@ -9220,7 +9221,7 @@
                     results.push(visitAll$1(t, children, context));
             }
             cb(visit);
-            return [].concat.apply([], results);
+            return Array.prototype.concat.apply([], results);
         };
         return RecursiveVisitor;
     }());
@@ -10997,7 +10998,7 @@
                     results.push(templateVisitAll(t, children, context));
             }
             cb(visit);
-            return [].concat.apply([], results);
+            return Array.prototype.concat.apply([], results);
         };
         return RecursiveTemplateAstVisitor;
     }(NullTemplateVisitor));
@@ -17286,10 +17287,12 @@
             if (!this.map.has(bindingKey)) {
                 this.generateSharedContextVar(retrievalLevel);
             }
+            // Shared context variables are always generated as "ReadVarExpr".
             return this.map.get(bindingKey).lhs;
         };
         BindingScope.prototype.getSharedContextName = function (retrievalLevel) {
             var sharedCtxObj = this.map.get(SHARED_CONTEXT_KEY + retrievalLevel);
+            // Shared context variables are always generated as "ReadVarExpr".
             return sharedCtxObj && sharedCtxObj.declare ? sharedCtxObj.lhs : null;
         };
         BindingScope.prototype.maybeGenerateSharedContextVar = function (value) {
@@ -18565,7 +18568,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.2.0-next.2+8.sha-78e7fdd.with-local-changes');
+    var VERSION$1 = new Version('8.2.0-next.2+22.sha-60f58bf.with-local-changes');
 
     /**
      * @license
@@ -26943,7 +26946,7 @@
             if (ast.builtin != null) {
                 switch (ast.builtin) {
                     case exports.BuiltinVar.Super:
-                        return ctx.instance.__proto__;
+                        return Object.getPrototypeOf(ctx.instance);
                     case exports.BuiltinVar.This:
                         return ctx.instance;
                     case exports.BuiltinVar.CatchError:

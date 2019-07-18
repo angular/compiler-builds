@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.0-next.2+8.sha-78e7fdd.with-local-changes
+ * @license Angular v8.2.0-next.2+22.sha-60f58bf.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4503,7 +4503,8 @@ function assembleBoundTextPlaceholders(meta, bindingStartIndex = 0, contextId = 
     const node = meta instanceof Message ? meta.nodes.find(node => node instanceof Container) : meta;
     if (node) {
         node
-            .children.filter((child) => child instanceof Placeholder)
+            .children
+            .filter((child) => child instanceof Placeholder)
             .forEach((child, idx) => {
             const content = wrapI18nPlaceholder(startIdx + idx, contextId);
             updatePlaceholderMap(placeholders, child.name, content);
@@ -8513,7 +8514,7 @@ class RecursiveVisitor {
                 results.push(visitAll$1(t, children, context));
         }
         cb(visit);
-        return [].concat.apply([], results);
+        return Array.prototype.concat.apply([], results);
     }
 }
 function spanOf(ast) {
@@ -10226,7 +10227,7 @@ class RecursiveTemplateAstVisitor extends NullTemplateVisitor {
                 results.push(templateVisitAll(t, children, context));
         }
         cb(visit);
-        return [].concat.apply([], results);
+        return Array.prototype.concat.apply([], results);
     }
 }
 /**
@@ -16261,10 +16262,12 @@ class BindingScope {
         if (!this.map.has(bindingKey)) {
             this.generateSharedContextVar(retrievalLevel);
         }
+        // Shared context variables are always generated as "ReadVarExpr".
         return this.map.get(bindingKey).lhs;
     }
     getSharedContextName(retrievalLevel) {
         const sharedCtxObj = this.map.get(SHARED_CONTEXT_KEY + retrievalLevel);
+        // Shared context variables are always generated as "ReadVarExpr".
         return sharedCtxObj && sharedCtxObj.declare ? sharedCtxObj.lhs : null;
     }
     maybeGenerateSharedContextVar(value) {
@@ -17479,7 +17482,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.2.0-next.2+8.sha-78e7fdd.with-local-changes');
+const VERSION$1 = new Version('8.2.0-next.2+22.sha-60f58bf.with-local-changes');
 
 /**
  * @license
@@ -25380,7 +25383,7 @@ class StatementInterpreter {
         if (ast.builtin != null) {
             switch (ast.builtin) {
                 case BuiltinVar.Super:
-                    return ctx.instance.__proto__;
+                    return Object.getPrototypeOf(ctx.instance);
                 case BuiltinVar.This:
                     return ctx.instance;
                 case BuiltinVar.CatchError:
