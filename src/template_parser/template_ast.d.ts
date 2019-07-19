@@ -260,7 +260,7 @@ export declare class RecursiveTemplateAstVisitor extends NullTemplateVisitor imp
     visitEmbeddedTemplate(ast: EmbeddedTemplateAst, context: any): any;
     visitElement(ast: ElementAst, context: any): any;
     visitDirective(ast: DirectiveAst, context: any): any;
-    protected visitChildren<T extends TemplateAst>(context: any, cb: (visit: (<V extends TemplateAst>(children: V[] | undefined) => void)) => void): any;
+    protected visitChildren<T extends TemplateAst>(context: any, cb: (visit: (<V extends TemplateAst>(children: V[] | undefined) => void)) => void): any[];
 }
 /**
  * Visit every node in a list of {@link TemplateAst}s with the given {@link TemplateAstVisitor}.

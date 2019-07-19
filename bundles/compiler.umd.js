@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.0-next.2+7.sha-1e9eeaf.with-local-changes
+ * @license Angular v8.2.0-next.2+25.sha-7151eae.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3983,6 +3983,31 @@
         Icu.prototype.visit = function (visitor) { return visitor.visitIcu(this); };
         return Icu;
     }());
+    var RecursiveVisitor = /** @class */ (function () {
+        function RecursiveVisitor() {
+        }
+        RecursiveVisitor.prototype.visitElement = function (element) {
+            visitAll(this, element.attributes);
+            visitAll(this, element.children);
+            visitAll(this, element.references);
+        };
+        RecursiveVisitor.prototype.visitTemplate = function (template) {
+            visitAll(this, template.attributes);
+            visitAll(this, template.children);
+            visitAll(this, template.references);
+            visitAll(this, template.variables);
+        };
+        RecursiveVisitor.prototype.visitContent = function (content) { };
+        RecursiveVisitor.prototype.visitVariable = function (variable) { };
+        RecursiveVisitor.prototype.visitReference = function (reference) { };
+        RecursiveVisitor.prototype.visitTextAttribute = function (attribute) { };
+        RecursiveVisitor.prototype.visitBoundAttribute = function (attribute) { };
+        RecursiveVisitor.prototype.visitBoundEvent = function (attribute) { };
+        RecursiveVisitor.prototype.visitText = function (text) { };
+        RecursiveVisitor.prototype.visitBoundText = function (text) { };
+        RecursiveVisitor.prototype.visitIcu = function (icu) { };
+        return RecursiveVisitor;
+    }());
     function visitAll(visitor, nodes) {
         var e_1, _a, e_2, _b;
         var result = [];
@@ -4952,7 +4977,8 @@
         var node = meta instanceof Message ? meta.nodes.find(function (node) { return node instanceof Container; }) : meta;
         if (node) {
             node
-                .children.filter(function (child) { return child instanceof Placeholder; })
+                .children
+                .filter(function (child) { return child instanceof Placeholder; })
                 .forEach(function (child, idx) {
                 var content = wrapI18nPlaceholder(startIdx + idx, contextId);
                 updatePlaceholderMap(placeholders, child.name, content);
@@ -9196,7 +9222,7 @@
         });
         return result;
     }
-    var RecursiveVisitor = /** @class */ (function () {
+    var RecursiveVisitor$1 = /** @class */ (function () {
         function RecursiveVisitor() {
         }
         RecursiveVisitor.prototype.visitElement = function (ast, context) {
@@ -9220,7 +9246,7 @@
                     results.push(visitAll$1(t, children, context));
             }
             cb(visit);
-            return [].concat.apply([], results);
+            return Array.prototype.concat.apply([], results);
         };
         return RecursiveVisitor;
     }());
@@ -9255,7 +9281,7 @@
                 }
             };
             return class_1;
-        }(RecursiveVisitor));
+        }(RecursiveVisitor$1));
         visitAll$1(visitor, nodes);
         return new AstPath(path, position);
     }
@@ -10997,7 +11023,7 @@
                     results.push(templateVisitAll(t, children, context));
             }
             cb(visit);
-            return [].concat.apply([], results);
+            return Array.prototype.concat.apply([], results);
         };
         return RecursiveTemplateAstVisitor;
     }(NullTemplateVisitor));
@@ -17286,10 +17312,12 @@
             if (!this.map.has(bindingKey)) {
                 this.generateSharedContextVar(retrievalLevel);
             }
+            // Shared context variables are always generated as "ReadVarExpr".
             return this.map.get(bindingKey).lhs;
         };
         BindingScope.prototype.getSharedContextName = function (retrievalLevel) {
             var sharedCtxObj = this.map.get(SHARED_CONTEXT_KEY + retrievalLevel);
+            // Shared context variables are always generated as "ReadVarExpr".
             return sharedCtxObj && sharedCtxObj.declare ? sharedCtxObj.lhs : null;
         };
         BindingScope.prototype.maybeGenerateSharedContextVar = function (value) {
@@ -18565,7 +18593,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.2.0-next.2+7.sha-1e9eeaf.with-local-changes');
+    var VERSION$1 = new Version('8.2.0-next.2+25.sha-7151eae.with-local-changes');
 
     /**
      * @license
@@ -26943,7 +26971,7 @@
             if (ast.builtin != null) {
                 switch (ast.builtin) {
                     case exports.BuiltinVar.Super:
-                        return ctx.instance.__proto__;
+                        return Object.getPrototypeOf(ctx.instance);
                     case exports.BuiltinVar.This:
                         return ctx.instance;
                     case exports.BuiltinVar.CatchError:
@@ -28417,6 +28445,7 @@
     exports.WritePropExpr = WritePropExpr;
     exports.WriteVarExpr = WriteVarExpr;
     exports.Statement = Statement;
+    exports.STRING_TYPE = STRING_TYPE;
     exports.TypeofExpr = TypeofExpr;
     exports.collectExternalReferences = collectExternalReferences;
     exports.EmitterVisitorContext = EmitterVisitorContext;
@@ -28433,6 +28462,7 @@
     exports.TmplAstBoundText = BoundText;
     exports.TmplAstContent = Content;
     exports.TmplAstElement = Element;
+    exports.TmplAstRecursiveVisitor = RecursiveVisitor;
     exports.TmplAstReference = Reference;
     exports.TmplAstTemplate = Template;
     exports.TmplAstText = Text;
@@ -28581,7 +28611,7 @@
     exports.Element = Element$1;
     exports.Comment = Comment;
     exports.visitAll = visitAll$1;
-    exports.RecursiveVisitor = RecursiveVisitor;
+    exports.RecursiveVisitor = RecursiveVisitor$1;
     exports.findNode = findNode;
     exports.HtmlParser = HtmlParser;
     exports.ParseTreeResult = ParseTreeResult;

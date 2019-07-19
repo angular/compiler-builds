@@ -211,7 +211,7 @@ export declare type DeclareLocalVarCallback = (scope: BindingScope, relativeLeve
  */
 declare type BindingData = {
     retrievalLevel: number;
-    lhs: o.ReadVarExpr;
+    lhs: o.Expression;
     declareLocalCallback?: DeclareLocalVarCallback;
     declare: boolean;
     priority: number;
@@ -238,7 +238,7 @@ export declare class BindingScope implements LocalResolver {
      * @param declareLocalCallback The callback to invoke when declaring this local var
      * @param localRef Whether or not this is a local ref
      */
-    set(retrievalLevel: number, name: string, lhs: o.ReadVarExpr, priority?: number, declareLocalCallback?: DeclareLocalVarCallback, localRef?: true): BindingScope;
+    set(retrievalLevel: number, name: string, lhs: o.Expression, priority?: number, declareLocalCallback?: DeclareLocalVarCallback, localRef?: true): BindingScope;
     getLocal(name: string): (o.Expression | null);
     notifyImplicitReceiverUse(): void;
     nestedScope(level: number): BindingScope;
