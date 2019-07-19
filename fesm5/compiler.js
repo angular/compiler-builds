@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.0-next.2+32.sha-f14693b.with-local-changes
+ * @license Angular v8.2.0-next.2+33.sha-9c954eb.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -12769,18 +12769,6 @@ function hyphenate(value) {
     }).toLowerCase();
 }
 
-/**
-* @license
-* Copyright Google Inc. All Rights Reserved.
-*
-* Use of this source code is governed by an MIT-style license that can be
-* found in the LICENSE file at https://angular.io/license
-*/
-var _stylingMode = 0;
-function compilerIsNewStylingInUse() {
-    return _stylingMode > 0 /* UseOld */;
-}
-
 var IMPORTANT_FLAG = '!important';
 /**
  * Produces creation/update instructions for all styling bindings (class and style)
@@ -12807,7 +12795,7 @@ var IMPORTANT_FLAG = '!important';
  *   classMap(...)
  *   styleProp(...)
  *   classProp(...)
- *   stylingApp(...)
+ *   stylingApply(...)
  * }
  *
  * The creation/update methods within the builder class produce these instructions.
@@ -12902,6 +12890,7 @@ var StylingBuilder = /** @class */ (function () {
         if (isEmptyExpression(value)) {
             return null;
         }
+        name = normalizePropName(name);
         var _a = parseProperty(name), property = _a.property, hasOverrideFlag = _a.hasOverrideFlag, bindingUnit = _a.unit;
         var entry = {
             name: property,
@@ -13012,42 +13001,12 @@ var StylingBuilder = /** @class */ (function () {
      * responsible for registering style/class bindings to an element.
      */
     StylingBuilder.prototype.buildStylingInstruction = function (sourceSpan, constantPool) {
-        var _this = this;
         if (this.hasBindings) {
             return {
                 sourceSpan: sourceSpan,
                 allocateBindingSlots: 0,
                 reference: Identifiers$1.styling,
-                params: function () {
-                    // a string array of every style-based binding
-                    var styleBindingProps = _this._singleStyleInputs ? _this._singleStyleInputs.map(function (i) { return literal(i.name); }) : [];
-                    // a string array of every class-based binding
-                    var classBindingNames = _this._singleClassInputs ? _this._singleClassInputs.map(function (i) { return literal(i.name); }) : [];
-                    // to salvage space in the AOT generated code, there is no point in passing
-                    // in `null` into a param if any follow-up params are not used. Therefore,
-                    // only when a trailing param is used then it will be filled with nulls in between
-                    // (otherwise a shorter amount of params will be filled). The code below helps
-                    // determine how many params are required in the expression code.
-                    //
-                    // min params => styling()
-                    // max params => styling(classBindings, styleBindings, sanitizer)
-                    //
-                    var params = [];
-                    var expectedNumberOfArgs = 0;
-                    if (_this._useDefaultSanitizer) {
-                        expectedNumberOfArgs = 3;
-                    }
-                    else if (styleBindingProps.length) {
-                        expectedNumberOfArgs = 2;
-                    }
-                    else if (classBindingNames.length) {
-                        expectedNumberOfArgs = 1;
-                    }
-                    addParam(params, classBindingNames.length > 0, getConstantLiteralFromArray(constantPool, classBindingNames), 1, expectedNumberOfArgs);
-                    addParam(params, styleBindingProps.length > 0, getConstantLiteralFromArray(constantPool, styleBindingProps), 2, expectedNumberOfArgs);
-                    addParam(params, _this._useDefaultSanitizer, importExpr(Identifiers$1.defaultStyleSanitizer), 3, expectedNumberOfArgs);
-                    return params;
-                }
+                params: function () { return []; },
             };
         }
         return null;
@@ -13077,12 +13036,8 @@ var StylingBuilder = /** @class */ (function () {
         return null;
     };
     StylingBuilder.prototype._buildMapBasedInstruction = function (valueConverter, isClassBased, stylingInput) {
-        var totalBindingSlotsRequired = 0;
-        if (compilerIsNewStylingInUse()) {
-            // the old implementation does not reserve slot values for
-            // binding entries. The new one does.
-            totalBindingSlotsRequired++;
-        }
+        // each styling binding value is stored in the LView
+        var totalBindingSlotsRequired = 1;
         // these values must be outside of the update block so that they can
         // be evaluated (the AST visit call) during creation time so that any
         // pipes can be picked up in time before the template is built
@@ -13107,29 +13062,24 @@ var StylingBuilder = /** @class */ (function () {
         };
     };
     StylingBuilder.prototype._buildSingleInputs = function (reference, inputs, mapIndex, allowUnits, valueConverter, getInterpolationExpressionFn) {
-        var totalBindingSlotsRequired = 0;
         return inputs.map(function (input) {
-            var bindingIndex = mapIndex.get(input.name);
             var value = input.value.visit(valueConverter);
+            // each styling binding value is stored in the LView
+            var totalBindingSlotsRequired = 1;
             if (value instanceof Interpolation) {
                 totalBindingSlotsRequired += value.expressions.length;
                 if (getInterpolationExpressionFn) {
                     reference = getInterpolationExpressionFn(value);
                 }
             }
-            if (compilerIsNewStylingInUse()) {
-                // the old implementation does not reserve slot values for
-                // binding entries. The new one does.
-                totalBindingSlotsRequired++;
-            }
             return {
                 sourceSpan: input.sourceSpan,
                 supportsInterpolation: !!getInterpolationExpressionFn,
                 allocateBindingSlots: totalBindingSlotsRequired, reference: reference,
                 params: function (convertFn) {
-                    // min params => stylingProp(elmIndex, bindingIndex, value)
-                    // max params => stylingProp(elmIndex, bindingIndex, value, overrideFlag)
-                    var params = [literal(bindingIndex)];
+                    // params => stylingProp(propName, value)
+                    var params = [];
+                    params.push(literal(input.name));
                     var convertResult = convertFn(value);
                     if (Array.isArray(convertResult)) {
                         params.push.apply(params, __spread(convertResult));
@@ -13137,16 +13087,8 @@ var StylingBuilder = /** @class */ (function () {
                     else {
                         params.push(convertResult);
                     }
-                    if (allowUnits) {
-                        if (input.unit) {
-                            params.push(literal(input.unit));
-                        }
-                        else if (input.hasOverrideFlag) {
-                            params.push(NULL_EXPR);
-                        }
-                    }
-                    if (input.hasOverrideFlag) {
-                        params.push(literal(true));
+                    if (allowUnits && input.unit) {
+                        params.push(literal(input.unit));
                     }
                     return params;
                 }
@@ -13188,7 +13130,7 @@ var StylingBuilder = /** @class */ (function () {
     StylingBuilder.prototype.buildUpdateLevelInstructions = function (valueConverter) {
         var instructions = [];
         if (this.hasBindings) {
-            if (compilerIsNewStylingInUse() && this._useDefaultSanitizer) {
+            if (this._useDefaultSanitizer) {
                 instructions.push(this._buildSanitizerFn());
             }
             var styleMapInstruction = this.buildStyleMapInstruction(valueConverter);
@@ -13226,18 +13168,6 @@ function isStyleSanitizable(prop) {
  */
 function getConstantLiteralFromArray(constantPool, values) {
     return values.length ? constantPool.getConstLiteral(literalArr(values), true) : NULL_EXPR;
-}
-/**
- * Simple helper function that adds a parameter or does nothing at all depending on the provided
- * predicate and totalExpectedArgs values
- */
-function addParam(params, predicate, value, argNumber, totalExpectedArgs) {
-    if (predicate && value) {
-        params.push(value);
-    }
-    else if (argNumber < totalExpectedArgs) {
-        params.push(NULL_EXPR);
-    }
 }
 function parseProperty(name) {
     var hasOverrideFlag = false;
@@ -13310,6 +13240,9 @@ function getStylePropInterpolationExpression(interpolation) {
         default:
             return Identifiers$1.stylePropInterpolateV;
     }
+}
+function normalizePropName(prop) {
+    return hyphenate(prop);
 }
 
 /**
@@ -17539,9 +17472,6 @@ var EMPTY_ARRAY = [];
 // This regex matches any binding names that contain the "attr." prefix, e.g. "attr.required"
 // If there is a match, the first matching group will contain the attribute name to bind.
 var ATTR_REGEX = /attr\.([^\]]+)/;
-function getStylingPrefix(name) {
-    return name.substring(0, 5); // style or class
-}
 function baseDirectiveFields(meta, constantPool, bindingParser) {
     var definitionMap = new DefinitionMap();
     // e.g. `type: MyDirective`
@@ -17962,14 +17892,8 @@ function createViewQueriesFunction(viewQueries, constantPool, name) {
 }
 // Return a host binding function or null if one is not necessary.
 function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindingParser, constantPool, selector, name) {
-    // Initialize hostVarsCount to number of bound host properties (interpolations illegal),
-    // except 'style' and 'class' properties, since they should *not* allocate host var slots
-    var hostVarsCount = Object.keys(hostBindingsMetadata.properties)
-        .filter(function (name) {
-        var prefix = getStylingPrefix(name);
-        return prefix !== 'style' && prefix !== 'class';
-    })
-        .length;
+    // Initialize hostVarsCount to number of bound host properties (interpolations illegal)
+    var hostVarsCount = Object.keys(hostBindingsMetadata.properties).length;
     var elVarExp = variable('elIndex');
     var bindingContext = variable(CONTEXT_NAME);
     var styleBuilder = new StylingBuilder(elVarExp, bindingContext);
@@ -18088,7 +18012,10 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
         // the update block of a component/directive templateFn/hostBindingsFn so that the bindings
         // are evaluated and updated for the element.
         styleBuilder.buildUpdateLevelInstructions(getValueConverter()).forEach(function (instruction) {
-            totalHostVarsCount += instruction.allocateBindingSlots;
+            // we subtract a value of `1` here because the binding slot was already
+            // allocated at the top of this method when all the input bindings were
+            // counted.
+            totalHostVarsCount += Math.max(instruction.allocateBindingSlots - 1, 0);
             updateStatements.push(createStylingStmt(instruction, bindingContext, bindingFn));
         });
     }
@@ -18537,7 +18464,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.2.0-next.2+32.sha-f14693b.with-local-changes');
+var VERSION$1 = new Version('8.2.0-next.2+33.sha-9c954eb.with-local-changes');
 
 /**
  * @license

@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.0-next.2+32.sha-f14693b.with-local-changes
+ * @license Angular v8.2.0-next.2+33.sha-9c954eb.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -11962,18 +11962,6 @@ function hyphenate(value) {
     }).toLowerCase();
 }
 
-/**
-* @license
-* Copyright Google Inc. All Rights Reserved.
-*
-* Use of this source code is governed by an MIT-style license that can be
-* found in the LICENSE file at https://angular.io/license
-*/
-let _stylingMode = 0;
-function compilerIsNewStylingInUse() {
-    return _stylingMode > 0 /* UseOld */;
-}
-
 const IMPORTANT_FLAG = '!important';
 /**
  * Produces creation/update instructions for all styling bindings (class and style)
@@ -12000,7 +11988,7 @@ const IMPORTANT_FLAG = '!important';
  *   classMap(...)
  *   styleProp(...)
  *   classProp(...)
- *   stylingApp(...)
+ *   stylingApply(...)
  * }
  *
  * The creation/update methods within the builder class produce these instructions.
@@ -12095,6 +12083,7 @@ class StylingBuilder {
         if (isEmptyExpression(value)) {
             return null;
         }
+        name = normalizePropName(name);
         const { property, hasOverrideFlag, unit: bindingUnit } = parseProperty(name);
         const entry = {
             name: property,
@@ -12209,36 +12198,7 @@ class StylingBuilder {
                 sourceSpan,
                 allocateBindingSlots: 0,
                 reference: Identifiers$1.styling,
-                params: () => {
-                    // a string array of every style-based binding
-                    const styleBindingProps = this._singleStyleInputs ? this._singleStyleInputs.map(i => literal(i.name)) : [];
-                    // a string array of every class-based binding
-                    const classBindingNames = this._singleClassInputs ? this._singleClassInputs.map(i => literal(i.name)) : [];
-                    // to salvage space in the AOT generated code, there is no point in passing
-                    // in `null` into a param if any follow-up params are not used. Therefore,
-                    // only when a trailing param is used then it will be filled with nulls in between
-                    // (otherwise a shorter amount of params will be filled). The code below helps
-                    // determine how many params are required in the expression code.
-                    //
-                    // min params => styling()
-                    // max params => styling(classBindings, styleBindings, sanitizer)
-                    //
-                    const params = [];
-                    let expectedNumberOfArgs = 0;
-                    if (this._useDefaultSanitizer) {
-                        expectedNumberOfArgs = 3;
-                    }
-                    else if (styleBindingProps.length) {
-                        expectedNumberOfArgs = 2;
-                    }
-                    else if (classBindingNames.length) {
-                        expectedNumberOfArgs = 1;
-                    }
-                    addParam(params, classBindingNames.length > 0, getConstantLiteralFromArray(constantPool, classBindingNames), 1, expectedNumberOfArgs);
-                    addParam(params, styleBindingProps.length > 0, getConstantLiteralFromArray(constantPool, styleBindingProps), 2, expectedNumberOfArgs);
-                    addParam(params, this._useDefaultSanitizer, importExpr(Identifiers$1.defaultStyleSanitizer), 3, expectedNumberOfArgs);
-                    return params;
-                }
+                params: () => [],
             };
         }
         return null;
@@ -12268,12 +12228,8 @@ class StylingBuilder {
         return null;
     }
     _buildMapBasedInstruction(valueConverter, isClassBased, stylingInput) {
-        let totalBindingSlotsRequired = 0;
-        if (compilerIsNewStylingInUse()) {
-            // the old implementation does not reserve slot values for
-            // binding entries. The new one does.
-            totalBindingSlotsRequired++;
-        }
+        // each styling binding value is stored in the LView
+        let totalBindingSlotsRequired = 1;
         // these values must be outside of the update block so that they can
         // be evaluated (the AST visit call) during creation time so that any
         // pipes can be picked up in time before the template is built
@@ -12298,29 +12254,24 @@ class StylingBuilder {
         };
     }
     _buildSingleInputs(reference, inputs, mapIndex, allowUnits, valueConverter, getInterpolationExpressionFn) {
-        let totalBindingSlotsRequired = 0;
         return inputs.map(input => {
-            const bindingIndex = mapIndex.get(input.name);
             const value = input.value.visit(valueConverter);
+            // each styling binding value is stored in the LView
+            let totalBindingSlotsRequired = 1;
             if (value instanceof Interpolation) {
                 totalBindingSlotsRequired += value.expressions.length;
                 if (getInterpolationExpressionFn) {
                     reference = getInterpolationExpressionFn(value);
                 }
             }
-            if (compilerIsNewStylingInUse()) {
-                // the old implementation does not reserve slot values for
-                // binding entries. The new one does.
-                totalBindingSlotsRequired++;
-            }
             return {
                 sourceSpan: input.sourceSpan,
                 supportsInterpolation: !!getInterpolationExpressionFn,
                 allocateBindingSlots: totalBindingSlotsRequired, reference,
                 params: (convertFn) => {
-                    // min params => stylingProp(elmIndex, bindingIndex, value)
-                    // max params => stylingProp(elmIndex, bindingIndex, value, overrideFlag)
-                    const params = [literal(bindingIndex)];
+                    // params => stylingProp(propName, value)
+                    const params = [];
+                    params.push(literal(input.name));
                     const convertResult = convertFn(value);
                     if (Array.isArray(convertResult)) {
                         params.push(...convertResult);
@@ -12328,16 +12279,8 @@ class StylingBuilder {
                     else {
                         params.push(convertResult);
                     }
-                    if (allowUnits) {
-                        if (input.unit) {
-                            params.push(literal(input.unit));
-                        }
-                        else if (input.hasOverrideFlag) {
-                            params.push(NULL_EXPR);
-                        }
-                    }
-                    if (input.hasOverrideFlag) {
-                        params.push(literal(true));
+                    if (allowUnits && input.unit) {
+                        params.push(literal(input.unit));
                     }
                     return params;
                 }
@@ -12379,7 +12322,7 @@ class StylingBuilder {
     buildUpdateLevelInstructions(valueConverter) {
         const instructions = [];
         if (this.hasBindings) {
-            if (compilerIsNewStylingInUse() && this._useDefaultSanitizer) {
+            if (this._useDefaultSanitizer) {
                 instructions.push(this._buildSanitizerFn());
             }
             const styleMapInstruction = this.buildStyleMapInstruction(valueConverter);
@@ -12416,18 +12359,6 @@ function isStyleSanitizable(prop) {
  */
 function getConstantLiteralFromArray(constantPool, values) {
     return values.length ? constantPool.getConstLiteral(literalArr(values), true) : NULL_EXPR;
-}
-/**
- * Simple helper function that adds a parameter or does nothing at all depending on the provided
- * predicate and totalExpectedArgs values
- */
-function addParam(params, predicate, value, argNumber, totalExpectedArgs) {
-    if (predicate && value) {
-        params.push(value);
-    }
-    else if (argNumber < totalExpectedArgs) {
-        params.push(NULL_EXPR);
-    }
 }
 function parseProperty(name) {
     let hasOverrideFlag = false;
@@ -12500,6 +12431,9 @@ function getStylePropInterpolationExpression(interpolation) {
         default:
             return Identifiers$1.stylePropInterpolateV;
     }
+}
+function normalizePropName(prop) {
+    return hyphenate(prop);
 }
 
 /**
@@ -16563,9 +16497,6 @@ const EMPTY_ARRAY = [];
 // This regex matches any binding names that contain the "attr." prefix, e.g. "attr.required"
 // If there is a match, the first matching group will contain the attribute name to bind.
 const ATTR_REGEX = /attr\.([^\]]+)/;
-function getStylingPrefix(name) {
-    return name.substring(0, 5); // style or class
-}
 function baseDirectiveFields(meta, constantPool, bindingParser) {
     const definitionMap = new DefinitionMap();
     // e.g. `type: MyDirective`
@@ -16953,14 +16884,8 @@ function createViewQueriesFunction(viewQueries, constantPool, name) {
 }
 // Return a host binding function or null if one is not necessary.
 function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindingParser, constantPool, selector, name) {
-    // Initialize hostVarsCount to number of bound host properties (interpolations illegal),
-    // except 'style' and 'class' properties, since they should *not* allocate host var slots
-    const hostVarsCount = Object.keys(hostBindingsMetadata.properties)
-        .filter(name => {
-        const prefix = getStylingPrefix(name);
-        return prefix !== 'style' && prefix !== 'class';
-    })
-        .length;
+    // Initialize hostVarsCount to number of bound host properties (interpolations illegal)
+    const hostVarsCount = Object.keys(hostBindingsMetadata.properties).length;
     const elVarExp = variable('elIndex');
     const bindingContext = variable(CONTEXT_NAME);
     const styleBuilder = new StylingBuilder(elVarExp, bindingContext);
@@ -17079,7 +17004,10 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
         // the update block of a component/directive templateFn/hostBindingsFn so that the bindings
         // are evaluated and updated for the element.
         styleBuilder.buildUpdateLevelInstructions(getValueConverter()).forEach(instruction => {
-            totalHostVarsCount += instruction.allocateBindingSlots;
+            // we subtract a value of `1` here because the binding slot was already
+            // allocated at the top of this method when all the input bindings were
+            // counted.
+            totalHostVarsCount += Math.max(instruction.allocateBindingSlots - 1, 0);
             updateStatements.push(createStylingStmt(instruction, bindingContext, bindingFn));
         });
     }
@@ -17504,7 +17432,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.2.0-next.2+32.sha-f14693b.with-local-changes');
+const VERSION$1 = new Version('8.2.0-next.2+33.sha-9c954eb.with-local-changes');
 
 /**
  * @license
