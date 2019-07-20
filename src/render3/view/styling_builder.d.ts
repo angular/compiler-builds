@@ -56,7 +56,7 @@ interface BoundStylingEntry {
  *   classMap(...)
  *   styleProp(...)
  *   classProp(...)
- *   stylingApp(...)
+ *   stylingApply(...)
  * }
  *
  * The creation/update methods within the builder class produce these instructions.
