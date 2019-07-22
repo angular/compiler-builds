@@ -169,12 +169,22 @@ export declare class FunctionCall extends AST {
     constructor(span: ParseSpan, target: AST | null, args: any[]);
     visit(visitor: AstVisitor, context?: any): any;
 }
+/**
+ * Records the absolute position of a text span in a source file, where `start` and `end` are the
+ * starting and ending byte offsets, respectively, of the text span in a source file.
+ */
+export declare class AbsoluteSourceSpan {
+    start: number;
+    end: number;
+    constructor(start: number, end: number);
+}
 export declare class ASTWithSource extends AST {
     ast: AST;
     source: string | null;
     location: string;
     errors: ParserError[];
-    constructor(ast: AST, source: string | null, location: string, errors: ParserError[]);
+    sourceSpan: AbsoluteSourceSpan;
+    constructor(ast: AST, source: string | null, location: string, absoluteOffset: number, errors: ParserError[]);
     visit(visitor: AstVisitor, context?: any): any;
     toString(): string;
 }
