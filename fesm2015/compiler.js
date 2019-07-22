@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.0-next.2+36.sha-8f084d7.with-local-changes
+ * @license Angular v8.2.0-next.2+38.sha-ebc71f7.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3451,6 +3451,8 @@ class ParseSourceSpan {
         return this.start.file.content.substring(this.start.offset, this.end.offset);
     }
 }
+const EMPTY_PARSE_LOCATION = new ParseLocation(new ParseSourceFile('', ''), 0, 0, 0);
+const EMPTY_SOURCE_SPAN = new ParseSourceSpan(EMPTY_PARSE_LOCATION, EMPTY_PARSE_LOCATION);
 var ParseErrorLevel;
 (function (ParseErrorLevel) {
     ParseErrorLevel[ParseErrorLevel["WARNING"] = 0] = "WARNING";
@@ -6596,13 +6598,24 @@ class FunctionCall extends AST {
         return visitor.visitFunctionCall(this, context);
     }
 }
+/**
+ * Records the absolute position of a text span in a source file, where `start` and `end` are the
+ * starting and ending byte offsets, respectively, of the text span in a source file.
+ */
+class AbsoluteSourceSpan {
+    constructor(start, end) {
+        this.start = start;
+        this.end = end;
+    }
+}
 class ASTWithSource extends AST {
-    constructor(ast, source, location, errors) {
+    constructor(ast, source, location, absoluteOffset, errors) {
         super(new ParseSpan(0, source == null ? 0 : source.length));
         this.ast = ast;
         this.source = source;
         this.location = location;
         this.errors = errors;
+        this.sourceSpan = new AbsoluteSourceSpan(absoluteOffset, absoluteOffset + this.span.end);
     }
     visit(visitor, context = null) {
         if (visitor.visitASTWithSource) {
@@ -10786,7 +10799,7 @@ class BindingParser {
             Object.keys(dirMeta.hostProperties).forEach(propName => {
                 const expression = dirMeta.hostProperties[propName];
                 if (typeof expression === 'string') {
-                    this.parsePropertyBinding(propName, expression, true, sourceSpan, [], boundProps);
+                    this.parsePropertyBinding(propName, expression, true, sourceSpan, sourceSpan.start.offset, [], boundProps);
                 }
                 else {
                     this._reportError(`Value of the host property binding "${propName}" needs to be a string representing an expression but got "${expression}" (${typeof expression})`, sourceSpan);
@@ -10821,7 +10834,7 @@ class BindingParser {
     parseInterpolation(value, sourceSpan) {
         const sourceInfo = sourceSpan.start.toString();
         try {
-            const ast = this._exprParser.parseInterpolation(value, sourceInfo, this._interpolationConfig);
+            const ast = this._exprParser.parseInterpolation(value, sourceInfo, sourceSpan.start.offset, this._interpolationConfig);
             if (ast)
                 this._reportExpressionParserErrors(ast.errors, sourceSpan);
             this._checkPipes(ast, sourceSpan);
@@ -10829,11 +10842,11 @@ class BindingParser {
         }
         catch (e) {
             this._reportError(`${e}`, sourceSpan);
-            return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo);
+            return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, sourceSpan.start.offset);
         }
     }
     // Parse an inline template binding. ie `<tag *tplKey="<tplValue>">`
-    parseInlineTemplateBinding(tplKey, tplValue, sourceSpan, targetMatchableAttrs, targetProps, targetVars) {
+    parseInlineTemplateBinding(tplKey, tplValue, sourceSpan, absoluteOffset, targetMatchableAttrs, targetProps, targetVars) {
         const bindings = this._parseTemplateBindings(tplKey, tplValue, sourceSpan);
         for (let i = 0; i < bindings.length; i++) {
             const binding = bindings[i];
@@ -10845,14 +10858,14 @@ class BindingParser {
             }
             else {
                 targetMatchableAttrs.push([binding.key, '']);
-                this.parseLiteralAttr(binding.key, null, sourceSpan, targetMatchableAttrs, targetProps);
+                this.parseLiteralAttr(binding.key, null, sourceSpan, absoluteOffset, targetMatchableAttrs, targetProps);
             }
         }
     }
     _parseTemplateBindings(tplKey, tplValue, sourceSpan) {
         const sourceInfo = sourceSpan.start.toString();
         try {
-            const bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceInfo);
+            const bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceInfo, sourceSpan.start.offset);
             this._reportExpressionParserErrors(bindingsResult.errors, sourceSpan);
             bindingsResult.templateBindings.forEach((binding) => {
                 if (binding.expression) {
@@ -10867,20 +10880,20 @@ class BindingParser {
             return [];
         }
     }
-    parseLiteralAttr(name, value, sourceSpan, targetMatchableAttrs, targetProps) {
+    parseLiteralAttr(name, value, sourceSpan, absoluteOffset, targetMatchableAttrs, targetProps) {
         if (isAnimationLabel(name)) {
             name = name.substring(1);
             if (value) {
                 this._reportError(`Assigning animation triggers via @prop="exp" attributes with an expression is invalid.` +
                     ` Use property bindings (e.g. [@prop]="exp") or use an attribute without a value (e.g. @prop) instead.`, sourceSpan, ParseErrorLevel.ERROR);
             }
-            this._parseAnimation(name, value, sourceSpan, targetMatchableAttrs, targetProps);
+            this._parseAnimation(name, value, sourceSpan, absoluteOffset, targetMatchableAttrs, targetProps);
         }
         else {
-            targetProps.push(new ParsedProperty(name, this._exprParser.wrapLiteralPrimitive(value, ''), ParsedPropertyType.LITERAL_ATTR, sourceSpan));
+            targetProps.push(new ParsedProperty(name, this._exprParser.wrapLiteralPrimitive(value, '', absoluteOffset), ParsedPropertyType.LITERAL_ATTR, sourceSpan));
         }
     }
-    parsePropertyBinding(name, expression, isHost, sourceSpan, targetMatchableAttrs, targetProps) {
+    parsePropertyBinding(name, expression, isHost, sourceSpan, absoluteOffset, targetMatchableAttrs, targetProps) {
         let isAnimationProp = false;
         if (name.startsWith(ANIMATE_PROP_PREFIX)) {
             isAnimationProp = true;
@@ -10891,10 +10904,10 @@ class BindingParser {
             name = name.substring(1);
         }
         if (isAnimationProp) {
-            this._parseAnimation(name, expression, sourceSpan, targetMatchableAttrs, targetProps);
+            this._parseAnimation(name, expression, sourceSpan, absoluteOffset, targetMatchableAttrs, targetProps);
         }
         else {
-            this._parsePropertyAst(name, this._parseBinding(expression, isHost, sourceSpan), sourceSpan, targetMatchableAttrs, targetProps);
+            this._parsePropertyAst(name, this._parseBinding(expression, isHost, sourceSpan, absoluteOffset), sourceSpan, targetMatchableAttrs, targetProps);
         }
     }
     parsePropertyInterpolation(name, value, sourceSpan, targetMatchableAttrs, targetProps) {
@@ -10909,20 +10922,20 @@ class BindingParser {
         targetMatchableAttrs.push([name, ast.source]);
         targetProps.push(new ParsedProperty(name, ast, ParsedPropertyType.DEFAULT, sourceSpan));
     }
-    _parseAnimation(name, expression, sourceSpan, targetMatchableAttrs, targetProps) {
+    _parseAnimation(name, expression, sourceSpan, absoluteOffset, targetMatchableAttrs, targetProps) {
         // This will occur when a @trigger is not paired with an expression.
         // For animations it is valid to not have an expression since */void
         // states will be applied by angular when the element is attached/detached
-        const ast = this._parseBinding(expression || 'undefined', false, sourceSpan);
+        const ast = this._parseBinding(expression || 'undefined', false, sourceSpan, absoluteOffset);
         targetMatchableAttrs.push([name, ast.source]);
         targetProps.push(new ParsedProperty(name, ast, ParsedPropertyType.ANIMATION, sourceSpan));
     }
-    _parseBinding(value, isHostBinding, sourceSpan) {
+    _parseBinding(value, isHostBinding, sourceSpan, absoluteOffset) {
         const sourceInfo = (sourceSpan && sourceSpan.start || '(unknown)').toString();
         try {
             const ast = isHostBinding ?
-                this._exprParser.parseSimpleBinding(value, sourceInfo, this._interpolationConfig) :
-                this._exprParser.parseBinding(value, sourceInfo, this._interpolationConfig);
+                this._exprParser.parseSimpleBinding(value, sourceInfo, absoluteOffset, this._interpolationConfig) :
+                this._exprParser.parseBinding(value, sourceInfo, absoluteOffset, this._interpolationConfig);
             if (ast)
                 this._reportExpressionParserErrors(ast.errors, sourceSpan);
             this._checkPipes(ast, sourceSpan);
@@ -10930,7 +10943,7 @@ class BindingParser {
         }
         catch (e) {
             this._reportError(`${e}`, sourceSpan);
-            return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo);
+            return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, absoluteOffset);
         }
     }
     createBoundElementProperty(elementSelector, boundProp, skipValidation = false, mapPropertyName = true) {
@@ -11026,21 +11039,22 @@ class BindingParser {
     }
     _parseAction(value, sourceSpan) {
         const sourceInfo = (sourceSpan && sourceSpan.start || '(unknown').toString();
+        const absoluteOffset = (sourceSpan && sourceSpan.start) ? sourceSpan.start.offset : 0;
         try {
-            const ast = this._exprParser.parseAction(value, sourceInfo, this._interpolationConfig);
+            const ast = this._exprParser.parseAction(value, sourceInfo, absoluteOffset, this._interpolationConfig);
             if (ast) {
                 this._reportExpressionParserErrors(ast.errors, sourceSpan);
             }
             if (!ast || ast.ast instanceof EmptyExpr) {
                 this._reportError(`Empty expressions are not allowed`, sourceSpan);
-                return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo);
+                return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, absoluteOffset);
             }
             this._checkPipes(ast, sourceSpan);
             return ast;
         }
         catch (e) {
             this._reportError(`${e}`, sourceSpan);
-            return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo);
+            return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, absoluteOffset);
         }
     }
     _reportError(message, sourceSpan, level = ParseErrorLevel.ERROR) {
@@ -11419,7 +11433,7 @@ class TemplateParseVisitor {
                 }
                 hasInlineTemplates = true;
                 const parsedVariables = [];
-                this._bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attr.sourceSpan, templateMatchableAttrs, templateElementOrDirectiveProps, parsedVariables);
+                this._bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attr.sourceSpan, attr.sourceSpan.start.offset, templateMatchableAttrs, templateElementOrDirectiveProps, parsedVariables);
                 templateElementVars.push(...parsedVariables.map(v => VariableAst.fromParsedVariable(v)));
             }
             if (!hasBinding && !hasTemplateBinding) {
@@ -11483,13 +11497,14 @@ class TemplateParseVisitor {
         const name = this._normalizeAttributeName(attr.name);
         const value = attr.value;
         const srcSpan = attr.sourceSpan;
+        const absoluteOffset = attr.valueSpan ? attr.valueSpan.start.offset : srcSpan.start.offset;
         const boundEvents = [];
         const bindParts = name.match(BIND_NAME_REGEXP);
         let hasBinding = false;
         if (bindParts !== null) {
             hasBinding = true;
             if (bindParts[KW_BIND_IDX] != null) {
-                this._bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX], value, false, srcSpan, targetMatchableAttrs, targetProps);
+                this._bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX], value, false, srcSpan, absoluteOffset, targetMatchableAttrs, targetProps);
             }
             else if (bindParts[KW_LET_IDX]) {
                 if (isTemplateElement) {
@@ -11508,18 +11523,18 @@ class TemplateParseVisitor {
                 this._bindingParser.parseEvent(bindParts[IDENT_KW_IDX], value, srcSpan, attr.valueSpan || srcSpan, targetMatchableAttrs, boundEvents);
             }
             else if (bindParts[KW_BINDON_IDX]) {
-                this._bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX], value, false, srcSpan, targetMatchableAttrs, targetProps);
+                this._bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX], value, false, srcSpan, absoluteOffset, targetMatchableAttrs, targetProps);
                 this._parseAssignmentEvent(bindParts[IDENT_KW_IDX], value, srcSpan, attr.valueSpan || srcSpan, targetMatchableAttrs, boundEvents);
             }
             else if (bindParts[KW_AT_IDX]) {
-                this._bindingParser.parseLiteralAttr(name, value, srcSpan, targetMatchableAttrs, targetProps);
+                this._bindingParser.parseLiteralAttr(name, value, srcSpan, absoluteOffset, targetMatchableAttrs, targetProps);
             }
             else if (bindParts[IDENT_BANANA_BOX_IDX]) {
-                this._bindingParser.parsePropertyBinding(bindParts[IDENT_BANANA_BOX_IDX], value, false, srcSpan, targetMatchableAttrs, targetProps);
+                this._bindingParser.parsePropertyBinding(bindParts[IDENT_BANANA_BOX_IDX], value, false, srcSpan, absoluteOffset, targetMatchableAttrs, targetProps);
                 this._parseAssignmentEvent(bindParts[IDENT_BANANA_BOX_IDX], value, srcSpan, attr.valueSpan || srcSpan, targetMatchableAttrs, boundEvents);
             }
             else if (bindParts[IDENT_PROPERTY_IDX]) {
-                this._bindingParser.parsePropertyBinding(bindParts[IDENT_PROPERTY_IDX], value, false, srcSpan, targetMatchableAttrs, targetProps);
+                this._bindingParser.parsePropertyBinding(bindParts[IDENT_PROPERTY_IDX], value, false, srcSpan, absoluteOffset, targetMatchableAttrs, targetProps);
             }
             else if (bindParts[IDENT_EVENT_IDX]) {
                 this._bindingParser.parseEvent(bindParts[IDENT_EVENT_IDX], value, srcSpan, attr.valueSpan || srcSpan, targetMatchableAttrs, boundEvents);
@@ -11529,7 +11544,7 @@ class TemplateParseVisitor {
             hasBinding = this._bindingParser.parsePropertyInterpolation(name, value, srcSpan, targetMatchableAttrs, targetProps);
         }
         if (!hasBinding) {
-            this._bindingParser.parseLiteralAttr(name, value, srcSpan, targetMatchableAttrs, targetProps);
+            this._bindingParser.parseLiteralAttr(name, value, srcSpan, absoluteOffset, targetMatchableAttrs, targetProps);
         }
         targetEvents.push(...boundEvents.map(e => BoundEventAst.fromParsedEvent(e)));
         return hasBinding;
@@ -12813,30 +12828,30 @@ class Parser$1 {
         this._lexer = _lexer;
         this.errors = [];
     }
-    parseAction(input, location, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+    parseAction(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
         this._checkNoInterpolation(input, location, interpolationConfig);
         const sourceToLex = this._stripComments(input);
         const tokens = this._lexer.tokenize(this._stripComments(input));
-        const ast = new _ParseAST(input, location, tokens, sourceToLex.length, true, this.errors, input.length - sourceToLex.length)
+        const ast = new _ParseAST(input, location, absoluteOffset, tokens, sourceToLex.length, true, this.errors, input.length - sourceToLex.length)
             .parseChain();
-        return new ASTWithSource(ast, input, location, this.errors);
+        return new ASTWithSource(ast, input, location, absoluteOffset, this.errors);
     }
-    parseBinding(input, location, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        const ast = this._parseBindingAst(input, location, interpolationConfig);
-        return new ASTWithSource(ast, input, location, this.errors);
+    parseBinding(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+        const ast = this._parseBindingAst(input, location, absoluteOffset, interpolationConfig);
+        return new ASTWithSource(ast, input, location, absoluteOffset, this.errors);
     }
-    parseSimpleBinding(input, location, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        const ast = this._parseBindingAst(input, location, interpolationConfig);
+    parseSimpleBinding(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+        const ast = this._parseBindingAst(input, location, absoluteOffset, interpolationConfig);
         const errors = SimpleExpressionChecker.check(ast);
         if (errors.length > 0) {
             this._reportError(`Host binding expression cannot contain ${errors.join(' ')}`, input, location);
         }
-        return new ASTWithSource(ast, input, location, this.errors);
+        return new ASTWithSource(ast, input, location, absoluteOffset, this.errors);
     }
     _reportError(message, input, errLocation, ctxLocation) {
         this.errors.push(new ParserError(message, input, errLocation, ctxLocation));
     }
-    _parseBindingAst(input, location, interpolationConfig) {
+    _parseBindingAst(input, location, absoluteOffset, interpolationConfig) {
         // Quotes expressions use 3rd-party expression language. We don't want to use
         // our lexer or parser for that, so we check for that ahead of time.
         const quote = this._parseQuote(input, location);
@@ -12846,7 +12861,7 @@ class Parser$1 {
         this._checkNoInterpolation(input, location, interpolationConfig);
         const sourceToLex = this._stripComments(input);
         const tokens = this._lexer.tokenize(sourceToLex);
-        return new _ParseAST(input, location, tokens, sourceToLex.length, false, this.errors, input.length - sourceToLex.length)
+        return new _ParseAST(input, location, absoluteOffset, tokens, sourceToLex.length, false, this.errors, input.length - sourceToLex.length)
             .parseChain();
     }
     _parseQuote(input, location) {
@@ -12861,12 +12876,12 @@ class Parser$1 {
         const uninterpretedExpression = input.substring(prefixSeparatorIndex + 1);
         return new Quote(new ParseSpan(0, input.length), prefix, uninterpretedExpression, location);
     }
-    parseTemplateBindings(tplKey, tplValue, location) {
+    parseTemplateBindings(tplKey, tplValue, location, absoluteOffset) {
         const tokens = this._lexer.tokenize(tplValue);
-        return new _ParseAST(tplValue, location, tokens, tplValue.length, false, this.errors, 0)
+        return new _ParseAST(tplValue, location, absoluteOffset, tokens, tplValue.length, false, this.errors, 0)
             .parseTemplateBindings(tplKey);
     }
-    parseInterpolation(input, location, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+    parseInterpolation(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
         const split = this.splitInterpolation(input, location, interpolationConfig);
         if (split == null)
             return null;
@@ -12875,11 +12890,11 @@ class Parser$1 {
             const expressionText = split.expressions[i];
             const sourceToLex = this._stripComments(expressionText);
             const tokens = this._lexer.tokenize(sourceToLex);
-            const ast = new _ParseAST(input, location, tokens, sourceToLex.length, false, this.errors, split.offsets[i] + (expressionText.length - sourceToLex.length))
+            const ast = new _ParseAST(input, location, absoluteOffset, tokens, sourceToLex.length, false, this.errors, split.offsets[i] + (expressionText.length - sourceToLex.length))
                 .parseChain();
             expressions.push(ast);
         }
-        return new ASTWithSource(new Interpolation(new ParseSpan(0, input == null ? 0 : input.length), split.strings, expressions), input, location, this.errors);
+        return new ASTWithSource(new Interpolation(new ParseSpan(0, input == null ? 0 : input.length), split.strings, expressions), input, location, absoluteOffset, this.errors);
     }
     splitInterpolation(input, location, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
         const regexp = _createInterpolateRegExp(interpolationConfig);
@@ -12912,8 +12927,8 @@ class Parser$1 {
         }
         return new SplitInterpolation(strings, expressions, offsets);
     }
-    wrapLiteralPrimitive(input, location) {
-        return new ASTWithSource(new LiteralPrimitive(new ParseSpan(0, input == null ? 0 : input.length), input), input, location, this.errors);
+    wrapLiteralPrimitive(input, location, absoluteOffset) {
+        return new ASTWithSource(new LiteralPrimitive(new ParseSpan(0, input == null ? 0 : input.length), input), input, location, absoluteOffset, this.errors);
     }
     _stripComments(input) {
         const i = this._commentStart(input);
@@ -12953,9 +12968,10 @@ class Parser$1 {
     }
 }
 class _ParseAST {
-    constructor(input, location, tokens, inputLength, parseAction, errors, offset) {
+    constructor(input, location, absoluteOffset, tokens, inputLength, parseAction, errors, offset) {
         this.input = input;
         this.location = location;
+        this.absoluteOffset = absoluteOffset;
         this.tokens = tokens;
         this.inputLength = inputLength;
         this.parseAction = parseAction;
@@ -13429,7 +13445,8 @@ class _ParseAST {
                 const start = this.inputIndex;
                 const ast = this.parsePipe();
                 const source = this.input.substring(start - this.offset, this.inputIndex - this.offset);
-                expression = new ASTWithSource(ast, source, this.location, this.errors);
+                expression =
+                    new ASTWithSource(ast, source, this.location, this.absoluteOffset, this.errors);
             }
             bindings.push(new TemplateBinding(this.span(start), key, isVar, name, expression));
             if (this.peekKeywordAs() && !isVar) {
@@ -14090,7 +14107,9 @@ class HtmlAstToIvyAst {
                 const templateValue = attribute.value;
                 const templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX$1.length);
                 const parsedVariables = [];
-                this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, [], templateParsedProperties, parsedVariables);
+                const absoluteOffset = attribute.valueSpan ? attribute.valueSpan.start.offset :
+                    attribute.sourceSpan.start.offset;
+                this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, absoluteOffset, [], templateParsedProperties, parsedVariables);
                 templateVariables.push(...parsedVariables.map(v => new Variable(v.name, v.value, v.sourceSpan)));
             }
             else {
@@ -14202,12 +14221,13 @@ class HtmlAstToIvyAst {
         const name = normalizeAttributeName(attribute.name);
         const value = attribute.value;
         const srcSpan = attribute.sourceSpan;
+        const absoluteOffset = attribute.valueSpan ? attribute.valueSpan.start.offset : srcSpan.start.offset;
         const bindParts = name.match(BIND_NAME_REGEXP$1);
         let hasBinding = false;
         if (bindParts) {
             hasBinding = true;
             if (bindParts[KW_BIND_IDX$1] != null) {
-                this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX$1], value, false, srcSpan, matchableAttributes, parsedProperties);
+                this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX$1], value, false, srcSpan, absoluteOffset, matchableAttributes, parsedProperties);
             }
             else if (bindParts[KW_LET_IDX$1]) {
                 if (isTemplateElement) {
@@ -14228,18 +14248,18 @@ class HtmlAstToIvyAst {
                 addEvents(events, boundEvents);
             }
             else if (bindParts[KW_BINDON_IDX$1]) {
-                this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX$1], value, false, srcSpan, matchableAttributes, parsedProperties);
+                this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX$1], value, false, srcSpan, absoluteOffset, matchableAttributes, parsedProperties);
                 this.parseAssignmentEvent(bindParts[IDENT_KW_IDX$1], value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents);
             }
             else if (bindParts[KW_AT_IDX$1]) {
-                this.bindingParser.parseLiteralAttr(name, value, srcSpan, matchableAttributes, parsedProperties);
+                this.bindingParser.parseLiteralAttr(name, value, srcSpan, absoluteOffset, matchableAttributes, parsedProperties);
             }
             else if (bindParts[IDENT_BANANA_BOX_IDX$1]) {
-                this.bindingParser.parsePropertyBinding(bindParts[IDENT_BANANA_BOX_IDX$1], value, false, srcSpan, matchableAttributes, parsedProperties);
+                this.bindingParser.parsePropertyBinding(bindParts[IDENT_BANANA_BOX_IDX$1], value, false, srcSpan, absoluteOffset, matchableAttributes, parsedProperties);
                 this.parseAssignmentEvent(bindParts[IDENT_BANANA_BOX_IDX$1], value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents);
             }
             else if (bindParts[IDENT_PROPERTY_IDX$1]) {
-                this.bindingParser.parsePropertyBinding(bindParts[IDENT_PROPERTY_IDX$1], value, false, srcSpan, matchableAttributes, parsedProperties);
+                this.bindingParser.parsePropertyBinding(bindParts[IDENT_PROPERTY_IDX$1], value, false, srcSpan, absoluteOffset, matchableAttributes, parsedProperties);
             }
             else if (bindParts[IDENT_EVENT_IDX$1]) {
                 const events = [];
@@ -17432,7 +17452,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.2.0-next.2+36.sha-8f084d7.with-local-changes');
+const VERSION$1 = new Version('8.2.0-next.2+38.sha-ebc71f7.with-local-changes');
 
 /**
  * @license
@@ -26707,5 +26727,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, DYNAMIC_TYPE, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, literalMap, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, STRING_TYPE, TypeofExpr, collectExternalReferences, EmitterVisitorContext, JitEvaluator, ViewCompiler, findStaticQueryIds, staticViewQueryIds, getParseErrors, isSyntaxError, syntaxError, Version, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileBaseDefFromMetadata, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, verifyHostBindings, publishFacade, VERSION$1 as VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor$1 as RecursiveAstVisitor, AstTransformer$1 as AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType$1 as TokenType, Lexer, Token$1 as Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser$1 as Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text$3 as Text, Expansion, ExpansionCase, Attribute, Element$1 as Element, Comment, visitAll$1 as visitAll, RecursiveVisitor$1 as RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, r3JitTypeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, HOST_ATTR, CONTENT_ATTR, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, isEmptyExpression, compileInjectable, R3TargetBinder, R3BoundTarget };
+export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, DYNAMIC_TYPE, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, literalMap, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, STRING_TYPE, TypeofExpr, collectExternalReferences, EmitterVisitorContext, JitEvaluator, ViewCompiler, findStaticQueryIds, staticViewQueryIds, getParseErrors, isSyntaxError, syntaxError, Version, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileBaseDefFromMetadata, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, verifyHostBindings, publishFacade, VERSION$1 as VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, AbsoluteSourceSpan, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor$1 as RecursiveAstVisitor, AstTransformer$1 as AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType$1 as TokenType, Lexer, Token$1 as Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser$1 as Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text$3 as Text, Expansion, ExpansionCase, Attribute, Element$1 as Element, Comment, visitAll$1 as visitAll, RecursiveVisitor$1 as RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, EMPTY_PARSE_LOCATION, EMPTY_SOURCE_SPAN, ParseErrorLevel, ParseError, typeSourceSpan, r3JitTypeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, HOST_ATTR, CONTENT_ATTR, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, isEmptyExpression, compileInjectable, R3TargetBinder, R3BoundTarget };
 //# sourceMappingURL=compiler.js.map
