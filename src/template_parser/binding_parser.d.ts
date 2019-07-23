@@ -29,10 +29,10 @@ export declare class BindingParser {
     createDirectiveHostPropertyAsts(dirMeta: CompileDirectiveSummary, elementSelector: string, sourceSpan: ParseSourceSpan): BoundElementProperty[] | null;
     createDirectiveHostEventAsts(dirMeta: CompileDirectiveSummary, sourceSpan: ParseSourceSpan): ParsedEvent[] | null;
     parseInterpolation(value: string, sourceSpan: ParseSourceSpan): ASTWithSource;
-    parseInlineTemplateBinding(tplKey: string, tplValue: string, sourceSpan: ParseSourceSpan, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], targetVars: ParsedVariable[]): void;
+    parseInlineTemplateBinding(tplKey: string, tplValue: string, sourceSpan: ParseSourceSpan, absoluteOffset: number, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], targetVars: ParsedVariable[]): void;
     private _parseTemplateBindings;
-    parseLiteralAttr(name: string, value: string | null, sourceSpan: ParseSourceSpan, targetMatchableAttrs: string[][], targetProps: ParsedProperty[]): void;
-    parsePropertyBinding(name: string, expression: string, isHost: boolean, sourceSpan: ParseSourceSpan, targetMatchableAttrs: string[][], targetProps: ParsedProperty[]): void;
+    parseLiteralAttr(name: string, value: string | null, sourceSpan: ParseSourceSpan, absoluteOffset: number, targetMatchableAttrs: string[][], targetProps: ParsedProperty[]): void;
+    parsePropertyBinding(name: string, expression: string, isHost: boolean, sourceSpan: ParseSourceSpan, absoluteOffset: number, targetMatchableAttrs: string[][], targetProps: ParsedProperty[]): void;
     parsePropertyInterpolation(name: string, value: string, sourceSpan: ParseSourceSpan, targetMatchableAttrs: string[][], targetProps: ParsedProperty[]): boolean;
     private _parsePropertyAst;
     private _parseAnimation;
