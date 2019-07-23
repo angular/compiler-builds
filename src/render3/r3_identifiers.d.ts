@@ -120,6 +120,7 @@ export declare class Identifiers {
     static reference: o.ExternalReference;
     static inject: o.ExternalReference;
     static injectAttribute: o.ExternalReference;
+    static injectPipeChangeDetectorRef: o.ExternalReference;
     static directiveInject: o.ExternalReference;
     static templateRefExtractor: o.ExternalReference;
     static resolveWindow: o.ExternalReference;

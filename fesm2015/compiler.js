@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.0-next.2+47.sha-f50dede.with-local-changes
+ * @license Angular v8.2.0-next.2+51.sha-24ca582.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2012,7 +2012,7 @@ class _ApplySourceSpanTransformer extends AstTransformer {
     }
     _clone(obj) {
         const clone = Object.create(obj.constructor.prototype);
-        for (let prop in obj) {
+        for (let prop of Object.keys(obj)) {
             clone[prop] = obj[prop];
         }
         return clone;
@@ -3193,6 +3193,7 @@ Identifiers$1.projectionDef = { name: 'ɵɵprojectionDef', moduleName: CORE$1 };
 Identifiers$1.reference = { name: 'ɵɵreference', moduleName: CORE$1 };
 Identifiers$1.inject = { name: 'ɵɵinject', moduleName: CORE$1 };
 Identifiers$1.injectAttribute = { name: 'ɵɵinjectAttribute', moduleName: CORE$1 };
+Identifiers$1.injectPipeChangeDetectorRef = { name: 'ɵɵinjectPipeChangeDetectorRef', moduleName: CORE$1 };
 Identifiers$1.directiveInject = { name: 'ɵɵdirectiveInject', moduleName: CORE$1 };
 Identifiers$1.templateRefExtractor = { name: 'ɵɵtemplateRefExtractor', moduleName: CORE$1 };
 Identifiers$1.resolveWindow = { name: 'ɵɵresolveWindow', moduleName: CORE$1 };
@@ -4843,11 +4844,15 @@ var R3ResolvedDependencyType;
      * The token expression is a string representing the attribute name.
      */
     R3ResolvedDependencyType[R3ResolvedDependencyType["Attribute"] = 1] = "Attribute";
+    /**
+     * Injecting the `ChangeDetectorRef` token. Needs special handling when injected into a pipe.
+     */
+    R3ResolvedDependencyType[R3ResolvedDependencyType["ChangeDetectorRef"] = 2] = "ChangeDetectorRef";
 })(R3ResolvedDependencyType || (R3ResolvedDependencyType = {}));
 /**
  * Construct a factory function expression for the given `R3FactoryMetadata`.
  */
-function compileFactoryFunction(meta) {
+function compileFactoryFunction(meta, isPipe = false) {
     const t = variable('t');
     const statements = [];
     // The type to instantiate via constructor invocation. If there is no delegated factory, meaning
@@ -4860,7 +4865,8 @@ function compileFactoryFunction(meta) {
     if (meta.deps !== null) {
         // There is a constructor (either explicitly or implicitly defined).
         if (meta.deps !== 'invalid') {
-            ctorExpr = new InstantiateExpr(typeForCtor, injectDependencies(meta.deps, meta.injectFn));
+            ctorExpr =
+                new InstantiateExpr(typeForCtor, injectDependencies(meta.deps, meta.injectFn, isPipe));
         }
     }
     else {
@@ -4904,7 +4910,7 @@ function compileFactoryFunction(meta) {
     else if (isDelegatedMetadata(meta)) {
         // This type is created with a delegated factory. If a type parameter is not specified, call
         // the factory instead.
-        const delegateArgs = injectDependencies(meta.delegateDeps, meta.injectFn);
+        const delegateArgs = injectDependencies(meta.delegateDeps, meta.injectFn, isPipe);
         // Either call `new delegate(...)` or `delegate(...)` depending on meta.useNewForDelegate.
         const factoryExpr = new (meta.delegateType === R3FactoryDelegateType.Class ?
             InstantiateExpr :
@@ -4929,27 +4935,32 @@ function compileFactoryFunction(meta) {
         statements,
     };
 }
-function injectDependencies(deps, injectFn) {
-    return deps.map(dep => compileInjectDependency(dep, injectFn));
+function injectDependencies(deps, injectFn, isPipe) {
+    return deps.map(dep => compileInjectDependency(dep, injectFn, isPipe));
 }
-function compileInjectDependency(dep, injectFn) {
+function compileInjectDependency(dep, injectFn, isPipe) {
     // Interpret the dependency according to its resolved type.
     switch (dep.resolved) {
-        case R3ResolvedDependencyType.Token: {
+        case R3ResolvedDependencyType.Token:
+        case R3ResolvedDependencyType.ChangeDetectorRef:
             // Build up the injection flags according to the metadata.
             const flags = 0 /* Default */ | (dep.self ? 2 /* Self */ : 0) |
                 (dep.skipSelf ? 4 /* SkipSelf */ : 0) | (dep.host ? 1 /* Host */ : 0) |
                 (dep.optional ? 8 /* Optional */ : 0);
-            // Build up the arguments to the injectFn call.
-            const injectArgs = [dep.token];
             // If this dependency is optional or otherwise has non-default flags, then additional
             // parameters describing how to inject the dependency must be passed to the inject function
             // that's being used.
-            if (flags !== 0 /* Default */ || dep.optional) {
-                injectArgs.push(literal(flags));
+            let flagsParam = (flags !== 0 /* Default */ || dep.optional) ? literal(flags) : null;
+            // We have a separate instruction for injecting ChangeDetectorRef into a pipe.
+            if (isPipe && dep.resolved === R3ResolvedDependencyType.ChangeDetectorRef) {
+                return importExpr(Identifiers$1.injectPipeChangeDetectorRef).callFn(flagsParam ? [flagsParam] : []);
+            }
+            // Build up the arguments to the injectFn call.
+            const injectArgs = [dep.token];
+            if (flagsParam) {
+                injectArgs.push(flagsParam);
             }
             return importExpr(injectFn).callFn(injectArgs);
-        }
         case R3ResolvedDependencyType.Attribute:
             // In the case of attributes, the attribute name in question is given as the token.
             return importExpr(Identifiers$1.injectAttribute).callFn([dep.token]);
@@ -6314,7 +6325,7 @@ function compilePipeFromMetadata(metadata) {
         type: metadata.type,
         deps: metadata.deps,
         injectFn: Identifiers$1.directiveInject,
-    });
+    }, true);
     definitionMapValues.push({ key: 'factory', value: templateFactory.factory, quoted: false });
     // e.g. `pure: true`
     definitionMapValues.push({ key: 'pure', value: literal(metadata.pure), quoted: false });
@@ -17452,7 +17463,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.2.0-next.2+47.sha-f50dede.with-local-changes');
+const VERSION$1 = new Version('8.2.0-next.2+51.sha-24ca582.with-local-changes');
 
 /**
  * @license
