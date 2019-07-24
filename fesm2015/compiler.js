@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.0-next.2+77.sha-716af10.with-local-changes
+ * @license Angular v8.2.0-next.2+83.sha-2c402d5.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16810,11 +16810,10 @@ function selectorsFromGlobalMetadata(selectors, outputCtx) {
     return NULL_EXPR;
 }
 function prepareQueryParams(query, constantPool) {
-    const parameters = [
-        getQueryPredicate(query, constantPool),
-        literal(query.descendants),
-        query.read || literal(null),
-    ];
+    const parameters = [getQueryPredicate(query, constantPool), literal(query.descendants)];
+    if (query.read) {
+        parameters.push(query.read);
+    }
     return parameters;
 }
 // Turn a directive selector into an R3-compatible selector for directive def
@@ -16835,10 +16834,11 @@ function createContentQueriesFunction(queries, constantPool, name) {
     const updateStatements = [];
     const tempAllocator = temporaryAllocator(updateStatements, TEMPORARY_NAME);
     for (const query of queries) {
-        // creation, e.g. r3.contentQuery(dirIndex, somePredicate, true, null);
-        const args = [variable('dirIndex'), ...prepareQueryParams(query, constantPool)];
         const queryInstruction = query.static ? Identifiers$1.staticContentQuery : Identifiers$1.contentQuery;
-        createStatements.push(importExpr(queryInstruction).callFn(args).toStmt());
+        // creation, e.g. r3.contentQuery(dirIndex, somePredicate, true, null);
+        createStatements.push(importExpr(queryInstruction)
+            .callFn([variable('dirIndex'), ...prepareQueryParams(query, constantPool)])
+            .toStmt());
         // update, e.g. (r3.queryRefresh(tmp = r3.loadContentQuery()) && (ctx.someDir = tmp));
         const temporary = tempAllocator();
         const getQueryList = importExpr(Identifiers$1.loadContentQuery).callFn([]);
@@ -17463,7 +17463,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.2.0-next.2+77.sha-716af10.with-local-changes');
+const VERSION$1 = new Version('8.2.0-next.2+83.sha-2c402d5.with-local-changes');
 
 /**
  * @license
