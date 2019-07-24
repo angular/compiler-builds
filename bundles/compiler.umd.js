@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.0-next.2+46.sha-0e68c7e.with-local-changes
+ * @license Angular v8.2.0-next.2+55.sha-f69e4e6.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2286,9 +2286,20 @@
             return _this;
         }
         _ApplySourceSpanTransformer.prototype._clone = function (obj) {
+            var e_1, _a;
             var clone = Object.create(obj.constructor.prototype);
-            for (var prop in obj) {
-                clone[prop] = obj[prop];
+            try {
+                for (var _b = __values(Object.keys(obj)), _c = _b.next(); !_c.done; _c = _b.next()) {
+                    var prop = _c.value;
+                    clone[prop] = obj[prop];
+                }
+            }
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+                }
+                finally { if (e_1) throw e_1.error; }
             }
             return clone;
         };
@@ -2371,7 +2382,7 @@
         return out;
     }
     function serializeTags(tags) {
-        var e_1, _a;
+        var e_2, _a;
         if (tags.length === 0)
             return '';
         var out = '*\n';
@@ -2384,12 +2395,12 @@
                 out += '\n';
             }
         }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        catch (e_2_1) { e_2 = { error: e_2_1 }; }
         finally {
             try {
                 if (tags_1_1 && !tags_1_1.done && (_a = tags_1.return)) _a.call(tags_1);
             }
-            finally { if (e_1) throw e_1.error; }
+            finally { if (e_2) throw e_2.error; }
         }
         out += ' ';
         return out;
@@ -3531,6 +3542,7 @@
         Identifiers.reference = { name: 'ɵɵreference', moduleName: CORE$1 };
         Identifiers.inject = { name: 'ɵɵinject', moduleName: CORE$1 };
         Identifiers.injectAttribute = { name: 'ɵɵinjectAttribute', moduleName: CORE$1 };
+        Identifiers.injectPipeChangeDetectorRef = { name: 'ɵɵinjectPipeChangeDetectorRef', moduleName: CORE$1 };
         Identifiers.directiveInject = { name: 'ɵɵdirectiveInject', moduleName: CORE$1 };
         Identifiers.templateRefExtractor = { name: 'ɵɵtemplateRefExtractor', moduleName: CORE$1 };
         Identifiers.resolveWindow = { name: 'ɵɵresolveWindow', moduleName: CORE$1 };
@@ -5290,11 +5302,16 @@
          * The token expression is a string representing the attribute name.
          */
         R3ResolvedDependencyType[R3ResolvedDependencyType["Attribute"] = 1] = "Attribute";
+        /**
+         * Injecting the `ChangeDetectorRef` token. Needs special handling when injected into a pipe.
+         */
+        R3ResolvedDependencyType[R3ResolvedDependencyType["ChangeDetectorRef"] = 2] = "ChangeDetectorRef";
     })(exports.R3ResolvedDependencyType || (exports.R3ResolvedDependencyType = {}));
     /**
      * Construct a factory function expression for the given `R3FactoryMetadata`.
      */
-    function compileFactoryFunction(meta) {
+    function compileFactoryFunction(meta, isPipe) {
+        if (isPipe === void 0) { isPipe = false; }
         var t = variable('t');
         var statements = [];
         // The type to instantiate via constructor invocation. If there is no delegated factory, meaning
@@ -5307,7 +5324,8 @@
         if (meta.deps !== null) {
             // There is a constructor (either explicitly or implicitly defined).
             if (meta.deps !== 'invalid') {
-                ctorExpr = new InstantiateExpr(typeForCtor, injectDependencies(meta.deps, meta.injectFn));
+                ctorExpr =
+                    new InstantiateExpr(typeForCtor, injectDependencies(meta.deps, meta.injectFn, isPipe));
             }
         }
         else {
@@ -5351,7 +5369,7 @@
         else if (isDelegatedMetadata(meta)) {
             // This type is created with a delegated factory. If a type parameter is not specified, call
             // the factory instead.
-            var delegateArgs = injectDependencies(meta.delegateDeps, meta.injectFn);
+            var delegateArgs = injectDependencies(meta.delegateDeps, meta.injectFn, isPipe);
             // Either call `new delegate(...)` or `delegate(...)` depending on meta.useNewForDelegate.
             var factoryExpr = new (meta.delegateType === R3FactoryDelegateType.Class ?
                 InstantiateExpr :
@@ -5376,27 +5394,32 @@
             statements: statements,
         };
     }
-    function injectDependencies(deps, injectFn) {
-        return deps.map(function (dep) { return compileInjectDependency(dep, injectFn); });
+    function injectDependencies(deps, injectFn, isPipe) {
+        return deps.map(function (dep) { return compileInjectDependency(dep, injectFn, isPipe); });
     }
-    function compileInjectDependency(dep, injectFn) {
+    function compileInjectDependency(dep, injectFn, isPipe) {
         // Interpret the dependency according to its resolved type.
         switch (dep.resolved) {
-            case exports.R3ResolvedDependencyType.Token: {
+            case exports.R3ResolvedDependencyType.Token:
+            case exports.R3ResolvedDependencyType.ChangeDetectorRef:
                 // Build up the injection flags according to the metadata.
                 var flags = 0 /* Default */ | (dep.self ? 2 /* Self */ : 0) |
                     (dep.skipSelf ? 4 /* SkipSelf */ : 0) | (dep.host ? 1 /* Host */ : 0) |
                     (dep.optional ? 8 /* Optional */ : 0);
-                // Build up the arguments to the injectFn call.
-                var injectArgs = [dep.token];
                 // If this dependency is optional or otherwise has non-default flags, then additional
                 // parameters describing how to inject the dependency must be passed to the inject function
                 // that's being used.
-                if (flags !== 0 /* Default */ || dep.optional) {
-                    injectArgs.push(literal(flags));
+                var flagsParam = (flags !== 0 /* Default */ || dep.optional) ? literal(flags) : null;
+                // We have a separate instruction for injecting ChangeDetectorRef into a pipe.
+                if (isPipe && dep.resolved === exports.R3ResolvedDependencyType.ChangeDetectorRef) {
+                    return importExpr(Identifiers$1.injectPipeChangeDetectorRef).callFn(flagsParam ? [flagsParam] : []);
+                }
+                // Build up the arguments to the injectFn call.
+                var injectArgs = [dep.token];
+                if (flagsParam) {
+                    injectArgs.push(flagsParam);
                 }
                 return importExpr(injectFn).callFn(injectArgs);
-            }
             case exports.R3ResolvedDependencyType.Attribute:
                 // In the case of attributes, the attribute name in question is given as the token.
                 return importExpr(Identifiers$1.injectAttribute).callFn([dep.token]);
@@ -6818,7 +6841,7 @@
             type: metadata.type,
             deps: metadata.deps,
             injectFn: Identifiers$1.directiveInject,
-        });
+        }, true);
         definitionMapValues.push({ key: 'factory', value: templateFactory.factory, quoted: false });
         // e.g. `pure: true`
         definitionMapValues.push({ key: 'pure', value: literal(metadata.pure), quoted: false });
@@ -18541,7 +18564,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('8.2.0-next.2+46.sha-0e68c7e.with-local-changes');
+    var VERSION$1 = new Version('8.2.0-next.2+55.sha-f69e4e6.with-local-changes');
 
     /**
      * @license

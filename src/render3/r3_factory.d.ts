@@ -76,7 +76,11 @@ export declare enum R3ResolvedDependencyType {
      *
      * The token expression is a string representing the attribute name.
      */
-    Attribute = 1
+    Attribute = 1,
+    /**
+     * Injecting the `ChangeDetectorRef` token. Needs special handling when injected into a pipe.
+     */
+    ChangeDetectorRef = 2
 }
 /**
  * Metadata representing a single dependency to be injected into a constructor or function call.
@@ -111,7 +115,7 @@ export interface R3DependencyMetadata {
 /**
  * Construct a factory function expression for the given `R3FactoryMetadata`.
  */
-export declare function compileFactoryFunction(meta: R3FactoryMetadata): {
+export declare function compileFactoryFunction(meta: R3FactoryMetadata, isPipe?: boolean): {
     factory: o.Expression;
     statements: o.Statement[];
 };
