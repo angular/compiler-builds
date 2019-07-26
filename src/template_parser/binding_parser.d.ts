@@ -31,9 +31,9 @@ export declare class BindingParser {
     parseInterpolation(value: string, sourceSpan: ParseSourceSpan): ASTWithSource;
     parseInlineTemplateBinding(tplKey: string, tplValue: string, sourceSpan: ParseSourceSpan, absoluteOffset: number, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], targetVars: ParsedVariable[]): void;
     private _parseTemplateBindings;
-    parseLiteralAttr(name: string, value: string | null, sourceSpan: ParseSourceSpan, absoluteOffset: number, targetMatchableAttrs: string[][], targetProps: ParsedProperty[]): void;
-    parsePropertyBinding(name: string, expression: string, isHost: boolean, sourceSpan: ParseSourceSpan, absoluteOffset: number, targetMatchableAttrs: string[][], targetProps: ParsedProperty[]): void;
-    parsePropertyInterpolation(name: string, value: string, sourceSpan: ParseSourceSpan, targetMatchableAttrs: string[][], targetProps: ParsedProperty[]): boolean;
+    parseLiteralAttr(name: string, value: string | null, sourceSpan: ParseSourceSpan, absoluteOffset: number, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[]): void;
+    parsePropertyBinding(name: string, expression: string, isHost: boolean, sourceSpan: ParseSourceSpan, absoluteOffset: number, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[]): void;
+    parsePropertyInterpolation(name: string, value: string, sourceSpan: ParseSourceSpan, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[]): boolean;
     private _parsePropertyAst;
     private _parseAnimation;
     private _parseBinding;
