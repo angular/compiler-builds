@@ -5,8 +5,8 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as tslib_1 from "tslib";
 var _a;
+import * as tslib_1 from "tslib";
 /**
  * A segment of text within the template.
  */

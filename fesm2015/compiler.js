@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.0-next.2+89.sha-6b67cd5.with-local-changes
+ * @license Angular v8.2.0-next.2+94.sha-6ece7db.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3529,17 +3529,18 @@ class TextAttribute {
     visit(visitor) { return visitor.visitTextAttribute(this); }
 }
 class BoundAttribute {
-    constructor(name, type, securityContext, value, unit, sourceSpan, i18n) {
+    constructor(name, type, securityContext, value, unit, sourceSpan, valueSpan, i18n) {
         this.name = name;
         this.type = type;
         this.securityContext = securityContext;
         this.value = value;
         this.unit = unit;
         this.sourceSpan = sourceSpan;
+        this.valueSpan = valueSpan;
         this.i18n = i18n;
     }
     static fromBoundElementProperty(prop, i18n) {
-        return new BoundAttribute(prop.name, prop.type, prop.securityContext, prop.value, prop.unit, prop.sourceSpan, i18n);
+        return new BoundAttribute(prop.name, prop.type, prop.securityContext, prop.value, prop.unit, prop.sourceSpan, prop.valueSpan, i18n);
     }
     visit(visitor) { return visitor.visitBoundAttribute(this); }
 }
@@ -3606,18 +3607,20 @@ class Content {
     visit(visitor) { return visitor.visitContent(this); }
 }
 class Variable {
-    constructor(name, value, sourceSpan) {
+    constructor(name, value, sourceSpan, valueSpan) {
         this.name = name;
         this.value = value;
         this.sourceSpan = sourceSpan;
+        this.valueSpan = valueSpan;
     }
     visit(visitor) { return visitor.visitVariable(this); }
 }
 class Reference {
-    constructor(name, value, sourceSpan) {
+    constructor(name, value, sourceSpan, valueSpan) {
         this.name = name;
         this.value = value;
         this.sourceSpan = sourceSpan;
+        this.valueSpan = valueSpan;
     }
     visit(visitor) { return visitor.visitReference(this); }
 }
@@ -7020,11 +7023,12 @@ function visitAstChildren(ast, visitor, context) {
 }
 // Bindings
 class ParsedProperty {
-    constructor(name, expression, type, sourceSpan) {
+    constructor(name, expression, type, sourceSpan, valueSpan) {
         this.name = name;
         this.expression = expression;
         this.type = type;
         this.sourceSpan = sourceSpan;
+        this.valueSpan = valueSpan;
         this.isLiteral = this.type === ParsedPropertyType.LITERAL_ATTR;
         this.isAnimation = this.type === ParsedPropertyType.ANIMATION;
     }
@@ -7055,13 +7059,14 @@ class ParsedVariable {
     }
 }
 class BoundElementProperty {
-    constructor(name, type, securityContext, value, unit, sourceSpan) {
+    constructor(name, type, securityContext, value, unit, sourceSpan, valueSpan) {
         this.name = name;
         this.type = type;
         this.securityContext = securityContext;
         this.value = value;
         this.unit = unit;
         this.sourceSpan = sourceSpan;
+        this.valueSpan = valueSpan;
     }
 }
 
@@ -10810,7 +10815,7 @@ class BindingParser {
             Object.keys(dirMeta.hostProperties).forEach(propName => {
                 const expression = dirMeta.hostProperties[propName];
                 if (typeof expression === 'string') {
-                    this.parsePropertyBinding(propName, expression, true, sourceSpan, sourceSpan.start.offset, [], boundProps);
+                    this.parsePropertyBinding(propName, expression, true, sourceSpan, sourceSpan.start.offset, undefined, [], boundProps);
                 }
                 else {
                     this._reportError(`Value of the host property binding "${propName}" needs to be a string representing an expression but got "${expression}" (${typeof expression})`, sourceSpan);
@@ -10865,11 +10870,11 @@ class BindingParser {
                 targetVars.push(new ParsedVariable(binding.key, binding.name, sourceSpan));
             }
             else if (binding.expression) {
-                this._parsePropertyAst(binding.key, binding.expression, sourceSpan, targetMatchableAttrs, targetProps);
+                this._parsePropertyAst(binding.key, binding.expression, sourceSpan, undefined, targetMatchableAttrs, targetProps);
             }
             else {
                 targetMatchableAttrs.push([binding.key, '']);
-                this.parseLiteralAttr(binding.key, null, sourceSpan, absoluteOffset, targetMatchableAttrs, targetProps);
+                this.parseLiteralAttr(binding.key, null, sourceSpan, absoluteOffset, undefined, targetMatchableAttrs, targetProps);
             }
         }
     }
@@ -10891,20 +10896,20 @@ class BindingParser {
             return [];
         }
     }
-    parseLiteralAttr(name, value, sourceSpan, absoluteOffset, targetMatchableAttrs, targetProps) {
+    parseLiteralAttr(name, value, sourceSpan, absoluteOffset, valueSpan, targetMatchableAttrs, targetProps) {
         if (isAnimationLabel(name)) {
             name = name.substring(1);
             if (value) {
                 this._reportError(`Assigning animation triggers via @prop="exp" attributes with an expression is invalid.` +
                     ` Use property bindings (e.g. [@prop]="exp") or use an attribute without a value (e.g. @prop) instead.`, sourceSpan, ParseErrorLevel.ERROR);
             }
-            this._parseAnimation(name, value, sourceSpan, absoluteOffset, targetMatchableAttrs, targetProps);
+            this._parseAnimation(name, value, sourceSpan, absoluteOffset, valueSpan, targetMatchableAttrs, targetProps);
         }
         else {
-            targetProps.push(new ParsedProperty(name, this._exprParser.wrapLiteralPrimitive(value, '', absoluteOffset), ParsedPropertyType.LITERAL_ATTR, sourceSpan));
+            targetProps.push(new ParsedProperty(name, this._exprParser.wrapLiteralPrimitive(value, '', absoluteOffset), ParsedPropertyType.LITERAL_ATTR, sourceSpan, valueSpan));
         }
     }
-    parsePropertyBinding(name, expression, isHost, sourceSpan, absoluteOffset, targetMatchableAttrs, targetProps) {
+    parsePropertyBinding(name, expression, isHost, sourceSpan, absoluteOffset, valueSpan, targetMatchableAttrs, targetProps) {
         let isAnimationProp = false;
         if (name.startsWith(ANIMATE_PROP_PREFIX)) {
             isAnimationProp = true;
@@ -10915,31 +10920,31 @@ class BindingParser {
             name = name.substring(1);
         }
         if (isAnimationProp) {
-            this._parseAnimation(name, expression, sourceSpan, absoluteOffset, targetMatchableAttrs, targetProps);
+            this._parseAnimation(name, expression, sourceSpan, absoluteOffset, valueSpan, targetMatchableAttrs, targetProps);
         }
         else {
-            this._parsePropertyAst(name, this._parseBinding(expression, isHost, sourceSpan, absoluteOffset), sourceSpan, targetMatchableAttrs, targetProps);
+            this._parsePropertyAst(name, this._parseBinding(expression, isHost, valueSpan || sourceSpan, absoluteOffset), sourceSpan, valueSpan, targetMatchableAttrs, targetProps);
         }
     }
-    parsePropertyInterpolation(name, value, sourceSpan, targetMatchableAttrs, targetProps) {
-        const expr = this.parseInterpolation(value, sourceSpan);
+    parsePropertyInterpolation(name, value, sourceSpan, valueSpan, targetMatchableAttrs, targetProps) {
+        const expr = this.parseInterpolation(value, valueSpan || sourceSpan);
         if (expr) {
-            this._parsePropertyAst(name, expr, sourceSpan, targetMatchableAttrs, targetProps);
+            this._parsePropertyAst(name, expr, sourceSpan, valueSpan, targetMatchableAttrs, targetProps);
             return true;
         }
         return false;
     }
-    _parsePropertyAst(name, ast, sourceSpan, targetMatchableAttrs, targetProps) {
+    _parsePropertyAst(name, ast, sourceSpan, valueSpan, targetMatchableAttrs, targetProps) {
         targetMatchableAttrs.push([name, ast.source]);
-        targetProps.push(new ParsedProperty(name, ast, ParsedPropertyType.DEFAULT, sourceSpan));
+        targetProps.push(new ParsedProperty(name, ast, ParsedPropertyType.DEFAULT, sourceSpan, valueSpan));
     }
-    _parseAnimation(name, expression, sourceSpan, absoluteOffset, targetMatchableAttrs, targetProps) {
+    _parseAnimation(name, expression, sourceSpan, absoluteOffset, valueSpan, targetMatchableAttrs, targetProps) {
         // This will occur when a @trigger is not paired with an expression.
         // For animations it is valid to not have an expression since */void
         // states will be applied by angular when the element is attached/detached
-        const ast = this._parseBinding(expression || 'undefined', false, sourceSpan, absoluteOffset);
+        const ast = this._parseBinding(expression || 'undefined', false, valueSpan || sourceSpan, absoluteOffset);
         targetMatchableAttrs.push([name, ast.source]);
-        targetProps.push(new ParsedProperty(name, ast, ParsedPropertyType.ANIMATION, sourceSpan));
+        targetProps.push(new ParsedProperty(name, ast, ParsedPropertyType.ANIMATION, sourceSpan, valueSpan));
     }
     _parseBinding(value, isHostBinding, sourceSpan, absoluteOffset) {
         const sourceInfo = (sourceSpan && sourceSpan.start || '(unknown)').toString();
@@ -10959,7 +10964,7 @@ class BindingParser {
     }
     createBoundElementProperty(elementSelector, boundProp, skipValidation = false, mapPropertyName = true) {
         if (boundProp.isAnimation) {
-            return new BoundElementProperty(boundProp.name, 4 /* Animation */, SecurityContext.NONE, boundProp.expression, null, boundProp.sourceSpan);
+            return new BoundElementProperty(boundProp.name, 4 /* Animation */, SecurityContext.NONE, boundProp.expression, null, boundProp.sourceSpan, boundProp.valueSpan);
         }
         let unit = null;
         let bindingType = undefined;
@@ -11004,7 +11009,7 @@ class BindingParser {
                 this._validatePropertyOrAttributeName(mappedPropName, boundProp.sourceSpan, false);
             }
         }
-        return new BoundElementProperty(boundPropertyName, bindingType, securityContexts[0], boundProp.expression, unit, boundProp.sourceSpan);
+        return new BoundElementProperty(boundPropertyName, bindingType, securityContexts[0], boundProp.expression, unit, boundProp.sourceSpan, boundProp.valueSpan);
     }
     parseEvent(name, expression, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents) {
         if (isAnimationLabel(name)) {
@@ -11515,7 +11520,7 @@ class TemplateParseVisitor {
         if (bindParts !== null) {
             hasBinding = true;
             if (bindParts[KW_BIND_IDX] != null) {
-                this._bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX], value, false, srcSpan, absoluteOffset, targetMatchableAttrs, targetProps);
+                this._bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX], value, false, srcSpan, absoluteOffset, attr.valueSpan, targetMatchableAttrs, targetProps);
             }
             else if (bindParts[KW_LET_IDX]) {
                 if (isTemplateElement) {
@@ -11534,28 +11539,28 @@ class TemplateParseVisitor {
                 this._bindingParser.parseEvent(bindParts[IDENT_KW_IDX], value, srcSpan, attr.valueSpan || srcSpan, targetMatchableAttrs, boundEvents);
             }
             else if (bindParts[KW_BINDON_IDX]) {
-                this._bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX], value, false, srcSpan, absoluteOffset, targetMatchableAttrs, targetProps);
+                this._bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX], value, false, srcSpan, absoluteOffset, attr.valueSpan, targetMatchableAttrs, targetProps);
                 this._parseAssignmentEvent(bindParts[IDENT_KW_IDX], value, srcSpan, attr.valueSpan || srcSpan, targetMatchableAttrs, boundEvents);
             }
             else if (bindParts[KW_AT_IDX]) {
-                this._bindingParser.parseLiteralAttr(name, value, srcSpan, absoluteOffset, targetMatchableAttrs, targetProps);
+                this._bindingParser.parseLiteralAttr(name, value, srcSpan, absoluteOffset, attr.valueSpan, targetMatchableAttrs, targetProps);
             }
             else if (bindParts[IDENT_BANANA_BOX_IDX]) {
-                this._bindingParser.parsePropertyBinding(bindParts[IDENT_BANANA_BOX_IDX], value, false, srcSpan, absoluteOffset, targetMatchableAttrs, targetProps);
+                this._bindingParser.parsePropertyBinding(bindParts[IDENT_BANANA_BOX_IDX], value, false, srcSpan, absoluteOffset, attr.valueSpan, targetMatchableAttrs, targetProps);
                 this._parseAssignmentEvent(bindParts[IDENT_BANANA_BOX_IDX], value, srcSpan, attr.valueSpan || srcSpan, targetMatchableAttrs, boundEvents);
             }
             else if (bindParts[IDENT_PROPERTY_IDX]) {
-                this._bindingParser.parsePropertyBinding(bindParts[IDENT_PROPERTY_IDX], value, false, srcSpan, absoluteOffset, targetMatchableAttrs, targetProps);
+                this._bindingParser.parsePropertyBinding(bindParts[IDENT_PROPERTY_IDX], value, false, srcSpan, absoluteOffset, attr.valueSpan, targetMatchableAttrs, targetProps);
             }
             else if (bindParts[IDENT_EVENT_IDX]) {
                 this._bindingParser.parseEvent(bindParts[IDENT_EVENT_IDX], value, srcSpan, attr.valueSpan || srcSpan, targetMatchableAttrs, boundEvents);
             }
         }
         else {
-            hasBinding = this._bindingParser.parsePropertyInterpolation(name, value, srcSpan, targetMatchableAttrs, targetProps);
+            hasBinding = this._bindingParser.parsePropertyInterpolation(name, value, srcSpan, attr.valueSpan, targetMatchableAttrs, targetProps);
         }
         if (!hasBinding) {
-            this._bindingParser.parseLiteralAttr(name, value, srcSpan, absoluteOffset, targetMatchableAttrs, targetProps);
+            this._bindingParser.parseLiteralAttr(name, value, srcSpan, absoluteOffset, attr.valueSpan, targetMatchableAttrs, targetProps);
         }
         targetEvents.push(...boundEvents.map(e => BoundEventAst.fromParsedEvent(e)));
         return hasBinding;
@@ -14238,12 +14243,12 @@ class HtmlAstToIvyAst {
         if (bindParts) {
             hasBinding = true;
             if (bindParts[KW_BIND_IDX$1] != null) {
-                this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX$1], value, false, srcSpan, absoluteOffset, matchableAttributes, parsedProperties);
+                this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX$1], value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties);
             }
             else if (bindParts[KW_LET_IDX$1]) {
                 if (isTemplateElement) {
                     const identifier = bindParts[IDENT_KW_IDX$1];
-                    this.parseVariable(identifier, value, srcSpan, variables);
+                    this.parseVariable(identifier, value, srcSpan, attribute.valueSpan, variables);
                 }
                 else {
                     this.reportError(`"let-" is only supported on ng-template elements.`, srcSpan);
@@ -14251,7 +14256,7 @@ class HtmlAstToIvyAst {
             }
             else if (bindParts[KW_REF_IDX$1]) {
                 const identifier = bindParts[IDENT_KW_IDX$1];
-                this.parseReference(identifier, value, srcSpan, references);
+                this.parseReference(identifier, value, srcSpan, attribute.valueSpan, references);
             }
             else if (bindParts[KW_ON_IDX$1]) {
                 const events = [];
@@ -14259,18 +14264,18 @@ class HtmlAstToIvyAst {
                 addEvents(events, boundEvents);
             }
             else if (bindParts[KW_BINDON_IDX$1]) {
-                this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX$1], value, false, srcSpan, absoluteOffset, matchableAttributes, parsedProperties);
+                this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX$1], value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties);
                 this.parseAssignmentEvent(bindParts[IDENT_KW_IDX$1], value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents);
             }
             else if (bindParts[KW_AT_IDX$1]) {
-                this.bindingParser.parseLiteralAttr(name, value, srcSpan, absoluteOffset, matchableAttributes, parsedProperties);
+                this.bindingParser.parseLiteralAttr(name, value, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties);
             }
             else if (bindParts[IDENT_BANANA_BOX_IDX$1]) {
-                this.bindingParser.parsePropertyBinding(bindParts[IDENT_BANANA_BOX_IDX$1], value, false, srcSpan, absoluteOffset, matchableAttributes, parsedProperties);
+                this.bindingParser.parsePropertyBinding(bindParts[IDENT_BANANA_BOX_IDX$1], value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties);
                 this.parseAssignmentEvent(bindParts[IDENT_BANANA_BOX_IDX$1], value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents);
             }
             else if (bindParts[IDENT_PROPERTY_IDX$1]) {
-                this.bindingParser.parsePropertyBinding(bindParts[IDENT_PROPERTY_IDX$1], value, false, srcSpan, absoluteOffset, matchableAttributes, parsedProperties);
+                this.bindingParser.parsePropertyBinding(bindParts[IDENT_PROPERTY_IDX$1], value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties);
             }
             else if (bindParts[IDENT_EVENT_IDX$1]) {
                 const events = [];
@@ -14279,7 +14284,7 @@ class HtmlAstToIvyAst {
             }
         }
         else {
-            hasBinding = this.bindingParser.parsePropertyInterpolation(name, value, srcSpan, matchableAttributes, parsedProperties);
+            hasBinding = this.bindingParser.parsePropertyInterpolation(name, value, srcSpan, attribute.valueSpan, matchableAttributes, parsedProperties);
         }
         return hasBinding;
     }
@@ -14288,17 +14293,17 @@ class HtmlAstToIvyAst {
         const expr = this.bindingParser.parseInterpolation(valueNoNgsp, sourceSpan);
         return expr ? new BoundText(expr, sourceSpan, i18n) : new Text(valueNoNgsp, sourceSpan);
     }
-    parseVariable(identifier, value, sourceSpan, variables) {
+    parseVariable(identifier, value, sourceSpan, valueSpan, variables) {
         if (identifier.indexOf('-') > -1) {
             this.reportError(`"-" is not allowed in variable names`, sourceSpan);
         }
-        variables.push(new Variable(identifier, value, sourceSpan));
+        variables.push(new Variable(identifier, value, sourceSpan, valueSpan));
     }
-    parseReference(identifier, value, sourceSpan, references) {
+    parseReference(identifier, value, sourceSpan, valueSpan, references) {
         if (identifier.indexOf('-') > -1) {
             this.reportError(`"-" is not allowed in reference names`, sourceSpan);
         }
-        references.push(new Reference(identifier, value, sourceSpan));
+        references.push(new Reference(identifier, value, sourceSpan, valueSpan));
     }
     parseAssignmentEvent(name, expression, sourceSpan, valueSpan, targetMatchableAttrs, boundEvents) {
         const events = [];
@@ -17463,7 +17468,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('8.2.0-next.2+89.sha-6b67cd5.with-local-changes');
+const VERSION$1 = new Version('8.2.0-next.2+94.sha-6ece7db.with-local-changes');
 
 /**
  * @license
