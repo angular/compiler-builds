@@ -15,9 +15,9 @@
     }
 })(function (require, exports) {
     "use strict";
+    var _a;
     Object.defineProperty(exports, "__esModule", { value: true });
     var tslib_1 = require("tslib");
-    var _a;
     /**
      * A segment of text within the template.
      */

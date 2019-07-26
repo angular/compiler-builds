@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.0-next.2+93.sha-3a2b195.with-local-changes
+ * @license Angular v8.2.0-next.2+94.sha-6ece7db.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -14946,8 +14946,8 @@ var HtmlAstToIvyAst = /** @class */ (function () {
     }
     // HTML visitor
     HtmlAstToIvyAst.prototype.visitElement = function (element) {
-        var _this = this;
         var e_1, _a;
+        var _this = this;
         var preparsedElement = preparseElement(element);
         if (preparsedElement.type === PreparsedElementType.SCRIPT) {
             return null;
@@ -16298,8 +16298,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this.creationInstruction(element.sourceSpan, nsInstruction);
     };
     TemplateDefinitionBuilder.prototype.visitElement = function (element) {
-        var _this = this;
         var e_1, _a;
+        var _this = this;
         var elementIndex = this.allocateDataSlot();
         var stylingBuilder = new StylingBuilder(literal(elementIndex), null);
         var isNonBindableMode = false;
@@ -18513,7 +18513,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.2.0-next.2+93.sha-3a2b195.with-local-changes');
+var VERSION$1 = new Version('8.2.0-next.2+94.sha-6ece7db.with-local-changes');
 
 /**
  * @license
@@ -22506,7 +22506,7 @@ var ViewBuilder = /** @class */ (function () {
             for (var _c = __values(ast.directives), _d = _c.next(); !_d.done; _d = _c.next()) {
                 var directive = _d.value;
                 try {
-                    for (var _e = __values(directive.inputs), _f = _e.next(); !_f.done; _f = _e.next()) {
+                    for (var _e = (e_2 = void 0, __values(directive.inputs)), _f = _e.next(); !_f.done; _f = _e.next()) {
                         var input = _f.value;
                         var guard = directive.directive.guards[input.directiveName];
                         if (guard) {
@@ -22542,8 +22542,8 @@ var ViewBuilder = /** @class */ (function () {
         templateVisitAll(this, astNodes);
     };
     ViewBuilder.prototype.build = function (componentId, targetStatements) {
-        var _this = this;
         var e_3, _a;
+        var _this = this;
         if (targetStatements === void 0) { targetStatements = []; }
         this.children.forEach(function (child) { return child.build(componentId, targetStatements); });
         var viewStmts = [variable(DYNAMIC_VAR_NAME).set(NULL_EXPR).toDeclStmt(DYNAMIC_TYPE)];
@@ -22760,8 +22760,8 @@ var ViewCompiler = /** @class */ (function () {
         this._reflector = _reflector;
     }
     ViewCompiler.prototype.compileComponent = function (outputCtx, component, template, styles, usedPipes) {
-        var _this = this;
         var _a;
+        var _this = this;
         var embeddedViewCount = 0;
         var staticQueryIds = findStaticQueryIds(template);
         var renderComponentVarName = undefined;
@@ -23787,7 +23787,7 @@ function listLazyRoutes(moduleMeta, reflector) {
             if (tokenReference(provider.token) === reflector.ROUTES) {
                 var loadChildren = _collectLoadChildren(provider.useValue);
                 try {
-                    for (var loadChildren_1 = __values(loadChildren), loadChildren_1_1 = loadChildren_1.next(); !loadChildren_1_1.done; loadChildren_1_1 = loadChildren_1.next()) {
+                    for (var loadChildren_1 = (e_2 = void 0, __values(loadChildren)), loadChildren_1_1 = loadChildren_1.next(); !loadChildren_1_1.done; loadChildren_1_1 = loadChildren_1.next()) {
                         var route = loadChildren_1_1.value;
                         allLazyRoutes.push(parseLazyRoute(route, reflector, module.reference));
                     }
@@ -24093,8 +24093,8 @@ var StaticSymbolResolver = /** @class */ (function () {
         return metadataSymbols;
     };
     StaticSymbolResolver.prototype._createSymbolsOf = function (filePath) {
-        var _this = this;
         var e_2, _a;
+        var _this = this;
         if (this.resolvedFilePaths.has(filePath)) {
             return;
         }
@@ -24648,8 +24648,8 @@ var ForJitSerializer = /** @class */ (function () {
         this.data.push({ summary: summary, metadata: null, isLibrary: true });
     };
     ForJitSerializer.prototype.serialize = function (exportAsArr) {
-        var _this = this;
         var e_1, _a, e_2, _b, e_3, _c;
+        var _this = this;
         var exportAsBySymbol = new Map();
         try {
             for (var exportAsArr_1 = __values(exportAsArr), exportAsArr_1_1 = exportAsArr_1.next(); !exportAsArr_1_1.done; exportAsArr_1_1 = exportAsArr_1.next()) {
@@ -24676,7 +24676,7 @@ var ForJitSerializer = /** @class */ (function () {
                     ngModuleSymbols.add(summary.type.reference);
                     var modSummary = summary;
                     try {
-                        for (var _h = __values(modSummary.modules), _j = _h.next(); !_j.done; _j = _h.next()) {
+                        for (var _h = (e_3 = void 0, __values(modSummary.modules)), _j = _h.next(); !_j.done; _j = _h.next()) {
                             var mod = _j.value;
                             ngModuleSymbols.add(mod.reference);
                         }
@@ -25366,7 +25366,7 @@ var AotCompiler = /** @class */ (function () {
                     var ngModule = _d.value;
                     var lazyRoutes = listLazyRoutes(ngModule, this.reflector);
                     try {
-                        for (var lazyRoutes_1 = __values(lazyRoutes), lazyRoutes_1_1 = lazyRoutes_1.next(); !lazyRoutes_1_1.done; lazyRoutes_1_1 = lazyRoutes_1.next()) {
+                        for (var lazyRoutes_1 = (e_3 = void 0, __values(lazyRoutes)), lazyRoutes_1_1 = lazyRoutes_1.next(); !lazyRoutes_1_1.done; lazyRoutes_1_1 = lazyRoutes_1.next()) {
                             var lazyRoute = lazyRoutes_1_1.value;
                             allLazyRoutes.push(lazyRoute);
                         }
@@ -26135,7 +26135,7 @@ var StaticReflector = /** @class */ (function () {
                                 var spreadArray = simplifyEagerly(item.expression);
                                 if (Array.isArray(spreadArray)) {
                                     try {
-                                        for (var spreadArray_1 = __values(spreadArray), spreadArray_1_1 = spreadArray_1.next(); !spreadArray_1_1.done; spreadArray_1_1 = spreadArray_1.next()) {
+                                        for (var spreadArray_1 = (e_3 = void 0, __values(spreadArray)), spreadArray_1_1 = spreadArray_1.next(); !spreadArray_1_1.done; spreadArray_1_1 = spreadArray_1.next()) {
                                             var spreadItem = spreadArray_1_1.value;
                                             result_2.push(spreadItem);
                                         }
