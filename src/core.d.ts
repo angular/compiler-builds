@@ -119,10 +119,10 @@ export interface SchemaMetadata {
 }
 export declare const CUSTOM_ELEMENTS_SCHEMA: SchemaMetadata;
 export declare const NO_ERRORS_SCHEMA: SchemaMetadata;
-export declare const createOptional: MetadataFactory<{}>;
-export declare const createSelf: MetadataFactory<{}>;
-export declare const createSkipSelf: MetadataFactory<{}>;
-export declare const createHost: MetadataFactory<{}>;
+export declare const createOptional: MetadataFactory<unknown>;
+export declare const createSelf: MetadataFactory<unknown>;
+export declare const createSkipSelf: MetadataFactory<unknown>;
+export declare const createHost: MetadataFactory<unknown>;
 export interface Type extends Function {
     new (...args: any[]): any;
 }
