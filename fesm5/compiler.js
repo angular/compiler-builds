@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.1+11.sha-0ddf0c4.with-local-changes
+ * @license Angular v9.0.0-next.1+13.sha-c198a27.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3608,6 +3608,9 @@ var $LBRACE = 123;
 var $BAR = 124;
 var $RBRACE = 125;
 var $NBSP = 160;
+var $PIPE = 124;
+var $TILDA = 126;
+var $AT = 64;
 var $BT = 96;
 function isWhitespace(code) {
     return (code >= $TAB && code <= $SPACE) || (code == $NBSP);
@@ -3932,6 +3935,22 @@ var Icu = /** @class */ (function () {
     Icu.prototype.visit = function (visitor) { return visitor.visitIcu(this); };
     return Icu;
 }());
+var NullVisitor = /** @class */ (function () {
+    function NullVisitor() {
+    }
+    NullVisitor.prototype.visitElement = function (element) { };
+    NullVisitor.prototype.visitTemplate = function (template) { };
+    NullVisitor.prototype.visitContent = function (content) { };
+    NullVisitor.prototype.visitVariable = function (variable) { };
+    NullVisitor.prototype.visitReference = function (reference) { };
+    NullVisitor.prototype.visitTextAttribute = function (attribute) { };
+    NullVisitor.prototype.visitBoundAttribute = function (attribute) { };
+    NullVisitor.prototype.visitBoundEvent = function (attribute) { };
+    NullVisitor.prototype.visitText = function (text) { };
+    NullVisitor.prototype.visitBoundText = function (text) { };
+    NullVisitor.prototype.visitIcu = function (icu) { };
+    return NullVisitor;
+}());
 var RecursiveVisitor = /** @class */ (function () {
     function RecursiveVisitor() {
     }
@@ -3956,6 +3975,49 @@ var RecursiveVisitor = /** @class */ (function () {
     RecursiveVisitor.prototype.visitBoundText = function (text) { };
     RecursiveVisitor.prototype.visitIcu = function (icu) { };
     return RecursiveVisitor;
+}());
+var TransformVisitor = /** @class */ (function () {
+    function TransformVisitor() {
+    }
+    TransformVisitor.prototype.visitElement = function (element) {
+        var newAttributes = transformAll(this, element.attributes);
+        var newInputs = transformAll(this, element.inputs);
+        var newOutputs = transformAll(this, element.outputs);
+        var newChildren = transformAll(this, element.children);
+        var newReferences = transformAll(this, element.references);
+        if (newAttributes != element.attributes || newInputs != element.inputs ||
+            newOutputs != element.outputs || newChildren != element.children ||
+            newReferences != element.references) {
+            return new Element(element.name, newAttributes, newInputs, newOutputs, newChildren, newReferences, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+        }
+        return element;
+    };
+    TransformVisitor.prototype.visitTemplate = function (template) {
+        var newAttributes = transformAll(this, template.attributes);
+        var newInputs = transformAll(this, template.inputs);
+        var newOutputs = transformAll(this, template.outputs);
+        var newTemplateAttrs = transformAll(this, template.templateAttrs);
+        var newChildren = transformAll(this, template.children);
+        var newReferences = transformAll(this, template.references);
+        var newVariables = transformAll(this, template.variables);
+        if (newAttributes != template.attributes || newInputs != template.inputs ||
+            newOutputs != template.outputs || newTemplateAttrs != template.templateAttrs ||
+            newChildren != template.children || newReferences != template.references ||
+            newVariables != template.variables) {
+            return new Template(template.tagName, newAttributes, newInputs, newOutputs, newTemplateAttrs, newChildren, newReferences, newVariables, template.sourceSpan, template.startSourceSpan, template.endSourceSpan);
+        }
+        return template;
+    };
+    TransformVisitor.prototype.visitContent = function (content) { return content; };
+    TransformVisitor.prototype.visitVariable = function (variable) { return variable; };
+    TransformVisitor.prototype.visitReference = function (reference) { return reference; };
+    TransformVisitor.prototype.visitTextAttribute = function (attribute) { return attribute; };
+    TransformVisitor.prototype.visitBoundAttribute = function (attribute) { return attribute; };
+    TransformVisitor.prototype.visitBoundEvent = function (attribute) { return attribute; };
+    TransformVisitor.prototype.visitText = function (text) { return text; };
+    TransformVisitor.prototype.visitBoundText = function (text) { return text; };
+    TransformVisitor.prototype.visitIcu = function (icu) { return icu; };
+    return TransformVisitor;
 }());
 function visitAll(visitor, nodes) {
     var e_1, _a, e_2, _b;
@@ -3994,6 +4056,29 @@ function visitAll(visitor, nodes) {
         }
     }
     return result;
+}
+function transformAll(visitor, nodes) {
+    var e_3, _a;
+    var result = [];
+    var changed = false;
+    try {
+        for (var nodes_3 = __values(nodes), nodes_3_1 = nodes_3.next(); !nodes_3_1.done; nodes_3_1 = nodes_3.next()) {
+            var node = nodes_3_1.value;
+            var newNode = node.visit(visitor);
+            if (newNode) {
+                result.push(newNode);
+            }
+            changed = changed || newNode != node;
+        }
+    }
+    catch (e_3_1) { e_3 = { error: e_3_1 }; }
+    finally {
+        try {
+            if (nodes_3_1 && !nodes_3_1.done && (_a = nodes_3.return)) _a.call(nodes_3);
+        }
+        finally { if (e_3) throw e_3.error; }
+    }
+    return changed ? result : nodes;
 }
 
 /**
@@ -4785,6 +4870,9 @@ function toPublicName(internalName) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+function mapEntry(key, value) {
+    return { key: key, value: value, quoted: false };
+}
 function mapLiteral(obj, quoted) {
     if (quoted === void 0) { quoted = false; }
     return literalMap(Object.keys(obj).map(function (key) { return ({
@@ -5144,6 +5232,7 @@ function getQueryPredicate(query, constantPool) {
         return query.predicate;
     }
 }
+function noop() { }
 var DefinitionMap = /** @class */ (function () {
     function DefinitionMap() {
         this.values = [];
@@ -5477,6 +5566,19 @@ function prepareSyntheticPropertyName(name) {
 }
 function prepareSyntheticListenerName(name, phase) {
     return "" + ANIMATE_SYMBOL_PREFIX + name + "." + phase;
+}
+function isSyntheticPropertyOrListener(name) {
+    return name.charAt(0) == ANIMATE_SYMBOL_PREFIX;
+}
+function getSyntheticPropertyName(name) {
+    // this will strip out listener phase values...
+    // @foo.start => @foo
+    var i = name.indexOf('.');
+    name = i > 0 ? name.substring(0, i) : name;
+    if (name.charAt(0) !== ANIMATE_SYMBOL_PREFIX) {
+        name = ANIMATE_SYMBOL_PREFIX + name;
+    }
+    return name;
 }
 function prepareSyntheticListenerFunctionName(name, phase) {
     return "animation_" + name + "_" + phase;
@@ -6758,6 +6860,10 @@ function compileNgModuleFromRender2(ctx, ngModule, injectableCompiler) {
     /* constructorMethod */ new ClassMethod(null, [], []), 
     /* methods */ []));
 }
+function accessExportScope(module) {
+    var selectorScope = new ReadPropExpr(module, 'ngModuleDef');
+    return new ReadPropExpr(selectorScope, 'exported');
+}
 function tupleTypeOf(exp) {
     var types = exp.map(function (ref) { return typeofExpr(ref.type); });
     return exp.length > 0 ? expressionType(literalArr(types)) : NONE_TYPE;
@@ -6800,6 +6906,7 @@ function compilePipeFromMetadata(metadata) {
  * Write a pipe definition to the output context.
  */
 function compilePipeFromRender2(outputCtx, pipe, reflector) {
+    var definitionMapValues = [];
     var name = identifierName(pipe.type);
     if (!name) {
         return error("Cannot resolve the name of " + pipe.type);
@@ -11415,13 +11522,19 @@ var NgModuleProviderAnalyzer = /** @class */ (function () {
     };
     NgModuleProviderAnalyzer.prototype._getDependency = function (dep, eager, requestorSourceSpan) {
         if (eager === void 0) { eager = false; }
+        var foundLocal = false;
         if (!dep.isSkipSelf && dep.token != null) {
             // access the injector
             if (tokenReference(dep.token) ===
                 this.reflector.resolveExternalReference(Identifiers.Injector) ||
                 tokenReference(dep.token) ===
-                    this.reflector.resolveExternalReference(Identifiers.ComponentFactoryResolver)) ;
-            else if (this._getOrCreateLocalProvider(dep.token, eager) != null) ;
+                    this.reflector.resolveExternalReference(Identifiers.ComponentFactoryResolver)) {
+                foundLocal = true;
+                // access providers
+            }
+            else if (this._getOrCreateLocalProvider(dep.token, eager) != null) {
+                foundLocal = true;
+            }
         }
         return dep;
     };
@@ -13119,6 +13232,7 @@ var StylingBuilder = /** @class */ (function () {
         };
     };
     StylingBuilder.prototype._buildSingleInputs = function (reference, inputs, mapIndex, allowUnits, valueConverter, getInterpolationExpressionFn) {
+        var totalBindingSlotsRequired = 0;
         return inputs.map(function (input) {
             var value = input.value.visit(valueConverter);
             // each styling binding value is stored in the LView
@@ -13225,6 +13339,18 @@ function isStyleSanitizable(prop) {
  */
 function getConstantLiteralFromArray(constantPool, values) {
     return values.length ? constantPool.getConstLiteral(literalArr(values), true) : NULL_EXPR;
+}
+/**
+ * Simple helper function that adds a parameter or does nothing at all depending on the provided
+ * predicate and totalExpectedArgs values
+ */
+function addParam(params, predicate, value, argNumber, totalExpectedArgs) {
+    if (predicate && value) {
+        params.push(value);
+    }
+    else if (argNumber < totalExpectedArgs) {
+        params.push(NULL_EXPR);
+    }
 }
 function parseProperty(name) {
     var hasOverrideFlag = false;
@@ -13527,7 +13653,9 @@ var _Scanner = /** @class */ (function () {
         var simple = (this.index === start);
         this.advance(); // Skip initial digit.
         while (true) {
-            if (isDigit(this.peek)) ;
+            if (isDigit(this.peek)) {
+                // Do nothing.
+            }
             else if (this.peek == $PERIOD) {
                 simple = false;
             }
@@ -15833,6 +15961,10 @@ var I18nMetaVisitor = /** @class */ (function () {
     I18nMetaVisitor.prototype.visitExpansionCase = function (expansionCase, context) { return expansionCase; };
     return I18nMetaVisitor;
 }());
+function processI18nMeta(htmlAstWithErrors, interpolationConfig) {
+    if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
+    return new ParseTreeResult(visitAll$1(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), htmlAstWithErrors.rootNodes), htmlAstWithErrors.errors);
+}
 
 /**
  * @license
@@ -17534,6 +17666,9 @@ var EMPTY_ARRAY = [];
 // This regex matches any binding names that contain the "attr." prefix, e.g. "attr.required"
 // If there is a match, the first matching group will contain the attribute name to bind.
 var ATTR_REGEX = /attr\.([^\]]+)/;
+function getStylingPrefix(name) {
+    return name.substring(0, 5); // style or class
+}
 function baseDirectiveFields(meta, constantPool, bindingParser) {
     var definitionMap = new DefinitionMap();
     // e.g. `type: MyDirective`
@@ -18526,7 +18661,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-next.1+11.sha-0ddf0c4.with-local-changes');
+var VERSION$1 = new Version('9.0.0-next.1+13.sha-c198a27.with-local-changes');
 
 /**
  * @license
@@ -20406,7 +20541,7 @@ var _ValueOutputAstTransformer = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-function mapEntry(key, value) {
+function mapEntry$1(key, value) {
     return { key: key, value: value, quoted: false };
 }
 var InjectableCompiler = /** @class */ (function () {
@@ -20500,9 +20635,9 @@ var InjectableCompiler = /** @class */ (function () {
             }
         }
         var def = [
-            mapEntry('factory', this.factoryFor(injectable, ctx)),
-            mapEntry('token', ctx.importExpr(injectable.type.reference)),
-            mapEntry('providedIn', providedIn),
+            mapEntry$1('factory', this.factoryFor(injectable, ctx)),
+            mapEntry$1('token', ctx.importExpr(injectable.type.reference)),
+            mapEntry$1('providedIn', providedIn),
         ];
         return importExpr(Identifiers.ɵɵdefineInjectable).callFn([literalMap(def)]);
     };
@@ -21991,6 +22126,7 @@ var NgModuleResolver = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+var _debugFilePath = '/debug/lib';
 function debugOutputAstAsTypeScript(ast) {
     var converter = new _TsEmitterVisitor();
     var ctx = EmitterVisitorContext.createRoot();
@@ -22649,6 +22785,9 @@ var ViewBuilder = /** @class */ (function () {
     ViewBuilder.prototype.visitElement = function (ast, context) {
         var _this = this;
         this.visitElementOrTemplate(ast);
+        var inputDefs = [];
+        var updateRendererExpressions = [];
+        var outputDefs = [];
         ast.inputs.forEach(function (inputAst) {
             _this.updates.push({ context: _this.component, value: inputAst.value, sourceSpan: inputAst.sourceSpan });
         });
@@ -24290,6 +24429,8 @@ var StaticSymbolResolver = /** @class */ (function () {
                         if (topLevelSymbolNames.has(name_1)) {
                             return self.getStaticSymbol(topLevelPath, name_1);
                         }
+                        // ambient value
+                        null;
                     }
                 }
                 else if (symbolic === 'error') {
@@ -26062,6 +26203,7 @@ var StaticReflector = /** @class */ (function () {
         var self = this;
         var scope = BindingScope$1.empty;
         var calling = new Map();
+        var rootContext = context;
         function simplifyInContext(context, value, depth, references) {
             function resolveReferenceValue(staticSymbol) {
                 var resolvedSymbol = self.symbolResolver.resolveSymbol(staticSymbol);
