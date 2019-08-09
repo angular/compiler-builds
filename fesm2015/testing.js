@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.1+4.sha-6ec91dd.with-local-changes
+ * @license Angular v8.2.1+6.sha-eccb60c.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -116,6 +116,23 @@ class MockResourceLoader extends ResourceLoader {
         throw new Error(`Unexpected request ${url}`);
     }
 }
+if (false) {
+    /**
+     * @type {?}
+     * @private
+     */
+    MockResourceLoader.prototype._expectations;
+    /**
+     * @type {?}
+     * @private
+     */
+    MockResourceLoader.prototype._definitions;
+    /**
+     * @type {?}
+     * @private
+     */
+    MockResourceLoader.prototype._requests;
+}
 class _PendingRequest {
     /**
      * @param {?} url
@@ -149,6 +166,16 @@ class _PendingRequest {
      */
     getPromise() { return this.promise; }
 }
+if (false) {
+    /** @type {?} */
+    _PendingRequest.prototype.resolve;
+    /** @type {?} */
+    _PendingRequest.prototype.reject;
+    /** @type {?} */
+    _PendingRequest.prototype.promise;
+    /** @type {?} */
+    _PendingRequest.prototype.url;
+}
 class _Expectation {
     /**
      * @param {?} url
@@ -158,6 +185,12 @@ class _Expectation {
         this.url = url;
         this.response = response;
     }
+}
+if (false) {
+    /** @type {?} */
+    _Expectation.prototype.url;
+    /** @type {?} */
+    _Expectation.prototype.response;
 }
 /**
  * @template T
@@ -277,6 +310,18 @@ class MockSchemaRegistry {
         return { error: (/** @type {?} */ (null)), value: val.toString() };
     }
 }
+if (false) {
+    /** @type {?} */
+    MockSchemaRegistry.prototype.existingProperties;
+    /** @type {?} */
+    MockSchemaRegistry.prototype.attrPropMapping;
+    /** @type {?} */
+    MockSchemaRegistry.prototype.existingElements;
+    /** @type {?} */
+    MockSchemaRegistry.prototype.invalidProperties;
+    /** @type {?} */
+    MockSchemaRegistry.prototype.invalidAttributes;
+}
 
 /**
  * @fileoverview added by tsickle
@@ -312,6 +357,13 @@ class MockDirectiveResolver extends DirectiveResolver {
         this._directives.set(type, metadata);
     }
 }
+if (false) {
+    /**
+     * @type {?}
+     * @private
+     */
+    MockDirectiveResolver.prototype._directives;
+}
 
 /**
  * @fileoverview added by tsickle
@@ -346,6 +398,13 @@ class MockNgModuleResolver extends NgModuleResolver {
     resolve(type, throwIfNotFound = true) {
         return this._ngModules.get(type) || (/** @type {?} */ (super.resolve(type, throwIfNotFound)));
     }
+}
+if (false) {
+    /**
+     * @type {?}
+     * @private
+     */
+    MockNgModuleResolver.prototype._ngModules;
 }
 
 /**
@@ -384,6 +443,13 @@ class MockPipeResolver extends PipeResolver {
         }
         return metadata;
     }
+}
+if (false) {
+    /**
+     * @type {?}
+     * @private
+     */
+    MockPipeResolver.prototype._pipes;
 }
 
 /**
