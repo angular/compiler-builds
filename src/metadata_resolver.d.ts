@@ -66,6 +66,7 @@ export declare class CompileMetadataResolver {
     getDirectiveMetadata(directiveType: any): cpl.CompileDirectiveMetadata;
     getDirectiveSummary(dirType: any): cpl.CompileDirectiveSummary;
     isDirective(type: any): boolean;
+    isAbstractDirective(type: any): boolean;
     isPipe(type: any): boolean;
     isNgModule(type: any): boolean;
     getNgModuleSummary(moduleType: any, alreadyCollecting?: Set<any> | null): cpl.CompileNgModuleSummary | null;
