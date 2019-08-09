@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.1+3.sha-90ddee7.with-local-changes
+ * @license Angular v8.2.1+4.sha-6ec91dd.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10553,14 +10553,16 @@ var WhitespaceVisitor = /** @class */ (function () {
             // but still visit all attributes to eliminate one used as a market to preserve WS
             return new Element$1(element.name, visitAll$1(this, element.attrs), element.children, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
         }
-        return new Element$1(element.name, element.attrs, visitAll$1(this, element.children), element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+        return new Element$1(element.name, element.attrs, visitAllWithSiblings(this, element.children), element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
     };
     WhitespaceVisitor.prototype.visitAttribute = function (attribute, context) {
         return attribute.name !== PRESERVE_WS_ATTR_NAME ? attribute : null;
     };
     WhitespaceVisitor.prototype.visitText = function (text, context) {
         var isNotBlank = text.value.match(NO_WS_REGEXP);
-        if (isNotBlank) {
+        var hasExpansionSibling = context &&
+            (context.prev instanceof Expansion || context.next instanceof Expansion);
+        if (isNotBlank || hasExpansionSibling) {
             return new Text$3(replaceNgsp(text.value).replace(WS_REPLACE_REGEXP, ' '), text.sourceSpan, text.i18n);
         }
         return null;
@@ -10572,6 +10574,17 @@ var WhitespaceVisitor = /** @class */ (function () {
 }());
 function removeWhitespaces(htmlAstWithErrors) {
     return new ParseTreeResult(visitAll$1(new WhitespaceVisitor(), htmlAstWithErrors.rootNodes), htmlAstWithErrors.errors);
+}
+function visitAllWithSiblings(visitor, nodes) {
+    var result = [];
+    nodes.forEach(function (ast, i) {
+        var context = { prev: nodes[i - 1], next: nodes[i + 1] };
+        var astResult = ast.visit(visitor, context);
+        if (astResult) {
+            result.push(astResult);
+        }
+    });
+    return result;
 }
 
 /**
@@ -18513,7 +18526,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.2.1+3.sha-90ddee7.with-local-changes');
+var VERSION$1 = new Version('8.2.1+4.sha-6ec91dd.with-local-changes');
 
 /**
  * @license
