@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.1+11.sha-0ddf0c4.with-local-changes
+ * @license Angular v9.0.0-next.1+18.sha-9a37e82.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3326,6 +3326,9 @@ const $LBRACE = 123;
 const $BAR = 124;
 const $RBRACE = 125;
 const $NBSP = 160;
+const $PIPE = 124;
+const $TILDA = 126;
+const $AT = 64;
 const $BT = 96;
 function isWhitespace(code) {
     return (code >= $TAB && code <= $SPACE) || (code == $NBSP);
@@ -3633,6 +3636,19 @@ class Icu {
     }
     visit(visitor) { return visitor.visitIcu(this); }
 }
+class NullVisitor {
+    visitElement(element) { }
+    visitTemplate(template) { }
+    visitContent(content) { }
+    visitVariable(variable) { }
+    visitReference(reference) { }
+    visitTextAttribute(attribute) { }
+    visitBoundAttribute(attribute) { }
+    visitBoundEvent(attribute) { }
+    visitText(text) { }
+    visitBoundText(text) { }
+    visitIcu(icu) { }
+}
 class RecursiveVisitor {
     visitElement(element) {
         visitAll(this, element.attributes);
@@ -3655,6 +3671,46 @@ class RecursiveVisitor {
     visitBoundText(text) { }
     visitIcu(icu) { }
 }
+class TransformVisitor {
+    visitElement(element) {
+        const newAttributes = transformAll(this, element.attributes);
+        const newInputs = transformAll(this, element.inputs);
+        const newOutputs = transformAll(this, element.outputs);
+        const newChildren = transformAll(this, element.children);
+        const newReferences = transformAll(this, element.references);
+        if (newAttributes != element.attributes || newInputs != element.inputs ||
+            newOutputs != element.outputs || newChildren != element.children ||
+            newReferences != element.references) {
+            return new Element(element.name, newAttributes, newInputs, newOutputs, newChildren, newReferences, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+        }
+        return element;
+    }
+    visitTemplate(template) {
+        const newAttributes = transformAll(this, template.attributes);
+        const newInputs = transformAll(this, template.inputs);
+        const newOutputs = transformAll(this, template.outputs);
+        const newTemplateAttrs = transformAll(this, template.templateAttrs);
+        const newChildren = transformAll(this, template.children);
+        const newReferences = transformAll(this, template.references);
+        const newVariables = transformAll(this, template.variables);
+        if (newAttributes != template.attributes || newInputs != template.inputs ||
+            newOutputs != template.outputs || newTemplateAttrs != template.templateAttrs ||
+            newChildren != template.children || newReferences != template.references ||
+            newVariables != template.variables) {
+            return new Template(template.tagName, newAttributes, newInputs, newOutputs, newTemplateAttrs, newChildren, newReferences, newVariables, template.sourceSpan, template.startSourceSpan, template.endSourceSpan);
+        }
+        return template;
+    }
+    visitContent(content) { return content; }
+    visitVariable(variable) { return variable; }
+    visitReference(reference) { return reference; }
+    visitTextAttribute(attribute) { return attribute; }
+    visitBoundAttribute(attribute) { return attribute; }
+    visitBoundEvent(attribute) { return attribute; }
+    visitText(text) { return text; }
+    visitBoundText(text) { return text; }
+    visitIcu(icu) { return icu; }
+}
 function visitAll(visitor, nodes) {
     const result = [];
     if (visitor.visit) {
@@ -3671,6 +3727,18 @@ function visitAll(visitor, nodes) {
         }
     }
     return result;
+}
+function transformAll(visitor, nodes) {
+    const result = [];
+    let changed = false;
+    for (const node of nodes) {
+        const newNode = node.visit(visitor);
+        if (newNode) {
+            result.push(newNode);
+        }
+        changed = changed || newNode != node;
+    }
+    return changed ? result : nodes;
 }
 
 /**
@@ -4402,6 +4470,9 @@ function toPublicName(internalName) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+function mapEntry(key, value) {
+    return { key, value, quoted: false };
+}
 function mapLiteral(obj, quoted = false) {
     return literalMap(Object.keys(obj).map(key => ({
         key,
@@ -4746,6 +4817,7 @@ function getQueryPredicate(query, constantPool) {
         return query.predicate;
     }
 }
+function noop() { }
 class DefinitionMap {
     constructor() {
         this.values = [];
@@ -5066,6 +5138,19 @@ function prepareSyntheticPropertyName(name) {
 }
 function prepareSyntheticListenerName(name, phase) {
     return `${ANIMATE_SYMBOL_PREFIX}${name}.${phase}`;
+}
+function isSyntheticPropertyOrListener(name) {
+    return name.charAt(0) == ANIMATE_SYMBOL_PREFIX;
+}
+function getSyntheticPropertyName(name) {
+    // this will strip out listener phase values...
+    // @foo.start => @foo
+    const i = name.indexOf('.');
+    name = i > 0 ? name.substring(0, i) : name;
+    if (name.charAt(0) !== ANIMATE_SYMBOL_PREFIX) {
+        name = ANIMATE_SYMBOL_PREFIX + name;
+    }
+    return name;
 }
 function prepareSyntheticListenerFunctionName(name, phase) {
     return `animation_${name}_${phase}`;
@@ -6301,6 +6386,10 @@ function compileNgModuleFromRender2(ctx, ngModule, injectableCompiler) {
     /* constructorMethod */ new ClassMethod(null, [], []), 
     /* methods */ []));
 }
+function accessExportScope(module) {
+    const selectorScope = new ReadPropExpr(module, 'ngModuleDef');
+    return new ReadPropExpr(selectorScope, 'exported');
+}
 function tupleTypeOf(exp) {
     const types = exp.map(ref => typeofExpr(ref.type));
     return exp.length > 0 ? expressionType(literalArr(types)) : NONE_TYPE;
@@ -6343,6 +6432,7 @@ function compilePipeFromMetadata(metadata) {
  * Write a pipe definition to the output context.
  */
 function compilePipeFromRender2(outputCtx, pipe, reflector) {
+    const definitionMapValues = [];
     const name = identifierName(pipe.type);
     if (!name) {
         return error(`Cannot resolve the name of ${pipe.type}`);
@@ -10655,13 +10745,19 @@ class NgModuleProviderAnalyzer {
         return transformedProviderAst;
     }
     _getDependency(dep, eager = false, requestorSourceSpan) {
+        let foundLocal = false;
         if (!dep.isSkipSelf && dep.token != null) {
             // access the injector
             if (tokenReference(dep.token) ===
                 this.reflector.resolveExternalReference(Identifiers.Injector) ||
                 tokenReference(dep.token) ===
-                    this.reflector.resolveExternalReference(Identifiers.ComponentFactoryResolver)) ;
-            else if (this._getOrCreateLocalProvider(dep.token, eager) != null) ;
+                    this.reflector.resolveExternalReference(Identifiers.ComponentFactoryResolver)) {
+                foundLocal = true;
+                // access providers
+            }
+            else if (this._getOrCreateLocalProvider(dep.token, eager) != null) {
+                foundLocal = true;
+            }
         }
         return dep;
     }
@@ -12298,6 +12394,7 @@ class StylingBuilder {
         };
     }
     _buildSingleInputs(reference, inputs, mapIndex, allowUnits, valueConverter, getInterpolationExpressionFn) {
+        let totalBindingSlotsRequired = 0;
         return inputs.map(input => {
             const value = input.value.visit(valueConverter);
             // each styling binding value is stored in the LView
@@ -12403,6 +12500,18 @@ function isStyleSanitizable(prop) {
  */
 function getConstantLiteralFromArray(constantPool, values) {
     return values.length ? constantPool.getConstLiteral(literalArr(values), true) : NULL_EXPR;
+}
+/**
+ * Simple helper function that adds a parameter or does nothing at all depending on the provided
+ * predicate and totalExpectedArgs values
+ */
+function addParam(params, predicate, value, argNumber, totalExpectedArgs) {
+    if (predicate && value) {
+        params.push(value);
+    }
+    else if (argNumber < totalExpectedArgs) {
+        params.push(NULL_EXPR);
+    }
 }
 function parseProperty(name) {
     let hasOverrideFlag = false;
@@ -12701,7 +12810,9 @@ class _Scanner {
         let simple = (this.index === start);
         this.advance(); // Skip initial digit.
         while (true) {
-            if (isDigit(this.peek)) ;
+            if (isDigit(this.peek)) {
+                // Do nothing.
+            }
             else if (this.peek == $PERIOD) {
                 simple = false;
             }
@@ -14897,6 +15008,9 @@ class I18nMetaVisitor {
     visitComment(comment, context) { return comment; }
     visitExpansionCase(expansionCase, context) { return expansionCase; }
 }
+function processI18nMeta(htmlAstWithErrors, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+    return new ParseTreeResult(visitAll$1(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), htmlAstWithErrors.rootNodes), htmlAstWithErrors.errors);
+}
 
 /**
  * @license
@@ -16546,6 +16660,9 @@ const EMPTY_ARRAY = [];
 // This regex matches any binding names that contain the "attr." prefix, e.g. "attr.required"
 // If there is a match, the first matching group will contain the attribute name to bind.
 const ATTR_REGEX = /attr\.([^\]]+)/;
+function getStylingPrefix(name) {
+    return name.substring(0, 5); // style or class
+}
 function baseDirectiveFields(meta, constantPool, bindingParser) {
     const definitionMap = new DefinitionMap();
     // e.g. `type: MyDirective`
@@ -17481,7 +17598,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.1+11.sha-0ddf0c4.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.1+18.sha-9a37e82.with-local-changes');
 
 /**
  * @license
@@ -19270,7 +19387,7 @@ class _ValueOutputAstTransformer {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-function mapEntry(key, value) {
+function mapEntry$1(key, value) {
     return { key, value, quoted: false };
 }
 class InjectableCompiler {
@@ -19363,9 +19480,9 @@ class InjectableCompiler {
             }
         }
         const def = [
-            mapEntry('factory', this.factoryFor(injectable, ctx)),
-            mapEntry('token', ctx.importExpr(injectable.type.reference)),
-            mapEntry('providedIn', providedIn),
+            mapEntry$1('factory', this.factoryFor(injectable, ctx)),
+            mapEntry$1('token', ctx.importExpr(injectable.type.reference)),
+            mapEntry$1('providedIn', providedIn),
         ];
         return importExpr(Identifiers.ɵɵdefineInjectable).callFn([literalMap(def)]);
     }
@@ -20818,6 +20935,7 @@ class NgModuleResolver {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+const _debugFilePath = '/debug/lib';
 function debugOutputAstAsTypeScript(ast) {
     const converter = new _TsEmitterVisitor();
     const ctx = EmitterVisitorContext.createRoot();
@@ -21416,6 +21534,9 @@ class ViewBuilder {
     }
     visitElement(ast, context) {
         this.visitElementOrTemplate(ast);
+        let inputDefs = [];
+        let updateRendererExpressions = [];
+        let outputDefs = [];
         ast.inputs.forEach((inputAst) => {
             this.updates.push({ context: this.component, value: inputAst.value, sourceSpan: inputAst.sourceSpan });
         });
@@ -22948,6 +23069,8 @@ class StaticSymbolResolver {
                         if (topLevelSymbolNames.has(name)) {
                             return self.getStaticSymbol(topLevelPath, name);
                         }
+                        // ambient value
+                        null;
                     }
                 }
                 else if (symbolic === 'error') {
@@ -24586,6 +24709,7 @@ class StaticReflector {
         const self = this;
         let scope = BindingScope$1.empty;
         const calling = new Map();
+        const rootContext = context;
         function simplifyInContext(context, value, depth, references) {
             function resolveReferenceValue(staticSymbol) {
                 const resolvedSymbol = self.symbolResolver.resolveSymbol(staticSymbol);
