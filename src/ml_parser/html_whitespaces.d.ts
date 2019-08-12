@@ -32,14 +32,9 @@ export declare function replaceNgsp(value: string): string;
 export declare class WhitespaceVisitor implements html.Visitor {
     visitElement(element: html.Element, context: any): any;
     visitAttribute(attribute: html.Attribute, context: any): any;
-    visitText(text: html.Text, context: SiblingVisitorContext | null): any;
+    visitText(text: html.Text, context: any): any;
     visitComment(comment: html.Comment, context: any): any;
     visitExpansion(expansion: html.Expansion, context: any): any;
     visitExpansionCase(expansionCase: html.ExpansionCase, context: any): any;
 }
 export declare function removeWhitespaces(htmlAstWithErrors: ParseTreeResult): ParseTreeResult;
-interface SiblingVisitorContext {
-    prev: html.Node | undefined;
-    next: html.Node | undefined;
-}
-export {};
