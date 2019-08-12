@@ -144,9 +144,8 @@ export declare class Identifiers {
     static viewQuery: o.ExternalReference;
     static staticViewQuery: o.ExternalReference;
     static staticContentQuery: o.ExternalReference;
-    static loadViewQuery: o.ExternalReference;
+    static loadQuery: o.ExternalReference;
     static contentQuery: o.ExternalReference;
-    static loadContentQuery: o.ExternalReference;
     static NgOnChangesFeature: o.ExternalReference;
     static InheritDefinitionFeature: o.ExternalReference;
     static ProvidersFeature: o.ExternalReference;
