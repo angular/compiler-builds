@@ -96,6 +96,7 @@ export interface NgAnalyzedFileWithInjectables {
 export interface NgAnalyzedFile {
     fileName: string;
     directives: StaticSymbol[];
+    abstractDirectives: StaticSymbol[];
     pipes: StaticSymbol[];
     ngModules: CompileNgModuleMetadata[];
     injectables: CompileInjectableMetadata[];
