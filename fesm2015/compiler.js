@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.2+13.sha-628b0c1.with-local-changes
+ * @license Angular v9.0.0-next.2+39.sha-2e4d17f.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -17596,7 +17596,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.2+13.sha-628b0c1.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.2+39.sha-2e4d17f.with-local-changes');
 
 /**
  * @license
@@ -19912,8 +19912,7 @@ class CompileMetadataResolver {
         else {
             // Directive
             if (!selector) {
-                this._reportError(syntaxError(`Directive ${stringifyType(directiveType)} has no selector, please add it!`), directiveType);
-                selector = 'error';
+                selector = null;
             }
         }
         let providers = [];
@@ -19977,6 +19976,17 @@ class CompileMetadataResolver {
     isDirective(type) {
         return !!this._loadSummary(type, CompileSummaryKind.Directive) ||
             this._directiveResolver.isDirective(type);
+    }
+    isAbstractDirective(type) {
+        const summary = this._loadSummary(type, CompileSummaryKind.Directive);
+        if (summary && !summary.isComponent) {
+            return !summary.selector;
+        }
+        const meta = this._directiveResolver.resolve(type, false);
+        if (meta && !createComponent.isTypeOf(meta)) {
+            return !meta.selector;
+        }
+        return false;
     }
     isPipe(type) {
         return !!this._loadSummary(type, CompileSummaryKind.Pipe) ||
@@ -20119,6 +20129,9 @@ class CompileMetadataResolver {
                 }
                 const declaredIdentifier = this._getIdentifierMetadata(declaredType);
                 if (this.isDirective(declaredType)) {
+                    if (this.isAbstractDirective(declaredType)) {
+                        this._reportError(syntaxError(`Directive ${stringifyType(declaredType)} has no selector, please add it!`), declaredType);
+                    }
                     transitiveModule.addDirective(declaredIdentifier);
                     declaredDirectives.push(declaredIdentifier);
                     this._addTypeToModule(declaredType, moduleType);
@@ -24159,18 +24172,20 @@ function _analyzeFilesIncludingNonProgramFiles(fileNames, host, staticSymbolReso
     return files;
 }
 function analyzeFile(host, staticSymbolResolver, metadataResolver, fileName) {
+    const abstractDirectives = [];
     const directives = [];
     const pipes = [];
     const injectables = [];
     const ngModules = [];
     const hasDecorators = staticSymbolResolver.hasDecorators(fileName);
     let exportsNonSourceFiles = false;
+    const isDeclarationFile = fileName.endsWith('.d.ts');
     // Don't analyze .d.ts files that have no decorators as a shortcut
     // to speed up the analysis. This prevents us from
     // resolving the references in these files.
     // Note: exportsNonSourceFiles is only needed when compiling with summaries,
     // which is not the case when .d.ts files are treated as input files.
-    if (!fileName.endsWith('.d.ts') || hasDecorators) {
+    if (!isDeclarationFile || hasDecorators) {
         staticSymbolResolver.getSymbolsOf(fileName).forEach((symbol) => {
             const resolvedSymbol = staticSymbolResolver.resolveSymbol(symbol);
             const symbolMeta = resolvedSymbol.metadata;
@@ -24181,7 +24196,25 @@ function analyzeFile(host, staticSymbolResolver, metadataResolver, fileName) {
             if (symbolMeta.__symbolic === 'class') {
                 if (metadataResolver.isDirective(symbol)) {
                     isNgSymbol = true;
-                    directives.push(symbol);
+                    if (!isDeclarationFile) {
+                        // This directive either has a selector or doesn't. Selector-less directives get tracked
+                        // in abstractDirectives, not directives. The compiler doesn't deal with selector-less
+                        // directives at all, really, other than to persist their metadata. This is done so that
+                        // apps will have an easier time migrating to Ivy, which requires the selector-less
+                        // annotations to be applied.
+                        if (!metadataResolver.isAbstractDirective(symbol)) {
+                            // The directive is an ordinary directive.
+                            directives.push(symbol);
+                        }
+                        else {
+                            // The directive has no selector and is an "abstract" directive, so track it
+                            // accordingly.
+                            abstractDirectives.push(symbol);
+                        }
+                    }
+                    else {
+                        directives.push(symbol);
+                    }
                 }
                 else if (metadataResolver.isPipe(symbol)) {
                     isNgSymbol = true;
@@ -24209,7 +24242,8 @@ function analyzeFile(host, staticSymbolResolver, metadataResolver, fileName) {
         });
     }
     return {
-        fileName, directives, pipes, ngModules, injectables, exportsNonSourceFiles,
+        fileName, directives, abstractDirectives, pipes,
+        ngModules, injectables, exportsNonSourceFiles,
     };
 }
 function analyzeFileForInjectables(host, staticSymbolResolver, metadataResolver, fileName) {
