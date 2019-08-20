@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.2+66.sha-f8b995d.with-local-changes
+ * @license Angular v9.0.0-next.2+68.sha-cfed0c0.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16725,9 +16725,6 @@ function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
     const { definitionMap, statements } = baseDirectiveFields(meta, constantPool, bindingParser);
     addFeatures(definitionMap, meta);
     const expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()]);
-    if (!meta.selector) {
-        throw new Error(`Directive ${meta.name} has no selector, please add it!`);
-    }
     const type = createTypeForDef(meta, Identifiers$1.DirectiveDefWithMeta);
     return { expression, type, statements };
 }
@@ -17596,7 +17593,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.2+66.sha-f8b995d.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.2+68.sha-cfed0c0.with-local-changes');
 
 /**
  * @license
