@@ -72,3 +72,5 @@ declare const _global: {
     [name: string]: any;
 };
 export { _global as global };
+export declare function newArray<T = any>(size: number): T[];
+export declare function newArray<T>(size: number, value: T): T[];

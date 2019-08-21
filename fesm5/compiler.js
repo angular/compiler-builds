@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.2+74.sha-10ea3a9.with-local-changes
+ * @license Angular v9.0.0-next.2+76.sha-6477057.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2531,6 +2531,13 @@ var __global = typeof global !== 'undefined' && global;
 // Check __global first, because in Node tests both __global and __window may be defined and _global
 // should be __global in that case.
 var _global = __global || __window || __self;
+function newArray(size, value) {
+    var list = [];
+    for (var i = 0; i < size; i++) {
+        list.push(value);
+    }
+    return list;
+}
 
 /**
  * @license
@@ -4317,7 +4324,7 @@ function sha1(str) {
     var utf8 = utf8Encode(str);
     var words32 = stringToWords32(utf8, Endian.Big);
     var len = utf8.length * 8;
-    var w = new Array(80);
+    var w = newArray(80);
     var _c = __read([0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0], 5), a = _c[0], b = _c[1], c = _c[2], d = _c[3], e = _c[4];
     words32[len >> 5] |= 0x80 << (24 - len % 32);
     words32[((len + 64 >> 9) << 4) + 15] = len;
@@ -4465,8 +4472,9 @@ function rol64(_a, count) {
     return [h, l];
 }
 function stringToWords32(str, endian) {
-    var words32 = Array((str.length + 3) >>> 2);
-    for (var i = 0; i < words32.length; i++) {
+    var size = (str.length + 3) >>> 2;
+    var words32 = [];
+    for (var i = 0; i < size; i++) {
         words32[i] = wordAt(str, i * 4, endian);
     }
     return words32;
@@ -7479,7 +7487,7 @@ var AstTransformer$1 = /** @class */ (function () {
         return new KeyedWrite(ast.span, ast.obj.visit(this), ast.key.visit(this), ast.value.visit(this));
     };
     AstTransformer.prototype.visitAll = function (asts) {
-        var res = new Array(asts.length);
+        var res = [];
         for (var i = 0; i < asts.length; ++i) {
             res[i] = asts[i].visit(this);
         }
@@ -7623,7 +7631,7 @@ var AstMemoryEfficientTransformer = /** @class */ (function () {
         return ast;
     };
     AstMemoryEfficientTransformer.prototype.visitAll = function (asts) {
-        var res = new Array(asts.length);
+        var res = [];
         var modified = false;
         for (var i = 0; i < asts.length; ++i) {
             var original = asts[i];
@@ -12519,7 +12527,7 @@ var TemplateParseVisitor = /** @class */ (function () {
         // Need to sort the directives so that we get consistent results throughout,
         // as selectorMatcher uses Maps inside.
         // Also deduplicate directives as they might match more than one time!
-        var directives = new Array(this.directivesIndex.size);
+        var directives = newArray(this.directivesIndex.size);
         // Whether any directive selector matches on the element name
         var matchElement = false;
         selectorMatcher.match(elementCssSelector, function (selector, directive) {
@@ -18656,7 +18664,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-next.2+74.sha-10ea3a9.with-local-changes');
+var VERSION$1 = new Version('9.0.0-next.2+76.sha-6477057.with-local-changes');
 
 /**
  * @license
@@ -25495,7 +25503,7 @@ var AotCompiler = /** @class */ (function () {
             // to the constructor function itself.
             var suppliedTypeParams = typeParams || [];
             var missingTypeParamsCount = arity - suppliedTypeParams.length;
-            var allTypeParams = suppliedTypeParams.concat(new Array(missingTypeParamsCount).fill(DYNAMIC_TYPE));
+            var allTypeParams = suppliedTypeParams.concat(newArray(missingTypeParamsCount, DYNAMIC_TYPE));
             return members.reduce(function (expr, memberName) { return expr.prop(memberName); }, importExpr(new ExternalReference(moduleName, name, null), allTypeParams));
         };
         return { statements: [], genFilePath: genFilePath, importExpr: importExpr$1, constantPool: new ConstantPool() };

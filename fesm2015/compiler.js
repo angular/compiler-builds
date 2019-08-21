@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.2+74.sha-10ea3a9.with-local-changes
+ * @license Angular v9.0.0-next.2+76.sha-6477057.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2285,6 +2285,13 @@ const __global = typeof global !== 'undefined' && global;
 // Check __global first, because in Node tests both __global and __window may be defined and _global
 // should be __global in that case.
 const _global = __global || __window || __self;
+function newArray(size, value) {
+    const list = [];
+    for (let i = 0; i < size; i++) {
+        list.push(value);
+    }
+    return list;
+}
 
 /**
  * @license
@@ -3945,7 +3952,7 @@ function sha1(str) {
     const utf8 = utf8Encode(str);
     const words32 = stringToWords32(utf8, Endian.Big);
     const len = utf8.length * 8;
-    const w = new Array(80);
+    const w = newArray(80);
     let [a, b, c, d, e] = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0];
     words32[len >> 5] |= 0x80 << (24 - len % 32);
     words32[((len + 64 >> 9) << 4) + 15] = len;
@@ -4087,8 +4094,9 @@ function rol64([hi, lo], count) {
     return [h, l];
 }
 function stringToWords32(str, endian) {
-    const words32 = Array((str.length + 3) >>> 2);
-    for (let i = 0; i < words32.length; i++) {
+    const size = (str.length + 3) >>> 2;
+    const words32 = [];
+    for (let i = 0; i < size; i++) {
         words32[i] = wordAt(str, i * 4, endian);
     }
     return words32;
@@ -6890,7 +6898,7 @@ class AstTransformer$1 {
         return new KeyedWrite(ast.span, ast.obj.visit(this), ast.key.visit(this), ast.value.visit(this));
     }
     visitAll(asts) {
-        const res = new Array(asts.length);
+        const res = [];
         for (let i = 0; i < asts.length; ++i) {
             res[i] = asts[i].visit(this);
         }
@@ -7031,7 +7039,7 @@ class AstMemoryEfficientTransformer {
         return ast;
     }
     visitAll(asts) {
-        const res = new Array(asts.length);
+        const res = [];
         let modified = false;
         for (let i = 0; i < asts.length; ++i) {
             const original = asts[i];
@@ -11694,7 +11702,7 @@ class TemplateParseVisitor {
         // Need to sort the directives so that we get consistent results throughout,
         // as selectorMatcher uses Maps inside.
         // Also deduplicate directives as they might match more than one time!
-        const directives = new Array(this.directivesIndex.size);
+        const directives = newArray(this.directivesIndex.size);
         // Whether any directive selector matches on the element name
         let matchElement = false;
         selectorMatcher.match(elementCssSelector, (selector, directive) => {
@@ -17593,7 +17601,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.2+74.sha-10ea3a9.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.2+76.sha-6477057.with-local-changes');
 
 /**
  * @license
@@ -24066,7 +24074,7 @@ class AotCompiler {
             // to the constructor function itself.
             const suppliedTypeParams = typeParams || [];
             const missingTypeParamsCount = arity - suppliedTypeParams.length;
-            const allTypeParams = suppliedTypeParams.concat(new Array(missingTypeParamsCount).fill(DYNAMIC_TYPE));
+            const allTypeParams = suppliedTypeParams.concat(newArray(missingTypeParamsCount, DYNAMIC_TYPE));
             return members.reduce((expr, memberName) => expr.prop(memberName), importExpr(new ExternalReference(moduleName, name, null), allTypeParams));
         };
         return { statements: [], genFilePath, importExpr: importExpr$1, constantPool: new ConstantPool() };
