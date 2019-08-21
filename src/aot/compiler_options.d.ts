@@ -17,6 +17,6 @@ export interface AotCompilerOptions {
     fullTemplateTypeCheck?: boolean;
     allowEmptyCodegenFiles?: boolean;
     strictInjectionParameters?: boolean;
-    enableIvy?: boolean | 'ngtsc' | 'tsc';
+    enableIvy?: boolean | 'ngtsc';
     createExternalSymbolFactoryReexports?: boolean;
 }
