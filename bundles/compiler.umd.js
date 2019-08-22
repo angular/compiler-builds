@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.3+9.sha-904a201.with-local-changes
+ * @license Angular v9.0.0-next.3+11.sha-4f7c971.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -18833,7 +18833,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.0.0-next.3+9.sha-904a201.with-local-changes');
+    var VERSION$1 = new Version('9.0.0-next.3+11.sha-4f7c971.with-local-changes');
 
     /**
      * @license
@@ -28670,6 +28670,8 @@
      */
 
     exports.core = core;
+    exports.CUSTOM_ELEMENTS_SCHEMA = CUSTOM_ELEMENTS_SCHEMA;
+    exports.NO_ERRORS_SCHEMA = NO_ERRORS_SCHEMA;
     exports.CompilerConfig = CompilerConfig;
     exports.preserveWhitespacesDefault = preserveWhitespacesDefault;
     exports.isLoweredSymbol = isLoweredSymbol;
