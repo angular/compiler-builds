@@ -208,7 +208,6 @@ export interface R3QueryMetadata {
 export interface R3DirectiveDef {
     expression: o.Expression;
     type: o.Type;
-    statements: o.Statement[];
 }
 /**
  * Output of render3 component compilation.
@@ -216,7 +215,6 @@ export interface R3DirectiveDef {
 export interface R3ComponentDef {
     expression: o.Expression;
     type: o.Type;
-    statements: o.Statement[];
 }
 /**
  * Mappings indicating how the class interacts with its

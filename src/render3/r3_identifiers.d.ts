@@ -130,6 +130,7 @@ export declare class Identifiers {
     static defineComponent: o.ExternalReference;
     static setComponentScope: o.ExternalReference;
     static ComponentDefWithMeta: o.ExternalReference;
+    static FactoryDef: o.ExternalReference;
     static defineDirective: o.ExternalReference;
     static DirectiveDefWithMeta: o.ExternalReference;
     static InjectorDef: o.ExternalReference;

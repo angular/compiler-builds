@@ -25,6 +25,8 @@ export interface R3ConstructorFactoryMetadata {
      * `useNew` property determines whether it will be called as a constructor or not.
      */
     type: o.Expression;
+    /** Number of arguments for the `type`. */
+    typeArgumentCount: number;
     /**
      * Regardless of whether `fnOrClass` is a constructor function or a user-defined factory, it
      * may have 0 or more parameters, which will be injected according to the `R3DependencyMetadata`
@@ -58,6 +60,13 @@ export interface R3ExpressionFactoryMetadata extends R3ConstructorFactoryMetadat
     expression: o.Expression;
 }
 export declare type R3FactoryMetadata = R3ConstructorFactoryMetadata | R3DelegatedFactoryMetadata | R3DelegatedFnOrClassMetadata | R3ExpressionFactoryMetadata;
+export interface R3FactoryDefMetadata {
+    name: string;
+    type: o.Expression;
+    typeArgumentCount: number;
+    deps: R3DependencyMetadata[] | null;
+    isPipe?: boolean;
+}
 /**
  * Resolved type of a dependency.
  *
@@ -112,13 +121,19 @@ export interface R3DependencyMetadata {
      */
     skipSelf: boolean;
 }
+export interface R3FactoryFn {
+    factory: o.Expression;
+    statements: o.Statement[];
+    type: o.ExpressionType;
+}
 /**
  * Construct a factory function expression for the given `R3FactoryMetadata`.
  */
-export declare function compileFactoryFunction(meta: R3FactoryMetadata, isPipe?: boolean): {
-    factory: o.Expression;
-    statements: o.Statement[];
-};
+export declare function compileFactoryFunction(meta: R3FactoryMetadata, isPipe?: boolean): R3FactoryFn;
+/**
+ * Constructs the `ngFactoryDef` from directive/component/pipe metadata.
+ */
+export declare function compileFactoryFromMetadata(meta: R3FactoryDefMetadata): R3FactoryFn;
 /**
  * A helper function useful for extracting `R3DependencyMetadata` from a Render2
  * `CompileTypeMetadata` instance.
