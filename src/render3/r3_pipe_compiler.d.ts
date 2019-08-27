@@ -39,7 +39,6 @@ export interface R3PipeMetadata {
 export declare function compilePipeFromMetadata(metadata: R3PipeMetadata): {
     expression: o.InvokeFunctionExpr;
     type: o.ExpressionType;
-    statements: o.Statement[];
 };
 /**
  * Write a pipe definition to the output context.

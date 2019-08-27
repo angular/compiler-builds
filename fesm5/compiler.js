@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.3+53.sha-14feb56.with-local-changes
+ * @license Angular v9.0.0-next.3+55.sha-7c7fcd7.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3496,6 +3496,10 @@ var Identifiers$1 = /** @class */ (function () {
         name: 'ɵɵComponentDefWithMeta',
         moduleName: CORE$1,
     };
+    Identifiers.FactoryDef = {
+        name: 'ɵɵFactoryDef',
+        moduleName: CORE$1,
+    };
     Identifiers.defineDirective = {
         name: 'ɵɵdefineDirective',
         moduleName: CORE$1,
@@ -3548,6 +3552,71 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.sanitizeUrlOrResourceUrl = { name: 'ɵɵsanitizeUrlOrResourceUrl', moduleName: CORE$1 };
     return Identifiers;
 }());
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Convert an object map with `Expression` values into a `LiteralMapExpr`.
+ */
+function mapToMapExpression(map) {
+    var result = Object.keys(map).map(function (key) { return ({ key: key, value: map[key], quoted: false }); });
+    return literalMap(result);
+}
+/**
+ * Convert metadata into an `Expression` in the given `OutputContext`.
+ *
+ * This operation will handle arrays, references to symbols, or literal `null` or `undefined`.
+ */
+function convertMetaToOutput(meta, ctx) {
+    if (Array.isArray(meta)) {
+        return literalArr(meta.map(function (entry) { return convertMetaToOutput(entry, ctx); }));
+    }
+    if (meta instanceof StaticSymbol) {
+        return ctx.importExpr(meta);
+    }
+    if (meta == null) {
+        return literal(meta);
+    }
+    throw new Error("Internal error: Unsupported or unknown metadata: " + meta);
+}
+function typeWithParameters(type, numParams) {
+    var params = null;
+    if (numParams > 0) {
+        params = [];
+        for (var i = 0; i < numParams; i++) {
+            params.push(DYNAMIC_TYPE);
+        }
+    }
+    return expressionType(type, null, params);
+}
+var ANIMATE_SYMBOL_PREFIX = '@';
+function prepareSyntheticPropertyName(name) {
+    return "" + ANIMATE_SYMBOL_PREFIX + name;
+}
+function prepareSyntheticListenerName(name, phase) {
+    return "" + ANIMATE_SYMBOL_PREFIX + name + "." + phase;
+}
+function isSyntheticPropertyOrListener(name) {
+    return name.charAt(0) == ANIMATE_SYMBOL_PREFIX;
+}
+function getSyntheticPropertyName(name) {
+    // this will strip out listener phase values...
+    // @foo.start => @foo
+    var i = name.indexOf('.');
+    name = i > 0 ? name.substring(0, i) : name;
+    if (name.charAt(0) !== ANIMATE_SYMBOL_PREFIX) {
+        name = ANIMATE_SYMBOL_PREFIX + name;
+    }
+    return name;
+}
+function prepareSyntheticListenerFunctionName(name, phase) {
+    return "animation_" + name + "_" + phase;
+}
 
 /**
  * @license
@@ -5431,7 +5500,21 @@ function compileFactoryFunction(meta, isPipe) {
     return {
         factory: fn([new FnParam('t', DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, meta.name + "_Factory"),
         statements: statements,
+        type: expressionType(importExpr(Identifiers$1.FactoryDef, [typeWithParameters(meta.type, meta.typeArgumentCount)]))
     };
+}
+/**
+ * Constructs the `ngFactoryDef` from directive/component/pipe metadata.
+ */
+function compileFactoryFromMetadata(meta) {
+    return compileFactoryFunction({
+        name: meta.name,
+        type: meta.type,
+        deps: meta.deps,
+        typeArgumentCount: meta.typeArgumentCount,
+        // TODO(crisbeto): this should be refactored once we start using it for injectables.
+        injectFn: Identifiers$1.directiveInject,
+    }, meta.isPipe);
 }
 function injectDependencies(deps, injectFn, isPipe) {
     return deps.map(function (dep) { return compileInjectDependency(dep, injectFn, isPipe); });
@@ -5532,76 +5615,12 @@ function isExpressionFactoryMetadata(meta) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * Convert an object map with `Expression` values into a `LiteralMapExpr`.
- */
-function mapToMapExpression(map) {
-    var result = Object.keys(map).map(function (key) { return ({ key: key, value: map[key], quoted: false }); });
-    return literalMap(result);
-}
-/**
- * Convert metadata into an `Expression` in the given `OutputContext`.
- *
- * This operation will handle arrays, references to symbols, or literal `null` or `undefined`.
- */
-function convertMetaToOutput(meta, ctx) {
-    if (Array.isArray(meta)) {
-        return literalArr(meta.map(function (entry) { return convertMetaToOutput(entry, ctx); }));
-    }
-    if (meta instanceof StaticSymbol) {
-        return ctx.importExpr(meta);
-    }
-    if (meta == null) {
-        return literal(meta);
-    }
-    throw new Error("Internal error: Unsupported or unknown metadata: " + meta);
-}
-function typeWithParameters(type, numParams) {
-    var params = null;
-    if (numParams > 0) {
-        params = [];
-        for (var i = 0; i < numParams; i++) {
-            params.push(DYNAMIC_TYPE);
-        }
-    }
-    return expressionType(type, null, params);
-}
-var ANIMATE_SYMBOL_PREFIX = '@';
-function prepareSyntheticPropertyName(name) {
-    return "" + ANIMATE_SYMBOL_PREFIX + name;
-}
-function prepareSyntheticListenerName(name, phase) {
-    return "" + ANIMATE_SYMBOL_PREFIX + name + "." + phase;
-}
-function isSyntheticPropertyOrListener(name) {
-    return name.charAt(0) == ANIMATE_SYMBOL_PREFIX;
-}
-function getSyntheticPropertyName(name) {
-    // this will strip out listener phase values...
-    // @foo.start => @foo
-    var i = name.indexOf('.');
-    name = i > 0 ? name.substring(0, i) : name;
-    if (name.charAt(0) !== ANIMATE_SYMBOL_PREFIX) {
-        name = ANIMATE_SYMBOL_PREFIX + name;
-    }
-    return name;
-}
-function prepareSyntheticListenerFunctionName(name, phase) {
-    return "animation_" + name + "_" + phase;
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 function compileInjectable(meta) {
     var result = null;
     var factoryMeta = {
         name: meta.name,
         type: meta.type,
+        typeArgumentCount: meta.typeArgumentCount,
         deps: meta.ctorDeps,
         injectFn: Identifiers.inject,
     };
@@ -6827,6 +6846,7 @@ function compileInjector(meta) {
     var result = compileFactoryFunction({
         name: meta.name,
         type: meta.type,
+        typeArgumentCount: 0,
         deps: meta.deps,
         injectFn: Identifiers$1.inject,
     });
@@ -6892,13 +6912,6 @@ function compilePipeFromMetadata(metadata) {
     definitionMapValues.push({ key: 'name', value: literal(metadata.pipeName), quoted: false });
     // e.g. `type: MyPipe`
     definitionMapValues.push({ key: 'type', value: metadata.type, quoted: false });
-    var templateFactory = compileFactoryFunction({
-        name: metadata.name,
-        type: metadata.type,
-        deps: metadata.deps,
-        injectFn: Identifiers$1.directiveInject,
-    }, true);
-    definitionMapValues.push({ key: 'factory', value: templateFactory.factory, quoted: false });
     // e.g. `pure: true`
     definitionMapValues.push({ key: 'pure', value: literal(metadata.pure), quoted: false });
     var expression = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]);
@@ -6906,13 +6919,12 @@ function compilePipeFromMetadata(metadata) {
         typeWithParameters(metadata.type, metadata.typeArgumentCount),
         new ExpressionType(new LiteralExpr(metadata.pipeName)),
     ]));
-    return { expression: expression, type: type, statements: templateFactory.statements };
+    return { expression: expression, type: type };
 }
 /**
  * Write a pipe definition to the output context.
  */
 function compilePipeFromRender2(outputCtx, pipe, reflector) {
-    var definitionMapValues = [];
     var name = identifierName(pipe.type);
     if (!name) {
         return error("Cannot resolve the name of " + pipe.type);
@@ -6926,8 +6938,21 @@ function compilePipeFromRender2(outputCtx, pipe, reflector) {
         pure: pipe.pure,
     };
     var res = compilePipeFromMetadata(metadata);
+    var factoryRes = compileFactoryFromMetadata(__assign({}, metadata, { isPipe: true }));
     var definitionField = outputCtx.constantPool.propertyNameOf(3 /* Pipe */);
-    outputCtx.statements.push(new ClassStmt(
+    var ngFactoryDefStatement = new ClassStmt(
+    /* name */ name, 
+    /* parent */ null, 
+    /* fields */
+    [new ClassField(
+        /* name */ 'ngFactoryDef', 
+        /* type */ INFERRED_TYPE, 
+        /* modifiers */ [StmtModifier.Static], 
+        /* initializer */ factoryRes.factory)], 
+    /* getters */ [], 
+    /* constructorMethod */ new ClassMethod(null, [], []), 
+    /* methods */ []);
+    var pipeDefStatement = new ClassStmt(
     /* name */ name, 
     /* parent */ null, 
     /* fields */ [new ClassField(
@@ -6937,7 +6962,8 @@ function compilePipeFromRender2(outputCtx, pipe, reflector) {
         /* initializer */ res.expression)], 
     /* getters */ [], 
     /* constructorMethod */ new ClassMethod(null, [], []), 
-    /* methods */ []));
+    /* methods */ []);
+    outputCtx.statements.push(ngFactoryDefStatement, pipeDefStatement);
 }
 
 /**
@@ -17681,14 +17707,6 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     definitionMap.set('type', meta.type);
     // e.g. `selectors: [['', 'someDir', '']]`
     definitionMap.set('selectors', createDirectiveSelector(meta.selector));
-    // e.g. `factory: () => new MyApp(directiveInject(ElementRef))`
-    var result = compileFactoryFunction({
-        name: meta.name,
-        type: meta.type,
-        deps: meta.deps,
-        injectFn: Identifiers$1.directiveInject,
-    });
-    definitionMap.set('factory', result.factory);
     if (meta.queries.length > 0) {
         // e.g. `contentQueries: (rf, ctx, dirIndex) => { ... }
         definitionMap.set('contentQueries', createContentQueriesFunction(meta.queries, constantPool, meta.name));
@@ -17705,7 +17723,7 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     if (meta.exportAs !== null) {
         definitionMap.set('exportAs', literalArr(meta.exportAs.map(function (e) { return literal(e); })));
     }
-    return { definitionMap: definitionMap, statements: result.statements };
+    return definitionMap;
 }
 /**
  * Add features to the definition map.
@@ -17736,11 +17754,11 @@ function addFeatures(definitionMap, meta) {
  * Compile a directive for the render3 runtime as defined by the `R3DirectiveMetadata`.
  */
 function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
-    var _a = baseDirectiveFields(meta, constantPool, bindingParser), definitionMap = _a.definitionMap, statements = _a.statements;
+    var definitionMap = baseDirectiveFields(meta, constantPool, bindingParser);
     addFeatures(definitionMap, meta);
     var expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()]);
     var type = createTypeForDef(meta, Identifiers$1.DirectiveDefWithMeta);
-    return { expression: expression, type: type, statements: statements };
+    return { expression: expression, type: type };
 }
 /**
  * Compile a base definition for the render3 runtime as defined by {@link R3BaseRefMetadata}
@@ -17783,7 +17801,7 @@ function compileBaseDefFromMetadata(meta, constantPool, bindingParser) {
  */
 function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     var e_1, _a;
-    var _b = baseDirectiveFields(meta, constantPool, bindingParser), definitionMap = _b.definitionMap, statements = _b.statements;
+    var definitionMap = baseDirectiveFields(meta, constantPool, bindingParser);
     addFeatures(definitionMap, meta);
     var selector = meta.selector && CssSelector.parse(meta.selector);
     var firstSelector = selector && selector[0];
@@ -17801,15 +17819,15 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     if (meta.directives.length > 0) {
         var matcher = new SelectorMatcher();
         try {
-            for (var _c = __values(meta.directives), _d = _c.next(); !_d.done; _d = _c.next()) {
-                var _e = _d.value, selector_1 = _e.selector, expression_1 = _e.expression;
+            for (var _b = __values(meta.directives), _c = _b.next(); !_c.done; _c = _b.next()) {
+                var _d = _c.value, selector_1 = _d.selector, expression_1 = _d.expression;
                 matcher.addSelectables(CssSelector.parse(selector_1), expression_1);
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
-                if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
+                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
             }
             finally { if (e_1) throw e_1.error; }
         }
@@ -17883,7 +17901,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     var selectorForType = (meta.selector || '').replace(/\n/g, '');
     var expression = importExpr(Identifiers$1.defineComponent).callFn([definitionMap.toLiteralMap()]);
     var type = createTypeForDef(meta, Identifiers$1.ComponentDefWithMeta);
-    return { expression: expression, type: type, statements: statements };
+    return { expression: expression, type: type };
 }
 /**
  * A wrapper around `compileDirective` which depends on render2 global analysis data as its input
@@ -17898,8 +17916,11 @@ function compileDirectiveFromRender2(outputCtx, directive, reflector, bindingPar
     var definitionField = outputCtx.constantPool.propertyNameOf(1 /* Directive */);
     var meta = directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector);
     var res = compileDirectiveFromMetadata(meta, outputCtx.constantPool, bindingParser);
+    var factoryRes = compileFactoryFromMetadata(meta);
+    var ngFactoryDefStatement = new ClassStmt(name, null, [new ClassField('ngFactoryDef', INFERRED_TYPE, [StmtModifier.Static], factoryRes.factory)], [], new ClassMethod(null, [], []), []);
+    var directiveDefStatement = new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []);
     // Create the partial class to be merged with the actual class.
-    outputCtx.statements.push(new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []));
+    outputCtx.statements.push(ngFactoryDefStatement, directiveDefStatement);
 }
 /**
  * A wrapper around `compileComponent` which depends on render2 global analysis data as its input
@@ -17916,8 +17937,11 @@ function compileComponentFromRender2(outputCtx, component, render3Ast, reflector
     // Compute the R3ComponentMetadata from the CompileDirectiveMetadata
     var meta = __assign({}, directiveMetadataFromGlobalMetadata(component, outputCtx, reflector), { selector: component.selector, template: { nodes: render3Ast.nodes }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, interpolation: DEFAULT_INTERPOLATION_CONFIG, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null, relativeContextFilePath: '', i18nUseExternalIds: true });
     var res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
+    var factoryRes = compileFactoryFromMetadata(meta);
+    var ngFactoryDefStatement = new ClassStmt(name, null, [new ClassField('ngFactoryDef', INFERRED_TYPE, [StmtModifier.Static], factoryRes.factory)], [], new ClassMethod(null, [], []), []);
+    var componentDefStatement = new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []);
     // Create the partial class to be merged with the actual class.
-    outputCtx.statements.push(new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []));
+    outputCtx.statements.push(ngFactoryDefStatement, componentDefStatement);
 }
 /**
  * Compute `R3DirectiveMetadata` given `CompileDirectiveMetadata` and a `CompileReflector`.
@@ -18422,15 +18446,16 @@ var CompilerFacadeImpl = /** @class */ (function () {
         this.elementSchemaRegistry = new DomElementSchemaRegistry();
     }
     CompilerFacadeImpl.prototype.compilePipe = function (angularCoreEnv, sourceMapUrl, facade) {
-        var res = compilePipeFromMetadata({
+        var metadata = {
             name: facade.name,
             type: new WrappedNodeExpr(facade.type),
             typeArgumentCount: facade.typeArgumentCount,
             deps: convertR3DependencyMetadataArray(facade.deps),
             pipeName: facade.pipeName,
             pure: facade.pure,
-        });
-        return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, res.statements);
+        };
+        var res = compilePipeFromMetadata(metadata);
+        return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, []);
     };
     CompilerFacadeImpl.prototype.compileInjectable = function (angularCoreEnv, sourceMapUrl, facade) {
         var _a = compileInjectable({
@@ -18478,8 +18503,7 @@ var CompilerFacadeImpl = /** @class */ (function () {
         var bindingParser = makeBindingParser();
         var meta = convertDirectiveFacadeToMetadata(facade);
         var res = compileDirectiveFromMetadata(meta, constantPool, bindingParser);
-        var preStatements = __spread(constantPool.statements, res.statements);
-        return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, preStatements);
+        return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, constantPool.statements);
     };
     CompilerFacadeImpl.prototype.compileComponent = function (angularCoreEnv, sourceMapUrl, facade) {
         // The ConstantPool is a requirement of the JIT'er.
@@ -18495,10 +18519,21 @@ var CompilerFacadeImpl = /** @class */ (function () {
         }
         // Compile the component metadata, including template, into an expression.
         // TODO(alxhub): implement inputs, outputs, queries, etc.
-        var res = compileComponentFromMetadata(__assign({}, facade, convertDirectiveFacadeToMetadata(facade), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template: template, wrapDirectivesAndPipesInClosure: false, styles: facade.styles || [], encapsulation: facade.encapsulation, interpolation: interpolationConfig, changeDetection: facade.changeDetection, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
-                null, relativeContextFilePath: '', i18nUseExternalIds: true }), constantPool, makeBindingParser(interpolationConfig));
-        var preStatements = __spread(constantPool.statements, res.statements);
-        return this.jitExpression(res.expression, angularCoreEnv, "ng:///" + facade.name + ".js", preStatements);
+        var metadata = __assign({}, facade, convertDirectiveFacadeToMetadata(facade), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template: template, wrapDirectivesAndPipesInClosure: false, styles: facade.styles || [], encapsulation: facade.encapsulation, interpolation: interpolationConfig, changeDetection: facade.changeDetection, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
+                null, relativeContextFilePath: '', i18nUseExternalIds: true });
+        var res = compileComponentFromMetadata(metadata, constantPool, makeBindingParser(interpolationConfig));
+        var jitExpressionSourceMap = "ng:///" + facade.name + ".js";
+        return this.jitExpression(res.expression, angularCoreEnv, jitExpressionSourceMap, constantPool.statements);
+    };
+    CompilerFacadeImpl.prototype.compileFactory = function (angularCoreEnv, sourceMapUrl, meta, isPipe) {
+        if (isPipe === void 0) { isPipe = false; }
+        var factoryRes = compileFactoryFromMetadata({
+            name: meta.name,
+            type: new WrappedNodeExpr(meta.type),
+            typeArgumentCount: meta.typeArgumentCount,
+            deps: convertR3DependencyMetadataArray(meta.deps), isPipe: isPipe
+        });
+        return this.jitExpression(factoryRes.factory, angularCoreEnv, sourceMapUrl, factoryRes.statements);
     };
     CompilerFacadeImpl.prototype.compileBase = function (angularCoreEnv, sourceMapUrl, facade) {
         var constantPool = new ConstantPool();
@@ -18664,7 +18699,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-next.3+53.sha-14feb56.with-local-changes');
+var VERSION$1 = new Version('9.0.0-next.3+55.sha-7c7fcd7.with-local-changes');
 
 /**
  * @license
@@ -28500,5 +28535,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { core, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, DYNAMIC_TYPE, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, literalMap, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, STRING_TYPE, TypeofExpr, collectExternalReferences, EmitterVisitorContext, JitEvaluator, ViewCompiler, findStaticQueryIds, staticViewQueryIds, getParseErrors, isSyntaxError, syntaxError, Version, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileBaseDefFromMetadata, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, verifyHostBindings, publishFacade, VERSION$1 as VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, AbsoluteSourceSpan, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor$1 as RecursiveAstVisitor, AstTransformer$1 as AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType$1 as TokenType, Lexer, Token$1 as Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser$1 as Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text$3 as Text, Expansion, ExpansionCase, Attribute, Element$1 as Element, Comment, visitAll$1 as visitAll, RecursiveVisitor$1 as RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, EMPTY_PARSE_LOCATION, EMPTY_SOURCE_SPAN, ParseErrorLevel, ParseError, typeSourceSpan, r3JitTypeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, HOST_ATTR, CONTENT_ATTR, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, isEmptyExpression, compileInjectable, R3TargetBinder, R3BoundTarget };
+export { core, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, DYNAMIC_TYPE, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, literalMap, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, STRING_TYPE, TypeofExpr, collectExternalReferences, EmitterVisitorContext, JitEvaluator, ViewCompiler, findStaticQueryIds, staticViewQueryIds, getParseErrors, isSyntaxError, syntaxError, Version, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, compileFactoryFromMetadata, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileBaseDefFromMetadata, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, verifyHostBindings, publishFacade, VERSION$1 as VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, AbsoluteSourceSpan, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor$1 as RecursiveAstVisitor, AstTransformer$1 as AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType$1 as TokenType, Lexer, Token$1 as Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser$1 as Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text$3 as Text, Expansion, ExpansionCase, Attribute, Element$1 as Element, Comment, visitAll$1 as visitAll, RecursiveVisitor$1 as RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, EMPTY_PARSE_LOCATION, EMPTY_SOURCE_SPAN, ParseErrorLevel, ParseError, typeSourceSpan, r3JitTypeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, HOST_ATTR, CONTENT_ATTR, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, isEmptyExpression, compileInjectable, R3TargetBinder, R3BoundTarget };
 //# sourceMappingURL=compiler.js.map

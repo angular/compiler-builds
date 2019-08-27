@@ -21,6 +21,7 @@ export declare class CompilerFacadeImpl implements CompilerFacade {
     compileNgModule(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, facade: R3NgModuleMetadataFacade): any;
     compileDirective(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, facade: R3DirectiveMetadataFacade): any;
     compileComponent(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, facade: R3ComponentMetadataFacade): any;
+    compileFactory(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, meta: R3PipeMetadataFacade | R3DirectiveMetadataFacade | R3ComponentMetadataFacade, isPipe?: boolean): any;
     compileBase(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, facade: R3BaseMetadataFacade): any;
     createParseSourceSpan(kind: string, typeName: string, sourceUrl: string): ParseSourceSpan;
     /**
