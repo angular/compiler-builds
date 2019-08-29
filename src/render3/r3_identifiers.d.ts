@@ -62,7 +62,6 @@ export declare class Identifiers {
     static nextContext: o.ExternalReference;
     static templateCreate: o.ExternalReference;
     static text: o.ExternalReference;
-    static textBinding: o.ExternalReference;
     static enableBindings: o.ExternalReference;
     static disableBindings: o.ExternalReference;
     static allocHostVars: o.ExternalReference;
