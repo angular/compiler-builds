@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.4+21.sha-18ce58c.with-local-changes
+ * @license Angular v9.0.0-next.4+30.sha-63dff9c.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3142,7 +3142,6 @@ Identifiers$1.containerCreate = { name: 'ɵɵcontainer', moduleName: CORE$1 };
 Identifiers$1.nextContext = { name: 'ɵɵnextContext', moduleName: CORE$1 };
 Identifiers$1.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE$1 };
 Identifiers$1.text = { name: 'ɵɵtext', moduleName: CORE$1 };
-Identifiers$1.textBinding = { name: 'ɵɵtextBinding', moduleName: CORE$1 };
 Identifiers$1.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE$1 };
 Identifiers$1.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE$1 };
 Identifiers$1.allocHostVars = { name: 'ɵɵallocHostVars', moduleName: CORE$1 };
@@ -15880,7 +15879,7 @@ class TemplateDefinitionBuilder {
             this.updateInstruction(nodeIndex, text.sourceSpan, getTextInterpolationExpression(value), () => this.getUpdateInstructionArguments(value));
         }
         else {
-            this.updateInstruction(nodeIndex, text.sourceSpan, Identifiers$1.textBinding, () => [this.convertPropertyBinding(value)]);
+            error('Text nodes should be interpolated and never bound directly.');
         }
     }
     visitText(text) {
@@ -17635,7 +17634,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.4+21.sha-18ce58c.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.4+30.sha-63dff9c.with-local-changes');
 
 /**
  * @license
