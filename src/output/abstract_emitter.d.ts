@@ -65,6 +65,7 @@ export declare abstract class AbstractEmitterVisitor implements o.StatementVisit
     visitReadVarExpr(ast: o.ReadVarExpr, ctx: EmitterVisitorContext): any;
     visitInstantiateExpr(ast: o.InstantiateExpr, ctx: EmitterVisitorContext): any;
     visitLiteralExpr(ast: o.LiteralExpr, ctx: EmitterVisitorContext): any;
+    visitLocalizedString(ast: o.LocalizedString, ctx: EmitterVisitorContext): any;
     abstract visitExternalExpr(ast: o.ExternalExpr, ctx: EmitterVisitorContext): any;
     visitConditionalExpr(ast: o.ConditionalExpr, ctx: EmitterVisitorContext): any;
     visitNotExpr(ast: o.NotExpr, ctx: EmitterVisitorContext): any;
