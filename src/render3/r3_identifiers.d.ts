@@ -111,7 +111,6 @@ export declare class Identifiers {
     static i18nEnd: o.ExternalReference;
     static i18nApply: o.ExternalReference;
     static i18nPostprocess: o.ExternalReference;
-    static i18nLocalize: o.ExternalReference;
     static pipe: o.ExternalReference;
     static projection: o.ExternalReference;
     static projectionDef: o.ExternalReference;

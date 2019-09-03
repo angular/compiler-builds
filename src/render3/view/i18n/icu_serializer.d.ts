@@ -6,4 +6,4 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import * as i18n from '../../../i18n/i18n_ast';
-export declare function getSerializedI18nContent(message: i18n.Message): string;
+export declare function serializeIcuNode(icu: i18n.Icu): string;

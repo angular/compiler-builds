@@ -13,7 +13,7 @@ import * as i18n from '../../i18n/i18n_ast';
 import { InterpolationConfig } from '../../ml_parser/interpolation_config';
 import { LexerRange } from '../../ml_parser/lexer';
 import * as o from '../../output/output_ast';
-import { ParseError, ParseSourceSpan } from '../../parse_util';
+import { ParseError } from '../../parse_util';
 import { SelectorMatcher } from '../../selector';
 import { BindingParser } from '../../template_parser/binding_parser';
 import * as t from '../r3_ast';
@@ -80,37 +80,26 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private _ngContentSelectorsOffset;
     private _implicitReceiverExpr;
     constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, i18nContext: I18nContext | null, templateIndex: number | null, templateName: string | null, directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference, relativeContextFilePath: string, i18nUseExternalIds: boolean);
-    registerContextVariables(variable: t.Variable): void;
     buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], ngContentSelectorsOffset?: number, i18n?: i18n.AST): o.FunctionExpr;
     getLocal(name: string): o.Expression | null;
     notifyImplicitReceiverUse(): void;
-    i18nTranslate(message: i18n.Message, params?: {
-        [name: string]: o.Expression;
-    }, ref?: o.ReadVarExpr, transformFn?: (raw: o.ReadVarExpr) => o.Expression): o.ReadVarExpr;
-    i18nFormatPlaceholderNames(params: {
-        [name: string]: o.Expression;
-    } | undefined, useCamelCase: boolean): {
-        [key: string]: o.Expression;
-    };
-    i18nAppendBindings(expressions: AST[]): void;
-    i18nBindProps(props: {
-        [key: string]: t.Text | t.BoundText;
-    }): {
-        [key: string]: o.Expression;
-    };
-    i18nGenerateClosureVar(messageId: string): o.ReadVarExpr;
-    i18nUpdateRef(context: I18nContext): void;
-    i18nStart(span: ParseSourceSpan | null | undefined, meta: i18n.AST, selfClosing?: boolean): void;
-    i18nEnd(span?: ParseSourceSpan | null, selfClosing?: boolean): void;
-    visitContent(ngContent: t.Content): void;
-    getNamespaceInstruction(namespaceKey: string | null): o.ExternalReference;
-    addNamespaceInstruction(nsInstruction: o.ExternalReference, element: t.Element): void;
-    visitElement(element: t.Element): void;
+    private i18nTranslate;
+    private registerContextVariables;
+    private i18nAppendBindings;
+    private i18nBindProps;
+    private i18nGenerateClosureVar;
+    private i18nUpdateRef;
+    private i18nStart;
+    private i18nEnd;
+    private getNamespaceInstruction;
+    private addNamespaceInstruction;
     /**
      * Adds an update instruction for an interpolated property or attribute, such as
      * `prop="{{value}}"` or `attr.title="{{value}}"`
      */
-    interpolatedUpdateInstruction(instruction: o.ExternalReference, elementIndex: number, attrName: string, input: t.BoundAttribute, value: any, params: any[]): void;
+    private interpolatedUpdateInstruction;
+    visitContent(ngContent: t.Content): void;
+    visitElement(element: t.Element): void;
     visitTemplate(template: t.Template): void;
     readonly visitReference: typeof invalid;
     readonly visitVariable: typeof invalid;
@@ -325,4 +314,33 @@ export declare function parseTemplate(template: string, templateUrl: string, opt
  */
 export declare function makeBindingParser(interpolationConfig?: InterpolationConfig): BindingParser;
 export declare function resolveSanitizationFn(context: core.SecurityContext, isAttribute?: boolean): o.ExternalExpr | null;
+/**
+ * Generate statements that define a given translation message.
+ *
+ * ```
+ * var I18N_1;
+ * if (ngI18nClosureMode) {
+ *     var MSG_EXTERNAL_XXX = goog.getMsg(
+ *          "Some message with {$interpolation}!",
+ *          { "interpolation": "\uFFFD0\uFFFD" }
+ *     );
+ *     I18N_1 = MSG_EXTERNAL_XXX;
+ * }
+ * else {
+ *     I18N_1 = $localize`Some message with ${'\uFFFD0\uFFFD'}!`;
+ * }
+ * ```
+ *
+ * @param message The original i18n AST message node
+ * @param variable The variable that will be assigned the translation, e.g. `I18N_1`.
+ * @param closureVar The variable for Closure `goog.getMsg` calls, e.g. `MSG_EXTERNAL_XXX`.
+ * @param params Object mapping placeholder names to their values (e.g.
+ * `{ "interpolation": "\uFFFD0\uFFFD" }`).
+ * @param transformFn Optional transformation function that will be applied to the translation (e.g.
+ * post-processing).
+ * @returns An array of statements that defined a given translation.
+ */
+export declare function getTranslationDeclStmts(message: i18n.Message, variable: o.ReadVarExpr, closureVar: o.ReadVarExpr, params?: {
+    [name: string]: o.Expression;
+}, transformFn?: (raw: o.ReadVarExpr) => o.Expression): o.Statement[];
 export {};

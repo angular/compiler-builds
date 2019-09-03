@@ -220,6 +220,15 @@ export declare class LiteralExpr extends Expression {
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
+export declare class LocalizedString extends Expression {
+    messageParts: string[];
+    placeHolderNames: string[];
+    expressions: Expression[];
+    constructor(messageParts: string[], placeHolderNames: string[], expressions: Expression[], sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
+    visitExpression(visitor: ExpressionVisitor, context: any): any;
+}
 export declare class ExternalExpr extends Expression {
     value: ExternalReference;
     typeParams: Type[] | null;
@@ -346,6 +355,7 @@ export interface ExpressionVisitor {
     visitInvokeFunctionExpr(ast: InvokeFunctionExpr, context: any): any;
     visitInstantiateExpr(ast: InstantiateExpr, context: any): any;
     visitLiteralExpr(ast: LiteralExpr, context: any): any;
+    visitLocalizedString(ast: LocalizedString, context: any): any;
     visitExternalExpr(ast: ExternalExpr, context: any): any;
     visitConditionalExpr(ast: ConditionalExpr, context: any): any;
     visitNotExpr(ast: NotExpr, context: any): any;
@@ -510,6 +520,7 @@ export declare class AstTransformer implements StatementVisitor, ExpressionVisit
     visitInvokeFunctionExpr(ast: InvokeFunctionExpr, context: any): any;
     visitInstantiateExpr(ast: InstantiateExpr, context: any): any;
     visitLiteralExpr(ast: LiteralExpr, context: any): any;
+    visitLocalizedString(ast: LocalizedString, context: any): any;
     visitExternalExpr(ast: ExternalExpr, context: any): any;
     visitConditionalExpr(ast: ConditionalExpr, context: any): any;
     visitNotExpr(ast: NotExpr, context: any): any;
@@ -552,6 +563,7 @@ export declare class RecursiveAstVisitor implements StatementVisitor, Expression
     visitInvokeFunctionExpr(ast: InvokeFunctionExpr, context: any): any;
     visitInstantiateExpr(ast: InstantiateExpr, context: any): any;
     visitLiteralExpr(ast: LiteralExpr, context: any): any;
+    visitLocalizedString(ast: LocalizedString, context: any): any;
     visitExternalExpr(ast: ExternalExpr, context: any): any;
     visitConditionalExpr(ast: ConditionalExpr, context: any): any;
     visitNotExpr(ast: NotExpr, context: any): any;
@@ -597,6 +609,7 @@ export declare function assertNotNull(expr: Expression, sourceSpan?: ParseSource
 export declare function fn(params: FnParam[], body: Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null, name?: string | null): FunctionExpr;
 export declare function ifStmt(condition: Expression, thenClause: Statement[], elseClause?: Statement[]): IfStmt;
 export declare function literal(value: any, type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralExpr;
+export declare function localizedString(messageParts: string[], placeholderNames: string[], expressions: Expression[], sourceSpan?: ParseSourceSpan | null): LocalizedString;
 export declare function isNull(exp: Expression): boolean;
 export declare const enum JSDocTagName {
     Desc = "desc",
