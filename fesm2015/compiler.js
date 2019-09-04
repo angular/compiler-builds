@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.5.with-local-changes
+ * @license Angular v9.0.0-next.5+2.sha-a731119.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15093,7 +15093,10 @@ function createGoogleGetMsgStatements(variable$1, message, closureVar, params) {
     if (Object.keys(params).length) {
         args.push(mapLiteral(params, true));
     }
-    // /** Description and meaning of message */
+    // /**
+    //  * @desc description of message
+    //  * @meaning meaning of message
+    //  */
     // const MSG_... = goog.getMsg(..);
     // I18N_X = MSG_...;
     const statements = [];
@@ -15133,10 +15136,12 @@ function serializeI18nMessageForGetMsg(message) {
 
 function createLocalizeStatements(variable, message, params) {
     const statements = [];
-    const jsdocComment = i18nMetaToDocStmt(metaFromI18nMessage(message));
-    if (jsdocComment !== null) {
-        statements.push(jsdocComment);
-    }
+    // TODO: re-enable these comments when we have a plan on how to make them work so that Closure
+    // compiler doesn't complain about the JSDOC comments.
+    // const jsdocComment = i18nMetaToDocStmt(metaFromI18nMessage(message));
+    // if (jsdocComment !== null) {
+    //   statements.push(jsdocComment);
+    // }
     const { messageParts, placeHolders } = serializeI18nMessageForLocalize(message);
     statements.push(new ExpressionStatement(variable.set(localizedString(messageParts, placeHolders, placeHolders.map(ph => params[ph])))));
     return statements;
@@ -17802,7 +17807,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.5.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.5+2.sha-a731119.with-local-changes');
 
 /**
  * @license
