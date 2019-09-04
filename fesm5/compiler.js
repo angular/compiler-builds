@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.4+84.sha-f0bdf2a.with-local-changes
+ * @license Angular v9.0.0-next.4+89.sha-5d8eb74.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16131,7 +16131,13 @@ var LocalizeSerializerVisitor = /** @class */ (function () {
     function LocalizeSerializerVisitor() {
     }
     LocalizeSerializerVisitor.prototype.visitText = function (text, context) {
-        context.push(new LiteralPiece(text.value));
+        if (context[context.length - 1] instanceof LiteralPiece) {
+            // Two literal pieces in a row means that there was some comment node in-between.
+            context[context.length - 1].text += text.value;
+        }
+        else {
+            context.push(new LiteralPiece(text.value));
+        }
     };
     LocalizeSerializerVisitor.prototype.visitContainer = function (container, context) {
         var _this = this;
@@ -18877,7 +18883,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-next.4+84.sha-f0bdf2a.with-local-changes');
+var VERSION$1 = new Version('9.0.0-next.4+89.sha-5d8eb74.with-local-changes');
 
 /**
  * @license
