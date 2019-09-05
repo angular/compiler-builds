@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.5+17.sha-a9ff48e.with-local-changes
+ * @license Angular v9.0.0-next.5+21.sha-4c3674f.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13196,9 +13196,10 @@
         };
         StylingBuilder.prototype.registerInputBasedOnName = function (name, expression, sourceSpan) {
             var binding = null;
-            var nameToMatch = name.substring(0, 5); // class | style
-            var isStyle = nameToMatch === 'style';
-            var isClass = isStyle ? false : (nameToMatch === 'class');
+            var prefix = name.substring(0, 6);
+            var isStyle = name === 'style' || prefix === 'style.' || prefix === 'style!';
+            var isClass = !isStyle &&
+                (name === 'class' || name === 'className' || prefix === 'class.' || prefix === 'class!');
             if (isStyle || isClass) {
                 var isMapBased = name.charAt(5) !== '.'; // style.prop or class.prop makes this a no
                 var property = name.substr(isMapBased ? 5 : 6); // the dot explains why there's a +1
@@ -19053,7 +19054,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.0.0-next.5+17.sha-a9ff48e.with-local-changes');
+    var VERSION$1 = new Version('9.0.0-next.5+21.sha-4c3674f.with-local-changes');
 
     /**
      * @license
