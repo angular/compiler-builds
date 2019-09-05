@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.5+19.sha-62d92f8.with-local-changes
+ * @license Angular v9.0.0-next.5+18.sha-098feec.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -12194,10 +12194,9 @@ class StylingBuilder {
     }
     registerInputBasedOnName(name, expression, sourceSpan) {
         let binding = null;
-        const prefix = name.substring(0, 6);
-        const isStyle = name === 'style' || prefix === 'style.' || prefix === 'style!';
-        const isClass = !isStyle &&
-            (name === 'class' || name === 'className' || prefix === 'class.' || prefix === 'class!');
+        const nameToMatch = name.substring(0, 5); // class | style
+        const isStyle = nameToMatch === 'style';
+        const isClass = isStyle ? false : (nameToMatch === 'class');
         if (isStyle || isClass) {
             const isMapBased = name.charAt(5) !== '.'; // style.prop or class.prop makes this a no
             const property = name.substr(isMapBased ? 5 : 6); // the dot explains why there's a +1
@@ -17804,7 +17803,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.5+19.sha-62d92f8.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.5+18.sha-098feec.with-local-changes');
 
 /**
  * @license
