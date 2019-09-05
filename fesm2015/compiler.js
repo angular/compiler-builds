@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.5+8.sha-d400345.with-local-changes
+ * @license Angular v9.0.0-next.5+12.sha-f00d033.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15772,7 +15772,7 @@ class TemplateDefinitionBuilder {
                                 hasBindings = true;
                                 bindings.push({
                                     sourceSpan: element.sourceSpan,
-                                    value: () => this.convertExpressionBinding(expression)
+                                    value: () => this.convertPropertyBinding(expression)
                                 });
                             });
                         }
@@ -16171,10 +16171,6 @@ class TemplateDefinitionBuilder {
         return this._implicitReceiverExpr = this.level === 0 ?
             variable(CONTEXT_NAME) :
             this._bindingScope.getOrCreateSharedContextVar(0);
-    }
-    convertExpressionBinding(value) {
-        const convertedPropertyBinding = convertPropertyBinding(this, this.getImplicitReceiverExpr(), value, this.bindingContext(), BindingForm.TrySimple);
-        return convertedPropertyBinding.currValExpr;
     }
     convertPropertyBinding(value) {
         const convertedPropertyBinding = convertPropertyBinding(this, this.getImplicitReceiverExpr(), value, this.bindingContext(), BindingForm.TrySimple, () => error('Unexpected interpolation'));
@@ -17807,7 +17803,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.5+8.sha-d400345.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.5+12.sha-f00d033.with-local-changes');
 
 /**
  * @license

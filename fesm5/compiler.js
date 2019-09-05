@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.5+8.sha-d400345.with-local-changes
+ * @license Angular v9.0.0-next.5+12.sha-f00d033.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16766,7 +16766,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                                 hasBindings_1 = true;
                                 bindings_1.push({
                                     sourceSpan: element.sourceSpan,
-                                    value: function () { return _this.convertExpressionBinding(expression); }
+                                    value: function () { return _this.convertPropertyBinding(expression); }
                                 });
                             });
                         }
@@ -17170,10 +17170,6 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         return this._implicitReceiverExpr = this.level === 0 ?
             variable(CONTEXT_NAME) :
             this._bindingScope.getOrCreateSharedContextVar(0);
-    };
-    TemplateDefinitionBuilder.prototype.convertExpressionBinding = function (value) {
-        var convertedPropertyBinding = convertPropertyBinding(this, this.getImplicitReceiverExpr(), value, this.bindingContext(), BindingForm.TrySimple);
-        return convertedPropertyBinding.currValExpr;
     };
     TemplateDefinitionBuilder.prototype.convertPropertyBinding = function (value) {
         var _a;
@@ -18888,7 +18884,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-next.5+8.sha-d400345.with-local-changes');
+var VERSION$1 = new Version('9.0.0-next.5+12.sha-f00d033.with-local-changes');
 
 /**
  * @license
