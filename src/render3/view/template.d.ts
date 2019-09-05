@@ -128,7 +128,6 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
      * receiver is always the root level context.
      */
     private getImplicitReceiverExpr;
-    private convertExpressionBinding;
     private convertPropertyBinding;
     /**
      * Gets a list of argument expressions to pass to an update instruction expression. Also updates
