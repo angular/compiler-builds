@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.5+48.sha-9166baf.with-local-changes
+ * @license Angular v9.0.0-next.5+49.sha-ea6a2e9.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15155,7 +15155,7 @@ class MessagePiece {
 class LiteralPiece extends MessagePiece {
 }
 class PlaceholderPiece extends MessagePiece {
-    constructor(name) { super(formatI18nPlaceholderName(name)); }
+    constructor(name) { super(formatI18nPlaceholderName(name, /* useCamelCase */ false)); }
 }
 /**
  * This visitor walks over an i18n tree, capturing literal strings and placeholders.
@@ -16839,10 +16839,9 @@ const NG_I18N_CLOSURE_MODE = 'ngI18nClosureMode';
  * @returns An array of statements that defined a given translation.
  */
 function getTranslationDeclStmts(message, variable$1, closureVar, params = {}, transformFn) {
-    const formattedParams = i18nFormatPlaceholderNames(params, /* useCamelCase */ true);
     const statements = [
         declareI18nVariable(variable$1),
-        ifStmt(variable(NG_I18N_CLOSURE_MODE), createGoogleGetMsgStatements(variable$1, message, closureVar, formattedParams), createLocalizeStatements(variable$1, message, formattedParams)),
+        ifStmt(variable(NG_I18N_CLOSURE_MODE), createGoogleGetMsgStatements(variable$1, message, closureVar, i18nFormatPlaceholderNames(params, /* useCamelCase */ true)), createLocalizeStatements(variable$1, message, i18nFormatPlaceholderNames(params, /* useCamelCase */ false))),
     ];
     if (transformFn) {
         statements.push(new ExpressionStatement(variable$1.set(transformFn(variable$1))));
@@ -17804,7 +17803,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.5+48.sha-9166baf.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.5+49.sha-ea6a2e9.with-local-changes');
 
 /**
  * @license
