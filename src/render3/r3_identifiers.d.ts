@@ -34,7 +34,6 @@ export declare class Identifiers {
     static elementContainerStart: o.ExternalReference;
     static elementContainerEnd: o.ExternalReference;
     static elementContainer: o.ExternalReference;
-    static styling: o.ExternalReference;
     static styleMap: o.ExternalReference;
     static classMap: o.ExternalReference;
     static classMapInterpolate1: o.ExternalReference;
@@ -56,7 +55,6 @@ export declare class Identifiers {
     static stylePropInterpolate7: o.ExternalReference;
     static stylePropInterpolate8: o.ExternalReference;
     static stylePropInterpolateV: o.ExternalReference;
-    static stylingApply: o.ExternalReference;
     static styleSanitizer: o.ExternalReference;
     static elementHostAttrs: o.ExternalReference;
     static containerCreate: o.ExternalReference;
