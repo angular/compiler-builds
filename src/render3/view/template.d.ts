@@ -50,8 +50,12 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
      * all local refs and context variables are available for matching.
      */
     private _updateCodeFns;
-    /** Index of the currently-selected node. */
-    private _currentIndex;
+    /**
+     * Memorizes the last node index for which a select instruction has been generated.
+     * We're initializing this to -1 to ensure the `select(0)` instruction is generated before any
+     * relevant update instructions.
+     */
+    private _lastNodeIndexWithFlush;
     /** Temporary variable declarations generated from visiting pipes, literals, etc. */
     private _tempVariables;
     /**
@@ -114,11 +118,9 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private instructionFn;
     private processStylingInstruction;
     private creationInstruction;
-    private updateInstructionWithAdvance;
     private updateInstruction;
     private updateInstructionChain;
-    private updateInstructionChainWithAdvance;
-    private addAdvanceInstructionIfNecessary;
+    private addSelectInstructionIfNecessary;
     private allocatePureFunctionSlots;
     private allocateBindingSlots;
     /**
