@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.5+67.sha-8a7129e.with-local-changes
+ * @license Angular v9.0.0-next.5+68.sha-3b37469.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3140,7 +3140,6 @@ Identifiers$1.classProp = { name: 'ɵɵclassProp', moduleName: CORE$1 };
 Identifiers$1.elementContainerStart = { name: 'ɵɵelementContainerStart', moduleName: CORE$1 };
 Identifiers$1.elementContainerEnd = { name: 'ɵɵelementContainerEnd', moduleName: CORE$1 };
 Identifiers$1.elementContainer = { name: 'ɵɵelementContainer', moduleName: CORE$1 };
-Identifiers$1.styling = { name: 'ɵɵstyling', moduleName: CORE$1 };
 Identifiers$1.styleMap = { name: 'ɵɵstyleMap', moduleName: CORE$1 };
 Identifiers$1.classMap = { name: 'ɵɵclassMap', moduleName: CORE$1 };
 Identifiers$1.classMapInterpolate1 = { name: 'ɵɵclassMapInterpolate1', moduleName: CORE$1 };
@@ -3162,7 +3161,6 @@ Identifiers$1.stylePropInterpolate6 = { name: 'ɵɵstylePropInterpolate6', modul
 Identifiers$1.stylePropInterpolate7 = { name: 'ɵɵstylePropInterpolate7', moduleName: CORE$1 };
 Identifiers$1.stylePropInterpolate8 = { name: 'ɵɵstylePropInterpolate8', moduleName: CORE$1 };
 Identifiers$1.stylePropInterpolateV = { name: 'ɵɵstylePropInterpolateV', moduleName: CORE$1 };
-Identifiers$1.stylingApply = { name: 'ɵɵstylingApply', moduleName: CORE$1 };
 Identifiers$1.styleSanitizer = { name: 'ɵɵstyleSanitizer', moduleName: CORE$1 };
 Identifiers$1.elementHostAttrs = { name: 'ɵɵelementHostAttrs', moduleName: CORE$1 };
 Identifiers$1.containerCreate = { name: 'ɵɵcontainer', moduleName: CORE$1 };
@@ -12119,7 +12117,6 @@ const IMPORTANT_FLAG = '!important';
  *   classMap(...)
  *   styleProp(...)
  *   classProp(...)
- *   stylingApply(...)
  * }
  *
  * The creation/update methods within the builder class produce these instructions.
@@ -12135,6 +12132,7 @@ class StylingBuilder {
          *  (i.e. `[style]`, `[class]`, `[style.prop]` or `[class.name]`)
          */
         this.hasBindings = false;
+        this.hasBindingsWithPipes = false;
         /** the input for [class] (if it exists) */
         this._classMapInput = null;
         /** the input for [style] (if it exists) */
@@ -12232,6 +12230,7 @@ class StylingBuilder {
         }
         this._lastStylingInput = entry;
         this._firstStylingInput = this._firstStylingInput || entry;
+        this._checkForPipes(value);
         this.hasBindings = true;
         return entry;
     }
@@ -12250,8 +12249,14 @@ class StylingBuilder {
         }
         this._lastStylingInput = entry;
         this._firstStylingInput = this._firstStylingInput || entry;
+        this._checkForPipes(value);
         this.hasBindings = true;
         return entry;
+    }
+    _checkForPipes(value) {
+        if ((value instanceof ASTWithSource) && (value.ast instanceof BindingPipe)) {
+            this.hasBindingsWithPipes = true;
+        }
     }
     /**
      * Registers the element's static style string value to the builder.
@@ -12314,23 +12319,6 @@ class StylingBuilder {
                         literalArr(attrs);
                     return [attrArray];
                 }
-            };
-        }
-        return null;
-    }
-    /**
-     * Builds an instruction with all the expressions and parameters for `styling`.
-     *
-     * The instruction generation code below is used for producing the AOT statement code which is
-     * responsible for registering style/class bindings to an element.
-     */
-    buildStylingInstruction(sourceSpan, constantPool) {
-        if (this.hasBindings) {
-            return {
-                sourceSpan,
-                allocateBindingSlots: 0,
-                reference: Identifiers$1.styling,
-                params: () => [],
             };
         }
         return null;
@@ -12432,14 +12420,6 @@ class StylingBuilder {
         }
         return [];
     }
-    _buildApplyFn() {
-        return {
-            sourceSpan: this._lastStylingInput ? this._lastStylingInput.sourceSpan : null,
-            reference: Identifiers$1.stylingApply,
-            allocateBindingSlots: 0,
-            params: () => { return []; }
-        };
-    }
     _buildSanitizerFn() {
         return {
             sourceSpan: this._firstStylingInput ? this._firstStylingInput.sourceSpan : null,
@@ -12468,7 +12448,6 @@ class StylingBuilder {
             }
             instructions.push(...this._buildStyleInputs(valueConverter));
             instructions.push(...this._buildClassInputs(valueConverter));
-            instructions.push(this._buildApplyFn());
         }
         return instructions;
     }
@@ -15737,10 +15716,9 @@ class TemplateDefinitionBuilder {
         // so we exclude them while calculating whether current element has children
         const hasChildren = (!isI18nRootElement && this.i18n) ? !hasTextChildrenOnly(element.children) :
             element.children.length > 0;
-        const createSelfClosingInstruction = !stylingBuilder.hasBindings &&
+        const createSelfClosingInstruction = !stylingBuilder.hasBindingsWithPipes &&
             element.outputs.length === 0 && i18nAttrs.length === 0 && !hasChildren;
-        const createSelfClosingI18nInstruction = !createSelfClosingInstruction &&
-            !stylingBuilder.hasBindings && hasTextChildrenOnly(element.children);
+        const createSelfClosingI18nInstruction = !createSelfClosingInstruction && hasTextChildrenOnly(element.children);
         if (createSelfClosingInstruction) {
             this.creationInstruction(element.sourceSpan, isNgContainer$1 ? Identifiers$1.elementContainer : Identifiers$1.element, trimTrailingNulls(parameters));
         }
@@ -15788,13 +15766,6 @@ class TemplateDefinitionBuilder {
                     }
                 }
             }
-            // The style bindings code is placed into two distinct blocks within the template function AOT
-            // code: creation and update. The creation code contains the `styling` instructions
-            // which will apply the collected binding values to the element. `styling` is
-            // designed to run inside of `elementStart` and `elementEnd`. The update instructions
-            // (things like `styleProp`, `classProp`, etc..) are applied later on in this
-            // file
-            this.processStylingInstruction(elementIndex, stylingBuilder.buildStylingInstruction(element.sourceSpan, this.constantPool), true);
             // Generate Listeners (outputs)
             element.outputs.forEach((outputAst) => {
                 this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter(element.name, outputAst, elementIndex));
@@ -17357,15 +17328,6 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
         createStatements.push(createStylingStmt(hostInstruction, bindingContext, bindingFn));
     }
     if (styleBuilder.hasBindings) {
-        // singular style/class bindings (things like `[style.prop]` and `[class.name]`)
-        // MUST be registered on a given element within the component/directive
-        // templateFn/hostBindingsFn functions. The instruction below will figure out
-        // what all the bindings are and then generate the statements required to register
-        // those bindings to the element via `styling`.
-        const stylingInstruction = styleBuilder.buildStylingInstruction(null, constantPool);
-        if (stylingInstruction) {
-            createStatements.push(createStylingStmt(stylingInstruction, bindingContext, bindingFn));
-        }
         // finally each binding that was registered in the statement above will need to be added to
         // the update block of a component/directive templateFn/hostBindingsFn so that the bindings
         // are evaluated and updated for the element.
@@ -17808,7 +17770,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.5+67.sha-8a7129e.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.5+68.sha-3b37469.with-local-changes');
 
 /**
  * @license
