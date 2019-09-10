@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.5+49.sha-ea6a2e9.with-local-changes
+ * @license Angular v9.0.0-next.5+51.sha-664e001.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3406,6 +3406,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.elementStart = { name: 'ɵɵelementStart', moduleName: CORE$1 };
     Identifiers.elementEnd = { name: 'ɵɵelementEnd', moduleName: CORE$1 };
     Identifiers.select = { name: 'ɵɵselect', moduleName: CORE$1 };
+    Identifiers.advance = { name: 'ɵɵadvance', moduleName: CORE$1 };
     Identifiers.updateSyntheticHostBinding = { name: 'ɵɵupdateSyntheticHostBinding', moduleName: CORE$1 };
     Identifiers.componentHostSyntheticListener = { name: 'ɵɵcomponentHostSyntheticListener', moduleName: CORE$1 };
     Identifiers.attribute = { name: 'ɵɵattribute', moduleName: CORE$1 };
@@ -16296,12 +16297,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
          * all local refs and context variables are available for matching.
          */
         this._updateCodeFns = [];
-        /**
-         * Memorizes the last node index for which a select instruction has been generated.
-         * We're initializing this to -1 to ensure the `select(0)` instruction is generated before any
-         * relevant update instructions.
-         */
-        this._lastNodeIndexWithFlush = -1;
+        /** Index of the currently-selected node. */
+        this._currentIndex = 0;
         /** Temporary variable declarations generated from visiting pipes, literals, etc. */
         this._tempVariables = [];
         /**
@@ -16577,8 +16574,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             bindings.forEach(function (binding) {
                 chainBindings_1.push({ sourceSpan: span, value: function () { return _this.convertPropertyBinding(binding); } });
             });
-            this.updateInstructionChain(index, Identifiers$1.i18nExp, chainBindings_1);
-            this.updateInstruction(index, span, Identifiers$1.i18nApply, [literal(index)]);
+            this.updateInstructionChain(Identifiers$1.i18nExp, chainBindings_1);
+            this.updateInstruction(span, Identifiers$1.i18nApply, [literal(index)]);
         }
         if (!selfClosing) {
             this.creationInstruction(span, Identifiers$1.i18nEnd);
@@ -16605,7 +16602,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
      */
     TemplateDefinitionBuilder.prototype.interpolatedUpdateInstruction = function (instruction, elementIndex, attrName, input, value, params) {
         var _this = this;
-        this.updateInstruction(elementIndex, input.sourceSpan, instruction, function () { return __spread([literal(attrName)], _this.getUpdateInstructionArguments(value), params); });
+        this.updateInstructionWithAdvance(elementIndex, input.sourceSpan, instruction, function () { return __spread([literal(attrName)], _this.getUpdateInstructionArguments(value), params); });
     };
     TemplateDefinitionBuilder.prototype.visitContent = function (ngContent) {
         var slot = this.allocateDataSlot();
@@ -16774,14 +16771,14 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                     }
                 });
                 if (bindings_1.length) {
-                    this.updateInstructionChain(elementIndex, Identifiers$1.i18nExp, bindings_1);
+                    this.updateInstructionChain(Identifiers$1.i18nExp, bindings_1);
                 }
                 if (i18nAttrArgs_1.length) {
                     var index = literal(this.allocateDataSlot());
                     var args = this.constantPool.getConstLiteral(literalArr(i18nAttrArgs_1), true);
                     this.creationInstruction(element.sourceSpan, Identifiers$1.i18nAttributes, [index, args]);
                     if (hasBindings_1) {
-                        this.updateInstruction(elementIndex, element.sourceSpan, Identifiers$1.i18nApply, [index]);
+                        this.updateInstruction(element.sourceSpan, Identifiers$1.i18nApply, [index]);
                     }
                 }
             }
@@ -16899,7 +16896,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                     }
                     else {
                         // class prop
-                        _this.updateInstruction(elementIndex, input.sourceSpan, Identifiers$1.classProp, function () {
+                        _this.updateInstructionWithAdvance(elementIndex, input.sourceSpan, Identifiers$1.classProp, function () {
                             return __spread([
                                 literal(elementIndex), literal(attrName_1), _this.convertPropertyBinding(value_2)
                             ], params_2);
@@ -16909,10 +16906,10 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             }
         });
         if (propertyBindings.length > 0) {
-            this.updateInstructionChain(elementIndex, Identifiers$1.property, propertyBindings);
+            this.updateInstructionChainWithAdvance(elementIndex, Identifiers$1.property, propertyBindings);
         }
         if (attributeBindings.length > 0) {
-            this.updateInstructionChain(elementIndex, Identifiers$1.attribute, attributeBindings);
+            this.updateInstructionChainWithAdvance(elementIndex, Identifiers$1.attribute, attributeBindings);
         }
         // Traverse element child nodes
         visitAll(this, element.children);
@@ -17007,7 +17004,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var value = text.value.visit(this._valueConverter);
         this.allocateBindingSlots(value);
         if (value instanceof Interpolation) {
-            this.updateInstruction(nodeIndex, text.sourceSpan, getTextInterpolationExpression(value), function () { return _this.getUpdateInstructionArguments(value); });
+            this.updateInstructionWithAdvance(nodeIndex, text.sourceSpan, getTextInterpolationExpression(value), function () { return _this.getUpdateInstructionArguments(value); });
         }
         else {
             error('Text nodes should be interpolated and never bound directly.');
@@ -17089,7 +17086,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             }
         });
         if (propertyBindings.length > 0) {
-            this.updateInstructionChain(templateIndex, Identifiers$1.property, propertyBindings);
+            this.updateInstructionChainWithAdvance(templateIndex, Identifiers$1.property, propertyBindings);
         }
     };
     // Bindings must only be resolved after all local refs have been visited, so all
@@ -17112,7 +17109,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 });
             }
             else {
-                this.updateInstruction(elementIndex, instruction.sourceSpan, instruction.reference, function () {
+                this.updateInstructionWithAdvance(elementIndex, instruction.sourceSpan, instruction.reference, function () {
                     return instruction
                         .params(function (value) {
                         return (instruction.supportsInterpolation && value instanceof Interpolation) ?
@@ -17126,13 +17123,15 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     TemplateDefinitionBuilder.prototype.creationInstruction = function (span, reference, paramsOrFn, prepend) {
         this.instructionFn(this._creationCodeFns, span, reference, paramsOrFn || [], prepend);
     };
-    TemplateDefinitionBuilder.prototype.updateInstruction = function (nodeIndex, span, reference, paramsOrFn) {
-        this.addSelectInstructionIfNecessary(nodeIndex, span);
+    TemplateDefinitionBuilder.prototype.updateInstructionWithAdvance = function (nodeIndex, span, reference, paramsOrFn) {
+        this.addAdvanceInstructionIfNecessary(nodeIndex, span);
+        this.updateInstruction(span, reference, paramsOrFn);
+    };
+    TemplateDefinitionBuilder.prototype.updateInstruction = function (span, reference, paramsOrFn) {
         this.instructionFn(this._updateCodeFns, span, reference, paramsOrFn || []);
     };
-    TemplateDefinitionBuilder.prototype.updateInstructionChain = function (nodeIndex, reference, bindings) {
+    TemplateDefinitionBuilder.prototype.updateInstructionChain = function (reference, bindings) {
         var span = bindings.length ? bindings[0].sourceSpan : null;
-        this.addSelectInstructionIfNecessary(nodeIndex, span);
         this._updateCodeFns.push(function () {
             var calls = bindings.map(function (property) {
                 var fnParams = __spread([property.value()], (property.params || []));
@@ -17144,12 +17143,18 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             return chainedInstruction(reference, calls, span).toStmt();
         });
     };
-    TemplateDefinitionBuilder.prototype.addSelectInstructionIfNecessary = function (nodeIndex, span) {
-        if (this._lastNodeIndexWithFlush < nodeIndex) {
-            if (nodeIndex > 0) {
-                this.instructionFn(this._updateCodeFns, span, Identifiers$1.select, [literal(nodeIndex)]);
+    TemplateDefinitionBuilder.prototype.updateInstructionChainWithAdvance = function (nodeIndex, reference, bindings) {
+        this.addAdvanceInstructionIfNecessary(nodeIndex, bindings.length ? bindings[0].sourceSpan : null);
+        this.updateInstructionChain(reference, bindings);
+    };
+    TemplateDefinitionBuilder.prototype.addAdvanceInstructionIfNecessary = function (nodeIndex, span) {
+        if (nodeIndex !== this._currentIndex) {
+            var delta = nodeIndex - this._currentIndex;
+            if (delta < 1) {
+                throw new Error('advance instruction can only go forwards');
             }
-            this._lastNodeIndexWithFlush = nodeIndex;
+            this.instructionFn(this._updateCodeFns, span, Identifiers$1.advance, [literal(delta)]);
+            this._currentIndex = nodeIndex;
         }
     };
     TemplateDefinitionBuilder.prototype.allocatePureFunctionSlots = function (numSlots) {
@@ -18884,7 +18889,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-next.5+49.sha-ea6a2e9.with-local-changes');
+var VERSION$1 = new Version('9.0.0-next.5+51.sha-664e001.with-local-changes');
 
 /**
  * @license
