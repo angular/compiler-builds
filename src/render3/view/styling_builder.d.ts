@@ -56,6 +56,7 @@ interface BoundStylingEntry {
  *   classMap(...)
  *   styleProp(...)
  *   classProp(...)
+ *   stylingApply(...)
  * }
  *
  * The creation/update methods within the builder class produce these instructions.
@@ -70,7 +71,6 @@ export declare class StylingBuilder {
      *  (i.e. `[style]`, `[class]`, `[style.prop]` or `[class.name]`)
      */
     hasBindings: boolean;
-    hasBindingsWithPipes: boolean;
     /** the input for [class] (if it exists) */
     private _classMapInput;
     /** the input for [style] (if it exists) */
@@ -107,7 +107,6 @@ export declare class StylingBuilder {
     registerInputBasedOnName(name: string, expression: AST, sourceSpan: ParseSourceSpan): BoundStylingEntry | null;
     registerStyleInput(name: string, isMapBased: boolean, value: AST, sourceSpan: ParseSourceSpan, unit?: string | null): BoundStylingEntry | null;
     registerClassInput(name: string, isMapBased: boolean, value: AST, sourceSpan: ParseSourceSpan): BoundStylingEntry | null;
-    private _checkForPipes;
     /**
      * Registers the element's static style string value to the builder.
      *
@@ -136,6 +135,13 @@ export declare class StylingBuilder {
      */
     buildHostAttrsInstruction(sourceSpan: ParseSourceSpan | null, attrs: o.Expression[], constantPool: ConstantPool): StylingInstruction | null;
     /**
+     * Builds an instruction with all the expressions and parameters for `styling`.
+     *
+     * The instruction generation code below is used for producing the AOT statement code which is
+     * responsible for registering style/class bindings to an element.
+     */
+    buildStylingInstruction(sourceSpan: ParseSourceSpan | null, constantPool: ConstantPool): StylingInstruction | null;
+    /**
      * Builds an instruction with all the expressions and parameters for `classMap`.
      *
      * The instruction data will contain all expressions for `classMap` to function
@@ -153,6 +159,7 @@ export declare class StylingBuilder {
     private _buildSingleInputs;
     private _buildClassInputs;
     private _buildStyleInputs;
+    private _buildApplyFn;
     private _buildSanitizerFn;
     /**
      * Constructs all instructions which contain the expressions that will be placed
