@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.6+47.sha-0477bfc.with-local-changes
+ * @license Angular v9.0.0-next.6+48.sha-5328bb2.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15183,8 +15183,12 @@ var HtmlAstToIvyAst = /** @class */ (function () {
                     outputs: parsedElement.outputs,
                 } :
                 { attributes: [], inputs: [], outputs: [] };
+            // For <ng-template>s with structural directives on them, avoid passing i18n information to
+            // the wrapping template to prevent unnecessary i18n instructions from being generated. The
+            // necessary i18n meta information will be extracted from child elements.
+            var i18n_1 = isTemplateElement && isI18nRootNode(element.i18n) ? undefined : element.i18n;
             // TODO(pk): test for this case
-            parsedElement = new Template(parsedElement.name, hoistedAttrs.attributes, hoistedAttrs.inputs, hoistedAttrs.outputs, templateAttrs_1, [parsedElement], [ /* no references */], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+            parsedElement = new Template(parsedElement.name, hoistedAttrs.attributes, hoistedAttrs.inputs, hoistedAttrs.outputs, templateAttrs_1, [parsedElement], [ /* no references */], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, i18n_1);
         }
         return parsedElement;
     };
@@ -18889,7 +18893,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-next.6+47.sha-0477bfc.with-local-changes');
+var VERSION$1 = new Version('9.0.0-next.6+48.sha-5328bb2.with-local-changes');
 
 /**
  * @license
