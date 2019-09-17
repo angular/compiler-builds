@@ -46,4 +46,11 @@ export declare function metaFromI18nMessage(message: i18n.Message, id?: string |
  * @returns Object with id, meaning and description fields
  */
 export declare function parseI18nMeta(meta?: string): I18nMeta;
+/**
+ * Serialize the given `meta` into a string that can be used in a `$localize` tagged string metadata
+ * block. The format is the same as that parsed by `parseI18nMeta()`.
+ *
+ * @param meta The metadata to serialize
+ */
+export declare function serializeI18nMeta(meta: I18nMeta): string;
 export declare function i18nMetaToDocStmt(meta: I18nMeta): o.JSDocCommentStmt | null;
