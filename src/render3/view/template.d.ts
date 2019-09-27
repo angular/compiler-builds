@@ -151,6 +151,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
      *   STYLES, style1, value1, style2, value2,
      *   BINDINGS, name1, name2, name3,
      *   TEMPLATE, name4, name5, name6,
+     *   PROJECT_AS, selector,
      *   I18N, name7, name8, ...]
      * ```
      *

@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.8+12.sha-f691415.with-local-changes
+ * @license Angular v9.0.0-next.8+14.sha-966c2a3.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16605,16 +16605,20 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var projectionSlotIdx = this._ngContentSelectorsOffset + this._ngContentReservedSlots.length;
         var parameters = [literal(slot)];
         var attributes = [];
+        var ngProjectAsAttr;
         this._ngContentReservedSlots.push(ngContent.selector);
         ngContent.attributes.forEach(function (attribute) {
             var name = attribute.name, value = attribute.value;
             if (name === NG_PROJECT_AS_ATTR_NAME) {
-                attributes.push.apply(attributes, __spread(getNgProjectAsLiteral(attribute)));
+                ngProjectAsAttr = attribute;
             }
-            else if (name.toLowerCase() !== NG_CONTENT_SELECT_ATTR$1) {
+            if (name.toLowerCase() !== NG_CONTENT_SELECT_ATTR$1) {
                 attributes.push(literal(name), literal(value));
             }
         });
+        if (ngProjectAsAttr) {
+            attributes.push.apply(attributes, __spread(getNgProjectAsLiteral(ngProjectAsAttr)));
+        }
         if (attributes.length > 0) {
             parameters.push(literal(projectionSlotIdx), literalArr(attributes));
         }
@@ -16638,6 +16642,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         }
         var i18nAttrs = [];
         var outputAttrs = [];
+        var ngProjectAsAttr;
         var _b = __read(splitNsName(element.name), 2), namespaceKey = _b[0], elementName = _b[1];
         var isNgContainer$1 = isNgContainer(element.name);
         try {
@@ -16655,6 +16660,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                     stylingBuilder.registerClassAttr(value);
                 }
                 else {
+                    if (attr.name === NG_PROJECT_AS_ATTR_NAME) {
+                        ngProjectAsAttr = attr;
+                    }
                     if (attr.i18n) {
                         // Place attributes into a separate array for i18n processing, but also keep such
                         // attributes in the main list to make them available for directive matching at runtime.
@@ -16701,15 +16709,10 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             }
         });
         outputAttrs.forEach(function (attr) {
-            if (attr.name === NG_PROJECT_AS_ATTR_NAME) {
-                attributes.push.apply(attributes, __spread(getNgProjectAsLiteral(attr)));
-            }
-            else {
-                attributes.push.apply(attributes, __spread(getAttributeNameLiterals(attr.name), [literal(attr.value)]));
-            }
+            attributes.push.apply(attributes, __spread(getAttributeNameLiterals(attr.name), [literal(attr.value)]));
         });
         // add attributes for directive and projection matching purposes
-        attributes.push.apply(attributes, __spread(this.prepareNonRenderAttrs(allOtherInputs, element.outputs, stylingBuilder, [], i18nAttrs)));
+        attributes.push.apply(attributes, __spread(this.prepareNonRenderAttrs(allOtherInputs, element.outputs, stylingBuilder, [], i18nAttrs, ngProjectAsAttr)));
         parameters.push(this.toAttrsParam(attributes));
         // local refs (ex.: <div #foo #bar="baz">)
         parameters.push(this.prepareRefsParameter(element.references));
@@ -17207,13 +17210,14 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
      *   STYLES, style1, value1, style2, value2,
      *   BINDINGS, name1, name2, name3,
      *   TEMPLATE, name4, name5, name6,
+     *   PROJECT_AS, selector,
      *   I18N, name7, name8, ...]
      * ```
      *
      * Note that this function will fully ignore all synthetic (@foo) attribute values
      * because those values are intended to always be generated as property instructions.
      */
-    TemplateDefinitionBuilder.prototype.prepareNonRenderAttrs = function (inputs, outputs, styles, templateAttrs, i18nAttrs) {
+    TemplateDefinitionBuilder.prototype.prepareNonRenderAttrs = function (inputs, outputs, styles, templateAttrs, i18nAttrs, ngProjectAsAttr) {
         if (templateAttrs === void 0) { templateAttrs = []; }
         if (i18nAttrs === void 0) { i18nAttrs = []; }
         var alreadySeen = new Set();
@@ -17263,6 +17267,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         if (templateAttrs.length) {
             attrExprs.push(literal(4 /* Template */));
             templateAttrs.forEach(function (attr) { return addAttrExpr(attr.name); });
+        }
+        if (ngProjectAsAttr) {
+            attrExprs.push.apply(attrExprs, __spread(getNgProjectAsLiteral(ngProjectAsAttr)));
         }
         if (i18nAttrs.length) {
             attrExprs.push(literal(6 /* I18n */));
@@ -18868,7 +18875,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-next.8+12.sha-f691415.with-local-changes');
+var VERSION$1 = new Version('9.0.0-next.8+14.sha-966c2a3.with-local-changes');
 
 /**
  * @license
