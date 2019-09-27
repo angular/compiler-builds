@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.8+12.sha-f691415.with-local-changes
+ * @license Angular v9.0.0-next.8+14.sha-966c2a3.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15623,16 +15623,20 @@ class TemplateDefinitionBuilder {
         const projectionSlotIdx = this._ngContentSelectorsOffset + this._ngContentReservedSlots.length;
         const parameters = [literal(slot)];
         const attributes = [];
+        let ngProjectAsAttr;
         this._ngContentReservedSlots.push(ngContent.selector);
         ngContent.attributes.forEach((attribute) => {
             const { name, value } = attribute;
             if (name === NG_PROJECT_AS_ATTR_NAME) {
-                attributes.push(...getNgProjectAsLiteral(attribute));
+                ngProjectAsAttr = attribute;
             }
-            else if (name.toLowerCase() !== NG_CONTENT_SELECT_ATTR$1) {
+            if (name.toLowerCase() !== NG_CONTENT_SELECT_ATTR$1) {
                 attributes.push(literal(name), literal(value));
             }
         });
+        if (ngProjectAsAttr) {
+            attributes.push(...getNgProjectAsLiteral(ngProjectAsAttr));
+        }
         if (attributes.length > 0) {
             parameters.push(literal(projectionSlotIdx), literalArr(attributes));
         }
@@ -15654,6 +15658,7 @@ class TemplateDefinitionBuilder {
         }
         const i18nAttrs = [];
         const outputAttrs = [];
+        let ngProjectAsAttr;
         const [namespaceKey, elementName] = splitNsName(element.name);
         const isNgContainer$1 = isNgContainer(element.name);
         // Handle styling, i18n, ngNonBindable attributes
@@ -15669,6 +15674,9 @@ class TemplateDefinitionBuilder {
                 stylingBuilder.registerClassAttr(value);
             }
             else {
+                if (attr.name === NG_PROJECT_AS_ATTR_NAME) {
+                    ngProjectAsAttr = attr;
+                }
                 if (attr.i18n) {
                     // Place attributes into a separate array for i18n processing, but also keep such
                     // attributes in the main list to make them available for directive matching at runtime.
@@ -15707,15 +15715,10 @@ class TemplateDefinitionBuilder {
             }
         });
         outputAttrs.forEach(attr => {
-            if (attr.name === NG_PROJECT_AS_ATTR_NAME) {
-                attributes.push(...getNgProjectAsLiteral(attr));
-            }
-            else {
-                attributes.push(...getAttributeNameLiterals(attr.name), literal(attr.value));
-            }
+            attributes.push(...getAttributeNameLiterals(attr.name), literal(attr.value));
         });
         // add attributes for directive and projection matching purposes
-        attributes.push(...this.prepareNonRenderAttrs(allOtherInputs, element.outputs, stylingBuilder, [], i18nAttrs));
+        attributes.push(...this.prepareNonRenderAttrs(allOtherInputs, element.outputs, stylingBuilder, [], i18nAttrs, ngProjectAsAttr));
         parameters.push(this.toAttrsParam(attributes));
         // local refs (ex.: <div #foo #bar="baz">)
         parameters.push(this.prepareRefsParameter(element.references));
@@ -16205,13 +16208,14 @@ class TemplateDefinitionBuilder {
      *   STYLES, style1, value1, style2, value2,
      *   BINDINGS, name1, name2, name3,
      *   TEMPLATE, name4, name5, name6,
+     *   PROJECT_AS, selector,
      *   I18N, name7, name8, ...]
      * ```
      *
      * Note that this function will fully ignore all synthetic (@foo) attribute values
      * because those values are intended to always be generated as property instructions.
      */
-    prepareNonRenderAttrs(inputs, outputs, styles, templateAttrs = [], i18nAttrs = []) {
+    prepareNonRenderAttrs(inputs, outputs, styles, templateAttrs = [], i18nAttrs = [], ngProjectAsAttr) {
         const alreadySeen = new Set();
         const attrExprs = [];
         function addAttrExpr(key, value) {
@@ -16259,6 +16263,9 @@ class TemplateDefinitionBuilder {
         if (templateAttrs.length) {
             attrExprs.push(literal(4 /* Template */));
             templateAttrs.forEach(attr => addAttrExpr(attr.name));
+        }
+        if (ngProjectAsAttr) {
+            attrExprs.push(...getNgProjectAsLiteral(ngProjectAsAttr));
         }
         if (i18nAttrs.length) {
             attrExprs.push(literal(6 /* I18n */));
@@ -17787,7 +17794,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.8+12.sha-f691415.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.8+14.sha-966c2a3.with-local-changes');
 
 /**
  * @license
