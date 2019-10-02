@@ -27,6 +27,7 @@ export declare class Identifiers {
     static moduleProviderDef: o.ExternalReference;
     static RegisterModuleFactoryFn: o.ExternalReference;
     static inject: o.ExternalReference;
+    static directiveInject: o.ExternalReference;
     static INJECTOR: o.ExternalReference;
     static Injector: o.ExternalReference;
     static ɵɵdefineInjectable: o.ExternalReference;

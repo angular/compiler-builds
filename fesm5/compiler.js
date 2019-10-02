@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.9.with-local-changes
+ * @license Angular v9.0.0-next.9+1.sha-4e35e34.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2868,6 +2868,7 @@ var Identifiers = /** @class */ (function () {
         moduleName: CORE,
     };
     Identifiers.inject = { name: 'ɵɵinject', moduleName: CORE };
+    Identifiers.directiveInject = { name: 'ɵɵdirectiveInject', moduleName: CORE };
     Identifiers.INJECTOR = { name: 'INJECTOR', moduleName: CORE };
     Identifiers.Injector = { name: 'Injector', moduleName: CORE };
     Identifiers.ɵɵdefineInjectable = { name: 'ɵɵdefineInjectable', moduleName: CORE };
@@ -5433,8 +5434,7 @@ function compileFactoryFromMetadata(meta) {
         type: meta.type,
         deps: meta.deps,
         typeArgumentCount: meta.typeArgumentCount,
-        // TODO(crisbeto): this should be refactored once we start using it for injectables.
-        injectFn: Identifiers$1.directiveInject,
+        injectFn: meta.injectFn,
     }, meta.isPipe);
 }
 function injectDependencies(deps, injectFn, isPipe) {
@@ -5542,7 +5542,7 @@ function compileInjectable(meta) {
         name: meta.name,
         type: meta.type,
         typeArgumentCount: meta.typeArgumentCount,
-        deps: meta.ctorDeps,
+        deps: [],
         injectFn: Identifiers.inject,
     };
     if (meta.useClass !== undefined) {
@@ -5565,11 +5565,19 @@ function compileInjectable(meta) {
             result = compileFactoryFunction(factoryMeta);
         }
         else {
-            result = compileFactoryFunction(__assign({}, factoryMeta, { delegate: meta.useClass, delegateType: R3FactoryDelegateType.Factory }));
+            result = delegateToFactory(meta.useClass);
         }
     }
     else if (meta.useFactory !== undefined) {
-        result = compileFactoryFunction(__assign({}, factoryMeta, { delegate: meta.useFactory, delegateDeps: meta.userDeps || [], delegateType: R3FactoryDelegateType.Function }));
+        if (meta.userDeps !== undefined) {
+            result = compileFactoryFunction(__assign({}, factoryMeta, { delegate: meta.useFactory, delegateDeps: meta.userDeps || [], delegateType: R3FactoryDelegateType.Function }));
+        }
+        else {
+            result = {
+                statements: [],
+                factory: fn([], [new ReturnStatement(meta.useFactory.callFn([]))])
+            };
+        }
     }
     else if (meta.useValue !== undefined) {
         // Note: it's safe to use `meta.useValue` instead of the `USE_VALUE in meta` check used for
@@ -5582,7 +5590,7 @@ function compileInjectable(meta) {
         result = compileFactoryFunction(__assign({}, factoryMeta, { expression: importExpr(Identifiers.inject).callFn([meta.useExisting]) }));
     }
     else {
-        result = compileFactoryFunction(factoryMeta);
+        result = delegateToFactory(meta.type);
     }
     var token = meta.type;
     var providedIn = meta.providedIn;
@@ -5592,6 +5600,13 @@ function compileInjectable(meta) {
         expression: expression,
         type: type,
         statements: result.statements,
+    };
+}
+function delegateToFactory(type) {
+    return {
+        statements: [],
+        // () => meta.type.ngFactoryDef(t)
+        factory: fn([new FnParam('t', DYNAMIC_TYPE)], [new ReturnStatement(type.callMethod('ngFactoryDef', [variable('t')]))])
     };
 }
 
@@ -6890,7 +6905,7 @@ function compilePipeFromRender2(outputCtx, pipe, reflector) {
         pure: pipe.pure,
     };
     var res = compilePipeFromMetadata(metadata);
-    var factoryRes = compileFactoryFromMetadata(__assign({}, metadata, { isPipe: true }));
+    var factoryRes = compileFactoryFromMetadata(__assign({}, metadata, { injectFn: Identifiers$1.directiveInject, isPipe: true }));
     var definitionField = outputCtx.constantPool.propertyNameOf(3 /* Pipe */);
     var ngFactoryDefStatement = new ClassStmt(
     /* name */ name, 
@@ -18101,7 +18116,7 @@ function compileDirectiveFromRender2(outputCtx, directive, reflector, bindingPar
     var definitionField = outputCtx.constantPool.propertyNameOf(1 /* Directive */);
     var meta = directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector);
     var res = compileDirectiveFromMetadata(meta, outputCtx.constantPool, bindingParser);
-    var factoryRes = compileFactoryFromMetadata(meta);
+    var factoryRes = compileFactoryFromMetadata(__assign({}, meta, { injectFn: Identifiers$1.directiveInject }));
     var ngFactoryDefStatement = new ClassStmt(name, null, [new ClassField('ngFactoryDef', INFERRED_TYPE, [StmtModifier.Static], factoryRes.factory)], [], new ClassMethod(null, [], []), []);
     var directiveDefStatement = new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []);
     // Create the partial class to be merged with the actual class.
@@ -18122,7 +18137,7 @@ function compileComponentFromRender2(outputCtx, component, render3Ast, reflector
     // Compute the R3ComponentMetadata from the CompileDirectiveMetadata
     var meta = __assign({}, directiveMetadataFromGlobalMetadata(component, outputCtx, reflector), { selector: component.selector, template: { nodes: render3Ast.nodes }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, interpolation: DEFAULT_INTERPOLATION_CONFIG, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null, relativeContextFilePath: '', i18nUseExternalIds: true });
     var res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
-    var factoryRes = compileFactoryFromMetadata(meta);
+    var factoryRes = compileFactoryFromMetadata(__assign({}, meta, { injectFn: Identifiers$1.directiveInject }));
     var ngFactoryDefStatement = new ClassStmt(name, null, [new ClassField('ngFactoryDef', INFERRED_TYPE, [StmtModifier.Static], factoryRes.factory)], [], new ClassMethod(null, [], []), []);
     var componentDefStatement = new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []);
     // Create the partial class to be merged with the actual class.
@@ -18643,7 +18658,6 @@ var CompilerFacadeImpl = /** @class */ (function () {
             useFactory: wrapExpression(facade, USE_FACTORY),
             useValue: wrapExpression(facade, USE_VALUE),
             useExisting: wrapExpression(facade, USE_EXISTING),
-            ctorDeps: convertR3DependencyMetadataArray(facade.ctorDeps),
             userDeps: convertR3DependencyMetadataArray(facade.userDeps) || undefined,
         }), expression = _a.expression, statements = _a.statements;
         return this.jitExpression(expression, angularCoreEnv, sourceMapUrl, statements);
@@ -18701,13 +18715,15 @@ var CompilerFacadeImpl = /** @class */ (function () {
         var jitExpressionSourceMap = "ng:///" + facade.name + ".js";
         return this.jitExpression(res.expression, angularCoreEnv, jitExpressionSourceMap, constantPool.statements);
     };
-    CompilerFacadeImpl.prototype.compileFactory = function (angularCoreEnv, sourceMapUrl, meta, isPipe) {
-        if (isPipe === void 0) { isPipe = false; }
+    CompilerFacadeImpl.prototype.compileFactory = function (angularCoreEnv, sourceMapUrl, meta) {
         var factoryRes = compileFactoryFromMetadata({
             name: meta.name,
             type: new WrappedNodeExpr(meta.type),
             typeArgumentCount: meta.typeArgumentCount,
-            deps: convertR3DependencyMetadataArray(meta.deps), isPipe: isPipe
+            deps: convertR3DependencyMetadataArray(meta.deps),
+            injectFn: meta.injectFn === 'directiveInject' ? Identifiers.directiveInject :
+                Identifiers.inject,
+            isPipe: meta.isPipe
         });
         return this.jitExpression(factoryRes.factory, angularCoreEnv, sourceMapUrl, factoryRes.statements);
     };
@@ -18875,7 +18891,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-next.9.with-local-changes');
+var VERSION$1 = new Version('9.0.0-next.9+1.sha-4e35e34.with-local-changes');
 
 /**
  * @license
