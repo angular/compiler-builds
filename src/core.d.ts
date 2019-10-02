@@ -20,7 +20,7 @@ export interface Query {
     read: any;
     isViewQuery: boolean;
     selector: any;
-    static: boolean;
+    static?: boolean;
 }
 export declare const createContentChildren: MetadataFactory<Query>;
 export declare const createContentChild: MetadataFactory<Query>;
