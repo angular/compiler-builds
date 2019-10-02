@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.8+44.sha-5d5c94d.with-local-changes
+ * @license Angular v9.0.0-next.8+52.sha-25219ba.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -17794,7 +17794,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.8+44.sha-5d5c94d.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.8+52.sha-25219ba.with-local-changes');
 
 /**
  * @license
@@ -21866,7 +21866,6 @@ class ViewCompiler {
     }
     compileComponent(outputCtx, component, template, styles, usedPipes) {
         let embeddedViewCount = 0;
-        const staticQueryIds = findStaticQueryIds(template);
         let renderComponentVarName = undefined;
         if (!component.isHost) {
             const template = component.template;
@@ -21886,7 +21885,7 @@ class ViewCompiler {
         }
         const viewBuilderFactory = (parent) => {
             const embeddedViewIndex = embeddedViewCount++;
-            return new ViewBuilder$1(this._reflector, outputCtx, parent, component, embeddedViewIndex, usedPipes, staticQueryIds, viewBuilderFactory);
+            return new ViewBuilder$1(this._reflector, outputCtx, parent, component, embeddedViewIndex, usedPipes, viewBuilderFactory);
         };
         const visitor = viewBuilderFactory(null);
         visitor.visitAll([], template);
@@ -21901,14 +21900,13 @@ const COMP_VAR = variable('_co');
 const EVENT_NAME_VAR = variable('en');
 const ALLOW_DEFAULT_VAR = variable(`ad`);
 class ViewBuilder$1 {
-    constructor(reflector, outputCtx, parent, component, embeddedViewIndex, usedPipes, staticQueryIds, viewBuilderFactory) {
+    constructor(reflector, outputCtx, parent, component, embeddedViewIndex, usedPipes, viewBuilderFactory) {
         this.reflector = reflector;
         this.outputCtx = outputCtx;
         this.parent = parent;
         this.component = component;
         this.embeddedViewIndex = embeddedViewIndex;
         this.usedPipes = usedPipes;
-        this.staticQueryIds = staticQueryIds;
         this.viewBuilderFactory = viewBuilderFactory;
         this.nodes = [];
         this.purePipeNodeIndices = Object.create(null);
@@ -21935,12 +21933,11 @@ class ViewBuilder$1 {
             });
         }
         if (!this.parent) {
-            const queryIds = staticViewQueryIds(this.staticQueryIds);
             this.component.viewQueries.forEach((query, queryIndex) => {
                 // Note: queries start with id 1 so we can use the number in a Bloom filter!
                 const queryId = queryIndex + 1;
                 const bindingType = query.first ? 0 /* First */ : 1 /* All */;
-                const flags = 134217728 /* TypeViewQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query);
+                const flags = 134217728 /* TypeViewQuery */ | calcStaticDynamicQueryFlags(query);
                 this.nodes.push(() => ({
                     sourceSpan: null,
                     nodeFlags: flags,
@@ -22150,17 +22147,15 @@ class ViewBuilder$1 {
         const hostBindings = [];
         const hostEvents = [];
         this._visitComponentFactoryResolverProvider(ast.directives);
-        ast.providers.forEach((providerAst, providerIndex) => {
+        ast.providers.forEach(providerAst => {
             let dirAst = undefined;
-            let dirIndex = undefined;
-            ast.directives.forEach((localDirAst, i) => {
+            ast.directives.forEach(localDirAst => {
                 if (localDirAst.directive.type.reference === tokenReference(providerAst.token)) {
                     dirAst = localDirAst;
-                    dirIndex = i;
                 }
             });
             if (dirAst) {
-                const { hostBindings: dirHostBindings, hostEvents: dirHostEvents } = this._visitDirective(providerAst, dirAst, dirIndex, nodeIndex, ast.references, ast.queryMatches, usedEvents, this.staticQueryIds.get(ast));
+                const { hostBindings: dirHostBindings, hostEvents: dirHostEvents } = this._visitDirective(providerAst, dirAst, ast.references, ast.queryMatches, usedEvents);
                 hostBindings.push(...dirHostBindings);
                 hostEvents.push(...dirHostEvents);
             }
@@ -22212,13 +22207,13 @@ class ViewBuilder$1 {
             hostEvents: hostEvents
         };
     }
-    _visitDirective(providerAst, dirAst, directiveIndex, elementNodeIndex, refs, queryMatches, usedEvents, queryIds) {
+    _visitDirective(providerAst, dirAst, refs, queryMatches, usedEvents) {
         const nodeIndex = this.nodes.length;
         // reserve the space in the nodeDefs array so we can add children
         this.nodes.push(null);
         dirAst.directive.queries.forEach((query, queryIndex) => {
             const queryId = dirAst.contentQueryStartId + queryIndex;
-            const flags = 67108864 /* TypeContentQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query);
+            const flags = 67108864 /* TypeContentQuery */ | calcStaticDynamicQueryFlags(query);
             const bindingType = query.first ? 0 /* First */ : 1 /* All */;
             this.nodes.push(() => ({
                 sourceSpan: dirAst.sourceSpan,
@@ -22318,7 +22313,6 @@ class ViewBuilder$1 {
         }
     }
     _addProviderNode(data) {
-        const nodeIndex = this.nodes.length;
         // providerDef(
         //   flags: NodeFlags, matchedQueries: [string, QueryValueType][], token:any,
         //   value: any, deps: ([DepFlags, any] | any)[]): NodeDef;
@@ -22693,25 +22687,17 @@ function elementEventNameAndTarget(eventAst, dirAst) {
         return eventAst;
     }
 }
-function calcStaticDynamicQueryFlags(queryIds, queryId, query) {
+function calcStaticDynamicQueryFlags(query) {
     let flags = 0 /* None */;
-    // Note: We only make queries static that query for a single item.
-    // This is because of backwards compatibility with the old view compiler...
-    if (query.first && shouldResolveAsStaticQuery(queryIds, queryId, query)) {
+    // Note: We only make queries static that query for a single item and the user specifically
+    // set the to be static. This is because of backwards compatibility with the old view compiler...
+    if (query.first && query.static) {
         flags |= 268435456 /* StaticQuery */;
     }
     else {
         flags |= 536870912 /* DynamicQuery */;
     }
     return flags;
-}
-function shouldResolveAsStaticQuery(queryIds, queryId, query) {
-    // If query.static has been set by the user, use that value to determine whether
-    // the query is static. If none has been set, sort the query into static/dynamic
-    // based on query results (i.e. dynamic if CD needs to run to get all results).
-    return query.static ||
-        query.static == null &&
-            (queryIds.staticQueryIds.has(queryId) || !queryIds.dynamicQueryIds.has(queryId));
 }
 function elementEventFullName(target, name) {
     return target ? `${target}:${name}` : name;
