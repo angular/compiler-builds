@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { CompilerFacade, CoreEnvironment, R3BaseMetadataFacade, R3ComponentMetadataFacade, R3DirectiveMetadataFacade, R3InjectableMetadataFacade, R3InjectorMetadataFacade, R3NgModuleMetadataFacade, R3PipeMetadataFacade } from './compiler_facade_interface';
+import { CompilerFacade, CoreEnvironment, R3BaseMetadataFacade, R3ComponentMetadataFacade, R3DirectiveMetadataFacade, R3FactoryDefMetadataFacade, R3InjectableMetadataFacade, R3InjectorMetadataFacade, R3NgModuleMetadataFacade, R3PipeMetadataFacade } from './compiler_facade_interface';
 import { JitEvaluator } from './output/output_jit';
 import { ParseSourceSpan } from './parse_util';
 import { ResourceLoader } from './resource_loader';
@@ -21,7 +21,7 @@ export declare class CompilerFacadeImpl implements CompilerFacade {
     compileNgModule(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, facade: R3NgModuleMetadataFacade): any;
     compileDirective(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, facade: R3DirectiveMetadataFacade): any;
     compileComponent(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, facade: R3ComponentMetadataFacade): any;
-    compileFactory(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, meta: R3PipeMetadataFacade | R3DirectiveMetadataFacade | R3ComponentMetadataFacade, isPipe?: boolean): any;
+    compileFactory(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, meta: R3FactoryDefMetadataFacade): any;
     compileBase(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, facade: R3BaseMetadataFacade): any;
     createParseSourceSpan(kind: string, typeName: string, sourceUrl: string): ParseSourceSpan;
     /**

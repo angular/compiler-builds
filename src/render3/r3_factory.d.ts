@@ -64,7 +64,8 @@ export interface R3FactoryDefMetadata {
     name: string;
     type: o.Expression;
     typeArgumentCount: number;
-    deps: R3DependencyMetadata[] | null;
+    deps: R3DependencyMetadata[] | 'invalid' | null;
+    injectFn: o.ExternalReference;
     isPipe?: boolean;
 }
 /**
