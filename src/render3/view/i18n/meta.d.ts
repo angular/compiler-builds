@@ -12,6 +12,7 @@ import { ParseTreeResult } from '../../../ml_parser/parser';
 import * as o from '../../../output/output_ast';
 export declare type I18nMeta = {
     id?: string;
+    customId?: string;
     description?: string;
     meaning?: string;
 };
@@ -47,10 +48,21 @@ export declare function metaFromI18nMessage(message: i18n.Message, id?: string |
  */
 export declare function parseI18nMeta(meta?: string): I18nMeta;
 /**
- * Serialize the given `meta` into a string that can be used in a `$localize` tagged string metadata
- * block. The format is the same as that parsed by `parseI18nMeta()`.
+ * Serialize the given `meta` and `messagePart` a string that can be used in a `$localize`
+ * tagged string. The format of the metadata is the same as that parsed by `parseI18nMeta()`.
  *
  * @param meta The metadata to serialize
+ * @param messagePart The first part of the tagged string
  */
-export declare function serializeI18nMeta(meta: I18nMeta): string;
+export declare function serializeI18nHead(meta: I18nMeta, messagePart: string): string;
+/**
+ * Serialize the given `placeholderName` and `messagePart` into strings that can be used in a
+ * `$localize` tagged string.
+ *
+ * @param placeholderName The placeholder name to serialize
+ * @param messagePart The following message string after this placeholder
+ */
+export declare function serializeI18nTemplatePart(placeholderName: string, messagePart: string): string;
 export declare function i18nMetaToDocStmt(meta: I18nMeta): o.JSDocCommentStmt | null;
+export declare function escapeStartingColon(str: string): string;
+export declare function escapeColons(str: string): string;
