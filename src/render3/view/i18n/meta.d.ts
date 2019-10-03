@@ -8,11 +8,11 @@
 import * as i18n from '../../../i18n/i18n_ast';
 import * as html from '../../../ml_parser/ast';
 import { InterpolationConfig } from '../../../ml_parser/interpolation_config';
-import { ParseTreeResult } from '../../../ml_parser/parser';
 import * as o from '../../../output/output_ast';
 export declare type I18nMeta = {
     id?: string;
     customId?: string;
+    legacyId?: string;
     description?: string;
     meaning?: string;
 };
@@ -24,8 +24,9 @@ export declare type I18nMeta = {
 export declare class I18nMetaVisitor implements html.Visitor {
     private interpolationConfig;
     private keepI18nAttrs;
+    private i18nLegacyMessageIdFormat;
     private _createI18nMessage;
-    constructor(interpolationConfig?: InterpolationConfig, keepI18nAttrs?: boolean);
+    constructor(interpolationConfig?: InterpolationConfig, keepI18nAttrs?: boolean, i18nLegacyMessageIdFormat?: string);
     private _generateI18nMessage;
     visitElement(element: html.Element, context: any): any;
     visitExpansion(expansion: html.Expansion, context: any): any;
@@ -34,7 +35,6 @@ export declare class I18nMetaVisitor implements html.Visitor {
     visitComment(comment: html.Comment, context: any): any;
     visitExpansionCase(expansionCase: html.ExpansionCase, context: any): any;
 }
-export declare function processI18nMeta(htmlAstWithErrors: ParseTreeResult, interpolationConfig?: InterpolationConfig): ParseTreeResult;
 export declare function metaFromI18nMessage(message: i18n.Message, id?: string | null): I18nMeta;
 /**
  * Parses i18n metas like:

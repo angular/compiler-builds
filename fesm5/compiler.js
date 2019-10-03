@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.9+22.sha-0f21ae9.with-local-changes
+ * @license Angular v9.0.0-next.9+26.sha-fca3e79.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4197,7 +4197,7 @@ var Message = /** @class */ (function () {
      * @param placeholderToMessage maps placeholder names to messages (used for nested ICU messages)
      * @param meaning
      * @param description
-     * @param id
+     * @param customId
      */
     function Message(nodes, placeholders, placeholderToMessage, meaning, description, customId) {
         this.nodes = nodes;
@@ -4207,6 +4207,8 @@ var Message = /** @class */ (function () {
         this.description = description;
         this.customId = customId;
         this.id = this.customId;
+        /** The id to use if there is no custom id and if `i18nLegacyMessageIdFormat` is true */
+        this.legacyId = '';
         if (nodes.length) {
             this.sources = [{
                     filePath: nodes[0].sourceSpan.start.file.url,
@@ -4340,13 +4342,28 @@ var RecurseVisitor = /** @class */ (function () {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/**
+ * Return the message id or compute it using the XLIFF1 digest.
+ */
 function digest(message) {
-    return message.id || sha1(serializeNodes(message.nodes).join('') + ("[" + message.meaning + "]"));
+    return message.id || computeDigest(message);
 }
+/**
+ * Compute the message id using the XLIFF1 digest.
+ */
+function computeDigest(message) {
+    return sha1(serializeNodes(message.nodes).join('') + ("[" + message.meaning + "]"));
+}
+/**
+ * Return the message id or compute it using the XLIFF2/XMB/$localize digest.
+ */
 function decimalDigest(message) {
-    if (message.id) {
-        return message.id;
-    }
+    return message.id || computeDecimalDigest(message);
+}
+/**
+ * Compute the message id using the XLIFF2/XMB/$localize digest.
+ */
+function computeDecimalDigest(message) {
     var visitor = new _SerializerIgnoreIcuExpVisitor();
     var parts = message.nodes.map(function (a) { return a.visit(visitor, null); });
     return computeMsgId(parts.join(''), message.meaning);
@@ -8069,1221 +8086,6 @@ function _extractPlaceholderName(input) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var TokenType$1;
-(function (TokenType) {
-    TokenType[TokenType["TAG_OPEN_START"] = 0] = "TAG_OPEN_START";
-    TokenType[TokenType["TAG_OPEN_END"] = 1] = "TAG_OPEN_END";
-    TokenType[TokenType["TAG_OPEN_END_VOID"] = 2] = "TAG_OPEN_END_VOID";
-    TokenType[TokenType["TAG_CLOSE"] = 3] = "TAG_CLOSE";
-    TokenType[TokenType["TEXT"] = 4] = "TEXT";
-    TokenType[TokenType["ESCAPABLE_RAW_TEXT"] = 5] = "ESCAPABLE_RAW_TEXT";
-    TokenType[TokenType["RAW_TEXT"] = 6] = "RAW_TEXT";
-    TokenType[TokenType["COMMENT_START"] = 7] = "COMMENT_START";
-    TokenType[TokenType["COMMENT_END"] = 8] = "COMMENT_END";
-    TokenType[TokenType["CDATA_START"] = 9] = "CDATA_START";
-    TokenType[TokenType["CDATA_END"] = 10] = "CDATA_END";
-    TokenType[TokenType["ATTR_NAME"] = 11] = "ATTR_NAME";
-    TokenType[TokenType["ATTR_QUOTE"] = 12] = "ATTR_QUOTE";
-    TokenType[TokenType["ATTR_VALUE"] = 13] = "ATTR_VALUE";
-    TokenType[TokenType["DOC_TYPE"] = 14] = "DOC_TYPE";
-    TokenType[TokenType["EXPANSION_FORM_START"] = 15] = "EXPANSION_FORM_START";
-    TokenType[TokenType["EXPANSION_CASE_VALUE"] = 16] = "EXPANSION_CASE_VALUE";
-    TokenType[TokenType["EXPANSION_CASE_EXP_START"] = 17] = "EXPANSION_CASE_EXP_START";
-    TokenType[TokenType["EXPANSION_CASE_EXP_END"] = 18] = "EXPANSION_CASE_EXP_END";
-    TokenType[TokenType["EXPANSION_FORM_END"] = 19] = "EXPANSION_FORM_END";
-    TokenType[TokenType["EOF"] = 20] = "EOF";
-})(TokenType$1 || (TokenType$1 = {}));
-var Token$1 = /** @class */ (function () {
-    function Token(type, parts, sourceSpan) {
-        this.type = type;
-        this.parts = parts;
-        this.sourceSpan = sourceSpan;
-    }
-    return Token;
-}());
-var TokenError = /** @class */ (function (_super) {
-    __extends(TokenError, _super);
-    function TokenError(errorMsg, tokenType, span) {
-        var _this = _super.call(this, span, errorMsg) || this;
-        _this.tokenType = tokenType;
-        return _this;
-    }
-    return TokenError;
-}(ParseError));
-var TokenizeResult = /** @class */ (function () {
-    function TokenizeResult(tokens, errors) {
-        this.tokens = tokens;
-        this.errors = errors;
-    }
-    return TokenizeResult;
-}());
-function tokenize(source, url, getTagDefinition, options) {
-    if (options === void 0) { options = {}; }
-    return new _Tokenizer(new ParseSourceFile(source, url), getTagDefinition, options).tokenize();
-}
-var _CR_OR_CRLF_REGEXP = /\r\n?/g;
-function _unexpectedCharacterErrorMsg(charCode) {
-    var char = charCode === $EOF ? 'EOF' : String.fromCharCode(charCode);
-    return "Unexpected character \"" + char + "\"";
-}
-function _unknownEntityErrorMsg(entitySrc) {
-    return "Unknown entity \"" + entitySrc + "\" - use the \"&#<decimal>;\" or  \"&#x<hex>;\" syntax";
-}
-var _ControlFlowError = /** @class */ (function () {
-    function _ControlFlowError(error) {
-        this.error = error;
-    }
-    return _ControlFlowError;
-}());
-// See http://www.w3.org/TR/html51/syntax.html#writing
-var _Tokenizer = /** @class */ (function () {
-    /**
-     * @param _file The html source file being tokenized.
-     * @param _getTagDefinition A function that will retrieve a tag definition for a given tag name.
-     * @param options Configuration of the tokenization.
-     */
-    function _Tokenizer(_file, _getTagDefinition, options) {
-        this._getTagDefinition = _getTagDefinition;
-        this._currentTokenStart = null;
-        this._currentTokenType = null;
-        this._expansionCaseStack = [];
-        this._inInterpolation = false;
-        this.tokens = [];
-        this.errors = [];
-        this._tokenizeIcu = options.tokenizeExpansionForms || false;
-        this._interpolationConfig = options.interpolationConfig || DEFAULT_INTERPOLATION_CONFIG;
-        this._leadingTriviaCodePoints =
-            options.leadingTriviaChars && options.leadingTriviaChars.map(function (c) { return c.codePointAt(0) || 0; });
-        var range = options.range || { endPos: _file.content.length, startPos: 0, startLine: 0, startCol: 0 };
-        this._cursor = options.escapedString ? new EscapedCharacterCursor(_file, range) :
-            new PlainCharacterCursor(_file, range);
-        try {
-            this._cursor.init();
-        }
-        catch (e) {
-            this.handleError(e);
-        }
-    }
-    _Tokenizer.prototype._processCarriageReturns = function (content) {
-        // http://www.w3.org/TR/html5/syntax.html#preprocessing-the-input-stream
-        // In order to keep the original position in the source, we can not
-        // pre-process it.
-        // Instead CRs are processed right before instantiating the tokens.
-        return content.replace(_CR_OR_CRLF_REGEXP, '\n');
-    };
-    _Tokenizer.prototype.tokenize = function () {
-        while (this._cursor.peek() !== $EOF) {
-            var start = this._cursor.clone();
-            try {
-                if (this._attemptCharCode($LT)) {
-                    if (this._attemptCharCode($BANG)) {
-                        if (this._attemptCharCode($LBRACKET)) {
-                            this._consumeCdata(start);
-                        }
-                        else if (this._attemptCharCode($MINUS)) {
-                            this._consumeComment(start);
-                        }
-                        else {
-                            this._consumeDocType(start);
-                        }
-                    }
-                    else if (this._attemptCharCode($SLASH)) {
-                        this._consumeTagClose(start);
-                    }
-                    else {
-                        this._consumeTagOpen(start);
-                    }
-                }
-                else if (!(this._tokenizeIcu && this._tokenizeExpansionForm())) {
-                    this._consumeText();
-                }
-            }
-            catch (e) {
-                this.handleError(e);
-            }
-        }
-        this._beginToken(TokenType$1.EOF);
-        this._endToken([]);
-        return new TokenizeResult(mergeTextTokens(this.tokens), this.errors);
-    };
-    /**
-     * @returns whether an ICU token has been created
-     * @internal
-     */
-    _Tokenizer.prototype._tokenizeExpansionForm = function () {
-        if (this.isExpansionFormStart()) {
-            this._consumeExpansionFormStart();
-            return true;
-        }
-        if (isExpansionCaseStart(this._cursor.peek()) && this._isInExpansionForm()) {
-            this._consumeExpansionCaseStart();
-            return true;
-        }
-        if (this._cursor.peek() === $RBRACE) {
-            if (this._isInExpansionCase()) {
-                this._consumeExpansionCaseEnd();
-                return true;
-            }
-            if (this._isInExpansionForm()) {
-                this._consumeExpansionFormEnd();
-                return true;
-            }
-        }
-        return false;
-    };
-    _Tokenizer.prototype._beginToken = function (type, start) {
-        if (start === void 0) { start = this._cursor.clone(); }
-        this._currentTokenStart = start;
-        this._currentTokenType = type;
-    };
-    _Tokenizer.prototype._endToken = function (parts, end) {
-        if (end === void 0) { end = this._cursor.clone(); }
-        if (this._currentTokenStart === null) {
-            throw new TokenError('Programming error - attempted to end a token when there was no start to the token', this._currentTokenType, this._cursor.getSpan(end));
-        }
-        if (this._currentTokenType === null) {
-            throw new TokenError('Programming error - attempted to end a token which has no token type', null, this._cursor.getSpan(this._currentTokenStart));
-        }
-        var token = new Token$1(this._currentTokenType, parts, this._cursor.getSpan(this._currentTokenStart, this._leadingTriviaCodePoints));
-        this.tokens.push(token);
-        this._currentTokenStart = null;
-        this._currentTokenType = null;
-        return token;
-    };
-    _Tokenizer.prototype._createError = function (msg, span) {
-        if (this._isInExpansionForm()) {
-            msg += " (Do you have an unescaped \"{\" in your template? Use \"{{ '{' }}\") to escape it.)";
-        }
-        var error = new TokenError(msg, this._currentTokenType, span);
-        this._currentTokenStart = null;
-        this._currentTokenType = null;
-        return new _ControlFlowError(error);
-    };
-    _Tokenizer.prototype.handleError = function (e) {
-        if (e instanceof CursorError) {
-            e = this._createError(e.msg, this._cursor.getSpan(e.cursor));
-        }
-        if (e instanceof _ControlFlowError) {
-            this.errors.push(e.error);
-        }
-        else {
-            throw e;
-        }
-    };
-    _Tokenizer.prototype._attemptCharCode = function (charCode) {
-        if (this._cursor.peek() === charCode) {
-            this._cursor.advance();
-            return true;
-        }
-        return false;
-    };
-    _Tokenizer.prototype._attemptCharCodeCaseInsensitive = function (charCode) {
-        if (compareCharCodeCaseInsensitive(this._cursor.peek(), charCode)) {
-            this._cursor.advance();
-            return true;
-        }
-        return false;
-    };
-    _Tokenizer.prototype._requireCharCode = function (charCode) {
-        var location = this._cursor.clone();
-        if (!this._attemptCharCode(charCode)) {
-            throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(location));
-        }
-    };
-    _Tokenizer.prototype._attemptStr = function (chars) {
-        var len = chars.length;
-        if (this._cursor.charsLeft() < len) {
-            return false;
-        }
-        var initialPosition = this._cursor.clone();
-        for (var i = 0; i < len; i++) {
-            if (!this._attemptCharCode(chars.charCodeAt(i))) {
-                // If attempting to parse the string fails, we want to reset the parser
-                // to where it was before the attempt
-                this._cursor = initialPosition;
-                return false;
-            }
-        }
-        return true;
-    };
-    _Tokenizer.prototype._attemptStrCaseInsensitive = function (chars) {
-        for (var i = 0; i < chars.length; i++) {
-            if (!this._attemptCharCodeCaseInsensitive(chars.charCodeAt(i))) {
-                return false;
-            }
-        }
-        return true;
-    };
-    _Tokenizer.prototype._requireStr = function (chars) {
-        var location = this._cursor.clone();
-        if (!this._attemptStr(chars)) {
-            throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(location));
-        }
-    };
-    _Tokenizer.prototype._attemptCharCodeUntilFn = function (predicate) {
-        while (!predicate(this._cursor.peek())) {
-            this._cursor.advance();
-        }
-    };
-    _Tokenizer.prototype._requireCharCodeUntilFn = function (predicate, len) {
-        var start = this._cursor.clone();
-        this._attemptCharCodeUntilFn(predicate);
-        var end = this._cursor.clone();
-        if (end.diff(start) < len) {
-            throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(start));
-        }
-    };
-    _Tokenizer.prototype._attemptUntilChar = function (char) {
-        while (this._cursor.peek() !== char) {
-            this._cursor.advance();
-        }
-    };
-    _Tokenizer.prototype._readChar = function (decodeEntities) {
-        if (decodeEntities && this._cursor.peek() === $AMPERSAND) {
-            return this._decodeEntity();
-        }
-        else {
-            // Don't rely upon reading directly from `_input` as the actual char value
-            // may have been generated from an escape sequence.
-            var char = String.fromCodePoint(this._cursor.peek());
-            this._cursor.advance();
-            return char;
-        }
-    };
-    _Tokenizer.prototype._decodeEntity = function () {
-        var start = this._cursor.clone();
-        this._cursor.advance();
-        if (this._attemptCharCode($HASH)) {
-            var isHex = this._attemptCharCode($x) || this._attemptCharCode($X);
-            var codeStart = this._cursor.clone();
-            this._attemptCharCodeUntilFn(isDigitEntityEnd);
-            if (this._cursor.peek() != $SEMICOLON) {
-                throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan());
-            }
-            var strNum = this._cursor.getChars(codeStart);
-            this._cursor.advance();
-            try {
-                var charCode = parseInt(strNum, isHex ? 16 : 10);
-                return String.fromCharCode(charCode);
-            }
-            catch (_a) {
-                throw this._createError(_unknownEntityErrorMsg(this._cursor.getChars(start)), this._cursor.getSpan());
-            }
-        }
-        else {
-            var nameStart = this._cursor.clone();
-            this._attemptCharCodeUntilFn(isNamedEntityEnd);
-            if (this._cursor.peek() != $SEMICOLON) {
-                this._cursor = nameStart;
-                return '&';
-            }
-            var name_1 = this._cursor.getChars(nameStart);
-            this._cursor.advance();
-            var char = NAMED_ENTITIES[name_1];
-            if (!char) {
-                throw this._createError(_unknownEntityErrorMsg(name_1), this._cursor.getSpan(start));
-            }
-            return char;
-        }
-    };
-    _Tokenizer.prototype._consumeRawText = function (decodeEntities, endMarkerPredicate) {
-        this._beginToken(decodeEntities ? TokenType$1.ESCAPABLE_RAW_TEXT : TokenType$1.RAW_TEXT);
-        var parts = [];
-        while (true) {
-            var tagCloseStart = this._cursor.clone();
-            var foundEndMarker = endMarkerPredicate();
-            this._cursor = tagCloseStart;
-            if (foundEndMarker) {
-                break;
-            }
-            parts.push(this._readChar(decodeEntities));
-        }
-        return this._endToken([this._processCarriageReturns(parts.join(''))]);
-    };
-    _Tokenizer.prototype._consumeComment = function (start) {
-        var _this = this;
-        this._beginToken(TokenType$1.COMMENT_START, start);
-        this._requireCharCode($MINUS);
-        this._endToken([]);
-        this._consumeRawText(false, function () { return _this._attemptStr('-->'); });
-        this._beginToken(TokenType$1.COMMENT_END);
-        this._requireStr('-->');
-        this._endToken([]);
-    };
-    _Tokenizer.prototype._consumeCdata = function (start) {
-        var _this = this;
-        this._beginToken(TokenType$1.CDATA_START, start);
-        this._requireStr('CDATA[');
-        this._endToken([]);
-        this._consumeRawText(false, function () { return _this._attemptStr(']]>'); });
-        this._beginToken(TokenType$1.CDATA_END);
-        this._requireStr(']]>');
-        this._endToken([]);
-    };
-    _Tokenizer.prototype._consumeDocType = function (start) {
-        this._beginToken(TokenType$1.DOC_TYPE, start);
-        var contentStart = this._cursor.clone();
-        this._attemptUntilChar($GT);
-        var content = this._cursor.getChars(contentStart);
-        this._cursor.advance();
-        this._endToken([content]);
-    };
-    _Tokenizer.prototype._consumePrefixAndName = function () {
-        var nameOrPrefixStart = this._cursor.clone();
-        var prefix = '';
-        while (this._cursor.peek() !== $COLON && !isPrefixEnd(this._cursor.peek())) {
-            this._cursor.advance();
-        }
-        var nameStart;
-        if (this._cursor.peek() === $COLON) {
-            prefix = this._cursor.getChars(nameOrPrefixStart);
-            this._cursor.advance();
-            nameStart = this._cursor.clone();
-        }
-        else {
-            nameStart = nameOrPrefixStart;
-        }
-        this._requireCharCodeUntilFn(isNameEnd, prefix === '' ? 0 : 1);
-        var name = this._cursor.getChars(nameStart);
-        return [prefix, name];
-    };
-    _Tokenizer.prototype._consumeTagOpen = function (start) {
-        var tagName;
-        var prefix;
-        var openTagToken;
-        var tokensBeforeTagOpen = this.tokens.length;
-        var innerStart = this._cursor.clone();
-        try {
-            if (!isAsciiLetter(this._cursor.peek())) {
-                throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(start));
-            }
-            openTagToken = this._consumeTagOpenStart(start);
-            prefix = openTagToken.parts[0];
-            tagName = openTagToken.parts[1];
-            this._attemptCharCodeUntilFn(isNotWhitespace);
-            while (this._cursor.peek() !== $SLASH && this._cursor.peek() !== $GT) {
-                this._consumeAttributeName();
-                this._attemptCharCodeUntilFn(isNotWhitespace);
-                if (this._attemptCharCode($EQ)) {
-                    this._attemptCharCodeUntilFn(isNotWhitespace);
-                    this._consumeAttributeValue();
-                }
-                this._attemptCharCodeUntilFn(isNotWhitespace);
-            }
-            this._consumeTagOpenEnd();
-        }
-        catch (e) {
-            if (e instanceof _ControlFlowError) {
-                // When the start tag is invalid (including invalid "attributes"), assume we want a "<"
-                this._cursor = innerStart;
-                if (openTagToken) {
-                    this.tokens.length = tokensBeforeTagOpen;
-                }
-                // Back to back text tokens are merged at the end
-                this._beginToken(TokenType$1.TEXT, start);
-                this._endToken(['<']);
-                return;
-            }
-            throw e;
-        }
-        var contentTokenType = this._getTagDefinition(tagName).contentType;
-        if (contentTokenType === TagContentType.RAW_TEXT) {
-            this._consumeRawTextWithTagClose(prefix, tagName, false);
-        }
-        else if (contentTokenType === TagContentType.ESCAPABLE_RAW_TEXT) {
-            this._consumeRawTextWithTagClose(prefix, tagName, true);
-        }
-    };
-    _Tokenizer.prototype._consumeRawTextWithTagClose = function (prefix, tagName, decodeEntities) {
-        var _this = this;
-        var textToken = this._consumeRawText(decodeEntities, function () {
-            if (!_this._attemptCharCode($LT))
-                return false;
-            if (!_this._attemptCharCode($SLASH))
-                return false;
-            _this._attemptCharCodeUntilFn(isNotWhitespace);
-            if (!_this._attemptStrCaseInsensitive(tagName))
-                return false;
-            _this._attemptCharCodeUntilFn(isNotWhitespace);
-            return _this._attemptCharCode($GT);
-        });
-        this._beginToken(TokenType$1.TAG_CLOSE);
-        this._requireCharCodeUntilFn(function (code) { return code === $GT; }, 3);
-        this._cursor.advance(); // Consume the `>`
-        this._endToken([prefix, tagName]);
-    };
-    _Tokenizer.prototype._consumeTagOpenStart = function (start) {
-        this._beginToken(TokenType$1.TAG_OPEN_START, start);
-        var parts = this._consumePrefixAndName();
-        return this._endToken(parts);
-    };
-    _Tokenizer.prototype._consumeAttributeName = function () {
-        var attrNameStart = this._cursor.peek();
-        if (attrNameStart === $SQ || attrNameStart === $DQ) {
-            throw this._createError(_unexpectedCharacterErrorMsg(attrNameStart), this._cursor.getSpan());
-        }
-        this._beginToken(TokenType$1.ATTR_NAME);
-        var prefixAndName = this._consumePrefixAndName();
-        this._endToken(prefixAndName);
-    };
-    _Tokenizer.prototype._consumeAttributeValue = function () {
-        var value;
-        if (this._cursor.peek() === $SQ || this._cursor.peek() === $DQ) {
-            this._beginToken(TokenType$1.ATTR_QUOTE);
-            var quoteChar = this._cursor.peek();
-            this._cursor.advance();
-            this._endToken([String.fromCodePoint(quoteChar)]);
-            this._beginToken(TokenType$1.ATTR_VALUE);
-            var parts = [];
-            while (this._cursor.peek() !== quoteChar) {
-                parts.push(this._readChar(true));
-            }
-            value = parts.join('');
-            this._endToken([this._processCarriageReturns(value)]);
-            this._beginToken(TokenType$1.ATTR_QUOTE);
-            this._cursor.advance();
-            this._endToken([String.fromCodePoint(quoteChar)]);
-        }
-        else {
-            this._beginToken(TokenType$1.ATTR_VALUE);
-            var valueStart = this._cursor.clone();
-            this._requireCharCodeUntilFn(isNameEnd, 1);
-            value = this._cursor.getChars(valueStart);
-            this._endToken([this._processCarriageReturns(value)]);
-        }
-    };
-    _Tokenizer.prototype._consumeTagOpenEnd = function () {
-        var tokenType = this._attemptCharCode($SLASH) ? TokenType$1.TAG_OPEN_END_VOID : TokenType$1.TAG_OPEN_END;
-        this._beginToken(tokenType);
-        this._requireCharCode($GT);
-        this._endToken([]);
-    };
-    _Tokenizer.prototype._consumeTagClose = function (start) {
-        this._beginToken(TokenType$1.TAG_CLOSE, start);
-        this._attemptCharCodeUntilFn(isNotWhitespace);
-        var prefixAndName = this._consumePrefixAndName();
-        this._attemptCharCodeUntilFn(isNotWhitespace);
-        this._requireCharCode($GT);
-        this._endToken(prefixAndName);
-    };
-    _Tokenizer.prototype._consumeExpansionFormStart = function () {
-        this._beginToken(TokenType$1.EXPANSION_FORM_START);
-        this._requireCharCode($LBRACE);
-        this._endToken([]);
-        this._expansionCaseStack.push(TokenType$1.EXPANSION_FORM_START);
-        this._beginToken(TokenType$1.RAW_TEXT);
-        var condition = this._readUntil($COMMA);
-        this._endToken([condition]);
-        this._requireCharCode($COMMA);
-        this._attemptCharCodeUntilFn(isNotWhitespace);
-        this._beginToken(TokenType$1.RAW_TEXT);
-        var type = this._readUntil($COMMA);
-        this._endToken([type]);
-        this._requireCharCode($COMMA);
-        this._attemptCharCodeUntilFn(isNotWhitespace);
-    };
-    _Tokenizer.prototype._consumeExpansionCaseStart = function () {
-        this._beginToken(TokenType$1.EXPANSION_CASE_VALUE);
-        var value = this._readUntil($LBRACE).trim();
-        this._endToken([value]);
-        this._attemptCharCodeUntilFn(isNotWhitespace);
-        this._beginToken(TokenType$1.EXPANSION_CASE_EXP_START);
-        this._requireCharCode($LBRACE);
-        this._endToken([]);
-        this._attemptCharCodeUntilFn(isNotWhitespace);
-        this._expansionCaseStack.push(TokenType$1.EXPANSION_CASE_EXP_START);
-    };
-    _Tokenizer.prototype._consumeExpansionCaseEnd = function () {
-        this._beginToken(TokenType$1.EXPANSION_CASE_EXP_END);
-        this._requireCharCode($RBRACE);
-        this._endToken([]);
-        this._attemptCharCodeUntilFn(isNotWhitespace);
-        this._expansionCaseStack.pop();
-    };
-    _Tokenizer.prototype._consumeExpansionFormEnd = function () {
-        this._beginToken(TokenType$1.EXPANSION_FORM_END);
-        this._requireCharCode($RBRACE);
-        this._endToken([]);
-        this._expansionCaseStack.pop();
-    };
-    _Tokenizer.prototype._consumeText = function () {
-        var start = this._cursor.clone();
-        this._beginToken(TokenType$1.TEXT, start);
-        var parts = [];
-        do {
-            if (this._interpolationConfig && this._attemptStr(this._interpolationConfig.start)) {
-                parts.push(this._interpolationConfig.start);
-                this._inInterpolation = true;
-            }
-            else if (this._interpolationConfig && this._inInterpolation &&
-                this._attemptStr(this._interpolationConfig.end)) {
-                parts.push(this._interpolationConfig.end);
-                this._inInterpolation = false;
-            }
-            else {
-                parts.push(this._readChar(true));
-            }
-        } while (!this._isTextEnd());
-        this._endToken([this._processCarriageReturns(parts.join(''))]);
-    };
-    _Tokenizer.prototype._isTextEnd = function () {
-        if (this._cursor.peek() === $LT || this._cursor.peek() === $EOF) {
-            return true;
-        }
-        if (this._tokenizeIcu && !this._inInterpolation) {
-            if (this.isExpansionFormStart()) {
-                // start of an expansion form
-                return true;
-            }
-            if (this._cursor.peek() === $RBRACE && this._isInExpansionCase()) {
-                // end of and expansion case
-                return true;
-            }
-        }
-        return false;
-    };
-    _Tokenizer.prototype._readUntil = function (char) {
-        var start = this._cursor.clone();
-        this._attemptUntilChar(char);
-        return this._cursor.getChars(start);
-    };
-    _Tokenizer.prototype._isInExpansionCase = function () {
-        return this._expansionCaseStack.length > 0 &&
-            this._expansionCaseStack[this._expansionCaseStack.length - 1] ===
-                TokenType$1.EXPANSION_CASE_EXP_START;
-    };
-    _Tokenizer.prototype._isInExpansionForm = function () {
-        return this._expansionCaseStack.length > 0 &&
-            this._expansionCaseStack[this._expansionCaseStack.length - 1] ===
-                TokenType$1.EXPANSION_FORM_START;
-    };
-    _Tokenizer.prototype.isExpansionFormStart = function () {
-        if (this._cursor.peek() !== $LBRACE) {
-            return false;
-        }
-        if (this._interpolationConfig) {
-            var start = this._cursor.clone();
-            var isInterpolation = this._attemptStr(this._interpolationConfig.start);
-            this._cursor = start;
-            return !isInterpolation;
-        }
-        return true;
-    };
-    return _Tokenizer;
-}());
-function isNotWhitespace(code) {
-    return !isWhitespace(code) || code === $EOF;
-}
-function isNameEnd(code) {
-    return isWhitespace(code) || code === $GT || code === $SLASH ||
-        code === $SQ || code === $DQ || code === $EQ;
-}
-function isPrefixEnd(code) {
-    return (code < $a || $z < code) && (code < $A || $Z < code) &&
-        (code < $0 || code > $9);
-}
-function isDigitEntityEnd(code) {
-    return code == $SEMICOLON || code == $EOF || !isAsciiHexDigit(code);
-}
-function isNamedEntityEnd(code) {
-    return code == $SEMICOLON || code == $EOF || !isAsciiLetter(code);
-}
-function isExpansionCaseStart(peek) {
-    return peek === $EQ || isAsciiLetter(peek) || isDigit(peek);
-}
-function compareCharCodeCaseInsensitive(code1, code2) {
-    return toUpperCaseCharCode(code1) == toUpperCaseCharCode(code2);
-}
-function toUpperCaseCharCode(code) {
-    return code >= $a && code <= $z ? code - $a + $A : code;
-}
-function mergeTextTokens(srcTokens) {
-    var dstTokens = [];
-    var lastDstToken = undefined;
-    for (var i = 0; i < srcTokens.length; i++) {
-        var token = srcTokens[i];
-        if (lastDstToken && lastDstToken.type == TokenType$1.TEXT && token.type == TokenType$1.TEXT) {
-            lastDstToken.parts[0] += token.parts[0];
-            lastDstToken.sourceSpan.end = token.sourceSpan.end;
-        }
-        else {
-            lastDstToken = token;
-            dstTokens.push(lastDstToken);
-        }
-    }
-    return dstTokens;
-}
-var PlainCharacterCursor = /** @class */ (function () {
-    function PlainCharacterCursor(fileOrCursor, range) {
-        if (fileOrCursor instanceof PlainCharacterCursor) {
-            this.file = fileOrCursor.file;
-            this.input = fileOrCursor.input;
-            this.end = fileOrCursor.end;
-            this.state = __assign({}, fileOrCursor.state);
-        }
-        else {
-            if (!range) {
-                throw new Error('Programming error: the range argument must be provided with a file argument.');
-            }
-            this.file = fileOrCursor;
-            this.input = fileOrCursor.content;
-            this.end = range.endPos;
-            this.state = {
-                peek: -1,
-                offset: range.startPos,
-                line: range.startLine,
-                column: range.startCol,
-            };
-        }
-    }
-    PlainCharacterCursor.prototype.clone = function () { return new PlainCharacterCursor(this); };
-    PlainCharacterCursor.prototype.peek = function () { return this.state.peek; };
-    PlainCharacterCursor.prototype.charsLeft = function () { return this.end - this.state.offset; };
-    PlainCharacterCursor.prototype.diff = function (other) { return this.state.offset - other.state.offset; };
-    PlainCharacterCursor.prototype.advance = function () { this.advanceState(this.state); };
-    PlainCharacterCursor.prototype.init = function () { this.updatePeek(this.state); };
-    PlainCharacterCursor.prototype.getSpan = function (start, leadingTriviaCodePoints) {
-        start = start || this;
-        if (leadingTriviaCodePoints) {
-            start = start.clone();
-            while (this.diff(start) > 0 && leadingTriviaCodePoints.indexOf(start.peek()) !== -1) {
-                start.advance();
-            }
-        }
-        return new ParseSourceSpan(new ParseLocation(start.file, start.state.offset, start.state.line, start.state.column), new ParseLocation(this.file, this.state.offset, this.state.line, this.state.column));
-    };
-    PlainCharacterCursor.prototype.getChars = function (start) {
-        return this.input.substring(start.state.offset, this.state.offset);
-    };
-    PlainCharacterCursor.prototype.charAt = function (pos) { return this.input.charCodeAt(pos); };
-    PlainCharacterCursor.prototype.advanceState = function (state) {
-        if (state.offset >= this.end) {
-            this.state = state;
-            throw new CursorError('Unexpected character "EOF"', this);
-        }
-        var currentChar = this.charAt(state.offset);
-        if (currentChar === $LF) {
-            state.line++;
-            state.column = 0;
-        }
-        else if (!isNewLine(currentChar)) {
-            state.column++;
-        }
-        state.offset++;
-        this.updatePeek(state);
-    };
-    PlainCharacterCursor.prototype.updatePeek = function (state) {
-        state.peek = state.offset >= this.end ? $EOF : this.charAt(state.offset);
-    };
-    return PlainCharacterCursor;
-}());
-var EscapedCharacterCursor = /** @class */ (function (_super) {
-    __extends(EscapedCharacterCursor, _super);
-    function EscapedCharacterCursor(fileOrCursor, range) {
-        var _this = this;
-        if (fileOrCursor instanceof EscapedCharacterCursor) {
-            _this = _super.call(this, fileOrCursor) || this;
-            _this.internalState = __assign({}, fileOrCursor.internalState);
-        }
-        else {
-            _this = _super.call(this, fileOrCursor, range) || this;
-            _this.internalState = _this.state;
-        }
-        return _this;
-    }
-    EscapedCharacterCursor.prototype.advance = function () {
-        this.state = this.internalState;
-        _super.prototype.advance.call(this);
-        this.processEscapeSequence();
-    };
-    EscapedCharacterCursor.prototype.init = function () {
-        _super.prototype.init.call(this);
-        this.processEscapeSequence();
-    };
-    EscapedCharacterCursor.prototype.clone = function () { return new EscapedCharacterCursor(this); };
-    EscapedCharacterCursor.prototype.getChars = function (start) {
-        var cursor = start.clone();
-        var chars = '';
-        while (cursor.internalState.offset < this.internalState.offset) {
-            chars += String.fromCodePoint(cursor.peek());
-            cursor.advance();
-        }
-        return chars;
-    };
-    /**
-     * Process the escape sequence that starts at the current position in the text.
-     *
-     * This method is called to ensure that `peek` has the unescaped value of escape sequences.
-     */
-    EscapedCharacterCursor.prototype.processEscapeSequence = function () {
-        var _this = this;
-        var peek = function () { return _this.internalState.peek; };
-        if (peek() === $BACKSLASH) {
-            // We have hit an escape sequence so we need the internal state to become independent
-            // of the external state.
-            this.internalState = __assign({}, this.state);
-            // Move past the backslash
-            this.advanceState(this.internalState);
-            // First check for standard control char sequences
-            if (peek() === $n) {
-                this.state.peek = $LF;
-            }
-            else if (peek() === $r) {
-                this.state.peek = $CR;
-            }
-            else if (peek() === $v) {
-                this.state.peek = $VTAB;
-            }
-            else if (peek() === $t) {
-                this.state.peek = $TAB;
-            }
-            else if (peek() === $b) {
-                this.state.peek = $BSPACE;
-            }
-            else if (peek() === $f) {
-                this.state.peek = $FF;
-            }
-            // Now consider more complex sequences
-            else if (peek() === $u) {
-                // Unicode code-point sequence
-                this.advanceState(this.internalState); // advance past the `u` char
-                if (peek() === $LBRACE) {
-                    // Variable length Unicode, e.g. `\x{123}`
-                    this.advanceState(this.internalState); // advance past the `{` char
-                    // Advance past the variable number of hex digits until we hit a `}` char
-                    var digitStart = this.clone();
-                    var length_1 = 0;
-                    while (peek() !== $RBRACE) {
-                        this.advanceState(this.internalState);
-                        length_1++;
-                    }
-                    this.state.peek = this.decodeHexDigits(digitStart, length_1);
-                }
-                else {
-                    // Fixed length Unicode, e.g. `\u1234`
-                    var digitStart = this.clone();
-                    this.advanceState(this.internalState);
-                    this.advanceState(this.internalState);
-                    this.advanceState(this.internalState);
-                    this.state.peek = this.decodeHexDigits(digitStart, 4);
-                }
-            }
-            else if (peek() === $x) {
-                // Hex char code, e.g. `\x2F`
-                this.advanceState(this.internalState); // advance past the `x` char
-                var digitStart = this.clone();
-                this.advanceState(this.internalState);
-                this.state.peek = this.decodeHexDigits(digitStart, 2);
-            }
-            else if (isOctalDigit(peek())) {
-                // Octal char code, e.g. `\012`,
-                var octal = '';
-                var length_2 = 0;
-                var previous = this.clone();
-                while (isOctalDigit(peek()) && length_2 < 3) {
-                    previous = this.clone();
-                    octal += String.fromCodePoint(peek());
-                    this.advanceState(this.internalState);
-                    length_2++;
-                }
-                this.state.peek = parseInt(octal, 8);
-                // Backup one char
-                this.internalState = previous.internalState;
-            }
-            else if (isNewLine(this.internalState.peek)) {
-                // Line continuation `\` followed by a new line
-                this.advanceState(this.internalState); // advance over the newline
-                this.state = this.internalState;
-            }
-            else {
-                // If none of the `if` blocks were executed then we just have an escaped normal character.
-                // In that case we just, effectively, skip the backslash from the character.
-                this.state.peek = this.internalState.peek;
-            }
-        }
-    };
-    EscapedCharacterCursor.prototype.decodeHexDigits = function (start, length) {
-        var hex = this.input.substr(start.internalState.offset, length);
-        var charCode = parseInt(hex, 16);
-        if (!isNaN(charCode)) {
-            return charCode;
-        }
-        else {
-            start.state = start.internalState;
-            throw new CursorError('Invalid hexadecimal escape sequence', start);
-        }
-    };
-    return EscapedCharacterCursor;
-}(PlainCharacterCursor));
-var CursorError = /** @class */ (function () {
-    function CursorError(msg, cursor) {
-        this.msg = msg;
-        this.cursor = cursor;
-    }
-    return CursorError;
-}());
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-var TreeError = /** @class */ (function (_super) {
-    __extends(TreeError, _super);
-    function TreeError(elementName, span, msg) {
-        var _this = _super.call(this, span, msg) || this;
-        _this.elementName = elementName;
-        return _this;
-    }
-    TreeError.create = function (elementName, span, msg) {
-        return new TreeError(elementName, span, msg);
-    };
-    return TreeError;
-}(ParseError));
-var ParseTreeResult = /** @class */ (function () {
-    function ParseTreeResult(rootNodes, errors) {
-        this.rootNodes = rootNodes;
-        this.errors = errors;
-    }
-    return ParseTreeResult;
-}());
-var Parser$1 = /** @class */ (function () {
-    function Parser(getTagDefinition) {
-        this.getTagDefinition = getTagDefinition;
-    }
-    Parser.prototype.parse = function (source, url, options) {
-        var tokensAndErrors = tokenize(source, url, this.getTagDefinition, options);
-        var treeAndErrors = new _TreeBuilder(tokensAndErrors.tokens, this.getTagDefinition).build();
-        return new ParseTreeResult(treeAndErrors.rootNodes, tokensAndErrors.errors.concat(treeAndErrors.errors));
-    };
-    return Parser;
-}());
-var _TreeBuilder = /** @class */ (function () {
-    function _TreeBuilder(tokens, getTagDefinition) {
-        this.tokens = tokens;
-        this.getTagDefinition = getTagDefinition;
-        this._index = -1;
-        this._rootNodes = [];
-        this._errors = [];
-        this._elementStack = [];
-        this._advance();
-    }
-    _TreeBuilder.prototype.build = function () {
-        while (this._peek.type !== TokenType$1.EOF) {
-            if (this._peek.type === TokenType$1.TAG_OPEN_START) {
-                this._consumeStartTag(this._advance());
-            }
-            else if (this._peek.type === TokenType$1.TAG_CLOSE) {
-                this._consumeEndTag(this._advance());
-            }
-            else if (this._peek.type === TokenType$1.CDATA_START) {
-                this._closeVoidElement();
-                this._consumeCdata(this._advance());
-            }
-            else if (this._peek.type === TokenType$1.COMMENT_START) {
-                this._closeVoidElement();
-                this._consumeComment(this._advance());
-            }
-            else if (this._peek.type === TokenType$1.TEXT || this._peek.type === TokenType$1.RAW_TEXT ||
-                this._peek.type === TokenType$1.ESCAPABLE_RAW_TEXT) {
-                this._closeVoidElement();
-                this._consumeText(this._advance());
-            }
-            else if (this._peek.type === TokenType$1.EXPANSION_FORM_START) {
-                this._consumeExpansion(this._advance());
-            }
-            else {
-                // Skip all other tokens...
-                this._advance();
-            }
-        }
-        return new ParseTreeResult(this._rootNodes, this._errors);
-    };
-    _TreeBuilder.prototype._advance = function () {
-        var prev = this._peek;
-        if (this._index < this.tokens.length - 1) {
-            // Note: there is always an EOF token at the end
-            this._index++;
-        }
-        this._peek = this.tokens[this._index];
-        return prev;
-    };
-    _TreeBuilder.prototype._advanceIf = function (type) {
-        if (this._peek.type === type) {
-            return this._advance();
-        }
-        return null;
-    };
-    _TreeBuilder.prototype._consumeCdata = function (startToken) {
-        this._consumeText(this._advance());
-        this._advanceIf(TokenType$1.CDATA_END);
-    };
-    _TreeBuilder.prototype._consumeComment = function (token) {
-        var text = this._advanceIf(TokenType$1.RAW_TEXT);
-        this._advanceIf(TokenType$1.COMMENT_END);
-        var value = text != null ? text.parts[0].trim() : null;
-        this._addToParent(new Comment(value, token.sourceSpan));
-    };
-    _TreeBuilder.prototype._consumeExpansion = function (token) {
-        var switchValue = this._advance();
-        var type = this._advance();
-        var cases = [];
-        // read =
-        while (this._peek.type === TokenType$1.EXPANSION_CASE_VALUE) {
-            var expCase = this._parseExpansionCase();
-            if (!expCase)
-                return; // error
-            cases.push(expCase);
-        }
-        // read the final }
-        if (this._peek.type !== TokenType$1.EXPANSION_FORM_END) {
-            this._errors.push(TreeError.create(null, this._peek.sourceSpan, "Invalid ICU message. Missing '}'."));
-            return;
-        }
-        var sourceSpan = new ParseSourceSpan(token.sourceSpan.start, this._peek.sourceSpan.end);
-        this._addToParent(new Expansion(switchValue.parts[0], type.parts[0], cases, sourceSpan, switchValue.sourceSpan));
-        this._advance();
-    };
-    _TreeBuilder.prototype._parseExpansionCase = function () {
-        var value = this._advance();
-        // read {
-        if (this._peek.type !== TokenType$1.EXPANSION_CASE_EXP_START) {
-            this._errors.push(TreeError.create(null, this._peek.sourceSpan, "Invalid ICU message. Missing '{'."));
-            return null;
-        }
-        // read until }
-        var start = this._advance();
-        var exp = this._collectExpansionExpTokens(start);
-        if (!exp)
-            return null;
-        var end = this._advance();
-        exp.push(new Token$1(TokenType$1.EOF, [], end.sourceSpan));
-        // parse everything in between { and }
-        var parsedExp = new _TreeBuilder(exp, this.getTagDefinition).build();
-        if (parsedExp.errors.length > 0) {
-            this._errors = this._errors.concat(parsedExp.errors);
-            return null;
-        }
-        var sourceSpan = new ParseSourceSpan(value.sourceSpan.start, end.sourceSpan.end);
-        var expSourceSpan = new ParseSourceSpan(start.sourceSpan.start, end.sourceSpan.end);
-        return new ExpansionCase(value.parts[0], parsedExp.rootNodes, sourceSpan, value.sourceSpan, expSourceSpan);
-    };
-    _TreeBuilder.prototype._collectExpansionExpTokens = function (start) {
-        var exp = [];
-        var expansionFormStack = [TokenType$1.EXPANSION_CASE_EXP_START];
-        while (true) {
-            if (this._peek.type === TokenType$1.EXPANSION_FORM_START ||
-                this._peek.type === TokenType$1.EXPANSION_CASE_EXP_START) {
-                expansionFormStack.push(this._peek.type);
-            }
-            if (this._peek.type === TokenType$1.EXPANSION_CASE_EXP_END) {
-                if (lastOnStack(expansionFormStack, TokenType$1.EXPANSION_CASE_EXP_START)) {
-                    expansionFormStack.pop();
-                    if (expansionFormStack.length == 0)
-                        return exp;
-                }
-                else {
-                    this._errors.push(TreeError.create(null, start.sourceSpan, "Invalid ICU message. Missing '}'."));
-                    return null;
-                }
-            }
-            if (this._peek.type === TokenType$1.EXPANSION_FORM_END) {
-                if (lastOnStack(expansionFormStack, TokenType$1.EXPANSION_FORM_START)) {
-                    expansionFormStack.pop();
-                }
-                else {
-                    this._errors.push(TreeError.create(null, start.sourceSpan, "Invalid ICU message. Missing '}'."));
-                    return null;
-                }
-            }
-            if (this._peek.type === TokenType$1.EOF) {
-                this._errors.push(TreeError.create(null, start.sourceSpan, "Invalid ICU message. Missing '}'."));
-                return null;
-            }
-            exp.push(this._advance());
-        }
-    };
-    _TreeBuilder.prototype._consumeText = function (token) {
-        var text = token.parts[0];
-        if (text.length > 0 && text[0] == '\n') {
-            var parent_1 = this._getParentElement();
-            if (parent_1 != null && parent_1.children.length == 0 &&
-                this.getTagDefinition(parent_1.name).ignoreFirstLf) {
-                text = text.substring(1);
-            }
-        }
-        if (text.length > 0) {
-            this._addToParent(new Text$3(text, token.sourceSpan));
-        }
-    };
-    _TreeBuilder.prototype._closeVoidElement = function () {
-        var el = this._getParentElement();
-        if (el && this.getTagDefinition(el.name).isVoid) {
-            this._elementStack.pop();
-        }
-    };
-    _TreeBuilder.prototype._consumeStartTag = function (startTagToken) {
-        var prefix = startTagToken.parts[0];
-        var name = startTagToken.parts[1];
-        var attrs = [];
-        while (this._peek.type === TokenType$1.ATTR_NAME) {
-            attrs.push(this._consumeAttr(this._advance()));
-        }
-        var fullName = this._getElementFullName(prefix, name, this._getParentElement());
-        var selfClosing = false;
-        // Note: There could have been a tokenizer error
-        // so that we don't get a token for the end tag...
-        if (this._peek.type === TokenType$1.TAG_OPEN_END_VOID) {
-            this._advance();
-            selfClosing = true;
-            var tagDef = this.getTagDefinition(fullName);
-            if (!(tagDef.canSelfClose || getNsPrefix(fullName) !== null || tagDef.isVoid)) {
-                this._errors.push(TreeError.create(fullName, startTagToken.sourceSpan, "Only void and foreign elements can be self closed \"" + startTagToken.parts[1] + "\""));
-            }
-        }
-        else if (this._peek.type === TokenType$1.TAG_OPEN_END) {
-            this._advance();
-            selfClosing = false;
-        }
-        var end = this._peek.sourceSpan.start;
-        var span = new ParseSourceSpan(startTagToken.sourceSpan.start, end);
-        var el = new Element$1(fullName, attrs, [], span, span, undefined);
-        this._pushElement(el);
-        if (selfClosing) {
-            this._popElement(fullName);
-            el.endSourceSpan = span;
-        }
-    };
-    _TreeBuilder.prototype._pushElement = function (el) {
-        var parentEl = this._getParentElement();
-        if (parentEl && this.getTagDefinition(parentEl.name).isClosedByChild(el.name)) {
-            this._elementStack.pop();
-        }
-        this._addToParent(el);
-        this._elementStack.push(el);
-    };
-    _TreeBuilder.prototype._consumeEndTag = function (endTagToken) {
-        var fullName = this._getElementFullName(endTagToken.parts[0], endTagToken.parts[1], this._getParentElement());
-        if (this._getParentElement()) {
-            this._getParentElement().endSourceSpan = endTagToken.sourceSpan;
-        }
-        if (this.getTagDefinition(fullName).isVoid) {
-            this._errors.push(TreeError.create(fullName, endTagToken.sourceSpan, "Void elements do not have end tags \"" + endTagToken.parts[1] + "\""));
-        }
-        else if (!this._popElement(fullName)) {
-            var errMsg = "Unexpected closing tag \"" + fullName + "\". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags";
-            this._errors.push(TreeError.create(fullName, endTagToken.sourceSpan, errMsg));
-        }
-    };
-    _TreeBuilder.prototype._popElement = function (fullName) {
-        for (var stackIndex = this._elementStack.length - 1; stackIndex >= 0; stackIndex--) {
-            var el = this._elementStack[stackIndex];
-            if (el.name == fullName) {
-                this._elementStack.splice(stackIndex, this._elementStack.length - stackIndex);
-                return true;
-            }
-            if (!this.getTagDefinition(el.name).closedByParent) {
-                return false;
-            }
-        }
-        return false;
-    };
-    _TreeBuilder.prototype._consumeAttr = function (attrName) {
-        var fullName = mergeNsAndName(attrName.parts[0], attrName.parts[1]);
-        var end = attrName.sourceSpan.end;
-        var value = '';
-        var valueSpan = undefined;
-        if (this._peek.type === TokenType$1.ATTR_QUOTE) {
-            this._advance();
-        }
-        if (this._peek.type === TokenType$1.ATTR_VALUE) {
-            var valueToken = this._advance();
-            value = valueToken.parts[0];
-            end = valueToken.sourceSpan.end;
-            valueSpan = valueToken.sourceSpan;
-        }
-        if (this._peek.type === TokenType$1.ATTR_QUOTE) {
-            var quoteToken = this._advance();
-            end = quoteToken.sourceSpan.end;
-        }
-        return new Attribute(fullName, value, new ParseSourceSpan(attrName.sourceSpan.start, end), valueSpan);
-    };
-    _TreeBuilder.prototype._getParentElement = function () {
-        return this._elementStack.length > 0 ? this._elementStack[this._elementStack.length - 1] : null;
-    };
-    /**
-     * Returns the parent in the DOM and the container.
-     *
-     * `<ng-container>` elements are skipped as they are not rendered as DOM element.
-     */
-    _TreeBuilder.prototype._getParentElementSkippingContainers = function () {
-        var container = null;
-        for (var i = this._elementStack.length - 1; i >= 0; i--) {
-            if (!isNgContainer(this._elementStack[i].name)) {
-                return { parent: this._elementStack[i], container: container };
-            }
-            container = this._elementStack[i];
-        }
-        return { parent: null, container: container };
-    };
-    _TreeBuilder.prototype._addToParent = function (node) {
-        var parent = this._getParentElement();
-        if (parent != null) {
-            parent.children.push(node);
-        }
-        else {
-            this._rootNodes.push(node);
-        }
-    };
-    /**
-     * Insert a node between the parent and the container.
-     * When no container is given, the node is appended as a child of the parent.
-     * Also updates the element stack accordingly.
-     *
-     * @internal
-     */
-    _TreeBuilder.prototype._insertBeforeContainer = function (parent, container, node) {
-        if (!container) {
-            this._addToParent(node);
-            this._elementStack.push(node);
-        }
-        else {
-            if (parent) {
-                // replace the container with the new node in the children
-                var index = parent.children.indexOf(container);
-                parent.children[index] = node;
-            }
-            else {
-                this._rootNodes.push(node);
-            }
-            node.children.push(container);
-            this._elementStack.splice(this._elementStack.indexOf(container), 0, node);
-        }
-    };
-    _TreeBuilder.prototype._getElementFullName = function (prefix, localName, parentElement) {
-        if (prefix === '') {
-            prefix = this.getTagDefinition(localName).implicitNamespacePrefix || '';
-            if (prefix === '' && parentElement != null) {
-                prefix = getNsPrefix(parentElement.name);
-            }
-        }
-        return mergeNsAndName(prefix, localName);
-    };
-    return _TreeBuilder;
-}());
-function lastOnStack(stack, element) {
-    return stack.length > 0 && stack[stack.length - 1] === element;
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 function setI18nRefs(html, i18n) {
     html.i18n = i18n;
 }
@@ -9293,13 +8095,15 @@ function setI18nRefs(html, i18n) {
  * stored with other element's and attribute's information.
  */
 var I18nMetaVisitor = /** @class */ (function () {
-    function I18nMetaVisitor(interpolationConfig, keepI18nAttrs) {
+    function I18nMetaVisitor(interpolationConfig, keepI18nAttrs, i18nLegacyMessageIdFormat) {
         if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
         if (keepI18nAttrs === void 0) { keepI18nAttrs = false; }
+        if (i18nLegacyMessageIdFormat === void 0) { i18nLegacyMessageIdFormat = ''; }
         this.interpolationConfig = interpolationConfig;
         this.keepI18nAttrs = keepI18nAttrs;
+        this.i18nLegacyMessageIdFormat = i18nLegacyMessageIdFormat;
         // i18n message generation factory
-        this._createI18nMessage = createI18nMessageFactory(interpolationConfig);
+        this._createI18nMessage = createI18nMessageFactory(this.interpolationConfig);
     }
     I18nMetaVisitor.prototype._generateI18nMessage = function (nodes, meta, visitNodeFn) {
         if (meta === void 0) { meta = ''; }
@@ -9308,6 +8112,18 @@ var I18nMetaVisitor = /** @class */ (function () {
         if (!message.id) {
             // generate (or restore) message id if not specified in template
             message.id = typeof meta !== 'string' && meta.id || decimalDigest(message);
+        }
+        if (this.i18nLegacyMessageIdFormat === 'xlf') {
+            message.legacyId = computeDigest(message);
+        }
+        else if (this.i18nLegacyMessageIdFormat === 'xlf2' || this.i18nLegacyMessageIdFormat === 'xmb') {
+            message.legacyId = computeDecimalDigest(message);
+        }
+        else if (typeof meta !== 'string') {
+            // This occurs if we are doing the 2nd pass after whitespace removal
+            // In that case we want to reuse the legacy message generated in the 1st pass
+            // See `parseTemplate()` in `packages/compiler/src/render3/view/template.ts`
+            message.legacyId = meta.legacyId;
         }
         return message;
     };
@@ -9400,15 +8216,12 @@ var I18nMetaVisitor = /** @class */ (function () {
     I18nMetaVisitor.prototype.visitExpansionCase = function (expansionCase, context) { return expansionCase; };
     return I18nMetaVisitor;
 }());
-function processI18nMeta(htmlAstWithErrors, interpolationConfig) {
-    if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
-    return new ParseTreeResult(visitAll$1(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), htmlAstWithErrors.rootNodes), htmlAstWithErrors.errors);
-}
 function metaFromI18nMessage(message, id) {
     if (id === void 0) { id = null; }
     return {
         id: typeof id === 'string' ? id : message.id || '',
         customId: message.customId,
+        legacyId: message.legacyId,
         meaning: message.meaning || '',
         description: message.description || ''
     };
@@ -9454,8 +8267,8 @@ function serializeI18nHead(meta, messagePart) {
     if (meta.meaning) {
         metaBlock = meta.meaning + "|" + metaBlock;
     }
-    if (meta.customId) {
-        metaBlock = metaBlock + "@@" + meta.customId;
+    if (meta.customId || meta.legacyId) {
+        metaBlock = metaBlock + "@@" + (meta.customId || meta.legacyId);
     }
     if (metaBlock === '') {
         // There is no metaBlock, so we must ensure that any starting colon is escaped.
@@ -12165,6 +10978,1221 @@ function getStylesVarName(component) {
         result += "_" + identifierName(component.type);
     }
     return result;
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var TokenType$1;
+(function (TokenType) {
+    TokenType[TokenType["TAG_OPEN_START"] = 0] = "TAG_OPEN_START";
+    TokenType[TokenType["TAG_OPEN_END"] = 1] = "TAG_OPEN_END";
+    TokenType[TokenType["TAG_OPEN_END_VOID"] = 2] = "TAG_OPEN_END_VOID";
+    TokenType[TokenType["TAG_CLOSE"] = 3] = "TAG_CLOSE";
+    TokenType[TokenType["TEXT"] = 4] = "TEXT";
+    TokenType[TokenType["ESCAPABLE_RAW_TEXT"] = 5] = "ESCAPABLE_RAW_TEXT";
+    TokenType[TokenType["RAW_TEXT"] = 6] = "RAW_TEXT";
+    TokenType[TokenType["COMMENT_START"] = 7] = "COMMENT_START";
+    TokenType[TokenType["COMMENT_END"] = 8] = "COMMENT_END";
+    TokenType[TokenType["CDATA_START"] = 9] = "CDATA_START";
+    TokenType[TokenType["CDATA_END"] = 10] = "CDATA_END";
+    TokenType[TokenType["ATTR_NAME"] = 11] = "ATTR_NAME";
+    TokenType[TokenType["ATTR_QUOTE"] = 12] = "ATTR_QUOTE";
+    TokenType[TokenType["ATTR_VALUE"] = 13] = "ATTR_VALUE";
+    TokenType[TokenType["DOC_TYPE"] = 14] = "DOC_TYPE";
+    TokenType[TokenType["EXPANSION_FORM_START"] = 15] = "EXPANSION_FORM_START";
+    TokenType[TokenType["EXPANSION_CASE_VALUE"] = 16] = "EXPANSION_CASE_VALUE";
+    TokenType[TokenType["EXPANSION_CASE_EXP_START"] = 17] = "EXPANSION_CASE_EXP_START";
+    TokenType[TokenType["EXPANSION_CASE_EXP_END"] = 18] = "EXPANSION_CASE_EXP_END";
+    TokenType[TokenType["EXPANSION_FORM_END"] = 19] = "EXPANSION_FORM_END";
+    TokenType[TokenType["EOF"] = 20] = "EOF";
+})(TokenType$1 || (TokenType$1 = {}));
+var Token$1 = /** @class */ (function () {
+    function Token(type, parts, sourceSpan) {
+        this.type = type;
+        this.parts = parts;
+        this.sourceSpan = sourceSpan;
+    }
+    return Token;
+}());
+var TokenError = /** @class */ (function (_super) {
+    __extends(TokenError, _super);
+    function TokenError(errorMsg, tokenType, span) {
+        var _this = _super.call(this, span, errorMsg) || this;
+        _this.tokenType = tokenType;
+        return _this;
+    }
+    return TokenError;
+}(ParseError));
+var TokenizeResult = /** @class */ (function () {
+    function TokenizeResult(tokens, errors) {
+        this.tokens = tokens;
+        this.errors = errors;
+    }
+    return TokenizeResult;
+}());
+function tokenize(source, url, getTagDefinition, options) {
+    if (options === void 0) { options = {}; }
+    return new _Tokenizer(new ParseSourceFile(source, url), getTagDefinition, options).tokenize();
+}
+var _CR_OR_CRLF_REGEXP = /\r\n?/g;
+function _unexpectedCharacterErrorMsg(charCode) {
+    var char = charCode === $EOF ? 'EOF' : String.fromCharCode(charCode);
+    return "Unexpected character \"" + char + "\"";
+}
+function _unknownEntityErrorMsg(entitySrc) {
+    return "Unknown entity \"" + entitySrc + "\" - use the \"&#<decimal>;\" or  \"&#x<hex>;\" syntax";
+}
+var _ControlFlowError = /** @class */ (function () {
+    function _ControlFlowError(error) {
+        this.error = error;
+    }
+    return _ControlFlowError;
+}());
+// See http://www.w3.org/TR/html51/syntax.html#writing
+var _Tokenizer = /** @class */ (function () {
+    /**
+     * @param _file The html source file being tokenized.
+     * @param _getTagDefinition A function that will retrieve a tag definition for a given tag name.
+     * @param options Configuration of the tokenization.
+     */
+    function _Tokenizer(_file, _getTagDefinition, options) {
+        this._getTagDefinition = _getTagDefinition;
+        this._currentTokenStart = null;
+        this._currentTokenType = null;
+        this._expansionCaseStack = [];
+        this._inInterpolation = false;
+        this.tokens = [];
+        this.errors = [];
+        this._tokenizeIcu = options.tokenizeExpansionForms || false;
+        this._interpolationConfig = options.interpolationConfig || DEFAULT_INTERPOLATION_CONFIG;
+        this._leadingTriviaCodePoints =
+            options.leadingTriviaChars && options.leadingTriviaChars.map(function (c) { return c.codePointAt(0) || 0; });
+        var range = options.range || { endPos: _file.content.length, startPos: 0, startLine: 0, startCol: 0 };
+        this._cursor = options.escapedString ? new EscapedCharacterCursor(_file, range) :
+            new PlainCharacterCursor(_file, range);
+        try {
+            this._cursor.init();
+        }
+        catch (e) {
+            this.handleError(e);
+        }
+    }
+    _Tokenizer.prototype._processCarriageReturns = function (content) {
+        // http://www.w3.org/TR/html5/syntax.html#preprocessing-the-input-stream
+        // In order to keep the original position in the source, we can not
+        // pre-process it.
+        // Instead CRs are processed right before instantiating the tokens.
+        return content.replace(_CR_OR_CRLF_REGEXP, '\n');
+    };
+    _Tokenizer.prototype.tokenize = function () {
+        while (this._cursor.peek() !== $EOF) {
+            var start = this._cursor.clone();
+            try {
+                if (this._attemptCharCode($LT)) {
+                    if (this._attemptCharCode($BANG)) {
+                        if (this._attemptCharCode($LBRACKET)) {
+                            this._consumeCdata(start);
+                        }
+                        else if (this._attemptCharCode($MINUS)) {
+                            this._consumeComment(start);
+                        }
+                        else {
+                            this._consumeDocType(start);
+                        }
+                    }
+                    else if (this._attemptCharCode($SLASH)) {
+                        this._consumeTagClose(start);
+                    }
+                    else {
+                        this._consumeTagOpen(start);
+                    }
+                }
+                else if (!(this._tokenizeIcu && this._tokenizeExpansionForm())) {
+                    this._consumeText();
+                }
+            }
+            catch (e) {
+                this.handleError(e);
+            }
+        }
+        this._beginToken(TokenType$1.EOF);
+        this._endToken([]);
+        return new TokenizeResult(mergeTextTokens(this.tokens), this.errors);
+    };
+    /**
+     * @returns whether an ICU token has been created
+     * @internal
+     */
+    _Tokenizer.prototype._tokenizeExpansionForm = function () {
+        if (this.isExpansionFormStart()) {
+            this._consumeExpansionFormStart();
+            return true;
+        }
+        if (isExpansionCaseStart(this._cursor.peek()) && this._isInExpansionForm()) {
+            this._consumeExpansionCaseStart();
+            return true;
+        }
+        if (this._cursor.peek() === $RBRACE) {
+            if (this._isInExpansionCase()) {
+                this._consumeExpansionCaseEnd();
+                return true;
+            }
+            if (this._isInExpansionForm()) {
+                this._consumeExpansionFormEnd();
+                return true;
+            }
+        }
+        return false;
+    };
+    _Tokenizer.prototype._beginToken = function (type, start) {
+        if (start === void 0) { start = this._cursor.clone(); }
+        this._currentTokenStart = start;
+        this._currentTokenType = type;
+    };
+    _Tokenizer.prototype._endToken = function (parts, end) {
+        if (end === void 0) { end = this._cursor.clone(); }
+        if (this._currentTokenStart === null) {
+            throw new TokenError('Programming error - attempted to end a token when there was no start to the token', this._currentTokenType, this._cursor.getSpan(end));
+        }
+        if (this._currentTokenType === null) {
+            throw new TokenError('Programming error - attempted to end a token which has no token type', null, this._cursor.getSpan(this._currentTokenStart));
+        }
+        var token = new Token$1(this._currentTokenType, parts, this._cursor.getSpan(this._currentTokenStart, this._leadingTriviaCodePoints));
+        this.tokens.push(token);
+        this._currentTokenStart = null;
+        this._currentTokenType = null;
+        return token;
+    };
+    _Tokenizer.prototype._createError = function (msg, span) {
+        if (this._isInExpansionForm()) {
+            msg += " (Do you have an unescaped \"{\" in your template? Use \"{{ '{' }}\") to escape it.)";
+        }
+        var error = new TokenError(msg, this._currentTokenType, span);
+        this._currentTokenStart = null;
+        this._currentTokenType = null;
+        return new _ControlFlowError(error);
+    };
+    _Tokenizer.prototype.handleError = function (e) {
+        if (e instanceof CursorError) {
+            e = this._createError(e.msg, this._cursor.getSpan(e.cursor));
+        }
+        if (e instanceof _ControlFlowError) {
+            this.errors.push(e.error);
+        }
+        else {
+            throw e;
+        }
+    };
+    _Tokenizer.prototype._attemptCharCode = function (charCode) {
+        if (this._cursor.peek() === charCode) {
+            this._cursor.advance();
+            return true;
+        }
+        return false;
+    };
+    _Tokenizer.prototype._attemptCharCodeCaseInsensitive = function (charCode) {
+        if (compareCharCodeCaseInsensitive(this._cursor.peek(), charCode)) {
+            this._cursor.advance();
+            return true;
+        }
+        return false;
+    };
+    _Tokenizer.prototype._requireCharCode = function (charCode) {
+        var location = this._cursor.clone();
+        if (!this._attemptCharCode(charCode)) {
+            throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(location));
+        }
+    };
+    _Tokenizer.prototype._attemptStr = function (chars) {
+        var len = chars.length;
+        if (this._cursor.charsLeft() < len) {
+            return false;
+        }
+        var initialPosition = this._cursor.clone();
+        for (var i = 0; i < len; i++) {
+            if (!this._attemptCharCode(chars.charCodeAt(i))) {
+                // If attempting to parse the string fails, we want to reset the parser
+                // to where it was before the attempt
+                this._cursor = initialPosition;
+                return false;
+            }
+        }
+        return true;
+    };
+    _Tokenizer.prototype._attemptStrCaseInsensitive = function (chars) {
+        for (var i = 0; i < chars.length; i++) {
+            if (!this._attemptCharCodeCaseInsensitive(chars.charCodeAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    };
+    _Tokenizer.prototype._requireStr = function (chars) {
+        var location = this._cursor.clone();
+        if (!this._attemptStr(chars)) {
+            throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(location));
+        }
+    };
+    _Tokenizer.prototype._attemptCharCodeUntilFn = function (predicate) {
+        while (!predicate(this._cursor.peek())) {
+            this._cursor.advance();
+        }
+    };
+    _Tokenizer.prototype._requireCharCodeUntilFn = function (predicate, len) {
+        var start = this._cursor.clone();
+        this._attemptCharCodeUntilFn(predicate);
+        var end = this._cursor.clone();
+        if (end.diff(start) < len) {
+            throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(start));
+        }
+    };
+    _Tokenizer.prototype._attemptUntilChar = function (char) {
+        while (this._cursor.peek() !== char) {
+            this._cursor.advance();
+        }
+    };
+    _Tokenizer.prototype._readChar = function (decodeEntities) {
+        if (decodeEntities && this._cursor.peek() === $AMPERSAND) {
+            return this._decodeEntity();
+        }
+        else {
+            // Don't rely upon reading directly from `_input` as the actual char value
+            // may have been generated from an escape sequence.
+            var char = String.fromCodePoint(this._cursor.peek());
+            this._cursor.advance();
+            return char;
+        }
+    };
+    _Tokenizer.prototype._decodeEntity = function () {
+        var start = this._cursor.clone();
+        this._cursor.advance();
+        if (this._attemptCharCode($HASH)) {
+            var isHex = this._attemptCharCode($x) || this._attemptCharCode($X);
+            var codeStart = this._cursor.clone();
+            this._attemptCharCodeUntilFn(isDigitEntityEnd);
+            if (this._cursor.peek() != $SEMICOLON) {
+                throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan());
+            }
+            var strNum = this._cursor.getChars(codeStart);
+            this._cursor.advance();
+            try {
+                var charCode = parseInt(strNum, isHex ? 16 : 10);
+                return String.fromCharCode(charCode);
+            }
+            catch (_a) {
+                throw this._createError(_unknownEntityErrorMsg(this._cursor.getChars(start)), this._cursor.getSpan());
+            }
+        }
+        else {
+            var nameStart = this._cursor.clone();
+            this._attemptCharCodeUntilFn(isNamedEntityEnd);
+            if (this._cursor.peek() != $SEMICOLON) {
+                this._cursor = nameStart;
+                return '&';
+            }
+            var name_1 = this._cursor.getChars(nameStart);
+            this._cursor.advance();
+            var char = NAMED_ENTITIES[name_1];
+            if (!char) {
+                throw this._createError(_unknownEntityErrorMsg(name_1), this._cursor.getSpan(start));
+            }
+            return char;
+        }
+    };
+    _Tokenizer.prototype._consumeRawText = function (decodeEntities, endMarkerPredicate) {
+        this._beginToken(decodeEntities ? TokenType$1.ESCAPABLE_RAW_TEXT : TokenType$1.RAW_TEXT);
+        var parts = [];
+        while (true) {
+            var tagCloseStart = this._cursor.clone();
+            var foundEndMarker = endMarkerPredicate();
+            this._cursor = tagCloseStart;
+            if (foundEndMarker) {
+                break;
+            }
+            parts.push(this._readChar(decodeEntities));
+        }
+        return this._endToken([this._processCarriageReturns(parts.join(''))]);
+    };
+    _Tokenizer.prototype._consumeComment = function (start) {
+        var _this = this;
+        this._beginToken(TokenType$1.COMMENT_START, start);
+        this._requireCharCode($MINUS);
+        this._endToken([]);
+        this._consumeRawText(false, function () { return _this._attemptStr('-->'); });
+        this._beginToken(TokenType$1.COMMENT_END);
+        this._requireStr('-->');
+        this._endToken([]);
+    };
+    _Tokenizer.prototype._consumeCdata = function (start) {
+        var _this = this;
+        this._beginToken(TokenType$1.CDATA_START, start);
+        this._requireStr('CDATA[');
+        this._endToken([]);
+        this._consumeRawText(false, function () { return _this._attemptStr(']]>'); });
+        this._beginToken(TokenType$1.CDATA_END);
+        this._requireStr(']]>');
+        this._endToken([]);
+    };
+    _Tokenizer.prototype._consumeDocType = function (start) {
+        this._beginToken(TokenType$1.DOC_TYPE, start);
+        var contentStart = this._cursor.clone();
+        this._attemptUntilChar($GT);
+        var content = this._cursor.getChars(contentStart);
+        this._cursor.advance();
+        this._endToken([content]);
+    };
+    _Tokenizer.prototype._consumePrefixAndName = function () {
+        var nameOrPrefixStart = this._cursor.clone();
+        var prefix = '';
+        while (this._cursor.peek() !== $COLON && !isPrefixEnd(this._cursor.peek())) {
+            this._cursor.advance();
+        }
+        var nameStart;
+        if (this._cursor.peek() === $COLON) {
+            prefix = this._cursor.getChars(nameOrPrefixStart);
+            this._cursor.advance();
+            nameStart = this._cursor.clone();
+        }
+        else {
+            nameStart = nameOrPrefixStart;
+        }
+        this._requireCharCodeUntilFn(isNameEnd, prefix === '' ? 0 : 1);
+        var name = this._cursor.getChars(nameStart);
+        return [prefix, name];
+    };
+    _Tokenizer.prototype._consumeTagOpen = function (start) {
+        var tagName;
+        var prefix;
+        var openTagToken;
+        var tokensBeforeTagOpen = this.tokens.length;
+        var innerStart = this._cursor.clone();
+        try {
+            if (!isAsciiLetter(this._cursor.peek())) {
+                throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(start));
+            }
+            openTagToken = this._consumeTagOpenStart(start);
+            prefix = openTagToken.parts[0];
+            tagName = openTagToken.parts[1];
+            this._attemptCharCodeUntilFn(isNotWhitespace);
+            while (this._cursor.peek() !== $SLASH && this._cursor.peek() !== $GT) {
+                this._consumeAttributeName();
+                this._attemptCharCodeUntilFn(isNotWhitespace);
+                if (this._attemptCharCode($EQ)) {
+                    this._attemptCharCodeUntilFn(isNotWhitespace);
+                    this._consumeAttributeValue();
+                }
+                this._attemptCharCodeUntilFn(isNotWhitespace);
+            }
+            this._consumeTagOpenEnd();
+        }
+        catch (e) {
+            if (e instanceof _ControlFlowError) {
+                // When the start tag is invalid (including invalid "attributes"), assume we want a "<"
+                this._cursor = innerStart;
+                if (openTagToken) {
+                    this.tokens.length = tokensBeforeTagOpen;
+                }
+                // Back to back text tokens are merged at the end
+                this._beginToken(TokenType$1.TEXT, start);
+                this._endToken(['<']);
+                return;
+            }
+            throw e;
+        }
+        var contentTokenType = this._getTagDefinition(tagName).contentType;
+        if (contentTokenType === TagContentType.RAW_TEXT) {
+            this._consumeRawTextWithTagClose(prefix, tagName, false);
+        }
+        else if (contentTokenType === TagContentType.ESCAPABLE_RAW_TEXT) {
+            this._consumeRawTextWithTagClose(prefix, tagName, true);
+        }
+    };
+    _Tokenizer.prototype._consumeRawTextWithTagClose = function (prefix, tagName, decodeEntities) {
+        var _this = this;
+        var textToken = this._consumeRawText(decodeEntities, function () {
+            if (!_this._attemptCharCode($LT))
+                return false;
+            if (!_this._attemptCharCode($SLASH))
+                return false;
+            _this._attemptCharCodeUntilFn(isNotWhitespace);
+            if (!_this._attemptStrCaseInsensitive(tagName))
+                return false;
+            _this._attemptCharCodeUntilFn(isNotWhitespace);
+            return _this._attemptCharCode($GT);
+        });
+        this._beginToken(TokenType$1.TAG_CLOSE);
+        this._requireCharCodeUntilFn(function (code) { return code === $GT; }, 3);
+        this._cursor.advance(); // Consume the `>`
+        this._endToken([prefix, tagName]);
+    };
+    _Tokenizer.prototype._consumeTagOpenStart = function (start) {
+        this._beginToken(TokenType$1.TAG_OPEN_START, start);
+        var parts = this._consumePrefixAndName();
+        return this._endToken(parts);
+    };
+    _Tokenizer.prototype._consumeAttributeName = function () {
+        var attrNameStart = this._cursor.peek();
+        if (attrNameStart === $SQ || attrNameStart === $DQ) {
+            throw this._createError(_unexpectedCharacterErrorMsg(attrNameStart), this._cursor.getSpan());
+        }
+        this._beginToken(TokenType$1.ATTR_NAME);
+        var prefixAndName = this._consumePrefixAndName();
+        this._endToken(prefixAndName);
+    };
+    _Tokenizer.prototype._consumeAttributeValue = function () {
+        var value;
+        if (this._cursor.peek() === $SQ || this._cursor.peek() === $DQ) {
+            this._beginToken(TokenType$1.ATTR_QUOTE);
+            var quoteChar = this._cursor.peek();
+            this._cursor.advance();
+            this._endToken([String.fromCodePoint(quoteChar)]);
+            this._beginToken(TokenType$1.ATTR_VALUE);
+            var parts = [];
+            while (this._cursor.peek() !== quoteChar) {
+                parts.push(this._readChar(true));
+            }
+            value = parts.join('');
+            this._endToken([this._processCarriageReturns(value)]);
+            this._beginToken(TokenType$1.ATTR_QUOTE);
+            this._cursor.advance();
+            this._endToken([String.fromCodePoint(quoteChar)]);
+        }
+        else {
+            this._beginToken(TokenType$1.ATTR_VALUE);
+            var valueStart = this._cursor.clone();
+            this._requireCharCodeUntilFn(isNameEnd, 1);
+            value = this._cursor.getChars(valueStart);
+            this._endToken([this._processCarriageReturns(value)]);
+        }
+    };
+    _Tokenizer.prototype._consumeTagOpenEnd = function () {
+        var tokenType = this._attemptCharCode($SLASH) ? TokenType$1.TAG_OPEN_END_VOID : TokenType$1.TAG_OPEN_END;
+        this._beginToken(tokenType);
+        this._requireCharCode($GT);
+        this._endToken([]);
+    };
+    _Tokenizer.prototype._consumeTagClose = function (start) {
+        this._beginToken(TokenType$1.TAG_CLOSE, start);
+        this._attemptCharCodeUntilFn(isNotWhitespace);
+        var prefixAndName = this._consumePrefixAndName();
+        this._attemptCharCodeUntilFn(isNotWhitespace);
+        this._requireCharCode($GT);
+        this._endToken(prefixAndName);
+    };
+    _Tokenizer.prototype._consumeExpansionFormStart = function () {
+        this._beginToken(TokenType$1.EXPANSION_FORM_START);
+        this._requireCharCode($LBRACE);
+        this._endToken([]);
+        this._expansionCaseStack.push(TokenType$1.EXPANSION_FORM_START);
+        this._beginToken(TokenType$1.RAW_TEXT);
+        var condition = this._readUntil($COMMA);
+        this._endToken([condition]);
+        this._requireCharCode($COMMA);
+        this._attemptCharCodeUntilFn(isNotWhitespace);
+        this._beginToken(TokenType$1.RAW_TEXT);
+        var type = this._readUntil($COMMA);
+        this._endToken([type]);
+        this._requireCharCode($COMMA);
+        this._attemptCharCodeUntilFn(isNotWhitespace);
+    };
+    _Tokenizer.prototype._consumeExpansionCaseStart = function () {
+        this._beginToken(TokenType$1.EXPANSION_CASE_VALUE);
+        var value = this._readUntil($LBRACE).trim();
+        this._endToken([value]);
+        this._attemptCharCodeUntilFn(isNotWhitespace);
+        this._beginToken(TokenType$1.EXPANSION_CASE_EXP_START);
+        this._requireCharCode($LBRACE);
+        this._endToken([]);
+        this._attemptCharCodeUntilFn(isNotWhitespace);
+        this._expansionCaseStack.push(TokenType$1.EXPANSION_CASE_EXP_START);
+    };
+    _Tokenizer.prototype._consumeExpansionCaseEnd = function () {
+        this._beginToken(TokenType$1.EXPANSION_CASE_EXP_END);
+        this._requireCharCode($RBRACE);
+        this._endToken([]);
+        this._attemptCharCodeUntilFn(isNotWhitespace);
+        this._expansionCaseStack.pop();
+    };
+    _Tokenizer.prototype._consumeExpansionFormEnd = function () {
+        this._beginToken(TokenType$1.EXPANSION_FORM_END);
+        this._requireCharCode($RBRACE);
+        this._endToken([]);
+        this._expansionCaseStack.pop();
+    };
+    _Tokenizer.prototype._consumeText = function () {
+        var start = this._cursor.clone();
+        this._beginToken(TokenType$1.TEXT, start);
+        var parts = [];
+        do {
+            if (this._interpolationConfig && this._attemptStr(this._interpolationConfig.start)) {
+                parts.push(this._interpolationConfig.start);
+                this._inInterpolation = true;
+            }
+            else if (this._interpolationConfig && this._inInterpolation &&
+                this._attemptStr(this._interpolationConfig.end)) {
+                parts.push(this._interpolationConfig.end);
+                this._inInterpolation = false;
+            }
+            else {
+                parts.push(this._readChar(true));
+            }
+        } while (!this._isTextEnd());
+        this._endToken([this._processCarriageReturns(parts.join(''))]);
+    };
+    _Tokenizer.prototype._isTextEnd = function () {
+        if (this._cursor.peek() === $LT || this._cursor.peek() === $EOF) {
+            return true;
+        }
+        if (this._tokenizeIcu && !this._inInterpolation) {
+            if (this.isExpansionFormStart()) {
+                // start of an expansion form
+                return true;
+            }
+            if (this._cursor.peek() === $RBRACE && this._isInExpansionCase()) {
+                // end of and expansion case
+                return true;
+            }
+        }
+        return false;
+    };
+    _Tokenizer.prototype._readUntil = function (char) {
+        var start = this._cursor.clone();
+        this._attemptUntilChar(char);
+        return this._cursor.getChars(start);
+    };
+    _Tokenizer.prototype._isInExpansionCase = function () {
+        return this._expansionCaseStack.length > 0 &&
+            this._expansionCaseStack[this._expansionCaseStack.length - 1] ===
+                TokenType$1.EXPANSION_CASE_EXP_START;
+    };
+    _Tokenizer.prototype._isInExpansionForm = function () {
+        return this._expansionCaseStack.length > 0 &&
+            this._expansionCaseStack[this._expansionCaseStack.length - 1] ===
+                TokenType$1.EXPANSION_FORM_START;
+    };
+    _Tokenizer.prototype.isExpansionFormStart = function () {
+        if (this._cursor.peek() !== $LBRACE) {
+            return false;
+        }
+        if (this._interpolationConfig) {
+            var start = this._cursor.clone();
+            var isInterpolation = this._attemptStr(this._interpolationConfig.start);
+            this._cursor = start;
+            return !isInterpolation;
+        }
+        return true;
+    };
+    return _Tokenizer;
+}());
+function isNotWhitespace(code) {
+    return !isWhitespace(code) || code === $EOF;
+}
+function isNameEnd(code) {
+    return isWhitespace(code) || code === $GT || code === $SLASH ||
+        code === $SQ || code === $DQ || code === $EQ;
+}
+function isPrefixEnd(code) {
+    return (code < $a || $z < code) && (code < $A || $Z < code) &&
+        (code < $0 || code > $9);
+}
+function isDigitEntityEnd(code) {
+    return code == $SEMICOLON || code == $EOF || !isAsciiHexDigit(code);
+}
+function isNamedEntityEnd(code) {
+    return code == $SEMICOLON || code == $EOF || !isAsciiLetter(code);
+}
+function isExpansionCaseStart(peek) {
+    return peek === $EQ || isAsciiLetter(peek) || isDigit(peek);
+}
+function compareCharCodeCaseInsensitive(code1, code2) {
+    return toUpperCaseCharCode(code1) == toUpperCaseCharCode(code2);
+}
+function toUpperCaseCharCode(code) {
+    return code >= $a && code <= $z ? code - $a + $A : code;
+}
+function mergeTextTokens(srcTokens) {
+    var dstTokens = [];
+    var lastDstToken = undefined;
+    for (var i = 0; i < srcTokens.length; i++) {
+        var token = srcTokens[i];
+        if (lastDstToken && lastDstToken.type == TokenType$1.TEXT && token.type == TokenType$1.TEXT) {
+            lastDstToken.parts[0] += token.parts[0];
+            lastDstToken.sourceSpan.end = token.sourceSpan.end;
+        }
+        else {
+            lastDstToken = token;
+            dstTokens.push(lastDstToken);
+        }
+    }
+    return dstTokens;
+}
+var PlainCharacterCursor = /** @class */ (function () {
+    function PlainCharacterCursor(fileOrCursor, range) {
+        if (fileOrCursor instanceof PlainCharacterCursor) {
+            this.file = fileOrCursor.file;
+            this.input = fileOrCursor.input;
+            this.end = fileOrCursor.end;
+            this.state = __assign({}, fileOrCursor.state);
+        }
+        else {
+            if (!range) {
+                throw new Error('Programming error: the range argument must be provided with a file argument.');
+            }
+            this.file = fileOrCursor;
+            this.input = fileOrCursor.content;
+            this.end = range.endPos;
+            this.state = {
+                peek: -1,
+                offset: range.startPos,
+                line: range.startLine,
+                column: range.startCol,
+            };
+        }
+    }
+    PlainCharacterCursor.prototype.clone = function () { return new PlainCharacterCursor(this); };
+    PlainCharacterCursor.prototype.peek = function () { return this.state.peek; };
+    PlainCharacterCursor.prototype.charsLeft = function () { return this.end - this.state.offset; };
+    PlainCharacterCursor.prototype.diff = function (other) { return this.state.offset - other.state.offset; };
+    PlainCharacterCursor.prototype.advance = function () { this.advanceState(this.state); };
+    PlainCharacterCursor.prototype.init = function () { this.updatePeek(this.state); };
+    PlainCharacterCursor.prototype.getSpan = function (start, leadingTriviaCodePoints) {
+        start = start || this;
+        if (leadingTriviaCodePoints) {
+            start = start.clone();
+            while (this.diff(start) > 0 && leadingTriviaCodePoints.indexOf(start.peek()) !== -1) {
+                start.advance();
+            }
+        }
+        return new ParseSourceSpan(new ParseLocation(start.file, start.state.offset, start.state.line, start.state.column), new ParseLocation(this.file, this.state.offset, this.state.line, this.state.column));
+    };
+    PlainCharacterCursor.prototype.getChars = function (start) {
+        return this.input.substring(start.state.offset, this.state.offset);
+    };
+    PlainCharacterCursor.prototype.charAt = function (pos) { return this.input.charCodeAt(pos); };
+    PlainCharacterCursor.prototype.advanceState = function (state) {
+        if (state.offset >= this.end) {
+            this.state = state;
+            throw new CursorError('Unexpected character "EOF"', this);
+        }
+        var currentChar = this.charAt(state.offset);
+        if (currentChar === $LF) {
+            state.line++;
+            state.column = 0;
+        }
+        else if (!isNewLine(currentChar)) {
+            state.column++;
+        }
+        state.offset++;
+        this.updatePeek(state);
+    };
+    PlainCharacterCursor.prototype.updatePeek = function (state) {
+        state.peek = state.offset >= this.end ? $EOF : this.charAt(state.offset);
+    };
+    return PlainCharacterCursor;
+}());
+var EscapedCharacterCursor = /** @class */ (function (_super) {
+    __extends(EscapedCharacterCursor, _super);
+    function EscapedCharacterCursor(fileOrCursor, range) {
+        var _this = this;
+        if (fileOrCursor instanceof EscapedCharacterCursor) {
+            _this = _super.call(this, fileOrCursor) || this;
+            _this.internalState = __assign({}, fileOrCursor.internalState);
+        }
+        else {
+            _this = _super.call(this, fileOrCursor, range) || this;
+            _this.internalState = _this.state;
+        }
+        return _this;
+    }
+    EscapedCharacterCursor.prototype.advance = function () {
+        this.state = this.internalState;
+        _super.prototype.advance.call(this);
+        this.processEscapeSequence();
+    };
+    EscapedCharacterCursor.prototype.init = function () {
+        _super.prototype.init.call(this);
+        this.processEscapeSequence();
+    };
+    EscapedCharacterCursor.prototype.clone = function () { return new EscapedCharacterCursor(this); };
+    EscapedCharacterCursor.prototype.getChars = function (start) {
+        var cursor = start.clone();
+        var chars = '';
+        while (cursor.internalState.offset < this.internalState.offset) {
+            chars += String.fromCodePoint(cursor.peek());
+            cursor.advance();
+        }
+        return chars;
+    };
+    /**
+     * Process the escape sequence that starts at the current position in the text.
+     *
+     * This method is called to ensure that `peek` has the unescaped value of escape sequences.
+     */
+    EscapedCharacterCursor.prototype.processEscapeSequence = function () {
+        var _this = this;
+        var peek = function () { return _this.internalState.peek; };
+        if (peek() === $BACKSLASH) {
+            // We have hit an escape sequence so we need the internal state to become independent
+            // of the external state.
+            this.internalState = __assign({}, this.state);
+            // Move past the backslash
+            this.advanceState(this.internalState);
+            // First check for standard control char sequences
+            if (peek() === $n) {
+                this.state.peek = $LF;
+            }
+            else if (peek() === $r) {
+                this.state.peek = $CR;
+            }
+            else if (peek() === $v) {
+                this.state.peek = $VTAB;
+            }
+            else if (peek() === $t) {
+                this.state.peek = $TAB;
+            }
+            else if (peek() === $b) {
+                this.state.peek = $BSPACE;
+            }
+            else if (peek() === $f) {
+                this.state.peek = $FF;
+            }
+            // Now consider more complex sequences
+            else if (peek() === $u) {
+                // Unicode code-point sequence
+                this.advanceState(this.internalState); // advance past the `u` char
+                if (peek() === $LBRACE) {
+                    // Variable length Unicode, e.g. `\x{123}`
+                    this.advanceState(this.internalState); // advance past the `{` char
+                    // Advance past the variable number of hex digits until we hit a `}` char
+                    var digitStart = this.clone();
+                    var length_1 = 0;
+                    while (peek() !== $RBRACE) {
+                        this.advanceState(this.internalState);
+                        length_1++;
+                    }
+                    this.state.peek = this.decodeHexDigits(digitStart, length_1);
+                }
+                else {
+                    // Fixed length Unicode, e.g. `\u1234`
+                    var digitStart = this.clone();
+                    this.advanceState(this.internalState);
+                    this.advanceState(this.internalState);
+                    this.advanceState(this.internalState);
+                    this.state.peek = this.decodeHexDigits(digitStart, 4);
+                }
+            }
+            else if (peek() === $x) {
+                // Hex char code, e.g. `\x2F`
+                this.advanceState(this.internalState); // advance past the `x` char
+                var digitStart = this.clone();
+                this.advanceState(this.internalState);
+                this.state.peek = this.decodeHexDigits(digitStart, 2);
+            }
+            else if (isOctalDigit(peek())) {
+                // Octal char code, e.g. `\012`,
+                var octal = '';
+                var length_2 = 0;
+                var previous = this.clone();
+                while (isOctalDigit(peek()) && length_2 < 3) {
+                    previous = this.clone();
+                    octal += String.fromCodePoint(peek());
+                    this.advanceState(this.internalState);
+                    length_2++;
+                }
+                this.state.peek = parseInt(octal, 8);
+                // Backup one char
+                this.internalState = previous.internalState;
+            }
+            else if (isNewLine(this.internalState.peek)) {
+                // Line continuation `\` followed by a new line
+                this.advanceState(this.internalState); // advance over the newline
+                this.state = this.internalState;
+            }
+            else {
+                // If none of the `if` blocks were executed then we just have an escaped normal character.
+                // In that case we just, effectively, skip the backslash from the character.
+                this.state.peek = this.internalState.peek;
+            }
+        }
+    };
+    EscapedCharacterCursor.prototype.decodeHexDigits = function (start, length) {
+        var hex = this.input.substr(start.internalState.offset, length);
+        var charCode = parseInt(hex, 16);
+        if (!isNaN(charCode)) {
+            return charCode;
+        }
+        else {
+            start.state = start.internalState;
+            throw new CursorError('Invalid hexadecimal escape sequence', start);
+        }
+    };
+    return EscapedCharacterCursor;
+}(PlainCharacterCursor));
+var CursorError = /** @class */ (function () {
+    function CursorError(msg, cursor) {
+        this.msg = msg;
+        this.cursor = cursor;
+    }
+    return CursorError;
+}());
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var TreeError = /** @class */ (function (_super) {
+    __extends(TreeError, _super);
+    function TreeError(elementName, span, msg) {
+        var _this = _super.call(this, span, msg) || this;
+        _this.elementName = elementName;
+        return _this;
+    }
+    TreeError.create = function (elementName, span, msg) {
+        return new TreeError(elementName, span, msg);
+    };
+    return TreeError;
+}(ParseError));
+var ParseTreeResult = /** @class */ (function () {
+    function ParseTreeResult(rootNodes, errors) {
+        this.rootNodes = rootNodes;
+        this.errors = errors;
+    }
+    return ParseTreeResult;
+}());
+var Parser$1 = /** @class */ (function () {
+    function Parser(getTagDefinition) {
+        this.getTagDefinition = getTagDefinition;
+    }
+    Parser.prototype.parse = function (source, url, options) {
+        var tokensAndErrors = tokenize(source, url, this.getTagDefinition, options);
+        var treeAndErrors = new _TreeBuilder(tokensAndErrors.tokens, this.getTagDefinition).build();
+        return new ParseTreeResult(treeAndErrors.rootNodes, tokensAndErrors.errors.concat(treeAndErrors.errors));
+    };
+    return Parser;
+}());
+var _TreeBuilder = /** @class */ (function () {
+    function _TreeBuilder(tokens, getTagDefinition) {
+        this.tokens = tokens;
+        this.getTagDefinition = getTagDefinition;
+        this._index = -1;
+        this._rootNodes = [];
+        this._errors = [];
+        this._elementStack = [];
+        this._advance();
+    }
+    _TreeBuilder.prototype.build = function () {
+        while (this._peek.type !== TokenType$1.EOF) {
+            if (this._peek.type === TokenType$1.TAG_OPEN_START) {
+                this._consumeStartTag(this._advance());
+            }
+            else if (this._peek.type === TokenType$1.TAG_CLOSE) {
+                this._consumeEndTag(this._advance());
+            }
+            else if (this._peek.type === TokenType$1.CDATA_START) {
+                this._closeVoidElement();
+                this._consumeCdata(this._advance());
+            }
+            else if (this._peek.type === TokenType$1.COMMENT_START) {
+                this._closeVoidElement();
+                this._consumeComment(this._advance());
+            }
+            else if (this._peek.type === TokenType$1.TEXT || this._peek.type === TokenType$1.RAW_TEXT ||
+                this._peek.type === TokenType$1.ESCAPABLE_RAW_TEXT) {
+                this._closeVoidElement();
+                this._consumeText(this._advance());
+            }
+            else if (this._peek.type === TokenType$1.EXPANSION_FORM_START) {
+                this._consumeExpansion(this._advance());
+            }
+            else {
+                // Skip all other tokens...
+                this._advance();
+            }
+        }
+        return new ParseTreeResult(this._rootNodes, this._errors);
+    };
+    _TreeBuilder.prototype._advance = function () {
+        var prev = this._peek;
+        if (this._index < this.tokens.length - 1) {
+            // Note: there is always an EOF token at the end
+            this._index++;
+        }
+        this._peek = this.tokens[this._index];
+        return prev;
+    };
+    _TreeBuilder.prototype._advanceIf = function (type) {
+        if (this._peek.type === type) {
+            return this._advance();
+        }
+        return null;
+    };
+    _TreeBuilder.prototype._consumeCdata = function (startToken) {
+        this._consumeText(this._advance());
+        this._advanceIf(TokenType$1.CDATA_END);
+    };
+    _TreeBuilder.prototype._consumeComment = function (token) {
+        var text = this._advanceIf(TokenType$1.RAW_TEXT);
+        this._advanceIf(TokenType$1.COMMENT_END);
+        var value = text != null ? text.parts[0].trim() : null;
+        this._addToParent(new Comment(value, token.sourceSpan));
+    };
+    _TreeBuilder.prototype._consumeExpansion = function (token) {
+        var switchValue = this._advance();
+        var type = this._advance();
+        var cases = [];
+        // read =
+        while (this._peek.type === TokenType$1.EXPANSION_CASE_VALUE) {
+            var expCase = this._parseExpansionCase();
+            if (!expCase)
+                return; // error
+            cases.push(expCase);
+        }
+        // read the final }
+        if (this._peek.type !== TokenType$1.EXPANSION_FORM_END) {
+            this._errors.push(TreeError.create(null, this._peek.sourceSpan, "Invalid ICU message. Missing '}'."));
+            return;
+        }
+        var sourceSpan = new ParseSourceSpan(token.sourceSpan.start, this._peek.sourceSpan.end);
+        this._addToParent(new Expansion(switchValue.parts[0], type.parts[0], cases, sourceSpan, switchValue.sourceSpan));
+        this._advance();
+    };
+    _TreeBuilder.prototype._parseExpansionCase = function () {
+        var value = this._advance();
+        // read {
+        if (this._peek.type !== TokenType$1.EXPANSION_CASE_EXP_START) {
+            this._errors.push(TreeError.create(null, this._peek.sourceSpan, "Invalid ICU message. Missing '{'."));
+            return null;
+        }
+        // read until }
+        var start = this._advance();
+        var exp = this._collectExpansionExpTokens(start);
+        if (!exp)
+            return null;
+        var end = this._advance();
+        exp.push(new Token$1(TokenType$1.EOF, [], end.sourceSpan));
+        // parse everything in between { and }
+        var parsedExp = new _TreeBuilder(exp, this.getTagDefinition).build();
+        if (parsedExp.errors.length > 0) {
+            this._errors = this._errors.concat(parsedExp.errors);
+            return null;
+        }
+        var sourceSpan = new ParseSourceSpan(value.sourceSpan.start, end.sourceSpan.end);
+        var expSourceSpan = new ParseSourceSpan(start.sourceSpan.start, end.sourceSpan.end);
+        return new ExpansionCase(value.parts[0], parsedExp.rootNodes, sourceSpan, value.sourceSpan, expSourceSpan);
+    };
+    _TreeBuilder.prototype._collectExpansionExpTokens = function (start) {
+        var exp = [];
+        var expansionFormStack = [TokenType$1.EXPANSION_CASE_EXP_START];
+        while (true) {
+            if (this._peek.type === TokenType$1.EXPANSION_FORM_START ||
+                this._peek.type === TokenType$1.EXPANSION_CASE_EXP_START) {
+                expansionFormStack.push(this._peek.type);
+            }
+            if (this._peek.type === TokenType$1.EXPANSION_CASE_EXP_END) {
+                if (lastOnStack(expansionFormStack, TokenType$1.EXPANSION_CASE_EXP_START)) {
+                    expansionFormStack.pop();
+                    if (expansionFormStack.length == 0)
+                        return exp;
+                }
+                else {
+                    this._errors.push(TreeError.create(null, start.sourceSpan, "Invalid ICU message. Missing '}'."));
+                    return null;
+                }
+            }
+            if (this._peek.type === TokenType$1.EXPANSION_FORM_END) {
+                if (lastOnStack(expansionFormStack, TokenType$1.EXPANSION_FORM_START)) {
+                    expansionFormStack.pop();
+                }
+                else {
+                    this._errors.push(TreeError.create(null, start.sourceSpan, "Invalid ICU message. Missing '}'."));
+                    return null;
+                }
+            }
+            if (this._peek.type === TokenType$1.EOF) {
+                this._errors.push(TreeError.create(null, start.sourceSpan, "Invalid ICU message. Missing '}'."));
+                return null;
+            }
+            exp.push(this._advance());
+        }
+    };
+    _TreeBuilder.prototype._consumeText = function (token) {
+        var text = token.parts[0];
+        if (text.length > 0 && text[0] == '\n') {
+            var parent_1 = this._getParentElement();
+            if (parent_1 != null && parent_1.children.length == 0 &&
+                this.getTagDefinition(parent_1.name).ignoreFirstLf) {
+                text = text.substring(1);
+            }
+        }
+        if (text.length > 0) {
+            this._addToParent(new Text$3(text, token.sourceSpan));
+        }
+    };
+    _TreeBuilder.prototype._closeVoidElement = function () {
+        var el = this._getParentElement();
+        if (el && this.getTagDefinition(el.name).isVoid) {
+            this._elementStack.pop();
+        }
+    };
+    _TreeBuilder.prototype._consumeStartTag = function (startTagToken) {
+        var prefix = startTagToken.parts[0];
+        var name = startTagToken.parts[1];
+        var attrs = [];
+        while (this._peek.type === TokenType$1.ATTR_NAME) {
+            attrs.push(this._consumeAttr(this._advance()));
+        }
+        var fullName = this._getElementFullName(prefix, name, this._getParentElement());
+        var selfClosing = false;
+        // Note: There could have been a tokenizer error
+        // so that we don't get a token for the end tag...
+        if (this._peek.type === TokenType$1.TAG_OPEN_END_VOID) {
+            this._advance();
+            selfClosing = true;
+            var tagDef = this.getTagDefinition(fullName);
+            if (!(tagDef.canSelfClose || getNsPrefix(fullName) !== null || tagDef.isVoid)) {
+                this._errors.push(TreeError.create(fullName, startTagToken.sourceSpan, "Only void and foreign elements can be self closed \"" + startTagToken.parts[1] + "\""));
+            }
+        }
+        else if (this._peek.type === TokenType$1.TAG_OPEN_END) {
+            this._advance();
+            selfClosing = false;
+        }
+        var end = this._peek.sourceSpan.start;
+        var span = new ParseSourceSpan(startTagToken.sourceSpan.start, end);
+        var el = new Element$1(fullName, attrs, [], span, span, undefined);
+        this._pushElement(el);
+        if (selfClosing) {
+            this._popElement(fullName);
+            el.endSourceSpan = span;
+        }
+    };
+    _TreeBuilder.prototype._pushElement = function (el) {
+        var parentEl = this._getParentElement();
+        if (parentEl && this.getTagDefinition(parentEl.name).isClosedByChild(el.name)) {
+            this._elementStack.pop();
+        }
+        this._addToParent(el);
+        this._elementStack.push(el);
+    };
+    _TreeBuilder.prototype._consumeEndTag = function (endTagToken) {
+        var fullName = this._getElementFullName(endTagToken.parts[0], endTagToken.parts[1], this._getParentElement());
+        if (this._getParentElement()) {
+            this._getParentElement().endSourceSpan = endTagToken.sourceSpan;
+        }
+        if (this.getTagDefinition(fullName).isVoid) {
+            this._errors.push(TreeError.create(fullName, endTagToken.sourceSpan, "Void elements do not have end tags \"" + endTagToken.parts[1] + "\""));
+        }
+        else if (!this._popElement(fullName)) {
+            var errMsg = "Unexpected closing tag \"" + fullName + "\". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags";
+            this._errors.push(TreeError.create(fullName, endTagToken.sourceSpan, errMsg));
+        }
+    };
+    _TreeBuilder.prototype._popElement = function (fullName) {
+        for (var stackIndex = this._elementStack.length - 1; stackIndex >= 0; stackIndex--) {
+            var el = this._elementStack[stackIndex];
+            if (el.name == fullName) {
+                this._elementStack.splice(stackIndex, this._elementStack.length - stackIndex);
+                return true;
+            }
+            if (!this.getTagDefinition(el.name).closedByParent) {
+                return false;
+            }
+        }
+        return false;
+    };
+    _TreeBuilder.prototype._consumeAttr = function (attrName) {
+        var fullName = mergeNsAndName(attrName.parts[0], attrName.parts[1]);
+        var end = attrName.sourceSpan.end;
+        var value = '';
+        var valueSpan = undefined;
+        if (this._peek.type === TokenType$1.ATTR_QUOTE) {
+            this._advance();
+        }
+        if (this._peek.type === TokenType$1.ATTR_VALUE) {
+            var valueToken = this._advance();
+            value = valueToken.parts[0];
+            end = valueToken.sourceSpan.end;
+            valueSpan = valueToken.sourceSpan;
+        }
+        if (this._peek.type === TokenType$1.ATTR_QUOTE) {
+            var quoteToken = this._advance();
+            end = quoteToken.sourceSpan.end;
+        }
+        return new Attribute(fullName, value, new ParseSourceSpan(attrName.sourceSpan.start, end), valueSpan);
+    };
+    _TreeBuilder.prototype._getParentElement = function () {
+        return this._elementStack.length > 0 ? this._elementStack[this._elementStack.length - 1] : null;
+    };
+    /**
+     * Returns the parent in the DOM and the container.
+     *
+     * `<ng-container>` elements are skipped as they are not rendered as DOM element.
+     */
+    _TreeBuilder.prototype._getParentElementSkippingContainers = function () {
+        var container = null;
+        for (var i = this._elementStack.length - 1; i >= 0; i--) {
+            if (!isNgContainer(this._elementStack[i].name)) {
+                return { parent: this._elementStack[i], container: container };
+            }
+            container = this._elementStack[i];
+        }
+        return { parent: null, container: container };
+    };
+    _TreeBuilder.prototype._addToParent = function (node) {
+        var parent = this._getParentElement();
+        if (parent != null) {
+            parent.children.push(node);
+        }
+        else {
+            this._rootNodes.push(node);
+        }
+    };
+    /**
+     * Insert a node between the parent and the container.
+     * When no container is given, the node is appended as a child of the parent.
+     * Also updates the element stack accordingly.
+     *
+     * @internal
+     */
+    _TreeBuilder.prototype._insertBeforeContainer = function (parent, container, node) {
+        if (!container) {
+            this._addToParent(node);
+            this._elementStack.push(node);
+        }
+        else {
+            if (parent) {
+                // replace the container with the new node in the children
+                var index = parent.children.indexOf(container);
+                parent.children[index] = node;
+            }
+            else {
+                this._rootNodes.push(node);
+            }
+            node.children.push(container);
+            this._elementStack.splice(this._elementStack.indexOf(container), 0, node);
+        }
+    };
+    _TreeBuilder.prototype._getElementFullName = function (prefix, localName, parentElement) {
+        if (prefix === '') {
+            prefix = this.getTagDefinition(localName).implicitNamespacePrefix || '';
+            if (prefix === '' && parentElement != null) {
+                prefix = getNsPrefix(parentElement.name);
+            }
+        }
+        return mergeNsAndName(prefix, localName);
+    };
+    return _TreeBuilder;
+}());
+function lastOnStack(stack, element) {
+    return stack.length > 0 && stack[stack.length - 1] === element;
 }
 
 /**
@@ -17816,7 +17844,7 @@ function getTextInterpolationExpression(interpolation) {
  */
 function parseTemplate(template, templateUrl, options) {
     if (options === void 0) { options = {}; }
-    var interpolationConfig = options.interpolationConfig, preserveWhitespaces = options.preserveWhitespaces;
+    var interpolationConfig = options.interpolationConfig, preserveWhitespaces = options.preserveWhitespaces, i18nLegacyMessageIdFormat = options.i18nLegacyMessageIdFormat;
     var bindingParser = makeBindingParser(interpolationConfig);
     var htmlParser = new HtmlParser();
     var parseResult = htmlParser.parse(template, templateUrl, __assign({ leadingTriviaChars: LEADING_TRIVIA_CHARS }, options, { tokenizeExpansionForms: true }));
@@ -17828,8 +17856,7 @@ function parseTemplate(template, templateUrl, options) {
     // before we run whitespace removal process, because existing i18n
     // extraction process (ng xi18n) relies on a raw content to generate
     // message ids
-    rootNodes =
-        visitAll$1(new I18nMetaVisitor(interpolationConfig, !preserveWhitespaces), rootNodes);
+    rootNodes = visitAll$1(new I18nMetaVisitor(interpolationConfig, !preserveWhitespaces, i18nLegacyMessageIdFormat), rootNodes);
     if (!preserveWhitespaces) {
         rootNodes = visitAll$1(new WhitespaceVisitor(), rootNodes);
         // run i18n meta visitor again in case we remove whitespaces, because
@@ -18923,7 +18950,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-next.9+22.sha-0f21ae9.with-local-changes');
+var VERSION$1 = new Version('9.0.0-next.9+26.sha-fca3e79.with-local-changes');
 
 /**
  * @license

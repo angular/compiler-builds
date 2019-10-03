@@ -293,6 +293,18 @@ export interface ParseTemplateOptions {
      * included in source-map segments.  A common example is whitespace.
      */
     leadingTriviaChars?: string[];
+    /**
+     * Render `$localize` message ids with the specified legacy format (xlf, xlf2 or xmb).
+     *
+     * Use this option when use are using the `$localize` based localization messages but
+     * have not migrated the translation files to use the new `$localize` message id format.
+     *
+     * @deprecated
+     * `i18nLegacyMessageIdFormat` should only be used while migrating from legacy message id
+     * formatted translation files and will be removed at the same time as ViewEngine support is
+     * removed.
+     */
+    i18nLegacyMessageIdFormat?: string;
 }
 /**
  * Parse a template into render3 `Node`s and additional metadata, with no other dependencies.
