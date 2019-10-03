@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.9+28.sha-deaac32.with-local-changes
+ * @license Angular v9.0.0-next.9+29.sha-7806596.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -18950,7 +18950,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-next.9+28.sha-deaac32.with-local-changes');
+var VERSION$1 = new Version('9.0.0-next.9+29.sha-7806596.with-local-changes');
 
 /**
  * @license
@@ -23217,7 +23217,6 @@ var ViewCompiler = /** @class */ (function () {
         var _a;
         var _this = this;
         var embeddedViewCount = 0;
-        var staticQueryIds = findStaticQueryIds(template);
         var renderComponentVarName = undefined;
         if (!component.isHost) {
             var template_1 = component.template;
@@ -23237,7 +23236,7 @@ var ViewCompiler = /** @class */ (function () {
         }
         var viewBuilderFactory = function (parent) {
             var embeddedViewIndex = embeddedViewCount++;
-            return new ViewBuilder$1(_this._reflector, outputCtx, parent, component, embeddedViewIndex, usedPipes, staticQueryIds, viewBuilderFactory);
+            return new ViewBuilder$1(_this._reflector, outputCtx, parent, component, embeddedViewIndex, usedPipes, viewBuilderFactory);
         };
         var visitor = viewBuilderFactory(null);
         visitor.visitAll([], template);
@@ -23253,14 +23252,13 @@ var COMP_VAR = variable('_co');
 var EVENT_NAME_VAR = variable('en');
 var ALLOW_DEFAULT_VAR = variable("ad");
 var ViewBuilder$1 = /** @class */ (function () {
-    function ViewBuilder(reflector, outputCtx, parent, component, embeddedViewIndex, usedPipes, staticQueryIds, viewBuilderFactory) {
+    function ViewBuilder(reflector, outputCtx, parent, component, embeddedViewIndex, usedPipes, viewBuilderFactory) {
         this.reflector = reflector;
         this.outputCtx = outputCtx;
         this.parent = parent;
         this.component = component;
         this.embeddedViewIndex = embeddedViewIndex;
         this.usedPipes = usedPipes;
-        this.staticQueryIds = staticQueryIds;
         this.viewBuilderFactory = viewBuilderFactory;
         this.nodes = [];
         this.purePipeNodeIndices = Object.create(null);
@@ -23288,12 +23286,11 @@ var ViewBuilder$1 = /** @class */ (function () {
             });
         }
         if (!this.parent) {
-            var queryIds_1 = staticViewQueryIds(this.staticQueryIds);
             this.component.viewQueries.forEach(function (query, queryIndex) {
                 // Note: queries start with id 1 so we can use the number in a Bloom filter!
                 var queryId = queryIndex + 1;
                 var bindingType = query.first ? 0 /* First */ : 1 /* All */;
-                var flags = 134217728 /* TypeViewQuery */ | calcStaticDynamicQueryFlags(queryIds_1, queryId, query);
+                var flags = 134217728 /* TypeViewQuery */ | calcStaticDynamicQueryFlags(query);
                 _this.nodes.push(function () { return ({
                     sourceSpan: null,
                     nodeFlags: flags,
@@ -23511,17 +23508,15 @@ var ViewBuilder$1 = /** @class */ (function () {
         var hostBindings = [];
         var hostEvents = [];
         this._visitComponentFactoryResolverProvider(ast.directives);
-        ast.providers.forEach(function (providerAst, providerIndex) {
+        ast.providers.forEach(function (providerAst) {
             var dirAst = undefined;
-            var dirIndex = undefined;
-            ast.directives.forEach(function (localDirAst, i) {
+            ast.directives.forEach(function (localDirAst) {
                 if (localDirAst.directive.type.reference === tokenReference(providerAst.token)) {
                     dirAst = localDirAst;
-                    dirIndex = i;
                 }
             });
             if (dirAst) {
-                var _a = _this._visitDirective(providerAst, dirAst, dirIndex, nodeIndex, ast.references, ast.queryMatches, usedEvents, _this.staticQueryIds.get(ast)), dirHostBindings = _a.hostBindings, dirHostEvents = _a.hostEvents;
+                var _a = _this._visitDirective(providerAst, dirAst, ast.references, ast.queryMatches, usedEvents), dirHostBindings = _a.hostBindings, dirHostEvents = _a.hostEvents;
                 hostBindings.push.apply(hostBindings, __spread(dirHostBindings));
                 hostEvents.push.apply(hostEvents, __spread(dirHostEvents));
             }
@@ -23573,14 +23568,14 @@ var ViewBuilder$1 = /** @class */ (function () {
             hostEvents: hostEvents
         };
     };
-    ViewBuilder.prototype._visitDirective = function (providerAst, dirAst, directiveIndex, elementNodeIndex, refs, queryMatches, usedEvents, queryIds) {
+    ViewBuilder.prototype._visitDirective = function (providerAst, dirAst, refs, queryMatches, usedEvents) {
         var _this = this;
         var nodeIndex = this.nodes.length;
         // reserve the space in the nodeDefs array so we can add children
         this.nodes.push(null);
         dirAst.directive.queries.forEach(function (query, queryIndex) {
             var queryId = dirAst.contentQueryStartId + queryIndex;
-            var flags = 67108864 /* TypeContentQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query);
+            var flags = 67108864 /* TypeContentQuery */ | calcStaticDynamicQueryFlags(query);
             var bindingType = query.first ? 0 /* First */ : 1 /* All */;
             _this.nodes.push(function () { return ({
                 sourceSpan: dirAst.sourceSpan,
@@ -23680,7 +23675,6 @@ var ViewBuilder$1 = /** @class */ (function () {
         }
     };
     ViewBuilder.prototype._addProviderNode = function (data) {
-        var nodeIndex = this.nodes.length;
         // providerDef(
         //   flags: NodeFlags, matchedQueries: [string, QueryValueType][], token:any,
         //   value: any, deps: ([DepFlags, any] | any)[]): NodeDef;
@@ -24066,25 +24060,17 @@ function elementEventNameAndTarget(eventAst, dirAst) {
         return eventAst;
     }
 }
-function calcStaticDynamicQueryFlags(queryIds, queryId, query) {
+function calcStaticDynamicQueryFlags(query) {
     var flags = 0 /* None */;
-    // Note: We only make queries static that query for a single item.
-    // This is because of backwards compatibility with the old view compiler...
-    if (query.first && shouldResolveAsStaticQuery(queryIds, queryId, query)) {
+    // Note: We only make queries static that query for a single item and the user specifically
+    // set the to be static. This is because of backwards compatibility with the old view compiler...
+    if (query.first && query.static) {
         flags |= 268435456 /* StaticQuery */;
     }
     else {
         flags |= 536870912 /* DynamicQuery */;
     }
     return flags;
-}
-function shouldResolveAsStaticQuery(queryIds, queryId, query) {
-    // If query.static has been set by the user, use that value to determine whether
-    // the query is static. If none has been set, sort the query into static/dynamic
-    // based on query results (i.e. dynamic if CD needs to run to get all results).
-    return query.static ||
-        query.static == null &&
-            (queryIds.staticQueryIds.has(queryId) || !queryIds.dynamicQueryIds.has(queryId));
 }
 function elementEventFullName(target, name) {
     return target ? target + ":" + name : name;
