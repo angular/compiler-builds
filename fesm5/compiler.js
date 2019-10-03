@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.9+26.sha-fca3e79.with-local-changes
+ * @license Angular v9.0.0-next.9+27.sha-65297cd.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -18950,7 +18950,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-next.9+26.sha-fca3e79.with-local-changes');
+var VERSION$1 = new Version('9.0.0-next.9+27.sha-65297cd.with-local-changes');
 
 /**
  * @license
@@ -24538,16 +24538,10 @@ var StaticSymbolResolver = /** @class */ (function () {
         // Note: Some users use libraries that were not compiled with ngc, i.e. they don't
         // have summaries, only .d.ts files, but `summaryResolver.isLibraryFile` returns true.
         this._createSymbolsOf(filePath);
-        var metadataSymbols = [];
-        this.resolvedSymbols.forEach(function (resolvedSymbol) {
-            if (resolvedSymbol.symbol.filePath === filePath) {
-                metadataSymbols.push(resolvedSymbol.symbol);
-            }
-        });
-        return metadataSymbols;
+        return this.symbolFromFile.get(filePath) || [];
     };
     StaticSymbolResolver.prototype._createSymbolsOf = function (filePath) {
-        var e_2, _a;
+        var e_2, _a, e_3, _b;
         var _this = this;
         if (this.resolvedFilePaths.has(filePath)) {
             return;
@@ -24600,15 +24594,15 @@ var StaticSymbolResolver = /** @class */ (function () {
             };
             var this_1 = this;
             try {
-                for (var _b = __values(metadata['exports']), _c = _b.next(); !_c.done; _c = _b.next()) {
-                    var moduleExport = _c.value;
+                for (var _c = __values(metadata['exports']), _d = _c.next(); !_d.done; _d = _c.next()) {
+                    var moduleExport = _d.value;
                     _loop_1(moduleExport);
                 }
             }
             catch (e_2_1) { e_2 = { error: e_2_1 }; }
             finally {
                 try {
-                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+                    if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
                 }
                 finally { if (e_2) throw e_2.error; }
             }
@@ -24640,8 +24634,22 @@ var StaticSymbolResolver = /** @class */ (function () {
                 resolvedSymbols.push(_this.createResolvedSymbol(symbol, filePath, topLevelSymbolNames_1, symbolMeta));
             });
         }
-        resolvedSymbols.forEach(function (resolvedSymbol) { return _this.resolvedSymbols.set(resolvedSymbol.symbol, resolvedSymbol); });
-        this.symbolFromFile.set(filePath, resolvedSymbols.map(function (resolvedSymbol) { return resolvedSymbol.symbol; }));
+        var uniqueSymbols = new Set();
+        try {
+            for (var resolvedSymbols_1 = __values(resolvedSymbols), resolvedSymbols_1_1 = resolvedSymbols_1.next(); !resolvedSymbols_1_1.done; resolvedSymbols_1_1 = resolvedSymbols_1.next()) {
+                var resolvedSymbol = resolvedSymbols_1_1.value;
+                this.resolvedSymbols.set(resolvedSymbol.symbol, resolvedSymbol);
+                uniqueSymbols.add(resolvedSymbol.symbol);
+            }
+        }
+        catch (e_3_1) { e_3 = { error: e_3_1 }; }
+        finally {
+            try {
+                if (resolvedSymbols_1_1 && !resolvedSymbols_1_1.done && (_b = resolvedSymbols_1.return)) _b.call(resolvedSymbols_1);
+            }
+            finally { if (e_3) throw e_3.error; }
+        }
+        this.symbolFromFile.set(filePath, Array.from(uniqueSymbols));
     };
     StaticSymbolResolver.prototype.createResolvedSymbol = function (sourceSymbol, topLevelPath, topLevelSymbolNames, metadata) {
         var _this = this;
