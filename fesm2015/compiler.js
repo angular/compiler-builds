@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.9+26.sha-fca3e79.with-local-changes
+ * @license Angular v9.0.0-next.9+27.sha-65297cd.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -17869,7 +17869,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.9+26.sha-fca3e79.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.9+27.sha-65297cd.with-local-changes');
 
 /**
  * @license
@@ -23181,13 +23181,7 @@ class StaticSymbolResolver {
         // Note: Some users use libraries that were not compiled with ngc, i.e. they don't
         // have summaries, only .d.ts files, but `summaryResolver.isLibraryFile` returns true.
         this._createSymbolsOf(filePath);
-        const metadataSymbols = [];
-        this.resolvedSymbols.forEach((resolvedSymbol) => {
-            if (resolvedSymbol.symbol.filePath === filePath) {
-                metadataSymbols.push(resolvedSymbol.symbol);
-            }
-        });
-        return metadataSymbols;
+        return this.symbolFromFile.get(filePath) || [];
     }
     _createSymbolsOf(filePath) {
         if (this.resolvedFilePaths.has(filePath)) {
@@ -23267,8 +23261,12 @@ class StaticSymbolResolver {
                 resolvedSymbols.push(this.createResolvedSymbol(symbol, filePath, topLevelSymbolNames, symbolMeta));
             });
         }
-        resolvedSymbols.forEach((resolvedSymbol) => this.resolvedSymbols.set(resolvedSymbol.symbol, resolvedSymbol));
-        this.symbolFromFile.set(filePath, resolvedSymbols.map(resolvedSymbol => resolvedSymbol.symbol));
+        const uniqueSymbols = new Set();
+        for (const resolvedSymbol of resolvedSymbols) {
+            this.resolvedSymbols.set(resolvedSymbol.symbol, resolvedSymbol);
+            uniqueSymbols.add(resolvedSymbol.symbol);
+        }
+        this.symbolFromFile.set(filePath, Array.from(uniqueSymbols));
     }
     createResolvedSymbol(sourceSymbol, topLevelPath, topLevelSymbolNames, metadata) {
         // For classes that don't have Angular summaries / metadata,
