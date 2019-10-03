@@ -57,7 +57,6 @@ export declare class StaticSymbolResolver {
     private errorRecorder?;
     private metadataCache;
     private resolvedSymbols;
-    private resolvedFilePaths;
     private importAs;
     private symbolResourcePaths;
     private symbolFromFile;
@@ -89,11 +88,12 @@ export declare class StaticSymbolResolver {
     recordImportAs(sourceSymbol: StaticSymbol, targetSymbol: StaticSymbol): void;
     recordModuleNameForFileName(fileName: string, moduleName: string): void;
     /**
-     * Invalidate all information derived from the given file.
+     * Invalidate all information derived from the given file and return the
+     * static symbols contained in the file.
      *
      * @param fileName the file to invalidate
      */
-    invalidateFile(fileName: string): void;
+    invalidateFile(fileName: string): StaticSymbol[];
     private _resolveSymbolMembers;
     private _resolveSymbolFromSummary;
     /**

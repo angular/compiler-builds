@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.9+30.sha-900d005.with-local-changes
+ * @license Angular v9.0.0-next.9+31.sha-adb562b.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -17869,7 +17869,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.9+30.sha-900d005.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.9+31.sha-adb562b.with-local-changes');
 
 /**
  * @license
@@ -22977,7 +22977,6 @@ class StaticSymbolResolver {
         this.metadataCache = new Map();
         // Note: this will only contain StaticSymbols without members!
         this.resolvedSymbols = new Map();
-        this.resolvedFilePaths = new Set();
         // Note: this will only contain StaticSymbols without members!
         this.importAs = new Map();
         this.symbolResourcePaths = new Map();
@@ -23075,22 +23074,24 @@ class StaticSymbolResolver {
         this.knownFileNameToModuleNames.set(fileName, moduleName);
     }
     /**
-     * Invalidate all information derived from the given file.
+     * Invalidate all information derived from the given file and return the
+     * static symbols contained in the file.
      *
      * @param fileName the file to invalidate
      */
     invalidateFile(fileName) {
         this.metadataCache.delete(fileName);
-        this.resolvedFilePaths.delete(fileName);
         const symbols = this.symbolFromFile.get(fileName);
-        if (symbols) {
-            this.symbolFromFile.delete(fileName);
-            for (const symbol of symbols) {
-                this.resolvedSymbols.delete(symbol);
-                this.importAs.delete(symbol);
-                this.symbolResourcePaths.delete(symbol);
-            }
+        if (!symbols) {
+            return [];
         }
+        this.symbolFromFile.delete(fileName);
+        for (const symbol of symbols) {
+            this.resolvedSymbols.delete(symbol);
+            this.importAs.delete(symbol);
+            this.symbolResourcePaths.delete(symbol);
+        }
+        return symbols;
     }
     /** @internal */
     ignoreErrorsFor(cb) {
@@ -23170,10 +23171,9 @@ class StaticSymbolResolver {
         return this.symbolFromFile.get(filePath) || [];
     }
     _createSymbolsOf(filePath) {
-        if (this.resolvedFilePaths.has(filePath)) {
+        if (this.symbolFromFile.has(filePath)) {
             return;
         }
-        this.resolvedFilePaths.add(filePath);
         const resolvedSymbols = [];
         const metadata = this.getModuleMetadata(filePath);
         if (metadata['importAs']) {
@@ -24667,6 +24667,21 @@ class StaticReflector {
     componentModuleUrl(typeOrFunc) {
         const staticSymbol = this.findSymbolDeclaration(typeOrFunc);
         return this.symbolResolver.getResourcePath(staticSymbol);
+    }
+    /**
+     * Invalidate the specified `symbols` on program change.
+     * @param symbols
+     */
+    invalidateSymbols(symbols) {
+        for (const symbol of symbols) {
+            this.annotationCache.delete(symbol);
+            this.shallowAnnotationCache.delete(symbol);
+            this.propertyCache.delete(symbol);
+            this.parameterCache.delete(symbol);
+            this.methodCache.delete(symbol);
+            this.staticCache.delete(symbol);
+            this.conversionMap.delete(symbol);
+        }
     }
     resolveExternalReference(ref, containingFile) {
         let key = undefined;
