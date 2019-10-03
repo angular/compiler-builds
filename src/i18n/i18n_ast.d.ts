@@ -19,13 +19,15 @@ export declare class Message {
     customId: string;
     sources: MessageSpan[];
     id: string;
+    /** The id to use if there is no custom id and if `i18nLegacyMessageIdFormat` is true */
+    legacyId?: string;
     /**
      * @param nodes message AST
      * @param placeholders maps placeholder names to static content
      * @param placeholderToMessage maps placeholder names to messages (used for nested ICU messages)
      * @param meaning
      * @param description
-     * @param id
+     * @param customId
      */
     constructor(nodes: Node[], placeholders: {
         [phName: string]: string;
