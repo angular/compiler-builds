@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.9+46.sha-3a53e2c.with-local-changes
+ * @license Angular v9.0.0-next.9+52.sha-d18289f.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -19119,7 +19119,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.0.0-next.9+46.sha-3a53e2c.with-local-changes');
+    var VERSION$1 = new Version('9.0.0-next.9+52.sha-d18289f.with-local-changes');
 
     /**
      * @license
@@ -24176,48 +24176,6 @@
             VIEW_VAR, literal(nodeIndex), literal(bindingIdx), expr
         ]);
     }
-    function findStaticQueryIds(nodes, result) {
-        if (result === void 0) { result = new Map(); }
-        nodes.forEach(function (node) {
-            var staticQueryIds = new Set();
-            var dynamicQueryIds = new Set();
-            var queryMatches = undefined;
-            if (node instanceof ElementAst) {
-                findStaticQueryIds(node.children, result);
-                node.children.forEach(function (child) {
-                    var childData = result.get(child);
-                    childData.staticQueryIds.forEach(function (queryId) { return staticQueryIds.add(queryId); });
-                    childData.dynamicQueryIds.forEach(function (queryId) { return dynamicQueryIds.add(queryId); });
-                });
-                queryMatches = node.queryMatches;
-            }
-            else if (node instanceof EmbeddedTemplateAst) {
-                findStaticQueryIds(node.children, result);
-                node.children.forEach(function (child) {
-                    var childData = result.get(child);
-                    childData.staticQueryIds.forEach(function (queryId) { return dynamicQueryIds.add(queryId); });
-                    childData.dynamicQueryIds.forEach(function (queryId) { return dynamicQueryIds.add(queryId); });
-                });
-                queryMatches = node.queryMatches;
-            }
-            if (queryMatches) {
-                queryMatches.forEach(function (match) { return staticQueryIds.add(match.queryId); });
-            }
-            dynamicQueryIds.forEach(function (queryId) { return staticQueryIds.delete(queryId); });
-            result.set(node, { staticQueryIds: staticQueryIds, dynamicQueryIds: dynamicQueryIds });
-        });
-        return result;
-    }
-    function staticViewQueryIds(nodeStaticQueryIds) {
-        var staticQueryIds = new Set();
-        var dynamicQueryIds = new Set();
-        Array.from(nodeStaticQueryIds.values()).forEach(function (entry) {
-            entry.staticQueryIds.forEach(function (queryId) { return staticQueryIds.add(queryId); });
-            entry.dynamicQueryIds.forEach(function (queryId) { return dynamicQueryIds.add(queryId); });
-        });
-        dynamicQueryIds.forEach(function (queryId) { return staticQueryIds.delete(queryId); });
-        return { staticQueryIds: staticQueryIds, dynamicQueryIds: dynamicQueryIds };
-    }
     function elementEventNameAndTarget(eventAst, dirAst) {
         if (eventAst.isAnimation) {
             return {
@@ -29034,8 +28992,6 @@
     exports.EmitterVisitorContext = EmitterVisitorContext;
     exports.JitEvaluator = JitEvaluator;
     exports.ViewCompiler = ViewCompiler;
-    exports.findStaticQueryIds = findStaticQueryIds;
-    exports.staticViewQueryIds = staticViewQueryIds;
     exports.getParseErrors = getParseErrors;
     exports.isSyntaxError = isSyntaxError;
     exports.syntaxError = syntaxError;
