@@ -33,8 +33,8 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private pipeTypeByName;
     private pipes;
     private _namespace;
-    private relativeContextFilePath;
     private i18nUseExternalIds;
+    private _constants;
     private _dataIndex;
     private _bindingContext;
     private _prefixCode;
@@ -75,7 +75,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private _ngContentReservedSlots;
     private _ngContentSelectorsOffset;
     private _implicitReceiverExpr;
-    constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, i18nContext: I18nContext | null, templateIndex: number | null, templateName: string | null, directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference, relativeContextFilePath: string, i18nUseExternalIds: boolean);
+    constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, i18nContext: I18nContext | null, templateIndex: number | null, templateName: string | null, directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference, relativeContextFilePath: string, i18nUseExternalIds: boolean, _constants?: o.Expression[]);
     buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], ngContentSelectorsOffset?: number, i18n?: i18n.AST): o.FunctionExpr;
     getLocal(name: string): o.Expression | null;
     notifyImplicitReceiverUse(): void;
@@ -108,6 +108,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private allocateDataSlot;
     getConstCount(): number;
     getVarCount(): number;
+    getConsts(): o.Expression[];
     getNgContentSelectors(): o.Expression | null;
     private bindingContext;
     private templatePropertyBindings;
@@ -159,7 +160,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
      * because those values are intended to always be generated as property instructions.
      */
     private prepareNonRenderAttrs;
-    private toAttrsParam;
+    private addConstants;
     private prepareRefsParameter;
     private prepareListenerParameter;
 }
