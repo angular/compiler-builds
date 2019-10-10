@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.10+20.sha-f640a4a.with-local-changes
+ * @license Angular v9.0.0-next.10+19.sha-5ede5b7.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4207,7 +4207,7 @@ var Message = /** @class */ (function () {
         this.description = description;
         this.customId = customId;
         this.id = this.customId;
-        /** The id to use if there is no custom id and if `i18nLegacyMessageIdFormat` is not empty */
+        /** The id to use if there is no custom id and if `i18nLegacyMessageIdFormat` is true */
         this.legacyId = '';
         if (nodes.length) {
             this.sources = [{
@@ -18965,7 +18965,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-next.10+20.sha-f640a4a.with-local-changes');
+var VERSION$1 = new Version('9.0.0-next.10+19.sha-5ede5b7.with-local-changes');
 
 /**
  * @license
