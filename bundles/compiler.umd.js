@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.10+28.sha-6ab5f36.with-local-changes
+ * @license Angular v9.0.0-next.10+29.sha-b0834fe.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2683,7 +2683,7 @@
         if (typeof token === 'string') {
             return token;
         }
-        if (token instanceof Array) {
+        if (Array.isArray(token)) {
             return '[' + token.map(stringify).join(', ') + ']';
         }
         if (token == null) {
@@ -19134,7 +19134,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.0.0-next.10+28.sha-6ab5f36.with-local-changes');
+    var VERSION$1 = new Version('9.0.0-next.10+29.sha-b0834fe.with-local-changes');
 
     /**
      * @license
@@ -26764,7 +26764,7 @@
                     if (isPrimitive(expression)) {
                         return expression;
                     }
-                    if (expression instanceof Array) {
+                    if (Array.isArray(expression)) {
                         var result_2 = [];
                         try {
                             for (var _c = __values(expression), _d = _c.next(); !_d.done; _d = _c.next()) {
