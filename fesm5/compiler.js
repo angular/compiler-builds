@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.10+27.sha-1ae77da.with-local-changes
+ * @license Angular v9.0.0-next.10+28.sha-6ab5f36.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -18965,7 +18965,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-next.10+27.sha-1ae77da.with-local-changes');
+var VERSION$1 = new Version('9.0.0-next.10+28.sha-6ab5f36.with-local-changes');
 
 /**
  * @license
@@ -21942,7 +21942,8 @@ var CompileMetadataResolver = /** @class */ (function () {
                     return;
                 }
                 else {
-                    var providersInfo = providers.reduce(function (soFar, seenProvider, seenProviderIdx) {
+                    var providersInfo = providers
+                        .reduce(function (soFar, seenProvider, seenProviderIdx) {
                         if (seenProviderIdx < providerIdx) {
                             soFar.push("" + stringifyType(seenProvider));
                         }
