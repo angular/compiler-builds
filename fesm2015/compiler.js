@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.10+66.sha-cd7b199.with-local-changes
+ * @license Angular v9.0.0-next.10+73.sha-f433d66.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5034,7 +5034,7 @@ function compileFactoryFunction(meta, isPipe = false) {
     };
 }
 /**
- * Constructs the `ngFactoryDef` from directive/component/pipe metadata.
+ * Constructs the factory def (`ɵfac`) from directive/component/pipe metadata.
  */
 function compileFactoryFromMetadata(meta) {
     return compileFactoryFunction({
@@ -5202,8 +5202,8 @@ function compileInjectable(meta) {
 function delegateToFactory(type) {
     return {
         statements: [],
-        // () => meta.type.ngFactoryDef(t)
-        factory: fn([new FnParam('t', DYNAMIC_TYPE)], [new ReturnStatement(type.callMethod('ngFactoryDef', [variable('t')]))])
+        // () => meta.type.ɵfac(t)
+        factory: fn([new FnParam('t', DYNAMIC_TYPE)], [new ReturnStatement(type.callMethod('ɵfac', [variable('t')]))])
     };
 }
 
@@ -8902,7 +8902,7 @@ function compilePipeFromRender2(outputCtx, pipe, reflector) {
     /* parent */ null, 
     /* fields */
     [new ClassField(
-        /* name */ 'ngFactoryDef', 
+        /* name */ 'ɵfac', 
         /* type */ INFERRED_TYPE, 
         /* modifiers */ [StmtModifier.Static], 
         /* initializer */ factoryRes.factory)], 
@@ -17192,7 +17192,7 @@ function compileDirectiveFromRender2(outputCtx, directive, reflector, bindingPar
     const meta = directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector);
     const res = compileDirectiveFromMetadata(meta, outputCtx.constantPool, bindingParser);
     const factoryRes = compileFactoryFromMetadata(Object.assign({}, meta, { injectFn: Identifiers$1.directiveInject }));
-    const ngFactoryDefStatement = new ClassStmt(name, null, [new ClassField('ngFactoryDef', INFERRED_TYPE, [StmtModifier.Static], factoryRes.factory)], [], new ClassMethod(null, [], []), []);
+    const ngFactoryDefStatement = new ClassStmt(name, null, [new ClassField('ɵfac', INFERRED_TYPE, [StmtModifier.Static], factoryRes.factory)], [], new ClassMethod(null, [], []), []);
     const directiveDefStatement = new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []);
     // Create the partial class to be merged with the actual class.
     outputCtx.statements.push(ngFactoryDefStatement, directiveDefStatement);
@@ -17213,7 +17213,7 @@ function compileComponentFromRender2(outputCtx, component, render3Ast, reflector
     const meta = Object.assign({}, directiveMetadataFromGlobalMetadata(component, outputCtx, reflector), { selector: component.selector, template: { nodes: render3Ast.nodes }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, interpolation: DEFAULT_INTERPOLATION_CONFIG, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null, relativeContextFilePath: '', i18nUseExternalIds: true });
     const res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
     const factoryRes = compileFactoryFromMetadata(Object.assign({}, meta, { injectFn: Identifiers$1.directiveInject }));
-    const ngFactoryDefStatement = new ClassStmt(name, null, [new ClassField('ngFactoryDef', INFERRED_TYPE, [StmtModifier.Static], factoryRes.factory)], [], new ClassMethod(null, [], []), []);
+    const ngFactoryDefStatement = new ClassStmt(name, null, [new ClassField('ɵfac', INFERRED_TYPE, [StmtModifier.Static], factoryRes.factory)], [], new ClassMethod(null, [], []), []);
     const componentDefStatement = new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []);
     // Create the partial class to be merged with the actual class.
     outputCtx.statements.push(ngFactoryDefStatement, componentDefStatement);
@@ -17920,7 +17920,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.10+66.sha-cd7b199.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.10+73.sha-f433d66.with-local-changes');
 
 /**
  * @license

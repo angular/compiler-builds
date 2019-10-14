@@ -132,7 +132,7 @@ export interface R3FactoryFn {
  */
 export declare function compileFactoryFunction(meta: R3FactoryMetadata, isPipe?: boolean): R3FactoryFn;
 /**
- * Constructs the `ngFactoryDef` from directive/component/pipe metadata.
+ * Constructs the factory def (`ɵfac`) from directive/component/pipe metadata.
  */
 export declare function compileFactoryFromMetadata(meta: R3FactoryDefMetadata): R3FactoryFn;
 /**
