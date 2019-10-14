@@ -17,7 +17,7 @@ export interface R3NgModuleDef {
     additionalStatements: o.Statement[];
 }
 /**
- * Metadata required by the module compiler to generate a `ngModuleDef` for a type.
+ * Metadata required by the module compiler to generate a module def (`ɵmod`) for a type.
  */
 export interface R3NgModuleMetadata {
     /**
