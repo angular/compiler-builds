@@ -95,5 +95,5 @@ export declare function temporaryDeclaration(bindingId: string, temporaryNumber:
 export declare class BuiltinFunctionCall extends cdAst.FunctionCall {
     args: cdAst.AST[];
     converter: BuiltinConverter;
-    constructor(span: cdAst.ParseSpan, args: cdAst.AST[], converter: BuiltinConverter);
+    constructor(span: cdAst.ParseSpan, sourceSpan: cdAst.AbsoluteSourceSpan, args: cdAst.AST[], converter: BuiltinConverter);
 }

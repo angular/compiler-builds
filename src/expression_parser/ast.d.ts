@@ -18,10 +18,19 @@ export declare class ParseSpan {
     start: number;
     end: number;
     constructor(start: number, end: number);
+    toAbsolute(absoluteOffset: number): AbsoluteSourceSpan;
 }
 export declare class AST {
     span: ParseSpan;
-    constructor(span: ParseSpan);
+    /**
+     * Absolute location of the expression AST in a source code file.
+     */
+    sourceSpan: Readonly<AbsoluteSourceSpan>;
+    constructor(span: ParseSpan, 
+    /**
+     * Absolute location of the expression AST in a source code file.
+     */
+    sourceSpan: Readonly<AbsoluteSourceSpan>);
     visit(visitor: AstVisitor, context?: any): any;
     toString(): string;
 }
@@ -42,7 +51,7 @@ export declare class Quote extends AST {
     prefix: string;
     uninterpretedExpression: string;
     location: any;
-    constructor(span: ParseSpan, prefix: string, uninterpretedExpression: string, location: any);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, prefix: string, uninterpretedExpression: string, location: any);
     visit(visitor: AstVisitor, context?: any): any;
     toString(): string;
 }
@@ -57,63 +66,63 @@ export declare class ImplicitReceiver extends AST {
  */
 export declare class Chain extends AST {
     expressions: any[];
-    constructor(span: ParseSpan, expressions: any[]);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expressions: any[]);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class Conditional extends AST {
     condition: AST;
     trueExp: AST;
     falseExp: AST;
-    constructor(span: ParseSpan, condition: AST, trueExp: AST, falseExp: AST);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, condition: AST, trueExp: AST, falseExp: AST);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class PropertyRead extends AST {
     receiver: AST;
     name: string;
-    constructor(span: ParseSpan, receiver: AST, name: string);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, receiver: AST, name: string);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class PropertyWrite extends AST {
     receiver: AST;
     name: string;
     value: AST;
-    constructor(span: ParseSpan, receiver: AST, name: string, value: AST);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, receiver: AST, name: string, value: AST);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class SafePropertyRead extends AST {
     receiver: AST;
     name: string;
-    constructor(span: ParseSpan, receiver: AST, name: string);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, receiver: AST, name: string);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class KeyedRead extends AST {
     obj: AST;
     key: AST;
-    constructor(span: ParseSpan, obj: AST, key: AST);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, obj: AST, key: AST);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class KeyedWrite extends AST {
     obj: AST;
     key: AST;
     value: AST;
-    constructor(span: ParseSpan, obj: AST, key: AST, value: AST);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, obj: AST, key: AST, value: AST);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class BindingPipe extends AST {
     exp: AST;
     name: string;
     args: any[];
-    constructor(span: ParseSpan, exp: AST, name: string, args: any[]);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, exp: AST, name: string, args: any[]);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class LiteralPrimitive extends AST {
     value: any;
-    constructor(span: ParseSpan, value: any);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, value: any);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class LiteralArray extends AST {
     expressions: any[];
-    constructor(span: ParseSpan, expressions: any[]);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expressions: any[]);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare type LiteralMapKey = {
@@ -123,50 +132,50 @@ export declare type LiteralMapKey = {
 export declare class LiteralMap extends AST {
     keys: LiteralMapKey[];
     values: any[];
-    constructor(span: ParseSpan, keys: LiteralMapKey[], values: any[]);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, keys: LiteralMapKey[], values: any[]);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class Interpolation extends AST {
     strings: any[];
     expressions: any[];
-    constructor(span: ParseSpan, strings: any[], expressions: any[]);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, strings: any[], expressions: any[]);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class Binary extends AST {
     operation: string;
     left: AST;
     right: AST;
-    constructor(span: ParseSpan, operation: string, left: AST, right: AST);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, operation: string, left: AST, right: AST);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class PrefixNot extends AST {
     expression: AST;
-    constructor(span: ParseSpan, expression: AST);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expression: AST);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class NonNullAssert extends AST {
     expression: AST;
-    constructor(span: ParseSpan, expression: AST);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expression: AST);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class MethodCall extends AST {
     receiver: AST;
     name: string;
     args: any[];
-    constructor(span: ParseSpan, receiver: AST, name: string, args: any[]);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, receiver: AST, name: string, args: any[]);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class SafeMethodCall extends AST {
     receiver: AST;
     name: string;
     args: any[];
-    constructor(span: ParseSpan, receiver: AST, name: string, args: any[]);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, receiver: AST, name: string, args: any[]);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class FunctionCall extends AST {
     target: AST | null;
     args: any[];
-    constructor(span: ParseSpan, target: AST | null, args: any[]);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, target: AST | null, args: any[]);
     visit(visitor: AstVisitor, context?: any): any;
 }
 /**
@@ -174,8 +183,8 @@ export declare class FunctionCall extends AST {
  * starting and ending byte offsets, respectively, of the text span in a source file.
  */
 export declare class AbsoluteSourceSpan {
-    start: number;
-    end: number;
+    readonly start: number;
+    readonly end: number;
     constructor(start: number, end: number);
 }
 export declare class ASTWithSource extends AST {
@@ -183,7 +192,6 @@ export declare class ASTWithSource extends AST {
     source: string | null;
     location: string;
     errors: ParserError[];
-    sourceSpan: AbsoluteSourceSpan;
     constructor(ast: AST, source: string | null, location: string, absoluteOffset: number, errors: ParserError[]);
     visit(visitor: AstVisitor, context?: any): any;
     toString(): string;
@@ -194,7 +202,7 @@ export declare class TemplateBinding {
     keyIsVar: boolean;
     name: string;
     expression: ASTWithSource | null;
-    constructor(span: ParseSpan, key: string, keyIsVar: boolean, name: string, expression: ASTWithSource | null);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, key: string, keyIsVar: boolean, name: string, expression: ASTWithSource | null);
 }
 export interface AstVisitor {
     visitBinary(ast: Binary, context: any): any;
