@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { InterpolationConfig } from '../ml_parser/interpolation_config';
-import { AST, ASTWithSource, BindingPipe, LiteralMap, ParseSpan, ParserError, TemplateBinding } from './ast';
+import { AST, ASTWithSource, AbsoluteSourceSpan, BindingPipe, LiteralMap, ParseSpan, ParserError, TemplateBinding } from './ast';
 import { Lexer, Token } from './lexer';
 export declare class SplitInterpolation {
     strings: string[];
@@ -51,12 +51,14 @@ export declare class _ParseAST {
     private rparensExpected;
     private rbracketsExpected;
     private rbracesExpected;
+    private sourceSpanCache;
     index: number;
     constructor(input: string, location: any, absoluteOffset: number, tokens: Token[], inputLength: number, parseAction: boolean, errors: ParserError[], offset: number);
     peek(offset: number): Token;
     readonly next: Token;
     readonly inputIndex: number;
     span(start: number): ParseSpan;
+    sourceSpan(start: number): AbsoluteSourceSpan;
     advance(): void;
     optionalCharacter(code: number): boolean;
     peekKeywordLet(): boolean;
