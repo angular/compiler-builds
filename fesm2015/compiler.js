@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.11+8.sha-3e14c2d.with-local-changes
+ * @license Angular v9.0.0-next.11+10.sha-86104b8.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -752,7 +752,7 @@ class SelectorContext {
  * found in the LICENSE file at https://angular.io/license
  */
 const createInject = makeMetadataFactory('Inject', (token) => ({ token }));
-const createInjectionToken = makeMetadataFactory('InjectionToken', (desc) => ({ _desc: desc, ngInjectableDef: undefined }));
+const createInjectionToken = makeMetadataFactory('InjectionToken', (desc) => ({ _desc: desc, ɵprov: undefined }));
 const createAttribute = makeMetadataFactory('Attribute', (attributeName) => ({ attributeName }));
 const createContentChildren = makeMetadataFactory('ContentChildren', (selector, data = {}) => (Object.assign({ selector, first: false, isViewQuery: false, descendants: false }, data)));
 const createContentChild = makeMetadataFactory('ContentChild', (selector, data = {}) => (Object.assign({ selector, first: true, isViewQuery: false, descendants: true }, data)));
@@ -2488,7 +2488,7 @@ class ConstantPool {
             case 1 /* Directive */:
                 return 'ɵdir';
             case 0 /* Injector */:
-                return 'ngInjectorDef';
+                return 'ɵinj';
             case 3 /* Pipe */:
                 return 'ɵpipe';
         }
@@ -8836,7 +8836,7 @@ function compileNgModuleFromRender2(ctx, ngModule, injectableCompiler) {
     /* name */ className, 
     /* parent */ null, 
     /* fields */ [new ClassField(
-        /* name */ 'ngInjectorDef', 
+        /* name */ 'ɵinj', 
         /* type */ INFERRED_TYPE, 
         /* modifiers */ [StmtModifier.Static], 
         /* initializer */ injectorDef)], 
@@ -17921,7 +17921,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.11+8.sha-3e14c2d.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.11+10.sha-86104b8.with-local-changes');
 
 /**
  * @license
@@ -19813,7 +19813,7 @@ class InjectableCompiler {
         if (this.alwaysGenerateDef || injectable.providedIn !== undefined) {
             const className = identifierName(injectable.type);
             const clazz = new ClassStmt(className, null, [
-                new ClassField('ngInjectableDef', INFERRED_TYPE, [StmtModifier.Static], this.injectableDef(injectable, ctx)),
+                new ClassField('ɵprov', INFERRED_TYPE, [StmtModifier.Static], this.injectableDef(injectable, ctx)),
             ], [], new ClassMethod(null, [], []), []);
             ctx.statements.push(clazz);
         }
