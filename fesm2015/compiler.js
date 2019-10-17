@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.11+41.sha-1a8bd22.with-local-changes
+ * @license Angular v9.0.0-next.11+42.sha-7e64bbe.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7588,7 +7588,7 @@ class I18nMetaVisitor {
                 element.attrs = attrs;
             }
         }
-        visitAll$1(this, element.children);
+        visitAll$1(this, element.children, element.i18n);
         return element;
     }
     visitExpansion(expansion, context) {
@@ -7604,8 +7604,10 @@ class I18nMetaVisitor {
             icu.name = name;
         }
         else {
-            // when ICU is a root level translation
-            message = this._generateI18nMessage([expansion], meta);
+            // ICU is a top level message, try to use metadata from container element if provided via
+            // `context` argument. Note: context may not be available for standalone ICUs (without
+            // wrapping element), so fallback to ICU metadata in this case.
+            message = this._generateI18nMessage([expansion], context || meta);
         }
         expansion.i18n = message;
         return expansion;
@@ -17924,7 +17926,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.11+41.sha-1a8bd22.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.11+42.sha-7e64bbe.with-local-changes');
 
 /**
  * @license
