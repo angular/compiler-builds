@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.11+47.sha-422eb14.with-local-changes
+ * @license Angular v9.0.0-next.11+48.sha-fd4fed1.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -12556,7 +12556,7 @@ class BindingParser {
     }
     // Parse an inline template binding. ie `<tag *tplKey="<tplValue>">`
     parseInlineTemplateBinding(tplKey, tplValue, sourceSpan, absoluteOffset, targetMatchableAttrs, targetProps, targetVars) {
-        const bindings = this._parseTemplateBindings(tplKey, tplValue, sourceSpan);
+        const bindings = this._parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteOffset);
         for (let i = 0; i < bindings.length; i++) {
             const binding = bindings[i];
             if (binding.keyIsVar) {
@@ -12571,10 +12571,10 @@ class BindingParser {
             }
         }
     }
-    _parseTemplateBindings(tplKey, tplValue, sourceSpan) {
+    _parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteOffset) {
         const sourceInfo = sourceSpan.start.toString();
         try {
-            const bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceInfo, sourceSpan.start.offset);
+            const bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceInfo, absoluteOffset);
             this._reportExpressionParserErrors(bindingsResult.errors, sourceSpan);
             bindingsResult.templateBindings.forEach((binding) => {
                 if (binding.expression) {
@@ -17926,7 +17926,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.11+47.sha-422eb14.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.11+48.sha-fd4fed1.with-local-changes');
 
 /**
  * @license
