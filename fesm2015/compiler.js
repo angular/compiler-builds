@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.11+59.sha-117ca7c.with-local-changes
+ * @license Angular v9.0.0-next.11+62.sha-a0d16dc.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2837,6 +2837,29 @@ class CompileTemplateMetadata {
  * Metadata regarding compilation of a directive.
  */
 class CompileDirectiveMetadata {
+    constructor({ isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, guards, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory }) {
+        this.isHost = !!isHost;
+        this.type = type;
+        this.isComponent = isComponent;
+        this.selector = selector;
+        this.exportAs = exportAs;
+        this.changeDetection = changeDetection;
+        this.inputs = inputs;
+        this.outputs = outputs;
+        this.hostListeners = hostListeners;
+        this.hostProperties = hostProperties;
+        this.hostAttributes = hostAttributes;
+        this.providers = _normalizeArray(providers);
+        this.viewProviders = _normalizeArray(viewProviders);
+        this.queries = _normalizeArray(queries);
+        this.guards = guards;
+        this.viewQueries = _normalizeArray(viewQueries);
+        this.entryComponents = _normalizeArray(entryComponents);
+        this.template = template;
+        this.componentViewType = componentViewType;
+        this.rendererType = rendererType;
+        this.componentFactory = componentFactory;
+    }
     static create({ isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, providers, viewProviders, queries, guards, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory }) {
         const hostListeners = {};
         const hostProperties = {};
@@ -2894,29 +2917,6 @@ class CompileDirectiveMetadata {
             rendererType,
             componentFactory,
         });
-    }
-    constructor({ isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, guards, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory }) {
-        this.isHost = !!isHost;
-        this.type = type;
-        this.isComponent = isComponent;
-        this.selector = selector;
-        this.exportAs = exportAs;
-        this.changeDetection = changeDetection;
-        this.inputs = inputs;
-        this.outputs = outputs;
-        this.hostListeners = hostListeners;
-        this.hostProperties = hostProperties;
-        this.hostAttributes = hostAttributes;
-        this.providers = _normalizeArray(providers);
-        this.viewProviders = _normalizeArray(viewProviders);
-        this.queries = _normalizeArray(queries);
-        this.guards = guards;
-        this.viewQueries = _normalizeArray(viewQueries);
-        this.entryComponents = _normalizeArray(entryComponents);
-        this.template = template;
-        this.componentViewType = componentViewType;
-        this.rendererType = rendererType;
-        this.componentFactory = componentFactory;
     }
     toSummary() {
         return {
@@ -5156,7 +5156,7 @@ function compileInjectable(meta) {
         }
         if (deps !== undefined) {
             // factory: () => new meta.useClass(...deps)
-            result = compileFactoryFunction(Object.assign({}, factoryMeta, { delegate: meta.useClass, delegateDeps: deps, delegateType: R3FactoryDelegateType.Class }));
+            result = compileFactoryFunction(Object.assign(Object.assign({}, factoryMeta), { delegate: meta.useClass, delegateDeps: deps, delegateType: R3FactoryDelegateType.Class }));
         }
         else if (useClassOnSelf) {
             result = compileFactoryFunction(factoryMeta);
@@ -5167,7 +5167,7 @@ function compileInjectable(meta) {
     }
     else if (meta.useFactory !== undefined) {
         if (meta.userDeps !== undefined) {
-            result = compileFactoryFunction(Object.assign({}, factoryMeta, { delegate: meta.useFactory, delegateDeps: meta.userDeps || [], delegateType: R3FactoryDelegateType.Function }));
+            result = compileFactoryFunction(Object.assign(Object.assign({}, factoryMeta), { delegate: meta.useFactory, delegateDeps: meta.userDeps || [], delegateType: R3FactoryDelegateType.Function }));
         }
         else {
             result = {
@@ -5180,11 +5180,11 @@ function compileInjectable(meta) {
         // Note: it's safe to use `meta.useValue` instead of the `USE_VALUE in meta` check used for
         // client code because meta.useValue is an Expression which will be defined even if the actual
         // value is undefined.
-        result = compileFactoryFunction(Object.assign({}, factoryMeta, { expression: meta.useValue }));
+        result = compileFactoryFunction(Object.assign(Object.assign({}, factoryMeta), { expression: meta.useValue }));
     }
     else if (meta.useExisting !== undefined) {
         // useExisting is an `inject` call on the existing token.
-        result = compileFactoryFunction(Object.assign({}, factoryMeta, { expression: importExpr(Identifiers.inject).callFn([meta.useExisting]) }));
+        result = compileFactoryFunction(Object.assign(Object.assign({}, factoryMeta), { expression: importExpr(Identifiers.inject).callFn([meta.useExisting]) }));
     }
     else {
         result = delegateToFactory(meta.type);
@@ -8898,7 +8898,7 @@ function compilePipeFromRender2(outputCtx, pipe, reflector) {
         pure: pipe.pure,
     };
     const res = compilePipeFromMetadata(metadata);
-    const factoryRes = compileFactoryFromMetadata(Object.assign({}, metadata, { injectFn: Identifiers$1.directiveInject, isPipe: true }));
+    const factoryRes = compileFactoryFromMetadata(Object.assign(Object.assign({}, metadata), { injectFn: Identifiers$1.directiveInject, isPipe: true }));
     const definitionField = outputCtx.constantPool.propertyNameOf(3 /* Pipe */);
     const ngFactoryDefStatement = new ClassStmt(
     /* name */ name, 
@@ -16148,7 +16148,7 @@ class TemplateDefinitionBuilder {
         // inside ICUs)
         // - all ICU vars (such as `VAR_SELECT` or `VAR_PLURAL`) are replaced with correct values
         const transformFn = (raw) => {
-            const params = Object.assign({}, vars, placeholders);
+            const params = Object.assign(Object.assign({}, vars), placeholders);
             const formatted = i18nFormatPlaceholderNames(params, /* useCamelCase */ false);
             return instruction(null, Identifiers$1.i18nPostprocess, [raw, mapLiteral(formatted, true)]);
         };
@@ -16877,7 +16877,7 @@ function parseTemplate(template, templateUrl, options = {}) {
     const { interpolationConfig, preserveWhitespaces, i18nLegacyMessageIdFormat } = options;
     const bindingParser = makeBindingParser(interpolationConfig);
     const htmlParser = new HtmlParser();
-    const parseResult = htmlParser.parse(template, templateUrl, Object.assign({ leadingTriviaChars: LEADING_TRIVIA_CHARS }, options, { tokenizeExpansionForms: true }));
+    const parseResult = htmlParser.parse(template, templateUrl, Object.assign(Object.assign({ leadingTriviaChars: LEADING_TRIVIA_CHARS }, options), { tokenizeExpansionForms: true }));
     if (parseResult.errors && parseResult.errors.length > 0) {
         return { errors: parseResult.errors, nodes: [], styleUrls: [], styles: [] };
     }
@@ -17197,7 +17197,7 @@ function compileDirectiveFromRender2(outputCtx, directive, reflector, bindingPar
     const definitionField = outputCtx.constantPool.propertyNameOf(1 /* Directive */);
     const meta = directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector);
     const res = compileDirectiveFromMetadata(meta, outputCtx.constantPool, bindingParser);
-    const factoryRes = compileFactoryFromMetadata(Object.assign({}, meta, { injectFn: Identifiers$1.directiveInject }));
+    const factoryRes = compileFactoryFromMetadata(Object.assign(Object.assign({}, meta), { injectFn: Identifiers$1.directiveInject }));
     const ngFactoryDefStatement = new ClassStmt(name, null, [new ClassField('ɵfac', INFERRED_TYPE, [StmtModifier.Static], factoryRes.factory)], [], new ClassMethod(null, [], []), []);
     const directiveDefStatement = new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []);
     // Create the partial class to be merged with the actual class.
@@ -17216,9 +17216,9 @@ function compileComponentFromRender2(outputCtx, component, render3Ast, reflector
     const definitionField = outputCtx.constantPool.propertyNameOf(2 /* Component */);
     const summary = component.toSummary();
     // Compute the R3ComponentMetadata from the CompileDirectiveMetadata
-    const meta = Object.assign({}, directiveMetadataFromGlobalMetadata(component, outputCtx, reflector), { selector: component.selector, template: { nodes: render3Ast.nodes }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, interpolation: DEFAULT_INTERPOLATION_CONFIG, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null, relativeContextFilePath: '', i18nUseExternalIds: true });
+    const meta = Object.assign(Object.assign({}, directiveMetadataFromGlobalMetadata(component, outputCtx, reflector)), { selector: component.selector, template: { nodes: render3Ast.nodes }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, interpolation: DEFAULT_INTERPOLATION_CONFIG, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null, relativeContextFilePath: '', i18nUseExternalIds: true });
     const res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
-    const factoryRes = compileFactoryFromMetadata(Object.assign({}, meta, { injectFn: Identifiers$1.directiveInject }));
+    const factoryRes = compileFactoryFromMetadata(Object.assign(Object.assign({}, meta), { injectFn: Identifiers$1.directiveInject }));
     const ngFactoryDefStatement = new ClassStmt(name, null, [new ClassField('ɵfac', INFERRED_TYPE, [StmtModifier.Static], factoryRes.factory)], [], new ClassMethod(null, [], []), []);
     const componentDefStatement = new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []);
     // Create the partial class to be merged with the actual class.
@@ -17750,7 +17750,7 @@ class CompilerFacadeImpl {
         }
         // Compile the component metadata, including template, into an expression.
         // TODO(alxhub): implement inputs, outputs, queries, etc.
-        const metadata = Object.assign({}, facade, convertDirectiveFacadeToMetadata(facade), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template, wrapDirectivesAndPipesInClosure: false, styles: facade.styles || [], encapsulation: facade.encapsulation, interpolation: interpolationConfig, changeDetection: facade.changeDetection, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
+        const metadata = Object.assign(Object.assign(Object.assign({}, facade), convertDirectiveFacadeToMetadata(facade)), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template, wrapDirectivesAndPipesInClosure: false, styles: facade.styles || [], encapsulation: facade.encapsulation, interpolation: interpolationConfig, changeDetection: facade.changeDetection, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
                 null, relativeContextFilePath: '', i18nUseExternalIds: true });
         const res = compileComponentFromMetadata(metadata, constantPool, makeBindingParser(interpolationConfig));
         const jitExpressionSourceMap = `ng:///${facade.name}.js`;
@@ -17771,7 +17771,7 @@ class CompilerFacadeImpl {
     compileBase(angularCoreEnv, sourceMapUrl, facade) {
         const constantPool = new ConstantPool();
         const typeSourceSpan = this.createParseSourceSpan('Base', facade.name, `ng:///${facade.name}.js`);
-        const meta = Object.assign({}, facade, { typeSourceSpan, viewQueries: facade.viewQueries ? facade.viewQueries.map(convertToR3QueryMetadata) :
+        const meta = Object.assign(Object.assign({}, facade), { typeSourceSpan, viewQueries: facade.viewQueries ? facade.viewQueries.map(convertToR3QueryMetadata) :
                 facade.viewQueries, queries: facade.queries ? facade.queries.map(convertToR3QueryMetadata) : facade.queries, host: extractHostBindings(facade.propMetadata, typeSourceSpan) });
         const res = compileBaseDefFromMetadata(meta, constantPool, makeBindingParser());
         return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, constantPool.statements);
@@ -17809,7 +17809,7 @@ const wrapReference = function (value) {
     return { value: wrapped, type: wrapped };
 };
 function convertToR3QueryMetadata(facade) {
-    return Object.assign({}, facade, { predicate: Array.isArray(facade.predicate) ? facade.predicate :
+    return Object.assign(Object.assign({}, facade), { predicate: Array.isArray(facade.predicate) ? facade.predicate :
             new WrappedNodeExpr(facade.predicate), read: facade.read ? new WrappedNodeExpr(facade.read) : null, static: facade.static });
 }
 function convertDirectiveFacadeToMetadata(facade) {
@@ -17831,7 +17831,7 @@ function convertDirectiveFacadeToMetadata(facade) {
             });
         }
     }
-    return Object.assign({}, facade, { typeSourceSpan: facade.typeSourceSpan, type: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: Object.assign({}, inputsFromMetadata, inputsFromType), outputs: Object.assign({}, outputsFromMetadata, outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata) });
+    return Object.assign(Object.assign({}, facade), { typeSourceSpan: facade.typeSourceSpan, type: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: Object.assign(Object.assign({}, inputsFromMetadata), inputsFromType), outputs: Object.assign(Object.assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata) });
 }
 function wrapExpression(obj, property) {
     if (obj.hasOwnProperty(property)) {
@@ -17926,7 +17926,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.11+59.sha-117ca7c.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.11+62.sha-a0d16dc.with-local-changes');
 
 /**
  * @license
@@ -18272,8 +18272,8 @@ class DirectiveResolver {
     _merge(directive, inputs, outputs, host, queries, guards, directiveType) {
         const mergedInputs = this._dedupeBindings(directive.inputs ? directive.inputs.concat(inputs) : inputs);
         const mergedOutputs = this._dedupeBindings(directive.outputs ? directive.outputs.concat(outputs) : outputs);
-        const mergedHost = directive.host ? Object.assign({}, directive.host, host) : host;
-        const mergedQueries = directive.queries ? Object.assign({}, directive.queries, queries) : queries;
+        const mergedHost = directive.host ? Object.assign(Object.assign({}, directive.host), host) : host;
+        const mergedQueries = directive.queries ? Object.assign(Object.assign({}, directive.queries), queries) : queries;
         if (createComponent.isTypeOf(directive)) {
             const comp = directive;
             return createComponent({
@@ -22524,7 +22524,7 @@ class ViewBuilder$1 {
             const valueExpr = importExpr(Identifiers.EMPTY_MAP);
             return () => valueExpr;
         }
-        const map = literalMap(keys.map((e, i) => (Object.assign({}, e, { value: literal(i) }))));
+        const map = literalMap(keys.map((e, i) => (Object.assign(Object.assign({}, e), { value: literal(i) }))));
         const checkIndex = this.nodes.length;
         this.nodes.push(() => ({
             sourceSpan,
@@ -23346,7 +23346,7 @@ class StaticSymbolResolver {
                     }
                 }
                 else if (symbolic === 'error') {
-                    return Object.assign({}, map, { fileName: getOriginalName() });
+                    return Object.assign(Object.assign({}, map), { fileName: getOriginalName() });
                 }
                 else {
                     return super.visitStringMap(map, functionParams);
@@ -24619,8 +24619,13 @@ function formatChain(chain, indent = 0) {
         '';
     const prefix = position && indent === 0 ? `${position}: ` : '';
     const postfix = position && indent !== 0 ? ` at ${position}` : '';
-    const message = `${prefix}${chain.message}${postfix}`;
-    return `${indentStr(indent)}${message}${(chain.next && ('\n' + formatChain(chain.next, indent + 2))) || ''}`;
+    let message = `${prefix}${chain.message}${postfix}`;
+    if (chain.next) {
+        for (const kid of chain.next) {
+            message += '\n' + formatChain(kid, indent + 2);
+        }
+    }
+    return `${indentStr(indent)}${message}`;
 }
 function formattedError(chain) {
     const message = formatChain(chain) + '.';
@@ -25537,7 +25542,7 @@ function formatMetadataMessageChain(chain, advise) {
     const next = chain.next ?
         formatMetadataMessageChain(chain.next, advise) :
         advise ? { message: advise } : undefined;
-    return { message, position, next };
+    return { message, position, next: next ? [next] : undefined };
 }
 function formatMetadataError(e, context) {
     if (isMetadataError(e)) {
