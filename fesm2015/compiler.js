@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.12+45.sha-5d86e4a.with-local-changes
+ * @license Angular v9.0.0-next.12+46.sha-7f7dc7c.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7534,6 +7534,8 @@ class I18nMetaVisitor {
         this.interpolationConfig = interpolationConfig;
         this.keepI18nAttrs = keepI18nAttrs;
         this.i18nLegacyMessageIdFormat = i18nLegacyMessageIdFormat;
+        // whether visited nodes contain i18n information
+        this.hasI18nMeta = false;
         // i18n message generation factory
         this._createI18nMessage = createI18nMessageFactory(this.interpolationConfig);
     }
@@ -7546,6 +7548,7 @@ class I18nMetaVisitor {
     }
     visitElement(element) {
         if (hasI18nAttrs(element)) {
+            this.hasI18nMeta = true;
             const attrs = [];
             const attrsMeta = {};
             for (const attr of element.attrs) {
@@ -7590,6 +7593,7 @@ class I18nMetaVisitor {
     visitExpansion(expansion, currentMessage) {
         let message;
         const meta = expansion.i18n;
+        this.hasI18nMeta = true;
         if (meta instanceof IcuPlaceholder) {
             // set ICU placeholder name (e.g. "ICU_1"),
             // generated while processing root element contents,
@@ -16938,14 +16942,17 @@ function parseTemplate(template, templateUrl, options = {}) {
     // before we run whitespace removal process, because existing i18n
     // extraction process (ng xi18n) relies on a raw content to generate
     // message ids
-    rootNodes = visitAll$1(new I18nMetaVisitor(interpolationConfig, !preserveWhitespaces, i18nLegacyMessageIdFormat), rootNodes);
+    const i18nMetaVisitor = new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ !preserveWhitespaces, i18nLegacyMessageIdFormat);
+    rootNodes = visitAll$1(i18nMetaVisitor, rootNodes);
     if (!preserveWhitespaces) {
         rootNodes = visitAll$1(new WhitespaceVisitor(), rootNodes);
-        // run i18n meta visitor again in case we remove whitespaces, because
-        // that might affect generated i18n message content. During this pass
-        // i18n IDs generated at the first pass will be preserved, so we can mimic
-        // existing extraction process (ng xi18n)
-        rootNodes = visitAll$1(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), rootNodes);
+        // run i18n meta visitor again in case whitespaces are removed (because that might affect
+        // generated i18n message content) and first pass indicated that i18n content is present in a
+        // template. During this pass i18n IDs generated at the first pass will be preserved, so we can
+        // mimic existing extraction process (ng xi18n)
+        if (i18nMetaVisitor.hasI18nMeta) {
+            rootNodes = visitAll$1(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), rootNodes);
+        }
     }
     const { nodes, errors, styleUrls, styles } = htmlAstToRender3Ast(rootNodes, bindingParser);
     if (errors && errors.length > 0) {
@@ -17978,7 +17985,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.12+45.sha-5d86e4a.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.12+46.sha-7f7dc7c.with-local-changes');
 
 /**
  * @license

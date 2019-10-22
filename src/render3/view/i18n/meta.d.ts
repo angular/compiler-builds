@@ -25,6 +25,7 @@ export declare class I18nMetaVisitor implements html.Visitor {
     private interpolationConfig;
     private keepI18nAttrs;
     private i18nLegacyMessageIdFormat;
+    hasI18nMeta: boolean;
     private _createI18nMessage;
     constructor(interpolationConfig?: InterpolationConfig, keepI18nAttrs?: boolean, i18nLegacyMessageIdFormat?: string);
     private _generateI18nMessage;
