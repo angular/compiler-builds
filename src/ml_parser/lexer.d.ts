@@ -95,6 +95,10 @@ export interface TokenizeOptions {
      * included in source-map segments.  A common example is whitespace.
      */
     leadingTriviaChars?: string[];
+    /**
+     * If true, do not convert CRLF to LF.
+     */
+    preserveLineEndings?: boolean;
 }
 export declare function tokenize(source: string, url: string, getTagDefinition: (tagName: string) => TagDefinition, options?: TokenizeOptions): TokenizeResult;
 /**

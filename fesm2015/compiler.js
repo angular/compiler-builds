@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.12+37.sha-e030375.with-local-changes
+ * @license Angular v9.0.0-next.12+38.sha-65a0d2b.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10361,6 +10361,7 @@ class _Tokenizer {
         const range = options.range || { endPos: _file.content.length, startPos: 0, startLine: 0, startCol: 0 };
         this._cursor = options.escapedString ? new EscapedCharacterCursor(_file, range) :
             new PlainCharacterCursor(_file, range);
+        this._preserveLineEndings = options.preserveLineEndings || false;
         try {
             this._cursor.init();
         }
@@ -10369,6 +10370,9 @@ class _Tokenizer {
         }
     }
     _processCarriageReturns(content) {
+        if (this._preserveLineEndings) {
+            return content;
+        }
         // http://www.w3.org/TR/html5/syntax.html#preprocessing-the-input-stream
         // In order to keep the original position in the source, we can not
         // pre-process it.
@@ -17926,7 +17930,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.12+37.sha-e030375.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.12+38.sha-65a0d2b.with-local-changes');
 
 /**
  * @license
