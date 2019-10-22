@@ -13,7 +13,7 @@ export interface Position {
 export interface FormattedMessageChain {
     message: string;
     position?: Position;
-    next?: FormattedMessageChain;
+    next?: FormattedMessageChain[];
 }
 export declare type FormattedError = Error & {
     chain: FormattedMessageChain;

@@ -1,6 +1,6 @@
 {
   "name": "@angular/compiler",
-  "version": "9.0.0-next.11+24.sha-20be755.with-local-changes",
+  "version": "9.0.0-next.12+50.sha-dfff5fe.with-local-changes",
   "description": "Angular - the compiler library",
   "main": "./bundles/compiler.umd.js",
   "module": "./fesm5/compiler.js",
@@ -13,7 +13,7 @@
   "author": "angular",
   "license": "MIT",
   "peerDependencies": {
-    "tslib": "^1.9.0"
+    "tslib": "^1.10.0"
   },
   "repository": {
     "type": "git",

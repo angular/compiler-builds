@@ -8,9 +8,11 @@
 import * as html from '../ml_parser/ast';
 import { InterpolationConfig } from '../ml_parser/interpolation_config';
 import * as i18n from './i18n_ast';
-declare type VisitNodeFn = (html: html.Node, i18n: i18n.Node) => void;
+export declare type VisitNodeFn = (html: html.Node, i18n: i18n.Node) => i18n.Node;
+export interface I18nMessageFactory {
+    (nodes: html.Node[], meaning: string | undefined, description: string | undefined, customId: string | undefined, visitNodeFn?: VisitNodeFn): i18n.Message;
+}
 /**
  * Returns a function converting html nodes to an i18n Message given an interpolationConfig
  */
-export declare function createI18nMessageFactory(interpolationConfig: InterpolationConfig): (nodes: html.Node[], meaning: string, description: string, id: string, visitNodeFn?: VisitNodeFn) => i18n.Message;
-export {};
+export declare function createI18nMessageFactory(interpolationConfig: InterpolationConfig): I18nMessageFactory;
