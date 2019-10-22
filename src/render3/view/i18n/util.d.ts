@@ -19,8 +19,8 @@ export declare const I18N_ICU_MAPPING_PREFIX = "I18N_EXP_";
 /** Placeholder wrapper for i18n expressions **/
 export declare const I18N_PLACEHOLDER_SYMBOL = "\uFFFD";
 export declare function isI18nAttribute(name: string): boolean;
-export declare function isI18nRootNode(meta?: i18n.AST): meta is i18n.Message;
-export declare function isSingleI18nIcu(meta?: i18n.AST): boolean;
+export declare function isI18nRootNode(meta?: i18n.I18nMeta): meta is i18n.Message;
+export declare function isSingleI18nIcu(meta?: i18n.I18nMeta): boolean;
 export declare function hasI18nAttrs(element: html.Element): boolean;
 export declare function icuFromI18nMessage(message: i18n.Message): i18n.IcuPlaceholder;
 export declare function wrapI18nPlaceholder(content: string | number, contextId?: number): string;
@@ -30,7 +30,7 @@ export declare function placeholdersToParams(placeholders: Map<string, string[]>
     [name: string]: o.LiteralExpr;
 };
 export declare function updatePlaceholderMap(map: Map<string, any[]>, name: string, ...values: any[]): void;
-export declare function assembleBoundTextPlaceholders(meta: i18n.AST, bindingStartIndex?: number, contextId?: number): Map<string, any[]>;
+export declare function assembleBoundTextPlaceholders(meta: i18n.I18nMeta, bindingStartIndex?: number, contextId?: number): Map<string, any[]>;
 /**
  * Format the placeholder names in a map of placeholders to expressions.
  *

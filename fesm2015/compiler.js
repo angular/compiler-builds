@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.12+38.sha-65a0d2b.with-local-changes
+ * @license Angular v9.0.0-next.12+45.sha-5d86e4a.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7141,22 +7141,26 @@ class AstPath {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-class Text$3 {
-    constructor(value, sourceSpan, i18n) {
-        this.value = value;
+class NodeWithI18n {
+    constructor(sourceSpan, i18n) {
         this.sourceSpan = sourceSpan;
         this.i18n = i18n;
     }
+}
+class Text$3 extends NodeWithI18n {
+    constructor(value, sourceSpan, i18n) {
+        super(sourceSpan, i18n);
+        this.value = value;
+    }
     visit(visitor, context) { return visitor.visitText(this, context); }
 }
-class Expansion {
+class Expansion extends NodeWithI18n {
     constructor(switchValue, type, cases, sourceSpan, switchValueSourceSpan, i18n) {
+        super(sourceSpan, i18n);
         this.switchValue = switchValue;
         this.type = type;
         this.cases = cases;
-        this.sourceSpan = sourceSpan;
         this.switchValueSourceSpan = switchValueSourceSpan;
-        this.i18n = i18n;
     }
     visit(visitor, context) { return visitor.visitExpansion(this, context); }
 }
@@ -7170,25 +7174,23 @@ class ExpansionCase {
     }
     visit(visitor, context) { return visitor.visitExpansionCase(this, context); }
 }
-class Attribute {
+class Attribute extends NodeWithI18n {
     constructor(name, value, sourceSpan, valueSpan, i18n) {
+        super(sourceSpan, i18n);
         this.name = name;
         this.value = value;
-        this.sourceSpan = sourceSpan;
         this.valueSpan = valueSpan;
-        this.i18n = i18n;
     }
     visit(visitor, context) { return visitor.visitAttribute(this, context); }
 }
-class Element$1 {
+class Element$1 extends NodeWithI18n {
     constructor(name, attrs, children, sourceSpan, startSourceSpan = null, endSourceSpan = null, i18n) {
+        super(sourceSpan, i18n);
         this.name = name;
         this.attrs = attrs;
         this.children = children;
-        this.sourceSpan = sourceSpan;
         this.startSourceSpan = startSourceSpan;
         this.endSourceSpan = endSourceSpan;
-        this.i18n = i18n;
     }
     visit(visitor, context) { return visitor.visitElement(this, context); }
 }
@@ -7388,88 +7390,87 @@ const _expParser = new Parser(new Lexer());
  */
 function createI18nMessageFactory(interpolationConfig) {
     const visitor = new _I18nVisitor(_expParser, interpolationConfig);
-    return (nodes, meaning, description, id, visitNodeFn) => visitor.toI18nMessage(nodes, meaning, description, id, visitNodeFn);
+    return (nodes, meaning, description, customId, visitNodeFn) => visitor.toI18nMessage(nodes, meaning, description, customId, visitNodeFn);
+}
+function noopVisitNodeFn(_html, i18n) {
+    return i18n;
 }
 class _I18nVisitor {
     constructor(_expressionParser, _interpolationConfig) {
         this._expressionParser = _expressionParser;
         this._interpolationConfig = _interpolationConfig;
     }
-    toI18nMessage(nodes, meaning, description, id, visitNodeFn) {
-        this._isIcu = nodes.length == 1 && nodes[0] instanceof Expansion;
-        this._icuDepth = 0;
-        this._placeholderRegistry = new PlaceholderRegistry();
-        this._placeholderToContent = {};
-        this._placeholderToMessage = {};
-        this._visitNodeFn = visitNodeFn;
-        const i18nodes = visitAll$1(this, nodes, {});
-        return new Message(i18nodes, this._placeholderToContent, this._placeholderToMessage, meaning, description, id);
-    }
-    _visitNode(html, i18n) {
-        if (this._visitNodeFn) {
-            this._visitNodeFn(html, i18n);
-        }
-        return i18n;
+    toI18nMessage(nodes, meaning = '', description = '', customId = '', visitNodeFn) {
+        const context = {
+            isIcu: nodes.length == 1 && nodes[0] instanceof Expansion,
+            icuDepth: 0,
+            placeholderRegistry: new PlaceholderRegistry(),
+            placeholderToContent: {},
+            placeholderToMessage: {},
+            visitNodeFn: visitNodeFn || noopVisitNodeFn,
+        };
+        const i18nodes = visitAll$1(this, nodes, context);
+        return new Message(i18nodes, context.placeholderToContent, context.placeholderToMessage, meaning, description, customId);
     }
     visitElement(el, context) {
-        const children = visitAll$1(this, el.children);
+        const children = visitAll$1(this, el.children, context);
         const attrs = {};
         el.attrs.forEach(attr => {
             // Do not visit the attributes, translatable ones are top-level ASTs
             attrs[attr.name] = attr.value;
         });
         const isVoid = getHtmlTagDefinition(el.name).isVoid;
-        const startPhName = this._placeholderRegistry.getStartTagPlaceholderName(el.name, attrs, isVoid);
-        this._placeholderToContent[startPhName] = el.sourceSpan.toString();
+        const startPhName = context.placeholderRegistry.getStartTagPlaceholderName(el.name, attrs, isVoid);
+        context.placeholderToContent[startPhName] = el.sourceSpan.toString();
         let closePhName = '';
         if (!isVoid) {
-            closePhName = this._placeholderRegistry.getCloseTagPlaceholderName(el.name);
-            this._placeholderToContent[closePhName] = `</${el.name}>`;
+            closePhName = context.placeholderRegistry.getCloseTagPlaceholderName(el.name);
+            context.placeholderToContent[closePhName] = `</${el.name}>`;
         }
         const node = new TagPlaceholder(el.name, attrs, startPhName, closePhName, children, isVoid, el.sourceSpan);
-        return this._visitNode(el, node);
+        return context.visitNodeFn(el, node);
     }
     visitAttribute(attribute, context) {
-        const node = this._visitTextWithInterpolation(attribute.value, attribute.sourceSpan);
-        return this._visitNode(attribute, node);
+        const node = this._visitTextWithInterpolation(attribute.value, attribute.sourceSpan, context);
+        return context.visitNodeFn(attribute, node);
     }
     visitText(text, context) {
-        const node = this._visitTextWithInterpolation(text.value, text.sourceSpan);
-        return this._visitNode(text, node);
+        const node = this._visitTextWithInterpolation(text.value, text.sourceSpan, context);
+        return context.visitNodeFn(text, node);
     }
-    visitComment(comment, context) { return null; }
+    visitComment(comment, context) {
+        return null;
+    }
     visitExpansion(icu, context) {
-        this._icuDepth++;
+        context.icuDepth++;
         const i18nIcuCases = {};
         const i18nIcu = new Icu$1(icu.switchValue, icu.type, i18nIcuCases, icu.sourceSpan);
         icu.cases.forEach((caze) => {
-            i18nIcuCases[caze.value] = new Container(caze.expression.map((node) => node.visit(this, {})), caze.expSourceSpan);
+            i18nIcuCases[caze.value] = new Container(caze.expression.map((node) => node.visit(this, context)), caze.expSourceSpan);
         });
-        this._icuDepth--;
-        if (this._isIcu || this._icuDepth > 0) {
+        context.icuDepth--;
+        if (context.isIcu || context.icuDepth > 0) {
             // Returns an ICU node when:
             // - the message (vs a part of the message) is an ICU message, or
             // - the ICU message is nested.
-            const expPh = this._placeholderRegistry.getUniquePlaceholder(`VAR_${icu.type}`);
+            const expPh = context.placeholderRegistry.getUniquePlaceholder(`VAR_${icu.type}`);
             i18nIcu.expressionPlaceholder = expPh;
-            this._placeholderToContent[expPh] = icu.switchValue;
-            return this._visitNode(icu, i18nIcu);
+            context.placeholderToContent[expPh] = icu.switchValue;
+            return context.visitNodeFn(icu, i18nIcu);
         }
         // Else returns a placeholder
         // ICU placeholders should not be replaced with their original content but with the their
-        // translations. We need to create a new visitor (they are not re-entrant) to compute the
-        // message id.
+        // translations.
         // TODO(vicb): add a html.Node -> i18n.Message cache to avoid having to re-create the msg
-        const phName = this._placeholderRegistry.getPlaceholderName('ICU', icu.sourceSpan.toString());
-        const visitor = new _I18nVisitor(this._expressionParser, this._interpolationConfig);
-        this._placeholderToMessage[phName] = visitor.toI18nMessage([icu], '', '', '');
+        const phName = context.placeholderRegistry.getPlaceholderName('ICU', icu.sourceSpan.toString());
+        context.placeholderToMessage[phName] = this.toI18nMessage([icu], '', '', '', undefined);
         const node = new IcuPlaceholder(i18nIcu, phName, icu.sourceSpan);
-        return this._visitNode(icu, node);
+        return context.visitNodeFn(icu, node);
     }
-    visitExpansionCase(icuCase, context) {
+    visitExpansionCase(_icuCase, _context) {
         throw new Error('Unreachable code');
     }
-    _visitTextWithInterpolation(text, sourceSpan) {
+    _visitTextWithInterpolation(text, sourceSpan, context) {
         const splitInterpolation = this._expressionParser.splitInterpolation(text, sourceSpan.start.toString(), this._interpolationConfig);
         if (!splitInterpolation) {
             // No expression, return a single text
@@ -7482,13 +7483,13 @@ class _I18nVisitor {
         for (let i = 0; i < splitInterpolation.strings.length - 1; i++) {
             const expression = splitInterpolation.expressions[i];
             const baseName = _extractPlaceholderName(expression) || 'INTERPOLATION';
-            const phName = this._placeholderRegistry.getPlaceholderName(baseName, expression);
+            const phName = context.placeholderRegistry.getPlaceholderName(baseName, expression);
             if (splitInterpolation.strings[i].length) {
                 // No need to add empty strings
                 nodes.push(new Text$1(splitInterpolation.strings[i], sourceSpan));
             }
             nodes.push(new Placeholder(expression, phName, sourceSpan));
-            this._placeholderToContent[phName] = sDelimiter + expression + eDelimiter;
+            context.placeholderToContent[phName] = sDelimiter + expression + eDelimiter;
         }
         // The last index contains no expression
         const lastStringIdx = splitInterpolation.strings.length - 1;
@@ -7510,9 +7511,19 @@ function _extractPlaceholderName(input) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-function setI18nRefs(html, i18n) {
-    html.i18n = i18n;
-}
+const setI18nRefs = (htmlNode, i18nNode) => {
+    if (htmlNode instanceof NodeWithI18n) {
+        if (i18nNode instanceof IcuPlaceholder && htmlNode.i18n instanceof Message) {
+            // This html node represents an ICU but this is a second processing pass, and the legacy id
+            // was computed in the previous pass and stored in the `i18n` property as a message.
+            // We are about to wipe out that property so capture the previous message to be reused when
+            // generating the message for this ICU later. See `_generateI18nMessage()`.
+            i18nNode.previousMessage = htmlNode.i18n;
+        }
+        htmlNode.i18n = i18nNode;
+    }
+    return i18nNode;
+};
 /**
  * This visitor walks over HTML parse tree and converts information stored in
  * i18n-related attributes ("i18n" and "i18n-*") into i18n meta object that is
@@ -7527,28 +7538,13 @@ class I18nMetaVisitor {
         this._createI18nMessage = createI18nMessageFactory(this.interpolationConfig);
     }
     _generateI18nMessage(nodes, meta = '', visitNodeFn) {
-        const parsed = typeof meta === 'string' ? parseI18nMeta(meta) : metaFromI18nMessage(meta);
-        const message = this._createI18nMessage(nodes, parsed.meaning || '', parsed.description || '', parsed.customId || '', visitNodeFn);
-        if (!message.id) {
-            // generate (or restore) message id if not specified in template
-            message.id = typeof meta !== 'string' && meta.id || decimalDigest(message);
-        }
-        if (this.i18nLegacyMessageIdFormat === 'xlf' || this.i18nLegacyMessageIdFormat === 'xliff') {
-            message.legacyId = computeDigest(message);
-        }
-        else if (this.i18nLegacyMessageIdFormat === 'xlf2' || this.i18nLegacyMessageIdFormat === 'xliff2' ||
-            this.i18nLegacyMessageIdFormat === 'xmb') {
-            message.legacyId = computeDecimalDigest(message);
-        }
-        else if (typeof meta !== 'string') {
-            // This occurs if we are doing the 2nd pass after whitespace removal
-            // In that case we want to reuse the legacy message generated in the 1st pass
-            // See `parseTemplate()` in `packages/compiler/src/render3/view/template.ts`
-            message.legacyId = meta.legacyId;
-        }
+        const { meaning, description, customId } = this._parseMetadata(meta);
+        const message = this._createI18nMessage(nodes, meaning, description, customId, visitNodeFn);
+        this._setMessageId(message, meta);
+        this._setLegacyId(message, meta);
         return message;
     }
-    visitElement(element, context) {
+    visitElement(element) {
         if (hasI18nAttrs(element)) {
             const attrs = [];
             const attrsMeta = {};
@@ -7591,7 +7587,7 @@ class I18nMetaVisitor {
         visitAll$1(this, element.children, element.i18n);
         return element;
     }
-    visitExpansion(expansion, context) {
+    visitExpansion(expansion, currentMessage) {
         let message;
         const meta = expansion.i18n;
         if (meta instanceof IcuPlaceholder) {
@@ -7607,15 +7603,64 @@ class I18nMetaVisitor {
             // ICU is a top level message, try to use metadata from container element if provided via
             // `context` argument. Note: context may not be available for standalone ICUs (without
             // wrapping element), so fallback to ICU metadata in this case.
-            message = this._generateI18nMessage([expansion], context || meta);
+            message = this._generateI18nMessage([expansion], currentMessage || meta);
         }
         expansion.i18n = message;
         return expansion;
     }
-    visitText(text, context) { return text; }
-    visitAttribute(attribute, context) { return attribute; }
-    visitComment(comment, context) { return comment; }
-    visitExpansionCase(expansionCase, context) { return expansionCase; }
+    visitText(text) { return text; }
+    visitAttribute(attribute) { return attribute; }
+    visitComment(comment) { return comment; }
+    visitExpansionCase(expansionCase) { return expansionCase; }
+    /**
+     * Parse the general form `meta` passed into extract the explicit metadata needed to create a
+     * `Message`.
+     *
+     * There are three possibilities for the `meta` variable
+     * 1) a string from an `i18n` template attribute: parse it to extract the metadata values.
+     * 2) a `Message` from a previous processing pass: reuse the metadata values in the message.
+     * 4) other: ignore this and just process the message metadata as normal
+     *
+     * @param meta the bucket that holds information about the message
+     * @returns the parsed metadata.
+     */
+    _parseMetadata(meta) {
+        return typeof meta === 'string' ? parseI18nMeta(meta) :
+            meta instanceof Message ? metaFromI18nMessage(meta) : {};
+    }
+    /**
+     * Generate (or restore) message id if not specified already.
+     */
+    _setMessageId(message, meta) {
+        if (!message.id) {
+            message.id = meta instanceof Message && meta.id || decimalDigest(message);
+        }
+    }
+    /**
+     * Update the `message` with a `legacyId` if necessary.
+     *
+     * @param message the message whose legacy id should be set
+     * @param meta information about the message being processed
+     */
+    _setLegacyId(message, meta) {
+        if (this.i18nLegacyMessageIdFormat === 'xlf' || this.i18nLegacyMessageIdFormat === 'xliff') {
+            message.legacyId = computeDigest(message);
+        }
+        else if (this.i18nLegacyMessageIdFormat === 'xlf2' || this.i18nLegacyMessageIdFormat === 'xliff2' ||
+            this.i18nLegacyMessageIdFormat === 'xmb') {
+            message.legacyId = computeDecimalDigest(message);
+        }
+        else if (typeof meta !== 'string') {
+            // This occurs if we are doing the 2nd pass after whitespace removal (see `parseTemplate()` in
+            // `packages/compiler/src/render3/view/template.ts`).
+            // In that case we want to reuse the legacy message generated in the 1st pass (see
+            // `setI18nRefs()`).
+            const previousMessage = meta instanceof Message ?
+                meta :
+                meta instanceof IcuPlaceholder ? meta.previousMessage : undefined;
+            message.legacyId = previousMessage && previousMessage.legacyId;
+        }
+    }
 }
 function metaFromI18nMessage(message, id = null) {
     return {
@@ -14807,19 +14852,22 @@ class HtmlAstToIvyAst {
         return this._visitTextWithInterpolation(text.value, text.sourceSpan, text.i18n);
     }
     visitExpansion(expansion) {
-        const meta = expansion.i18n;
-        // do not generate Icu in case it was created
-        // outside of i18n block in a template
-        if (!meta) {
+        if (!expansion.i18n) {
+            // do not generate Icu in case it was created
+            // outside of i18n block in a template
             return null;
         }
+        if (!isI18nRootNode(expansion.i18n)) {
+            throw new Error(`Invalid type "${expansion.i18n.constructor}" for "i18n" property of ${expansion.sourceSpan.toString()}. Expected a "Message"`);
+        }
+        const message = expansion.i18n;
         const vars = {};
         const placeholders = {};
         // extract VARs from ICUs - we process them separately while
         // assembling resulting message via goog.getMsg function, since
         // we need to pass them to top-level goog.getMsg call
-        Object.keys(meta.placeholders).forEach(key => {
-            const value = meta.placeholders[key];
+        Object.keys(message.placeholders).forEach(key => {
+            const value = message.placeholders[key];
             if (key.startsWith(I18N_ICU_VAR_PREFIX)) {
                 const config = this.bindingParser.interpolationConfig;
                 // ICU expression is a plain string, not wrapped into start
@@ -14831,7 +14879,7 @@ class HtmlAstToIvyAst {
                 placeholders[key] = this._visitTextWithInterpolation(value, expansion.sourceSpan);
             }
         });
-        return new Icu(vars, placeholders, expansion.sourceSpan, meta);
+        return new Icu(vars, placeholders, expansion.sourceSpan, message);
     }
     visitExpansionCase(expansionCase) { return null; }
     visitComment(comment) { return null; }
@@ -17930,7 +17978,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.12+38.sha-65a0d2b.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.12+45.sha-5d86e4a.with-local-changes');
 
 /**
  * @license
@@ -27204,5 +27252,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { core, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, DYNAMIC_TYPE, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, literalMap, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, STRING_TYPE, TypeofExpr, collectExternalReferences, EmitterVisitorContext, JitEvaluator, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, compileFactoryFromMetadata, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileBaseDefFromMetadata, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, verifyHostBindings, publishFacade, VERSION$1 as VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, computeMsgId, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, AbsoluteSourceSpan, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor$1 as RecursiveAstVisitor, AstTransformer$1 as AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text$3 as Text, Expansion, ExpansionCase, Attribute, Element$1 as Element, Comment, visitAll$1 as visitAll, RecursiveVisitor$1 as RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, XmlParser, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, EMPTY_PARSE_LOCATION, EMPTY_SOURCE_SPAN, ParseErrorLevel, ParseError, typeSourceSpan, r3JitTypeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, HOST_ATTR, CONTENT_ATTR, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, isEmptyExpression, compileInjectable, R3TargetBinder, R3BoundTarget };
+export { core, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, DYNAMIC_TYPE, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, literalMap, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, STRING_TYPE, TypeofExpr, collectExternalReferences, EmitterVisitorContext, JitEvaluator, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, compileFactoryFromMetadata, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileBaseDefFromMetadata, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, verifyHostBindings, publishFacade, VERSION$1 as VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, computeMsgId, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, AbsoluteSourceSpan, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor$1 as RecursiveAstVisitor, AstTransformer$1 as AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, NodeWithI18n, Text$3 as Text, Expansion, ExpansionCase, Attribute, Element$1 as Element, Comment, visitAll$1 as visitAll, RecursiveVisitor$1 as RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, XmlParser, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, EMPTY_PARSE_LOCATION, EMPTY_SOURCE_SPAN, ParseErrorLevel, ParseError, typeSourceSpan, r3JitTypeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, HOST_ATTR, CONTENT_ATTR, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, isEmptyExpression, compileInjectable, R3TargetBinder, R3BoundTarget };
 //# sourceMappingURL=compiler.js.map
