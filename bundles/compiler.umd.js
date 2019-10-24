@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.13+17.sha-63f0ded.with-local-changes
+ * @license Angular v9.0.0-next.13+19.sha-a42057d.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -18464,9 +18464,6 @@
         if (changeDetection != null && changeDetection !== ChangeDetectionStrategy.Default) {
             definitionMap.set('changeDetection', literal(changeDetection));
         }
-        // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
-        // string literal, which must be on one line.
-        var selectorForType = (meta.selector || '').replace(/\n/g, '');
         var expression = importExpr(Identifiers$1.defineComponent).callFn([definitionMap.toLiteralMap()]);
         var type = createTypeForDef(meta, Identifiers$1.ComponentDefWithMeta);
         return { expression: expression, type: type };
@@ -18647,10 +18644,10 @@
     function createTypeForDef(meta, typeBase) {
         // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
         // string literal, which must be on one line.
-        var selectorForType = (meta.selector || '').replace(/\n/g, '');
+        var selectorForType = meta.selector !== null ? meta.selector.replace(/\n/g, '') : null;
         return expressionType(importExpr(typeBase, [
             typeWithParameters(meta.type, meta.typeArgumentCount),
-            stringAsType(selectorForType),
+            selectorForType !== null ? stringAsType(selectorForType) : NONE_TYPE,
             meta.exportAs !== null ? stringArrayAsType(meta.exportAs) : NONE_TYPE,
             stringMapAsType(meta.inputs),
             stringMapAsType(meta.outputs),
@@ -19259,7 +19256,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.0.0-next.13+17.sha-63f0ded.with-local-changes');
+    var VERSION$1 = new Version('9.0.0-next.13+19.sha-a42057d.with-local-changes');
 
     /**
      * @license
