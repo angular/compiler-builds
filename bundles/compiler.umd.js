@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.13+4.sha-f1269d9.with-local-changes
+ * @license Angular v9.0.0-next.13+7.sha-3d11355.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -14267,7 +14267,8 @@
                     }
                     hasInlineTemplates = true;
                     var parsedVariables_1 = [];
-                    _this._bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attr.sourceSpan, attr.sourceSpan.start.offset, templateMatchableAttrs, templateElementOrDirectiveProps, parsedVariables_1);
+                    var absoluteOffset = (attr.valueSpan || attr.sourceSpan).start.offset;
+                    _this._bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attr.sourceSpan, absoluteOffset, templateMatchableAttrs, templateElementOrDirectiveProps, parsedVariables_1);
                     templateElementVars.push.apply(templateElementVars, __spread(parsedVariables_1.map(function (v) { return VariableAst.fromParsedVariable(v); })));
                 }
                 if (!hasBinding && !hasTemplateBinding) {
@@ -19258,7 +19259,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.0.0-next.13+4.sha-f1269d9.with-local-changes');
+    var VERSION$1 = new Version('9.0.0-next.13+7.sha-3d11355.with-local-changes');
 
     /**
      * @license
