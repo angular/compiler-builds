@@ -13,33 +13,11 @@ import { ParseError, ParseSourceSpan } from '../../parse_util';
 import { BindingParser } from '../../template_parser/binding_parser';
 import { OutputContext } from '../../util';
 import { Render3ParseResult } from '../r3_template_transform';
-import { R3ComponentDef, R3ComponentMetadata, R3DirectiveDef, R3DirectiveMetadata, R3HostMetadata, R3QueryMetadata } from './api';
+import { R3ComponentDef, R3ComponentMetadata, R3DirectiveDef, R3DirectiveMetadata } from './api';
 /**
  * Compile a directive for the render3 runtime as defined by the `R3DirectiveMetadata`.
  */
 export declare function compileDirectiveFromMetadata(meta: R3DirectiveMetadata, constantPool: ConstantPool, bindingParser: BindingParser): R3DirectiveDef;
-export interface R3BaseRefMetaData {
-    name: string;
-    type: o.Expression;
-    typeSourceSpan: ParseSourceSpan;
-    inputs?: {
-        [key: string]: string | [string, string];
-    };
-    outputs?: {
-        [key: string]: string;
-    };
-    viewQueries?: R3QueryMetadata[];
-    queries?: R3QueryMetadata[];
-    host?: R3HostMetadata;
-}
-/**
- * Compile a base definition for the render3 runtime as defined by {@link R3BaseRefMetadata}
- * @param meta the metadata used for compilation.
- */
-export declare function compileBaseDefFromMetadata(meta: R3BaseRefMetaData, constantPool: ConstantPool, bindingParser: BindingParser): {
-    expression: o.InvokeFunctionExpr;
-    type: o.ExpressionType;
-};
 /**
  * Compile a component for the render3 runtime as defined by the `R3ComponentMetadata`.
  */

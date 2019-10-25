@@ -123,8 +123,6 @@ export declare class Identifiers {
     static resolveWindow: o.ExternalReference;
     static resolveDocument: o.ExternalReference;
     static resolveBody: o.ExternalReference;
-    static defineBase: o.ExternalReference;
-    static BaseDef: o.ExternalReference;
     static defineComponent: o.ExternalReference;
     static setComponentScope: o.ExternalReference;
     static ComponentDefWithMeta: o.ExternalReference;
