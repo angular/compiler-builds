@@ -12,6 +12,7 @@ import { ResourceLoader } from './resource_loader';
 export declare class CompilerFacadeImpl implements CompilerFacade {
     private jitEvaluator;
     R3ResolvedDependencyType: any;
+    R3FactoryTarget: any;
     ResourceLoader: typeof ResourceLoader;
     private elementSchemaRegistry;
     constructor(jitEvaluator?: JitEvaluator);
