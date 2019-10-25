@@ -145,6 +145,7 @@ export declare class Identifiers {
     static contentQuery: o.ExternalReference;
     static NgOnChangesFeature: o.ExternalReference;
     static InheritDefinitionFeature: o.ExternalReference;
+    static CopyDefinitionFeature: o.ExternalReference;
     static ProvidersFeature: o.ExternalReference;
     static listener: o.ExternalReference;
     static getFactoryOf: o.ExternalReference;
