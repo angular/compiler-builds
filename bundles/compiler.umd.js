@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.13+34.sha-ee4fc12.with-local-changes
+ * @license Angular v9.0.0-next.13+35.sha-dcdb433.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15087,7 +15087,10 @@
         };
         StylingBuilder.prototype._buildMapBasedInstruction = function (valueConverter, isClassBased, stylingInput) {
             // each styling binding value is stored in the LView
-            var totalBindingSlotsRequired = 1;
+            // map-based bindings allocate two slots: one for the
+            // previous binding value and another for the previous
+            // className or style attribute value.
+            var totalBindingSlotsRequired = 2;
             // these values must be outside of the update block so that they can
             // be evaluated (the AST visit call) during creation time so that any
             // pipes can be picked up in time before the template is built
@@ -19256,7 +19259,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.0.0-next.13+34.sha-ee4fc12.with-local-changes');
+    var VERSION$1 = new Version('9.0.0-next.13+35.sha-dcdb433.with-local-changes');
 
     /**
      * @license
