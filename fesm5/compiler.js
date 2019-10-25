@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.13+35.sha-dcdb433.with-local-changes
+ * @license Angular v9.0.0-next.13+43.sha-6323a35.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3560,6 +3560,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.contentQuery = { name: 'ɵɵcontentQuery', moduleName: CORE$1 };
     Identifiers.NgOnChangesFeature = { name: 'ɵɵNgOnChangesFeature', moduleName: CORE$1 };
     Identifiers.InheritDefinitionFeature = { name: 'ɵɵInheritDefinitionFeature', moduleName: CORE$1 };
+    Identifiers.CopyDefinitionFeature = { name: 'ɵɵCopyDefinitionFeature', moduleName: CORE$1 };
     Identifiers.ProvidersFeature = { name: 'ɵɵProvidersFeature', moduleName: CORE$1 };
     Identifiers.listener = { name: 'ɵɵlistener', moduleName: CORE$1 };
     Identifiers.getFactoryOf = {
@@ -18130,6 +18131,9 @@ function addFeatures(definitionMap, meta) {
     if (meta.usesInheritance) {
         features.push(importExpr(Identifiers$1.InheritDefinitionFeature));
     }
+    if (meta.fullInheritance) {
+        features.push(importExpr(Identifiers$1.CopyDefinitionFeature));
+    }
     if (meta.lifecycle.usesOnChanges) {
         features.push(importExpr(Identifiers$1.NgOnChangesFeature).callFn(EMPTY_ARRAY));
     }
@@ -18982,7 +18986,7 @@ function convertDirectiveFacadeToMetadata(facade) {
     for (var field in propMetadata) {
         _loop_1(field);
     }
-    return __assign(__assign({}, facade), { typeSourceSpan: facade.typeSourceSpan, type: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: __assign(__assign({}, inputsFromMetadata), inputsFromType), outputs: __assign(__assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata) });
+    return __assign(__assign({}, facade), { typeSourceSpan: facade.typeSourceSpan, type: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: __assign(__assign({}, inputsFromMetadata), inputsFromType), outputs: __assign(__assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), fullInheritance: false });
 }
 function wrapExpression(obj, property) {
     if (obj.hasOwnProperty(property)) {
@@ -19080,7 +19084,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-next.13+35.sha-dcdb433.with-local-changes');
+var VERSION$1 = new Version('9.0.0-next.13+43.sha-6323a35.with-local-changes');
 
 /**
  * @license
