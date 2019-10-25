@@ -34,7 +34,7 @@ export interface R3DirectiveMetadata {
     /**
      * Dependencies of the directive's constructor.
      */
-    deps: R3DependencyMetadata[] | null;
+    deps: R3DependencyMetadata[] | 'invalid' | null;
     /**
      * Unparsed selector of the directive, or `null` if there was no selector.
      */
@@ -78,6 +78,10 @@ export interface R3DirectiveMetadata {
      * Whether or not the component or directive inherits from another class
      */
     usesInheritance: boolean;
+    /**
+     * Whether or not the component or directive inherits its entire decorator from its base class.
+     */
+    fullInheritance: boolean;
     /**
      * Reference name under which to export the directive's type in a template,
      * if any.

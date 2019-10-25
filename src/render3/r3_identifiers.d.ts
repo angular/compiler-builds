@@ -118,12 +118,11 @@ export declare class Identifiers {
     static injectAttribute: o.ExternalReference;
     static injectPipeChangeDetectorRef: o.ExternalReference;
     static directiveInject: o.ExternalReference;
+    static invalidFactory: o.ExternalReference;
     static templateRefExtractor: o.ExternalReference;
     static resolveWindow: o.ExternalReference;
     static resolveDocument: o.ExternalReference;
     static resolveBody: o.ExternalReference;
-    static defineBase: o.ExternalReference;
-    static BaseDef: o.ExternalReference;
     static defineComponent: o.ExternalReference;
     static setComponentScope: o.ExternalReference;
     static ComponentDefWithMeta: o.ExternalReference;
@@ -145,6 +144,7 @@ export declare class Identifiers {
     static contentQuery: o.ExternalReference;
     static NgOnChangesFeature: o.ExternalReference;
     static InheritDefinitionFeature: o.ExternalReference;
+    static CopyDefinitionFeature: o.ExternalReference;
     static ProvidersFeature: o.ExternalReference;
     static listener: o.ExternalReference;
     static getFactoryOf: o.ExternalReference;

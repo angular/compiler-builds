@@ -29,10 +29,10 @@ export interface CompilerFacade {
     compileNgModule(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, meta: R3NgModuleMetadataFacade): any;
     compileDirective(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, meta: R3DirectiveMetadataFacade): any;
     compileComponent(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, meta: R3ComponentMetadataFacade): any;
-    compileBase(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, meta: R3BaseMetadataFacade): any;
     compileFactory(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, meta: R3FactoryDefMetadataFacade): any;
     createParseSourceSpan(kind: string, typeName: string, sourceUrl: string): ParseSourceSpan;
     R3ResolvedDependencyType: typeof R3ResolvedDependencyType;
+    R3FactoryTarget: typeof R3FactoryTarget;
     ResourceLoader: {
         new (): ResourceLoader;
     };
@@ -54,6 +54,13 @@ export declare enum R3ResolvedDependencyType {
     Token = 0,
     Attribute = 1,
     ChangeDetectorRef = 2
+}
+export declare enum R3FactoryTarget {
+    Directive = 0,
+    Component = 1,
+    Injectable = 2,
+    Pipe = 3,
+    NgModule = 4
 }
 export interface R3DependencyMetadataFacade {
     token: any;
@@ -140,28 +147,13 @@ export interface R3ComponentMetadataFacade extends R3DirectiveMetadataFacade {
     interpolation?: [string, string];
     changeDetection?: ChangeDetectionStrategy;
 }
-export interface R3BaseMetadataFacade {
-    name: string;
-    type: any;
-    propMetadata: {
-        [key: string]: any[];
-    };
-    inputs?: {
-        [key: string]: string | [string, string];
-    };
-    outputs?: {
-        [key: string]: string;
-    };
-    queries?: R3QueryMetadataFacade[];
-    viewQueries?: R3QueryMetadataFacade[];
-}
 export interface R3FactoryDefMetadataFacade {
     name: string;
     type: any;
     typeArgumentCount: number;
     deps: R3DependencyMetadataFacade[] | null;
     injectFn: 'directiveInject' | 'inject';
-    isPipe: boolean;
+    target: R3FactoryTarget;
 }
 export declare type ViewEncapsulation = number;
 export declare type ChangeDetectionStrategy = number;

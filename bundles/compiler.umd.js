@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.12+7.sha-ed391ad.with-local-changes
+ * @license Angular v9.0.0-next.14+2.sha-585ea89.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3701,15 +3701,11 @@
         Identifiers.injectAttribute = { name: 'ɵɵinjectAttribute', moduleName: CORE$1 };
         Identifiers.injectPipeChangeDetectorRef = { name: 'ɵɵinjectPipeChangeDetectorRef', moduleName: CORE$1 };
         Identifiers.directiveInject = { name: 'ɵɵdirectiveInject', moduleName: CORE$1 };
+        Identifiers.invalidFactory = { name: 'ɵɵinvalidFactory', moduleName: CORE$1 };
         Identifiers.templateRefExtractor = { name: 'ɵɵtemplateRefExtractor', moduleName: CORE$1 };
         Identifiers.resolveWindow = { name: 'ɵɵresolveWindow', moduleName: CORE$1 };
         Identifiers.resolveDocument = { name: 'ɵɵresolveDocument', moduleName: CORE$1 };
         Identifiers.resolveBody = { name: 'ɵɵresolveBody', moduleName: CORE$1 };
-        Identifiers.defineBase = { name: 'ɵɵdefineBase', moduleName: CORE$1 };
-        Identifiers.BaseDef = {
-            name: 'ɵɵBaseDef',
-            moduleName: CORE$1,
-        };
         Identifiers.defineComponent = { name: 'ɵɵdefineComponent', moduleName: CORE$1 };
         Identifiers.setComponentScope = { name: 'ɵɵsetComponentScope', moduleName: CORE$1 };
         Identifiers.ComponentDefWithMeta = {
@@ -3752,6 +3748,7 @@
         Identifiers.contentQuery = { name: 'ɵɵcontentQuery', moduleName: CORE$1 };
         Identifiers.NgOnChangesFeature = { name: 'ɵɵNgOnChangesFeature', moduleName: CORE$1 };
         Identifiers.InheritDefinitionFeature = { name: 'ɵɵInheritDefinitionFeature', moduleName: CORE$1 };
+        Identifiers.CopyDefinitionFeature = { name: 'ɵɵCopyDefinitionFeature', moduleName: CORE$1 };
         Identifiers.ProvidersFeature = { name: 'ɵɵProvidersFeature', moduleName: CORE$1 };
         Identifiers.listener = { name: 'ɵɵlistener', moduleName: CORE$1 };
         Identifiers.getFactoryOf = {
@@ -5523,6 +5520,13 @@
         R3FactoryDelegateType[R3FactoryDelegateType["Function"] = 1] = "Function";
         R3FactoryDelegateType[R3FactoryDelegateType["Factory"] = 2] = "Factory";
     })(R3FactoryDelegateType || (R3FactoryDelegateType = {}));
+    (function (R3FactoryTarget) {
+        R3FactoryTarget[R3FactoryTarget["Directive"] = 0] = "Directive";
+        R3FactoryTarget[R3FactoryTarget["Component"] = 1] = "Component";
+        R3FactoryTarget[R3FactoryTarget["Injectable"] = 2] = "Injectable";
+        R3FactoryTarget[R3FactoryTarget["Pipe"] = 3] = "Pipe";
+        R3FactoryTarget[R3FactoryTarget["NgModule"] = 4] = "NgModule";
+    })(exports.R3FactoryTarget || (exports.R3FactoryTarget = {}));
     (function (R3ResolvedDependencyType) {
         /**
          * A normal token dependency.
@@ -5542,8 +5546,7 @@
     /**
      * Construct a factory function expression for the given `R3FactoryMetadata`.
      */
-    function compileFactoryFunction(meta, isPipe) {
-        if (isPipe === void 0) { isPipe = false; }
+    function compileFactoryFunction(meta) {
         var t = variable('t');
         var statements = [];
         // The type to instantiate via constructor invocation. If there is no delegated factory, meaning
@@ -5556,8 +5559,7 @@
         if (meta.deps !== null) {
             // There is a constructor (either explicitly or implicitly defined).
             if (meta.deps !== 'invalid') {
-                ctorExpr =
-                    new InstantiateExpr(typeForCtor, injectDependencies(meta.deps, meta.injectFn, isPipe));
+                ctorExpr = new InstantiateExpr(typeForCtor, injectDependencies(meta.deps, meta.injectFn, meta.target === exports.R3FactoryTarget.Pipe));
             }
         }
         else {
@@ -5581,7 +5583,7 @@
                 ctorStmt = r.set(ctorExprFinal).toStmt();
             }
             else {
-                ctorStmt = makeErrorStmt(meta.name);
+                ctorStmt = importExpr(Identifiers$1.invalidFactory).callFn([]).toStmt();
             }
             body.push(ifStmt(t, [ctorStmt], [r.set(nonCtorExpr).toStmt()]));
             return r;
@@ -5601,8 +5603,8 @@
         else if (isDelegatedMetadata(meta)) {
             // This type is created with a delegated factory. If a type parameter is not specified, call
             // the factory instead.
-            var delegateArgs = injectDependencies(meta.delegateDeps, meta.injectFn, isPipe);
-            // Either call `new delegate(...)` or `delegate(...)` depending on meta.useNewForDelegate.
+            var delegateArgs = injectDependencies(meta.delegateDeps, meta.injectFn, meta.target === exports.R3FactoryTarget.Pipe);
+            // Either call `new delegate(...)` or `delegate(...)` depending on meta.delegateType.
             var factoryExpr = new (meta.delegateType === R3FactoryDelegateType.Class ?
                 InstantiateExpr :
                 InvokeFunctionExpr)(meta.delegate, delegateArgs);
@@ -5619,25 +5621,13 @@
             body.push(new ReturnStatement(retExpr));
         }
         else {
-            body.push(makeErrorStmt(meta.name));
+            body.push(importExpr(Identifiers$1.invalidFactory).callFn([]).toStmt());
         }
         return {
             factory: fn([new FnParam('t', DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, meta.name + "_Factory"),
             statements: statements,
             type: expressionType(importExpr(Identifiers$1.FactoryDef, [typeWithParameters(meta.type, meta.typeArgumentCount)]))
         };
-    }
-    /**
-     * Constructs the factory def (`ɵfac`) from directive/component/pipe metadata.
-     */
-    function compileFactoryFromMetadata(meta) {
-        return compileFactoryFunction({
-            name: meta.name,
-            type: meta.type,
-            deps: meta.deps,
-            typeArgumentCount: meta.typeArgumentCount,
-            injectFn: meta.injectFn,
-        }, meta.isPipe);
     }
     function injectDependencies(deps, injectFn, isPipe) {
         return deps.map(function (dep) { return compileInjectDependency(dep, injectFn, isPipe); });
@@ -5719,11 +5709,6 @@
         }
         return deps;
     }
-    function makeErrorStmt(name) {
-        return new ThrowStmt(new InstantiateExpr(new ReadVarExpr('Error'), [
-            literal(name + " has a constructor which is not compatible with Dependency Injection. It should probably not be @Injectable().")
-        ]));
-    }
     function isDelegatedMetadata(meta) {
         return meta.delegateType !== undefined;
     }
@@ -5746,6 +5731,7 @@
             typeArgumentCount: meta.typeArgumentCount,
             deps: [],
             injectFn: Identifiers.inject,
+            target: exports.R3FactoryTarget.Injectable,
         };
         if (meta.useClass !== undefined) {
             // meta.useClass has two modes of operation. Either deps are specified, in which case `new` is
@@ -7911,27 +7897,36 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var Text$3 = /** @class */ (function () {
-        function Text(value, sourceSpan, i18n) {
-            this.value = value;
+    var NodeWithI18n = /** @class */ (function () {
+        function NodeWithI18n(sourceSpan, i18n) {
             this.sourceSpan = sourceSpan;
             this.i18n = i18n;
+        }
+        return NodeWithI18n;
+    }());
+    var Text$3 = /** @class */ (function (_super) {
+        __extends(Text, _super);
+        function Text(value, sourceSpan, i18n) {
+            var _this = _super.call(this, sourceSpan, i18n) || this;
+            _this.value = value;
+            return _this;
         }
         Text.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
         return Text;
-    }());
-    var Expansion = /** @class */ (function () {
+    }(NodeWithI18n));
+    var Expansion = /** @class */ (function (_super) {
+        __extends(Expansion, _super);
         function Expansion(switchValue, type, cases, sourceSpan, switchValueSourceSpan, i18n) {
-            this.switchValue = switchValue;
-            this.type = type;
-            this.cases = cases;
-            this.sourceSpan = sourceSpan;
-            this.switchValueSourceSpan = switchValueSourceSpan;
-            this.i18n = i18n;
+            var _this = _super.call(this, sourceSpan, i18n) || this;
+            _this.switchValue = switchValue;
+            _this.type = type;
+            _this.cases = cases;
+            _this.switchValueSourceSpan = switchValueSourceSpan;
+            return _this;
         }
         Expansion.prototype.visit = function (visitor, context) { return visitor.visitExpansion(this, context); };
         return Expansion;
-    }());
+    }(NodeWithI18n));
     var ExpansionCase = /** @class */ (function () {
         function ExpansionCase(value, expression, sourceSpan, valueSourceSpan, expSourceSpan) {
             this.value = value;
@@ -7943,32 +7938,34 @@
         ExpansionCase.prototype.visit = function (visitor, context) { return visitor.visitExpansionCase(this, context); };
         return ExpansionCase;
     }());
-    var Attribute = /** @class */ (function () {
+    var Attribute = /** @class */ (function (_super) {
+        __extends(Attribute, _super);
         function Attribute(name, value, sourceSpan, valueSpan, i18n) {
-            this.name = name;
-            this.value = value;
-            this.sourceSpan = sourceSpan;
-            this.valueSpan = valueSpan;
-            this.i18n = i18n;
+            var _this = _super.call(this, sourceSpan, i18n) || this;
+            _this.name = name;
+            _this.value = value;
+            _this.valueSpan = valueSpan;
+            return _this;
         }
         Attribute.prototype.visit = function (visitor, context) { return visitor.visitAttribute(this, context); };
         return Attribute;
-    }());
-    var Element$1 = /** @class */ (function () {
+    }(NodeWithI18n));
+    var Element$1 = /** @class */ (function (_super) {
+        __extends(Element, _super);
         function Element(name, attrs, children, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
             if (startSourceSpan === void 0) { startSourceSpan = null; }
             if (endSourceSpan === void 0) { endSourceSpan = null; }
-            this.name = name;
-            this.attrs = attrs;
-            this.children = children;
-            this.sourceSpan = sourceSpan;
-            this.startSourceSpan = startSourceSpan;
-            this.endSourceSpan = endSourceSpan;
-            this.i18n = i18n;
+            var _this = _super.call(this, sourceSpan, i18n) || this;
+            _this.name = name;
+            _this.attrs = attrs;
+            _this.children = children;
+            _this.startSourceSpan = startSourceSpan;
+            _this.endSourceSpan = endSourceSpan;
+            return _this;
         }
         Element.prototype.visit = function (visitor, context) { return visitor.visitElement(this, context); };
         return Element;
-    }());
+    }(NodeWithI18n));
     var Comment = /** @class */ (function () {
         function Comment(value, sourceSpan) {
             this.value = value;
@@ -8175,91 +8172,93 @@
      */
     function createI18nMessageFactory(interpolationConfig) {
         var visitor = new _I18nVisitor(_expParser, interpolationConfig);
-        return function (nodes, meaning, description, id, visitNodeFn) {
-            return visitor.toI18nMessage(nodes, meaning, description, id, visitNodeFn);
+        return function (nodes, meaning, description, customId, visitNodeFn) {
+            return visitor.toI18nMessage(nodes, meaning, description, customId, visitNodeFn);
         };
+    }
+    function noopVisitNodeFn(_html, i18n) {
+        return i18n;
     }
     var _I18nVisitor = /** @class */ (function () {
         function _I18nVisitor(_expressionParser, _interpolationConfig) {
             this._expressionParser = _expressionParser;
             this._interpolationConfig = _interpolationConfig;
         }
-        _I18nVisitor.prototype.toI18nMessage = function (nodes, meaning, description, id, visitNodeFn) {
-            this._isIcu = nodes.length == 1 && nodes[0] instanceof Expansion;
-            this._icuDepth = 0;
-            this._placeholderRegistry = new PlaceholderRegistry();
-            this._placeholderToContent = {};
-            this._placeholderToMessage = {};
-            this._visitNodeFn = visitNodeFn;
-            var i18nodes = visitAll$1(this, nodes, {});
-            return new Message(i18nodes, this._placeholderToContent, this._placeholderToMessage, meaning, description, id);
-        };
-        _I18nVisitor.prototype._visitNode = function (html, i18n) {
-            if (this._visitNodeFn) {
-                this._visitNodeFn(html, i18n);
-            }
-            return i18n;
+        _I18nVisitor.prototype.toI18nMessage = function (nodes, meaning, description, customId, visitNodeFn) {
+            if (meaning === void 0) { meaning = ''; }
+            if (description === void 0) { description = ''; }
+            if (customId === void 0) { customId = ''; }
+            var context = {
+                isIcu: nodes.length == 1 && nodes[0] instanceof Expansion,
+                icuDepth: 0,
+                placeholderRegistry: new PlaceholderRegistry(),
+                placeholderToContent: {},
+                placeholderToMessage: {},
+                visitNodeFn: visitNodeFn || noopVisitNodeFn,
+            };
+            var i18nodes = visitAll$1(this, nodes, context);
+            return new Message(i18nodes, context.placeholderToContent, context.placeholderToMessage, meaning, description, customId);
         };
         _I18nVisitor.prototype.visitElement = function (el, context) {
-            var children = visitAll$1(this, el.children);
+            var children = visitAll$1(this, el.children, context);
             var attrs = {};
             el.attrs.forEach(function (attr) {
                 // Do not visit the attributes, translatable ones are top-level ASTs
                 attrs[attr.name] = attr.value;
             });
             var isVoid = getHtmlTagDefinition(el.name).isVoid;
-            var startPhName = this._placeholderRegistry.getStartTagPlaceholderName(el.name, attrs, isVoid);
-            this._placeholderToContent[startPhName] = el.sourceSpan.toString();
+            var startPhName = context.placeholderRegistry.getStartTagPlaceholderName(el.name, attrs, isVoid);
+            context.placeholderToContent[startPhName] = el.sourceSpan.toString();
             var closePhName = '';
             if (!isVoid) {
-                closePhName = this._placeholderRegistry.getCloseTagPlaceholderName(el.name);
-                this._placeholderToContent[closePhName] = "</" + el.name + ">";
+                closePhName = context.placeholderRegistry.getCloseTagPlaceholderName(el.name);
+                context.placeholderToContent[closePhName] = "</" + el.name + ">";
             }
             var node = new TagPlaceholder(el.name, attrs, startPhName, closePhName, children, isVoid, el.sourceSpan);
-            return this._visitNode(el, node);
+            return context.visitNodeFn(el, node);
         };
         _I18nVisitor.prototype.visitAttribute = function (attribute, context) {
-            var node = this._visitTextWithInterpolation(attribute.value, attribute.sourceSpan);
-            return this._visitNode(attribute, node);
+            var node = this._visitTextWithInterpolation(attribute.value, attribute.sourceSpan, context);
+            return context.visitNodeFn(attribute, node);
         };
         _I18nVisitor.prototype.visitText = function (text, context) {
-            var node = this._visitTextWithInterpolation(text.value, text.sourceSpan);
-            return this._visitNode(text, node);
+            var node = this._visitTextWithInterpolation(text.value, text.sourceSpan, context);
+            return context.visitNodeFn(text, node);
         };
-        _I18nVisitor.prototype.visitComment = function (comment, context) { return null; };
+        _I18nVisitor.prototype.visitComment = function (comment, context) {
+            return null;
+        };
         _I18nVisitor.prototype.visitExpansion = function (icu, context) {
             var _this = this;
-            this._icuDepth++;
+            context.icuDepth++;
             var i18nIcuCases = {};
             var i18nIcu = new Icu$1(icu.switchValue, icu.type, i18nIcuCases, icu.sourceSpan);
             icu.cases.forEach(function (caze) {
-                i18nIcuCases[caze.value] = new Container(caze.expression.map(function (node) { return node.visit(_this, {}); }), caze.expSourceSpan);
+                i18nIcuCases[caze.value] = new Container(caze.expression.map(function (node) { return node.visit(_this, context); }), caze.expSourceSpan);
             });
-            this._icuDepth--;
-            if (this._isIcu || this._icuDepth > 0) {
+            context.icuDepth--;
+            if (context.isIcu || context.icuDepth > 0) {
                 // Returns an ICU node when:
                 // - the message (vs a part of the message) is an ICU message, or
                 // - the ICU message is nested.
-                var expPh = this._placeholderRegistry.getUniquePlaceholder("VAR_" + icu.type);
+                var expPh = context.placeholderRegistry.getUniquePlaceholder("VAR_" + icu.type);
                 i18nIcu.expressionPlaceholder = expPh;
-                this._placeholderToContent[expPh] = icu.switchValue;
-                return this._visitNode(icu, i18nIcu);
+                context.placeholderToContent[expPh] = icu.switchValue;
+                return context.visitNodeFn(icu, i18nIcu);
             }
             // Else returns a placeholder
             // ICU placeholders should not be replaced with their original content but with the their
-            // translations. We need to create a new visitor (they are not re-entrant) to compute the
-            // message id.
+            // translations.
             // TODO(vicb): add a html.Node -> i18n.Message cache to avoid having to re-create the msg
-            var phName = this._placeholderRegistry.getPlaceholderName('ICU', icu.sourceSpan.toString());
-            var visitor = new _I18nVisitor(this._expressionParser, this._interpolationConfig);
-            this._placeholderToMessage[phName] = visitor.toI18nMessage([icu], '', '', '');
+            var phName = context.placeholderRegistry.getPlaceholderName('ICU', icu.sourceSpan.toString());
+            context.placeholderToMessage[phName] = this.toI18nMessage([icu], '', '', '', undefined);
             var node = new IcuPlaceholder(i18nIcu, phName, icu.sourceSpan);
-            return this._visitNode(icu, node);
+            return context.visitNodeFn(icu, node);
         };
-        _I18nVisitor.prototype.visitExpansionCase = function (icuCase, context) {
+        _I18nVisitor.prototype.visitExpansionCase = function (_icuCase, _context) {
             throw new Error('Unreachable code');
         };
-        _I18nVisitor.prototype._visitTextWithInterpolation = function (text, sourceSpan) {
+        _I18nVisitor.prototype._visitTextWithInterpolation = function (text, sourceSpan, context) {
             var splitInterpolation = this._expressionParser.splitInterpolation(text, sourceSpan.start.toString(), this._interpolationConfig);
             if (!splitInterpolation) {
                 // No expression, return a single text
@@ -8272,13 +8271,13 @@
             for (var i = 0; i < splitInterpolation.strings.length - 1; i++) {
                 var expression = splitInterpolation.expressions[i];
                 var baseName = _extractPlaceholderName(expression) || 'INTERPOLATION';
-                var phName = this._placeholderRegistry.getPlaceholderName(baseName, expression);
+                var phName = context.placeholderRegistry.getPlaceholderName(baseName, expression);
                 if (splitInterpolation.strings[i].length) {
                     // No need to add empty strings
                     nodes.push(new Text$1(splitInterpolation.strings[i], sourceSpan));
                 }
                 nodes.push(new Placeholder(expression, phName, sourceSpan));
-                this._placeholderToContent[phName] = sDelimiter + expression + eDelimiter;
+                context.placeholderToContent[phName] = sDelimiter + expression + eDelimiter;
             }
             // The last index contains no expression
             var lastStringIdx = splitInterpolation.strings.length - 1;
@@ -8301,9 +8300,19 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    function setI18nRefs(html, i18n) {
-        html.i18n = i18n;
-    }
+    var setI18nRefs = function (htmlNode, i18nNode) {
+        if (htmlNode instanceof NodeWithI18n) {
+            if (i18nNode instanceof IcuPlaceholder && htmlNode.i18n instanceof Message) {
+                // This html node represents an ICU but this is a second processing pass, and the legacy id
+                // was computed in the previous pass and stored in the `i18n` property as a message.
+                // We are about to wipe out that property so capture the previous message to be reused when
+                // generating the message for this ICU later. See `_generateI18nMessage()`.
+                i18nNode.previousMessage = htmlNode.i18n;
+            }
+            htmlNode.i18n = i18nNode;
+        }
+        return i18nNode;
+    };
     /**
      * This visitor walks over HTML parse tree and converts information stored in
      * i18n-related attributes ("i18n" and "i18n-*") into i18n meta object that is
@@ -8317,35 +8326,23 @@
             this.interpolationConfig = interpolationConfig;
             this.keepI18nAttrs = keepI18nAttrs;
             this.i18nLegacyMessageIdFormat = i18nLegacyMessageIdFormat;
+            // whether visited nodes contain i18n information
+            this.hasI18nMeta = false;
             // i18n message generation factory
             this._createI18nMessage = createI18nMessageFactory(this.interpolationConfig);
         }
         I18nMetaVisitor.prototype._generateI18nMessage = function (nodes, meta, visitNodeFn) {
             if (meta === void 0) { meta = ''; }
-            var parsed = typeof meta === 'string' ? parseI18nMeta(meta) : metaFromI18nMessage(meta);
-            var message = this._createI18nMessage(nodes, parsed.meaning || '', parsed.description || '', parsed.customId || '', visitNodeFn);
-            if (!message.id) {
-                // generate (or restore) message id if not specified in template
-                message.id = typeof meta !== 'string' && meta.id || decimalDigest(message);
-            }
-            if (this.i18nLegacyMessageIdFormat === 'xlf' || this.i18nLegacyMessageIdFormat === 'xliff') {
-                message.legacyId = computeDigest(message);
-            }
-            else if (this.i18nLegacyMessageIdFormat === 'xlf2' || this.i18nLegacyMessageIdFormat === 'xliff2' ||
-                this.i18nLegacyMessageIdFormat === 'xmb') {
-                message.legacyId = computeDecimalDigest(message);
-            }
-            else if (typeof meta !== 'string') {
-                // This occurs if we are doing the 2nd pass after whitespace removal
-                // In that case we want to reuse the legacy message generated in the 1st pass
-                // See `parseTemplate()` in `packages/compiler/src/render3/view/template.ts`
-                message.legacyId = meta.legacyId;
-            }
+            var _a = this._parseMetadata(meta), meaning = _a.meaning, description = _a.description, customId = _a.customId;
+            var message = this._createI18nMessage(nodes, meaning, description, customId, visitNodeFn);
+            this._setMessageId(message, meta);
+            this._setLegacyId(message, meta);
             return message;
         };
-        I18nMetaVisitor.prototype.visitElement = function (element, context) {
+        I18nMetaVisitor.prototype.visitElement = function (element) {
             var e_1, _a, e_2, _b;
             if (hasI18nAttrs(element)) {
+                this.hasI18nMeta = true;
                 var attrs = [];
                 var attrsMeta = {};
                 try {
@@ -8407,9 +8404,10 @@
             visitAll$1(this, element.children, element.i18n);
             return element;
         };
-        I18nMetaVisitor.prototype.visitExpansion = function (expansion, context) {
+        I18nMetaVisitor.prototype.visitExpansion = function (expansion, currentMessage) {
             var message;
             var meta = expansion.i18n;
+            this.hasI18nMeta = true;
             if (meta instanceof IcuPlaceholder) {
                 // set ICU placeholder name (e.g. "ICU_1"),
                 // generated while processing root element contents,
@@ -8423,15 +8421,64 @@
                 // ICU is a top level message, try to use metadata from container element if provided via
                 // `context` argument. Note: context may not be available for standalone ICUs (without
                 // wrapping element), so fallback to ICU metadata in this case.
-                message = this._generateI18nMessage([expansion], context || meta);
+                message = this._generateI18nMessage([expansion], currentMessage || meta);
             }
             expansion.i18n = message;
             return expansion;
         };
-        I18nMetaVisitor.prototype.visitText = function (text, context) { return text; };
-        I18nMetaVisitor.prototype.visitAttribute = function (attribute, context) { return attribute; };
-        I18nMetaVisitor.prototype.visitComment = function (comment, context) { return comment; };
-        I18nMetaVisitor.prototype.visitExpansionCase = function (expansionCase, context) { return expansionCase; };
+        I18nMetaVisitor.prototype.visitText = function (text) { return text; };
+        I18nMetaVisitor.prototype.visitAttribute = function (attribute) { return attribute; };
+        I18nMetaVisitor.prototype.visitComment = function (comment) { return comment; };
+        I18nMetaVisitor.prototype.visitExpansionCase = function (expansionCase) { return expansionCase; };
+        /**
+         * Parse the general form `meta` passed into extract the explicit metadata needed to create a
+         * `Message`.
+         *
+         * There are three possibilities for the `meta` variable
+         * 1) a string from an `i18n` template attribute: parse it to extract the metadata values.
+         * 2) a `Message` from a previous processing pass: reuse the metadata values in the message.
+         * 4) other: ignore this and just process the message metadata as normal
+         *
+         * @param meta the bucket that holds information about the message
+         * @returns the parsed metadata.
+         */
+        I18nMetaVisitor.prototype._parseMetadata = function (meta) {
+            return typeof meta === 'string' ? parseI18nMeta(meta) :
+                meta instanceof Message ? metaFromI18nMessage(meta) : {};
+        };
+        /**
+         * Generate (or restore) message id if not specified already.
+         */
+        I18nMetaVisitor.prototype._setMessageId = function (message, meta) {
+            if (!message.id) {
+                message.id = meta instanceof Message && meta.id || decimalDigest(message);
+            }
+        };
+        /**
+         * Update the `message` with a `legacyId` if necessary.
+         *
+         * @param message the message whose legacy id should be set
+         * @param meta information about the message being processed
+         */
+        I18nMetaVisitor.prototype._setLegacyId = function (message, meta) {
+            if (this.i18nLegacyMessageIdFormat === 'xlf' || this.i18nLegacyMessageIdFormat === 'xliff') {
+                message.legacyId = computeDigest(message);
+            }
+            else if (this.i18nLegacyMessageIdFormat === 'xlf2' || this.i18nLegacyMessageIdFormat === 'xliff2' ||
+                this.i18nLegacyMessageIdFormat === 'xmb') {
+                message.legacyId = computeDecimalDigest(message);
+            }
+            else if (typeof meta !== 'string') {
+                // This occurs if we are doing the 2nd pass after whitespace removal (see `parseTemplate()` in
+                // `packages/compiler/src/render3/view/template.ts`).
+                // In that case we want to reuse the legacy message generated in the 1st pass (see
+                // `setI18nRefs()`).
+                var previousMessage = meta instanceof Message ?
+                    meta :
+                    meta instanceof IcuPlaceholder ? meta.previousMessage : undefined;
+                message.legacyId = previousMessage && previousMessage.legacyId;
+            }
+        };
         return I18nMetaVisitor;
     }());
     function metaFromI18nMessage(message, id) {
@@ -9673,6 +9720,7 @@
             typeArgumentCount: 0,
             deps: meta.deps,
             injectFn: Identifiers$1.inject,
+            target: exports.R3FactoryTarget.NgModule,
         });
         var definitionMap = {
             factory: result.factory,
@@ -9762,7 +9810,7 @@
             pure: pipe.pure,
         };
         var res = compilePipeFromMetadata(metadata);
-        var factoryRes = compileFactoryFromMetadata(__assign(__assign({}, metadata), { injectFn: Identifiers$1.directiveInject, isPipe: true }));
+        var factoryRes = compileFactoryFunction(__assign(__assign({}, metadata), { injectFn: Identifiers$1.directiveInject, target: exports.R3FactoryTarget.Pipe }));
         var definitionField = outputCtx.constantPool.propertyNameOf(3 /* Pipe */);
         var ngFactoryDefStatement = new ClassStmt(
         /* name */ name, 
@@ -11293,6 +11341,7 @@
             var range = options.range || { endPos: _file.content.length, startPos: 0, startLine: 0, startCol: 0 };
             this._cursor = options.escapedString ? new EscapedCharacterCursor(_file, range) :
                 new PlainCharacterCursor(_file, range);
+            this._preserveLineEndings = options.preserveLineEndings || false;
             try {
                 this._cursor.init();
             }
@@ -11301,6 +11350,9 @@
             }
         }
         _Tokenizer.prototype._processCarriageReturns = function (content) {
+            if (this._preserveLineEndings) {
+                return content;
+            }
             // http://www.w3.org/TR/html5/syntax.html#preprocessing-the-input-stream
             // In order to keep the original position in the source, we can not
             // pre-process it.
@@ -14202,7 +14254,8 @@
                     }
                     hasInlineTemplates = true;
                     var parsedVariables_1 = [];
-                    _this._bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attr.sourceSpan, attr.sourceSpan.start.offset, templateMatchableAttrs, templateElementOrDirectiveProps, parsedVariables_1);
+                    var absoluteOffset = (attr.valueSpan || attr.sourceSpan).start.offset;
+                    _this._bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attr.sourceSpan, absoluteOffset, templateMatchableAttrs, templateElementOrDirectiveProps, parsedVariables_1);
                     templateElementVars.push.apply(templateElementVars, __spread(parsedVariables_1.map(function (v) { return VariableAst.fromParsedVariable(v); })));
                 }
                 if (!hasBinding && !hasTemplateBinding) {
@@ -15021,7 +15074,10 @@
         };
         StylingBuilder.prototype._buildMapBasedInstruction = function (valueConverter, isClassBased, stylingInput) {
             // each styling binding value is stored in the LView
-            var totalBindingSlotsRequired = 1;
+            // map-based bindings allocate two slots: one for the
+            // previous binding value and another for the previous
+            // className or style attribute value.
+            var totalBindingSlotsRequired = 2;
             // these values must be outside of the update block so that they can
             // be evaluated (the AST visit call) during creation time so that any
             // pipes can be picked up in time before the template is built
@@ -15909,19 +15965,22 @@
         };
         HtmlAstToIvyAst.prototype.visitExpansion = function (expansion) {
             var _this = this;
-            var meta = expansion.i18n;
-            // do not generate Icu in case it was created
-            // outside of i18n block in a template
-            if (!meta) {
+            if (!expansion.i18n) {
+                // do not generate Icu in case it was created
+                // outside of i18n block in a template
                 return null;
             }
+            if (!isI18nRootNode(expansion.i18n)) {
+                throw new Error("Invalid type \"" + expansion.i18n.constructor + "\" for \"i18n\" property of " + expansion.sourceSpan.toString() + ". Expected a \"Message\"");
+            }
+            var message = expansion.i18n;
             var vars = {};
             var placeholders = {};
             // extract VARs from ICUs - we process them separately while
             // assembling resulting message via goog.getMsg function, since
             // we need to pass them to top-level goog.getMsg call
-            Object.keys(meta.placeholders).forEach(function (key) {
-                var value = meta.placeholders[key];
+            Object.keys(message.placeholders).forEach(function (key) {
+                var value = message.placeholders[key];
                 if (key.startsWith(I18N_ICU_VAR_PREFIX)) {
                     var config = _this.bindingParser.interpolationConfig;
                     // ICU expression is a plain string, not wrapped into start
@@ -15933,7 +15992,7 @@
                     placeholders[key] = _this._visitTextWithInterpolation(value, expansion.sourceSpan);
                 }
             });
-            return new Icu(vars, placeholders, expansion.sourceSpan, meta);
+            return new Icu(vars, placeholders, expansion.sourceSpan, message);
         };
         HtmlAstToIvyAst.prototype.visitExpansionCase = function (expansionCase) { return null; };
         HtmlAstToIvyAst.prototype.visitComment = function (comment) { return null; };
@@ -18088,14 +18147,17 @@
         // before we run whitespace removal process, because existing i18n
         // extraction process (ng xi18n) relies on a raw content to generate
         // message ids
-        rootNodes = visitAll$1(new I18nMetaVisitor(interpolationConfig, !preserveWhitespaces, i18nLegacyMessageIdFormat), rootNodes);
+        var i18nMetaVisitor = new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ !preserveWhitespaces, i18nLegacyMessageIdFormat);
+        rootNodes = visitAll$1(i18nMetaVisitor, rootNodes);
         if (!preserveWhitespaces) {
             rootNodes = visitAll$1(new WhitespaceVisitor(), rootNodes);
-            // run i18n meta visitor again in case we remove whitespaces, because
-            // that might affect generated i18n message content. During this pass
-            // i18n IDs generated at the first pass will be preserved, so we can mimic
-            // existing extraction process (ng xi18n)
-            rootNodes = visitAll$1(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), rootNodes);
+            // run i18n meta visitor again in case whitespaces are removed (because that might affect
+            // generated i18n message content) and first pass indicated that i18n content is present in a
+            // template. During this pass i18n IDs generated at the first pass will be preserved, so we can
+            // mimic existing extraction process (ng xi18n)
+            if (i18nMetaVisitor.hasI18nMeta) {
+                rootNodes = visitAll$1(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), rootNodes);
+            }
         }
         var _a = htmlAstToRender3Ast(rootNodes, bindingParser), nodes = _a.nodes, errors = _a.errors, styleUrls = _a.styleUrls, styles = _a.styles;
         if (errors && errors.length > 0) {
@@ -18234,6 +18296,9 @@
         if (meta.usesInheritance) {
             features.push(importExpr(Identifiers$1.InheritDefinitionFeature));
         }
+        if (meta.fullInheritance) {
+            features.push(importExpr(Identifiers$1.CopyDefinitionFeature));
+        }
         if (meta.lifecycle.usesOnChanges) {
             features.push(importExpr(Identifiers$1.NgOnChangesFeature).callFn(EMPTY_ARRAY));
         }
@@ -18249,42 +18314,6 @@
         addFeatures(definitionMap, meta);
         var expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()]);
         var type = createTypeForDef(meta, Identifiers$1.DirectiveDefWithMeta);
-        return { expression: expression, type: type };
-    }
-    /**
-     * Compile a base definition for the render3 runtime as defined by {@link R3BaseRefMetadata}
-     * @param meta the metadata used for compilation.
-     */
-    function compileBaseDefFromMetadata(meta, constantPool, bindingParser) {
-        var definitionMap = new DefinitionMap();
-        if (meta.inputs) {
-            var inputs_1 = meta.inputs;
-            var inputsMap = Object.keys(inputs_1).map(function (key) {
-                var v = inputs_1[key];
-                var value = Array.isArray(v) ? literalArr(v.map(function (vx) { return literal(vx); })) : literal(v);
-                return { key: key, value: value, quoted: false };
-            });
-            definitionMap.set('inputs', literalMap(inputsMap));
-        }
-        if (meta.outputs) {
-            var outputs_1 = meta.outputs;
-            var outputsMap = Object.keys(outputs_1).map(function (key) {
-                var value = literal(outputs_1[key]);
-                return { key: key, value: value, quoted: false };
-            });
-            definitionMap.set('outputs', literalMap(outputsMap));
-        }
-        if (meta.viewQueries && meta.viewQueries.length > 0) {
-            definitionMap.set('viewQuery', createViewQueriesFunction(meta.viewQueries, constantPool));
-        }
-        if (meta.queries && meta.queries.length > 0) {
-            definitionMap.set('contentQueries', createContentQueriesFunction(meta.queries, constantPool));
-        }
-        if (meta.host) {
-            definitionMap.set('hostBindings', createHostBindingsFunction(meta.host, meta.typeSourceSpan, bindingParser, constantPool, meta.name));
-        }
-        var expression = importExpr(Identifiers$1.defineBase).callFn([definitionMap.toLiteralMap()]);
-        var type = new ExpressionType(importExpr(Identifiers$1.BaseDef), /* modifiers */ null, [expressionType(meta.type)]);
         return { expression: expression, type: type };
     }
     /**
@@ -18392,9 +18421,6 @@
         if (changeDetection != null && changeDetection !== ChangeDetectionStrategy.Default) {
             definitionMap.set('changeDetection', literal(changeDetection));
         }
-        // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
-        // string literal, which must be on one line.
-        var selectorForType = (meta.selector || '').replace(/\n/g, '');
         var expression = importExpr(Identifiers$1.defineComponent).callFn([definitionMap.toLiteralMap()]);
         var type = createTypeForDef(meta, Identifiers$1.ComponentDefWithMeta);
         return { expression: expression, type: type };
@@ -18412,7 +18438,7 @@
         var definitionField = outputCtx.constantPool.propertyNameOf(1 /* Directive */);
         var meta = directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector);
         var res = compileDirectiveFromMetadata(meta, outputCtx.constantPool, bindingParser);
-        var factoryRes = compileFactoryFromMetadata(__assign(__assign({}, meta), { injectFn: Identifiers$1.directiveInject }));
+        var factoryRes = compileFactoryFunction(__assign(__assign({}, meta), { injectFn: Identifiers$1.directiveInject, target: exports.R3FactoryTarget.Directive }));
         var ngFactoryDefStatement = new ClassStmt(name, null, [new ClassField('ɵfac', INFERRED_TYPE, [exports.StmtModifier.Static], factoryRes.factory)], [], new ClassMethod(null, [], []), []);
         var directiveDefStatement = new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [exports.StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []);
         // Create the partial class to be merged with the actual class.
@@ -18433,7 +18459,7 @@
         // Compute the R3ComponentMetadata from the CompileDirectiveMetadata
         var meta = __assign(__assign({}, directiveMetadataFromGlobalMetadata(component, outputCtx, reflector)), { selector: component.selector, template: { nodes: render3Ast.nodes }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, interpolation: DEFAULT_INTERPOLATION_CONFIG, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null, relativeContextFilePath: '', i18nUseExternalIds: true });
         var res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
-        var factoryRes = compileFactoryFromMetadata(__assign(__assign({}, meta), { injectFn: Identifiers$1.directiveInject }));
+        var factoryRes = compileFactoryFunction(__assign(__assign({}, meta), { injectFn: Identifiers$1.directiveInject, target: exports.R3FactoryTarget.Directive }));
         var ngFactoryDefStatement = new ClassStmt(name, null, [new ClassField('ɵfac', INFERRED_TYPE, [exports.StmtModifier.Static], factoryRes.factory)], [], new ClassMethod(null, [], []), []);
         var componentDefStatement = new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [exports.StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []);
         // Create the partial class to be merged with the actual class.
@@ -18575,10 +18601,10 @@
     function createTypeForDef(meta, typeBase) {
         // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
         // string literal, which must be on one line.
-        var selectorForType = (meta.selector || '').replace(/\n/g, '');
+        var selectorForType = meta.selector !== null ? meta.selector.replace(/\n/g, '') : null;
         return expressionType(importExpr(typeBase, [
             typeWithParameters(meta.type, meta.typeArgumentCount),
-            stringAsType(selectorForType),
+            selectorForType !== null ? stringAsType(selectorForType) : NONE_TYPE,
             meta.exportAs !== null ? stringArrayAsType(meta.exportAs) : NONE_TYPE,
             stringMapAsType(meta.inputs),
             stringMapAsType(meta.outputs),
@@ -18929,6 +18955,7 @@
             if (jitEvaluator === void 0) { jitEvaluator = new JitEvaluator(); }
             this.jitEvaluator = jitEvaluator;
             this.R3ResolvedDependencyType = exports.R3ResolvedDependencyType;
+            this.R3FactoryTarget = exports.R3FactoryTarget;
             this.ResourceLoader = ResourceLoader;
             this.elementSchemaRegistry = new DomElementSchemaRegistry();
         }
@@ -19012,24 +19039,16 @@
             return this.jitExpression(res.expression, angularCoreEnv, jitExpressionSourceMap, constantPool.statements);
         };
         CompilerFacadeImpl.prototype.compileFactory = function (angularCoreEnv, sourceMapUrl, meta) {
-            var factoryRes = compileFactoryFromMetadata({
+            var factoryRes = compileFactoryFunction({
                 name: meta.name,
                 type: new WrappedNodeExpr(meta.type),
                 typeArgumentCount: meta.typeArgumentCount,
                 deps: convertR3DependencyMetadataArray(meta.deps),
                 injectFn: meta.injectFn === 'directiveInject' ? Identifiers.directiveInject :
                     Identifiers.inject,
-                isPipe: meta.isPipe
+                target: meta.target,
             });
             return this.jitExpression(factoryRes.factory, angularCoreEnv, sourceMapUrl, factoryRes.statements);
-        };
-        CompilerFacadeImpl.prototype.compileBase = function (angularCoreEnv, sourceMapUrl, facade) {
-            var constantPool = new ConstantPool();
-            var typeSourceSpan = this.createParseSourceSpan('Base', facade.name, "ng:///" + facade.name + ".js");
-            var meta = __assign(__assign({}, facade), { typeSourceSpan: typeSourceSpan, viewQueries: facade.viewQueries ? facade.viewQueries.map(convertToR3QueryMetadata) :
-                    facade.viewQueries, queries: facade.queries ? facade.queries.map(convertToR3QueryMetadata) : facade.queries, host: extractHostBindings(facade.propMetadata, typeSourceSpan) });
-            var res = compileBaseDefFromMetadata(meta, constantPool, makeBindingParser());
-            return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, constantPool.statements);
         };
         CompilerFacadeImpl.prototype.createParseSourceSpan = function (kind, typeName, sourceUrl) {
             return r3JitTypeSourceSpan(kind, typeName, sourceUrl);
@@ -19089,7 +19108,7 @@
         for (var field in propMetadata) {
             _loop_1(field);
         }
-        return __assign(__assign({}, facade), { typeSourceSpan: facade.typeSourceSpan, type: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: __assign(__assign({}, inputsFromMetadata), inputsFromType), outputs: __assign(__assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata) });
+        return __assign(__assign({}, facade), { typeSourceSpan: facade.typeSourceSpan, type: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: __assign(__assign({}, inputsFromMetadata), inputsFromType), outputs: __assign(__assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), fullInheritance: false });
     }
     function wrapExpression(obj, property) {
         if (obj.hasOwnProperty(property)) {
@@ -19187,7 +19206,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.0.0-next.12+7.sha-ed391ad.with-local-changes');
+    var VERSION$1 = new Version('9.0.0-next.14+2.sha-585ea89.with-local-changes');
 
     /**
      * @license
@@ -26143,24 +26162,19 @@
                 if (symbolMeta.__symbolic === 'class') {
                     if (metadataResolver.isDirective(symbol)) {
                         isNgSymbol = true;
-                        if (!isDeclarationFile) {
-                            // This directive either has a selector or doesn't. Selector-less directives get tracked
-                            // in abstractDirectives, not directives. The compiler doesn't deal with selector-less
-                            // directives at all, really, other than to persist their metadata. This is done so that
-                            // apps will have an easier time migrating to Ivy, which requires the selector-less
-                            // annotations to be applied.
-                            if (!metadataResolver.isAbstractDirective(symbol)) {
-                                // The directive is an ordinary directive.
-                                directives.push(symbol);
-                            }
-                            else {
-                                // The directive has no selector and is an "abstract" directive, so track it
-                                // accordingly.
-                                abstractDirectives.push(symbol);
-                            }
+                        // This directive either has a selector or doesn't. Selector-less directives get tracked
+                        // in abstractDirectives, not directives. The compiler doesn't deal with selector-less
+                        // directives at all, really, other than to persist their metadata. This is done so that
+                        // apps will have an easier time migrating to Ivy, which requires the selector-less
+                        // annotations to be applied.
+                        if (!metadataResolver.isAbstractDirective(symbol)) {
+                            // The directive is an ordinary directive.
+                            directives.push(symbol);
                         }
                         else {
-                            directives.push(symbol);
+                            // The directive has no selector and is an "abstract" directive, so track it
+                            // accordingly.
+                            abstractDirectives.push(symbol);
                         }
                     }
                     else if (metadataResolver.isPipe(symbol)) {
@@ -29093,13 +29107,12 @@
     exports.TmplAstTextAttribute = TextAttribute;
     exports.TmplAstVariable = Variable;
     exports.R3Identifiers = Identifiers$1;
-    exports.compileFactoryFromMetadata = compileFactoryFromMetadata;
+    exports.compileFactoryFunction = compileFactoryFunction;
     exports.compileInjector = compileInjector;
     exports.compileNgModule = compileNgModule;
     exports.compilePipeFromMetadata = compilePipeFromMetadata;
     exports.makeBindingParser = makeBindingParser;
     exports.parseTemplate = parseTemplate;
-    exports.compileBaseDefFromMetadata = compileBaseDefFromMetadata;
     exports.compileComponentFromMetadata = compileComponentFromMetadata;
     exports.compileDirectiveFromMetadata = compileDirectiveFromMetadata;
     exports.parseHostBindings = parseHostBindings;
@@ -29231,6 +29244,7 @@
     exports._ParseAST = _ParseAST;
     exports.ERROR_COMPONENT_TYPE = ERROR_COMPONENT_TYPE;
     exports.CompileMetadataResolver = CompileMetadataResolver;
+    exports.NodeWithI18n = NodeWithI18n;
     exports.Text = Text$3;
     exports.Expansion = Expansion;
     exports.ExpansionCase = ExpansionCase;

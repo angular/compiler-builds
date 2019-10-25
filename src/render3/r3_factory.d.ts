@@ -41,6 +41,10 @@ export interface R3ConstructorFactoryMetadata {
      * function could be different, and other options control how it will be invoked.
      */
     injectFn: o.ExternalReference;
+    /**
+     * Type of the target being created by the factory.
+     */
+    target: R3FactoryTarget;
 }
 export declare enum R3FactoryDelegateType {
     Class = 0,
@@ -60,13 +64,12 @@ export interface R3ExpressionFactoryMetadata extends R3ConstructorFactoryMetadat
     expression: o.Expression;
 }
 export declare type R3FactoryMetadata = R3ConstructorFactoryMetadata | R3DelegatedFactoryMetadata | R3DelegatedFnOrClassMetadata | R3ExpressionFactoryMetadata;
-export interface R3FactoryDefMetadata {
-    name: string;
-    type: o.Expression;
-    typeArgumentCount: number;
-    deps: R3DependencyMetadata[] | 'invalid' | null;
-    injectFn: o.ExternalReference;
-    isPipe?: boolean;
+export declare enum R3FactoryTarget {
+    Directive = 0,
+    Component = 1,
+    Injectable = 2,
+    Pipe = 3,
+    NgModule = 4
 }
 /**
  * Resolved type of a dependency.
@@ -130,11 +133,7 @@ export interface R3FactoryFn {
 /**
  * Construct a factory function expression for the given `R3FactoryMetadata`.
  */
-export declare function compileFactoryFunction(meta: R3FactoryMetadata, isPipe?: boolean): R3FactoryFn;
-/**
- * Constructs the factory def (`ɵfac`) from directive/component/pipe metadata.
- */
-export declare function compileFactoryFromMetadata(meta: R3FactoryDefMetadata): R3FactoryFn;
+export declare function compileFactoryFunction(meta: R3FactoryMetadata): R3FactoryFn;
 /**
  * A helper function useful for extracting `R3DependencyMetadata` from a Render2
  * `CompileTypeMetadata` instance.

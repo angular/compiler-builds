@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.12+7.sha-ed391ad.with-local-changes
+ * @license Angular v9.0.0-next.14+2.sha-585ea89.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3226,15 +3226,11 @@ Identifiers$1.inject = { name: 'ɵɵinject', moduleName: CORE$1 };
 Identifiers$1.injectAttribute = { name: 'ɵɵinjectAttribute', moduleName: CORE$1 };
 Identifiers$1.injectPipeChangeDetectorRef = { name: 'ɵɵinjectPipeChangeDetectorRef', moduleName: CORE$1 };
 Identifiers$1.directiveInject = { name: 'ɵɵdirectiveInject', moduleName: CORE$1 };
+Identifiers$1.invalidFactory = { name: 'ɵɵinvalidFactory', moduleName: CORE$1 };
 Identifiers$1.templateRefExtractor = { name: 'ɵɵtemplateRefExtractor', moduleName: CORE$1 };
 Identifiers$1.resolveWindow = { name: 'ɵɵresolveWindow', moduleName: CORE$1 };
 Identifiers$1.resolveDocument = { name: 'ɵɵresolveDocument', moduleName: CORE$1 };
 Identifiers$1.resolveBody = { name: 'ɵɵresolveBody', moduleName: CORE$1 };
-Identifiers$1.defineBase = { name: 'ɵɵdefineBase', moduleName: CORE$1 };
-Identifiers$1.BaseDef = {
-    name: 'ɵɵBaseDef',
-    moduleName: CORE$1,
-};
 Identifiers$1.defineComponent = { name: 'ɵɵdefineComponent', moduleName: CORE$1 };
 Identifiers$1.setComponentScope = { name: 'ɵɵsetComponentScope', moduleName: CORE$1 };
 Identifiers$1.ComponentDefWithMeta = {
@@ -3277,6 +3273,7 @@ Identifiers$1.loadQuery = { name: 'ɵɵloadQuery', moduleName: CORE$1 };
 Identifiers$1.contentQuery = { name: 'ɵɵcontentQuery', moduleName: CORE$1 };
 Identifiers$1.NgOnChangesFeature = { name: 'ɵɵNgOnChangesFeature', moduleName: CORE$1 };
 Identifiers$1.InheritDefinitionFeature = { name: 'ɵɵInheritDefinitionFeature', moduleName: CORE$1 };
+Identifiers$1.CopyDefinitionFeature = { name: 'ɵɵCopyDefinitionFeature', moduleName: CORE$1 };
 Identifiers$1.ProvidersFeature = { name: 'ɵɵProvidersFeature', moduleName: CORE$1 };
 Identifiers$1.listener = { name: 'ɵɵlistener', moduleName: CORE$1 };
 Identifiers$1.getFactoryOf = {
@@ -4921,6 +4918,14 @@ var R3FactoryDelegateType;
     R3FactoryDelegateType[R3FactoryDelegateType["Function"] = 1] = "Function";
     R3FactoryDelegateType[R3FactoryDelegateType["Factory"] = 2] = "Factory";
 })(R3FactoryDelegateType || (R3FactoryDelegateType = {}));
+var R3FactoryTarget;
+(function (R3FactoryTarget) {
+    R3FactoryTarget[R3FactoryTarget["Directive"] = 0] = "Directive";
+    R3FactoryTarget[R3FactoryTarget["Component"] = 1] = "Component";
+    R3FactoryTarget[R3FactoryTarget["Injectable"] = 2] = "Injectable";
+    R3FactoryTarget[R3FactoryTarget["Pipe"] = 3] = "Pipe";
+    R3FactoryTarget[R3FactoryTarget["NgModule"] = 4] = "NgModule";
+})(R3FactoryTarget || (R3FactoryTarget = {}));
 /**
  * Resolved type of a dependency.
  *
@@ -4949,7 +4954,7 @@ var R3ResolvedDependencyType;
 /**
  * Construct a factory function expression for the given `R3FactoryMetadata`.
  */
-function compileFactoryFunction(meta, isPipe = false) {
+function compileFactoryFunction(meta) {
     const t = variable('t');
     const statements = [];
     // The type to instantiate via constructor invocation. If there is no delegated factory, meaning
@@ -4962,8 +4967,7 @@ function compileFactoryFunction(meta, isPipe = false) {
     if (meta.deps !== null) {
         // There is a constructor (either explicitly or implicitly defined).
         if (meta.deps !== 'invalid') {
-            ctorExpr =
-                new InstantiateExpr(typeForCtor, injectDependencies(meta.deps, meta.injectFn, isPipe));
+            ctorExpr = new InstantiateExpr(typeForCtor, injectDependencies(meta.deps, meta.injectFn, meta.target === R3FactoryTarget.Pipe));
         }
     }
     else {
@@ -4987,7 +4991,7 @@ function compileFactoryFunction(meta, isPipe = false) {
             ctorStmt = r.set(ctorExprFinal).toStmt();
         }
         else {
-            ctorStmt = makeErrorStmt(meta.name);
+            ctorStmt = importExpr(Identifiers$1.invalidFactory).callFn([]).toStmt();
         }
         body.push(ifStmt(t, [ctorStmt], [r.set(nonCtorExpr).toStmt()]));
         return r;
@@ -5007,8 +5011,8 @@ function compileFactoryFunction(meta, isPipe = false) {
     else if (isDelegatedMetadata(meta)) {
         // This type is created with a delegated factory. If a type parameter is not specified, call
         // the factory instead.
-        const delegateArgs = injectDependencies(meta.delegateDeps, meta.injectFn, isPipe);
-        // Either call `new delegate(...)` or `delegate(...)` depending on meta.useNewForDelegate.
+        const delegateArgs = injectDependencies(meta.delegateDeps, meta.injectFn, meta.target === R3FactoryTarget.Pipe);
+        // Either call `new delegate(...)` or `delegate(...)` depending on meta.delegateType.
         const factoryExpr = new (meta.delegateType === R3FactoryDelegateType.Class ?
             InstantiateExpr :
             InvokeFunctionExpr)(meta.delegate, delegateArgs);
@@ -5025,25 +5029,13 @@ function compileFactoryFunction(meta, isPipe = false) {
         body.push(new ReturnStatement(retExpr));
     }
     else {
-        body.push(makeErrorStmt(meta.name));
+        body.push(importExpr(Identifiers$1.invalidFactory).callFn([]).toStmt());
     }
     return {
         factory: fn([new FnParam('t', DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, `${meta.name}_Factory`),
         statements,
         type: expressionType(importExpr(Identifiers$1.FactoryDef, [typeWithParameters(meta.type, meta.typeArgumentCount)]))
     };
-}
-/**
- * Constructs the factory def (`ɵfac`) from directive/component/pipe metadata.
- */
-function compileFactoryFromMetadata(meta) {
-    return compileFactoryFunction({
-        name: meta.name,
-        type: meta.type,
-        deps: meta.deps,
-        typeArgumentCount: meta.typeArgumentCount,
-        injectFn: meta.injectFn,
-    }, meta.isPipe);
 }
 function injectDependencies(deps, injectFn, isPipe) {
     return deps.map(dep => compileInjectDependency(dep, injectFn, isPipe));
@@ -5114,11 +5106,6 @@ function dependenciesFromGlobalMetadata(type, outputCtx, reflector) {
     }
     return deps;
 }
-function makeErrorStmt(name) {
-    return new ThrowStmt(new InstantiateExpr(new ReadVarExpr('Error'), [
-        literal(`${name} has a constructor which is not compatible with Dependency Injection. It should probably not be @Injectable().`)
-    ]));
-}
 function isDelegatedMetadata(meta) {
     return meta.delegateType !== undefined;
 }
@@ -5141,6 +5128,7 @@ function compileInjectable(meta) {
         typeArgumentCount: meta.typeArgumentCount,
         deps: [],
         injectFn: Identifiers.inject,
+        target: R3FactoryTarget.Injectable,
     };
     if (meta.useClass !== undefined) {
         // meta.useClass has two modes of operation. Either deps are specified, in which case `new` is
@@ -7141,22 +7129,26 @@ class AstPath {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-class Text$3 {
-    constructor(value, sourceSpan, i18n) {
-        this.value = value;
+class NodeWithI18n {
+    constructor(sourceSpan, i18n) {
         this.sourceSpan = sourceSpan;
         this.i18n = i18n;
     }
+}
+class Text$3 extends NodeWithI18n {
+    constructor(value, sourceSpan, i18n) {
+        super(sourceSpan, i18n);
+        this.value = value;
+    }
     visit(visitor, context) { return visitor.visitText(this, context); }
 }
-class Expansion {
+class Expansion extends NodeWithI18n {
     constructor(switchValue, type, cases, sourceSpan, switchValueSourceSpan, i18n) {
+        super(sourceSpan, i18n);
         this.switchValue = switchValue;
         this.type = type;
         this.cases = cases;
-        this.sourceSpan = sourceSpan;
         this.switchValueSourceSpan = switchValueSourceSpan;
-        this.i18n = i18n;
     }
     visit(visitor, context) { return visitor.visitExpansion(this, context); }
 }
@@ -7170,25 +7162,23 @@ class ExpansionCase {
     }
     visit(visitor, context) { return visitor.visitExpansionCase(this, context); }
 }
-class Attribute {
+class Attribute extends NodeWithI18n {
     constructor(name, value, sourceSpan, valueSpan, i18n) {
+        super(sourceSpan, i18n);
         this.name = name;
         this.value = value;
-        this.sourceSpan = sourceSpan;
         this.valueSpan = valueSpan;
-        this.i18n = i18n;
     }
     visit(visitor, context) { return visitor.visitAttribute(this, context); }
 }
-class Element$1 {
+class Element$1 extends NodeWithI18n {
     constructor(name, attrs, children, sourceSpan, startSourceSpan = null, endSourceSpan = null, i18n) {
+        super(sourceSpan, i18n);
         this.name = name;
         this.attrs = attrs;
         this.children = children;
-        this.sourceSpan = sourceSpan;
         this.startSourceSpan = startSourceSpan;
         this.endSourceSpan = endSourceSpan;
-        this.i18n = i18n;
     }
     visit(visitor, context) { return visitor.visitElement(this, context); }
 }
@@ -7388,88 +7378,87 @@ const _expParser = new Parser(new Lexer());
  */
 function createI18nMessageFactory(interpolationConfig) {
     const visitor = new _I18nVisitor(_expParser, interpolationConfig);
-    return (nodes, meaning, description, id, visitNodeFn) => visitor.toI18nMessage(nodes, meaning, description, id, visitNodeFn);
+    return (nodes, meaning, description, customId, visitNodeFn) => visitor.toI18nMessage(nodes, meaning, description, customId, visitNodeFn);
+}
+function noopVisitNodeFn(_html, i18n) {
+    return i18n;
 }
 class _I18nVisitor {
     constructor(_expressionParser, _interpolationConfig) {
         this._expressionParser = _expressionParser;
         this._interpolationConfig = _interpolationConfig;
     }
-    toI18nMessage(nodes, meaning, description, id, visitNodeFn) {
-        this._isIcu = nodes.length == 1 && nodes[0] instanceof Expansion;
-        this._icuDepth = 0;
-        this._placeholderRegistry = new PlaceholderRegistry();
-        this._placeholderToContent = {};
-        this._placeholderToMessage = {};
-        this._visitNodeFn = visitNodeFn;
-        const i18nodes = visitAll$1(this, nodes, {});
-        return new Message(i18nodes, this._placeholderToContent, this._placeholderToMessage, meaning, description, id);
-    }
-    _visitNode(html, i18n) {
-        if (this._visitNodeFn) {
-            this._visitNodeFn(html, i18n);
-        }
-        return i18n;
+    toI18nMessage(nodes, meaning = '', description = '', customId = '', visitNodeFn) {
+        const context = {
+            isIcu: nodes.length == 1 && nodes[0] instanceof Expansion,
+            icuDepth: 0,
+            placeholderRegistry: new PlaceholderRegistry(),
+            placeholderToContent: {},
+            placeholderToMessage: {},
+            visitNodeFn: visitNodeFn || noopVisitNodeFn,
+        };
+        const i18nodes = visitAll$1(this, nodes, context);
+        return new Message(i18nodes, context.placeholderToContent, context.placeholderToMessage, meaning, description, customId);
     }
     visitElement(el, context) {
-        const children = visitAll$1(this, el.children);
+        const children = visitAll$1(this, el.children, context);
         const attrs = {};
         el.attrs.forEach(attr => {
             // Do not visit the attributes, translatable ones are top-level ASTs
             attrs[attr.name] = attr.value;
         });
         const isVoid = getHtmlTagDefinition(el.name).isVoid;
-        const startPhName = this._placeholderRegistry.getStartTagPlaceholderName(el.name, attrs, isVoid);
-        this._placeholderToContent[startPhName] = el.sourceSpan.toString();
+        const startPhName = context.placeholderRegistry.getStartTagPlaceholderName(el.name, attrs, isVoid);
+        context.placeholderToContent[startPhName] = el.sourceSpan.toString();
         let closePhName = '';
         if (!isVoid) {
-            closePhName = this._placeholderRegistry.getCloseTagPlaceholderName(el.name);
-            this._placeholderToContent[closePhName] = `</${el.name}>`;
+            closePhName = context.placeholderRegistry.getCloseTagPlaceholderName(el.name);
+            context.placeholderToContent[closePhName] = `</${el.name}>`;
         }
         const node = new TagPlaceholder(el.name, attrs, startPhName, closePhName, children, isVoid, el.sourceSpan);
-        return this._visitNode(el, node);
+        return context.visitNodeFn(el, node);
     }
     visitAttribute(attribute, context) {
-        const node = this._visitTextWithInterpolation(attribute.value, attribute.sourceSpan);
-        return this._visitNode(attribute, node);
+        const node = this._visitTextWithInterpolation(attribute.value, attribute.sourceSpan, context);
+        return context.visitNodeFn(attribute, node);
     }
     visitText(text, context) {
-        const node = this._visitTextWithInterpolation(text.value, text.sourceSpan);
-        return this._visitNode(text, node);
+        const node = this._visitTextWithInterpolation(text.value, text.sourceSpan, context);
+        return context.visitNodeFn(text, node);
     }
-    visitComment(comment, context) { return null; }
+    visitComment(comment, context) {
+        return null;
+    }
     visitExpansion(icu, context) {
-        this._icuDepth++;
+        context.icuDepth++;
         const i18nIcuCases = {};
         const i18nIcu = new Icu$1(icu.switchValue, icu.type, i18nIcuCases, icu.sourceSpan);
         icu.cases.forEach((caze) => {
-            i18nIcuCases[caze.value] = new Container(caze.expression.map((node) => node.visit(this, {})), caze.expSourceSpan);
+            i18nIcuCases[caze.value] = new Container(caze.expression.map((node) => node.visit(this, context)), caze.expSourceSpan);
         });
-        this._icuDepth--;
-        if (this._isIcu || this._icuDepth > 0) {
+        context.icuDepth--;
+        if (context.isIcu || context.icuDepth > 0) {
             // Returns an ICU node when:
             // - the message (vs a part of the message) is an ICU message, or
             // - the ICU message is nested.
-            const expPh = this._placeholderRegistry.getUniquePlaceholder(`VAR_${icu.type}`);
+            const expPh = context.placeholderRegistry.getUniquePlaceholder(`VAR_${icu.type}`);
             i18nIcu.expressionPlaceholder = expPh;
-            this._placeholderToContent[expPh] = icu.switchValue;
-            return this._visitNode(icu, i18nIcu);
+            context.placeholderToContent[expPh] = icu.switchValue;
+            return context.visitNodeFn(icu, i18nIcu);
         }
         // Else returns a placeholder
         // ICU placeholders should not be replaced with their original content but with the their
-        // translations. We need to create a new visitor (they are not re-entrant) to compute the
-        // message id.
+        // translations.
         // TODO(vicb): add a html.Node -> i18n.Message cache to avoid having to re-create the msg
-        const phName = this._placeholderRegistry.getPlaceholderName('ICU', icu.sourceSpan.toString());
-        const visitor = new _I18nVisitor(this._expressionParser, this._interpolationConfig);
-        this._placeholderToMessage[phName] = visitor.toI18nMessage([icu], '', '', '');
+        const phName = context.placeholderRegistry.getPlaceholderName('ICU', icu.sourceSpan.toString());
+        context.placeholderToMessage[phName] = this.toI18nMessage([icu], '', '', '', undefined);
         const node = new IcuPlaceholder(i18nIcu, phName, icu.sourceSpan);
-        return this._visitNode(icu, node);
+        return context.visitNodeFn(icu, node);
     }
-    visitExpansionCase(icuCase, context) {
+    visitExpansionCase(_icuCase, _context) {
         throw new Error('Unreachable code');
     }
-    _visitTextWithInterpolation(text, sourceSpan) {
+    _visitTextWithInterpolation(text, sourceSpan, context) {
         const splitInterpolation = this._expressionParser.splitInterpolation(text, sourceSpan.start.toString(), this._interpolationConfig);
         if (!splitInterpolation) {
             // No expression, return a single text
@@ -7482,13 +7471,13 @@ class _I18nVisitor {
         for (let i = 0; i < splitInterpolation.strings.length - 1; i++) {
             const expression = splitInterpolation.expressions[i];
             const baseName = _extractPlaceholderName(expression) || 'INTERPOLATION';
-            const phName = this._placeholderRegistry.getPlaceholderName(baseName, expression);
+            const phName = context.placeholderRegistry.getPlaceholderName(baseName, expression);
             if (splitInterpolation.strings[i].length) {
                 // No need to add empty strings
                 nodes.push(new Text$1(splitInterpolation.strings[i], sourceSpan));
             }
             nodes.push(new Placeholder(expression, phName, sourceSpan));
-            this._placeholderToContent[phName] = sDelimiter + expression + eDelimiter;
+            context.placeholderToContent[phName] = sDelimiter + expression + eDelimiter;
         }
         // The last index contains no expression
         const lastStringIdx = splitInterpolation.strings.length - 1;
@@ -7510,9 +7499,19 @@ function _extractPlaceholderName(input) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-function setI18nRefs(html, i18n) {
-    html.i18n = i18n;
-}
+const setI18nRefs = (htmlNode, i18nNode) => {
+    if (htmlNode instanceof NodeWithI18n) {
+        if (i18nNode instanceof IcuPlaceholder && htmlNode.i18n instanceof Message) {
+            // This html node represents an ICU but this is a second processing pass, and the legacy id
+            // was computed in the previous pass and stored in the `i18n` property as a message.
+            // We are about to wipe out that property so capture the previous message to be reused when
+            // generating the message for this ICU later. See `_generateI18nMessage()`.
+            i18nNode.previousMessage = htmlNode.i18n;
+        }
+        htmlNode.i18n = i18nNode;
+    }
+    return i18nNode;
+};
 /**
  * This visitor walks over HTML parse tree and converts information stored in
  * i18n-related attributes ("i18n" and "i18n-*") into i18n meta object that is
@@ -7523,33 +7522,21 @@ class I18nMetaVisitor {
         this.interpolationConfig = interpolationConfig;
         this.keepI18nAttrs = keepI18nAttrs;
         this.i18nLegacyMessageIdFormat = i18nLegacyMessageIdFormat;
+        // whether visited nodes contain i18n information
+        this.hasI18nMeta = false;
         // i18n message generation factory
         this._createI18nMessage = createI18nMessageFactory(this.interpolationConfig);
     }
     _generateI18nMessage(nodes, meta = '', visitNodeFn) {
-        const parsed = typeof meta === 'string' ? parseI18nMeta(meta) : metaFromI18nMessage(meta);
-        const message = this._createI18nMessage(nodes, parsed.meaning || '', parsed.description || '', parsed.customId || '', visitNodeFn);
-        if (!message.id) {
-            // generate (or restore) message id if not specified in template
-            message.id = typeof meta !== 'string' && meta.id || decimalDigest(message);
-        }
-        if (this.i18nLegacyMessageIdFormat === 'xlf' || this.i18nLegacyMessageIdFormat === 'xliff') {
-            message.legacyId = computeDigest(message);
-        }
-        else if (this.i18nLegacyMessageIdFormat === 'xlf2' || this.i18nLegacyMessageIdFormat === 'xliff2' ||
-            this.i18nLegacyMessageIdFormat === 'xmb') {
-            message.legacyId = computeDecimalDigest(message);
-        }
-        else if (typeof meta !== 'string') {
-            // This occurs if we are doing the 2nd pass after whitespace removal
-            // In that case we want to reuse the legacy message generated in the 1st pass
-            // See `parseTemplate()` in `packages/compiler/src/render3/view/template.ts`
-            message.legacyId = meta.legacyId;
-        }
+        const { meaning, description, customId } = this._parseMetadata(meta);
+        const message = this._createI18nMessage(nodes, meaning, description, customId, visitNodeFn);
+        this._setMessageId(message, meta);
+        this._setLegacyId(message, meta);
         return message;
     }
-    visitElement(element, context) {
+    visitElement(element) {
         if (hasI18nAttrs(element)) {
+            this.hasI18nMeta = true;
             const attrs = [];
             const attrsMeta = {};
             for (const attr of element.attrs) {
@@ -7591,9 +7578,10 @@ class I18nMetaVisitor {
         visitAll$1(this, element.children, element.i18n);
         return element;
     }
-    visitExpansion(expansion, context) {
+    visitExpansion(expansion, currentMessage) {
         let message;
         const meta = expansion.i18n;
+        this.hasI18nMeta = true;
         if (meta instanceof IcuPlaceholder) {
             // set ICU placeholder name (e.g. "ICU_1"),
             // generated while processing root element contents,
@@ -7607,15 +7595,64 @@ class I18nMetaVisitor {
             // ICU is a top level message, try to use metadata from container element if provided via
             // `context` argument. Note: context may not be available for standalone ICUs (without
             // wrapping element), so fallback to ICU metadata in this case.
-            message = this._generateI18nMessage([expansion], context || meta);
+            message = this._generateI18nMessage([expansion], currentMessage || meta);
         }
         expansion.i18n = message;
         return expansion;
     }
-    visitText(text, context) { return text; }
-    visitAttribute(attribute, context) { return attribute; }
-    visitComment(comment, context) { return comment; }
-    visitExpansionCase(expansionCase, context) { return expansionCase; }
+    visitText(text) { return text; }
+    visitAttribute(attribute) { return attribute; }
+    visitComment(comment) { return comment; }
+    visitExpansionCase(expansionCase) { return expansionCase; }
+    /**
+     * Parse the general form `meta` passed into extract the explicit metadata needed to create a
+     * `Message`.
+     *
+     * There are three possibilities for the `meta` variable
+     * 1) a string from an `i18n` template attribute: parse it to extract the metadata values.
+     * 2) a `Message` from a previous processing pass: reuse the metadata values in the message.
+     * 4) other: ignore this and just process the message metadata as normal
+     *
+     * @param meta the bucket that holds information about the message
+     * @returns the parsed metadata.
+     */
+    _parseMetadata(meta) {
+        return typeof meta === 'string' ? parseI18nMeta(meta) :
+            meta instanceof Message ? metaFromI18nMessage(meta) : {};
+    }
+    /**
+     * Generate (or restore) message id if not specified already.
+     */
+    _setMessageId(message, meta) {
+        if (!message.id) {
+            message.id = meta instanceof Message && meta.id || decimalDigest(message);
+        }
+    }
+    /**
+     * Update the `message` with a `legacyId` if necessary.
+     *
+     * @param message the message whose legacy id should be set
+     * @param meta information about the message being processed
+     */
+    _setLegacyId(message, meta) {
+        if (this.i18nLegacyMessageIdFormat === 'xlf' || this.i18nLegacyMessageIdFormat === 'xliff') {
+            message.legacyId = computeDigest(message);
+        }
+        else if (this.i18nLegacyMessageIdFormat === 'xlf2' || this.i18nLegacyMessageIdFormat === 'xliff2' ||
+            this.i18nLegacyMessageIdFormat === 'xmb') {
+            message.legacyId = computeDecimalDigest(message);
+        }
+        else if (typeof meta !== 'string') {
+            // This occurs if we are doing the 2nd pass after whitespace removal (see `parseTemplate()` in
+            // `packages/compiler/src/render3/view/template.ts`).
+            // In that case we want to reuse the legacy message generated in the 1st pass (see
+            // `setI18nRefs()`).
+            const previousMessage = meta instanceof Message ?
+                meta :
+                meta instanceof IcuPlaceholder ? meta.previousMessage : undefined;
+            message.legacyId = previousMessage && previousMessage.legacyId;
+        }
+    }
 }
 function metaFromI18nMessage(message, id = null) {
     return {
@@ -8809,6 +8846,7 @@ function compileInjector(meta) {
         typeArgumentCount: 0,
         deps: meta.deps,
         injectFn: Identifiers$1.inject,
+        target: R3FactoryTarget.NgModule,
     });
     const definitionMap = {
         factory: result.factory,
@@ -8898,7 +8936,7 @@ function compilePipeFromRender2(outputCtx, pipe, reflector) {
         pure: pipe.pure,
     };
     const res = compilePipeFromMetadata(metadata);
-    const factoryRes = compileFactoryFromMetadata(Object.assign(Object.assign({}, metadata), { injectFn: Identifiers$1.directiveInject, isPipe: true }));
+    const factoryRes = compileFactoryFunction(Object.assign(Object.assign({}, metadata), { injectFn: Identifiers$1.directiveInject, target: R3FactoryTarget.Pipe }));
     const definitionField = outputCtx.constantPool.propertyNameOf(3 /* Pipe */);
     const ngFactoryDefStatement = new ClassStmt(
     /* name */ name, 
@@ -10361,6 +10399,7 @@ class _Tokenizer {
         const range = options.range || { endPos: _file.content.length, startPos: 0, startLine: 0, startCol: 0 };
         this._cursor = options.escapedString ? new EscapedCharacterCursor(_file, range) :
             new PlainCharacterCursor(_file, range);
+        this._preserveLineEndings = options.preserveLineEndings || false;
         try {
             this._cursor.init();
         }
@@ -10369,6 +10408,9 @@ class _Tokenizer {
         }
     }
     _processCarriageReturns(content) {
+        if (this._preserveLineEndings) {
+            return content;
+        }
         // http://www.w3.org/TR/html5/syntax.html#preprocessing-the-input-stream
         // In order to keep the original position in the source, we can not
         // pre-process it.
@@ -13142,7 +13184,8 @@ class TemplateParseVisitor {
                 }
                 hasInlineTemplates = true;
                 const parsedVariables = [];
-                this._bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attr.sourceSpan, attr.sourceSpan.start.offset, templateMatchableAttrs, templateElementOrDirectiveProps, parsedVariables);
+                const absoluteOffset = (attr.valueSpan || attr.sourceSpan).start.offset;
+                this._bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attr.sourceSpan, absoluteOffset, templateMatchableAttrs, templateElementOrDirectiveProps, parsedVariables);
                 templateElementVars.push(...parsedVariables.map(v => VariableAst.fromParsedVariable(v)));
             }
             if (!hasBinding && !hasTemplateBinding) {
@@ -13947,7 +13990,10 @@ class StylingBuilder {
     }
     _buildMapBasedInstruction(valueConverter, isClassBased, stylingInput) {
         // each styling binding value is stored in the LView
-        let totalBindingSlotsRequired = 1;
+        // map-based bindings allocate two slots: one for the
+        // previous binding value and another for the previous
+        // className or style attribute value.
+        let totalBindingSlotsRequired = 2;
         // these values must be outside of the update block so that they can
         // be evaluated (the AST visit call) during creation time so that any
         // pipes can be picked up in time before the template is built
@@ -14803,19 +14849,22 @@ class HtmlAstToIvyAst {
         return this._visitTextWithInterpolation(text.value, text.sourceSpan, text.i18n);
     }
     visitExpansion(expansion) {
-        const meta = expansion.i18n;
-        // do not generate Icu in case it was created
-        // outside of i18n block in a template
-        if (!meta) {
+        if (!expansion.i18n) {
+            // do not generate Icu in case it was created
+            // outside of i18n block in a template
             return null;
         }
+        if (!isI18nRootNode(expansion.i18n)) {
+            throw new Error(`Invalid type "${expansion.i18n.constructor}" for "i18n" property of ${expansion.sourceSpan.toString()}. Expected a "Message"`);
+        }
+        const message = expansion.i18n;
         const vars = {};
         const placeholders = {};
         // extract VARs from ICUs - we process them separately while
         // assembling resulting message via goog.getMsg function, since
         // we need to pass them to top-level goog.getMsg call
-        Object.keys(meta.placeholders).forEach(key => {
-            const value = meta.placeholders[key];
+        Object.keys(message.placeholders).forEach(key => {
+            const value = message.placeholders[key];
             if (key.startsWith(I18N_ICU_VAR_PREFIX)) {
                 const config = this.bindingParser.interpolationConfig;
                 // ICU expression is a plain string, not wrapped into start
@@ -14827,7 +14876,7 @@ class HtmlAstToIvyAst {
                 placeholders[key] = this._visitTextWithInterpolation(value, expansion.sourceSpan);
             }
         });
-        return new Icu(vars, placeholders, expansion.sourceSpan, meta);
+        return new Icu(vars, placeholders, expansion.sourceSpan, message);
     }
     visitExpansionCase(expansionCase) { return null; }
     visitComment(comment) { return null; }
@@ -16886,14 +16935,17 @@ function parseTemplate(template, templateUrl, options = {}) {
     // before we run whitespace removal process, because existing i18n
     // extraction process (ng xi18n) relies on a raw content to generate
     // message ids
-    rootNodes = visitAll$1(new I18nMetaVisitor(interpolationConfig, !preserveWhitespaces, i18nLegacyMessageIdFormat), rootNodes);
+    const i18nMetaVisitor = new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ !preserveWhitespaces, i18nLegacyMessageIdFormat);
+    rootNodes = visitAll$1(i18nMetaVisitor, rootNodes);
     if (!preserveWhitespaces) {
         rootNodes = visitAll$1(new WhitespaceVisitor(), rootNodes);
-        // run i18n meta visitor again in case we remove whitespaces, because
-        // that might affect generated i18n message content. During this pass
-        // i18n IDs generated at the first pass will be preserved, so we can mimic
-        // existing extraction process (ng xi18n)
-        rootNodes = visitAll$1(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), rootNodes);
+        // run i18n meta visitor again in case whitespaces are removed (because that might affect
+        // generated i18n message content) and first pass indicated that i18n content is present in a
+        // template. During this pass i18n IDs generated at the first pass will be preserved, so we can
+        // mimic existing extraction process (ng xi18n)
+        if (i18nMetaVisitor.hasI18nMeta) {
+            rootNodes = visitAll$1(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), rootNodes);
+        }
     }
     const { nodes, errors, styleUrls, styles } = htmlAstToRender3Ast(rootNodes, bindingParser);
     if (errors && errors.length > 0) {
@@ -17030,6 +17082,9 @@ function addFeatures(definitionMap, meta) {
     if (meta.usesInheritance) {
         features.push(importExpr(Identifiers$1.InheritDefinitionFeature));
     }
+    if (meta.fullInheritance) {
+        features.push(importExpr(Identifiers$1.CopyDefinitionFeature));
+    }
     if (meta.lifecycle.usesOnChanges) {
         features.push(importExpr(Identifiers$1.NgOnChangesFeature).callFn(EMPTY_ARRAY));
     }
@@ -17045,42 +17100,6 @@ function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
     addFeatures(definitionMap, meta);
     const expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()]);
     const type = createTypeForDef(meta, Identifiers$1.DirectiveDefWithMeta);
-    return { expression, type };
-}
-/**
- * Compile a base definition for the render3 runtime as defined by {@link R3BaseRefMetadata}
- * @param meta the metadata used for compilation.
- */
-function compileBaseDefFromMetadata(meta, constantPool, bindingParser) {
-    const definitionMap = new DefinitionMap();
-    if (meta.inputs) {
-        const inputs = meta.inputs;
-        const inputsMap = Object.keys(inputs).map(key => {
-            const v = inputs[key];
-            const value = Array.isArray(v) ? literalArr(v.map(vx => literal(vx))) : literal(v);
-            return { key, value, quoted: false };
-        });
-        definitionMap.set('inputs', literalMap(inputsMap));
-    }
-    if (meta.outputs) {
-        const outputs = meta.outputs;
-        const outputsMap = Object.keys(outputs).map(key => {
-            const value = literal(outputs[key]);
-            return { key, value, quoted: false };
-        });
-        definitionMap.set('outputs', literalMap(outputsMap));
-    }
-    if (meta.viewQueries && meta.viewQueries.length > 0) {
-        definitionMap.set('viewQuery', createViewQueriesFunction(meta.viewQueries, constantPool));
-    }
-    if (meta.queries && meta.queries.length > 0) {
-        definitionMap.set('contentQueries', createContentQueriesFunction(meta.queries, constantPool));
-    }
-    if (meta.host) {
-        definitionMap.set('hostBindings', createHostBindingsFunction(meta.host, meta.typeSourceSpan, bindingParser, constantPool, meta.name));
-    }
-    const expression = importExpr(Identifiers$1.defineBase).callFn([definitionMap.toLiteralMap()]);
-    const type = new ExpressionType(importExpr(Identifiers$1.BaseDef), /* modifiers */ null, [expressionType(meta.type)]);
     return { expression, type };
 }
 /**
@@ -17177,9 +17196,6 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     if (changeDetection != null && changeDetection !== ChangeDetectionStrategy.Default) {
         definitionMap.set('changeDetection', literal(changeDetection));
     }
-    // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
-    // string literal, which must be on one line.
-    const selectorForType = (meta.selector || '').replace(/\n/g, '');
     const expression = importExpr(Identifiers$1.defineComponent).callFn([definitionMap.toLiteralMap()]);
     const type = createTypeForDef(meta, Identifiers$1.ComponentDefWithMeta);
     return { expression, type };
@@ -17197,7 +17213,7 @@ function compileDirectiveFromRender2(outputCtx, directive, reflector, bindingPar
     const definitionField = outputCtx.constantPool.propertyNameOf(1 /* Directive */);
     const meta = directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector);
     const res = compileDirectiveFromMetadata(meta, outputCtx.constantPool, bindingParser);
-    const factoryRes = compileFactoryFromMetadata(Object.assign(Object.assign({}, meta), { injectFn: Identifiers$1.directiveInject }));
+    const factoryRes = compileFactoryFunction(Object.assign(Object.assign({}, meta), { injectFn: Identifiers$1.directiveInject, target: R3FactoryTarget.Directive }));
     const ngFactoryDefStatement = new ClassStmt(name, null, [new ClassField('ɵfac', INFERRED_TYPE, [StmtModifier.Static], factoryRes.factory)], [], new ClassMethod(null, [], []), []);
     const directiveDefStatement = new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []);
     // Create the partial class to be merged with the actual class.
@@ -17218,7 +17234,7 @@ function compileComponentFromRender2(outputCtx, component, render3Ast, reflector
     // Compute the R3ComponentMetadata from the CompileDirectiveMetadata
     const meta = Object.assign(Object.assign({}, directiveMetadataFromGlobalMetadata(component, outputCtx, reflector)), { selector: component.selector, template: { nodes: render3Ast.nodes }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, interpolation: DEFAULT_INTERPOLATION_CONFIG, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null, relativeContextFilePath: '', i18nUseExternalIds: true });
     const res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
-    const factoryRes = compileFactoryFromMetadata(Object.assign(Object.assign({}, meta), { injectFn: Identifiers$1.directiveInject }));
+    const factoryRes = compileFactoryFunction(Object.assign(Object.assign({}, meta), { injectFn: Identifiers$1.directiveInject, target: R3FactoryTarget.Directive }));
     const ngFactoryDefStatement = new ClassStmt(name, null, [new ClassField('ɵfac', INFERRED_TYPE, [StmtModifier.Static], factoryRes.factory)], [], new ClassMethod(null, [], []), []);
     const componentDefStatement = new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []);
     // Create the partial class to be merged with the actual class.
@@ -17338,10 +17354,10 @@ function stringArrayAsType(arr) {
 function createTypeForDef(meta, typeBase) {
     // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
     // string literal, which must be on one line.
-    const selectorForType = (meta.selector || '').replace(/\n/g, '');
+    const selectorForType = meta.selector !== null ? meta.selector.replace(/\n/g, '') : null;
     return expressionType(importExpr(typeBase, [
         typeWithParameters(meta.type, meta.typeArgumentCount),
-        stringAsType(selectorForType),
+        selectorForType !== null ? stringAsType(selectorForType) : NONE_TYPE,
         meta.exportAs !== null ? stringArrayAsType(meta.exportAs) : NONE_TYPE,
         stringMapAsType(meta.inputs),
         stringMapAsType(meta.outputs),
@@ -17674,6 +17690,7 @@ class CompilerFacadeImpl {
     constructor(jitEvaluator = new JitEvaluator()) {
         this.jitEvaluator = jitEvaluator;
         this.R3ResolvedDependencyType = R3ResolvedDependencyType;
+        this.R3FactoryTarget = R3FactoryTarget;
         this.ResourceLoader = ResourceLoader;
         this.elementSchemaRegistry = new DomElementSchemaRegistry();
     }
@@ -17757,24 +17774,16 @@ class CompilerFacadeImpl {
         return this.jitExpression(res.expression, angularCoreEnv, jitExpressionSourceMap, constantPool.statements);
     }
     compileFactory(angularCoreEnv, sourceMapUrl, meta) {
-        const factoryRes = compileFactoryFromMetadata({
+        const factoryRes = compileFactoryFunction({
             name: meta.name,
             type: new WrappedNodeExpr(meta.type),
             typeArgumentCount: meta.typeArgumentCount,
             deps: convertR3DependencyMetadataArray(meta.deps),
             injectFn: meta.injectFn === 'directiveInject' ? Identifiers.directiveInject :
                 Identifiers.inject,
-            isPipe: meta.isPipe
+            target: meta.target,
         });
         return this.jitExpression(factoryRes.factory, angularCoreEnv, sourceMapUrl, factoryRes.statements);
-    }
-    compileBase(angularCoreEnv, sourceMapUrl, facade) {
-        const constantPool = new ConstantPool();
-        const typeSourceSpan = this.createParseSourceSpan('Base', facade.name, `ng:///${facade.name}.js`);
-        const meta = Object.assign(Object.assign({}, facade), { typeSourceSpan, viewQueries: facade.viewQueries ? facade.viewQueries.map(convertToR3QueryMetadata) :
-                facade.viewQueries, queries: facade.queries ? facade.queries.map(convertToR3QueryMetadata) : facade.queries, host: extractHostBindings(facade.propMetadata, typeSourceSpan) });
-        const res = compileBaseDefFromMetadata(meta, constantPool, makeBindingParser());
-        return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, constantPool.statements);
     }
     createParseSourceSpan(kind, typeName, sourceUrl) {
         return r3JitTypeSourceSpan(kind, typeName, sourceUrl);
@@ -17831,7 +17840,7 @@ function convertDirectiveFacadeToMetadata(facade) {
             });
         }
     }
-    return Object.assign(Object.assign({}, facade), { typeSourceSpan: facade.typeSourceSpan, type: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: Object.assign(Object.assign({}, inputsFromMetadata), inputsFromType), outputs: Object.assign(Object.assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata) });
+    return Object.assign(Object.assign({}, facade), { typeSourceSpan: facade.typeSourceSpan, type: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: Object.assign(Object.assign({}, inputsFromMetadata), inputsFromType), outputs: Object.assign(Object.assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), fullInheritance: false });
 }
 function wrapExpression(obj, property) {
     if (obj.hasOwnProperty(property)) {
@@ -17926,7 +17935,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.12+7.sha-ed391ad.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.14+2.sha-585ea89.with-local-changes');
 
 /**
  * @license
@@ -24470,24 +24479,19 @@ function analyzeFile(host, staticSymbolResolver, metadataResolver, fileName) {
             if (symbolMeta.__symbolic === 'class') {
                 if (metadataResolver.isDirective(symbol)) {
                     isNgSymbol = true;
-                    if (!isDeclarationFile) {
-                        // This directive either has a selector or doesn't. Selector-less directives get tracked
-                        // in abstractDirectives, not directives. The compiler doesn't deal with selector-less
-                        // directives at all, really, other than to persist their metadata. This is done so that
-                        // apps will have an easier time migrating to Ivy, which requires the selector-less
-                        // annotations to be applied.
-                        if (!metadataResolver.isAbstractDirective(symbol)) {
-                            // The directive is an ordinary directive.
-                            directives.push(symbol);
-                        }
-                        else {
-                            // The directive has no selector and is an "abstract" directive, so track it
-                            // accordingly.
-                            abstractDirectives.push(symbol);
-                        }
+                    // This directive either has a selector or doesn't. Selector-less directives get tracked
+                    // in abstractDirectives, not directives. The compiler doesn't deal with selector-less
+                    // directives at all, really, other than to persist their metadata. This is done so that
+                    // apps will have an easier time migrating to Ivy, which requires the selector-less
+                    // annotations to be applied.
+                    if (!metadataResolver.isAbstractDirective(symbol)) {
+                        // The directive is an ordinary directive.
+                        directives.push(symbol);
                     }
                     else {
-                        directives.push(symbol);
+                        // The directive has no selector and is an "abstract" directive, so track it
+                        // accordingly.
+                        abstractDirectives.push(symbol);
                     }
                 }
                 else if (metadataResolver.isPipe(symbol)) {
@@ -27200,5 +27204,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { core, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, DYNAMIC_TYPE, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, literalMap, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, STRING_TYPE, TypeofExpr, collectExternalReferences, EmitterVisitorContext, JitEvaluator, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, compileFactoryFromMetadata, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileBaseDefFromMetadata, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, verifyHostBindings, publishFacade, VERSION$1 as VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, computeMsgId, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, AbsoluteSourceSpan, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor$1 as RecursiveAstVisitor, AstTransformer$1 as AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text$3 as Text, Expansion, ExpansionCase, Attribute, Element$1 as Element, Comment, visitAll$1 as visitAll, RecursiveVisitor$1 as RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, XmlParser, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, EMPTY_PARSE_LOCATION, EMPTY_SOURCE_SPAN, ParseErrorLevel, ParseError, typeSourceSpan, r3JitTypeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, HOST_ATTR, CONTENT_ATTR, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, isEmptyExpression, compileInjectable, R3TargetBinder, R3BoundTarget };
+export { core, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, ConstantPool, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ArrayType, AssertNotNull, DYNAMIC_TYPE, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, literalMap, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, MapType, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, Type$1 as Type, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, STRING_TYPE, TypeofExpr, collectExternalReferences, EmitterVisitorContext, JitEvaluator, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, compileFactoryFunction, R3FactoryTarget, compileInjector, compileNgModule, compilePipeFromMetadata, makeBindingParser, parseTemplate, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, verifyHostBindings, publishFacade, VERSION$1 as VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, sanitizeIdentifier, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileShallowModuleMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, computeMsgId, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, AbsoluteSourceSpan, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor$1 as RecursiveAstVisitor, AstTransformer$1 as AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, ParsedProperty, ParsedPropertyType, ParsedEvent, ParsedVariable, BoundElementProperty, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, NodeWithI18n, Text$3 as Text, Expansion, ExpansionCase, Attribute, Element$1 as Element, Comment, visitAll$1 as visitAll, RecursiveVisitor$1 as RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, XmlParser, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, EMPTY_PARSE_LOCATION, EMPTY_SOURCE_SPAN, ParseErrorLevel, ParseError, typeSourceSpan, r3JitTypeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, HOST_ATTR, CONTENT_ATTR, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates, isEmptyExpression, compileInjectable, R3TargetBinder, R3BoundTarget };
 //# sourceMappingURL=compiler.js.map
