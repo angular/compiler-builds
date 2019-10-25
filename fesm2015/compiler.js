@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.13+4.sha-3dff266.with-local-changes
+ * @license Angular v9.0.0-next.13+36.sha-b131f5b.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13195,7 +13195,8 @@ class TemplateParseVisitor {
                 }
                 hasInlineTemplates = true;
                 const parsedVariables = [];
-                this._bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attr.sourceSpan, attr.sourceSpan.start.offset, templateMatchableAttrs, templateElementOrDirectiveProps, parsedVariables);
+                const absoluteOffset = (attr.valueSpan || attr.sourceSpan).start.offset;
+                this._bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attr.sourceSpan, absoluteOffset, templateMatchableAttrs, templateElementOrDirectiveProps, parsedVariables);
                 templateElementVars.push(...parsedVariables.map(v => VariableAst.fromParsedVariable(v)));
             }
             if (!hasBinding && !hasTemplateBinding) {
@@ -14000,7 +14001,10 @@ class StylingBuilder {
     }
     _buildMapBasedInstruction(valueConverter, isClassBased, stylingInput) {
         // each styling binding value is stored in the LView
-        let totalBindingSlotsRequired = 1;
+        // map-based bindings allocate two slots: one for the
+        // previous binding value and another for the previous
+        // className or style attribute value.
+        let totalBindingSlotsRequired = 2;
         // these values must be outside of the update block so that they can
         // be evaluated (the AST visit call) during creation time so that any
         // pipes can be picked up in time before the template is built
@@ -17236,9 +17240,6 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     if (changeDetection != null && changeDetection !== ChangeDetectionStrategy.Default) {
         definitionMap.set('changeDetection', literal(changeDetection));
     }
-    // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
-    // string literal, which must be on one line.
-    const selectorForType = (meta.selector || '').replace(/\n/g, '');
     const expression = importExpr(Identifiers$1.defineComponent).callFn([definitionMap.toLiteralMap()]);
     const type = createTypeForDef(meta, Identifiers$1.ComponentDefWithMeta);
     return { expression, type };
@@ -17397,10 +17398,10 @@ function stringArrayAsType(arr) {
 function createTypeForDef(meta, typeBase) {
     // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
     // string literal, which must be on one line.
-    const selectorForType = (meta.selector || '').replace(/\n/g, '');
+    const selectorForType = meta.selector !== null ? meta.selector.replace(/\n/g, '') : null;
     return expressionType(importExpr(typeBase, [
         typeWithParameters(meta.type, meta.typeArgumentCount),
-        stringAsType(selectorForType),
+        selectorForType !== null ? stringAsType(selectorForType) : NONE_TYPE,
         meta.exportAs !== null ? stringArrayAsType(meta.exportAs) : NONE_TYPE,
         stringMapAsType(meta.inputs),
         stringMapAsType(meta.outputs),
@@ -17985,7 +17986,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-next.13+4.sha-3dff266.with-local-changes');
+const VERSION$1 = new Version('9.0.0-next.13+36.sha-b131f5b.with-local-changes');
 
 /**
  * @license
