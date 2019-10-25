@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.13+53.sha-3505692.with-local-changes
+ * @license Angular v9.0.0-next.13+54.sha-14c4b1b.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3706,11 +3706,6 @@
         Identifiers.resolveWindow = { name: 'ɵɵresolveWindow', moduleName: CORE$1 };
         Identifiers.resolveDocument = { name: 'ɵɵresolveDocument', moduleName: CORE$1 };
         Identifiers.resolveBody = { name: 'ɵɵresolveBody', moduleName: CORE$1 };
-        Identifiers.defineBase = { name: 'ɵɵdefineBase', moduleName: CORE$1 };
-        Identifiers.BaseDef = {
-            name: 'ɵɵBaseDef',
-            moduleName: CORE$1,
-        };
         Identifiers.defineComponent = { name: 'ɵɵdefineComponent', moduleName: CORE$1 };
         Identifiers.setComponentScope = { name: 'ɵɵsetComponentScope', moduleName: CORE$1 };
         Identifiers.ComponentDefWithMeta = {
@@ -18322,42 +18317,6 @@
         return { expression: expression, type: type };
     }
     /**
-     * Compile a base definition for the render3 runtime as defined by {@link R3BaseRefMetadata}
-     * @param meta the metadata used for compilation.
-     */
-    function compileBaseDefFromMetadata(meta, constantPool, bindingParser) {
-        var definitionMap = new DefinitionMap();
-        if (meta.inputs) {
-            var inputs_1 = meta.inputs;
-            var inputsMap = Object.keys(inputs_1).map(function (key) {
-                var v = inputs_1[key];
-                var value = Array.isArray(v) ? literalArr(v.map(function (vx) { return literal(vx); })) : literal(v);
-                return { key: key, value: value, quoted: false };
-            });
-            definitionMap.set('inputs', literalMap(inputsMap));
-        }
-        if (meta.outputs) {
-            var outputs_1 = meta.outputs;
-            var outputsMap = Object.keys(outputs_1).map(function (key) {
-                var value = literal(outputs_1[key]);
-                return { key: key, value: value, quoted: false };
-            });
-            definitionMap.set('outputs', literalMap(outputsMap));
-        }
-        if (meta.viewQueries && meta.viewQueries.length > 0) {
-            definitionMap.set('viewQuery', createViewQueriesFunction(meta.viewQueries, constantPool));
-        }
-        if (meta.queries && meta.queries.length > 0) {
-            definitionMap.set('contentQueries', createContentQueriesFunction(meta.queries, constantPool));
-        }
-        if (meta.host) {
-            definitionMap.set('hostBindings', createHostBindingsFunction(meta.host, meta.typeSourceSpan, bindingParser, constantPool, meta.name));
-        }
-        var expression = importExpr(Identifiers$1.defineBase).callFn([definitionMap.toLiteralMap()]);
-        var type = new ExpressionType(importExpr(Identifiers$1.BaseDef), /* modifiers */ null, [expressionType(meta.type)]);
-        return { expression: expression, type: type };
-    }
-    /**
      * Compile a component for the render3 runtime as defined by the `R3ComponentMetadata`.
      */
     function compileComponentFromMetadata(meta, constantPool, bindingParser) {
@@ -19091,14 +19050,6 @@
             });
             return this.jitExpression(factoryRes.factory, angularCoreEnv, sourceMapUrl, factoryRes.statements);
         };
-        CompilerFacadeImpl.prototype.compileBase = function (angularCoreEnv, sourceMapUrl, facade) {
-            var constantPool = new ConstantPool();
-            var typeSourceSpan = this.createParseSourceSpan('Base', facade.name, "ng:///" + facade.name + ".js");
-            var meta = __assign(__assign({}, facade), { typeSourceSpan: typeSourceSpan, viewQueries: facade.viewQueries ? facade.viewQueries.map(convertToR3QueryMetadata) :
-                    facade.viewQueries, queries: facade.queries ? facade.queries.map(convertToR3QueryMetadata) : facade.queries, host: extractHostBindings(facade.propMetadata, typeSourceSpan) });
-            var res = compileBaseDefFromMetadata(meta, constantPool, makeBindingParser());
-            return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, constantPool.statements);
-        };
         CompilerFacadeImpl.prototype.createParseSourceSpan = function (kind, typeName, sourceUrl) {
             return r3JitTypeSourceSpan(kind, typeName, sourceUrl);
         };
@@ -19255,7 +19206,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.0.0-next.13+53.sha-3505692.with-local-changes');
+    var VERSION$1 = new Version('9.0.0-next.13+54.sha-14c4b1b.with-local-changes');
 
     /**
      * @license
@@ -29162,7 +29113,6 @@
     exports.compilePipeFromMetadata = compilePipeFromMetadata;
     exports.makeBindingParser = makeBindingParser;
     exports.parseTemplate = parseTemplate;
-    exports.compileBaseDefFromMetadata = compileBaseDefFromMetadata;
     exports.compileComponentFromMetadata = compileComponentFromMetadata;
     exports.compileDirectiveFromMetadata = compileDirectiveFromMetadata;
     exports.parseHostBindings = parseHostBindings;
