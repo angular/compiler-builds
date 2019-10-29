@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.14+24.sha-d1246a1.with-local-changes
+ * @license Angular v9.0.0-next.14+25.sha-c3e9356.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -18073,15 +18073,15 @@ var EMPTY_ARRAY = [];
 // This regex matches any binding names that contain the "attr." prefix, e.g. "attr.required"
 // If there is a match, the first matching group will contain the attribute name to bind.
 var ATTR_REGEX = /attr\.([^\]]+)/;
-function getStylingPrefix(name) {
-    return name.substring(0, 5); // style or class
-}
 function baseDirectiveFields(meta, constantPool, bindingParser) {
     var definitionMap = new DefinitionMap();
+    var selectors = parseSelectorToR3Selector(meta.selector);
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type);
     // e.g. `selectors: [['', 'someDir', '']]`
-    definitionMap.set('selectors', createDirectiveSelector(meta.selector));
+    if (selectors.length > 0) {
+        definitionMap.set('selectors', asLiteral(selectors));
+    }
     if (meta.queries.length > 0) {
         // e.g. `contentQueries: (rf, ctx, dirIndex) => { ... }
         definitionMap.set('contentQueries', createContentQueriesFunction(meta.queries, constantPool, meta.name));
@@ -18338,10 +18338,6 @@ function prepareQueryParams(query, constantPool) {
         parameters.push(query.read);
     }
     return parameters;
-}
-// Turn a directive selector into an R3-compatible selector for directive def
-function createDirectiveSelector(selector) {
-    return asLiteral(parseSelectorToR3Selector(selector));
 }
 function convertAttributesToExpressions(attributes) {
     var e_2, _a;
@@ -19028,7 +19024,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-next.14+24.sha-d1246a1.with-local-changes');
+var VERSION$1 = new Version('9.0.0-next.14+25.sha-c3e9356.with-local-changes');
 
 /**
  * @license
