@@ -1,5 +1,5 @@
 /**
- * @license Angular v8.2.12+3.sha-26a6db2.with-local-changes
+ * @license Angular v8.2.12+5.sha-f97c464.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -18648,7 +18648,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('8.2.12+3.sha-26a6db2.with-local-changes');
+var VERSION$1 = new Version('8.2.12+5.sha-f97c464.with-local-changes');
 
 /**
  * @license
@@ -19544,6 +19544,7 @@ var _MARKER_TAG = 'mrk';
 var _FILE_TAG = 'file';
 var _SOURCE_TAG$1 = 'source';
 var _SEGMENT_SOURCE_TAG = 'seg-source';
+var _ALT_TRANS_TAG = 'alt-trans';
 var _TARGET_TAG = 'target';
 var _UNIT_TAG = 'trans-unit';
 var _CONTEXT_GROUP_TAG = 'context-group';
@@ -19695,6 +19696,7 @@ var XliffParser = /** @class */ (function () {
             // ignore those tags
             case _SOURCE_TAG$1:
             case _SEGMENT_SOURCE_TAG:
+            case _ALT_TRANS_TAG:
                 break;
             case _TARGET_TAG:
                 var innerTextStart = element.startSourceSpan.end.offset;
