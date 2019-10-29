@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-next.14+17.sha-4e38cab.with-local-changes
+ * @license Angular v9.0.0-next.14+22.sha-936700a.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -19206,7 +19206,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.0.0-next.14+17.sha-4e38cab.with-local-changes');
+    var VERSION$1 = new Version('9.0.0-next.14+22.sha-936700a.with-local-changes');
 
     /**
      * @license
@@ -20102,6 +20102,7 @@
     var _FILE_TAG = 'file';
     var _SOURCE_TAG$1 = 'source';
     var _SEGMENT_SOURCE_TAG = 'seg-source';
+    var _ALT_TRANS_TAG = 'alt-trans';
     var _TARGET_TAG = 'target';
     var _UNIT_TAG = 'trans-unit';
     var _CONTEXT_GROUP_TAG = 'context-group';
@@ -20253,6 +20254,7 @@
                 // ignore those tags
                 case _SOURCE_TAG$1:
                 case _SEGMENT_SOURCE_TAG:
+                case _ALT_TRANS_TAG:
                     break;
                 case _TARGET_TAG:
                     var innerTextStart = element.startSourceSpan.end.offset;
