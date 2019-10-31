@@ -5,319 +5,78 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-import { identifierModuleUrl, identifierName, tokenName, tokenReference } from './compile_metadata';
-import { createDiTokenExpression } from './compiler_util/identifier_util';
-import { isPresent } from './facade/lang';
-import { Identifiers, createIdentifier, resolveIdentifier } from './identifiers';
-import { CompilerInjectable } from './injectable';
-import { createClassStmt } from './output/class_builder';
-import * as o from './output/output_ast';
-import { convertValueToOutputAst } from './output/value_util';
-import { ParseLocation, ParseSourceFile, ParseSourceSpan } from './parse_util';
-import { LifecycleHooks } from './private_import_core';
-import { NgModuleProviderAnalyzer } from './provider_analyzer';
-/**
- * This is currently not read, but will probably be used in the future.
- * We keep it as we already pass it through all the rigth places...
- */
-var ComponentFactoryDependency = (function () {
-    /**
-     * @param {?} compType
-     */
-    function ComponentFactoryDependency(compType) {
-        this.compType = compType;
+(function (factory) {
+    if (typeof module === "object" && typeof module.exports === "object") {
+        var v = factory(require, exports);
+        if (v !== undefined) module.exports = v;
     }
-    return ComponentFactoryDependency;
-}());
-export { ComponentFactoryDependency };
-function ComponentFactoryDependency_tsickle_Closure_declarations() {
-    /** @type {?} */
-    ComponentFactoryDependency.prototype.compType;
-}
-var NgModuleCompileResult = (function () {
-    /**
-     * @param {?} statements
-     * @param {?} ngModuleFactoryVar
-     * @param {?} dependencies
-     */
-    function NgModuleCompileResult(statements, ngModuleFactoryVar, dependencies) {
-        this.statements = statements;
-        this.ngModuleFactoryVar = ngModuleFactoryVar;
-        this.dependencies = dependencies;
+    else if (typeof define === "function" && define.amd) {
+        define("@angular/compiler/src/ng_module_compiler", ["require", "exports", "@angular/compiler/src/compile_metadata", "@angular/compiler/src/identifiers", "@angular/compiler/src/output/output_ast", "@angular/compiler/src/parse_util", "@angular/compiler/src/provider_analyzer", "@angular/compiler/src/view_compiler/provider_compiler"], factory);
     }
-    return NgModuleCompileResult;
-}());
-export { NgModuleCompileResult };
-function NgModuleCompileResult_tsickle_Closure_declarations() {
-    /** @type {?} */
-    NgModuleCompileResult.prototype.statements;
-    /** @type {?} */
-    NgModuleCompileResult.prototype.ngModuleFactoryVar;
-    /** @type {?} */
-    NgModuleCompileResult.prototype.dependencies;
-}
-var NgModuleCompiler = (function () {
-    function NgModuleCompiler() {
-    }
-    /**
-     * @param {?} ngModuleMeta
-     * @param {?} extraProviders
-     * @return {?}
-     */
-    NgModuleCompiler.prototype.compile = function (ngModuleMeta, extraProviders) {
-        var /** @type {?} */ moduleUrl = identifierModuleUrl(ngModuleMeta.type);
-        var /** @type {?} */ sourceFileName = isPresent(moduleUrl) ?
-            "in NgModule " + identifierName(ngModuleMeta.type) + " in " + moduleUrl :
-            "in NgModule " + identifierName(ngModuleMeta.type);
-        var /** @type {?} */ sourceFile = new ParseSourceFile('', sourceFileName);
-        var /** @type {?} */ sourceSpan = new ParseSourceSpan(new ParseLocation(sourceFile, null, null, null), new ParseLocation(sourceFile, null, null, null));
-        var /** @type {?} */ deps = [];
-        var /** @type {?} */ bootstrapComponentFactories = [];
-        var /** @type {?} */ entryComponentFactories = ngModuleMeta.transitiveModule.entryComponents.map(function (entryComponent) {
-            if (ngModuleMeta.bootstrapComponents.some(function (id) { return id.reference === entryComponent.componentType; })) {
-                bootstrapComponentFactories.push({ reference: entryComponent.componentFactory });
+})(function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var compile_metadata_1 = require("@angular/compiler/src/compile_metadata");
+    var identifiers_1 = require("@angular/compiler/src/identifiers");
+    var o = require("@angular/compiler/src/output/output_ast");
+    var parse_util_1 = require("@angular/compiler/src/parse_util");
+    var provider_analyzer_1 = require("@angular/compiler/src/provider_analyzer");
+    var provider_compiler_1 = require("@angular/compiler/src/view_compiler/provider_compiler");
+    var NgModuleCompileResult = /** @class */ (function () {
+        function NgModuleCompileResult(ngModuleFactoryVar) {
+            this.ngModuleFactoryVar = ngModuleFactoryVar;
+        }
+        return NgModuleCompileResult;
+    }());
+    exports.NgModuleCompileResult = NgModuleCompileResult;
+    var LOG_VAR = o.variable('_l');
+    var NgModuleCompiler = /** @class */ (function () {
+        function NgModuleCompiler(reflector) {
+            this.reflector = reflector;
+        }
+        NgModuleCompiler.prototype.compile = function (ctx, ngModuleMeta, extraProviders) {
+            var sourceSpan = parse_util_1.typeSourceSpan('NgModule', ngModuleMeta.type);
+            var entryComponentFactories = ngModuleMeta.transitiveModule.entryComponents;
+            var bootstrapComponents = ngModuleMeta.bootstrapComponents;
+            var providerParser = new provider_analyzer_1.NgModuleProviderAnalyzer(this.reflector, ngModuleMeta, extraProviders, sourceSpan);
+            var providerDefs = [provider_compiler_1.componentFactoryResolverProviderDef(this.reflector, ctx, 0 /* None */, entryComponentFactories)]
+                .concat(providerParser.parse().map(function (provider) { return provider_compiler_1.providerDef(ctx, provider); }))
+                .map(function (_a) {
+                var providerExpr = _a.providerExpr, depsExpr = _a.depsExpr, flags = _a.flags, tokenExpr = _a.tokenExpr;
+                return o.importExpr(identifiers_1.Identifiers.moduleProviderDef).callFn([
+                    o.literal(flags), tokenExpr, providerExpr, depsExpr
+                ]);
+            });
+            var ngModuleDef = o.importExpr(identifiers_1.Identifiers.moduleDef).callFn([o.literalArr(providerDefs)]);
+            var ngModuleDefFactory = o.fn([new o.FnParam(LOG_VAR.name)], [new o.ReturnStatement(ngModuleDef)], o.INFERRED_TYPE);
+            var ngModuleFactoryVar = compile_metadata_1.identifierName(ngModuleMeta.type) + "NgFactory";
+            this._createNgModuleFactory(ctx, ngModuleMeta.type.reference, o.importExpr(identifiers_1.Identifiers.createModuleFactory).callFn([
+                ctx.importExpr(ngModuleMeta.type.reference),
+                o.literalArr(bootstrapComponents.map(function (id) { return ctx.importExpr(id.reference); })),
+                ngModuleDefFactory
+            ]));
+            if (ngModuleMeta.id) {
+                var id = typeof ngModuleMeta.id === 'string' ? o.literal(ngModuleMeta.id) :
+                    ctx.importExpr(ngModuleMeta.id);
+                var registerFactoryStmt = o.importExpr(identifiers_1.Identifiers.RegisterModuleFactoryFn)
+                    .callFn([id, o.variable(ngModuleFactoryVar)])
+                    .toStmt();
+                ctx.statements.push(registerFactoryStmt);
             }
-            deps.push(new ComponentFactoryDependency(entryComponent.componentType));
-            return { reference: entryComponent.componentFactory };
-        });
-        var /** @type {?} */ builder = new _InjectorBuilder(ngModuleMeta, entryComponentFactories, bootstrapComponentFactories, sourceSpan);
-        var /** @type {?} */ providerParser = new NgModuleProviderAnalyzer(ngModuleMeta, extraProviders, sourceSpan);
-        providerParser.parse().forEach(function (provider) { return builder.addProvider(provider); });
-        var /** @type {?} */ injectorClass = builder.build();
-        var /** @type {?} */ ngModuleFactoryVar = identifierName(ngModuleMeta.type) + "NgFactory";
-        var /** @type {?} */ ngModuleFactoryStmt = o.variable(ngModuleFactoryVar)
-            .set(o.importExpr(createIdentifier(Identifiers.NgModuleFactory))
-            .instantiate([o.variable(injectorClass.name), o.importExpr(ngModuleMeta.type)], o.importType(createIdentifier(Identifiers.NgModuleFactory), [o.importType(ngModuleMeta.type)], [o.TypeModifier.Const])))
-            .toDeclStmt(null, [o.StmtModifier.Final]);
-        var /** @type {?} */ stmts = [injectorClass, ngModuleFactoryStmt];
-        if (ngModuleMeta.id) {
-            var /** @type {?} */ registerFactoryStmt = o.importExpr(createIdentifier(Identifiers.RegisterModuleFactoryFn))
-                .callFn([o.literal(ngModuleMeta.id), o.variable(ngModuleFactoryVar)])
-                .toStmt();
-            stmts.push(registerFactoryStmt);
-        }
-        return new NgModuleCompileResult(stmts, ngModuleFactoryVar, deps);
-    };
-    return NgModuleCompiler;
-}());
-NgModuleCompiler = __decorate([
-    CompilerInjectable()
-], NgModuleCompiler);
-export { NgModuleCompiler };
-var _InjectorBuilder = (function () {
-    /**
-     * @param {?} _ngModuleMeta
-     * @param {?} _entryComponentFactories
-     * @param {?} _bootstrapComponentFactories
-     * @param {?} _sourceSpan
-     */
-    function _InjectorBuilder(_ngModuleMeta, _entryComponentFactories, _bootstrapComponentFactories, _sourceSpan) {
-        this._ngModuleMeta = _ngModuleMeta;
-        this._entryComponentFactories = _entryComponentFactories;
-        this._bootstrapComponentFactories = _bootstrapComponentFactories;
-        this._sourceSpan = _sourceSpan;
-        this.fields = [];
-        this.getters = [];
-        this.methods = [];
-        this.ctorStmts = [];
-        this._tokens = [];
-        this._instances = new Map();
-        this._createStmts = [];
-        this._destroyStmts = [];
-    }
-    /**
-     * @param {?} resolvedProvider
-     * @return {?}
-     */
-    _InjectorBuilder.prototype.addProvider = function (resolvedProvider) {
-        var _this = this;
-        var /** @type {?} */ providerValueExpressions = resolvedProvider.providers.map(function (provider) { return _this._getProviderValue(provider); });
-        var /** @type {?} */ propName = "_" + tokenName(resolvedProvider.token) + "_" + this._instances.size;
-        var /** @type {?} */ instance = this._createProviderProperty(propName, resolvedProvider, providerValueExpressions, resolvedProvider.multiProvider, resolvedProvider.eager);
-        if (resolvedProvider.lifecycleHooks.indexOf(LifecycleHooks.OnDestroy) !== -1) {
-            this._destroyStmts.push(instance.callMethod('ngOnDestroy', []).toStmt());
-        }
-        this._tokens.push(resolvedProvider.token);
-        this._instances.set(tokenReference(resolvedProvider.token), instance);
-    };
-    /**
-     * @return {?}
-     */
-    _InjectorBuilder.prototype.build = function () {
-        var _this = this;
-        var /** @type {?} */ getMethodStmts = this._tokens.map(function (token) {
-            var /** @type {?} */ providerExpr = _this._instances.get(tokenReference(token));
-            return new o.IfStmt(InjectMethodVars.token.identical(createDiTokenExpression(token)), [new o.ReturnStatement(providerExpr)]);
-        });
-        var /** @type {?} */ methods = [
-            new o.ClassMethod('createInternal', [], this._createStmts.concat(new o.ReturnStatement(this._instances.get(this._ngModuleMeta.type.reference))), o.importType(this._ngModuleMeta.type)),
-            new o.ClassMethod('getInternal', [
-                new o.FnParam(InjectMethodVars.token.name, o.DYNAMIC_TYPE),
-                new o.FnParam(InjectMethodVars.notFoundResult.name, o.DYNAMIC_TYPE)
-            ], getMethodStmts.concat([new o.ReturnStatement(InjectMethodVars.notFoundResult)]), o.DYNAMIC_TYPE),
-            new o.ClassMethod('destroyInternal', [], this._destroyStmts),
-        ];
-        var /** @type {?} */ parentArgs = [
-            o.variable(InjectorProps.parent.name),
-            o.literalArr(this._entryComponentFactories.map(function (componentFactory) { return o.importExpr(componentFactory); })),
-            o.literalArr(this._bootstrapComponentFactories.map(function (componentFactory) { return o.importExpr(componentFactory); }))
-        ];
-        var /** @type {?} */ injClassName = identifierName(this._ngModuleMeta.type) + "Injector";
-        return createClassStmt({
-            name: injClassName,
-            ctorParams: [new o.FnParam(InjectorProps.parent.name, o.importType(createIdentifier(Identifiers.Injector)))],
-            parent: o.importExpr(createIdentifier(Identifiers.NgModuleInjector), [o.importType(this._ngModuleMeta.type)]),
-            parentArgs: parentArgs,
-            builders: [{ methods: methods }, this]
-        });
-    };
-    /**
-     * @param {?} provider
-     * @return {?}
-     */
-    _InjectorBuilder.prototype._getProviderValue = function (provider) {
-        var _this = this;
-        var /** @type {?} */ result;
-        if (isPresent(provider.useExisting)) {
-            result = this._getDependency({ token: provider.useExisting });
-        }
-        else if (isPresent(provider.useFactory)) {
-            var /** @type {?} */ deps = provider.deps || provider.useFactory.diDeps;
-            var /** @type {?} */ depsExpr = deps.map(function (dep) { return _this._getDependency(dep); });
-            result = o.importExpr(provider.useFactory).callFn(depsExpr);
-        }
-        else if (isPresent(provider.useClass)) {
-            var /** @type {?} */ deps = provider.deps || provider.useClass.diDeps;
-            var /** @type {?} */ depsExpr = deps.map(function (dep) { return _this._getDependency(dep); });
-            result =
-                o.importExpr(provider.useClass).instantiate(depsExpr, o.importType(provider.useClass));
-        }
-        else {
-            result = convertValueToOutputAst(provider.useValue);
-        }
-        return result;
-    };
-    /**
-     * @param {?} propName
-     * @param {?} provider
-     * @param {?} providerValueExpressions
-     * @param {?} isMulti
-     * @param {?} isEager
-     * @return {?}
-     */
-    _InjectorBuilder.prototype._createProviderProperty = function (propName, provider, providerValueExpressions, isMulti, isEager) {
-        var /** @type {?} */ resolvedProviderValueExpr;
-        var /** @type {?} */ type;
-        if (isMulti) {
-            resolvedProviderValueExpr = o.literalArr(providerValueExpressions);
-            type = new o.ArrayType(o.DYNAMIC_TYPE);
-        }
-        else {
-            resolvedProviderValueExpr = providerValueExpressions[0];
-            type = providerValueExpressions[0].type;
-        }
-        if (!type) {
-            type = o.DYNAMIC_TYPE;
-        }
-        if (isEager) {
-            this.fields.push(new o.ClassField(propName, type));
-            this._createStmts.push(o.THIS_EXPR.prop(propName).set(resolvedProviderValueExpr).toStmt());
-        }
-        else {
-            var /** @type {?} */ internalField = "_" + propName;
-            this.fields.push(new o.ClassField(internalField, type));
-            // Note: Equals is important for JS so that it also checks the undefined case!
-            var /** @type {?} */ getterStmts = [
-                new o.IfStmt(o.THIS_EXPR.prop(internalField).isBlank(), [o.THIS_EXPR.prop(internalField).set(resolvedProviderValueExpr).toStmt()]),
-                new o.ReturnStatement(o.THIS_EXPR.prop(internalField))
-            ];
-            this.getters.push(new o.ClassGetter(propName, getterStmts, type));
-        }
-        return o.THIS_EXPR.prop(propName);
-    };
-    /**
-     * @param {?} dep
-     * @return {?}
-     */
-    _InjectorBuilder.prototype._getDependency = function (dep) {
-        var /** @type {?} */ result = null;
-        if (dep.isValue) {
-            result = o.literal(dep.value);
-        }
-        if (!dep.isSkipSelf) {
-            if (dep.token &&
-                (tokenReference(dep.token) === resolveIdentifier(Identifiers.Injector) ||
-                    tokenReference(dep.token) === resolveIdentifier(Identifiers.ComponentFactoryResolver))) {
-                result = o.THIS_EXPR;
-            }
-            if (!result) {
-                result = this._instances.get(tokenReference(dep.token));
-            }
-        }
-        if (!result) {
-            var /** @type {?} */ args = [createDiTokenExpression(dep.token)];
-            if (dep.isOptional) {
-                args.push(o.NULL_EXPR);
-            }
-            result = InjectorProps.parent.callMethod('get', args);
-        }
-        return result;
-    };
-    return _InjectorBuilder;
-}());
-function _InjectorBuilder_tsickle_Closure_declarations() {
-    /** @type {?} */
-    _InjectorBuilder.prototype.fields;
-    /** @type {?} */
-    _InjectorBuilder.prototype.getters;
-    /** @type {?} */
-    _InjectorBuilder.prototype.methods;
-    /** @type {?} */
-    _InjectorBuilder.prototype.ctorStmts;
-    /** @type {?} */
-    _InjectorBuilder.prototype._tokens;
-    /** @type {?} */
-    _InjectorBuilder.prototype._instances;
-    /** @type {?} */
-    _InjectorBuilder.prototype._createStmts;
-    /** @type {?} */
-    _InjectorBuilder.prototype._destroyStmts;
-    /** @type {?} */
-    _InjectorBuilder.prototype._ngModuleMeta;
-    /** @type {?} */
-    _InjectorBuilder.prototype._entryComponentFactories;
-    /** @type {?} */
-    _InjectorBuilder.prototype._bootstrapComponentFactories;
-    /** @type {?} */
-    _InjectorBuilder.prototype._sourceSpan;
-}
-var InjectorProps = (function () {
-    function InjectorProps() {
-    }
-    return InjectorProps;
-}());
-InjectorProps.parent = o.THIS_EXPR.prop('parent');
-function InjectorProps_tsickle_Closure_declarations() {
-    /** @type {?} */
-    InjectorProps.parent;
-}
-var InjectMethodVars = (function () {
-    function InjectMethodVars() {
-    }
-    return InjectMethodVars;
-}());
-InjectMethodVars.token = o.variable('token');
-InjectMethodVars.notFoundResult = o.variable('notFoundResult');
-function InjectMethodVars_tsickle_Closure_declarations() {
-    /** @type {?} */
-    InjectMethodVars.token;
-    /** @type {?} */
-    InjectMethodVars.notFoundResult;
-}
-//# sourceMappingURL=ng_module_compiler.js.map
+            return new NgModuleCompileResult(ngModuleFactoryVar);
+        };
+        NgModuleCompiler.prototype.createStub = function (ctx, ngModuleReference) {
+            this._createNgModuleFactory(ctx, ngModuleReference, o.NULL_EXPR);
+        };
+        NgModuleCompiler.prototype._createNgModuleFactory = function (ctx, reference, value) {
+            var ngModuleFactoryVar = compile_metadata_1.identifierName({ reference: reference }) + "NgFactory";
+            var ngModuleFactoryStmt = o.variable(ngModuleFactoryVar)
+                .set(value)
+                .toDeclStmt(o.importType(identifiers_1.Identifiers.NgModuleFactory, [o.expressionType(ctx.importExpr(reference))], [o.TypeModifier.Const]), [o.StmtModifier.Final, o.StmtModifier.Exported]);
+            ctx.statements.push(ngModuleFactoryStmt);
+        };
+        return NgModuleCompiler;
+    }());
+    exports.NgModuleCompiler = NgModuleCompiler;
+});
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoibmdfbW9kdWxlX2NvbXBpbGVyLmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiLi4vLi4vLi4vLi4vLi4vLi4vcGFja2FnZXMvY29tcGlsZXIvc3JjL25nX21vZHVsZV9jb21waWxlci50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFBQTs7Ozs7O0dBTUc7Ozs7Ozs7Ozs7OztJQUVILDJFQUFvRztJQUdwRyxpRUFBMEM7SUFDMUMsMkRBQXlDO0lBQ3pDLCtEQUE0QztJQUM1Qyw2RUFBNkQ7SUFFN0QsMkZBQTJHO0lBRTNHO1FBQ0UsK0JBQW1CLGtCQUEwQjtZQUExQix1QkFBa0IsR0FBbEIsa0JBQWtCLENBQVE7UUFBRyxDQUFDO1FBQ25ELDRCQUFDO0lBQUQsQ0FBQyxBQUZELElBRUM7SUFGWSxzREFBcUI7SUFJbEMsSUFBTSxPQUFPLEdBQUcsQ0FBQyxDQUFDLFFBQVEsQ0FBQyxJQUFJLENBQUMsQ0FBQztJQUVqQztRQUNFLDBCQUFvQixTQUEyQjtZQUEzQixjQUFTLEdBQVQsU0FBUyxDQUFrQjtRQUFHLENBQUM7UUFDbkQsa0NBQU8sR0FBUCxVQUNJLEdBQWtCLEVBQUUsWUFBcUMsRUFDekQsY0FBeUM7WUFDM0MsSUFBTSxVQUFVLEdBQUcsMkJBQWMsQ0FBQyxVQUFVLEVBQUUsWUFBWSxDQUFDLElBQUksQ0FBQyxDQUFDO1lBQ2pFLElBQU0sdUJBQXVCLEdBQUcsWUFBWSxDQUFDLGdCQUFnQixDQUFDLGVBQWUsQ0FBQztZQUM5RSxJQUFNLG1CQUFtQixHQUFHLFlBQVksQ0FBQyxtQkFBbUIsQ0FBQztZQUM3RCxJQUFNLGNBQWMsR0FDaEIsSUFBSSw0Q0FBd0IsQ0FBQyxJQUFJLENBQUMsU0FBUyxFQUFFLFlBQVksRUFBRSxjQUFjLEVBQUUsVUFBVSxDQUFDLENBQUM7WUFDM0YsSUFBTSxZQUFZLEdBQ2QsQ0FBQyx1REFBbUMsQ0FDL0IsSUFBSSxDQUFDLFNBQVMsRUFBRSxHQUFHLGdCQUFrQix1QkFBdUIsQ0FBQyxDQUFDO2lCQUM5RCxNQUFN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QVcsQ0FBQztZQUNoRixJQUFNLG1CQUFtQixHQUNyQixDQUFDLENBQUMsUUFBUSxDQUFDLGtCQUFrQixDQUFDO2lCQUN6QixHQUFHLENBQUMsS0FBSyxDQUFDO2lCQUNWLFVBQVUsQ0FDUCxDQUFDLENBQUMsVUFBVSxDQUNSLHlCQUFXLENBQUMsZUFBZSxFQUFFLENBQUMsQ0FBQyxDQUFDLGNBQWMsQ0FBQyxHQUFHLENBQUMsVUFBVSxDQUFDLFNBQVMsQ0FBQyxDQUFHLENBQUMsRUFDNUUsQ0FBQyxDQUFDLENBQUMsWUFBWSxDQUFDLEtBQUssQ0FBQyxDQUFDLEVBQzNCLENBQUMsQ0FBQyxDQUFDLFlBQVksQ0FBQyxLQUFLLEVBQUUsQ0FBQyxDQUFDLFlBQVksQ0FBQyxRQUFRLENBQUMsQ0FBQyxDQUFDO1lBRTdELEdBQUcsQ0FBQyxVQUFVLENBQUMsSUFBSSxDQUFDLG1CQUFtQixDQUFDLENBQUM7UUFDM0MsQ0FBQztRQUNILHVCQUFDO0lBQUQsQ0FBQyxBQTdERCxJQTZEQztJQTdEWSw0Q0FBZ0IiLCJzb3VyY2VzQ29udGVudCI6WyIvKipcbiAqIEBsaWNlbnNlXG4gKiBDb3B5cmlnaHQgR29vZ2xlIEluYy4gQWxsIFJpZ2h0cyBSZXNlcnZlZC5cbiAqXG4gKiBVc2Ugb2YgdGhpcyBzb3VyY2UgY29kZSBpcyBnb3Zlcm5lZCBieSBhbiBNSVQtc3R5bGUgbGljZW5zZSB0aGF0IGNhbiBiZVxuICogZm91bmQgaW4gdGhlIExJQ0VOU0UgZmlsZSBhdCBodHRwczovL2FuZ3VsYXIuaW8vbGljZW5zZVxuICovXG5cbmltcG9ydCB7Q29tcGlsZU5nTW9kdWxlTWV0YWRhdGEsIENvbXBpbGVQcm92aWRlck1ldGFkYXRhLCBpZGVudGlmaWVyTmFtZX0gZnJvbSAnLi9jb21waWxlX21ldGFkYXRhJztcbmltcG9ydCB7Q29tcGlsZVJlZmxlY3Rvcn0gZnJvbSAnLi9jb21waWxlX3JlZmxlY3Rvcic7XG5pbXBvcnQge05vZGVGbGFnc30gZnJvbSAnLi9jb3JlJztcbmltcG9ydCB7SWRlbnRpZmllcnN9IGZyb20gJy4vaWRlbnRpZmllcnMnO1xuaW1wb3J0ICogYXMgbyBmcm9tICcuL291dHB1dC9vdXRwdXRfYXN0JztcbmltcG9ydCB7dHlwZVNvdXJjZVNwYW59IGZyb20gJy4vcGFyc2VfdXRpbCc7XG5pbXBvcnQge05nTW9kdWxlUHJvdmlkZXJBbmFseXplcn0gZnJvbSAnLi9wcm92aWRlcl9hbmFseXplcic7XG5pbXBvcnQge091dHB1dENvbnRleHR9IGZyb20gJy4vdXRpbCc7XG5pbXBvcnQge2NvbXBvbmVudEZhY3RvcnlSZXNvbHZlclByb3ZpZGVyRGVmLCBkZXBEZWYsIHByb3ZpZGVyRGVmfSBmcm9tICcuL3ZpZXdfY29tcGlsZXIvcHJvdmlkZXJfY29tcGlsZXInO1xuXG5leHBvcnQgY2xhc3MgTmdNb2R1bGVDb21waWxlUmVzdWx0IHtcbiAgY29uc3RydWN0b3IocHVibGljIG5nTW9kdWxlRmFjdG9yeVZhcjogc3RyaW5nKSB7fVxufVxuXG5jb25zdCBMT0dfVkFSID0gby52YXJpYWJsZSgnX2wnKTtcblxuZXhwb3J0IGNsYXNzIE5nTW9kdWxlQ29tcGlsZXIge1xuICBjb25zdHJ1Y3Rvcihwcml2YXRlIHJlZmxlY3RvcjogQ29tcGlsZVJlZmxlY3Rvcikge31cbiAgY29tcGlsZShcbiAgICAgIGN0eDogT3V0cHV0Q29udGV4dCwgbmdNb2R1bGVNZXRhOiBDb21waWxlTmdNb2R1bGVNZXRhZGF0YSxcbiAgICAgIGV4dHJhUHJvdmlkZXJzOiBDb21waWxlUHJvdmlkZXJNZXRhZGF0YVtdKTogTmdNb2R1bGVDb21waWxlUmVzdWx0IHtcbiAgICBjb25zdCBzb3VyY2VTcGFuID0gdHlwZVNvdXJjZVNwYW4oJ05nTW9kdWxlJywgbmdNb2R1bGVNZXRhLnR5cGUpO1xuICAgIGNvbnN0IGVudHJ5Q29tcG9uZW50RmFjdG9yaWVzID0gbmdNb2R1bGVNZXRhLnRyYW5zaXRpdmVNb2R1bGUuZW50cnlDb21wb25lbnRzO1xuICAgIGNvbnN0IGJvb3RzdHJhcENvbXBvbmVudHMgPSBuZ01vZHVsZU1ldGEuYm9vdHN0cmFwQ29tcG9uZW50cztcbiAgICBjb25zdCBwcm92aWRlclBhcnNlciA9XG4gICAgICAgIG5ldyBOZ01vZHVsZVByb3ZpZGVyQW5hbHl6ZXIodGhpcy5yZWZsZWN0b3IsIG5nTW9kdWxlTWV0YSwgZXh0cmFQcm92aWRlcnMsIHNvdXJjZVNwYW4pO1xuICAgIGNvbnN0IHByb3ZpZGVyRGVmcyA9XG4gICAgICAgIFtjb21wb25lbnRGYWN0b3J5UmVzb2x2ZXJQcm92aWRlckRlZihcbiAgICAgICAgICAgICB0aGlzLnJlZmxlY3RvciwgY3R4LCBOb2RlRmxhZ3MuTm9uZSwgZW50cnlDb21wb25lbnRGYWN0b3JpZXMpXVxuICAgICAgICAgICAgLmNvbmNhdChwcm92aWRlclBhcnNlci5wYXJzZSgpLm1hcCgocHJvdmlkZXIpID0+IHByb3ZpZGVyRGVmKGN0eCwgcHJvdmlkZXIpKSlcbiAgICAgICAgICAgIC5tYXAoKHtwcm92aWRlckV4cHIsIGRlcHNFeHByLCBmbGFncywgdG9rZW5FeHByfSkgPT4ge1xuICAgICAgICAgICAgICByZXR1cm4gby5pbXBvcnRFeHByKElkZW50aWZpZXJzLm1vZHVsZVByb3ZpZGVyRGVmKS5jYWxsRm4oW1xuICAgICAgICAgICAgICAgIG8ubGl0ZXJhbChmbGFncyksIHRva2VuRXhwciwgcHJvdmlkZXJFeHByLCBkZXBzRXhwclxuICAgICAgICAgICAgICBdKTtcbiAgICAgICAgICAgIH0pO1xuXG4gICAgY29uc3QgbmdNb2R1bGVEZWYgPSBvLmltcG9ydEV4cHIoSWRlbnRpZmllcnMubW9kdWxlRGVmKS5jYWxsRm4oW28ubGl0ZXJhbEFycihwcm92aWRlckRlZnMpXSk7XG4gICAgY29uc3QgbmdNb2R1bGVEZWZGYWN0b3J5ID0gby5mbihcbiAgICAgICAgW25ldyBvLkZuUGFyYW0oTE9HX1ZBUi5uYW1lICEpXSwgW25ldyBvLlJldHVyblN0YXRlbWVudChuZ01vZHVsZURlZildLCBvLklORkVSUkVEX1RZUEUpO1xuXG4gICAgY29uc3QgbmdNb2R1bGVGYWN0b3J5VmFyID0gYCR7aWRlbnRpZmllck5hbWUobmdNb2R1bGVNZXRhLnR5cGUpfU5nRmFjdG9yeWA7XG4gICAgdGhpcy5fY3JlYXRlTmdNb2R1bGVGYWN0b3J5KFxuICAgICAgICBjdHgsIG5nTW9kdWxlTWV0YS50eXBlLnJlZmVyZW5jZSwgby5pbXBvcnRFeHByKElkZW50aWZpZXJzLmNyZWF0ZU1vZHVsZUZhY3RvcnkpLmNhbGxGbihbXG4gICAgICAgICAgY3R4LmltcG9ydEV4cHIobmdNb2R1bGVNZXRhLnR5cGUucmVmZXJlbmNlKSxcbiAgICAgICAgICBvLmxpdGVyYWxBcnIoYm9vdHN0cmFwQ29tcG9uZW50cy5tYXAoaWQgPT4gY3R4LmltcG9ydEV4cHIoaWQucmVmZXJlbmNlKSkpLFxuICAgICAgICAgIG5nTW9kdWxlRGVmRmFjdG9yeVxuICAgICAgICBdKSk7XG5cbiAgICBpZiAobmdNb2R1bGVNZXRhLmlkKSB7XG4gICAgICBjb25zdCBpZCA9IHR5cGVvZiBuZ01vZHVsZU1ldGEuaWQgPT09ICdzdHJpbmcnID8gby5saXRlcmFsKG5nTW9kdWxlTWV0YS5pZCkgOlxuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGN0eC5pbXBvcnRFeHByKG5nTW9kdWxlTWV0YS5pZCk7XG4gICAgICBjb25zdCByZWdpc3RlckZhY3RvcnlTdG10ID0gby5pbXBvcnRFeHByKElkZW50aWZpZXJzLlJlZ2lzdGVyTW9kdWxlRmFjdG9yeUZuKVxuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAuY2FsbEZuKFtpZCwgby52YXJpYWJsZShuZ01vZHVsZUZhY3RvcnlWYXIpXSlcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgLnRvU3RtdCgpO1xuICAgICAgY3R4LnN0YXRlbWVudHMucHVzaChyZWdpc3RlckZhY3RvcnlTdG10KTtcbiAgICB9XG5cbiAgICByZXR1cm4gbmV3IE5nTW9kdWxlQ29tcGlsZVJlc3VsdChuZ01vZHVsZUZhY3RvcnlWYXIpO1xuICB9XG5cbiAgY3JlYXRlU3R1YihjdHg6IE91dHB1dENvbnRleHQsIG5nTW9kdWxlUmVmZXJlbmNlOiBhbnkpIHtcbiAgICB0aGlzLl9jcmVhdGVOZ01vZHVsZUZhY3RvcnkoY3R4LCBuZ01vZHVsZVJlZmVyZW5jZSwgby5OVUxMX0VYUFIpO1xuICB9XG5cbiAgcHJpdmF0ZSBfY3JlYXRlTmdNb2R1bGVGYWN0b3J5KGN0eDogT3V0cHV0Q29udGV4dCwgcmVmZXJlbmNlOiBhbnksIHZhbHVlOiBvLkV4cHJlc3Npb24pIHtcbiAgICBjb25zdCBuZ01vZHVsZUZhY3RvcnlWYXIgPSBgJHtpZGVudGlmaWVyTmFtZSh7cmVmZXJlbmNlOiByZWZlcmVuY2V9KX1OZ0ZhY3RvcnlgO1xuICAgIGNvbnN0IG5nTW9kdWxlRmFjdG9yeVN0bXQgPVxuICAgICAgICBvLnZhcmlhYmxlKG5nTW9kdWxlRmFjdG9yeVZhcilcbiAgICAgICAgICAgIC5zZXQodmFsdWUpXG4gICAgICAgICAgICAudG9EZWNsU3RtdChcbiAgICAgICAgICAgICAgICBvLmltcG9ydFR5cGUoXG4gICAgICAgICAgICAgICAgICAgIElkZW50aWZpZXJzLk5nTW9kdWxlRmFjdG9yeSwgW28uZXhwcmVzc2lvblR5cGUoY3R4LmltcG9ydEV4cHIocmVmZXJlbmNlKSkgIV0sXG4gICAgICAgICAgICAgICAgICAgIFtvLlR5cGVNb2RpZmllci5Db25zdF0pLFxuICAgICAgICAgICAgICAgIFtvLlN0bXRNb2RpZmllci5GaW5hbCwgby5TdG10TW9kaWZpZXIuRXhwb3J0ZWRdKTtcblxuICAgIGN0eC5zdGF0ZW1lbnRzLnB1c2gobmdNb2R1bGVGYWN0b3J5U3RtdCk7XG4gIH1cbn1cbiJdfQ==

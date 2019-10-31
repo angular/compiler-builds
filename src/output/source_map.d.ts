@@ -1,9 +1,16 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 export declare type SourceMap = {
     version: number;
     file?: string;
     sourceRoot: string;
     sources: string[];
-    sourcesContent: string[];
+    sourcesContent: (string | null)[];
     mappings: string;
 };
 export declare class SourceMapGenerator {

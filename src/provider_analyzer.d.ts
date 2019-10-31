@@ -6,20 +6,21 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { CompileDirectiveMetadata, CompileNgModuleMetadata, CompileProviderMetadata, CompileQueryMetadata } from './compile_metadata';
+import { CompileReflector } from './compile_reflector';
 import { ParseError, ParseSourceSpan } from './parse_util';
-import { AttrAst, DirectiveAst, ProviderAst, QueryId, QueryMatch, ReferenceAst } from './template_parser/template_ast';
+import { AttrAst, DirectiveAst, ProviderAst, QueryMatch, ReferenceAst } from './template_parser/template_ast';
 export declare class ProviderError extends ParseError {
     constructor(message: string, span: ParseSourceSpan);
 }
 export interface QueryWithId {
     meta: CompileQueryMetadata;
-    id: QueryId;
+    queryId: number;
 }
 export declare class ProviderViewContext {
+    reflector: CompileReflector;
     component: CompileDirectiveMetadata;
-    sourceSpan: ParseSourceSpan;
     errors: ProviderError[];
-    constructor(component: CompileDirectiveMetadata, sourceSpan: ParseSourceSpan);
+    constructor(reflector: CompileReflector, component: CompileDirectiveMetadata);
 }
 export declare class ProviderElementContext {
     viewContext: ProviderViewContext;
@@ -32,28 +33,27 @@ export declare class ProviderElementContext {
     private _seenProviders;
     private _allProviders;
     private _attrs;
-    private _hasViewContainer;
     private _queriedTokens;
-    constructor(viewContext: ProviderViewContext, _parent: ProviderElementContext, _isViewRoot: boolean, _directiveAsts: DirectiveAst[], attrs: AttrAst[], refs: ReferenceAst[], _sourceSpan: ParseSourceSpan);
+    readonly transformedHasViewContainer: boolean;
+    constructor(viewContext: ProviderViewContext, _parent: ProviderElementContext, _isViewRoot: boolean, _directiveAsts: DirectiveAst[], attrs: AttrAst[], refs: ReferenceAst[], isTemplate: boolean, contentQueryStartId: number, _sourceSpan: ParseSourceSpan);
     afterElement(): void;
-    readonly depth: number;
     readonly transformProviders: ProviderAst[];
     readonly transformedDirectiveAsts: DirectiveAst[];
-    readonly transformedHasViewContainer: boolean;
     readonly queryMatches: QueryMatch[];
-    private _addQueryReadsTo(token, defaultValue, queryReadTokens);
-    private _getQueriesFor(token);
-    private _getOrCreateLocalProvider(requestingProviderType, token, eager);
-    private _getLocalDependency(requestingProviderType, dep, eager?);
-    private _getDependency(requestingProviderType, dep, eager?);
+    private _addQueryReadsTo;
+    private _getQueriesFor;
+    private _getOrCreateLocalProvider;
+    private _getLocalDependency;
+    private _getDependency;
 }
 export declare class NgModuleProviderAnalyzer {
+    private reflector;
     private _transformedProviders;
     private _seenProviders;
     private _allProviders;
     private _errors;
-    constructor(ngModule: CompileNgModuleMetadata, extraProviders: CompileProviderMetadata[], sourceSpan: ParseSourceSpan);
+    constructor(reflector: CompileReflector, ngModule: CompileNgModuleMetadata, extraProviders: CompileProviderMetadata[], sourceSpan: ParseSourceSpan);
     parse(): ProviderAst[];
-    private _getOrCreateLocalProvider(token, eager);
-    private _getDependency(dep, eager, requestorSourceSpan);
+    private _getOrCreateLocalProvider;
+    private _getDependency;
 }

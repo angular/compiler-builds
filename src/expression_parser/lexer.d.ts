@@ -1,3 +1,10 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 export declare enum TokenType {
     Character = 0,
     Identifier = 1,
@@ -5,7 +12,7 @@ export declare enum TokenType {
     String = 3,
     Operator = 4,
     Number = 5,
-    Error = 6,
+    Error = 6
 }
 export declare class Lexer {
     tokenize(text: string): Token[];
@@ -19,10 +26,11 @@ export declare class Token {
     isCharacter(code: number): boolean;
     isNumber(): boolean;
     isString(): boolean;
-    isOperator(operater: string): boolean;
+    isOperator(operator: string): boolean;
     isIdentifier(): boolean;
     isKeyword(): boolean;
     isKeywordLet(): boolean;
+    isKeywordAs(): boolean;
     isKeywordNull(): boolean;
     isKeywordUndefined(): boolean;
     isKeywordTrue(): boolean;
@@ -30,7 +38,7 @@ export declare class Token {
     isKeywordThis(): boolean;
     isError(): boolean;
     toNumber(): number;
-    toString(): string;
+    toString(): string | null;
 }
 export declare const EOF: Token;
 export declare function isIdentifier(input: string): boolean;

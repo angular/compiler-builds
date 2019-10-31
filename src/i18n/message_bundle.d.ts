@@ -17,11 +17,12 @@ export declare class MessageBundle {
     private _htmlParser;
     private _implicitTags;
     private _implicitAttrs;
+    private _locale;
     private _messages;
     constructor(_htmlParser: HtmlParser, _implicitTags: string[], _implicitAttrs: {
         [k: string]: string[];
-    });
+    }, _locale?: string | null);
     updateFromTemplate(html: string, url: string, interpolationConfig: InterpolationConfig): ParseError[];
     getMessages(): i18n.Message[];
-    write(serializer: Serializer): string;
+    write(serializer: Serializer, filterSources?: (path: string) => string): string;
 }

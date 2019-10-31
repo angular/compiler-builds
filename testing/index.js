@@ -5,119 +5,22 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * @module
- * @description
- * Entry point for all APIs of the compiler package.
- *
- * <div class="callout is-critical">
- *   <header>Unstable APIs</header>
- *   <p>
- *     All compiler apis are currently considered experimental and private!
- *   </p>
- *   <p>
- *     We expect the APIs in this package to keep on changing. Do not rely on them.
- *   </p>
- * </div>
- */
-export * from './schema_registry_mock';
-export * from './directive_resolver_mock';
-export * from './ng_module_resolver_mock';
-export * from './pipe_resolver_mock';
-import { createPlatformFactory, Injectable, COMPILER_OPTIONS, CompilerFactory, NgModule, Component, Directive, Pipe } from '@angular/core';
-import { TestingCompilerFactory } from './private_import_core';
-import { platformCoreDynamic, DirectiveResolver, NgModuleResolver, PipeResolver } from '@angular/compiler';
-import { MockDirectiveResolver } from './directive_resolver_mock';
-import { MockNgModuleResolver } from './ng_module_resolver_mock';
-import { MockPipeResolver } from './pipe_resolver_mock';
-import { MetadataOverrider } from './metadata_overrider';
-var TestingCompilerFactoryImpl = (function () {
-    function TestingCompilerFactoryImpl(_compilerFactory) {
-        this._compilerFactory = _compilerFactory;
+(function (factory) {
+    if (typeof module === "object" && typeof module.exports === "object") {
+        var v = factory(require, exports);
+        if (v !== undefined) module.exports = v;
     }
-    TestingCompilerFactoryImpl.prototype.createTestingCompiler = function (options) {
-        var compiler = this._compilerFactory.createCompiler(options);
-        return new TestingCompilerImpl(compiler, compiler.injector.get(MockDirectiveResolver), compiler.injector.get(MockPipeResolver), compiler.injector.get(MockNgModuleResolver));
-    };
-    return TestingCompilerFactoryImpl;
-}());
-export { TestingCompilerFactoryImpl };
-TestingCompilerFactoryImpl.decorators = [
-    { type: Injectable },
-];
-/** @nocollapse */
-TestingCompilerFactoryImpl.ctorParameters = function () { return [
-    { type: CompilerFactory, },
-]; };
-var TestingCompilerImpl = (function () {
-    function TestingCompilerImpl(_compiler, _directiveResolver, _pipeResolver, _moduleResolver) {
-        this._compiler = _compiler;
-        this._directiveResolver = _directiveResolver;
-        this._pipeResolver = _pipeResolver;
-        this._moduleResolver = _moduleResolver;
-        this._overrider = new MetadataOverrider();
+    else if (typeof define === "function" && define.amd) {
+        define("@angular/compiler/testing", ["require", "exports", "tslib", "@angular/compiler/testing/public_api"], factory);
     }
-    Object.defineProperty(TestingCompilerImpl.prototype, "injector", {
-        get: function () { return this._compiler.injector; },
-        enumerable: true,
-        configurable: true
-    });
-    TestingCompilerImpl.prototype.compileModuleSync = function (moduleType) {
-        return this._compiler.compileModuleSync(moduleType);
-    };
-    TestingCompilerImpl.prototype.compileModuleAsync = function (moduleType) {
-        return this._compiler.compileModuleAsync(moduleType);
-    };
-    TestingCompilerImpl.prototype.compileModuleAndAllComponentsSync = function (moduleType) {
-        return this._compiler.compileModuleAndAllComponentsSync(moduleType);
-    };
-    TestingCompilerImpl.prototype.compileModuleAndAllComponentsAsync = function (moduleType) {
-        return this._compiler.compileModuleAndAllComponentsAsync(moduleType);
-    };
-    TestingCompilerImpl.prototype.getNgContentSelectors = function (component) {
-        return this._compiler.getNgContentSelectors(component);
-    };
-    TestingCompilerImpl.prototype.overrideModule = function (ngModule, override) {
-        var oldMetadata = this._moduleResolver.resolve(ngModule, false);
-        this._moduleResolver.setNgModule(ngModule, this._overrider.overrideMetadata(NgModule, oldMetadata, override));
-    };
-    TestingCompilerImpl.prototype.overrideDirective = function (directive, override) {
-        var oldMetadata = this._directiveResolver.resolve(directive, false);
-        this._directiveResolver.setDirective(directive, this._overrider.overrideMetadata(Directive, oldMetadata, override));
-    };
-    TestingCompilerImpl.prototype.overrideComponent = function (component, override) {
-        var oldMetadata = this._directiveResolver.resolve(component, false);
-        this._directiveResolver.setDirective(component, this._overrider.overrideMetadata(Component, oldMetadata, override));
-    };
-    TestingCompilerImpl.prototype.overridePipe = function (pipe, override) {
-        var oldMetadata = this._pipeResolver.resolve(pipe, false);
-        this._pipeResolver.setPipe(pipe, this._overrider.overrideMetadata(Pipe, oldMetadata, override));
-    };
-    TestingCompilerImpl.prototype.clearCache = function () { this._compiler.clearCache(); };
-    TestingCompilerImpl.prototype.clearCacheFor = function (type) { this._compiler.clearCacheFor(type); };
-    return TestingCompilerImpl;
-}());
-export { TestingCompilerImpl };
-/**
- * Platform for dynamic tests
- *
- * @experimental
- */
-export var platformCoreDynamicTesting = createPlatformFactory(platformCoreDynamic, 'coreDynamicTesting', [
-    {
-        provide: COMPILER_OPTIONS,
-        useValue: {
-            providers: [
-                MockPipeResolver,
-                { provide: PipeResolver, useExisting: MockPipeResolver },
-                MockDirectiveResolver,
-                { provide: DirectiveResolver, useExisting: MockDirectiveResolver },
-                MockNgModuleResolver,
-                { provide: NgModuleResolver, useExisting: MockNgModuleResolver },
-            ]
-        },
-        multi: true
-    },
-    { provide: TestingCompilerFactory, useClass: TestingCompilerFactoryImpl }
-]);
-//# sourceMappingURL=index.js.map
+})(function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var tslib_1 = require("tslib");
+    // This file is not used to build this module. It is only used during editing
+    // by the TypeScript language service and during build for verification. `ngc`
+    // replaces this file with production index.ts when it rewrites private symbol
+    // names.
+    tslib_1.__exportStar(require("@angular/compiler/testing/public_api"), exports);
+});
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW5kZXguanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi8uLi8uLi8uLi8uLi8uLi9wYWNrYWdlcy9jb21waWxlci90ZXN0aW5nL2luZGV4LnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBOzs7Ozs7R0FNRzs7Ozs7Ozs7Ozs7OztJQUVILDZFQUE2RTtJQUM3RSw4RUFBOEU7SUFDOUUsOEVBQThFO0lBQzlFLFNBQVM7SUFFVCwrRUFBNkIiLCJzb3VyY2VzQ29udGVudCI6WyIvKipcbiAqIEBsaWNlbnNlXG4gKiBDb3B5cmlnaHQgR29vZ2xlIEluYy4gQWxsIFJpZ2h0cyBSZXNlcnZlZC5cbiAqXG4gKiBVc2Ugb2YgdGhpcyBzb3VyY2UgY29kZSBpcyBnb3Zlcm5lZCBieSBhbiBNSVQtc3R5bGUgbGljZW5zZSB0aGF0IGNhbiBiZVxuICogZm91bmQgaW4gdGhlIExJQ0VOU0UgZmlsZSBhdCBodHRwczovL2FuZ3VsYXIuaW8vbGljZW5zZVxuICovXG5cbi8vIFRoaXMgZmlsZSBpcyBub3QgdXNlZCB0byBidWlsZCB0aGlzIG1vZHVsZS4gSXQgaXMgb25seSB1c2VkIGR1cmluZyBlZGl0aW5nXG4vLyBieSB0aGUgVHlwZVNjcmlwdCBsYW5ndWFnZSBzZXJ2aWNlIGFuZCBkdXJpbmcgYnVpbGQgZm9yIHZlcmlmaWNhdGlvbi4gYG5nY2Bcbi8vIHJlcGxhY2VzIHRoaXMgZmlsZSB3aXRoIHByb2R1Y3Rpb24gaW5kZXgudHMgd2hlbiBpdCByZXdyaXRlcyBwcml2YXRlIHN5bWJvbFxuLy8gbmFtZXMuXG5cbmV4cG9ydCAqIGZyb20gJy4vcHVibGljX2FwaSc7XG4iXX0=

@@ -20,7 +20,12 @@ export interface AotCompilerHost extends StaticSymbolResolverHost, AotSummaryRes
      */
     fileNameToModuleName(importedFilePath: string, containingFilePath: string): string;
     /**
+     * Converts a path that refers to a resource into an absolute filePath
+     * that can be later on used for loading the resource via `loadResource.
+     */
+    resourceNameToFileName(resourceName: string, containingFileName: string): string | null;
+    /**
      * Loads a resource (e.g. html / css)
      */
-    loadResource(path: string): Promise<string>;
+    loadResource(path: string): Promise<string> | string;
 }

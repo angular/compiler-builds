@@ -6,8 +6,22 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import * as i18n from './i18n_ast';
+/**
+ * Return the message id or compute it using the XLIFF1 digest.
+ */
 export declare function digest(message: i18n.Message): string;
+/**
+ * Compute the message id using the XLIFF1 digest.
+ */
+export declare function computeDigest(message: i18n.Message): string;
+/**
+ * Return the message id or compute it using the XLIFF2/XMB/$localize digest.
+ */
 export declare function decimalDigest(message: i18n.Message): string;
+/**
+ * Compute the message id using the XLIFF2/XMB/$localize digest.
+ */
+export declare function computeDecimalDigest(message: i18n.Message): string;
 export declare function serializeNodes(nodes: i18n.Node[]): string[];
 /**
  * Compute the SHA1 of the given string
@@ -27,4 +41,4 @@ export declare function sha1(str: string): string;
  * https://github.com/google/closure-compiler/blob/master/src/com/google/javascript/jscomp/GoogleJsMessageIdGenerator.java
  */
 export declare function fingerprint(str: string): [number, number];
-export declare function computeMsgId(msg: string, meaning: string): string;
+export declare function computeMsgId(msg: string, meaning?: string): string;
