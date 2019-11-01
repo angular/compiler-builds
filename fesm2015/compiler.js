@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.0+14.sha-7dbf716.with-local-changes
+ * @license Angular v9.0.0-rc.0+19.sha-88e8023.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5752,11 +5752,12 @@ class KeyedWrite extends AST {
     }
 }
 class BindingPipe extends AST {
-    constructor(span, sourceSpan, exp, name, args) {
+    constructor(span, sourceSpan, exp, name, args, nameSpan) {
         super(span, sourceSpan);
         this.exp = exp;
         this.name = name;
         this.args = args;
+        this.nameSpan = nameSpan;
     }
     visit(visitor, context = null) { return visitor.visitPipe(this, context); }
 }
@@ -6039,7 +6040,7 @@ class AstTransformer$1 {
         return new Conditional(ast.span, ast.sourceSpan, ast.condition.visit(this), ast.trueExp.visit(this), ast.falseExp.visit(this));
     }
     visitPipe(ast, context) {
-        return new BindingPipe(ast.span, ast.sourceSpan, ast.exp.visit(this), ast.name, this.visitAll(ast.args));
+        return new BindingPipe(ast.span, ast.sourceSpan, ast.exp.visit(this), ast.name, this.visitAll(ast.args), ast.nameSpan);
     }
     visitKeyedRead(ast, context) {
         return new KeyedRead(ast.span, ast.sourceSpan, ast.obj.visit(this), ast.key.visit(this));
@@ -6167,7 +6168,7 @@ class AstMemoryEfficientTransformer {
         const exp = ast.exp.visit(this);
         const args = this.visitAll(ast.args);
         if (exp !== ast.exp || args !== ast.args) {
-            return new BindingPipe(ast.span, ast.sourceSpan, exp, ast.name, args);
+            return new BindingPipe(ast.span, ast.sourceSpan, exp, ast.name, args, ast.nameSpan);
         }
         return ast;
     }
@@ -6604,13 +6605,16 @@ class _ParseAST {
                 this.error('Cannot have a pipe in an action expression');
             }
             do {
+                const nameStart = this.inputIndex;
                 const name = this.expectIdentifierOrKeyword();
+                const nameSpan = this.span(nameStart);
                 const args = [];
                 while (this.optionalCharacter($COLON)) {
                     args.push(this.parseExpression());
                 }
                 const { start } = result.span;
-                result = new BindingPipe(this.span(start), this.sourceSpan(start), result, name, args);
+                result =
+                    new BindingPipe(this.span(start), this.sourceSpan(start), result, name, args, nameSpan);
             } while (this.optionalOperator('|'));
         }
         return result;
@@ -17931,7 +17935,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-rc.0+14.sha-7dbf716.with-local-changes');
+const VERSION$1 = new Version('9.0.0-rc.0+19.sha-88e8023.with-local-changes');
 
 /**
  * @license
@@ -26937,14 +26941,15 @@ class DirectiveBinder {
                 dirTarget = directives.find(dir => dir.isComponent) || null;
             }
             else {
-                // This is a reference to a directive exported via exportAs. One should exist.
+                // This should be a reference to a directive exported via exportAs.
                 dirTarget =
                     directives.find(dir => dir.exportAs !== null && dir.exportAs.some(value => value === ref.value)) ||
                         null;
-                // Check if a matching directive was found, and error if it wasn't.
+                // Check if a matching directive was found.
                 if (dirTarget === null) {
-                    // TODO(alxhub): Return an error value here that can be used for template validation.
-                    throw new Error(`Assertion error: failed to find directive with exportAs: ${ref.value}`);
+                    // No matching directive was found - this reference points to an unknown target. Leave it
+                    // unmapped.
+                    return;
                 }
             }
             if (dirTarget !== null) {
