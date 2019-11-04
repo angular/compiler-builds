@@ -160,8 +160,9 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
      * because those values are intended to always be generated as property instructions.
      */
     private prepareNonRenderAttrs;
-    private addConstants;
-    private prepareRefsParameter;
+    private addToConsts;
+    private addAttrsToConsts;
+    private prepareRefsArray;
     private prepareListenerParameter;
 }
 export declare class ValueConverter extends AstMemoryEfficientTransformer {
