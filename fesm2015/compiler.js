@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.0+34.sha-5437e2d.with-local-changes
+ * @license Angular v9.0.0-rc.0+35.sha-66725b7.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15887,9 +15887,10 @@ class TemplateDefinitionBuilder {
         });
         // add attributes for directive and projection matching purposes
         attributes.push(...this.prepareNonRenderAttrs(allOtherInputs, element.outputs, stylingBuilder, [], i18nAttrs, ngProjectAsAttr));
-        parameters.push(this.addConstants(attributes));
+        parameters.push(this.addAttrsToConsts(attributes));
         // local refs (ex.: <div #foo #bar="baz">)
-        parameters.push(this.prepareRefsParameter(element.references));
+        const refs = this.prepareRefsArray(element.references);
+        parameters.push(this.addToConsts(refs));
         const wasInNamespace = this._namespace;
         const currentNamespace = this.getNamespaceInstruction(namespaceKey);
         // If the namespace is changing now, include an instruction to change it
@@ -16116,10 +16117,11 @@ class TemplateDefinitionBuilder {
         const attrsExprs = [];
         template.attributes.forEach((a) => { attrsExprs.push(asLiteral(a.name), asLiteral(a.value)); });
         attrsExprs.push(...this.prepareNonRenderAttrs(template.inputs, template.outputs, undefined, template.templateAttrs));
-        parameters.push(this.addConstants(attrsExprs));
+        parameters.push(this.addAttrsToConsts(attrsExprs));
         // local refs (ex.: <ng-template #foo>)
         if (template.references && template.references.length) {
-            parameters.push(this.prepareRefsParameter(template.references));
+            const refs = this.prepareRefsArray(template.references);
+            parameters.push(this.addToConsts(refs));
             parameters.push(importExpr(Identifiers$1.templateRefExtractor));
         }
         // Create the template function
@@ -16442,20 +16444,22 @@ class TemplateDefinitionBuilder {
         }
         return attrExprs;
     }
-    addConstants(constExprs) {
-        if (constExprs.length > 0) {
-            const literal$1 = literalArr(constExprs);
-            // Try to reuse a literal that's already in the array, if possible.
-            for (let i = 0; i < this._constants.length; i++) {
-                if (this._constants[i].isEquivalent(literal$1)) {
-                    return literal(i);
-                }
-            }
-            return literal(this._constants.push(literal$1) - 1);
+    addToConsts(expression) {
+        if (isNull(expression)) {
+            return TYPED_NULL_EXPR;
         }
-        return TYPED_NULL_EXPR;
+        // Try to reuse a literal that's already in the array, if possible.
+        for (let i = 0; i < this._constants.length; i++) {
+            if (this._constants[i].isEquivalent(expression)) {
+                return literal(i);
+            }
+        }
+        return literal(this._constants.push(expression) - 1);
     }
-    prepareRefsParameter(references) {
+    addAttrsToConsts(attrs) {
+        return attrs.length > 0 ? this.addToConsts(literalArr(attrs)) : TYPED_NULL_EXPR;
+    }
+    prepareRefsArray(references) {
         if (!references || references.length === 0) {
             return TYPED_NULL_EXPR;
         }
@@ -16474,7 +16478,7 @@ class TemplateDefinitionBuilder {
             }, true);
             return [reference.name, reference.value];
         }));
-        return this.constantPool.getConstLiteral(asLiteral(refsParam), true);
+        return asLiteral(refsParam);
     }
     prepareListenerParameter(tagName, outputAst, index) {
         return () => {
@@ -17935,7 +17939,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-rc.0+34.sha-5437e2d.with-local-changes');
+const VERSION$1 = new Version('9.0.0-rc.0+35.sha-66725b7.with-local-changes');
 
 /**
  * @license
