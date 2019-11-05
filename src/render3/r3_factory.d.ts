@@ -18,17 +18,13 @@ export interface R3ConstructorFactoryMetadata {
      */
     name: string;
     /**
-     * An expression representing the interface type being constructed.
+     * An expression representing the function (or constructor) which will instantiate the requested
+     * type.
+     *
+     * This could be a reference to a constructor type, or to a user-defined factory function. The
+     * `useNew` property determines whether it will be called as a constructor or not.
      */
     type: o.Expression;
-    /**
-     * An expression representing the constructor type, intended for use within a class definition
-     * itself.
-     *
-     * This can differ from the outer `type` if the class is being compiled by ngcc and is inside
-     * an IIFE structure that uses a different name internally.
-     */
-    internalType: o.Expression;
     /** Number of arguments for the `type`. */
     typeArgumentCount: number;
     /**
