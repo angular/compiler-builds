@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.0+42.sha-1b08f7c.with-local-changes
+ * @license Angular v9.0.0-rc.0+43.sha-abdbd46.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -14737,9 +14737,17 @@ class HtmlAstToIvyAst {
         this.errors = [];
         this.styles = [];
         this.styleUrls = [];
+        this.inI18nBlock = false;
     }
     // HTML visitor
     visitElement(element) {
+        const isI18nRootElement = isI18nRootNode(element.i18n);
+        if (isI18nRootElement) {
+            if (this.inI18nBlock) {
+                this.reportError('Cannot mark an element as translatable inside of a translatable section. Please remove the nested i18n marker.', element.sourceSpan);
+            }
+            this.inI18nBlock = true;
+        }
         const preparsedElement = preparseElement(element);
         if (preparsedElement.type === PreparsedElementType.SCRIPT) {
             return null;
@@ -14840,9 +14848,12 @@ class HtmlAstToIvyAst {
             // For <ng-template>s with structural directives on them, avoid passing i18n information to
             // the wrapping template to prevent unnecessary i18n instructions from being generated. The
             // necessary i18n meta information will be extracted from child elements.
-            const i18n = isTemplateElement && isI18nRootNode(element.i18n) ? undefined : element.i18n;
+            const i18n = isTemplateElement && isI18nRootElement ? undefined : element.i18n;
             // TODO(pk): test for this case
             parsedElement = new Template(parsedElement.name, hoistedAttrs.attributes, hoistedAttrs.inputs, hoistedAttrs.outputs, templateAttrs, [parsedElement], [ /* no references */], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, i18n);
+        }
+        if (isI18nRootElement) {
+            this.inI18nBlock = false;
         }
         return parsedElement;
     }
@@ -15821,9 +15832,6 @@ class TemplateDefinitionBuilder {
         const stylingBuilder = new StylingBuilder(literal(elementIndex), null);
         let isNonBindableMode = false;
         const isI18nRootElement = isI18nRootNode(element.i18n) && !isSingleI18nIcu(element.i18n);
-        if (isI18nRootElement && this.i18n) {
-            throw new Error(`Could not mark an element as translatable inside of a translatable section`);
-        }
         const i18nAttrs = [];
         const outputAttrs = [];
         let ngProjectAsAttr;
@@ -17939,7 +17947,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-rc.0+42.sha-1b08f7c.with-local-changes');
+const VERSION$1 = new Version('9.0.0-rc.0+43.sha-abdbd46.with-local-changes');
 
 /**
  * @license
