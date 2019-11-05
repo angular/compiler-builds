@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.0+47.sha-85298e3.with-local-changes
+ * @license Angular v9.0.0-rc.0+62.sha-d751ca7.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@angular/compiler')) :
     typeof define === 'function' && define.amd ? define('@angular/compiler/testing', ['exports', '@angular/compiler'], factory) :
     (global = global || self, factory((global.ng = global.ng || {}, global.ng.compiler = global.ng.compiler || {}, global.ng.compiler.testing = {}), global.ng.compiler));
-}(this, function (exports, compiler) { 'use strict';
+}(this, (function (exports, compiler) { 'use strict';
 
     /*! *****************************************************************************
     Copyright (c) Microsoft Corporation. All rights reserved.
@@ -506,13 +506,13 @@
      * Generated bundle index. Do not edit.
      */
 
-    exports.MockResourceLoader = MockResourceLoader;
-    exports.MockSchemaRegistry = MockSchemaRegistry;
     exports.MockDirectiveResolver = MockDirectiveResolver;
     exports.MockNgModuleResolver = MockNgModuleResolver;
     exports.MockPipeResolver = MockPipeResolver;
+    exports.MockResourceLoader = MockResourceLoader;
+    exports.MockSchemaRegistry = MockSchemaRegistry;
 
     Object.defineProperty(exports, '__esModule', { value: true });
 
-}));
+})));
 //# sourceMappingURL=compiler-testing.umd.js.map
