@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.0+66.sha-1735135.with-local-changes
+ * @license Angular v9.0.0-rc.0+75.sha-114317c.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -306,5 +306,5 @@ var MockPipeResolver = /** @class */ (function (_super) {
  * Generated bundle index. Do not edit.
  */
 
-export { MockResourceLoader, MockSchemaRegistry, MockDirectiveResolver, MockNgModuleResolver, MockPipeResolver };
+export { MockDirectiveResolver, MockNgModuleResolver, MockPipeResolver, MockResourceLoader, MockSchemaRegistry };
 //# sourceMappingURL=testing.js.map
