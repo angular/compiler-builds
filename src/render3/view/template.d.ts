@@ -14,7 +14,7 @@ import { InterpolationConfig } from '../../ml_parser/interpolation_config';
 import { LexerRange } from '../../ml_parser/lexer';
 import * as o from '../../output/output_ast';
 import { ParseError } from '../../parse_util';
-import { SelectorMatcher } from '../../selector';
+import { CssSelector, SelectorMatcher } from '../../selector';
 import { BindingParser } from '../../template_parser/binding_parser';
 import * as t from '../r3_ast';
 import { I18nContext } from './i18n/context';
@@ -248,6 +248,12 @@ export declare class BindingScope implements LocalResolver {
     variableDeclarations(): o.Statement[];
     freshReferenceName(): string;
 }
+/**
+ * Creates a `CssSelector` given a tag name and a map of attributes
+ */
+export declare function createCssSelector(elementName: string, attributes: {
+    [name: string]: string;
+}): CssSelector;
 /**
  * Options that can be used to modify how a template is parsed by `parseTemplate()`.
  */
