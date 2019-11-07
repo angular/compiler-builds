@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+4.sha-7bccef5.with-local-changes
+ * @license Angular v9.0.0-rc.1+7.sha-99ead47.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16371,9 +16371,9 @@ class TemplateDefinitionBuilder {
         this._tempVariables.push(...stmts);
         return args;
     }
-    matchDirectives(tagName, elOrTpl) {
+    matchDirectives(elementName, elOrTpl) {
         if (this.directiveMatcher) {
-            const selector = createCssSelector(tagName, getAttrsForDirectiveMatching(elOrTpl));
+            const selector = createCssSelector(elementName, getAttrsForDirectiveMatching(elOrTpl));
             this.directiveMatcher.match(selector, (cssSelector, staticType) => { this.directives.add(staticType); });
         }
     }
@@ -16832,12 +16832,14 @@ class BindingScope {
 /**
  * Creates a `CssSelector` given a tag name and a map of attributes
  */
-function createCssSelector(tag, attributes) {
+function createCssSelector(elementName, attributes) {
     const cssSelector = new CssSelector();
-    cssSelector.setElement(tag);
+    const elementNameNoNs = splitNsName(elementName)[1];
+    cssSelector.setElement(elementNameNoNs);
     Object.getOwnPropertyNames(attributes).forEach((name) => {
+        const nameNoNs = splitNsName(name)[1];
         const value = attributes[name];
-        cssSelector.addAttribute(name, value);
+        cssSelector.addAttribute(nameNoNs, value);
         if (name.toLowerCase() === 'class') {
             const classes = value.trim().split(/\s+/);
             classes.forEach(className => cssSelector.addClassName(className));
@@ -17959,7 +17961,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-rc.1+4.sha-7bccef5.with-local-changes');
+const VERSION$1 = new Version('9.0.0-rc.1+7.sha-99ead47.with-local-changes');
 
 /**
  * @license
@@ -26932,22 +26934,10 @@ class DirectiveBinder {
     ingest(template) { template.forEach(node => node.visit(this)); }
     visitElement(element) { this.visitElementOrTemplate(element.name, element); }
     visitTemplate(template) { this.visitElementOrTemplate('ng-template', template); }
-    visitElementOrTemplate(tag, node) {
+    visitElementOrTemplate(elementName, node) {
         // First, determine the HTML shape of the node for the purpose of directive matching.
         // Do this by building up a `CssSelector` for the node.
-        const cssSelector = new CssSelector();
-        cssSelector.setElement(tag);
-        // Add attributes to the CSS selector.
-        const attrs = getAttrsForDirectiveMatching(node);
-        Object.getOwnPropertyNames(attrs).forEach((name) => {
-            const value = attrs[name];
-            cssSelector.addAttribute(name, value);
-            // Treat the 'class' attribute specially.
-            if (name.toLowerCase() === 'class') {
-                const classes = value.trim().split(/\s+/g);
-                classes.forEach(className => cssSelector.addClassName(className));
-            }
-        });
+        const cssSelector = createCssSelector(elementName, getAttrsForDirectiveMatching(node));
         // Next, use the `SelectorMatcher` to get the list of directives on the node.
         const directives = [];
         this.matcher.match(cssSelector, (_, directive) => directives.push(directive));
