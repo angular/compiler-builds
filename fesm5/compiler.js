@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1.with-local-changes
+ * @license Angular v9.0.0-rc.1+2.sha-3419b50.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13582,7 +13582,7 @@ var BindingParser = /** @class */ (function () {
         // Check for special cases (prefix style, attr, class)
         if (parts.length > 1) {
             if (parts[0] == ATTRIBUTE_PREFIX) {
-                boundPropertyName = parts[1];
+                boundPropertyName = parts.slice(1).join(PROPERTY_PARTS_SEPARATOR);
                 if (!skipValidation) {
                     this._validatePropertyOrAttributeName(boundPropertyName, boundProp.sourceSpan, true);
                 }
@@ -19052,7 +19052,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-rc.1.with-local-changes');
+var VERSION$1 = new Version('9.0.0-rc.1+2.sha-3419b50.with-local-changes');
 
 /**
  * @license
