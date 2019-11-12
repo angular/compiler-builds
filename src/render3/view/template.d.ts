@@ -115,6 +115,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private instructionFn;
     private processStylingInstruction;
     private creationInstruction;
+    private creationInstructionChain;
     private updateInstructionWithAdvance;
     private updateInstruction;
     private updateInstructionChain;
