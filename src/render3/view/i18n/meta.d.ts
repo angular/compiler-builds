@@ -25,15 +25,40 @@ export declare class I18nMetaVisitor implements html.Visitor {
     private interpolationConfig;
     private keepI18nAttrs;
     private i18nLegacyMessageIdFormat;
+    hasI18nMeta: boolean;
     private _createI18nMessage;
     constructor(interpolationConfig?: InterpolationConfig, keepI18nAttrs?: boolean, i18nLegacyMessageIdFormat?: string);
     private _generateI18nMessage;
-    visitElement(element: html.Element, context: any): any;
-    visitExpansion(expansion: html.Expansion, context: any): any;
-    visitText(text: html.Text, context: any): any;
-    visitAttribute(attribute: html.Attribute, context: any): any;
-    visitComment(comment: html.Comment, context: any): any;
-    visitExpansionCase(expansionCase: html.ExpansionCase, context: any): any;
+    visitElement(element: html.Element): any;
+    visitExpansion(expansion: html.Expansion, currentMessage: i18n.Message | undefined): any;
+    visitText(text: html.Text): any;
+    visitAttribute(attribute: html.Attribute): any;
+    visitComment(comment: html.Comment): any;
+    visitExpansionCase(expansionCase: html.ExpansionCase): any;
+    /**
+     * Parse the general form `meta` passed into extract the explicit metadata needed to create a
+     * `Message`.
+     *
+     * There are three possibilities for the `meta` variable
+     * 1) a string from an `i18n` template attribute: parse it to extract the metadata values.
+     * 2) a `Message` from a previous processing pass: reuse the metadata values in the message.
+     * 4) other: ignore this and just process the message metadata as normal
+     *
+     * @param meta the bucket that holds information about the message
+     * @returns the parsed metadata.
+     */
+    private _parseMetadata;
+    /**
+     * Generate (or restore) message id if not specified already.
+     */
+    private _setMessageId;
+    /**
+     * Update the `message` with a `legacyId` if necessary.
+     *
+     * @param message the message whose legacy id should be set
+     * @param meta information about the message being processed
+     */
+    private _setLegacyId;
 }
 export declare function metaFromI18nMessage(message: i18n.Message, id?: string | null): I18nMeta;
 /**

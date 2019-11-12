@@ -14,7 +14,7 @@ import { InterpolationConfig } from '../../ml_parser/interpolation_config';
 import { LexerRange } from '../../ml_parser/lexer';
 import * as o from '../../output/output_ast';
 import { ParseError } from '../../parse_util';
-import { SelectorMatcher } from '../../selector';
+import { CssSelector, SelectorMatcher } from '../../selector';
 import { BindingParser } from '../../template_parser/binding_parser';
 import * as t from '../r3_ast';
 import { I18nContext } from './i18n/context';
@@ -76,7 +76,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private _ngContentSelectorsOffset;
     private _implicitReceiverExpr;
     constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, i18nContext: I18nContext | null, templateIndex: number | null, templateName: string | null, directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference, relativeContextFilePath: string, i18nUseExternalIds: boolean, _constants?: o.Expression[]);
-    buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], ngContentSelectorsOffset?: number, i18n?: i18n.AST): o.FunctionExpr;
+    buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], ngContentSelectorsOffset?: number, i18n?: i18n.I18nMeta): o.FunctionExpr;
     getLocal(name: string): o.Expression | null;
     notifyImplicitReceiverUse(): void;
     private i18nTranslate;
@@ -160,8 +160,9 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
      * because those values are intended to always be generated as property instructions.
      */
     private prepareNonRenderAttrs;
-    private addConstants;
-    private prepareRefsParameter;
+    private addToConsts;
+    private addAttrsToConsts;
+    private prepareRefsArray;
     private prepareListenerParameter;
 }
 export declare class ValueConverter extends AstMemoryEfficientTransformer {
@@ -247,6 +248,12 @@ export declare class BindingScope implements LocalResolver {
     variableDeclarations(): o.Statement[];
     freshReferenceName(): string;
 }
+/**
+ * Creates a `CssSelector` given a tag name and a map of attributes
+ */
+export declare function createCssSelector(elementName: string, attributes: {
+    [name: string]: string;
+}): CssSelector;
 /**
  * Options that can be used to modify how a template is parsed by `parseTemplate()`.
  */

@@ -85,10 +85,10 @@ export { BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEven
 export * from './render3/view/t2_api';
 export * from './render3/view/t2_binder';
 export { Identifiers as R3Identifiers } from './render3/r3_identifiers';
-export { R3DependencyMetadata, R3FactoryDefMetadata, R3ResolvedDependencyType, compileFactoryFromMetadata, R3FactoryMetadata } from './render3/r3_factory';
+export { R3DependencyMetadata, R3ResolvedDependencyType, compileFactoryFunction, R3FactoryMetadata, R3FactoryTarget } from './render3/r3_factory';
 export { compileInjector, compileNgModule, R3InjectorMetadata, R3NgModuleMetadata } from './render3/r3_module_compiler';
 export { compilePipeFromMetadata, R3PipeMetadata } from './render3/r3_pipe_compiler';
 export { makeBindingParser, parseTemplate, ParseTemplateOptions } from './render3/view/template';
 export { R3Reference } from './render3/util';
-export { compileBaseDefFromMetadata, R3BaseRefMetaData, compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, ParsedHostBindings, verifyHostBindings } from './render3/view/compiler';
+export { compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, ParsedHostBindings, verifyHostBindings } from './render3/view/compiler';
 export { publishFacade } from './jit_compiler_facade';

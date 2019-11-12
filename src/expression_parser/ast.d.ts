@@ -112,7 +112,8 @@ export declare class BindingPipe extends AST {
     exp: AST;
     name: string;
     args: any[];
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, exp: AST, name: string, args: any[]);
+    nameSpan: ParseSpan;
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, exp: AST, name: string, args: any[], nameSpan: ParseSpan);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class LiteralPrimitive extends AST {

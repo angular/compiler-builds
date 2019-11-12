@@ -6,26 +6,29 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { AstPath } from '../ast_path';
+import { I18nMeta } from '../i18n/i18n_ast';
 import { ParseSourceSpan } from '../parse_util';
 export interface Node {
     sourceSpan: ParseSourceSpan;
     visit(visitor: Visitor, context: any): any;
 }
-export declare class Text implements Node {
-    value: string;
+export declare abstract class NodeWithI18n implements Node {
     sourceSpan: ParseSourceSpan;
     i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined;
-    constructor(value: string, sourceSpan: ParseSourceSpan, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
+    constructor(sourceSpan: ParseSourceSpan, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
+    abstract visit(visitor: Visitor, context: any): any;
+}
+export declare class Text extends NodeWithI18n {
+    value: string;
+    constructor(value: string, sourceSpan: ParseSourceSpan, i18n?: I18nMeta);
     visit(visitor: Visitor, context: any): any;
 }
-export declare class Expansion implements Node {
+export declare class Expansion extends NodeWithI18n {
     switchValue: string;
     type: string;
     cases: ExpansionCase[];
-    sourceSpan: ParseSourceSpan;
     switchValueSourceSpan: ParseSourceSpan;
-    i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined;
-    constructor(switchValue: string, type: string, cases: ExpansionCase[], sourceSpan: ParseSourceSpan, switchValueSourceSpan: ParseSourceSpan, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
+    constructor(switchValue: string, type: string, cases: ExpansionCase[], sourceSpan: ParseSourceSpan, switchValueSourceSpan: ParseSourceSpan, i18n?: I18nMeta);
     visit(visitor: Visitor, context: any): any;
 }
 export declare class ExpansionCase implements Node {
@@ -37,24 +40,20 @@ export declare class ExpansionCase implements Node {
     constructor(value: string, expression: Node[], sourceSpan: ParseSourceSpan, valueSourceSpan: ParseSourceSpan, expSourceSpan: ParseSourceSpan);
     visit(visitor: Visitor, context: any): any;
 }
-export declare class Attribute implements Node {
+export declare class Attribute extends NodeWithI18n {
     name: string;
     value: string;
-    sourceSpan: ParseSourceSpan;
     valueSpan?: ParseSourceSpan | undefined;
-    i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined;
-    constructor(name: string, value: string, sourceSpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
+    constructor(name: string, value: string, sourceSpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined, i18n?: I18nMeta);
     visit(visitor: Visitor, context: any): any;
 }
-export declare class Element implements Node {
+export declare class Element extends NodeWithI18n {
     name: string;
     attrs: Attribute[];
     children: Node[];
-    sourceSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan | null;
     endSourceSpan: ParseSourceSpan | null;
-    i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined;
-    constructor(name: string, attrs: Attribute[], children: Node[], sourceSpan: ParseSourceSpan, startSourceSpan?: ParseSourceSpan | null, endSourceSpan?: ParseSourceSpan | null, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
+    constructor(name: string, attrs: Attribute[], children: Node[], sourceSpan: ParseSourceSpan, startSourceSpan?: ParseSourceSpan | null, endSourceSpan?: ParseSourceSpan | null, i18n?: I18nMeta);
     visit(visitor: Visitor, context: any): any;
 }
 export declare class Comment implements Node {
