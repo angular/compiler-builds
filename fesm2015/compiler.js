@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+64.sha-ccee818.with-local-changes
+ * @license Angular v9.0.0-rc.1+67.sha-2f0b8bc.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15970,9 +15970,13 @@ class TemplateDefinitionBuilder {
                 }
             }
             // Generate Listeners (outputs)
-            element.outputs.forEach((outputAst) => {
-                this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter(element.name, outputAst, elementIndex));
-            });
+            if (element.outputs.length > 0) {
+                const listeners = element.outputs.map((outputAst) => ({
+                    sourceSpan: outputAst.sourceSpan,
+                    params: this.prepareListenerParameter(element.name, outputAst, elementIndex)
+                }));
+                this.creationInstructionChain(Identifiers$1.listener, listeners);
+            }
             // Note: it's important to keep i18n/i18nStart instructions after i18nAttributes and
             // listeners, to make sure i18nAttributes instruction targets current element at runtime.
             if (isI18nRootElement) {
@@ -16163,9 +16167,13 @@ class TemplateDefinitionBuilder {
             // Add the input bindings
             this.templatePropertyBindings(templateIndex, template.inputs);
             // Generate listeners for directive output
-            template.outputs.forEach((outputAst) => {
-                this.creationInstruction(outputAst.sourceSpan, Identifiers$1.listener, this.prepareListenerParameter('ng_template', outputAst, templateIndex));
-            });
+            if (template.outputs.length > 0) {
+                const listeners = template.outputs.map((outputAst) => ({
+                    sourceSpan: outputAst.sourceSpan,
+                    params: this.prepareListenerParameter('ng_template', outputAst, templateIndex)
+                }));
+                this.creationInstructionChain(Identifiers$1.listener, listeners);
+            }
         }
     }
     visitBoundText(text) {
@@ -16299,6 +16307,12 @@ class TemplateDefinitionBuilder {
     }
     creationInstruction(span, reference, paramsOrFn, prepend) {
         this.instructionFn(this._creationCodeFns, span, reference, paramsOrFn || [], prepend);
+    }
+    creationInstructionChain(reference, calls) {
+        const span = calls.length ? calls[0].sourceSpan : null;
+        this._creationCodeFns.push(() => {
+            return chainedInstruction(reference, calls.map(call => call.params()), span).toStmt();
+        });
     }
     updateInstructionWithAdvance(nodeIndex, span, reference, paramsOrFn) {
         this.addAdvanceInstructionIfNecessary(nodeIndex, span);
@@ -17581,16 +17595,30 @@ function getBindingNameAndInstruction(binding) {
     return { bindingName, instruction, isAttribute: !!attrMatches };
 }
 function createHostListeners(eventBindings, name) {
-    return eventBindings.map(binding => {
+    const listeners = [];
+    const syntheticListeners = [];
+    const instructions = [];
+    eventBindings.forEach(binding => {
         let bindingName = binding.name && sanitizeIdentifier(binding.name);
         const bindingFnName = binding.type === 1 /* Animation */ ?
             prepareSyntheticListenerFunctionName(bindingName, binding.targetOrPhase) :
             bindingName;
         const handlerName = name && bindingName ? `${name}_${bindingFnName}_HostBindingHandler` : null;
         const params = prepareEventListenerParameters(BoundEvent.fromParsedEvent(binding), handlerName);
-        const instruction = binding.type == 1 /* Animation */ ? Identifiers$1.componentHostSyntheticListener : Identifiers$1.listener;
-        return importExpr(instruction).callFn(params).toStmt();
+        if (binding.type == 1 /* Animation */) {
+            syntheticListeners.push(params);
+        }
+        else {
+            listeners.push(params);
+        }
     });
+    if (syntheticListeners.length > 0) {
+        instructions.push(chainedInstruction(Identifiers$1.componentHostSyntheticListener, syntheticListeners).toStmt());
+    }
+    if (listeners.length > 0) {
+        instructions.push(chainedInstruction(Identifiers$1.listener, listeners).toStmt());
+    }
+    return instructions;
 }
 function metadataAsSummary(meta) {
     // clang-format off
@@ -17961,7 +17989,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-rc.1+64.sha-ccee818.with-local-changes');
+const VERSION$1 = new Version('9.0.0-rc.1+67.sha-2f0b8bc.with-local-changes');
 
 /**
  * @license
