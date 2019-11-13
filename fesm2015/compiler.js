@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+89.sha-f1b3284.with-local-changes
+ * @license Angular v9.0.0-rc.1+100.sha-b30bb8d.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16563,22 +16563,18 @@ class ValueConverter extends AstMemoryEfficientTransformer {
         return new BuiltinFunctionCall(array.span, array.sourceSpan, this.visitAll(array.expressions), values => {
             // If the literal has calculated (non-literal) elements transform it into
             // calls to literal factories that compose the literal and will cache intermediate
-            // values. Otherwise, just return an literal array that contains the values.
+            // values.
             const literal = literalArr(values);
-            return values.every(a => a.isConstant()) ?
-                this.constantPool.getConstLiteral(literal, true) :
-                getLiteralFactory(this.constantPool, literal, this.allocatePureFunctionSlots);
+            return getLiteralFactory(this.constantPool, literal, this.allocatePureFunctionSlots);
         });
     }
     visitLiteralMap(map, context) {
         return new BuiltinFunctionCall(map.span, map.sourceSpan, this.visitAll(map.values), values => {
             // If the literal has calculated (non-literal) elements  transform it into
             // calls to literal factories that compose the literal and will cache intermediate
-            // values. Otherwise, just return an literal array that contains the values.
+            // values.
             const literal = literalMap(values.map((value, index) => ({ key: map.keys[index].key, value, quoted: map.keys[index].quoted })));
-            return values.every(a => a.isConstant()) ?
-                this.constantPool.getConstLiteral(literal, true) :
-                getLiteralFactory(this.constantPool, literal, this.allocatePureFunctionSlots);
+            return getLiteralFactory(this.constantPool, literal, this.allocatePureFunctionSlots);
         });
     }
 }
@@ -16614,14 +16610,10 @@ function getLiteralFactory(constantPool, literal$1, allocateSlots) {
     const { literalFactory, literalFactoryArguments } = constantPool.getLiteralFactory(literal$1);
     // Allocate 1 slot for the result plus 1 per argument
     const startSlot = allocateSlots(1 + literalFactoryArguments.length);
-    literalFactoryArguments.length > 0 || error(`Expected arguments to a literal factory function`);
     const { identifier, isVarLength } = pureFunctionCallInfo(literalFactoryArguments);
     // Literal factories are pure functions that only need to be re-invoked when the parameters
     // change.
-    const args = [
-        literal(startSlot),
-        literalFactory,
-    ];
+    const args = [literal(startSlot), literalFactory];
     if (isVarLength) {
         args.push(literalArr(literalFactoryArguments));
     }
@@ -17989,7 +17981,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-rc.1+89.sha-f1b3284.with-local-changes');
+const VERSION$1 = new Version('9.0.0-rc.1+100.sha-b30bb8d.with-local-changes');
 
 /**
  * @license
