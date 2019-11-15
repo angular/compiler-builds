@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.2+21.sha-8452458.with-local-changes
+ * @license Angular v9.0.0-rc.2+36.sha-c182dea.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -400,15 +400,15 @@ function getHtmlTagDefinition(tagName) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' + //":not("
-    '([-\\w]+)|' + // "tag"
-    '(?:\\.([-\\w]+))|' + // ".class"
+const _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' + // 1: ":not("
+    '(([\\.\\#]?)[-\\w]+)|' + // 2: "tag"; 3: "."/"#";
     // "-" should appear first in the regexp below as FF31 parses "[.-\w]" as a range
+    // 4: attribute; 5: attribute_string; 6: attribute_value
     '(?:\\[([-.\\w*]+)(?:=([\"\']?)([^\\]\"\']*)\\5)?\\])|' + // "[name]", "[name=value]",
     // "[name="value"]",
     // "[name='value']"
-    '(\\))|' + // ")"
-    '(\\s*,\\s*)', // ","
+    '(\\))|' + // 7: ")"
+    '(\\s*,\\s*)', // 8: ","
 'g');
 /**
  * A css selector contains an element name,
@@ -448,28 +448,39 @@ class CssSelector {
         let inNot = false;
         _SELECTOR_REGEXP.lastIndex = 0;
         while (match = _SELECTOR_REGEXP.exec(selector)) {
-            if (match[1]) {
+            if (match[1 /* NOT */]) {
                 if (inNot) {
-                    throw new Error('Nesting :not is not allowed in a selector');
+                    throw new Error('Nesting :not in a selector is not allowed');
                 }
                 inNot = true;
                 current = new CssSelector();
                 cssSelector.notSelectors.push(current);
             }
-            if (match[2]) {
-                current.setElement(match[2]);
+            const tag = match[2 /* TAG */];
+            if (tag) {
+                const prefix = match[3 /* PREFIX */];
+                if (prefix === '#') {
+                    // #hash
+                    current.addAttribute('id', tag.substr(1));
+                }
+                else if (prefix === '.') {
+                    // Class
+                    current.addClassName(tag.substr(1));
+                }
+                else {
+                    // Element
+                    current.setElement(tag);
+                }
             }
-            if (match[3]) {
-                current.addClassName(match[3]);
+            const attribute = match[4 /* ATTRIBUTE */];
+            if (attribute) {
+                current.addAttribute(attribute, match[6 /* ATTRIBUTE_VALUE */]);
             }
-            if (match[4]) {
-                current.addAttribute(match[4], match[6]);
-            }
-            if (match[7]) {
+            if (match[7 /* NOT_END */]) {
                 inNot = false;
                 current = cssSelector;
             }
-            if (match[8]) {
+            if (match[8 /* SEPARATOR */]) {
                 if (inNot) {
                     throw new Error('Multiple selectors in :not are not supported');
                 }
@@ -17953,7 +17964,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-rc.2+21.sha-8452458.with-local-changes');
+const VERSION$1 = new Version('9.0.0-rc.2+36.sha-c182dea.with-local-changes');
 
 /**
  * @license
