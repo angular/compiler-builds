@@ -15,10 +15,14 @@ import { ValueConverter } from './template';
  * A styling expression summary that is to be processed by the compiler
  */
 export interface StylingInstruction {
-    sourceSpan: ParseSourceSpan | null;
     reference: o.ExternalReference;
-    allocateBindingSlots: number;
+    /** Calls to individual styling instructions. Used when chaining calls to the same instruction. */
+    calls: StylingInstructionCall[];
+}
+export interface StylingInstructionCall {
+    sourceSpan: ParseSourceSpan | null;
     supportsInterpolation?: boolean;
+    allocateBindingSlots: number;
     params: ((convertFn: (value: any) => o.Expression | o.Expression[]) => o.Expression[]);
 }
 /**
