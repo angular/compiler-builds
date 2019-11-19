@@ -230,6 +230,29 @@ export declare class LocalizedString extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+    /**
+     * Serialize the given `meta` and `messagePart` into "cooked" and "raw" strings that can be used
+     * in a `$localize` tagged string. The format of the metadata is the same as that parsed by
+     * `parseI18nMeta()`.
+     *
+     * @param meta The metadata to serialize
+     * @param messagePart The first part of the tagged string
+     */
+    serializeI18nHead(): {
+        cooked: string;
+        raw: string;
+    };
+    /**
+     * Serialize the given `placeholderName` and `messagePart` into "cooked" and "raw" strings that
+     * can be used in a `$localize` tagged string.
+     *
+     * @param placeholderName The placeholder name to serialize
+     * @param messagePart The following message string after this placeholder
+     */
+    serializeI18nTemplatePart(partIndex: number): {
+        cooked: string;
+        raw: string;
+    };
 }
 export declare class ExternalExpr extends Expression {
     value: ExternalReference;
