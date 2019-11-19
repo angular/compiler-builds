@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+164.sha-c68200c.with-local-changes
+ * @license Angular v9.0.0-rc.1+177.sha-6bf2531.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -12429,17 +12429,19 @@ class StylingBuilder {
     buildHostAttrsInstruction(sourceSpan, attrs, constantPool) {
         if (this._directiveExpr && (attrs.length || this._hasInitialValues)) {
             return {
-                sourceSpan,
                 reference: Identifiers$1.elementHostAttrs,
-                allocateBindingSlots: 0,
-                params: () => {
-                    // params => elementHostAttrs(attrs)
-                    this.populateInitialStylingAttrs(attrs);
-                    const attrArray = !attrs.some(attr => attr instanceof WrappedNodeExpr) ?
-                        getConstantLiteralFromArray(constantPool, attrs) :
-                        literalArr(attrs);
-                    return [attrArray];
-                }
+                calls: [{
+                        sourceSpan,
+                        allocateBindingSlots: 0,
+                        params: () => {
+                            // params => elementHostAttrs(attrs)
+                            this.populateInitialStylingAttrs(attrs);
+                            const attrArray = !attrs.some(attr => attr instanceof WrappedNodeExpr) ?
+                                getConstantLiteralFromArray(constantPool, attrs) :
+                                literalArr(attrs);
+                            return [attrArray];
+                        }
+                    }]
             };
         }
         return null;
@@ -12487,32 +12489,35 @@ class StylingBuilder {
             reference = isClassBased ? Identifiers$1.classMap : Identifiers$1.styleMap;
         }
         return {
-            sourceSpan: stylingInput.sourceSpan,
             reference,
-            allocateBindingSlots: totalBindingSlotsRequired,
-            supportsInterpolation: isClassBased,
-            params: (convertFn) => {
-                const convertResult = convertFn(mapValue);
-                return Array.isArray(convertResult) ? convertResult : [convertResult];
-            }
+            calls: [{
+                    supportsInterpolation: isClassBased,
+                    sourceSpan: stylingInput.sourceSpan,
+                    allocateBindingSlots: totalBindingSlotsRequired,
+                    params: (convertFn) => {
+                        const convertResult = convertFn(mapValue);
+                        return Array.isArray(convertResult) ? convertResult : [convertResult];
+                    }
+                }]
         };
     }
     _buildSingleInputs(reference, inputs, mapIndex, allowUnits, valueConverter, getInterpolationExpressionFn) {
-        let totalBindingSlotsRequired = 0;
-        return inputs.map(input => {
+        const instructions = [];
+        inputs.forEach(input => {
+            const previousInstruction = instructions[instructions.length - 1];
             const value = input.value.visit(valueConverter);
-            // each styling binding value is stored in the LView
-            let totalBindingSlotsRequired = 1;
+            let referenceForCall = reference;
+            let totalBindingSlotsRequired = 1; // each styling binding value is stored in the LView
             if (value instanceof Interpolation) {
                 totalBindingSlotsRequired += value.expressions.length;
                 if (getInterpolationExpressionFn) {
-                    reference = getInterpolationExpressionFn(value);
+                    referenceForCall = getInterpolationExpressionFn(value);
                 }
             }
-            return {
+            const call = {
                 sourceSpan: input.sourceSpan,
+                allocateBindingSlots: totalBindingSlotsRequired,
                 supportsInterpolation: !!getInterpolationExpressionFn,
-                allocateBindingSlots: totalBindingSlotsRequired, reference,
                 params: (convertFn) => {
                     // params => stylingProp(propName, value)
                     const params = [];
@@ -12530,7 +12535,19 @@ class StylingBuilder {
                     return params;
                 }
             };
+            // If we ended up generating a call to the same instruction as the previous styling property
+            // we can chain the calls together safely to save some bytes, otherwise we have to generate
+            // a separate instruction call. This is primarily a concern with interpolation instructions
+            // where we may start off with one `reference`, but end up using another based on the
+            // number of interpolations.
+            if (previousInstruction && previousInstruction.reference === referenceForCall) {
+                previousInstruction.calls.push(call);
+            }
+            else {
+                instructions.push({ reference: referenceForCall, calls: [call] });
+            }
         });
+        return instructions;
     }
     _buildClassInputs(valueConverter) {
         if (this._singleClassInputs) {
@@ -12546,10 +12563,12 @@ class StylingBuilder {
     }
     _buildSanitizerFn() {
         return {
-            sourceSpan: this._firstStylingInput ? this._firstStylingInput.sourceSpan : null,
             reference: Identifiers$1.styleSanitizer,
-            allocateBindingSlots: 0,
-            params: () => [importExpr(Identifiers$1.defaultStyleSanitizer)]
+            calls: [{
+                    sourceSpan: this._firstStylingInput ? this._firstStylingInput.sourceSpan : null,
+                    allocateBindingSlots: 0,
+                    params: () => [importExpr(Identifiers$1.defaultStyleSanitizer)]
+                }]
         };
     }
     /**
@@ -12595,18 +12614,6 @@ function isStyleSanitizable(prop) {
  */
 function getConstantLiteralFromArray(constantPool, values) {
     return values.length ? constantPool.getConstLiteral(literalArr(values), true) : NULL_EXPR;
-}
-/**
- * Simple helper function that adds a parameter or does nothing at all depending on the provided
- * predicate and totalExpectedArgs values
- */
-function addParam(params, predicate, value, argNumber, totalExpectedArgs) {
-    if (predicate && value) {
-        params.push(value);
-    }
-    else if (argNumber < totalExpectedArgs) {
-        params.push(NULL_EXPR);
-    }
 }
 function parseProperty(name) {
     let hasOverrideFlag = false;
@@ -16018,8 +16025,7 @@ class TemplateDefinitionBuilder {
         const limit = stylingInstructions.length - 1;
         for (let i = 0; i <= limit; i++) {
             const instruction = stylingInstructions[i];
-            this._bindingSlots += instruction.allocateBindingSlots;
-            this.processStylingInstruction(elementIndex, instruction, false);
+            this._bindingSlots += this.processStylingUpdateInstruction(elementIndex, instruction);
         }
         // the reason why `undefined` is used is because the renderer understands this as a
         // special value to symbolize that there is no RHS to this binding
@@ -16313,24 +16319,25 @@ class TemplateDefinitionBuilder {
             return instruction(span, reference, params).toStmt();
         });
     }
-    processStylingInstruction(elementIndex, instruction, createMode) {
+    processStylingUpdateInstruction(elementIndex, instruction) {
+        let allocateBindingSlots = 0;
         if (instruction) {
-            if (createMode) {
-                this.creationInstruction(instruction.sourceSpan, instruction.reference, () => {
-                    return instruction.params(value => this.convertPropertyBinding(value));
-                });
-            }
-            else {
-                this.updateInstructionWithAdvance(elementIndex, instruction.sourceSpan, instruction.reference, () => {
-                    return instruction
-                        .params(value => {
-                        return (instruction.supportsInterpolation && value instanceof Interpolation) ?
+            const calls = [];
+            instruction.calls.forEach(call => {
+                allocateBindingSlots += call.allocateBindingSlots;
+                calls.push({
+                    sourceSpan: call.sourceSpan,
+                    value: () => {
+                        return call
+                            .params(value => (call.supportsInterpolation && value instanceof Interpolation) ?
                             this.getUpdateInstructionArguments(value) :
-                            this.convertPropertyBinding(value);
-                    });
+                            this.convertPropertyBinding(value));
+                    }
                 });
-            }
+            });
+            this.updateInstructionChainWithAdvance(elementIndex, instruction.reference, calls);
         }
+        return allocateBindingSlots;
     }
     creationInstruction(span, reference, paramsOrFn, prepend) {
         this.instructionFn(this._creationCodeFns, span, reference, paramsOrFn || [], prepend);
@@ -16352,8 +16359,13 @@ class TemplateDefinitionBuilder {
         const span = bindings.length ? bindings[0].sourceSpan : null;
         this._updateCodeFns.push(() => {
             const calls = bindings.map(property => {
-                const fnParams = [property.value(), ...(property.params || [])];
+                const value = property.value();
+                const fnParams = Array.isArray(value) ? value : [value];
+                if (property.params) {
+                    fnParams.push(...property.params);
+                }
                 if (property.name) {
+                    // We want the property name to always be the first function parameter.
                     fnParams.unshift(literal(property.name));
                 }
                 return fnParams;
@@ -17547,19 +17559,25 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
     // collected earlier.
     const hostAttrs = convertAttributesToExpressions(hostBindingsMetadata.attributes);
     const hostInstruction = styleBuilder.buildHostAttrsInstruction(null, hostAttrs, constantPool);
-    if (hostInstruction) {
-        createStatements.push(createStylingStmt(hostInstruction, bindingContext, bindingFn));
+    if (hostInstruction && hostInstruction.calls.length > 0) {
+        createStatements.push(chainedInstruction(hostInstruction.reference, hostInstruction.calls.map(call => convertStylingCall(call, bindingContext, bindingFn)))
+            .toStmt());
     }
     if (styleBuilder.hasBindings) {
         // finally each binding that was registered in the statement above will need to be added to
         // the update block of a component/directive templateFn/hostBindingsFn so that the bindings
         // are evaluated and updated for the element.
         styleBuilder.buildUpdateLevelInstructions(getValueConverter()).forEach(instruction => {
-            // we subtract a value of `1` here because the binding slot was already
-            // allocated at the top of this method when all the input bindings were
-            // counted.
-            totalHostVarsCount += Math.max(instruction.allocateBindingSlots - 1, 0);
-            updateStatements.push(createStylingStmt(instruction, bindingContext, bindingFn));
+            if (instruction.calls.length > 0) {
+                const calls = [];
+                instruction.calls.forEach(call => {
+                    // we subtract a value of `1` here because the binding slot was already allocated
+                    // at the top of this method when all the input bindings were counted.
+                    totalHostVarsCount += Math.max(call.allocateBindingSlots - 1, 0);
+                    calls.push(convertStylingCall(call, bindingContext, bindingFn));
+                });
+                updateStatements.push(chainedInstruction(instruction.reference, calls).toStmt());
+            }
         });
     }
     if (totalHostVarsCount) {
@@ -17584,11 +17602,8 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
 function bindingFn(implicit, value) {
     return convertPropertyBinding(null, implicit, value, 'b', BindingForm.TrySimple, () => error('Unexpected interpolation'));
 }
-function createStylingStmt(instruction, bindingContext, bindingFn) {
-    const params = instruction.params(value => bindingFn(bindingContext, value).currValExpr);
-    return importExpr(instruction.reference, null, instruction.sourceSpan)
-        .callFn(params, instruction.sourceSpan)
-        .toStmt();
+function convertStylingCall(call, bindingContext, bindingFn) {
+    return call.params(value => bindingFn(bindingContext, value).currValExpr);
 }
 function getBindingNameAndInstruction(binding) {
     let bindingName = binding.name;
@@ -18008,7 +18023,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-rc.1+164.sha-c68200c.with-local-changes');
+const VERSION$1 = new Version('9.0.0-rc.1+177.sha-6bf2531.with-local-changes');
 
 /**
  * @license
