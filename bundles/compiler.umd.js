@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.2+96.sha-595375f.with-local-changes
+ * @license Angular v9.0.0-rc.2+98.sha-213e3c3.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3857,7 +3857,13 @@
      * Convert an object map with `Expression` values into a `LiteralMapExpr`.
      */
     function mapToMapExpression(map) {
-        var result = Object.keys(map).map(function (key) { return ({ key: key, value: map[key], quoted: false }); });
+        var result = Object.keys(map).map(function (key) { return ({
+            key: key,
+            // The assertion here is because really TypeScript doesn't allow us to express that if the
+            // key is present, it will have a value, but this is true in reality.
+            value: map[key],
+            quoted: false,
+        }); });
         return literalMap(result);
     }
     /**
@@ -3909,6 +3915,13 @@
     }
     function prepareSyntheticListenerFunctionName(name, phase) {
         return "animation_" + name + "_" + phase;
+    }
+    function jitOnlyGuardedExpression(expr) {
+        var ngJitMode = new ExternalExpr({ name: 'ngJitMode', moduleName: null });
+        var jitFlagNotDefined = new BinaryOperatorExpr(exports.BinaryOperator.Identical, new TypeofExpr(ngJitMode), literal('undefined'));
+        var jitFlagUndefinedOrTrue = new BinaryOperatorExpr(exports.BinaryOperator.Or, jitFlagNotDefined, ngJitMode, /* type */ undefined, 
+        /* sourceSpan */ undefined, true);
+        return new BinaryOperatorExpr(exports.BinaryOperator.And, jitFlagUndefinedOrTrue, expr);
     }
 
     /**
@@ -7066,13 +7079,21 @@
         if (Object.keys(scopeMap).length === 0) {
             return null;
         }
+        // setNgModuleScope(...)
         var fnCall = new InvokeFunctionExpr(
         /* fn */ importExpr(Identifiers$1.setNgModuleScope), 
-        /* args */ [moduleType, mapToMapExpression(scopeMap)], 
-        /* type */ undefined, 
-        /* sourceSpan */ undefined, 
-        /* pure */ true);
-        return fnCall.toStmt();
+        /* args */ [moduleType, mapToMapExpression(scopeMap)]);
+        // (ngJitMode guard) && setNgModuleScope(...)
+        var guardedCall = jitOnlyGuardedExpression(fnCall);
+        // function() { (ngJitMode guard) && setNgModuleScope(...); }
+        var iife = new FunctionExpr(
+        /* params */ [], 
+        /* statements */ [guardedCall.toStmt()]);
+        // (function() { (ngJitMode guard) && setNgModuleScope(...); })()
+        var iifeCall = new InvokeFunctionExpr(
+        /* fn */ iife, 
+        /* args */ []);
+        return iifeCall.toStmt();
     }
     function compileInjector(meta) {
         var result = compileFactoryFunction({
@@ -19253,7 +19274,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.0.0-rc.2+96.sha-595375f.with-local-changes');
+    var VERSION$1 = new Version('9.0.0-rc.2+98.sha-213e3c3.with-local-changes');
 
     /**
      * @license
@@ -29168,6 +29189,7 @@
     exports.MethodCall = MethodCall;
     exports.NAMED_ENTITIES = NAMED_ENTITIES;
     exports.NGSP_UNICODE = NGSP_UNICODE;
+    exports.NONE_TYPE = NONE_TYPE;
     exports.NO_ERRORS_SCHEMA = NO_ERRORS_SCHEMA;
     exports.NgContentAst = NgContentAst;
     exports.NgModuleCompiler = NgModuleCompiler;

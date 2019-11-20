@@ -11,7 +11,7 @@ import { OutputContext } from '../util';
  * Convert an object map with `Expression` values into a `LiteralMapExpr`.
  */
 export declare function mapToMapExpression(map: {
-    [key: string]: o.Expression;
+    [key: string]: o.Expression | undefined;
 }): o.LiteralMapExpr;
 /**
  * Convert metadata into an `Expression` in the given `OutputContext`.
@@ -29,3 +29,4 @@ export declare function prepareSyntheticListenerName(name: string, phase: string
 export declare function isSyntheticPropertyOrListener(name: string): boolean;
 export declare function getSyntheticPropertyName(name: string): string;
 export declare function prepareSyntheticListenerFunctionName(name: string, phase: string): string;
+export declare function jitOnlyGuardedExpression(expr: o.Expression): o.Expression;
