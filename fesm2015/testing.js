@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.3+35.sha-ad9b9a3.with-local-changes
+ * @license Angular v9.0.0-rc.3+42.sha-99e68d0.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8,6 +8,7 @@ import { ResourceLoader, core, DirectiveResolver, NgModuleResolver, PipeResolver
 
 /**
  * @fileoverview added by tsickle
+ * Generated from: packages/compiler/testing/src/resource_loader_mock.ts
  * @suppress {checkTypes,constantProperty,extraRequire,missingOverride,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
  */
 /**
@@ -208,6 +209,7 @@ function remove(list, el) {
 
 /**
  * @fileoverview added by tsickle
+ * Generated from: packages/compiler/testing/src/schema_registry_mock.ts
  * @suppress {checkTypes,constantProperty,extraRequire,missingOverride,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
  */
 class MockSchemaRegistry {
@@ -325,6 +327,7 @@ if (false) {
 
 /**
  * @fileoverview added by tsickle
+ * Generated from: packages/compiler/testing/src/directive_resolver_mock.ts
  * @suppress {checkTypes,constantProperty,extraRequire,missingOverride,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
  */
 /**
@@ -367,6 +370,7 @@ if (false) {
 
 /**
  * @fileoverview added by tsickle
+ * Generated from: packages/compiler/testing/src/ng_module_resolver_mock.ts
  * @suppress {checkTypes,constantProperty,extraRequire,missingOverride,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
  */
 class MockNgModuleResolver extends NgModuleResolver {
@@ -409,6 +413,7 @@ if (false) {
 
 /**
  * @fileoverview added by tsickle
+ * Generated from: packages/compiler/testing/src/pipe_resolver_mock.ts
  * @suppress {checkTypes,constantProperty,extraRequire,missingOverride,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
  */
 class MockPipeResolver extends PipeResolver {
@@ -454,16 +459,19 @@ if (false) {
 
 /**
  * @fileoverview added by tsickle
+ * Generated from: packages/compiler/testing/src/testing.ts
  * @suppress {checkTypes,constantProperty,extraRequire,missingOverride,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
  */
 
 /**
  * @fileoverview added by tsickle
+ * Generated from: packages/compiler/testing/public_api.ts
  * @suppress {checkTypes,constantProperty,extraRequire,missingOverride,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
  */
 
 /**
  * @fileoverview added by tsickle
+ * Generated from: packages/compiler/testing/index.ts
  * @suppress {checkTypes,constantProperty,extraRequire,missingOverride,missingReturn,unusedPrivateMembers,uselessCode} checked by tsc
  */
 
