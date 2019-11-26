@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+259.sha-25dcc76.with-local-changes
+ * @license Angular v9.0.0-rc.1+260.sha-9ba5344.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8565,7 +8565,7 @@
             // an expression that guards the access to the member by checking the receiver for blank. As
             // execution proceeds from left to right, the left most part of the expression must be guarded
             // first but, because member access is left associative, the right side of the expression is at
-            // the top of the AST. The desired result requires lifting a copy of the the left part of the
+            // the top of the AST. The desired result requires lifting a copy of the left part of the
             // expression up to test it for blank before generating the unguarded version.
             // Consider, for example the following expression: a?.b.c?.d.e
             // This results in the ast:
@@ -8628,10 +8628,10 @@
             // Produce the conditional
             return convertToStatementIfNeeded(mode, condition.conditional(literal(null), access));
         };
-        // Given a expression of the form a?.b.c?.d.e the the left most safe node is
+        // Given an expression of the form a?.b.c?.d.e then the left most safe node is
         // the (a?.b). The . and ?. are left associative thus can be rewritten as:
         // ((((a?.c).b).c)?.d).e. This returns the most deeply nested safe read or
-        // safe method call as this needs be transform initially to:
+        // safe method call as this needs to be transformed initially to:
         //   a == null ? null : a.c.b.c?.d.e
         // then to:
         //   a == null ? null : a.b.c == null ? null : a.b.c.d.e
@@ -8721,7 +8721,7 @@
          * show where the span is within the overall source file.
          *
          * @param span the relative span to convert.
-         * @returns a `ParseSourceSpan` for the the given span or null if no
+         * @returns a `ParseSourceSpan` for the given span or null if no
          * `baseSourceSpan` was provided to this class.
          */
         _AstToIrVisitor.prototype.convertSourceSpan = function (span) {
@@ -19317,7 +19317,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.0.0-rc.1+259.sha-25dcc76.with-local-changes');
+    var VERSION$1 = new Version('9.0.0-rc.1+260.sha-9ba5344.with-local-changes');
 
     /**
      * @license
