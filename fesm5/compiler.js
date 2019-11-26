@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.3+73.sha-bbc8b0f.with-local-changes
+ * @license Angular v9.0.0-rc.3+76.sha-b659aa3.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -18921,7 +18921,7 @@ var CompilerFacadeImpl = /** @class */ (function () {
         }
         // Compile the component metadata, including template, into an expression.
         // TODO(alxhub): implement inputs, outputs, queries, etc.
-        var metadata = __assign(__assign(__assign({}, facade), convertDirectiveFacadeToMetadata(facade)), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template: template, wrapDirectivesAndPipesInClosure: false, styles: facade.styles || [], encapsulation: facade.encapsulation, interpolation: interpolationConfig, changeDetection: facade.changeDetection, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
+        var metadata = __assign(__assign(__assign({}, facade), convertDirectiveFacadeToMetadata(facade)), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template: template, wrapDirectivesAndPipesInClosure: false, styles: __spread(facade.styles, template.styles), encapsulation: facade.encapsulation, interpolation: interpolationConfig, changeDetection: facade.changeDetection, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
                 null, relativeContextFilePath: '', i18nUseExternalIds: true });
         var res = compileComponentFromMetadata(metadata, constantPool, makeBindingParser(interpolationConfig));
         var jitExpressionSourceMap = "ng:///" + facade.name + ".js";
@@ -19096,7 +19096,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-rc.3+73.sha-bbc8b0f.with-local-changes');
+var VERSION$1 = new Version('9.0.0-rc.3+76.sha-b659aa3.with-local-changes');
 
 /**
  * @license
