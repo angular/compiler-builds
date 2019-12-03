@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+335.sha-56f4e56.with-local-changes
+ * @license Angular v9.0.0-rc.1+336.sha-67eac73.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5691,8 +5691,12 @@ function compileInjectable(meta) {
         result = delegateToFactory(meta.type, meta.internalType);
     }
     var token = meta.internalType;
-    var providedIn = meta.providedIn;
-    var expression = importExpr(Identifiers.ɵɵdefineInjectable).callFn([mapToMapExpression({ token: token, factory: result.factory, providedIn: providedIn })]);
+    var injectableProps = { token: token, factory: result.factory };
+    // Only generate providedIn property if it has a non-null value
+    if (meta.providedIn.value !== null) {
+        injectableProps.providedIn = meta.providedIn;
+    }
+    var expression = importExpr(Identifiers.ɵɵdefineInjectable).callFn([mapToMapExpression(injectableProps)]);
     var type = new ExpressionType(importExpr(Identifiers.InjectableDef, [typeWithParameters(meta.type, meta.typeArgumentCount)]));
     return {
         expression: expression,
@@ -19143,7 +19147,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-rc.1+335.sha-56f4e56.with-local-changes');
+var VERSION$1 = new Version('9.0.0-rc.1+336.sha-67eac73.with-local-changes');
 
 /**
  * @license
