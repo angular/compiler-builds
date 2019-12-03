@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.4+28.sha-716fc84.with-local-changes
+ * @license Angular v9.0.0-rc.4+51.sha-d2538ca.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1298,12 +1298,18 @@ class LocalizedString extends Expression {
      * @param messagePart The first part of the tagged string
      */
     serializeI18nHead() {
+        const MEANING_SEPARATOR = '|';
+        const ID_SEPARATOR = '@@';
+        const LEGACY_ID_INDICATOR = '␟';
         let metaBlock = this.metaBlock.description || '';
         if (this.metaBlock.meaning) {
-            metaBlock = `${this.metaBlock.meaning}|${metaBlock}`;
+            metaBlock = `${this.metaBlock.meaning}${MEANING_SEPARATOR}${metaBlock}`;
         }
-        if (this.metaBlock.customId || this.metaBlock.legacyId) {
-            metaBlock = `${metaBlock}@@${this.metaBlock.customId || this.metaBlock.legacyId}`;
+        if (this.metaBlock.customId) {
+            metaBlock = `${metaBlock}${ID_SEPARATOR}${this.metaBlock.customId}`;
+        }
+        if (this.metaBlock.legacyIds) {
+            this.metaBlock.legacyIds.forEach(legacyId => { metaBlock = `${metaBlock}${LEGACY_ID_INDICATOR}${legacyId}`; });
         }
         return createCookedRawString(metaBlock, this.messageParts[0]);
     }
@@ -3948,8 +3954,8 @@ class Message {
         this.description = description;
         this.customId = customId;
         this.id = this.customId;
-        /** The id to use if there is no custom id and if `i18nLegacyMessageIdFormat` is not empty */
-        this.legacyId = '';
+        /** The ids to use if there are no custom id and if `i18nLegacyMessageIdFormat` is not empty */
+        this.legacyIds = [];
         if (nodes.length) {
             this.sources = [{
                     filePath: nodes[0].sourceSpan.start.file.url,
@@ -5267,8 +5273,12 @@ function compileInjectable(meta) {
         result = delegateToFactory(meta.type, meta.internalType);
     }
     const token = meta.internalType;
-    const providedIn = meta.providedIn;
-    const expression = importExpr(Identifiers.ɵɵdefineInjectable).callFn([mapToMapExpression({ token, factory: result.factory, providedIn })]);
+    const injectableProps = { token, factory: result.factory };
+    // Only generate providedIn property if it has a non-null value
+    if (meta.providedIn.value !== null) {
+        injectableProps.providedIn = meta.providedIn;
+    }
+    const expression = importExpr(Identifiers.ɵɵdefineInjectable).callFn([mapToMapExpression(injectableProps)]);
     const type = new ExpressionType(importExpr(Identifiers.InjectableDef, [typeWithParameters(meta.type, meta.typeArgumentCount)]));
     return {
         expression,
@@ -15139,10 +15149,10 @@ const setI18nRefs = (htmlNode, i18nNode) => {
  * stored with other element's and attribute's information.
  */
 class I18nMetaVisitor {
-    constructor(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG, keepI18nAttrs = false, i18nLegacyMessageIdFormat = '') {
+    constructor(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG, keepI18nAttrs = false, enableI18nLegacyMessageIdFormat = false) {
         this.interpolationConfig = interpolationConfig;
         this.keepI18nAttrs = keepI18nAttrs;
-        this.i18nLegacyMessageIdFormat = i18nLegacyMessageIdFormat;
+        this.enableI18nLegacyMessageIdFormat = enableI18nLegacyMessageIdFormat;
         // whether visited nodes contain i18n information
         this.hasI18nMeta = false;
         // i18n message generation factory
@@ -15152,7 +15162,7 @@ class I18nMetaVisitor {
         const { meaning, description, customId } = this._parseMetadata(meta);
         const message = this._createI18nMessage(nodes, meaning, description, customId, visitNodeFn);
         this._setMessageId(message, meta);
-        this._setLegacyId(message, meta);
+        this._setLegacyIds(message, meta);
         return message;
     }
     visitElement(element) {
@@ -15239,7 +15249,7 @@ class I18nMetaVisitor {
      */
     _parseMetadata(meta) {
         return typeof meta === 'string' ? parseI18nMeta(meta) :
-            meta instanceof Message ? metaFromI18nMessage(meta) : {};
+            meta instanceof Message ? meta : {};
     }
     /**
      * Generate (or restore) message id if not specified already.
@@ -15255,13 +15265,9 @@ class I18nMetaVisitor {
      * @param message the message whose legacy id should be set
      * @param meta information about the message being processed
      */
-    _setLegacyId(message, meta) {
-        if (this.i18nLegacyMessageIdFormat === 'xlf' || this.i18nLegacyMessageIdFormat === 'xliff') {
-            message.legacyId = computeDigest(message);
-        }
-        else if (this.i18nLegacyMessageIdFormat === 'xlf2' || this.i18nLegacyMessageIdFormat === 'xliff2' ||
-            this.i18nLegacyMessageIdFormat === 'xmb') {
-            message.legacyId = computeDecimalDigest(message);
+    _setLegacyIds(message, meta) {
+        if (this.enableI18nLegacyMessageIdFormat) {
+            message.legacyIds = [computeDigest(message), computeDecimalDigest(message)];
         }
         else if (typeof meta !== 'string') {
             // This occurs if we are doing the 2nd pass after whitespace removal (see `parseTemplate()` in
@@ -15271,18 +15277,9 @@ class I18nMetaVisitor {
             const previousMessage = meta instanceof Message ?
                 meta :
                 meta instanceof IcuPlaceholder ? meta.previousMessage : undefined;
-            message.legacyId = previousMessage && previousMessage.legacyId;
+            message.legacyIds = previousMessage ? previousMessage.legacyIds : [];
         }
     }
-}
-function metaFromI18nMessage(message, id = null) {
-    return {
-        id: typeof id === 'string' ? id : message.id || '',
-        customId: message.customId,
-        legacyId: message.legacyId,
-        meaning: message.meaning || '',
-        description: message.description || ''
-    };
 }
 /** I18n separators for metadata **/
 const I18N_MEANING_SEPARATOR = '|';
@@ -15297,10 +15294,11 @@ const I18N_ID_SEPARATOR = '@@';
  * @param meta String that represents i18n meta
  * @returns Object with id, meaning and description fields
  */
-function parseI18nMeta(meta) {
+function parseI18nMeta(meta = '') {
     let customId;
     let meaning;
     let description;
+    meta = meta.trim();
     if (meta) {
         const idIndex = meta.indexOf(I18N_ID_SEPARATOR);
         const descIndex = meta.indexOf(I18N_MEANING_SEPARATOR);
@@ -15341,7 +15339,7 @@ function createGoogleGetMsgStatements(variable$1, message, closureVar, params) {
     // const MSG_... = goog.getMsg(..);
     // I18N_X = MSG_...;
     const statements = [];
-    const jsdocComment = i18nMetaToDocStmt(metaFromI18nMessage(message));
+    const jsdocComment = i18nMetaToDocStmt(message);
     if (jsdocComment !== null) {
         statements.push(jsdocComment);
     }
@@ -15378,7 +15376,7 @@ function serializeI18nMessageForGetMsg(message) {
 function createLocalizeStatements(variable, message, params) {
     const statements = [];
     const { messageParts, placeHolders } = serializeI18nMessageForLocalize(message);
-    statements.push(new ExpressionStatement(variable.set(localizedString(metaFromI18nMessage(message), messageParts, placeHolders, placeHolders.map(ph => params[ph])))));
+    statements.push(new ExpressionStatement(variable.set(localizedString(message, messageParts, placeHolders, placeHolders.map(ph => params[ph])))));
     return statements;
 }
 class MessagePiece {
@@ -16991,7 +16989,7 @@ function getTextInterpolationExpression(interpolation) {
  * @param options options to modify how the template is parsed
  */
 function parseTemplate(template, templateUrl, options = {}) {
-    const { interpolationConfig, preserveWhitespaces, i18nLegacyMessageIdFormat } = options;
+    const { interpolationConfig, preserveWhitespaces, enableI18nLegacyMessageIdFormat } = options;
     const bindingParser = makeBindingParser(interpolationConfig);
     const htmlParser = new HtmlParser();
     const parseResult = htmlParser.parse(template, templateUrl, Object.assign(Object.assign({ leadingTriviaChars: LEADING_TRIVIA_CHARS }, options), { tokenizeExpansionForms: true }));
@@ -17003,7 +17001,7 @@ function parseTemplate(template, templateUrl, options = {}) {
     // before we run whitespace removal process, because existing i18n
     // extraction process (ng xi18n) relies on a raw content to generate
     // message ids
-    const i18nMetaVisitor = new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ !preserveWhitespaces, i18nLegacyMessageIdFormat);
+    const i18nMetaVisitor = new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ !preserveWhitespaces, enableI18nLegacyMessageIdFormat);
     rootNodes = visitAll$1(i18nMetaVisitor, rootNodes);
     if (!preserveWhitespaces) {
         rootNodes = visitAll$1(new WhitespaceVisitor(), rootNodes);
@@ -18005,7 +18003,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-rc.4+28.sha-716fc84.with-local-changes');
+const VERSION$1 = new Version('9.0.0-rc.4+51.sha-d2538ca.with-local-changes');
 
 /**
  * @license
@@ -18810,7 +18808,7 @@ function _parseMessageMeta(i18n) {
     const [meaning, description] = (descIndex > -1) ?
         [meaningAndDesc.slice(0, descIndex), meaningAndDesc.slice(descIndex + 1)] :
         ['', meaningAndDesc];
-    return { meaning, description, id };
+    return { meaning, description, id: id.trim() };
 }
 
 /**

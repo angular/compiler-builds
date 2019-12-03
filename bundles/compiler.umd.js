@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.4+28.sha-716fc84.with-local-changes
+ * @license Angular v9.0.0-rc.4+51.sha-d2538ca.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1582,12 +1582,18 @@
          * @param messagePart The first part of the tagged string
          */
         LocalizedString.prototype.serializeI18nHead = function () {
+            var MEANING_SEPARATOR = '|';
+            var ID_SEPARATOR = '@@';
+            var LEGACY_ID_INDICATOR = '␟';
             var metaBlock = this.metaBlock.description || '';
             if (this.metaBlock.meaning) {
-                metaBlock = this.metaBlock.meaning + "|" + metaBlock;
+                metaBlock = "" + this.metaBlock.meaning + MEANING_SEPARATOR + metaBlock;
             }
-            if (this.metaBlock.customId || this.metaBlock.legacyId) {
-                metaBlock = metaBlock + "@@" + (this.metaBlock.customId || this.metaBlock.legacyId);
+            if (this.metaBlock.customId) {
+                metaBlock = "" + metaBlock + ID_SEPARATOR + this.metaBlock.customId;
+            }
+            if (this.metaBlock.legacyIds) {
+                this.metaBlock.legacyIds.forEach(function (legacyId) { metaBlock = "" + metaBlock + LEGACY_ID_INDICATOR + legacyId; });
             }
             return createCookedRawString(metaBlock, this.messageParts[0]);
         };
@@ -4484,8 +4490,8 @@
             this.description = description;
             this.customId = customId;
             this.id = this.customId;
-            /** The id to use if there is no custom id and if `i18nLegacyMessageIdFormat` is not empty */
-            this.legacyId = '';
+            /** The ids to use if there are no custom id and if `i18nLegacyMessageIdFormat` is not empty */
+            this.legacyIds = [];
             if (nodes.length) {
                 this.sources = [{
                         filePath: nodes[0].sourceSpan.start.file.url,
@@ -5872,8 +5878,12 @@
             result = delegateToFactory(meta.type, meta.internalType);
         }
         var token = meta.internalType;
-        var providedIn = meta.providedIn;
-        var expression = importExpr(Identifiers.ɵɵdefineInjectable).callFn([mapToMapExpression({ token: token, factory: result.factory, providedIn: providedIn })]);
+        var injectableProps = { token: token, factory: result.factory };
+        // Only generate providedIn property if it has a non-null value
+        if (meta.providedIn.value !== null) {
+            injectableProps.providedIn = meta.providedIn;
+        }
+        var expression = importExpr(Identifiers.ɵɵdefineInjectable).callFn([mapToMapExpression(injectableProps)]);
         var type = new ExpressionType(importExpr(Identifiers.InjectableDef, [typeWithParameters(meta.type, meta.typeArgumentCount)]));
         return {
             expression: expression,
@@ -16260,13 +16270,13 @@
      * stored with other element's and attribute's information.
      */
     var I18nMetaVisitor = /** @class */ (function () {
-        function I18nMetaVisitor(interpolationConfig, keepI18nAttrs, i18nLegacyMessageIdFormat) {
+        function I18nMetaVisitor(interpolationConfig, keepI18nAttrs, enableI18nLegacyMessageIdFormat) {
             if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
             if (keepI18nAttrs === void 0) { keepI18nAttrs = false; }
-            if (i18nLegacyMessageIdFormat === void 0) { i18nLegacyMessageIdFormat = ''; }
+            if (enableI18nLegacyMessageIdFormat === void 0) { enableI18nLegacyMessageIdFormat = false; }
             this.interpolationConfig = interpolationConfig;
             this.keepI18nAttrs = keepI18nAttrs;
-            this.i18nLegacyMessageIdFormat = i18nLegacyMessageIdFormat;
+            this.enableI18nLegacyMessageIdFormat = enableI18nLegacyMessageIdFormat;
             // whether visited nodes contain i18n information
             this.hasI18nMeta = false;
             // i18n message generation factory
@@ -16277,7 +16287,7 @@
             var _a = this._parseMetadata(meta), meaning = _a.meaning, description = _a.description, customId = _a.customId;
             var message = this._createI18nMessage(nodes, meaning, description, customId, visitNodeFn);
             this._setMessageId(message, meta);
-            this._setLegacyId(message, meta);
+            this._setLegacyIds(message, meta);
             return message;
         };
         I18nMetaVisitor.prototype.visitElement = function (element) {
@@ -16385,7 +16395,7 @@
          */
         I18nMetaVisitor.prototype._parseMetadata = function (meta) {
             return typeof meta === 'string' ? parseI18nMeta(meta) :
-                meta instanceof Message ? metaFromI18nMessage(meta) : {};
+                meta instanceof Message ? meta : {};
         };
         /**
          * Generate (or restore) message id if not specified already.
@@ -16401,13 +16411,9 @@
          * @param message the message whose legacy id should be set
          * @param meta information about the message being processed
          */
-        I18nMetaVisitor.prototype._setLegacyId = function (message, meta) {
-            if (this.i18nLegacyMessageIdFormat === 'xlf' || this.i18nLegacyMessageIdFormat === 'xliff') {
-                message.legacyId = computeDigest(message);
-            }
-            else if (this.i18nLegacyMessageIdFormat === 'xlf2' || this.i18nLegacyMessageIdFormat === 'xliff2' ||
-                this.i18nLegacyMessageIdFormat === 'xmb') {
-                message.legacyId = computeDecimalDigest(message);
+        I18nMetaVisitor.prototype._setLegacyIds = function (message, meta) {
+            if (this.enableI18nLegacyMessageIdFormat) {
+                message.legacyIds = [computeDigest(message), computeDecimalDigest(message)];
             }
             else if (typeof meta !== 'string') {
                 // This occurs if we are doing the 2nd pass after whitespace removal (see `parseTemplate()` in
@@ -16417,21 +16423,11 @@
                 var previousMessage = meta instanceof Message ?
                     meta :
                     meta instanceof IcuPlaceholder ? meta.previousMessage : undefined;
-                message.legacyId = previousMessage && previousMessage.legacyId;
+                message.legacyIds = previousMessage ? previousMessage.legacyIds : [];
             }
         };
         return I18nMetaVisitor;
     }());
-    function metaFromI18nMessage(message, id) {
-        if (id === void 0) { id = null; }
-        return {
-            id: typeof id === 'string' ? id : message.id || '',
-            customId: message.customId,
-            legacyId: message.legacyId,
-            meaning: message.meaning || '',
-            description: message.description || ''
-        };
-    }
     /** I18n separators for metadata **/
     var I18N_MEANING_SEPARATOR = '|';
     var I18N_ID_SEPARATOR = '@@';
@@ -16447,9 +16443,11 @@
      */
     function parseI18nMeta(meta) {
         var _a, _b;
+        if (meta === void 0) { meta = ''; }
         var customId;
         var meaning;
         var description;
+        meta = meta.trim();
         if (meta) {
             var idIndex = meta.indexOf(I18N_ID_SEPARATOR);
             var descIndex = meta.indexOf(I18N_MEANING_SEPARATOR);
@@ -16489,7 +16487,7 @@
         // const MSG_... = goog.getMsg(..);
         // I18N_X = MSG_...;
         var statements = [];
-        var jsdocComment = i18nMetaToDocStmt(metaFromI18nMessage(message));
+        var jsdocComment = i18nMetaToDocStmt(message);
         if (jsdocComment !== null) {
             statements.push(jsdocComment);
         }
@@ -16531,7 +16529,7 @@
     function createLocalizeStatements(variable, message, params) {
         var statements = [];
         var _a = serializeI18nMessageForLocalize(message), messageParts = _a.messageParts, placeHolders = _a.placeHolders;
-        statements.push(new ExpressionStatement(variable.set(localizedString(metaFromI18nMessage(message), messageParts, placeHolders, placeHolders.map(function (ph) { return params[ph]; })))));
+        statements.push(new ExpressionStatement(variable.set(localizedString(message, messageParts, placeHolders, placeHolders.map(function (ph) { return params[ph]; })))));
         return statements;
     }
     var MessagePiece = /** @class */ (function () {
@@ -18205,7 +18203,7 @@
      */
     function parseTemplate(template, templateUrl, options) {
         if (options === void 0) { options = {}; }
-        var interpolationConfig = options.interpolationConfig, preserveWhitespaces = options.preserveWhitespaces, i18nLegacyMessageIdFormat = options.i18nLegacyMessageIdFormat;
+        var interpolationConfig = options.interpolationConfig, preserveWhitespaces = options.preserveWhitespaces, enableI18nLegacyMessageIdFormat = options.enableI18nLegacyMessageIdFormat;
         var bindingParser = makeBindingParser(interpolationConfig);
         var htmlParser = new HtmlParser();
         var parseResult = htmlParser.parse(template, templateUrl, __assign(__assign({ leadingTriviaChars: LEADING_TRIVIA_CHARS }, options), { tokenizeExpansionForms: true }));
@@ -18217,7 +18215,7 @@
         // before we run whitespace removal process, because existing i18n
         // extraction process (ng xi18n) relies on a raw content to generate
         // message ids
-        var i18nMetaVisitor = new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ !preserveWhitespaces, i18nLegacyMessageIdFormat);
+        var i18nMetaVisitor = new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ !preserveWhitespaces, enableI18nLegacyMessageIdFormat);
         rootNodes = visitAll$1(i18nMetaVisitor, rootNodes);
         if (!preserveWhitespaces) {
             rootNodes = visitAll$1(new WhitespaceVisitor(), rootNodes);
@@ -19278,7 +19276,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.0.0-rc.4+28.sha-716fc84.with-local-changes');
+    var VERSION$1 = new Version('9.0.0-rc.4+51.sha-d2538ca.with-local-changes');
 
     /**
      * @license
@@ -20113,7 +20111,7 @@
         var _b = __read((descIndex > -1) ?
             [meaningAndDesc.slice(0, descIndex), meaningAndDesc.slice(descIndex + 1)] :
             ['', meaningAndDesc], 2), meaning = _b[0], description = _b[1];
-        return { meaning: meaning, description: description, id: id };
+        return { meaning: meaning, description: description, id: id.trim() };
     }
 
     /**
