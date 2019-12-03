@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.4.with-local-changes
+ * @license Angular v9.0.0-rc.4+28.sha-716fc84.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5844,7 +5844,7 @@
                 result = compileFactoryFunction(factoryMeta);
             }
             else {
-                result = delegateToFactory(meta.useClass);
+                result = delegateToFactory(meta.type, meta.useClass);
             }
         }
         else if (meta.useFactory !== undefined) {
@@ -5869,7 +5869,7 @@
             result = compileFactoryFunction(__assign(__assign({}, factoryMeta), { expression: importExpr(Identifiers.inject).callFn([meta.useExisting]) }));
         }
         else {
-            result = delegateToFactory(meta.internalType);
+            result = delegateToFactory(meta.type, meta.internalType);
         }
         var token = meta.internalType;
         var providedIn = meta.providedIn;
@@ -5881,11 +5881,15 @@
             statements: result.statements,
         };
     }
-    function delegateToFactory(type) {
+    function delegateToFactory(type, internalType) {
         return {
             statements: [],
-            // () => type.ɵfac(t)
-            factory: fn([new FnParam('t', DYNAMIC_TYPE)], [new ReturnStatement(type.callMethod('ɵfac', [variable('t')]))])
+            // If types are the same, we can generate `factory: type.ɵfac`
+            // If types are different, we have to generate a wrapper function to ensure
+            // the internal type has been resolved (`factory: function(t) { return type.ɵfac(t); }`)
+            factory: type.node === internalType.node ?
+                internalType.prop('ɵfac') :
+                fn([new FnParam('t', DYNAMIC_TYPE)], [new ReturnStatement(internalType.callMethod('ɵfac', [variable('t')]))])
         };
     }
 
@@ -19274,7 +19278,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.0.0-rc.4.with-local-changes');
+    var VERSION$1 = new Version('9.0.0-rc.4+28.sha-716fc84.with-local-changes');
 
     /**
      * @license
