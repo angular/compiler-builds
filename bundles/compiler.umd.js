@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+344.sha-f16f6a2.with-local-changes
+ * @license Angular v9.0.0-rc.1+348.sha-539d8f0.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16402,7 +16402,7 @@
          */
         I18nMetaVisitor.prototype._parseMetadata = function (meta) {
             return typeof meta === 'string' ? parseI18nMeta(meta) :
-                meta instanceof Message ? metaFromI18nMessage(meta) : {};
+                meta instanceof Message ? meta : {};
         };
         /**
          * Generate (or restore) message id if not specified already.
@@ -16435,16 +16435,6 @@
         };
         return I18nMetaVisitor;
     }());
-    function metaFromI18nMessage(message, id) {
-        if (id === void 0) { id = null; }
-        return {
-            id: typeof id === 'string' ? id : message.id || '',
-            customId: message.customId,
-            legacyIds: message.legacyIds,
-            meaning: message.meaning || '',
-            description: message.description || ''
-        };
-    }
     /** I18n separators for metadata **/
     var I18N_MEANING_SEPARATOR = '|';
     var I18N_ID_SEPARATOR = '@@';
@@ -16460,9 +16450,11 @@
      */
     function parseI18nMeta(meta) {
         var _a, _b;
+        if (meta === void 0) { meta = ''; }
         var customId;
         var meaning;
         var description;
+        meta = meta.trim();
         if (meta) {
             var idIndex = meta.indexOf(I18N_ID_SEPARATOR);
             var descIndex = meta.indexOf(I18N_MEANING_SEPARATOR);
@@ -16502,7 +16494,7 @@
         // const MSG_... = goog.getMsg(..);
         // I18N_X = MSG_...;
         var statements = [];
-        var jsdocComment = i18nMetaToDocStmt(metaFromI18nMessage(message));
+        var jsdocComment = i18nMetaToDocStmt(message);
         if (jsdocComment !== null) {
             statements.push(jsdocComment);
         }
@@ -16544,7 +16536,7 @@
     function createLocalizeStatements(variable, message, params) {
         var statements = [];
         var _a = serializeI18nMessageForLocalize(message), messageParts = _a.messageParts, placeHolders = _a.placeHolders;
-        statements.push(new ExpressionStatement(variable.set(localizedString(metaFromI18nMessage(message), messageParts, placeHolders, placeHolders.map(function (ph) { return params[ph]; })))));
+        statements.push(new ExpressionStatement(variable.set(localizedString(message, messageParts, placeHolders, placeHolders.map(function (ph) { return params[ph]; })))));
         return statements;
     }
     var MessagePiece = /** @class */ (function () {
@@ -19327,7 +19319,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.0.0-rc.1+344.sha-f16f6a2.with-local-changes');
+    var VERSION$1 = new Version('9.0.0-rc.1+348.sha-539d8f0.with-local-changes');
 
     /**
      * @license
@@ -20162,7 +20154,7 @@
         var _b = __read((descIndex > -1) ?
             [meaningAndDesc.slice(0, descIndex), meaningAndDesc.slice(descIndex + 1)] :
             ['', meaningAndDesc], 2), meaning = _b[0], description = _b[1];
-        return { meaning: meaning, description: description, id: id };
+        return { meaning: meaning, description: description, id: id.trim() };
     }
 
     /**

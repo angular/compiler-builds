@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+344.sha-f16f6a2.with-local-changes
+ * @license Angular v9.0.0-rc.1+348.sha-539d8f0.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15256,7 +15256,7 @@ class I18nMetaVisitor {
      */
     _parseMetadata(meta) {
         return typeof meta === 'string' ? parseI18nMeta(meta) :
-            meta instanceof Message ? metaFromI18nMessage(meta) : {};
+            meta instanceof Message ? meta : {};
     }
     /**
      * Generate (or restore) message id if not specified already.
@@ -15288,15 +15288,6 @@ class I18nMetaVisitor {
         }
     }
 }
-function metaFromI18nMessage(message, id = null) {
-    return {
-        id: typeof id === 'string' ? id : message.id || '',
-        customId: message.customId,
-        legacyIds: message.legacyIds,
-        meaning: message.meaning || '',
-        description: message.description || ''
-    };
-}
 /** I18n separators for metadata **/
 const I18N_MEANING_SEPARATOR = '|';
 const I18N_ID_SEPARATOR = '@@';
@@ -15310,10 +15301,11 @@ const I18N_ID_SEPARATOR = '@@';
  * @param meta String that represents i18n meta
  * @returns Object with id, meaning and description fields
  */
-function parseI18nMeta(meta) {
+function parseI18nMeta(meta = '') {
     let customId;
     let meaning;
     let description;
+    meta = meta.trim();
     if (meta) {
         const idIndex = meta.indexOf(I18N_ID_SEPARATOR);
         const descIndex = meta.indexOf(I18N_MEANING_SEPARATOR);
@@ -15354,7 +15346,7 @@ function createGoogleGetMsgStatements(variable$1, message, closureVar, params) {
     // const MSG_... = goog.getMsg(..);
     // I18N_X = MSG_...;
     const statements = [];
-    const jsdocComment = i18nMetaToDocStmt(metaFromI18nMessage(message));
+    const jsdocComment = i18nMetaToDocStmt(message);
     if (jsdocComment !== null) {
         statements.push(jsdocComment);
     }
@@ -15391,7 +15383,7 @@ function serializeI18nMessageForGetMsg(message) {
 function createLocalizeStatements(variable, message, params) {
     const statements = [];
     const { messageParts, placeHolders } = serializeI18nMessageForLocalize(message);
-    statements.push(new ExpressionStatement(variable.set(localizedString(metaFromI18nMessage(message), messageParts, placeHolders, placeHolders.map(ph => params[ph])))));
+    statements.push(new ExpressionStatement(variable.set(localizedString(message, messageParts, placeHolders, placeHolders.map(ph => params[ph])))));
     return statements;
 }
 class MessagePiece {
@@ -18054,7 +18046,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-rc.1+344.sha-f16f6a2.with-local-changes');
+const VERSION$1 = new Version('9.0.0-rc.1+348.sha-539d8f0.with-local-changes');
 
 /**
  * @license
@@ -18859,7 +18851,7 @@ function _parseMessageMeta(i18n) {
     const [meaning, description] = (descIndex > -1) ?
         [meaningAndDesc.slice(0, descIndex), meaningAndDesc.slice(descIndex + 1)] :
         ['', meaningAndDesc];
-    return { meaning, description, id };
+    return { meaning, description, id: id.trim() };
 }
 
 /**
