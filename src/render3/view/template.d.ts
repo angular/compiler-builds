@@ -303,17 +303,14 @@ export interface ParseTemplateOptions {
      */
     leadingTriviaChars?: string[];
     /**
-     * Render `$localize` message ids with the specified legacy format (xlf, xlf2 or xmb).
+     * Render `$localize` message ids with additional legacy message ids.
      *
-     * Use this option when use are using the `$localize` based localization messages but
-     * have not migrated the translation files to use the new `$localize` message id format.
+     * This option defaults to `true` but in the future the defaul will be flipped.
      *
-     * @deprecated
-     * `i18nLegacyMessageIdFormat` should only be used while migrating from legacy message id
-     * formatted translation files and will be removed at the same time as ViewEngine support is
-     * removed.
+     * For now set this option to false if you have migrated the translation files to use the new
+     * `$localize` message id format and you are not using compile time translation merging.
      */
-    i18nLegacyMessageIdFormat?: string;
+    enableI18nLegacyMessageIdFormat?: boolean;
 }
 /**
  * Parse a template into render3 `Node`s and additional metadata, with no other dependencies.

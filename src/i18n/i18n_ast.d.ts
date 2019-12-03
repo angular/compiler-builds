@@ -19,8 +19,8 @@ export declare class Message {
     customId: string;
     sources: MessageSpan[];
     id: string;
-    /** The id to use if there is no custom id and if `i18nLegacyMessageIdFormat` is not empty */
-    legacyId?: string;
+    /** The ids to use if there are no custom id and if `i18nLegacyMessageIdFormat` is not empty */
+    legacyIds: string[];
     /**
      * @param nodes message AST
      * @param placeholders maps placeholder names to static content

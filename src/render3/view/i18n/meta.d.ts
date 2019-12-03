@@ -12,7 +12,7 @@ import * as o from '../../../output/output_ast';
 export declare type I18nMeta = {
     id?: string;
     customId?: string;
-    legacyId?: string;
+    legacyIds?: string[];
     description?: string;
     meaning?: string;
 };
@@ -24,10 +24,10 @@ export declare type I18nMeta = {
 export declare class I18nMetaVisitor implements html.Visitor {
     private interpolationConfig;
     private keepI18nAttrs;
-    private i18nLegacyMessageIdFormat;
+    private enableI18nLegacyMessageIdFormat;
     hasI18nMeta: boolean;
     private _createI18nMessage;
-    constructor(interpolationConfig?: InterpolationConfig, keepI18nAttrs?: boolean, i18nLegacyMessageIdFormat?: string);
+    constructor(interpolationConfig?: InterpolationConfig, keepI18nAttrs?: boolean, enableI18nLegacyMessageIdFormat?: boolean);
     private _generateI18nMessage;
     visitElement(element: html.Element): any;
     visitExpansion(expansion: html.Expansion, currentMessage: i18n.Message | undefined): any;
@@ -58,7 +58,7 @@ export declare class I18nMetaVisitor implements html.Visitor {
      * @param message the message whose legacy id should be set
      * @param meta information about the message being processed
      */
-    private _setLegacyId;
+    private _setLegacyIds;
 }
 export declare function metaFromI18nMessage(message: i18n.Message, id?: string | null): I18nMeta;
 /**
