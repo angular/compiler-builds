@@ -60,7 +60,6 @@ export declare class I18nMetaVisitor implements html.Visitor {
      */
     private _setLegacyIds;
 }
-export declare function metaFromI18nMessage(message: i18n.Message, id?: string | null): I18nMeta;
 /**
  * Parses i18n metas like:
  *  - "@@id",
