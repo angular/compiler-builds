@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.4+51.sha-d2538ca.with-local-changes
+ * @license Angular v9.0.0-rc.4+67.sha-9555731.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -17171,6 +17171,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         var _this = this;
         var NG_TEMPLATE_TAG_NAME = 'ng-template';
         var templateIndex = this.allocateDataSlot();
+        var ngProjectAsAttr;
         if (this.i18n) {
             this.i18n.appendTemplate(template.i18n, templateIndex);
         }
@@ -17188,8 +17189,13 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this.matchDirectives(NG_TEMPLATE_TAG_NAME, template);
         // prepare attributes parameter (including attributes used for directive matching)
         var attrsExprs = [];
-        template.attributes.forEach(function (a) { attrsExprs.push(asLiteral(a.name), asLiteral(a.value)); });
-        attrsExprs.push.apply(attrsExprs, __spread(this.prepareNonRenderAttrs(template.inputs, template.outputs, undefined, template.templateAttrs)));
+        template.attributes.forEach(function (attr) {
+            if (attr.name === NG_PROJECT_AS_ATTR_NAME) {
+                ngProjectAsAttr = attr;
+            }
+            attrsExprs.push(asLiteral(attr.name), asLiteral(attr.value));
+        });
+        attrsExprs.push.apply(attrsExprs, __spread(this.prepareNonRenderAttrs(template.inputs, template.outputs, undefined, template.templateAttrs, undefined, ngProjectAsAttr)));
         parameters.push(this.addAttrsToConsts(attrsExprs));
         // local refs (ex.: <ng-template #foo>)
         if (template.references && template.references.length) {
@@ -18097,7 +18103,7 @@ var NG_I18N_CLOSURE_MODE = 'ngI18nClosureMode';
  *
  * ```
  * var I18N_1;
- * if (ngI18nClosureMode) {
+ * if (typeof ngI18nClosureMode !== undefined && ngI18nClosureMode) {
  *     var MSG_EXTERNAL_XXX = goog.getMsg(
  *          "Some message with {$interpolation}!",
  *          { "interpolation": "\uFFFD0\uFFFD" }
@@ -18118,16 +18124,29 @@ var NG_I18N_CLOSURE_MODE = 'ngI18nClosureMode';
  * post-processing).
  * @returns An array of statements that defined a given translation.
  */
-function getTranslationDeclStmts(message, variable$1, closureVar, params, transformFn) {
+function getTranslationDeclStmts(message, variable, closureVar, params, transformFn) {
     if (params === void 0) { params = {}; }
     var statements = [
-        declareI18nVariable(variable$1),
-        ifStmt(variable(NG_I18N_CLOSURE_MODE), createGoogleGetMsgStatements(variable$1, message, closureVar, i18nFormatPlaceholderNames(params, /* useCamelCase */ true)), createLocalizeStatements(variable$1, message, i18nFormatPlaceholderNames(params, /* useCamelCase */ false))),
+        declareI18nVariable(variable),
+        ifStmt(createClosureModeGuard(), createGoogleGetMsgStatements(variable, message, closureVar, i18nFormatPlaceholderNames(params, /* useCamelCase */ true)), createLocalizeStatements(variable, message, i18nFormatPlaceholderNames(params, /* useCamelCase */ false))),
     ];
     if (transformFn) {
-        statements.push(new ExpressionStatement(variable$1.set(transformFn(variable$1))));
+        statements.push(new ExpressionStatement(variable.set(transformFn(variable))));
     }
     return statements;
+}
+/**
+ * Create the expression that will be used to guard the closure mode block
+ * It is equivalent to:
+ *
+ * ```
+ * typeof ngI18nClosureMode !== undefined && ngI18nClosureMode
+ * ```
+ */
+function createClosureModeGuard() {
+    return typeofExpr(variable(NG_I18N_CLOSURE_MODE))
+        .notIdentical(literal('undefined', STRING_TYPE))
+        .and(variable(NG_I18N_CLOSURE_MODE));
 }
 
 /**
@@ -19098,7 +19117,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-rc.4+51.sha-d2538ca.with-local-changes');
+var VERSION$1 = new Version('9.0.0-rc.4+67.sha-9555731.with-local-changes');
 
 /**
  * @license

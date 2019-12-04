@@ -334,7 +334,7 @@ export declare function resolveSanitizationFn(context: core.SecurityContext, isA
  *
  * ```
  * var I18N_1;
- * if (ngI18nClosureMode) {
+ * if (typeof ngI18nClosureMode !== undefined && ngI18nClosureMode) {
  *     var MSG_EXTERNAL_XXX = goog.getMsg(
  *          "Some message with {$interpolation}!",
  *          { "interpolation": "\uFFFD0\uFFFD" }
