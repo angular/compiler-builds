@@ -21,6 +21,7 @@ export declare abstract class AbstractJsEmitterVisitor extends AbstractEmitterVi
     visitFunctionExpr(ast: o.FunctionExpr, ctx: EmitterVisitorContext): any;
     visitDeclareFunctionStmt(stmt: o.DeclareFunctionStmt, ctx: EmitterVisitorContext): any;
     visitTryCatchStmt(stmt: o.TryCatchStmt, ctx: EmitterVisitorContext): any;
+    visitLocalizedString(ast: o.LocalizedString, ctx: EmitterVisitorContext): any;
     private _visitParams;
     getBuiltinMethodName(method: o.BuiltinMethod): string;
 }
