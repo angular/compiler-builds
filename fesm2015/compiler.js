@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+405.sha-2f3d41f.with-local-changes
+ * @license Angular v9.0.0-rc.1+408.sha-9fa2c39.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3307,6 +3307,7 @@ Identifiers$1.injectAttribute = { name: 'ɵɵinjectAttribute', moduleName: CORE$
 Identifiers$1.injectPipeChangeDetectorRef = { name: 'ɵɵinjectPipeChangeDetectorRef', moduleName: CORE$1 };
 Identifiers$1.directiveInject = { name: 'ɵɵdirectiveInject', moduleName: CORE$1 };
 Identifiers$1.invalidFactory = { name: 'ɵɵinvalidFactory', moduleName: CORE$1 };
+Identifiers$1.invalidFactoryDep = { name: 'ɵɵinvalidFactoryDep', moduleName: CORE$1 };
 Identifiers$1.templateRefExtractor = { name: 'ɵɵtemplateRefExtractor', moduleName: CORE$1 };
 Identifiers$1.resolveWindow = { name: 'ɵɵresolveWindow', moduleName: CORE$1 };
 Identifiers$1.resolveDocument = { name: 'ɵɵresolveDocument', moduleName: CORE$1 };
@@ -5043,6 +5044,10 @@ var R3ResolvedDependencyType;
      * Injecting the `ChangeDetectorRef` token. Needs special handling when injected into a pipe.
      */
     R3ResolvedDependencyType[R3ResolvedDependencyType["ChangeDetectorRef"] = 2] = "ChangeDetectorRef";
+    /**
+     * An invalid dependency (no token could be determined). An error should be thrown at runtime.
+     */
+    R3ResolvedDependencyType[R3ResolvedDependencyType["Invalid"] = 3] = "Invalid";
 })(R3ResolvedDependencyType || (R3ResolvedDependencyType = {}));
 /**
  * Construct a factory function expression for the given `R3FactoryMetadata`.
@@ -5132,9 +5137,9 @@ function compileFactoryFunction(meta) {
     };
 }
 function injectDependencies(deps, injectFn, isPipe) {
-    return deps.map(dep => compileInjectDependency(dep, injectFn, isPipe));
+    return deps.map((dep, index) => compileInjectDependency(dep, injectFn, isPipe, index));
 }
-function compileInjectDependency(dep, injectFn, isPipe) {
+function compileInjectDependency(dep, injectFn, isPipe, index) {
     // Interpret the dependency according to its resolved type.
     switch (dep.resolved) {
         case R3ResolvedDependencyType.Token:
@@ -5160,6 +5165,8 @@ function compileInjectDependency(dep, injectFn, isPipe) {
         case R3ResolvedDependencyType.Attribute:
             // In the case of attributes, the attribute name in question is given as the token.
             return importExpr(Identifiers$1.injectAttribute).callFn([dep.token]);
+        case R3ResolvedDependencyType.Invalid:
+            return importExpr(Identifiers$1.invalidFactoryDep).callFn([literal(index)]);
         default:
             return unsupported(`Unknown R3ResolvedDependencyType: ${R3ResolvedDependencyType[dep.resolved]}`);
     }
@@ -18098,7 +18105,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-rc.1+405.sha-2f3d41f.with-local-changes');
+const VERSION$1 = new Version('9.0.0-rc.1+408.sha-9fa2c39.with-local-changes');
 
 /**
  * @license
