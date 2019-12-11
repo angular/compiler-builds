@@ -97,7 +97,11 @@ export declare enum R3ResolvedDependencyType {
     /**
      * Injecting the `ChangeDetectorRef` token. Needs special handling when injected into a pipe.
      */
-    ChangeDetectorRef = 2
+    ChangeDetectorRef = 2,
+    /**
+     * An invalid dependency (no token could be determined). An error should be thrown at runtime.
+     */
+    Invalid = 3
 }
 /**
  * Metadata representing a single dependency to be injected into a constructor or function call.

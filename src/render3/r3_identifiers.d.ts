@@ -119,6 +119,7 @@ export declare class Identifiers {
     static injectPipeChangeDetectorRef: o.ExternalReference;
     static directiveInject: o.ExternalReference;
     static invalidFactory: o.ExternalReference;
+    static invalidFactoryDep: o.ExternalReference;
     static templateRefExtractor: o.ExternalReference;
     static resolveWindow: o.ExternalReference;
     static resolveDocument: o.ExternalReference;
@@ -132,6 +133,7 @@ export declare class Identifiers {
     static InjectorDef: o.ExternalReference;
     static defineInjector: o.ExternalReference;
     static NgModuleDefWithMeta: o.ExternalReference;
+    static ModuleWithProviders: o.ExternalReference;
     static defineNgModule: o.ExternalReference;
     static setNgModuleScope: o.ExternalReference;
     static PipeDefWithMeta: o.ExternalReference;
