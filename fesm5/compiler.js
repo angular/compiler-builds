@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+449.sha-6ba5fdc.with-local-changes
+ * @license Angular v9.0.0-rc.1+457.sha-ff0a914.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4532,16 +4532,15 @@ var _SerializerIgnoreIcuExpVisitor = /** @class */ (function (_super) {
  *          DO NOT USE IT IN A SECURITY SENSITIVE CONTEXT.
  */
 function sha1(str) {
-    var _a, _b;
     var utf8 = utf8Encode(str);
     var words32 = stringToWords32(utf8, Endian.Big);
     var len = utf8.length * 8;
     var w = newArray(80);
-    var _c = __read([0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0], 5), a = _c[0], b = _c[1], c = _c[2], d = _c[3], e = _c[4];
+    var a = 0x67452301, b = 0xefcdab89, c = 0x98badcfe, d = 0x10325476, e = 0xc3d2e1f0;
     words32[len >> 5] |= 0x80 << (24 - len % 32);
     words32[((len + 64 >> 9) << 4) + 15] = len;
     for (var i = 0; i < words32.length; i += 16) {
-        var _d = __read([a, b, c, d, e], 5), h0 = _d[0], h1 = _d[1], h2 = _d[2], h3 = _d[3], h4 = _d[4];
+        var h0 = a, h1 = b, h2 = c, h3 = d, h4 = e;
         for (var j = 0; j < 80; j++) {
             if (j < 16) {
                 w[j] = words32[i + j];
@@ -4549,11 +4548,21 @@ function sha1(str) {
             else {
                 w[j] = rol32(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
             }
-            var _e = __read(fk(j, b, c, d), 2), f = _e[0], k = _e[1];
+            var fkVal = fk(j, b, c, d);
+            var f = fkVal[0];
+            var k = fkVal[1];
             var temp = [rol32(a, 5), f, e, k, w[j]].reduce(add32);
-            _a = __read([d, c, rol32(b, 30), a, temp], 5), e = _a[0], d = _a[1], c = _a[2], b = _a[3], a = _a[4];
+            e = d;
+            d = c;
+            c = rol32(b, 30);
+            b = a;
+            a = temp;
         }
-        _b = __read([add32(a, h0), add32(b, h1), add32(c, h2), add32(d, h3), add32(e, h4)], 5), a = _b[0], b = _b[1], c = _b[2], d = _b[3], e = _b[4];
+        a = add32(a, h0);
+        b = add32(b, h1);
+        c = add32(c, h2);
+        d = add32(d, h3);
+        e = add32(e, h4);
     }
     return byteStringToHexString(words32ToByteString([a, b, c, d, e]));
 }
@@ -4579,7 +4588,8 @@ function fk(index, b, c, d) {
  */
 function fingerprint(str) {
     var utf8 = utf8Encode(str);
-    var _a = __read([hash32(utf8, 0), hash32(utf8, 102072)], 2), hi = _a[0], lo = _a[1];
+    var hi = hash32(utf8, 0);
+    var lo = hash32(utf8, 102072);
     if (hi == 0 && (lo == 0 || lo == 1)) {
         hi = hi ^ 0x130f9bef;
         lo = lo ^ -0x6b5f56d8;
@@ -4587,36 +4597,36 @@ function fingerprint(str) {
     return [hi, lo];
 }
 function computeMsgId(msg, meaning) {
-    var _a;
     if (meaning === void 0) { meaning = ''; }
-    var _b = __read(fingerprint(msg), 2), hi = _b[0], lo = _b[1];
+    var msgFingerprint = fingerprint(msg);
     if (meaning) {
-        var _c = __read(fingerprint(meaning), 2), him = _c[0], lom = _c[1];
-        _a = __read(add64(rol64([hi, lo], 1), [him, lom]), 2), hi = _a[0], lo = _a[1];
+        var meaningFingerprint = fingerprint(meaning);
+        msgFingerprint = add64(rol64(msgFingerprint, 1), meaningFingerprint);
     }
+    var hi = msgFingerprint[0];
+    var lo = msgFingerprint[1];
     return byteStringToDecString(words32ToByteString([hi & 0x7fffffff, lo]));
 }
 function hash32(str, c) {
-    var _a;
-    var _b = __read([0x9e3779b9, 0x9e3779b9], 2), a = _b[0], b = _b[1];
+    var a = 0x9e3779b9, b = 0x9e3779b9;
     var i;
     var len = str.length;
     for (i = 0; i + 12 <= len; i += 12) {
         a = add32(a, wordAt(str, i, Endian.Little));
         b = add32(b, wordAt(str, i + 4, Endian.Little));
         c = add32(c, wordAt(str, i + 8, Endian.Little));
-        _a = __read(mix([a, b, c]), 3), a = _a[0], b = _a[1], c = _a[2];
+        var res = mix(a, b, c);
+        a = res[0], b = res[1], c = res[2];
     }
     a = add32(a, wordAt(str, i, Endian.Little));
     b = add32(b, wordAt(str, i + 4, Endian.Little));
     // the first byte of c is reserved for the length
     c = add32(c, len);
     c = add32(c, wordAt(str, i + 8, Endian.Little) << 8);
-    return mix([a, b, c])[2];
+    return mix(a, b, c)[2];
 }
 // clang-format off
-function mix(_a) {
-    var _b = __read(_a, 3), a = _b[0], b = _b[1], c = _b[2];
+function mix(a, b, c) {
     a = sub32(a, b);
     a = sub32(a, c);
     a ^= c >>> 13;
@@ -4661,10 +4671,12 @@ function add32to64(a, b) {
     var high = (a >>> 16) + (b >>> 16) + (low >>> 16);
     return [high >>> 16, (high << 16) | (low & 0xffff)];
 }
-function add64(_a, _b) {
-    var _c = __read(_a, 2), ah = _c[0], al = _c[1];
-    var _d = __read(_b, 2), bh = _d[0], bl = _d[1];
-    var _e = __read(add32to64(al, bl), 2), carry = _e[0], l = _e[1];
+function add64(a, b) {
+    var ah = a[0], al = a[1];
+    var bh = b[0], bl = b[1];
+    var result = add32to64(al, bl);
+    var carry = result[0];
+    var l = result[1];
     var h = add32(add32(ah, bh), carry);
     return [h, l];
 }
@@ -4678,8 +4690,8 @@ function rol32(a, count) {
     return (a << count) | (a >>> (32 - count));
 }
 // Rotate a 64b number left `count` position
-function rol64(_a, count) {
-    var _b = __read(_a, 2), hi = _b[0], lo = _b[1];
+function rol64(num, count) {
+    var hi = num[0], lo = num[1];
     var h = (hi << count) | (lo >>> (32 - count));
     var l = (lo << count) | (hi >>> (32 - count));
     return [h, l];
@@ -9744,7 +9756,6 @@ var _Tokenizer = /** @class */ (function () {
         this._currentTokenType = type;
     };
     _Tokenizer.prototype._endToken = function (parts, end) {
-        if (end === void 0) { end = this._cursor.clone(); }
         if (this._currentTokenStart === null) {
             throw new TokenError('Programming error - attempted to end a token when there was no start to the token', this._currentTokenType, this._cursor.getSpan(end));
         }
@@ -9835,8 +9846,7 @@ var _Tokenizer = /** @class */ (function () {
     _Tokenizer.prototype._requireCharCodeUntilFn = function (predicate, len) {
         var start = this._cursor.clone();
         this._attemptCharCodeUntilFn(predicate);
-        var end = this._cursor.clone();
-        if (end.diff(start) < len) {
+        if (this._cursor.diff(start) < len) {
             throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(start));
         }
     };
@@ -10226,7 +10236,17 @@ var PlainCharacterCursor = /** @class */ (function () {
             this.file = fileOrCursor.file;
             this.input = fileOrCursor.input;
             this.end = fileOrCursor.end;
-            this.state = __assign({}, fileOrCursor.state);
+            var state = fileOrCursor.state;
+            // Note: avoid using `{...fileOrCursor.state}` here as that has a severe performance penalty.
+            // In ES5 bundles the object spread operator is translated into the `__assign` helper, which
+            // is not optimized by VMs as efficiently as a raw object literal. Since this constructor is
+            // called in tight loops, this difference matters.
+            this.state = {
+                peek: state.peek,
+                offset: state.offset,
+                line: state.line,
+                column: state.column,
+            };
         }
         else {
             if (!range) {
@@ -10251,9 +10271,13 @@ var PlainCharacterCursor = /** @class */ (function () {
     PlainCharacterCursor.prototype.init = function () { this.updatePeek(this.state); };
     PlainCharacterCursor.prototype.getSpan = function (start, leadingTriviaCodePoints) {
         start = start || this;
+        var cloned = false;
         if (leadingTriviaCodePoints) {
-            start = start.clone();
             while (this.diff(start) > 0 && leadingTriviaCodePoints.indexOf(start.peek()) !== -1) {
+                if (!cloned) {
+                    start = start.clone();
+                    cloned = true;
+                }
                 start.advance();
             }
         }
@@ -13993,6 +14017,15 @@ var TemplateBindingParseResult = /** @class */ (function () {
     }
     return TemplateBindingParseResult;
 }());
+var defaultInterpolateRegExp = _createInterpolateRegExp(DEFAULT_INTERPOLATION_CONFIG);
+function _getInterpolateRegExp(config) {
+    if (config === DEFAULT_INTERPOLATION_CONFIG) {
+        return defaultInterpolateRegExp;
+    }
+    else {
+        return _createInterpolateRegExp(config);
+    }
+}
 function _createInterpolateRegExp(config) {
     var pattern = escapeRegExp(config.start) + '([\\s\\S]*?)' + escapeRegExp(config.end);
     return new RegExp(pattern, 'g');
@@ -14078,7 +14111,7 @@ var Parser$1 = /** @class */ (function () {
     };
     Parser.prototype.splitInterpolation = function (input, location, interpolationConfig) {
         if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
-        var regexp = _createInterpolateRegExp(interpolationConfig);
+        var regexp = _getInterpolateRegExp(interpolationConfig);
         var parts = input.split(regexp);
         if (parts.length <= 1) {
             return null;
@@ -14133,7 +14166,7 @@ var Parser$1 = /** @class */ (function () {
         return null;
     };
     Parser.prototype._checkNoInterpolation = function (input, location, interpolationConfig) {
-        var regexp = _createInterpolateRegExp(interpolationConfig);
+        var regexp = _getInterpolateRegExp(interpolationConfig);
         var parts = input.split(regexp);
         if (parts.length > 1) {
             this._reportError("Got interpolation (" + interpolationConfig.start + interpolationConfig.end + ") where expression was expected", input, "at column " + this._findInterpolationErrorColumn(parts, 1, interpolationConfig) + " in", location);
@@ -18132,12 +18165,13 @@ function parseTemplate(template, templateUrl, options) {
     }
     return { nodes: nodes, styleUrls: styleUrls, styles: styles };
 }
+var elementRegistry = new DomElementSchemaRegistry();
 /**
  * Construct a `BindingParser` with a default configuration.
  */
 function makeBindingParser(interpolationConfig) {
     if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
-    return new BindingParser(new Parser$1(new Lexer()), interpolationConfig, new DomElementSchemaRegistry(), null, []);
+    return new BindingParser(new Parser$1(new Lexer()), interpolationConfig, elementRegistry, null, []);
 }
 function resolveSanitizationFn(context, isAttribute) {
     switch (context) {
@@ -19205,7 +19239,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-rc.1+449.sha-6ba5fdc.with-local-changes');
+var VERSION$1 = new Version('9.0.0-rc.1+457.sha-ff0a914.with-local-changes');
 
 /**
  * @license
