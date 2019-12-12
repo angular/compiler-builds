@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.6+22.sha-45b73c2.with-local-changes
+ * @license Angular v9.0.0-rc.6+29.sha-fb4a11a.with-local-changes
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4160,11 +4160,11 @@ function sha1(str) {
     const words32 = stringToWords32(utf8, Endian.Big);
     const len = utf8.length * 8;
     const w = newArray(80);
-    let [a, b, c, d, e] = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0];
+    let a = 0x67452301, b = 0xefcdab89, c = 0x98badcfe, d = 0x10325476, e = 0xc3d2e1f0;
     words32[len >> 5] |= 0x80 << (24 - len % 32);
     words32[((len + 64 >> 9) << 4) + 15] = len;
     for (let i = 0; i < words32.length; i += 16) {
-        const [h0, h1, h2, h3, h4] = [a, b, c, d, e];
+        const h0 = a, h1 = b, h2 = c, h3 = d, h4 = e;
         for (let j = 0; j < 80; j++) {
             if (j < 16) {
                 w[j] = words32[i + j];
@@ -4172,11 +4172,21 @@ function sha1(str) {
             else {
                 w[j] = rol32(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
             }
-            const [f, k] = fk(j, b, c, d);
+            const fkVal = fk(j, b, c, d);
+            const f = fkVal[0];
+            const k = fkVal[1];
             const temp = [rol32(a, 5), f, e, k, w[j]].reduce(add32);
-            [e, d, c, b, a] = [d, c, rol32(b, 30), a, temp];
+            e = d;
+            d = c;
+            c = rol32(b, 30);
+            b = a;
+            a = temp;
         }
-        [a, b, c, d, e] = [add32(a, h0), add32(b, h1), add32(c, h2), add32(d, h3), add32(e, h4)];
+        a = add32(a, h0);
+        b = add32(b, h1);
+        c = add32(c, h2);
+        d = add32(d, h3);
+        e = add32(e, h4);
     }
     return byteStringToHexString(words32ToByteString([a, b, c, d, e]));
 }
@@ -4202,7 +4212,8 @@ function fk(index, b, c, d) {
  */
 function fingerprint(str) {
     const utf8 = utf8Encode(str);
-    let [hi, lo] = [hash32(utf8, 0), hash32(utf8, 102072)];
+    let hi = hash32(utf8, 0);
+    let lo = hash32(utf8, 102072);
     if (hi == 0 && (lo == 0 || lo == 1)) {
         hi = hi ^ 0x130f9bef;
         lo = lo ^ -0x6b5f56d8;
@@ -4210,32 +4221,35 @@ function fingerprint(str) {
     return [hi, lo];
 }
 function computeMsgId(msg, meaning = '') {
-    let [hi, lo] = fingerprint(msg);
+    let msgFingerprint = fingerprint(msg);
     if (meaning) {
-        const [him, lom] = fingerprint(meaning);
-        [hi, lo] = add64(rol64([hi, lo], 1), [him, lom]);
+        const meaningFingerprint = fingerprint(meaning);
+        msgFingerprint = add64(rol64(msgFingerprint, 1), meaningFingerprint);
     }
+    const hi = msgFingerprint[0];
+    const lo = msgFingerprint[1];
     return byteStringToDecString(words32ToByteString([hi & 0x7fffffff, lo]));
 }
 function hash32(str, c) {
-    let [a, b] = [0x9e3779b9, 0x9e3779b9];
+    let a = 0x9e3779b9, b = 0x9e3779b9;
     let i;
     const len = str.length;
     for (i = 0; i + 12 <= len; i += 12) {
         a = add32(a, wordAt(str, i, Endian.Little));
         b = add32(b, wordAt(str, i + 4, Endian.Little));
         c = add32(c, wordAt(str, i + 8, Endian.Little));
-        [a, b, c] = mix([a, b, c]);
+        const res = mix(a, b, c);
+        a = res[0], b = res[1], c = res[2];
     }
     a = add32(a, wordAt(str, i, Endian.Little));
     b = add32(b, wordAt(str, i + 4, Endian.Little));
     // the first byte of c is reserved for the length
     c = add32(c, len);
     c = add32(c, wordAt(str, i + 8, Endian.Little) << 8);
-    return mix([a, b, c])[2];
+    return mix(a, b, c)[2];
 }
 // clang-format off
-function mix([a, b, c]) {
+function mix(a, b, c) {
     a = sub32(a, b);
     a = sub32(a, c);
     a ^= c >>> 13;
@@ -4280,8 +4294,12 @@ function add32to64(a, b) {
     const high = (a >>> 16) + (b >>> 16) + (low >>> 16);
     return [high >>> 16, (high << 16) | (low & 0xffff)];
 }
-function add64([ah, al], [bh, bl]) {
-    const [carry, l] = add32to64(al, bl);
+function add64(a, b) {
+    const ah = a[0], al = a[1];
+    const bh = b[0], bl = b[1];
+    const result = add32to64(al, bl);
+    const carry = result[0];
+    const l = result[1];
     const h = add32(add32(ah, bh), carry);
     return [h, l];
 }
@@ -4295,7 +4313,8 @@ function rol32(a, count) {
     return (a << count) | (a >>> (32 - count));
 }
 // Rotate a 64b number left `count` position
-function rol64([hi, lo], count) {
+function rol64(num, count) {
+    const hi = num[0], lo = num[1];
     const h = (hi << count) | (lo >>> (32 - count));
     const l = (lo << count) | (hi >>> (32 - count));
     return [h, l];
@@ -9040,7 +9059,7 @@ class _Tokenizer {
         this._currentTokenStart = start;
         this._currentTokenType = type;
     }
-    _endToken(parts, end = this._cursor.clone()) {
+    _endToken(parts, end) {
         if (this._currentTokenStart === null) {
             throw new TokenError('Programming error - attempted to end a token when there was no start to the token', this._currentTokenType, this._cursor.getSpan(end));
         }
@@ -9131,8 +9150,7 @@ class _Tokenizer {
     _requireCharCodeUntilFn(predicate, len) {
         const start = this._cursor.clone();
         this._attemptCharCodeUntilFn(predicate);
-        const end = this._cursor.clone();
-        if (end.diff(start) < len) {
+        if (this._cursor.diff(start) < len) {
             throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(start));
         }
     }
@@ -9518,7 +9536,17 @@ class PlainCharacterCursor {
             this.file = fileOrCursor.file;
             this.input = fileOrCursor.input;
             this.end = fileOrCursor.end;
-            this.state = Object.assign({}, fileOrCursor.state);
+            const state = fileOrCursor.state;
+            // Note: avoid using `{...fileOrCursor.state}` here as that has a severe performance penalty.
+            // In ES5 bundles the object spread operator is translated into the `__assign` helper, which
+            // is not optimized by VMs as efficiently as a raw object literal. Since this constructor is
+            // called in tight loops, this difference matters.
+            this.state = {
+                peek: state.peek,
+                offset: state.offset,
+                line: state.line,
+                column: state.column,
+            };
         }
         else {
             if (!range) {
@@ -9543,9 +9571,13 @@ class PlainCharacterCursor {
     init() { this.updatePeek(this.state); }
     getSpan(start, leadingTriviaCodePoints) {
         start = start || this;
+        let cloned = false;
         if (leadingTriviaCodePoints) {
-            start = start.clone();
             while (this.diff(start) > 0 && leadingTriviaCodePoints.indexOf(start.peek()) !== -1) {
+                if (!cloned) {
+                    start = start.clone();
+                    cloned = true;
+                }
                 start.advance();
             }
         }
@@ -13140,6 +13172,15 @@ class TemplateBindingParseResult {
         this.errors = errors;
     }
 }
+const defaultInterpolateRegExp = _createInterpolateRegExp(DEFAULT_INTERPOLATION_CONFIG);
+function _getInterpolateRegExp(config) {
+    if (config === DEFAULT_INTERPOLATION_CONFIG) {
+        return defaultInterpolateRegExp;
+    }
+    else {
+        return _createInterpolateRegExp(config);
+    }
+}
 function _createInterpolateRegExp(config) {
     const pattern = escapeRegExp(config.start) + '([\\s\\S]*?)' + escapeRegExp(config.end);
     return new RegExp(pattern, 'g');
@@ -13220,7 +13261,7 @@ class Parser$1 {
         return new ASTWithSource(new Interpolation(span, span.toAbsolute(absoluteOffset), split.strings, expressions), input, location, absoluteOffset, this.errors);
     }
     splitInterpolation(input, location, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        const regexp = _createInterpolateRegExp(interpolationConfig);
+        const regexp = _getInterpolateRegExp(interpolationConfig);
         const parts = input.split(regexp);
         if (parts.length <= 1) {
             return null;
@@ -13275,7 +13316,7 @@ class Parser$1 {
         return null;
     }
     _checkNoInterpolation(input, location, interpolationConfig) {
-        const regexp = _createInterpolateRegExp(interpolationConfig);
+        const regexp = _getInterpolateRegExp(interpolationConfig);
         const parts = input.split(regexp);
         if (parts.length > 1) {
             this._reportError(`Got interpolation (${interpolationConfig.start}${interpolationConfig.end}) where expression was expected`, input, `at column ${this._findInterpolationErrorColumn(parts, 1, interpolationConfig)} in`, location);
@@ -17095,11 +17136,12 @@ function parseTemplate(template, templateUrl, options = {}) {
     }
     return { nodes, styleUrls, styles };
 }
+const elementRegistry = new DomElementSchemaRegistry();
 /**
  * Construct a `BindingParser` with a default configuration.
  */
 function makeBindingParser(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-    return new BindingParser(new Parser$1(new Lexer()), interpolationConfig, new DomElementSchemaRegistry(), null, []);
+    return new BindingParser(new Parser$1(new Lexer()), interpolationConfig, elementRegistry, null, []);
 }
 function resolveSanitizationFn(context, isAttribute) {
     switch (context) {
@@ -18109,7 +18151,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-rc.6+22.sha-45b73c2.with-local-changes');
+const VERSION$1 = new Version('9.0.0-rc.6+29.sha-fb4a11a.with-local-changes');
 
 /**
  * @license
