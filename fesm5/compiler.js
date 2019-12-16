@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.6+35.sha-4d99dfe.with-local-changes
+ * @license Angular v9.0.0-rc.6+60.sha-76e4870
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -11978,9 +11978,19 @@ var BindingParser = /** @class */ (function () {
             return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, sourceSpan.start.offset);
         }
     };
-    // Parse an inline template binding. ie `<tag *tplKey="<tplValue>">`
-    BindingParser.prototype.parseInlineTemplateBinding = function (tplKey, tplValue, sourceSpan, absoluteOffset, targetMatchableAttrs, targetProps, targetVars) {
-        var bindings = this._parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteOffset);
+    /**
+     * Parses an inline template binding, e.g.
+     *    <tag *tplKey="<tplValue>">
+     * @param tplKey template binding name
+     * @param tplValue template binding value
+     * @param sourceSpan span of template binding relative to entire the template
+     * @param absoluteValueOffset start of the tplValue relative to the entire template
+     * @param targetMatchableAttrs potential attributes to match in the template
+     * @param targetProps target property bindings in the template
+     * @param targetVars target variables in the template
+     */
+    BindingParser.prototype.parseInlineTemplateBinding = function (tplKey, tplValue, sourceSpan, absoluteValueOffset, targetMatchableAttrs, targetProps, targetVars) {
+        var bindings = this._parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteValueOffset);
         for (var i = 0; i < bindings.length; i++) {
             var binding = bindings[i];
             if (binding.keyIsVar) {
@@ -11991,15 +12001,23 @@ var BindingParser = /** @class */ (function () {
             }
             else {
                 targetMatchableAttrs.push([binding.key, '']);
-                this.parseLiteralAttr(binding.key, null, sourceSpan, absoluteOffset, undefined, targetMatchableAttrs, targetProps);
+                this.parseLiteralAttr(binding.key, null, sourceSpan, absoluteValueOffset, undefined, targetMatchableAttrs, targetProps);
             }
         }
     };
-    BindingParser.prototype._parseTemplateBindings = function (tplKey, tplValue, sourceSpan, absoluteOffset) {
+    /**
+     * Parses the bindings in an inline template binding, e.g.
+     *    <tag *tplKey="let value1 = prop; let value2 = localVar">
+     * @param tplKey template binding name
+     * @param tplValue template binding value
+     * @param sourceSpan span of template binding relative to entire the template
+     * @param absoluteValueOffset start of the tplValue relative to the entire template
+     */
+    BindingParser.prototype._parseTemplateBindings = function (tplKey, tplValue, sourceSpan, absoluteValueOffset) {
         var _this = this;
         var sourceInfo = sourceSpan.start.toString();
         try {
-            var bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceInfo, absoluteOffset);
+            var bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceInfo, absoluteValueOffset);
             this._reportExpressionParserErrors(bindingsResult.errors, sourceSpan);
             bindingsResult.templateBindings.forEach(function (binding) {
                 if (binding.expression) {
@@ -14699,7 +14717,7 @@ var _ParseAST = /** @class */ (function () {
                 var ast = this.parsePipe();
                 var source = this.input.substring(start_1 - this.offset, this.inputIndex - this.offset);
                 expression =
-                    new ASTWithSource(ast, source, this.location, this.absoluteOffset, this.errors);
+                    new ASTWithSource(ast, source, this.location, this.absoluteOffset + start_1, this.errors);
             }
             bindings.push(new TemplateBinding(this.span(start), this.sourceSpan(start), key, isVar, name_2, expression));
             if (this.peekKeywordAs() && !isVar) {
@@ -15397,9 +15415,13 @@ var HtmlAstToIvyAst = /** @class */ (function () {
                     var templateValue = attribute.value;
                     var templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX$1.length);
                     var parsedVariables = [];
-                    var absoluteOffset = attribute.valueSpan ? attribute.valueSpan.start.offset :
-                        attribute.sourceSpan.start.offset;
-                    this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, absoluteOffset, [], templateParsedProperties, parsedVariables);
+                    var absoluteValueOffset = attribute.valueSpan ?
+                        attribute.valueSpan.start.offset :
+                        // If there is no value span the attribute does not have a value, like `attr` in
+                        //`<div attr></div>`. In this case, point to one character beyond the last character of
+                        // the attribute name.
+                        attribute.sourceSpan.start.offset + attribute.name.length;
+                    this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, absoluteValueOffset, [], templateParsedProperties, parsedVariables);
                     templateVariables.push.apply(templateVariables, __spread(parsedVariables.map(function (v) { return new Variable(v.name, v.value, v.sourceSpan); })));
                 }
                 else {
@@ -19239,7 +19261,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-rc.6+35.sha-4d99dfe.with-local-changes');
+var VERSION$1 = new Version('9.0.0-rc.6+60.sha-76e4870');
 
 /**
  * @license
