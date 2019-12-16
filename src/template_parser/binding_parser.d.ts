@@ -29,7 +29,26 @@ export declare class BindingParser {
     createDirectiveHostPropertyAsts(dirMeta: CompileDirectiveSummary, elementSelector: string, sourceSpan: ParseSourceSpan): BoundElementProperty[] | null;
     createDirectiveHostEventAsts(dirMeta: CompileDirectiveSummary, sourceSpan: ParseSourceSpan): ParsedEvent[] | null;
     parseInterpolation(value: string, sourceSpan: ParseSourceSpan): ASTWithSource;
-    parseInlineTemplateBinding(tplKey: string, tplValue: string, sourceSpan: ParseSourceSpan, absoluteOffset: number, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], targetVars: ParsedVariable[]): void;
+    /**
+     * Parses an inline template binding, e.g.
+     *    <tag *tplKey="<tplValue>">
+     * @param tplKey template binding name
+     * @param tplValue template binding value
+     * @param sourceSpan span of template binding relative to entire the template
+     * @param absoluteValueOffset start of the tplValue relative to the entire template
+     * @param targetMatchableAttrs potential attributes to match in the template
+     * @param targetProps target property bindings in the template
+     * @param targetVars target variables in the template
+     */
+    parseInlineTemplateBinding(tplKey: string, tplValue: string, sourceSpan: ParseSourceSpan, absoluteValueOffset: number, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], targetVars: ParsedVariable[]): void;
+    /**
+     * Parses the bindings in an inline template binding, e.g.
+     *    <tag *tplKey="let value1 = prop; let value2 = localVar">
+     * @param tplKey template binding name
+     * @param tplValue template binding value
+     * @param sourceSpan span of template binding relative to entire the template
+     * @param absoluteValueOffset start of the tplValue relative to the entire template
+     */
     private _parseTemplateBindings;
     parseLiteralAttr(name: string, value: string | null, sourceSpan: ParseSourceSpan, absoluteOffset: number, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[]): void;
     parsePropertyBinding(name: string, expression: string, isHost: boolean, sourceSpan: ParseSourceSpan, absoluteOffset: number, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[]): void;
