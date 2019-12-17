@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+497.sha-7938ff3
+ * @license Angular v9.0.0-rc.1+498.sha-3e20118
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -18173,7 +18173,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-rc.1+497.sha-7938ff3');
+const VERSION$1 = new Version('9.0.0-rc.1+498.sha-3e20118');
 
 /**
  * @license
@@ -27187,22 +27187,20 @@ class DirectiveBinder {
                 this.references.set(ref, node);
             }
         });
-        // Associate attributes/bindings on the node with directives or with the node itself.
-        const processAttribute = (attribute) => {
-            let dir = directives.find(dir => dir.inputs.hasOwnProperty(attribute.name));
-            if (dir !== undefined) {
-                this.bindings.set(attribute, dir);
-            }
-            else {
-                this.bindings.set(attribute, node);
-            }
+        const setAttributeBinding = (attribute, ioType) => {
+            const dir = directives.find(dir => dir[ioType].hasOwnProperty(attribute.name));
+            const binding = dir !== undefined ? dir : node;
+            this.bindings.set(attribute, binding);
         };
-        node.attributes.forEach(processAttribute);
-        node.inputs.forEach(processAttribute);
-        node.outputs.forEach(processAttribute);
+        // Node inputs (bound attributes) and text attributes can be bound to an
+        // input on a directive.
+        node.inputs.forEach(input => setAttributeBinding(input, 'inputs'));
+        node.attributes.forEach(attr => setAttributeBinding(attr, 'inputs'));
         if (node instanceof Template) {
-            node.templateAttrs.forEach(processAttribute);
+            node.templateAttrs.forEach(attr => setAttributeBinding(attr, 'inputs'));
         }
+        // Node outputs (bound events) can be bound to an output on a directive.
+        node.outputs.forEach(output => setAttributeBinding(output, 'outputs'));
         // Recurse into the node's children.
         node.children.forEach(child => child.visit(this));
     }
