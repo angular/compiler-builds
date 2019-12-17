@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+497.sha-7938ff3
+ * @license Angular v9.0.0-rc.1+498.sha-3e20118
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -19261,7 +19261,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-rc.1+497.sha-7938ff3');
+var VERSION$1 = new Version('9.0.0-rc.1+498.sha-3e20118');
 
 /**
  * @license
@@ -28821,22 +28821,20 @@ var DirectiveBinder = /** @class */ (function () {
                 _this.references.set(ref, node);
             }
         });
-        // Associate attributes/bindings on the node with directives or with the node itself.
-        var processAttribute = function (attribute) {
-            var dir = directives.find(function (dir) { return dir.inputs.hasOwnProperty(attribute.name); });
-            if (dir !== undefined) {
-                _this.bindings.set(attribute, dir);
-            }
-            else {
-                _this.bindings.set(attribute, node);
-            }
+        var setAttributeBinding = function (attribute, ioType) {
+            var dir = directives.find(function (dir) { return dir[ioType].hasOwnProperty(attribute.name); });
+            var binding = dir !== undefined ? dir : node;
+            _this.bindings.set(attribute, binding);
         };
-        node.attributes.forEach(processAttribute);
-        node.inputs.forEach(processAttribute);
-        node.outputs.forEach(processAttribute);
+        // Node inputs (bound attributes) and text attributes can be bound to an
+        // input on a directive.
+        node.inputs.forEach(function (input) { return setAttributeBinding(input, 'inputs'); });
+        node.attributes.forEach(function (attr) { return setAttributeBinding(attr, 'inputs'); });
         if (node instanceof Template) {
-            node.templateAttrs.forEach(processAttribute);
+            node.templateAttrs.forEach(function (attr) { return setAttributeBinding(attr, 'inputs'); });
         }
+        // Node outputs (bound events) can be bound to an output on a directive.
+        node.outputs.forEach(function (output) { return setAttributeBinding(output, 'outputs'); });
         // Recurse into the node's children.
         node.children.forEach(function (child) { return child.visit(_this); });
     };
