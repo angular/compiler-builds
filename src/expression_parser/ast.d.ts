@@ -25,12 +25,12 @@ export declare class AST {
     /**
      * Absolute location of the expression AST in a source code file.
      */
-    sourceSpan: Readonly<AbsoluteSourceSpan>;
+    sourceSpan: AbsoluteSourceSpan;
     constructor(span: ParseSpan, 
     /**
      * Absolute location of the expression AST in a source code file.
      */
-    sourceSpan: Readonly<AbsoluteSourceSpan>);
+    sourceSpan: AbsoluteSourceSpan);
     visit(visitor: AstVisitor, context?: any): any;
     toString(): string;
 }
@@ -112,8 +112,8 @@ export declare class BindingPipe extends AST {
     exp: AST;
     name: string;
     args: any[];
-    nameSpan: ParseSpan;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, exp: AST, name: string, args: any[], nameSpan: ParseSpan);
+    nameSpan: AbsoluteSourceSpan;
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, exp: AST, name: string, args: any[], nameSpan: AbsoluteSourceSpan);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class LiteralPrimitive extends AST {
