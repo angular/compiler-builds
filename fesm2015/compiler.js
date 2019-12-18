@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.6+81.sha-76219f6
+ * @license Angular v9.0.0-rc.6+89.sha-f563c7c
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13472,7 +13472,7 @@ class _ParseAST {
             do {
                 const nameStart = this.inputIndex;
                 const name = this.expectIdentifierOrKeyword();
-                const nameSpan = this.span(nameStart);
+                const nameSpan = this.sourceSpan(nameStart);
                 const args = [];
                 while (this.optionalCharacter($COLON)) {
                     args.push(this.parseExpression());
@@ -18177,7 +18177,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-rc.6+81.sha-76219f6');
+const VERSION$1 = new Version('9.0.0-rc.6+89.sha-f563c7c');
 
 /**
  * @license

@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.6+81.sha-76219f6
+ * @license Angular v9.0.0-rc.6+89.sha-f563c7c
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -14509,7 +14509,7 @@
                 do {
                     var nameStart = this.inputIndex;
                     var name_1 = this.expectIdentifierOrKeyword();
-                    var nameSpan = this.span(nameStart);
+                    var nameSpan = this.sourceSpan(nameStart);
                     var args = [];
                     while (this.optionalCharacter($COLON)) {
                         args.push(this.parseExpression());
@@ -19443,7 +19443,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.0.0-rc.6+81.sha-76219f6');
+    var VERSION$1 = new Version('9.0.0-rc.6+89.sha-f563c7c');
 
     /**
      * @license
