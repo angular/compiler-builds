@@ -10,6 +10,7 @@ import { CompileReflector } from '../compile_reflector';
 import * as o from '../output/output_ast';
 import { OutputContext } from '../util';
 import { R3DependencyMetadata } from './r3_factory';
+import { R3Reference } from './util';
 export interface R3PipeMetadata {
     /**
      * Name of the pipe type.
@@ -18,7 +19,7 @@ export interface R3PipeMetadata {
     /**
      * An expression representing a reference to the pipe itself.
      */
-    type: o.Expression;
+    type: R3Reference;
     /**
      * An expression representing the pipe being compiled, intended for use within a class definition
      * itself.

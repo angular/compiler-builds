@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+502.sha-dfecca2
+ * @license Angular v9.0.0-rc.1+509.sha-9264f43
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3742,6 +3742,10 @@ function jitOnlyGuardedExpression(expr) {
     /* sourceSpan */ undefined, true);
     return new BinaryOperatorExpr(BinaryOperator.And, jitFlagUndefinedOrTrue, expr);
 }
+function wrapReference(value) {
+    var wrapped = new WrappedNodeExpr(value);
+    return { value: wrapped, type: wrapped };
+}
 
 /**
  * @license
@@ -5562,7 +5566,7 @@ function compileFactoryFunction(meta) {
     return {
         factory: fn([new FnParam('t', DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, meta.name + "_Factory"),
         statements: statements,
-        type: expressionType(importExpr(Identifiers$1.FactoryDef, [typeWithParameters(meta.type, meta.typeArgumentCount)]))
+        type: expressionType(importExpr(Identifiers$1.FactoryDef, [typeWithParameters(meta.type.type, meta.typeArgumentCount)]))
     };
 }
 function injectDependencies(deps, injectFn, isPipe) {
@@ -5692,7 +5696,7 @@ function compileInjectable(meta) {
             result = compileFactoryFunction(factoryMeta);
         }
         else {
-            result = delegateToFactory(meta.type, meta.useClass);
+            result = delegateToFactory(meta.type.value, meta.useClass);
         }
     }
     else if (meta.useFactory !== undefined) {
@@ -5717,7 +5721,7 @@ function compileInjectable(meta) {
         result = compileFactoryFunction(__assign(__assign({}, factoryMeta), { expression: importExpr(Identifiers.inject).callFn([meta.useExisting]) }));
     }
     else {
-        result = delegateToFactory(meta.type, meta.internalType);
+        result = delegateToFactory(meta.type.value, meta.internalType);
     }
     var token = meta.internalType;
     var injectableProps = { token: token, factory: result.factory };
@@ -5726,7 +5730,7 @@ function compileInjectable(meta) {
         injectableProps.providedIn = meta.providedIn;
     }
     var expression = importExpr(Identifiers.ɵɵdefineInjectable).callFn([mapToMapExpression(injectableProps)]);
-    var type = new ExpressionType(importExpr(Identifiers.InjectableDef, [typeWithParameters(meta.type, meta.typeArgumentCount)]));
+    var type = new ExpressionType(importExpr(Identifiers.InjectableDef, [typeWithParameters(meta.type.type, meta.typeArgumentCount)]));
     return {
         expression: expression,
         type: type,
@@ -6943,7 +6947,7 @@ function compileNgModule(meta) {
     }
     var expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression(definitionMap)]);
     var type = new ExpressionType(importExpr(Identifiers$1.NgModuleDefWithMeta, [
-        new ExpressionType(moduleType), tupleTypeOf(declarations), tupleTypeOf(imports),
+        new ExpressionType(moduleType.type), tupleTypeOf(declarations), tupleTypeOf(imports),
         tupleTypeOf(exports)
     ]));
     return { expression: expression, type: type, additionalStatements: additionalStatements };
@@ -7005,7 +7009,7 @@ function compileInjector(meta) {
         definitionMap.imports = literalArr(meta.imports);
     }
     var expression = importExpr(Identifiers$1.defineInjector).callFn([mapToMapExpression(definitionMap)]);
-    var type = new ExpressionType(importExpr(Identifiers$1.InjectorDef, [new ExpressionType(meta.type)]));
+    var type = new ExpressionType(importExpr(Identifiers$1.InjectorDef, [new ExpressionType(meta.type.type)]));
     return { expression: expression, type: type, statements: result.statements };
 }
 // TODO(alxhub): integrate this with `compileNgModule`. Currently the two are separate operations.
@@ -7056,12 +7060,12 @@ function compilePipeFromMetadata(metadata) {
     // e.g. `name: 'myPipe'`
     definitionMapValues.push({ key: 'name', value: literal(metadata.pipeName), quoted: false });
     // e.g. `type: MyPipe`
-    definitionMapValues.push({ key: 'type', value: metadata.type, quoted: false });
+    definitionMapValues.push({ key: 'type', value: metadata.type.value, quoted: false });
     // e.g. `pure: true`
     definitionMapValues.push({ key: 'pure', value: literal(metadata.pure), quoted: false });
     var expression = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]);
     var type = new ExpressionType(importExpr(Identifiers$1.PipeDefWithMeta, [
-        typeWithParameters(metadata.type, metadata.typeArgumentCount),
+        typeWithParameters(metadata.type.type, metadata.typeArgumentCount),
         new ExpressionType(new LiteralExpr(metadata.pipeName)),
     ]));
     return { expression: expression, type: type };
@@ -7077,7 +7081,7 @@ function compilePipeFromRender2(outputCtx, pipe, reflector) {
     var type = outputCtx.importExpr(pipe.type.reference);
     var metadata = {
         name: name,
-        type: type,
+        type: wrapReference(type),
         internalType: type,
         pipeName: pipe.name,
         typeArgumentCount: 0,
@@ -18635,7 +18639,7 @@ function createTypeForDef(meta, typeBase) {
     // string literal, which must be on one line.
     var selectorForType = meta.selector !== null ? meta.selector.replace(/\n/g, '') : null;
     return expressionType(importExpr(typeBase, [
-        typeWithParameters(meta.type, meta.typeArgumentCount),
+        typeWithParameters(meta.type.type, meta.typeArgumentCount),
         selectorForType !== null ? stringAsType(selectorForType) : NONE_TYPE,
         meta.exportAs !== null ? stringArrayAsType(meta.exportAs) : NONE_TYPE,
         stringMapAsType(meta.inputs),
@@ -19011,7 +19015,7 @@ var CompilerFacadeImpl = /** @class */ (function () {
     CompilerFacadeImpl.prototype.compilePipe = function (angularCoreEnv, sourceMapUrl, facade) {
         var metadata = {
             name: facade.name,
-            type: new WrappedNodeExpr(facade.type),
+            type: wrapReference$1(facade.type),
             internalType: new WrappedNodeExpr(facade.type),
             typeArgumentCount: facade.typeArgumentCount,
             deps: convertR3DependencyMetadataArray(facade.deps),
@@ -19024,7 +19028,7 @@ var CompilerFacadeImpl = /** @class */ (function () {
     CompilerFacadeImpl.prototype.compileInjectable = function (angularCoreEnv, sourceMapUrl, facade) {
         var _a = compileInjectable({
             name: facade.name,
-            type: new WrappedNodeExpr(facade.type),
+            type: wrapReference$1(facade.type),
             internalType: new WrappedNodeExpr(facade.type),
             typeArgumentCount: facade.typeArgumentCount,
             providedIn: computeProvidedIn(facade.providedIn),
@@ -19039,7 +19043,7 @@ var CompilerFacadeImpl = /** @class */ (function () {
     CompilerFacadeImpl.prototype.compileInjector = function (angularCoreEnv, sourceMapUrl, facade) {
         var meta = {
             name: facade.name,
-            type: new WrappedNodeExpr(facade.type),
+            type: wrapReference$1(facade.type),
             internalType: new WrappedNodeExpr(facade.type),
             deps: convertR3DependencyMetadataArray(facade.deps),
             providers: new WrappedNodeExpr(facade.providers),
@@ -19050,16 +19054,16 @@ var CompilerFacadeImpl = /** @class */ (function () {
     };
     CompilerFacadeImpl.prototype.compileNgModule = function (angularCoreEnv, sourceMapUrl, facade) {
         var meta = {
-            type: new WrappedNodeExpr(facade.type),
+            type: wrapReference$1(facade.type),
             internalType: new WrappedNodeExpr(facade.type),
             adjacentType: new WrappedNodeExpr(facade.type),
-            bootstrap: facade.bootstrap.map(wrapReference),
-            declarations: facade.declarations.map(wrapReference),
-            imports: facade.imports.map(wrapReference),
-            exports: facade.exports.map(wrapReference),
+            bootstrap: facade.bootstrap.map(wrapReference$1),
+            declarations: facade.declarations.map(wrapReference$1),
+            imports: facade.imports.map(wrapReference$1),
+            exports: facade.exports.map(wrapReference$1),
             emitInline: true,
             containsForwardDecls: false,
-            schemas: facade.schemas ? facade.schemas.map(wrapReference) : null,
+            schemas: facade.schemas ? facade.schemas.map(wrapReference$1) : null,
             id: facade.id ? new WrappedNodeExpr(facade.id) : null,
         };
         var res = compileNgModule(meta);
@@ -19095,7 +19099,7 @@ var CompilerFacadeImpl = /** @class */ (function () {
     CompilerFacadeImpl.prototype.compileFactory = function (angularCoreEnv, sourceMapUrl, meta) {
         var factoryRes = compileFactoryFunction({
             name: meta.name,
-            type: new WrappedNodeExpr(meta.type),
+            type: wrapReference$1(meta.type),
             internalType: new WrappedNodeExpr(meta.type),
             typeArgumentCount: meta.typeArgumentCount,
             deps: convertR3DependencyMetadataArray(meta.deps),
@@ -19133,7 +19137,7 @@ var USE_CLASS = Object.keys({ useClass: null })[0];
 var USE_FACTORY = Object.keys({ useFactory: null })[0];
 var USE_VALUE = Object.keys({ useValue: null })[0];
 var USE_EXISTING = Object.keys({ useExisting: null })[0];
-var wrapReference = function (value) {
+var wrapReference$1 = function (value) {
     var wrapped = new WrappedNodeExpr(value);
     return { value: wrapped, type: wrapped };
 };
@@ -19163,7 +19167,7 @@ function convertDirectiveFacadeToMetadata(facade) {
     for (var field in propMetadata) {
         _loop_1(field);
     }
-    return __assign(__assign({}, facade), { typeSourceSpan: facade.typeSourceSpan, type: new WrappedNodeExpr(facade.type), internalType: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: __assign(__assign({}, inputsFromMetadata), inputsFromType), outputs: __assign(__assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), fullInheritance: false });
+    return __assign(__assign({}, facade), { typeSourceSpan: facade.typeSourceSpan, type: wrapReference$1(facade.type), internalType: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: __assign(__assign({}, inputsFromMetadata), inputsFromType), outputs: __assign(__assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), fullInheritance: false });
 }
 function wrapExpression(obj, property) {
     if (obj.hasOwnProperty(property)) {
@@ -19261,7 +19265,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-rc.1+502.sha-dfecca2');
+var VERSION$1 = new Version('9.0.0-rc.1+509.sha-9264f43');
 
 /**
  * @license

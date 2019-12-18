@@ -23,7 +23,7 @@ export interface R3NgModuleMetadata {
     /**
      * An expression representing the module type being compiled.
      */
-    type: o.Expression;
+    type: R3Reference;
     /**
      * An expression representing the module type being compiled, intended for use within a class
      * definition itself.
@@ -84,7 +84,7 @@ export interface R3InjectorDef {
 }
 export interface R3InjectorMetadata {
     name: string;
-    type: o.Expression;
+    type: R3Reference;
     internalType: o.Expression;
     deps: R3DependencyMetadata[] | null;
     providers: o.Expression | null;
