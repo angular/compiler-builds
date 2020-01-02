@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+422.sha-a719656.with-local-changes
+ * @license Angular v9.0.0-rc.1+524.sha-f004195
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3627,6 +3627,10 @@ var Identifiers$1 = /** @class */ (function () {
         name: 'ɵɵNgModuleDefWithMeta',
         moduleName: CORE$1,
     };
+    Identifiers.ModuleWithProviders = {
+        name: 'ModuleWithProviders',
+        moduleName: CORE$1,
+    };
     Identifiers.defineNgModule = { name: 'ɵɵdefineNgModule', moduleName: CORE$1 };
     Identifiers.setNgModuleScope = { name: 'ɵɵsetNgModuleScope', moduleName: CORE$1 };
     Identifiers.PipeDefWithMeta = { name: 'ɵɵPipeDefWithMeta', moduleName: CORE$1 };
@@ -3737,6 +3741,10 @@ function jitOnlyGuardedExpression(expr) {
     var jitFlagUndefinedOrTrue = new BinaryOperatorExpr(BinaryOperator.Or, jitFlagNotDefined, ngJitMode, /* type */ undefined, 
     /* sourceSpan */ undefined, true);
     return new BinaryOperatorExpr(BinaryOperator.And, jitFlagUndefinedOrTrue, expr);
+}
+function wrapReference(value) {
+    var wrapped = new WrappedNodeExpr(value);
+    return { value: wrapped, type: wrapped };
 }
 
 /**
@@ -4528,16 +4536,15 @@ var _SerializerIgnoreIcuExpVisitor = /** @class */ (function (_super) {
  *          DO NOT USE IT IN A SECURITY SENSITIVE CONTEXT.
  */
 function sha1(str) {
-    var _a, _b;
     var utf8 = utf8Encode(str);
     var words32 = stringToWords32(utf8, Endian.Big);
     var len = utf8.length * 8;
     var w = newArray(80);
-    var _c = __read([0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0], 5), a = _c[0], b = _c[1], c = _c[2], d = _c[3], e = _c[4];
+    var a = 0x67452301, b = 0xefcdab89, c = 0x98badcfe, d = 0x10325476, e = 0xc3d2e1f0;
     words32[len >> 5] |= 0x80 << (24 - len % 32);
     words32[((len + 64 >> 9) << 4) + 15] = len;
     for (var i = 0; i < words32.length; i += 16) {
-        var _d = __read([a, b, c, d, e], 5), h0 = _d[0], h1 = _d[1], h2 = _d[2], h3 = _d[3], h4 = _d[4];
+        var h0 = a, h1 = b, h2 = c, h3 = d, h4 = e;
         for (var j = 0; j < 80; j++) {
             if (j < 16) {
                 w[j] = words32[i + j];
@@ -4545,11 +4552,21 @@ function sha1(str) {
             else {
                 w[j] = rol32(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
             }
-            var _e = __read(fk(j, b, c, d), 2), f = _e[0], k = _e[1];
+            var fkVal = fk(j, b, c, d);
+            var f = fkVal[0];
+            var k = fkVal[1];
             var temp = [rol32(a, 5), f, e, k, w[j]].reduce(add32);
-            _a = __read([d, c, rol32(b, 30), a, temp], 5), e = _a[0], d = _a[1], c = _a[2], b = _a[3], a = _a[4];
+            e = d;
+            d = c;
+            c = rol32(b, 30);
+            b = a;
+            a = temp;
         }
-        _b = __read([add32(a, h0), add32(b, h1), add32(c, h2), add32(d, h3), add32(e, h4)], 5), a = _b[0], b = _b[1], c = _b[2], d = _b[3], e = _b[4];
+        a = add32(a, h0);
+        b = add32(b, h1);
+        c = add32(c, h2);
+        d = add32(d, h3);
+        e = add32(e, h4);
     }
     return byteStringToHexString(words32ToByteString([a, b, c, d, e]));
 }
@@ -4575,7 +4592,8 @@ function fk(index, b, c, d) {
  */
 function fingerprint(str) {
     var utf8 = utf8Encode(str);
-    var _a = __read([hash32(utf8, 0), hash32(utf8, 102072)], 2), hi = _a[0], lo = _a[1];
+    var hi = hash32(utf8, 0);
+    var lo = hash32(utf8, 102072);
     if (hi == 0 && (lo == 0 || lo == 1)) {
         hi = hi ^ 0x130f9bef;
         lo = lo ^ -0x6b5f56d8;
@@ -4583,36 +4601,36 @@ function fingerprint(str) {
     return [hi, lo];
 }
 function computeMsgId(msg, meaning) {
-    var _a;
     if (meaning === void 0) { meaning = ''; }
-    var _b = __read(fingerprint(msg), 2), hi = _b[0], lo = _b[1];
+    var msgFingerprint = fingerprint(msg);
     if (meaning) {
-        var _c = __read(fingerprint(meaning), 2), him = _c[0], lom = _c[1];
-        _a = __read(add64(rol64([hi, lo], 1), [him, lom]), 2), hi = _a[0], lo = _a[1];
+        var meaningFingerprint = fingerprint(meaning);
+        msgFingerprint = add64(rol64(msgFingerprint, 1), meaningFingerprint);
     }
+    var hi = msgFingerprint[0];
+    var lo = msgFingerprint[1];
     return byteStringToDecString(words32ToByteString([hi & 0x7fffffff, lo]));
 }
 function hash32(str, c) {
-    var _a;
-    var _b = __read([0x9e3779b9, 0x9e3779b9], 2), a = _b[0], b = _b[1];
+    var a = 0x9e3779b9, b = 0x9e3779b9;
     var i;
     var len = str.length;
     for (i = 0; i + 12 <= len; i += 12) {
         a = add32(a, wordAt(str, i, Endian.Little));
         b = add32(b, wordAt(str, i + 4, Endian.Little));
         c = add32(c, wordAt(str, i + 8, Endian.Little));
-        _a = __read(mix([a, b, c]), 3), a = _a[0], b = _a[1], c = _a[2];
+        var res = mix(a, b, c);
+        a = res[0], b = res[1], c = res[2];
     }
     a = add32(a, wordAt(str, i, Endian.Little));
     b = add32(b, wordAt(str, i + 4, Endian.Little));
     // the first byte of c is reserved for the length
     c = add32(c, len);
     c = add32(c, wordAt(str, i + 8, Endian.Little) << 8);
-    return mix([a, b, c])[2];
+    return mix(a, b, c)[2];
 }
 // clang-format off
-function mix(_a) {
-    var _b = __read(_a, 3), a = _b[0], b = _b[1], c = _b[2];
+function mix(a, b, c) {
     a = sub32(a, b);
     a = sub32(a, c);
     a ^= c >>> 13;
@@ -4657,10 +4675,12 @@ function add32to64(a, b) {
     var high = (a >>> 16) + (b >>> 16) + (low >>> 16);
     return [high >>> 16, (high << 16) | (low & 0xffff)];
 }
-function add64(_a, _b) {
-    var _c = __read(_a, 2), ah = _c[0], al = _c[1];
-    var _d = __read(_b, 2), bh = _d[0], bl = _d[1];
-    var _e = __read(add32to64(al, bl), 2), carry = _e[0], l = _e[1];
+function add64(a, b) {
+    var ah = a[0], al = a[1];
+    var bh = b[0], bl = b[1];
+    var result = add32to64(al, bl);
+    var carry = result[0];
+    var l = result[1];
     var h = add32(add32(ah, bh), carry);
     return [h, l];
 }
@@ -4674,8 +4694,8 @@ function rol32(a, count) {
     return (a << count) | (a >>> (32 - count));
 }
 // Rotate a 64b number left `count` position
-function rol64(_a, count) {
-    var _b = __read(_a, 2), hi = _b[0], lo = _b[1];
+function rol64(num, count) {
+    var hi = num[0], lo = num[1];
     var h = (hi << count) | (lo >>> (32 - count));
     var l = (lo << count) | (hi >>> (32 - count));
     return [h, l];
@@ -5546,7 +5566,7 @@ function compileFactoryFunction(meta) {
     return {
         factory: fn([new FnParam('t', DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, meta.name + "_Factory"),
         statements: statements,
-        type: expressionType(importExpr(Identifiers$1.FactoryDef, [typeWithParameters(meta.type, meta.typeArgumentCount)]))
+        type: expressionType(importExpr(Identifiers$1.FactoryDef, [typeWithParameters(meta.type.type, meta.typeArgumentCount)]))
     };
 }
 function injectDependencies(deps, injectFn, isPipe) {
@@ -5676,7 +5696,7 @@ function compileInjectable(meta) {
             result = compileFactoryFunction(factoryMeta);
         }
         else {
-            result = delegateToFactory(meta.type, meta.useClass);
+            result = delegateToFactory(meta.type.value, meta.useClass);
         }
     }
     else if (meta.useFactory !== undefined) {
@@ -5701,7 +5721,7 @@ function compileInjectable(meta) {
         result = compileFactoryFunction(__assign(__assign({}, factoryMeta), { expression: importExpr(Identifiers.inject).callFn([meta.useExisting]) }));
     }
     else {
-        result = delegateToFactory(meta.type, meta.internalType);
+        result = delegateToFactory(meta.type.value, meta.internalType);
     }
     var token = meta.internalType;
     var injectableProps = { token: token, factory: result.factory };
@@ -5710,7 +5730,7 @@ function compileInjectable(meta) {
         injectableProps.providedIn = meta.providedIn;
     }
     var expression = importExpr(Identifiers.ɵɵdefineInjectable).callFn([mapToMapExpression(injectableProps)]);
-    var type = new ExpressionType(importExpr(Identifiers.InjectableDef, [typeWithParameters(meta.type, meta.typeArgumentCount)]));
+    var type = new ExpressionType(importExpr(Identifiers.InjectableDef, [typeWithParameters(meta.type.type, meta.typeArgumentCount)]));
     return {
         expression: expression,
         type: type,
@@ -6927,7 +6947,7 @@ function compileNgModule(meta) {
     }
     var expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression(definitionMap)]);
     var type = new ExpressionType(importExpr(Identifiers$1.NgModuleDefWithMeta, [
-        new ExpressionType(moduleType), tupleTypeOf(declarations), tupleTypeOf(imports),
+        new ExpressionType(moduleType.type), tupleTypeOf(declarations), tupleTypeOf(imports),
         tupleTypeOf(exports)
     ]));
     return { expression: expression, type: type, additionalStatements: additionalStatements };
@@ -6989,7 +7009,7 @@ function compileInjector(meta) {
         definitionMap.imports = literalArr(meta.imports);
     }
     var expression = importExpr(Identifiers$1.defineInjector).callFn([mapToMapExpression(definitionMap)]);
-    var type = new ExpressionType(importExpr(Identifiers$1.InjectorDef, [new ExpressionType(meta.type)]));
+    var type = new ExpressionType(importExpr(Identifiers$1.InjectorDef, [new ExpressionType(meta.type.type)]));
     return { expression: expression, type: type, statements: result.statements };
 }
 // TODO(alxhub): integrate this with `compileNgModule`. Currently the two are separate operations.
@@ -7040,12 +7060,12 @@ function compilePipeFromMetadata(metadata) {
     // e.g. `name: 'myPipe'`
     definitionMapValues.push({ key: 'name', value: literal(metadata.pipeName), quoted: false });
     // e.g. `type: MyPipe`
-    definitionMapValues.push({ key: 'type', value: metadata.type, quoted: false });
+    definitionMapValues.push({ key: 'type', value: metadata.type.value, quoted: false });
     // e.g. `pure: true`
     definitionMapValues.push({ key: 'pure', value: literal(metadata.pure), quoted: false });
     var expression = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]);
     var type = new ExpressionType(importExpr(Identifiers$1.PipeDefWithMeta, [
-        typeWithParameters(metadata.type, metadata.typeArgumentCount),
+        typeWithParameters(metadata.type.type, metadata.typeArgumentCount),
         new ExpressionType(new LiteralExpr(metadata.pipeName)),
     ]));
     return { expression: expression, type: type };
@@ -7061,7 +7081,7 @@ function compilePipeFromRender2(outputCtx, pipe, reflector) {
     var type = outputCtx.importExpr(pipe.type.reference);
     var metadata = {
         name: name,
-        type: type,
+        type: wrapReference(type),
         internalType: type,
         pipeName: pipe.name,
         typeArgumentCount: 0,
@@ -9740,7 +9760,6 @@ var _Tokenizer = /** @class */ (function () {
         this._currentTokenType = type;
     };
     _Tokenizer.prototype._endToken = function (parts, end) {
-        if (end === void 0) { end = this._cursor.clone(); }
         if (this._currentTokenStart === null) {
             throw new TokenError('Programming error - attempted to end a token when there was no start to the token', this._currentTokenType, this._cursor.getSpan(end));
         }
@@ -9831,8 +9850,7 @@ var _Tokenizer = /** @class */ (function () {
     _Tokenizer.prototype._requireCharCodeUntilFn = function (predicate, len) {
         var start = this._cursor.clone();
         this._attemptCharCodeUntilFn(predicate);
-        var end = this._cursor.clone();
-        if (end.diff(start) < len) {
+        if (this._cursor.diff(start) < len) {
             throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(start));
         }
     };
@@ -10222,7 +10240,17 @@ var PlainCharacterCursor = /** @class */ (function () {
             this.file = fileOrCursor.file;
             this.input = fileOrCursor.input;
             this.end = fileOrCursor.end;
-            this.state = __assign({}, fileOrCursor.state);
+            var state = fileOrCursor.state;
+            // Note: avoid using `{...fileOrCursor.state}` here as that has a severe performance penalty.
+            // In ES5 bundles the object spread operator is translated into the `__assign` helper, which
+            // is not optimized by VMs as efficiently as a raw object literal. Since this constructor is
+            // called in tight loops, this difference matters.
+            this.state = {
+                peek: state.peek,
+                offset: state.offset,
+                line: state.line,
+                column: state.column,
+            };
         }
         else {
             if (!range) {
@@ -10247,9 +10275,13 @@ var PlainCharacterCursor = /** @class */ (function () {
     PlainCharacterCursor.prototype.init = function () { this.updatePeek(this.state); };
     PlainCharacterCursor.prototype.getSpan = function (start, leadingTriviaCodePoints) {
         start = start || this;
+        var cloned = false;
         if (leadingTriviaCodePoints) {
-            start = start.clone();
             while (this.diff(start) > 0 && leadingTriviaCodePoints.indexOf(start.peek()) !== -1) {
+                if (!cloned) {
+                    start = start.clone();
+                    cloned = true;
+                }
                 start.advance();
             }
         }
@@ -11950,9 +11982,19 @@ var BindingParser = /** @class */ (function () {
             return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, sourceSpan.start.offset);
         }
     };
-    // Parse an inline template binding. ie `<tag *tplKey="<tplValue>">`
-    BindingParser.prototype.parseInlineTemplateBinding = function (tplKey, tplValue, sourceSpan, absoluteOffset, targetMatchableAttrs, targetProps, targetVars) {
-        var bindings = this._parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteOffset);
+    /**
+     * Parses an inline template binding, e.g.
+     *    <tag *tplKey="<tplValue>">
+     * @param tplKey template binding name
+     * @param tplValue template binding value
+     * @param sourceSpan span of template binding relative to entire the template
+     * @param absoluteValueOffset start of the tplValue relative to the entire template
+     * @param targetMatchableAttrs potential attributes to match in the template
+     * @param targetProps target property bindings in the template
+     * @param targetVars target variables in the template
+     */
+    BindingParser.prototype.parseInlineTemplateBinding = function (tplKey, tplValue, sourceSpan, absoluteValueOffset, targetMatchableAttrs, targetProps, targetVars) {
+        var bindings = this._parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteValueOffset);
         for (var i = 0; i < bindings.length; i++) {
             var binding = bindings[i];
             if (binding.keyIsVar) {
@@ -11963,15 +12005,23 @@ var BindingParser = /** @class */ (function () {
             }
             else {
                 targetMatchableAttrs.push([binding.key, '']);
-                this.parseLiteralAttr(binding.key, null, sourceSpan, absoluteOffset, undefined, targetMatchableAttrs, targetProps);
+                this.parseLiteralAttr(binding.key, null, sourceSpan, absoluteValueOffset, undefined, targetMatchableAttrs, targetProps);
             }
         }
     };
-    BindingParser.prototype._parseTemplateBindings = function (tplKey, tplValue, sourceSpan, absoluteOffset) {
+    /**
+     * Parses the bindings in an inline template binding, e.g.
+     *    <tag *tplKey="let value1 = prop; let value2 = localVar">
+     * @param tplKey template binding name
+     * @param tplValue template binding value
+     * @param sourceSpan span of template binding relative to entire the template
+     * @param absoluteValueOffset start of the tplValue relative to the entire template
+     */
+    BindingParser.prototype._parseTemplateBindings = function (tplKey, tplValue, sourceSpan, absoluteValueOffset) {
         var _this = this;
         var sourceInfo = sourceSpan.start.toString();
         try {
-            var bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceInfo, absoluteOffset);
+            var bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceInfo, absoluteValueOffset);
             this._reportExpressionParserErrors(bindingsResult.errors, sourceSpan);
             bindingsResult.templateBindings.forEach(function (binding) {
                 if (binding.expression) {
@@ -13989,6 +14039,15 @@ var TemplateBindingParseResult = /** @class */ (function () {
     }
     return TemplateBindingParseResult;
 }());
+var defaultInterpolateRegExp = _createInterpolateRegExp(DEFAULT_INTERPOLATION_CONFIG);
+function _getInterpolateRegExp(config) {
+    if (config === DEFAULT_INTERPOLATION_CONFIG) {
+        return defaultInterpolateRegExp;
+    }
+    else {
+        return _createInterpolateRegExp(config);
+    }
+}
 function _createInterpolateRegExp(config) {
     var pattern = escapeRegExp(config.start) + '([\\s\\S]*?)' + escapeRegExp(config.end);
     return new RegExp(pattern, 'g');
@@ -14074,7 +14133,7 @@ var Parser$1 = /** @class */ (function () {
     };
     Parser.prototype.splitInterpolation = function (input, location, interpolationConfig) {
         if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
-        var regexp = _createInterpolateRegExp(interpolationConfig);
+        var regexp = _getInterpolateRegExp(interpolationConfig);
         var parts = input.split(regexp);
         if (parts.length <= 1) {
             return null;
@@ -14129,7 +14188,7 @@ var Parser$1 = /** @class */ (function () {
         return null;
     };
     Parser.prototype._checkNoInterpolation = function (input, location, interpolationConfig) {
-        var regexp = _createInterpolateRegExp(interpolationConfig);
+        var regexp = _getInterpolateRegExp(interpolationConfig);
         var parts = input.split(regexp);
         if (parts.length > 1) {
             this._reportError("Got interpolation (" + interpolationConfig.start + interpolationConfig.end + ") where expression was expected", input, "at column " + this._findInterpolationErrorColumn(parts, 1, interpolationConfig) + " in", location);
@@ -14272,7 +14331,7 @@ var _ParseAST = /** @class */ (function () {
             do {
                 var nameStart = this.inputIndex;
                 var name_1 = this.expectIdentifierOrKeyword();
-                var nameSpan = this.span(nameStart);
+                var nameSpan = this.sourceSpan(nameStart);
                 var args = [];
                 while (this.optionalCharacter($COLON)) {
                     args.push(this.parseExpression());
@@ -14662,7 +14721,7 @@ var _ParseAST = /** @class */ (function () {
                 var ast = this.parsePipe();
                 var source = this.input.substring(start_1 - this.offset, this.inputIndex - this.offset);
                 expression =
-                    new ASTWithSource(ast, source, this.location, this.absoluteOffset, this.errors);
+                    new ASTWithSource(ast, source, this.location, this.absoluteOffset + start_1, this.errors);
             }
             bindings.push(new TemplateBinding(this.span(start), this.sourceSpan(start), key, isVar, name_2, expression));
             if (this.peekKeywordAs() && !isVar) {
@@ -15360,9 +15419,13 @@ var HtmlAstToIvyAst = /** @class */ (function () {
                     var templateValue = attribute.value;
                     var templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX$1.length);
                     var parsedVariables = [];
-                    var absoluteOffset = attribute.valueSpan ? attribute.valueSpan.start.offset :
-                        attribute.sourceSpan.start.offset;
-                    this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, absoluteOffset, [], templateParsedProperties, parsedVariables);
+                    var absoluteValueOffset = attribute.valueSpan ?
+                        attribute.valueSpan.start.offset :
+                        // If there is no value span the attribute does not have a value, like `attr` in
+                        //`<div attr></div>`. In this case, point to one character beyond the last character of
+                        // the attribute name.
+                        attribute.sourceSpan.start.offset + attribute.name.length;
+                    this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, absoluteValueOffset, [], templateParsedProperties, parsedVariables);
                     templateVariables.push.apply(templateVariables, __spread(parsedVariables.map(function (v) { return new Variable(v.name, v.value, v.sourceSpan); })));
                 }
                 else {
@@ -18128,12 +18191,13 @@ function parseTemplate(template, templateUrl, options) {
     }
     return { nodes: nodes, styleUrls: styleUrls, styles: styles };
 }
+var elementRegistry = new DomElementSchemaRegistry();
 /**
  * Construct a `BindingParser` with a default configuration.
  */
 function makeBindingParser(interpolationConfig) {
     if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
-    return new BindingParser(new Parser$1(new Lexer()), interpolationConfig, new DomElementSchemaRegistry(), null, []);
+    return new BindingParser(new Parser$1(new Lexer()), interpolationConfig, elementRegistry, null, []);
 }
 function resolveSanitizationFn(context, isAttribute) {
     switch (context) {
@@ -18575,7 +18639,7 @@ function createTypeForDef(meta, typeBase) {
     // string literal, which must be on one line.
     var selectorForType = meta.selector !== null ? meta.selector.replace(/\n/g, '') : null;
     return expressionType(importExpr(typeBase, [
-        typeWithParameters(meta.type, meta.typeArgumentCount),
+        typeWithParameters(meta.type.type, meta.typeArgumentCount),
         selectorForType !== null ? stringAsType(selectorForType) : NONE_TYPE,
         meta.exportAs !== null ? stringArrayAsType(meta.exportAs) : NONE_TYPE,
         stringMapAsType(meta.inputs),
@@ -18951,7 +19015,7 @@ var CompilerFacadeImpl = /** @class */ (function () {
     CompilerFacadeImpl.prototype.compilePipe = function (angularCoreEnv, sourceMapUrl, facade) {
         var metadata = {
             name: facade.name,
-            type: new WrappedNodeExpr(facade.type),
+            type: wrapReference$1(facade.type),
             internalType: new WrappedNodeExpr(facade.type),
             typeArgumentCount: facade.typeArgumentCount,
             deps: convertR3DependencyMetadataArray(facade.deps),
@@ -18964,7 +19028,7 @@ var CompilerFacadeImpl = /** @class */ (function () {
     CompilerFacadeImpl.prototype.compileInjectable = function (angularCoreEnv, sourceMapUrl, facade) {
         var _a = compileInjectable({
             name: facade.name,
-            type: new WrappedNodeExpr(facade.type),
+            type: wrapReference$1(facade.type),
             internalType: new WrappedNodeExpr(facade.type),
             typeArgumentCount: facade.typeArgumentCount,
             providedIn: computeProvidedIn(facade.providedIn),
@@ -18979,7 +19043,7 @@ var CompilerFacadeImpl = /** @class */ (function () {
     CompilerFacadeImpl.prototype.compileInjector = function (angularCoreEnv, sourceMapUrl, facade) {
         var meta = {
             name: facade.name,
-            type: new WrappedNodeExpr(facade.type),
+            type: wrapReference$1(facade.type),
             internalType: new WrappedNodeExpr(facade.type),
             deps: convertR3DependencyMetadataArray(facade.deps),
             providers: new WrappedNodeExpr(facade.providers),
@@ -18990,16 +19054,16 @@ var CompilerFacadeImpl = /** @class */ (function () {
     };
     CompilerFacadeImpl.prototype.compileNgModule = function (angularCoreEnv, sourceMapUrl, facade) {
         var meta = {
-            type: new WrappedNodeExpr(facade.type),
+            type: wrapReference$1(facade.type),
             internalType: new WrappedNodeExpr(facade.type),
             adjacentType: new WrappedNodeExpr(facade.type),
-            bootstrap: facade.bootstrap.map(wrapReference),
-            declarations: facade.declarations.map(wrapReference),
-            imports: facade.imports.map(wrapReference),
-            exports: facade.exports.map(wrapReference),
+            bootstrap: facade.bootstrap.map(wrapReference$1),
+            declarations: facade.declarations.map(wrapReference$1),
+            imports: facade.imports.map(wrapReference$1),
+            exports: facade.exports.map(wrapReference$1),
             emitInline: true,
             containsForwardDecls: false,
-            schemas: facade.schemas ? facade.schemas.map(wrapReference) : null,
+            schemas: facade.schemas ? facade.schemas.map(wrapReference$1) : null,
             id: facade.id ? new WrappedNodeExpr(facade.id) : null,
         };
         var res = compileNgModule(meta);
@@ -19035,7 +19099,7 @@ var CompilerFacadeImpl = /** @class */ (function () {
     CompilerFacadeImpl.prototype.compileFactory = function (angularCoreEnv, sourceMapUrl, meta) {
         var factoryRes = compileFactoryFunction({
             name: meta.name,
-            type: new WrappedNodeExpr(meta.type),
+            type: wrapReference$1(meta.type),
             internalType: new WrappedNodeExpr(meta.type),
             typeArgumentCount: meta.typeArgumentCount,
             deps: convertR3DependencyMetadataArray(meta.deps),
@@ -19073,7 +19137,7 @@ var USE_CLASS = Object.keys({ useClass: null })[0];
 var USE_FACTORY = Object.keys({ useFactory: null })[0];
 var USE_VALUE = Object.keys({ useValue: null })[0];
 var USE_EXISTING = Object.keys({ useExisting: null })[0];
-var wrapReference = function (value) {
+var wrapReference$1 = function (value) {
     var wrapped = new WrappedNodeExpr(value);
     return { value: wrapped, type: wrapped };
 };
@@ -19103,7 +19167,7 @@ function convertDirectiveFacadeToMetadata(facade) {
     for (var field in propMetadata) {
         _loop_1(field);
     }
-    return __assign(__assign({}, facade), { typeSourceSpan: facade.typeSourceSpan, type: new WrappedNodeExpr(facade.type), internalType: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: __assign(__assign({}, inputsFromMetadata), inputsFromType), outputs: __assign(__assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), fullInheritance: false });
+    return __assign(__assign({}, facade), { typeSourceSpan: facade.typeSourceSpan, type: wrapReference$1(facade.type), internalType: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: __assign(__assign({}, inputsFromMetadata), inputsFromType), outputs: __assign(__assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), fullInheritance: false });
 }
 function wrapExpression(obj, property) {
     if (obj.hasOwnProperty(property)) {
@@ -19201,7 +19265,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-rc.1+422.sha-a719656.with-local-changes');
+var VERSION$1 = new Version('9.0.0-rc.1+524.sha-f004195');
 
 /**
  * @license
@@ -28761,22 +28825,20 @@ var DirectiveBinder = /** @class */ (function () {
                 _this.references.set(ref, node);
             }
         });
-        // Associate attributes/bindings on the node with directives or with the node itself.
-        var processAttribute = function (attribute) {
-            var dir = directives.find(function (dir) { return dir.inputs.hasOwnProperty(attribute.name); });
-            if (dir !== undefined) {
-                _this.bindings.set(attribute, dir);
-            }
-            else {
-                _this.bindings.set(attribute, node);
-            }
+        var setAttributeBinding = function (attribute, ioType) {
+            var dir = directives.find(function (dir) { return dir[ioType].hasOwnProperty(attribute.name); });
+            var binding = dir !== undefined ? dir : node;
+            _this.bindings.set(attribute, binding);
         };
-        node.attributes.forEach(processAttribute);
-        node.inputs.forEach(processAttribute);
-        node.outputs.forEach(processAttribute);
+        // Node inputs (bound attributes) and text attributes can be bound to an
+        // input on a directive.
+        node.inputs.forEach(function (input) { return setAttributeBinding(input, 'inputs'); });
+        node.attributes.forEach(function (attr) { return setAttributeBinding(attr, 'inputs'); });
         if (node instanceof Template) {
-            node.templateAttrs.forEach(processAttribute);
+            node.templateAttrs.forEach(function (attr) { return setAttributeBinding(attr, 'inputs'); });
         }
+        // Node outputs (bound events) can be bound to an output on a directive.
+        node.outputs.forEach(function (output) { return setAttributeBinding(output, 'outputs'); });
         // Recurse into the node's children.
         node.children.forEach(function (child) { return child.visit(_this); });
     };

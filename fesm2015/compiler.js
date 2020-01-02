@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+422.sha-a719656.with-local-changes
+ * @license Angular v9.0.0-rc.1+524.sha-f004195
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3342,6 +3342,10 @@ Identifiers$1.NgModuleDefWithMeta = {
     name: 'ɵɵNgModuleDefWithMeta',
     moduleName: CORE$1,
 };
+Identifiers$1.ModuleWithProviders = {
+    name: 'ModuleWithProviders',
+    moduleName: CORE$1,
+};
 Identifiers$1.defineNgModule = { name: 'ɵɵdefineNgModule', moduleName: CORE$1 };
 Identifiers$1.setNgModuleScope = { name: 'ɵɵsetNgModuleScope', moduleName: CORE$1 };
 Identifiers$1.PipeDefWithMeta = { name: 'ɵɵPipeDefWithMeta', moduleName: CORE$1 };
@@ -3450,6 +3454,10 @@ function jitOnlyGuardedExpression(expr) {
     const jitFlagUndefinedOrTrue = new BinaryOperatorExpr(BinaryOperator.Or, jitFlagNotDefined, ngJitMode, /* type */ undefined, 
     /* sourceSpan */ undefined, true);
     return new BinaryOperatorExpr(BinaryOperator.And, jitFlagUndefinedOrTrue, expr);
+}
+function wrapReference(value) {
+    const wrapped = new WrappedNodeExpr(value);
+    return { value: wrapped, type: wrapped };
 }
 
 /**
@@ -4156,11 +4164,11 @@ function sha1(str) {
     const words32 = stringToWords32(utf8, Endian.Big);
     const len = utf8.length * 8;
     const w = newArray(80);
-    let [a, b, c, d, e] = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0];
+    let a = 0x67452301, b = 0xefcdab89, c = 0x98badcfe, d = 0x10325476, e = 0xc3d2e1f0;
     words32[len >> 5] |= 0x80 << (24 - len % 32);
     words32[((len + 64 >> 9) << 4) + 15] = len;
     for (let i = 0; i < words32.length; i += 16) {
-        const [h0, h1, h2, h3, h4] = [a, b, c, d, e];
+        const h0 = a, h1 = b, h2 = c, h3 = d, h4 = e;
         for (let j = 0; j < 80; j++) {
             if (j < 16) {
                 w[j] = words32[i + j];
@@ -4168,11 +4176,21 @@ function sha1(str) {
             else {
                 w[j] = rol32(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
             }
-            const [f, k] = fk(j, b, c, d);
+            const fkVal = fk(j, b, c, d);
+            const f = fkVal[0];
+            const k = fkVal[1];
             const temp = [rol32(a, 5), f, e, k, w[j]].reduce(add32);
-            [e, d, c, b, a] = [d, c, rol32(b, 30), a, temp];
+            e = d;
+            d = c;
+            c = rol32(b, 30);
+            b = a;
+            a = temp;
         }
-        [a, b, c, d, e] = [add32(a, h0), add32(b, h1), add32(c, h2), add32(d, h3), add32(e, h4)];
+        a = add32(a, h0);
+        b = add32(b, h1);
+        c = add32(c, h2);
+        d = add32(d, h3);
+        e = add32(e, h4);
     }
     return byteStringToHexString(words32ToByteString([a, b, c, d, e]));
 }
@@ -4198,7 +4216,8 @@ function fk(index, b, c, d) {
  */
 function fingerprint(str) {
     const utf8 = utf8Encode(str);
-    let [hi, lo] = [hash32(utf8, 0), hash32(utf8, 102072)];
+    let hi = hash32(utf8, 0);
+    let lo = hash32(utf8, 102072);
     if (hi == 0 && (lo == 0 || lo == 1)) {
         hi = hi ^ 0x130f9bef;
         lo = lo ^ -0x6b5f56d8;
@@ -4206,32 +4225,35 @@ function fingerprint(str) {
     return [hi, lo];
 }
 function computeMsgId(msg, meaning = '') {
-    let [hi, lo] = fingerprint(msg);
+    let msgFingerprint = fingerprint(msg);
     if (meaning) {
-        const [him, lom] = fingerprint(meaning);
-        [hi, lo] = add64(rol64([hi, lo], 1), [him, lom]);
+        const meaningFingerprint = fingerprint(meaning);
+        msgFingerprint = add64(rol64(msgFingerprint, 1), meaningFingerprint);
     }
+    const hi = msgFingerprint[0];
+    const lo = msgFingerprint[1];
     return byteStringToDecString(words32ToByteString([hi & 0x7fffffff, lo]));
 }
 function hash32(str, c) {
-    let [a, b] = [0x9e3779b9, 0x9e3779b9];
+    let a = 0x9e3779b9, b = 0x9e3779b9;
     let i;
     const len = str.length;
     for (i = 0; i + 12 <= len; i += 12) {
         a = add32(a, wordAt(str, i, Endian.Little));
         b = add32(b, wordAt(str, i + 4, Endian.Little));
         c = add32(c, wordAt(str, i + 8, Endian.Little));
-        [a, b, c] = mix([a, b, c]);
+        const res = mix(a, b, c);
+        a = res[0], b = res[1], c = res[2];
     }
     a = add32(a, wordAt(str, i, Endian.Little));
     b = add32(b, wordAt(str, i + 4, Endian.Little));
     // the first byte of c is reserved for the length
     c = add32(c, len);
     c = add32(c, wordAt(str, i + 8, Endian.Little) << 8);
-    return mix([a, b, c])[2];
+    return mix(a, b, c)[2];
 }
 // clang-format off
-function mix([a, b, c]) {
+function mix(a, b, c) {
     a = sub32(a, b);
     a = sub32(a, c);
     a ^= c >>> 13;
@@ -4276,8 +4298,12 @@ function add32to64(a, b) {
     const high = (a >>> 16) + (b >>> 16) + (low >>> 16);
     return [high >>> 16, (high << 16) | (low & 0xffff)];
 }
-function add64([ah, al], [bh, bl]) {
-    const [carry, l] = add32to64(al, bl);
+function add64(a, b) {
+    const ah = a[0], al = a[1];
+    const bh = b[0], bl = b[1];
+    const result = add32to64(al, bl);
+    const carry = result[0];
+    const l = result[1];
     const h = add32(add32(ah, bh), carry);
     return [h, l];
 }
@@ -4291,7 +4317,8 @@ function rol32(a, count) {
     return (a << count) | (a >>> (32 - count));
 }
 // Rotate a 64b number left `count` position
-function rol64([hi, lo], count) {
+function rol64(num, count) {
+    const hi = num[0], lo = num[1];
     const h = (hi << count) | (lo >>> (32 - count));
     const l = (lo << count) | (hi >>> (32 - count));
     return [h, l];
@@ -5133,7 +5160,7 @@ function compileFactoryFunction(meta) {
     return {
         factory: fn([new FnParam('t', DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, `${meta.name}_Factory`),
         statements,
-        type: expressionType(importExpr(Identifiers$1.FactoryDef, [typeWithParameters(meta.type, meta.typeArgumentCount)]))
+        type: expressionType(importExpr(Identifiers$1.FactoryDef, [typeWithParameters(meta.type.type, meta.typeArgumentCount)]))
     };
 }
 function injectDependencies(deps, injectFn, isPipe) {
@@ -5252,7 +5279,7 @@ function compileInjectable(meta) {
             result = compileFactoryFunction(factoryMeta);
         }
         else {
-            result = delegateToFactory(meta.type, meta.useClass);
+            result = delegateToFactory(meta.type.value, meta.useClass);
         }
     }
     else if (meta.useFactory !== undefined) {
@@ -5277,7 +5304,7 @@ function compileInjectable(meta) {
         result = compileFactoryFunction(Object.assign(Object.assign({}, factoryMeta), { expression: importExpr(Identifiers.inject).callFn([meta.useExisting]) }));
     }
     else {
-        result = delegateToFactory(meta.type, meta.internalType);
+        result = delegateToFactory(meta.type.value, meta.internalType);
     }
     const token = meta.internalType;
     const injectableProps = { token, factory: result.factory };
@@ -5286,7 +5313,7 @@ function compileInjectable(meta) {
         injectableProps.providedIn = meta.providedIn;
     }
     const expression = importExpr(Identifiers.ɵɵdefineInjectable).callFn([mapToMapExpression(injectableProps)]);
-    const type = new ExpressionType(importExpr(Identifiers.InjectableDef, [typeWithParameters(meta.type, meta.typeArgumentCount)]));
+    const type = new ExpressionType(importExpr(Identifiers.InjectableDef, [typeWithParameters(meta.type.type, meta.typeArgumentCount)]));
     return {
         expression,
         type,
@@ -6455,7 +6482,7 @@ function compileNgModule(meta) {
     }
     const expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression(definitionMap)]);
     const type = new ExpressionType(importExpr(Identifiers$1.NgModuleDefWithMeta, [
-        new ExpressionType(moduleType), tupleTypeOf(declarations), tupleTypeOf(imports),
+        new ExpressionType(moduleType.type), tupleTypeOf(declarations), tupleTypeOf(imports),
         tupleTypeOf(exports)
     ]));
     return { expression, type, additionalStatements };
@@ -6517,7 +6544,7 @@ function compileInjector(meta) {
         definitionMap.imports = literalArr(meta.imports);
     }
     const expression = importExpr(Identifiers$1.defineInjector).callFn([mapToMapExpression(definitionMap)]);
-    const type = new ExpressionType(importExpr(Identifiers$1.InjectorDef, [new ExpressionType(meta.type)]));
+    const type = new ExpressionType(importExpr(Identifiers$1.InjectorDef, [new ExpressionType(meta.type.type)]));
     return { expression, type, statements: result.statements };
 }
 // TODO(alxhub): integrate this with `compileNgModule`. Currently the two are separate operations.
@@ -6568,12 +6595,12 @@ function compilePipeFromMetadata(metadata) {
     // e.g. `name: 'myPipe'`
     definitionMapValues.push({ key: 'name', value: literal(metadata.pipeName), quoted: false });
     // e.g. `type: MyPipe`
-    definitionMapValues.push({ key: 'type', value: metadata.type, quoted: false });
+    definitionMapValues.push({ key: 'type', value: metadata.type.value, quoted: false });
     // e.g. `pure: true`
     definitionMapValues.push({ key: 'pure', value: literal(metadata.pure), quoted: false });
     const expression = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]);
     const type = new ExpressionType(importExpr(Identifiers$1.PipeDefWithMeta, [
-        typeWithParameters(metadata.type, metadata.typeArgumentCount),
+        typeWithParameters(metadata.type.type, metadata.typeArgumentCount),
         new ExpressionType(new LiteralExpr(metadata.pipeName)),
     ]));
     return { expression, type };
@@ -6589,7 +6616,7 @@ function compilePipeFromRender2(outputCtx, pipe, reflector) {
     const type = outputCtx.importExpr(pipe.type.reference);
     const metadata = {
         name,
-        type,
+        type: wrapReference(type),
         internalType: type,
         pipeName: pipe.name,
         typeArgumentCount: 0,
@@ -9036,7 +9063,7 @@ class _Tokenizer {
         this._currentTokenStart = start;
         this._currentTokenType = type;
     }
-    _endToken(parts, end = this._cursor.clone()) {
+    _endToken(parts, end) {
         if (this._currentTokenStart === null) {
             throw new TokenError('Programming error - attempted to end a token when there was no start to the token', this._currentTokenType, this._cursor.getSpan(end));
         }
@@ -9127,8 +9154,7 @@ class _Tokenizer {
     _requireCharCodeUntilFn(predicate, len) {
         const start = this._cursor.clone();
         this._attemptCharCodeUntilFn(predicate);
-        const end = this._cursor.clone();
-        if (end.diff(start) < len) {
+        if (this._cursor.diff(start) < len) {
             throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(start));
         }
     }
@@ -9514,7 +9540,17 @@ class PlainCharacterCursor {
             this.file = fileOrCursor.file;
             this.input = fileOrCursor.input;
             this.end = fileOrCursor.end;
-            this.state = Object.assign({}, fileOrCursor.state);
+            const state = fileOrCursor.state;
+            // Note: avoid using `{...fileOrCursor.state}` here as that has a severe performance penalty.
+            // In ES5 bundles the object spread operator is translated into the `__assign` helper, which
+            // is not optimized by VMs as efficiently as a raw object literal. Since this constructor is
+            // called in tight loops, this difference matters.
+            this.state = {
+                peek: state.peek,
+                offset: state.offset,
+                line: state.line,
+                column: state.column,
+            };
         }
         else {
             if (!range) {
@@ -9539,9 +9575,13 @@ class PlainCharacterCursor {
     init() { this.updatePeek(this.state); }
     getSpan(start, leadingTriviaCodePoints) {
         start = start || this;
+        let cloned = false;
         if (leadingTriviaCodePoints) {
-            start = start.clone();
             while (this.diff(start) > 0 && leadingTriviaCodePoints.indexOf(start.peek()) !== -1) {
+                if (!cloned) {
+                    start = start.clone();
+                    cloned = true;
+                }
                 start.advance();
             }
         }
@@ -11151,9 +11191,19 @@ class BindingParser {
             return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, sourceSpan.start.offset);
         }
     }
-    // Parse an inline template binding. ie `<tag *tplKey="<tplValue>">`
-    parseInlineTemplateBinding(tplKey, tplValue, sourceSpan, absoluteOffset, targetMatchableAttrs, targetProps, targetVars) {
-        const bindings = this._parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteOffset);
+    /**
+     * Parses an inline template binding, e.g.
+     *    <tag *tplKey="<tplValue>">
+     * @param tplKey template binding name
+     * @param tplValue template binding value
+     * @param sourceSpan span of template binding relative to entire the template
+     * @param absoluteValueOffset start of the tplValue relative to the entire template
+     * @param targetMatchableAttrs potential attributes to match in the template
+     * @param targetProps target property bindings in the template
+     * @param targetVars target variables in the template
+     */
+    parseInlineTemplateBinding(tplKey, tplValue, sourceSpan, absoluteValueOffset, targetMatchableAttrs, targetProps, targetVars) {
+        const bindings = this._parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteValueOffset);
         for (let i = 0; i < bindings.length; i++) {
             const binding = bindings[i];
             if (binding.keyIsVar) {
@@ -11164,14 +11214,22 @@ class BindingParser {
             }
             else {
                 targetMatchableAttrs.push([binding.key, '']);
-                this.parseLiteralAttr(binding.key, null, sourceSpan, absoluteOffset, undefined, targetMatchableAttrs, targetProps);
+                this.parseLiteralAttr(binding.key, null, sourceSpan, absoluteValueOffset, undefined, targetMatchableAttrs, targetProps);
             }
         }
     }
-    _parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteOffset) {
+    /**
+     * Parses the bindings in an inline template binding, e.g.
+     *    <tag *tplKey="let value1 = prop; let value2 = localVar">
+     * @param tplKey template binding name
+     * @param tplValue template binding value
+     * @param sourceSpan span of template binding relative to entire the template
+     * @param absoluteValueOffset start of the tplValue relative to the entire template
+     */
+    _parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteValueOffset) {
         const sourceInfo = sourceSpan.start.toString();
         try {
-            const bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceInfo, absoluteOffset);
+            const bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceInfo, absoluteValueOffset);
             this._reportExpressionParserErrors(bindingsResult.errors, sourceSpan);
             bindingsResult.templateBindings.forEach((binding) => {
                 if (binding.expression) {
@@ -13136,6 +13194,15 @@ class TemplateBindingParseResult {
         this.errors = errors;
     }
 }
+const defaultInterpolateRegExp = _createInterpolateRegExp(DEFAULT_INTERPOLATION_CONFIG);
+function _getInterpolateRegExp(config) {
+    if (config === DEFAULT_INTERPOLATION_CONFIG) {
+        return defaultInterpolateRegExp;
+    }
+    else {
+        return _createInterpolateRegExp(config);
+    }
+}
 function _createInterpolateRegExp(config) {
     const pattern = escapeRegExp(config.start) + '([\\s\\S]*?)' + escapeRegExp(config.end);
     return new RegExp(pattern, 'g');
@@ -13216,7 +13283,7 @@ class Parser$1 {
         return new ASTWithSource(new Interpolation(span, span.toAbsolute(absoluteOffset), split.strings, expressions), input, location, absoluteOffset, this.errors);
     }
     splitInterpolation(input, location, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        const regexp = _createInterpolateRegExp(interpolationConfig);
+        const regexp = _getInterpolateRegExp(interpolationConfig);
         const parts = input.split(regexp);
         if (parts.length <= 1) {
             return null;
@@ -13271,7 +13338,7 @@ class Parser$1 {
         return null;
     }
     _checkNoInterpolation(input, location, interpolationConfig) {
-        const regexp = _createInterpolateRegExp(interpolationConfig);
+        const regexp = _getInterpolateRegExp(interpolationConfig);
         const parts = input.split(regexp);
         if (parts.length > 1) {
             this._reportError(`Got interpolation (${interpolationConfig.start}${interpolationConfig.end}) where expression was expected`, input, `at column ${this._findInterpolationErrorColumn(parts, 1, interpolationConfig)} in`, location);
@@ -13405,7 +13472,7 @@ class _ParseAST {
             do {
                 const nameStart = this.inputIndex;
                 const name = this.expectIdentifierOrKeyword();
-                const nameSpan = this.span(nameStart);
+                const nameSpan = this.sourceSpan(nameStart);
                 const args = [];
                 while (this.optionalCharacter($COLON)) {
                     args.push(this.parseExpression());
@@ -13794,7 +13861,7 @@ class _ParseAST {
                 const ast = this.parsePipe();
                 const source = this.input.substring(start - this.offset, this.inputIndex - this.offset);
                 expression =
-                    new ASTWithSource(ast, source, this.location, this.absoluteOffset, this.errors);
+                    new ASTWithSource(ast, source, this.location, this.absoluteOffset + start, this.errors);
             }
             bindings.push(new TemplateBinding(this.span(start), this.sourceSpan(start), key, isVar, name, expression));
             if (this.peekKeywordAs() && !isVar) {
@@ -14463,9 +14530,13 @@ class HtmlAstToIvyAst {
                 const templateValue = attribute.value;
                 const templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX$1.length);
                 const parsedVariables = [];
-                const absoluteOffset = attribute.valueSpan ? attribute.valueSpan.start.offset :
-                    attribute.sourceSpan.start.offset;
-                this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, absoluteOffset, [], templateParsedProperties, parsedVariables);
+                const absoluteValueOffset = attribute.valueSpan ?
+                    attribute.valueSpan.start.offset :
+                    // If there is no value span the attribute does not have a value, like `attr` in
+                    //`<div attr></div>`. In this case, point to one character beyond the last character of
+                    // the attribute name.
+                    attribute.sourceSpan.start.offset + attribute.name.length;
+                this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, absoluteValueOffset, [], templateParsedProperties, parsedVariables);
                 templateVariables.push(...parsedVariables.map(v => new Variable(v.name, v.value, v.sourceSpan)));
             }
             else {
@@ -17091,11 +17162,12 @@ function parseTemplate(template, templateUrl, options = {}) {
     }
     return { nodes, styleUrls, styles };
 }
+const elementRegistry = new DomElementSchemaRegistry();
 /**
  * Construct a `BindingParser` with a default configuration.
  */
 function makeBindingParser(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-    return new BindingParser(new Parser$1(new Lexer()), interpolationConfig, new DomElementSchemaRegistry(), null, []);
+    return new BindingParser(new Parser$1(new Lexer()), interpolationConfig, elementRegistry, null, []);
 }
 function resolveSanitizationFn(context, isAttribute) {
     switch (context) {
@@ -17503,7 +17575,7 @@ function createTypeForDef(meta, typeBase) {
     // string literal, which must be on one line.
     const selectorForType = meta.selector !== null ? meta.selector.replace(/\n/g, '') : null;
     return expressionType(importExpr(typeBase, [
-        typeWithParameters(meta.type, meta.typeArgumentCount),
+        typeWithParameters(meta.type.type, meta.typeArgumentCount),
         selectorForType !== null ? stringAsType(selectorForType) : NONE_TYPE,
         meta.exportAs !== null ? stringArrayAsType(meta.exportAs) : NONE_TYPE,
         stringMapAsType(meta.inputs),
@@ -17861,7 +17933,7 @@ class CompilerFacadeImpl {
     compilePipe(angularCoreEnv, sourceMapUrl, facade) {
         const metadata = {
             name: facade.name,
-            type: new WrappedNodeExpr(facade.type),
+            type: wrapReference$1(facade.type),
             internalType: new WrappedNodeExpr(facade.type),
             typeArgumentCount: facade.typeArgumentCount,
             deps: convertR3DependencyMetadataArray(facade.deps),
@@ -17874,7 +17946,7 @@ class CompilerFacadeImpl {
     compileInjectable(angularCoreEnv, sourceMapUrl, facade) {
         const { expression, statements } = compileInjectable({
             name: facade.name,
-            type: new WrappedNodeExpr(facade.type),
+            type: wrapReference$1(facade.type),
             internalType: new WrappedNodeExpr(facade.type),
             typeArgumentCount: facade.typeArgumentCount,
             providedIn: computeProvidedIn(facade.providedIn),
@@ -17889,7 +17961,7 @@ class CompilerFacadeImpl {
     compileInjector(angularCoreEnv, sourceMapUrl, facade) {
         const meta = {
             name: facade.name,
-            type: new WrappedNodeExpr(facade.type),
+            type: wrapReference$1(facade.type),
             internalType: new WrappedNodeExpr(facade.type),
             deps: convertR3DependencyMetadataArray(facade.deps),
             providers: new WrappedNodeExpr(facade.providers),
@@ -17900,16 +17972,16 @@ class CompilerFacadeImpl {
     }
     compileNgModule(angularCoreEnv, sourceMapUrl, facade) {
         const meta = {
-            type: new WrappedNodeExpr(facade.type),
+            type: wrapReference$1(facade.type),
             internalType: new WrappedNodeExpr(facade.type),
             adjacentType: new WrappedNodeExpr(facade.type),
-            bootstrap: facade.bootstrap.map(wrapReference),
-            declarations: facade.declarations.map(wrapReference),
-            imports: facade.imports.map(wrapReference),
-            exports: facade.exports.map(wrapReference),
+            bootstrap: facade.bootstrap.map(wrapReference$1),
+            declarations: facade.declarations.map(wrapReference$1),
+            imports: facade.imports.map(wrapReference$1),
+            exports: facade.exports.map(wrapReference$1),
             emitInline: true,
             containsForwardDecls: false,
-            schemas: facade.schemas ? facade.schemas.map(wrapReference) : null,
+            schemas: facade.schemas ? facade.schemas.map(wrapReference$1) : null,
             id: facade.id ? new WrappedNodeExpr(facade.id) : null,
         };
         const res = compileNgModule(meta);
@@ -17945,7 +18017,7 @@ class CompilerFacadeImpl {
     compileFactory(angularCoreEnv, sourceMapUrl, meta) {
         const factoryRes = compileFactoryFunction({
             name: meta.name,
-            type: new WrappedNodeExpr(meta.type),
+            type: wrapReference$1(meta.type),
             internalType: new WrappedNodeExpr(meta.type),
             typeArgumentCount: meta.typeArgumentCount,
             deps: convertR3DependencyMetadataArray(meta.deps),
@@ -17983,7 +18055,7 @@ const USE_CLASS = Object.keys({ useClass: null })[0];
 const USE_FACTORY = Object.keys({ useFactory: null })[0];
 const USE_VALUE = Object.keys({ useValue: null })[0];
 const USE_EXISTING = Object.keys({ useExisting: null })[0];
-const wrapReference = function (value) {
+const wrapReference$1 = function (value) {
     const wrapped = new WrappedNodeExpr(value);
     return { value: wrapped, type: wrapped };
 };
@@ -18010,7 +18082,7 @@ function convertDirectiveFacadeToMetadata(facade) {
             });
         }
     }
-    return Object.assign(Object.assign({}, facade), { typeSourceSpan: facade.typeSourceSpan, type: new WrappedNodeExpr(facade.type), internalType: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: Object.assign(Object.assign({}, inputsFromMetadata), inputsFromType), outputs: Object.assign(Object.assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), fullInheritance: false });
+    return Object.assign(Object.assign({}, facade), { typeSourceSpan: facade.typeSourceSpan, type: wrapReference$1(facade.type), internalType: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: Object.assign(Object.assign({}, inputsFromMetadata), inputsFromType), outputs: Object.assign(Object.assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), fullInheritance: false });
 }
 function wrapExpression(obj, property) {
     if (obj.hasOwnProperty(property)) {
@@ -18105,7 +18177,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-rc.1+422.sha-a719656.with-local-changes');
+const VERSION$1 = new Version('9.0.0-rc.1+524.sha-f004195');
 
 /**
  * @license
@@ -27119,22 +27191,20 @@ class DirectiveBinder {
                 this.references.set(ref, node);
             }
         });
-        // Associate attributes/bindings on the node with directives or with the node itself.
-        const processAttribute = (attribute) => {
-            let dir = directives.find(dir => dir.inputs.hasOwnProperty(attribute.name));
-            if (dir !== undefined) {
-                this.bindings.set(attribute, dir);
-            }
-            else {
-                this.bindings.set(attribute, node);
-            }
+        const setAttributeBinding = (attribute, ioType) => {
+            const dir = directives.find(dir => dir[ioType].hasOwnProperty(attribute.name));
+            const binding = dir !== undefined ? dir : node;
+            this.bindings.set(attribute, binding);
         };
-        node.attributes.forEach(processAttribute);
-        node.inputs.forEach(processAttribute);
-        node.outputs.forEach(processAttribute);
+        // Node inputs (bound attributes) and text attributes can be bound to an
+        // input on a directive.
+        node.inputs.forEach(input => setAttributeBinding(input, 'inputs'));
+        node.attributes.forEach(attr => setAttributeBinding(attr, 'inputs'));
         if (node instanceof Template) {
-            node.templateAttrs.forEach(processAttribute);
+            node.templateAttrs.forEach(attr => setAttributeBinding(attr, 'inputs'));
         }
+        // Node outputs (bound events) can be bound to an output on a directive.
+        node.outputs.forEach(output => setAttributeBinding(output, 'outputs'));
         // Recurse into the node's children.
         node.children.forEach(child => child.visit(this));
     }

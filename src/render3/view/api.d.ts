@@ -11,6 +11,7 @@ import * as o from '../../output/output_ast';
 import { ParseSourceSpan } from '../../parse_util';
 import * as t from '../r3_ast';
 import { R3DependencyMetadata } from '../r3_factory';
+import { R3Reference } from '../util';
 /**
  * Information needed to compile a directive for the render3 runtime.
  */
@@ -22,7 +23,7 @@ export interface R3DirectiveMetadata {
     /**
      * An expression representing a reference to the directive itself.
      */
-    type: o.Expression;
+    type: R3Reference;
     /**
      * An expression representing a reference to the directive being compiled, intended for use within
      * a class definition itself.
