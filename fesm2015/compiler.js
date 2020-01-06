@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+522.sha-8410278
+ * @license Angular v9.0.0-rc.1+523.sha-19944c2
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -12855,8 +12855,9 @@ class Lexer {
     }
 }
 class Token$1 {
-    constructor(index, type, numValue, strValue) {
+    constructor(index, end, type, numValue, strValue) {
         this.index = index;
+        this.end = end;
         this.type = type;
         this.numValue = numValue;
         this.strValue = strValue;
@@ -12898,28 +12899,28 @@ class Token$1 {
         }
     }
 }
-function newCharacterToken(index, code) {
-    return new Token$1(index, TokenType$1.Character, code, String.fromCharCode(code));
+function newCharacterToken(index, end, code) {
+    return new Token$1(index, end, TokenType$1.Character, code, String.fromCharCode(code));
 }
-function newIdentifierToken(index, text) {
-    return new Token$1(index, TokenType$1.Identifier, 0, text);
+function newIdentifierToken(index, end, text) {
+    return new Token$1(index, end, TokenType$1.Identifier, 0, text);
 }
-function newKeywordToken(index, text) {
-    return new Token$1(index, TokenType$1.Keyword, 0, text);
+function newKeywordToken(index, end, text) {
+    return new Token$1(index, end, TokenType$1.Keyword, 0, text);
 }
-function newOperatorToken(index, text) {
-    return new Token$1(index, TokenType$1.Operator, 0, text);
+function newOperatorToken(index, end, text) {
+    return new Token$1(index, end, TokenType$1.Operator, 0, text);
 }
-function newStringToken(index, text) {
-    return new Token$1(index, TokenType$1.String, 0, text);
+function newStringToken(index, end, text) {
+    return new Token$1(index, end, TokenType$1.String, 0, text);
 }
-function newNumberToken(index, n) {
-    return new Token$1(index, TokenType$1.Number, n, '');
+function newNumberToken(index, end, n) {
+    return new Token$1(index, end, TokenType$1.Number, n, '');
 }
-function newErrorToken(index, message) {
-    return new Token$1(index, TokenType$1.Error, 0, message);
+function newErrorToken(index, end, message) {
+    return new Token$1(index, end, TokenType$1.Error, 0, message);
 }
-const EOF = new Token$1(-1, TokenType$1.Character, 0, '');
+const EOF = new Token$1(-1, -1, TokenType$1.Character, 0, '');
 class _Scanner {
     constructor(input) {
         this.input = input;
@@ -12959,7 +12960,7 @@ class _Scanner {
             case $PERIOD:
                 this.advance();
                 return isDigit(this.peek) ? this.scanNumber(start) :
-                    newCharacterToken(start, $PERIOD);
+                    newCharacterToken(start, this.index, $PERIOD);
             case $LPAREN:
             case $RPAREN:
             case $LBRACE:
@@ -13003,11 +13004,11 @@ class _Scanner {
     }
     scanCharacter(start, code) {
         this.advance();
-        return newCharacterToken(start, code);
+        return newCharacterToken(start, this.index, code);
     }
     scanOperator(start, str) {
         this.advance();
-        return newOperatorToken(start, str);
+        return newOperatorToken(start, this.index, str);
     }
     /**
      * Tokenize a 2/3 char long operator
@@ -13030,7 +13031,7 @@ class _Scanner {
             this.advance();
             str += three;
         }
-        return newOperatorToken(start, str);
+        return newOperatorToken(start, this.index, str);
     }
     scanIdentifier() {
         const start = this.index;
@@ -13038,8 +13039,8 @@ class _Scanner {
         while (isIdentifierPart(this.peek))
             this.advance();
         const str = this.input.substring(start, this.index);
-        return KEYWORDS.indexOf(str) > -1 ? newKeywordToken(start, str) :
-            newIdentifierToken(start, str);
+        return KEYWORDS.indexOf(str) > -1 ? newKeywordToken(start, this.index, str) :
+            newIdentifierToken(start, this.index, str);
     }
     scanNumber(start) {
         let simple = (this.index === start);
@@ -13066,7 +13067,7 @@ class _Scanner {
         }
         const str = this.input.substring(start, this.index);
         const value = simple ? parseIntAutoRadix(str) : parseFloat(str);
-        return newNumberToken(start, value);
+        return newNumberToken(start, this.index, value);
     }
     scanString() {
         const start = this.index;
@@ -13111,11 +13112,11 @@ class _Scanner {
         }
         const last = input.substring(marker, this.index);
         this.advance(); // Skip terminating quote.
-        return newStringToken(start, buffer + last);
+        return newStringToken(start, this.index, buffer + last);
     }
     error(message, offset) {
         const position = this.index + offset;
-        return newErrorToken(position, `Lexer Error: ${message} at column ${position} in expression [${this.input}]`);
+        return newErrorToken(position, this.index, `Lexer Error: ${message} at column ${position} in expression [${this.input}]`);
     }
 }
 function isIdentifierStart(code) {
@@ -18177,7 +18178,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-rc.1+522.sha-8410278');
+const VERSION$1 = new Version('9.0.0-rc.1+523.sha-19944c2');
 
 /**
  * @license
