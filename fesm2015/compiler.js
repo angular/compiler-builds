@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+535.sha-0254cba
+ * @license Angular v9.0.0-rc.1+537.sha-b9b8920
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15943,7 +15943,10 @@ class TemplateDefinitionBuilder {
             bindings.forEach(binding => {
                 chainBindings.push({ sourceSpan: span, value: () => this.convertPropertyBinding(binding) });
             });
-            this.updateInstructionChain(Identifiers$1.i18nExp, chainBindings);
+            // for i18n block, advance to the most recent element index (by taking the current number of
+            // elements and subtracting one) before invoking `i18nExp` instructions, to make sure the
+            // necessary lifecycle hooks of components/directives are properly flushed.
+            this.updateInstructionChainWithAdvance(this.getConstCount() - 1, Identifiers$1.i18nExp, chainBindings);
             this.updateInstruction(span, Identifiers$1.i18nApply, [literal(index)]);
         }
         if (!selfClosing) {
@@ -16127,7 +16130,7 @@ class TemplateDefinitionBuilder {
                     }
                 });
                 if (bindings.length) {
-                    this.updateInstructionChain(Identifiers$1.i18nExp, bindings);
+                    this.updateInstructionChainWithAdvance(elementIndex, Identifiers$1.i18nExp, bindings);
                 }
                 if (i18nAttrArgs.length) {
                     const index = literal(this.allocateDataSlot());
@@ -18178,7 +18181,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-rc.1+535.sha-0254cba');
+const VERSION$1 = new Version('9.0.0-rc.1+537.sha-b9b8920');
 
 /**
  * @license
