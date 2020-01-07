@@ -149,18 +149,18 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
      *
      * ```
      * attrs = [prop, value, prop2, value2,
+     *   PROJECT_AS, selector,
      *   CLASSES, class1, class2,
      *   STYLES, style1, value1, style2, value2,
      *   BINDINGS, name1, name2, name3,
      *   TEMPLATE, name4, name5, name6,
-     *   PROJECT_AS, selector,
      *   I18N, name7, name8, ...]
      * ```
      *
      * Note that this function will fully ignore all synthetic (@foo) attribute values
      * because those values are intended to always be generated as property instructions.
      */
-    private prepareNonRenderAttrs;
+    private getAttributeExpressions;
     private addToConsts;
     private addAttrsToConsts;
     private prepareRefsArray;
