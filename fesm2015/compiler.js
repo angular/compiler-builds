@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+524.sha-f004195
+ * @license Angular v9.0.0-rc.1+558.sha-d1c7ca7
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -12855,8 +12855,9 @@ class Lexer {
     }
 }
 class Token$1 {
-    constructor(index, type, numValue, strValue) {
+    constructor(index, end, type, numValue, strValue) {
         this.index = index;
+        this.end = end;
         this.type = type;
         this.numValue = numValue;
         this.strValue = strValue;
@@ -12898,28 +12899,28 @@ class Token$1 {
         }
     }
 }
-function newCharacterToken(index, code) {
-    return new Token$1(index, TokenType$1.Character, code, String.fromCharCode(code));
+function newCharacterToken(index, end, code) {
+    return new Token$1(index, end, TokenType$1.Character, code, String.fromCharCode(code));
 }
-function newIdentifierToken(index, text) {
-    return new Token$1(index, TokenType$1.Identifier, 0, text);
+function newIdentifierToken(index, end, text) {
+    return new Token$1(index, end, TokenType$1.Identifier, 0, text);
 }
-function newKeywordToken(index, text) {
-    return new Token$1(index, TokenType$1.Keyword, 0, text);
+function newKeywordToken(index, end, text) {
+    return new Token$1(index, end, TokenType$1.Keyword, 0, text);
 }
-function newOperatorToken(index, text) {
-    return new Token$1(index, TokenType$1.Operator, 0, text);
+function newOperatorToken(index, end, text) {
+    return new Token$1(index, end, TokenType$1.Operator, 0, text);
 }
-function newStringToken(index, text) {
-    return new Token$1(index, TokenType$1.String, 0, text);
+function newStringToken(index, end, text) {
+    return new Token$1(index, end, TokenType$1.String, 0, text);
 }
-function newNumberToken(index, n) {
-    return new Token$1(index, TokenType$1.Number, n, '');
+function newNumberToken(index, end, n) {
+    return new Token$1(index, end, TokenType$1.Number, n, '');
 }
-function newErrorToken(index, message) {
-    return new Token$1(index, TokenType$1.Error, 0, message);
+function newErrorToken(index, end, message) {
+    return new Token$1(index, end, TokenType$1.Error, 0, message);
 }
-const EOF = new Token$1(-1, TokenType$1.Character, 0, '');
+const EOF = new Token$1(-1, -1, TokenType$1.Character, 0, '');
 class _Scanner {
     constructor(input) {
         this.input = input;
@@ -12959,7 +12960,7 @@ class _Scanner {
             case $PERIOD:
                 this.advance();
                 return isDigit(this.peek) ? this.scanNumber(start) :
-                    newCharacterToken(start, $PERIOD);
+                    newCharacterToken(start, this.index, $PERIOD);
             case $LPAREN:
             case $RPAREN:
             case $LBRACE:
@@ -13003,11 +13004,11 @@ class _Scanner {
     }
     scanCharacter(start, code) {
         this.advance();
-        return newCharacterToken(start, code);
+        return newCharacterToken(start, this.index, code);
     }
     scanOperator(start, str) {
         this.advance();
-        return newOperatorToken(start, str);
+        return newOperatorToken(start, this.index, str);
     }
     /**
      * Tokenize a 2/3 char long operator
@@ -13030,7 +13031,7 @@ class _Scanner {
             this.advance();
             str += three;
         }
-        return newOperatorToken(start, str);
+        return newOperatorToken(start, this.index, str);
     }
     scanIdentifier() {
         const start = this.index;
@@ -13038,8 +13039,8 @@ class _Scanner {
         while (isIdentifierPart(this.peek))
             this.advance();
         const str = this.input.substring(start, this.index);
-        return KEYWORDS.indexOf(str) > -1 ? newKeywordToken(start, str) :
-            newIdentifierToken(start, str);
+        return KEYWORDS.indexOf(str) > -1 ? newKeywordToken(start, this.index, str) :
+            newIdentifierToken(start, this.index, str);
     }
     scanNumber(start) {
         let simple = (this.index === start);
@@ -13066,7 +13067,7 @@ class _Scanner {
         }
         const str = this.input.substring(start, this.index);
         const value = simple ? parseIntAutoRadix(str) : parseFloat(str);
-        return newNumberToken(start, value);
+        return newNumberToken(start, this.index, value);
     }
     scanString() {
         const start = this.index;
@@ -13111,11 +13112,11 @@ class _Scanner {
         }
         const last = input.substring(marker, this.index);
         this.advance(); // Skip terminating quote.
-        return newStringToken(start, buffer + last);
+        return newStringToken(start, this.index, buffer + last);
     }
     error(message, offset) {
         const position = this.index + offset;
-        return newErrorToken(position, `Lexer Error: ${message} at column ${position} in expression [${this.input}]`);
+        return newErrorToken(position, this.index, `Lexer Error: ${message} at column ${position} in expression [${this.input}]`);
     }
 }
 function isIdentifierStart(code) {
@@ -15942,7 +15943,10 @@ class TemplateDefinitionBuilder {
             bindings.forEach(binding => {
                 chainBindings.push({ sourceSpan: span, value: () => this.convertPropertyBinding(binding) });
             });
-            this.updateInstructionChain(Identifiers$1.i18nExp, chainBindings);
+            // for i18n block, advance to the most recent element index (by taking the current number of
+            // elements and subtracting one) before invoking `i18nExp` instructions, to make sure the
+            // necessary lifecycle hooks of components/directives are properly flushed.
+            this.updateInstructionChainWithAdvance(this.getConstCount() - 1, Identifiers$1.i18nExp, chainBindings);
             this.updateInstruction(span, Identifiers$1.i18nApply, [literal(index)]);
         }
         if (!selfClosing) {
@@ -15975,21 +15979,9 @@ class TemplateDefinitionBuilder {
         const slot = this.allocateDataSlot();
         const projectionSlotIdx = this._ngContentSelectorsOffset + this._ngContentReservedSlots.length;
         const parameters = [literal(slot)];
-        const attributes = [];
-        let ngProjectAsAttr;
         this._ngContentReservedSlots.push(ngContent.selector);
-        ngContent.attributes.forEach((attribute) => {
-            const { name, value } = attribute;
-            if (name === NG_PROJECT_AS_ATTR_NAME) {
-                ngProjectAsAttr = attribute;
-            }
-            if (name.toLowerCase() !== NG_CONTENT_SELECT_ATTR$1) {
-                attributes.push(literal(name), literal(value));
-            }
-        });
-        if (ngProjectAsAttr) {
-            attributes.push(...getNgProjectAsLiteral(ngProjectAsAttr));
-        }
+        const nonContentSelectAttributes = ngContent.attributes.filter(attr => attr.name.toLowerCase() !== NG_CONTENT_SELECT_ATTR$1);
+        const attributes = this.getAttributeExpressions(nonContentSelectAttributes, [], []);
         if (attributes.length > 0) {
             parameters.push(literal(projectionSlotIdx), literalArr(attributes));
         }
@@ -16008,7 +16000,6 @@ class TemplateDefinitionBuilder {
         const isI18nRootElement = isI18nRootNode(element.i18n) && !isSingleI18nIcu(element.i18n);
         const i18nAttrs = [];
         const outputAttrs = [];
-        let ngProjectAsAttr;
         const [namespaceKey, elementName] = splitNsName(element.name);
         const isNgContainer$1 = isNgContainer(element.name);
         // Handle styling, i18n, ngNonBindable attributes
@@ -16024,9 +16015,6 @@ class TemplateDefinitionBuilder {
                 stylingBuilder.registerClassAttr(value);
             }
             else {
-                if (attr.name === NG_PROJECT_AS_ATTR_NAME) {
-                    ngProjectAsAttr = attr;
-                }
                 if (attr.i18n) {
                     // Place attributes into a separate array for i18n processing, but also keep such
                     // attributes in the main list to make them available for directive matching at runtime.
@@ -16047,7 +16035,6 @@ class TemplateDefinitionBuilder {
             parameters.push(literal(elementName));
         }
         // Add the attributes
-        const attributes = [];
         const allOtherInputs = [];
         element.inputs.forEach((input) => {
             const stylingInputWasSet = stylingBuilder.registerBoundInput(input);
@@ -16064,11 +16051,8 @@ class TemplateDefinitionBuilder {
                 }
             }
         });
-        outputAttrs.forEach(attr => {
-            attributes.push(...getAttributeNameLiterals(attr.name), literal(attr.value));
-        });
         // add attributes for directive and projection matching purposes
-        attributes.push(...this.prepareNonRenderAttrs(allOtherInputs, element.outputs, stylingBuilder, [], i18nAttrs, ngProjectAsAttr));
+        const attributes = this.getAttributeExpressions(outputAttrs, allOtherInputs, element.outputs, stylingBuilder, [], i18nAttrs);
         parameters.push(this.addAttrsToConsts(attributes));
         // local refs (ex.: <div #foo #bar="baz">)
         const refs = this.prepareRefsArray(element.references);
@@ -16126,7 +16110,7 @@ class TemplateDefinitionBuilder {
                     }
                 });
                 if (bindings.length) {
-                    this.updateInstructionChain(Identifiers$1.i18nExp, bindings);
+                    this.updateInstructionChainWithAdvance(elementIndex, Identifiers$1.i18nExp, bindings);
                 }
                 if (i18nAttrArgs.length) {
                     const index = literal(this.allocateDataSlot());
@@ -16283,7 +16267,6 @@ class TemplateDefinitionBuilder {
     visitTemplate(template) {
         const NG_TEMPLATE_TAG_NAME = 'ng-template';
         const templateIndex = this.allocateDataSlot();
-        let ngProjectAsAttr;
         if (this.i18n) {
             this.i18n.appendTemplate(template.i18n, templateIndex);
         }
@@ -16300,14 +16283,7 @@ class TemplateDefinitionBuilder {
         // find directives matching on a given <ng-template> node
         this.matchDirectives(NG_TEMPLATE_TAG_NAME, template);
         // prepare attributes parameter (including attributes used for directive matching)
-        const attrsExprs = [];
-        template.attributes.forEach((attr) => {
-            if (attr.name === NG_PROJECT_AS_ATTR_NAME) {
-                ngProjectAsAttr = attr;
-            }
-            attrsExprs.push(asLiteral(attr.name), asLiteral(attr.value));
-        });
-        attrsExprs.push(...this.prepareNonRenderAttrs(template.inputs, template.outputs, undefined, template.templateAttrs, undefined, ngProjectAsAttr));
+        const attrsExprs = this.getAttributeExpressions(template.attributes, template.inputs, template.outputs, undefined, template.templateAttrs, undefined);
         parameters.push(this.addAttrsToConsts(attrsExprs));
         // local refs (ex.: <ng-template #foo>)
         if (template.references && template.references.length) {
@@ -16582,20 +16558,32 @@ class TemplateDefinitionBuilder {
      *
      * ```
      * attrs = [prop, value, prop2, value2,
+     *   PROJECT_AS, selector,
      *   CLASSES, class1, class2,
      *   STYLES, style1, value1, style2, value2,
      *   BINDINGS, name1, name2, name3,
      *   TEMPLATE, name4, name5, name6,
-     *   PROJECT_AS, selector,
      *   I18N, name7, name8, ...]
      * ```
      *
      * Note that this function will fully ignore all synthetic (@foo) attribute values
      * because those values are intended to always be generated as property instructions.
      */
-    prepareNonRenderAttrs(inputs, outputs, styles, templateAttrs = [], i18nAttrs = [], ngProjectAsAttr) {
+    getAttributeExpressions(renderAttributes, inputs, outputs, styles, templateAttrs = [], i18nAttrs = []) {
         const alreadySeen = new Set();
         const attrExprs = [];
+        let ngProjectAsAttr;
+        renderAttributes.forEach((attr) => {
+            if (attr.name === NG_PROJECT_AS_ATTR_NAME) {
+                ngProjectAsAttr = attr;
+            }
+            attrExprs.push(...getAttributeNameLiterals(attr.name), asLiteral(attr.value));
+        });
+        // Keep ngProjectAs next to the other name, value pairs so we can verify that we match
+        // ngProjectAs marker in the attribute name slot.
+        if (ngProjectAsAttr) {
+            attrExprs.push(...getNgProjectAsLiteral(ngProjectAsAttr));
+        }
         function addAttrExpr(key, value) {
             if (typeof key === 'string') {
                 if (!alreadySeen.has(key)) {
@@ -16641,9 +16629,6 @@ class TemplateDefinitionBuilder {
         if (templateAttrs.length) {
             attrExprs.push(literal(4 /* Template */));
             templateAttrs.forEach(attr => addAttrExpr(attr.name));
-        }
-        if (ngProjectAsAttr) {
-            attrExprs.push(...getNgProjectAsLiteral(ngProjectAsAttr));
         }
         if (i18nAttrs.length) {
             attrExprs.push(literal(6 /* I18n */));
@@ -18177,7 +18162,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-rc.1+524.sha-f004195');
+const VERSION$1 = new Version('9.0.0-rc.1+558.sha-d1c7ca7');
 
 /**
  * @license

@@ -19,10 +19,11 @@ export declare class Lexer {
 }
 export declare class Token {
     index: number;
+    end: number;
     type: TokenType;
     numValue: number;
     strValue: string;
-    constructor(index: number, type: TokenType, numValue: number, strValue: string);
+    constructor(index: number, end: number, type: TokenType, numValue: number, strValue: string);
     isCharacter(code: number): boolean;
     isNumber(): boolean;
     isString(): boolean;
