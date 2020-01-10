@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+558.sha-d1c7ca7
+ * @license Angular v9.0.0-rc.1+615.sha-82a41af
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3721,14 +3721,12 @@
         Identifiers.stylePropInterpolate8 = { name: 'ɵɵstylePropInterpolate8', moduleName: CORE$1 };
         Identifiers.stylePropInterpolateV = { name: 'ɵɵstylePropInterpolateV', moduleName: CORE$1 };
         Identifiers.styleSanitizer = { name: 'ɵɵstyleSanitizer', moduleName: CORE$1 };
-        Identifiers.elementHostAttrs = { name: 'ɵɵelementHostAttrs', moduleName: CORE$1 };
         Identifiers.containerCreate = { name: 'ɵɵcontainer', moduleName: CORE$1 };
         Identifiers.nextContext = { name: 'ɵɵnextContext', moduleName: CORE$1 };
         Identifiers.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE$1 };
         Identifiers.text = { name: 'ɵɵtext', moduleName: CORE$1 };
         Identifiers.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE$1 };
         Identifiers.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE$1 };
-        Identifiers.allocHostVars = { name: 'ɵɵallocHostVars', moduleName: CORE$1 };
         Identifiers.getCurrentView = { name: 'ɵɵgetCurrentView', moduleName: CORE$1 };
         Identifiers.textInterpolate = { name: 'ɵɵtextInterpolate', moduleName: CORE$1 };
         Identifiers.textInterpolate1 = { name: 'ɵɵtextInterpolate1', moduleName: CORE$1 };
@@ -13574,26 +13572,11 @@
          * responsible for registering initial styles (within a directive hostBindings' creation block),
          * as well as any of the provided attribute values, to the directive host element.
          */
-        StylingBuilder.prototype.buildHostAttrsInstruction = function (sourceSpan, attrs, constantPool) {
-            var _this = this;
+        StylingBuilder.prototype.assignHostAttrs = function (attrs, definitionMap) {
             if (this._directiveExpr && (attrs.length || this._hasInitialValues)) {
-                return {
-                    reference: Identifiers$1.elementHostAttrs,
-                    calls: [{
-                            sourceSpan: sourceSpan,
-                            allocateBindingSlots: 0,
-                            params: function () {
-                                // params => elementHostAttrs(attrs)
-                                _this.populateInitialStylingAttrs(attrs);
-                                var attrArray = !attrs.some(function (attr) { return attr instanceof WrappedNodeExpr; }) ?
-                                    getConstantLiteralFromArray(constantPool, attrs) :
-                                    literalArr(attrs);
-                                return [attrArray];
-                            }
-                        }]
-                };
+                this.populateInitialStylingAttrs(attrs);
+                definitionMap.set('hostAttrs', literalArr(attrs));
             }
-            return null;
         };
         /**
          * Builds an instruction with all the expressions and parameters for `classMap`.
@@ -18471,7 +18454,7 @@
             definitionMap.set('viewQuery', createViewQueriesFunction(meta.viewQueries, constantPool, meta.name));
         }
         // e.g. `hostBindings: (rf, ctx, elIndex) => { ... }
-        definitionMap.set('hostBindings', createHostBindingsFunction(meta.host, meta.typeSourceSpan, bindingParser, constantPool, meta.selector || '', meta.name));
+        definitionMap.set('hostBindings', createHostBindingsFunction(meta.host, meta.typeSourceSpan, bindingParser, constantPool, meta.selector || '', meta.name, definitionMap));
         // e.g 'inputs: {a: 'a'}`
         definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs, true));
         // e.g 'outputs: {a: 'a'}`
@@ -18836,7 +18819,7 @@
         ], INFERRED_TYPE, null, viewQueryFnName);
     }
     // Return a host binding function or null if one is not necessary.
-    function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindingParser, constantPool, selector, name) {
+    function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindingParser, constantPool, selector, name, definitionMap) {
         // Initialize hostVarsCount to number of bound host properties (interpolations illegal)
         var hostVarsCount = Object.keys(hostBindingsMetadata.properties).length;
         var elVarExp = variable('elIndex');
@@ -18939,11 +18922,7 @@
         // to the host element alongside any of the provided host attributes that were
         // collected earlier.
         var hostAttrs = convertAttributesToExpressions(hostBindingsMetadata.attributes);
-        var hostInstruction = styleBuilder.buildHostAttrsInstruction(null, hostAttrs, constantPool);
-        if (hostInstruction && hostInstruction.calls.length > 0) {
-            createStatements.push(chainedInstruction(hostInstruction.reference, hostInstruction.calls.map(function (call) { return convertStylingCall(call, bindingContext, bindingFn); }))
-                .toStmt());
-        }
+        styleBuilder.assignHostAttrs(hostAttrs, definitionMap);
         if (styleBuilder.hasBindings) {
             // finally each binding that was registered in the statement above will need to be added to
             // the update block of a component/directive templateFn/hostBindingsFn so that the bindings
@@ -18962,7 +18941,7 @@
             });
         }
         if (totalHostVarsCount) {
-            createStatements.unshift(importExpr(Identifiers$1.allocHostVars).callFn([literal(totalHostVarsCount)]).toStmt());
+            definitionMap.set('hostVars', literal(totalHostVarsCount));
         }
         if (createStatements.length > 0 || updateStatements.length > 0) {
             var hostBindingsFnName = name ? name + "_HostBindings" : null;
@@ -19428,7 +19407,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.0.0-rc.1+558.sha-d1c7ca7');
+    var VERSION$1 = new Version('0.0.0');
 
     /**
      * @license

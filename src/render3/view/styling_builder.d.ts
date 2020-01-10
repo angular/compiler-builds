@@ -1,16 +1,9 @@
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-import { ConstantPool } from '../../constant_pool';
 import { AST } from '../../expression_parser/ast';
 import * as o from '../../output/output_ast';
 import { ParseSourceSpan } from '../../parse_util';
 import * as t from '../r3_ast';
 import { ValueConverter } from './template';
+import { DefinitionMap } from './util';
 /**
  * A styling expression summary that is to be processed by the compiler
  */
@@ -138,7 +131,7 @@ export declare class StylingBuilder {
      * responsible for registering initial styles (within a directive hostBindings' creation block),
      * as well as any of the provided attribute values, to the directive host element.
      */
-    buildHostAttrsInstruction(sourceSpan: ParseSourceSpan | null, attrs: o.Expression[], constantPool: ConstantPool): StylingInstruction | null;
+    assignHostAttrs(attrs: o.Expression[], definitionMap: DefinitionMap): void;
     /**
      * Builds an instruction with all the expressions and parameters for `classMap`.
      *

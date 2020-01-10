@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+558.sha-d1c7ca7
+ * @license Angular v9.0.0-rc.1+615.sha-82a41af
  * (c) 2010-2019 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3244,14 +3244,12 @@ Identifiers$1.stylePropInterpolate7 = { name: 'ɵɵstylePropInterpolate7', modul
 Identifiers$1.stylePropInterpolate8 = { name: 'ɵɵstylePropInterpolate8', moduleName: CORE$1 };
 Identifiers$1.stylePropInterpolateV = { name: 'ɵɵstylePropInterpolateV', moduleName: CORE$1 };
 Identifiers$1.styleSanitizer = { name: 'ɵɵstyleSanitizer', moduleName: CORE$1 };
-Identifiers$1.elementHostAttrs = { name: 'ɵɵelementHostAttrs', moduleName: CORE$1 };
 Identifiers$1.containerCreate = { name: 'ɵɵcontainer', moduleName: CORE$1 };
 Identifiers$1.nextContext = { name: 'ɵɵnextContext', moduleName: CORE$1 };
 Identifiers$1.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE$1 };
 Identifiers$1.text = { name: 'ɵɵtext', moduleName: CORE$1 };
 Identifiers$1.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE$1 };
 Identifiers$1.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE$1 };
-Identifiers$1.allocHostVars = { name: 'ɵɵallocHostVars', moduleName: CORE$1 };
 Identifiers$1.getCurrentView = { name: 'ɵɵgetCurrentView', moduleName: CORE$1 };
 Identifiers$1.textInterpolate = { name: 'ɵɵtextInterpolate', moduleName: CORE$1 };
 Identifiers$1.textInterpolate1 = { name: 'ɵɵtextInterpolate1', moduleName: CORE$1 };
@@ -12559,25 +12557,11 @@ class StylingBuilder {
      * responsible for registering initial styles (within a directive hostBindings' creation block),
      * as well as any of the provided attribute values, to the directive host element.
      */
-    buildHostAttrsInstruction(sourceSpan, attrs, constantPool) {
+    assignHostAttrs(attrs, definitionMap) {
         if (this._directiveExpr && (attrs.length || this._hasInitialValues)) {
-            return {
-                reference: Identifiers$1.elementHostAttrs,
-                calls: [{
-                        sourceSpan,
-                        allocateBindingSlots: 0,
-                        params: () => {
-                            // params => elementHostAttrs(attrs)
-                            this.populateInitialStylingAttrs(attrs);
-                            const attrArray = !attrs.some(attr => attr instanceof WrappedNodeExpr) ?
-                                getConstantLiteralFromArray(constantPool, attrs) :
-                                literalArr(attrs);
-                            return [attrArray];
-                        }
-                    }]
-            };
+            this.populateInitialStylingAttrs(attrs);
+            definitionMap.set('hostAttrs', literalArr(attrs));
         }
-        return null;
     }
     /**
      * Builds an instruction with all the expressions and parameters for `classMap`.
@@ -17262,7 +17246,7 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
         definitionMap.set('viewQuery', createViewQueriesFunction(meta.viewQueries, constantPool, meta.name));
     }
     // e.g. `hostBindings: (rf, ctx, elIndex) => { ... }
-    definitionMap.set('hostBindings', createHostBindingsFunction(meta.host, meta.typeSourceSpan, bindingParser, constantPool, meta.selector || '', meta.name));
+    definitionMap.set('hostBindings', createHostBindingsFunction(meta.host, meta.typeSourceSpan, bindingParser, constantPool, meta.selector || '', meta.name, definitionMap));
     // e.g 'inputs: {a: 'a'}`
     definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs, true));
     // e.g 'outputs: {a: 'a'}`
@@ -17594,7 +17578,7 @@ function createViewQueriesFunction(viewQueries, constantPool, name) {
     ], INFERRED_TYPE, null, viewQueryFnName);
 }
 // Return a host binding function or null if one is not necessary.
-function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindingParser, constantPool, selector, name) {
+function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindingParser, constantPool, selector, name, definitionMap) {
     // Initialize hostVarsCount to number of bound host properties (interpolations illegal)
     const hostVarsCount = Object.keys(hostBindingsMetadata.properties).length;
     const elVarExp = variable('elIndex');
@@ -17697,11 +17681,7 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
     // to the host element alongside any of the provided host attributes that were
     // collected earlier.
     const hostAttrs = convertAttributesToExpressions(hostBindingsMetadata.attributes);
-    const hostInstruction = styleBuilder.buildHostAttrsInstruction(null, hostAttrs, constantPool);
-    if (hostInstruction && hostInstruction.calls.length > 0) {
-        createStatements.push(chainedInstruction(hostInstruction.reference, hostInstruction.calls.map(call => convertStylingCall(call, bindingContext, bindingFn)))
-            .toStmt());
-    }
+    styleBuilder.assignHostAttrs(hostAttrs, definitionMap);
     if (styleBuilder.hasBindings) {
         // finally each binding that was registered in the statement above will need to be added to
         // the update block of a component/directive templateFn/hostBindingsFn so that the bindings
@@ -17720,7 +17700,7 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
         });
     }
     if (totalHostVarsCount) {
-        createStatements.unshift(importExpr(Identifiers$1.allocHostVars).callFn([literal(totalHostVarsCount)]).toStmt());
+        definitionMap.set('hostVars', literal(totalHostVarsCount));
     }
     if (createStatements.length > 0 || updateStatements.length > 0) {
         const hostBindingsFnName = name ? `${name}_HostBindings` : null;
@@ -18162,7 +18142,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-rc.1+558.sha-d1c7ca7');
+const VERSION$1 = new Version('0.0.0');
 
 /**
  * @license

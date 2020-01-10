@@ -56,14 +56,12 @@ export declare class Identifiers {
     static stylePropInterpolate8: o.ExternalReference;
     static stylePropInterpolateV: o.ExternalReference;
     static styleSanitizer: o.ExternalReference;
-    static elementHostAttrs: o.ExternalReference;
     static containerCreate: o.ExternalReference;
     static nextContext: o.ExternalReference;
     static templateCreate: o.ExternalReference;
     static text: o.ExternalReference;
     static enableBindings: o.ExternalReference;
     static disableBindings: o.ExternalReference;
-    static allocHostVars: o.ExternalReference;
     static getCurrentView: o.ExternalReference;
     static textInterpolate: o.ExternalReference;
     static textInterpolate1: o.ExternalReference;
