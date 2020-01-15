@@ -55,8 +55,8 @@ export declare class _ParseAST {
     index: number;
     constructor(input: string, location: any, absoluteOffset: number, tokens: Token[], inputLength: number, parseAction: boolean, errors: ParserError[], offset: number);
     peek(offset: number): Token;
-    readonly next: Token;
-    readonly inputIndex: number;
+    get next(): Token;
+    get inputIndex(): number;
     span(start: number): ParseSpan;
     sourceSpan(start: number): AbsoluteSourceSpan;
     advance(): void;

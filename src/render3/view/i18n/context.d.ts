@@ -38,9 +38,9 @@ export declare class I18nContext {
     private _unresolvedCtxCount;
     constructor(index: number, ref: o.ReadVarExpr, level: number, templateIndex: number | null, meta: i18n.I18nMeta, registry?: any);
     private appendTag;
-    readonly icus: any;
-    readonly isRoot: boolean;
-    readonly isResolved: boolean;
+    get icus(): any;
+    get isRoot(): boolean;
+    get isResolved(): boolean;
     getSerializedPlaceholders(): Map<string, any[]>;
     appendBinding(binding: AST): void;
     appendIcu(name: string, ref: o.Expression): void;

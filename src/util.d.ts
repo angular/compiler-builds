@@ -33,7 +33,7 @@ export declare class ValueTransformer implements ValueVisitor {
 export declare type SyncAsync<T> = T | Promise<T>;
 export declare const SyncAsync: {
     assertSync: <T>(value: SyncAsync<T>) => T;
-    then: <T_1, R>(value: SyncAsync<T_1>, cb: (value: T_1) => SyncAsync<R>) => SyncAsync<R>;
+    then: <T_1, R>(value: SyncAsync<T_1>, cb: (value: T_1) => R | Promise<R> | Promise<R>) => SyncAsync<R>;
     all: <T_2>(syncAsyncValues: SyncAsync<T_2>[]) => SyncAsync<T_2[]>;
 };
 export declare function error(msg: string): never;
