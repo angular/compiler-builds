@@ -23,7 +23,7 @@ export declare class SourceMapGenerator {
     addSource(url: string, content?: string | null): this;
     addLine(): this;
     addMapping(col0: number, sourceUrl?: string, sourceLine0?: number, sourceCol0?: number): this;
-    private readonly currentLine;
+    private get currentLine();
     toJSON(): SourceMap | null;
     toJsComment(): string;
 }

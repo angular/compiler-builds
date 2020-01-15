@@ -215,7 +215,7 @@ export declare class BindingScope implements LocalResolver {
     private referenceNameIndex;
     private restoreViewVariable;
     private static _ROOT_SCOPE;
-    static readonly ROOT_SCOPE: BindingScope;
+    static get ROOT_SCOPE(): BindingScope;
     private constructor();
     get(name: string): o.Expression | null;
     /**
