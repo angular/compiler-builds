@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+711.sha-3102dc8
+ * @license Angular v9.0.0-rc.1+717.sha-f2df1c7
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5448,6 +5448,10 @@ class SourceMapGenerator {
         this.currentLine.push({ col0, sourceUrl, sourceLine0, sourceCol0 });
         return this;
     }
+    /**
+    * @internal strip this from published d.ts files due to
+    * https://github.com/microsoft/TypeScript/issues/36216
+    */
     get currentLine() { return this.lines.slice(-1)[0]; }
     toJSON() {
         if (!this.hasMappings) {
@@ -5568,6 +5572,10 @@ class EmitterVisitorContext {
         this._lines = [new _EmittedLine(_indent)];
     }
     static createRoot() { return new EmitterVisitorContext(0); }
+    /**
+     * @internal strip this from published d.ts files due to
+     * https://github.com/microsoft/TypeScript/issues/36216
+     */
     get _currentLine() { return this._lines[this._lines.length - 1]; }
     println(from, lastPart = '') {
         this.print(from || null, lastPart, true);
@@ -5679,6 +5687,10 @@ class EmitterVisitorContext {
         }
         return null;
     }
+    /**
+     * @internal strip this from published d.ts files due to
+     * https://github.com/microsoft/TypeScript/issues/36216
+     */
     get sourceLines() {
         if (this._lines.length && this._lines[this._lines.length - 1].parts.length === 0) {
             return this._lines.slice(0, -1);
