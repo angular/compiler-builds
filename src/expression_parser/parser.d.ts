@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { InterpolationConfig } from '../ml_parser/interpolation_config';
-import { AST, ASTWithSource, AbsoluteSourceSpan, BindingPipe, LiteralMap, ParseSpan, ParserError, TemplateBinding } from './ast';
+import { AST, ASTWithSource, AbsoluteSourceSpan, AstVisitor, Binary, BindingPipe, Chain, Conditional, FunctionCall, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, MethodCall, NonNullAssert, ParseSpan, ParserError, PrefixNot, PropertyRead, PropertyWrite, Quote, SafeMethodCall, SafePropertyRead, TemplateBinding } from './ast';
 import { Lexer, Token } from './lexer';
 export declare class SplitInterpolation {
     strings: string[];
@@ -24,8 +24,10 @@ export declare class Parser {
     private _lexer;
     private errors;
     constructor(_lexer: Lexer);
+    simpleExpressionChecker: typeof SimpleExpressionChecker;
     parseAction(input: string, location: any, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
     parseBinding(input: string, location: any, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
+    private checkSimpleExpression;
     parseSimpleBinding(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
     private _reportError;
     private _parseBindingAst;
@@ -38,6 +40,9 @@ export declare class Parser {
     private _commentStart;
     private _checkNoInterpolation;
     private _findInterpolationErrorColumn;
+}
+export declare class IvyParser extends Parser {
+    simpleExpressionChecker: typeof IvySimpleExpressionChecker;
 }
 export declare class _ParseAST {
     input: string;
@@ -94,3 +99,39 @@ export declare class _ParseAST {
     private locationText;
     private skip;
 }
+declare class SimpleExpressionChecker implements AstVisitor {
+    errors: string[];
+    visitImplicitReceiver(ast: ImplicitReceiver, context: any): void;
+    visitInterpolation(ast: Interpolation, context: any): void;
+    visitLiteralPrimitive(ast: LiteralPrimitive, context: any): void;
+    visitPropertyRead(ast: PropertyRead, context: any): void;
+    visitPropertyWrite(ast: PropertyWrite, context: any): void;
+    visitSafePropertyRead(ast: SafePropertyRead, context: any): void;
+    visitMethodCall(ast: MethodCall, context: any): void;
+    visitSafeMethodCall(ast: SafeMethodCall, context: any): void;
+    visitFunctionCall(ast: FunctionCall, context: any): void;
+    visitLiteralArray(ast: LiteralArray, context: any): void;
+    visitLiteralMap(ast: LiteralMap, context: any): void;
+    visitBinary(ast: Binary, context: any): void;
+    visitPrefixNot(ast: PrefixNot, context: any): void;
+    visitNonNullAssert(ast: NonNullAssert, context: any): void;
+    visitConditional(ast: Conditional, context: any): void;
+    visitPipe(ast: BindingPipe, context: any): void;
+    visitKeyedRead(ast: KeyedRead, context: any): void;
+    visitKeyedWrite(ast: KeyedWrite, context: any): void;
+    visitAll(asts: any[]): any[];
+    visitChain(ast: Chain, context: any): void;
+    visitQuote(ast: Quote, context: any): void;
+}
+/**
+ * This class extends SimpleExpressionChecker used in View Engine and performs more strict checks to
+ * make sure host bindings do not contain pipes. In View Engine, having pipes in host bindings is
+ * not supported as well, but in some cases (like `!(value | async)`) the error is not triggered at
+ * compile time. In order to preserve View Engine behavior, more strict checks are introduced for
+ * Ivy mode only.
+ */
+declare class IvySimpleExpressionChecker extends SimpleExpressionChecker {
+    visitBinary(ast: Binary, context: any): void;
+    visitPrefixNot(ast: PrefixNot, context: any): void;
+}
+export {};
