@@ -33,6 +33,7 @@ interface BoundStylingEntry {
     name: string | null;
     unit: string | null;
     sourceSpan: ParseSourceSpan;
+    sanitize: boolean;
     value: AST;
 }
 /**
@@ -99,7 +100,6 @@ export declare class StylingBuilder {
     private _classesIndex;
     private _initialStyleValues;
     private _initialClassValues;
-    private _useDefaultSanitizer;
     constructor(_elementIndexExpr: o.Expression, _directiveExpr: o.Expression | null);
     /**
      * Registers a given input to the styling builder to be later used when producing AOT code.
@@ -157,7 +157,6 @@ export declare class StylingBuilder {
     private _buildSingleInputs;
     private _buildClassInputs;
     private _buildStyleInputs;
-    private _buildSanitizerFn;
     /**
      * Constructs all instructions which contain the expressions that will be placed
      * into the update block of a template function or a directive hostBindings function.
