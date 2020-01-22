@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+747.sha-61ad50d
+ * @license Angular v9.0.0-rc.1+748.sha-32489c7
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3243,6 +3243,7 @@ Identifiers$1.stylePropInterpolate6 = { name: 'ɵɵstylePropInterpolate6', modul
 Identifiers$1.stylePropInterpolate7 = { name: 'ɵɵstylePropInterpolate7', moduleName: CORE$1 };
 Identifiers$1.stylePropInterpolate8 = { name: 'ɵɵstylePropInterpolate8', moduleName: CORE$1 };
 Identifiers$1.stylePropInterpolateV = { name: 'ɵɵstylePropInterpolateV', moduleName: CORE$1 };
+Identifiers$1.styleSanitizer = { name: 'ɵɵstyleSanitizer', moduleName: CORE$1 };
 Identifiers$1.elementHostAttrs = { name: 'ɵɵelementHostAttrs', moduleName: CORE$1 };
 Identifiers$1.containerCreate = { name: 'ɵɵcontainer', moduleName: CORE$1 };
 Identifiers$1.nextContext = { name: 'ɵɵnextContext', moduleName: CORE$1 };
@@ -12421,6 +12422,9 @@ class StylingBuilder {
         this._classesIndex = new Map();
         this._initialStyleValues = [];
         this._initialClassValues = [];
+        // certain style properties ALWAYS need sanitization
+        // this is checked each time new styles are encountered
+        this._useDefaultSanitizer = false;
     }
     /**
      * Registers a given input to the styling builder to be later used when producing AOT code.
@@ -12476,14 +12480,15 @@ class StylingBuilder {
         const { property, hasOverrideFlag, unit: bindingUnit } = parseProperty(name);
         const entry = {
             name: property,
-            sanitize: property ? isStyleSanitizable(property) : true,
             unit: unit || bindingUnit, value, sourceSpan, hasOverrideFlag
         };
         if (isMapBased) {
+            this._useDefaultSanitizer = true;
             this._styleMapInput = entry;
         }
         else {
             (this._singleStyleInputs = this._singleStyleInputs || []).push(entry);
+            this._useDefaultSanitizer = this._useDefaultSanitizer || isStyleSanitizable(name);
             registerIntoMap(this._stylesIndex, property);
         }
         this._lastStylingInput = entry;
@@ -12497,7 +12502,7 @@ class StylingBuilder {
             return null;
         }
         const { property, hasOverrideFlag } = parseProperty(name);
-        const entry = { name: property, value, sourceSpan, sanitize: false, hasOverrideFlag, unit: null };
+        const entry = { name: property, value, sourceSpan, hasOverrideFlag, unit: null };
         if (isMapBased) {
             if (this._classMapInput) {
                 throw new Error('[class] and [className] bindings cannot be used on the same element simultaneously');
@@ -12641,7 +12646,7 @@ class StylingBuilder {
                 }]
         };
     }
-    _buildSingleInputs(reference, inputs, valueConverter, getInterpolationExpressionFn, isClassBased) {
+    _buildSingleInputs(reference, inputs, mapIndex, allowUnits, valueConverter, getInterpolationExpressionFn) {
         const instructions = [];
         inputs.forEach(input => {
             const previousInstruction = instructions[instructions.length - 1];
@@ -12659,7 +12664,7 @@ class StylingBuilder {
                 allocateBindingSlots: totalBindingSlotsRequired,
                 supportsInterpolation: !!getInterpolationExpressionFn,
                 params: (convertFn) => {
-                    // params => stylingProp(propName, value, suffix|sanitizer)
+                    // params => stylingProp(propName, value)
                     const params = [];
                     params.push(literal(input.name));
                     const convertResult = convertFn(value);
@@ -12669,17 +12674,8 @@ class StylingBuilder {
                     else {
                         params.push(convertResult);
                     }
-                    // [style.prop] bindings may use suffix values (e.g. px, em, etc...) and they
-                    // can also use a sanitizer. Sanitization occurs for url-based entries. Having
-                    // the suffix value and a sanitizer together into the instruction doesn't make
-                    // any sense (url-based entries cannot be sanitized).
-                    if (!isClassBased) {
-                        if (input.unit) {
-                            params.push(literal(input.unit));
-                        }
-                        else if (input.sanitize) {
-                            params.push(importExpr(Identifiers$1.defaultStyleSanitizer));
-                        }
+                    if (allowUnits && input.unit) {
+                        params.push(literal(input.unit));
                     }
                     return params;
                 }
@@ -12700,15 +12696,25 @@ class StylingBuilder {
     }
     _buildClassInputs(valueConverter) {
         if (this._singleClassInputs) {
-            return this._buildSingleInputs(Identifiers$1.classProp, this._singleClassInputs, valueConverter, null, true);
+            return this._buildSingleInputs(Identifiers$1.classProp, this._singleClassInputs, this._classesIndex, false, valueConverter);
         }
         return [];
     }
     _buildStyleInputs(valueConverter) {
         if (this._singleStyleInputs) {
-            return this._buildSingleInputs(Identifiers$1.styleProp, this._singleStyleInputs, valueConverter, getStylePropInterpolationExpression, false);
+            return this._buildSingleInputs(Identifiers$1.styleProp, this._singleStyleInputs, this._stylesIndex, true, valueConverter, getStylePropInterpolationExpression);
         }
         return [];
+    }
+    _buildSanitizerFn() {
+        return {
+            reference: Identifiers$1.styleSanitizer,
+            calls: [{
+                    sourceSpan: this._firstStylingInput ? this._firstStylingInput.sourceSpan : null,
+                    allocateBindingSlots: 0,
+                    params: () => [importExpr(Identifiers$1.defaultStyleSanitizer)]
+                }]
+        };
     }
     /**
      * Constructs all instructions which contain the expressions that will be placed
@@ -12717,6 +12723,9 @@ class StylingBuilder {
     buildUpdateLevelInstructions(valueConverter) {
         const instructions = [];
         if (this.hasBindings) {
+            if (this._useDefaultSanitizer) {
+                instructions.push(this._buildSanitizerFn());
+            }
             const styleMapInstruction = this.buildStyleMapInstruction(valueConverter);
             if (styleMapInstruction) {
                 instructions.push(styleMapInstruction);
@@ -18186,7 +18195,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.0-rc.1+747.sha-61ad50d');
+const VERSION$1 = new Version('9.0.0-rc.1+748.sha-32489c7');
 
 /**
  * @license
