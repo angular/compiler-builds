@@ -23,7 +23,7 @@ export declare class BindingParser {
     pipesByName: Map<string, CompilePipeSummary> | null;
     private _usedPipes;
     constructor(_exprParser: Parser, _interpolationConfig: InterpolationConfig, _schemaRegistry: ElementSchemaRegistry, pipes: CompilePipeSummary[] | null, errors: ParseError[]);
-    readonly interpolationConfig: InterpolationConfig;
+    get interpolationConfig(): InterpolationConfig;
     getUsedPipes(): CompilePipeSummary[];
     createBoundHostProperties(dirMeta: CompileDirectiveSummary, sourceSpan: ParseSourceSpan): ParsedProperty[] | null;
     createDirectiveHostPropertyAsts(dirMeta: CompileDirectiveSummary, elementSelector: string, sourceSpan: ParseSourceSpan): BoundElementProperty[] | null;

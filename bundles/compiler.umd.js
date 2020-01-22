@@ -1,6 +1,6 @@
 /**
- * @license Angular v9.0.0-rc.1+636.sha-142363a
- * (c) 2010-2019 Google LLC. https://angular.io/
+ * @license Angular v9.0.0-rc.1+745.sha-ad68b61
+ * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
 
@@ -6048,6 +6048,10 @@
             return this;
         };
         Object.defineProperty(SourceMapGenerator.prototype, "currentLine", {
+            /**
+            * @internal strip this from published d.ts files due to
+            * https://github.com/microsoft/TypeScript/issues/36216
+            */
             get: function () { return this.lines.slice(-1)[0]; },
             enumerable: true,
             configurable: true
@@ -6175,6 +6179,10 @@
         }
         EmitterVisitorContext.createRoot = function () { return new EmitterVisitorContext(0); };
         Object.defineProperty(EmitterVisitorContext.prototype, "_currentLine", {
+            /**
+             * @internal strip this from published d.ts files due to
+             * https://github.com/microsoft/TypeScript/issues/36216
+             */
             get: function () { return this._lines[this._lines.length - 1]; },
             enumerable: true,
             configurable: true
@@ -6297,6 +6305,10 @@
             return null;
         };
         Object.defineProperty(EmitterVisitorContext.prototype, "sourceLines", {
+            /**
+             * @internal strip this from published d.ts files due to
+             * https://github.com/microsoft/TypeScript/issues/36216
+             */
             get: function () {
                 if (this._lines.length && this._lines[this._lines.length - 1].parts.length === 0) {
                     return this._lines.slice(0, -1);
@@ -14218,6 +14230,7 @@
         function Parser(_lexer) {
             this._lexer = _lexer;
             this.errors = [];
+            this.simpleExpressionChecker = SimpleExpressionChecker;
         }
         Parser.prototype.parseAction = function (input, location, absoluteOffset, interpolationConfig) {
             if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
@@ -14233,10 +14246,15 @@
             var ast = this._parseBindingAst(input, location, absoluteOffset, interpolationConfig);
             return new ASTWithSource(ast, input, location, absoluteOffset, this.errors);
         };
+        Parser.prototype.checkSimpleExpression = function (ast) {
+            var checker = new this.simpleExpressionChecker();
+            ast.visit(checker);
+            return checker.errors;
+        };
         Parser.prototype.parseSimpleBinding = function (input, location, absoluteOffset, interpolationConfig) {
             if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
             var ast = this._parseBindingAst(input, location, absoluteOffset, interpolationConfig);
-            var errors = SimpleExpressionChecker.check(ast);
+            var errors = this.checkSimpleExpression(ast);
             if (errors.length > 0) {
                 this._reportError("Host binding expression cannot contain " + errors.join(' '), input, location);
             }
@@ -14367,6 +14385,15 @@
         };
         return Parser;
     }());
+    var IvyParser = /** @class */ (function (_super) {
+        __extends(IvyParser, _super);
+        function IvyParser() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.simpleExpressionChecker = IvySimpleExpressionChecker; //
+            return _this;
+        }
+        return IvyParser;
+    }(Parser$1));
     var _ParseAST = /** @class */ (function () {
         function _ParseAST(input, location, absoluteOffset, tokens, inputLength, parseAction, errors, offset) {
             this.input = input;
@@ -14941,11 +14968,6 @@
         function SimpleExpressionChecker() {
             this.errors = [];
         }
-        SimpleExpressionChecker.check = function (ast) {
-            var s = new SimpleExpressionChecker();
-            ast.visit(s);
-            return s.errors;
-        };
         SimpleExpressionChecker.prototype.visitImplicitReceiver = function (ast, context) { };
         SimpleExpressionChecker.prototype.visitInterpolation = function (ast, context) { };
         SimpleExpressionChecker.prototype.visitLiteralPrimitive = function (ast, context) { };
@@ -14972,6 +14994,25 @@
         SimpleExpressionChecker.prototype.visitQuote = function (ast, context) { };
         return SimpleExpressionChecker;
     }());
+    /**
+     * This class extends SimpleExpressionChecker used in View Engine and performs more strict checks to
+     * make sure host bindings do not contain pipes. In View Engine, having pipes in host bindings is
+     * not supported as well, but in some cases (like `!(value | async)`) the error is not triggered at
+     * compile time. In order to preserve View Engine behavior, more strict checks are introduced for
+     * Ivy mode only.
+     */
+    var IvySimpleExpressionChecker = /** @class */ (function (_super) {
+        __extends(IvySimpleExpressionChecker, _super);
+        function IvySimpleExpressionChecker() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        IvySimpleExpressionChecker.prototype.visitBinary = function (ast, context) {
+            ast.left.visit(this);
+            ast.right.visit(this);
+        };
+        IvySimpleExpressionChecker.prototype.visitPrefixNot = function (ast, context) { ast.expression.visit(this); };
+        return IvySimpleExpressionChecker;
+    }(SimpleExpressionChecker));
 
     /**
      * @license
@@ -18343,7 +18384,7 @@
      */
     function makeBindingParser(interpolationConfig) {
         if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
-        return new BindingParser(new Parser$1(new Lexer()), interpolationConfig, elementRegistry, null, []);
+        return new BindingParser(new IvyParser(new Lexer()), interpolationConfig, elementRegistry, null, []);
     }
     function resolveSanitizationFn(context, isAttribute) {
         switch (context) {
@@ -19407,7 +19448,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.0.0-rc.1+636.sha-142363a');
+    var VERSION$1 = new Version('0.0.0');
 
     /**
      * @license
@@ -29302,6 +29343,7 @@
     exports.InterpolationConfig = InterpolationConfig;
     exports.InvokeFunctionExpr = InvokeFunctionExpr;
     exports.InvokeMethodExpr = InvokeMethodExpr;
+    exports.IvyParser = IvyParser;
     exports.JSDocCommentStmt = JSDocCommentStmt;
     exports.JitCompiler = JitCompiler;
     exports.JitEvaluator = JitEvaluator;

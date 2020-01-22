@@ -1,6 +1,6 @@
 /**
- * @license Angular v9.0.0-rc.1+636.sha-142363a
- * (c) 2010-2019 Google LLC. https://angular.io/
+ * @license Angular v9.0.0-rc.1+745.sha-ad68b61
+ * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
 
@@ -5867,6 +5867,10 @@ var SourceMapGenerator = /** @class */ (function () {
         return this;
     };
     Object.defineProperty(SourceMapGenerator.prototype, "currentLine", {
+        /**
+        * @internal strip this from published d.ts files due to
+        * https://github.com/microsoft/TypeScript/issues/36216
+        */
         get: function () { return this.lines.slice(-1)[0]; },
         enumerable: true,
         configurable: true
@@ -5994,6 +5998,10 @@ var EmitterVisitorContext = /** @class */ (function () {
     }
     EmitterVisitorContext.createRoot = function () { return new EmitterVisitorContext(0); };
     Object.defineProperty(EmitterVisitorContext.prototype, "_currentLine", {
+        /**
+         * @internal strip this from published d.ts files due to
+         * https://github.com/microsoft/TypeScript/issues/36216
+         */
         get: function () { return this._lines[this._lines.length - 1]; },
         enumerable: true,
         configurable: true
@@ -6116,6 +6124,10 @@ var EmitterVisitorContext = /** @class */ (function () {
         return null;
     };
     Object.defineProperty(EmitterVisitorContext.prototype, "sourceLines", {
+        /**
+         * @internal strip this from published d.ts files due to
+         * https://github.com/microsoft/TypeScript/issues/36216
+         */
         get: function () {
             if (this._lines.length && this._lines[this._lines.length - 1].parts.length === 0) {
                 return this._lines.slice(0, -1);
@@ -14040,6 +14052,7 @@ var Parser$1 = /** @class */ (function () {
     function Parser(_lexer) {
         this._lexer = _lexer;
         this.errors = [];
+        this.simpleExpressionChecker = SimpleExpressionChecker;
     }
     Parser.prototype.parseAction = function (input, location, absoluteOffset, interpolationConfig) {
         if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
@@ -14055,10 +14068,15 @@ var Parser$1 = /** @class */ (function () {
         var ast = this._parseBindingAst(input, location, absoluteOffset, interpolationConfig);
         return new ASTWithSource(ast, input, location, absoluteOffset, this.errors);
     };
+    Parser.prototype.checkSimpleExpression = function (ast) {
+        var checker = new this.simpleExpressionChecker();
+        ast.visit(checker);
+        return checker.errors;
+    };
     Parser.prototype.parseSimpleBinding = function (input, location, absoluteOffset, interpolationConfig) {
         if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
         var ast = this._parseBindingAst(input, location, absoluteOffset, interpolationConfig);
-        var errors = SimpleExpressionChecker.check(ast);
+        var errors = this.checkSimpleExpression(ast);
         if (errors.length > 0) {
             this._reportError("Host binding expression cannot contain " + errors.join(' '), input, location);
         }
@@ -14189,6 +14207,15 @@ var Parser$1 = /** @class */ (function () {
     };
     return Parser;
 }());
+var IvyParser = /** @class */ (function (_super) {
+    __extends(IvyParser, _super);
+    function IvyParser() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.simpleExpressionChecker = IvySimpleExpressionChecker; //
+        return _this;
+    }
+    return IvyParser;
+}(Parser$1));
 var _ParseAST = /** @class */ (function () {
     function _ParseAST(input, location, absoluteOffset, tokens, inputLength, parseAction, errors, offset) {
         this.input = input;
@@ -14763,11 +14790,6 @@ var SimpleExpressionChecker = /** @class */ (function () {
     function SimpleExpressionChecker() {
         this.errors = [];
     }
-    SimpleExpressionChecker.check = function (ast) {
-        var s = new SimpleExpressionChecker();
-        ast.visit(s);
-        return s.errors;
-    };
     SimpleExpressionChecker.prototype.visitImplicitReceiver = function (ast, context) { };
     SimpleExpressionChecker.prototype.visitInterpolation = function (ast, context) { };
     SimpleExpressionChecker.prototype.visitLiteralPrimitive = function (ast, context) { };
@@ -14794,6 +14816,25 @@ var SimpleExpressionChecker = /** @class */ (function () {
     SimpleExpressionChecker.prototype.visitQuote = function (ast, context) { };
     return SimpleExpressionChecker;
 }());
+/**
+ * This class extends SimpleExpressionChecker used in View Engine and performs more strict checks to
+ * make sure host bindings do not contain pipes. In View Engine, having pipes in host bindings is
+ * not supported as well, but in some cases (like `!(value | async)`) the error is not triggered at
+ * compile time. In order to preserve View Engine behavior, more strict checks are introduced for
+ * Ivy mode only.
+ */
+var IvySimpleExpressionChecker = /** @class */ (function (_super) {
+    __extends(IvySimpleExpressionChecker, _super);
+    function IvySimpleExpressionChecker() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    IvySimpleExpressionChecker.prototype.visitBinary = function (ast, context) {
+        ast.left.visit(this);
+        ast.right.visit(this);
+    };
+    IvySimpleExpressionChecker.prototype.visitPrefixNot = function (ast, context) { ast.expression.visit(this); };
+    return IvySimpleExpressionChecker;
+}(SimpleExpressionChecker));
 
 /**
  * @license
@@ -18165,7 +18206,7 @@ var elementRegistry = new DomElementSchemaRegistry();
  */
 function makeBindingParser(interpolationConfig) {
     if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
-    return new BindingParser(new Parser$1(new Lexer()), interpolationConfig, elementRegistry, null, []);
+    return new BindingParser(new IvyParser(new Lexer()), interpolationConfig, elementRegistry, null, []);
 }
 function resolveSanitizationFn(context, isAttribute) {
     switch (context) {
@@ -19229,7 +19270,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.0-rc.1+636.sha-142363a');
+var VERSION$1 = new Version('0.0.0');
 
 /**
  * @license
@@ -29038,5 +29079,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { AST, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CommentStmt, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EMPTY_PARSE_LOCATION, EMPTY_SOURCE_SPAN, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullAstVisitor, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TemplateBinding, TemplateBindingParseResult, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll, visitAstChildren };
+export { AST, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CommentStmt, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EMPTY_PARSE_LOCATION, EMPTY_SOURCE_SPAN, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocCommentStmt, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullAstVisitor, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TemplateBinding, TemplateBindingParseResult, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll, visitAstChildren };
 //# sourceMappingURL=compiler.js.map
