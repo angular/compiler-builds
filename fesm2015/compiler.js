@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+745.sha-ad68b61
+ * @license Angular v9.0.0-rc.1+804.sha-0eaf874
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3243,7 +3243,6 @@ Identifiers$1.stylePropInterpolate6 = { name: 'ɵɵstylePropInterpolate6', modul
 Identifiers$1.stylePropInterpolate7 = { name: 'ɵɵstylePropInterpolate7', moduleName: CORE$1 };
 Identifiers$1.stylePropInterpolate8 = { name: 'ɵɵstylePropInterpolate8', moduleName: CORE$1 };
 Identifiers$1.stylePropInterpolateV = { name: 'ɵɵstylePropInterpolateV', moduleName: CORE$1 };
-Identifiers$1.styleSanitizer = { name: 'ɵɵstyleSanitizer', moduleName: CORE$1 };
 Identifiers$1.containerCreate = { name: 'ɵɵcontainer', moduleName: CORE$1 };
 Identifiers$1.nextContext = { name: 'ɵɵnextContext', moduleName: CORE$1 };
 Identifiers$1.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE$1 };
@@ -12354,6 +12353,55 @@ function hyphenate(value) {
 
 const IMPORTANT_FLAG = '!important';
 /**
+ * Minimum amount of binding slots required in the runtime for style/class bindings.
+ *
+ * Styling in Angular uses up two slots in the runtime LView/TData data structures to
+ * record binding data, property information and metadata.
+ *
+ * When a binding is registered it will place the following information in the `LView`:
+ *
+ * slot 1) binding value
+ * slot 2) cached value (all other values collected before it in string form)
+ *
+ * When a binding is registered it will place the following information in the `TData`:
+ *
+ * slot 1) prop name
+ * slot 2) binding index that points to the previous style/class binding (and some extra config
+ * values)
+ *
+ * Let's imagine we have a binding that looks like so:
+ *
+ * ```
+ * <div [style.width]="x" [style.height]="y">
+ * ```
+ *
+ * Our `LView` and `TData` data-structures look like so:
+ *
+ * ```typescript
+ * LView = [
+ *   // ...
+ *   x, // value of x
+ *   "width: x",
+ *
+ *   y, // value of y
+ *   "width: x; height: y",
+ *   // ...
+ * ];
+ *
+ * TData = [
+ *   // ...
+ *   "width", // binding slot 20
+ *   0,
+ *
+ *   "height",
+ *   20,
+ *   // ...
+ * ];
+ * ```
+ *
+ * */
+const MIN_STYLING_BINDING_SLOTS_REQUIRED = 2;
+/**
  * Produces creation/update instructions for all styling bindings (class and style)
  *
  * It also produces the creation instruction to register all initial styling values
@@ -12420,9 +12468,6 @@ class StylingBuilder {
         this._classesIndex = new Map();
         this._initialStyleValues = [];
         this._initialClassValues = [];
-        // certain style properties ALWAYS need sanitization
-        // this is checked each time new styles are encountered
-        this._useDefaultSanitizer = false;
     }
     /**
      * Registers a given input to the styling builder to be later used when producing AOT code.
@@ -12478,15 +12523,14 @@ class StylingBuilder {
         const { property, hasOverrideFlag, unit: bindingUnit } = parseProperty(name);
         const entry = {
             name: property,
+            sanitize: property ? isStyleSanitizable(property) : true,
             unit: unit || bindingUnit, value, sourceSpan, hasOverrideFlag
         };
         if (isMapBased) {
-            this._useDefaultSanitizer = true;
             this._styleMapInput = entry;
         }
         else {
             (this._singleStyleInputs = this._singleStyleInputs || []).push(entry);
-            this._useDefaultSanitizer = this._useDefaultSanitizer || isStyleSanitizable(name);
             registerIntoMap(this._stylesIndex, property);
         }
         this._lastStylingInput = entry;
@@ -12500,7 +12544,7 @@ class StylingBuilder {
             return null;
         }
         const { property, hasOverrideFlag } = parseProperty(name);
-        const entry = { name: property, value, sourceSpan, hasOverrideFlag, unit: null };
+        const entry = { name: property, value, sourceSpan, sanitize: false, hasOverrideFlag, unit: null };
         if (isMapBased) {
             if (this._classMapInput) {
                 throw new Error('[class] and [className] bindings cannot be used on the same element simultaneously');
@@ -12604,7 +12648,7 @@ class StylingBuilder {
         // map-based bindings allocate two slots: one for the
         // previous binding value and another for the previous
         // className or style attribute value.
-        let totalBindingSlotsRequired = 2;
+        let totalBindingSlotsRequired = MIN_STYLING_BINDING_SLOTS_REQUIRED;
         // these values must be outside of the update block so that they can
         // be evaluated (the AST visit call) during creation time so that any
         // pipes can be picked up in time before the template is built
@@ -12625,18 +12669,30 @@ class StylingBuilder {
                     allocateBindingSlots: totalBindingSlotsRequired,
                     params: (convertFn) => {
                         const convertResult = convertFn(mapValue);
-                        return Array.isArray(convertResult) ? convertResult : [convertResult];
+                        const params = Array.isArray(convertResult) ? convertResult : [convertResult];
+                        // [style] instructions will sanitize all their values. For this reason we
+                        // need to include the sanitizer as a param.
+                        if (!isClassBased) {
+                            params.push(importExpr(Identifiers$1.defaultStyleSanitizer));
+                        }
+                        return params;
                     }
                 }]
         };
     }
-    _buildSingleInputs(reference, inputs, mapIndex, allowUnits, valueConverter, getInterpolationExpressionFn) {
+    _buildSingleInputs(reference, inputs, valueConverter, getInterpolationExpressionFn, isClassBased) {
         const instructions = [];
         inputs.forEach(input => {
             const previousInstruction = instructions[instructions.length - 1];
             const value = input.value.visit(valueConverter);
             let referenceForCall = reference;
-            let totalBindingSlotsRequired = 1; // each styling binding value is stored in the LView
+            // each styling binding value is stored in the LView
+            // but there are two values stored for each binding:
+            //   1) the value itself
+            //   2) an intermediate value (concatenation of style up to this point).
+            //      We need to store the intermediate value so that we don't allocate
+            //      the strings on each CD.
+            let totalBindingSlotsRequired = MIN_STYLING_BINDING_SLOTS_REQUIRED;
             if (value instanceof Interpolation) {
                 totalBindingSlotsRequired += value.expressions.length;
                 if (getInterpolationExpressionFn) {
@@ -12648,7 +12704,7 @@ class StylingBuilder {
                 allocateBindingSlots: totalBindingSlotsRequired,
                 supportsInterpolation: !!getInterpolationExpressionFn,
                 params: (convertFn) => {
-                    // params => stylingProp(propName, value)
+                    // params => stylingProp(propName, value, suffix|sanitizer)
                     const params = [];
                     params.push(literal(input.name));
                     const convertResult = convertFn(value);
@@ -12658,8 +12714,17 @@ class StylingBuilder {
                     else {
                         params.push(convertResult);
                     }
-                    if (allowUnits && input.unit) {
-                        params.push(literal(input.unit));
+                    // [style.prop] bindings may use suffix values (e.g. px, em, etc...) and they
+                    // can also use a sanitizer. Sanitization occurs for url-based entries. Having
+                    // the suffix value and a sanitizer together into the instruction doesn't make
+                    // any sense (url-based entries cannot be sanitized).
+                    if (!isClassBased) {
+                        if (input.unit) {
+                            params.push(literal(input.unit));
+                        }
+                        else if (input.sanitize) {
+                            params.push(importExpr(Identifiers$1.defaultStyleSanitizer));
+                        }
                     }
                     return params;
                 }
@@ -12680,25 +12745,15 @@ class StylingBuilder {
     }
     _buildClassInputs(valueConverter) {
         if (this._singleClassInputs) {
-            return this._buildSingleInputs(Identifiers$1.classProp, this._singleClassInputs, this._classesIndex, false, valueConverter);
+            return this._buildSingleInputs(Identifiers$1.classProp, this._singleClassInputs, valueConverter, null, true);
         }
         return [];
     }
     _buildStyleInputs(valueConverter) {
         if (this._singleStyleInputs) {
-            return this._buildSingleInputs(Identifiers$1.styleProp, this._singleStyleInputs, this._stylesIndex, true, valueConverter, getStylePropInterpolationExpression);
+            return this._buildSingleInputs(Identifiers$1.styleProp, this._singleStyleInputs, valueConverter, getStylePropInterpolationExpression, false);
         }
         return [];
-    }
-    _buildSanitizerFn() {
-        return {
-            reference: Identifiers$1.styleSanitizer,
-            calls: [{
-                    sourceSpan: this._firstStylingInput ? this._firstStylingInput.sourceSpan : null,
-                    allocateBindingSlots: 0,
-                    params: () => [importExpr(Identifiers$1.defaultStyleSanitizer)]
-                }]
-        };
     }
     /**
      * Constructs all instructions which contain the expressions that will be placed
@@ -12707,9 +12762,6 @@ class StylingBuilder {
     buildUpdateLevelInstructions(valueConverter) {
         const instructions = [];
         if (this.hasBindings) {
-            if (this._useDefaultSanitizer) {
-                instructions.push(this._buildSanitizerFn());
-            }
             const styleMapInstruction = this.buildStyleMapInstruction(valueConverter);
             if (styleMapInstruction) {
                 instructions.push(styleMapInstruction);
@@ -12733,9 +12785,10 @@ function isStyleSanitizable(prop) {
     // Note that browsers support both the dash case and
     // camel case property names when setting through JS.
     return prop === 'background-image' || prop === 'backgroundImage' || prop === 'background' ||
-        prop === 'border-image' || prop === 'borderImage' || prop === 'filter' ||
-        prop === 'list-style' || prop === 'listStyle' || prop === 'list-style-image' ||
-        prop === 'listStyleImage' || prop === 'clip-path' || prop === 'clipPath';
+        prop === 'border-image' || prop === 'borderImage' || prop === 'border-image-source' ||
+        prop === 'borderImageSource' || prop === 'filter' || prop === 'list-style' ||
+        prop === 'listStyle' || prop === 'list-style-image' || prop === 'listStyleImage' ||
+        prop === 'clip-path' || prop === 'clipPath';
 }
 /**
  * Simple helper function to either provide the constant literal that will house the value
@@ -16154,7 +16207,7 @@ class TemplateDefinitionBuilder {
         }
         // the code here will collect all update-level styling instructions and add them to the
         // update block of the template function AOT code. Instructions like `styleProp`,
-        // `styleMap`, `classMap`, `classProp` and `stylingApply`
+        // `styleMap`, `classMap`, `classProp`
         // are all generated and assigned in the code below.
         const stylingInstructions = stylingBuilder.buildUpdateLevelInstructions(this._valueConverter);
         const limit = stylingInstructions.length - 1;
@@ -17612,8 +17665,6 @@ function createViewQueriesFunction(viewQueries, constantPool, name) {
 }
 // Return a host binding function or null if one is not necessary.
 function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindingParser, constantPool, selector, name, definitionMap) {
-    // Initialize hostVarsCount to number of bound host properties (interpolations illegal)
-    const hostVarsCount = Object.keys(hostBindingsMetadata.properties).length;
     const elVarExp = variable('elIndex');
     const bindingContext = variable(CONTEXT_NAME);
     const styleBuilder = new StylingBuilder(elVarExp, bindingContext);
@@ -17626,9 +17677,33 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
     }
     const createStatements = [];
     const updateStatements = [];
-    let totalHostVarsCount = hostVarsCount;
     const hostBindingSourceSpan = typeSourceSpan;
     const directiveSummary = metadataAsSummary(hostBindingsMetadata);
+    // Calculate host event bindings
+    const eventBindings = bindingParser.createDirectiveHostEventAsts(directiveSummary, hostBindingSourceSpan);
+    if (eventBindings && eventBindings.length) {
+        const listeners = createHostListeners(eventBindings, name);
+        createStatements.push(...listeners);
+    }
+    // Calculate the host property bindings
+    const bindings = bindingParser.createBoundHostProperties(directiveSummary, hostBindingSourceSpan);
+    const allOtherBindings = [];
+    // We need to calculate the total amount of binding slots required by
+    // all the instructions together before any value conversions happen.
+    // Value conversions may require additional slots for interpolation and
+    // bindings with pipes. These calculates happen after this block.
+    let totalHostVarsCount = 0;
+    bindings && bindings.forEach((binding) => {
+        const name = binding.name;
+        const stylingInputWasSet = styleBuilder.registerInputBasedOnName(name, binding.expression, binding.sourceSpan);
+        if (stylingInputWasSet) {
+            totalHostVarsCount += MIN_STYLING_BINDING_SLOTS_REQUIRED;
+        }
+        else {
+            allOtherBindings.push(binding);
+            totalHostVarsCount++;
+        }
+    });
     let valueConverter;
     const getValueConverter = () => {
         if (!valueConverter) {
@@ -17642,59 +17717,47 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
         }
         return valueConverter;
     };
-    // Calculate host event bindings
-    const eventBindings = bindingParser.createDirectiveHostEventAsts(directiveSummary, hostBindingSourceSpan);
-    if (eventBindings && eventBindings.length) {
-        const listeners = createHostListeners(eventBindings, name);
-        createStatements.push(...listeners);
-    }
-    // Calculate the host property bindings
-    const bindings = bindingParser.createBoundHostProperties(directiveSummary, hostBindingSourceSpan);
     const propertyBindings = [];
     const attributeBindings = [];
     const syntheticHostBindings = [];
-    bindings && bindings.forEach((binding) => {
-        const name = binding.name;
-        const stylingInputWasSet = styleBuilder.registerInputBasedOnName(name, binding.expression, binding.sourceSpan);
-        if (!stylingInputWasSet) {
-            // resolve literal arrays and literal objects
-            const value = binding.expression.visit(getValueConverter());
-            const bindingExpr = bindingFn(bindingContext, value);
-            const { bindingName, instruction, isAttribute } = getBindingNameAndInstruction(binding);
-            const securityContexts = bindingParser.calcPossibleSecurityContexts(selector, bindingName, isAttribute)
-                .filter(context => context !== SecurityContext.NONE);
-            let sanitizerFn = null;
-            if (securityContexts.length) {
-                if (securityContexts.length === 2 &&
-                    securityContexts.indexOf(SecurityContext.URL) > -1 &&
-                    securityContexts.indexOf(SecurityContext.RESOURCE_URL) > -1) {
-                    // Special case for some URL attributes (such as "src" and "href") that may be a part
-                    // of different security contexts. In this case we use special santitization function and
-                    // select the actual sanitizer at runtime based on a tag name that is provided while
-                    // invoking sanitization function.
-                    sanitizerFn = importExpr(Identifiers$1.sanitizeUrlOrResourceUrl);
-                }
-                else {
-                    sanitizerFn = resolveSanitizationFn(securityContexts[0], isAttribute);
-                }
-            }
-            const instructionParams = [literal(bindingName), bindingExpr.currValExpr];
-            if (sanitizerFn) {
-                instructionParams.push(sanitizerFn);
-            }
-            updateStatements.push(...bindingExpr.stmts);
-            if (instruction === Identifiers$1.hostProperty) {
-                propertyBindings.push(instructionParams);
-            }
-            else if (instruction === Identifiers$1.attribute) {
-                attributeBindings.push(instructionParams);
-            }
-            else if (instruction === Identifiers$1.updateSyntheticHostBinding) {
-                syntheticHostBindings.push(instructionParams);
+    allOtherBindings.forEach((binding) => {
+        // resolve literal arrays and literal objects
+        const value = binding.expression.visit(getValueConverter());
+        const bindingExpr = bindingFn(bindingContext, value);
+        const { bindingName, instruction, isAttribute } = getBindingNameAndInstruction(binding);
+        const securityContexts = bindingParser.calcPossibleSecurityContexts(selector, bindingName, isAttribute)
+            .filter(context => context !== SecurityContext.NONE);
+        let sanitizerFn = null;
+        if (securityContexts.length) {
+            if (securityContexts.length === 2 &&
+                securityContexts.indexOf(SecurityContext.URL) > -1 &&
+                securityContexts.indexOf(SecurityContext.RESOURCE_URL) > -1) {
+                // Special case for some URL attributes (such as "src" and "href") that may be a part
+                // of different security contexts. In this case we use special santitization function and
+                // select the actual sanitizer at runtime based on a tag name that is provided while
+                // invoking sanitization function.
+                sanitizerFn = importExpr(Identifiers$1.sanitizeUrlOrResourceUrl);
             }
             else {
-                updateStatements.push(importExpr(instruction).callFn(instructionParams).toStmt());
+                sanitizerFn = resolveSanitizationFn(securityContexts[0], isAttribute);
             }
+        }
+        const instructionParams = [literal(bindingName), bindingExpr.currValExpr];
+        if (sanitizerFn) {
+            instructionParams.push(sanitizerFn);
+        }
+        updateStatements.push(...bindingExpr.stmts);
+        if (instruction === Identifiers$1.hostProperty) {
+            propertyBindings.push(instructionParams);
+        }
+        else if (instruction === Identifiers$1.attribute) {
+            attributeBindings.push(instructionParams);
+        }
+        else if (instruction === Identifiers$1.updateSyntheticHostBinding) {
+            syntheticHostBindings.push(instructionParams);
+        }
+        else {
+            updateStatements.push(importExpr(instruction).callFn(instructionParams).toStmt());
         }
     });
     if (propertyBindings.length > 0) {
@@ -17725,7 +17788,8 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
                 instruction.calls.forEach(call => {
                     // we subtract a value of `1` here because the binding slot was already allocated
                     // at the top of this method when all the input bindings were counted.
-                    totalHostVarsCount += Math.max(call.allocateBindingSlots - 1, 0);
+                    totalHostVarsCount +=
+                        Math.max(call.allocateBindingSlots - MIN_STYLING_BINDING_SLOTS_REQUIRED, 0);
                     calls.push(convertStylingCall(call, bindingContext, bindingFn));
                 });
                 updateStatements.push(chainedInstruction(instruction.reference, calls).toStmt());
@@ -18175,7 +18239,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('0.0.0');
+const VERSION$1 = new Version('9.0.0-rc.1+804.sha-0eaf874');
 
 /**
  * @license

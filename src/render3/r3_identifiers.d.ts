@@ -55,7 +55,6 @@ export declare class Identifiers {
     static stylePropInterpolate7: o.ExternalReference;
     static stylePropInterpolate8: o.ExternalReference;
     static stylePropInterpolateV: o.ExternalReference;
-    static styleSanitizer: o.ExternalReference;
     static containerCreate: o.ExternalReference;
     static nextContext: o.ExternalReference;
     static templateCreate: o.ExternalReference;

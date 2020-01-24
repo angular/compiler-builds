@@ -5,6 +5,55 @@ import * as t from '../r3_ast';
 import { ValueConverter } from './template';
 import { DefinitionMap } from './util';
 /**
+ * Minimum amount of binding slots required in the runtime for style/class bindings.
+ *
+ * Styling in Angular uses up two slots in the runtime LView/TData data structures to
+ * record binding data, property information and metadata.
+ *
+ * When a binding is registered it will place the following information in the `LView`:
+ *
+ * slot 1) binding value
+ * slot 2) cached value (all other values collected before it in string form)
+ *
+ * When a binding is registered it will place the following information in the `TData`:
+ *
+ * slot 1) prop name
+ * slot 2) binding index that points to the previous style/class binding (and some extra config
+ * values)
+ *
+ * Let's imagine we have a binding that looks like so:
+ *
+ * ```
+ * <div [style.width]="x" [style.height]="y">
+ * ```
+ *
+ * Our `LView` and `TData` data-structures look like so:
+ *
+ * ```typescript
+ * LView = [
+ *   // ...
+ *   x, // value of x
+ *   "width: x",
+ *
+ *   y, // value of y
+ *   "width: x; height: y",
+ *   // ...
+ * ];
+ *
+ * TData = [
+ *   // ...
+ *   "width", // binding slot 20
+ *   0,
+ *
+ *   "height",
+ *   20,
+ *   // ...
+ * ];
+ * ```
+ *
+ * */
+export declare const MIN_STYLING_BINDING_SLOTS_REQUIRED = 2;
+/**
  * A styling expression summary that is to be processed by the compiler
  */
 export interface StylingInstruction {
@@ -26,6 +75,7 @@ interface BoundStylingEntry {
     name: string | null;
     unit: string | null;
     sourceSpan: ParseSourceSpan;
+    sanitize: boolean;
     value: AST;
 }
 /**
@@ -92,7 +142,6 @@ export declare class StylingBuilder {
     private _classesIndex;
     private _initialStyleValues;
     private _initialClassValues;
-    private _useDefaultSanitizer;
     constructor(_elementIndexExpr: o.Expression, _directiveExpr: o.Expression | null);
     /**
      * Registers a given input to the styling builder to be later used when producing AOT code.
@@ -150,7 +199,6 @@ export declare class StylingBuilder {
     private _buildSingleInputs;
     private _buildClassInputs;
     private _buildStyleInputs;
-    private _buildSanitizerFn;
     /**
      * Constructs all instructions which contain the expressions that will be placed
      * into the update block of a template function or a directive hostBindings function.
