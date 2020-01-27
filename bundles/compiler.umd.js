@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.0-rc.1+828.sha-7069a83
+ * @license Angular v9.0.0-rc.1+829.sha-304584c
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13446,8 +13446,7 @@
      * The creation/update methods within the builder class produce these instructions.
      */
     var StylingBuilder = /** @class */ (function () {
-        function StylingBuilder(_elementIndexExpr, _directiveExpr) {
-            this._elementIndexExpr = _elementIndexExpr;
+        function StylingBuilder(_directiveExpr) {
             this._directiveExpr = _directiveExpr;
             /** Whether or not there are any static styling values present */
             this._hasInitialValues = false;
@@ -17242,7 +17241,7 @@
             var e_1, _a;
             var _this = this;
             var elementIndex = this.allocateDataSlot();
-            var stylingBuilder = new StylingBuilder(literal(elementIndex), null);
+            var stylingBuilder = new StylingBuilder(null);
             var isNonBindableMode = false;
             var isI18nRootElement = isI18nRootNode(element.i18n) && !isSingleI18nIcu(element.i18n);
             var i18nAttrs = [];
@@ -18547,7 +18546,7 @@
         if (meta.viewQueries.length) {
             definitionMap.set('viewQuery', createViewQueriesFunction(meta.viewQueries, constantPool, meta.name));
         }
-        // e.g. `hostBindings: (rf, ctx, elIndex) => { ... }
+        // e.g. `hostBindings: (rf, ctx) => { ... }
         definitionMap.set('hostBindings', createHostBindingsFunction(meta.host, meta.typeSourceSpan, bindingParser, constantPool, meta.selector || '', meta.name, definitionMap));
         // e.g 'inputs: {a: 'a'}`
         definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs, true));
@@ -18914,9 +18913,8 @@
     }
     // Return a host binding function or null if one is not necessary.
     function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindingParser, constantPool, selector, name, definitionMap) {
-        var elVarExp = variable('elIndex');
         var bindingContext = variable(CONTEXT_NAME);
-        var styleBuilder = new StylingBuilder(elVarExp, bindingContext);
+        var styleBuilder = new StylingBuilder(bindingContext);
         var _a = hostBindingsMetadata.specialAttributes, styleAttr = _a.styleAttr, classAttr = _a.classAttr;
         if (styleAttr !== undefined) {
             styleBuilder.registerStyleAttr(styleAttr);
@@ -19057,10 +19055,7 @@
             if (updateStatements.length > 0) {
                 statements.push(renderFlagCheckIfStmt(2 /* Update */, updateStatements));
             }
-            return fn([
-                new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null),
-                new FnParam(elVarExp.name, NUMBER_TYPE)
-            ], statements, INFERRED_TYPE, null, hostBindingsFnName);
+            return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null)], statements, INFERRED_TYPE, null, hostBindingsFnName);
         }
         return null;
     }
@@ -19512,7 +19507,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.0.0-rc.1+828.sha-7069a83');
+    var VERSION$1 = new Version('9.0.0-rc.1+829.sha-304584c');
 
     /**
      * @license
