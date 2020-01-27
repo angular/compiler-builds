@@ -108,7 +108,6 @@ interface BoundStylingEntry {
  * The creation/update methods within the builder class produce these instructions.
  */
 export declare class StylingBuilder {
-    private _elementIndexExpr;
     private _directiveExpr;
     /** Whether or not there are any static styling values present */
     private _hasInitialValues;
@@ -142,7 +141,7 @@ export declare class StylingBuilder {
     private _classesIndex;
     private _initialStyleValues;
     private _initialClassValues;
-    constructor(_elementIndexExpr: o.Expression, _directiveExpr: o.Expression | null);
+    constructor(_directiveExpr: o.Expression | null);
     /**
      * Registers a given input to the styling builder to be later used when producing AOT code.
      *
