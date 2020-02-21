@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.2+10.sha-72664ca
+ * @license Angular v9.0.2+19.sha-824d9a8
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2659,6 +2659,15 @@ function newArray(size, value) {
  */
 var CONSTANT_PREFIX = '_c';
 /**
+ * `ConstantPool` tries to reuse literal factories when two or more literals are identical.
+ * We determine whether literals are identical by creating a key out of their AST using the
+ * `KeyVisitor`. This constant is used to replace dynamic expressions which can't be safely
+ * converted into a key. E.g. given an expression `{foo: bar()}`, since we don't know what
+ * the result of `bar` will be, we create a key that looks like `{foo: <unknown>}`. Note
+ * that we use a variable, rather than something like `null` in order to avoid collisions.
+ */
+var UNKNOWN_VALUE_KEY = variable('<unknown>');
+/**
  * Context to use when producing a key.
  *
  * This ensures we see the constant not the reference variable when producing
@@ -2757,24 +2766,24 @@ var ConstantPool = /** @class */ (function () {
         }
         return fixup;
     };
-    ConstantPool.prototype.getLiteralFactory = function (literal$1) {
-        // Create a pure function that builds an array of a mix of constant  and variable expressions
-        if (literal$1 instanceof LiteralArrayExpr) {
-            var argumentsForKey = literal$1.entries.map(function (e) { return e.isConstant() ? e : literal(null); });
+    ConstantPool.prototype.getLiteralFactory = function (literal) {
+        // Create a pure function that builds an array of a mix of constant and variable expressions
+        if (literal instanceof LiteralArrayExpr) {
+            var argumentsForKey = literal.entries.map(function (e) { return e.isConstant() ? e : UNKNOWN_VALUE_KEY; });
             var key = this.keyOf(literalArr(argumentsForKey));
-            return this._getLiteralFactory(key, literal$1.entries, function (entries) { return literalArr(entries); });
+            return this._getLiteralFactory(key, literal.entries, function (entries) { return literalArr(entries); });
         }
         else {
-            var expressionForKey = literalMap(literal$1.entries.map(function (e) { return ({
+            var expressionForKey = literalMap(literal.entries.map(function (e) { return ({
                 key: e.key,
-                value: e.value.isConstant() ? e.value : literal(null),
+                value: e.value.isConstant() ? e.value : UNKNOWN_VALUE_KEY,
                 quoted: e.quoted
             }); }));
             var key = this.keyOf(expressionForKey);
-            return this._getLiteralFactory(key, literal$1.entries.map(function (e) { return e.value; }), function (entries) { return literalMap(entries.map(function (value, index) { return ({
-                key: literal$1.entries[index].key,
+            return this._getLiteralFactory(key, literal.entries.map(function (e) { return e.value; }), function (entries) { return literalMap(entries.map(function (value, index) { return ({
+                key: literal.entries[index].key,
                 value: value,
-                quoted: literal$1.entries[index].quoted
+                quoted: literal.entries[index].quoted
             }); })); });
         }
     };
@@ -3508,6 +3517,15 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.elementContainerEnd = { name: 'ɵɵelementContainerEnd', moduleName: CORE$1 };
     Identifiers.elementContainer = { name: 'ɵɵelementContainer', moduleName: CORE$1 };
     Identifiers.styleMap = { name: 'ɵɵstyleMap', moduleName: CORE$1 };
+    Identifiers.styleMapInterpolate1 = { name: 'ɵɵstyleMapInterpolate1', moduleName: CORE$1 };
+    Identifiers.styleMapInterpolate2 = { name: 'ɵɵstyleMapInterpolate2', moduleName: CORE$1 };
+    Identifiers.styleMapInterpolate3 = { name: 'ɵɵstyleMapInterpolate3', moduleName: CORE$1 };
+    Identifiers.styleMapInterpolate4 = { name: 'ɵɵstyleMapInterpolate4', moduleName: CORE$1 };
+    Identifiers.styleMapInterpolate5 = { name: 'ɵɵstyleMapInterpolate5', moduleName: CORE$1 };
+    Identifiers.styleMapInterpolate6 = { name: 'ɵɵstyleMapInterpolate6', moduleName: CORE$1 };
+    Identifiers.styleMapInterpolate7 = { name: 'ɵɵstyleMapInterpolate7', moduleName: CORE$1 };
+    Identifiers.styleMapInterpolate8 = { name: 'ɵɵstyleMapInterpolate8', moduleName: CORE$1 };
+    Identifiers.styleMapInterpolateV = { name: 'ɵɵstyleMapInterpolateV', moduleName: CORE$1 };
     Identifiers.classMap = { name: 'ɵɵclassMap', moduleName: CORE$1 };
     Identifiers.classMapInterpolate1 = { name: 'ɵɵclassMapInterpolate1', moduleName: CORE$1 };
     Identifiers.classMapInterpolate2 = { name: 'ɵɵclassMapInterpolate2', moduleName: CORE$1 };
@@ -8015,7 +8033,7 @@ var ConvertActionBindingResult = /** @class */ (function () {
  * Converts the given expression AST into an executable output AST, assuming the expression is
  * used in an action binding (e.g. an event handler).
  */
-function convertActionBinding(localResolver, implicitReceiver, action, bindingId, interpolationFunction, baseSourceSpan) {
+function convertActionBinding(localResolver, implicitReceiver, action, bindingId, interpolationFunction, baseSourceSpan, implicitReceiverAccesses) {
     if (!localResolver) {
         localResolver = new DefaultLocalResolver();
     }
@@ -8039,7 +8057,7 @@ function convertActionBinding(localResolver, implicitReceiver, action, bindingId
             throw new Error("Illegal State: Actions are not allowed to contain pipes. Pipe: " + name);
         }
     }, action);
-    var visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId, interpolationFunction, baseSourceSpan);
+    var visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId, interpolationFunction, baseSourceSpan, implicitReceiverAccesses);
     var actionStmts = [];
     flattenStatements(actionWithoutBuiltins.visit(visitor, _Mode.Statement), actionStmts);
     prependTemporaryDecls(visitor.temporaryCount, bindingId, actionStmts);
@@ -8213,12 +8231,13 @@ var _BuiltinAstConverter = /** @class */ (function (_super) {
     return _BuiltinAstConverter;
 }(AstTransformer$1));
 var _AstToIrVisitor = /** @class */ (function () {
-    function _AstToIrVisitor(_localResolver, _implicitReceiver, bindingId, interpolationFunction, baseSourceSpan) {
+    function _AstToIrVisitor(_localResolver, _implicitReceiver, bindingId, interpolationFunction, baseSourceSpan, implicitReceiverAccesses) {
         this._localResolver = _localResolver;
         this._implicitReceiver = _implicitReceiver;
         this.bindingId = bindingId;
         this.interpolationFunction = interpolationFunction;
         this.baseSourceSpan = baseSourceSpan;
+        this.implicitReceiverAccesses = implicitReceiverAccesses;
         this._nodeMap = new Map();
         this._resultMap = new Map();
         this._currentTemporary = 0;
@@ -8378,6 +8397,7 @@ var _AstToIrVisitor = /** @class */ (function () {
                     this.usesImplicitReceiver = prevUsesImplicitReceiver;
                     result = varExpr.callFn(args);
                 }
+                this.addImplicitReceiverAccess(ast.name);
             }
             if (result == null) {
                 result = receiver.callMethod(ast.name, args, this.convertSourceSpan(ast.span));
@@ -8407,6 +8427,7 @@ var _AstToIrVisitor = /** @class */ (function () {
                     // receiver has been replaced with a resolved local expression.
                     this.usesImplicitReceiver = prevUsesImplicitReceiver;
                 }
+                this.addImplicitReceiverAccess(ast.name);
             }
             if (result == null) {
                 result = receiver.prop(ast.name);
@@ -8429,6 +8450,7 @@ var _AstToIrVisitor = /** @class */ (function () {
                     // Restore the previous "usesImplicitReceiver" state since the implicit
                     // receiver has been replaced with a resolved local expression.
                     this.usesImplicitReceiver = prevUsesImplicitReceiver;
+                    this.addImplicitReceiverAccess(ast.name);
                 }
                 else {
                     // Otherwise it's an error.
@@ -8636,6 +8658,12 @@ var _AstToIrVisitor = /** @class */ (function () {
         }
         else {
             return null;
+        }
+    };
+    /** Adds the name of an AST to the list of implicit receiver accesses. */
+    _AstToIrVisitor.prototype.addImplicitReceiverAccess = function (name) {
+        if (this.implicitReceiverAccesses) {
+            this.implicitReceiverAccesses.add(name);
         }
     };
     return _AstToIrVisitor;
@@ -13504,9 +13532,10 @@ var StylingBuilder = /** @class */ (function () {
         // pipes can be picked up in time before the template is built
         var mapValue = stylingInput.value.visit(valueConverter);
         var reference;
-        if (mapValue instanceof Interpolation && isClassBased) {
+        if (mapValue instanceof Interpolation) {
             totalBindingSlotsRequired += mapValue.expressions.length;
-            reference = getClassMapInterpolationExpression(mapValue);
+            reference = isClassBased ? getClassMapInterpolationExpression(mapValue) :
+                getStyleMapInterpolationExpression(mapValue);
         }
         else {
             reference = isClassBased ? Identifiers$1.classMap : Identifiers$1.styleMap;
@@ -13514,17 +13543,12 @@ var StylingBuilder = /** @class */ (function () {
         return {
             reference: reference,
             calls: [{
-                    supportsInterpolation: isClassBased,
+                    supportsInterpolation: true,
                     sourceSpan: stylingInput.sourceSpan,
                     allocateBindingSlots: totalBindingSlotsRequired,
                     params: function (convertFn) {
                         var convertResult = convertFn(mapValue);
                         var params = Array.isArray(convertResult) ? convertResult : [convertResult];
-                        // [style] instructions will sanitize all their values. For this reason we
-                        // need to include the sanitizer as a param.
-                        if (!isClassBased) {
-                            params.push(importExpr(Identifiers$1.defaultStyleSanitizer));
-                        }
                         return params;
                     }
                 }]
@@ -13690,6 +13714,34 @@ function getClassMapInterpolationExpression(interpolation) {
             return Identifiers$1.classMapInterpolate8;
         default:
             return Identifiers$1.classMapInterpolateV;
+    }
+}
+/**
+ * Gets the instruction to generate for an interpolated style map.
+ * @param interpolation An Interpolation AST
+ */
+function getStyleMapInterpolationExpression(interpolation) {
+    switch (getInterpolationArgsLength(interpolation)) {
+        case 1:
+            return Identifiers$1.styleMap;
+        case 3:
+            return Identifiers$1.styleMapInterpolate1;
+        case 5:
+            return Identifiers$1.styleMapInterpolate2;
+        case 7:
+            return Identifiers$1.styleMapInterpolate3;
+        case 9:
+            return Identifiers$1.styleMapInterpolate4;
+        case 11:
+            return Identifiers$1.styleMapInterpolate5;
+        case 13:
+            return Identifiers$1.styleMapInterpolate6;
+        case 15:
+            return Identifiers$1.styleMapInterpolate7;
+        case 17:
+            return Identifiers$1.styleMapInterpolate8;
+        default:
+            return Identifiers$1.styleMapInterpolateV;
     }
 }
 /**
@@ -16698,10 +16750,12 @@ function prepareEventListenerParameters(eventAst, handlerName, scope) {
     if (target && !GLOBAL_TARGET_RESOLVERS.has(target)) {
         throw new Error("Unexpected global target '" + target + "' defined for '" + name + "' event.\n        Supported list of global targets: " + Array.from(GLOBAL_TARGET_RESOLVERS.keys()) + ".");
     }
+    var eventArgumentName = '$event';
+    var implicitReceiverAccesses = new Set();
     var implicitReceiverExpr = (scope === null || scope.bindingLevel === 0) ?
         variable(CONTEXT_NAME) :
         scope.getOrCreateSharedContextVar(0);
-    var bindingExpr = convertActionBinding(scope, implicitReceiverExpr, handler, 'b', function () { return error('Unexpected interpolation'); }, eventAst.handlerSpan);
+    var bindingExpr = convertActionBinding(scope, implicitReceiverExpr, handler, 'b', function () { return error('Unexpected interpolation'); }, eventAst.handlerSpan, implicitReceiverAccesses);
     var statements = [];
     if (scope) {
         statements.push.apply(statements, __spread(scope.restoreViewStatement()));
@@ -16710,7 +16764,10 @@ function prepareEventListenerParameters(eventAst, handlerName, scope) {
     statements.push.apply(statements, __spread(bindingExpr.render3Stmts));
     var eventName = type === 1 /* Animation */ ? prepareSyntheticListenerName(name, phase) : name;
     var fnName = handlerName && sanitizeIdentifier(handlerName);
-    var fnArgs = [new FnParam('$event', DYNAMIC_TYPE)];
+    var fnArgs = [];
+    if (implicitReceiverAccesses.has(eventArgumentName)) {
+        fnArgs.push(new FnParam(eventArgumentName, DYNAMIC_TYPE));
+    }
     var handlerFn = fn(fnArgs, statements, INFERRED_TYPE, null, fnName);
     var params = [literal(eventName), handlerFn];
     if (target) {
@@ -19350,7 +19407,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.0.2+10.sha-72664ca');
+var VERSION$1 = new Version('9.0.2+19.sha-824d9a8');
 
 /**
  * @license

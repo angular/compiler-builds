@@ -63,7 +63,7 @@ export interface StylingInstruction {
 }
 export interface StylingInstructionCall {
     sourceSpan: ParseSourceSpan | null;
-    supportsInterpolation?: boolean;
+    supportsInterpolation: boolean;
     allocateBindingSlots: number;
     params: ((convertFn: (value: any) => o.Expression | o.Expression[]) => o.Expression[]);
 }
