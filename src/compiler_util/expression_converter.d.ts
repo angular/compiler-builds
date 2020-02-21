@@ -43,7 +43,7 @@ export declare type InterpolationFunction = (args: o.Expression[]) => o.Expressi
  * Converts the given expression AST into an executable output AST, assuming the expression is
  * used in an action binding (e.g. an event handler).
  */
-export declare function convertActionBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, action: cdAst.AST, bindingId: string, interpolationFunction?: InterpolationFunction, baseSourceSpan?: ParseSourceSpan): ConvertActionBindingResult;
+export declare function convertActionBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, action: cdAst.AST, bindingId: string, interpolationFunction?: InterpolationFunction, baseSourceSpan?: ParseSourceSpan, implicitReceiverAccesses?: Set<string>): ConvertActionBindingResult;
 export interface BuiltinConverter {
     (args: o.Expression[]): o.Expression;
 }

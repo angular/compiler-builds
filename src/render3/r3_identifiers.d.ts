@@ -35,6 +35,15 @@ export declare class Identifiers {
     static elementContainerEnd: o.ExternalReference;
     static elementContainer: o.ExternalReference;
     static styleMap: o.ExternalReference;
+    static styleMapInterpolate1: o.ExternalReference;
+    static styleMapInterpolate2: o.ExternalReference;
+    static styleMapInterpolate3: o.ExternalReference;
+    static styleMapInterpolate4: o.ExternalReference;
+    static styleMapInterpolate5: o.ExternalReference;
+    static styleMapInterpolate6: o.ExternalReference;
+    static styleMapInterpolate7: o.ExternalReference;
+    static styleMapInterpolate8: o.ExternalReference;
+    static styleMapInterpolateV: o.ExternalReference;
     static classMap: o.ExternalReference;
     static classMapInterpolate1: o.ExternalReference;
     static classMapInterpolate2: o.ExternalReference;
