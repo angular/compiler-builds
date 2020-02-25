@@ -1,6 +1,6 @@
 {
   "name": "@angular/compiler",
-  "version": "9.0.2+47.sha-8cac5fe",
+  "version": "9.0.2+54.sha-d690488",
   "description": "Angular - the compiler library",
   "main": "./bundles/compiler.umd.js",
   "module": "./fesm5/compiler.js",
@@ -17,7 +17,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/angular/angular.git"
+    "url": "https://github.com/angular/angular.git",
+    "directory": "packages/compiler"
   },
   "ng-update": {
     "packageGroup": [
