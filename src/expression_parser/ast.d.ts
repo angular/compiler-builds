@@ -227,31 +227,16 @@ export interface AstVisitor {
     visitSafeMethodCall(ast: SafeMethodCall, context: any): any;
     visitSafePropertyRead(ast: SafePropertyRead, context: any): any;
     visitASTWithSource?(ast: ASTWithSource, context: any): any;
+    /**
+     * This function is optionally defined to allow classes that implement this
+     * interface to selectively decide if the specified `ast` should be visited.
+     * @param ast node to visit
+     * @param context context that gets passed to the node and all its children
+     */
     visit?(ast: AST, context?: any): any;
 }
-export declare class NullAstVisitor implements AstVisitor {
-    visitBinary(ast: Binary, context: any): any;
-    visitChain(ast: Chain, context: any): any;
-    visitConditional(ast: Conditional, context: any): any;
-    visitFunctionCall(ast: FunctionCall, context: any): any;
-    visitImplicitReceiver(ast: ImplicitReceiver, context: any): any;
-    visitInterpolation(ast: Interpolation, context: any): any;
-    visitKeyedRead(ast: KeyedRead, context: any): any;
-    visitKeyedWrite(ast: KeyedWrite, context: any): any;
-    visitLiteralArray(ast: LiteralArray, context: any): any;
-    visitLiteralMap(ast: LiteralMap, context: any): any;
-    visitLiteralPrimitive(ast: LiteralPrimitive, context: any): any;
-    visitMethodCall(ast: MethodCall, context: any): any;
-    visitPipe(ast: BindingPipe, context: any): any;
-    visitPrefixNot(ast: PrefixNot, context: any): any;
-    visitNonNullAssert(ast: NonNullAssert, context: any): any;
-    visitPropertyRead(ast: PropertyRead, context: any): any;
-    visitPropertyWrite(ast: PropertyWrite, context: any): any;
-    visitQuote(ast: Quote, context: any): any;
-    visitSafeMethodCall(ast: SafeMethodCall, context: any): any;
-    visitSafePropertyRead(ast: SafePropertyRead, context: any): any;
-}
 export declare class RecursiveAstVisitor implements AstVisitor {
+    visit(ast: AST, context?: any): any;
     visitBinary(ast: Binary, context: any): any;
     visitChain(ast: Chain, context: any): any;
     visitConditional(ast: Conditional, context: any): any;
@@ -271,8 +256,8 @@ export declare class RecursiveAstVisitor implements AstVisitor {
     visitPropertyWrite(ast: PropertyWrite, context: any): any;
     visitSafePropertyRead(ast: SafePropertyRead, context: any): any;
     visitSafeMethodCall(ast: SafeMethodCall, context: any): any;
-    visitAll(asts: AST[], context: any): any;
     visitQuote(ast: Quote, context: any): any;
+    visitAll(asts: AST[], context: any): any;
 }
 export declare class AstTransformer implements AstVisitor {
     visitImplicitReceiver(ast: ImplicitReceiver, context: any): AST;
@@ -320,7 +305,6 @@ export declare class AstMemoryEfficientTransformer implements AstVisitor {
     visitChain(ast: Chain, context: any): AST;
     visitQuote(ast: Quote, context: any): AST;
 }
-export declare function visitAstChildren(ast: AST, visitor: AstVisitor, context?: any): void;
 export declare class ParsedProperty {
     name: string;
     expression: ASTWithSource;
