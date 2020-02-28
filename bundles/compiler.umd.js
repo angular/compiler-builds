@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.4+4.sha-52fc087
+ * @license Angular v9.0.4+10.sha-fcad075
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7717,111 +7717,89 @@
         }
         return TemplateBinding;
     }());
-    var NullAstVisitor = /** @class */ (function () {
-        function NullAstVisitor() {
-        }
-        NullAstVisitor.prototype.visitBinary = function (ast, context) { };
-        NullAstVisitor.prototype.visitChain = function (ast, context) { };
-        NullAstVisitor.prototype.visitConditional = function (ast, context) { };
-        NullAstVisitor.prototype.visitFunctionCall = function (ast, context) { };
-        NullAstVisitor.prototype.visitImplicitReceiver = function (ast, context) { };
-        NullAstVisitor.prototype.visitInterpolation = function (ast, context) { };
-        NullAstVisitor.prototype.visitKeyedRead = function (ast, context) { };
-        NullAstVisitor.prototype.visitKeyedWrite = function (ast, context) { };
-        NullAstVisitor.prototype.visitLiteralArray = function (ast, context) { };
-        NullAstVisitor.prototype.visitLiteralMap = function (ast, context) { };
-        NullAstVisitor.prototype.visitLiteralPrimitive = function (ast, context) { };
-        NullAstVisitor.prototype.visitMethodCall = function (ast, context) { };
-        NullAstVisitor.prototype.visitPipe = function (ast, context) { };
-        NullAstVisitor.prototype.visitPrefixNot = function (ast, context) { };
-        NullAstVisitor.prototype.visitNonNullAssert = function (ast, context) { };
-        NullAstVisitor.prototype.visitPropertyRead = function (ast, context) { };
-        NullAstVisitor.prototype.visitPropertyWrite = function (ast, context) { };
-        NullAstVisitor.prototype.visitQuote = function (ast, context) { };
-        NullAstVisitor.prototype.visitSafeMethodCall = function (ast, context) { };
-        NullAstVisitor.prototype.visitSafePropertyRead = function (ast, context) { };
-        return NullAstVisitor;
-    }());
     var RecursiveAstVisitor$1 = /** @class */ (function () {
         function RecursiveAstVisitor() {
         }
-        RecursiveAstVisitor.prototype.visitBinary = function (ast, context) {
-            ast.left.visit(this, context);
-            ast.right.visit(this, context);
-            return null;
+        RecursiveAstVisitor.prototype.visit = function (ast, context) {
+            // The default implementation just visits every node.
+            // Classes that extend RecursiveAstVisitor should override this function
+            // to selectively visit the specified node.
+            ast.visit(this, context);
         };
-        RecursiveAstVisitor.prototype.visitChain = function (ast, context) { return this.visitAll(ast.expressions, context); };
+        RecursiveAstVisitor.prototype.visitBinary = function (ast, context) {
+            this.visit(ast.left, context);
+            this.visit(ast.right, context);
+        };
+        RecursiveAstVisitor.prototype.visitChain = function (ast, context) { this.visitAll(ast.expressions, context); };
         RecursiveAstVisitor.prototype.visitConditional = function (ast, context) {
-            ast.condition.visit(this, context);
-            ast.trueExp.visit(this, context);
-            ast.falseExp.visit(this, context);
-            return null;
+            this.visit(ast.condition, context);
+            this.visit(ast.trueExp, context);
+            this.visit(ast.falseExp, context);
         };
         RecursiveAstVisitor.prototype.visitPipe = function (ast, context) {
-            ast.exp.visit(this, context);
+            this.visit(ast.exp, context);
             this.visitAll(ast.args, context);
-            return null;
         };
         RecursiveAstVisitor.prototype.visitFunctionCall = function (ast, context) {
-            ast.target.visit(this, context);
+            if (ast.target) {
+                this.visit(ast.target, context);
+            }
             this.visitAll(ast.args, context);
-            return null;
         };
-        RecursiveAstVisitor.prototype.visitImplicitReceiver = function (ast, context) { return null; };
+        RecursiveAstVisitor.prototype.visitImplicitReceiver = function (ast, context) { };
         RecursiveAstVisitor.prototype.visitInterpolation = function (ast, context) {
-            return this.visitAll(ast.expressions, context);
+            this.visitAll(ast.expressions, context);
         };
         RecursiveAstVisitor.prototype.visitKeyedRead = function (ast, context) {
-            ast.obj.visit(this, context);
-            ast.key.visit(this, context);
-            return null;
+            this.visit(ast.obj, context);
+            this.visit(ast.key, context);
         };
         RecursiveAstVisitor.prototype.visitKeyedWrite = function (ast, context) {
-            ast.obj.visit(this, context);
-            ast.key.visit(this, context);
-            ast.value.visit(this, context);
-            return null;
+            this.visit(ast.obj, context);
+            this.visit(ast.key, context);
+            this.visit(ast.value, context);
         };
         RecursiveAstVisitor.prototype.visitLiteralArray = function (ast, context) {
-            return this.visitAll(ast.expressions, context);
+            this.visitAll(ast.expressions, context);
         };
-        RecursiveAstVisitor.prototype.visitLiteralMap = function (ast, context) { return this.visitAll(ast.values, context); };
-        RecursiveAstVisitor.prototype.visitLiteralPrimitive = function (ast, context) { return null; };
+        RecursiveAstVisitor.prototype.visitLiteralMap = function (ast, context) { this.visitAll(ast.values, context); };
+        RecursiveAstVisitor.prototype.visitLiteralPrimitive = function (ast, context) { };
         RecursiveAstVisitor.prototype.visitMethodCall = function (ast, context) {
-            ast.receiver.visit(this, context);
-            return this.visitAll(ast.args, context);
+            this.visit(ast.receiver, context);
+            this.visitAll(ast.args, context);
         };
-        RecursiveAstVisitor.prototype.visitPrefixNot = function (ast, context) {
-            ast.expression.visit(this, context);
-            return null;
-        };
-        RecursiveAstVisitor.prototype.visitNonNullAssert = function (ast, context) {
-            ast.expression.visit(this, context);
-            return null;
-        };
-        RecursiveAstVisitor.prototype.visitPropertyRead = function (ast, context) {
-            ast.receiver.visit(this, context);
-            return null;
-        };
+        RecursiveAstVisitor.prototype.visitPrefixNot = function (ast, context) { this.visit(ast.expression, context); };
+        RecursiveAstVisitor.prototype.visitNonNullAssert = function (ast, context) { this.visit(ast.expression, context); };
+        RecursiveAstVisitor.prototype.visitPropertyRead = function (ast, context) { this.visit(ast.receiver, context); };
         RecursiveAstVisitor.prototype.visitPropertyWrite = function (ast, context) {
-            ast.receiver.visit(this, context);
-            ast.value.visit(this, context);
-            return null;
+            this.visit(ast.receiver, context);
+            this.visit(ast.value, context);
         };
         RecursiveAstVisitor.prototype.visitSafePropertyRead = function (ast, context) {
-            ast.receiver.visit(this, context);
-            return null;
+            this.visit(ast.receiver, context);
         };
         RecursiveAstVisitor.prototype.visitSafeMethodCall = function (ast, context) {
-            ast.receiver.visit(this, context);
-            return this.visitAll(ast.args, context);
+            this.visit(ast.receiver, context);
+            this.visitAll(ast.args, context);
         };
+        RecursiveAstVisitor.prototype.visitQuote = function (ast, context) { };
+        // This is not part of the AstVisitor interface, just a helper method
         RecursiveAstVisitor.prototype.visitAll = function (asts, context) {
-            var _this = this;
-            asts.forEach(function (ast) { return ast.visit(_this, context); });
-            return null;
+            var e_1, _a;
+            try {
+                for (var asts_1 = __values(asts), asts_1_1 = asts_1.next(); !asts_1_1.done; asts_1_1 = asts_1.next()) {
+                    var ast = asts_1_1.value;
+                    this.visit(ast, context);
+                }
+            }
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (asts_1_1 && !asts_1_1.done && (_a = asts_1.return)) _a.call(asts_1);
+                }
+                finally { if (e_1) throw e_1.error; }
+            }
         };
-        RecursiveAstVisitor.prototype.visitQuote = function (ast, context) { return null; };
         return RecursiveAstVisitor;
     }());
     var AstTransformer$1 = /** @class */ (function () {
@@ -8044,65 +8022,6 @@
         AstMemoryEfficientTransformer.prototype.visitQuote = function (ast, context) { return ast; };
         return AstMemoryEfficientTransformer;
     }());
-    function visitAstChildren(ast, visitor, context) {
-        function visit(ast) {
-            visitor.visit && visitor.visit(ast, context) || ast.visit(visitor, context);
-        }
-        function visitAll(asts) { asts.forEach(visit); }
-        ast.visit({
-            visitBinary: function (ast) {
-                visit(ast.left);
-                visit(ast.right);
-            },
-            visitChain: function (ast) { visitAll(ast.expressions); },
-            visitConditional: function (ast) {
-                visit(ast.condition);
-                visit(ast.trueExp);
-                visit(ast.falseExp);
-            },
-            visitFunctionCall: function (ast) {
-                if (ast.target) {
-                    visit(ast.target);
-                }
-                visitAll(ast.args);
-            },
-            visitImplicitReceiver: function (ast) { },
-            visitInterpolation: function (ast) { visitAll(ast.expressions); },
-            visitKeyedRead: function (ast) {
-                visit(ast.obj);
-                visit(ast.key);
-            },
-            visitKeyedWrite: function (ast) {
-                visit(ast.obj);
-                visit(ast.key);
-                visit(ast.obj);
-            },
-            visitLiteralArray: function (ast) { visitAll(ast.expressions); },
-            visitLiteralMap: function (ast) { },
-            visitLiteralPrimitive: function (ast) { },
-            visitMethodCall: function (ast) {
-                visit(ast.receiver);
-                visitAll(ast.args);
-            },
-            visitPipe: function (ast) {
-                visit(ast.exp);
-                visitAll(ast.args);
-            },
-            visitPrefixNot: function (ast) { visit(ast.expression); },
-            visitNonNullAssert: function (ast) { visit(ast.expression); },
-            visitPropertyRead: function (ast) { visit(ast.receiver); },
-            visitPropertyWrite: function (ast) {
-                visit(ast.receiver);
-                visit(ast.value);
-            },
-            visitQuote: function (ast) { },
-            visitSafeMethodCall: function (ast) {
-                visit(ast.receiver);
-                visitAll(ast.args);
-            },
-            visitSafePropertyRead: function (ast) { visit(ast.receiver); },
-        });
-    }
     // Bindings
     var ParsedProperty = /** @class */ (function () {
         function ParsedProperty(name, expression, type, sourceSpan, valueSpan) {
@@ -19585,7 +19504,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.0.4+4.sha-52fc087');
+    var VERSION$1 = new Version('9.0.4+10.sha-fcad075');
 
     /**
      * @license
@@ -29200,6 +29119,17 @@
             _this.visitNode = function (node) { return node.visit(_this); };
             return _this;
         }
+        // This method is defined to reconcile the type of TemplateBinder since both
+        // RecursiveAstVisitor and Visitor define the visit() method in their
+        // interfaces.
+        TemplateBinder.prototype.visit = function (node, context) {
+            if (node instanceof AST) {
+                node.visit(this, context);
+            }
+            else {
+                node.visit(this);
+            }
+        };
         /**
          * Process a template and extract metadata about expressions and symbols within.
          *
@@ -29507,7 +29437,6 @@
     exports.NodeWithI18n = NodeWithI18n;
     exports.NonNullAssert = NonNullAssert;
     exports.NotExpr = NotExpr;
-    exports.NullAstVisitor = NullAstVisitor;
     exports.NullTemplateVisitor = NullTemplateVisitor;
     exports.ParseError = ParseError;
     exports.ParseLocation = ParseLocation;
@@ -29667,7 +29596,6 @@
     exports.verifyHostBindings = verifyHostBindings;
     exports.viewClassName = viewClassName;
     exports.visitAll = visitAll$1;
-    exports.visitAstChildren = visitAstChildren;
 
     Object.defineProperty(exports, '__esModule', { value: true });
 
