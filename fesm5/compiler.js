@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.0-next.2+33.sha-40da51f
+ * @license Angular v9.1.0-next.2+35.sha-a153b61
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13298,8 +13298,7 @@ var StylingBuilder = /** @class */ (function () {
         var binding = null;
         var prefix = name.substring(0, 6);
         var isStyle = name === 'style' || prefix === 'style.' || prefix === 'style!';
-        var isClass = !isStyle &&
-            (name === 'class' || name === 'className' || prefix === 'class.' || prefix === 'class!');
+        var isClass = !isStyle && (name === 'class' || prefix === 'class.' || prefix === 'class!');
         if (isStyle || isClass) {
             var isMapBased = name.charAt(5) !== '.'; // style.prop or class.prop makes this a no
             var property = name.substr(isMapBased ? 5 : 6); // the dot explains why there's a +1
@@ -19331,7 +19330,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.1.0-next.2+33.sha-40da51f');
+var VERSION$1 = new Version('9.1.0-next.2+35.sha-a153b61');
 
 /**
  * @license
