@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.0-next.2+32.sha-35c9f0d
+ * @license Angular v9.1.0-next.2+33.sha-40da51f
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -17194,6 +17194,45 @@
             }
             this.i18n = null; // reset local i18n context
         };
+        TemplateDefinitionBuilder.prototype.i18nAttributesInstruction = function (nodeIndex, attrs, sourceSpan) {
+            var _this = this;
+            var hasBindings = false;
+            var i18nAttrArgs = [];
+            var bindings = [];
+            attrs.forEach(function (attr) {
+                var message = attr.i18n;
+                if (attr instanceof TextAttribute) {
+                    i18nAttrArgs.push(literal(attr.name), _this.i18nTranslate(message));
+                }
+                else {
+                    var converted = attr.value.visit(_this._valueConverter);
+                    _this.allocateBindingSlots(converted);
+                    if (converted instanceof Interpolation) {
+                        var placeholders = assembleBoundTextPlaceholders(message);
+                        var params = placeholdersToParams(placeholders);
+                        i18nAttrArgs.push(literal(attr.name), _this.i18nTranslate(message, params));
+                        converted.expressions.forEach(function (expression) {
+                            hasBindings = true;
+                            bindings.push({
+                                sourceSpan: sourceSpan,
+                                value: function () { return _this.convertPropertyBinding(expression); },
+                            });
+                        });
+                    }
+                }
+            });
+            if (bindings.length > 0) {
+                this.updateInstructionChainWithAdvance(nodeIndex, Identifiers$1.i18nExp, bindings);
+            }
+            if (i18nAttrArgs.length > 0) {
+                var index = literal(this.allocateDataSlot());
+                var args = this.constantPool.getConstLiteral(literalArr(i18nAttrArgs), true);
+                this.creationInstruction(sourceSpan, Identifiers$1.i18nAttributes, [index, args]);
+                if (hasBindings) {
+                    this.updateInstruction(sourceSpan, Identifiers$1.i18nApply, [index]);
+                }
+            }
+        };
         TemplateDefinitionBuilder.prototype.getNamespaceInstruction = function (namespaceKey) {
             switch (namespaceKey) {
                 case 'math':
@@ -17261,10 +17300,6 @@
                     }
                     else {
                         if (attr.i18n) {
-                            // Place attributes into a separate array for i18n processing, but also keep such
-                            // attributes in the main list to make them available for directive matching at runtime.
-                            // TODO(FW-1248): prevent attributes duplication in `i18nAttributes` and `elementStart`
-                            // arguments
                             i18nAttrs.push(attr);
                         }
                         else {
@@ -17293,10 +17328,6 @@
                 var stylingInputWasSet = stylingBuilder.registerBoundInput(input);
                 if (!stylingInputWasSet) {
                     if (input.type === 0 /* Property */ && input.i18n) {
-                        // Place attributes into a separate array for i18n processing, but also keep such
-                        // attributes in the main list to make them available for directive matching at runtime.
-                        // TODO(FW-1248): prevent attributes duplication in `i18nAttributes` and `elementStart`
-                        // arguments
                         i18nAttrs.push(input);
                     }
                     else {
@@ -17335,44 +17366,8 @@
                 if (isNonBindableMode) {
                     this.creationInstruction(element.sourceSpan, Identifiers$1.disableBindings);
                 }
-                // process i18n element attributes
-                if (i18nAttrs.length) {
-                    var hasBindings_1 = false;
-                    var i18nAttrArgs_1 = [];
-                    var bindings_1 = [];
-                    i18nAttrs.forEach(function (attr) {
-                        var message = attr.i18n;
-                        if (attr instanceof TextAttribute) {
-                            i18nAttrArgs_1.push(literal(attr.name), _this.i18nTranslate(message));
-                        }
-                        else {
-                            var converted = attr.value.visit(_this._valueConverter);
-                            _this.allocateBindingSlots(converted);
-                            if (converted instanceof Interpolation) {
-                                var placeholders = assembleBoundTextPlaceholders(message);
-                                var params = placeholdersToParams(placeholders);
-                                i18nAttrArgs_1.push(literal(attr.name), _this.i18nTranslate(message, params));
-                                converted.expressions.forEach(function (expression) {
-                                    hasBindings_1 = true;
-                                    bindings_1.push({
-                                        sourceSpan: element.sourceSpan,
-                                        value: function () { return _this.convertPropertyBinding(expression); }
-                                    });
-                                });
-                            }
-                        }
-                    });
-                    if (bindings_1.length) {
-                        this.updateInstructionChainWithAdvance(elementIndex, Identifiers$1.i18nExp, bindings_1);
-                    }
-                    if (i18nAttrArgs_1.length) {
-                        var index = literal(this.allocateDataSlot());
-                        var args = this.constantPool.getConstLiteral(literalArr(i18nAttrArgs_1), true);
-                        this.creationInstruction(element.sourceSpan, Identifiers$1.i18nAttributes, [index, args]);
-                        if (hasBindings_1) {
-                            this.updateInstruction(element.sourceSpan, Identifiers$1.i18nApply, [index]);
-                        }
-                    }
+                if (i18nAttrs.length > 0) {
+                    this.i18nAttributesInstruction(elementIndex, i18nAttrs, element.sourceSpan);
                 }
                 // Generate Listeners (outputs)
                 if (element.outputs.length > 0) {
@@ -17536,6 +17531,8 @@
             // find directives matching on a given <ng-template> node
             this.matchDirectives(NG_TEMPLATE_TAG_NAME, template);
             // prepare attributes parameter (including attributes used for directive matching)
+            // TODO (FW-1942): exclude i18n attributes from the main attribute list and pass them
+            // as an `i18nAttrs` argument of the `getAttributeExpressions` function below.
             var attrsExprs = this.getAttributeExpressions(template.attributes, template.inputs, template.outputs, undefined, template.templateAttrs, undefined);
             parameters.push(this.addAttrsToConsts(attrsExprs));
             // local refs (ex.: <ng-template #foo>)
@@ -17565,8 +17562,16 @@
             });
             // handle property bindings e.g. ɵɵproperty('ngForOf', ctx.items), et al;
             this.templatePropertyBindings(templateIndex, template.templateAttrs);
-            // Only add normal input/output binding instructions on explicit ng-template elements.
+            // Only add normal input/output binding instructions on explicit <ng-template> elements.
             if (template.tagName === NG_TEMPLATE_TAG_NAME) {
+                // Add i18n attributes that may act as inputs to directives. If such attributes are present,
+                // generate `i18nAttributes` instruction. Note: we generate it only for explicit <ng-template>
+                // elements, in case of inline templates, corresponding instructions will be generated in the
+                // nested template function.
+                var i18nAttrs = template.attributes.filter(function (attr) { return !!attr.i18n; });
+                if (i18nAttrs.length > 0) {
+                    this.i18nAttributesInstruction(templateIndex, i18nAttrs, template.sourceSpan);
+                }
                 // Add the input bindings
                 this.templatePropertyBindings(templateIndex, template.inputs);
                 // Generate listeners for directive output
@@ -19504,7 +19509,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.1.0-next.2+32.sha-35c9f0d');
+    var VERSION$1 = new Version('9.1.0-next.2+33.sha-40da51f');
 
     /**
      * @license

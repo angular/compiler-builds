@@ -87,6 +87,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private i18nUpdateRef;
     private i18nStart;
     private i18nEnd;
+    private i18nAttributesInstruction;
     private getNamespaceInstruction;
     private addNamespaceInstruction;
     /**
