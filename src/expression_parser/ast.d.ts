@@ -202,8 +202,8 @@ export declare class TemplateBinding {
     key: string;
     keyIsVar: boolean;
     name: string;
-    expression: ASTWithSource | null;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, key: string, keyIsVar: boolean, name: string, expression: ASTWithSource | null);
+    value: ASTWithSource | null;
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, key: string, keyIsVar: boolean, name: string, value: ASTWithSource | null);
 }
 export interface AstVisitor {
     visitBinary(ast: Binary, context: any): any;

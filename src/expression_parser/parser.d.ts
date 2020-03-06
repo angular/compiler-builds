@@ -89,7 +89,7 @@ export declare class _ParseAST {
     span(start: number): ParseSpan;
     sourceSpan(start: number): AbsoluteSourceSpan;
     advance(): void;
-    optionalCharacter(code: number): boolean;
+    consumeOptionalCharacter(code: number): boolean;
     peekKeywordLet(): boolean;
     peekKeywordAs(): boolean;
     expectCharacter(code: number): void;

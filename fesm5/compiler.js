@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.0-next.2+86.sha-a1b9061
+ * @license Angular v9.1.0-next.2+91.sha-59607dc
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7527,12 +7527,12 @@ var ASTWithSource = /** @class */ (function (_super) {
     return ASTWithSource;
 }(AST));
 var TemplateBinding = /** @class */ (function () {
-    function TemplateBinding(span, sourceSpan, key, keyIsVar, name, expression) {
+    function TemplateBinding(span, sourceSpan, key, keyIsVar, name, value) {
         this.span = span;
         this.key = key;
         this.keyIsVar = keyIsVar;
         this.name = name;
-        this.expression = expression;
+        this.value = value;
     }
     return TemplateBinding;
 }());
@@ -11956,8 +11956,8 @@ var BindingParser = /** @class */ (function () {
             if (binding.keyIsVar) {
                 targetVars.push(new ParsedVariable(binding.key, binding.name, sourceSpan));
             }
-            else if (binding.expression) {
-                this._parsePropertyAst(binding.key, binding.expression, sourceSpan, undefined, targetMatchableAttrs, targetProps);
+            else if (binding.value) {
+                this._parsePropertyAst(binding.key, binding.value, sourceSpan, undefined, targetMatchableAttrs, targetProps);
             }
             else {
                 targetMatchableAttrs.push([binding.key, '']);
@@ -11980,8 +11980,8 @@ var BindingParser = /** @class */ (function () {
             var bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceInfo, absoluteValueOffset);
             this._reportExpressionParserErrors(bindingsResult.errors, sourceSpan);
             bindingsResult.templateBindings.forEach(function (binding) {
-                if (binding.expression) {
-                    _this._checkPipes(binding.expression, sourceSpan);
+                if (binding.value) {
+                    _this._checkPipes(binding.value, sourceSpan);
                 }
             });
             bindingsResult.warnings.forEach(function (warning) { _this._reportError(warning, sourceSpan, ParseErrorLevel.WARNING); });
@@ -14323,7 +14323,7 @@ var _ParseAST = /** @class */ (function () {
         return this.sourceSpanCache.get(serial);
     };
     _ParseAST.prototype.advance = function () { this.index++; };
-    _ParseAST.prototype.optionalCharacter = function (code) {
+    _ParseAST.prototype.consumeOptionalCharacter = function (code) {
         if (this.next.isCharacter(code)) {
             this.advance();
             return true;
@@ -14335,7 +14335,7 @@ var _ParseAST = /** @class */ (function () {
     _ParseAST.prototype.peekKeywordLet = function () { return this.next.isKeywordLet(); };
     _ParseAST.prototype.peekKeywordAs = function () { return this.next.isKeywordAs(); };
     _ParseAST.prototype.expectCharacter = function (code) {
-        if (this.optionalCharacter(code))
+        if (this.consumeOptionalCharacter(code))
             return;
         this.error("Missing expected " + String.fromCharCode(code));
     };
@@ -14377,11 +14377,11 @@ var _ParseAST = /** @class */ (function () {
         while (this.index < this.tokens.length) {
             var expr = this.parsePipe();
             exprs.push(expr);
-            if (this.optionalCharacter($SEMICOLON)) {
+            if (this.consumeOptionalCharacter($SEMICOLON)) {
                 if (!this.parseAction) {
                     this.error('Binding expression cannot contain chained expression');
                 }
-                while (this.optionalCharacter($SEMICOLON)) {
+                while (this.consumeOptionalCharacter($SEMICOLON)) {
                 } // read all semicolons
             }
             else if (this.index < this.tokens.length) {
@@ -14405,7 +14405,7 @@ var _ParseAST = /** @class */ (function () {
                 var name_1 = this.expectIdentifierOrKeyword();
                 var nameSpan = this.sourceSpan(nameStart);
                 var args = [];
-                while (this.optionalCharacter($COLON)) {
+                while (this.consumeOptionalCharacter($COLON)) {
                     args.push(this.parseExpression());
                 }
                 var start = result.span.start;
@@ -14422,7 +14422,7 @@ var _ParseAST = /** @class */ (function () {
         if (this.optionalOperator('?')) {
             var yes = this.parsePipe();
             var no = void 0;
-            if (!this.optionalCharacter($COLON)) {
+            if (!this.consumeOptionalCharacter($COLON)) {
                 var end = this.inputIndex;
                 var expression = this.input.substring(start, end);
                 this.error("Conditional expression " + expression + " requires all 3 expressions");
@@ -14562,13 +14562,13 @@ var _ParseAST = /** @class */ (function () {
         var result = this.parsePrimary();
         var resultStart = result.span.start;
         while (true) {
-            if (this.optionalCharacter($PERIOD)) {
+            if (this.consumeOptionalCharacter($PERIOD)) {
                 result = this.parseAccessMemberOrMethodCall(result, false);
             }
             else if (this.optionalOperator('?.')) {
                 result = this.parseAccessMemberOrMethodCall(result, true);
             }
-            else if (this.optionalCharacter($LBRACKET)) {
+            else if (this.consumeOptionalCharacter($LBRACKET)) {
                 this.rbracketsExpected++;
                 var key = this.parsePipe();
                 this.rbracketsExpected--;
@@ -14581,7 +14581,7 @@ var _ParseAST = /** @class */ (function () {
                     result = new KeyedRead(this.span(resultStart), this.sourceSpan(resultStart), result, key);
                 }
             }
-            else if (this.optionalCharacter($LPAREN)) {
+            else if (this.consumeOptionalCharacter($LPAREN)) {
                 this.rparensExpected++;
                 var args = this.parseCallArguments();
                 this.rparensExpected--;
@@ -14599,7 +14599,7 @@ var _ParseAST = /** @class */ (function () {
     };
     _ParseAST.prototype.parsePrimary = function () {
         var start = this.inputIndex;
-        if (this.optionalCharacter($LPAREN)) {
+        if (this.consumeOptionalCharacter($LPAREN)) {
             this.rparensExpected++;
             var result = this.parsePipe();
             this.rparensExpected--;
@@ -14626,7 +14626,7 @@ var _ParseAST = /** @class */ (function () {
             this.advance();
             return new ImplicitReceiver(this.span(start), this.sourceSpan(start));
         }
-        else if (this.optionalCharacter($LBRACKET)) {
+        else if (this.consumeOptionalCharacter($LBRACKET)) {
             this.rbracketsExpected++;
             var elements = this.parseExpressionList($RBRACKET);
             this.rbracketsExpected--;
@@ -14663,7 +14663,7 @@ var _ParseAST = /** @class */ (function () {
         if (!this.next.isCharacter(terminator)) {
             do {
                 result.push(this.parsePipe());
-            } while (this.optionalCharacter($COMMA));
+            } while (this.consumeOptionalCharacter($COMMA));
         }
         return result;
     };
@@ -14672,7 +14672,7 @@ var _ParseAST = /** @class */ (function () {
         var values = [];
         var start = this.inputIndex;
         this.expectCharacter($LBRACE);
-        if (!this.optionalCharacter($RBRACE)) {
+        if (!this.consumeOptionalCharacter($RBRACE)) {
             this.rbracesExpected++;
             do {
                 var quoted = this.next.isString();
@@ -14680,7 +14680,7 @@ var _ParseAST = /** @class */ (function () {
                 keys.push({ key: key, quoted: quoted });
                 this.expectCharacter($COLON);
                 values.push(this.parsePipe());
-            } while (this.optionalCharacter($COMMA));
+            } while (this.consumeOptionalCharacter($COMMA));
             this.rbracesExpected--;
             this.expectCharacter($RBRACE);
         }
@@ -14690,7 +14690,7 @@ var _ParseAST = /** @class */ (function () {
         if (isSafe === void 0) { isSafe = false; }
         var start = receiver.span.start;
         var id = this.expectIdentifierOrKeyword();
-        if (this.optionalCharacter($LPAREN)) {
+        if (this.consumeOptionalCharacter($LPAREN)) {
             this.rparensExpected++;
             var args = this.parseCallArguments();
             this.expectCharacter($RPAREN);
@@ -14732,7 +14732,7 @@ var _ParseAST = /** @class */ (function () {
         var positionals = [];
         do {
             positionals.push(this.parsePipe());
-        } while (this.optionalCharacter($COMMA));
+        } while (this.consumeOptionalCharacter($COMMA));
         return positionals;
     };
     /**
@@ -14829,7 +14829,7 @@ var _ParseAST = /** @class */ (function () {
     _ParseAST.prototype.parseDirectiveKeywordBindings = function (key, keySpan, absoluteOffset) {
         var _a;
         var bindings = [];
-        this.optionalCharacter($COLON); // trackBy: trackByFunction
+        this.consumeOptionalCharacter($COLON); // trackBy: trackByFunction
         var valueExpr = this.getDirectiveBoundTarget();
         var span = new ParseSpan(keySpan.start, this.inputIndex);
         bindings.push(new TemplateBinding(span, span.toAbsolute(absoluteOffset), key, false /* keyIsVar */, ((_a = valueExpr) === null || _a === void 0 ? void 0 : _a.source) || '', valueExpr));
@@ -14918,7 +14918,7 @@ var _ParseAST = /** @class */ (function () {
      * Consume the optional statement terminator: semicolon or comma.
      */
     _ParseAST.prototype.consumeStatementTerminator = function () {
-        this.optionalCharacter($SEMICOLON) || this.optionalCharacter($COMMA);
+        this.consumeOptionalCharacter($SEMICOLON) || this.consumeOptionalCharacter($COMMA);
     };
     _ParseAST.prototype.error = function (message, index) {
         if (index === void 0) { index = null; }
@@ -19466,7 +19466,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.1.0-next.2+86.sha-a1b9061');
+var VERSION$1 = new Version('9.1.0-next.2+91.sha-59607dc');
 
 /**
  * @license
