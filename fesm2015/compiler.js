@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.0-next.2+91.sha-59607dc
+ * @license Angular v9.1.0-next.2+89.sha-59078c4
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -6957,12 +6957,12 @@ class ASTWithSource extends AST {
     toString() { return `${this.source} in ${this.location}`; }
 }
 class TemplateBinding {
-    constructor(span, sourceSpan, key, keyIsVar, name, value) {
+    constructor(span, sourceSpan, key, keyIsVar, name, expression) {
         this.span = span;
         this.key = key;
         this.keyIsVar = keyIsVar;
         this.name = name;
-        this.value = value;
+        this.expression = expression;
     }
 }
 class RecursiveAstVisitor$1 {
@@ -11158,8 +11158,8 @@ class BindingParser {
             if (binding.keyIsVar) {
                 targetVars.push(new ParsedVariable(binding.key, binding.name, sourceSpan));
             }
-            else if (binding.value) {
-                this._parsePropertyAst(binding.key, binding.value, sourceSpan, undefined, targetMatchableAttrs, targetProps);
+            else if (binding.expression) {
+                this._parsePropertyAst(binding.key, binding.expression, sourceSpan, undefined, targetMatchableAttrs, targetProps);
             }
             else {
                 targetMatchableAttrs.push([binding.key, '']);
@@ -11181,8 +11181,8 @@ class BindingParser {
             const bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceInfo, absoluteValueOffset);
             this._reportExpressionParserErrors(bindingsResult.errors, sourceSpan);
             bindingsResult.templateBindings.forEach((binding) => {
-                if (binding.value) {
-                    this._checkPipes(binding.value, sourceSpan);
+                if (binding.expression) {
+                    this._checkPipes(binding.expression, sourceSpan);
                 }
             });
             bindingsResult.warnings.forEach((warning) => { this._reportError(warning, sourceSpan, ParseErrorLevel.WARNING); });
@@ -13455,7 +13455,7 @@ class _ParseAST {
         return this.sourceSpanCache.get(serial);
     }
     advance() { this.index++; }
-    consumeOptionalCharacter(code) {
+    optionalCharacter(code) {
         if (this.next.isCharacter(code)) {
             this.advance();
             return true;
@@ -13467,7 +13467,7 @@ class _ParseAST {
     peekKeywordLet() { return this.next.isKeywordLet(); }
     peekKeywordAs() { return this.next.isKeywordAs(); }
     expectCharacter(code) {
-        if (this.consumeOptionalCharacter(code))
+        if (this.optionalCharacter(code))
             return;
         this.error(`Missing expected ${String.fromCharCode(code)}`);
     }
@@ -13509,11 +13509,11 @@ class _ParseAST {
         while (this.index < this.tokens.length) {
             const expr = this.parsePipe();
             exprs.push(expr);
-            if (this.consumeOptionalCharacter($SEMICOLON)) {
+            if (this.optionalCharacter($SEMICOLON)) {
                 if (!this.parseAction) {
                     this.error('Binding expression cannot contain chained expression');
                 }
-                while (this.consumeOptionalCharacter($SEMICOLON)) {
+                while (this.optionalCharacter($SEMICOLON)) {
                 } // read all semicolons
             }
             else if (this.index < this.tokens.length) {
@@ -13537,7 +13537,7 @@ class _ParseAST {
                 const name = this.expectIdentifierOrKeyword();
                 const nameSpan = this.sourceSpan(nameStart);
                 const args = [];
-                while (this.consumeOptionalCharacter($COLON)) {
+                while (this.optionalCharacter($COLON)) {
                     args.push(this.parseExpression());
                 }
                 const { start } = result.span;
@@ -13554,7 +13554,7 @@ class _ParseAST {
         if (this.optionalOperator('?')) {
             const yes = this.parsePipe();
             let no;
-            if (!this.consumeOptionalCharacter($COLON)) {
+            if (!this.optionalCharacter($COLON)) {
                 const end = this.inputIndex;
                 const expression = this.input.substring(start, end);
                 this.error(`Conditional expression ${expression} requires all 3 expressions`);
@@ -13694,13 +13694,13 @@ class _ParseAST {
         let result = this.parsePrimary();
         const resultStart = result.span.start;
         while (true) {
-            if (this.consumeOptionalCharacter($PERIOD)) {
+            if (this.optionalCharacter($PERIOD)) {
                 result = this.parseAccessMemberOrMethodCall(result, false);
             }
             else if (this.optionalOperator('?.')) {
                 result = this.parseAccessMemberOrMethodCall(result, true);
             }
-            else if (this.consumeOptionalCharacter($LBRACKET)) {
+            else if (this.optionalCharacter($LBRACKET)) {
                 this.rbracketsExpected++;
                 const key = this.parsePipe();
                 this.rbracketsExpected--;
@@ -13713,7 +13713,7 @@ class _ParseAST {
                     result = new KeyedRead(this.span(resultStart), this.sourceSpan(resultStart), result, key);
                 }
             }
-            else if (this.consumeOptionalCharacter($LPAREN)) {
+            else if (this.optionalCharacter($LPAREN)) {
                 this.rparensExpected++;
                 const args = this.parseCallArguments();
                 this.rparensExpected--;
@@ -13731,7 +13731,7 @@ class _ParseAST {
     }
     parsePrimary() {
         const start = this.inputIndex;
-        if (this.consumeOptionalCharacter($LPAREN)) {
+        if (this.optionalCharacter($LPAREN)) {
             this.rparensExpected++;
             const result = this.parsePipe();
             this.rparensExpected--;
@@ -13758,7 +13758,7 @@ class _ParseAST {
             this.advance();
             return new ImplicitReceiver(this.span(start), this.sourceSpan(start));
         }
-        else if (this.consumeOptionalCharacter($LBRACKET)) {
+        else if (this.optionalCharacter($LBRACKET)) {
             this.rbracketsExpected++;
             const elements = this.parseExpressionList($RBRACKET);
             this.rbracketsExpected--;
@@ -13795,7 +13795,7 @@ class _ParseAST {
         if (!this.next.isCharacter(terminator)) {
             do {
                 result.push(this.parsePipe());
-            } while (this.consumeOptionalCharacter($COMMA));
+            } while (this.optionalCharacter($COMMA));
         }
         return result;
     }
@@ -13804,7 +13804,7 @@ class _ParseAST {
         const values = [];
         const start = this.inputIndex;
         this.expectCharacter($LBRACE);
-        if (!this.consumeOptionalCharacter($RBRACE)) {
+        if (!this.optionalCharacter($RBRACE)) {
             this.rbracesExpected++;
             do {
                 const quoted = this.next.isString();
@@ -13812,7 +13812,7 @@ class _ParseAST {
                 keys.push({ key, quoted });
                 this.expectCharacter($COLON);
                 values.push(this.parsePipe());
-            } while (this.consumeOptionalCharacter($COMMA));
+            } while (this.optionalCharacter($COMMA));
             this.rbracesExpected--;
             this.expectCharacter($RBRACE);
         }
@@ -13821,7 +13821,7 @@ class _ParseAST {
     parseAccessMemberOrMethodCall(receiver, isSafe = false) {
         const start = receiver.span.start;
         const id = this.expectIdentifierOrKeyword();
-        if (this.consumeOptionalCharacter($LPAREN)) {
+        if (this.optionalCharacter($LPAREN)) {
             this.rparensExpected++;
             const args = this.parseCallArguments();
             this.expectCharacter($RPAREN);
@@ -13863,7 +13863,7 @@ class _ParseAST {
         const positionals = [];
         do {
             positionals.push(this.parsePipe());
-        } while (this.consumeOptionalCharacter($COMMA));
+        } while (this.optionalCharacter($COMMA));
         return positionals;
     }
     /**
@@ -13960,7 +13960,7 @@ class _ParseAST {
     parseDirectiveKeywordBindings(key, keySpan, absoluteOffset) {
         var _a;
         const bindings = [];
-        this.consumeOptionalCharacter($COLON); // trackBy: trackByFunction
+        this.optionalCharacter($COLON); // trackBy: trackByFunction
         const valueExpr = this.getDirectiveBoundTarget();
         const span = new ParseSpan(keySpan.start, this.inputIndex);
         bindings.push(new TemplateBinding(span, span.toAbsolute(absoluteOffset), key, false /* keyIsVar */, ((_a = valueExpr) === null || _a === void 0 ? void 0 : _a.source) || '', valueExpr));
@@ -14049,7 +14049,7 @@ class _ParseAST {
      * Consume the optional statement terminator: semicolon or comma.
      */
     consumeStatementTerminator() {
-        this.consumeOptionalCharacter($SEMICOLON) || this.consumeOptionalCharacter($COMMA);
+        this.optionalCharacter($SEMICOLON) || this.optionalCharacter($COMMA);
     }
     error(message, index = null) {
         this.errors.push(new ParserError(message, this.input, this.locationText(index), this.location));
@@ -18363,7 +18363,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.1.0-next.2+91.sha-59607dc');
+const VERSION$1 = new Version('9.1.0-next.2+89.sha-59078c4');
 
 /**
  * @license
