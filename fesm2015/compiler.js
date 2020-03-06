@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.5+12.sha-28d2bf7
+ * @license Angular v9.0.5+22.sha-9e23a69
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -17474,7 +17474,7 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
  * Add features to the definition map.
  */
 function addFeatures(definitionMap, meta) {
-    // e.g. `features: [NgOnChangesFeature()]`
+    // e.g. `features: [NgOnChangesFeature]`
     const features = [];
     const providers = meta.providers;
     const viewProviders = meta.viewProviders;
@@ -17492,7 +17492,7 @@ function addFeatures(definitionMap, meta) {
         features.push(importExpr(Identifiers$1.CopyDefinitionFeature));
     }
     if (meta.lifecycle.usesOnChanges) {
-        features.push(importExpr(Identifiers$1.NgOnChangesFeature).callFn(EMPTY_ARRAY));
+        features.push(importExpr(Identifiers$1.NgOnChangesFeature));
     }
     if (features.length) {
         definitionMap.set('features', literalArr(features));
@@ -18363,7 +18363,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.5+12.sha-28d2bf7');
+const VERSION$1 = new Version('9.0.5+22.sha-9e23a69');
 
 /**
  * @license
