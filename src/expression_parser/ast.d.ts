@@ -328,10 +328,10 @@ export declare class ParsedEvent {
     name: string;
     targetOrPhase: string;
     type: ParsedEventType;
-    handler: AST;
+    handler: ASTWithSource;
     sourceSpan: ParseSourceSpan;
     handlerSpan: ParseSourceSpan;
-    constructor(name: string, targetOrPhase: string, type: ParsedEventType, handler: AST, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan);
+    constructor(name: string, targetOrPhase: string, type: ParsedEventType, handler: ASTWithSource, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan);
 }
 export declare class ParsedVariable {
     name: string;
@@ -350,9 +350,9 @@ export declare class BoundElementProperty {
     name: string;
     type: BindingType;
     securityContext: SecurityContext;
-    value: AST;
+    value: ASTWithSource;
     unit: string | null;
     sourceSpan: ParseSourceSpan;
     valueSpan?: ParseSourceSpan | undefined;
-    constructor(name: string, type: BindingType, securityContext: SecurityContext, value: AST, unit: string | null, sourceSpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined);
+    constructor(name: string, type: BindingType, securityContext: SecurityContext, value: ASTWithSource, unit: string | null, sourceSpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined);
 }
