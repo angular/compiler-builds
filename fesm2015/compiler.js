@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.0-next.2+128.sha-c98c6e8
+ * @license Angular v9.1.0-next.2+129.sha-95c729f
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13958,12 +13958,11 @@ class _ParseAST {
      * @param absoluteOffset absolute offset of the attribute value
      */
     parseDirectiveKeywordBindings(key, keySpan, absoluteOffset) {
-        var _a;
         const bindings = [];
         this.consumeOptionalCharacter($COLON); // trackBy: trackByFunction
         const valueExpr = this.getDirectiveBoundTarget();
         const span = new ParseSpan(keySpan.start, this.inputIndex);
-        bindings.push(new TemplateBinding(span, span.toAbsolute(absoluteOffset), key, false /* keyIsVar */, ((_a = valueExpr) === null || _a === void 0 ? void 0 : _a.source) || '', valueExpr));
+        bindings.push(new TemplateBinding(span, span.toAbsolute(absoluteOffset), key, false /* keyIsVar */, (valueExpr === null || valueExpr === void 0 ? void 0 : valueExpr.source) || '', valueExpr));
         // The binding could optionally be followed by "as". For example,
         // *ngIf="cond | pipe as x". In this case, the key in the "as" binding
         // is "x" and the value is the template key itself ("ngIf"). Note that the
@@ -14028,7 +14027,6 @@ class _ParseAST {
      * In the second binding, `i` is bound to `NgForOfContext.index`.
      */
     parseLetBinding() {
-        var _a;
         if (!this.peekKeywordLet()) {
             return null;
         }
@@ -14043,7 +14041,7 @@ class _ParseAST {
         }
         const spanEnd = this.inputIndex;
         const span = new ParseSpan(spanStart, spanEnd);
-        return new TemplateBinding(span, span.toAbsolute(this.absoluteOffset), key, true /* keyIsVar */, ((_a = valueExpr) === null || _a === void 0 ? void 0 : _a.source) || '$implicit', valueExpr);
+        return new TemplateBinding(span, span.toAbsolute(this.absoluteOffset), key, true /* keyIsVar */, (valueExpr === null || valueExpr === void 0 ? void 0 : valueExpr.source) || '$implicit', valueExpr);
     }
     /**
      * Consume the optional statement terminator: semicolon or comma.
@@ -18363,7 +18361,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.1.0-next.2+128.sha-c98c6e8');
+const VERSION$1 = new Version('9.1.0-next.2+129.sha-95c729f');
 
 /**
  * @license
