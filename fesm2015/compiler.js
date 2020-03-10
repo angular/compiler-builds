@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.0.5+30.sha-83d7819
+ * @license Angular v9.0.5+43.sha-20dd0ac
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13471,7 +13471,7 @@ class _ParseAST {
             return;
         this.error(`Missing expected ${String.fromCharCode(code)}`);
     }
-    optionalOperator(op) {
+    consumeOptionalOperator(op) {
         if (this.next.isOperator(op)) {
             this.advance();
             return true;
@@ -13481,7 +13481,7 @@ class _ParseAST {
         }
     }
     expectOperator(operator) {
-        if (this.optionalOperator(operator))
+        if (this.consumeOptionalOperator(operator))
             return;
         this.error(`Missing expected operator ${operator}`);
     }
@@ -13528,7 +13528,7 @@ class _ParseAST {
     }
     parsePipe() {
         let result = this.parseExpression();
-        if (this.optionalOperator('|')) {
+        if (this.consumeOptionalOperator('|')) {
             if (this.parseAction) {
                 this.error('Cannot have a pipe in an action expression');
             }
@@ -13543,7 +13543,7 @@ class _ParseAST {
                 const { start } = result.span;
                 result =
                     new BindingPipe(this.span(start), this.sourceSpan(start), result, name, args, nameSpan);
-            } while (this.optionalOperator('|'));
+            } while (this.consumeOptionalOperator('|'));
         }
         return result;
     }
@@ -13551,7 +13551,7 @@ class _ParseAST {
     parseConditional() {
         const start = this.inputIndex;
         const result = this.parseLogicalOr();
-        if (this.optionalOperator('?')) {
+        if (this.consumeOptionalOperator('?')) {
             const yes = this.parsePipe();
             let no;
             if (!this.consumeOptionalCharacter($COLON)) {
@@ -13572,7 +13572,7 @@ class _ParseAST {
     parseLogicalOr() {
         // '||'
         let result = this.parseLogicalAnd();
-        while (this.optionalOperator('||')) {
+        while (this.consumeOptionalOperator('||')) {
             const right = this.parseLogicalAnd();
             const { start } = result.span;
             result = new Binary(this.span(start), this.sourceSpan(start), '||', result, right);
@@ -13582,7 +13582,7 @@ class _ParseAST {
     parseLogicalAnd() {
         // '&&'
         let result = this.parseEquality();
-        while (this.optionalOperator('&&')) {
+        while (this.consumeOptionalOperator('&&')) {
             const right = this.parseEquality();
             const { start } = result.span;
             result = new Binary(this.span(start), this.sourceSpan(start), '&&', result, right);
@@ -13697,7 +13697,7 @@ class _ParseAST {
             if (this.consumeOptionalCharacter($PERIOD)) {
                 result = this.parseAccessMemberOrMethodCall(result, false);
             }
-            else if (this.optionalOperator('?.')) {
+            else if (this.consumeOptionalOperator('?.')) {
                 result = this.parseAccessMemberOrMethodCall(result, true);
             }
             else if (this.consumeOptionalCharacter($LBRACKET)) {
@@ -13705,7 +13705,7 @@ class _ParseAST {
                 const key = this.parsePipe();
                 this.rbracketsExpected--;
                 this.expectCharacter($RBRACKET);
-                if (this.optionalOperator('=')) {
+                if (this.consumeOptionalOperator('=')) {
                     const value = this.parseConditional();
                     result = new KeyedWrite(this.span(resultStart), this.sourceSpan(resultStart), result, key, value);
                 }
@@ -13721,7 +13721,7 @@ class _ParseAST {
                 result =
                     new FunctionCall(this.span(resultStart), this.sourceSpan(resultStart), result, args);
             }
-            else if (this.optionalOperator('!')) {
+            else if (this.consumeOptionalOperator('!')) {
                 result = new NonNullAssert(this.span(resultStart), this.sourceSpan(resultStart), result);
             }
             else {
@@ -13833,7 +13833,7 @@ class _ParseAST {
         }
         else {
             if (isSafe) {
-                if (this.optionalOperator('=')) {
+                if (this.consumeOptionalOperator('=')) {
                     this.error('The \'?.\' operator cannot be used in the assignment');
                     return new EmptyExpr(this.span(start), this.sourceSpan(start));
                 }
@@ -13842,7 +13842,7 @@ class _ParseAST {
                 }
             }
             else {
-                if (this.optionalOperator('=')) {
+                if (this.consumeOptionalOperator('=')) {
                     if (!this.parseAction) {
                         this.error('Bindings cannot contain assignments');
                         return new EmptyExpr(this.span(start), this.sourceSpan(start));
@@ -13875,7 +13875,7 @@ class _ParseAST {
         const start = this.inputIndex;
         do {
             result += this.expectIdentifierOrKeywordOrString();
-            operatorFound = this.optionalOperator('-');
+            operatorFound = this.consumeOptionalOperator('-');
             if (operatorFound) {
                 result += '-';
             }
@@ -14036,7 +14036,7 @@ class _ParseAST {
         this.advance(); // consume the 'let' keyword
         const { key } = this.expectTemplateBindingKey();
         let valueExpr = null;
-        if (this.optionalOperator('=')) {
+        if (this.consumeOptionalOperator('=')) {
             const { key: value, keySpan: valueSpan } = this.expectTemplateBindingKey();
             const ast = new AST(valueSpan, valueSpan.toAbsolute(this.absoluteOffset));
             valueExpr = new ASTWithSource(ast, value, this.location, this.absoluteOffset + valueSpan.start, this.errors);
@@ -18363,7 +18363,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.0.5+30.sha-83d7819');
+const VERSION$1 = new Version('9.0.5+43.sha-20dd0ac');
 
 /**
  * @license
