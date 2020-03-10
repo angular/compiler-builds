@@ -93,7 +93,7 @@ export declare class _ParseAST {
     peekKeywordLet(): boolean;
     peekKeywordAs(): boolean;
     expectCharacter(code: number): void;
-    optionalOperator(op: string): boolean;
+    consumeOptionalOperator(op: string): boolean;
     expectOperator(operator: string): void;
     expectIdentifierOrKeyword(): string;
     expectIdentifierOrKeywordOrString(): string;
