@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.0-next.2+128.sha-c98c6e8
+ * @license Angular v9.1.0-next.2+129.sha-95c729f
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15005,12 +15005,11 @@
          * @param absoluteOffset absolute offset of the attribute value
          */
         _ParseAST.prototype.parseDirectiveKeywordBindings = function (key, keySpan, absoluteOffset) {
-            var _a;
             var bindings = [];
             this.consumeOptionalCharacter($COLON); // trackBy: trackByFunction
             var valueExpr = this.getDirectiveBoundTarget();
             var span = new ParseSpan(keySpan.start, this.inputIndex);
-            bindings.push(new TemplateBinding(span, span.toAbsolute(absoluteOffset), key, false /* keyIsVar */, ((_a = valueExpr) === null || _a === void 0 ? void 0 : _a.source) || '', valueExpr));
+            bindings.push(new TemplateBinding(span, span.toAbsolute(absoluteOffset), key, false /* keyIsVar */, (valueExpr === null || valueExpr === void 0 ? void 0 : valueExpr.source) || '', valueExpr));
             // The binding could optionally be followed by "as". For example,
             // *ngIf="cond | pipe as x". In this case, the key in the "as" binding
             // is "x" and the value is the template key itself ("ngIf"). Note that the
@@ -15075,7 +15074,6 @@
          * In the second binding, `i` is bound to `NgForOfContext.index`.
          */
         _ParseAST.prototype.parseLetBinding = function () {
-            var _a;
             if (!this.peekKeywordLet()) {
                 return null;
             }
@@ -15084,13 +15082,13 @@
             var key = this.expectTemplateBindingKey().key;
             var valueExpr = null;
             if (this.consumeOptionalOperator('=')) {
-                var _b = this.expectTemplateBindingKey(), value = _b.key, valueSpan = _b.keySpan;
+                var _a = this.expectTemplateBindingKey(), value = _a.key, valueSpan = _a.keySpan;
                 var ast = new AST(valueSpan, valueSpan.toAbsolute(this.absoluteOffset));
                 valueExpr = new ASTWithSource(ast, value, this.location, this.absoluteOffset + valueSpan.start, this.errors);
             }
             var spanEnd = this.inputIndex;
             var span = new ParseSpan(spanStart, spanEnd);
-            return new TemplateBinding(span, span.toAbsolute(this.absoluteOffset), key, true /* keyIsVar */, ((_a = valueExpr) === null || _a === void 0 ? void 0 : _a.source) || '$implicit', valueExpr);
+            return new TemplateBinding(span, span.toAbsolute(this.absoluteOffset), key, true /* keyIsVar */, (valueExpr === null || valueExpr === void 0 ? void 0 : valueExpr.source) || '$implicit', valueExpr);
         };
         /**
          * Consume the optional statement terminator: semicolon or comma.
@@ -19644,7 +19642,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.1.0-next.2+128.sha-c98c6e8');
+    var VERSION$1 = new Version('9.1.0-next.2+129.sha-95c729f');
 
     /**
      * @license
