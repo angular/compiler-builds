@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.0-next.2+114.sha-a73e125
+ * @license Angular v9.1.0-next.2+117.sha-81cb54f
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -14339,7 +14339,7 @@ var _ParseAST = /** @class */ (function () {
             return;
         this.error("Missing expected " + String.fromCharCode(code));
     };
-    _ParseAST.prototype.optionalOperator = function (op) {
+    _ParseAST.prototype.consumeOptionalOperator = function (op) {
         if (this.next.isOperator(op)) {
             this.advance();
             return true;
@@ -14349,7 +14349,7 @@ var _ParseAST = /** @class */ (function () {
         }
     };
     _ParseAST.prototype.expectOperator = function (operator) {
-        if (this.optionalOperator(operator))
+        if (this.consumeOptionalOperator(operator))
             return;
         this.error("Missing expected operator " + operator);
     };
@@ -14396,7 +14396,7 @@ var _ParseAST = /** @class */ (function () {
     };
     _ParseAST.prototype.parsePipe = function () {
         var result = this.parseExpression();
-        if (this.optionalOperator('|')) {
+        if (this.consumeOptionalOperator('|')) {
             if (this.parseAction) {
                 this.error('Cannot have a pipe in an action expression');
             }
@@ -14411,7 +14411,7 @@ var _ParseAST = /** @class */ (function () {
                 var start = result.span.start;
                 result =
                     new BindingPipe(this.span(start), this.sourceSpan(start), result, name_1, args, nameSpan);
-            } while (this.optionalOperator('|'));
+            } while (this.consumeOptionalOperator('|'));
         }
         return result;
     };
@@ -14419,7 +14419,7 @@ var _ParseAST = /** @class */ (function () {
     _ParseAST.prototype.parseConditional = function () {
         var start = this.inputIndex;
         var result = this.parseLogicalOr();
-        if (this.optionalOperator('?')) {
+        if (this.consumeOptionalOperator('?')) {
             var yes = this.parsePipe();
             var no = void 0;
             if (!this.consumeOptionalCharacter($COLON)) {
@@ -14440,7 +14440,7 @@ var _ParseAST = /** @class */ (function () {
     _ParseAST.prototype.parseLogicalOr = function () {
         // '||'
         var result = this.parseLogicalAnd();
-        while (this.optionalOperator('||')) {
+        while (this.consumeOptionalOperator('||')) {
             var right = this.parseLogicalAnd();
             var start = result.span.start;
             result = new Binary(this.span(start), this.sourceSpan(start), '||', result, right);
@@ -14450,7 +14450,7 @@ var _ParseAST = /** @class */ (function () {
     _ParseAST.prototype.parseLogicalAnd = function () {
         // '&&'
         var result = this.parseEquality();
-        while (this.optionalOperator('&&')) {
+        while (this.consumeOptionalOperator('&&')) {
             var right = this.parseEquality();
             var start = result.span.start;
             result = new Binary(this.span(start), this.sourceSpan(start), '&&', result, right);
@@ -14565,7 +14565,7 @@ var _ParseAST = /** @class */ (function () {
             if (this.consumeOptionalCharacter($PERIOD)) {
                 result = this.parseAccessMemberOrMethodCall(result, false);
             }
-            else if (this.optionalOperator('?.')) {
+            else if (this.consumeOptionalOperator('?.')) {
                 result = this.parseAccessMemberOrMethodCall(result, true);
             }
             else if (this.consumeOptionalCharacter($LBRACKET)) {
@@ -14573,7 +14573,7 @@ var _ParseAST = /** @class */ (function () {
                 var key = this.parsePipe();
                 this.rbracketsExpected--;
                 this.expectCharacter($RBRACKET);
-                if (this.optionalOperator('=')) {
+                if (this.consumeOptionalOperator('=')) {
                     var value = this.parseConditional();
                     result = new KeyedWrite(this.span(resultStart), this.sourceSpan(resultStart), result, key, value);
                 }
@@ -14589,7 +14589,7 @@ var _ParseAST = /** @class */ (function () {
                 result =
                     new FunctionCall(this.span(resultStart), this.sourceSpan(resultStart), result, args);
             }
-            else if (this.optionalOperator('!')) {
+            else if (this.consumeOptionalOperator('!')) {
                 result = new NonNullAssert(this.span(resultStart), this.sourceSpan(resultStart), result);
             }
             else {
@@ -14702,7 +14702,7 @@ var _ParseAST = /** @class */ (function () {
         }
         else {
             if (isSafe) {
-                if (this.optionalOperator('=')) {
+                if (this.consumeOptionalOperator('=')) {
                     this.error('The \'?.\' operator cannot be used in the assignment');
                     return new EmptyExpr(this.span(start), this.sourceSpan(start));
                 }
@@ -14711,7 +14711,7 @@ var _ParseAST = /** @class */ (function () {
                 }
             }
             else {
-                if (this.optionalOperator('=')) {
+                if (this.consumeOptionalOperator('=')) {
                     if (!this.parseAction) {
                         this.error('Bindings cannot contain assignments');
                         return new EmptyExpr(this.span(start), this.sourceSpan(start));
@@ -14744,7 +14744,7 @@ var _ParseAST = /** @class */ (function () {
         var start = this.inputIndex;
         do {
             result += this.expectIdentifierOrKeywordOrString();
-            operatorFound = this.optionalOperator('-');
+            operatorFound = this.consumeOptionalOperator('-');
             if (operatorFound) {
                 result += '-';
             }
@@ -14905,7 +14905,7 @@ var _ParseAST = /** @class */ (function () {
         this.advance(); // consume the 'let' keyword
         var key = this.expectTemplateBindingKey().key;
         var valueExpr = null;
-        if (this.optionalOperator('=')) {
+        if (this.consumeOptionalOperator('=')) {
             var _b = this.expectTemplateBindingKey(), value = _b.key, valueSpan = _b.keySpan;
             var ast = new AST(valueSpan, valueSpan.toAbsolute(this.absoluteOffset));
             valueExpr = new ASTWithSource(ast, value, this.location, this.absoluteOffset + valueSpan.start, this.errors);
@@ -19466,7 +19466,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.1.0-next.2+114.sha-a73e125');
+var VERSION$1 = new Version('9.1.0-next.2+117.sha-81cb54f');
 
 /**
  * @license
