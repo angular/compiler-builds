@@ -30,8 +30,9 @@ export declare class BindingParser {
     createDirectiveHostEventAsts(dirMeta: CompileDirectiveSummary, sourceSpan: ParseSourceSpan): ParsedEvent[] | null;
     parseInterpolation(value: string, sourceSpan: ParseSourceSpan): ASTWithSource;
     /**
-     * Parses an inline template binding, e.g.
-     *    <tag *tplKey="<tplValue>">
+     * Parses the bindings in a microsyntax expression, and converts them to
+     * `ParsedProperty` or `ParsedVariable`.
+     *
      * @param tplKey template binding name
      * @param tplValue template binding value
      * @param sourceSpan span of template binding relative to entire the template
@@ -42,12 +43,16 @@ export declare class BindingParser {
      */
     parseInlineTemplateBinding(tplKey: string, tplValue: string, sourceSpan: ParseSourceSpan, absoluteValueOffset: number, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], targetVars: ParsedVariable[]): void;
     /**
-     * Parses the bindings in an inline template binding, e.g.
+     * Parses the bindings in a microsyntax expression, e.g.
+     * ```
      *    <tag *tplKey="let value1 = prop; let value2 = localVar">
+     * ```
+     *
      * @param tplKey template binding name
      * @param tplValue template binding value
      * @param sourceSpan span of template binding relative to entire the template
-     * @param absoluteValueOffset start of the tplValue relative to the entire template
+     * @param absoluteKeyOffset start of the `tplKey`
+     * @param absoluteValueOffset start of the `tplValue`
      */
     private _parseTemplateBindings;
     parseLiteralAttr(name: string, value: string | null, sourceSpan: ParseSourceSpan, absoluteOffset: number, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[]): void;

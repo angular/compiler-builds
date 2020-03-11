@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { InterpolationConfig } from '../ml_parser/interpolation_config';
-import { AST, ASTWithSource, AbsoluteSourceSpan, AstVisitor, Binary, BindingPipe, Chain, Conditional, FunctionCall, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, MethodCall, NonNullAssert, ParseSpan, ParserError, PrefixNot, PropertyRead, PropertyWrite, Quote, SafeMethodCall, SafePropertyRead, TemplateBinding } from './ast';
+import { AST, ASTWithSource, AbsoluteSourceSpan, AstVisitor, Binary, BindingPipe, Chain, Conditional, FunctionCall, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, MethodCall, NonNullAssert, ParseSpan, ParserError, PrefixNot, PropertyRead, PropertyWrite, Quote, SafeMethodCall, SafePropertyRead, TemplateBinding, TemplateBindingIdentifier } from './ast';
 import { Lexer, Token } from './lexer';
 export declare class SplitInterpolation {
     strings: string[];
@@ -39,7 +39,8 @@ export declare class Parser {
      * For example,
      * ```
      *   <div *ngFor="let item of items">
-     *                ^ `absoluteOffset` for `tplValue`
+     *         ^      ^ absoluteValueOffset for `templateValue`
+     *         absoluteKeyOffset for `templateKey`
      * ```
      * contains three bindings:
      * 1. ngFor -> null
@@ -54,9 +55,10 @@ export declare class Parser {
      * @param templateKey name of directive, without the * prefix. For example: ngIf, ngFor
      * @param templateValue RHS of the microsyntax attribute
      * @param templateUrl template filename if it's external, component filename if it's inline
-     * @param absoluteOffset absolute offset of the `tplValue`
+     * @param absoluteKeyOffset start of the `templateKey`
+     * @param absoluteValueOffset start of the `templateValue`
      */
-    parseTemplateBindings(templateKey: string, templateValue: string, templateUrl: string, absoluteOffset: number): TemplateBindingParseResult;
+    parseTemplateBindings(templateKey: string, templateValue: string, templateUrl: string, absoluteKeyOffset: number, absoluteValueOffset: number): TemplateBindingParseResult;
     parseInterpolation(input: string, location: any, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource | null;
     splitInterpolation(input: string, location: string, interpolationConfig?: InterpolationConfig): SplitInterpolation | null;
     wrapLiteralPrimitive(input: string | null, location: any, absoluteOffset: number): ASTWithSource;
@@ -86,6 +88,10 @@ export declare class _ParseAST {
     peek(offset: number): Token;
     get next(): Token;
     get inputIndex(): number;
+    /**
+     * Returns the absolute offset of the start of the current token.
+     */
+    get currentAbsoluteOffset(): number;
     span(start: number): ParseSpan;
     sourceSpan(start: number): AbsoluteSourceSpan;
     advance(): void;
@@ -115,12 +121,10 @@ export declare class _ParseAST {
     parseAccessMemberOrMethodCall(receiver: AST, isSafe?: boolean): AST;
     parseCallArguments(): BindingPipe[];
     /**
-     * Parses an identifier, a keyword, a string with an optional `-` in between.
+     * Parses an identifier, a keyword, a string with an optional `-` in between,
+     * and returns the string along with its absolute source span.
      */
-    expectTemplateBindingKey(): {
-        key: string;
-        keySpan: ParseSpan;
-    };
+    expectTemplateBindingKey(): TemplateBindingIdentifier;
     /**
      * Parse microsyntax template expression and return a list of bindings or
      * parsing errors in case the given expression is invalid.
@@ -139,9 +143,10 @@ export declare class _ParseAST {
      * For a full description of the microsyntax grammar, see
      * https://gist.github.com/mhevery/d3530294cff2e4a1b3fe15ff75d08855
      *
-     * @param templateKey name of the microsyntax directive, like ngIf, ngFor, without the *
+     * @param templateKey name of the microsyntax directive, like ngIf, ngFor,
+     * without the *, along with its absolute span.
      */
-    parseTemplateBindings(templateKey: string): TemplateBindingParseResult;
+    parseTemplateBindings(templateKey: TemplateBindingIdentifier): TemplateBindingParseResult;
     /**
      * Parse a directive keyword, followed by a mandatory expression.
      * For example, "of items", "trackBy: func".
@@ -149,25 +154,23 @@ export declare class _ParseAST {
      * There could be an optional "as" binding that follows the expression.
      * For example,
      * ```
-     * *ngFor="let item of items | slice:0:1 as collection".`
-     *                  ^^ ^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^
-     *             keyword    bound target   optional 'as' binding
+     *   *ngFor="let item of items | slice:0:1 as collection".
+     *                    ^^ ^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^
+     *               keyword    bound target   optional 'as' binding
      * ```
      *
-     * @param key binding key, for example, ngFor, ngIf, ngForOf
-     * @param keySpan span of the key in the expression. keySpan might be different
-     * from `key.length`. For example, the span for key "ngForOf" is "of".
-     * @param absoluteOffset absolute offset of the attribute value
+     * @param key binding key, for example, ngFor, ngIf, ngForOf, along with its
+     * absolute span.
      */
     private parseDirectiveKeywordBindings;
     /**
      * Return the expression AST for the bound target of a directive keyword
      * binding. For example,
      * ```
-     * *ngIf="condition | pipe".
-     *        ^^^^^^^^^^^^^^^^ bound target for "ngIf"
-     * *ngFor="let item of items"
-     *                     ^^^^^ bound target for "ngForOf"
+     *   *ngIf="condition | pipe"
+     *          ^^^^^^^^^^^^^^^^ bound target for "ngIf"
+     *   *ngFor="let item of items"
+     *                       ^^^^^ bound target for "ngForOf"
      * ```
      */
     private getDirectiveBoundTarget;
@@ -175,21 +178,20 @@ export declare class _ParseAST {
      * Return the binding for a variable declared using `as`. Note that the order
      * of the key-value pair in this declaration is reversed. For example,
      * ```
-     * *ngFor="let item of items; index as i"
-     *                            ^^^^^    ^
-     *                            value    key
+     *   *ngFor="let item of items; index as i"
+     *                              ^^^^^    ^
+     *                              value    key
      * ```
      *
-     * @param value name of the value in the declaration, "ngIf" in the example above
-     * @param valueSpan span of the value in the declaration
-     * @param absoluteOffset absolute offset of `value`
+     * @param value name of the value in the declaration, "ngIf" in the example
+     * above, along with its absolute span.
      */
     private parseAsBinding;
     /**
      * Return the binding for a variable declared using `let`. For example,
      * ```
-     * *ngFor="let item of items; let i=index;"
-     *         ^^^^^^^^           ^^^^^^^^^^^
+     *   *ngFor="let item of items; let i=index;"
+     *           ^^^^^^^^           ^^^^^^^^^^^
      * ```
      * In the first binding, `item` is bound to `NgForOfContext.$implicit`.
      * In the second binding, `i` is bound to `NgForOfContext.index`.
