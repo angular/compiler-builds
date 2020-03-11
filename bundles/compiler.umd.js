@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.0-next.4+19.sha-146ef48
+ * @license Angular v9.1.0-next.4+26.sha-06779cf
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7707,15 +7707,36 @@
         ASTWithSource.prototype.toString = function () { return this.source + " in " + this.location; };
         return ASTWithSource;
     }(AST));
-    var TemplateBinding = /** @class */ (function () {
-        function TemplateBinding(span, sourceSpan, key, keyIsVar, name, value) {
-            this.span = span;
+    var VariableBinding = /** @class */ (function () {
+        /**
+         * @param sourceSpan entire span of the binding.
+         * @param key name of the LHS along with its span.
+         * @param value optional value for the RHS along with its span.
+         */
+        function VariableBinding(sourceSpan, key, value) {
+            this.sourceSpan = sourceSpan;
             this.key = key;
-            this.keyIsVar = keyIsVar;
-            this.name = name;
             this.value = value;
         }
-        return TemplateBinding;
+        return VariableBinding;
+    }());
+    var ExpressionBinding = /** @class */ (function () {
+        /**
+         * @param sourceSpan entire span of the binding.
+         * @param key binding name, like ngForOf, ngForTrackBy, ngIf, along with its
+         * span. Note that the length of the span may not be the same as
+         * `key.source.length`. For example,
+         * 1. key.source = ngFor, key.span is for "ngFor"
+         * 2. key.source = ngForOf, key.span is for "of"
+         * 3. key.source = ngForTrackBy, key.span is for "trackBy"
+         * @param value optional expression for the RHS.
+         */
+        function ExpressionBinding(sourceSpan, key, value) {
+            this.sourceSpan = sourceSpan;
+            this.key = key;
+            this.value = value;
+        }
+        return ExpressionBinding;
     }());
     var RecursiveAstVisitor$1 = /** @class */ (function () {
         function RecursiveAstVisitor() {
@@ -12118,8 +12139,9 @@
             }
         };
         /**
-         * Parses an inline template binding, e.g.
-         *    <tag *tplKey="<tplValue>">
+         * Parses the bindings in a microsyntax expression, and converts them to
+         * `ParsedProperty` or `ParsedVariable`.
+         *
          * @param tplKey template binding name
          * @param tplValue template binding value
          * @param sourceSpan span of template binding relative to entire the template
@@ -12129,37 +12151,44 @@
          * @param targetVars target variables in the template
          */
         BindingParser.prototype.parseInlineTemplateBinding = function (tplKey, tplValue, sourceSpan, absoluteValueOffset, targetMatchableAttrs, targetProps, targetVars) {
-            var bindings = this._parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteValueOffset);
+            var absoluteKeyOffset = sourceSpan.start.offset;
+            var bindings = this._parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteKeyOffset, absoluteValueOffset);
             for (var i = 0; i < bindings.length; i++) {
                 var binding = bindings[i];
-                if (binding.keyIsVar) {
-                    targetVars.push(new ParsedVariable(binding.key, binding.name, sourceSpan));
+                var key = binding.key.source;
+                if (binding instanceof VariableBinding) {
+                    var value = binding.value ? binding.value.source : '$implicit';
+                    targetVars.push(new ParsedVariable(key, value, sourceSpan));
                 }
                 else if (binding.value) {
-                    this._parsePropertyAst(binding.key, binding.value, sourceSpan, undefined, targetMatchableAttrs, targetProps);
+                    this._parsePropertyAst(key, binding.value, sourceSpan, undefined, targetMatchableAttrs, targetProps);
                 }
                 else {
-                    targetMatchableAttrs.push([binding.key, '']);
-                    this.parseLiteralAttr(binding.key, null, sourceSpan, absoluteValueOffset, undefined, targetMatchableAttrs, targetProps);
+                    targetMatchableAttrs.push([key, '']);
+                    this.parseLiteralAttr(key, null, sourceSpan, absoluteValueOffset, undefined, targetMatchableAttrs, targetProps);
                 }
             }
         };
         /**
-         * Parses the bindings in an inline template binding, e.g.
+         * Parses the bindings in a microsyntax expression, e.g.
+         * ```
          *    <tag *tplKey="let value1 = prop; let value2 = localVar">
+         * ```
+         *
          * @param tplKey template binding name
          * @param tplValue template binding value
          * @param sourceSpan span of template binding relative to entire the template
-         * @param absoluteValueOffset start of the tplValue relative to the entire template
+         * @param absoluteKeyOffset start of the `tplKey`
+         * @param absoluteValueOffset start of the `tplValue`
          */
-        BindingParser.prototype._parseTemplateBindings = function (tplKey, tplValue, sourceSpan, absoluteValueOffset) {
+        BindingParser.prototype._parseTemplateBindings = function (tplKey, tplValue, sourceSpan, absoluteKeyOffset, absoluteValueOffset) {
             var _this = this;
             var sourceInfo = sourceSpan.start.toString();
             try {
-                var bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceInfo, absoluteValueOffset);
+                var bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceInfo, absoluteKeyOffset, absoluteValueOffset);
                 this._reportExpressionParserErrors(bindingsResult.errors, sourceSpan);
                 bindingsResult.templateBindings.forEach(function (binding) {
-                    if (binding.value) {
+                    if (binding.value instanceof ASTWithSource) {
                         _this._checkPipes(binding.value, sourceSpan);
                     }
                 });
@@ -14333,7 +14362,8 @@
          * For example,
          * ```
          *   <div *ngFor="let item of items">
-         *                ^ `absoluteOffset` for `tplValue`
+         *         ^      ^ absoluteValueOffset for `templateValue`
+         *         absoluteKeyOffset for `templateKey`
          * ```
          * contains three bindings:
          * 1. ngFor -> null
@@ -14348,12 +14378,16 @@
          * @param templateKey name of directive, without the * prefix. For example: ngIf, ngFor
          * @param templateValue RHS of the microsyntax attribute
          * @param templateUrl template filename if it's external, component filename if it's inline
-         * @param absoluteOffset absolute offset of the `tplValue`
+         * @param absoluteKeyOffset start of the `templateKey`
+         * @param absoluteValueOffset start of the `templateValue`
          */
-        Parser.prototype.parseTemplateBindings = function (templateKey, templateValue, templateUrl, absoluteOffset) {
+        Parser.prototype.parseTemplateBindings = function (templateKey, templateValue, templateUrl, absoluteKeyOffset, absoluteValueOffset) {
             var tokens = this._lexer.tokenize(templateValue);
-            return new _ParseAST(templateValue, templateUrl, absoluteOffset, tokens, templateValue.length, false /* parseAction */, this.errors, 0 /* relative offset */)
-                .parseTemplateBindings(templateKey);
+            var parser = new _ParseAST(templateValue, templateUrl, absoluteValueOffset, tokens, templateValue.length, false /* parseAction */, this.errors, 0 /* relative offset */);
+            return parser.parseTemplateBindings({
+                source: templateKey,
+                span: new AbsoluteSourceSpan(absoluteKeyOffset, absoluteKeyOffset + templateKey.length),
+            });
         };
         Parser.prototype.parseInterpolation = function (input, location, absoluteOffset, interpolationConfig) {
             if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
@@ -14489,6 +14523,14 @@
                 return (this.index < this.tokens.length) ? this.next.index + this.offset :
                     this.inputLength + this.offset;
             },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(_ParseAST.prototype, "currentAbsoluteOffset", {
+            /**
+             * Returns the absolute offset of the start of the current token.
+             */
+            get: function () { return this.absoluteOffset + this.inputIndex; },
             enumerable: true,
             configurable: true
         });
@@ -14914,12 +14956,13 @@
             return positionals;
         };
         /**
-         * Parses an identifier, a keyword, a string with an optional `-` in between.
+         * Parses an identifier, a keyword, a string with an optional `-` in between,
+         * and returns the string along with its absolute source span.
          */
         _ParseAST.prototype.expectTemplateBindingKey = function () {
             var result = '';
             var operatorFound = false;
-            var start = this.inputIndex;
+            var start = this.currentAbsoluteOffset;
             do {
                 result += this.expectIdentifierOrKeywordOrString();
                 operatorFound = this.consumeOptionalOperator('-');
@@ -14928,8 +14971,8 @@
                 }
             } while (operatorFound);
             return {
-                key: result,
-                keySpan: new ParseSpan(start, start + result.length),
+                source: result,
+                span: new AbsoluteSourceSpan(start, start + result.length),
             };
         };
         /**
@@ -14950,14 +14993,15 @@
          * For a full description of the microsyntax grammar, see
          * https://gist.github.com/mhevery/d3530294cff2e4a1b3fe15ff75d08855
          *
-         * @param templateKey name of the microsyntax directive, like ngIf, ngFor, without the *
+         * @param templateKey name of the microsyntax directive, like ngIf, ngFor,
+         * without the *, along with its absolute span.
          */
         _ParseAST.prototype.parseTemplateBindings = function (templateKey) {
             var bindings = [];
             // The first binding is for the template key itself
             // In *ngFor="let item of items", key = "ngFor", value = null
             // In *ngIf="cond | pipe", key = "ngIf", value = "cond | pipe"
-            bindings.push.apply(bindings, __spread(this.parseDirectiveKeywordBindings(templateKey, new ParseSpan(0, templateKey.length), this.absoluteOffset)));
+            bindings.push.apply(bindings, __spread(this.parseDirectiveKeywordBindings(templateKey)));
             while (this.index < this.tokens.length) {
                 // If it starts with 'let', then this must be variable declaration
                 var letBinding = this.parseLetBinding();
@@ -14969,18 +15013,18 @@
                     // "directive-keyword expression". We don't know which case, but both
                     // "value" and "directive-keyword" are template binding key, so consume
                     // the key first.
-                    var _a = this.expectTemplateBindingKey(), key = _a.key, keySpan = _a.keySpan;
+                    var key = this.expectTemplateBindingKey();
                     // Peek at the next token, if it is "as" then this must be variable
                     // declaration.
-                    var binding = this.parseAsBinding(key, keySpan, this.absoluteOffset);
+                    var binding = this.parseAsBinding(key);
                     if (binding) {
                         bindings.push(binding);
                     }
                     else {
                         // Otherwise the key must be a directive keyword, like "of". Transform
                         // the key to actual key. Eg. of -> ngForOf, trackBy -> ngForTrackBy
-                        var actualKey = templateKey + key[0].toUpperCase() + key.substring(1);
-                        bindings.push.apply(bindings, __spread(this.parseDirectiveKeywordBindings(actualKey, keySpan, this.absoluteOffset)));
+                        key.source = templateKey.source + key.source[0].toUpperCase() + key.source.substring(1);
+                        bindings.push.apply(bindings, __spread(this.parseDirectiveKeywordBindings(key)));
                     }
                 }
                 this.consumeStatementTerminator();
@@ -14994,41 +15038,43 @@
          * There could be an optional "as" binding that follows the expression.
          * For example,
          * ```
-         * *ngFor="let item of items | slice:0:1 as collection".`
-         *                  ^^ ^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^
-         *             keyword    bound target   optional 'as' binding
+         *   *ngFor="let item of items | slice:0:1 as collection".
+         *                    ^^ ^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^
+         *               keyword    bound target   optional 'as' binding
          * ```
          *
-         * @param key binding key, for example, ngFor, ngIf, ngForOf
-         * @param keySpan span of the key in the expression. keySpan might be different
-         * from `key.length`. For example, the span for key "ngForOf" is "of".
-         * @param absoluteOffset absolute offset of the attribute value
+         * @param key binding key, for example, ngFor, ngIf, ngForOf, along with its
+         * absolute span.
          */
-        _ParseAST.prototype.parseDirectiveKeywordBindings = function (key, keySpan, absoluteOffset) {
+        _ParseAST.prototype.parseDirectiveKeywordBindings = function (key) {
             var bindings = [];
             this.consumeOptionalCharacter($COLON); // trackBy: trackByFunction
-            var valueExpr = this.getDirectiveBoundTarget();
-            var span = new ParseSpan(keySpan.start, this.inputIndex);
-            bindings.push(new TemplateBinding(span, span.toAbsolute(absoluteOffset), key, false /* keyIsVar */, (valueExpr === null || valueExpr === void 0 ? void 0 : valueExpr.source) || '', valueExpr));
+            var value = this.getDirectiveBoundTarget();
+            var spanEnd = this.currentAbsoluteOffset;
             // The binding could optionally be followed by "as". For example,
             // *ngIf="cond | pipe as x". In this case, the key in the "as" binding
             // is "x" and the value is the template key itself ("ngIf"). Note that the
             // 'key' in the current context now becomes the "value" in the next binding.
-            var asBinding = this.parseAsBinding(key, keySpan, absoluteOffset);
+            var asBinding = this.parseAsBinding(key);
+            if (!asBinding) {
+                this.consumeStatementTerminator();
+                spanEnd = this.currentAbsoluteOffset;
+            }
+            var sourceSpan = new AbsoluteSourceSpan(key.span.start, spanEnd);
+            bindings.push(new ExpressionBinding(sourceSpan, key, value));
             if (asBinding) {
                 bindings.push(asBinding);
             }
-            this.consumeStatementTerminator();
             return bindings;
         };
         /**
          * Return the expression AST for the bound target of a directive keyword
          * binding. For example,
          * ```
-         * *ngIf="condition | pipe".
-         *        ^^^^^^^^^^^^^^^^ bound target for "ngIf"
-         * *ngFor="let item of items"
-         *                     ^^^^^ bound target for "ngForOf"
+         *   *ngIf="condition | pipe"
+         *          ^^^^^^^^^^^^^^^^ bound target for "ngIf"
+         *   *ngFor="let item of items"
+         *                       ^^^^^ bound target for "ngForOf"
          * ```
          */
         _ParseAST.prototype.getDirectiveBoundTarget = function () {
@@ -15036,7 +15082,11 @@
                 return null;
             }
             var ast = this.parsePipe(); // example: "condition | async"
-            var _a = ast.span, start = _a.start, end = _a.end;
+            var start = ast.span.start;
+            // Getting the end of the last token removes trailing whitespace.
+            // If ast has the correct end span then no need to peek at last token.
+            // TODO(ayazhafiz): Remove this in https://github.com/angular/angular/pull/34690
+            var end = this.peek(-1).end;
             var value = this.input.substring(start, end);
             return new ASTWithSource(ast, value, this.location, this.absoluteOffset + start, this.errors);
         };
@@ -15044,31 +15094,29 @@
          * Return the binding for a variable declared using `as`. Note that the order
          * of the key-value pair in this declaration is reversed. For example,
          * ```
-         * *ngFor="let item of items; index as i"
-         *                            ^^^^^    ^
-         *                            value    key
+         *   *ngFor="let item of items; index as i"
+         *                              ^^^^^    ^
+         *                              value    key
          * ```
          *
-         * @param value name of the value in the declaration, "ngIf" in the example above
-         * @param valueSpan span of the value in the declaration
-         * @param absoluteOffset absolute offset of `value`
+         * @param value name of the value in the declaration, "ngIf" in the example
+         * above, along with its absolute span.
          */
-        _ParseAST.prototype.parseAsBinding = function (value, valueSpan, absoluteOffset) {
+        _ParseAST.prototype.parseAsBinding = function (value) {
             if (!this.peekKeywordAs()) {
                 return null;
             }
             this.advance(); // consume the 'as' keyword
-            var key = this.expectTemplateBindingKey().key;
-            var valueAst = new AST(valueSpan, valueSpan.toAbsolute(absoluteOffset));
-            var valueExpr = new ASTWithSource(valueAst, value, this.location, absoluteOffset + valueSpan.start, this.errors);
-            var span = new ParseSpan(valueSpan.start, this.inputIndex);
-            return new TemplateBinding(span, span.toAbsolute(absoluteOffset), key, true /* keyIsVar */, value, valueExpr);
+            var key = this.expectTemplateBindingKey();
+            this.consumeStatementTerminator();
+            var sourceSpan = new AbsoluteSourceSpan(value.span.start, this.currentAbsoluteOffset);
+            return new VariableBinding(sourceSpan, key, value);
         };
         /**
          * Return the binding for a variable declared using `let`. For example,
          * ```
-         * *ngFor="let item of items; let i=index;"
-         *         ^^^^^^^^           ^^^^^^^^^^^
+         *   *ngFor="let item of items; let i=index;"
+         *           ^^^^^^^^           ^^^^^^^^^^^
          * ```
          * In the first binding, `item` is bound to `NgForOfContext.$implicit`.
          * In the second binding, `i` is bound to `NgForOfContext.index`.
@@ -15077,18 +15125,16 @@
             if (!this.peekKeywordLet()) {
                 return null;
             }
-            var spanStart = this.inputIndex;
+            var spanStart = this.currentAbsoluteOffset;
             this.advance(); // consume the 'let' keyword
-            var key = this.expectTemplateBindingKey().key;
-            var valueExpr = null;
+            var key = this.expectTemplateBindingKey();
+            var value = null;
             if (this.consumeOptionalOperator('=')) {
-                var _a = this.expectTemplateBindingKey(), value = _a.key, valueSpan = _a.keySpan;
-                var ast = new AST(valueSpan, valueSpan.toAbsolute(this.absoluteOffset));
-                valueExpr = new ASTWithSource(ast, value, this.location, this.absoluteOffset + valueSpan.start, this.errors);
+                value = this.expectTemplateBindingKey();
             }
-            var spanEnd = this.inputIndex;
-            var span = new ParseSpan(spanStart, spanEnd);
-            return new TemplateBinding(span, span.toAbsolute(this.absoluteOffset), key, true /* keyIsVar */, (valueExpr === null || valueExpr === void 0 ? void 0 : valueExpr.source) || '$implicit', valueExpr);
+            this.consumeStatementTerminator();
+            var sourceSpan = new AbsoluteSourceSpan(spanStart, this.currentAbsoluteOffset);
+            return new VariableBinding(sourceSpan, key, value);
         };
         /**
          * Consume the optional statement terminator: semicolon or comma.
@@ -19642,7 +19688,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.1.0-next.4+19.sha-146ef48');
+    var VERSION$1 = new Version('9.1.0-next.4+26.sha-06779cf');
 
     /**
      * @license
@@ -29532,6 +29578,7 @@
     exports.Expansion = Expansion;
     exports.ExpansionCase = ExpansionCase;
     exports.Expression = Expression;
+    exports.ExpressionBinding = ExpressionBinding;
     exports.ExpressionStatement = ExpressionStatement;
     exports.ExpressionType = ExpressionType;
     exports.ExternalExpr = ExternalExpr;
@@ -29627,7 +29674,6 @@
     exports.StyleCompiler = StyleCompiler;
     exports.StylesCompileDependency = StylesCompileDependency;
     exports.SummaryResolver = SummaryResolver;
-    exports.TemplateBinding = TemplateBinding;
     exports.TemplateBindingParseResult = TemplateBindingParseResult;
     exports.TemplateParseError = TemplateParseError;
     exports.TemplateParseResult = TemplateParseResult;
@@ -29656,6 +29702,7 @@
     exports.UrlResolver = UrlResolver;
     exports.VERSION = VERSION$1;
     exports.VariableAst = VariableAst;
+    exports.VariableBinding = VariableBinding;
     exports.Version = Version;
     exports.ViewCompiler = ViewCompiler;
     exports.WrappedNodeExpr = WrappedNodeExpr;
