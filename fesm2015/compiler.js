@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.0-next.4+57.sha-79659ee
+ * @license Angular v9.1.0-next.4+58.sha-e179c58
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -18412,7 +18412,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.1.0-next.4+57.sha-79659ee');
+const VERSION$1 = new Version('9.1.0-next.4+58.sha-e179c58');
 
 /**
  * @license
@@ -23717,9 +23717,9 @@ class StaticSymbolResolver {
                     });
                 }
                 else {
-                    // handle the symbols via export * directives.
+                    // Handle the symbols loaded by 'export *' directives.
                     const resolvedModule = this.resolveModule(moduleExport.from, filePath);
-                    if (resolvedModule) {
+                    if (resolvedModule && resolvedModule !== filePath) {
                         const nestedExports = this.getSymbolsOf(resolvedModule);
                         nestedExports.forEach((targetSymbol) => {
                             const sourceSymbol = this.getStaticSymbol(filePath, targetSymbol.name);
