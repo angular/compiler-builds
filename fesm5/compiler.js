@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.0-next.4+56.sha-3fa8952
+ * @license Angular v9.1.0-next.4+57.sha-79659ee
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -17300,12 +17300,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                     stylingBuilder.registerClassAttr(value);
                 }
                 else {
-                    if (attr.i18n) {
-                        i18nAttrs.push(attr);
-                    }
-                    else {
-                        outputAttrs.push(attr);
-                    }
+                    (attr.i18n ? i18nAttrs : outputAttrs).push(attr);
                 }
             }
         }
@@ -17565,16 +17560,20 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this.templatePropertyBindings(templateIndex, template.templateAttrs);
         // Only add normal input/output binding instructions on explicit <ng-template> elements.
         if (template.tagName === NG_TEMPLATE_TAG_NAME) {
+            var inputs_1 = [];
+            var i18nAttrs_1 = template.attributes.filter(function (attr) { return !!attr.i18n; });
+            template.inputs.forEach(function (input) { return (input.i18n ? i18nAttrs_1 : inputs_1).push(input); });
             // Add i18n attributes that may act as inputs to directives. If such attributes are present,
             // generate `i18nAttributes` instruction. Note: we generate it only for explicit <ng-template>
             // elements, in case of inline templates, corresponding instructions will be generated in the
             // nested template function.
-            var i18nAttrs = template.attributes.filter(function (attr) { return !!attr.i18n; });
-            if (i18nAttrs.length > 0) {
-                this.i18nAttributesInstruction(templateIndex, i18nAttrs, template.sourceSpan);
+            if (i18nAttrs_1.length > 0) {
+                this.i18nAttributesInstruction(templateIndex, i18nAttrs_1, template.sourceSpan);
             }
             // Add the input bindings
-            this.templatePropertyBindings(templateIndex, template.inputs);
+            if (inputs_1.length > 0) {
+                this.templatePropertyBindings(templateIndex, inputs_1);
+            }
             // Generate listeners for directive output
             if (template.outputs.length > 0) {
                 var listeners = template.outputs.map(function (outputAst) { return ({
@@ -17675,11 +17674,22 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 var value_4 = input.value.visit(_this._valueConverter);
                 if (value_4 !== undefined) {
                     _this.allocateBindingSlots(value_4);
-                    propertyBindings.push({
-                        name: input.name,
-                        sourceSpan: input.sourceSpan,
-                        value: function () { return _this.convertPropertyBinding(value_4); }
-                    });
+                    if (value_4 instanceof Interpolation) {
+                        // Params typically contain attribute namespace and value sanitizer, which is applicable
+                        // for regular HTML elements, but not applicable for <ng-template> (since props act as
+                        // inputs to directives), so keep params array empty.
+                        var params = [];
+                        // prop="{{value}}" case
+                        _this.interpolatedUpdateInstruction(getPropertyInterpolationExpression(value_4), templateIndex, input.name, input, value_4, params);
+                    }
+                    else {
+                        // [prop]="value" case
+                        propertyBindings.push({
+                            name: input.name,
+                            sourceSpan: input.sourceSpan,
+                            value: function () { return _this.convertPropertyBinding(value_4); }
+                        });
+                    }
                 }
             }
         });
@@ -19510,7 +19520,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.1.0-next.4+56.sha-3fa8952');
+var VERSION$1 = new Version('9.1.0-next.4+57.sha-79659ee');
 
 /**
  * @license
