@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.0-next.4+58.sha-e179c58
+ * @license Angular v9.1.0-next.4+59.sha-31bec8c
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7300,11 +7300,16 @@ class ParsedEvent {
         this.handlerSpan = handlerSpan;
     }
 }
+/**
+ * ParsedVariable represents a variable declaration in a microsyntax expression.
+ */
 class ParsedVariable {
-    constructor(name, value, sourceSpan) {
+    constructor(name, value, sourceSpan, keySpan, valueSpan) {
         this.name = name;
         this.value = value;
         this.sourceSpan = sourceSpan;
+        this.keySpan = keySpan;
+        this.valueSpan = valueSpan;
     }
 }
 class BoundElementProperty {
@@ -10384,13 +10389,14 @@ class ReferenceAst {
  * A variable declaration on a <ng-template> (e.g. `var-someName="someLocalName"`).
  */
 class VariableAst {
-    constructor(name, value, sourceSpan) {
+    constructor(name, value, sourceSpan, valueSpan) {
         this.name = name;
         this.value = value;
         this.sourceSpan = sourceSpan;
+        this.valueSpan = valueSpan;
     }
     static fromParsedVariable(v) {
-        return new VariableAst(v.name, v.value, v.sourceSpan);
+        return new VariableAst(v.name, v.value, v.sourceSpan, v.valueSpan);
     }
     visit(visitor, context) {
         return visitor.visitVariable(this, context);
@@ -11086,6 +11092,7 @@ const PROPERTY_PARTS_SEPARATOR = '.';
 const ATTRIBUTE_PREFIX = 'attr';
 const CLASS_PREFIX = 'class';
 const STYLE_PREFIX = 'style';
+const TEMPLATE_ATTR_PREFIX = '*';
 const ANIMATE_PROP_PREFIX = 'animate-';
 /**
  * Parses bindings in templates and in the directive host area.
@@ -11173,14 +11180,18 @@ class BindingParser {
      * @param targetVars target variables in the template
      */
     parseInlineTemplateBinding(tplKey, tplValue, sourceSpan, absoluteValueOffset, targetMatchableAttrs, targetProps, targetVars) {
-        const absoluteKeyOffset = sourceSpan.start.offset;
+        const absoluteKeyOffset = sourceSpan.start.offset + TEMPLATE_ATTR_PREFIX.length;
         const bindings = this._parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteKeyOffset, absoluteValueOffset);
-        for (let i = 0; i < bindings.length; i++) {
-            const binding = bindings[i];
+        for (const binding of bindings) {
+            // sourceSpan is for the entire HTML attribute. bindingSpan is for a particular
+            // binding within the microsyntax expression so it's more narrow than sourceSpan.
+            const bindingSpan = moveParseSourceSpan(sourceSpan, binding.sourceSpan);
             const key = binding.key.source;
+            const keySpan = moveParseSourceSpan(sourceSpan, binding.key.span);
             if (binding instanceof VariableBinding) {
                 const value = binding.value ? binding.value.source : '$implicit';
-                targetVars.push(new ParsedVariable(key, value, sourceSpan));
+                const valueSpan = binding.value ? moveParseSourceSpan(sourceSpan, binding.value.span) : undefined;
+                targetVars.push(new ParsedVariable(key, value, bindingSpan, keySpan, valueSpan));
             }
             else if (binding.value) {
                 this._parsePropertyAst(key, binding.value, sourceSpan, undefined, targetMatchableAttrs, targetProps);
@@ -11470,6 +11481,19 @@ function calcPossibleSecurityContexts(registry, selector, propName, isAttribute)
     });
     return ctxs.length === 0 ? [SecurityContext.NONE] : Array.from(new Set(ctxs)).sort();
 }
+/**
+ * Compute a new ParseSourceSpan based off an original `sourceSpan` by using
+ * absolute offsets from the specified `absoluteSpan`.
+ *
+ * @param sourceSpan original source span
+ * @param absoluteSpan absolute source span to move to
+ */
+function moveParseSourceSpan(sourceSpan, absoluteSpan) {
+    // The difference of two absolute offsets provide the relative offset
+    const startDiff = absoluteSpan.start - sourceSpan.start.offset;
+    const endDiff = absoluteSpan.end - sourceSpan.end.offset;
+    return new ParseSourceSpan(sourceSpan.start.moveBy(startDiff), sourceSpan.end.moveBy(endDiff));
+}
 
 /**
  * @license
@@ -11582,7 +11606,7 @@ const IDENT_BANANA_BOX_IDX = 8;
 const IDENT_PROPERTY_IDX = 9;
 // Group 10 = identifier inside ()
 const IDENT_EVENT_IDX = 10;
-const TEMPLATE_ATTR_PREFIX = '*';
+const TEMPLATE_ATTR_PREFIX$1 = '*';
 const CLASS_ATTR = 'class';
 let _TEXT_CSS_SELECTOR;
 function TEXT_CSS_SELECTOR() {
@@ -11772,9 +11796,9 @@ class TemplateParseVisitor {
             let templateValue;
             let templateKey;
             const normalizedName = this._normalizeAttributeName(attr.name);
-            if (normalizedName.startsWith(TEMPLATE_ATTR_PREFIX)) {
+            if (normalizedName.startsWith(TEMPLATE_ATTR_PREFIX$1)) {
                 templateValue = attr.value;
-                templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length);
+                templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX$1.length);
             }
             const hasTemplateBinding = templateValue != null;
             if (hasTemplateBinding) {
@@ -14672,7 +14696,7 @@ const IDENT_BANANA_BOX_IDX$1 = 8;
 const IDENT_PROPERTY_IDX$1 = 9;
 // Group 10 = identifier inside ()
 const IDENT_EVENT_IDX$1 = 10;
-const TEMPLATE_ATTR_PREFIX$1 = '*';
+const TEMPLATE_ATTR_PREFIX$2 = '*';
 function htmlAstToRender3Ast(htmlNodes, bindingParser) {
     const transformer = new HtmlAstToIvyAst(bindingParser);
     const ivyNodes = visitAll$1(transformer, htmlNodes);
@@ -14743,7 +14767,7 @@ class HtmlAstToIvyAst {
             if (attribute.i18n) {
                 i18nAttrsMeta[attribute.name] = attribute.i18n;
             }
-            if (normalizedName.startsWith(TEMPLATE_ATTR_PREFIX$1)) {
+            if (normalizedName.startsWith(TEMPLATE_ATTR_PREFIX$2)) {
                 // *-attributes
                 if (elementHasInlineTemplate) {
                     this.reportError(`Can't have multiple template bindings on one element. Use only one attribute prefixed with *`, attribute.sourceSpan);
@@ -14751,7 +14775,7 @@ class HtmlAstToIvyAst {
                 isTemplateBinding = true;
                 elementHasInlineTemplate = true;
                 const templateValue = attribute.value;
-                const templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX$1.length);
+                const templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX$2.length);
                 const parsedVariables = [];
                 const absoluteValueOffset = attribute.valueSpan ?
                     attribute.valueSpan.start.offset :
@@ -14760,7 +14784,7 @@ class HtmlAstToIvyAst {
                     // the attribute name.
                     attribute.sourceSpan.start.offset + attribute.name.length;
                 this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, absoluteValueOffset, [], templateParsedProperties, parsedVariables);
-                templateVariables.push(...parsedVariables.map(v => new Variable(v.name, v.value, v.sourceSpan)));
+                templateVariables.push(...parsedVariables.map(v => new Variable(v.name, v.value, v.sourceSpan, v.valueSpan)));
             }
             else {
                 // Check for variables, events, property bindings, interpolation
@@ -18412,7 +18436,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.1.0-next.4+58.sha-e179c58');
+const VERSION$1 = new Version('9.1.0-next.4+59.sha-31bec8c');
 
 /**
  * @license

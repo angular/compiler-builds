@@ -376,11 +376,16 @@ export declare class ParsedEvent {
     handlerSpan: ParseSourceSpan;
     constructor(name: string, targetOrPhase: string, type: ParsedEventType, handler: ASTWithSource, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan);
 }
+/**
+ * ParsedVariable represents a variable declaration in a microsyntax expression.
+ */
 export declare class ParsedVariable {
-    name: string;
-    value: string;
-    sourceSpan: ParseSourceSpan;
-    constructor(name: string, value: string, sourceSpan: ParseSourceSpan);
+    readonly name: string;
+    readonly value: string;
+    readonly sourceSpan: ParseSourceSpan;
+    readonly keySpan: ParseSourceSpan;
+    readonly valueSpan?: ParseSourceSpan | undefined;
+    constructor(name: string, value: string, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined);
 }
 export declare const enum BindingType {
     Property = 0,

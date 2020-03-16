@@ -110,10 +110,11 @@ export declare class ReferenceAst implements TemplateAst {
  * A variable declaration on a <ng-template> (e.g. `var-someName="someLocalName"`).
  */
 export declare class VariableAst implements TemplateAst {
-    name: string;
-    value: string;
-    sourceSpan: ParseSourceSpan;
-    constructor(name: string, value: string, sourceSpan: ParseSourceSpan);
+    readonly name: string;
+    readonly value: string;
+    readonly sourceSpan: ParseSourceSpan;
+    readonly valueSpan?: ParseSourceSpan | undefined;
+    constructor(name: string, value: string, sourceSpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined);
     static fromParsedVariable(v: ParsedVariable): VariableAst;
     visit(visitor: TemplateAstVisitor, context: any): any;
 }
