@@ -56,7 +56,7 @@ export declare function resolveForwardRef(type: any): any;
 /**
  * Determine if the argument is shaped like a Promise
  */
-export declare function isPromise(obj: any): obj is Promise<any>;
+export declare function isPromise<T = any>(obj: any): obj is Promise<T>;
 export declare class Version {
     full: string;
     readonly major: string;

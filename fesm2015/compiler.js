@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.0-rc.0
+ * @license Angular v9.1.0-rc.0+8.sha-05eeb7d
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -11194,7 +11194,8 @@ class BindingParser {
                 targetVars.push(new ParsedVariable(key, value, bindingSpan, keySpan, valueSpan));
             }
             else if (binding.value) {
-                this._parsePropertyAst(key, binding.value, sourceSpan, undefined, targetMatchableAttrs, targetProps);
+                const valueSpan = moveParseSourceSpan(sourceSpan, binding.value.ast.sourceSpan);
+                this._parsePropertyAst(key, binding.value, sourceSpan, valueSpan, targetMatchableAttrs, targetProps);
             }
             else {
                 targetMatchableAttrs.push([key, '']);
@@ -13507,7 +13508,14 @@ class _ParseAST {
      * Returns the absolute offset of the start of the current token.
      */
     get currentAbsoluteOffset() { return this.absoluteOffset + this.inputIndex; }
-    span(start) { return new ParseSpan(start, this.inputIndex); }
+    span(start) {
+        // `end` is either the
+        //   - end index of the current token
+        //   - start of the first token (this can happen e.g. when creating an implicit receiver)
+        const curToken = this.peek(-1);
+        const end = this.index > 0 ? curToken.end + this.offset : this.inputIndex;
+        return new ParseSpan(start, end);
+    }
     sourceSpan(start) {
         const serial = `${start}@${this.inputIndex}`;
         if (!this.sourceSpanCache.has(serial)) {
@@ -13912,7 +13920,6 @@ class _ParseAST {
                     return new PropertyWrite(this.span(start), this.sourceSpan(start), receiver, id, value);
                 }
                 else {
-                    const span = this.span(start);
                     return new PropertyRead(this.span(start), this.sourceSpan(start), receiver, id);
                 }
             }
@@ -14054,11 +14061,7 @@ class _ParseAST {
             return null;
         }
         const ast = this.parsePipe(); // example: "condition | async"
-        const { start } = ast.span;
-        // Getting the end of the last token removes trailing whitespace.
-        // If ast has the correct end span then no need to peek at last token.
-        // TODO(ayazhafiz): Remove this in https://github.com/angular/angular/pull/34690
-        const { end } = this.peek(-1);
+        const { start, end } = ast.span;
         const value = this.input.substring(start, end);
         return new ASTWithSource(ast, value, this.location, this.absoluteOffset + start, this.errors);
     }
@@ -18436,7 +18439,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.1.0-rc.0');
+const VERSION$1 = new Version('9.1.0-rc.0+8.sha-05eeb7d');
 
 /**
  * @license
