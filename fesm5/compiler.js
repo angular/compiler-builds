@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.0-rc.0+6.sha-9126921
+ * @license Angular v9.1.0-rc.0+8.sha-ae3eaf8
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -11996,7 +11996,8 @@ var BindingParser = /** @class */ (function () {
                     targetVars.push(new ParsedVariable(key, value, bindingSpan, keySpan, valueSpan));
                 }
                 else if (binding.value) {
-                    this._parsePropertyAst(key, binding.value, sourceSpan, undefined, targetMatchableAttrs, targetProps);
+                    var valueSpan = moveParseSourceSpan(sourceSpan, binding.value.ast.sourceSpan);
+                    this._parsePropertyAst(key, binding.value, sourceSpan, valueSpan, targetMatchableAttrs, targetProps);
                 }
                 else {
                     targetMatchableAttrs.push([key, '']);
@@ -19557,7 +19558,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.1.0-rc.0+6.sha-9126921');
+var VERSION$1 = new Version('9.1.0-rc.0+8.sha-ae3eaf8');
 
 /**
  * @license
