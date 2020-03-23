@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.0-rc.0+19.sha-fced8ee
+ * @license Angular v9.1.0-rc.0+18.sha-1cb7b88
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9484,7 +9484,7 @@ function isNamedEntityEnd(code) {
     return code == $SEMICOLON || code == $EOF || !isAsciiLetter(code);
 }
 function isExpansionCaseStart(peek) {
-    return peek !== $RBRACE;
+    return peek === $EQ || isAsciiLetter(peek) || isDigit(peek);
 }
 function compareCharCodeCaseInsensitive(code1, code2) {
     return toUpperCaseCharCode(code1) == toUpperCaseCharCode(code2);
@@ -18439,7 +18439,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.1.0-rc.0+19.sha-fced8ee');
+const VERSION$1 = new Version('9.1.0-rc.0+18.sha-1cb7b88');
 
 /**
  * @license
