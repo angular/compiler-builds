@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.0-rc.1+10.sha-c9c2408
+ * @license Angular v9.1.0-rc.1+13.sha-407fa42
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5097,6 +5097,7 @@ var R3ResolvedDependencyType;
 function compileFactoryFunction(meta) {
     const t = variable('t');
     const statements = [];
+    let ctorDepsType = NONE_TYPE;
     // The type to instantiate via constructor invocation. If there is no delegated factory, meaning
     // this type is always created by constructor invocation, then this is the type-to-create
     // parameter provided by the user (t) if specified, or the current type if not. If there is a
@@ -5110,6 +5111,7 @@ function compileFactoryFunction(meta) {
         // There is a constructor (either explicitly or implicitly defined).
         if (meta.deps !== 'invalid') {
             ctorExpr = new InstantiateExpr(typeForCtor, injectDependencies(meta.deps, meta.injectFn, meta.target === R3FactoryTarget.Pipe));
+            ctorDepsType = createCtorDepsType(meta.deps);
         }
     }
     else {
@@ -5175,7 +5177,7 @@ function compileFactoryFunction(meta) {
     return {
         factory: fn([new FnParam('t', DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, `${meta.name}_Factory`),
         statements,
-        type: expressionType(importExpr(Identifiers$1.FactoryDef, [typeWithParameters(meta.type.type, meta.typeArgumentCount)]))
+        type: expressionType(importExpr(Identifiers$1.FactoryDef, [typeWithParameters(meta.type.type, meta.typeArgumentCount), ctorDepsType]))
     };
 }
 function injectDependencies(deps, injectFn, isPipe) {
@@ -5213,6 +5215,46 @@ function compileInjectDependency(dep, injectFn, isPipe, index) {
             return unsupported(`Unknown R3ResolvedDependencyType: ${R3ResolvedDependencyType[dep.resolved]}`);
     }
 }
+function createCtorDepsType(deps) {
+    let hasTypes = false;
+    const attributeTypes = deps.map(dep => {
+        const type = createCtorDepType(dep);
+        if (type !== null) {
+            hasTypes = true;
+            return type;
+        }
+        else {
+            return literal(null);
+        }
+    });
+    if (hasTypes) {
+        return expressionType(literalArr(attributeTypes));
+    }
+    else {
+        return NONE_TYPE;
+    }
+}
+function createCtorDepType(dep) {
+    const entries = [];
+    if (dep.resolved === R3ResolvedDependencyType.Attribute) {
+        if (dep.attribute !== null) {
+            entries.push({ key: 'attribute', value: dep.attribute, quoted: false });
+        }
+    }
+    if (dep.optional) {
+        entries.push({ key: 'optional', value: literal(true), quoted: false });
+    }
+    if (dep.host) {
+        entries.push({ key: 'host', value: literal(true), quoted: false });
+    }
+    if (dep.self) {
+        entries.push({ key: 'self', value: literal(true), quoted: false });
+    }
+    if (dep.skipSelf) {
+        entries.push({ key: 'skipSelf', value: literal(true), quoted: false });
+    }
+    return entries.length > 0 ? literalMap(entries) : null;
+}
 /**
  * A helper function useful for extracting `R3DependencyMetadata` from a Render2
  * `CompileTypeMetadata` instance.
@@ -5236,7 +5278,7 @@ function dependenciesFromGlobalMetadata(type, outputCtx, reflector) {
             // Construct the dependency.
             deps.push({
                 token,
-                resolved,
+                attribute: null, resolved,
                 host: !!dependency.isHost,
                 optional: !!dependency.isOptional,
                 self: !!dependency.isSelf,
@@ -14715,6 +14757,7 @@ function htmlAstToRender3Ast(htmlNodes, bindingParser) {
         errors: allErrors,
         styleUrls: transformer.styleUrls,
         styles: transformer.styles,
+        ngContentSelectors: transformer.ngContentSelectors,
     };
 }
 class HtmlAstToIvyAst {
@@ -14723,6 +14766,7 @@ class HtmlAstToIvyAst {
         this.errors = [];
         this.styles = [];
         this.styleUrls = [];
+        this.ngContentSelectors = [];
         this.inI18nBlock = false;
     }
     // HTML visitor
@@ -14809,6 +14853,7 @@ class HtmlAstToIvyAst {
             const selector = preparsedElement.selectAttr;
             const attrs = element.attrs.map(attr => this.visitAttribute(attr));
             parsedElement = new Content(selector, attrs, element.sourceSpan, element.i18n);
+            this.ngContentSelectors.push(selector);
         }
         else if (isTemplateElement) {
             // `<ng-template>`
@@ -17396,7 +17441,13 @@ function parseTemplate(template, templateUrl, options = {}) {
     const htmlParser = new HtmlParser();
     const parseResult = htmlParser.parse(template, templateUrl, Object.assign(Object.assign({ leadingTriviaChars: LEADING_TRIVIA_CHARS }, options), { tokenizeExpansionForms: true }));
     if (parseResult.errors && parseResult.errors.length > 0) {
-        return { errors: parseResult.errors, nodes: [], styleUrls: [], styles: [] };
+        return {
+            errors: parseResult.errors,
+            nodes: [],
+            styleUrls: [],
+            styles: [],
+            ngContentSelectors: []
+        };
     }
     let rootNodes = parseResult.rootNodes;
     // process i18n meta information (scan attributes, generate ids)
@@ -17415,11 +17466,11 @@ function parseTemplate(template, templateUrl, options = {}) {
             rootNodes = visitAll$1(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), rootNodes);
         }
     }
-    const { nodes, errors, styleUrls, styles } = htmlAstToRender3Ast(rootNodes, bindingParser);
+    const { nodes, errors, styleUrls, styles, ngContentSelectors } = htmlAstToRender3Ast(rootNodes, bindingParser);
     if (errors && errors.length > 0) {
-        return { errors, nodes: [], styleUrls: [], styles: [] };
+        return { errors, nodes: [], styleUrls: [], styles: [], ngContentSelectors: [] };
     }
-    return { nodes, styleUrls, styles };
+    return { nodes, styleUrls, styles, ngContentSelectors };
 }
 const elementRegistry = new DomElementSchemaRegistry();
 /**
@@ -17581,7 +17632,8 @@ function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
     const definitionMap = baseDirectiveFields(meta, constantPool, bindingParser);
     addFeatures(definitionMap, meta);
     const expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()]);
-    const type = createTypeForDef(meta, Identifiers$1.DirectiveDefWithMeta);
+    const typeParams = createDirectiveTypeParams(meta);
+    const type = expressionType(importExpr(Identifiers$1.DirectiveDefWithMeta, typeParams));
     return { expression, type };
 }
 /**
@@ -17679,7 +17731,9 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
         definitionMap.set('changeDetection', literal(changeDetection));
     }
     const expression = importExpr(Identifiers$1.defineComponent).callFn([definitionMap.toLiteralMap()]);
-    const type = createTypeForDef(meta, Identifiers$1.ComponentDefWithMeta);
+    const typeParams = createDirectiveTypeParams(meta);
+    typeParams.push(stringArrayAsType(meta.template.ngContentSelectors));
+    const type = expressionType(importExpr(Identifiers$1.ComponentDefWithMeta, typeParams));
     return { expression, type };
 }
 /**
@@ -17714,7 +17768,7 @@ function compileComponentFromRender2(outputCtx, component, render3Ast, reflector
     const definitionField = outputCtx.constantPool.propertyNameOf(2 /* Component */);
     const summary = component.toSummary();
     // Compute the R3ComponentMetadata from the CompileDirectiveMetadata
-    const meta = Object.assign(Object.assign({}, directiveMetadataFromGlobalMetadata(component, outputCtx, reflector)), { selector: component.selector, template: { nodes: render3Ast.nodes }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, interpolation: DEFAULT_INTERPOLATION_CONFIG, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null, relativeContextFilePath: '', i18nUseExternalIds: true });
+    const meta = Object.assign(Object.assign({}, directiveMetadataFromGlobalMetadata(component, outputCtx, reflector)), { selector: component.selector, template: { nodes: render3Ast.nodes, ngContentSelectors: render3Ast.ngContentSelectors }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, interpolation: DEFAULT_INTERPOLATION_CONFIG, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null, relativeContextFilePath: '', i18nUseExternalIds: true });
     const res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
     const factoryRes = compileFactoryFunction(Object.assign(Object.assign({}, meta), { injectFn: Identifiers$1.directiveInject, target: R3FactoryTarget.Directive }));
     const ngFactoryDefStatement = new ClassStmt(name, null, [new ClassField('ɵfac', INFERRED_TYPE, [StmtModifier.Static], factoryRes.factory)], [], new ClassMethod(null, [], []), []);
@@ -17829,18 +17883,18 @@ function stringArrayAsType(arr) {
     return arr.length > 0 ? expressionType(literalArr(arr.map(value => literal(value)))) :
         NONE_TYPE;
 }
-function createTypeForDef(meta, typeBase) {
+function createDirectiveTypeParams(meta) {
     // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
     // string literal, which must be on one line.
     const selectorForType = meta.selector !== null ? meta.selector.replace(/\n/g, '') : null;
-    return expressionType(importExpr(typeBase, [
+    return [
         typeWithParameters(meta.type.type, meta.typeArgumentCount),
         selectorForType !== null ? stringAsType(selectorForType) : NONE_TYPE,
         meta.exportAs !== null ? stringArrayAsType(meta.exportAs) : NONE_TYPE,
         stringMapAsType(meta.inputs),
         stringMapAsType(meta.outputs),
         stringArrayAsType(meta.queries.map(q => q.propertyName)),
-    ]));
+    ];
 }
 // Define and update any view queries
 function createViewQueriesFunction(viewQueries, constantPool, name) {
@@ -18375,11 +18429,12 @@ function convertR3DependencyMetadata(facade) {
     }
     return {
         token: tokenExpr,
+        attribute: null,
         resolved: facade.resolved,
         host: facade.host,
         optional: facade.optional,
         self: facade.self,
-        skipSelf: facade.skipSelf
+        skipSelf: facade.skipSelf,
     };
 }
 function convertR3DependencyMetadataArray(facades) {
@@ -18439,7 +18494,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.1.0-rc.1+10.sha-c9c2408');
+const VERSION$1 = new Version('9.1.0-rc.1+13.sha-407fa42');
 
 /**
  * @license
