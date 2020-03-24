@@ -325,6 +325,7 @@ export declare function parseTemplate(template: string, templateUrl: string, opt
     nodes: t.Node[];
     styleUrls: string[];
     styles: string[];
+    ngContentSelectors: string[];
 };
 /**
  * Construct a `BindingParser` with a default configuration.

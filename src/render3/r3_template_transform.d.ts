@@ -14,5 +14,6 @@ export interface Render3ParseResult {
     errors: ParseError[];
     styles: string[];
     styleUrls: string[];
+    ngContentSelectors: string[];
 }
 export declare function htmlAstToRender3Ast(htmlNodes: html.Node[], bindingParser: BindingParser): Render3ParseResult;

@@ -113,6 +113,12 @@ export interface R3DependencyMetadata {
      */
     token: o.Expression;
     /**
+     * If an @Attribute decorator is present, this is the literal type of the attribute name, or
+     * the unknown type if no literal type is available (e.g. the attribute name is an expression).
+     * Will be null otherwise.
+     */
+    attribute: o.Expression | null;
+    /**
      * An enum indicating whether this dependency has special meaning to Angular and needs to be
      * injected specially.
      */
