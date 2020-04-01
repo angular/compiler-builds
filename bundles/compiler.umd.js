@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.0-rc.0+82.sha-5516802
+ * @license Angular v9.1.0-rc.0+81.sha-cc4b813
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -19791,7 +19791,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.1.0-rc.0+82.sha-5516802');
+    var VERSION$1 = new Version('9.1.0-rc.0+81.sha-cc4b813');
 
     /**
      * @license
@@ -21642,16 +21642,8 @@
             this.ctx = ctx;
         }
         _ValueOutputAstTransformer.prototype.visitArray = function (arr, type) {
-            var values = [];
-            // Note Array.map() must not be used to convert the values because it will
-            // skip over empty elements in arrays constructed using `new Array(length)`,
-            // resulting in `undefined` elements. This breaks the type guarantee that
-            // all values in `o.LiteralArrayExpr` are of type `o.Expression`.
-            // See test case in `value_util_spec.ts`.
-            for (var i = 0; i < arr.length; ++i) {
-                values.push(visitValue(arr[i], this, null /* context */));
-            }
-            return literalArr(values, type);
+            var _this = this;
+            return literalArr(arr.map(function (value) { return visitValue(value, _this, null); }), type);
         };
         _ValueOutputAstTransformer.prototype.visitStringMap = function (map, type) {
             var _this = this;
