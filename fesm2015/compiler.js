@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.0+27.sha-beb3f19
+ * @license Angular v9.1.0+43.sha-cb0a2a0
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -18494,7 +18494,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.1.0+27.sha-beb3f19');
+const VERSION$1 = new Version('9.1.0+43.sha-cb0a2a0');
 
 /**
  * @license
@@ -20257,7 +20257,16 @@ class _ValueOutputAstTransformer {
         this.ctx = ctx;
     }
     visitArray(arr, type) {
-        return literalArr(arr.map(value => visitValue(value, this, null)), type);
+        const values = [];
+        // Note Array.map() must not be used to convert the values because it will
+        // skip over empty elements in arrays constructed using `new Array(length)`,
+        // resulting in `undefined` elements. This breaks the type guarantee that
+        // all values in `o.LiteralArrayExpr` are of type `o.Expression`.
+        // See test case in `value_util_spec.ts`.
+        for (let i = 0; i < arr.length; ++i) {
+            values.push(visitValue(arr[i], this, null /* context */));
+        }
+        return literalArr(values, type);
     }
     visitStringMap(map, type) {
         const entries = [];
