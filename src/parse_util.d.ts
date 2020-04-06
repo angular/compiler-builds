@@ -24,8 +24,6 @@ export declare class ParseSourceSpan {
     constructor(start: ParseLocation, end: ParseLocation, details?: string | null);
     toString(): string;
 }
-export declare const EMPTY_PARSE_LOCATION: ParseLocation;
-export declare const EMPTY_SOURCE_SPAN: ParseSourceSpan;
 export declare enum ParseErrorLevel {
     WARNING = 0,
     ERROR = 1

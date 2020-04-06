@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.0-rc.0+110.sha-c8bef12
+ * @license Angular v9.1.0-rc.0+115.sha-1140bbc
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4168,8 +4168,6 @@
         };
         return ParseSourceSpan;
     }());
-    var EMPTY_PARSE_LOCATION = new ParseLocation(new ParseSourceFile('', ''), 0, 0, 0);
-    var EMPTY_SOURCE_SPAN = new ParseSourceSpan(EMPTY_PARSE_LOCATION, EMPTY_PARSE_LOCATION);
     (function (ParseErrorLevel) {
         ParseErrorLevel[ParseErrorLevel["WARNING"] = 0] = "WARNING";
         ParseErrorLevel[ParseErrorLevel["ERROR"] = 1] = "ERROR";
@@ -19808,7 +19806,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.1.0-rc.0+110.sha-c8bef12');
+    var VERSION$1 = new Version('9.1.0-rc.0+115.sha-1140bbc');
 
     /**
      * @license
@@ -29693,8 +29691,6 @@
     exports.DirectiveNormalizer = DirectiveNormalizer;
     exports.DirectiveResolver = DirectiveResolver;
     exports.DomElementSchemaRegistry = DomElementSchemaRegistry;
-    exports.EMPTY_PARSE_LOCATION = EMPTY_PARSE_LOCATION;
-    exports.EMPTY_SOURCE_SPAN = EMPTY_SOURCE_SPAN;
     exports.EOF = EOF;
     exports.ERROR_COMPONENT_TYPE = ERROR_COMPONENT_TYPE;
     exports.Element = Element$1;
