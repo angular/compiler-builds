@@ -65,7 +65,7 @@ export declare class SelectorMatcher<T = any> {
      * @param cssSelector A css selector
      * @param matchedCallback This callback will be called with the object handed into `addSelectable`
      * @return boolean true if a match was found
-    */
+     */
     match(cssSelector: CssSelector, matchedCallback: ((c: CssSelector, a: T) => void) | null): boolean;
 }
 export declare class SelectorListContext {

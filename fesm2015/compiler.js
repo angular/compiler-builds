@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.1+9.sha-33eee43
+ * @license Angular v9.1.1+11.sha-cbed582
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -495,8 +495,12 @@ class CssSelector {
         return this.hasElementSelector() && this.classNames.length == 0 && this.attrs.length == 0 &&
             this.notSelectors.length === 0;
     }
-    hasElementSelector() { return !!this.element; }
-    setElement(element = null) { this.element = element; }
+    hasElementSelector() {
+        return !!this.element;
+    }
+    setElement(element = null) {
+        this.element = element;
+    }
     /** Gets a template string for an element that matches the selector. */
     getMatchingElementTemplate() {
         const tagName = this.element || 'div';
@@ -520,7 +524,9 @@ class CssSelector {
     addAttribute(name, value = '') {
         this.attrs.push(name, value && value.toLowerCase() || '');
     }
-    addClassName(name) { this.classNames.push(name.toLowerCase()); }
+    addClassName(name) {
+        this.classNames.push(name.toLowerCase());
+    }
     toString() {
         let res = this.element || '';
         if (this.classNames) {
@@ -646,7 +652,7 @@ class SelectorMatcher {
      * @param cssSelector A css selector
      * @param matchedCallback This callback will be called with the object handed into `addSelectable`
      * @return boolean true if a match was found
-    */
+     */
     match(cssSelector, matchedCallback) {
         let result = false;
         const element = cssSelector.element;
@@ -916,7 +922,9 @@ class Type$1 {
             this.modifiers = [];
         }
     }
-    hasModifier(modifier) { return this.modifiers.indexOf(modifier) !== -1; }
+    hasModifier(modifier) {
+        return this.modifiers.indexOf(modifier) !== -1;
+    }
 }
 var BuiltinTypeName;
 (function (BuiltinTypeName) {
@@ -962,7 +970,9 @@ class MapType extends Type$1 {
         super(modifiers);
         this.valueType = valueType || null;
     }
-    visitType(visitor, context) { return visitor.visitMapType(this, context); }
+    visitType(visitor, context) {
+        return visitor.visitMapType(this, context);
+    }
 }
 const DYNAMIC_TYPE = new BuiltinType(BuiltinTypeName.Dynamic);
 const INFERRED_TYPE = new BuiltinType(BuiltinTypeName.Inferred);
@@ -1089,7 +1099,9 @@ class Expression {
     cast(type, sourceSpan) {
         return new CastExpr(this, type, sourceSpan);
     }
-    toStmt() { return new ExpressionStatement(this, null); }
+    toStmt() {
+        return new ExpressionStatement(this, null);
+    }
 }
 var BuiltinVar;
 (function (BuiltinVar) {
@@ -1113,7 +1125,9 @@ class ReadVarExpr extends Expression {
     isEquivalent(e) {
         return e instanceof ReadVarExpr && this.name === e.name && this.builtin === e.builtin;
     }
-    isConstant() { return false; }
+    isConstant() {
+        return false;
+    }
     visitExpression(visitor, context) {
         return visitor.visitReadVarExpr(this, context);
     }
@@ -1135,7 +1149,9 @@ class TypeofExpr extends Expression {
     isEquivalent(e) {
         return e instanceof TypeofExpr && e.expr.isEquivalent(this.expr);
     }
-    isConstant() { return this.expr.isConstant(); }
+    isConstant() {
+        return this.expr.isConstant();
+    }
 }
 class WrappedNodeExpr extends Expression {
     constructor(node, type, sourceSpan) {
@@ -1145,7 +1161,9 @@ class WrappedNodeExpr extends Expression {
     isEquivalent(e) {
         return e instanceof WrappedNodeExpr && this.node === e.node;
     }
-    isConstant() { return false; }
+    isConstant() {
+        return false;
+    }
     visitExpression(visitor, context) {
         return visitor.visitWrappedNodeExpr(this, context);
     }
@@ -1159,14 +1177,18 @@ class WriteVarExpr extends Expression {
     isEquivalent(e) {
         return e instanceof WriteVarExpr && this.name === e.name && this.value.isEquivalent(e.value);
     }
-    isConstant() { return false; }
+    isConstant() {
+        return false;
+    }
     visitExpression(visitor, context) {
         return visitor.visitWriteVarExpr(this, context);
     }
     toDeclStmt(type, modifiers) {
         return new DeclareVarStmt(this.name, this.value, type, modifiers, this.sourceSpan);
     }
-    toConstDecl() { return this.toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]); }
+    toConstDecl() {
+        return this.toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]);
+    }
 }
 class WriteKeyExpr extends Expression {
     constructor(receiver, index, value, type, sourceSpan) {
@@ -1179,7 +1201,9 @@ class WriteKeyExpr extends Expression {
         return e instanceof WriteKeyExpr && this.receiver.isEquivalent(e.receiver) &&
             this.index.isEquivalent(e.index) && this.value.isEquivalent(e.value);
     }
-    isConstant() { return false; }
+    isConstant() {
+        return false;
+    }
     visitExpression(visitor, context) {
         return visitor.visitWriteKeyExpr(this, context);
     }
@@ -1195,7 +1219,9 @@ class WritePropExpr extends Expression {
         return e instanceof WritePropExpr && this.receiver.isEquivalent(e.receiver) &&
             this.name === e.name && this.value.isEquivalent(e.value);
     }
-    isConstant() { return false; }
+    isConstant() {
+        return false;
+    }
     visitExpression(visitor, context) {
         return visitor.visitWritePropExpr(this, context);
     }
@@ -1224,7 +1250,9 @@ class InvokeMethodExpr extends Expression {
         return e instanceof InvokeMethodExpr && this.receiver.isEquivalent(e.receiver) &&
             this.name === e.name && this.builtin === e.builtin && areAllEquivalent(this.args, e.args);
     }
-    isConstant() { return false; }
+    isConstant() {
+        return false;
+    }
     visitExpression(visitor, context) {
         return visitor.visitInvokeMethodExpr(this, context);
     }
@@ -1240,7 +1268,9 @@ class InvokeFunctionExpr extends Expression {
         return e instanceof InvokeFunctionExpr && this.fn.isEquivalent(e.fn) &&
             areAllEquivalent(this.args, e.args) && this.pure === e.pure;
     }
-    isConstant() { return false; }
+    isConstant() {
+        return false;
+    }
     visitExpression(visitor, context) {
         return visitor.visitInvokeFunctionExpr(this, context);
     }
@@ -1255,7 +1285,9 @@ class InstantiateExpr extends Expression {
         return e instanceof InstantiateExpr && this.classExpr.isEquivalent(e.classExpr) &&
             areAllEquivalent(this.args, e.args);
     }
-    isConstant() { return false; }
+    isConstant() {
+        return false;
+    }
     visitExpression(visitor, context) {
         return visitor.visitInstantiateExpr(this, context);
     }
@@ -1268,7 +1300,9 @@ class LiteralExpr extends Expression {
     isEquivalent(e) {
         return e instanceof LiteralExpr && this.value === e.value;
     }
-    isConstant() { return true; }
+    isConstant() {
+        return true;
+    }
     visitExpression(visitor, context) {
         return visitor.visitLiteralExpr(this, context);
     }
@@ -1285,7 +1319,9 @@ class LocalizedString extends Expression {
         // return e instanceof LocalizedString && this.message === e.message;
         return false;
     }
-    isConstant() { return false; }
+    isConstant() {
+        return false;
+    }
     visitExpression(visitor, context) {
         return visitor.visitLocalizedString(this, context);
     }
@@ -1309,7 +1345,9 @@ class LocalizedString extends Expression {
             metaBlock = `${metaBlock}${ID_SEPARATOR}${this.metaBlock.customId}`;
         }
         if (this.metaBlock.legacyIds) {
-            this.metaBlock.legacyIds.forEach(legacyId => { metaBlock = `${metaBlock}${LEGACY_ID_INDICATOR}${legacyId}`; });
+            this.metaBlock.legacyIds.forEach(legacyId => {
+                metaBlock = `${metaBlock}${LEGACY_ID_INDICATOR}${legacyId}`;
+            });
         }
         return createCookedRawString(metaBlock, this.messageParts[0]);
     }
@@ -1368,7 +1406,9 @@ class ExternalExpr extends Expression {
         return e instanceof ExternalExpr && this.value.name === e.value.name &&
             this.value.moduleName === e.value.moduleName && this.value.runtime === e.value.runtime;
     }
-    isConstant() { return false; }
+    isConstant() {
+        return false;
+    }
     visitExpression(visitor, context) {
         return visitor.visitExternalExpr(this, context);
     }
@@ -1391,7 +1431,9 @@ class ConditionalExpr extends Expression {
         return e instanceof ConditionalExpr && this.condition.isEquivalent(e.condition) &&
             this.trueCase.isEquivalent(e.trueCase) && nullSafeIsEquivalent(this.falseCase, e.falseCase);
     }
-    isConstant() { return false; }
+    isConstant() {
+        return false;
+    }
     visitExpression(visitor, context) {
         return visitor.visitConditionalExpr(this, context);
     }
@@ -1404,7 +1446,9 @@ class NotExpr extends Expression {
     isEquivalent(e) {
         return e instanceof NotExpr && this.condition.isEquivalent(e.condition);
     }
-    isConstant() { return false; }
+    isConstant() {
+        return false;
+    }
     visitExpression(visitor, context) {
         return visitor.visitNotExpr(this, context);
     }
@@ -1417,7 +1461,9 @@ class AssertNotNull extends Expression {
     isEquivalent(e) {
         return e instanceof AssertNotNull && this.condition.isEquivalent(e.condition);
     }
-    isConstant() { return false; }
+    isConstant() {
+        return false;
+    }
     visitExpression(visitor, context) {
         return visitor.visitAssertNotNullExpr(this, context);
     }
@@ -1430,7 +1476,9 @@ class CastExpr extends Expression {
     isEquivalent(e) {
         return e instanceof CastExpr && this.value.isEquivalent(e.value);
     }
-    isConstant() { return false; }
+    isConstant() {
+        return false;
+    }
     visitExpression(visitor, context) {
         return visitor.visitCastExpr(this, context);
     }
@@ -1440,7 +1488,9 @@ class FnParam {
         this.name = name;
         this.type = type;
     }
-    isEquivalent(param) { return this.name === param.name; }
+    isEquivalent(param) {
+        return this.name === param.name;
+    }
 }
 class FunctionExpr extends Expression {
     constructor(params, statements, type, sourceSpan, name) {
@@ -1453,7 +1503,9 @@ class FunctionExpr extends Expression {
         return e instanceof FunctionExpr && areAllEquivalent(this.params, e.params) &&
             areAllEquivalent(this.statements, e.statements);
     }
-    isConstant() { return false; }
+    isConstant() {
+        return false;
+    }
     visitExpression(visitor, context) {
         return visitor.visitFunctionExpr(this, context);
     }
@@ -1473,7 +1525,9 @@ class BinaryOperatorExpr extends Expression {
         return e instanceof BinaryOperatorExpr && this.operator === e.operator &&
             this.lhs.isEquivalent(e.lhs) && this.rhs.isEquivalent(e.rhs);
     }
-    isConstant() { return false; }
+    isConstant() {
+        return false;
+    }
     visitExpression(visitor, context) {
         return visitor.visitBinaryOperatorExpr(this, context);
     }
@@ -1488,7 +1542,9 @@ class ReadPropExpr extends Expression {
         return e instanceof ReadPropExpr && this.receiver.isEquivalent(e.receiver) &&
             this.name === e.name;
     }
-    isConstant() { return false; }
+    isConstant() {
+        return false;
+    }
     visitExpression(visitor, context) {
         return visitor.visitReadPropExpr(this, context);
     }
@@ -1506,7 +1562,9 @@ class ReadKeyExpr extends Expression {
         return e instanceof ReadKeyExpr && this.receiver.isEquivalent(e.receiver) &&
             this.index.isEquivalent(e.index);
     }
-    isConstant() { return false; }
+    isConstant() {
+        return false;
+    }
     visitExpression(visitor, context) {
         return visitor.visitReadKeyExpr(this, context);
     }
@@ -1519,7 +1577,9 @@ class LiteralArrayExpr extends Expression {
         super(type, sourceSpan);
         this.entries = entries;
     }
-    isConstant() { return this.entries.every(e => e.isConstant()); }
+    isConstant() {
+        return this.entries.every(e => e.isConstant());
+    }
     isEquivalent(e) {
         return e instanceof LiteralArrayExpr && areAllEquivalent(this.entries, e.entries);
     }
@@ -1549,7 +1609,9 @@ class LiteralMapExpr extends Expression {
     isEquivalent(e) {
         return e instanceof LiteralMapExpr && areAllEquivalent(this.entries, e.entries);
     }
-    isConstant() { return this.entries.every(e => e.value.isConstant()); }
+    isConstant() {
+        return this.entries.every(e => e.value.isConstant());
+    }
     visitExpression(visitor, context) {
         return visitor.visitLiteralMapExpr(this, context);
     }
@@ -1562,7 +1624,9 @@ class CommaExpr extends Expression {
     isEquivalent(e) {
         return e instanceof CommaExpr && areAllEquivalent(this.parts, e.parts);
     }
-    isConstant() { return false; }
+    isConstant() {
+        return false;
+    }
     visitExpression(visitor, context) {
         return visitor.visitCommaExpr(this, context);
     }
@@ -1586,7 +1650,9 @@ class Statement {
         this.modifiers = modifiers || [];
         this.sourceSpan = sourceSpan || null;
     }
-    hasModifier(modifier) { return this.modifiers.indexOf(modifier) !== -1; }
+    hasModifier(modifier) {
+        return this.modifiers.indexOf(modifier) !== -1;
+    }
 }
 class DeclareVarStmt extends Statement {
     constructor(name, value, type, modifiers = null, sourceSpan) {
@@ -1651,7 +1717,9 @@ class AbstractClassPart {
         }
         this.type = type || null;
     }
-    hasModifier(modifier) { return this.modifiers.indexOf(modifier) !== -1; }
+    hasModifier(modifier) {
+        return this.modifiers.indexOf(modifier) !== -1;
+    }
 }
 class ClassField extends AbstractClassPart {
     constructor(name, type, modifiers = null, initializer) {
@@ -1659,7 +1727,9 @@ class ClassField extends AbstractClassPart {
         this.name = name;
         this.initializer = initializer;
     }
-    isEquivalent(f) { return this.name === f.name; }
+    isEquivalent(f) {
+        return this.name === f.name;
+    }
 }
 class ClassMethod extends AbstractClassPart {
     constructor(name, params, body, type, modifiers = null) {
@@ -1726,7 +1796,9 @@ class CommentStmt extends Statement {
         this.comment = comment;
         this.multiline = multiline;
     }
-    isEquivalent(stmt) { return stmt instanceof CommentStmt; }
+    isEquivalent(stmt) {
+        return stmt instanceof CommentStmt;
+    }
     visitStatement(visitor, context) {
         return visitor.visitCommentStmt(this, context);
     }
@@ -1742,7 +1814,9 @@ class JSDocCommentStmt extends Statement {
     visitStatement(visitor, context) {
         return visitor.visitJSDocCommentStmt(this, context);
     }
-    toString() { return serializeTags(this.tags); }
+    toString() {
+        return serializeTags(this.tags);
+    }
 }
 class TryCatchStmt extends Statement {
     constructor(bodyStmts, catchStmts, sourceSpan) {
@@ -1771,9 +1845,15 @@ class ThrowStmt extends Statement {
     }
 }
 class AstTransformer {
-    transformExpr(expr, context) { return expr; }
-    transformStmt(stmt, context) { return stmt; }
-    visitReadVarExpr(ast, context) { return this.transformExpr(ast, context); }
+    transformExpr(expr, context) {
+        return expr;
+    }
+    transformStmt(stmt, context) {
+        return stmt;
+    }
+    visitReadVarExpr(ast, context) {
+        return this.transformExpr(ast, context);
+    }
     visitWrappedNodeExpr(ast, context) {
         return this.transformExpr(ast, context);
     }
@@ -1799,7 +1879,9 @@ class AstTransformer {
     visitInstantiateExpr(ast, context) {
         return this.transformExpr(new InstantiateExpr(ast.classExpr.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan), context);
     }
-    visitLiteralExpr(ast, context) { return this.transformExpr(ast, context); }
+    visitLiteralExpr(ast, context) {
+        return this.transformExpr(ast, context);
+    }
     visitLocalizedString(ast, context) {
         return this.transformExpr(new LocalizedString(ast.metaBlock, ast.messageParts, ast.placeHolderNames, this.visitAllExpressions(ast.expressions, context), ast.sourceSpan), context);
     }
@@ -1885,14 +1967,18 @@ class AstTransformer {
     }
 }
 class RecursiveAstVisitor {
-    visitType(ast, context) { return ast; }
+    visitType(ast, context) {
+        return ast;
+    }
     visitExpression(ast, context) {
         if (ast.type) {
             ast.type.visitType(this, context);
         }
         return ast;
     }
-    visitBuiltinType(type, context) { return this.visitType(type, context); }
+    visitBuiltinType(type, context) {
+        return this.visitType(type, context);
+    }
     visitExpressionType(type, context) {
         type.value.visitExpression(this, context);
         if (type.typeParams !== null) {
@@ -1900,10 +1986,18 @@ class RecursiveAstVisitor {
         }
         return this.visitType(type, context);
     }
-    visitArrayType(type, context) { return this.visitType(type, context); }
-    visitMapType(type, context) { return this.visitType(type, context); }
-    visitWrappedNodeExpr(ast, context) { return ast; }
-    visitTypeofExpr(ast, context) { return this.visitExpression(ast, context); }
+    visitArrayType(type, context) {
+        return this.visitType(type, context);
+    }
+    visitMapType(type, context) {
+        return this.visitType(type, context);
+    }
+    visitWrappedNodeExpr(ast, context) {
+        return ast;
+    }
+    visitTypeofExpr(ast, context) {
+        return this.visitExpression(ast, context);
+    }
     visitReadVarExpr(ast, context) {
         return this.visitExpression(ast, context);
     }
@@ -2048,8 +2142,12 @@ class RecursiveAstVisitor {
         stmt.error.visitExpression(this, context);
         return stmt;
     }
-    visitCommentStmt(stmt, context) { return stmt; }
-    visitJSDocCommentStmt(stmt, context) { return stmt; }
+    visitCommentStmt(stmt, context) {
+        return stmt;
+    }
+    visitJSDocCommentStmt(stmt, context) {
+        return stmt;
+    }
     visitAllStatements(stmts, context) {
         stmts.forEach(stmt => stmt.visitStatement(this, context));
     }
@@ -2256,11 +2354,17 @@ class ValueTransformer {
     }
     visitStringMap(map, context) {
         const result = {};
-        Object.keys(map).forEach(key => { result[key] = visitValue(map[key], this, context); });
+        Object.keys(map).forEach(key => {
+            result[key] = visitValue(map[key], this, context);
+        });
         return result;
     }
-    visitPrimitive(value, context) { return value; }
-    visitOther(value, context) { return value; }
+    visitPrimitive(value, context) {
+        return value;
+    }
+    visitOther(value, context) {
+        return value;
+    }
 }
 const SyncAsync = {
     assertSync: (value) => {
@@ -2269,7 +2373,9 @@ const SyncAsync = {
         }
         return value;
     },
-    then: (value, cb) => { return isPromise(value) ? value.then(cb) : cb(value); },
+    then: (value, cb) => {
+        return isPromise(value) ? value.then(cb) : cb(value);
+    },
     all: (syncAsyncValues) => {
         return syncAsyncValues.some(isPromise) ? Promise.all(syncAsyncValues) : syncAsyncValues;
     }
@@ -2450,7 +2556,9 @@ class FixupExpression extends Expression {
     isEquivalent(e) {
         return e instanceof FixupExpression && this.resolved.isEquivalent(e.resolved);
     }
-    isConstant() { return true; }
+    isConstant() {
+        return true;
+    }
     fixup(expression) {
         this.resolved = expression;
         this.shared = true;
@@ -2555,7 +2663,9 @@ class ConstantPool {
      * a digit so the prefix should be a constant string (not based on user input) and
      * must not end in a digit.
      */
-    uniqueName(prefix) { return `${prefix}${this.nextNameIndex++}`; }
+    uniqueName(prefix) {
+        return `${prefix}${this.nextNameIndex++}`;
+    }
     definitionsOf(kind) {
         switch (kind) {
             case 2 /* Component */:
@@ -2584,7 +2694,9 @@ class ConstantPool {
         error(`Unknown definition kind ${kind}`);
         return '<unknown>';
     }
-    freshName() { return this.uniqueName(CONSTANT_PREFIX); }
+    freshName() {
+        return this.uniqueName(CONSTANT_PREFIX);
+    }
     keyOf(expression) {
         return expression.visitExpression(new KeyVisitor(), KEY_CONTEXT);
     }
@@ -2633,7 +2745,9 @@ class KeyVisitor {
         return ast.value.moduleName ? `EX:${ast.value.moduleName}:${ast.value.name}` :
             `EX:${ast.value.runtime.name}`;
     }
-    visitReadVarExpr(node) { return `VAR:${node.name}`; }
+    visitReadVarExpr(node) {
+        return `VAR:${node.name}`;
+    }
     visitTypeofExpr(node, context) {
         return `TYPEOF:${node.expr.visitExpression(this, context)}`;
     }
@@ -2989,7 +3103,10 @@ class CompileDirectiveMetadata {
         return new CompileDirectiveMetadata({
             isHost,
             type,
-            isComponent: !!isComponent, selector, exportAs, changeDetection,
+            isComponent: !!isComponent,
+            selector,
+            exportAs,
+            changeDetection,
             inputs: inputsMap,
             outputs: outputsMap,
             hostListeners,
@@ -3722,7 +3839,9 @@ class Text {
         this.value = value;
         this.sourceSpan = sourceSpan;
     }
-    visit(visitor) { return visitor.visitText(this); }
+    visit(visitor) {
+        return visitor.visitText(this);
+    }
 }
 class BoundText {
     constructor(value, sourceSpan, i18n) {
@@ -3730,7 +3849,9 @@ class BoundText {
         this.sourceSpan = sourceSpan;
         this.i18n = i18n;
     }
-    visit(visitor) { return visitor.visitBoundText(this); }
+    visit(visitor) {
+        return visitor.visitBoundText(this);
+    }
 }
 class TextAttribute {
     constructor(name, value, sourceSpan, valueSpan, i18n) {
@@ -3740,7 +3861,9 @@ class TextAttribute {
         this.valueSpan = valueSpan;
         this.i18n = i18n;
     }
-    visit(visitor) { return visitor.visitTextAttribute(this); }
+    visit(visitor) {
+        return visitor.visitTextAttribute(this);
+    }
 }
 class BoundAttribute {
     constructor(name, type, securityContext, value, unit, sourceSpan, valueSpan, i18n) {
@@ -3756,7 +3879,9 @@ class BoundAttribute {
     static fromBoundElementProperty(prop, i18n) {
         return new BoundAttribute(prop.name, prop.type, prop.securityContext, prop.value, prop.unit, prop.sourceSpan, prop.valueSpan, i18n);
     }
-    visit(visitor) { return visitor.visitBoundAttribute(this); }
+    visit(visitor) {
+        return visitor.visitBoundAttribute(this);
+    }
 }
 class BoundEvent {
     constructor(name, type, handler, target, phase, sourceSpan, handlerSpan) {
@@ -3773,7 +3898,9 @@ class BoundEvent {
         const phase = event.type === 1 /* Animation */ ? event.targetOrPhase : null;
         return new BoundEvent(event.name, event.type, event.handler, target, phase, event.sourceSpan, event.handlerSpan);
     }
-    visit(visitor) { return visitor.visitBoundEvent(this); }
+    visit(visitor) {
+        return visitor.visitBoundEvent(this);
+    }
 }
 class Element {
     constructor(name, attributes, inputs, outputs, children, references, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
@@ -3792,7 +3919,9 @@ class Element {
             this.sourceSpan = new ParseSourceSpan(sourceSpan.start, endSourceSpan.end);
         }
     }
-    visit(visitor) { return visitor.visitElement(this); }
+    visit(visitor) {
+        return visitor.visitElement(this);
+    }
 }
 class Template {
     constructor(tagName, attributes, inputs, outputs, templateAttrs, children, references, variables, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
@@ -3809,7 +3938,9 @@ class Template {
         this.endSourceSpan = endSourceSpan;
         this.i18n = i18n;
     }
-    visit(visitor) { return visitor.visitTemplate(this); }
+    visit(visitor) {
+        return visitor.visitTemplate(this);
+    }
 }
 class Content {
     constructor(selector, attributes, sourceSpan, i18n) {
@@ -3818,7 +3949,9 @@ class Content {
         this.sourceSpan = sourceSpan;
         this.i18n = i18n;
     }
-    visit(visitor) { return visitor.visitContent(this); }
+    visit(visitor) {
+        return visitor.visitContent(this);
+    }
 }
 class Variable {
     constructor(name, value, sourceSpan, valueSpan) {
@@ -3827,7 +3960,9 @@ class Variable {
         this.sourceSpan = sourceSpan;
         this.valueSpan = valueSpan;
     }
-    visit(visitor) { return visitor.visitVariable(this); }
+    visit(visitor) {
+        return visitor.visitVariable(this);
+    }
 }
 class Reference {
     constructor(name, value, sourceSpan, valueSpan) {
@@ -3836,7 +3971,9 @@ class Reference {
         this.sourceSpan = sourceSpan;
         this.valueSpan = valueSpan;
     }
-    visit(visitor) { return visitor.visitReference(this); }
+    visit(visitor) {
+        return visitor.visitReference(this);
+    }
 }
 class Icu {
     constructor(vars, placeholders, sourceSpan, i18n) {
@@ -3845,7 +3982,9 @@ class Icu {
         this.sourceSpan = sourceSpan;
         this.i18n = i18n;
     }
-    visit(visitor) { return visitor.visitIcu(this); }
+    visit(visitor) {
+        return visitor.visitIcu(this);
+    }
 }
 class NullVisitor {
     visitElement(element) { }
@@ -3912,15 +4051,33 @@ class TransformVisitor {
         }
         return template;
     }
-    visitContent(content) { return content; }
-    visitVariable(variable) { return variable; }
-    visitReference(reference) { return reference; }
-    visitTextAttribute(attribute) { return attribute; }
-    visitBoundAttribute(attribute) { return attribute; }
-    visitBoundEvent(attribute) { return attribute; }
-    visitText(text) { return text; }
-    visitBoundText(text) { return text; }
-    visitIcu(icu) { return icu; }
+    visitContent(content) {
+        return content;
+    }
+    visitVariable(variable) {
+        return variable;
+    }
+    visitReference(reference) {
+        return reference;
+    }
+    visitTextAttribute(attribute) {
+        return attribute;
+    }
+    visitBoundAttribute(attribute) {
+        return attribute;
+    }
+    visitBoundEvent(attribute) {
+        return attribute;
+    }
+    visitText(text) {
+        return text;
+    }
+    visitBoundText(text) {
+        return text;
+    }
+    visitIcu(icu) {
+        return icu;
+    }
 }
 function visitAll(visitor, nodes) {
     const result = [];
@@ -3997,7 +4154,9 @@ class Text$1 {
         this.value = value;
         this.sourceSpan = sourceSpan;
     }
-    visit(visitor, context) { return visitor.visitText(this, context); }
+    visit(visitor, context) {
+        return visitor.visitText(this, context);
+    }
 }
 // TODO(vicb): do we really need this node (vs an array) ?
 class Container {
@@ -4005,7 +4164,9 @@ class Container {
         this.children = children;
         this.sourceSpan = sourceSpan;
     }
-    visit(visitor, context) { return visitor.visitContainer(this, context); }
+    visit(visitor, context) {
+        return visitor.visitContainer(this, context);
+    }
 }
 class Icu$1 {
     constructor(expression, type, cases, sourceSpan) {
@@ -4014,7 +4175,9 @@ class Icu$1 {
         this.cases = cases;
         this.sourceSpan = sourceSpan;
     }
-    visit(visitor, context) { return visitor.visitIcu(this, context); }
+    visit(visitor, context) {
+        return visitor.visitIcu(this, context);
+    }
 }
 class TagPlaceholder {
     constructor(tag, attrs, startName, closeName, children, isVoid, sourceSpan) {
@@ -4026,7 +4189,9 @@ class TagPlaceholder {
         this.isVoid = isVoid;
         this.sourceSpan = sourceSpan;
     }
-    visit(visitor, context) { return visitor.visitTagPlaceholder(this, context); }
+    visit(visitor, context) {
+        return visitor.visitTagPlaceholder(this, context);
+    }
 }
 class Placeholder {
     constructor(value, name, sourceSpan) {
@@ -4034,7 +4199,9 @@ class Placeholder {
         this.name = name;
         this.sourceSpan = sourceSpan;
     }
-    visit(visitor, context) { return visitor.visitPlaceholder(this, context); }
+    visit(visitor, context) {
+        return visitor.visitPlaceholder(this, context);
+    }
 }
 class IcuPlaceholder {
     constructor(value, name, sourceSpan) {
@@ -4042,11 +4209,15 @@ class IcuPlaceholder {
         this.name = name;
         this.sourceSpan = sourceSpan;
     }
-    visit(visitor, context) { return visitor.visitIcuPlaceholder(this, context); }
+    visit(visitor, context) {
+        return visitor.visitIcuPlaceholder(this, context);
+    }
 }
 // Clone the AST
 class CloneVisitor {
-    visitText(text, context) { return new Text$1(text.value, text.sourceSpan); }
+    visitText(text, context) {
+        return new Text$1(text.value, text.sourceSpan);
+    }
     visitContainer(container, context) {
         const children = container.children.map(n => n.visit(this, context));
         return new Container(children, container.sourceSpan);
@@ -4076,7 +4247,9 @@ class RecurseVisitor {
         container.children.forEach(child => child.visit(this));
     }
     visitIcu(icu, context) {
-        Object.keys(icu.cases).forEach(k => { icu.cases[k].visit(this); });
+        Object.keys(icu.cases).forEach(k => {
+            icu.cases[k].visit(this);
+        });
     }
     visitTagPlaceholder(ph, context) {
         ph.children.forEach(child => child.visit(this));
@@ -4126,7 +4299,9 @@ function computeDecimalDigest(message) {
  * @internal
  */
 class _SerializerVisitor {
-    visitText(text, context) { return text.value; }
+    visitText(text, context) {
+        return text.value;
+    }
     visitContainer(container, context) {
         return `[${container.children.map(child => child.visit(this)).join(', ')}]`;
     }
@@ -4427,7 +4602,9 @@ function numberTimesBigInt(num, b) {
 class Serializer {
     // Creates a name mapper, see `PlaceholderMapper`
     // Returning `null` means that no name mapping is used.
-    createNameMapper(message) { return null; }
+    createNameMapper(message) {
+        return null;
+    }
 }
 /**
  * A simple mapper that take a function to transform an internal name to a public name
@@ -4451,13 +4628,17 @@ class SimplePlaceholderMapper extends RecurseVisitor {
         return this.publicToInternal.hasOwnProperty(publicName) ? this.publicToInternal[publicName] :
             null;
     }
-    visitText(text, context) { return null; }
+    visitText(text, context) {
+        return null;
+    }
     visitTagPlaceholder(ph, context) {
         this.visitPlaceholderName(ph.startName);
         super.visitTagPlaceholder(ph, context);
         this.visitPlaceholderName(ph.closeName);
     }
-    visitPlaceholder(ph, context) { this.visitPlaceholderName(ph.name); }
+    visitPlaceholder(ph, context) {
+        this.visitPlaceholderName(ph.name);
+    }
     visitIcuPlaceholder(ph, context) {
         this.visitPlaceholderName(ph.name);
     }
@@ -4497,7 +4678,9 @@ class _Visitor {
         const strChildren = tag.children.map(node => node.visit(this));
         return `<${tag.name}${strAttrs}>${strChildren.join('')}</${tag.name}>`;
     }
-    visitText(text) { return text.value; }
+    visitText(text) {
+        return text.value;
+    }
     visitDeclaration(decl) {
         return `<?xml${this._serializeAttributes(decl.attrs)} ?>`;
     }
@@ -4520,14 +4703,18 @@ class Declaration {
             this.attrs[k] = escapeXml(unescapedAttrs[k]);
         });
     }
-    visit(visitor) { return visitor.visitDeclaration(this); }
+    visit(visitor) {
+        return visitor.visitDeclaration(this);
+    }
 }
 class Doctype {
     constructor(rootTag, dtd) {
         this.rootTag = rootTag;
         this.dtd = dtd;
     }
-    visit(visitor) { return visitor.visitDoctype(this); }
+    visit(visitor) {
+        return visitor.visitDoctype(this);
+    }
 }
 class Tag {
     constructor(name, unescapedAttrs = {}, children = []) {
@@ -4538,14 +4725,22 @@ class Tag {
             this.attrs[k] = escapeXml(unescapedAttrs[k]);
         });
     }
-    visit(visitor) { return visitor.visitTag(this); }
+    visit(visitor) {
+        return visitor.visitTag(this);
+    }
 }
 class Text$2 {
-    constructor(unescapedValue) { this.value = escapeXml(unescapedValue); }
-    visit(visitor) { return visitor.visitText(this); }
+    constructor(unescapedValue) {
+        this.value = escapeXml(unescapedValue);
+    }
+    visit(visitor) {
+        return visitor.visitText(this);
+    }
 }
 class CR extends Text$2 {
-    constructor(ws = 0) { super(`\n${new Array(ws + 1).join(' ')}`); }
+    constructor(ws = 0) {
+        super(`\n${new Array(ws + 1).join(' ')}`);
+    }
 }
 const _ESCAPED_CHARS = [
     [/&/g, '&amp;'],
@@ -4605,9 +4800,7 @@ class Xmb extends Serializer {
             }
             let sourceTags = [];
             message.sources.forEach((source) => {
-                sourceTags.push(new Tag(_SOURCE_TAG, {}, [
-                    new Text$2(`${source.filePath}:${source.startLine}${source.endLine !== source.startLine ? ',' + source.endLine : ''}`)
-                ]));
+                sourceTags.push(new Tag(_SOURCE_TAG, {}, [new Text$2(`${source.filePath}:${source.startLine}${source.endLine !== source.startLine ? ',' + source.endLine : ''}`)]));
             });
             rootNode.children.push(new CR(2), new Tag(_MESSAGE_TAG, attrs, [...sourceTags, ...visitor.serialize(message.nodes)]));
         });
@@ -4624,13 +4817,17 @@ class Xmb extends Serializer {
     load(content, url) {
         throw new Error('Unsupported');
     }
-    digest(message) { return digest$1(message); }
+    digest(message) {
+        return digest$1(message);
+    }
     createNameMapper(message) {
         return new SimplePlaceholderMapper(message, toPublicName);
     }
 }
 class _Visitor$1 {
-    visitText(text, context) { return [new Text$2(text.value)]; }
+    visitText(text, context) {
+        return [new Text$2(text.value)];
+    }
     visitContainer(container, context) {
         const nodes = [];
         container.children.forEach((node) => nodes.push(...node.visit(this)));
@@ -4980,7 +5177,9 @@ class DefinitionMap {
             this.values.push({ key, value, quoted: false });
         }
     }
-    toLiteralMap() { return literalMap(this.values); }
+    toLiteralMap() {
+        return literalMap(this.values);
+    }
 }
 /**
  * Extract a map of properties to values for a given element or template node, which can be used
@@ -5002,8 +5201,12 @@ function getAttrsForDirectiveMatching(elOrTpl) {
                 attributesMap[a.name] = a.value;
             }
         });
-        elOrTpl.inputs.forEach(i => { attributesMap[i.name] = ''; });
-        elOrTpl.outputs.forEach(o => { attributesMap[o.name] = ''; });
+        elOrTpl.inputs.forEach(i => {
+            attributesMap[i.name] = '';
+        });
+        elOrTpl.outputs.forEach(o => {
+            attributesMap[o.name] = '';
+        });
     }
     return attributesMap;
 }
@@ -5276,7 +5479,8 @@ function dependenciesFromGlobalMetadata(type, outputCtx, reflector) {
             // Construct the dependency.
             deps.push({
                 token,
-                attribute: null, resolved,
+                attribute: null,
+                resolved,
                 host: !!dependency.isHost,
                 optional: !!dependency.isOptional,
                 self: !!dependency.isSelf,
@@ -5504,10 +5708,12 @@ class SourceMapGenerator {
         return this;
     }
     /**
-    * @internal strip this from published d.ts files due to
-    * https://github.com/microsoft/TypeScript/issues/36216
-    */
-    get currentLine() { return this.lines.slice(-1)[0]; }
+     * @internal strip this from published d.ts files due to
+     * https://github.com/microsoft/TypeScript/issues/36216
+     */
+    get currentLine() {
+        return this.lines.slice(-1)[0];
+    }
     toJSON() {
         if (!this.hasMappings) {
             return null;
@@ -5626,16 +5832,22 @@ class EmitterVisitorContext {
         this._preambleLineCount = 0;
         this._lines = [new _EmittedLine(_indent)];
     }
-    static createRoot() { return new EmitterVisitorContext(0); }
+    static createRoot() {
+        return new EmitterVisitorContext(0);
+    }
     /**
      * @internal strip this from published d.ts files due to
      * https://github.com/microsoft/TypeScript/issues/36216
      */
-    get _currentLine() { return this._lines[this._lines.length - 1]; }
+    get _currentLine() {
+        return this._lines[this._lines.length - 1];
+    }
     println(from, lastPart = '') {
         this.print(from || null, lastPart, true);
     }
-    lineIsEmpty() { return this._currentLine.parts.length === 0; }
+    lineIsEmpty() {
+        return this._currentLine.parts.length === 0;
+    }
     lineLength() {
         return this._currentLine.indent * _INDENT_WITH.length + this._currentLine.partsLength;
     }
@@ -5666,8 +5878,12 @@ class EmitterVisitorContext {
             this._currentLine.indent = this._indent;
         }
     }
-    pushClass(clazz) { this._classes.push(clazz); }
-    popClass() { return this._classes.pop(); }
+    pushClass(clazz) {
+        this._classes.push(clazz);
+    }
+    popClass() {
+        return this._classes.pop();
+    }
     get currentClass() {
         return this._classes.length > 0 ? this._classes[this._classes.length - 1] : null;
     }
@@ -5727,7 +5943,9 @@ class EmitterVisitorContext {
         });
         return map;
     }
-    setPreambleLineCount(count) { return this._preambleLineCount = count; }
+    setPreambleLineCount(count) {
+        return this._preambleLineCount = count;
+    }
     spanOf(line, column) {
         const emittedLine = this._lines[line - this._preambleLineCount];
         if (emittedLine) {
@@ -5805,7 +6023,9 @@ class AbstractEmitterVisitor {
             ctx.println(stmt, `/* ${stmt.comment} */`);
         }
         else {
-            stmt.comment.split('\n').forEach((line) => { ctx.println(stmt, `// ${line}`); });
+            stmt.comment.split('\n').forEach((line) => {
+                ctx.println(stmt, `// ${line}`);
+            });
         }
         return null;
     }
@@ -6119,7 +6339,9 @@ function _createIndent(count) {
  * found in the LICENSE file at https://angular.io/license
  */
 class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
-    constructor() { super(false); }
+    constructor() {
+        super(false);
+    }
     visitDeclareClassStmt(stmt, ctx) {
         ctx.pushClass(stmt);
         this._visitClassConstructor(stmt, ctx);
@@ -6380,7 +6602,9 @@ class JitEvaluator {
      * @param args The arguments to pass to the function being executed.
      * @returns The return value of the executed function.
      */
-    executeFunction(fn, args) { return fn(...args); }
+    executeFunction(fn, args) {
+        return fn(...args);
+    }
 }
 /**
  * An Angular AST visitor that converts AST nodes into executable JavaScript code.
@@ -6472,14 +6696,30 @@ class R3JitReflector {
         }
         return this.context[ref.name];
     }
-    parameters(typeOrFunc) { throw new Error('Not implemented.'); }
-    annotations(typeOrFunc) { throw new Error('Not implemented.'); }
-    shallowAnnotations(typeOrFunc) { throw new Error('Not implemented.'); }
-    tryAnnotations(typeOrFunc) { throw new Error('Not implemented.'); }
-    propMetadata(typeOrFunc) { throw new Error('Not implemented.'); }
-    hasLifecycleHook(type, lcProperty) { throw new Error('Not implemented.'); }
-    guards(typeOrFunc) { throw new Error('Not implemented.'); }
-    componentModuleUrl(type, cmpMetadata) { throw new Error('Not implemented.'); }
+    parameters(typeOrFunc) {
+        throw new Error('Not implemented.');
+    }
+    annotations(typeOrFunc) {
+        throw new Error('Not implemented.');
+    }
+    shallowAnnotations(typeOrFunc) {
+        throw new Error('Not implemented.');
+    }
+    tryAnnotations(typeOrFunc) {
+        throw new Error('Not implemented.');
+    }
+    propMetadata(typeOrFunc) {
+        throw new Error('Not implemented.');
+    }
+    hasLifecycleHook(type, lcProperty) {
+        throw new Error('Not implemented.');
+    }
+    guards(typeOrFunc) {
+        throw new Error('Not implemented.');
+    }
+    componentModuleUrl(type, cmpMetadata) {
+        throw new Error('Not implemented.');
+    }
 }
 
 /**
@@ -6513,9 +6753,7 @@ function mapLiteral(obj, quoted = false) {
 function compileNgModule(meta) {
     const { internalType, type: moduleType, bootstrap, declarations, imports, exports, schemas, containsForwardDecls, emitInline, id } = meta;
     const additionalStatements = [];
-    const definitionMap = {
-        type: internalType
-    };
+    const definitionMap = { type: internalType };
     // Only generate the keys in the metadata if the arrays have values.
     if (bootstrap.length) {
         definitionMap.bootstrap = refsToArray(bootstrap, containsForwardDecls);
@@ -6752,8 +6990,12 @@ class AST {
         this.span = span;
         this.sourceSpan = sourceSpan;
     }
-    visit(visitor, context = null) { return null; }
-    toString() { return 'AST'; }
+    visit(visitor, context = null) {
+        return null;
+    }
+    toString() {
+        return 'AST';
+    }
 }
 /**
  * Represents a quoted expression of the form:
@@ -6775,8 +7017,12 @@ class Quote extends AST {
         this.uninterpretedExpression = uninterpretedExpression;
         this.location = location;
     }
-    visit(visitor, context = null) { return visitor.visitQuote(this, context); }
-    toString() { return 'Quote'; }
+    visit(visitor, context = null) {
+        return visitor.visitQuote(this, context);
+    }
+    toString() {
+        return 'Quote';
+    }
 }
 class EmptyExpr extends AST {
     visit(visitor, context = null) {
@@ -6796,7 +7042,9 @@ class Chain extends AST {
         super(span, sourceSpan);
         this.expressions = expressions;
     }
-    visit(visitor, context = null) { return visitor.visitChain(this, context); }
+    visit(visitor, context = null) {
+        return visitor.visitChain(this, context);
+    }
 }
 class Conditional extends AST {
     constructor(span, sourceSpan, condition, trueExp, falseExp) {
@@ -6869,7 +7117,9 @@ class BindingPipe extends AST {
         this.args = args;
         this.nameSpan = nameSpan;
     }
-    visit(visitor, context = null) { return visitor.visitPipe(this, context); }
+    visit(visitor, context = null) {
+        return visitor.visitPipe(this, context);
+    }
 }
 class LiteralPrimitive extends AST {
     constructor(span, sourceSpan, value) {
@@ -6994,7 +7244,9 @@ class ASTWithSource extends AST {
         }
         return this.ast.visit(visitor, context);
     }
-    toString() { return `${this.source} in ${this.location}`; }
+    toString() {
+        return `${this.source} in ${this.location}`;
+    }
 }
 class VariableBinding {
     /**
@@ -7036,7 +7288,9 @@ class RecursiveAstVisitor$1 {
         this.visit(ast.left, context);
         this.visit(ast.right, context);
     }
-    visitChain(ast, context) { this.visitAll(ast.expressions, context); }
+    visitChain(ast, context) {
+        this.visitAll(ast.expressions, context);
+    }
     visitConditional(ast, context) {
         this.visit(ast.condition, context);
         this.visit(ast.trueExp, context);
@@ -7068,15 +7322,23 @@ class RecursiveAstVisitor$1 {
     visitLiteralArray(ast, context) {
         this.visitAll(ast.expressions, context);
     }
-    visitLiteralMap(ast, context) { this.visitAll(ast.values, context); }
+    visitLiteralMap(ast, context) {
+        this.visitAll(ast.values, context);
+    }
     visitLiteralPrimitive(ast, context) { }
     visitMethodCall(ast, context) {
         this.visit(ast.receiver, context);
         this.visitAll(ast.args, context);
     }
-    visitPrefixNot(ast, context) { this.visit(ast.expression, context); }
-    visitNonNullAssert(ast, context) { this.visit(ast.expression, context); }
-    visitPropertyRead(ast, context) { this.visit(ast.receiver, context); }
+    visitPrefixNot(ast, context) {
+        this.visit(ast.expression, context);
+    }
+    visitNonNullAssert(ast, context) {
+        this.visit(ast.expression, context);
+    }
+    visitPropertyRead(ast, context) {
+        this.visit(ast.receiver, context);
+    }
     visitPropertyWrite(ast, context) {
         this.visit(ast.receiver, context);
         this.visit(ast.value, context);
@@ -7097,7 +7359,9 @@ class RecursiveAstVisitor$1 {
     }
 }
 class AstTransformer$1 {
-    visitImplicitReceiver(ast, context) { return ast; }
+    visitImplicitReceiver(ast, context) {
+        return ast;
+    }
     visitInterpolation(ast, context) {
         return new Interpolation(ast.span, ast.sourceSpan, ast.strings, this.visitAll(ast.expressions));
     }
@@ -7166,14 +7430,18 @@ class AstTransformer$1 {
 // A transformer that only creates new nodes if the transformer makes a change or
 // a change is made a child node.
 class AstMemoryEfficientTransformer {
-    visitImplicitReceiver(ast, context) { return ast; }
+    visitImplicitReceiver(ast, context) {
+        return ast;
+    }
     visitInterpolation(ast, context) {
         const expressions = this.visitAll(ast.expressions);
         if (expressions !== ast.expressions)
             return new Interpolation(ast.span, ast.sourceSpan, ast.strings, expressions);
         return ast;
     }
-    visitLiteralPrimitive(ast, context) { return ast; }
+    visitLiteralPrimitive(ast, context) {
+        return ast;
+    }
     visitPropertyRead(ast, context) {
         const receiver = ast.receiver.visit(this);
         if (receiver !== ast.receiver) {
@@ -7308,7 +7576,9 @@ class AstMemoryEfficientTransformer {
         }
         return ast;
     }
-    visitQuote(ast, context) { return ast; }
+    visitQuote(ast, context) {
+        return ast;
+    }
 }
 // Bindings
 class ParsedProperty {
@@ -7749,7 +8019,9 @@ class _AstToIrVisitor {
             undefined;
         return convertToStatementIfNeeded(mode, literal(ast.value, type, this.convertSourceSpan(ast.span)));
     }
-    _getLocal(name) { return this._localResolver.getLocal(name); }
+    _getLocal(name) {
+        return this._localResolver.getLocal(name);
+    }
     visitMethodCall(ast, mode) {
         if (ast.receiver instanceof ImplicitReceiver && ast.name == '$any') {
             const args = this.visitAll(ast.args, _Mode.Expression);
@@ -7851,7 +8123,9 @@ class _AstToIrVisitor {
     visitSafeMethodCall(ast, mode) {
         return this.convertSafeAccess(ast, this.leftMostSafeNode(ast), mode);
     }
-    visitAll(asts, mode) { return asts.map(ast => this._visit(ast, mode)); }
+    visitAll(asts, mode) {
+        return asts.map(ast => this._visit(ast, mode));
+    }
     visitQuote(ast, mode) {
         throw new Error(`Quotes are not supported for evaluation!
         Statement: ${ast.uninterpretedExpression} located at ${ast.location}`);
@@ -7942,25 +8216,63 @@ class _AstToIrVisitor {
             return (this._nodeMap.get(ast) || ast).visit(visitor);
         };
         return ast.visit({
-            visitBinary(ast) { return null; },
-            visitChain(ast) { return null; },
-            visitConditional(ast) { return null; },
-            visitFunctionCall(ast) { return null; },
-            visitImplicitReceiver(ast) { return null; },
-            visitInterpolation(ast) { return null; },
-            visitKeyedRead(ast) { return visit(this, ast.obj); },
-            visitKeyedWrite(ast) { return null; },
-            visitLiteralArray(ast) { return null; },
-            visitLiteralMap(ast) { return null; },
-            visitLiteralPrimitive(ast) { return null; },
-            visitMethodCall(ast) { return visit(this, ast.receiver); },
-            visitPipe(ast) { return null; },
-            visitPrefixNot(ast) { return null; },
-            visitNonNullAssert(ast) { return null; },
-            visitPropertyRead(ast) { return visit(this, ast.receiver); },
-            visitPropertyWrite(ast) { return null; },
-            visitQuote(ast) { return null; },
-            visitSafeMethodCall(ast) { return visit(this, ast.receiver) || ast; },
+            visitBinary(ast) {
+                return null;
+            },
+            visitChain(ast) {
+                return null;
+            },
+            visitConditional(ast) {
+                return null;
+            },
+            visitFunctionCall(ast) {
+                return null;
+            },
+            visitImplicitReceiver(ast) {
+                return null;
+            },
+            visitInterpolation(ast) {
+                return null;
+            },
+            visitKeyedRead(ast) {
+                return visit(this, ast.obj);
+            },
+            visitKeyedWrite(ast) {
+                return null;
+            },
+            visitLiteralArray(ast) {
+                return null;
+            },
+            visitLiteralMap(ast) {
+                return null;
+            },
+            visitLiteralPrimitive(ast) {
+                return null;
+            },
+            visitMethodCall(ast) {
+                return visit(this, ast.receiver);
+            },
+            visitPipe(ast) {
+                return null;
+            },
+            visitPrefixNot(ast) {
+                return null;
+            },
+            visitNonNullAssert(ast) {
+                return null;
+            },
+            visitPropertyRead(ast) {
+                return visit(this, ast.receiver);
+            },
+            visitPropertyWrite(ast) {
+                return null;
+            },
+            visitQuote(ast) {
+                return null;
+            },
+            visitSafeMethodCall(ast) {
+                return visit(this, ast.receiver) || ast;
+            },
             visitSafePropertyRead(ast) {
                 return visit(this, ast.receiver) || ast;
             }
@@ -7977,29 +8289,66 @@ class _AstToIrVisitor {
             return ast.some(ast => visit(visitor, ast));
         };
         return ast.visit({
-            visitBinary(ast) { return visit(this, ast.left) || visit(this, ast.right); },
-            visitChain(ast) { return false; },
-            visitConditional(ast) {
-                return visit(this, ast.condition) || visit(this, ast.trueExp) ||
-                    visit(this, ast.falseExp);
+            visitBinary(ast) {
+                return visit(this, ast.left) || visit(this, ast.right);
             },
-            visitFunctionCall(ast) { return true; },
-            visitImplicitReceiver(ast) { return false; },
-            visitInterpolation(ast) { return visitSome(this, ast.expressions); },
-            visitKeyedRead(ast) { return false; },
-            visitKeyedWrite(ast) { return false; },
-            visitLiteralArray(ast) { return true; },
-            visitLiteralMap(ast) { return true; },
-            visitLiteralPrimitive(ast) { return false; },
-            visitMethodCall(ast) { return true; },
-            visitPipe(ast) { return true; },
-            visitPrefixNot(ast) { return visit(this, ast.expression); },
-            visitNonNullAssert(ast) { return visit(this, ast.expression); },
-            visitPropertyRead(ast) { return false; },
-            visitPropertyWrite(ast) { return false; },
-            visitQuote(ast) { return false; },
-            visitSafeMethodCall(ast) { return true; },
-            visitSafePropertyRead(ast) { return false; }
+            visitChain(ast) {
+                return false;
+            },
+            visitConditional(ast) {
+                return visit(this, ast.condition) || visit(this, ast.trueExp) || visit(this, ast.falseExp);
+            },
+            visitFunctionCall(ast) {
+                return true;
+            },
+            visitImplicitReceiver(ast) {
+                return false;
+            },
+            visitInterpolation(ast) {
+                return visitSome(this, ast.expressions);
+            },
+            visitKeyedRead(ast) {
+                return false;
+            },
+            visitKeyedWrite(ast) {
+                return false;
+            },
+            visitLiteralArray(ast) {
+                return true;
+            },
+            visitLiteralMap(ast) {
+                return true;
+            },
+            visitLiteralPrimitive(ast) {
+                return false;
+            },
+            visitMethodCall(ast) {
+                return true;
+            },
+            visitPipe(ast) {
+                return true;
+            },
+            visitPrefixNot(ast) {
+                return visit(this, ast.expression);
+            },
+            visitNonNullAssert(ast) {
+                return visit(this, ast.expression);
+            },
+            visitPropertyRead(ast) {
+                return false;
+            },
+            visitPropertyWrite(ast) {
+                return false;
+            },
+            visitQuote(ast) {
+                return false;
+            },
+            visitSafeMethodCall(ast) {
+                return true;
+            },
+            visitSafePropertyRead(ast) {
+                return false;
+            }
         });
     }
     allocateTemporary() {
@@ -8217,13 +8566,13 @@ class ShadowCss {
         this.strictStyling = true;
     }
     /*
-    * Shim some cssText with the given selector. Returns cssText that can
-    * be included in the document via WebComponents.ShadowCSS.addCssToDocument(css).
-    *
-    * When strictStyling is true:
-    * - selector is the attribute added to all elements inside the host,
-    * - hostSelector is the attribute added to the host itself.
-    */
+     * Shim some cssText with the given selector. Returns cssText that can
+     * be included in the document via WebComponents.ShadowCSS.addCssToDocument(css).
+     *
+     * When strictStyling is true:
+     * - selector is the attribute added to all elements inside the host,
+     * - hostSelector is the attribute added to the host itself.
+     */
     shimCssText(cssText, selector, hostSelector = '') {
         const commentsWithHash = extractCommentsWithHash(cssText);
         cssText = stripComments(cssText);
@@ -8248,10 +8597,12 @@ class ShadowCss {
      *
      * scopeName menu-item {
      *
-    **/
+     **/
     _insertPolyfillDirectivesInCssText(cssText) {
         // Difference with webcomponents.js: does not handle comments
-        return cssText.replace(_cssContentNextSelectorRe, function (...m) { return m[2] + '{'; });
+        return cssText.replace(_cssContentNextSelectorRe, function (...m) {
+            return m[2] + '{';
+        });
     }
     /*
      * Process styles to add rules which will only apply under the polyfill
@@ -8267,7 +8618,7 @@ class ShadowCss {
      *
      * scopeName menu-item {...}
      *
-    **/
+     **/
     _insertPolyfillRulesInCssText(cssText) {
         // Difference with webcomponents.js: does not handle comments
         return cssText.replace(_cssContentRuleRe, (...m) => {
@@ -8282,7 +8633,7 @@ class ShadowCss {
      *  and converts this to
      *
      *  scopeName .foo { ... }
-    */
+     */
     _scopeCssText(cssText, scopeSelector, hostSelector) {
         const unscopedRules = this._extractUnscopedRulesFromCssText(cssText);
         // replace :host and :host-context -shadowcsshost and -shadowcsshost respectively
@@ -8310,7 +8661,7 @@ class ShadowCss {
      *
      * menu-item {...}
      *
-    **/
+     **/
     _extractUnscopedRulesFromCssText(cssText) {
         // Difference with webcomponents.js: does not handle comments
         let r = '';
@@ -8328,7 +8679,7 @@ class ShadowCss {
      * to
      *
      * .foo<scopeName> > .bar
-    */
+     */
     _convertColonHost(cssText) {
         return this._convertColonRule(cssText, _cssColonHostRe, this._colonHostPartReplacer);
     }
@@ -8346,7 +8697,7 @@ class ShadowCss {
      * to
      *
      * .foo<scopeName> .bar { ... }
-    */
+     */
     _convertColonHostContext(cssText) {
         return this._convertColonRule(cssText, _cssColonHostContextRe, this._colonHostContextPartReplacer);
     }
@@ -8383,7 +8734,7 @@ class ShadowCss {
     /*
      * Convert combinators like ::shadow and pseudo-elements like ::content
      * by replacing with space.
-    */
+     */
     _convertShadowDOMSelectors(cssText) {
         return _shadowDOMSelectorsRe.reduce((result, pattern) => result.replace(pattern, ' '), cssText);
     }
@@ -8541,7 +8892,9 @@ class SafeSelector {
     restore(content) {
         return content.replace(/__ph-(\d+)__/g, (ph, index) => this.placeholders[+index]);
     }
-    content() { return this._content; }
+    content() {
+        return this._content;
+    }
 }
 const _cssContentNextSelectorRe = /polyfill-next-selector[^}]*content:[\s]*?(['"])(.*?)\1[;\s]*}([^{]*?){/gim;
 const _cssContentRuleRe = /(polyfill-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;
@@ -8752,13 +9105,21 @@ class AstPath {
         this.path = path;
         this.position = position;
     }
-    get empty() { return !this.path || !this.path.length; }
-    get head() { return this.path[0]; }
-    get tail() { return this.path[this.path.length - 1]; }
+    get empty() {
+        return !this.path || !this.path.length;
+    }
+    get head() {
+        return this.path[0];
+    }
+    get tail() {
+        return this.path[this.path.length - 1];
+    }
     parentOf(node) {
         return node && this.path[this.path.indexOf(node) - 1];
     }
-    childOf(node) { return this.path[this.path.indexOf(node) + 1]; }
+    childOf(node) {
+        return this.path[this.path.indexOf(node) + 1];
+    }
     first(ctor) {
         for (let i = this.path.length - 1; i >= 0; i--) {
             let item = this.path[i];
@@ -8766,8 +9127,12 @@ class AstPath {
                 return item;
         }
     }
-    push(node) { this.path.push(node); }
-    pop() { return this.path.pop(); }
+    push(node) {
+        this.path.push(node);
+    }
+    pop() {
+        return this.path.pop();
+    }
 }
 
 /**
@@ -8788,7 +9153,9 @@ class Text$3 extends NodeWithI18n {
         super(sourceSpan, i18n);
         this.value = value;
     }
-    visit(visitor, context) { return visitor.visitText(this, context); }
+    visit(visitor, context) {
+        return visitor.visitText(this, context);
+    }
 }
 class Expansion extends NodeWithI18n {
     constructor(switchValue, type, cases, sourceSpan, switchValueSourceSpan, i18n) {
@@ -8798,7 +9165,9 @@ class Expansion extends NodeWithI18n {
         this.cases = cases;
         this.switchValueSourceSpan = switchValueSourceSpan;
     }
-    visit(visitor, context) { return visitor.visitExpansion(this, context); }
+    visit(visitor, context) {
+        return visitor.visitExpansion(this, context);
+    }
 }
 class ExpansionCase {
     constructor(value, expression, sourceSpan, valueSourceSpan, expSourceSpan) {
@@ -8808,7 +9177,9 @@ class ExpansionCase {
         this.valueSourceSpan = valueSourceSpan;
         this.expSourceSpan = expSourceSpan;
     }
-    visit(visitor, context) { return visitor.visitExpansionCase(this, context); }
+    visit(visitor, context) {
+        return visitor.visitExpansionCase(this, context);
+    }
 }
 class Attribute extends NodeWithI18n {
     constructor(name, value, sourceSpan, valueSpan, i18n) {
@@ -8817,7 +9188,9 @@ class Attribute extends NodeWithI18n {
         this.value = value;
         this.valueSpan = valueSpan;
     }
-    visit(visitor, context) { return visitor.visitAttribute(this, context); }
+    visit(visitor, context) {
+        return visitor.visitAttribute(this, context);
+    }
 }
 class Element$1 extends NodeWithI18n {
     constructor(name, attrs, children, sourceSpan, startSourceSpan = null, endSourceSpan = null, i18n) {
@@ -8828,14 +9201,18 @@ class Element$1 extends NodeWithI18n {
         this.startSourceSpan = startSourceSpan;
         this.endSourceSpan = endSourceSpan;
     }
-    visit(visitor, context) { return visitor.visitElement(this, context); }
+    visit(visitor, context) {
+        return visitor.visitElement(this, context);
+    }
 }
 class Comment {
     constructor(value, sourceSpan) {
         this.value = value;
         this.sourceSpan = sourceSpan;
     }
-    visit(visitor, context) { return visitor.visitComment(this, context); }
+    visit(visitor, context) {
+        return visitor.visitComment(this, context);
+    }
 }
 function visitAll$1(visitor, nodes, context = null) {
     const result = [];
@@ -8862,7 +9239,9 @@ class RecursiveVisitor$1 {
     visitText(ast, context) { }
     visitComment(ast, context) { }
     visitExpansion(ast, context) {
-        return this.visitChildren(context, visit => { visit(ast.cases); });
+        return this.visitChildren(context, visit => {
+            visit(ast.cases);
+        });
     }
     visitExpansionCase(ast, context) { }
     visitChildren(context, cb) {
@@ -9581,12 +9960,24 @@ class PlainCharacterCursor {
             };
         }
     }
-    clone() { return new PlainCharacterCursor(this); }
-    peek() { return this.state.peek; }
-    charsLeft() { return this.end - this.state.offset; }
-    diff(other) { return this.state.offset - other.state.offset; }
-    advance() { this.advanceState(this.state); }
-    init() { this.updatePeek(this.state); }
+    clone() {
+        return new PlainCharacterCursor(this);
+    }
+    peek() {
+        return this.state.peek;
+    }
+    charsLeft() {
+        return this.end - this.state.offset;
+    }
+    diff(other) {
+        return this.state.offset - other.state.offset;
+    }
+    advance() {
+        this.advanceState(this.state);
+    }
+    init() {
+        this.updatePeek(this.state);
+    }
     getSpan(start, leadingTriviaCodePoints) {
         start = start || this;
         let cloned = false;
@@ -9604,7 +9995,9 @@ class PlainCharacterCursor {
     getChars(start) {
         return this.input.substring(start.state.offset, this.state.offset);
     }
-    charAt(pos) { return this.input.charCodeAt(pos); }
+    charAt(pos) {
+        return this.input.charCodeAt(pos);
+    }
     advanceState(state) {
         if (state.offset >= this.end) {
             this.state = state;
@@ -9645,7 +10038,9 @@ class EscapedCharacterCursor extends PlainCharacterCursor {
         super.init();
         this.processEscapeSequence();
     }
-    clone() { return new EscapedCharacterCursor(this); }
+    clone() {
+        return new EscapedCharacterCursor(this);
+    }
     getChars(start) {
         const cursor = start.clone();
         let chars = '';
@@ -10121,7 +10516,9 @@ function lastOnStack(stack, element) {
  * found in the LICENSE file at https://angular.io/license
  */
 class HtmlParser extends Parser {
-    constructor() { super(getHtmlTagDefinition); }
+    constructor() {
+        super(getHtmlTagDefinition);
+    }
     parse(source, url, options) {
         return super.parse(source, url, options);
     }
@@ -10189,9 +10586,15 @@ class WhitespaceVisitor {
         }
         return null;
     }
-    visitComment(comment, context) { return comment; }
-    visitExpansion(expansion, context) { return expansion; }
-    visitExpansionCase(expansionCase, context) { return expansionCase; }
+    visitComment(comment, context) {
+        return comment;
+    }
+    visitExpansion(expansion, context) {
+        return expansion;
+    }
+    visitExpansionCase(expansionCase, context) {
+        return expansionCase;
+    }
 }
 function removeWhitespaces(htmlAstWithErrors) {
     return new ParseTreeResult(visitAll$1(new WhitespaceVisitor(), htmlAstWithErrors.rootNodes), htmlAstWithErrors.errors);
@@ -10252,7 +10655,9 @@ class ExpansionResult {
     }
 }
 class ExpansionError extends ParseError {
-    constructor(span, errorMsg) { super(span, errorMsg); }
+    constructor(span, errorMsg) {
+        super(span, errorMsg);
+    }
 }
 /**
  * Expand expansion forms (plural, select) to directives
@@ -10267,9 +10672,15 @@ class _Expander {
     visitElement(element, context) {
         return new Element$1(element.name, element.attrs, visitAll$1(this, element.children), element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
     }
-    visitAttribute(attribute, context) { return attribute; }
-    visitText(text, context) { return text; }
-    visitComment(comment, context) { return comment; }
+    visitAttribute(attribute, context) {
+        return attribute;
+    }
+    visitText(text, context) {
+        return text;
+    }
+    visitComment(comment, context) {
+        return comment;
+    }
     visitExpansion(icu, context) {
         this.isExpanded = true;
         return icu.type == 'plural' ? _expandPluralForm(icu, this.errors) :
@@ -10283,7 +10694,7 @@ class _Expander {
 function _expandPluralForm(ast, errors) {
     const children = ast.cases.map(c => {
         if (PLURAL_CASES.indexOf(c.value) == -1 && !c.value.match(/^=\d+$/)) {
-            errors.push(new ExpansionError(c.valueSourceSpan, `Plural cases should be "=<number>" or one of ${PLURAL_CASES.join(", ")}`));
+            errors.push(new ExpansionError(c.valueSourceSpan, `Plural cases should be "=<number>" or one of ${PLURAL_CASES.join(', ')}`));
         }
         const expansionResult = expandNodes(c.expression);
         errors.push(...expansionResult.errors);
@@ -10323,7 +10734,9 @@ class TextAst {
         this.ngContentIndex = ngContentIndex;
         this.sourceSpan = sourceSpan;
     }
-    visit(visitor, context) { return visitor.visitText(this, context); }
+    visit(visitor, context) {
+        return visitor.visitText(this, context);
+    }
 }
 /**
  * A bound expression within the text of a template.
@@ -10347,7 +10760,9 @@ class AttrAst {
         this.value = value;
         this.sourceSpan = sourceSpan;
     }
-    visit(visitor, context) { return visitor.visitAttr(this, context); }
+    visit(visitor, context) {
+        return visitor.visitAttr(this, context);
+    }
 }
 const BoundPropertyMapping = {
     [4 /* Animation */]: 4 /* Animation */,
@@ -10579,7 +10994,9 @@ class NullTemplateVisitor {
  * in an template ast recursively.
  */
 class RecursiveTemplateAstVisitor extends NullTemplateVisitor {
-    constructor() { super(); }
+    constructor() {
+        super();
+    }
     // Nodes with children
     visitEmbeddedTemplate(ast, context) {
         return this.visitChildren(context, visit => {
@@ -10645,7 +11062,9 @@ function templateVisitAll(visitor, asts, context = null) {
  * found in the LICENSE file at https://angular.io/license
  */
 class ProviderError extends ParseError {
-    constructor(message, span) { super(span, message); }
+    constructor(message, span) {
+        super(span, message);
+    }
 }
 class ProviderViewContext {
     constructor(reflector, component) {
@@ -10730,7 +11149,9 @@ class ProviderElementContext {
     }
     get queryMatches() {
         const allMatches = [];
-        this._queriedTokens.forEach((matches) => { allMatches.push(...matches); });
+        this._queriedTokens.forEach((matches) => {
+            allMatches.push(...matches);
+        });
         return allMatches;
     }
     _addQueryReadsTo(token, defaultValue, queryReadTokens) {
@@ -10768,9 +11189,10 @@ class ProviderElementContext {
     }
     _getOrCreateLocalProvider(requestingProviderType, token, eager) {
         const resolvedProvider = this._allProviders.get(tokenReference(token));
-        if (!resolvedProvider || ((requestingProviderType === ProviderAstType.Directive ||
-            requestingProviderType === ProviderAstType.PublicService) &&
-            resolvedProvider.providerType === ProviderAstType.PrivateService) ||
+        if (!resolvedProvider ||
+            ((requestingProviderType === ProviderAstType.Directive ||
+                requestingProviderType === ProviderAstType.PublicService) &&
+                resolvedProvider.providerType === ProviderAstType.PrivateService) ||
             ((requestingProviderType === ProviderAstType.PrivateService ||
                 requestingProviderType === ProviderAstType.PublicService) &&
                 resolvedProvider.providerType === ProviderAstType.Builtin)) {
@@ -11153,8 +11575,12 @@ class BindingParser {
             this.pipesByName = pipesByName;
         }
     }
-    get interpolationConfig() { return this._interpolationConfig; }
-    getUsedPipes() { return Array.from(this._usedPipes.values()); }
+    get interpolationConfig() {
+        return this._interpolationConfig;
+    }
+    getUsedPipes() {
+        return Array.from(this._usedPipes.values());
+    }
     createBoundHostProperties(dirMeta, sourceSpan) {
         if (dirMeta.hostProperties) {
             const boundProps = [];
@@ -11265,7 +11691,9 @@ class BindingParser {
                     this._checkPipes(binding.value, sourceSpan);
                 }
             });
-            bindingsResult.warnings.forEach((warning) => { this._reportError(warning, sourceSpan, ParseErrorLevel.WARNING); });
+            bindingsResult.warnings.forEach((warning) => {
+                this._reportError(warning, sourceSpan, ParseErrorLevel.WARNING);
+            });
             return bindingsResult.templateBindings;
         }
         catch (e) {
@@ -11678,7 +12106,9 @@ class TemplateParser {
         this._console = _console;
         this.transforms = transforms;
     }
-    get expressionParser() { return this._exprParser; }
+    get expressionParser() {
+        return this._exprParser;
+    }
     parse(component, template, directives, pipes, schemas, templateUrl, preserveWhitespaces) {
         const result = this.tryParse(component, template, directives, pipes, schemas, templateUrl, preserveWhitespaces);
         const warnings = result.errors.filter(error => error.level === ParseErrorLevel.WARNING);
@@ -11733,7 +12163,9 @@ class TemplateParser {
             return new TemplateParseResult(result, usedPipes, errors);
         }
         if (this.transforms) {
-            this.transforms.forEach((transform) => { result = templateVisitAll(transform, result); });
+            this.transforms.forEach((transform) => {
+                result = templateVisitAll(transform, result);
+            });
         }
         return new TemplateParseResult(result, usedPipes, errors);
     }
@@ -11789,8 +12221,12 @@ class TemplateParseVisitor {
             this.directivesIndex.set(directive, index);
         });
     }
-    visitExpansion(expansion, context) { return null; }
-    visitExpansionCase(expansionCase, context) { return null; }
+    visitExpansion(expansion, context) {
+        return null;
+    }
+    visitExpansionCase(expansionCase, context) {
+        return null;
+    }
     visitText(text, parent) {
         const ngContentIndex = parent.findNgContentIndex(TEXT_CSS_SELECTOR());
         const valueNoNgsp = replaceNgsp(text.value);
@@ -11801,7 +12237,9 @@ class TemplateParseVisitor {
     visitAttribute(attribute, context) {
         return new AttrAst(attribute.name, attribute.value, attribute.sourceSpan);
     }
-    visitComment(comment, context) { return null; }
+    visitComment(comment, context) {
+        return null;
+    }
     visitElement(element, parent) {
         const queryStartIndex = this.contentQueryStartId;
         const elName = element.name;
@@ -12110,11 +12548,9 @@ class TemplateParseVisitor {
         const elName = element.name.replace(/^:xhtml:/, '');
         if (!matchElement && !this._schemaRegistry.hasElement(elName, this._schemas)) {
             let errorMsg = `'${elName}' is not a known element:\n`;
-            errorMsg +=
-                `1. If '${elName}' is an Angular component, then verify that it is part of this module.\n`;
+            errorMsg += `1. If '${elName}' is an Angular component, then verify that it is part of this module.\n`;
             if (elName.indexOf('-') > -1) {
-                errorMsg +=
-                    `2. If '${elName}' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.`;
+                errorMsg += `2. If '${elName}' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.`;
             }
             else {
                 errorMsg +=
@@ -12142,7 +12578,8 @@ class TemplateParseVisitor {
         });
         events.forEach(event => {
             if (event.target != null || !allDirectiveEvents.has(event.name)) {
-                this._reportError(`Event binding ${event.fullName} not emitted by any directive on an embedded template. Make sure that the event name is spelled correctly and all directives are listed in the "@NgModule.declarations".`, event.sourceSpan);
+                this._reportError(`Event binding ${event
+                    .fullName} not emitted by any directive on an embedded template. Make sure that the event name is spelled correctly and all directives are listed in the "@NgModule.declarations".`, event.sourceSpan);
             }
         });
     }
@@ -12155,7 +12592,8 @@ class TemplateParseVisitor {
                 let errorMsg = `Can't bind to '${boundProp.name}' since it isn't a known property of '${elementName}'.`;
                 if (elementName.startsWith('ng-')) {
                     errorMsg +=
-                        `\n1. If '${boundProp.name}' is an Angular directive, then add 'CommonModule' to the '@NgModule.imports' of this component.` +
+                        `\n1. If '${boundProp
+                            .name}' is an Angular directive, then add 'CommonModule' to the '@NgModule.imports' of this component.` +
                             `\n2. To allow any property add 'NO_ERRORS_SCHEMA' to the '@NgModule.schemas' of this component.`;
                 }
                 else if (elementName.indexOf('-') > -1) {
@@ -12190,7 +12628,9 @@ class NonBindableVisitor {
         const children = visitAll$1(this, ast.children, EMPTY_ELEMENT_CONTEXT);
         return new ElementAst(ast.name, visitAll$1(this, ast.attrs), [], [], [], [], [], false, [], children, ngContentIndex, ast.sourceSpan, ast.endSourceSpan);
     }
-    visitComment(comment, context) { return null; }
+    visitComment(comment, context) {
+        return null;
+    }
     visitAttribute(attribute, context) {
         return new AttrAst(attribute.name, attribute.value, attribute.sourceSpan);
     }
@@ -12198,8 +12638,12 @@ class NonBindableVisitor {
         const ngContentIndex = parent.findNgContentIndex(TEXT_CSS_SELECTOR());
         return new TextAst(text.value, ngContentIndex, text.sourceSpan);
     }
-    visitExpansion(expansion, context) { return expansion; }
-    visitExpansionCase(expansionCase, context) { return expansionCase; }
+    visitExpansion(expansion, context) {
+        return expansion;
+    }
+    visitExpansionCase(expansionCase, context) {
+        return expansionCase;
+    }
 }
 /**
  * A reference to an element or directive in a template. E.g., the reference in this template:
@@ -12253,7 +12697,9 @@ class ElementContext {
     }
     findNgContentIndex(selector) {
         const ngContentIndices = [];
-        this._ngContentIndexMatcher.match(selector, (selector, ngContentIndex) => { ngContentIndices.push(ngContentIndex); });
+        this._ngContentIndexMatcher.match(selector, (selector, ngContentIndex) => {
+            ngContentIndices.push(ngContentIndex);
+        });
         ngContentIndices.sort();
         if (this._wildcardNgContentIndex != null) {
             ngContentIndices.push(this._wildcardNgContentIndex);
@@ -12394,9 +12840,11 @@ function stripUnnecessaryQuotes(value) {
     return value;
 }
 function hyphenate(value) {
-    return value.replace(/[a-z][A-Z]/g, v => {
+    return value
+        .replace(/[a-z][A-Z]/g, v => {
         return v.charAt(0) + '-' + v.charAt(1);
-    }).toLowerCase();
+    })
+        .toLowerCase();
 }
 
 const IMPORTANT_FLAG = '!important';
@@ -12570,7 +13018,10 @@ class StylingBuilder {
         const entry = {
             name: property,
             sanitize: property ? isStyleSanitizable(property) : true,
-            unit: unit || bindingUnit, value, sourceSpan, hasOverrideFlag
+            unit: unit || bindingUnit,
+            value,
+            sourceSpan,
+            hasOverrideFlag
         };
         if (isMapBased) {
             this._styleMapInput = entry;
@@ -12984,24 +13435,48 @@ class Token$1 {
     isCharacter(code) {
         return this.type == TokenType$1.Character && this.numValue == code;
     }
-    isNumber() { return this.type == TokenType$1.Number; }
-    isString() { return this.type == TokenType$1.String; }
+    isNumber() {
+        return this.type == TokenType$1.Number;
+    }
+    isString() {
+        return this.type == TokenType$1.String;
+    }
     isOperator(operator) {
         return this.type == TokenType$1.Operator && this.strValue == operator;
     }
-    isIdentifier() { return this.type == TokenType$1.Identifier; }
-    isKeyword() { return this.type == TokenType$1.Keyword; }
-    isKeywordLet() { return this.type == TokenType$1.Keyword && this.strValue == 'let'; }
-    isKeywordAs() { return this.type == TokenType$1.Keyword && this.strValue == 'as'; }
-    isKeywordNull() { return this.type == TokenType$1.Keyword && this.strValue == 'null'; }
+    isIdentifier() {
+        return this.type == TokenType$1.Identifier;
+    }
+    isKeyword() {
+        return this.type == TokenType$1.Keyword;
+    }
+    isKeywordLet() {
+        return this.type == TokenType$1.Keyword && this.strValue == 'let';
+    }
+    isKeywordAs() {
+        return this.type == TokenType$1.Keyword && this.strValue == 'as';
+    }
+    isKeywordNull() {
+        return this.type == TokenType$1.Keyword && this.strValue == 'null';
+    }
     isKeywordUndefined() {
         return this.type == TokenType$1.Keyword && this.strValue == 'undefined';
     }
-    isKeywordTrue() { return this.type == TokenType$1.Keyword && this.strValue == 'true'; }
-    isKeywordFalse() { return this.type == TokenType$1.Keyword && this.strValue == 'false'; }
-    isKeywordThis() { return this.type == TokenType$1.Keyword && this.strValue == 'this'; }
-    isError() { return this.type == TokenType$1.Error; }
-    toNumber() { return this.type == TokenType$1.Number ? this.numValue : -1; }
+    isKeywordTrue() {
+        return this.type == TokenType$1.Keyword && this.strValue == 'true';
+    }
+    isKeywordFalse() {
+        return this.type == TokenType$1.Keyword && this.strValue == 'false';
+    }
+    isKeywordThis() {
+        return this.type == TokenType$1.Keyword && this.strValue == 'this';
+    }
+    isError() {
+        return this.type == TokenType$1.Error;
+    }
+    toNumber() {
+        return this.type == TokenType$1.Number ? this.numValue : -1;
+    }
     toString() {
         switch (this.type) {
             case TokenType$1.Character:
@@ -13539,7 +14014,9 @@ class _ParseAST {
         const i = this.index + offset;
         return i < this.tokens.length ? this.tokens[i] : EOF;
     }
-    get next() { return this.peek(0); }
+    get next() {
+        return this.peek(0);
+    }
     get inputIndex() {
         return (this.index < this.tokens.length) ? this.next.index + this.offset :
             this.inputLength + this.offset;
@@ -13547,7 +14024,9 @@ class _ParseAST {
     /**
      * Returns the absolute offset of the start of the current token.
      */
-    get currentAbsoluteOffset() { return this.absoluteOffset + this.inputIndex; }
+    get currentAbsoluteOffset() {
+        return this.absoluteOffset + this.inputIndex;
+    }
     span(start) {
         // `end` is either the
         //   - end index of the current token
@@ -13563,7 +14042,9 @@ class _ParseAST {
         }
         return this.sourceSpanCache.get(serial);
     }
-    advance() { this.index++; }
+    advance() {
+        this.index++;
+    }
     consumeOptionalCharacter(code) {
         if (this.next.isCharacter(code)) {
             this.advance();
@@ -13573,8 +14054,12 @@ class _ParseAST {
             return false;
         }
     }
-    peekKeywordLet() { return this.next.isKeywordLet(); }
-    peekKeywordAs() { return this.next.isKeywordAs(); }
+    peekKeywordLet() {
+        return this.next.isKeywordLet();
+    }
+    peekKeywordAs() {
+        return this.next.isKeywordAs();
+    }
     expectCharacter(code) {
         if (this.consumeOptionalCharacter(code))
             return;
@@ -13656,7 +14141,9 @@ class _ParseAST {
         }
         return result;
     }
-    parseExpression() { return this.parseConditional(); }
+    parseExpression() {
+        return this.parseConditional();
+    }
     parseConditional() {
         const start = this.inputIndex;
         const result = this.parseLogicalOr();
@@ -14206,16 +14693,24 @@ class SimpleExpressionChecker {
     visitMethodCall(ast, context) { }
     visitSafeMethodCall(ast, context) { }
     visitFunctionCall(ast, context) { }
-    visitLiteralArray(ast, context) { this.visitAll(ast.expressions); }
-    visitLiteralMap(ast, context) { this.visitAll(ast.values); }
+    visitLiteralArray(ast, context) {
+        this.visitAll(ast.expressions);
+    }
+    visitLiteralMap(ast, context) {
+        this.visitAll(ast.values);
+    }
     visitBinary(ast, context) { }
     visitPrefixNot(ast, context) { }
     visitNonNullAssert(ast, context) { }
     visitConditional(ast, context) { }
-    visitPipe(ast, context) { this.errors.push('pipes'); }
+    visitPipe(ast, context) {
+        this.errors.push('pipes');
+    }
     visitKeyedRead(ast, context) { }
     visitKeyedWrite(ast, context) { }
-    visitAll(asts) { return asts.map(node => node.visit(this)); }
+    visitAll(asts) {
+        return asts.map(node => node.visit(this));
+    }
     visitChain(ast, context) { }
     visitQuote(ast, context) { }
 }
@@ -14231,7 +14726,9 @@ class IvySimpleExpressionChecker extends SimpleExpressionChecker {
         ast.left.visit(this);
         ast.right.visit(this);
     }
-    visitPrefixNot(ast, context) { ast.expression.visit(this); }
+    visitPrefixNot(ast, context) {
+        ast.expression.visit(this);
+    }
 }
 
 /**
@@ -14543,7 +15040,9 @@ class DomElementSchemaRegistry extends ElementSchemaRegistry {
             typeNames.split(',').forEach(tag => this._schema[tag.toLowerCase()] = type);
             const superType = superName && this._schema[superName.toLowerCase()];
             if (superType) {
-                Object.keys(superType).forEach((prop) => { type[prop] = superType[prop]; });
+                Object.keys(superType).forEach((prop) => {
+                    type[prop] = superType[prop];
+                });
             }
             properties.forEach((property) => {
                 if (property.length > 0) {
@@ -14629,8 +15128,12 @@ class DomElementSchemaRegistry extends ElementSchemaRegistry {
         ctx = SECURITY_SCHEMA()['*|' + propName];
         return ctx ? ctx : SecurityContext.NONE;
     }
-    getMappedPropName(propName) { return _ATTR_TO_PROP[propName] || propName; }
-    getDefaultComponentElementName() { return 'ng-component'; }
+    getMappedPropName(propName) {
+        return _ATTR_TO_PROP[propName] || propName;
+    }
+    getDefaultComponentElementName() {
+        return 'ng-component';
+    }
     validateProperty(name) {
         if (name.toLowerCase().startsWith('on')) {
             const msg = `Binding to event property '${name}' is disallowed for security reasons, ` +
@@ -14653,7 +15156,9 @@ class DomElementSchemaRegistry extends ElementSchemaRegistry {
             return { error: false };
         }
     }
-    allKnownElementNames() { return Object.keys(this._schema); }
+    allKnownElementNames() {
+        return Object.keys(this._schema);
+    }
     normalizeAnimationStyleProperty(propName) {
         return dashCaseToCamelCase(propName);
     }
@@ -14926,8 +15431,12 @@ class HtmlAstToIvyAst {
         });
         return new Icu(vars, placeholders, expansion.sourceSpan, message);
     }
-    visitExpansionCase(expansionCase) { return null; }
-    visitComment(comment) { return null; }
+    visitExpansionCase(expansionCase) {
+        return null;
+    }
+    visitComment(comment) {
+        return null;
+    }
     // convert view engine `ParsedProperty` to a format suitable for IVY
     extractAttributes(elementName, properties, i18nPropsMeta) {
         const bound = [];
@@ -15049,13 +15558,21 @@ class NonBindableVisitor$1 {
         return new Element(ast.name, visitAll$1(this, ast.attrs), 
         /* inputs */ [], /* outputs */ [], children, /* references */ [], ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
     }
-    visitComment(comment) { return null; }
+    visitComment(comment) {
+        return null;
+    }
     visitAttribute(attribute) {
         return new TextAttribute(attribute.name, attribute.value, attribute.sourceSpan, undefined, attribute.i18n);
     }
-    visitText(text) { return new Text(text.value, text.sourceSpan); }
-    visitExpansion(expansion) { return null; }
-    visitExpansionCase(expansionCase) { return null; }
+    visitText(text) {
+        return new Text(text.value, text.sourceSpan);
+    }
+    visitExpansion(expansion) {
+        return null;
+    }
+    visitExpansionCase(expansionCase) {
+        return null;
+    }
 }
 const NON_BINDABLE_VISITOR$1 = new NonBindableVisitor$1();
 function normalizeAttributeName(attrName) {
@@ -15136,16 +15653,24 @@ class I18nContext {
         const content = { type, index, ctx: this.id, isVoid: node.isVoid, closed };
         updatePlaceholderMap(this.placeholders, ph, content);
     }
-    get icus() { return this._registry.icus; }
-    get isRoot() { return this.level === 0; }
-    get isResolved() { return this._unresolvedCtxCount === 0; }
+    get icus() {
+        return this._registry.icus;
+    }
+    get isRoot() {
+        return this.level === 0;
+    }
+    get isResolved() {
+        return this._unresolvedCtxCount === 0;
+    }
     getSerializedPlaceholders() {
         const result = new Map();
         this.placeholders.forEach((values, key) => result.set(key, values.map(serializePlaceholderValue)));
         return result;
     }
     // public API to accumulate i18n-related content
-    appendBinding(binding) { this.bindings.add(binding); }
+    appendBinding(binding) {
+        this.bindings.add(binding);
+    }
     appendIcu(name, ref) {
         updatePlaceholderMap(this._registry.icus, name, ref);
     }
@@ -15280,7 +15805,9 @@ function serializePlaceholderValue(value) {
  * found in the LICENSE file at https://angular.io/license
  */
 class IcuSerializerVisitor {
-    visitText(text) { return text.value; }
+    visitText(text) {
+        return text.value;
+    }
     visitContainer(container) {
         return container.children.map(child => child.visit(this)).join('');
     }
@@ -15294,7 +15821,9 @@ class IcuSerializerVisitor {
             this.formatPh(ph.startName) :
             `${this.formatPh(ph.startName)}${ph.children.map(child => child.visit(this)).join('')}${this.formatPh(ph.closeName)}`;
     }
-    visitPlaceholder(ph) { return this.formatPh(ph.name); }
+    visitPlaceholder(ph) {
+        return this.formatPh(ph.name);
+    }
     visitIcuPlaceholder(ph, context) {
         return this.formatPh(ph.name);
     }
@@ -15400,7 +15929,9 @@ class PlaceholderRegistry {
         const end = isVoid ? '/>' : `></${tag}>`;
         return start + strAttrs + end;
     }
-    _hashClosingTag(tag) { return this._hashTag(`/${tag}`, {}, false); }
+    _hashClosingTag(tag) {
+        return this._hashTag(`/${tag}`, {}, false);
+    }
     _generateUniqueName(base) {
         const seen = this._placeHolderNameCounts.hasOwnProperty(base);
         if (!seen) {
@@ -15648,10 +16179,18 @@ class I18nMetaVisitor {
         expansion.i18n = message;
         return expansion;
     }
-    visitText(text) { return text; }
-    visitAttribute(attribute) { return attribute; }
-    visitComment(comment) { return comment; }
-    visitExpansionCase(expansionCase) { return expansionCase; }
+    visitText(text) {
+        return text;
+    }
+    visitAttribute(attribute) {
+        return attribute;
+    }
+    visitComment(comment) {
+        return comment;
+    }
+    visitExpansionCase(expansionCase) {
+        return expansionCase;
+    }
     /**
      * Parse the general form `meta` passed into extract the explicit metadata needed to create a
      * `Message`.
@@ -15769,18 +16308,26 @@ function createGoogleGetMsgStatements(variable$1, message, closureVar, params) {
  * placeholders in `{$placeholder}` (for plain messages) or `{PLACEHOLDER}` (inside ICUs) format.
  */
 class GetMsgSerializerVisitor {
-    formatPh(value) { return `{$${formatI18nPlaceholderName(value)}}`; }
-    visitText(text) { return text.value; }
+    formatPh(value) {
+        return `{$${formatI18nPlaceholderName(value)}}`;
+    }
+    visitText(text) {
+        return text.value;
+    }
     visitContainer(container) {
         return container.children.map(child => child.visit(this)).join('');
     }
-    visitIcu(icu) { return serializeIcuNode(icu); }
+    visitIcu(icu) {
+        return serializeIcuNode(icu);
+    }
     visitTagPlaceholder(ph) {
         return ph.isVoid ?
             this.formatPh(ph.startName) :
             `${this.formatPh(ph.startName)}${ph.children.map(child => child.visit(this)).join('')}${this.formatPh(ph.closeName)}`;
     }
-    visitPlaceholder(ph) { return this.formatPh(ph.name); }
+    visitPlaceholder(ph) {
+        return this.formatPh(ph.name);
+    }
     visitIcuPlaceholder(ph, context) {
         return this.formatPh(ph.name);
     }
@@ -15804,7 +16351,9 @@ class MessagePiece {
 class LiteralPiece extends MessagePiece {
 }
 class PlaceholderPiece extends MessagePiece {
-    constructor(name) { super(formatI18nPlaceholderName(name, /* useCamelCase */ false)); }
+    constructor(name) {
+        super(formatI18nPlaceholderName(name, /* useCamelCase */ false));
+    }
 }
 /**
  * This visitor walks over an i18n tree, capturing literal strings and placeholders.
@@ -16029,8 +16578,9 @@ class TemplateDefinitionBuilder {
         // - this template has parent i18n context
         // - or the template has i18n meta associated with it,
         //   but it's not initiated by the Element (e.g. <ng-template i18n>)
-        const initI18nContext = this.i18nContext || (isI18nRootNode(i18n) && !isSingleI18nIcu(i18n) &&
-            !(isSingleElementTemplate(nodes) && nodes[0].i18n === i18n));
+        const initI18nContext = this.i18nContext ||
+            (isI18nRootNode(i18n) && !isSingleI18nIcu(i18n) &&
+                !(isSingleElementTemplate(nodes) && nodes[0].i18n === i18n));
         const selfClosingI18nInstruction = hasTextChildrenOnly(nodes);
         if (initI18nContext) {
             this.i18nStart(null, i18n, selfClosingI18nInstruction);
@@ -16097,9 +16647,13 @@ class TemplateDefinitionBuilder {
         ], INFERRED_TYPE, null, this.templateName);
     }
     // LocalResolver
-    getLocal(name) { return this._bindingScope.get(name); }
+    getLocal(name) {
+        return this._bindingScope.get(name);
+    }
     // LocalResolver
-    notifyImplicitReceiverUse() { this._bindingScope.notifyImplicitReceiverUse(); }
+    notifyImplicitReceiverUse() {
+        this._bindingScope.notifyImplicitReceiverUse();
+    }
     i18nTranslate(message, params = {}, ref, transformFn) {
         const _ref = ref || variable(this.constantPool.uniqueName(TRANSLATION_PREFIX));
         // Closure Compiler requires const names to start with `MSG_` but disallows any other const to
@@ -16501,7 +17055,8 @@ class TemplateDefinitionBuilder {
                             propertyBindings.push({
                                 name: attrName,
                                 sourceSpan: input.sourceSpan,
-                                value: () => this.convertPropertyBinding(value), params
+                                value: () => this.convertPropertyBinding(value),
+                                params
                             });
                         }
                     }
@@ -16517,7 +17072,8 @@ class TemplateDefinitionBuilder {
                             attributeBindings.push({
                                 name: attrName,
                                 sourceSpan: input.sourceSpan,
-                                value: () => this.convertPropertyBinding(boundValue), params
+                                value: () => this.convertPropertyBinding(boundValue),
+                                params
                             });
                         }
                     }
@@ -16702,16 +17258,26 @@ class TemplateDefinitionBuilder {
         }
         return null;
     }
-    allocateDataSlot() { return this._dataIndex++; }
-    getConstCount() { return this._dataIndex; }
-    getVarCount() { return this._pureFunctionSlots; }
-    getConsts() { return this._constants; }
+    allocateDataSlot() {
+        return this._dataIndex++;
+    }
+    getConstCount() {
+        return this._dataIndex;
+    }
+    getVarCount() {
+        return this._pureFunctionSlots;
+    }
+    getConsts() {
+        return this._constants;
+    }
     getNgContentSelectors() {
         return this._ngContentReservedSlots.length ?
             this.constantPool.getConstLiteral(asLiteral(this._ngContentReservedSlots), true) :
             null;
     }
-    bindingContext() { return `${this._bindingContext++}`; }
+    bindingContext() {
+        return `${this._bindingContext++}`;
+    }
     templatePropertyBindings(templateIndex, attrs) {
         const propertyBindings = [];
         attrs.forEach(input => {
@@ -16761,8 +17327,7 @@ class TemplateDefinitionBuilder {
                 calls.push({
                     sourceSpan: call.sourceSpan,
                     value: () => {
-                        return call
-                            .params(value => (call.supportsInterpolation && value instanceof Interpolation) ?
+                        return call.params(value => (call.supportsInterpolation && value instanceof Interpolation) ?
                             this.getUpdateInstructionArguments(value) :
                             this.convertPropertyBinding(value));
                     }
@@ -16860,7 +17425,9 @@ class TemplateDefinitionBuilder {
     matchDirectives(elementName, elOrTpl) {
         if (this.directiveMatcher) {
             const selector = createCssSelector(elementName, getAttrsForDirectiveMatching(elOrTpl));
-            this.directiveMatcher.match(selector, (cssSelector, staticType) => { this.directives.add(staticType); });
+            this.directiveMatcher.match(selector, (cssSelector, staticType) => {
+                this.directives.add(staticType);
+            });
         }
     }
     /**
@@ -17201,7 +17768,9 @@ class BindingScope {
         return this;
     }
     // Implemented as part of LocalResolver.
-    getLocal(name) { return this.get(name); }
+    getLocal(name) {
+        return this.get(name);
+    }
     // Implemented as part of LocalResolver.
     notifyImplicitReceiverUse() {
         if (this.bindingLevel !== 0) {
@@ -17294,7 +17863,9 @@ class BindingScope {
             [this.restoreViewVariable.set(getCurrentViewInstruction).toConstDecl()] :
             [];
     }
-    isListenerScope() { return this.parent && this.parent.bindingLevel === this.bindingLevel; }
+    isListenerScope() {
+        return this.parent && this.parent.bindingLevel === this.bindingLevel;
+    }
     variableDeclarations() {
         let currentContextLevel = 0;
         return Array.from(this.map.values())
@@ -17794,7 +18365,8 @@ function queriesFromGlobalMetadata(queries, outputCtx) {
             propertyName: query.propertyName,
             first: query.first,
             predicate: selectorsFromGlobalMetadata(query.selectors, outputCtx),
-            descendants: query.descendants, read,
+            descendants: query.descendants,
+            read,
             static: !!query.static
         };
     });
@@ -18211,7 +18783,9 @@ function verifyHostBindings(bindings, sourceSpan) {
 }
 function compileStyles(styles, selector, hostSelector) {
     const shadowCss = new ShadowCss();
-    return styles.map(style => { return shadowCss.shimCssText(style, selector, hostSelector); });
+    return styles.map(style => {
+        return shadowCss.shimCssText(style, selector, hostSelector);
+    });
 }
 
 /**
@@ -18226,7 +18800,9 @@ function compileStyles(styles, selector, hostSelector) {
  * to load templates.
  */
 class ResourceLoader {
-    get(url) { return ''; }
+    get(url) {
+        return '';
+    }
 }
 
 /**
@@ -18492,7 +19068,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.1.1+9.sha-33eee43');
+const VERSION$1 = new Version('9.1.1+11.sha-cbed582');
 
 /**
  * @license
@@ -18530,14 +19106,18 @@ class DirectiveNormalizer {
         this._config = _config;
         this._resourceLoaderCache = new Map();
     }
-    clearCache() { this._resourceLoaderCache.clear(); }
+    clearCache() {
+        this._resourceLoaderCache.clear();
+    }
     clearCacheFor(normalizedDirective) {
         if (!normalizedDirective.isComponent) {
             return;
         }
         const template = normalizedDirective.template;
         this._resourceLoaderCache.delete(template.templateUrl);
-        template.externalStylesheets.forEach((stylesheet) => { this._resourceLoaderCache.delete(stylesheet.moduleUrl); });
+        template.externalStylesheets.forEach((stylesheet) => {
+            this._resourceLoaderCache.delete(stylesheet.moduleUrl);
+        });
     }
     _fetch(url) {
         let result = this._resourceLoaderCache.get(url);
@@ -18550,7 +19130,8 @@ class DirectiveNormalizer {
     normalizeTemplate(prenormData) {
         if (isDefined(prenormData.template)) {
             if (isDefined(prenormData.templateUrl)) {
-                throw syntaxError(`'${stringify(prenormData.componentType)}' component cannot define both template and templateUrl`);
+                throw syntaxError(`'${stringify(prenormData
+                    .componentType)}' component cannot define both template and templateUrl`);
             }
             if (typeof prenormData.template !== 'string') {
                 throw syntaxError(`The template specified for component ${stringify(prenormData.componentType)} is not a string`);
@@ -18603,8 +19184,12 @@ class DirectiveNormalizer {
             .styleUrls;
         return {
             template,
-            templateUrl: templateAbsUrl, isInline,
-            htmlAst: rootNodesAndErrors, styles, inlineStyleUrls, styleUrls,
+            templateUrl: templateAbsUrl,
+            isInline,
+            htmlAst: rootNodesAndErrors,
+            styles,
+            inlineStyleUrls,
+            styleUrls,
             ngContentSelectors: visitor.ngContentSelectors,
         };
     }
@@ -18640,11 +19225,14 @@ class DirectiveNormalizer {
             encapsulation,
             template: preparsedTemplate.template,
             templateUrl: preparsedTemplate.templateUrl,
-            htmlAst: preparsedTemplate.htmlAst, styles, styleUrls,
+            htmlAst: preparsedTemplate.htmlAst,
+            styles,
+            styleUrls,
             ngContentSelectors: preparsedTemplate.ngContentSelectors,
             animations: prenormData.animations,
             interpolation: prenormData.interpolation,
-            isInline: preparsedTemplate.isInline, externalStylesheets,
+            isInline: preparsedTemplate.isInline,
+            externalStylesheets,
             preserveWhitespaces: preserveWhitespacesDefault(prenormData.preserveWhitespaces, this._config.preserveWhitespaces),
         });
     }
@@ -18714,13 +19302,21 @@ class TemplatePreparseVisitor {
         }
         return null;
     }
-    visitExpansion(ast, context) { visitAll$1(this, ast.cases); }
+    visitExpansion(ast, context) {
+        visitAll$1(this, ast.cases);
+    }
     visitExpansionCase(ast, context) {
         visitAll$1(this, ast.expression);
     }
-    visitComment(ast, context) { return null; }
-    visitAttribute(ast, context) { return null; }
-    visitText(ast, context) { return null; }
+    visitComment(ast, context) {
+        return null;
+    }
+    visitAttribute(ast, context) {
+        return null;
+    }
+    visitText(ast, context) {
+        return null;
+    }
 }
 
 /**
@@ -18818,7 +19414,9 @@ class DirectiveResolver {
         });
         return this._merge(dm, inputs, outputs, host, queries, guards, directiveType);
     }
-    _extractPublicName(def) { return splitAtColon(def, [null, def])[1].trim(); }
+    _extractPublicName(def) {
+        return splitAtColon(def, [null, def])[1].trim();
+    }
     _dedupeBindings(bindings) {
         const names = new Set();
         const publicNames = new Set();
@@ -18872,7 +19470,8 @@ class DirectiveResolver {
                 host: mergedHost,
                 exportAs: directive.exportAs,
                 queries: mergedQueries,
-                providers: directive.providers, guards
+                providers: directive.providers,
+                guards
             });
         }
     }
@@ -18900,7 +19499,9 @@ function findLast(arr, condition) {
  * An i18n error.
  */
 class I18nError extends ParseError {
-    constructor(span, msg) { super(span, msg); }
+    constructor(span, msg) {
+        super(span, msg);
+    }
 }
 
 /**
@@ -19315,8 +19916,12 @@ class XmlTagDefinition {
         this.ignoreFirstLf = false;
         this.canSelfClose = true;
     }
-    requireExtraParent(currentParent) { return false; }
-    isClosedByChild(name) { return false; }
+    requireExtraParent(currentParent) {
+        return false;
+    }
+    isClosedByChild(name) {
+        return false;
+    }
 }
 const _TAG_DEFINITION = new XmlTagDefinition();
 function getXmlTagDefinition(tagName) {
@@ -19331,7 +19936,9 @@ function getXmlTagDefinition(tagName) {
  * found in the LICENSE file at https://angular.io/license
  */
 class XmlParser extends Parser {
-    constructor() { super(getXmlTagDefinition); }
+    constructor() {
+        super(getXmlTagDefinition);
+    }
     parse(source, url, options) {
         return super.parse(source, url, options);
     }
@@ -19410,10 +20017,14 @@ class Xliff extends Serializer {
         }
         return { locale: locale, i18nNodesByMsgId };
     }
-    digest(message) { return digest(message); }
+    digest(message) {
+        return digest(message);
+    }
 }
 class _WriteVisitor {
-    visitText(text, context) { return [new Text$2(text.value)]; }
+    visitText(text, context) {
+        return [new Text$2(text.value)];
+    }
     visitContainer(container, context) {
         const nodes = [];
         container.children.forEach((node) => nodes.push(...node.visit(this)));
@@ -19537,7 +20148,9 @@ class XmlToI18n {
             errors: this._errors,
         };
     }
-    visitText(text, context) { return new Text$1(text.value, text.sourceSpan); }
+    visitText(text, context) {
+        return new Text$1(text.value, text.sourceSpan);
+    }
     visitElement(el, context) {
         if (el.name === _PLACEHOLDER_TAG$1) {
             const nameAttr = el.attrs.find((attr) => attr.name === 'id');
@@ -19652,10 +20265,14 @@ class Xliff2 extends Serializer {
         }
         return { locale: locale, i18nNodesByMsgId };
     }
-    digest(message) { return decimalDigest(message); }
+    digest(message) {
+        return decimalDigest(message);
+    }
 }
 class _WriteVisitor$1 {
-    visitText(text, context) { return [new Text$2(text.value)]; }
+    visitText(text, context) {
+        return [new Text$2(text.value)];
+    }
     visitContainer(container, context) {
         const nodes = [];
         container.children.forEach((node) => nodes.push(...node.visit(this)));
@@ -19808,7 +20425,9 @@ class XmlToI18n$1 {
             errors: this._errors,
         };
     }
-    visitText(text, context) { return new Text$1(text.value, text.sourceSpan); }
+    visitText(text, context) {
+        return new Text$1(text.value, text.sourceSpan);
+    }
     visitElement(el, context) {
         switch (el.name) {
             case _PLACEHOLDER_TAG$2:
@@ -19887,7 +20506,9 @@ const _TRANSLATIONS_TAG = 'translationbundle';
 const _TRANSLATION_TAG = 'translation';
 const _PLACEHOLDER_TAG$3 = 'ph';
 class Xtb extends Serializer {
-    write(messages, locale) { throw new Error('Unsupported'); }
+    write(messages, locale) {
+        throw new Error('Unsupported');
+    }
     load(content, url) {
         // xtb to xml nodes
         const xtbParser = new XtbParser();
@@ -19913,7 +20534,9 @@ class Xtb extends Serializer {
         }
         return { locale: locale, i18nNodesByMsgId };
     }
-    digest(message) { return digest$1(message); }
+    digest(message) {
+        return digest$1(message);
+    }
     createNameMapper(message) {
         return new SimplePlaceholderMapper(message, toPublicName);
     }
@@ -19927,7 +20550,9 @@ function createLazyProperty(messages, id, valueFn) {
             Object.defineProperty(messages, id, { enumerable: true, value });
             return value;
         },
-        set: _ => { throw new Error('Could not overwrite an XTB translation'); },
+        set: _ => {
+            throw new Error('Could not overwrite an XTB translation');
+        },
     });
 }
 // Extract messages as xml nodes from the xtb file
@@ -20008,7 +20633,9 @@ class XmlToI18n$2 {
             errors: this._errors,
         };
     }
-    visitText(text, context) { return new Text$1(text.value, text.sourceSpan); }
+    visitText(text, context) {
+        return new Text$1(text.value, text.sourceSpan);
+    }
     visitExpansion(icu, context) {
         const caseMap = {};
         visitAll$1(this, icu.cases).forEach(c => {
@@ -20074,7 +20701,9 @@ class TranslationBundle {
         }
         return html.nodes;
     }
-    has(srcMsg) { return this.digest(srcMsg) in this._i18nNodesByMsgId; }
+    has(srcMsg) {
+        return this.digest(srcMsg) in this._i18nNodesByMsgId;
+    }
 }
 class I18nToHtmlVisitor {
     constructor(_i18nNodesByMsgId = {}, _locale, _digest, _mapperFactory, _missingTranslationStrategy, _console) {
@@ -20274,7 +20903,9 @@ class _ValueOutputAstTransformer {
         });
         return new LiteralMapExpr(entries, type);
     }
-    visitPrimitive(value, type) { return literal(value, type); }
+    visitPrimitive(value, type) {
+        return literal(value, type);
+    }
     visitOther(value, type) {
         if (value instanceof Expression) {
             return value;
@@ -20555,7 +21186,9 @@ class CompileMetadataResolver {
         this._ngModuleOfTypes = new Map();
         this._shallowModuleCache = new Map();
     }
-    getReflector() { return this._reflector; }
+    getReflector() {
+        return this._reflector;
+    }
     clearCacheFor(type) {
         const dirMeta = this._directiveCache.get(type);
         this._directiveCache.delete(type);
@@ -21380,7 +22013,9 @@ class CompileMetadataResolver {
                         return soFar;
                     }, [])
                         .join(', ');
-                    this._reportError(syntaxError(`Invalid ${debugInfo ? debugInfo : 'provider'} - only instances of Provider and Type are allowed, got: [${providersInfo}]`), type);
+                    this._reportError(syntaxError(`Invalid ${debugInfo ?
+                        debugInfo :
+                        'provider'} - only instances of Provider and Type are allowed, got: [${providersInfo}]`), type);
                     return;
                 }
                 if (providerMeta.token ===
@@ -21481,7 +22116,9 @@ class CompileMetadataResolver {
         });
         return res;
     }
-    _queryVarBindings(selector) { return selector.split(/\s*,\s*/); }
+    _queryVarBindings(selector) {
+        return selector.split(/\s*,\s*/);
+    }
     _getQueryMetadata(q, propertyName, typeOrFunc) {
         let selectors;
         if (typeof q.selector === 'string') {
@@ -21500,7 +22137,8 @@ class CompileMetadataResolver {
         return {
             selectors,
             first: q.first,
-            descendants: q.descendants, propertyName,
+            descendants: q.descendants,
+            propertyName,
             read: q.read ? this._getTokenMetadata(q.read) : null,
             static: q.static
         };
@@ -21599,7 +22237,8 @@ function providerDef(ctx, providerAst) {
         singleProviderDef(ctx, flags, providerAst.providerType, providerAst.providers[0]);
     return {
         providerExpr,
-        flags: providerFlags, depsExpr,
+        flags: providerFlags,
+        depsExpr,
         tokenExpr: tokenExpr(ctx, providerAst.token),
     };
 }
@@ -21819,7 +22458,9 @@ class NgModuleResolver {
     constructor(_reflector) {
         this._reflector = _reflector;
     }
-    isNgModule(type) { return this._reflector.annotations(type).some(createNgModule.isTypeOf); }
+    isNgModule(type) {
+        return this._reflector.annotations(type).some(createNgModule.isTypeOf);
+    }
     resolve(type, throwIfNotFound = true) {
         const ngModuleMeta = findLast(this._reflector.annotations(type), createNgModule.isTypeOf);
         if (ngModuleMeta) {
@@ -22453,7 +23094,9 @@ class ViewBuilder {
         templateVisitAll(this, ast.children);
     }
     visitElementOrTemplate(ast) {
-        ast.directives.forEach((dirAst) => { this.visitDirective(dirAst); });
+        ast.directives.forEach((dirAst) => {
+            this.visitDirective(dirAst);
+        });
         ast.references.forEach((ref) => {
             let outputVarType = null;
             // Note: The old view compiler used to use an `any` type
@@ -22714,9 +23357,8 @@ class ViewBuilder$1 {
         this.nodes.push(() => ({
             sourceSpan: ast.sourceSpan,
             nodeFlags: 8 /* TypeNgContent */,
-            nodeDef: importExpr(Identifiers.ngContentDef).callFn([
-                literal(ast.ngContentIndex), literal(ast.index)
-            ])
+            nodeDef: importExpr(Identifiers.ngContentDef)
+                .callFn([literal(ast.ngContentIndex), literal(ast.index)])
         }));
     }
     visitText(ast, context) {
@@ -22986,7 +23628,8 @@ class ViewBuilder$1 {
         }));
         const hostEvents = dirAst.hostEvents.map((hostEventAst) => ({
             context: dirContextExpr,
-            eventAst: hostEventAst, dirAst,
+            eventAst: hostEventAst,
+            dirAst,
         }));
         // Check index is the same as the node index during compilation
         // They might only differ at runtime
@@ -23316,7 +23959,9 @@ function elementBindingDef(inputAst, dirAst) {
 }
 function fixedAttrsDef(elementAst) {
     const mapResult = Object.create(null);
-    elementAst.attrs.forEach(attrAst => { mapResult[attrAst.name] = attrAst.value; });
+    elementAst.attrs.forEach(attrAst => {
+        mapResult[attrAst.name] = attrAst.value;
+    });
     elementAst.directives.forEach(dirAst => {
         Object.keys(dirAst.directive.hostAttributes).forEach(name => {
             const value = dirAst.directive.hostAttributes[name];
@@ -23408,7 +24053,9 @@ class MessageBundle {
     }
     // Return the message in the internal format
     // The public (serialized) format might be different, see the `write` method.
-    getMessages() { return this._messages; }
+    getMessages() {
+        return this._messages;
+    }
     write(serializer, filterSources) {
         const messages = {};
         const mapperVisitor = new MapPlaceholderNames();
@@ -23624,8 +24271,7 @@ class StaticSymbolResolver {
             const summarizedName = stripSummaryForJitNameSuffix(staticSymbol.name);
             const baseSymbol = this.getStaticSymbol(summarizedFileName, summarizedName, staticSymbol.members);
             const baseImportAs = this.getImportAs(baseSymbol, useSummaries);
-            return baseImportAs ?
-                this.getStaticSymbol(summaryForJitFileName(baseImportAs.filePath), summaryForJitName(baseImportAs.name), baseSymbol.members) :
+            return baseImportAs ? this.getStaticSymbol(summaryForJitFileName(baseImportAs.filePath), summaryForJitName(baseImportAs.name), baseSymbol.members) :
                 null;
         }
         let result = (useSummaries && this.summaryResolver.getImportAs(staticSymbol)) || null;
@@ -23995,8 +24641,7 @@ class StaticSymbolResolver {
     getSymbolByModule(module, symbolName, containingFile) {
         const filePath = this.resolveModule(module, containingFile);
         if (!filePath) {
-            this.reportError(new Error(`Could not resolve module ${module}${containingFile ? ' relative to ' +
-                this.host.getOutputName(containingFile) : ''}`));
+            this.reportError(new Error(`Could not resolve module ${module}${containingFile ? ' relative to ' + this.host.getOutputName(containingFile) : ''}`));
             return this.getStaticSymbol(`ERROR:${module}`, symbolName);
         }
         return this.getStaticSymbol(filePath, symbolName);
@@ -24044,7 +24689,9 @@ function serializeSummaries(srcFileName, forJitCtx, summaryResolver, symbolResol
     const { json, exportAs } = toJsonSerializer.serialize(createExternalSymbolReexports);
     if (forJitCtx) {
         const forJitSerializer = new ForJitSerializer(forJitCtx, symbolResolver, summaryResolver);
-        types.forEach(({ summary, metadata }) => { forJitSerializer.addSourceType(summary, metadata); });
+        types.forEach(({ summary, metadata }) => {
+            forJitSerializer.addSourceType(summary, metadata);
+        });
         toJsonSerializer.unprocessedSymbolSummariesBySymbol.forEach((summary) => {
             if (summaryResolver.isLibraryFile(summary.symbol.filePath) && summary.type) {
                 forJitSerializer.addLibType(summary.type);
@@ -24365,7 +25012,8 @@ class ForJitSerializer {
         // providers without ctor arguments to skip the `@Injectable` decorator,
         // i.e. we didn't generate .ngsummary.ts files for these.
         expressions.push(...providers.filter(provider => !!provider.useClass).map(provider => this.serializeSummary({
-            summaryKind: CompileSummaryKind.Injectable, type: provider.useClass
+            summaryKind: CompileSummaryKind.Injectable,
+            type: provider.useClass
         })));
         return literalArr(expressions);
     }
@@ -24382,7 +25030,9 @@ class ForJitSerializer {
             visitStringMap(map, context) {
                 return new LiteralMapExpr(Object.keys(map).map((key) => new LiteralMapEntry(key, visitValue(map[key], this, context), false)));
             }
-            visitPrimitive(value, context) { return literal(value); }
+            visitPrimitive(value, context) {
+                return literal(value);
+            }
             visitOther(value, context) {
                 if (value instanceof StaticSymbol) {
                     return outputCtx.importExpr(value);
@@ -24468,7 +25118,9 @@ class AotCompiler {
         this._analyzedFiles = new Map();
         this._analyzedFilesForInjectables = new Map();
     }
-    clearCache() { this._metadataResolver.clearCache(); }
+    clearCache() {
+        this._metadataResolver.clearCache();
+    }
     analyzeModulesSync(rootFiles) {
         const analyzeResult = analyzeAndValidateNgModules(rootFiles, this._host, this._symbolResolver, this._metadataResolver);
         analyzeResult.ngModules.forEach(ngModule => this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference, true));
@@ -24729,7 +25381,9 @@ class AotCompiler {
                 // Map of StaticType by pipe names
                 const pipeTypeByName = new Map();
                 const pipes = module.transitiveModule.pipes.map(pipe => this._metadataResolver.getPipeSummary(pipe.reference));
-                pipes.forEach(pipe => { pipeTypeByName.set(pipe.name, pipe.type.reference); });
+                pipes.forEach(pipe => {
+                    pipeTypeByName.set(pipe.name, pipe.type.reference);
+                });
                 compileComponentFromRender2(context, directiveMetadata, render3Ast, this.reflector, hostBindingParser, directiveTypeBySel, pipeTypeByName);
             }
             else {
@@ -25092,8 +25746,13 @@ function analyzeFile(host, staticSymbolResolver, metadataResolver, fileName) {
         });
     }
     return {
-        fileName, directives, abstractDirectives, pipes,
-        ngModules, injectables, exportsNonSourceFiles,
+        fileName,
+        directives,
+        abstractDirectives,
+        pipes,
+        ngModules,
+        injectables,
+        exportsNonSourceFiles,
     };
 }
 function analyzeFileForInjectables(host, staticSymbolResolver, metadataResolver, fileName) {
@@ -25127,7 +25786,9 @@ function analyzeFileForInjectables(host, staticSymbolResolver, metadataResolver,
 function isValueExportingNonSourceFile(host, metadata) {
     let exportsNonSourceFiles = false;
     class Visitor {
-        visitArray(arr, context) { arr.forEach(v => visitValue(v, this, context)); }
+        visitArray(arr, context) {
+            arr.forEach(v => visitValue(v, this, context));
+        }
         visitStringMap(map, context) {
             Object.keys(map).forEach((key) => visitValue(map[key], this, context));
         }
@@ -25360,7 +26021,8 @@ class StaticReflector {
                     const typeHasRequiredAnnotation = requiredAnnotationTypes.some((requiredType) => ownAnnotations.some(ann => requiredType.isTypeOf(ann)));
                     if (!typeHasRequiredAnnotation) {
                         this.reportError(formatMetadataError(metadataError(`Class ${type.name} in ${type.filePath} extends from a ${CompileSummaryKind[summary.type.summaryKind]} in another compilation unit without duplicating the decorator`, 
-                        /* summary */ undefined, `Please add a ${requiredAnnotationTypes.map((type) => type.ngMetadataName).join(' or ')} decorator to the class`), type), type);
+                        /* summary */ undefined, `Please add a ${requiredAnnotationTypes.map((type) => type.ngMetadataName)
+                            .join(' or ')} decorator to the class`), type), type);
                     }
                 }
             }
@@ -25610,7 +26272,8 @@ class StaticReflector {
                         self.error({
                             message: e.message,
                             advise: e.advise,
-                            context: e.context, chain,
+                            context: e.context,
+                            chain,
                             symbol: nestedContext
                         }, context);
                     }
@@ -25678,7 +26341,8 @@ class StaticReflector {
                 self.error({
                     message: FUNCTION_CALL_NOT_SUPPORTED,
                     context: functionSymbol,
-                    value: targetFunction, position
+                    value: targetFunction,
+                    position
                 }, context);
             }
             function simplify(expression) {
@@ -26193,7 +26857,9 @@ class AotSummaryResolver {
     getKnownModuleName(importedFilePath) {
         return this.knownFileNameToModuleNames.get(importedFilePath) || null;
     }
-    addSummary(summary) { this.summaryCache.set(summary.symbol, summary); }
+    addSummary(summary) {
+        this.summaryCache.set(summary.symbol, summary);
+    }
     _loadSummaryFile(filePath) {
         let hasSummary = this.loadedFilePaths.get(filePath);
         if (hasSummary != null) {
@@ -26218,7 +26884,9 @@ class AotSummaryResolver {
             if (moduleName) {
                 this.knownFileNameToModuleNames.set(filePath, moduleName);
             }
-            importAs.forEach((importAs) => { this.importAs.set(importAs.symbol, importAs.importAs); });
+            importAs.forEach((importAs) => {
+                this.importAs.set(importAs.symbol, importAs.importAs);
+            });
         }
         return hasSummary;
     }
@@ -26285,16 +26953,30 @@ class JitSummaryResolver {
     constructor() {
         this._summaries = new Map();
     }
-    isLibraryFile() { return false; }
-    toSummaryFileName(fileName) { return fileName; }
-    fromSummaryFileName(fileName) { return fileName; }
+    isLibraryFile() {
+        return false;
+    }
+    toSummaryFileName(fileName) {
+        return fileName;
+    }
+    fromSummaryFileName(fileName) {
+        return fileName;
+    }
     resolveSummary(reference) {
         return this._summaries.get(reference) || null;
     }
-    getSymbolsOf() { return []; }
-    getImportAs(reference) { return reference; }
-    getKnownModuleName(fileName) { return null; }
-    addSummary(summary) { this._summaries.set(summary.symbol, summary); }
+    getSymbolsOf() {
+        return [];
+    }
+    getImportAs(reference) {
+        return reference;
+    }
+    getKnownModuleName(fileName) {
+        return null;
+    }
+    addSummary(summary) {
+        this._summaries.set(summary.symbol, summary);
+    }
 }
 
 function interpretStatements(statements, reflector) {
@@ -26302,7 +26984,9 @@ function interpretStatements(statements, reflector) {
     const visitor = new StatementInterpreter(reflector);
     visitor.visitAllStatements(statements, ctx);
     const result = {};
-    ctx.exports.forEach((exportName) => { result[exportName] = ctx.vars.get(exportName); });
+    ctx.exports.forEach((exportName) => {
+        result[exportName] = ctx.vars.get(exportName);
+    });
     return result;
 }
 function _executeFunctionStatements(varNames, varValues, statements, ctx, visitor) {
@@ -26358,7 +27042,9 @@ function createDynamicClass(_classStmt, _ctx, _visitor) {
     // Note: use `function` instead of arrow function to capture `this`
     const ctor = function (...args) {
         const instanceCtx = new _ExecutionContext(_ctx, this, _classStmt.name, _ctx.vars);
-        _classStmt.fields.forEach((field) => { this[field.name] = undefined; });
+        _classStmt.fields.forEach((field) => {
+            this[field.name] = undefined;
+        });
         _executeFunctionStatements(ctorParamNames, args, _classStmt.constructorMethod.body, instanceCtx, _visitor);
     };
     const superClass = _classStmt.parent ? _classStmt.parent.visitExpression(_visitor, _ctx) : Object;
@@ -26369,7 +27055,9 @@ class StatementInterpreter {
     constructor(reflector) {
         this.reflector = reflector;
     }
-    debugAst(ast) { return debugOutputAstAsTypeScript(ast); }
+    debugAst(ast) {
+        return debugOutputAstAsTypeScript(ast);
+    }
     visitDeclareVarStmt(stmt, ctx) {
         const initialValue = stmt.value ? stmt.value.visitExpression(this, ctx) : undefined;
         ctx.vars.set(stmt.name, initialValue);
@@ -26510,15 +27198,23 @@ class StatementInterpreter {
     visitThrowStmt(stmt, ctx) {
         throw stmt.error.visitExpression(this, ctx);
     }
-    visitCommentStmt(stmt, context) { return null; }
-    visitJSDocCommentStmt(stmt, context) { return null; }
+    visitCommentStmt(stmt, context) {
+        return null;
+    }
+    visitJSDocCommentStmt(stmt, context) {
+        return null;
+    }
     visitInstantiateExpr(ast, ctx) {
         const args = this.visitAllExpressions(ast.args, ctx);
         const clazz = ast.classExpr.visitExpression(this, ctx);
         return new clazz(...args);
     }
-    visitLiteralExpr(ast, ctx) { return ast.value; }
-    visitLocalizedString(ast, context) { return null; }
+    visitLiteralExpr(ast, ctx) {
+        return ast.value;
+    }
+    visitLocalizedString(ast, context) {
+        return null;
+    }
     visitExternalExpr(ast, ctx) {
         return this.reflector.resolveExternalReference(ast.value);
     }
@@ -26706,7 +27402,9 @@ class JitCompiler {
             }
         }
     }
-    hasAotSummary(ref) { return !!this._summaryResolver.resolveSummary(ref); }
+    hasAotSummary(ref) {
+        return !!this._summaryResolver.resolveSummary(ref);
+    }
     _filterJitIdentifiers(ids) {
         return ids.map(mod => mod.reference).filter((ref) => !this.hasAotSummary(ref));
     }
@@ -27139,12 +27837,12 @@ function _split(uri) {
     return uri.match(_splitRe);
 }
 /**
-  * Removes dot segments in given path component, as described in
-  * RFC 3986, section 5.2.4.
-  *
-  * @param path A non-empty path component.
-  * @return Path component with removed dot segments.
-  */
+ * Removes dot segments in given path component, as described in
+ * RFC 3986, section 5.2.4.
+ *
+ * @param path A non-empty path component.
+ * @return Path component with removed dot segments.
+ */
 function _removeDotSegments(path) {
     if (path == '/')
         return '/';
@@ -27475,9 +28173,15 @@ class DirectiveBinder {
         matcher.ingest(template);
         return { directives, bindings, references };
     }
-    ingest(template) { template.forEach(node => node.visit(this)); }
-    visitElement(element) { this.visitElementOrTemplate(element.name, element); }
-    visitTemplate(template) { this.visitElementOrTemplate('ng-template', template); }
+    ingest(template) {
+        template.forEach(node => node.visit(this));
+    }
+    visitElement(element) {
+        this.visitElementOrTemplate(element.name, element);
+    }
+    visitTemplate(template) {
+        this.visitElementOrTemplate('ng-template', template);
+    }
     visitElementOrTemplate(elementName, node) {
         // First, determine the HTML shape of the node for the purpose of directive matching.
         // Do this by building up a `CssSelector` for the node.
@@ -27654,9 +28358,15 @@ class TemplateBinder extends RecursiveAstVisitor$1 {
     visitTextAttribute(attribute) { }
     visitIcu(icu) { }
     // The remaining visitors are concerned with processing AST expressions within template bindings
-    visitBoundAttribute(attribute) { attribute.value.visit(this); }
-    visitBoundEvent(event) { event.handler.visit(this); }
-    visitBoundText(text) { text.value.visit(this); }
+    visitBoundAttribute(attribute) {
+        attribute.value.visit(this);
+    }
+    visitBoundEvent(event) {
+        event.handler.visit(this);
+    }
+    visitBoundText(text) {
+        text.value.visit(this);
+    }
     visitPipe(ast, context) {
         this.usedPipes.add(ast.name);
         return super.visitPipe(ast, context);
@@ -27728,13 +28438,17 @@ class R3BoundTarget {
     getTemplateOfSymbol(symbol) {
         return this.symbols.get(symbol) || null;
     }
-    getNestingLevel(template) { return this.nestingLevel.get(template) || 0; }
+    getNestingLevel(template) {
+        return this.nestingLevel.get(template) || 0;
+    }
     getUsedDirectives() {
         const set = new Set();
         this.directives.forEach(dirs => dirs.forEach(dir => set.add(dir)));
         return Array.from(set.values());
     }
-    getUsedPipes() { return Array.from(this.usedPipes); }
+    getUsedPipes() {
+        return Array.from(this.usedPipes);
+    }
 }
 
 /**
