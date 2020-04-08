@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { CompileReflector, PipeResolver, core } from '@angular/compiler';
+import { CompileReflector, core, PipeResolver } from '@angular/compiler';
 export declare class MockPipeResolver extends PipeResolver {
     private _pipes;
     constructor(refector: CompileReflector);

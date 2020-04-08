@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ElementSchemaRegistry, core } from '@angular/compiler';
+import { core, ElementSchemaRegistry } from '@angular/compiler';
 export declare class MockSchemaRegistry implements ElementSchemaRegistry {
     existingProperties: {
         [key: string]: boolean;
