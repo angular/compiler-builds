@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.0.0-next.1+1.sha-717df13
+ * @license Angular v10.0.0-next.1+3.sha-83a9159
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -35,7 +35,9 @@ class MockResourceLoader extends ResourceLoader {
     /**
      * @return {?}
      */
-    hasPendingRequests() { return !!this._requests.length; }
+    hasPendingRequests() {
+        return !!this._requests.length;
+    }
     /**
      * Add an expectation for the given URL. Incoming requests will be checked against
      * the next expectation (in FIFO order). The `verifyNoOutstandingExpectations` method
@@ -60,7 +62,9 @@ class MockResourceLoader extends ResourceLoader {
      * @param {?} response
      * @return {?}
      */
-    when(url, response) { this._definitions.set(url, response); }
+    when(url, response) {
+        this._definitions.set(url, response);
+    }
     /**
      * Process pending requests and verify there are no outstanding expectations. Also fails
      * if no requests are pending.
@@ -165,7 +169,9 @@ class _PendingRequest {
     /**
      * @return {?}
      */
-    getPromise() { return this.promise; }
+    getPromise() {
+        return this.promise;
+    }
 }
 if (false) {
     /** @type {?} */
@@ -251,7 +257,9 @@ class MockSchemaRegistry {
     /**
      * @return {?}
      */
-    allKnownElementNames() { return Object.keys(this.existingElements); }
+    allKnownElementNames() {
+        return Object.keys(this.existingElements);
+    }
     /**
      * @param {?} selector
      * @param {?} property
@@ -265,11 +273,15 @@ class MockSchemaRegistry {
      * @param {?} attrName
      * @return {?}
      */
-    getMappedPropName(attrName) { return this.attrPropMapping[attrName] || attrName; }
+    getMappedPropName(attrName) {
+        return this.attrPropMapping[attrName] || attrName;
+    }
     /**
      * @return {?}
      */
-    getDefaultComponentElementName() { return 'ng-component'; }
+    getDefaultComponentElementName() {
+        return 'ng-component';
+    }
     /**
      * @param {?} name
      * @return {?}
@@ -301,7 +313,9 @@ class MockSchemaRegistry {
      * @param {?} propName
      * @return {?}
      */
-    normalizeAnimationStyleProperty(propName) { return propName; }
+    normalizeAnimationStyleProperty(propName) {
+        return propName;
+    }
     /**
      * @param {?} camelCaseProp
      * @param {?} userProvidedProp
@@ -430,7 +444,9 @@ class MockPipeResolver extends PipeResolver {
      * @param {?} metadata
      * @return {?}
      */
-    setPipe(type, metadata) { this._pipes.set(type, metadata); }
+    setPipe(type, metadata) {
+        this._pipes.set(type, metadata);
+    }
     /**
      * Returns the {\@link Pipe} for a pipe:
      * - Set the {\@link Pipe} to the overridden view when it exists or fallback to the

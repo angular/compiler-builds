@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.0.0-next.1+1.sha-717df13
+ * @license Angular v10.0.0-next.1+3.sha-83a9159
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -32,7 +32,9 @@ var MockResourceLoader = /** @class */ (function (_super) {
         this._requests.push(request);
         return request.getPromise();
     };
-    MockResourceLoader.prototype.hasPendingRequests = function () { return !!this._requests.length; };
+    MockResourceLoader.prototype.hasPendingRequests = function () {
+        return !!this._requests.length;
+    };
     /**
      * Add an expectation for the given URL. Incoming requests will be checked against
      * the next expectation (in FIFO order). The `verifyNoOutstandingExpectations` method
@@ -50,7 +52,9 @@ var MockResourceLoader = /** @class */ (function (_super) {
      * unlike expectations, unused definitions do not cause `verifyNoOutstandingExpectations`
      * to return an error.
      */
-    MockResourceLoader.prototype.when = function (url, response) { this._definitions.set(url, response); };
+    MockResourceLoader.prototype.when = function (url, response) {
+        this._definitions.set(url, response);
+    };
     /**
      * Process pending requests and verify there are no outstanding expectations. Also fails
      * if no requests are pending.
@@ -113,7 +117,9 @@ var _PendingRequest = /** @class */ (function () {
             this.resolve(response);
         }
     };
-    _PendingRequest.prototype.getPromise = function () { return this.promise; };
+    _PendingRequest.prototype.getPromise = function () {
+        return this.promise;
+    };
     return _PendingRequest;
 }());
 var _Expectation = /** @class */ (function () {
@@ -153,12 +159,18 @@ var MockSchemaRegistry = /** @class */ (function () {
         var value = this.existingElements[tagName.toLowerCase()];
         return value === void 0 ? true : value;
     };
-    MockSchemaRegistry.prototype.allKnownElementNames = function () { return Object.keys(this.existingElements); };
+    MockSchemaRegistry.prototype.allKnownElementNames = function () {
+        return Object.keys(this.existingElements);
+    };
     MockSchemaRegistry.prototype.securityContext = function (selector, property, isAttribute) {
         return core.SecurityContext.NONE;
     };
-    MockSchemaRegistry.prototype.getMappedPropName = function (attrName) { return this.attrPropMapping[attrName] || attrName; };
-    MockSchemaRegistry.prototype.getDefaultComponentElementName = function () { return 'ng-component'; };
+    MockSchemaRegistry.prototype.getMappedPropName = function (attrName) {
+        return this.attrPropMapping[attrName] || attrName;
+    };
+    MockSchemaRegistry.prototype.getDefaultComponentElementName = function () {
+        return 'ng-component';
+    };
     MockSchemaRegistry.prototype.validateProperty = function (name) {
         if (this.invalidProperties.indexOf(name) > -1) {
             return { error: true, msg: "Binding to property '" + name + "' is disallowed for security reasons" };
@@ -178,7 +190,9 @@ var MockSchemaRegistry = /** @class */ (function () {
             return { error: false };
         }
     };
-    MockSchemaRegistry.prototype.normalizeAnimationStyleProperty = function (propName) { return propName; };
+    MockSchemaRegistry.prototype.normalizeAnimationStyleProperty = function (propName) {
+        return propName;
+    };
     MockSchemaRegistry.prototype.normalizeAnimationStyleValue = function (camelCaseProp, userProvidedProp, val) {
         return { error: null, value: val.toString() };
     };
@@ -259,7 +273,9 @@ var MockPipeResolver = /** @class */ (function (_super) {
     /**
      * Overrides the {@link Pipe} for a pipe.
      */
-    MockPipeResolver.prototype.setPipe = function (type, metadata) { this._pipes.set(type, metadata); };
+    MockPipeResolver.prototype.setPipe = function (type, metadata) {
+        this._pipes.set(type, metadata);
+    };
     /**
      * Returns the {@link Pipe} for a pipe:
      * - Set the {@link Pipe} to the overridden view when it exists or fallback to the
