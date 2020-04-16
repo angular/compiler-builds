@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.2
+ * @license Angular v9.1.2+17.sha-797c306
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2504,6 +2504,22 @@ function newArray(size, value) {
     }
     return list;
 }
+/**
+ * Partitions a given array into 2 arrays, based on a boolean value returned by the condition
+ * function.
+ *
+ * @param arr Input array that should be partitioned
+ * @param conditionFn Condition function that is called for each item in a given array and returns a
+ * boolean value.
+ */
+function partitionArray(arr, conditionFn) {
+    const truthy = [];
+    const falsy = [];
+    arr.forEach(item => {
+        (conditionFn(item) ? truthy : falsy).push(item);
+    });
+    return [truthy, falsy];
+}
 
 /**
  * @license
@@ -4937,6 +4953,9 @@ function isI18nRootNode(meta) {
 }
 function isSingleI18nIcu(meta) {
     return isI18nRootNode(meta) && meta.nodes.length === 1 && meta.nodes[0] instanceof Icu$1;
+}
+function hasI18nMeta(node) {
+    return !!node.i18n;
 }
 function hasI18nAttrs(element) {
     return element.attrs.some((attr) => isI18nAttribute(attr.name));
@@ -17131,9 +17150,8 @@ class TemplateDefinitionBuilder {
         // find directives matching on a given <ng-template> node
         this.matchDirectives(NG_TEMPLATE_TAG_NAME, template);
         // prepare attributes parameter (including attributes used for directive matching)
-        // TODO (FW-1942): exclude i18n attributes from the main attribute list and pass them
-        // as an `i18nAttrs` argument of the `getAttributeExpressions` function below.
-        const attrsExprs = this.getAttributeExpressions(template.attributes, template.inputs, template.outputs, undefined, template.templateAttrs, undefined);
+        const [i18nStaticAttrs, staticAttrs] = partitionArray(template.attributes, hasI18nMeta);
+        const attrsExprs = this.getAttributeExpressions(staticAttrs, template.inputs, template.outputs, undefined /* styles */, template.templateAttrs, i18nStaticAttrs);
         parameters.push(this.addAttrsToConsts(attrsExprs));
         // local refs (ex.: <ng-template #foo>)
         if (template.references && template.references.length) {
@@ -17163,9 +17181,8 @@ class TemplateDefinitionBuilder {
         this.templatePropertyBindings(templateIndex, template.templateAttrs);
         // Only add normal input/output binding instructions on explicit <ng-template> elements.
         if (template.tagName === NG_TEMPLATE_TAG_NAME) {
-            const inputs = [];
-            const i18nAttrs = template.attributes.filter(attr => !!attr.i18n);
-            template.inputs.forEach((input) => (input.i18n ? i18nAttrs : inputs).push(input));
+            const [i18nInputs, inputs] = partitionArray(template.inputs, hasI18nMeta);
+            const i18nAttrs = [...i18nStaticAttrs, ...i18nInputs];
             // Add i18n attributes that may act as inputs to directives. If such attributes are present,
             // generate `i18nAttributes` instruction. Note: we generate it only for explicit <ng-template>
             // elements, in case of inline templates, corresponding instructions will be generated in the
@@ -19065,7 +19082,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('9.1.2');
+const VERSION$1 = new Version('9.1.2+17.sha-797c306');
 
 /**
  * @license
