@@ -74,3 +74,12 @@ declare const _global: {
 export { _global as global };
 export declare function newArray<T = any>(size: number): T[];
 export declare function newArray<T>(size: number, value: T): T[];
+/**
+ * Partitions a given array into 2 arrays, based on a boolean value returned by the condition
+ * function.
+ *
+ * @param arr Input array that should be partitioned
+ * @param conditionFn Condition function that is called for each item in a given array and returns a
+ * boolean value.
+ */
+export declare function partitionArray<T>(arr: T[], conditionFn: <K extends T>(value: K) => boolean): [T[], T[]];
