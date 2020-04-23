@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.3+15.sha-f898c9a
+ * @license Angular v9.1.3+18.sha-d840503
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -20360,7 +20360,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.1.3+15.sha-f898c9a');
+    var VERSION$1 = new Version('9.1.3+18.sha-d840503');
 
     /**
      * @license
