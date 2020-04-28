@@ -35,7 +35,7 @@ export declare class TemplateParser {
     private _htmlParser;
     private _console;
     transforms: t.TemplateAstVisitor[];
-    constructor(_config: CompilerConfig, _reflector: CompileReflector, _exprParser: Parser, _schemaRegistry: ElementSchemaRegistry, _htmlParser: HtmlParser, _console: Console, transforms: t.TemplateAstVisitor[]);
+    constructor(_config: CompilerConfig, _reflector: CompileReflector, _exprParser: Parser, _schemaRegistry: ElementSchemaRegistry, _htmlParser: HtmlParser, _console: Console | null, transforms: t.TemplateAstVisitor[]);
     get expressionParser(): Parser;
     parse(component: CompileDirectiveMetadata, template: string | ParseTreeResult, directives: CompileDirectiveSummary[], pipes: CompilePipeSummary[], schemas: SchemaMetadata[], templateUrl: string, preserveWhitespaces: boolean): {
         template: t.TemplateAst[];
