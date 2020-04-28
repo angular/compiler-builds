@@ -44,7 +44,8 @@ export declare class TokenError extends ParseError {
 export declare class TokenizeResult {
     tokens: Token[];
     errors: TokenError[];
-    constructor(tokens: Token[], errors: TokenError[]);
+    nonNormalizedIcuExpressions: Token[];
+    constructor(tokens: Token[], errors: TokenError[], nonNormalizedIcuExpressions: Token[]);
 }
 export interface LexerRange {
     startPos: number;
@@ -89,6 +90,15 @@ export interface TokenizeOptions {
      * but the new line should increment the current line for source mapping.
      */
     escapedString?: boolean;
+    /**
+     * If this text is stored in an external template (e.g. via `templateUrl`) then we need to decide
+     * whether or not to normalize the line-endings (from `\r\n` to `\n`) when processing ICU
+     * expressions.
+     *
+     * If `true` then we will normalize ICU expression line endings.
+     * The default is `false`, but this will be switched in a future major release.
+     */
+    i18nNormalizeLineEndingsInICUs?: boolean;
     /**
      * An array of characters that should be considered as leading trivia.
      * Leading trivia are characters that are not important to the developer, and so should not be

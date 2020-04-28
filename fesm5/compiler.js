@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.0.0-next.3+38.sha-7c8c413
+ * @license Angular v10.0.0-next.3+43.sha-70dd27f
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10030,15 +10030,18 @@ var TokenError = /** @class */ (function (_super) {
     return TokenError;
 }(ParseError));
 var TokenizeResult = /** @class */ (function () {
-    function TokenizeResult(tokens, errors) {
+    function TokenizeResult(tokens, errors, nonNormalizedIcuExpressions) {
         this.tokens = tokens;
         this.errors = errors;
+        this.nonNormalizedIcuExpressions = nonNormalizedIcuExpressions;
     }
     return TokenizeResult;
 }());
 function tokenize(source, url, getTagDefinition, options) {
     if (options === void 0) { options = {}; }
-    return new _Tokenizer(new ParseSourceFile(source, url), getTagDefinition, options).tokenize();
+    var tokenizer = new _Tokenizer(new ParseSourceFile(source, url), getTagDefinition, options);
+    tokenizer.tokenize();
+    return new TokenizeResult(mergeTextTokens(tokenizer.tokens), tokenizer.errors, tokenizer.nonNormalizedIcuExpressions);
 }
 var _CR_OR_CRLF_REGEXP = /\r\n?/g;
 function _unexpectedCharacterErrorMsg(charCode) {
@@ -10069,6 +10072,7 @@ var _Tokenizer = /** @class */ (function () {
         this._inInterpolation = false;
         this.tokens = [];
         this.errors = [];
+        this.nonNormalizedIcuExpressions = [];
         this._tokenizeIcu = options.tokenizeExpansionForms || false;
         this._interpolationConfig = options.interpolationConfig || DEFAULT_INTERPOLATION_CONFIG;
         this._leadingTriviaCodePoints =
@@ -10077,6 +10081,8 @@ var _Tokenizer = /** @class */ (function () {
         this._cursor = options.escapedString ? new EscapedCharacterCursor(_file, range) :
             new PlainCharacterCursor(_file, range);
         this._preserveLineEndings = options.preserveLineEndings || false;
+        this._escapedString = options.escapedString || false;
+        this._i18nNormalizeLineEndingsInICUs = options.i18nNormalizeLineEndingsInICUs || false;
         try {
             this._cursor.init();
         }
@@ -10127,7 +10133,6 @@ var _Tokenizer = /** @class */ (function () {
         }
         this._beginToken(TokenType.EOF);
         this._endToken([]);
-        return new TokenizeResult(mergeTextTokens(this.tokens), this.errors);
     };
     /**
      * @returns whether an ICU token has been created
@@ -10494,7 +10499,20 @@ var _Tokenizer = /** @class */ (function () {
         this._expansionCaseStack.push(TokenType.EXPANSION_FORM_START);
         this._beginToken(TokenType.RAW_TEXT);
         var condition = this._readUntil($COMMA);
-        this._endToken([condition]);
+        var normalizedCondition = this._processCarriageReturns(condition);
+        if (this._escapedString || this._i18nNormalizeLineEndingsInICUs) {
+            // Either the template is inline or,
+            // we explicitly want to normalize line endings for this text.
+            this._endToken([normalizedCondition]);
+        }
+        else {
+            // The expression is in an external template and, for backward compatibility,
+            // we are not normalizing line endings.
+            var conditionToken = this._endToken([condition]);
+            if (normalizedCondition !== condition) {
+                this.nonNormalizedIcuExpressions.push(conditionToken);
+            }
+        }
         this._requireCharCode($COMMA);
         this._attemptCharCodeUntilFn(isNotWhitespace);
         this._beginToken(TokenType.RAW_TEXT);
@@ -10905,9 +10923,10 @@ var Parser = /** @class */ (function () {
         this.getTagDefinition = getTagDefinition;
     }
     Parser.prototype.parse = function (source, url, options) {
-        var tokensAndErrors = tokenize(source, url, this.getTagDefinition, options);
-        var treeAndErrors = new _TreeBuilder(tokensAndErrors.tokens, this.getTagDefinition).build();
-        return new ParseTreeResult(treeAndErrors.rootNodes, tokensAndErrors.errors.concat(treeAndErrors.errors));
+        var tokenizeResult = tokenize(source, url, this.getTagDefinition, options);
+        var parser = new _TreeBuilder(tokenizeResult.tokens, this.getTagDefinition);
+        parser.build();
+        return new ParseTreeResult(parser.rootNodes, tokenizeResult.errors.concat(parser.errors));
     };
     return Parser;
 }());
@@ -10916,9 +10935,9 @@ var _TreeBuilder = /** @class */ (function () {
         this.tokens = tokens;
         this.getTagDefinition = getTagDefinition;
         this._index = -1;
-        this._rootNodes = [];
-        this._errors = [];
         this._elementStack = [];
+        this.rootNodes = [];
+        this.errors = [];
         this._advance();
     }
     _TreeBuilder.prototype.build = function () {
@@ -10950,7 +10969,6 @@ var _TreeBuilder = /** @class */ (function () {
                 this._advance();
             }
         }
-        return new ParseTreeResult(this._rootNodes, this._errors);
     };
     _TreeBuilder.prototype._advance = function () {
         var prev = this._peek;
@@ -10967,7 +10985,7 @@ var _TreeBuilder = /** @class */ (function () {
         }
         return null;
     };
-    _TreeBuilder.prototype._consumeCdata = function (startToken) {
+    _TreeBuilder.prototype._consumeCdata = function (_startToken) {
         this._consumeText(this._advance());
         this._advanceIf(TokenType.CDATA_END);
     };
@@ -10990,7 +11008,7 @@ var _TreeBuilder = /** @class */ (function () {
         }
         // read the final }
         if (this._peek.type !== TokenType.EXPANSION_FORM_END) {
-            this._errors.push(TreeError.create(null, this._peek.sourceSpan, "Invalid ICU message. Missing '}'."));
+            this.errors.push(TreeError.create(null, this._peek.sourceSpan, "Invalid ICU message. Missing '}'."));
             return;
         }
         var sourceSpan = new ParseSourceSpan(token.sourceSpan.start, this._peek.sourceSpan.end);
@@ -11001,7 +11019,7 @@ var _TreeBuilder = /** @class */ (function () {
         var value = this._advance();
         // read {
         if (this._peek.type !== TokenType.EXPANSION_CASE_EXP_START) {
-            this._errors.push(TreeError.create(null, this._peek.sourceSpan, "Invalid ICU message. Missing '{'."));
+            this.errors.push(TreeError.create(null, this._peek.sourceSpan, "Invalid ICU message. Missing '{'."));
             return null;
         }
         // read until }
@@ -11012,14 +11030,15 @@ var _TreeBuilder = /** @class */ (function () {
         var end = this._advance();
         exp.push(new Token(TokenType.EOF, [], end.sourceSpan));
         // parse everything in between { and }
-        var parsedExp = new _TreeBuilder(exp, this.getTagDefinition).build();
-        if (parsedExp.errors.length > 0) {
-            this._errors = this._errors.concat(parsedExp.errors);
+        var expansionCaseParser = new _TreeBuilder(exp, this.getTagDefinition);
+        expansionCaseParser.build();
+        if (expansionCaseParser.errors.length > 0) {
+            this.errors = this.errors.concat(expansionCaseParser.errors);
             return null;
         }
         var sourceSpan = new ParseSourceSpan(value.sourceSpan.start, end.sourceSpan.end);
         var expSourceSpan = new ParseSourceSpan(start.sourceSpan.start, end.sourceSpan.end);
-        return new ExpansionCase(value.parts[0], parsedExp.rootNodes, sourceSpan, value.sourceSpan, expSourceSpan);
+        return new ExpansionCase(value.parts[0], expansionCaseParser.rootNodes, sourceSpan, value.sourceSpan, expSourceSpan);
     };
     _TreeBuilder.prototype._collectExpansionExpTokens = function (start) {
         var exp = [];
@@ -11036,7 +11055,7 @@ var _TreeBuilder = /** @class */ (function () {
                         return exp;
                 }
                 else {
-                    this._errors.push(TreeError.create(null, start.sourceSpan, "Invalid ICU message. Missing '}'."));
+                    this.errors.push(TreeError.create(null, start.sourceSpan, "Invalid ICU message. Missing '}'."));
                     return null;
                 }
             }
@@ -11045,12 +11064,12 @@ var _TreeBuilder = /** @class */ (function () {
                     expansionFormStack.pop();
                 }
                 else {
-                    this._errors.push(TreeError.create(null, start.sourceSpan, "Invalid ICU message. Missing '}'."));
+                    this.errors.push(TreeError.create(null, start.sourceSpan, "Invalid ICU message. Missing '}'."));
                     return null;
                 }
             }
             if (this._peek.type === TokenType.EOF) {
-                this._errors.push(TreeError.create(null, start.sourceSpan, "Invalid ICU message. Missing '}'."));
+                this.errors.push(TreeError.create(null, start.sourceSpan, "Invalid ICU message. Missing '}'."));
                 return null;
             }
             exp.push(this._advance());
@@ -11091,7 +11110,7 @@ var _TreeBuilder = /** @class */ (function () {
             selfClosing = true;
             var tagDef = this.getTagDefinition(fullName);
             if (!(tagDef.canSelfClose || getNsPrefix(fullName) !== null || tagDef.isVoid)) {
-                this._errors.push(TreeError.create(fullName, startTagToken.sourceSpan, "Only void and foreign elements can be self closed \"" + startTagToken.parts[1] + "\""));
+                this.errors.push(TreeError.create(fullName, startTagToken.sourceSpan, "Only void and foreign elements can be self closed \"" + startTagToken.parts[1] + "\""));
             }
         }
         else if (this._peek.type === TokenType.TAG_OPEN_END) {
@@ -11121,11 +11140,11 @@ var _TreeBuilder = /** @class */ (function () {
             this._getParentElement().endSourceSpan = endTagToken.sourceSpan;
         }
         if (this.getTagDefinition(fullName).isVoid) {
-            this._errors.push(TreeError.create(fullName, endTagToken.sourceSpan, "Void elements do not have end tags \"" + endTagToken.parts[1] + "\""));
+            this.errors.push(TreeError.create(fullName, endTagToken.sourceSpan, "Void elements do not have end tags \"" + endTagToken.parts[1] + "\""));
         }
         else if (!this._popElement(fullName)) {
             var errMsg = "Unexpected closing tag \"" + fullName + "\". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags";
-            this._errors.push(TreeError.create(fullName, endTagToken.sourceSpan, errMsg));
+            this.errors.push(TreeError.create(fullName, endTagToken.sourceSpan, errMsg));
         }
     };
     _TreeBuilder.prototype._popElement = function (fullName) {
@@ -11185,7 +11204,7 @@ var _TreeBuilder = /** @class */ (function () {
             parent.children.push(node);
         }
         else {
-            this._rootNodes.push(node);
+            this.rootNodes.push(node);
         }
     };
     /**
@@ -11207,7 +11226,7 @@ var _TreeBuilder = /** @class */ (function () {
                 parent.children[index] = node;
             }
             else {
-                this._rootNodes.push(node);
+                this.rootNodes.push(node);
             }
             node.children.push(container);
             this._elementStack.splice(this._elementStack.indexOf(container), 0, node);
@@ -12939,11 +12958,12 @@ var TemplateParser = /** @class */ (function () {
         configurable: true
     });
     TemplateParser.prototype.parse = function (component, template, directives, pipes, schemas, templateUrl, preserveWhitespaces) {
+        var _a;
         var result = this.tryParse(component, template, directives, pipes, schemas, templateUrl, preserveWhitespaces);
         var warnings = result.errors.filter(function (error) { return error.level === ParseErrorLevel.WARNING; });
         var errors = result.errors.filter(function (error) { return error.level === ParseErrorLevel.ERROR; });
         if (warnings.length > 0) {
-            this._console.warn("Template parse warnings:\n" + warnings.join('\n'));
+            (_a = this._console) === null || _a === void 0 ? void 0 : _a.warn("Template parse warnings:\n" + warnings.join('\n'));
         }
         if (errors.length > 0) {
             var errorString = errors.join('\n');
@@ -20165,7 +20185,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('10.0.0-next.3+38.sha-7c8c413');
+var VERSION$1 = new Version('10.0.0-next.3+43.sha-70dd27f');
 
 /**
  * @license
