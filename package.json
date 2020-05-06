@@ -1,15 +1,7 @@
 {
   "name": "@angular/compiler",
-  "version": "10.0.0-next.5+45.sha-fafa50d",
+  "version": "10.0.0-next.5+53.sha-3c6c00d",
   "description": "Angular - the compiler library",
-  "main": "./bundles/compiler.umd.js",
-  "module": "./fesm5/compiler.js",
-  "es2015": "./fesm2015/compiler.js",
-  "esm5": "./esm5/compiler.js",
-  "esm2015": "./esm2015/compiler.js",
-  "fesm5": "./fesm5/compiler.js",
-  "fesm2015": "./fesm2015/compiler.js",
-  "typings": "./compiler.d.ts",
   "author": "angular",
   "license": "MIT",
   "peerDependencies": {
@@ -45,5 +37,11 @@
   "sideEffects": true,
   "publishConfig": {
     "registry": "https://wombat-dressing-room.appspot.com"
-  }
+  },
+  "main": "./bundles/compiler.umd.js",
+  "fesm2015": "./fesm2015/compiler.js",
+  "esm2015": "./esm2015/index.js",
+  "typings": "./index.d.ts",
+  "module": "./fesm2015/compiler.js",
+  "es2015": "./fesm2015/compiler.js"
 }
