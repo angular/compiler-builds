@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.6
+ * @license Angular v9.1.6+5.sha-790af88
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7477,6 +7477,15 @@ var AST = /** @class */ (function () {
     };
     return AST;
 }());
+var ASTWithName = /** @class */ (function (_super) {
+    __extends(ASTWithName, _super);
+    function ASTWithName(span, sourceSpan, nameSpan) {
+        var _this = _super.call(this, span, sourceSpan) || this;
+        _this.nameSpan = nameSpan;
+        return _this;
+    }
+    return ASTWithName;
+}(AST));
 /**
  * Represents a quoted expression of the form:
  *
@@ -7563,8 +7572,8 @@ var Conditional = /** @class */ (function (_super) {
 }(AST));
 var PropertyRead = /** @class */ (function (_super) {
     __extends(PropertyRead, _super);
-    function PropertyRead(span, sourceSpan, receiver, name) {
-        var _this = _super.call(this, span, sourceSpan) || this;
+    function PropertyRead(span, sourceSpan, nameSpan, receiver, name) {
+        var _this = _super.call(this, span, sourceSpan, nameSpan) || this;
         _this.receiver = receiver;
         _this.name = name;
         return _this;
@@ -7574,11 +7583,11 @@ var PropertyRead = /** @class */ (function (_super) {
         return visitor.visitPropertyRead(this, context);
     };
     return PropertyRead;
-}(AST));
+}(ASTWithName));
 var PropertyWrite = /** @class */ (function (_super) {
     __extends(PropertyWrite, _super);
-    function PropertyWrite(span, sourceSpan, receiver, name, value) {
-        var _this = _super.call(this, span, sourceSpan) || this;
+    function PropertyWrite(span, sourceSpan, nameSpan, receiver, name, value) {
+        var _this = _super.call(this, span, sourceSpan, nameSpan) || this;
         _this.receiver = receiver;
         _this.name = name;
         _this.value = value;
@@ -7589,11 +7598,11 @@ var PropertyWrite = /** @class */ (function (_super) {
         return visitor.visitPropertyWrite(this, context);
     };
     return PropertyWrite;
-}(AST));
+}(ASTWithName));
 var SafePropertyRead = /** @class */ (function (_super) {
     __extends(SafePropertyRead, _super);
-    function SafePropertyRead(span, sourceSpan, receiver, name) {
-        var _this = _super.call(this, span, sourceSpan) || this;
+    function SafePropertyRead(span, sourceSpan, nameSpan, receiver, name) {
+        var _this = _super.call(this, span, sourceSpan, nameSpan) || this;
         _this.receiver = receiver;
         _this.name = name;
         return _this;
@@ -7603,7 +7612,7 @@ var SafePropertyRead = /** @class */ (function (_super) {
         return visitor.visitSafePropertyRead(this, context);
     };
     return SafePropertyRead;
-}(AST));
+}(ASTWithName));
 var KeyedRead = /** @class */ (function (_super) {
     __extends(KeyedRead, _super);
     function KeyedRead(span, sourceSpan, obj, key) {
@@ -7636,11 +7645,10 @@ var KeyedWrite = /** @class */ (function (_super) {
 var BindingPipe = /** @class */ (function (_super) {
     __extends(BindingPipe, _super);
     function BindingPipe(span, sourceSpan, exp, name, args, nameSpan) {
-        var _this = _super.call(this, span, sourceSpan) || this;
+        var _this = _super.call(this, span, sourceSpan, nameSpan) || this;
         _this.exp = exp;
         _this.name = name;
         _this.args = args;
-        _this.nameSpan = nameSpan;
         return _this;
     }
     BindingPipe.prototype.visit = function (visitor, context) {
@@ -7648,7 +7656,7 @@ var BindingPipe = /** @class */ (function (_super) {
         return visitor.visitPipe(this, context);
     };
     return BindingPipe;
-}(AST));
+}(ASTWithName));
 var LiteralPrimitive = /** @class */ (function (_super) {
     __extends(LiteralPrimitive, _super);
     function LiteralPrimitive(span, sourceSpan, value) {
@@ -7746,8 +7754,8 @@ var NonNullAssert = /** @class */ (function (_super) {
 }(AST));
 var MethodCall = /** @class */ (function (_super) {
     __extends(MethodCall, _super);
-    function MethodCall(span, sourceSpan, receiver, name, args) {
-        var _this = _super.call(this, span, sourceSpan) || this;
+    function MethodCall(span, sourceSpan, nameSpan, receiver, name, args) {
+        var _this = _super.call(this, span, sourceSpan, nameSpan) || this;
         _this.receiver = receiver;
         _this.name = name;
         _this.args = args;
@@ -7758,11 +7766,11 @@ var MethodCall = /** @class */ (function (_super) {
         return visitor.visitMethodCall(this, context);
     };
     return MethodCall;
-}(AST));
+}(ASTWithName));
 var SafeMethodCall = /** @class */ (function (_super) {
     __extends(SafeMethodCall, _super);
-    function SafeMethodCall(span, sourceSpan, receiver, name, args) {
-        var _this = _super.call(this, span, sourceSpan) || this;
+    function SafeMethodCall(span, sourceSpan, nameSpan, receiver, name, args) {
+        var _this = _super.call(this, span, sourceSpan, nameSpan) || this;
         _this.receiver = receiver;
         _this.name = name;
         _this.args = args;
@@ -7773,7 +7781,7 @@ var SafeMethodCall = /** @class */ (function (_super) {
         return visitor.visitSafeMethodCall(this, context);
     };
     return SafeMethodCall;
-}(AST));
+}(ASTWithName));
 var FunctionCall = /** @class */ (function (_super) {
     __extends(FunctionCall, _super);
     function FunctionCall(span, sourceSpan, target, args) {
@@ -7960,19 +7968,19 @@ var AstTransformer$1 = /** @class */ (function () {
         return new LiteralPrimitive(ast.span, ast.sourceSpan, ast.value);
     };
     AstTransformer.prototype.visitPropertyRead = function (ast, context) {
-        return new PropertyRead(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.name);
+        return new PropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name);
     };
     AstTransformer.prototype.visitPropertyWrite = function (ast, context) {
-        return new PropertyWrite(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.name, ast.value.visit(this));
+        return new PropertyWrite(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, ast.value.visit(this));
     };
     AstTransformer.prototype.visitSafePropertyRead = function (ast, context) {
-        return new SafePropertyRead(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.name);
+        return new SafePropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name);
     };
     AstTransformer.prototype.visitMethodCall = function (ast, context) {
-        return new MethodCall(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.name, this.visitAll(ast.args));
+        return new MethodCall(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, this.visitAll(ast.args));
     };
     AstTransformer.prototype.visitSafeMethodCall = function (ast, context) {
-        return new SafeMethodCall(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.name, this.visitAll(ast.args));
+        return new SafeMethodCall(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, this.visitAll(ast.args));
     };
     AstTransformer.prototype.visitFunctionCall = function (ast, context) {
         return new FunctionCall(ast.span, ast.sourceSpan, ast.target.visit(this), this.visitAll(ast.args));
@@ -8039,7 +8047,7 @@ var AstMemoryEfficientTransformer = /** @class */ (function () {
     AstMemoryEfficientTransformer.prototype.visitPropertyRead = function (ast, context) {
         var receiver = ast.receiver.visit(this);
         if (receiver !== ast.receiver) {
-            return new PropertyRead(ast.span, ast.sourceSpan, receiver, ast.name);
+            return new PropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name);
         }
         return ast;
     };
@@ -8047,14 +8055,14 @@ var AstMemoryEfficientTransformer = /** @class */ (function () {
         var receiver = ast.receiver.visit(this);
         var value = ast.value.visit(this);
         if (receiver !== ast.receiver || value !== ast.value) {
-            return new PropertyWrite(ast.span, ast.sourceSpan, receiver, ast.name, value);
+            return new PropertyWrite(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, value);
         }
         return ast;
     };
     AstMemoryEfficientTransformer.prototype.visitSafePropertyRead = function (ast, context) {
         var receiver = ast.receiver.visit(this);
         if (receiver !== ast.receiver) {
-            return new SafePropertyRead(ast.span, ast.sourceSpan, receiver, ast.name);
+            return new SafePropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name);
         }
         return ast;
     };
@@ -8062,7 +8070,7 @@ var AstMemoryEfficientTransformer = /** @class */ (function () {
         var receiver = ast.receiver.visit(this);
         var args = this.visitAll(ast.args);
         if (receiver !== ast.receiver || args !== ast.args) {
-            return new MethodCall(ast.span, ast.sourceSpan, receiver, ast.name, args);
+            return new MethodCall(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, args);
         }
         return ast;
     };
@@ -8070,7 +8078,7 @@ var AstMemoryEfficientTransformer = /** @class */ (function () {
         var receiver = ast.receiver.visit(this);
         var args = this.visitAll(ast.args);
         if (receiver !== ast.receiver || args !== ast.args) {
-            return new SafeMethodCall(ast.span, ast.sourceSpan, receiver, ast.name, args);
+            return new SafeMethodCall(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, args);
         }
         return ast;
     };
@@ -8797,10 +8805,10 @@ var _AstToIrVisitor = /** @class */ (function () {
         // Convert the ast to an unguarded access to the receiver's member. The map will substitute
         // leftMostNode with its unguarded version in the call to `this.visit()`.
         if (leftMostSafe instanceof SafeMethodCall) {
-            this._nodeMap.set(leftMostSafe, new MethodCall(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.receiver, leftMostSafe.name, leftMostSafe.args));
+            this._nodeMap.set(leftMostSafe, new MethodCall(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.nameSpan, leftMostSafe.receiver, leftMostSafe.name, leftMostSafe.args));
         }
         else {
-            this._nodeMap.set(leftMostSafe, new PropertyRead(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.receiver, leftMostSafe.name));
+            this._nodeMap.set(leftMostSafe, new PropertyRead(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.nameSpan, leftMostSafe.receiver, leftMostSafe.name));
         }
         // Recursively convert the node now without the guarded member access.
         var access = this._visit(ast, _Mode.Expression);
@@ -14884,10 +14892,41 @@ var _ParseAST = /** @class */ (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(_ParseAST.prototype, "inputIndex", {
+    Object.defineProperty(_ParseAST.prototype, "atEOF", {
+        /** Whether all the parser input has been processed. */
         get: function () {
-            return (this.index < this.tokens.length) ? this.next.index + this.offset :
-                this.inputLength + this.offset;
+            return this.index >= this.tokens.length;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(_ParseAST.prototype, "inputIndex", {
+        /**
+         * Index of the next token to be processed, or the end of the last token if all have been
+         * processed.
+         */
+        get: function () {
+            return this.atEOF ? this.currentEndIndex : this.next.index + this.offset;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(_ParseAST.prototype, "currentEndIndex", {
+        /**
+         * End index of the last processed token, or the start of the first token if none have been
+         * processed.
+         */
+        get: function () {
+            if (this.index > 0) {
+                var curToken = this.peek(-1);
+                return curToken.end + this.offset;
+            }
+            // No tokens have been processed yet; return the next token's start or the length of the input
+            // if there is no token.
+            if (this.tokens.length === 0) {
+                return this.inputLength + this.offset;
+            }
+            return this.next.index + this.offset;
         },
         enumerable: true,
         configurable: true
@@ -14903,12 +14942,7 @@ var _ParseAST = /** @class */ (function () {
         configurable: true
     });
     _ParseAST.prototype.span = function (start) {
-        // `end` is either the
-        //   - end index of the current token
-        //   - start of the first token (this can happen e.g. when creating an implicit receiver)
-        var curToken = this.peek(-1);
-        var end = this.index > 0 ? curToken.end + this.offset : this.inputIndex;
-        return new ParseSpan(start, end);
+        return new ParseSpan(start, this.currentEndIndex);
     };
     _ParseAST.prototype.sourceSpan = function (start) {
         var serial = start + "@" + this.inputIndex;
@@ -15292,7 +15326,9 @@ var _ParseAST = /** @class */ (function () {
     _ParseAST.prototype.parseAccessMemberOrMethodCall = function (receiver, isSafe) {
         if (isSafe === void 0) { isSafe = false; }
         var start = receiver.span.start;
+        var nameStart = this.inputIndex;
         var id = this.expectIdentifierOrKeyword();
+        var nameSpan = this.sourceSpan(nameStart);
         if (this.consumeOptionalCharacter($LPAREN)) {
             this.rparensExpected++;
             var args = this.parseCallArguments();
@@ -15300,8 +15336,8 @@ var _ParseAST = /** @class */ (function () {
             this.rparensExpected--;
             var span = this.span(start);
             var sourceSpan = this.sourceSpan(start);
-            return isSafe ? new SafeMethodCall(span, sourceSpan, receiver, id, args) :
-                new MethodCall(span, sourceSpan, receiver, id, args);
+            return isSafe ? new SafeMethodCall(span, sourceSpan, nameSpan, receiver, id, args) :
+                new MethodCall(span, sourceSpan, nameSpan, receiver, id, args);
         }
         else {
             if (isSafe) {
@@ -15310,7 +15346,7 @@ var _ParseAST = /** @class */ (function () {
                     return new EmptyExpr(this.span(start), this.sourceSpan(start));
                 }
                 else {
-                    return new SafePropertyRead(this.span(start), this.sourceSpan(start), receiver, id);
+                    return new SafePropertyRead(this.span(start), this.sourceSpan(start), nameSpan, receiver, id);
                 }
             }
             else {
@@ -15320,10 +15356,10 @@ var _ParseAST = /** @class */ (function () {
                         return new EmptyExpr(this.span(start), this.sourceSpan(start));
                     }
                     var value = this.parseConditional();
-                    return new PropertyWrite(this.span(start), this.sourceSpan(start), receiver, id, value);
+                    return new PropertyWrite(this.span(start), this.sourceSpan(start), nameSpan, receiver, id, value);
                 }
                 else {
-                    return new PropertyRead(this.span(start), this.sourceSpan(start), receiver, id);
+                    return new PropertyRead(this.span(start), this.sourceSpan(start), nameSpan, receiver, id);
                 }
             }
         }
@@ -18618,7 +18654,7 @@ var ValueConverter = /** @class */ (function (_super) {
         var slotPseudoLocal = "PIPE:" + slot;
         // Allocate one slot for the result plus one slot per pipe argument
         var pureFunctionSlot = this.allocatePureFunctionSlots(2 + pipe.args.length);
-        var target = new PropertyRead(pipe.span, pipe.sourceSpan, new ImplicitReceiver(pipe.span, pipe.sourceSpan), slotPseudoLocal);
+        var target = new PropertyRead(pipe.span, pipe.sourceSpan, pipe.nameSpan, new ImplicitReceiver(pipe.span, pipe.sourceSpan), slotPseudoLocal);
         var _a = pipeBindingCallInfo(pipe.args), identifier = _a.identifier, isVarLength = _a.isVarLength;
         this.definePipe(pipe.name, slotPseudoLocal, slot, importExpr(identifier));
         var args = __spread([pipe.exp], pipe.args);
@@ -20165,7 +20201,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var VERSION$1 = new Version('9.1.6');
+var VERSION$1 = new Version('9.1.6+5.sha-790af88');
 
 /**
  * @license
@@ -30127,5 +30163,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { AST, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CommentStmt, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocCommentStmt, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TemplateBindingParseResult, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CommentStmt, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocCommentStmt, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TemplateBindingParseResult, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
 //# sourceMappingURL=compiler.js.map

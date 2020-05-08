@@ -1,5 +1,5 @@
 /**
- * @license Angular v9.1.6
+ * @license Angular v9.1.6+5.sha-790af88
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7675,6 +7675,15 @@
         };
         return AST;
     }());
+    var ASTWithName = /** @class */ (function (_super) {
+        __extends(ASTWithName, _super);
+        function ASTWithName(span, sourceSpan, nameSpan) {
+            var _this = _super.call(this, span, sourceSpan) || this;
+            _this.nameSpan = nameSpan;
+            return _this;
+        }
+        return ASTWithName;
+    }(AST));
     /**
      * Represents a quoted expression of the form:
      *
@@ -7761,8 +7770,8 @@
     }(AST));
     var PropertyRead = /** @class */ (function (_super) {
         __extends(PropertyRead, _super);
-        function PropertyRead(span, sourceSpan, receiver, name) {
-            var _this = _super.call(this, span, sourceSpan) || this;
+        function PropertyRead(span, sourceSpan, nameSpan, receiver, name) {
+            var _this = _super.call(this, span, sourceSpan, nameSpan) || this;
             _this.receiver = receiver;
             _this.name = name;
             return _this;
@@ -7772,11 +7781,11 @@
             return visitor.visitPropertyRead(this, context);
         };
         return PropertyRead;
-    }(AST));
+    }(ASTWithName));
     var PropertyWrite = /** @class */ (function (_super) {
         __extends(PropertyWrite, _super);
-        function PropertyWrite(span, sourceSpan, receiver, name, value) {
-            var _this = _super.call(this, span, sourceSpan) || this;
+        function PropertyWrite(span, sourceSpan, nameSpan, receiver, name, value) {
+            var _this = _super.call(this, span, sourceSpan, nameSpan) || this;
             _this.receiver = receiver;
             _this.name = name;
             _this.value = value;
@@ -7787,11 +7796,11 @@
             return visitor.visitPropertyWrite(this, context);
         };
         return PropertyWrite;
-    }(AST));
+    }(ASTWithName));
     var SafePropertyRead = /** @class */ (function (_super) {
         __extends(SafePropertyRead, _super);
-        function SafePropertyRead(span, sourceSpan, receiver, name) {
-            var _this = _super.call(this, span, sourceSpan) || this;
+        function SafePropertyRead(span, sourceSpan, nameSpan, receiver, name) {
+            var _this = _super.call(this, span, sourceSpan, nameSpan) || this;
             _this.receiver = receiver;
             _this.name = name;
             return _this;
@@ -7801,7 +7810,7 @@
             return visitor.visitSafePropertyRead(this, context);
         };
         return SafePropertyRead;
-    }(AST));
+    }(ASTWithName));
     var KeyedRead = /** @class */ (function (_super) {
         __extends(KeyedRead, _super);
         function KeyedRead(span, sourceSpan, obj, key) {
@@ -7834,11 +7843,10 @@
     var BindingPipe = /** @class */ (function (_super) {
         __extends(BindingPipe, _super);
         function BindingPipe(span, sourceSpan, exp, name, args, nameSpan) {
-            var _this = _super.call(this, span, sourceSpan) || this;
+            var _this = _super.call(this, span, sourceSpan, nameSpan) || this;
             _this.exp = exp;
             _this.name = name;
             _this.args = args;
-            _this.nameSpan = nameSpan;
             return _this;
         }
         BindingPipe.prototype.visit = function (visitor, context) {
@@ -7846,7 +7854,7 @@
             return visitor.visitPipe(this, context);
         };
         return BindingPipe;
-    }(AST));
+    }(ASTWithName));
     var LiteralPrimitive = /** @class */ (function (_super) {
         __extends(LiteralPrimitive, _super);
         function LiteralPrimitive(span, sourceSpan, value) {
@@ -7944,8 +7952,8 @@
     }(AST));
     var MethodCall = /** @class */ (function (_super) {
         __extends(MethodCall, _super);
-        function MethodCall(span, sourceSpan, receiver, name, args) {
-            var _this = _super.call(this, span, sourceSpan) || this;
+        function MethodCall(span, sourceSpan, nameSpan, receiver, name, args) {
+            var _this = _super.call(this, span, sourceSpan, nameSpan) || this;
             _this.receiver = receiver;
             _this.name = name;
             _this.args = args;
@@ -7956,11 +7964,11 @@
             return visitor.visitMethodCall(this, context);
         };
         return MethodCall;
-    }(AST));
+    }(ASTWithName));
     var SafeMethodCall = /** @class */ (function (_super) {
         __extends(SafeMethodCall, _super);
-        function SafeMethodCall(span, sourceSpan, receiver, name, args) {
-            var _this = _super.call(this, span, sourceSpan) || this;
+        function SafeMethodCall(span, sourceSpan, nameSpan, receiver, name, args) {
+            var _this = _super.call(this, span, sourceSpan, nameSpan) || this;
             _this.receiver = receiver;
             _this.name = name;
             _this.args = args;
@@ -7971,7 +7979,7 @@
             return visitor.visitSafeMethodCall(this, context);
         };
         return SafeMethodCall;
-    }(AST));
+    }(ASTWithName));
     var FunctionCall = /** @class */ (function (_super) {
         __extends(FunctionCall, _super);
         function FunctionCall(span, sourceSpan, target, args) {
@@ -8158,19 +8166,19 @@
             return new LiteralPrimitive(ast.span, ast.sourceSpan, ast.value);
         };
         AstTransformer.prototype.visitPropertyRead = function (ast, context) {
-            return new PropertyRead(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.name);
+            return new PropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name);
         };
         AstTransformer.prototype.visitPropertyWrite = function (ast, context) {
-            return new PropertyWrite(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.name, ast.value.visit(this));
+            return new PropertyWrite(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, ast.value.visit(this));
         };
         AstTransformer.prototype.visitSafePropertyRead = function (ast, context) {
-            return new SafePropertyRead(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.name);
+            return new SafePropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name);
         };
         AstTransformer.prototype.visitMethodCall = function (ast, context) {
-            return new MethodCall(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.name, this.visitAll(ast.args));
+            return new MethodCall(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, this.visitAll(ast.args));
         };
         AstTransformer.prototype.visitSafeMethodCall = function (ast, context) {
-            return new SafeMethodCall(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.name, this.visitAll(ast.args));
+            return new SafeMethodCall(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, this.visitAll(ast.args));
         };
         AstTransformer.prototype.visitFunctionCall = function (ast, context) {
             return new FunctionCall(ast.span, ast.sourceSpan, ast.target.visit(this), this.visitAll(ast.args));
@@ -8237,7 +8245,7 @@
         AstMemoryEfficientTransformer.prototype.visitPropertyRead = function (ast, context) {
             var receiver = ast.receiver.visit(this);
             if (receiver !== ast.receiver) {
-                return new PropertyRead(ast.span, ast.sourceSpan, receiver, ast.name);
+                return new PropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name);
             }
             return ast;
         };
@@ -8245,14 +8253,14 @@
             var receiver = ast.receiver.visit(this);
             var value = ast.value.visit(this);
             if (receiver !== ast.receiver || value !== ast.value) {
-                return new PropertyWrite(ast.span, ast.sourceSpan, receiver, ast.name, value);
+                return new PropertyWrite(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, value);
             }
             return ast;
         };
         AstMemoryEfficientTransformer.prototype.visitSafePropertyRead = function (ast, context) {
             var receiver = ast.receiver.visit(this);
             if (receiver !== ast.receiver) {
-                return new SafePropertyRead(ast.span, ast.sourceSpan, receiver, ast.name);
+                return new SafePropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name);
             }
             return ast;
         };
@@ -8260,7 +8268,7 @@
             var receiver = ast.receiver.visit(this);
             var args = this.visitAll(ast.args);
             if (receiver !== ast.receiver || args !== ast.args) {
-                return new MethodCall(ast.span, ast.sourceSpan, receiver, ast.name, args);
+                return new MethodCall(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, args);
             }
             return ast;
         };
@@ -8268,7 +8276,7 @@
             var receiver = ast.receiver.visit(this);
             var args = this.visitAll(ast.args);
             if (receiver !== ast.receiver || args !== ast.args) {
-                return new SafeMethodCall(ast.span, ast.sourceSpan, receiver, ast.name, args);
+                return new SafeMethodCall(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, args);
             }
             return ast;
         };
@@ -8994,10 +9002,10 @@
             // Convert the ast to an unguarded access to the receiver's member. The map will substitute
             // leftMostNode with its unguarded version in the call to `this.visit()`.
             if (leftMostSafe instanceof SafeMethodCall) {
-                this._nodeMap.set(leftMostSafe, new MethodCall(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.receiver, leftMostSafe.name, leftMostSafe.args));
+                this._nodeMap.set(leftMostSafe, new MethodCall(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.nameSpan, leftMostSafe.receiver, leftMostSafe.name, leftMostSafe.args));
             }
             else {
-                this._nodeMap.set(leftMostSafe, new PropertyRead(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.receiver, leftMostSafe.name));
+                this._nodeMap.set(leftMostSafe, new PropertyRead(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.nameSpan, leftMostSafe.receiver, leftMostSafe.name));
             }
             // Recursively convert the node now without the guarded member access.
             var access = this._visit(ast, _Mode.Expression);
@@ -15079,10 +15087,41 @@
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(_ParseAST.prototype, "inputIndex", {
+        Object.defineProperty(_ParseAST.prototype, "atEOF", {
+            /** Whether all the parser input has been processed. */
             get: function () {
-                return (this.index < this.tokens.length) ? this.next.index + this.offset :
-                    this.inputLength + this.offset;
+                return this.index >= this.tokens.length;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(_ParseAST.prototype, "inputIndex", {
+            /**
+             * Index of the next token to be processed, or the end of the last token if all have been
+             * processed.
+             */
+            get: function () {
+                return this.atEOF ? this.currentEndIndex : this.next.index + this.offset;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(_ParseAST.prototype, "currentEndIndex", {
+            /**
+             * End index of the last processed token, or the start of the first token if none have been
+             * processed.
+             */
+            get: function () {
+                if (this.index > 0) {
+                    var curToken = this.peek(-1);
+                    return curToken.end + this.offset;
+                }
+                // No tokens have been processed yet; return the next token's start or the length of the input
+                // if there is no token.
+                if (this.tokens.length === 0) {
+                    return this.inputLength + this.offset;
+                }
+                return this.next.index + this.offset;
             },
             enumerable: true,
             configurable: true
@@ -15098,12 +15137,7 @@
             configurable: true
         });
         _ParseAST.prototype.span = function (start) {
-            // `end` is either the
-            //   - end index of the current token
-            //   - start of the first token (this can happen e.g. when creating an implicit receiver)
-            var curToken = this.peek(-1);
-            var end = this.index > 0 ? curToken.end + this.offset : this.inputIndex;
-            return new ParseSpan(start, end);
+            return new ParseSpan(start, this.currentEndIndex);
         };
         _ParseAST.prototype.sourceSpan = function (start) {
             var serial = start + "@" + this.inputIndex;
@@ -15487,7 +15521,9 @@
         _ParseAST.prototype.parseAccessMemberOrMethodCall = function (receiver, isSafe) {
             if (isSafe === void 0) { isSafe = false; }
             var start = receiver.span.start;
+            var nameStart = this.inputIndex;
             var id = this.expectIdentifierOrKeyword();
+            var nameSpan = this.sourceSpan(nameStart);
             if (this.consumeOptionalCharacter($LPAREN)) {
                 this.rparensExpected++;
                 var args = this.parseCallArguments();
@@ -15495,8 +15531,8 @@
                 this.rparensExpected--;
                 var span = this.span(start);
                 var sourceSpan = this.sourceSpan(start);
-                return isSafe ? new SafeMethodCall(span, sourceSpan, receiver, id, args) :
-                    new MethodCall(span, sourceSpan, receiver, id, args);
+                return isSafe ? new SafeMethodCall(span, sourceSpan, nameSpan, receiver, id, args) :
+                    new MethodCall(span, sourceSpan, nameSpan, receiver, id, args);
             }
             else {
                 if (isSafe) {
@@ -15505,7 +15541,7 @@
                         return new EmptyExpr(this.span(start), this.sourceSpan(start));
                     }
                     else {
-                        return new SafePropertyRead(this.span(start), this.sourceSpan(start), receiver, id);
+                        return new SafePropertyRead(this.span(start), this.sourceSpan(start), nameSpan, receiver, id);
                     }
                 }
                 else {
@@ -15515,10 +15551,10 @@
                             return new EmptyExpr(this.span(start), this.sourceSpan(start));
                         }
                         var value = this.parseConditional();
-                        return new PropertyWrite(this.span(start), this.sourceSpan(start), receiver, id, value);
+                        return new PropertyWrite(this.span(start), this.sourceSpan(start), nameSpan, receiver, id, value);
                     }
                     else {
-                        return new PropertyRead(this.span(start), this.sourceSpan(start), receiver, id);
+                        return new PropertyRead(this.span(start), this.sourceSpan(start), nameSpan, receiver, id);
                     }
                 }
             }
@@ -18813,7 +18849,7 @@
             var slotPseudoLocal = "PIPE:" + slot;
             // Allocate one slot for the result plus one slot per pipe argument
             var pureFunctionSlot = this.allocatePureFunctionSlots(2 + pipe.args.length);
-            var target = new PropertyRead(pipe.span, pipe.sourceSpan, new ImplicitReceiver(pipe.span, pipe.sourceSpan), slotPseudoLocal);
+            var target = new PropertyRead(pipe.span, pipe.sourceSpan, pipe.nameSpan, new ImplicitReceiver(pipe.span, pipe.sourceSpan), slotPseudoLocal);
             var _a = pipeBindingCallInfo(pipe.args), identifier = _a.identifier, isVarLength = _a.isVarLength;
             this.definePipe(pipe.name, slotPseudoLocal, slot, importExpr(identifier));
             var args = __spread([pipe.exp], pipe.args);
@@ -20360,7 +20396,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('9.1.6');
+    var VERSION$1 = new Version('9.1.6+5.sha-790af88');
 
     /**
      * @license
@@ -30323,6 +30359,7 @@
      */
 
     exports.AST = AST;
+    exports.ASTWithName = ASTWithName;
     exports.ASTWithSource = ASTWithSource;
     exports.AbsoluteSourceSpan = AbsoluteSourceSpan;
     exports.AotCompiler = AotCompiler;
