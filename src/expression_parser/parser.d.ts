@@ -87,7 +87,18 @@ export declare class _ParseAST {
     constructor(input: string, location: any, absoluteOffset: number, tokens: Token[], inputLength: number, parseAction: boolean, errors: ParserError[], offset: number);
     peek(offset: number): Token;
     get next(): Token;
+    /** Whether all the parser input has been processed. */
+    get atEOF(): boolean;
+    /**
+     * Index of the next token to be processed, or the end of the last token if all have been
+     * processed.
+     */
     get inputIndex(): number;
+    /**
+     * End index of the last processed token, or the start of the first token if none have been
+     * processed.
+     */
+    get currentEndIndex(): number;
     /**
      * Returns the absolute offset of the start of the current token.
      */
