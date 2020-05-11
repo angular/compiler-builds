@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.0.0-next.6+18.sha-ed1b4a8
+ * @license Angular v10.0.0-next.6+20.sha-28f3c1c
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3394,7 +3394,6 @@ Identifiers$1.stylePropInterpolate6 = { name: 'ɵɵstylePropInterpolate6', modul
 Identifiers$1.stylePropInterpolate7 = { name: 'ɵɵstylePropInterpolate7', moduleName: CORE$1 };
 Identifiers$1.stylePropInterpolate8 = { name: 'ɵɵstylePropInterpolate8', moduleName: CORE$1 };
 Identifiers$1.stylePropInterpolateV = { name: 'ɵɵstylePropInterpolateV', moduleName: CORE$1 };
-Identifiers$1.containerCreate = { name: 'ɵɵcontainer', moduleName: CORE$1 };
 Identifiers$1.nextContext = { name: 'ɵɵnextContext', moduleName: CORE$1 };
 Identifiers$1.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE$1 };
 Identifiers$1.text = { name: 'ɵɵtext', moduleName: CORE$1 };
@@ -19127,7 +19126,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('10.0.0-next.6+18.sha-ed1b4a8');
+const VERSION$1 = new Version('10.0.0-next.6+20.sha-28f3c1c');
 
 /**
  * @license
