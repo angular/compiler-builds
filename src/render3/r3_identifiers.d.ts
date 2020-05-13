@@ -158,7 +158,6 @@ export declare class Identifiers {
     static getInheritedFactory: o.ExternalReference;
     static sanitizeHtml: o.ExternalReference;
     static sanitizeStyle: o.ExternalReference;
-    static defaultStyleSanitizer: o.ExternalReference;
     static sanitizeResourceUrl: o.ExternalReference;
     static sanitizeScript: o.ExternalReference;
     static sanitizeUrl: o.ExternalReference;

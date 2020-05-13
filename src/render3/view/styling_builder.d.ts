@@ -73,9 +73,8 @@ export interface StylingInstructionCall {
 interface BoundStylingEntry {
     hasOverrideFlag: boolean;
     name: string | null;
-    unit: string | null;
+    suffix: string | null;
     sourceSpan: ParseSourceSpan;
-    sanitize: boolean;
     value: AST;
 }
 /**
@@ -150,7 +149,7 @@ export declare class StylingBuilder {
      */
     registerBoundInput(input: t.BoundAttribute): boolean;
     registerInputBasedOnName(name: string, expression: AST, sourceSpan: ParseSourceSpan): BoundStylingEntry | null;
-    registerStyleInput(name: string, isMapBased: boolean, value: AST, sourceSpan: ParseSourceSpan, unit?: string | null): BoundStylingEntry | null;
+    registerStyleInput(name: string, isMapBased: boolean, value: AST, sourceSpan: ParseSourceSpan, suffix?: string | null): BoundStylingEntry | null;
     registerClassInput(name: string, isMapBased: boolean, value: AST, sourceSpan: ParseSourceSpan): BoundStylingEntry | null;
     private _checkForPipes;
     /**
@@ -206,7 +205,7 @@ export declare class StylingBuilder {
 }
 export declare function parseProperty(name: string): {
     property: string;
-    unit: string;
+    suffix: string | null;
     hasOverrideFlag: boolean;
 };
 export {};

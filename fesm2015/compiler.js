@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.0.0-next.7+3.sha-352b9c7
+ * @license Angular v10.0.0-next.7+9.sha-7d3f504
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3519,7 +3519,6 @@ Identifiers$1.getInheritedFactory = {
 // sanitization-related functions
 Identifiers$1.sanitizeHtml = { name: 'ɵɵsanitizeHtml', moduleName: CORE$1 };
 Identifiers$1.sanitizeStyle = { name: 'ɵɵsanitizeStyle', moduleName: CORE$1 };
-Identifiers$1.defaultStyleSanitizer = { name: 'ɵɵdefaultStyleSanitizer', moduleName: CORE$1 };
 Identifiers$1.sanitizeResourceUrl = { name: 'ɵɵsanitizeResourceUrl', moduleName: CORE$1 };
 Identifiers$1.sanitizeScript = { name: 'ɵɵsanitizeScript', moduleName: CORE$1 };
 Identifiers$1.sanitizeUrl = { name: 'ɵɵsanitizeUrl', moduleName: CORE$1 };
@@ -13052,20 +13051,14 @@ class StylingBuilder {
         }
         return binding;
     }
-    registerStyleInput(name, isMapBased, value, sourceSpan, unit) {
+    registerStyleInput(name, isMapBased, value, sourceSpan, suffix) {
         if (isEmptyExpression(value)) {
             return null;
         }
         name = normalizePropName(name);
-        const { property, hasOverrideFlag, unit: bindingUnit } = parseProperty(name);
-        const entry = {
-            name: property,
-            sanitize: property ? isStyleSanitizable(property) : true,
-            unit: unit || bindingUnit,
-            value,
-            sourceSpan,
-            hasOverrideFlag
-        };
+        const { property, hasOverrideFlag, suffix: bindingSuffix } = parseProperty(name);
+        suffix = typeof suffix === 'string' && suffix.length !== 0 ? suffix : bindingSuffix;
+        const entry = { name: property, suffix: suffix, value, sourceSpan, hasOverrideFlag };
         if (isMapBased) {
             this._styleMapInput = entry;
         }
@@ -13084,7 +13077,7 @@ class StylingBuilder {
             return null;
         }
         const { property, hasOverrideFlag } = parseProperty(name);
-        const entry = { name: property, value, sourceSpan, sanitize: false, hasOverrideFlag, unit: null };
+        const entry = { name: property, value, sourceSpan, hasOverrideFlag, suffix: null };
         if (isMapBased) {
             if (this._classMapInput) {
                 throw new Error('[class] and [className] bindings cannot be used on the same element simultaneously');
@@ -13240,7 +13233,7 @@ class StylingBuilder {
                 allocateBindingSlots: totalBindingSlotsRequired,
                 supportsInterpolation: !!getInterpolationExpressionFn,
                 params: (convertFn) => {
-                    // params => stylingProp(propName, value, suffix|sanitizer)
+                    // params => stylingProp(propName, value, suffix)
                     const params = [];
                     params.push(literal(input.name));
                     const convertResult = convertFn(value);
@@ -13250,17 +13243,10 @@ class StylingBuilder {
                     else {
                         params.push(convertResult);
                     }
-                    // [style.prop] bindings may use suffix values (e.g. px, em, etc...) and they
-                    // can also use a sanitizer. Sanitization occurs for url-based entries. Having
-                    // the suffix value and a sanitizer together into the instruction doesn't make
-                    // any sense (url-based entries cannot be sanitized).
-                    if (!isClassBased) {
-                        if (input.unit) {
-                            params.push(literal(input.unit));
-                        }
-                        else if (input.sanitize) {
-                            params.push(importExpr(Identifiers$1.defaultStyleSanitizer));
-                        }
+                    // [style.prop] bindings may use suffix values (e.g. px, em, etc...), therefore,
+                    // if that is detected then we need to pass that in as an optional param.
+                    if (!isClassBased && input.suffix !== null) {
+                        params.push(literal(input.suffix));
                     }
                     return params;
                 }
@@ -13317,22 +13303,6 @@ function registerIntoMap(map, key) {
         map.set(key, map.size);
     }
 }
-function isStyleSanitizable(prop) {
-    // Note that browsers support both the dash case and
-    // camel case property names when setting through JS.
-    return prop === 'background-image' || prop === 'backgroundImage' || prop === 'background' ||
-        prop === 'border-image' || prop === 'borderImage' || prop === 'border-image-source' ||
-        prop === 'borderImageSource' || prop === 'filter' || prop === 'list-style' ||
-        prop === 'listStyle' || prop === 'list-style-image' || prop === 'listStyleImage' ||
-        prop === 'clip-path' || prop === 'clipPath';
-}
-/**
- * Simple helper function to either provide the constant literal that will house the value
- * here or a null value if the provided values are empty.
- */
-function getConstantLiteralFromArray(constantPool, values) {
-    return values.length ? constantPool.getConstLiteral(literalArr(values), true) : NULL_EXPR;
-}
 function parseProperty(name) {
     let hasOverrideFlag = false;
     const overrideIndex = name.indexOf(IMPORTANT_FLAG);
@@ -13340,14 +13310,14 @@ function parseProperty(name) {
         name = overrideIndex > 0 ? name.substring(0, overrideIndex) : '';
         hasOverrideFlag = true;
     }
-    let unit = '';
+    let suffix = null;
     let property = name;
     const unitIndex = name.lastIndexOf('.');
     if (unitIndex > 0) {
-        unit = name.substr(unitIndex + 1);
+        suffix = name.substr(unitIndex + 1);
         property = name.substring(0, unitIndex);
     }
-    return { property, unit, hasOverrideFlag };
+    return { property, suffix, hasOverrideFlag };
 }
 /**
  * Gets the instruction to generate for an interpolated class map.
@@ -19126,7 +19096,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('10.0.0-next.7+3.sha-352b9c7');
+const VERSION$1 = new Version('10.0.0-next.7+9.sha-7d3f504');
 
 /**
  * @license
