@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.0.0-next.7+3.sha-352b9c7
+ * @license Angular v10.0.0-next.7+9.sha-7d3f504
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4011,7 +4011,6 @@
         // sanitization-related functions
         Identifiers.sanitizeHtml = { name: 'ɵɵsanitizeHtml', moduleName: CORE$1 };
         Identifiers.sanitizeStyle = { name: 'ɵɵsanitizeStyle', moduleName: CORE$1 };
-        Identifiers.defaultStyleSanitizer = { name: 'ɵɵdefaultStyleSanitizer', moduleName: CORE$1 };
         Identifiers.sanitizeResourceUrl = { name: 'ɵɵsanitizeResourceUrl', moduleName: CORE$1 };
         Identifiers.sanitizeScript = { name: 'ɵɵsanitizeScript', moduleName: CORE$1 };
         Identifiers.sanitizeUrl = { name: 'ɵɵsanitizeUrl', moduleName: CORE$1 };
@@ -14078,20 +14077,14 @@
             }
             return binding;
         };
-        StylingBuilder.prototype.registerStyleInput = function (name, isMapBased, value, sourceSpan, unit) {
+        StylingBuilder.prototype.registerStyleInput = function (name, isMapBased, value, sourceSpan, suffix) {
             if (isEmptyExpression(value)) {
                 return null;
             }
             name = normalizePropName(name);
-            var _a = parseProperty(name), property = _a.property, hasOverrideFlag = _a.hasOverrideFlag, bindingUnit = _a.unit;
-            var entry = {
-                name: property,
-                sanitize: property ? isStyleSanitizable(property) : true,
-                unit: unit || bindingUnit,
-                value: value,
-                sourceSpan: sourceSpan,
-                hasOverrideFlag: hasOverrideFlag
-            };
+            var _a = parseProperty(name), property = _a.property, hasOverrideFlag = _a.hasOverrideFlag, bindingSuffix = _a.suffix;
+            suffix = typeof suffix === 'string' && suffix.length !== 0 ? suffix : bindingSuffix;
+            var entry = { name: property, suffix: suffix, value: value, sourceSpan: sourceSpan, hasOverrideFlag: hasOverrideFlag };
             if (isMapBased) {
                 this._styleMapInput = entry;
             }
@@ -14110,7 +14103,7 @@
                 return null;
             }
             var _a = parseProperty(name), property = _a.property, hasOverrideFlag = _a.hasOverrideFlag;
-            var entry = { name: property, value: value, sourceSpan: sourceSpan, sanitize: false, hasOverrideFlag: hasOverrideFlag, unit: null };
+            var entry = { name: property, value: value, sourceSpan: sourceSpan, hasOverrideFlag: hasOverrideFlag, suffix: null };
             if (isMapBased) {
                 if (this._classMapInput) {
                     throw new Error('[class] and [className] bindings cannot be used on the same element simultaneously');
@@ -14266,7 +14259,7 @@
                     allocateBindingSlots: totalBindingSlotsRequired,
                     supportsInterpolation: !!getInterpolationExpressionFn,
                     params: function (convertFn) {
-                        // params => stylingProp(propName, value, suffix|sanitizer)
+                        // params => stylingProp(propName, value, suffix)
                         var params = [];
                         params.push(literal(input.name));
                         var convertResult = convertFn(value);
@@ -14276,17 +14269,10 @@
                         else {
                             params.push(convertResult);
                         }
-                        // [style.prop] bindings may use suffix values (e.g. px, em, etc...) and they
-                        // can also use a sanitizer. Sanitization occurs for url-based entries. Having
-                        // the suffix value and a sanitizer together into the instruction doesn't make
-                        // any sense (url-based entries cannot be sanitized).
-                        if (!isClassBased) {
-                            if (input.unit) {
-                                params.push(literal(input.unit));
-                            }
-                            else if (input.sanitize) {
-                                params.push(importExpr(Identifiers$1.defaultStyleSanitizer));
-                            }
+                        // [style.prop] bindings may use suffix values (e.g. px, em, etc...), therefore,
+                        // if that is detected then we need to pass that in as an optional param.
+                        if (!isClassBased && input.suffix !== null) {
+                            params.push(literal(input.suffix));
                         }
                         return params;
                     }
@@ -14344,22 +14330,6 @@
             map.set(key, map.size);
         }
     }
-    function isStyleSanitizable(prop) {
-        // Note that browsers support both the dash case and
-        // camel case property names when setting through JS.
-        return prop === 'background-image' || prop === 'backgroundImage' || prop === 'background' ||
-            prop === 'border-image' || prop === 'borderImage' || prop === 'border-image-source' ||
-            prop === 'borderImageSource' || prop === 'filter' || prop === 'list-style' ||
-            prop === 'listStyle' || prop === 'list-style-image' || prop === 'listStyleImage' ||
-            prop === 'clip-path' || prop === 'clipPath';
-    }
-    /**
-     * Simple helper function to either provide the constant literal that will house the value
-     * here or a null value if the provided values are empty.
-     */
-    function getConstantLiteralFromArray(constantPool, values) {
-        return values.length ? constantPool.getConstLiteral(literalArr(values), true) : NULL_EXPR;
-    }
     function parseProperty(name) {
         var hasOverrideFlag = false;
         var overrideIndex = name.indexOf(IMPORTANT_FLAG);
@@ -14367,14 +14337,14 @@
             name = overrideIndex > 0 ? name.substring(0, overrideIndex) : '';
             hasOverrideFlag = true;
         }
-        var unit = '';
+        var suffix = null;
         var property = name;
         var unitIndex = name.lastIndexOf('.');
         if (unitIndex > 0) {
-            unit = name.substr(unitIndex + 1);
+            suffix = name.substr(unitIndex + 1);
             property = name.substring(0, unitIndex);
         }
-        return { property: property, unit: unit, hasOverrideFlag: hasOverrideFlag };
+        return { property: property, suffix: suffix, hasOverrideFlag: hasOverrideFlag };
     }
     /**
      * Gets the instruction to generate for an interpolated class map.
@@ -20415,7 +20385,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('10.0.0-next.7+3.sha-352b9c7');
+    var VERSION$1 = new Version('10.0.0-next.7+9.sha-7d3f504');
 
     /**
      * @license
