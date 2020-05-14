@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.0.0-next.7+17.sha-2418c6a
+ * @license Angular v10.0.0-next.7+43.sha-f16ca1c
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -6344,7 +6344,7 @@
             get: function () {
                 return this.lines.slice(-1)[0];
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         SourceMapGenerator.prototype.toJSON = function () {
@@ -6479,7 +6479,7 @@
             get: function () {
                 return this._lines[this._lines.length - 1];
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         EmitterVisitorContext.prototype.println = function (from, lastPart) {
@@ -6530,7 +6530,7 @@
             get: function () {
                 return this._classes.length > 0 ? this._classes[this._classes.length - 1] : null;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         EmitterVisitorContext.prototype.toSource = function () {
@@ -6618,7 +6618,7 @@
                 }
                 return this._lines;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         return EmitterVisitorContext;
@@ -9969,21 +9969,21 @@
             get: function () {
                 return !this.path || !this.path.length;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         Object.defineProperty(AstPath.prototype, "head", {
             get: function () {
                 return this.path[0];
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         Object.defineProperty(AstPath.prototype, "tail", {
             get: function () {
                 return this.path[this.path.length - 1];
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         AstPath.prototype.parentOf = function (node) {
@@ -12117,7 +12117,7 @@
                 });
                 return lazyProviders.concat(eagerProviders);
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         Object.defineProperty(ProviderElementContext.prototype, "transformedDirectiveAsts", {
@@ -12128,7 +12128,7 @@
                     sortedProviderTypes.indexOf(dir2.directive.type); });
                 return sortedDirectives;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         Object.defineProperty(ProviderElementContext.prototype, "queryMatches", {
@@ -12139,7 +12139,7 @@
                 });
                 return allMatches;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         ProviderElementContext.prototype._addQueryReadsTo = function (token, defaultValue, queryReadTokens) {
@@ -12583,7 +12583,7 @@
             get: function () {
                 return this._interpolationConfig;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         BindingParser.prototype.getUsedPipes = function () {
@@ -13156,7 +13156,7 @@
             get: function () {
                 return this._exprParser;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         TemplateParser.prototype.parse = function (component, template, directives, pipes, schemas, templateUrl, preserveWhitespaces) {
@@ -15073,7 +15073,7 @@
             get: function () {
                 return this.peek(0);
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         Object.defineProperty(_ParseAST.prototype, "atEOF", {
@@ -15081,7 +15081,7 @@
             get: function () {
                 return this.index >= this.tokens.length;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         Object.defineProperty(_ParseAST.prototype, "inputIndex", {
@@ -15092,7 +15092,7 @@
             get: function () {
                 return this.atEOF ? this.currentEndIndex : this.next.index + this.offset;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         Object.defineProperty(_ParseAST.prototype, "currentEndIndex", {
@@ -15112,7 +15112,7 @@
                 }
                 return this.next.index + this.offset;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         Object.defineProperty(_ParseAST.prototype, "currentAbsoluteOffset", {
@@ -15122,7 +15122,7 @@
             get: function () {
                 return this.absoluteOffset + this.inputIndex;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         _ParseAST.prototype.span = function (start) {
@@ -16802,21 +16802,21 @@
             get: function () {
                 return this._registry.icus;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         Object.defineProperty(I18nContext.prototype, "isRoot", {
             get: function () {
                 return this.level === 0;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         Object.defineProperty(I18nContext.prototype, "isResolved", {
             get: function () {
                 return this._unresolvedCtxCount === 0;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         I18nContext.prototype.getSerializedPlaceholders = function () {
@@ -20385,7 +20385,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('10.0.0-next.7+17.sha-2418c6a');
+    var VERSION$1 = new Version('10.0.0-next.7+43.sha-f16ca1c');
 
     /**
      * @license
@@ -21183,7 +21183,7 @@
             get: function () {
                 return this._msgCountAtSectionStart !== void 0;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         /**
@@ -28747,6 +28747,30 @@
         return { compiler: compiler, reflector: staticReflector };
     }
 
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+
     var SummaryResolver = /** @class */ (function () {
         function SummaryResolver() {
         }
@@ -29824,6 +29848,22 @@
         };
         return Extractor;
     }());
+
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
 
     /**
      * @license
