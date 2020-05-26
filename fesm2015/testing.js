@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.0.0-rc.0+1.sha-441073b
+ * @license Angular v10.0.0-rc.0+4.sha-6f82918
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { ResourceLoader, core, DirectiveResolver, NgModuleResolver, PipeResolver
 
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -131,7 +131,7 @@ function remove(list, el) {
 
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -193,7 +193,7 @@ class MockSchemaRegistry {
 
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -220,7 +220,7 @@ class MockDirectiveResolver extends DirectiveResolver {
 
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -249,7 +249,7 @@ class MockNgModuleResolver extends NgModuleResolver {
 
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -282,7 +282,7 @@ class MockPipeResolver extends PipeResolver {
 
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -290,7 +290,7 @@ class MockPipeResolver extends PipeResolver {
 
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -299,7 +299,7 @@ class MockPipeResolver extends PipeResolver {
 
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
