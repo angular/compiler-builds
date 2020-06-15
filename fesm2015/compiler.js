@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.0.0-rc.5
+ * @license Angular v10.0.0-rc.6+3.sha-6c7467a
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -19096,7 +19096,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('10.0.0-rc.5');
+const VERSION$1 = new Version('10.0.0-rc.6+3.sha-6c7467a');
 
 /**
  * @license
@@ -22507,7 +22507,6 @@ class NgModuleResolver {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const _debugFilePath = '/debug/lib';
 function debugOutputAstAsTypeScript(ast) {
     const converter = new _TsEmitterVisitor();
     const ctx = EmitterVisitorContext.createRoot();
