@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.0.0-rc.0+200.sha-7e0eccc
+ * @license Angular v10.0.0-rc.0+208.sha-fd65958
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -25,35 +25,36 @@
     PERFORMANCE OF THIS SOFTWARE.
     ***************************************************************************** */
     /* global Reflect, Promise */
-
-    var extendStatics = function(d, b) {
+    var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
             ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+            function (d, b) { for (var p in b)
+                if (b.hasOwnProperty(p))
+                    d[p] = b[p]; };
         return extendStatics(d, b);
     };
-
     function __extends(d, b) {
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     }
-
-    var __assign = function() {
+    var __assign = function () {
         __assign = Object.assign || function __assign(t) {
             for (var s, i = 1, n = arguments.length; i < n; i++) {
                 s = arguments[i];
-                for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+                for (var p in s)
+                    if (Object.prototype.hasOwnProperty.call(s, p))
+                        t[p] = s[p];
             }
             return t;
         };
         return __assign.apply(this, arguments);
     };
-
     function __rest(s, e) {
         var t = {};
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-            t[p] = s[p];
+        for (var p in s)
+            if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+                t[p] = s[p];
         if (s != null && typeof Object.getOwnPropertySymbols === "function")
             for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
                 if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
@@ -61,175 +62,247 @@
             }
         return t;
     }
-
     function __decorate(decorators, target, key, desc) {
         var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-        if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-        else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+        if (typeof Reflect === "object" && typeof Reflect.decorate === "function")
+            r = Reflect.decorate(decorators, target, key, desc);
+        else
+            for (var i = decorators.length - 1; i >= 0; i--)
+                if (d = decorators[i])
+                    r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
         return c > 3 && r && Object.defineProperty(target, key, r), r;
     }
-
     function __param(paramIndex, decorator) {
-        return function (target, key) { decorator(target, key, paramIndex); }
+        return function (target, key) { decorator(target, key, paramIndex); };
     }
-
     function __metadata(metadataKey, metadataValue) {
-        if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(metadataKey, metadataValue);
+        if (typeof Reflect === "object" && typeof Reflect.metadata === "function")
+            return Reflect.metadata(metadataKey, metadataValue);
     }
-
     function __awaiter(thisArg, _arguments, P, generator) {
         function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
         return new (P || (P = Promise))(function (resolve, reject) {
-            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+            function fulfilled(value) { try {
+                step(generator.next(value));
+            }
+            catch (e) {
+                reject(e);
+            } }
+            function rejected(value) { try {
+                step(generator["throw"](value));
+            }
+            catch (e) {
+                reject(e);
+            } }
             function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
             step((generator = generator.apply(thisArg, _arguments || [])).next());
         });
     }
-
     function __generator(thisArg, body) {
-        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+        var _ = { label: 0, sent: function () { if (t[0] & 1)
+                throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function () { return this; }), g;
         function verb(n) { return function (v) { return step([n, v]); }; }
         function step(op) {
-            if (f) throw new TypeError("Generator is already executing.");
-            while (_) try {
-                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-                if (y = 0, t) op = [op[0] & 2, t.value];
-                switch (op[0]) {
-                    case 0: case 1: t = op; break;
-                    case 4: _.label++; return { value: op[1], done: false };
-                    case 5: _.label++; y = op[1]; op = [0]; continue;
-                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                    default:
-                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                        if (t[2]) _.ops.pop();
-                        _.trys.pop(); continue;
+            if (f)
+                throw new TypeError("Generator is already executing.");
+            while (_)
+                try {
+                    if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done)
+                        return t;
+                    if (y = 0, t)
+                        op = [op[0] & 2, t.value];
+                    switch (op[0]) {
+                        case 0:
+                        case 1:
+                            t = op;
+                            break;
+                        case 4:
+                            _.label++;
+                            return { value: op[1], done: false };
+                        case 5:
+                            _.label++;
+                            y = op[1];
+                            op = [0];
+                            continue;
+                        case 7:
+                            op = _.ops.pop();
+                            _.trys.pop();
+                            continue;
+                        default:
+                            if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) {
+                                _ = 0;
+                                continue;
+                            }
+                            if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) {
+                                _.label = op[1];
+                                break;
+                            }
+                            if (op[0] === 6 && _.label < t[1]) {
+                                _.label = t[1];
+                                t = op;
+                                break;
+                            }
+                            if (t && _.label < t[2]) {
+                                _.label = t[2];
+                                _.ops.push(op);
+                                break;
+                            }
+                            if (t[2])
+                                _.ops.pop();
+                            _.trys.pop();
+                            continue;
+                    }
+                    op = body.call(thisArg, _);
                 }
-                op = body.call(thisArg, _);
-            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+                catch (e) {
+                    op = [6, e];
+                    y = 0;
+                }
+                finally {
+                    f = t = 0;
+                }
+            if (op[0] & 5)
+                throw op[1];
+            return { value: op[0] ? op[1] : void 0, done: true };
         }
     }
-
-    var __createBinding = Object.create ? (function(o, m, k, k2) {
-        if (k2 === undefined) k2 = k;
-        Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-    }) : (function(o, m, k, k2) {
-        if (k2 === undefined) k2 = k;
+    var __createBinding = Object.create ? (function (o, m, k, k2) {
+        if (k2 === undefined)
+            k2 = k;
+        Object.defineProperty(o, k2, { enumerable: true, get: function () { return m[k]; } });
+    }) : (function (o, m, k, k2) {
+        if (k2 === undefined)
+            k2 = k;
         o[k2] = m[k];
     });
-
     function __exportStar(m, exports) {
-        for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+        for (var p in m)
+            if (p !== "default" && !exports.hasOwnProperty(p))
+                __createBinding(exports, m, p);
     }
-
     function __values(o) {
         var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
-        if (m) return m.call(o);
-        if (o && typeof o.length === "number") return {
-            next: function () {
-                if (o && i >= o.length) o = void 0;
-                return { value: o && o[i++], done: !o };
-            }
-        };
+        if (m)
+            return m.call(o);
+        if (o && typeof o.length === "number")
+            return {
+                next: function () {
+                    if (o && i >= o.length)
+                        o = void 0;
+                    return { value: o && o[i++], done: !o };
+                }
+            };
         throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
     }
-
     function __read(o, n) {
         var m = typeof Symbol === "function" && o[Symbol.iterator];
-        if (!m) return o;
+        if (!m)
+            return o;
         var i = m.call(o), r, ar = [], e;
         try {
-            while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+            while ((n === void 0 || n-- > 0) && !(r = i.next()).done)
+                ar.push(r.value);
         }
-        catch (error) { e = { error: error }; }
+        catch (error) {
+            e = { error: error };
+        }
         finally {
             try {
-                if (r && !r.done && (m = i["return"])) m.call(i);
+                if (r && !r.done && (m = i["return"]))
+                    m.call(i);
             }
-            finally { if (e) throw e.error; }
+            finally {
+                if (e)
+                    throw e.error;
+            }
         }
         return ar;
     }
-
     function __spread() {
         for (var ar = [], i = 0; i < arguments.length; i++)
             ar = ar.concat(__read(arguments[i]));
         return ar;
     }
-
     function __spreadArrays() {
-        for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+        for (var s = 0, i = 0, il = arguments.length; i < il; i++)
+            s += arguments[i].length;
         for (var r = Array(s), k = 0, i = 0; i < il; i++)
             for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
                 r[k] = a[j];
         return r;
-    };
-
+    }
+    ;
     function __await(v) {
         return this instanceof __await ? (this.v = v, this) : new __await(v);
     }
-
     function __asyncGenerator(thisArg, _arguments, generator) {
-        if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+        if (!Symbol.asyncIterator)
+            throw new TypeError("Symbol.asyncIterator is not defined.");
         var g = generator.apply(thisArg, _arguments || []), i, q = [];
         return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
-        function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
-        function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
+        function verb(n) { if (g[n])
+            i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
+        function resume(n, v) { try {
+            step(g[n](v));
+        }
+        catch (e) {
+            settle(q[0][3], e);
+        } }
         function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
         function fulfill(value) { resume("next", value); }
         function reject(value) { resume("throw", value); }
-        function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
+        function settle(f, v) { if (f(v), q.shift(), q.length)
+            resume(q[0][0], q[0][1]); }
     }
-
     function __asyncDelegator(o) {
         var i, p;
         return i = {}, verb("next"), verb("throw", function (e) { throw e; }), verb("return"), i[Symbol.iterator] = function () { return this; }, i;
         function verb(n, f) { i[n] = o[n] ? function (v) { return (p = !p) ? { value: __await(o[n](v)), done: n === "return" } : f ? f(v) : v; } : f; }
     }
-
     function __asyncValues(o) {
-        if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+        if (!Symbol.asyncIterator)
+            throw new TypeError("Symbol.asyncIterator is not defined.");
         var m = o[Symbol.asyncIterator], i;
         return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
         function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-        function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+        function settle(resolve, reject, d, v) { Promise.resolve(v).then(function (v) { resolve({ value: v, done: d }); }, reject); }
     }
-
     function __makeTemplateObject(cooked, raw) {
-        if (Object.defineProperty) { Object.defineProperty(cooked, "raw", { value: raw }); } else { cooked.raw = raw; }
+        if (Object.defineProperty) {
+            Object.defineProperty(cooked, "raw", { value: raw });
+        }
+        else {
+            cooked.raw = raw;
+        }
         return cooked;
-    };
-
-    var __setModuleDefault = Object.create ? (function(o, v) {
+    }
+    ;
+    var __setModuleDefault = Object.create ? (function (o, v) {
         Object.defineProperty(o, "default", { enumerable: true, value: v });
-    }) : function(o, v) {
+    }) : function (o, v) {
         o["default"] = v;
     };
-
     function __importStar(mod) {
-        if (mod && mod.__esModule) return mod;
+        if (mod && mod.__esModule)
+            return mod;
         var result = {};
-        if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+        if (mod != null)
+            for (var k in mod)
+                if (Object.hasOwnProperty.call(mod, k))
+                    __createBinding(result, mod, k);
         __setModuleDefault(result, mod);
         return result;
     }
-
     function __importDefault(mod) {
         return (mod && mod.__esModule) ? mod : { default: mod };
     }
-
     function __classPrivateFieldGet(receiver, privateMap) {
         if (!privateMap.has(receiver)) {
             throw new TypeError("attempted to get private field on non-instance");
         }
         return privateMap.get(receiver);
     }
-
     function __classPrivateFieldSet(receiver, privateMap, value) {
         if (!privateMap.has(receiver)) {
             throw new TypeError("attempted to set private field on non-instance");
@@ -772,9 +845,9 @@
             }
             if (this.attrs) {
                 for (var i = 0; i < this.attrs.length; i += 2) {
-                    var name_1 = this.attrs[i];
+                    var name = this.attrs[i];
                     var value = this.attrs[i + 1];
-                    res += "[" + name_1 + (value ? '=' + value : '') + "]";
+                    res += "[" + name + (value ? '=' + value : '') + "]";
                 }
             }
             this.notSelectors.forEach(function (notSelector) { return res += ":not(" + notSelector + ")"; });
@@ -846,23 +919,23 @@
             if (attrs) {
                 for (var i = 0; i < attrs.length; i += 2) {
                     var isTerminal = i === attrs.length - 2;
-                    var name_2 = attrs[i];
+                    var name = attrs[i];
                     var value = attrs[i + 1];
                     if (isTerminal) {
                         var terminalMap = matcher._attrValueMap;
-                        var terminalValuesMap = terminalMap.get(name_2);
+                        var terminalValuesMap = terminalMap.get(name);
                         if (!terminalValuesMap) {
                             terminalValuesMap = new Map();
-                            terminalMap.set(name_2, terminalValuesMap);
+                            terminalMap.set(name, terminalValuesMap);
                         }
                         this._addTerminal(terminalValuesMap, value, selectable);
                     }
                     else {
                         var partialMap = matcher._attrValuePartialMap;
-                        var partialValuesMap = partialMap.get(name_2);
+                        var partialValuesMap = partialMap.get(name);
                         if (!partialValuesMap) {
                             partialValuesMap = new Map();
-                            partialMap.set(name_2, partialValuesMap);
+                            partialMap.set(name, partialValuesMap);
                         }
                         matcher = this._addPartial(partialValuesMap, value);
                     }
@@ -915,16 +988,16 @@
             }
             if (attrs) {
                 for (var i = 0; i < attrs.length; i += 2) {
-                    var name_3 = attrs[i];
+                    var name = attrs[i];
                     var value = attrs[i + 1];
-                    var terminalValuesMap = this._attrValueMap.get(name_3);
+                    var terminalValuesMap = this._attrValueMap.get(name);
                     if (value) {
                         result =
                             this._matchTerminal(terminalValuesMap, '', cssSelector, matchedCallback) || result;
                     }
                     result =
                         this._matchTerminal(terminalValuesMap, value, cssSelector, matchedCallback) || result;
-                    var partialValuesMap = this._attrValuePartialMap.get(name_3);
+                    var partialValuesMap = this._attrValuePartialMap.get(name);
                     if (value) {
                         result = this._matchPartial(partialValuesMap, '', cssSelector, matchedCallback) || result;
                     }
@@ -1003,31 +1076,22 @@
         return SelectorContext;
     }());
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var createInject = makeMetadataFactory('Inject', function (token) { return ({ token: token }); });
     var createInjectionToken = makeMetadataFactory('InjectionToken', function (desc) { return ({ _desc: desc, ɵprov: undefined }); });
     var createAttribute = makeMetadataFactory('Attribute', function (attributeName) { return ({ attributeName: attributeName }); });
     var createContentChildren = makeMetadataFactory('ContentChildren', function (selector, data) {
         if (data === void 0) { data = {}; }
-        return (__assign({ selector: selector, first: false, isViewQuery: false, descendants: false }, data));
+        return (Object.assign({ selector: selector, first: false, isViewQuery: false, descendants: false }, data));
     });
     var createContentChild = makeMetadataFactory('ContentChild', function (selector, data) {
         if (data === void 0) { data = {}; }
-        return (__assign({ selector: selector, first: true, isViewQuery: false, descendants: true }, data));
+        return (Object.assign({ selector: selector, first: true, isViewQuery: false, descendants: true }, data));
     });
     var createViewChildren = makeMetadataFactory('ViewChildren', function (selector, data) {
         if (data === void 0) { data = {}; }
-        return (__assign({ selector: selector, first: false, isViewQuery: true, descendants: true }, data));
+        return (Object.assign({ selector: selector, first: false, isViewQuery: true, descendants: true }, data));
     });
-    var createViewChild = makeMetadataFactory('ViewChild', function (selector, data) {
-        return (__assign({ selector: selector, first: true, isViewQuery: true, descendants: true }, data));
-    });
+    var createViewChild = makeMetadataFactory('ViewChild', function (selector, data) { return (Object.assign({ selector: selector, first: true, isViewQuery: true, descendants: true }, data)); });
     var createDirective = makeMetadataFactory('Directive', function (dir) {
         if (dir === void 0) { dir = {}; }
         return dir;
@@ -1046,9 +1110,9 @@
     })(ChangeDetectionStrategy || (ChangeDetectionStrategy = {}));
     var createComponent = makeMetadataFactory('Component', function (c) {
         if (c === void 0) { c = {}; }
-        return (__assign({ changeDetection: ChangeDetectionStrategy.Default }, c));
+        return (Object.assign({ changeDetection: ChangeDetectionStrategy.Default }, c));
     });
-    var createPipe = makeMetadataFactory('Pipe', function (p) { return (__assign({ pure: true }, p)); });
+    var createPipe = makeMetadataFactory('Pipe', function (p) { return (Object.assign({ pure: true }, p)); });
     var createInput = makeMetadataFactory('Input', function (bindingPropertyName) { return ({ bindingPropertyName: bindingPropertyName }); });
     var createOutput = makeMetadataFactory('Output', function (bindingPropertyName) { return ({ bindingPropertyName: bindingPropertyName }); });
     var createHostBinding = makeMetadataFactory('HostBinding', function (hostPropertyName) { return ({ hostPropertyName: hostPropertyName }); });
@@ -1095,7 +1159,7 @@
                 args[_i] = arguments[_i];
             }
             var values = props ? props.apply(void 0, __spread(args)) : {};
-            return __assign({ ngMetadataName: name }, values);
+            return Object.assign({ ngMetadataName: name }, values);
         }
         factory.isTypeOf = function (obj) { return obj && obj.ngMetadataName === name; };
         factory.ngMetadataName = name;
@@ -1681,9 +1745,7 @@
     var escapeSlashes = function (str) { return str.replace(/\\/g, '\\\\'); };
     var escapeStartingColon = function (str) { return str.replace(/^:/, '\\:'); };
     var escapeColons = function (str) { return str.replace(/:/g, '\\:'); };
-    var escapeForMessagePart = function (str) {
-        return str.replace(/`/g, '\\`').replace(/\${/g, '$\\{');
-    };
+    var escapeForMessagePart = function (str) { return str.replace(/`/g, '\\`').replace(/\${/g, '$\\{'); };
     /**
      * Creates a `{cooked, raw}` object from the `metaBlock` and `messagePart`.
      *
@@ -2584,7 +2646,7 @@
     var _ReadVarVisitor = /** @class */ (function (_super) {
         __extends(_ReadVarVisitor, _super);
         function _ReadVarVisitor() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
+            var _this = _super.apply(this, __spread(arguments)) || this;
             _this.varNames = new Set();
             return _this;
         }
@@ -2612,7 +2674,7 @@
     var _FindExternalReferencesVisitor = /** @class */ (function (_super) {
         __extends(_FindExternalReferencesVisitor, _super);
         function _FindExternalReferencesVisitor() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
+            var _this = _super.apply(this, __spread(arguments)) || this;
             _this.externalReferences = [];
             return _this;
         }
@@ -2994,13 +3056,6 @@
         return [truthy, falsy];
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var CONSTANT_PREFIX = '_c';
     /**
      * `ConstantPool` tries to reuse literal factories when two or more literals are identical.
@@ -3088,9 +3143,9 @@
             }
             if ((!newValue && !fixup.shared) || (newValue && forceShared)) {
                 // Replace the expression with a variable
-                var name_1 = this.freshName();
-                this.statements.push(variable(name_1).set(literal).toDeclStmt(INFERRED_TYPE, [exports.StmtModifier.Final]));
-                fixup.fixup(variable(name_1));
+                var name = this.freshName();
+                this.statements.push(variable(name).set(literal).toDeclStmt(INFERRED_TYPE, [exports.StmtModifier.Final]));
+                fixup.fixup(variable(name));
             }
             return fixup;
         };
@@ -3106,9 +3161,9 @@
                 newValue = true;
             }
             if ((!newValue && !fixup.shared) || (newValue && forceShared)) {
-                var name_2 = this.freshName();
-                this.statements.push(variable(name_2).set(fixup.resolved).toDeclStmt(INFERRED_TYPE, [exports.StmtModifier.Final]));
-                fixup.fixup(variable(name_2));
+                var name = this.freshName();
+                this.statements.push(variable(name).set(fixup.resolved).toDeclStmt(INFERRED_TYPE, [exports.StmtModifier.Final]));
+                fixup.fixup(variable(name));
             }
             return fixup;
         };
@@ -3141,11 +3196,11 @@
                 var resultExpressions = values.map(function (e, index) { return e.isConstant() ? _this.getConstLiteral(e, true) : variable("a" + index); });
                 var parameters = resultExpressions.filter(isVariable).map(function (e) { return new FnParam(e.name, DYNAMIC_TYPE); });
                 var pureFunctionDeclaration = fn(parameters, [new ReturnStatement(resultMap(resultExpressions))], INFERRED_TYPE);
-                var name_3 = this.freshName();
-                this.statements.push(variable(name_3).set(pureFunctionDeclaration).toDeclStmt(INFERRED_TYPE, [
+                var name = this.freshName();
+                this.statements.push(variable(name).set(pureFunctionDeclaration).toDeclStmt(INFERRED_TYPE, [
                     exports.StmtModifier.Final
                 ]));
-                literalFactory = variable(name_3);
+                literalFactory = variable(name);
                 this.literalFactories.set(key, literalFactory);
             }
             return { literalFactory: literalFactory, literalFactoryArguments: literalFactoryArguments };
@@ -3235,9 +3290,7 @@
                 var quote = entry.quoted ? '"' : '';
                 return "" + quote + entry.key + quote;
             };
-            var mapEntry = function (entry) {
-                return mapKey(entry) + ":" + entry.value.visitExpression(_this, context);
-            };
+            var mapEntry = function (entry) { return mapKey(entry) + ":" + entry.value.visitExpression(_this, context); };
             return "{" + ast.entries.map(mapEntry).join(',');
         };
         KeyVisitor.prototype.visitExternalExpr = function (ast) {
@@ -3270,107 +3323,107 @@
     var Identifiers = /** @class */ (function () {
         function Identifiers() {
         }
-        Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS = {
-            name: 'ANALYZE_FOR_ENTRY_COMPONENTS',
-            moduleName: CORE,
-        };
-        Identifiers.ElementRef = { name: 'ElementRef', moduleName: CORE };
-        Identifiers.NgModuleRef = { name: 'NgModuleRef', moduleName: CORE };
-        Identifiers.ViewContainerRef = { name: 'ViewContainerRef', moduleName: CORE };
-        Identifiers.ChangeDetectorRef = {
-            name: 'ChangeDetectorRef',
-            moduleName: CORE,
-        };
-        Identifiers.QueryList = { name: 'QueryList', moduleName: CORE };
-        Identifiers.TemplateRef = { name: 'TemplateRef', moduleName: CORE };
-        Identifiers.Renderer2 = { name: 'Renderer2', moduleName: CORE };
-        Identifiers.CodegenComponentFactoryResolver = {
-            name: 'ɵCodegenComponentFactoryResolver',
-            moduleName: CORE,
-        };
-        Identifiers.ComponentFactoryResolver = {
-            name: 'ComponentFactoryResolver',
-            moduleName: CORE,
-        };
-        Identifiers.ComponentFactory = { name: 'ComponentFactory', moduleName: CORE };
-        Identifiers.ComponentRef = { name: 'ComponentRef', moduleName: CORE };
-        Identifiers.NgModuleFactory = { name: 'NgModuleFactory', moduleName: CORE };
-        Identifiers.createModuleFactory = {
-            name: 'ɵcmf',
-            moduleName: CORE,
-        };
-        Identifiers.moduleDef = {
-            name: 'ɵmod',
-            moduleName: CORE,
-        };
-        Identifiers.moduleProviderDef = {
-            name: 'ɵmpd',
-            moduleName: CORE,
-        };
-        Identifiers.RegisterModuleFactoryFn = {
-            name: 'ɵregisterModuleFactory',
-            moduleName: CORE,
-        };
-        Identifiers.inject = { name: 'ɵɵinject', moduleName: CORE };
-        Identifiers.directiveInject = { name: 'ɵɵdirectiveInject', moduleName: CORE };
-        Identifiers.INJECTOR = { name: 'INJECTOR', moduleName: CORE };
-        Identifiers.Injector = { name: 'Injector', moduleName: CORE };
-        Identifiers.ɵɵdefineInjectable = { name: 'ɵɵdefineInjectable', moduleName: CORE };
-        Identifiers.InjectableDef = { name: 'ɵɵInjectableDef', moduleName: CORE };
-        Identifiers.ViewEncapsulation = {
-            name: 'ViewEncapsulation',
-            moduleName: CORE,
-        };
-        Identifiers.ChangeDetectionStrategy = {
-            name: 'ChangeDetectionStrategy',
-            moduleName: CORE,
-        };
-        Identifiers.SecurityContext = {
-            name: 'SecurityContext',
-            moduleName: CORE,
-        };
-        Identifiers.LOCALE_ID = { name: 'LOCALE_ID', moduleName: CORE };
-        Identifiers.TRANSLATIONS_FORMAT = {
-            name: 'TRANSLATIONS_FORMAT',
-            moduleName: CORE,
-        };
-        Identifiers.inlineInterpolate = {
-            name: 'ɵinlineInterpolate',
-            moduleName: CORE,
-        };
-        Identifiers.interpolate = { name: 'ɵinterpolate', moduleName: CORE };
-        Identifiers.EMPTY_ARRAY = { name: 'ɵEMPTY_ARRAY', moduleName: CORE };
-        Identifiers.EMPTY_MAP = { name: 'ɵEMPTY_MAP', moduleName: CORE };
-        Identifiers.Renderer = { name: 'Renderer', moduleName: CORE };
-        Identifiers.viewDef = { name: 'ɵvid', moduleName: CORE };
-        Identifiers.elementDef = { name: 'ɵeld', moduleName: CORE };
-        Identifiers.anchorDef = { name: 'ɵand', moduleName: CORE };
-        Identifiers.textDef = { name: 'ɵted', moduleName: CORE };
-        Identifiers.directiveDef = { name: 'ɵdid', moduleName: CORE };
-        Identifiers.providerDef = { name: 'ɵprd', moduleName: CORE };
-        Identifiers.queryDef = { name: 'ɵqud', moduleName: CORE };
-        Identifiers.pureArrayDef = { name: 'ɵpad', moduleName: CORE };
-        Identifiers.pureObjectDef = { name: 'ɵpod', moduleName: CORE };
-        Identifiers.purePipeDef = { name: 'ɵppd', moduleName: CORE };
-        Identifiers.pipeDef = { name: 'ɵpid', moduleName: CORE };
-        Identifiers.nodeValue = { name: 'ɵnov', moduleName: CORE };
-        Identifiers.ngContentDef = { name: 'ɵncd', moduleName: CORE };
-        Identifiers.unwrapValue = { name: 'ɵunv', moduleName: CORE };
-        Identifiers.createRendererType2 = { name: 'ɵcrt', moduleName: CORE };
-        // type only
-        Identifiers.RendererType2 = {
-            name: 'RendererType2',
-            moduleName: CORE,
-        };
-        // type only
-        Identifiers.ViewDefinition = {
-            name: 'ɵViewDefinition',
-            moduleName: CORE,
-        };
-        Identifiers.createComponentFactory = { name: 'ɵccf', moduleName: CORE };
-        Identifiers.setClassMetadata = { name: 'ɵsetClassMetadata', moduleName: CORE };
         return Identifiers;
     }());
+    Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS = {
+        name: 'ANALYZE_FOR_ENTRY_COMPONENTS',
+        moduleName: CORE,
+    };
+    Identifiers.ElementRef = { name: 'ElementRef', moduleName: CORE };
+    Identifiers.NgModuleRef = { name: 'NgModuleRef', moduleName: CORE };
+    Identifiers.ViewContainerRef = { name: 'ViewContainerRef', moduleName: CORE };
+    Identifiers.ChangeDetectorRef = {
+        name: 'ChangeDetectorRef',
+        moduleName: CORE,
+    };
+    Identifiers.QueryList = { name: 'QueryList', moduleName: CORE };
+    Identifiers.TemplateRef = { name: 'TemplateRef', moduleName: CORE };
+    Identifiers.Renderer2 = { name: 'Renderer2', moduleName: CORE };
+    Identifiers.CodegenComponentFactoryResolver = {
+        name: 'ɵCodegenComponentFactoryResolver',
+        moduleName: CORE,
+    };
+    Identifiers.ComponentFactoryResolver = {
+        name: 'ComponentFactoryResolver',
+        moduleName: CORE,
+    };
+    Identifiers.ComponentFactory = { name: 'ComponentFactory', moduleName: CORE };
+    Identifiers.ComponentRef = { name: 'ComponentRef', moduleName: CORE };
+    Identifiers.NgModuleFactory = { name: 'NgModuleFactory', moduleName: CORE };
+    Identifiers.createModuleFactory = {
+        name: 'ɵcmf',
+        moduleName: CORE,
+    };
+    Identifiers.moduleDef = {
+        name: 'ɵmod',
+        moduleName: CORE,
+    };
+    Identifiers.moduleProviderDef = {
+        name: 'ɵmpd',
+        moduleName: CORE,
+    };
+    Identifiers.RegisterModuleFactoryFn = {
+        name: 'ɵregisterModuleFactory',
+        moduleName: CORE,
+    };
+    Identifiers.inject = { name: 'ɵɵinject', moduleName: CORE };
+    Identifiers.directiveInject = { name: 'ɵɵdirectiveInject', moduleName: CORE };
+    Identifiers.INJECTOR = { name: 'INJECTOR', moduleName: CORE };
+    Identifiers.Injector = { name: 'Injector', moduleName: CORE };
+    Identifiers.ɵɵdefineInjectable = { name: 'ɵɵdefineInjectable', moduleName: CORE };
+    Identifiers.InjectableDef = { name: 'ɵɵInjectableDef', moduleName: CORE };
+    Identifiers.ViewEncapsulation = {
+        name: 'ViewEncapsulation',
+        moduleName: CORE,
+    };
+    Identifiers.ChangeDetectionStrategy = {
+        name: 'ChangeDetectionStrategy',
+        moduleName: CORE,
+    };
+    Identifiers.SecurityContext = {
+        name: 'SecurityContext',
+        moduleName: CORE,
+    };
+    Identifiers.LOCALE_ID = { name: 'LOCALE_ID', moduleName: CORE };
+    Identifiers.TRANSLATIONS_FORMAT = {
+        name: 'TRANSLATIONS_FORMAT',
+        moduleName: CORE,
+    };
+    Identifiers.inlineInterpolate = {
+        name: 'ɵinlineInterpolate',
+        moduleName: CORE,
+    };
+    Identifiers.interpolate = { name: 'ɵinterpolate', moduleName: CORE };
+    Identifiers.EMPTY_ARRAY = { name: 'ɵEMPTY_ARRAY', moduleName: CORE };
+    Identifiers.EMPTY_MAP = { name: 'ɵEMPTY_MAP', moduleName: CORE };
+    Identifiers.Renderer = { name: 'Renderer', moduleName: CORE };
+    Identifiers.viewDef = { name: 'ɵvid', moduleName: CORE };
+    Identifiers.elementDef = { name: 'ɵeld', moduleName: CORE };
+    Identifiers.anchorDef = { name: 'ɵand', moduleName: CORE };
+    Identifiers.textDef = { name: 'ɵted', moduleName: CORE };
+    Identifiers.directiveDef = { name: 'ɵdid', moduleName: CORE };
+    Identifiers.providerDef = { name: 'ɵprd', moduleName: CORE };
+    Identifiers.queryDef = { name: 'ɵqud', moduleName: CORE };
+    Identifiers.pureArrayDef = { name: 'ɵpad', moduleName: CORE };
+    Identifiers.pureObjectDef = { name: 'ɵpod', moduleName: CORE };
+    Identifiers.purePipeDef = { name: 'ɵppd', moduleName: CORE };
+    Identifiers.pipeDef = { name: 'ɵpid', moduleName: CORE };
+    Identifiers.nodeValue = { name: 'ɵnov', moduleName: CORE };
+    Identifiers.ngContentDef = { name: 'ɵncd', moduleName: CORE };
+    Identifiers.unwrapValue = { name: 'ɵunv', moduleName: CORE };
+    Identifiers.createRendererType2 = { name: 'ɵcrt', moduleName: CORE };
+    // type only
+    Identifiers.RendererType2 = {
+        name: 'RendererType2',
+        moduleName: CORE,
+    };
+    // type only
+    Identifiers.ViewDefinition = {
+        name: 'ɵViewDefinition',
+        moduleName: CORE,
+    };
+    Identifiers.createComponentFactory = { name: 'ɵccf', moduleName: CORE };
+    Identifiers.setClassMetadata = { name: 'ɵsetClassMetadata', moduleName: CORE };
     function createTokenForReference(reference) {
         return { identifier: { reference: reference } };
     }
@@ -3841,196 +3894,196 @@
     var Identifiers$1 = /** @class */ (function () {
         function Identifiers() {
         }
-        /* Methods */
-        Identifiers.NEW_METHOD = 'factory';
-        Identifiers.TRANSFORM_METHOD = 'transform';
-        Identifiers.PATCH_DEPS = 'patchedDeps';
-        /* Instructions */
-        Identifiers.namespaceHTML = { name: 'ɵɵnamespaceHTML', moduleName: CORE$1 };
-        Identifiers.namespaceMathML = { name: 'ɵɵnamespaceMathML', moduleName: CORE$1 };
-        Identifiers.namespaceSVG = { name: 'ɵɵnamespaceSVG', moduleName: CORE$1 };
-        Identifiers.element = { name: 'ɵɵelement', moduleName: CORE$1 };
-        Identifiers.elementStart = { name: 'ɵɵelementStart', moduleName: CORE$1 };
-        Identifiers.elementEnd = { name: 'ɵɵelementEnd', moduleName: CORE$1 };
-        Identifiers.select = { name: 'ɵɵselect', moduleName: CORE$1 };
-        Identifiers.advance = { name: 'ɵɵadvance', moduleName: CORE$1 };
-        Identifiers.updateSyntheticHostBinding = { name: 'ɵɵupdateSyntheticHostBinding', moduleName: CORE$1 };
-        Identifiers.componentHostSyntheticListener = { name: 'ɵɵcomponentHostSyntheticListener', moduleName: CORE$1 };
-        Identifiers.attribute = { name: 'ɵɵattribute', moduleName: CORE$1 };
-        Identifiers.attributeInterpolate1 = { name: 'ɵɵattributeInterpolate1', moduleName: CORE$1 };
-        Identifiers.attributeInterpolate2 = { name: 'ɵɵattributeInterpolate2', moduleName: CORE$1 };
-        Identifiers.attributeInterpolate3 = { name: 'ɵɵattributeInterpolate3', moduleName: CORE$1 };
-        Identifiers.attributeInterpolate4 = { name: 'ɵɵattributeInterpolate4', moduleName: CORE$1 };
-        Identifiers.attributeInterpolate5 = { name: 'ɵɵattributeInterpolate5', moduleName: CORE$1 };
-        Identifiers.attributeInterpolate6 = { name: 'ɵɵattributeInterpolate6', moduleName: CORE$1 };
-        Identifiers.attributeInterpolate7 = { name: 'ɵɵattributeInterpolate7', moduleName: CORE$1 };
-        Identifiers.attributeInterpolate8 = { name: 'ɵɵattributeInterpolate8', moduleName: CORE$1 };
-        Identifiers.attributeInterpolateV = { name: 'ɵɵattributeInterpolateV', moduleName: CORE$1 };
-        Identifiers.classProp = { name: 'ɵɵclassProp', moduleName: CORE$1 };
-        Identifiers.elementContainerStart = { name: 'ɵɵelementContainerStart', moduleName: CORE$1 };
-        Identifiers.elementContainerEnd = { name: 'ɵɵelementContainerEnd', moduleName: CORE$1 };
-        Identifiers.elementContainer = { name: 'ɵɵelementContainer', moduleName: CORE$1 };
-        Identifiers.styleMap = { name: 'ɵɵstyleMap', moduleName: CORE$1 };
-        Identifiers.styleMapInterpolate1 = { name: 'ɵɵstyleMapInterpolate1', moduleName: CORE$1 };
-        Identifiers.styleMapInterpolate2 = { name: 'ɵɵstyleMapInterpolate2', moduleName: CORE$1 };
-        Identifiers.styleMapInterpolate3 = { name: 'ɵɵstyleMapInterpolate3', moduleName: CORE$1 };
-        Identifiers.styleMapInterpolate4 = { name: 'ɵɵstyleMapInterpolate4', moduleName: CORE$1 };
-        Identifiers.styleMapInterpolate5 = { name: 'ɵɵstyleMapInterpolate5', moduleName: CORE$1 };
-        Identifiers.styleMapInterpolate6 = { name: 'ɵɵstyleMapInterpolate6', moduleName: CORE$1 };
-        Identifiers.styleMapInterpolate7 = { name: 'ɵɵstyleMapInterpolate7', moduleName: CORE$1 };
-        Identifiers.styleMapInterpolate8 = { name: 'ɵɵstyleMapInterpolate8', moduleName: CORE$1 };
-        Identifiers.styleMapInterpolateV = { name: 'ɵɵstyleMapInterpolateV', moduleName: CORE$1 };
-        Identifiers.classMap = { name: 'ɵɵclassMap', moduleName: CORE$1 };
-        Identifiers.classMapInterpolate1 = { name: 'ɵɵclassMapInterpolate1', moduleName: CORE$1 };
-        Identifiers.classMapInterpolate2 = { name: 'ɵɵclassMapInterpolate2', moduleName: CORE$1 };
-        Identifiers.classMapInterpolate3 = { name: 'ɵɵclassMapInterpolate3', moduleName: CORE$1 };
-        Identifiers.classMapInterpolate4 = { name: 'ɵɵclassMapInterpolate4', moduleName: CORE$1 };
-        Identifiers.classMapInterpolate5 = { name: 'ɵɵclassMapInterpolate5', moduleName: CORE$1 };
-        Identifiers.classMapInterpolate6 = { name: 'ɵɵclassMapInterpolate6', moduleName: CORE$1 };
-        Identifiers.classMapInterpolate7 = { name: 'ɵɵclassMapInterpolate7', moduleName: CORE$1 };
-        Identifiers.classMapInterpolate8 = { name: 'ɵɵclassMapInterpolate8', moduleName: CORE$1 };
-        Identifiers.classMapInterpolateV = { name: 'ɵɵclassMapInterpolateV', moduleName: CORE$1 };
-        Identifiers.styleProp = { name: 'ɵɵstyleProp', moduleName: CORE$1 };
-        Identifiers.stylePropInterpolate1 = { name: 'ɵɵstylePropInterpolate1', moduleName: CORE$1 };
-        Identifiers.stylePropInterpolate2 = { name: 'ɵɵstylePropInterpolate2', moduleName: CORE$1 };
-        Identifiers.stylePropInterpolate3 = { name: 'ɵɵstylePropInterpolate3', moduleName: CORE$1 };
-        Identifiers.stylePropInterpolate4 = { name: 'ɵɵstylePropInterpolate4', moduleName: CORE$1 };
-        Identifiers.stylePropInterpolate5 = { name: 'ɵɵstylePropInterpolate5', moduleName: CORE$1 };
-        Identifiers.stylePropInterpolate6 = { name: 'ɵɵstylePropInterpolate6', moduleName: CORE$1 };
-        Identifiers.stylePropInterpolate7 = { name: 'ɵɵstylePropInterpolate7', moduleName: CORE$1 };
-        Identifiers.stylePropInterpolate8 = { name: 'ɵɵstylePropInterpolate8', moduleName: CORE$1 };
-        Identifiers.stylePropInterpolateV = { name: 'ɵɵstylePropInterpolateV', moduleName: CORE$1 };
-        Identifiers.nextContext = { name: 'ɵɵnextContext', moduleName: CORE$1 };
-        Identifiers.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE$1 };
-        Identifiers.text = { name: 'ɵɵtext', moduleName: CORE$1 };
-        Identifiers.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE$1 };
-        Identifiers.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE$1 };
-        Identifiers.getCurrentView = { name: 'ɵɵgetCurrentView', moduleName: CORE$1 };
-        Identifiers.textInterpolate = { name: 'ɵɵtextInterpolate', moduleName: CORE$1 };
-        Identifiers.textInterpolate1 = { name: 'ɵɵtextInterpolate1', moduleName: CORE$1 };
-        Identifiers.textInterpolate2 = { name: 'ɵɵtextInterpolate2', moduleName: CORE$1 };
-        Identifiers.textInterpolate3 = { name: 'ɵɵtextInterpolate3', moduleName: CORE$1 };
-        Identifiers.textInterpolate4 = { name: 'ɵɵtextInterpolate4', moduleName: CORE$1 };
-        Identifiers.textInterpolate5 = { name: 'ɵɵtextInterpolate5', moduleName: CORE$1 };
-        Identifiers.textInterpolate6 = { name: 'ɵɵtextInterpolate6', moduleName: CORE$1 };
-        Identifiers.textInterpolate7 = { name: 'ɵɵtextInterpolate7', moduleName: CORE$1 };
-        Identifiers.textInterpolate8 = { name: 'ɵɵtextInterpolate8', moduleName: CORE$1 };
-        Identifiers.textInterpolateV = { name: 'ɵɵtextInterpolateV', moduleName: CORE$1 };
-        Identifiers.restoreView = { name: 'ɵɵrestoreView', moduleName: CORE$1 };
-        Identifiers.pureFunction0 = { name: 'ɵɵpureFunction0', moduleName: CORE$1 };
-        Identifiers.pureFunction1 = { name: 'ɵɵpureFunction1', moduleName: CORE$1 };
-        Identifiers.pureFunction2 = { name: 'ɵɵpureFunction2', moduleName: CORE$1 };
-        Identifiers.pureFunction3 = { name: 'ɵɵpureFunction3', moduleName: CORE$1 };
-        Identifiers.pureFunction4 = { name: 'ɵɵpureFunction4', moduleName: CORE$1 };
-        Identifiers.pureFunction5 = { name: 'ɵɵpureFunction5', moduleName: CORE$1 };
-        Identifiers.pureFunction6 = { name: 'ɵɵpureFunction6', moduleName: CORE$1 };
-        Identifiers.pureFunction7 = { name: 'ɵɵpureFunction7', moduleName: CORE$1 };
-        Identifiers.pureFunction8 = { name: 'ɵɵpureFunction8', moduleName: CORE$1 };
-        Identifiers.pureFunctionV = { name: 'ɵɵpureFunctionV', moduleName: CORE$1 };
-        Identifiers.pipeBind1 = { name: 'ɵɵpipeBind1', moduleName: CORE$1 };
-        Identifiers.pipeBind2 = { name: 'ɵɵpipeBind2', moduleName: CORE$1 };
-        Identifiers.pipeBind3 = { name: 'ɵɵpipeBind3', moduleName: CORE$1 };
-        Identifiers.pipeBind4 = { name: 'ɵɵpipeBind4', moduleName: CORE$1 };
-        Identifiers.pipeBindV = { name: 'ɵɵpipeBindV', moduleName: CORE$1 };
-        Identifiers.hostProperty = { name: 'ɵɵhostProperty', moduleName: CORE$1 };
-        Identifiers.property = { name: 'ɵɵproperty', moduleName: CORE$1 };
-        Identifiers.propertyInterpolate = { name: 'ɵɵpropertyInterpolate', moduleName: CORE$1 };
-        Identifiers.propertyInterpolate1 = { name: 'ɵɵpropertyInterpolate1', moduleName: CORE$1 };
-        Identifiers.propertyInterpolate2 = { name: 'ɵɵpropertyInterpolate2', moduleName: CORE$1 };
-        Identifiers.propertyInterpolate3 = { name: 'ɵɵpropertyInterpolate3', moduleName: CORE$1 };
-        Identifiers.propertyInterpolate4 = { name: 'ɵɵpropertyInterpolate4', moduleName: CORE$1 };
-        Identifiers.propertyInterpolate5 = { name: 'ɵɵpropertyInterpolate5', moduleName: CORE$1 };
-        Identifiers.propertyInterpolate6 = { name: 'ɵɵpropertyInterpolate6', moduleName: CORE$1 };
-        Identifiers.propertyInterpolate7 = { name: 'ɵɵpropertyInterpolate7', moduleName: CORE$1 };
-        Identifiers.propertyInterpolate8 = { name: 'ɵɵpropertyInterpolate8', moduleName: CORE$1 };
-        Identifiers.propertyInterpolateV = { name: 'ɵɵpropertyInterpolateV', moduleName: CORE$1 };
-        Identifiers.i18n = { name: 'ɵɵi18n', moduleName: CORE$1 };
-        Identifiers.i18nAttributes = { name: 'ɵɵi18nAttributes', moduleName: CORE$1 };
-        Identifiers.i18nExp = { name: 'ɵɵi18nExp', moduleName: CORE$1 };
-        Identifiers.i18nStart = { name: 'ɵɵi18nStart', moduleName: CORE$1 };
-        Identifiers.i18nEnd = { name: 'ɵɵi18nEnd', moduleName: CORE$1 };
-        Identifiers.i18nApply = { name: 'ɵɵi18nApply', moduleName: CORE$1 };
-        Identifiers.i18nPostprocess = { name: 'ɵɵi18nPostprocess', moduleName: CORE$1 };
-        Identifiers.pipe = { name: 'ɵɵpipe', moduleName: CORE$1 };
-        Identifiers.projection = { name: 'ɵɵprojection', moduleName: CORE$1 };
-        Identifiers.projectionDef = { name: 'ɵɵprojectionDef', moduleName: CORE$1 };
-        Identifiers.reference = { name: 'ɵɵreference', moduleName: CORE$1 };
-        Identifiers.inject = { name: 'ɵɵinject', moduleName: CORE$1 };
-        Identifiers.injectAttribute = { name: 'ɵɵinjectAttribute', moduleName: CORE$1 };
-        Identifiers.injectPipeChangeDetectorRef = { name: 'ɵɵinjectPipeChangeDetectorRef', moduleName: CORE$1 };
-        Identifiers.directiveInject = { name: 'ɵɵdirectiveInject', moduleName: CORE$1 };
-        Identifiers.invalidFactory = { name: 'ɵɵinvalidFactory', moduleName: CORE$1 };
-        Identifiers.invalidFactoryDep = { name: 'ɵɵinvalidFactoryDep', moduleName: CORE$1 };
-        Identifiers.templateRefExtractor = { name: 'ɵɵtemplateRefExtractor', moduleName: CORE$1 };
-        Identifiers.resolveWindow = { name: 'ɵɵresolveWindow', moduleName: CORE$1 };
-        Identifiers.resolveDocument = { name: 'ɵɵresolveDocument', moduleName: CORE$1 };
-        Identifiers.resolveBody = { name: 'ɵɵresolveBody', moduleName: CORE$1 };
-        Identifiers.defineComponent = { name: 'ɵɵdefineComponent', moduleName: CORE$1 };
-        Identifiers.setComponentScope = { name: 'ɵɵsetComponentScope', moduleName: CORE$1 };
-        Identifiers.ComponentDefWithMeta = {
-            name: 'ɵɵComponentDefWithMeta',
-            moduleName: CORE$1,
-        };
-        Identifiers.FactoryDef = {
-            name: 'ɵɵFactoryDef',
-            moduleName: CORE$1,
-        };
-        Identifiers.defineDirective = {
-            name: 'ɵɵdefineDirective',
-            moduleName: CORE$1,
-        };
-        Identifiers.DirectiveDefWithMeta = {
-            name: 'ɵɵDirectiveDefWithMeta',
-            moduleName: CORE$1,
-        };
-        Identifiers.InjectorDef = {
-            name: 'ɵɵInjectorDef',
-            moduleName: CORE$1,
-        };
-        Identifiers.defineInjector = {
-            name: 'ɵɵdefineInjector',
-            moduleName: CORE$1,
-        };
-        Identifiers.NgModuleDefWithMeta = {
-            name: 'ɵɵNgModuleDefWithMeta',
-            moduleName: CORE$1,
-        };
-        Identifiers.ModuleWithProviders = {
-            name: 'ModuleWithProviders',
-            moduleName: CORE$1,
-        };
-        Identifiers.defineNgModule = { name: 'ɵɵdefineNgModule', moduleName: CORE$1 };
-        Identifiers.setNgModuleScope = { name: 'ɵɵsetNgModuleScope', moduleName: CORE$1 };
-        Identifiers.PipeDefWithMeta = { name: 'ɵɵPipeDefWithMeta', moduleName: CORE$1 };
-        Identifiers.definePipe = { name: 'ɵɵdefinePipe', moduleName: CORE$1 };
-        Identifiers.queryRefresh = { name: 'ɵɵqueryRefresh', moduleName: CORE$1 };
-        Identifiers.viewQuery = { name: 'ɵɵviewQuery', moduleName: CORE$1 };
-        Identifiers.staticViewQuery = { name: 'ɵɵstaticViewQuery', moduleName: CORE$1 };
-        Identifiers.staticContentQuery = { name: 'ɵɵstaticContentQuery', moduleName: CORE$1 };
-        Identifiers.loadQuery = { name: 'ɵɵloadQuery', moduleName: CORE$1 };
-        Identifiers.contentQuery = { name: 'ɵɵcontentQuery', moduleName: CORE$1 };
-        Identifiers.NgOnChangesFeature = { name: 'ɵɵNgOnChangesFeature', moduleName: CORE$1 };
-        Identifiers.InheritDefinitionFeature = { name: 'ɵɵInheritDefinitionFeature', moduleName: CORE$1 };
-        Identifiers.CopyDefinitionFeature = { name: 'ɵɵCopyDefinitionFeature', moduleName: CORE$1 };
-        Identifiers.ProvidersFeature = { name: 'ɵɵProvidersFeature', moduleName: CORE$1 };
-        Identifiers.listener = { name: 'ɵɵlistener', moduleName: CORE$1 };
-        Identifiers.getFactoryOf = {
-            name: 'ɵɵgetFactoryOf',
-            moduleName: CORE$1,
-        };
-        Identifiers.getInheritedFactory = {
-            name: 'ɵɵgetInheritedFactory',
-            moduleName: CORE$1,
-        };
-        // sanitization-related functions
-        Identifiers.sanitizeHtml = { name: 'ɵɵsanitizeHtml', moduleName: CORE$1 };
-        Identifiers.sanitizeStyle = { name: 'ɵɵsanitizeStyle', moduleName: CORE$1 };
-        Identifiers.sanitizeResourceUrl = { name: 'ɵɵsanitizeResourceUrl', moduleName: CORE$1 };
-        Identifiers.sanitizeScript = { name: 'ɵɵsanitizeScript', moduleName: CORE$1 };
-        Identifiers.sanitizeUrl = { name: 'ɵɵsanitizeUrl', moduleName: CORE$1 };
-        Identifiers.sanitizeUrlOrResourceUrl = { name: 'ɵɵsanitizeUrlOrResourceUrl', moduleName: CORE$1 };
         return Identifiers;
     }());
+    /* Methods */
+    Identifiers$1.NEW_METHOD = 'factory';
+    Identifiers$1.TRANSFORM_METHOD = 'transform';
+    Identifiers$1.PATCH_DEPS = 'patchedDeps';
+    /* Instructions */
+    Identifiers$1.namespaceHTML = { name: 'ɵɵnamespaceHTML', moduleName: CORE$1 };
+    Identifiers$1.namespaceMathML = { name: 'ɵɵnamespaceMathML', moduleName: CORE$1 };
+    Identifiers$1.namespaceSVG = { name: 'ɵɵnamespaceSVG', moduleName: CORE$1 };
+    Identifiers$1.element = { name: 'ɵɵelement', moduleName: CORE$1 };
+    Identifiers$1.elementStart = { name: 'ɵɵelementStart', moduleName: CORE$1 };
+    Identifiers$1.elementEnd = { name: 'ɵɵelementEnd', moduleName: CORE$1 };
+    Identifiers$1.select = { name: 'ɵɵselect', moduleName: CORE$1 };
+    Identifiers$1.advance = { name: 'ɵɵadvance', moduleName: CORE$1 };
+    Identifiers$1.updateSyntheticHostBinding = { name: 'ɵɵupdateSyntheticHostBinding', moduleName: CORE$1 };
+    Identifiers$1.componentHostSyntheticListener = { name: 'ɵɵcomponentHostSyntheticListener', moduleName: CORE$1 };
+    Identifiers$1.attribute = { name: 'ɵɵattribute', moduleName: CORE$1 };
+    Identifiers$1.attributeInterpolate1 = { name: 'ɵɵattributeInterpolate1', moduleName: CORE$1 };
+    Identifiers$1.attributeInterpolate2 = { name: 'ɵɵattributeInterpolate2', moduleName: CORE$1 };
+    Identifiers$1.attributeInterpolate3 = { name: 'ɵɵattributeInterpolate3', moduleName: CORE$1 };
+    Identifiers$1.attributeInterpolate4 = { name: 'ɵɵattributeInterpolate4', moduleName: CORE$1 };
+    Identifiers$1.attributeInterpolate5 = { name: 'ɵɵattributeInterpolate5', moduleName: CORE$1 };
+    Identifiers$1.attributeInterpolate6 = { name: 'ɵɵattributeInterpolate6', moduleName: CORE$1 };
+    Identifiers$1.attributeInterpolate7 = { name: 'ɵɵattributeInterpolate7', moduleName: CORE$1 };
+    Identifiers$1.attributeInterpolate8 = { name: 'ɵɵattributeInterpolate8', moduleName: CORE$1 };
+    Identifiers$1.attributeInterpolateV = { name: 'ɵɵattributeInterpolateV', moduleName: CORE$1 };
+    Identifiers$1.classProp = { name: 'ɵɵclassProp', moduleName: CORE$1 };
+    Identifiers$1.elementContainerStart = { name: 'ɵɵelementContainerStart', moduleName: CORE$1 };
+    Identifiers$1.elementContainerEnd = { name: 'ɵɵelementContainerEnd', moduleName: CORE$1 };
+    Identifiers$1.elementContainer = { name: 'ɵɵelementContainer', moduleName: CORE$1 };
+    Identifiers$1.styleMap = { name: 'ɵɵstyleMap', moduleName: CORE$1 };
+    Identifiers$1.styleMapInterpolate1 = { name: 'ɵɵstyleMapInterpolate1', moduleName: CORE$1 };
+    Identifiers$1.styleMapInterpolate2 = { name: 'ɵɵstyleMapInterpolate2', moduleName: CORE$1 };
+    Identifiers$1.styleMapInterpolate3 = { name: 'ɵɵstyleMapInterpolate3', moduleName: CORE$1 };
+    Identifiers$1.styleMapInterpolate4 = { name: 'ɵɵstyleMapInterpolate4', moduleName: CORE$1 };
+    Identifiers$1.styleMapInterpolate5 = { name: 'ɵɵstyleMapInterpolate5', moduleName: CORE$1 };
+    Identifiers$1.styleMapInterpolate6 = { name: 'ɵɵstyleMapInterpolate6', moduleName: CORE$1 };
+    Identifiers$1.styleMapInterpolate7 = { name: 'ɵɵstyleMapInterpolate7', moduleName: CORE$1 };
+    Identifiers$1.styleMapInterpolate8 = { name: 'ɵɵstyleMapInterpolate8', moduleName: CORE$1 };
+    Identifiers$1.styleMapInterpolateV = { name: 'ɵɵstyleMapInterpolateV', moduleName: CORE$1 };
+    Identifiers$1.classMap = { name: 'ɵɵclassMap', moduleName: CORE$1 };
+    Identifiers$1.classMapInterpolate1 = { name: 'ɵɵclassMapInterpolate1', moduleName: CORE$1 };
+    Identifiers$1.classMapInterpolate2 = { name: 'ɵɵclassMapInterpolate2', moduleName: CORE$1 };
+    Identifiers$1.classMapInterpolate3 = { name: 'ɵɵclassMapInterpolate3', moduleName: CORE$1 };
+    Identifiers$1.classMapInterpolate4 = { name: 'ɵɵclassMapInterpolate4', moduleName: CORE$1 };
+    Identifiers$1.classMapInterpolate5 = { name: 'ɵɵclassMapInterpolate5', moduleName: CORE$1 };
+    Identifiers$1.classMapInterpolate6 = { name: 'ɵɵclassMapInterpolate6', moduleName: CORE$1 };
+    Identifiers$1.classMapInterpolate7 = { name: 'ɵɵclassMapInterpolate7', moduleName: CORE$1 };
+    Identifiers$1.classMapInterpolate8 = { name: 'ɵɵclassMapInterpolate8', moduleName: CORE$1 };
+    Identifiers$1.classMapInterpolateV = { name: 'ɵɵclassMapInterpolateV', moduleName: CORE$1 };
+    Identifiers$1.styleProp = { name: 'ɵɵstyleProp', moduleName: CORE$1 };
+    Identifiers$1.stylePropInterpolate1 = { name: 'ɵɵstylePropInterpolate1', moduleName: CORE$1 };
+    Identifiers$1.stylePropInterpolate2 = { name: 'ɵɵstylePropInterpolate2', moduleName: CORE$1 };
+    Identifiers$1.stylePropInterpolate3 = { name: 'ɵɵstylePropInterpolate3', moduleName: CORE$1 };
+    Identifiers$1.stylePropInterpolate4 = { name: 'ɵɵstylePropInterpolate4', moduleName: CORE$1 };
+    Identifiers$1.stylePropInterpolate5 = { name: 'ɵɵstylePropInterpolate5', moduleName: CORE$1 };
+    Identifiers$1.stylePropInterpolate6 = { name: 'ɵɵstylePropInterpolate6', moduleName: CORE$1 };
+    Identifiers$1.stylePropInterpolate7 = { name: 'ɵɵstylePropInterpolate7', moduleName: CORE$1 };
+    Identifiers$1.stylePropInterpolate8 = { name: 'ɵɵstylePropInterpolate8', moduleName: CORE$1 };
+    Identifiers$1.stylePropInterpolateV = { name: 'ɵɵstylePropInterpolateV', moduleName: CORE$1 };
+    Identifiers$1.nextContext = { name: 'ɵɵnextContext', moduleName: CORE$1 };
+    Identifiers$1.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE$1 };
+    Identifiers$1.text = { name: 'ɵɵtext', moduleName: CORE$1 };
+    Identifiers$1.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE$1 };
+    Identifiers$1.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE$1 };
+    Identifiers$1.getCurrentView = { name: 'ɵɵgetCurrentView', moduleName: CORE$1 };
+    Identifiers$1.textInterpolate = { name: 'ɵɵtextInterpolate', moduleName: CORE$1 };
+    Identifiers$1.textInterpolate1 = { name: 'ɵɵtextInterpolate1', moduleName: CORE$1 };
+    Identifiers$1.textInterpolate2 = { name: 'ɵɵtextInterpolate2', moduleName: CORE$1 };
+    Identifiers$1.textInterpolate3 = { name: 'ɵɵtextInterpolate3', moduleName: CORE$1 };
+    Identifiers$1.textInterpolate4 = { name: 'ɵɵtextInterpolate4', moduleName: CORE$1 };
+    Identifiers$1.textInterpolate5 = { name: 'ɵɵtextInterpolate5', moduleName: CORE$1 };
+    Identifiers$1.textInterpolate6 = { name: 'ɵɵtextInterpolate6', moduleName: CORE$1 };
+    Identifiers$1.textInterpolate7 = { name: 'ɵɵtextInterpolate7', moduleName: CORE$1 };
+    Identifiers$1.textInterpolate8 = { name: 'ɵɵtextInterpolate8', moduleName: CORE$1 };
+    Identifiers$1.textInterpolateV = { name: 'ɵɵtextInterpolateV', moduleName: CORE$1 };
+    Identifiers$1.restoreView = { name: 'ɵɵrestoreView', moduleName: CORE$1 };
+    Identifiers$1.pureFunction0 = { name: 'ɵɵpureFunction0', moduleName: CORE$1 };
+    Identifiers$1.pureFunction1 = { name: 'ɵɵpureFunction1', moduleName: CORE$1 };
+    Identifiers$1.pureFunction2 = { name: 'ɵɵpureFunction2', moduleName: CORE$1 };
+    Identifiers$1.pureFunction3 = { name: 'ɵɵpureFunction3', moduleName: CORE$1 };
+    Identifiers$1.pureFunction4 = { name: 'ɵɵpureFunction4', moduleName: CORE$1 };
+    Identifiers$1.pureFunction5 = { name: 'ɵɵpureFunction5', moduleName: CORE$1 };
+    Identifiers$1.pureFunction6 = { name: 'ɵɵpureFunction6', moduleName: CORE$1 };
+    Identifiers$1.pureFunction7 = { name: 'ɵɵpureFunction7', moduleName: CORE$1 };
+    Identifiers$1.pureFunction8 = { name: 'ɵɵpureFunction8', moduleName: CORE$1 };
+    Identifiers$1.pureFunctionV = { name: 'ɵɵpureFunctionV', moduleName: CORE$1 };
+    Identifiers$1.pipeBind1 = { name: 'ɵɵpipeBind1', moduleName: CORE$1 };
+    Identifiers$1.pipeBind2 = { name: 'ɵɵpipeBind2', moduleName: CORE$1 };
+    Identifiers$1.pipeBind3 = { name: 'ɵɵpipeBind3', moduleName: CORE$1 };
+    Identifiers$1.pipeBind4 = { name: 'ɵɵpipeBind4', moduleName: CORE$1 };
+    Identifiers$1.pipeBindV = { name: 'ɵɵpipeBindV', moduleName: CORE$1 };
+    Identifiers$1.hostProperty = { name: 'ɵɵhostProperty', moduleName: CORE$1 };
+    Identifiers$1.property = { name: 'ɵɵproperty', moduleName: CORE$1 };
+    Identifiers$1.propertyInterpolate = { name: 'ɵɵpropertyInterpolate', moduleName: CORE$1 };
+    Identifiers$1.propertyInterpolate1 = { name: 'ɵɵpropertyInterpolate1', moduleName: CORE$1 };
+    Identifiers$1.propertyInterpolate2 = { name: 'ɵɵpropertyInterpolate2', moduleName: CORE$1 };
+    Identifiers$1.propertyInterpolate3 = { name: 'ɵɵpropertyInterpolate3', moduleName: CORE$1 };
+    Identifiers$1.propertyInterpolate4 = { name: 'ɵɵpropertyInterpolate4', moduleName: CORE$1 };
+    Identifiers$1.propertyInterpolate5 = { name: 'ɵɵpropertyInterpolate5', moduleName: CORE$1 };
+    Identifiers$1.propertyInterpolate6 = { name: 'ɵɵpropertyInterpolate6', moduleName: CORE$1 };
+    Identifiers$1.propertyInterpolate7 = { name: 'ɵɵpropertyInterpolate7', moduleName: CORE$1 };
+    Identifiers$1.propertyInterpolate8 = { name: 'ɵɵpropertyInterpolate8', moduleName: CORE$1 };
+    Identifiers$1.propertyInterpolateV = { name: 'ɵɵpropertyInterpolateV', moduleName: CORE$1 };
+    Identifiers$1.i18n = { name: 'ɵɵi18n', moduleName: CORE$1 };
+    Identifiers$1.i18nAttributes = { name: 'ɵɵi18nAttributes', moduleName: CORE$1 };
+    Identifiers$1.i18nExp = { name: 'ɵɵi18nExp', moduleName: CORE$1 };
+    Identifiers$1.i18nStart = { name: 'ɵɵi18nStart', moduleName: CORE$1 };
+    Identifiers$1.i18nEnd = { name: 'ɵɵi18nEnd', moduleName: CORE$1 };
+    Identifiers$1.i18nApply = { name: 'ɵɵi18nApply', moduleName: CORE$1 };
+    Identifiers$1.i18nPostprocess = { name: 'ɵɵi18nPostprocess', moduleName: CORE$1 };
+    Identifiers$1.pipe = { name: 'ɵɵpipe', moduleName: CORE$1 };
+    Identifiers$1.projection = { name: 'ɵɵprojection', moduleName: CORE$1 };
+    Identifiers$1.projectionDef = { name: 'ɵɵprojectionDef', moduleName: CORE$1 };
+    Identifiers$1.reference = { name: 'ɵɵreference', moduleName: CORE$1 };
+    Identifiers$1.inject = { name: 'ɵɵinject', moduleName: CORE$1 };
+    Identifiers$1.injectAttribute = { name: 'ɵɵinjectAttribute', moduleName: CORE$1 };
+    Identifiers$1.injectPipeChangeDetectorRef = { name: 'ɵɵinjectPipeChangeDetectorRef', moduleName: CORE$1 };
+    Identifiers$1.directiveInject = { name: 'ɵɵdirectiveInject', moduleName: CORE$1 };
+    Identifiers$1.invalidFactory = { name: 'ɵɵinvalidFactory', moduleName: CORE$1 };
+    Identifiers$1.invalidFactoryDep = { name: 'ɵɵinvalidFactoryDep', moduleName: CORE$1 };
+    Identifiers$1.templateRefExtractor = { name: 'ɵɵtemplateRefExtractor', moduleName: CORE$1 };
+    Identifiers$1.resolveWindow = { name: 'ɵɵresolveWindow', moduleName: CORE$1 };
+    Identifiers$1.resolveDocument = { name: 'ɵɵresolveDocument', moduleName: CORE$1 };
+    Identifiers$1.resolveBody = { name: 'ɵɵresolveBody', moduleName: CORE$1 };
+    Identifiers$1.defineComponent = { name: 'ɵɵdefineComponent', moduleName: CORE$1 };
+    Identifiers$1.setComponentScope = { name: 'ɵɵsetComponentScope', moduleName: CORE$1 };
+    Identifiers$1.ComponentDefWithMeta = {
+        name: 'ɵɵComponentDefWithMeta',
+        moduleName: CORE$1,
+    };
+    Identifiers$1.FactoryDef = {
+        name: 'ɵɵFactoryDef',
+        moduleName: CORE$1,
+    };
+    Identifiers$1.defineDirective = {
+        name: 'ɵɵdefineDirective',
+        moduleName: CORE$1,
+    };
+    Identifiers$1.DirectiveDefWithMeta = {
+        name: 'ɵɵDirectiveDefWithMeta',
+        moduleName: CORE$1,
+    };
+    Identifiers$1.InjectorDef = {
+        name: 'ɵɵInjectorDef',
+        moduleName: CORE$1,
+    };
+    Identifiers$1.defineInjector = {
+        name: 'ɵɵdefineInjector',
+        moduleName: CORE$1,
+    };
+    Identifiers$1.NgModuleDefWithMeta = {
+        name: 'ɵɵNgModuleDefWithMeta',
+        moduleName: CORE$1,
+    };
+    Identifiers$1.ModuleWithProviders = {
+        name: 'ModuleWithProviders',
+        moduleName: CORE$1,
+    };
+    Identifiers$1.defineNgModule = { name: 'ɵɵdefineNgModule', moduleName: CORE$1 };
+    Identifiers$1.setNgModuleScope = { name: 'ɵɵsetNgModuleScope', moduleName: CORE$1 };
+    Identifiers$1.PipeDefWithMeta = { name: 'ɵɵPipeDefWithMeta', moduleName: CORE$1 };
+    Identifiers$1.definePipe = { name: 'ɵɵdefinePipe', moduleName: CORE$1 };
+    Identifiers$1.queryRefresh = { name: 'ɵɵqueryRefresh', moduleName: CORE$1 };
+    Identifiers$1.viewQuery = { name: 'ɵɵviewQuery', moduleName: CORE$1 };
+    Identifiers$1.staticViewQuery = { name: 'ɵɵstaticViewQuery', moduleName: CORE$1 };
+    Identifiers$1.staticContentQuery = { name: 'ɵɵstaticContentQuery', moduleName: CORE$1 };
+    Identifiers$1.loadQuery = { name: 'ɵɵloadQuery', moduleName: CORE$1 };
+    Identifiers$1.contentQuery = { name: 'ɵɵcontentQuery', moduleName: CORE$1 };
+    Identifiers$1.NgOnChangesFeature = { name: 'ɵɵNgOnChangesFeature', moduleName: CORE$1 };
+    Identifiers$1.InheritDefinitionFeature = { name: 'ɵɵInheritDefinitionFeature', moduleName: CORE$1 };
+    Identifiers$1.CopyDefinitionFeature = { name: 'ɵɵCopyDefinitionFeature', moduleName: CORE$1 };
+    Identifiers$1.ProvidersFeature = { name: 'ɵɵProvidersFeature', moduleName: CORE$1 };
+    Identifiers$1.listener = { name: 'ɵɵlistener', moduleName: CORE$1 };
+    Identifiers$1.getFactoryOf = {
+        name: 'ɵɵgetFactoryOf',
+        moduleName: CORE$1,
+    };
+    Identifiers$1.getInheritedFactory = {
+        name: 'ɵɵgetInheritedFactory',
+        moduleName: CORE$1,
+    };
+    // sanitization-related functions
+    Identifiers$1.sanitizeHtml = { name: 'ɵɵsanitizeHtml', moduleName: CORE$1 };
+    Identifiers$1.sanitizeStyle = { name: 'ɵɵsanitizeStyle', moduleName: CORE$1 };
+    Identifiers$1.sanitizeResourceUrl = { name: 'ɵɵsanitizeResourceUrl', moduleName: CORE$1 };
+    Identifiers$1.sanitizeScript = { name: 'ɵɵsanitizeScript', moduleName: CORE$1 };
+    Identifiers$1.sanitizeUrl = { name: 'ɵɵsanitizeUrl', moduleName: CORE$1 };
+    Identifiers$1.sanitizeUrlOrResourceUrl = { name: 'ɵɵsanitizeUrlOrResourceUrl', moduleName: CORE$1 };
 
     /**
      * @license
@@ -4354,13 +4407,6 @@
         return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var Text = /** @class */ (function () {
         function Text(value, sourceSpan) {
             this.value = value;
@@ -4857,13 +4903,6 @@
     }());
 
     /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    /**
      * Return the message id or compute it using the XLIFF1 digest.
      */
     function digest(message) {
@@ -5203,13 +5242,6 @@
         return product;
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var Serializer = /** @class */ (function () {
         function Serializer() {
         }
@@ -5386,13 +5418,6 @@
         return _ESCAPED_CHARS.reduce(function (text, entry) { return text.replace(entry[0], entry[1]); }, text);
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var _MESSAGES_TAG = 'messagebundle';
     var _MESSAGE_TAG = 'msg';
     var _PLACEHOLDER_TAG = 'ph';
@@ -5691,13 +5716,6 @@
     }
 
     /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    /**
      * Checks whether an object key contains potentially unsafe chars, thus the key should be wrapped in
      * quotes. Note: we do not wrap all keys into quotes, as it may have impact on minification and may
      * bot work in some cases when object keys are mangled by minifier.
@@ -5881,13 +5899,6 @@
         }
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var R3FactoryDelegateType;
     (function (R3FactoryDelegateType) {
         R3FactoryDelegateType[R3FactoryDelegateType["Class"] = 0] = "Class";
@@ -6172,7 +6183,7 @@
             }
             if (deps !== undefined) {
                 // factory: () => new meta.useClass(...deps)
-                result = compileFactoryFunction(__assign(__assign({}, factoryMeta), { delegate: meta.useClass, delegateDeps: deps, delegateType: R3FactoryDelegateType.Class }));
+                result = compileFactoryFunction(Object.assign(Object.assign({}, factoryMeta), { delegate: meta.useClass, delegateDeps: deps, delegateType: R3FactoryDelegateType.Class }));
             }
             else if (useClassOnSelf) {
                 result = compileFactoryFunction(factoryMeta);
@@ -6183,7 +6194,7 @@
         }
         else if (meta.useFactory !== undefined) {
             if (meta.userDeps !== undefined) {
-                result = compileFactoryFunction(__assign(__assign({}, factoryMeta), { delegate: meta.useFactory, delegateDeps: meta.userDeps || [], delegateType: R3FactoryDelegateType.Function }));
+                result = compileFactoryFunction(Object.assign(Object.assign({}, factoryMeta), { delegate: meta.useFactory, delegateDeps: meta.userDeps || [], delegateType: R3FactoryDelegateType.Function }));
             }
             else {
                 result = {
@@ -6196,11 +6207,11 @@
             // Note: it's safe to use `meta.useValue` instead of the `USE_VALUE in meta` check used for
             // client code because meta.useValue is an Expression which will be defined even if the actual
             // value is undefined.
-            result = compileFactoryFunction(__assign(__assign({}, factoryMeta), { expression: meta.useValue }));
+            result = compileFactoryFunction(Object.assign(Object.assign({}, factoryMeta), { expression: meta.useValue }));
         }
         else if (meta.useExisting !== undefined) {
             // useExisting is an `inject` call on the existing token.
-            result = compileFactoryFunction(__assign(__assign({}, factoryMeta), { expression: importExpr(Identifiers.inject).callFn([meta.useExisting]) }));
+            result = compileFactoryFunction(Object.assign(Object.assign({}, factoryMeta), { expression: importExpr(Identifiers.inject).callFn([meta.useExisting]) }));
         }
         else {
             result = delegateToFactory(meta.type.value, meta.internalType);
@@ -7006,13 +7017,6 @@
         return res;
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var AbstractJsEmitterVisitor = /** @class */ (function (_super) {
         __extends(AbstractJsEmitterVisitor, _super);
         function AbstractJsEmitterVisitor() {
@@ -7207,13 +7211,6 @@
     }(AbstractEmitterVisitor));
 
     /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    /**
      * A helper class to manage the evaluation of JIT generated code.
      */
     var JitEvaluator = /** @class */ (function () {
@@ -7342,8 +7339,8 @@
             if (id === -1) {
                 id = this._evalArgValues.length;
                 this._evalArgValues.push(value);
-                var name_1 = identifierName({ reference: value }) || 'val';
-                this._evalArgNames.push("jit_" + name_1 + "_" + id);
+                var name = identifierName({ reference: value }) || 'val';
+                this._evalArgNames.push("jit_" + name + "_" + id);
             }
             ctx.print(ast, this._evalArgNames[id]);
         };
@@ -7426,13 +7423,6 @@
         }); }));
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     /**
      * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
      */
@@ -7615,7 +7605,7 @@
             pure: pipe.pure,
         };
         var res = compilePipeFromMetadata(metadata);
-        var factoryRes = compileFactoryFunction(__assign(__assign({}, metadata), { injectFn: Identifiers$1.directiveInject, target: exports.R3FactoryTarget.Pipe }));
+        var factoryRes = compileFactoryFunction(Object.assign(Object.assign({}, metadata), { injectFn: Identifiers$1.directiveInject, target: exports.R3FactoryTarget.Pipe }));
         var definitionField = outputCtx.constantPool.propertyNameOf(3 /* Pipe */);
         var ngFactoryDefStatement = new ClassStmt(
         /* name */ name, 
@@ -8450,19 +8440,12 @@
         return BoundElementProperty;
     }());
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var EventHandlerVars = /** @class */ (function () {
         function EventHandlerVars() {
         }
-        EventHandlerVars.event = variable('$event');
         return EventHandlerVars;
     }());
+    EventHandlerVars.event = variable('$event');
     var ConvertActionBindingResult = /** @class */ (function () {
         function ConvertActionBindingResult(
         /**
@@ -10022,13 +10005,6 @@
         return AstPath;
     }());
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var NodeWithI18n = /** @class */ (function () {
         function NodeWithI18n(sourceSpan, i18n) {
             this.sourceSpan = sourceSpan;
@@ -10198,13 +10174,6 @@
         return new AstPath(path, position);
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var TokenType;
     (function (TokenType) {
         TokenType[TokenType["TAG_OPEN_START"] = 0] = "TAG_OPEN_START";
@@ -10520,11 +10489,11 @@
                     this._cursor = nameStart;
                     return '&';
                 }
-                var name_1 = this._cursor.getChars(nameStart);
+                var name = this._cursor.getChars(nameStart);
                 this._cursor.advance();
-                var char = NAMED_ENTITIES[name_1];
+                var char = NAMED_ENTITIES[name];
                 if (!char) {
-                    throw this._createError(_unknownEntityErrorMsg(name_1), this._cursor.getSpan(start));
+                    throw this._createError(_unknownEntityErrorMsg(name), this._cursor.getSpan(start));
                 }
                 return char;
             }
@@ -10967,7 +10936,7 @@
             var _this = this;
             if (fileOrCursor instanceof EscapedCharacterCursor) {
                 _this = _super.call(this, fileOrCursor) || this;
-                _this.internalState = __assign({}, fileOrCursor.internalState);
+                _this.internalState = Object.assign({}, fileOrCursor.internalState);
             }
             else {
                 _this = _super.call(this, fileOrCursor, range) || this;
@@ -11007,7 +10976,7 @@
             if (peek() === $BACKSLASH) {
                 // We have hit an escape sequence so we need the internal state to become independent
                 // of the external state.
-                this.internalState = __assign({}, this.state);
+                this.internalState = Object.assign({}, this.state);
                 // Move past the backslash
                 this.advanceState(this.internalState);
                 // First check for standard control char sequences
@@ -11038,12 +11007,12 @@
                         this.advanceState(this.internalState); // advance past the `{` char
                         // Advance past the variable number of hex digits until we hit a `}` char
                         var digitStart = this.clone();
-                        var length_1 = 0;
+                        var length = 0;
                         while (peek() !== $RBRACE) {
                             this.advanceState(this.internalState);
-                            length_1++;
+                            length++;
                         }
-                        this.state.peek = this.decodeHexDigits(digitStart, length_1);
+                        this.state.peek = this.decodeHexDigits(digitStart, length);
                     }
                     else {
                         // Fixed length Unicode, e.g. `\u1234`
@@ -11064,13 +11033,13 @@
                 else if (isOctalDigit(peek())) {
                     // Octal char code, e.g. `\012`,
                     var octal = '';
-                    var length_2 = 0;
+                    var length = 0;
                     var previous = this.clone();
-                    while (isOctalDigit(peek()) && length_2 < 3) {
+                    while (isOctalDigit(peek()) && length < 3) {
                         previous = this.clone();
                         octal += String.fromCodePoint(peek());
                         this.advanceState(this.internalState);
-                        length_2++;
+                        length++;
                     }
                     this.state.peek = parseInt(octal, 8);
                     // Backup one char
@@ -11109,13 +11078,6 @@
         return CursorError;
     }());
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var TreeError = /** @class */ (function (_super) {
         __extends(TreeError, _super);
         function TreeError(elementName, span, msg) {
@@ -11295,9 +11257,9 @@
         _TreeBuilder.prototype._consumeText = function (token) {
             var text = token.parts[0];
             if (text.length > 0 && text[0] == '\n') {
-                var parent_1 = this._getParentElement();
-                if (parent_1 != null && parent_1.children.length == 0 &&
-                    this.getTagDefinition(parent_1.name).ignoreFirstLf) {
+                var parent = this._getParentElement();
+                if (parent != null && parent.children.length == 0 &&
+                    this.getTagDefinition(parent.name).ignoreFirstLf) {
                     text = text.substring(1);
                 }
             }
@@ -11464,13 +11426,6 @@
         return stack.length > 0 && stack[stack.length - 1] === element;
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var HtmlParser = /** @class */ (function (_super) {
         __extends(HtmlParser, _super);
         function HtmlParser() {
@@ -11572,13 +11527,6 @@
         return result;
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     // http://cldr.unicode.org/index/cldr-spec/plural-rules
     var PLURAL_CASES = ['zero', 'one', 'two', 'few', 'many', 'other'];
     /**
@@ -11683,6 +11631,7 @@
         return new Element$1('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
     }
 
+    var _a;
     /**
      * @license
      * Copyright Google LLC All Rights Reserved.
@@ -11690,7 +11639,6 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var _a;
     /**
      * A segment of text within the template.
      */
@@ -12038,13 +11986,6 @@
         return result;
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var ProviderError = /** @class */ (function (_super) {
         __extends(ProviderError, _super);
         function ProviderError(message, span) {
@@ -12561,13 +12502,6 @@
     var CSS_STRIPPABLE_COMMENT_REGEXP = /\/\*(?!#\s*(?:sourceURL|sourceMappingURL)=)[\s\S]+?\*\//g;
     var URL_WITH_SCHEMA_REGEXP = /^([^:/?#]+):/;
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var PROPERTY_PARTS_SEPARATOR = '.';
     var ATTRIBUTE_PREFIX = 'attr';
     var CLASS_PREFIX = 'class';
@@ -12832,8 +12766,8 @@
                     var nsSeparatorIdx = boundPropertyName.indexOf(':');
                     if (nsSeparatorIdx > -1) {
                         var ns = boundPropertyName.substring(0, nsSeparatorIdx);
-                        var name_1 = boundPropertyName.substring(nsSeparatorIdx + 1);
-                        boundPropertyName = mergeNsAndName(ns, name_1);
+                        var name = boundPropertyName.substring(nsSeparatorIdx + 1);
+                        boundPropertyName = mergeNsAndName(ns, name);
                     }
                     bindingType = 1 /* Attribute */;
                 }
@@ -12980,7 +12914,7 @@
     var PipeCollector = /** @class */ (function (_super) {
         __extends(PipeCollector, _super);
         function PipeCollector() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
+            var _this = _super.apply(this, __spread(arguments)) || this;
             _this.pipes = new Map();
             return _this;
         }
@@ -13104,13 +13038,6 @@
         return selectAttr;
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.*))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
     // Group 1 = "bind-"
     var KW_BIND_IDX = 1;
@@ -13366,7 +13293,7 @@
                 }
             });
             var elementCssSelector = createElementCssSelector(elName, matchableAttrs);
-            var _a = this._parseDirectives(this.selectorMatcher, elementCssSelector), directiveMetas = _a.directives, matchElement = _a.matchElement;
+            var _b = this._parseDirectives(this.selectorMatcher, elementCssSelector), directiveMetas = _b.directives, matchElement = _b.matchElement;
             var references = [];
             var boundDirectivePropNames = new Set();
             var directiveAsts = this._createDirectiveAsts(isTemplateElement, element.name, directiveMetas, elementOrDirectiveProps, elementOrDirectiveRefs, element.sourceSpan, references, boundDirectivePropNames);
@@ -14826,13 +14753,6 @@
         return result;
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var SplitInterpolation = /** @class */ (function () {
         function SplitInterpolation(strings, expressions, offsets) {
             this.strings = strings;
@@ -15053,7 +14973,7 @@
     var IvyParser = /** @class */ (function (_super) {
         __extends(IvyParser, _super);
         function IvyParser() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
+            var _this = _super.apply(this, __spread(arguments)) || this;
             _this.simpleExpressionChecker = IvySimpleExpressionChecker; //
             return _this;
         }
@@ -15235,7 +15155,7 @@
                 }
                 do {
                     var nameStart = this.inputIndex;
-                    var name_1 = this.expectIdentifierOrKeyword();
+                    var name = this.expectIdentifierOrKeyword();
                     var nameSpan = this.sourceSpan(nameStart);
                     var args = [];
                     while (this.consumeOptionalCharacter($COLON)) {
@@ -15243,7 +15163,7 @@
                     }
                     var start = result.span.start;
                     result =
-                        new BindingPipe(this.span(start), this.sourceSpan(start), result, name_1, args, nameSpan);
+                        new BindingPipe(this.span(start), this.sourceSpan(start), result, name, args, nameSpan);
                 } while (this.consumeOptionalOperator('|'));
             }
             return result;
@@ -15851,13 +15771,6 @@
         return IvySimpleExpressionChecker;
     }(SimpleExpressionChecker));
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     // =================================================================================================
     // =================================================================================================
     // =========== S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P  ===========
@@ -15935,13 +15848,6 @@
         return ElementSchemaRegistry;
     }());
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var BOOLEAN = 'boolean';
     var NUMBER = 'number';
     var STRING = 'string';
@@ -16354,13 +16260,6 @@
         }
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var BIND_NAME_REGEXP$1 = /^(?:(?:(?:(bind-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.*))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
     // Group 1 = "bind-"
     var KW_BIND_IDX$1 = 1;
@@ -16536,9 +16435,9 @@
                 // For <ng-template>s with structural directives on them, avoid passing i18n information to
                 // the wrapping template to prevent unnecessary i18n instructions from being generated. The
                 // necessary i18n meta information will be extracted from child elements.
-                var i18n_1 = isTemplateElement && isI18nRootElement ? undefined : element.i18n;
+                var i18n = isTemplateElement && isI18nRootElement ? undefined : element.i18n;
                 // TODO(pk): test for this case
-                parsedElement = new Template(parsedElement.name, hoistedAttrs.attributes, hoistedAttrs.inputs, hoistedAttrs.outputs, templateAttrs_1, [parsedElement], [ /* no references */], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, i18n_1);
+                parsedElement = new Template(parsedElement.name, hoistedAttrs.attributes, hoistedAttrs.inputs, hoistedAttrs.outputs, templateAttrs_1, [parsedElement], [ /* no references */], templateVariables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, i18n);
             }
             if (isI18nRootElement) {
                 this.inI18nBlock = false;
@@ -16753,13 +16652,6 @@
         }
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var TagType;
     (function (TagType) {
         TagType[TagType["ELEMENT"] = 0] = "ELEMENT";
@@ -17139,9 +17031,7 @@
      */
     function createI18nMessageFactory(interpolationConfig) {
         var visitor = new _I18nVisitor(_expParser, interpolationConfig);
-        return function (nodes, meaning, description, customId, visitNodeFn) {
-            return visitor.toI18nMessage(nodes, meaning, description, customId, visitNodeFn);
-        };
+        return function (nodes, meaning, description, customId, visitNodeFn) { return visitor.toI18nMessage(nodes, meaning, description, customId, visitNodeFn); };
     }
     function noopVisitNodeFn(_html, i18n) {
         return i18n;
@@ -17260,13 +17150,6 @@
         return input.split(_CUSTOM_PH_EXP)[2];
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var setI18nRefs = function (htmlNode, i18nNode) {
         if (htmlNode instanceof NodeWithI18n) {
             if (i18nNode instanceof IcuPlaceholder && htmlNode.i18n instanceof Message) {
@@ -17379,10 +17262,10 @@
                 // set ICU placeholder name (e.g. "ICU_1"),
                 // generated while processing root element contents,
                 // so we can reference it when we output translation
-                var name_1 = meta.name;
+                var name = meta.name;
                 message = this._generateI18nMessage([expansion], meta);
                 var icu = icuFromI18nMessage(message);
-                icu.name = name_1;
+                icu.name = name;
             }
             else {
                 // ICU is a top level message, try to use metadata from container element if provided via
@@ -17674,13 +17557,6 @@
         return { messageParts: messageParts, placeHolders: placeHolders };
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     // Selector attribute name of `<ng-content>`
     var NG_CONTENT_SELECT_ATTR$1 = 'select';
     // Attribute name of `ngProjectAs`.
@@ -18145,14 +18021,14 @@
                 // Handle styling, i18n, ngNonBindable attributes
                 for (var _c = __values(element.attributes), _d = _c.next(); !_d.done; _d = _c.next()) {
                     var attr = _d.value;
-                    var name_1 = attr.name, value = attr.value;
-                    if (name_1 === NON_BINDABLE_ATTR) {
+                    var name = attr.name, value = attr.value;
+                    if (name === NON_BINDABLE_ATTR) {
                         isNonBindableMode = true;
                     }
-                    else if (name_1 === 'style') {
+                    else if (name === 'style') {
                         stylingBuilder.registerStyleAttr(value);
                     }
-                    else if (name_1 === 'class') {
+                    else if (name === 'class') {
                         stylingBuilder.registerClassAttr(value);
                     }
                     else {
@@ -18490,7 +18366,7 @@
             // inside ICUs)
             // - all ICU vars (such as `VAR_SELECT` or `VAR_PLURAL`) are replaced with correct values
             var transformFn = function (raw) {
-                var params = __assign(__assign({}, vars), placeholders);
+                var params = Object.assign(Object.assign({}, vars), placeholders);
                 var formatted = i18nFormatPlaceholderNames(params, /* useCamelCase */ false);
                 return instruction(null, Identifiers$1.i18nPostprocess, [raw, mapLiteral(formatted, true)]);
             };
@@ -19016,8 +18892,8 @@
          * @param declareLocalCallback The callback to invoke when declaring this local var
          * @param localRef Whether or not this is a local ref
          */
-        BindingScope.prototype.set = function (retrievalLevel, name, lhs, priority, declareLocalCallback, localRef) {
-            if (priority === void 0) { priority = 0 /* DEFAULT */; }
+        BindingScope.prototype.set = function (retrievalLevel, name, lhs, priority /* DEFAULT */, declareLocalCallback, localRef) {
+            if (priority === void 0) { priority = 0; }
             if (this.map.has(name)) {
                 if (localRef) {
                     // Do not throw an error if it's a local ref and do not update existing value,
@@ -19280,7 +19156,7 @@
         var interpolationConfig = options.interpolationConfig, preserveWhitespaces = options.preserveWhitespaces, enableI18nLegacyMessageIdFormat = options.enableI18nLegacyMessageIdFormat;
         var bindingParser = makeBindingParser(interpolationConfig);
         var htmlParser = new HtmlParser();
-        var parseResult = htmlParser.parse(template, templateUrl, __assign(__assign({ leadingTriviaChars: LEADING_TRIVIA_CHARS }, options), { tokenizeExpansionForms: true }));
+        var parseResult = htmlParser.parse(template, templateUrl, Object.assign(Object.assign({ leadingTriviaChars: LEADING_TRIVIA_CHARS }, options), { tokenizeExpansionForms: true }));
         if (parseResult.errors && parseResult.errors.length > 0) {
             return {
                 errors: parseResult.errors,
@@ -19402,13 +19278,6 @@
             .and(variable(NG_I18N_CLOSURE_MODE));
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var EMPTY_ARRAY = [];
     // This regex matches any binding names that contain the "attr." prefix, e.g. "attr.required"
     // If there is a match, the first matching group will contain the attribute name to bind.
@@ -19603,7 +19472,7 @@
         var definitionField = outputCtx.constantPool.propertyNameOf(1 /* Directive */);
         var meta = directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector);
         var res = compileDirectiveFromMetadata(meta, outputCtx.constantPool, bindingParser);
-        var factoryRes = compileFactoryFunction(__assign(__assign({}, meta), { injectFn: Identifiers$1.directiveInject, target: exports.R3FactoryTarget.Directive }));
+        var factoryRes = compileFactoryFunction(Object.assign(Object.assign({}, meta), { injectFn: Identifiers$1.directiveInject, target: exports.R3FactoryTarget.Directive }));
         var ngFactoryDefStatement = new ClassStmt(name, null, [new ClassField('ɵfac', INFERRED_TYPE, [exports.StmtModifier.Static], factoryRes.factory)], [], new ClassMethod(null, [], []), []);
         var directiveDefStatement = new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [exports.StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []);
         // Create the partial class to be merged with the actual class.
@@ -19622,9 +19491,9 @@
         var definitionField = outputCtx.constantPool.propertyNameOf(2 /* Component */);
         var summary = component.toSummary();
         // Compute the R3ComponentMetadata from the CompileDirectiveMetadata
-        var meta = __assign(__assign({}, directiveMetadataFromGlobalMetadata(component, outputCtx, reflector)), { selector: component.selector, template: { nodes: render3Ast.nodes, ngContentSelectors: render3Ast.ngContentSelectors }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, interpolation: DEFAULT_INTERPOLATION_CONFIG, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null, relativeContextFilePath: '', i18nUseExternalIds: true });
+        var meta = Object.assign(Object.assign({}, directiveMetadataFromGlobalMetadata(component, outputCtx, reflector)), { selector: component.selector, template: { nodes: render3Ast.nodes, ngContentSelectors: render3Ast.ngContentSelectors }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), wrapDirectivesAndPipesInClosure: false, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, interpolation: DEFAULT_INTERPOLATION_CONFIG, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null, relativeContextFilePath: '', i18nUseExternalIds: true });
         var res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
-        var factoryRes = compileFactoryFunction(__assign(__assign({}, meta), { injectFn: Identifiers$1.directiveInject, target: exports.R3FactoryTarget.Directive }));
+        var factoryRes = compileFactoryFunction(Object.assign(Object.assign({}, meta), { injectFn: Identifiers$1.directiveInject, target: exports.R3FactoryTarget.Directive }));
         var ngFactoryDefStatement = new ClassStmt(name, null, [new ClassField('ɵfac', INFERRED_TYPE, [exports.StmtModifier.Static], factoryRes.factory)], [], new ClassMethod(null, [], []), []);
         var componentDefStatement = new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [exports.StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []);
         // Create the partial class to be merged with the actual class.
@@ -20129,13 +19998,6 @@
         return ResourceLoader;
     }());
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var CompilerFacadeImpl = /** @class */ (function () {
         function CompilerFacadeImpl(jitEvaluator) {
             if (jitEvaluator === void 0) { jitEvaluator = new JitEvaluator(); }
@@ -20223,7 +20085,7 @@
             }
             // Compile the component metadata, including template, into an expression.
             // TODO(alxhub): implement inputs, outputs, queries, etc.
-            var metadata = __assign(__assign(__assign({}, facade), convertDirectiveFacadeToMetadata(facade)), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template: template, wrapDirectivesAndPipesInClosure: false, styles: __spread(facade.styles, template.styles), encapsulation: facade.encapsulation, interpolation: interpolationConfig, changeDetection: facade.changeDetection, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
+            var metadata = Object.assign(Object.assign(Object.assign({}, facade), convertDirectiveFacadeToMetadata(facade)), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template: template, wrapDirectivesAndPipesInClosure: false, styles: __spread(facade.styles, template.styles), encapsulation: facade.encapsulation, interpolation: interpolationConfig, changeDetection: facade.changeDetection, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
                     null, relativeContextFilePath: '', i18nUseExternalIds: true });
             var res = compileComponentFromMetadata(metadata, constantPool, makeBindingParser(interpolationConfig));
             var jitExpressionSourceMap = "ng:///" + facade.name + ".js";
@@ -20275,7 +20137,7 @@
         return { value: wrapped, type: wrapped };
     };
     function convertToR3QueryMetadata(facade) {
-        return __assign(__assign({}, facade), { predicate: Array.isArray(facade.predicate) ? facade.predicate :
+        return Object.assign(Object.assign({}, facade), { predicate: Array.isArray(facade.predicate) ? facade.predicate :
                 new WrappedNodeExpr(facade.predicate), read: facade.read ? new WrappedNodeExpr(facade.read) : null, static: facade.static });
     }
     function convertDirectiveFacadeToMetadata(facade) {
@@ -20300,7 +20162,7 @@
         for (var field in propMetadata) {
             _loop_1(field);
         }
-        return __assign(__assign({}, facade), { typeSourceSpan: facade.typeSourceSpan, type: wrapReference$1(facade.type), internalType: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: __assign(__assign({}, inputsFromMetadata), inputsFromType), outputs: __assign(__assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), fullInheritance: false });
+        return Object.assign(Object.assign({}, facade), { typeSourceSpan: facade.typeSourceSpan, type: wrapReference$1(facade.type), internalType: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: Object.assign(Object.assign({}, inputsFromMetadata), inputsFromType), outputs: Object.assign(Object.assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), fullInheritance: false });
     }
     function wrapExpression(obj, property) {
         if (obj.hasOwnProperty(property)) {
@@ -20399,7 +20261,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('10.0.0-rc.0+200.sha-7e0eccc');
+    var VERSION$1 = new Version('10.0.0-rc.0+208.sha-fd65958');
 
     /**
      * @license
@@ -20425,13 +20287,6 @@
         return preserveWhitespacesOption === null ? defaultSetting : preserveWhitespacesOption;
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var DirectiveNormalizer = /** @class */ (function () {
         function DirectiveNormalizer(_resourceLoader, _urlResolver, _htmlParser, _config) {
             this._resourceLoader = _resourceLoader;
@@ -20535,6 +20390,7 @@
             return SyncAsync.then(this._loadMissingExternalStylesheets(preparsedTemplate.styleUrls.concat(preparsedTemplate.inlineStyleUrls)), function (externalStylesheets) { return _this._normalizeLoadedTemplateMetadata(prenormData, preparsedTemplate, externalStylesheets); });
         };
         DirectiveNormalizer.prototype._normalizeLoadedTemplateMetadata = function (prenormData, preparsedTemplate, stylesheets) {
+            var _this = this;
             // Algorithm:
             // - produce exactly 1 entry per original styleUrl in
             // CompileTemplateMetadata.externalStylesheets with all styles inlined
@@ -20542,7 +20398,6 @@
             // Reason: be able to determine how many stylesheets there are even without loading
             // the template nor the stylesheets, so we can create a stub for TypeScript always synchronously
             // (as resource loading may be async)
-            var _this = this;
             var styles = __spread(preparsedTemplate.styles);
             this._inlineStyles(preparsedTemplate.inlineStyleUrls, stylesheets, styles);
             var styleUrls = preparsedTemplate.styleUrls;
@@ -20770,10 +20625,10 @@
             // go last to first to allow later entries to overwrite previous entries
             for (var i = bindings.length - 1; i >= 0; i--) {
                 var binding = bindings[i];
-                var name_1 = this._extractPublicName(binding);
-                publicNames.add(name_1);
-                if (!names.has(name_1)) {
-                    names.add(name_1);
+                var name = this._extractPublicName(binding);
+                publicNames.add(name);
+                if (!names.has(name)) {
+                    names.add(name);
                     reversedResult.push(binding);
                 }
             }
@@ -20782,8 +20637,8 @@
         DirectiveResolver.prototype._merge = function (directive, inputs, outputs, host, queries, guards, directiveType) {
             var mergedInputs = this._dedupeBindings(directive.inputs ? directive.inputs.concat(inputs) : inputs);
             var mergedOutputs = this._dedupeBindings(directive.outputs ? directive.outputs.concat(outputs) : outputs);
-            var mergedHost = directive.host ? __assign(__assign({}, directive.host), host) : host;
-            var mergedQueries = directive.queries ? __assign(__assign({}, directive.queries), queries) : queries;
+            var mergedHost = directive.host ? Object.assign(Object.assign({}, directive.host), host) : host;
+            var mergedQueries = directive.queries ? Object.assign(Object.assign({}, directive.queries), queries) : queries;
             if (createComponent.isTypeOf(directive)) {
                 var comp = directive;
                 return createComponent({
@@ -20836,13 +20691,6 @@
     }
 
     /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    /**
      * An i18n error.
      */
     var I18nError = /** @class */ (function (_super) {
@@ -20853,13 +20701,6 @@
         return I18nError;
     }(ParseError));
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var _I18N_ATTR = 'i18n';
     var _I18N_ATTR_PREFIX = 'i18n-';
     var _I18N_COMMENT_PREFIX_REGEXP = /^i18n:?/;
@@ -21288,13 +21129,6 @@
         return _TAG_DEFINITION;
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var XmlParser = /** @class */ (function (_super) {
         __extends(XmlParser, _super);
         function XmlParser() {
@@ -21306,13 +21140,6 @@
         return XmlParser;
     }(Parser));
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var _VERSION = '1.2';
     var _XMLNS = 'urn:oasis:names:tc:xliff:document:1.2';
     // TODO(vicb): make this a param (s/_/-/)
@@ -21573,13 +21400,6 @@
         }
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var _VERSION$1 = '2.0';
     var _XMLNS$1 = 'urn:oasis:names:tc:xliff:document:2.0';
     // TODO(vicb): make this a param (s/_/-/)
@@ -21888,13 +21708,6 @@
         }
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var _TRANSLATIONS_TAG = 'translationbundle';
     var _TRANSLATION_TAG = 'translation';
     var _PLACEHOLDER_TAG$3 = 'ph';
@@ -22071,13 +21884,6 @@
         return XmlToI18n;
     }());
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     /**
      * A container for translated messages
      */
@@ -22257,7 +22063,7 @@
         I18NHtmlParser.prototype.parse = function (source, url, options) {
             if (options === void 0) { options = {}; }
             var interpolationConfig = options.interpolationConfig || DEFAULT_INTERPOLATION_CONFIG;
-            var parseResult = this._htmlParser.parse(source, url, __assign({ interpolationConfig: interpolationConfig }, options));
+            var parseResult = this._htmlParser.parse(source, url, Object.assign({ interpolationConfig: interpolationConfig }, options));
             if (parseResult.errors.length) {
                 return new ParseTreeResult(parseResult.rootNodes, parseResult.errors);
             }
@@ -22571,13 +22377,6 @@
         }
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var ERROR_COMPONENT_TYPE = 'ngComponentType';
     // Design notes:
     // - don't lazily create metadata:
@@ -23926,13 +23725,6 @@
         return NgModuleResolver;
     }());
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     function debugOutputAstAsTypeScript(ast) {
         var converter = new _TsEmitterVisitor();
         var ctx = EmitterVisitorContext.createRoot();
@@ -24046,14 +23838,14 @@
             if (stmt.hasModifier(exports.StmtModifier.Exported) && stmt.value instanceof ExternalExpr &&
                 !stmt.type) {
                 // check for a reexport
-                var _a = stmt.value.value, name_1 = _a.name, moduleName = _a.moduleName;
+                var _a = stmt.value.value, name = _a.name, moduleName = _a.moduleName;
                 if (moduleName) {
                     var reexports = this.reexports.get(moduleName);
                     if (!reexports) {
                         reexports = [];
                         this.reexports.set(moduleName, reexports);
                     }
-                    reexports.push({ name: name_1, as: stmt.name });
+                    reexports.push({ name: name, as: stmt.name });
                     return null;
                 }
             }
@@ -24379,13 +24171,6 @@
     }());
 
     /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    /**
      * Generates code that is used to type check templates.
      */
     var TypeCheckCompiler = /** @class */ (function () {
@@ -24572,9 +24357,7 @@
             var _this = this;
             var astWithSource = ast.value;
             var inter = astWithSource.ast;
-            inter.expressions.forEach(function (expr) {
-                return _this.updates.push({ context: _this.component, value: expr, sourceSpan: ast.sourceSpan });
-            });
+            inter.expressions.forEach(function (expr) { return _this.updates.push({ context: _this.component, value: expr, sourceSpan: ast.sourceSpan }); });
         };
         ViewBuilder.prototype.visitEmbeddedTemplate = function (ast, context) {
             this.visitElementOrTemplate(ast);
@@ -24682,19 +24465,17 @@
                         // for arrays.
                         return _this.options.fullTemplateTypeCheck ? arr : arr.cast(DYNAMIC_TYPE);
                     }; },
-                    createLiteralMapConverter: function (keys) {
-                        return function (values) {
-                            var entries = keys.map(function (k, i) { return ({
-                                key: k.key,
-                                value: values[i],
-                                quoted: k.quoted,
-                            }); });
-                            var map = literalMap(entries);
-                            // Note: The old view compiler used to use an `any` type
-                            // for maps.
-                            return _this.options.fullTemplateTypeCheck ? map : map.cast(DYNAMIC_TYPE);
-                        };
-                    },
+                    createLiteralMapConverter: function (keys) { return function (values) {
+                        var entries = keys.map(function (k, i) { return ({
+                            key: k.key,
+                            value: values[i],
+                            quoted: k.quoted,
+                        }); });
+                        var map = literalMap(entries);
+                        // Note: The old view compiler used to use an `any` type
+                        // for maps.
+                        return _this.options.fullTemplateTypeCheck ? map : map.cast(DYNAMIC_TYPE);
+                    }; },
                     createPipeConverter: function (name, argCount) { return function (args) {
                         // Note: The old view compiler used to use an `any` type
                         // for pipes.
@@ -24717,13 +24498,6 @@
         return ViewBuilder;
     }());
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var CLASS_ATTR$1 = 'class';
     var STYLE_ATTR = 'style';
     var IMPLICIT_TEMPLATE_VAR = '\$implicit';
@@ -25278,7 +25052,7 @@
                 var valueExpr_2 = importExpr(Identifiers.EMPTY_MAP);
                 return function () { return valueExpr_2; };
             }
-            var map = literalMap(keys.map(function (e, i) { return (__assign(__assign({}, e), { value: literal(i) })); }));
+            var map = literalMap(keys.map(function (e, i) { return (Object.assign(Object.assign({}, e), { value: literal(i) })); }));
             var checkIndex = this.nodes.length;
             this.nodes.push(function () { return ({
                 sourceSpan: sourceSpan,
@@ -25356,15 +25130,9 @@
                 sourceSpan: expression.sourceSpan,
                 context: expression.context,
                 value: convertPropertyBindingBuiltins({
-                    createLiteralArrayConverter: function (argCount) {
-                        return _this._createLiteralArrayConverter(expression.sourceSpan, argCount);
-                    },
-                    createLiteralMapConverter: function (keys) {
-                        return _this._createLiteralMapConverter(expression.sourceSpan, keys);
-                    },
-                    createPipeConverter: function (name, argCount) {
-                        return _this._createPipeConverter(expression, name, argCount);
-                    }
+                    createLiteralArrayConverter: function (argCount) { return _this._createLiteralArrayConverter(expression.sourceSpan, argCount); },
+                    createLiteralMapConverter: function (keys) { return _this._createLiteralMapConverter(expression.sourceSpan, keys); },
+                    createPipeConverter: function (name, argCount) { return _this._createPipeConverter(expression, name, argCount); }
                 }, expression.value)
             };
         };
@@ -25564,13 +25332,6 @@
     }
 
     /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    /**
      * A container for message extracted from the templates.
      */
     var MessageBundle = /** @class */ (function () {
@@ -25700,13 +25461,6 @@
         return new TypeScriptEmitter().emitStatements(file.genFileUrl, file.stmts, preamble);
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     function listLazyRoutes(moduleMeta, reflector) {
         var e_1, _a, e_2, _b;
         var allLazyRoutes = [];
@@ -25778,13 +25532,6 @@
         return { route: route, module: module || referencedModule, referencedModule: referencedModule };
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var TS = /^(?!.*\.d\.ts$).*\.ts$/;
     var ResolvedStaticSymbol = /** @class */ (function () {
         function ResolvedStaticSymbol(symbol, metadata) {
@@ -26168,8 +25915,8 @@
                     }
                     else if (symbolic === 'reference') {
                         var module = map['module'];
-                        var name_1 = map['name'] ? unescapeIdentifier(map['name']) : map['name'];
-                        if (!name_1) {
+                        var name = map['name'] ? unescapeIdentifier(map['name']) : map['name'];
+                        if (!name) {
                             return null;
                         }
                         var filePath = void 0;
@@ -26186,26 +25933,26 @@
                             }
                             return {
                                 __symbolic: 'resolved',
-                                symbol: self.getStaticSymbol(filePath, name_1),
+                                symbol: self.getStaticSymbol(filePath, name),
                                 line: map['line'],
                                 character: map['character'],
                                 fileName: getOriginalName()
                             };
                         }
-                        else if (functionParams.indexOf(name_1) >= 0) {
+                        else if (functionParams.indexOf(name) >= 0) {
                             // reference to a function parameter
-                            return { __symbolic: 'reference', name: name_1 };
+                            return { __symbolic: 'reference', name: name };
                         }
                         else {
-                            if (topLevelSymbolNames.has(name_1)) {
-                                return self.getStaticSymbol(topLevelPath, name_1);
+                            if (topLevelSymbolNames.has(name)) {
+                                return self.getStaticSymbol(topLevelPath, name);
                             }
                             // ambient value
                             null;
                         }
                     }
                     else if (symbolic === 'error') {
-                        return __assign(__assign({}, map), { fileName: getOriginalName() });
+                        return Object.assign(Object.assign({}, map), { fileName: getOriginalName() });
                     }
                     else {
                         return _super.prototype.visitStringMap.call(this, map, functionParams);
@@ -26769,13 +26516,6 @@
             unwrapResolvedMetadata(metadata.expression.expression) instanceof StaticSymbol;
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var AotCompiler = /** @class */ (function () {
         function AotCompiler(_config, _options, _host, reflector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _typeCheckCompiler, _ngModuleCompiler, _injectableCompiler, _outputEmitter, _summaryResolver, _symbolResolver) {
             this._config = _config;
@@ -26913,9 +26653,7 @@
             var _this = this;
             var files = fileNames.map(function (fileName) { return _this._analyzeFile(fileName); });
             var loadingPromises = [];
-            files.forEach(function (file) { return file.ngModules.forEach(function (ngModule) {
-                return loadingPromises.push(_this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference, false));
-            }); });
+            files.forEach(function (file) { return file.ngModules.forEach(function (ngModule) { return loadingPromises.push(_this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference, false)); }); });
             var analyzedInjectables = tsFiles.map(function (tsFile) { return _this._analyzeFileForInjectables(tsFile); });
             return Promise.all(loadingPromises).then(function (_) { return ({
                 analyzedModules: mergeAndValidateNgFiles(files),
@@ -27571,13 +27309,6 @@
         return validateAnalyzedModules(mergeAnalyzedFiles(files));
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var FORMATTED_MESSAGE = 'ngFormattedMessage';
     function indentStr(level) {
         if (level <= 0)
@@ -27627,13 +27358,6 @@
         return !!error[FORMATTED_MESSAGE];
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var ANGULAR_CORE = '@angular/core';
     var ANGULAR_ROUTER = '@angular/router';
     var HIDDEN_KEY = /^\$.*\$$/;
@@ -27934,16 +27658,16 @@
             var result = {};
             try {
                 for (var staticMembers_1 = __values(staticMembers), staticMembers_1_1 = staticMembers_1.next(); !staticMembers_1_1.done; staticMembers_1_1 = staticMembers_1.next()) {
-                    var name_1 = staticMembers_1_1.value;
-                    if (name_1.endsWith(TYPEGUARD_POSTFIX)) {
-                        var property = name_1.substr(0, name_1.length - TYPEGUARD_POSTFIX.length);
+                    var name = staticMembers_1_1.value;
+                    if (name.endsWith(TYPEGUARD_POSTFIX)) {
+                        var property = name.substr(0, name.length - TYPEGUARD_POSTFIX.length);
                         var value = void 0;
                         if (property.endsWith(USE_IF)) {
-                            property = name_1.substr(0, property.length - USE_IF.length);
+                            property = name.substr(0, property.length - USE_IF.length);
                             value = USE_IF;
                         }
                         else {
-                            value = this.getStaticSymbol(type.filePath, type.name, [name_1]);
+                            value = this.getStaticSymbol(type.filePath, type.name, [name]);
                         }
                         result[property] = value;
                     }
@@ -28135,8 +27859,8 @@
                     if (Array.isArray(expression)) {
                         var result_2 = [];
                         try {
-                            for (var _c = __values(expression), _d = _c.next(); !_d.done; _d = _c.next()) {
-                                var item = _d.value;
+                            for (var expression_1 = __values(expression), expression_1_1 = expression_1.next(); !expression_1_1.done; expression_1_1 = expression_1.next()) {
+                                var item = expression_1_1.value;
                                 // Check for a spread expression
                                 if (item && item.__symbolic === 'spread') {
                                     // We call with references as 0 because we require the actual value and cannot
@@ -28169,7 +27893,7 @@
                         catch (e_3_1) { e_3 = { error: e_3_1 }; }
                         finally {
                             try {
-                                if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
+                                if (expression_1_1 && !expression_1_1.done && (_a = expression_1.return)) _a.call(expression_1);
                             }
                             finally { if (e_3) throw e_3.error; }
                         }
@@ -28295,8 +28019,8 @@
                                     // Note: This only has to deal with variable references, as symbol references have
                                     // been converted into 'resolved'
                                     // in the StaticSymbolResolver.
-                                    var name_2 = expression['name'];
-                                    var localValue = scope.resolve(name_2);
+                                    var name = expression['name'];
+                                    var localValue = scope.resolve(name);
                                     if (localValue != BindingScope$1.missing) {
                                         return localValue;
                                     }
@@ -28569,10 +28293,10 @@
                 }
             };
         };
-        BindingScope.missing = {};
-        BindingScope.empty = { resolve: function (name) { return BindingScope.missing; } };
         return BindingScope;
     }());
+    BindingScope$1.missing = {};
+    BindingScope$1.empty = { resolve: function (name) { return BindingScope$1.missing; } };
     var PopulatedScope = /** @class */ (function (_super) {
         __extends(PopulatedScope, _super);
         function PopulatedScope(bindings) {
@@ -29484,9 +29208,7 @@
         }
     }
     function createOutputContext() {
-        var importExpr$1 = function (symbol) {
-            return importExpr({ name: identifierName(symbol), moduleName: null, runtime: symbol });
-        };
+        var importExpr$1 = function (symbol) { return importExpr({ name: identifierName(symbol), moduleName: null, runtime: symbol }); };
         return { statements: [], genFilePath: '', importExpr: importExpr$1, constantPool: new ConstantPool() };
     }
 
@@ -29798,13 +29520,6 @@
         return _joinAndCanonicalizePath(parts);
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var Extractor = /** @class */ (function () {
         function Extractor(host, staticSymbolResolver, messageBundle, metadataResolver) {
             this.host = host;
@@ -29886,13 +29601,6 @@
      * found in the LICENSE file at https://angular.io/license
      */
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     /**
      * Processes `Target`s with a given set of directives and performs a binding operation, which
      * returns an object similar to TypeScript's `ts.TypeChecker` that contains knowledge about the
