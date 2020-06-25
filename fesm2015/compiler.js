@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.0.0-rc.0+247.sha-2b2146b
+ * @license Angular v10.0.0-rc.0+255.sha-9318e23
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16371,10 +16371,12 @@ function serializeI18nMessageForGetMsg(message) {
 }
 
 function createLocalizeStatements(variable, message, params) {
-    const statements = [];
     const { messageParts, placeHolders } = serializeI18nMessageForLocalize(message);
-    statements.push(new ExpressionStatement(variable.set(localizedString(message, messageParts, placeHolders, placeHolders.map(ph => params[ph])))));
-    return statements;
+    const sourceSpan = getSourceSpan(message);
+    const expressions = placeHolders.map(ph => params[ph]);
+    const localizedString$1 = localizedString(message, messageParts, placeHolders, expressions, sourceSpan);
+    const variableInitialization = variable.set(localizedString$1);
+    return [new ExpressionStatement(variableInitialization)];
 }
 class MessagePiece {
     constructor(text) {
@@ -16436,6 +16438,11 @@ function serializeI18nMessageForLocalize(message) {
     const pieces = [];
     message.nodes.forEach(node => node.visit(serializerVisitor$2, pieces));
     return processMessagePieces(pieces);
+}
+function getSourceSpan(message) {
+    const startNode = message.nodes[0];
+    const endNode = message.nodes[message.nodes.length - 1];
+    return new ParseSourceSpan(startNode.sourceSpan.start, endNode.sourceSpan.end, startNode.sourceSpan.details);
 }
 /**
  * Convert the list of serialized MessagePieces into two arrays.
@@ -19096,7 +19103,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('10.0.0-rc.0+247.sha-2b2146b');
+const VERSION$1 = new Version('10.0.0-rc.0+255.sha-9318e23');
 
 /**
  * @license
