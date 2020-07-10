@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { InterpolationConfig } from '../ml_parser/interpolation_config';
-import { AbsoluteSourceSpan, AST, AstVisitor, ASTWithSource, Binary, BindingPipe, Chain, Conditional, FunctionCall, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, MethodCall, NonNullAssert, ParserError, ParseSpan, PrefixNot, PropertyRead, PropertyWrite, Quote, SafeMethodCall, SafePropertyRead, TemplateBinding, TemplateBindingIdentifier } from './ast';
+import { AbsoluteSourceSpan, AST, AstVisitor, ASTWithSource, Binary, BindingPipe, Chain, Conditional, FunctionCall, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, MethodCall, NonNullAssert, ParserError, ParseSpan, PrefixNot, PropertyRead, PropertyWrite, Quote, RecursiveAstVisitor, SafeMethodCall, SafePropertyRead, TemplateBinding, TemplateBindingIdentifier } from './ast';
 import { Lexer, Token } from './lexer';
 export declare class SplitInterpolation {
     strings: string[];
@@ -236,19 +236,19 @@ declare class SimpleExpressionChecker implements AstVisitor {
     visitPipe(ast: BindingPipe, context: any): void;
     visitKeyedRead(ast: KeyedRead, context: any): void;
     visitKeyedWrite(ast: KeyedWrite, context: any): void;
-    visitAll(asts: any[]): any[];
+    visitAll(asts: any[], context: any): any[];
     visitChain(ast: Chain, context: any): void;
     visitQuote(ast: Quote, context: any): void;
 }
 /**
- * This class extends SimpleExpressionChecker used in View Engine and performs more strict checks to
- * make sure host bindings do not contain pipes. In View Engine, having pipes in host bindings is
+ * This class implements SimpleExpressionChecker used in View Engine and performs more strict checks
+ * to make sure host bindings do not contain pipes. In View Engine, having pipes in host bindings is
  * not supported as well, but in some cases (like `!(value | async)`) the error is not triggered at
  * compile time. In order to preserve View Engine behavior, more strict checks are introduced for
  * Ivy mode only.
  */
-declare class IvySimpleExpressionChecker extends SimpleExpressionChecker {
-    visitBinary(ast: Binary, context: any): void;
-    visitPrefixNot(ast: PrefixNot, context: any): void;
+declare class IvySimpleExpressionChecker extends RecursiveAstVisitor implements SimpleExpressionChecker {
+    errors: string[];
+    visitPipe(): void;
 }
 export {};
