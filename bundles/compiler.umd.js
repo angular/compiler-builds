@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.1.0-next.0+22.sha-9bd4b74
+ * @license Angular v10.1.0-next.0+23.sha-9322b9a
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15727,10 +15727,10 @@
         SimpleExpressionChecker.prototype.visitSafeMethodCall = function (ast, context) { };
         SimpleExpressionChecker.prototype.visitFunctionCall = function (ast, context) { };
         SimpleExpressionChecker.prototype.visitLiteralArray = function (ast, context) {
-            this.visitAll(ast.expressions);
+            this.visitAll(ast.expressions, context);
         };
         SimpleExpressionChecker.prototype.visitLiteralMap = function (ast, context) {
-            this.visitAll(ast.values);
+            this.visitAll(ast.values, context);
         };
         SimpleExpressionChecker.prototype.visitBinary = function (ast, context) { };
         SimpleExpressionChecker.prototype.visitPrefixNot = function (ast, context) { };
@@ -15741,17 +15741,17 @@
         };
         SimpleExpressionChecker.prototype.visitKeyedRead = function (ast, context) { };
         SimpleExpressionChecker.prototype.visitKeyedWrite = function (ast, context) { };
-        SimpleExpressionChecker.prototype.visitAll = function (asts) {
+        SimpleExpressionChecker.prototype.visitAll = function (asts, context) {
             var _this = this;
-            return asts.map(function (node) { return node.visit(_this); });
+            return asts.map(function (node) { return node.visit(_this, context); });
         };
         SimpleExpressionChecker.prototype.visitChain = function (ast, context) { };
         SimpleExpressionChecker.prototype.visitQuote = function (ast, context) { };
         return SimpleExpressionChecker;
     }());
     /**
-     * This class extends SimpleExpressionChecker used in View Engine and performs more strict checks to
-     * make sure host bindings do not contain pipes. In View Engine, having pipes in host bindings is
+     * This class implements SimpleExpressionChecker used in View Engine and performs more strict checks
+     * to make sure host bindings do not contain pipes. In View Engine, having pipes in host bindings is
      * not supported as well, but in some cases (like `!(value | async)`) the error is not triggered at
      * compile time. In order to preserve View Engine behavior, more strict checks are introduced for
      * Ivy mode only.
@@ -15759,17 +15759,15 @@
     var IvySimpleExpressionChecker = /** @class */ (function (_super) {
         __extends(IvySimpleExpressionChecker, _super);
         function IvySimpleExpressionChecker() {
-            return _super !== null && _super.apply(this, arguments) || this;
+            var _this = _super.apply(this, __spread(arguments)) || this;
+            _this.errors = [];
+            return _this;
         }
-        IvySimpleExpressionChecker.prototype.visitBinary = function (ast, context) {
-            ast.left.visit(this);
-            ast.right.visit(this);
-        };
-        IvySimpleExpressionChecker.prototype.visitPrefixNot = function (ast, context) {
-            ast.expression.visit(this);
+        IvySimpleExpressionChecker.prototype.visitPipe = function () {
+            this.errors.push('pipes');
         };
         return IvySimpleExpressionChecker;
-    }(SimpleExpressionChecker));
+    }(RecursiveAstVisitor$1));
 
     // =================================================================================================
     // =================================================================================================
@@ -20275,7 +20273,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('10.1.0-next.0+22.sha-9bd4b74');
+    var VERSION$1 = new Version('10.1.0-next.0+23.sha-9322b9a');
 
     /**
      * @license
