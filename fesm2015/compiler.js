@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.1.0-next.1+9.sha-406f801
+ * @license Angular v10.1.0-next.1+11.sha-24b4205
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3962,6 +3962,7 @@ class Content {
         this.attributes = attributes;
         this.sourceSpan = sourceSpan;
         this.i18n = i18n;
+        this.name = 'ng-content';
     }
     visit(visitor) {
         return visitor.visitContent(this);
@@ -19110,7 +19111,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('10.1.0-next.1+9.sha-406f801');
+const VERSION$1 = new Version('10.1.0-next.1+11.sha-24b4205');
 
 /**
  * @license
