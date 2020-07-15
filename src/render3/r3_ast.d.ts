@@ -95,7 +95,6 @@ export declare class Content implements Node {
     attributes: TextAttribute[];
     sourceSpan: ParseSourceSpan;
     i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined;
-    readonly name = "ng-content";
     constructor(selector: string, attributes: TextAttribute[], sourceSpan: ParseSourceSpan, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
