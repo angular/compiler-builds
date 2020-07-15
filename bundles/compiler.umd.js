@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.0.4
+ * @license Angular v10.0.4+9.sha-17ddab9
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4528,6 +4528,7 @@
             this.attributes = attributes;
             this.sourceSpan = sourceSpan;
             this.i18n = i18n;
+            this.name = 'ng-content';
         }
         Content.prototype.visit = function (visitor) {
             return visitor.visitContent(this);
@@ -20266,7 +20267,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('10.0.4');
+    var VERSION$1 = new Version('10.0.4+9.sha-17ddab9');
 
     /**
      * @license
