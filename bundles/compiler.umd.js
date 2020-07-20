@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.0.4+23.sha-8e305e7
+ * @license Angular v10.0.4+27.sha-e80278c
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -11302,8 +11302,9 @@
             var el = new Element$1(fullName, attrs, [], span, span, undefined);
             this._pushElement(el);
             if (selfClosing) {
-                this._popElement(fullName);
-                el.endSourceSpan = span;
+                // Elements that are self-closed have their `endSourceSpan` set to the full span, as the
+                // element start tag also represents the end tag.
+                this._popElement(fullName, span);
             }
         };
         _TreeBuilder.prototype._pushElement = function (el) {
@@ -11316,21 +11317,22 @@
         };
         _TreeBuilder.prototype._consumeEndTag = function (endTagToken) {
             var fullName = this._getElementFullName(endTagToken.parts[0], endTagToken.parts[1], this._getParentElement());
-            if (this._getParentElement()) {
-                this._getParentElement().endSourceSpan = endTagToken.sourceSpan;
-            }
             if (this.getTagDefinition(fullName).isVoid) {
                 this.errors.push(TreeError.create(fullName, endTagToken.sourceSpan, "Void elements do not have end tags \"" + endTagToken.parts[1] + "\""));
             }
-            else if (!this._popElement(fullName)) {
+            else if (!this._popElement(fullName, endTagToken.sourceSpan)) {
                 var errMsg = "Unexpected closing tag \"" + fullName + "\". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags";
                 this.errors.push(TreeError.create(fullName, endTagToken.sourceSpan, errMsg));
             }
         };
-        _TreeBuilder.prototype._popElement = function (fullName) {
+        _TreeBuilder.prototype._popElement = function (fullName, endSourceSpan) {
             for (var stackIndex = this._elementStack.length - 1; stackIndex >= 0; stackIndex--) {
                 var el = this._elementStack[stackIndex];
                 if (el.name == fullName) {
+                    // Record the parse span with the element that is being closed. Any elements that are
+                    // removed from the element stack at this point are closed implicitly, so they won't get
+                    // an end source span (as there is no explicit closing element).
+                    el.endSourceSpan = endSourceSpan;
                     this._elementStack.splice(stackIndex, this._elementStack.length - stackIndex);
                     return true;
                 }
@@ -11363,21 +11365,6 @@
         _TreeBuilder.prototype._getParentElement = function () {
             return this._elementStack.length > 0 ? this._elementStack[this._elementStack.length - 1] : null;
         };
-        /**
-         * Returns the parent in the DOM and the container.
-         *
-         * `<ng-container>` elements are skipped as they are not rendered as DOM element.
-         */
-        _TreeBuilder.prototype._getParentElementSkippingContainers = function () {
-            var container = null;
-            for (var i = this._elementStack.length - 1; i >= 0; i--) {
-                if (!isNgContainer(this._elementStack[i].name)) {
-                    return { parent: this._elementStack[i], container: container };
-                }
-                container = this._elementStack[i];
-            }
-            return { parent: null, container: container };
-        };
         _TreeBuilder.prototype._addToParent = function (node) {
             var parent = this._getParentElement();
             if (parent != null) {
@@ -11385,31 +11372,6 @@
             }
             else {
                 this.rootNodes.push(node);
-            }
-        };
-        /**
-         * Insert a node between the parent and the container.
-         * When no container is given, the node is appended as a child of the parent.
-         * Also updates the element stack accordingly.
-         *
-         * @internal
-         */
-        _TreeBuilder.prototype._insertBeforeContainer = function (parent, container, node) {
-            if (!container) {
-                this._addToParent(node);
-                this._elementStack.push(node);
-            }
-            else {
-                if (parent) {
-                    // replace the container with the new node in the children
-                    var index = parent.children.indexOf(container);
-                    parent.children[index] = node;
-                }
-                else {
-                    this.rootNodes.push(node);
-                }
-                node.children.push(container);
-                this._elementStack.splice(this._elementStack.indexOf(container), 0, node);
             }
         };
         _TreeBuilder.prototype._getElementFullName = function (prefix, localName, parentElement) {
@@ -20267,7 +20229,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('10.0.4+23.sha-8e305e7');
+    var VERSION$1 = new Version('10.0.4+27.sha-e80278c');
 
     /**
      * @license
