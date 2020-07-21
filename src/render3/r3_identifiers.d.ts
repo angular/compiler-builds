@@ -18,8 +18,8 @@ export declare class Identifiers {
     static elementEnd: o.ExternalReference;
     static select: o.ExternalReference;
     static advance: o.ExternalReference;
-    static updateSyntheticHostBinding: o.ExternalReference;
-    static componentHostSyntheticListener: o.ExternalReference;
+    static syntheticHostProperty: o.ExternalReference;
+    static syntheticHostListener: o.ExternalReference;
     static attribute: o.ExternalReference;
     static attributeInterpolate1: o.ExternalReference;
     static attributeInterpolate2: o.ExternalReference;

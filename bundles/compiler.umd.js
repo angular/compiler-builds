@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.1.0-next.1+41.sha-eae13e4
+ * @license Angular v10.1.0-next.1+42.sha-d72b1e4
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3909,8 +3909,8 @@
     Identifiers$1.elementEnd = { name: 'ɵɵelementEnd', moduleName: CORE$1 };
     Identifiers$1.select = { name: 'ɵɵselect', moduleName: CORE$1 };
     Identifiers$1.advance = { name: 'ɵɵadvance', moduleName: CORE$1 };
-    Identifiers$1.updateSyntheticHostBinding = { name: 'ɵɵupdateSyntheticHostBinding', moduleName: CORE$1 };
-    Identifiers$1.componentHostSyntheticListener = { name: 'ɵɵcomponentHostSyntheticListener', moduleName: CORE$1 };
+    Identifiers$1.syntheticHostProperty = { name: 'ɵɵsyntheticHostProperty', moduleName: CORE$1 };
+    Identifiers$1.syntheticHostListener = { name: 'ɵɵsyntheticHostListener', moduleName: CORE$1 };
     Identifiers$1.attribute = { name: 'ɵɵattribute', moduleName: CORE$1 };
     Identifiers$1.attributeInterpolate1 = { name: 'ɵɵattributeInterpolate1', moduleName: CORE$1 };
     Identifiers$1.attributeInterpolate2 = { name: 'ɵɵattributeInterpolate2', moduleName: CORE$1 };
@@ -19731,7 +19731,7 @@
             else if (instruction === Identifiers$1.attribute) {
                 attributeBindings.push(instructionParams);
             }
-            else if (instruction === Identifiers$1.updateSyntheticHostBinding) {
+            else if (instruction === Identifiers$1.syntheticHostProperty) {
                 syntheticHostBindings.push(instructionParams);
             }
             else {
@@ -19745,7 +19745,7 @@
             updateStatements.push(chainedInstruction(Identifiers$1.attribute, attributeBindings).toStmt());
         }
         if (syntheticHostBindings.length > 0) {
-            updateStatements.push(chainedInstruction(Identifiers$1.updateSyntheticHostBinding, syntheticHostBindings).toStmt());
+            updateStatements.push(chainedInstruction(Identifiers$1.syntheticHostProperty, syntheticHostBindings).toStmt());
         }
         // since we're dealing with directives/components and both have hostBinding
         // functions, we need to generate a special hostAttrs instruction that deals
@@ -19811,7 +19811,7 @@
                 // host bindings that have a synthetic property (e.g. @foo) should always be rendered
                 // in the context of the component and not the parent. Therefore there is a special
                 // compatibility instruction available for this purpose.
-                instruction = Identifiers$1.updateSyntheticHostBinding;
+                instruction = Identifiers$1.syntheticHostProperty;
             }
             else {
                 instruction = Identifiers$1.hostProperty;
@@ -19838,7 +19838,7 @@
             }
         });
         if (syntheticListeners.length > 0) {
-            instructions.push(chainedInstruction(Identifiers$1.componentHostSyntheticListener, syntheticListeners).toStmt());
+            instructions.push(chainedInstruction(Identifiers$1.syntheticHostListener, syntheticListeners).toStmt());
         }
         if (listeners.length > 0) {
             instructions.push(chainedInstruction(Identifiers$1.listener, listeners).toStmt());
@@ -20236,7 +20236,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('10.1.0-next.1+41.sha-eae13e4');
+    var VERSION$1 = new Version('10.1.0-next.1+42.sha-d72b1e4');
 
     /**
      * @license
