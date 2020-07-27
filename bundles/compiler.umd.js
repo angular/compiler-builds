@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.0.5+23.sha-a123ef5
+ * @license Angular v10.0.5+29.sha-3d6e50d
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3074,6 +3074,12 @@
      */
     var KEY_CONTEXT = {};
     /**
+     * Generally all primitive values are excluded from the `ConstantPool`, but there is an exclusion
+     * for strings that reach a certain length threshold. This constant defines the length threshold for
+     * strings.
+     */
+    var POOL_INCLUSION_LENGTH_THRESHOLD_FOR_STRINGS = 50;
+    /**
      * A node that is a place-holder that allows the node to be replaced when the actual
      * node is known.
      *
@@ -3128,7 +3134,8 @@
             this.nextNameIndex = 0;
         }
         ConstantPool.prototype.getConstLiteral = function (literal, forceShared) {
-            if (literal instanceof LiteralExpr || literal instanceof FixupExpression) {
+            if ((literal instanceof LiteralExpr && !isLongStringExpr(literal)) ||
+                literal instanceof FixupExpression) {
                 // Do no put simple literals into the constant pool or try to produce a constant for a
                 // reference to a constant.
                 return literal;
@@ -3310,6 +3317,10 @@
     }
     function isVariable(e) {
         return e instanceof ReadVarExpr;
+    }
+    function isLongStringExpr(expr) {
+        return typeof expr.value === 'string' &&
+            expr.value.length >= POOL_INCLUSION_LENGTH_THRESHOLD_FOR_STRINGS;
     }
 
     /**
@@ -19402,7 +19413,7 @@
             var styleValues = meta.encapsulation == ViewEncapsulation.Emulated ?
                 compileStyles(meta.styles, CONTENT_ATTR, HOST_ATTR) :
                 meta.styles;
-            var strings = styleValues.map(function (str) { return literal(str); });
+            var strings = styleValues.map(function (str) { return constantPool.getConstLiteral(literal(str)); });
             definitionMap.set('styles', literalArr(strings));
         }
         else if (meta.encapsulation === ViewEncapsulation.Emulated) {
@@ -20229,7 +20240,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('10.0.5+23.sha-a123ef5');
+    var VERSION$1 = new Version('10.0.5+29.sha-3d6e50d');
 
     /**
      * @license
