@@ -11,7 +11,7 @@ export interface Inject {
 export declare const createInject: MetadataFactory<Inject>;
 export declare const createInjectionToken: MetadataFactory<object>;
 export interface Attribute {
-    attributeName?: string;
+    attributeName: string;
 }
 export declare const createAttribute: MetadataFactory<Attribute>;
 export interface Query {
