@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.1.0-next.3+19.sha-3a525d1
+ * @license Angular v10.1.0-next.3+20.sha-fd51e01
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -20278,7 +20278,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('10.1.0-next.3+19.sha-3a525d1');
+    var VERSION$1 = new Version('10.1.0-next.3+20.sha-fd51e01');
 
     /**
      * @license
@@ -27558,7 +27558,9 @@
                     var prop = propData
                         .find(function (a) { return a['__symbolic'] == 'property' || a['__symbolic'] == 'method'; });
                     var decorators = [];
-                    if (propMetadata[propName]) {
+                    // hasOwnProperty() is used here to make sure we do not look up methods
+                    // on `Object.prototype`.
+                    if (propMetadata === null || propMetadata === void 0 ? void 0 : propMetadata.hasOwnProperty(propName)) {
                         decorators.push.apply(decorators, __spread(propMetadata[propName]));
                     }
                     propMetadata[propName] = decorators;
