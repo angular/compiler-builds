@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.0.6+1.sha-0469d92
+ * @license Angular v10.0.6+19.sha-4a6abbd
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3123,7 +3123,9 @@
      * The constant pool also supports sharing access to ivy definitions references.
      */
     var ConstantPool = /** @class */ (function () {
-        function ConstantPool() {
+        function ConstantPool(isClosureCompilerEnabled) {
+            if (isClosureCompilerEnabled === void 0) { isClosureCompilerEnabled = false; }
+            this.isClosureCompilerEnabled = isClosureCompilerEnabled;
             this.statements = [];
             this.literals = new Map();
             this.literalFactories = new Map();
@@ -3134,7 +3136,7 @@
             this.nextNameIndex = 0;
         }
         ConstantPool.prototype.getConstLiteral = function (literal, forceShared) {
-            if ((literal instanceof LiteralExpr && !isLongStringExpr(literal)) ||
+            if ((literal instanceof LiteralExpr && !isLongStringLiteral(literal)) ||
                 literal instanceof FixupExpression) {
                 // Do no put simple literals into the constant pool or try to produce a constant for a
                 // reference to a constant.
@@ -3151,8 +3153,37 @@
             if ((!newValue && !fixup.shared) || (newValue && forceShared)) {
                 // Replace the expression with a variable
                 var name = this.freshName();
-                this.statements.push(variable(name).set(literal).toDeclStmt(INFERRED_TYPE, [exports.StmtModifier.Final]));
-                fixup.fixup(variable(name));
+                var definition = void 0;
+                var usage = void 0;
+                if (this.isClosureCompilerEnabled && isLongStringLiteral(literal)) {
+                    // For string literals, Closure will **always** inline the string at
+                    // **all** usages, duplicating it each time. For large strings, this
+                    // unnecessarily bloats bundle size. To work around this restriction, we
+                    // wrap the string in a function, and call that function for each usage.
+                    // This tricks Closure into using inline logic for functions instead of
+                    // string literals. Function calls are only inlined if the body is small
+                    // enough to be worth it. By doing this, very large strings will be
+                    // shared across multiple usages, rather than duplicating the string at
+                    // each usage site.
+                    //
+                    // const myStr = function() { return "very very very long string"; };
+                    // const usage1 = myStr();
+                    // const usage2 = myStr();
+                    definition = variable(name).set(new FunctionExpr([], // Params.
+                    [
+                        // Statements.
+                        new ReturnStatement(literal),
+                    ]));
+                    usage = variable(name).callFn([]);
+                }
+                else {
+                    // Just declare and use the variable directly, without a function call
+                    // indirection. This saves a few bytes and avoids an unncessary call.
+                    definition = variable(name).set(literal);
+                    usage = variable(name);
+                }
+                this.statements.push(definition.toDeclStmt(INFERRED_TYPE, [exports.StmtModifier.Final]));
+                fixup.fixup(usage);
             }
             return fixup;
         };
@@ -3318,8 +3349,8 @@
     function isVariable(e) {
         return e instanceof ReadVarExpr;
     }
-    function isLongStringExpr(expr) {
-        return typeof expr.value === 'string' &&
+    function isLongStringLiteral(expr) {
+        return expr instanceof LiteralExpr && typeof expr.value === 'string' &&
             expr.value.length >= POOL_INCLUSION_LENGTH_THRESHOLD_FOR_STRINGS;
     }
 
@@ -20240,7 +20271,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('10.0.6+1.sha-0469d92');
+    var VERSION$1 = new Version('10.0.6+19.sha-4a6abbd');
 
     /**
      * @license
