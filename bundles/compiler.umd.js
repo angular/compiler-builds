@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.1.0-next.3+21.sha-4c7f233
+ * @license Angular v10.1.0-next.3+22.sha-6f6102d
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1377,8 +1377,8 @@
         Expression.prototype.callMethod = function (name, params, sourceSpan) {
             return new InvokeMethodExpr(this, name, params, null, sourceSpan);
         };
-        Expression.prototype.callFn = function (params, sourceSpan) {
-            return new InvokeFunctionExpr(this, params, null, sourceSpan);
+        Expression.prototype.callFn = function (params, sourceSpan, pure) {
+            return new InvokeFunctionExpr(this, params, null, sourceSpan, pure);
         };
         Expression.prototype.instantiate = function (params, type, sourceSpan) {
             return new InstantiateExpr(this, params, type, sourceSpan);
@@ -6001,7 +6001,8 @@
         else {
             var baseFactory = variable("\u0275" + meta.name + "_BaseFactory");
             var getInheritedFactory = importExpr(Identifiers$1.getInheritedFactory);
-            var baseFactoryStmt = baseFactory.set(getInheritedFactory.callFn([meta.internalType]))
+            var baseFactoryStmt = baseFactory
+                .set(getInheritedFactory.callFn([meta.internalType], /* sourceSpan */ undefined, /* pure */ true))
                 .toDeclStmt(INFERRED_TYPE, [exports.StmtModifier.Exported, exports.StmtModifier.Final]);
             statements.push(baseFactoryStmt);
             // There is no constructor, use the base class' factory to construct typeForCtor.
@@ -20278,7 +20279,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('10.1.0-next.3+21.sha-4c7f233');
+    var VERSION$1 = new Version('10.1.0-next.3+22.sha-6f6102d');
 
     /**
      * @license
