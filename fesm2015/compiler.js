@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.1.0-next.3+21.sha-4c7f233
+ * @license Angular v10.1.0-next.3+22.sha-6f6102d
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1034,8 +1034,8 @@ class Expression {
     callMethod(name, params, sourceSpan) {
         return new InvokeMethodExpr(this, name, params, null, sourceSpan);
     }
-    callFn(params, sourceSpan) {
-        return new InvokeFunctionExpr(this, params, null, sourceSpan);
+    callFn(params, sourceSpan, pure) {
+        return new InvokeFunctionExpr(this, params, null, sourceSpan, pure);
     }
     instantiate(params, type, sourceSpan) {
         return new InstantiateExpr(this, params, type, sourceSpan);
@@ -5377,7 +5377,8 @@ function compileFactoryFunction(meta) {
     else {
         const baseFactory = variable(`ɵ${meta.name}_BaseFactory`);
         const getInheritedFactory = importExpr(Identifiers$1.getInheritedFactory);
-        const baseFactoryStmt = baseFactory.set(getInheritedFactory.callFn([meta.internalType]))
+        const baseFactoryStmt = baseFactory
+            .set(getInheritedFactory.callFn([meta.internalType], /* sourceSpan */ undefined, /* pure */ true))
             .toDeclStmt(INFERRED_TYPE, [StmtModifier.Exported, StmtModifier.Final]);
         statements.push(baseFactoryStmt);
         // There is no constructor, use the base class' factory to construct typeForCtor.
@@ -19114,7 +19115,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('10.1.0-next.3+21.sha-4c7f233');
+const VERSION$1 = new Version('10.1.0-next.3+22.sha-6f6102d');
 
 /**
  * @license

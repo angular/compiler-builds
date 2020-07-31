@@ -102,7 +102,7 @@ export declare abstract class Expression {
     prop(name: string, sourceSpan?: ParseSourceSpan | null): ReadPropExpr;
     key(index: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null): ReadKeyExpr;
     callMethod(name: string | BuiltinMethod, params: Expression[], sourceSpan?: ParseSourceSpan | null): InvokeMethodExpr;
-    callFn(params: Expression[], sourceSpan?: ParseSourceSpan | null): InvokeFunctionExpr;
+    callFn(params: Expression[], sourceSpan?: ParseSourceSpan | null, pure?: boolean): InvokeFunctionExpr;
     instantiate(params: Expression[], type?: Type | null, sourceSpan?: ParseSourceSpan | null): InstantiateExpr;
     conditional(trueCase: Expression, falseCase?: Expression | null, sourceSpan?: ParseSourceSpan | null): ConditionalExpr;
     equals(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
