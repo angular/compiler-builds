@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.1.0-next.4+36.sha-df76a20
+ * @license Angular v10.1.0-next.4+43.sha-e2e5f83
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7816,6 +7816,10 @@ var BindingForm;
     // Try to generate a simple binding (no temporaries or statements)
     // otherwise generate a general binding
     BindingForm[BindingForm["TrySimple"] = 1] = "TrySimple";
+    // Inlines assignment of temporaries into the generated expression. The result may still
+    // have statements attached for declarations of temporary variables.
+    // This is the only relevant form for Ivy, the other forms are only used in ViewEngine.
+    BindingForm[BindingForm["Expression"] = 2] = "Expression";
 })(BindingForm || (BindingForm = {}));
 /**
  * Converts the given expression AST into an executable output AST, assuming the expression
@@ -7826,7 +7830,6 @@ function convertPropertyBinding(localResolver, implicitReceiver, expressionWitho
     if (!localResolver) {
         localResolver = new DefaultLocalResolver();
     }
-    const currValExpr = createCurrValueExpr(bindingId);
     const visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId, interpolationFunction);
     const outputExpr = expressionWithoutBuiltins.visit(visitor, _Mode.Expression);
     const stmts = getStatementsFromVisitor(visitor, bindingId);
@@ -7836,6 +7839,10 @@ function convertPropertyBinding(localResolver, implicitReceiver, expressionWitho
     if (visitor.temporaryCount === 0 && form == BindingForm.TrySimple) {
         return new ConvertPropertyBindingResult([], outputExpr);
     }
+    else if (form === BindingForm.Expression) {
+        return new ConvertPropertyBindingResult(stmts, outputExpr);
+    }
+    const currValExpr = createCurrValueExpr(bindingId);
     stmts.push(currValExpr.set(outputExpr).toDeclStmt(DYNAMIC_TYPE, [StmtModifier.Final]));
     return new ConvertPropertyBindingResult(stmts, currValExpr);
 }
@@ -17468,7 +17475,7 @@ class TemplateDefinitionBuilder {
             this._bindingScope.getOrCreateSharedContextVar(0);
     }
     convertPropertyBinding(value) {
-        const convertedPropertyBinding = convertPropertyBinding(this, this.getImplicitReceiverExpr(), value, this.bindingContext(), BindingForm.TrySimple, () => error('Unexpected interpolation'));
+        const convertedPropertyBinding = convertPropertyBinding(this, this.getImplicitReceiverExpr(), value, this.bindingContext(), BindingForm.Expression, () => error('Unexpected interpolation'));
         const valExpr = convertedPropertyBinding.currValExpr;
         this._tempVariables.push(...convertedPropertyBinding.stmts);
         return valExpr;
@@ -18699,7 +18706,7 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
     return null;
 }
 function bindingFn(implicit, value) {
-    return convertPropertyBinding(null, implicit, value, 'b', BindingForm.TrySimple, () => error('Unexpected interpolation'));
+    return convertPropertyBinding(null, implicit, value, 'b', BindingForm.Expression, () => error('Unexpected interpolation'));
 }
 function convertStylingCall(call, bindingContext, bindingFn) {
     return call.params(value => bindingFn(bindingContext, value).currValExpr);
@@ -19127,7 +19134,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('10.1.0-next.4+36.sha-df76a20');
+const VERSION$1 = new Version('10.1.0-next.4+43.sha-e2e5f83');
 
 /**
  * @license
