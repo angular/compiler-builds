@@ -63,7 +63,8 @@ export declare class ConvertPropertyBindingResult {
 }
 export declare enum BindingForm {
     General = 0,
-    TrySimple = 1
+    TrySimple = 1,
+    Expression = 2
 }
 /**
  * Converts the given expression AST into an executable output AST, assuming the expression
