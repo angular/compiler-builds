@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.1.0-next.5+20.sha-71079ce
+ * @license Angular v10.1.0-next.5+22.sha-cb05c01
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5607,9 +5607,13 @@
     }
 
     /* Closure variables holding messages must be named `MSG_[A-Z0-9]+` */
-    var CLOSURE_TRANSLATION_PREFIX = 'MSG_';
-    /* Prefix for non-`goog.getMsg` i18n-related vars */
-    var TRANSLATION_PREFIX = 'I18N_';
+    var CLOSURE_TRANSLATION_VAR_PREFIX = 'MSG_';
+    /**
+     * Prefix for non-`goog.getMsg` i18n-related vars.
+     * Note: the prefix uses lowercase characters intentionally due to a Closure behavior that
+     * considers variables like `I18N_0` as constants and throws an error when their value changes.
+     */
+    var TRANSLATION_VAR_PREFIX = 'i18n_';
     /** Name of the i18n attributes **/
     var I18N_ATTR = 'i18n';
     var I18N_ATTR_PREFIX = 'i18n-';
@@ -5748,7 +5752,7 @@
      * @returns Complete translation const prefix
      */
     function getTranslationConstPrefix(extra) {
-        return ("" + CLOSURE_TRANSLATION_PREFIX + extra).toUpperCase();
+        return ("" + CLOSURE_TRANSLATION_VAR_PREFIX + extra).toUpperCase();
     }
     /**
      * Generate AST to declare a variable. E.g. `var I18N_1;`.
@@ -17638,11 +17642,14 @@
         }
         return params;
     }
+    function createComponentDefConsts() {
+        return { prepareStatements: [], constExpressions: [] };
+    }
     var TemplateDefinitionBuilder = /** @class */ (function () {
         function TemplateDefinitionBuilder(constantPool, parentBindingScope, level, contextName, i18nContext, templateIndex, templateName, directiveMatcher, directives, pipeTypeByName, pipes, _namespace, relativeContextFilePath, i18nUseExternalIds, _constants) {
             var _this = this;
             if (level === void 0) { level = 0; }
-            if (_constants === void 0) { _constants = []; }
+            if (_constants === void 0) { _constants = createComponentDefConsts(); }
             this.constantPool = constantPool;
             this.level = level;
             this.contextName = contextName;
@@ -17803,12 +17810,12 @@
         TemplateDefinitionBuilder.prototype.i18nTranslate = function (message, params, ref, transformFn) {
             var _a;
             if (params === void 0) { params = {}; }
-            var _ref = ref || variable(this.constantPool.uniqueName(TRANSLATION_PREFIX));
+            var _ref = ref || this.i18nGenerateMainBlockVar();
             // Closure Compiler requires const names to start with `MSG_` but disallows any other const to
             // start with `MSG_`. We define a variable starting with `MSG_` just for the `goog.getMsg` call
             var closureVar = this.i18nGenerateClosureVar(message.id);
             var statements = getTranslationDeclStmts(message, _ref, closureVar, params, transformFn);
-            (_a = this.constantPool.statements).push.apply(_a, __spread(statements));
+            (_a = this._constants.prepareStatements).push.apply(_a, __spread(statements));
             return _ref;
         };
         TemplateDefinitionBuilder.prototype.registerContextVariables = function (variable$1) {
@@ -17858,6 +17865,11 @@
             });
             return bound;
         };
+        // Generates top level vars for i18n blocks (i.e. `i18n_N`).
+        TemplateDefinitionBuilder.prototype.i18nGenerateMainBlockVar = function () {
+            return variable(this.constantPool.uniqueName(TRANSLATION_VAR_PREFIX));
+        };
+        // Generates vars with Closure-specific names for i18n blocks (i.e. `MSG_XXX`).
         TemplateDefinitionBuilder.prototype.i18nGenerateClosureVar = function (messageId) {
             var name;
             var suffix = this.fileBasedI18nSuffix.toUpperCase();
@@ -17916,16 +17928,12 @@
         TemplateDefinitionBuilder.prototype.i18nStart = function (span, meta, selfClosing) {
             if (span === void 0) { span = null; }
             var index = this.allocateDataSlot();
-            if (this.i18nContext) {
-                this.i18n = this.i18nContext.forkChildContext(index, this.templateIndex, meta);
-            }
-            else {
-                var ref_1 = variable(this.constantPool.uniqueName(TRANSLATION_PREFIX));
-                this.i18n = new I18nContext(index, ref_1, 0, this.templateIndex, meta);
-            }
+            this.i18n = this.i18nContext ?
+                this.i18nContext.forkChildContext(index, this.templateIndex, meta) :
+                new I18nContext(index, this.i18nGenerateMainBlockVar(), 0, this.templateIndex, meta);
             // generate i18nStart instruction
             var _a = this.i18n, id = _a.id, ref = _a.ref;
-            var params = [literal(index), ref];
+            var params = [literal(index), this.addToConsts(ref)];
             if (id > 0) {
                 // do not push 3rd argument (sub-block id)
                 // into i18nStart call for top level i18n context
@@ -17996,8 +18004,8 @@
             }
             if (i18nAttrArgs.length > 0) {
                 var index = literal(this.allocateDataSlot());
-                var args = this.constantPool.getConstLiteral(literalArr(i18nAttrArgs), true);
-                this.creationInstruction(sourceSpan, Identifiers$1.i18nAttributes, [index, args]);
+                var constIndex = this.addToConsts(literalArr(i18nAttrArgs));
+                this.creationInstruction(sourceSpan, Identifiers$1.i18nAttributes, [index, constIndex]);
                 if (hasBindings) {
                     this.updateInstruction(sourceSpan, Identifiers$1.i18nApply, [index]);
                 }
@@ -18699,13 +18707,14 @@
             if (isNull(expression)) {
                 return TYPED_NULL_EXPR;
             }
+            var consts = this._constants.constExpressions;
             // Try to reuse a literal that's already in the array, if possible.
-            for (var i = 0; i < this._constants.length; i++) {
-                if (this._constants[i].isEquivalent(expression)) {
+            for (var i = 0; i < consts.length; i++) {
+                if (consts[i].isEquivalent(expression)) {
                     return literal(i);
                 }
             }
-            return literal(this._constants.push(expression) - 1);
+            return literal(consts.push(expression) - 1);
         };
         TemplateDefinitionBuilder.prototype.addAttrsToConsts = function (attrs) {
             return attrs.length > 0 ? this.addToConsts(literalArr(attrs)) : TYPED_NULL_EXPR;
@@ -19441,10 +19450,19 @@
         definitionMap.set('decls', literal(templateBuilder.getConstCount()));
         // e.g. `vars: 2`
         definitionMap.set('vars', literal(templateBuilder.getVarCount()));
-        // e.g. `consts: [['one', 'two'], ['three', 'four']]
-        var consts = templateBuilder.getConsts();
-        if (consts.length > 0) {
-            definitionMap.set('consts', literalArr(consts));
+        // Generate `consts` section of ComponentDef:
+        // - either as an array:
+        //   `consts: [['one', 'two'], ['three', 'four']]`
+        // - or as a factory function in case additional statements are present (to support i18n):
+        //   `consts: function() { var i18n_0; if (ngI18nClosureMode) {...} else {...} return [i18n_0]; }`
+        var _e = templateBuilder.getConsts(), constExpressions = _e.constExpressions, prepareStatements = _e.prepareStatements;
+        if (constExpressions.length > 0) {
+            var constsExpr = literalArr(constExpressions);
+            // Prepare statements are present - turn `consts` into a function.
+            if (prepareStatements.length > 0) {
+                constsExpr = fn([], __spread(prepareStatements, [new ReturnStatement(constsExpr)]));
+            }
+            definitionMap.set('consts', constsExpr);
         }
         definitionMap.set('template', templateFunctionExpression);
         // e.g. `directives: [MyDirective]`
@@ -20298,7 +20316,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('10.1.0-next.5+20.sha-71079ce');
+    var VERSION$1 = new Version('10.1.0-next.5+22.sha-cb05c01');
 
     /**
      * @license

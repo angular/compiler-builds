@@ -9,7 +9,12 @@ import * as i18n from '../../../i18n/i18n_ast';
 import * as html from '../../../ml_parser/ast';
 import * as o from '../../../output/output_ast';
 import * as t from '../../r3_ast';
-export declare const TRANSLATION_PREFIX = "I18N_";
+/**
+ * Prefix for non-`goog.getMsg` i18n-related vars.
+ * Note: the prefix uses lowercase characters intentionally due to a Closure behavior that
+ * considers variables like `I18N_0` as constants and throws an error when their value changes.
+ */
+export declare const TRANSLATION_VAR_PREFIX = "i18n_";
 /** Name of the i18n attributes **/
 export declare const I18N_ATTR = "i18n";
 export declare const I18N_ATTR_PREFIX = "i18n-";
