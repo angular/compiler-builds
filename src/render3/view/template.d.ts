@@ -21,6 +21,10 @@ import { I18nContext } from './i18n/context';
 import { invalid } from './util';
 export declare function renderFlagCheckIfStmt(flags: core.RenderFlags, statements: o.Statement[]): o.IfStmt;
 export declare function prepareEventListenerParameters(eventAst: t.BoundEvent, handlerName?: string | null, scope?: BindingScope | null): o.Expression[];
+export interface ComponentDefConsts {
+    prepareStatements: o.Statement[];
+    constExpressions: o.Expression[];
+}
 export declare class TemplateDefinitionBuilder implements t.Visitor<void>, LocalResolver {
     private constantPool;
     private level;
@@ -75,7 +79,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private _ngContentReservedSlots;
     private _ngContentSelectorsOffset;
     private _implicitReceiverExpr;
-    constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, i18nContext: I18nContext | null, templateIndex: number | null, templateName: string | null, directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference, relativeContextFilePath: string, i18nUseExternalIds: boolean, _constants?: o.Expression[]);
+    constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, i18nContext: I18nContext | null, templateIndex: number | null, templateName: string | null, directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference, relativeContextFilePath: string, i18nUseExternalIds: boolean, _constants?: ComponentDefConsts);
     buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], ngContentSelectorsOffset?: number, i18n?: i18n.I18nMeta): o.FunctionExpr;
     getLocal(name: string): o.Expression | null;
     notifyImplicitReceiverUse(): void;
@@ -83,6 +87,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private registerContextVariables;
     private i18nAppendBindings;
     private i18nBindProps;
+    private i18nGenerateMainBlockVar;
     private i18nGenerateClosureVar;
     private i18nUpdateRef;
     private i18nStart;
@@ -109,7 +114,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private allocateDataSlot;
     getConstCount(): number;
     getVarCount(): number;
-    getConsts(): o.Expression[];
+    getConsts(): ComponentDefConsts;
     getNgContentSelectors(): o.Expression | null;
     private bindingContext;
     private templatePropertyBindings;
