@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.1.0-next.7+17.sha-e7da404
+ * @license Angular v10.1.0-next.7+18.sha-874792d
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1327,6 +1327,12 @@
     var STRING_TYPE = new BuiltinType(exports.BuiltinTypeName.String);
     var FUNCTION_TYPE = new BuiltinType(exports.BuiltinTypeName.Function);
     var NONE_TYPE = new BuiltinType(exports.BuiltinTypeName.None);
+    ///// Expressions
+    var UnaryOperator;
+    (function (UnaryOperator) {
+        UnaryOperator[UnaryOperator["Minus"] = 0] = "Minus";
+        UnaryOperator[UnaryOperator["Plus"] = 1] = "Plus";
+    })(UnaryOperator || (UnaryOperator = {}));
     (function (BinaryOperator) {
         BinaryOperator[BinaryOperator["Equals"] = 0] = "Equals";
         BinaryOperator[BinaryOperator["NotEquals"] = 1] = "NotEquals";
@@ -1915,6 +1921,28 @@
         };
         return FunctionExpr;
     }(Expression));
+    var UnaryOperatorExpr = /** @class */ (function (_super) {
+        __extends(UnaryOperatorExpr, _super);
+        function UnaryOperatorExpr(operator, expr, type, sourceSpan, parens) {
+            if (parens === void 0) { parens = true; }
+            var _this = _super.call(this, type || NUMBER_TYPE, sourceSpan) || this;
+            _this.operator = operator;
+            _this.expr = expr;
+            _this.parens = parens;
+            return _this;
+        }
+        UnaryOperatorExpr.prototype.isEquivalent = function (e) {
+            return e instanceof UnaryOperatorExpr && this.operator === e.operator &&
+                this.expr.isEquivalent(e.expr);
+        };
+        UnaryOperatorExpr.prototype.isConstant = function () {
+            return false;
+        };
+        UnaryOperatorExpr.prototype.visitExpression = function (visitor, context) {
+            return visitor.visitUnaryOperatorExpr(this, context);
+        };
+        return UnaryOperatorExpr;
+    }(Expression));
     var BinaryOperatorExpr = /** @class */ (function (_super) {
         __extends(BinaryOperatorExpr, _super);
         function BinaryOperatorExpr(operator, lhs, rhs, type, sourceSpan, parens) {
@@ -2375,6 +2403,9 @@
         AstTransformer.prototype.visitFunctionExpr = function (ast, context) {
             return this.transformExpr(new FunctionExpr(ast.params, this.visitAllStatements(ast.statements, context), ast.type, ast.sourceSpan), context);
         };
+        AstTransformer.prototype.visitUnaryOperatorExpr = function (ast, context) {
+            return this.transformExpr(new UnaryOperatorExpr(ast.operator, ast.expr.visitExpression(this, context), ast.type, ast.sourceSpan), context);
+        };
         AstTransformer.prototype.visitBinaryOperatorExpr = function (ast, context) {
             return this.transformExpr(new BinaryOperatorExpr(ast.operator, ast.lhs.visitExpression(this, context), ast.rhs.visitExpression(this, context), ast.type, ast.sourceSpan), context);
         };
@@ -2544,6 +2575,10 @@
         };
         RecursiveAstVisitor.prototype.visitFunctionExpr = function (ast, context) {
             this.visitAllStatements(ast.statements, context);
+            return this.visitExpression(ast, context);
+        };
+        RecursiveAstVisitor.prototype.visitUnaryOperatorExpr = function (ast, context) {
+            ast.expr.visitExpression(this, context);
             return this.visitExpression(ast, context);
         };
         RecursiveAstVisitor.prototype.visitBinaryOperatorExpr = function (ast, context) {
@@ -2765,6 +2800,9 @@
     function literalMap(values, type) {
         if (type === void 0) { type = null; }
         return new LiteralMapExpr(values.map(function (e) { return new LiteralMapEntry(e.key, e.value, e.quoted); }), type, null);
+    }
+    function unary(operator, expr, type, sourceSpan) {
+        return new UnaryOperatorExpr(operator, expr, type, sourceSpan);
     }
     function not(expr, sourceSpan) {
         return new NotExpr(expr, sourceSpan);
@@ -3309,6 +3347,7 @@
             this.visitAssertNotNullExpr = invalid;
             this.visitCastExpr = invalid;
             this.visitFunctionExpr = invalid;
+            this.visitUnaryOperatorExpr = invalid;
             this.visitBinaryOperatorExpr = invalid;
             this.visitReadPropExpr = invalid;
             this.visitReadKeyExpr = invalid;
@@ -6898,6 +6937,26 @@
             ast.condition.visitExpression(this, ctx);
             return null;
         };
+        AbstractEmitterVisitor.prototype.visitUnaryOperatorExpr = function (ast, ctx) {
+            var opStr;
+            switch (ast.operator) {
+                case UnaryOperator.Plus:
+                    opStr = '+';
+                    break;
+                case UnaryOperator.Minus:
+                    opStr = '-';
+                    break;
+                default:
+                    throw new Error("Unknown operator " + ast.operator);
+            }
+            if (ast.parens)
+                ctx.print(ast, "(");
+            ctx.print(ast, opStr);
+            ast.expr.visitExpression(this, ctx);
+            if (ast.parens)
+                ctx.print(ast, ")");
+            return null;
+        };
         AbstractEmitterVisitor.prototype.visitBinaryOperatorExpr = function (ast, ctx) {
             var opStr;
             switch (ast.operator) {
@@ -7974,6 +8033,44 @@
         };
         return Binary;
     }(AST));
+    /**
+     * For backwards compatibility reasons, `Unary` inherits from `Binary` and mimics the binary AST
+     * node that was originally used. This inheritance relation can be deleted in some future major,
+     * after consumers have been given a chance to fully support Unary.
+     */
+    var Unary = /** @class */ (function (_super) {
+        __extends(Unary, _super);
+        /**
+         * During the deprecation period this constructor is private, to avoid consumers from creating
+         * a `Unary` with the fallback properties for `Binary`.
+         */
+        function Unary(span, sourceSpan, operator, expr, binaryOp, binaryLeft, binaryRight) {
+            var _this = _super.call(this, span, sourceSpan, binaryOp, binaryLeft, binaryRight) || this;
+            _this.operator = operator;
+            _this.expr = expr;
+            return _this;
+        }
+        /**
+         * Creates a unary minus expression "-x", represented as `Binary` using "0 - x".
+         */
+        Unary.createMinus = function (span, sourceSpan, expr) {
+            return new Unary(span, sourceSpan, '-', expr, '-', new LiteralPrimitive(span, sourceSpan, 0), expr);
+        };
+        /**
+         * Creates a unary plus expression "+x", represented as `Binary` using "x - 0".
+         */
+        Unary.createPlus = function (span, sourceSpan, expr) {
+            return new Unary(span, sourceSpan, '+', expr, '-', expr, new LiteralPrimitive(span, sourceSpan, 0));
+        };
+        Unary.prototype.visit = function (visitor, context) {
+            if (context === void 0) { context = null; }
+            if (visitor.visitUnary !== undefined) {
+                return visitor.visitUnary(this, context);
+            }
+            return visitor.visitBinary(this, context);
+        };
+        return Unary;
+    }(Binary));
     var PrefixNot = /** @class */ (function (_super) {
         __extends(PrefixNot, _super);
         function PrefixNot(span, sourceSpan, expression) {
@@ -8117,6 +8214,9 @@
             // to selectively visit the specified node.
             ast.visit(this, context);
         };
+        RecursiveAstVisitor.prototype.visitUnary = function (ast, context) {
+            this.visit(ast.expr, context);
+        };
         RecursiveAstVisitor.prototype.visitBinary = function (ast, context) {
             this.visit(ast.left, context);
             this.visit(ast.right, context);
@@ -8239,6 +8339,16 @@
         AstTransformer.prototype.visitLiteralMap = function (ast, context) {
             return new LiteralMap(ast.span, ast.sourceSpan, ast.keys, this.visitAll(ast.values));
         };
+        AstTransformer.prototype.visitUnary = function (ast, context) {
+            switch (ast.operator) {
+                case '+':
+                    return Unary.createPlus(ast.span, ast.sourceSpan, ast.expr.visit(this));
+                case '-':
+                    return Unary.createMinus(ast.span, ast.sourceSpan, ast.expr.visit(this));
+                default:
+                    throw new Error("Unknown unary operator " + ast.operator);
+            }
+        };
         AstTransformer.prototype.visitBinary = function (ast, context) {
             return new Binary(ast.span, ast.sourceSpan, ast.operation, ast.left.visit(this), ast.right.visit(this));
         };
@@ -8349,6 +8459,20 @@
             var values = this.visitAll(ast.values);
             if (values !== ast.values) {
                 return new LiteralMap(ast.span, ast.sourceSpan, ast.keys, values);
+            }
+            return ast;
+        };
+        AstMemoryEfficientTransformer.prototype.visitUnary = function (ast, context) {
+            var expr = ast.expr.visit(this);
+            if (expr !== ast.expr) {
+                switch (ast.operator) {
+                    case '+':
+                        return Unary.createPlus(ast.span, ast.sourceSpan, expr);
+                    case '-':
+                        return Unary.createMinus(ast.span, ast.sourceSpan, expr);
+                    default:
+                        throw new Error("Unknown unary operator " + ast.operator);
+                }
             }
             return ast;
         };
@@ -8757,6 +8881,20 @@
             this.temporaryCount = 0;
             this.usesImplicitReceiver = false;
         }
+        _AstToIrVisitor.prototype.visitUnary = function (ast, mode) {
+            var op;
+            switch (ast.operator) {
+                case '+':
+                    op = UnaryOperator.Plus;
+                    break;
+                case '-':
+                    op = UnaryOperator.Minus;
+                    break;
+                default:
+                    throw new Error("Unsupported operator " + ast.operator);
+            }
+            return convertToStatementIfNeeded(mode, new UnaryOperatorExpr(op, this._visit(ast.expr, _Mode.Expression), undefined, this.convertSourceSpan(ast.span)));
+        };
         _AstToIrVisitor.prototype.visitBinary = function (ast, mode) {
             var op;
             switch (ast.operation) {
@@ -9082,6 +9220,9 @@
                 return (_this._nodeMap.get(ast) || ast).visit(visitor);
             };
             return ast.visit({
+                visitUnary: function (ast) {
+                    return null;
+                },
                 visitBinary: function (ast) {
                     return null;
                 },
@@ -9156,6 +9297,9 @@
                 return ast.some(function (ast) { return visit(visitor, ast); });
             };
             return ast.visit({
+                visitUnary: function (ast) {
+                    return visit(this, ast.expr);
+                },
                 visitBinary: function (ast) {
                     return visit(this, ast.left) || visit(this, ast.right);
                 },
@@ -15322,18 +15466,16 @@
             if (this.next.type == exports.TokenType.Operator) {
                 var start = this.inputIndex;
                 var operator = this.next.strValue;
-                var literalSpan = new ParseSpan(start, start);
-                var literalSourceSpan = literalSpan.toAbsolute(this.absoluteOffset);
                 var result = void 0;
                 switch (operator) {
                     case '+':
                         this.advance();
                         result = this.parsePrefix();
-                        return new Binary(this.span(start), this.sourceSpan(start), '-', result, new LiteralPrimitive(literalSpan, literalSourceSpan, 0));
+                        return Unary.createPlus(this.span(start), this.sourceSpan(start), result);
                     case '-':
                         this.advance();
                         result = this.parsePrefix();
-                        return new Binary(this.span(start), this.sourceSpan(start), operator, new LiteralPrimitive(literalSpan, literalSourceSpan, 0), result);
+                        return Unary.createMinus(this.span(start), this.sourceSpan(start), result);
                     case '!':
                         this.advance();
                         result = this.parsePrefix();
@@ -15761,6 +15903,7 @@
         SimpleExpressionChecker.prototype.visitLiteralMap = function (ast, context) {
             this.visitAll(ast.values, context);
         };
+        SimpleExpressionChecker.prototype.visitUnary = function (ast, context) { };
         SimpleExpressionChecker.prototype.visitBinary = function (ast, context) { };
         SimpleExpressionChecker.prototype.visitPrefixNot = function (ast, context) { };
         SimpleExpressionChecker.prototype.visitNonNullAssert = function (ast, context) { };
@@ -20316,7 +20459,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('10.1.0-next.7+17.sha-e7da404');
+    var VERSION$1 = new Version('10.1.0-next.7+18.sha-874792d');
 
     /**
      * @license
@@ -28881,6 +29024,18 @@
             }
             return null;
         };
+        StatementInterpreter.prototype.visitUnaryOperatorExpr = function (ast, ctx) {
+            var _this = this;
+            var rhs = function () { return ast.expr.visitExpression(_this, ctx); };
+            switch (ast.operator) {
+                case UnaryOperator.Plus:
+                    return +rhs();
+                case UnaryOperator.Minus:
+                    return -rhs();
+                default:
+                    throw new Error("Unknown operator " + ast.operator);
+            }
+        };
         StatementInterpreter.prototype.visitBinaryOperatorExpr = function (ast, ctx) {
             var _this = this;
             var lhs = function () { return ast.lhs.visitExpression(_this, ctx); };
@@ -30348,6 +30503,7 @@
     exports.Type = Type$1;
     exports.TypeScriptEmitter = TypeScriptEmitter;
     exports.TypeofExpr = TypeofExpr;
+    exports.Unary = Unary;
     exports.UrlResolver = UrlResolver;
     exports.VERSION = VERSION$1;
     exports.VariableAst = VariableAst;

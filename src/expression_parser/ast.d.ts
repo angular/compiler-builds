@@ -152,6 +152,32 @@ export declare class Binary extends AST {
     constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, operation: string, left: AST, right: AST);
     visit(visitor: AstVisitor, context?: any): any;
 }
+/**
+ * For backwards compatibility reasons, `Unary` inherits from `Binary` and mimics the binary AST
+ * node that was originally used. This inheritance relation can be deleted in some future major,
+ * after consumers have been given a chance to fully support Unary.
+ */
+export declare class Unary extends Binary {
+    operator: string;
+    expr: AST;
+    left: never;
+    right: never;
+    operation: never;
+    /**
+     * Creates a unary minus expression "-x", represented as `Binary` using "0 - x".
+     */
+    static createMinus(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expr: AST): Unary;
+    /**
+     * Creates a unary plus expression "+x", represented as `Binary` using "x - 0".
+     */
+    static createPlus(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expr: AST): Unary;
+    /**
+     * During the deprecation period this constructor is private, to avoid consumers from creating
+     * a `Unary` with the fallback properties for `Binary`.
+     */
+    private constructor();
+    visit(visitor: AstVisitor, context?: any): any;
+}
 export declare class PrefixNot extends AST {
     expression: AST;
     constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expression: AST);
@@ -252,6 +278,11 @@ export interface TemplateBindingIdentifier {
     span: AbsoluteSourceSpan;
 }
 export interface AstVisitor {
+    /**
+     * The `visitUnary` method is declared as optional for backwards compatibility. In an upcoming
+     * major release, this method will be made required.
+     */
+    visitUnary?(ast: Unary, context: any): any;
     visitBinary(ast: Binary, context: any): any;
     visitChain(ast: Chain, context: any): any;
     visitConditional(ast: Conditional, context: any): any;
@@ -283,6 +314,7 @@ export interface AstVisitor {
 }
 export declare class RecursiveAstVisitor implements AstVisitor {
     visit(ast: AST, context?: any): any;
+    visitUnary(ast: Unary, context: any): any;
     visitBinary(ast: Binary, context: any): any;
     visitChain(ast: Chain, context: any): any;
     visitConditional(ast: Conditional, context: any): any;
@@ -317,6 +349,7 @@ export declare class AstTransformer implements AstVisitor {
     visitFunctionCall(ast: FunctionCall, context: any): AST;
     visitLiteralArray(ast: LiteralArray, context: any): AST;
     visitLiteralMap(ast: LiteralMap, context: any): AST;
+    visitUnary(ast: Unary, context: any): AST;
     visitBinary(ast: Binary, context: any): AST;
     visitPrefixNot(ast: PrefixNot, context: any): AST;
     visitNonNullAssert(ast: NonNullAssert, context: any): AST;
@@ -340,6 +373,7 @@ export declare class AstMemoryEfficientTransformer implements AstVisitor {
     visitFunctionCall(ast: FunctionCall, context: any): AST;
     visitLiteralArray(ast: LiteralArray, context: any): AST;
     visitLiteralMap(ast: LiteralMap, context: any): AST;
+    visitUnary(ast: Unary, context: any): AST;
     visitBinary(ast: Binary, context: any): AST;
     visitPrefixNot(ast: PrefixNot, context: any): AST;
     visitNonNullAssert(ast: NonNullAssert, context: any): AST;

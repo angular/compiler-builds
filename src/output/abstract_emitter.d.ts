@@ -70,6 +70,7 @@ export declare abstract class AbstractEmitterVisitor implements o.StatementVisit
     visitAssertNotNullExpr(ast: o.AssertNotNull, ctx: EmitterVisitorContext): any;
     abstract visitFunctionExpr(ast: o.FunctionExpr, ctx: EmitterVisitorContext): any;
     abstract visitDeclareFunctionStmt(stmt: o.DeclareFunctionStmt, context: any): any;
+    visitUnaryOperatorExpr(ast: o.UnaryOperatorExpr, ctx: EmitterVisitorContext): any;
     visitBinaryOperatorExpr(ast: o.BinaryOperatorExpr, ctx: EmitterVisitorContext): any;
     visitReadPropExpr(ast: o.ReadPropExpr, ctx: EmitterVisitorContext): any;
     visitReadKeyExpr(ast: o.ReadKeyExpr, ctx: EmitterVisitorContext): any;

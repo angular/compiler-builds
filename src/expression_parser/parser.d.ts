@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { InterpolationConfig } from '../ml_parser/interpolation_config';
-import { AbsoluteSourceSpan, AST, AstVisitor, ASTWithSource, Binary, BindingPipe, Chain, Conditional, FunctionCall, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, MethodCall, NonNullAssert, ParserError, ParseSpan, PrefixNot, PropertyRead, PropertyWrite, Quote, RecursiveAstVisitor, SafeMethodCall, SafePropertyRead, TemplateBinding, TemplateBindingIdentifier } from './ast';
+import { AbsoluteSourceSpan, AST, AstVisitor, ASTWithSource, Binary, BindingPipe, Chain, Conditional, FunctionCall, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, MethodCall, NonNullAssert, ParserError, ParseSpan, PrefixNot, PropertyRead, PropertyWrite, Quote, RecursiveAstVisitor, SafeMethodCall, SafePropertyRead, TemplateBinding, TemplateBindingIdentifier, Unary } from './ast';
 import { Lexer, Token } from './lexer';
 export declare class SplitInterpolation {
     strings: string[];
@@ -229,6 +229,7 @@ declare class SimpleExpressionChecker implements AstVisitor {
     visitFunctionCall(ast: FunctionCall, context: any): void;
     visitLiteralArray(ast: LiteralArray, context: any): void;
     visitLiteralMap(ast: LiteralMap, context: any): void;
+    visitUnary(ast: Unary, context: any): void;
     visitBinary(ast: Binary, context: any): void;
     visitPrefixNot(ast: PrefixNot, context: any): void;
     visitNonNullAssert(ast: NonNullAssert, context: any): void;

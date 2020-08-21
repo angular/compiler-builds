@@ -61,6 +61,10 @@ export interface TypeVisitor {
     visitArrayType(type: ArrayType, context: any): any;
     visitMapType(type: MapType, context: any): any;
 }
+export declare enum UnaryOperator {
+    Minus = 0,
+    Plus = 1
+}
 export declare enum BinaryOperator {
     Equals = 0,
     NotEquals = 1,
@@ -314,6 +318,15 @@ export declare class FunctionExpr extends Expression {
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     toDeclStmt(name: string, modifiers?: StmtModifier[] | null): DeclareFunctionStmt;
 }
+export declare class UnaryOperatorExpr extends Expression {
+    operator: UnaryOperator;
+    expr: Expression;
+    parens: boolean;
+    constructor(operator: UnaryOperator, expr: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null, parens?: boolean);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
+    visitExpression(visitor: ExpressionVisitor, context: any): any;
+}
 export declare class BinaryOperatorExpr extends Expression {
     operator: BinaryOperator;
     rhs: Expression;
@@ -387,6 +400,7 @@ export interface ExpressionVisitor {
     visitAssertNotNullExpr(ast: AssertNotNull, context: any): any;
     visitCastExpr(ast: CastExpr, context: any): any;
     visitFunctionExpr(ast: FunctionExpr, context: any): any;
+    visitUnaryOperatorExpr(ast: UnaryOperatorExpr, context: any): any;
     visitBinaryOperatorExpr(ast: BinaryOperatorExpr, context: any): any;
     visitReadPropExpr(ast: ReadPropExpr, context: any): any;
     visitReadKeyExpr(ast: ReadKeyExpr, context: any): any;
@@ -552,6 +566,7 @@ export declare class AstTransformer implements StatementVisitor, ExpressionVisit
     visitAssertNotNullExpr(ast: AssertNotNull, context: any): any;
     visitCastExpr(ast: CastExpr, context: any): any;
     visitFunctionExpr(ast: FunctionExpr, context: any): any;
+    visitUnaryOperatorExpr(ast: UnaryOperatorExpr, context: any): any;
     visitBinaryOperatorExpr(ast: BinaryOperatorExpr, context: any): any;
     visitReadPropExpr(ast: ReadPropExpr, context: any): any;
     visitReadKeyExpr(ast: ReadKeyExpr, context: any): any;
@@ -595,6 +610,7 @@ export declare class RecursiveAstVisitor implements StatementVisitor, Expression
     visitAssertNotNullExpr(ast: AssertNotNull, context: any): any;
     visitCastExpr(ast: CastExpr, context: any): any;
     visitFunctionExpr(ast: FunctionExpr, context: any): any;
+    visitUnaryOperatorExpr(ast: UnaryOperatorExpr, context: any): any;
     visitBinaryOperatorExpr(ast: BinaryOperatorExpr, context: any): any;
     visitReadPropExpr(ast: ReadPropExpr, context: any): any;
     visitReadKeyExpr(ast: ReadKeyExpr, context: any): any;
@@ -629,6 +645,7 @@ export declare function literalMap(values: {
     quoted: boolean;
     value: Expression;
 }[], type?: MapType | null): LiteralMapExpr;
+export declare function unary(operator: UnaryOperator, expr: Expression, type?: Type, sourceSpan?: ParseSourceSpan | null): UnaryOperatorExpr;
 export declare function not(expr: Expression, sourceSpan?: ParseSourceSpan | null): NotExpr;
 export declare function assertNotNull(expr: Expression, sourceSpan?: ParseSourceSpan | null): AssertNotNull;
 export declare function fn(params: FnParam[], body: Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null, name?: string | null): FunctionExpr;

@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.1.0-next.7+17.sha-e7da404
+ * @license Angular v10.1.0-next.7+18.sha-874792d
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -983,6 +983,11 @@ const STRING_TYPE = new BuiltinType(BuiltinTypeName.String);
 const FUNCTION_TYPE = new BuiltinType(BuiltinTypeName.Function);
 const NONE_TYPE = new BuiltinType(BuiltinTypeName.None);
 ///// Expressions
+var UnaryOperator;
+(function (UnaryOperator) {
+    UnaryOperator[UnaryOperator["Minus"] = 0] = "Minus";
+    UnaryOperator[UnaryOperator["Plus"] = 1] = "Plus";
+})(UnaryOperator || (UnaryOperator = {}));
 var BinaryOperator;
 (function (BinaryOperator) {
     BinaryOperator[BinaryOperator["Equals"] = 0] = "Equals";
@@ -1513,6 +1518,24 @@ class FunctionExpr extends Expression {
         return new DeclareFunctionStmt(name, this.params, this.statements, this.type, modifiers, this.sourceSpan);
     }
 }
+class UnaryOperatorExpr extends Expression {
+    constructor(operator, expr, type, sourceSpan, parens = true) {
+        super(type || NUMBER_TYPE, sourceSpan);
+        this.operator = operator;
+        this.expr = expr;
+        this.parens = parens;
+    }
+    isEquivalent(e) {
+        return e instanceof UnaryOperatorExpr && this.operator === e.operator &&
+            this.expr.isEquivalent(e.expr);
+    }
+    isConstant() {
+        return false;
+    }
+    visitExpression(visitor, context) {
+        return visitor.visitUnaryOperatorExpr(this, context);
+    }
+}
 class BinaryOperatorExpr extends Expression {
     constructor(operator, lhs, rhs, type, sourceSpan, parens = true) {
         super(type || lhs.type, sourceSpan);
@@ -1903,6 +1926,9 @@ class AstTransformer {
     visitFunctionExpr(ast, context) {
         return this.transformExpr(new FunctionExpr(ast.params, this.visitAllStatements(ast.statements, context), ast.type, ast.sourceSpan), context);
     }
+    visitUnaryOperatorExpr(ast, context) {
+        return this.transformExpr(new UnaryOperatorExpr(ast.operator, ast.expr.visitExpression(this, context), ast.type, ast.sourceSpan), context);
+    }
     visitBinaryOperatorExpr(ast, context) {
         return this.transformExpr(new BinaryOperatorExpr(ast.operator, ast.lhs.visitExpression(this, context), ast.rhs.visitExpression(this, context), ast.type, ast.sourceSpan), context);
     }
@@ -2063,6 +2089,10 @@ class RecursiveAstVisitor {
     }
     visitFunctionExpr(ast, context) {
         this.visitAllStatements(ast.statements, context);
+        return this.visitExpression(ast, context);
+    }
+    visitUnaryOperatorExpr(ast, context) {
+        ast.expr.visitExpression(this, context);
         return this.visitExpression(ast, context);
     }
     visitBinaryOperatorExpr(ast, context) {
@@ -2253,6 +2283,9 @@ function literalArr(values, type, sourceSpan) {
 }
 function literalMap(values, type = null) {
     return new LiteralMapExpr(values.map(e => new LiteralMapEntry(e.key, e.value, e.quoted)), type, null);
+}
+function unary(operator, expr, type, sourceSpan) {
+    return new UnaryOperatorExpr(operator, expr, type, sourceSpan);
 }
 function not(expr, sourceSpan) {
     return new NotExpr(expr, sourceSpan);
@@ -2774,6 +2807,7 @@ class KeyVisitor {
         this.visitAssertNotNullExpr = invalid;
         this.visitCastExpr = invalid;
         this.visitFunctionExpr = invalid;
+        this.visitUnaryOperatorExpr = invalid;
         this.visitBinaryOperatorExpr = invalid;
         this.visitReadPropExpr = invalid;
         this.visitReadKeyExpr = invalid;
@@ -6237,6 +6271,26 @@ class AbstractEmitterVisitor {
         ast.condition.visitExpression(this, ctx);
         return null;
     }
+    visitUnaryOperatorExpr(ast, ctx) {
+        let opStr;
+        switch (ast.operator) {
+            case UnaryOperator.Plus:
+                opStr = '+';
+                break;
+            case UnaryOperator.Minus:
+                opStr = '-';
+                break;
+            default:
+                throw new Error(`Unknown operator ${ast.operator}`);
+        }
+        if (ast.parens)
+            ctx.print(ast, `(`);
+        ctx.print(ast, opStr);
+        ast.expr.visitExpression(this, ctx);
+        if (ast.parens)
+            ctx.print(ast, `)`);
+        return null;
+    }
     visitBinaryOperatorExpr(ast, ctx) {
         let opStr;
         switch (ast.operator) {
@@ -7239,6 +7293,40 @@ class Binary extends AST {
         return visitor.visitBinary(this, context);
     }
 }
+/**
+ * For backwards compatibility reasons, `Unary` inherits from `Binary` and mimics the binary AST
+ * node that was originally used. This inheritance relation can be deleted in some future major,
+ * after consumers have been given a chance to fully support Unary.
+ */
+class Unary extends Binary {
+    /**
+     * During the deprecation period this constructor is private, to avoid consumers from creating
+     * a `Unary` with the fallback properties for `Binary`.
+     */
+    constructor(span, sourceSpan, operator, expr, binaryOp, binaryLeft, binaryRight) {
+        super(span, sourceSpan, binaryOp, binaryLeft, binaryRight);
+        this.operator = operator;
+        this.expr = expr;
+    }
+    /**
+     * Creates a unary minus expression "-x", represented as `Binary` using "0 - x".
+     */
+    static createMinus(span, sourceSpan, expr) {
+        return new Unary(span, sourceSpan, '-', expr, '-', new LiteralPrimitive(span, sourceSpan, 0), expr);
+    }
+    /**
+     * Creates a unary plus expression "+x", represented as `Binary` using "x - 0".
+     */
+    static createPlus(span, sourceSpan, expr) {
+        return new Unary(span, sourceSpan, '+', expr, '-', expr, new LiteralPrimitive(span, sourceSpan, 0));
+    }
+    visit(visitor, context = null) {
+        if (visitor.visitUnary !== undefined) {
+            return visitor.visitUnary(this, context);
+        }
+        return visitor.visitBinary(this, context);
+    }
+}
 class PrefixNot extends AST {
     constructor(span, sourceSpan, expression) {
         super(span, sourceSpan);
@@ -7353,6 +7441,9 @@ class RecursiveAstVisitor$1 {
         // to selectively visit the specified node.
         ast.visit(this, context);
     }
+    visitUnary(ast, context) {
+        this.visit(ast.expr, context);
+    }
     visitBinary(ast, context) {
         this.visit(ast.left, context);
         this.visit(ast.right, context);
@@ -7461,6 +7552,16 @@ class AstTransformer$1 {
     visitLiteralMap(ast, context) {
         return new LiteralMap(ast.span, ast.sourceSpan, ast.keys, this.visitAll(ast.values));
     }
+    visitUnary(ast, context) {
+        switch (ast.operator) {
+            case '+':
+                return Unary.createPlus(ast.span, ast.sourceSpan, ast.expr.visit(this));
+            case '-':
+                return Unary.createMinus(ast.span, ast.sourceSpan, ast.expr.visit(this));
+            default:
+                throw new Error(`Unknown unary operator ${ast.operator}`);
+        }
+    }
     visitBinary(ast, context) {
         return new Binary(ast.span, ast.sourceSpan, ast.operation, ast.left.visit(this), ast.right.visit(this));
     }
@@ -7568,6 +7669,20 @@ class AstMemoryEfficientTransformer {
         const values = this.visitAll(ast.values);
         if (values !== ast.values) {
             return new LiteralMap(ast.span, ast.sourceSpan, ast.keys, values);
+        }
+        return ast;
+    }
+    visitUnary(ast, context) {
+        const expr = ast.expr.visit(this);
+        if (expr !== ast.expr) {
+            switch (ast.operator) {
+                case '+':
+                    return Unary.createPlus(ast.span, ast.sourceSpan, expr);
+                case '-':
+                    return Unary.createMinus(ast.span, ast.sourceSpan, expr);
+                default:
+                    throw new Error(`Unknown unary operator ${ast.operator}`);
+            }
         }
         return ast;
     }
@@ -7968,6 +8083,20 @@ class _AstToIrVisitor {
         this.temporaryCount = 0;
         this.usesImplicitReceiver = false;
     }
+    visitUnary(ast, mode) {
+        let op;
+        switch (ast.operator) {
+            case '+':
+                op = UnaryOperator.Plus;
+                break;
+            case '-':
+                op = UnaryOperator.Minus;
+                break;
+            default:
+                throw new Error(`Unsupported operator ${ast.operator}`);
+        }
+        return convertToStatementIfNeeded(mode, new UnaryOperatorExpr(op, this._visit(ast.expr, _Mode.Expression), undefined, this.convertSourceSpan(ast.span)));
+    }
     visitBinary(ast, mode) {
         let op;
         switch (ast.operation) {
@@ -8292,6 +8421,9 @@ class _AstToIrVisitor {
             return (this._nodeMap.get(ast) || ast).visit(visitor);
         };
         return ast.visit({
+            visitUnary(ast) {
+                return null;
+            },
             visitBinary(ast) {
                 return null;
             },
@@ -8365,6 +8497,9 @@ class _AstToIrVisitor {
             return ast.some(ast => visit(visitor, ast));
         };
         return ast.visit({
+            visitUnary(ast) {
+                return visit(this, ast.expr);
+            },
             visitBinary(ast) {
                 return visit(this, ast.left) || visit(this, ast.right);
             },
@@ -14325,18 +14460,16 @@ class _ParseAST {
         if (this.next.type == TokenType$1.Operator) {
             const start = this.inputIndex;
             const operator = this.next.strValue;
-            const literalSpan = new ParseSpan(start, start);
-            const literalSourceSpan = literalSpan.toAbsolute(this.absoluteOffset);
             let result;
             switch (operator) {
                 case '+':
                     this.advance();
                     result = this.parsePrefix();
-                    return new Binary(this.span(start), this.sourceSpan(start), '-', result, new LiteralPrimitive(literalSpan, literalSourceSpan, 0));
+                    return Unary.createPlus(this.span(start), this.sourceSpan(start), result);
                 case '-':
                     this.advance();
                     result = this.parsePrefix();
-                    return new Binary(this.span(start), this.sourceSpan(start), operator, new LiteralPrimitive(literalSpan, literalSourceSpan, 0), result);
+                    return Unary.createMinus(this.span(start), this.sourceSpan(start), result);
                 case '!':
                     this.advance();
                     result = this.parsePrefix();
@@ -14760,6 +14893,7 @@ class SimpleExpressionChecker {
     visitLiteralMap(ast, context) {
         this.visitAll(ast.values, context);
     }
+    visitUnary(ast, context) { }
     visitBinary(ast, context) { }
     visitPrefixNot(ast, context) { }
     visitNonNullAssert(ast, context) { }
@@ -19152,7 +19286,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('10.1.0-next.7+17.sha-e7da404');
+const VERSION$1 = new Version('10.1.0-next.7+18.sha-874792d');
 
 /**
  * @license
@@ -27354,6 +27488,17 @@ class StatementInterpreter {
         }
         return null;
     }
+    visitUnaryOperatorExpr(ast, ctx) {
+        const rhs = () => ast.expr.visitExpression(this, ctx);
+        switch (ast.operator) {
+            case UnaryOperator.Plus:
+                return +rhs();
+            case UnaryOperator.Minus:
+                return -rhs();
+            default:
+                throw new Error(`Unknown operator ${ast.operator}`);
+        }
+    }
     visitBinaryOperatorExpr(ast, ctx) {
         const lhs = () => ast.lhs.visitExpression(this, ctx);
         const rhs = () => ast.rhs.visitExpression(this, ctx);
@@ -28610,5 +28755,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CommentStmt, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocCommentStmt, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TemplateBindingParseResult, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CommentStmt, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocCommentStmt, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TemplateBindingParseResult, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
 //# sourceMappingURL=compiler.js.map
