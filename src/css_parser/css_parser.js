@@ -16,7 +16,7 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.CssParseError = exports.CssParser = exports.ParsedCssResult = void 0;
+    exports.CssParseError = exports.CssParser = exports.ParsedCssResult = exports.BlockType = exports.CssToken = void 0;
     var tslib_1 = require("tslib");
     var chars = require("@angular/compiler/src/chars");
     var parse_util_1 = require("@angular/compiler/src/parse_util");
