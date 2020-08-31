@@ -17,6 +17,7 @@ export declare class XmlTagDefinition implements TagDefinition {
     isVoid: boolean;
     ignoreFirstLf: boolean;
     canSelfClose: boolean;
+    preventNamespaceInheritance: boolean;
     requireExtraParent(currentParent: string): boolean;
     isClosedByChild(name: string): boolean;
 }
