@@ -14,13 +14,15 @@ export declare class HtmlTagDefinition implements TagDefinition {
     isVoid: boolean;
     ignoreFirstLf: boolean;
     canSelfClose: boolean;
-    constructor({ closedByChildren, implicitNamespacePrefix, contentType, closedByParent, isVoid, ignoreFirstLf }?: {
+    preventNamespaceInheritance: boolean;
+    constructor({ closedByChildren, implicitNamespacePrefix, contentType, closedByParent, isVoid, ignoreFirstLf, preventNamespaceInheritance }?: {
         closedByChildren?: string[];
         closedByParent?: boolean;
         implicitNamespacePrefix?: string;
         contentType?: TagContentType;
         isVoid?: boolean;
         ignoreFirstLf?: boolean;
+        preventNamespaceInheritance?: boolean;
     });
     isClosedByChild(name: string): boolean;
 }
