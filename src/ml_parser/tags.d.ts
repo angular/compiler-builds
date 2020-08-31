@@ -17,6 +17,7 @@ export interface TagDefinition {
     isVoid: boolean;
     ignoreFirstLf: boolean;
     canSelfClose: boolean;
+    preventNamespaceInheritance: boolean;
     isClosedByChild(name: string): boolean;
 }
 export declare function splitNsName(elementName: string): [string | null, string];

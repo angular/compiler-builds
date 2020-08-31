@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.1.0-rc.0+16.sha-5e4aeaa
+ * @license Angular v10.1.0-rc.0+17.sha-0dda97e
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -623,9 +623,9 @@
      * found in the LICENSE file at https://angular.io/license
      */
     var HtmlTagDefinition = /** @class */ (function () {
-        function HtmlTagDefinition(_a) {
+        function HtmlTagDefinition(_c) {
             var _this = this;
-            var _b = _a === void 0 ? {} : _a, closedByChildren = _b.closedByChildren, implicitNamespacePrefix = _b.implicitNamespacePrefix, _c = _b.contentType, contentType = _c === void 0 ? exports.TagContentType.PARSABLE_DATA : _c, _d = _b.closedByParent, closedByParent = _d === void 0 ? false : _d, _e = _b.isVoid, isVoid = _e === void 0 ? false : _e, _f = _b.ignoreFirstLf, ignoreFirstLf = _f === void 0 ? false : _f;
+            var _d = _c === void 0 ? {} : _c, closedByChildren = _d.closedByChildren, implicitNamespacePrefix = _d.implicitNamespacePrefix, _e = _d.contentType, contentType = _e === void 0 ? exports.TagContentType.PARSABLE_DATA : _e, _f = _d.closedByParent, closedByParent = _f === void 0 ? false : _f, _g = _d.isVoid, isVoid = _g === void 0 ? false : _g, _h = _d.ignoreFirstLf, ignoreFirstLf = _h === void 0 ? false : _h, _j = _d.preventNamespaceInheritance, preventNamespaceInheritance = _j === void 0 ? false : _j;
             this.closedByChildren = {};
             this.closedByParent = false;
             this.canSelfClose = false;
@@ -637,6 +637,7 @@
             this.implicitNamespacePrefix = implicitNamespacePrefix || null;
             this.contentType = contentType;
             this.ignoreFirstLf = ignoreFirstLf;
+            this.preventNamespaceInheritance = preventNamespaceInheritance;
         }
         HtmlTagDefinition.prototype.isClosedByChild = function (name) {
             return this.isVoid || name.toLowerCase() in this.closedByChildren;
@@ -648,6 +649,7 @@
     // This implementation does not fully conform to the HTML5 spec.
     var TAG_DEFINITIONS;
     function getHtmlTagDefinition(tagName) {
+        var _a, _b;
         if (!TAG_DEFINITIONS) {
             _DEFAULT_TAG_DEFINITION = new HtmlTagDefinition();
             TAG_DEFINITIONS = {
@@ -681,6 +683,17 @@
                 'th': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
                 'col': new HtmlTagDefinition({ isVoid: true }),
                 'svg': new HtmlTagDefinition({ implicitNamespacePrefix: 'svg' }),
+                'foreignObject': new HtmlTagDefinition({
+                    // Usually the implicit namespace here would be redundant since it will be inherited from
+                    // the parent `svg`, but we have to do it for `foreignObject`, because the way the parser
+                    // works is that the parent node of an end tag is its own start tag which means that
+                    // the `preventNamespaceInheritance` on `foreignObject` would have it default to the
+                    // implicit namespace which is `html`, unless specified otherwise.
+                    implicitNamespacePrefix: 'svg',
+                    // We want to prevent children of foreignObject from inheriting its namespace, because
+                    // the point of the element is to allow nodes from other namespaces to be inserted.
+                    preventNamespaceInheritance: true,
+                }),
                 'math': new HtmlTagDefinition({ implicitNamespacePrefix: 'math' }),
                 'li': new HtmlTagDefinition({ closedByChildren: ['li'], closedByParent: true }),
                 'dt': new HtmlTagDefinition({ closedByChildren: ['dt', 'dd'] }),
@@ -699,7 +712,9 @@
                 'textarea': new HtmlTagDefinition({ contentType: exports.TagContentType.ESCAPABLE_RAW_TEXT, ignoreFirstLf: true }),
             };
         }
-        return TAG_DEFINITIONS[tagName.toLowerCase()] || _DEFAULT_TAG_DEFINITION;
+        // We have to make both a case-sensitive and a case-insesitive lookup, because
+        // HTML tag names are case insensitive, whereas some SVG tags are case sensitive.
+        return (_b = (_a = TAG_DEFINITIONS[tagName]) !== null && _a !== void 0 ? _a : TAG_DEFINITIONS[tagName.toLowerCase()]) !== null && _b !== void 0 ? _b : _DEFAULT_TAG_DEFINITION;
     }
 
     /**
@@ -11588,7 +11603,11 @@
             if (prefix === '') {
                 prefix = this.getTagDefinition(localName).implicitNamespacePrefix || '';
                 if (prefix === '' && parentElement != null) {
-                    prefix = getNsPrefix(parentElement.name);
+                    var parentTagName = splitNsName(parentElement.name)[1];
+                    var parentTagDefinition = this.getTagDefinition(parentTagName);
+                    if (!parentTagDefinition.preventNamespaceInheritance) {
+                        prefix = getNsPrefix(parentElement.name);
+                    }
                 }
             }
             return mergeNsAndName(prefix, localName);
@@ -20459,7 +20478,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('10.1.0-rc.0+16.sha-5e4aeaa');
+    var VERSION$1 = new Version('10.1.0-rc.0+17.sha-0dda97e');
 
     /**
      * @license
@@ -21313,6 +21332,7 @@
             this.isVoid = false;
             this.ignoreFirstLf = false;
             this.canSelfClose = true;
+            this.preventNamespaceInheritance = false;
         }
         XmlTagDefinition.prototype.requireExtraParent = function (currentParent) {
             return false;
