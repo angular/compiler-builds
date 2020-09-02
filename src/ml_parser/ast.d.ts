@@ -51,9 +51,9 @@ export declare class Element extends NodeWithI18n {
     name: string;
     attrs: Attribute[];
     children: Node[];
-    startSourceSpan: ParseSourceSpan;
+    startSourceSpan: ParseSourceSpan | null;
     endSourceSpan: ParseSourceSpan | null;
-    constructor(name: string, attrs: Attribute[], children: Node[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan?: ParseSourceSpan | null, i18n?: I18nMeta);
+    constructor(name: string, attrs: Attribute[], children: Node[], sourceSpan: ParseSourceSpan, startSourceSpan?: ParseSourceSpan | null, endSourceSpan?: ParseSourceSpan | null, i18n?: I18nMeta);
     visit(visitor: Visitor, context: any): any;
 }
 export declare class Comment implements Node {
