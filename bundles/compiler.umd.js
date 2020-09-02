@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.0+1.sha-86e7cd8
+ * @license Angular v11.0.0-next.0+5.sha-1d8c5d8
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4270,239 +4270,6 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var $EOF = 0;
-    var $BSPACE = 8;
-    var $TAB = 9;
-    var $LF = 10;
-    var $VTAB = 11;
-    var $FF = 12;
-    var $CR = 13;
-    var $SPACE = 32;
-    var $BANG = 33;
-    var $DQ = 34;
-    var $HASH = 35;
-    var $$ = 36;
-    var $PERCENT = 37;
-    var $AMPERSAND = 38;
-    var $SQ = 39;
-    var $LPAREN = 40;
-    var $RPAREN = 41;
-    var $STAR = 42;
-    var $PLUS = 43;
-    var $COMMA = 44;
-    var $MINUS = 45;
-    var $PERIOD = 46;
-    var $SLASH = 47;
-    var $COLON = 58;
-    var $SEMICOLON = 59;
-    var $LT = 60;
-    var $EQ = 61;
-    var $GT = 62;
-    var $QUESTION = 63;
-    var $0 = 48;
-    var $7 = 55;
-    var $9 = 57;
-    var $A = 65;
-    var $E = 69;
-    var $F = 70;
-    var $X = 88;
-    var $Z = 90;
-    var $LBRACKET = 91;
-    var $BACKSLASH = 92;
-    var $RBRACKET = 93;
-    var $CARET = 94;
-    var $_ = 95;
-    var $a = 97;
-    var $b = 98;
-    var $e = 101;
-    var $f = 102;
-    var $n = 110;
-    var $r = 114;
-    var $t = 116;
-    var $u = 117;
-    var $v = 118;
-    var $x = 120;
-    var $z = 122;
-    var $LBRACE = 123;
-    var $BAR = 124;
-    var $RBRACE = 125;
-    var $NBSP = 160;
-    var $PIPE = 124;
-    var $TILDA = 126;
-    var $AT = 64;
-    var $BT = 96;
-    function isWhitespace(code) {
-        return (code >= $TAB && code <= $SPACE) || (code == $NBSP);
-    }
-    function isDigit(code) {
-        return $0 <= code && code <= $9;
-    }
-    function isAsciiLetter(code) {
-        return code >= $a && code <= $z || code >= $A && code <= $Z;
-    }
-    function isAsciiHexDigit(code) {
-        return code >= $a && code <= $f || code >= $A && code <= $F || isDigit(code);
-    }
-    function isNewLine(code) {
-        return code === $LF || code === $CR;
-    }
-    function isOctalDigit(code) {
-        return $0 <= code && code <= $7;
-    }
-
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    var ParseLocation = /** @class */ (function () {
-        function ParseLocation(file, offset, line, col) {
-            this.file = file;
-            this.offset = offset;
-            this.line = line;
-            this.col = col;
-        }
-        ParseLocation.prototype.toString = function () {
-            return this.offset != null ? this.file.url + "@" + this.line + ":" + this.col : this.file.url;
-        };
-        ParseLocation.prototype.moveBy = function (delta) {
-            var source = this.file.content;
-            var len = source.length;
-            var offset = this.offset;
-            var line = this.line;
-            var col = this.col;
-            while (offset > 0 && delta < 0) {
-                offset--;
-                delta++;
-                var ch = source.charCodeAt(offset);
-                if (ch == $LF) {
-                    line--;
-                    var priorLine = source.substr(0, offset - 1).lastIndexOf(String.fromCharCode($LF));
-                    col = priorLine > 0 ? offset - priorLine : offset;
-                }
-                else {
-                    col--;
-                }
-            }
-            while (offset < len && delta > 0) {
-                var ch = source.charCodeAt(offset);
-                offset++;
-                delta--;
-                if (ch == $LF) {
-                    line++;
-                    col = 0;
-                }
-                else {
-                    col++;
-                }
-            }
-            return new ParseLocation(this.file, offset, line, col);
-        };
-        // Return the source around the location
-        // Up to `maxChars` or `maxLines` on each side of the location
-        ParseLocation.prototype.getContext = function (maxChars, maxLines) {
-            var content = this.file.content;
-            var startOffset = this.offset;
-            if (startOffset != null) {
-                if (startOffset > content.length - 1) {
-                    startOffset = content.length - 1;
-                }
-                var endOffset = startOffset;
-                var ctxChars = 0;
-                var ctxLines = 0;
-                while (ctxChars < maxChars && startOffset > 0) {
-                    startOffset--;
-                    ctxChars++;
-                    if (content[startOffset] == '\n') {
-                        if (++ctxLines == maxLines) {
-                            break;
-                        }
-                    }
-                }
-                ctxChars = 0;
-                ctxLines = 0;
-                while (ctxChars < maxChars && endOffset < content.length - 1) {
-                    endOffset++;
-                    ctxChars++;
-                    if (content[endOffset] == '\n') {
-                        if (++ctxLines == maxLines) {
-                            break;
-                        }
-                    }
-                }
-                return {
-                    before: content.substring(startOffset, this.offset),
-                    after: content.substring(this.offset, endOffset + 1),
-                };
-            }
-            return null;
-        };
-        return ParseLocation;
-    }());
-    var ParseSourceFile = /** @class */ (function () {
-        function ParseSourceFile(content, url) {
-            this.content = content;
-            this.url = url;
-        }
-        return ParseSourceFile;
-    }());
-    var ParseSourceSpan = /** @class */ (function () {
-        function ParseSourceSpan(start, end, details) {
-            if (details === void 0) { details = null; }
-            this.start = start;
-            this.end = end;
-            this.details = details;
-        }
-        ParseSourceSpan.prototype.toString = function () {
-            return this.start.file.content.substring(this.start.offset, this.end.offset);
-        };
-        return ParseSourceSpan;
-    }());
-    (function (ParseErrorLevel) {
-        ParseErrorLevel[ParseErrorLevel["WARNING"] = 0] = "WARNING";
-        ParseErrorLevel[ParseErrorLevel["ERROR"] = 1] = "ERROR";
-    })(exports.ParseErrorLevel || (exports.ParseErrorLevel = {}));
-    var ParseError = /** @class */ (function () {
-        function ParseError(span, msg, level) {
-            if (level === void 0) { level = exports.ParseErrorLevel.ERROR; }
-            this.span = span;
-            this.msg = msg;
-            this.level = level;
-        }
-        ParseError.prototype.contextualMessage = function () {
-            var ctx = this.span.start.getContext(100, 3);
-            return ctx ? this.msg + " (\"" + ctx.before + "[" + exports.ParseErrorLevel[this.level] + " ->]" + ctx.after + "\")" :
-                this.msg;
-        };
-        ParseError.prototype.toString = function () {
-            var details = this.span.details ? ", " + this.span.details : '';
-            return this.contextualMessage() + ": " + this.span.start + details;
-        };
-        return ParseError;
-    }());
-    function typeSourceSpan(kind, type) {
-        var moduleUrl = identifierModuleUrl(type);
-        var sourceFileName = moduleUrl != null ? "in " + kind + " " + identifierName(type) + " in " + moduleUrl :
-            "in " + kind + " " + identifierName(type);
-        var sourceFile = new ParseSourceFile('', sourceFileName);
-        return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
-    }
-    /**
-     * Generates Source Span object for a given R3 Type for JIT mode.
-     *
-     * @param kind Component or Directive.
-     * @param typeName name of the Component or Directive.
-     * @param sourceUrl reference to Component or Directive source.
-     * @returns instance of ParseSourceSpan that represent a given Component or Directive.
-     */
-    function r3JitTypeSourceSpan(kind, typeName, sourceUrl) {
-        var sourceFileName = "in " + kind + " " + typeName + " in " + sourceUrl;
-        var sourceFile = new ParseSourceFile('', sourceFileName);
-        return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
-    }
-
     var Text = /** @class */ (function () {
         function Text(value, sourceSpan) {
             this.value = value;
@@ -4588,10 +4355,6 @@
             this.startSourceSpan = startSourceSpan;
             this.endSourceSpan = endSourceSpan;
             this.i18n = i18n;
-            // If the element is empty then the source span should include any closing tag
-            if (children.length === 0 && startSourceSpan && endSourceSpan) {
-                this.sourceSpan = new ParseSourceSpan(sourceSpan.start, endSourceSpan.end);
-            }
         }
         Element.prototype.visit = function (visitor) {
             return visitor.visitElement(this);
@@ -7479,6 +7242,246 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
+    var $EOF = 0;
+    var $BSPACE = 8;
+    var $TAB = 9;
+    var $LF = 10;
+    var $VTAB = 11;
+    var $FF = 12;
+    var $CR = 13;
+    var $SPACE = 32;
+    var $BANG = 33;
+    var $DQ = 34;
+    var $HASH = 35;
+    var $$ = 36;
+    var $PERCENT = 37;
+    var $AMPERSAND = 38;
+    var $SQ = 39;
+    var $LPAREN = 40;
+    var $RPAREN = 41;
+    var $STAR = 42;
+    var $PLUS = 43;
+    var $COMMA = 44;
+    var $MINUS = 45;
+    var $PERIOD = 46;
+    var $SLASH = 47;
+    var $COLON = 58;
+    var $SEMICOLON = 59;
+    var $LT = 60;
+    var $EQ = 61;
+    var $GT = 62;
+    var $QUESTION = 63;
+    var $0 = 48;
+    var $7 = 55;
+    var $9 = 57;
+    var $A = 65;
+    var $E = 69;
+    var $F = 70;
+    var $X = 88;
+    var $Z = 90;
+    var $LBRACKET = 91;
+    var $BACKSLASH = 92;
+    var $RBRACKET = 93;
+    var $CARET = 94;
+    var $_ = 95;
+    var $a = 97;
+    var $b = 98;
+    var $e = 101;
+    var $f = 102;
+    var $n = 110;
+    var $r = 114;
+    var $t = 116;
+    var $u = 117;
+    var $v = 118;
+    var $x = 120;
+    var $z = 122;
+    var $LBRACE = 123;
+    var $BAR = 124;
+    var $RBRACE = 125;
+    var $NBSP = 160;
+    var $PIPE = 124;
+    var $TILDA = 126;
+    var $AT = 64;
+    var $BT = 96;
+    function isWhitespace(code) {
+        return (code >= $TAB && code <= $SPACE) || (code == $NBSP);
+    }
+    function isDigit(code) {
+        return $0 <= code && code <= $9;
+    }
+    function isAsciiLetter(code) {
+        return code >= $a && code <= $z || code >= $A && code <= $Z;
+    }
+    function isAsciiHexDigit(code) {
+        return code >= $a && code <= $f || code >= $A && code <= $F || isDigit(code);
+    }
+    function isNewLine(code) {
+        return code === $LF || code === $CR;
+    }
+    function isOctalDigit(code) {
+        return $0 <= code && code <= $7;
+    }
+
+    /**
+     * @license
+     * Copyright Google LLC All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    var ParseLocation = /** @class */ (function () {
+        function ParseLocation(file, offset, line, col) {
+            this.file = file;
+            this.offset = offset;
+            this.line = line;
+            this.col = col;
+        }
+        ParseLocation.prototype.toString = function () {
+            return this.offset != null ? this.file.url + "@" + this.line + ":" + this.col : this.file.url;
+        };
+        ParseLocation.prototype.moveBy = function (delta) {
+            var source = this.file.content;
+            var len = source.length;
+            var offset = this.offset;
+            var line = this.line;
+            var col = this.col;
+            while (offset > 0 && delta < 0) {
+                offset--;
+                delta++;
+                var ch = source.charCodeAt(offset);
+                if (ch == $LF) {
+                    line--;
+                    var priorLine = source.substr(0, offset - 1).lastIndexOf(String.fromCharCode($LF));
+                    col = priorLine > 0 ? offset - priorLine : offset;
+                }
+                else {
+                    col--;
+                }
+            }
+            while (offset < len && delta > 0) {
+                var ch = source.charCodeAt(offset);
+                offset++;
+                delta--;
+                if (ch == $LF) {
+                    line++;
+                    col = 0;
+                }
+                else {
+                    col++;
+                }
+            }
+            return new ParseLocation(this.file, offset, line, col);
+        };
+        // Return the source around the location
+        // Up to `maxChars` or `maxLines` on each side of the location
+        ParseLocation.prototype.getContext = function (maxChars, maxLines) {
+            var content = this.file.content;
+            var startOffset = this.offset;
+            if (startOffset != null) {
+                if (startOffset > content.length - 1) {
+                    startOffset = content.length - 1;
+                }
+                var endOffset = startOffset;
+                var ctxChars = 0;
+                var ctxLines = 0;
+                while (ctxChars < maxChars && startOffset > 0) {
+                    startOffset--;
+                    ctxChars++;
+                    if (content[startOffset] == '\n') {
+                        if (++ctxLines == maxLines) {
+                            break;
+                        }
+                    }
+                }
+                ctxChars = 0;
+                ctxLines = 0;
+                while (ctxChars < maxChars && endOffset < content.length - 1) {
+                    endOffset++;
+                    ctxChars++;
+                    if (content[endOffset] == '\n') {
+                        if (++ctxLines == maxLines) {
+                            break;
+                        }
+                    }
+                }
+                return {
+                    before: content.substring(startOffset, this.offset),
+                    after: content.substring(this.offset, endOffset + 1),
+                };
+            }
+            return null;
+        };
+        return ParseLocation;
+    }());
+    var ParseSourceFile = /** @class */ (function () {
+        function ParseSourceFile(content, url) {
+            this.content = content;
+            this.url = url;
+        }
+        return ParseSourceFile;
+    }());
+    var ParseSourceSpan = /** @class */ (function () {
+        function ParseSourceSpan(start, end, details) {
+            if (details === void 0) { details = null; }
+            this.start = start;
+            this.end = end;
+            this.details = details;
+        }
+        ParseSourceSpan.prototype.toString = function () {
+            return this.start.file.content.substring(this.start.offset, this.end.offset);
+        };
+        return ParseSourceSpan;
+    }());
+    (function (ParseErrorLevel) {
+        ParseErrorLevel[ParseErrorLevel["WARNING"] = 0] = "WARNING";
+        ParseErrorLevel[ParseErrorLevel["ERROR"] = 1] = "ERROR";
+    })(exports.ParseErrorLevel || (exports.ParseErrorLevel = {}));
+    var ParseError = /** @class */ (function () {
+        function ParseError(span, msg, level) {
+            if (level === void 0) { level = exports.ParseErrorLevel.ERROR; }
+            this.span = span;
+            this.msg = msg;
+            this.level = level;
+        }
+        ParseError.prototype.contextualMessage = function () {
+            var ctx = this.span.start.getContext(100, 3);
+            return ctx ? this.msg + " (\"" + ctx.before + "[" + exports.ParseErrorLevel[this.level] + " ->]" + ctx.after + "\")" :
+                this.msg;
+        };
+        ParseError.prototype.toString = function () {
+            var details = this.span.details ? ", " + this.span.details : '';
+            return this.contextualMessage() + ": " + this.span.start + details;
+        };
+        return ParseError;
+    }());
+    function typeSourceSpan(kind, type) {
+        var moduleUrl = identifierModuleUrl(type);
+        var sourceFileName = moduleUrl != null ? "in " + kind + " " + identifierName(type) + " in " + moduleUrl :
+            "in " + kind + " " + identifierName(type);
+        var sourceFile = new ParseSourceFile('', sourceFileName);
+        return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
+    }
+    /**
+     * Generates Source Span object for a given R3 Type for JIT mode.
+     *
+     * @param kind Component or Directive.
+     * @param typeName name of the Component or Directive.
+     * @param sourceUrl reference to Component or Directive source.
+     * @returns instance of ParseSourceSpan that represent a given Component or Directive.
+     */
+    function r3JitTypeSourceSpan(kind, typeName, sourceUrl) {
+        var sourceFileName = "in " + kind + " " + typeName + " in " + sourceUrl;
+        var sourceFile = new ParseSourceFile('', sourceFileName);
+        return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
+    }
+
+    /**
+     * @license
+     * Copyright Google LLC All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
     /**
      * Implementation of `CompileReflector` which resolves references to @angular/core
      * symbols at runtime, according to a consumer-provided mapping.
@@ -10283,7 +10286,6 @@
     var Element$1 = /** @class */ (function (_super) {
         __extends(Element, _super);
         function Element(name, attrs, children, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
-            if (startSourceSpan === void 0) { startSourceSpan = null; }
             if (endSourceSpan === void 0) { endSourceSpan = null; }
             var _this = _super.call(this, sourceSpan, i18n) || this;
             _this.name = name;
@@ -10912,14 +10914,12 @@
             this._beginToken(TokenType.RAW_TEXT);
             var condition = this._readUntil($COMMA);
             var normalizedCondition = this._processCarriageReturns(condition);
-            if (this._escapedString || this._i18nNormalizeLineEndingsInICUs) {
-                // Either the template is inline or,
-                // we explicitly want to normalize line endings for this text.
+            if (this._i18nNormalizeLineEndingsInICUs) {
+                // We explicitly want to normalize line endings for this text.
                 this._endToken([normalizedCondition]);
             }
             else {
-                // The expression is in an external template and, for backward compatibility,
-                // we are not normalizing line endings.
+                // We are not normalizing line endings.
                 var conditionToken = this._endToken([condition]);
                 if (normalizedCondition !== condition) {
                     this.nonNormalizedIcuExpressions.push(conditionToken);
@@ -11524,7 +11524,9 @@
             }
             var end = this._peek.sourceSpan.start;
             var span = new ParseSourceSpan(startTagToken.sourceSpan.start, end);
-            var el = new Element$1(fullName, attrs, [], span, span, undefined);
+            // Create a separate `startSpan` because `span` will be modified when there is an `end` span.
+            var startSpan = new ParseSourceSpan(startTagToken.sourceSpan.start, end);
+            var el = new Element$1(fullName, attrs, [], span, startSpan, undefined);
             this._pushElement(el);
             if (selfClosing) {
                 // Elements that are self-closed have their `endSourceSpan` set to the full span, as the
@@ -11558,6 +11560,7 @@
                     // removed from the element stack at this point are closed implicitly, so they won't get
                     // an end source span (as there is no explicit closing element).
                     el.endSourceSpan = endSourceSpan;
+                    el.sourceSpan.end = endSourceSpan.end || el.sourceSpan.end;
                     this._elementStack.splice(stackIndex, this._elementStack.length - stackIndex);
                     return true;
                 }
@@ -17261,7 +17264,7 @@
             });
             var isVoid = getHtmlTagDefinition(el.name).isVoid;
             var startPhName = context.placeholderRegistry.getStartTagPlaceholderName(el.name, attrs, isVoid);
-            context.placeholderToContent[startPhName] = el.sourceSpan.toString();
+            context.placeholderToContent[startPhName] = el.startSourceSpan.toString();
             var closePhName = '';
             if (!isVoid) {
                 closePhName = context.placeholderRegistry.getCloseTagPlaceholderName(el.name);
@@ -17970,14 +17973,14 @@
             this._bindingScope.notifyImplicitReceiverUse();
         };
         TemplateDefinitionBuilder.prototype.i18nTranslate = function (message, params, ref, transformFn) {
-            var _a;
+            var _c;
             if (params === void 0) { params = {}; }
             var _ref = ref || this.i18nGenerateMainBlockVar();
             // Closure Compiler requires const names to start with `MSG_` but disallows any other const to
             // start with `MSG_`. We define a variable starting with `MSG_` just for the `goog.getMsg` call
             var closureVar = this.i18nGenerateClosureVar(message.id);
             var statements = getTranslationDeclStmts(message, _ref, closureVar, params, transformFn);
-            (_a = this._constants.prepareStatements).push.apply(_a, __spread(statements));
+            (_c = this._constants.prepareStatements).push.apply(_c, __spread(statements));
             return _ref;
         };
         TemplateDefinitionBuilder.prototype.registerContextVariables = function (variable$1) {
@@ -18018,7 +18021,7 @@
                     _this.allocateBindingSlots(value);
                     if (value instanceof Interpolation) {
                         var strings = value.strings, expressions = value.expressions;
-                        var _a = _this.i18n, id = _a.id, bindings = _a.bindings;
+                        var _c = _this.i18n, id = _c.id, bindings = _c.bindings;
                         var label = assembleI18nBoundString(strings, bindings.size, id);
                         _this.i18nAppendBindings(expressions);
                         bound[key] = literal(label);
@@ -18094,7 +18097,7 @@
                 this.i18nContext.forkChildContext(index, this.templateIndex, meta) :
                 new I18nContext(index, this.i18nGenerateMainBlockVar(), 0, this.templateIndex, meta);
             // generate i18nStart instruction
-            var _a = this.i18n, id = _a.id, ref = _a.ref;
+            var _c = this.i18n, id = _c.id, ref = _c.ref;
             var params = [literal(index), this.addToConsts(ref)];
             if (id > 0) {
                 // do not push 3rd argument (sub-block id)
@@ -18117,7 +18120,7 @@
                 this.i18nUpdateRef(this.i18n);
             }
             // setup accumulated bindings
-            var _a = this.i18n, index = _a.index, bindings = _a.bindings;
+            var _c = this.i18n, index = _c.index, bindings = _c.bindings;
             if (bindings.size) {
                 var chainBindings_1 = [];
                 bindings.forEach(function (binding) {
@@ -18185,7 +18188,7 @@
         };
         TemplateDefinitionBuilder.prototype.addNamespaceInstruction = function (nsInstruction, element) {
             this._namespace = nsInstruction;
-            this.creationInstruction(element.sourceSpan, nsInstruction);
+            this.creationInstruction(element.startSourceSpan, nsInstruction);
         };
         /**
          * Adds an update instruction for an interpolated property or attribute, such as
@@ -18214,20 +18217,21 @@
             }
         };
         TemplateDefinitionBuilder.prototype.visitElement = function (element) {
-            var e_1, _a;
+            var e_1, _c;
             var _this = this;
+            var _a, _b;
             var elementIndex = this.allocateDataSlot();
             var stylingBuilder = new StylingBuilder(null);
             var isNonBindableMode = false;
             var isI18nRootElement = isI18nRootNode(element.i18n) && !isSingleI18nIcu(element.i18n);
             var i18nAttrs = [];
             var outputAttrs = [];
-            var _b = __read(splitNsName(element.name), 2), namespaceKey = _b[0], elementName = _b[1];
+            var _d = __read(splitNsName(element.name), 2), namespaceKey = _d[0], elementName = _d[1];
             var isNgContainer$1 = isNgContainer(element.name);
             try {
                 // Handle styling, i18n, ngNonBindable attributes
-                for (var _c = __values(element.attributes), _d = _c.next(); !_d.done; _d = _c.next()) {
-                    var attr = _d.value;
+                for (var _e = __values(element.attributes), _f = _e.next(); !_f.done; _f = _e.next()) {
+                    var attr = _f.value;
                     var name = attr.name, value = attr.value;
                     if (name === NON_BINDABLE_ATTR) {
                         isNonBindableMode = true;
@@ -18246,7 +18250,7 @@
             catch (e_1_1) { e_1 = { error: e_1_1 }; }
             finally {
                 try {
-                    if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
+                    if (_f && !_f.done && (_c = _e.return)) _c.call(_e);
                 }
                 finally { if (e_1) throw e_1.error; }
             }
@@ -18297,12 +18301,12 @@
                 this.creationInstruction(element.sourceSpan, isNgContainer$1 ? Identifiers$1.elementContainer : Identifiers$1.element, trimTrailingNulls(parameters));
             }
             else {
-                this.creationInstruction(element.sourceSpan, isNgContainer$1 ? Identifiers$1.elementContainerStart : Identifiers$1.elementStart, trimTrailingNulls(parameters));
+                this.creationInstruction(element.startSourceSpan, isNgContainer$1 ? Identifiers$1.elementContainerStart : Identifiers$1.elementStart, trimTrailingNulls(parameters));
                 if (isNonBindableMode) {
-                    this.creationInstruction(element.sourceSpan, Identifiers$1.disableBindings);
+                    this.creationInstruction(element.startSourceSpan, Identifiers$1.disableBindings);
                 }
                 if (i18nAttrs.length > 0) {
-                    this.i18nAttributesInstruction(elementIndex, i18nAttrs, element.sourceSpan);
+                    this.i18nAttributesInstruction(elementIndex, i18nAttrs, (_a = element.startSourceSpan) !== null && _a !== void 0 ? _a : element.sourceSpan);
                 }
                 // Generate Listeners (outputs)
                 if (element.outputs.length > 0) {
@@ -18315,7 +18319,7 @@
                 // Note: it's important to keep i18n/i18nStart instructions after i18nAttributes and
                 // listeners, to make sure i18nAttributes instruction targets current element at runtime.
                 if (isI18nRootElement) {
-                    this.i18nStart(element.sourceSpan, element.i18n, createSelfClosingI18nInstruction);
+                    this.i18nStart(element.startSourceSpan, element.i18n, createSelfClosingI18nInstruction);
                 }
             }
             // the code here will collect all update-level styling instructions and add them to the
@@ -18364,7 +18368,7 @@
                     var value_2 = input.value.visit(_this._valueConverter);
                     if (value_2 !== undefined) {
                         var params_2 = [];
-                        var _a = __read(splitNsName(input.name), 2), attrNamespace = _a[0], attrName_1 = _a[1];
+                        var _c = __read(splitNsName(input.name), 2), attrNamespace = _c[0], attrName_1 = _c[1];
                         var isAttributeBinding = inputType === 1 /* Attribute */;
                         var sanitizationRef = resolveSanitizationFn(input.securityContext, isAttributeBinding);
                         if (sanitizationRef)
@@ -18438,7 +18442,7 @@
             }
             if (!createSelfClosingInstruction) {
                 // Finish element construction mode.
-                var span = element.endSourceSpan || element.sourceSpan;
+                var span = (_b = element.endSourceSpan) !== null && _b !== void 0 ? _b : element.sourceSpan;
                 if (isI18nRootElement) {
                     this.i18nEnd(span, createSelfClosingI18nInstruction);
                 }
@@ -18450,6 +18454,7 @@
         };
         TemplateDefinitionBuilder.prototype.visitTemplate = function (template) {
             var _this = this;
+            var _a;
             var NG_TEMPLATE_TAG_NAME = 'ng-template';
             var templateIndex = this.allocateDataSlot();
             if (this.i18n) {
@@ -18468,7 +18473,7 @@
             // find directives matching on a given <ng-template> node
             this.matchDirectives(NG_TEMPLATE_TAG_NAME, template);
             // prepare attributes parameter (including attributes used for directive matching)
-            var _a = __read(partitionArray(template.attributes, hasI18nMeta), 2), i18nStaticAttrs = _a[0], staticAttrs = _a[1];
+            var _c = __read(partitionArray(template.attributes, hasI18nMeta), 2), i18nStaticAttrs = _c[0], staticAttrs = _c[1];
             var attrsExprs = this.getAttributeExpressions(staticAttrs, template.inputs, template.outputs, undefined /* styles */, template.templateAttrs, i18nStaticAttrs);
             parameters.push(this.addAttrsToConsts(attrsExprs));
             // local refs (ex.: <ng-template #foo>)
@@ -18484,11 +18489,11 @@
             // be able to support bindings in nested templates to local refs that occur after the
             // template definition. e.g. <div *ngIf="showing">{{ foo }}</div>  <div #foo></div>
             this._nestedTemplateFns.push(function () {
-                var _a;
+                var _c;
                 var templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables, _this._ngContentReservedSlots.length + _this._ngContentSelectorsOffset, template.i18n);
                 _this.constantPool.statements.push(templateFunctionExpr.toDeclStmt(templateName, null));
                 if (templateVisitor._ngContentReservedSlots.length) {
-                    (_a = _this._ngContentReservedSlots).push.apply(_a, __spread(templateVisitor._ngContentReservedSlots));
+                    (_c = _this._ngContentReservedSlots).push.apply(_c, __spread(templateVisitor._ngContentReservedSlots));
                 }
             });
             // e.g. template(1, MyComp_Template_1)
@@ -18500,14 +18505,14 @@
             this.templatePropertyBindings(templateIndex, template.templateAttrs);
             // Only add normal input/output binding instructions on explicit <ng-template> elements.
             if (template.tagName === NG_TEMPLATE_TAG_NAME) {
-                var _b = __read(partitionArray(template.inputs, hasI18nMeta), 2), i18nInputs = _b[0], inputs = _b[1];
+                var _d = __read(partitionArray(template.inputs, hasI18nMeta), 2), i18nInputs = _d[0], inputs = _d[1];
                 var i18nAttrs = __spread(i18nStaticAttrs, i18nInputs);
                 // Add i18n attributes that may act as inputs to directives. If such attributes are present,
                 // generate `i18nAttributes` instruction. Note: we generate it only for explicit <ng-template>
                 // elements, in case of inline templates, corresponding instructions will be generated in the
                 // nested template function.
                 if (i18nAttrs.length > 0) {
-                    this.i18nAttributesInstruction(templateIndex, i18nAttrs, template.sourceSpan);
+                    this.i18nAttributesInstruction(templateIndex, i18nAttrs, (_a = template.startSourceSpan) !== null && _a !== void 0 ? _a : template.sourceSpan);
                 }
                 // Add the input bindings
                 if (inputs.length > 0) {
@@ -18746,10 +18751,10 @@
                 this._bindingScope.getOrCreateSharedContextVar(0);
         };
         TemplateDefinitionBuilder.prototype.convertPropertyBinding = function (value) {
-            var _a;
+            var _c;
             var convertedPropertyBinding = convertPropertyBinding(this, this.getImplicitReceiverExpr(), value, this.bindingContext(), BindingForm.Expression, function () { return error('Unexpected interpolation'); });
             var valExpr = convertedPropertyBinding.currValExpr;
-            (_a = this._tempVariables).push.apply(_a, __spread(convertedPropertyBinding.stmts));
+            (_c = this._tempVariables).push.apply(_c, __spread(convertedPropertyBinding.stmts));
             return valExpr;
         };
         /**
@@ -18759,9 +18764,9 @@
          * @param value The original expression we will be resolving an arguments list from.
          */
         TemplateDefinitionBuilder.prototype.getUpdateInstructionArguments = function (value) {
-            var _a;
-            var _b = convertUpdateArguments(this, this.getImplicitReceiverExpr(), value, this.bindingContext()), args = _b.args, stmts = _b.stmts;
-            (_a = this._tempVariables).push.apply(_a, __spread(stmts));
+            var _c;
+            var _d = convertUpdateArguments(this, this.getImplicitReceiverExpr(), value, this.bindingContext()), args = _d.args, stmts = _d.stmts;
+            (_c = this._tempVariables).push.apply(_c, __spread(stmts));
             return args;
         };
         TemplateDefinitionBuilder.prototype.matchDirectives = function (elementName, elOrTpl) {
@@ -18937,7 +18942,7 @@
             // Allocate one slot for the result plus one slot per pipe argument
             var pureFunctionSlot = this.allocatePureFunctionSlots(2 + pipe.args.length);
             var target = new PropertyRead(pipe.span, pipe.sourceSpan, pipe.nameSpan, new ImplicitReceiver(pipe.span, pipe.sourceSpan), slotPseudoLocal);
-            var _a = pipeBindingCallInfo(pipe.args), identifier = _a.identifier, isVarLength = _a.isVarLength;
+            var _c = pipeBindingCallInfo(pipe.args), identifier = _c.identifier, isVarLength = _c.isVarLength;
             this.definePipe(pipe.name, slotPseudoLocal, slot, importExpr(identifier));
             var args = __spread([pipe.exp], pipe.args);
             var convertedArgs = isVarLength ?
@@ -19008,10 +19013,10 @@
             .callFn(relativeLevelDiff > 1 ? [literal(relativeLevelDiff)] : []);
     }
     function getLiteralFactory(constantPool, literal$1, allocateSlots) {
-        var _a = constantPool.getLiteralFactory(literal$1), literalFactory = _a.literalFactory, literalFactoryArguments = _a.literalFactoryArguments;
+        var _c = constantPool.getLiteralFactory(literal$1), literalFactory = _c.literalFactory, literalFactoryArguments = _c.literalFactoryArguments;
         // Allocate 1 slot for the result plus 1 per argument
         var startSlot = allocateSlots(1 + literalFactoryArguments.length);
-        var _b = pureFunctionCallInfo(literalFactoryArguments), identifier = _b.identifier, isVarLength = _b.isVarLength;
+        var _d = pureFunctionCallInfo(literalFactoryArguments), identifier = _d.identifier, isVarLength = _d.isVarLength;
         // Literal factories are pure functions that only need to be re-invoked when the parameters
         // change.
         var args = [literal(startSlot), literalFactory];
@@ -19031,7 +19036,7 @@
      * @param name Name of the attribute, including the namespace.
      */
     function getAttributeNameLiterals(name) {
-        var _a = __read(splitNsName(name), 2), attributeNamespace = _a[0], attributeName = _a[1];
+        var _c = __read(splitNsName(name), 2), attributeNamespace = _c[0], attributeName = _c[1];
         var nameLiteral = literal(attributeName);
         if (attributeNamespace) {
             return [
@@ -19391,7 +19396,7 @@
                 rootNodes = visitAll$1(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), rootNodes);
             }
         }
-        var _a = htmlAstToRender3Ast(rootNodes, bindingParser), nodes = _a.nodes, errors = _a.errors, styleUrls = _a.styleUrls, styles = _a.styles, ngContentSelectors = _a.ngContentSelectors;
+        var _c = htmlAstToRender3Ast(rootNodes, bindingParser), nodes = _c.nodes, errors = _c.errors, styleUrls = _c.styleUrls, styles = _c.styles, ngContentSelectors = _c.ngContentSelectors;
         if (errors && errors.length > 0) {
             return { errors: errors, nodes: [], styleUrls: [], styles: [], ngContentSelectors: [] };
         }
@@ -20478,7 +20483,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.0+1.sha-86e7cd8');
+    var VERSION$1 = new Version('11.0.0-next.0+5.sha-1d8c5d8');
 
     /**
      * @license
