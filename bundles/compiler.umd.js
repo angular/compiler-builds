@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.1.0+7.sha-25afbcc
+ * @license Angular v10.1.0+9.sha-9bf32c4
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16476,11 +16476,6 @@
         var ivyNodes = visitAll$1(transformer, htmlNodes);
         // Errors might originate in either the binding parser or the html to ivy transformer
         var allErrors = bindingParser.errors.concat(transformer.errors);
-        var errors = allErrors.filter(function (e) { return e.level === exports.ParseErrorLevel.ERROR; });
-        if (errors.length > 0) {
-            var errorString = errors.join('\n');
-            throw syntaxError("Template parse errors:\n" + errorString, errors);
-        }
         return {
             nodes: ivyNodes,
             errors: allErrors,
@@ -20478,7 +20473,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('10.1.0+7.sha-25afbcc');
+    var VERSION$1 = new Version('10.1.0+9.sha-9bf32c4');
 
     /**
      * @license
