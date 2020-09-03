@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.0+10.sha-1c7e5ce
+ * @license Angular v11.0.0-next.0+12.sha-c90eb54
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15461,11 +15461,6 @@ function htmlAstToRender3Ast(htmlNodes, bindingParser) {
     const ivyNodes = visitAll$1(transformer, htmlNodes);
     // Errors might originate in either the binding parser or the html to ivy transformer
     const allErrors = bindingParser.errors.concat(transformer.errors);
-    const errors = allErrors.filter(e => e.level === ParseErrorLevel.ERROR);
-    if (errors.length > 0) {
-        const errorString = errors.join('\n');
-        throw syntaxError(`Template parse errors:\n${errorString}`, errors);
-    }
     return {
         nodes: ivyNodes,
         errors: allErrors,
@@ -19304,7 +19299,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.0.0-next.0+10.sha-1c7e5ce');
+const VERSION$1 = new Version('11.0.0-next.0+12.sha-c90eb54');
 
 /**
  * @license
