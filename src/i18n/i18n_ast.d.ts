@@ -81,9 +81,11 @@ export declare class TagPlaceholder implements Node {
     children: Node[];
     isVoid: boolean;
     sourceSpan: ParseSourceSpan;
+    startSourceSpan: ParseSourceSpan | null;
+    endSourceSpan: ParseSourceSpan | null;
     constructor(tag: string, attrs: {
         [k: string]: string;
-    }, startName: string, closeName: string, children: Node[], isVoid: boolean, sourceSpan: ParseSourceSpan);
+    }, startName: string, closeName: string, children: Node[], isVoid: boolean, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan | null, endSourceSpan: ParseSourceSpan | null);
     visit(visitor: Visitor, context?: any): any;
 }
 export declare class Placeholder implements Node {
