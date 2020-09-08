@@ -225,12 +225,21 @@ export declare class LiteralExpr extends Expression {
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
+export declare abstract class MessagePiece {
+    text: string;
+    sourceSpan: ParseSourceSpan;
+    constructor(text: string, sourceSpan: ParseSourceSpan);
+}
+export declare class LiteralPiece extends MessagePiece {
+}
+export declare class PlaceholderPiece extends MessagePiece {
+}
 export declare class LocalizedString extends Expression {
     readonly metaBlock: I18nMeta;
-    readonly messageParts: string[];
-    readonly placeHolderNames: string[];
+    readonly messageParts: LiteralPiece[];
+    readonly placeHolderNames: PlaceholderPiece[];
     readonly expressions: Expression[];
-    constructor(metaBlock: I18nMeta, messageParts: string[], placeHolderNames: string[], expressions: Expression[], sourceSpan?: ParseSourceSpan | null);
+    constructor(metaBlock: I18nMeta, messageParts: LiteralPiece[], placeHolderNames: PlaceholderPiece[], expressions: Expression[], sourceSpan?: ParseSourceSpan | null);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -246,6 +255,8 @@ export declare class LocalizedString extends Expression {
         cooked: string;
         raw: string;
     };
+    getMessagePartSourceSpan(i: number): ParseSourceSpan | null;
+    getPlaceholderSourceSpan(i: number): ParseSourceSpan;
     /**
      * Serialize the given `placeholderName` and `messagePart` into "cooked" and "raw" strings that
      * can be used in a `$localize` tagged string.
@@ -651,7 +662,7 @@ export declare function assertNotNull(expr: Expression, sourceSpan?: ParseSource
 export declare function fn(params: FnParam[], body: Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null, name?: string | null): FunctionExpr;
 export declare function ifStmt(condition: Expression, thenClause: Statement[], elseClause?: Statement[]): IfStmt;
 export declare function literal(value: any, type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralExpr;
-export declare function localizedString(metaBlock: I18nMeta, messageParts: string[], placeholderNames: string[], expressions: Expression[], sourceSpan?: ParseSourceSpan | null): LocalizedString;
+export declare function localizedString(metaBlock: I18nMeta, messageParts: LiteralPiece[], placeholderNames: PlaceholderPiece[], expressions: Expression[], sourceSpan?: ParseSourceSpan | null): LocalizedString;
 export declare function isNull(exp: Expression): boolean;
 export declare const enum JSDocTagName {
     Desc = "desc",
