@@ -333,13 +333,7 @@ export interface ParseTemplateOptions {
  * @param templateUrl URL to use for source mapping of the parsed template
  * @param options options to modify how the template is parsed
  */
-export declare function parseTemplate(template: string, templateUrl: string, options?: ParseTemplateOptions): {
-    errors?: ParseError[];
-    nodes: t.Node[];
-    styleUrls: string[];
-    styles: string[];
-    ngContentSelectors: string[];
-};
+export declare function parseTemplate(template: string, templateUrl: string, options?: ParseTemplateOptions): ParsedTemplate;
 /**
  * Construct a `BindingParser` with a default configuration.
  */
@@ -374,4 +368,47 @@ export declare function resolveSanitizationFn(context: core.SecurityContext, isA
 export declare function getTranslationDeclStmts(message: i18n.Message, variable: o.ReadVarExpr, closureVar: o.ReadVarExpr, params?: {
     [name: string]: o.Expression;
 }, transformFn?: (raw: o.ReadVarExpr) => o.Expression): o.Statement[];
+/**
+ * Information about the template which was extracted during parsing.
+ *
+ * This contains the actual parsed template as well as any metadata collected during its parsing,
+ * some of which might be useful for re-parsing the template with different options.
+ */
+export interface ParsedTemplate {
+    /**
+     * Include whitespace nodes in the parsed output.
+     */
+    preserveWhitespaces?: boolean;
+    /**
+     * How to parse interpolation markers.
+     */
+    interpolationConfig?: InterpolationConfig;
+    /**
+     * The string contents of the template.
+     *
+     * This is the "logical" template string, after expansion of any escaped characters (for inline
+     * templates). This may differ from the actual template bytes as they appear in the .ts file.
+     */
+    template: string;
+    /**
+     * Any errors from parsing the template the first time.
+     */
+    errors: ParseError[] | null;
+    /**
+     * The template AST, parsed from the template.
+     */
+    nodes: t.Node[];
+    /**
+     * Any styleUrls extracted from the metadata.
+     */
+    styleUrls: string[];
+    /**
+     * Any inline styles extracted from the metadata.
+     */
+    styles: string[];
+    /**
+     * Any ng-content selectors extracted from the template.
+     */
+    ngContentSelectors: string[];
+}
 export {};

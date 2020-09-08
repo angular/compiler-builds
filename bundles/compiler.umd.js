@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.0+26.sha-83ace4e
+ * @license Angular v11.0.0-next.0+39.sha-bfb7eec
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1703,6 +1703,27 @@
         };
         return LiteralExpr;
     }(Expression));
+    var MessagePiece = /** @class */ (function () {
+        function MessagePiece(text, sourceSpan) {
+            this.text = text;
+            this.sourceSpan = sourceSpan;
+        }
+        return MessagePiece;
+    }());
+    var LiteralPiece = /** @class */ (function (_super) {
+        __extends(LiteralPiece, _super);
+        function LiteralPiece() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        return LiteralPiece;
+    }(MessagePiece));
+    var PlaceholderPiece = /** @class */ (function (_super) {
+        __extends(PlaceholderPiece, _super);
+        function PlaceholderPiece() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        return PlaceholderPiece;
+    }(MessagePiece));
     var LocalizedString = /** @class */ (function (_super) {
         __extends(LocalizedString, _super);
         function LocalizedString(metaBlock, messageParts, placeHolderNames, expressions, sourceSpan) {
@@ -1747,7 +1768,15 @@
                     metaBlock = "" + metaBlock + LEGACY_ID_INDICATOR + legacyId;
                 });
             }
-            return createCookedRawString(metaBlock, this.messageParts[0]);
+            return createCookedRawString(metaBlock, this.messageParts[0].text);
+        };
+        LocalizedString.prototype.getMessagePartSourceSpan = function (i) {
+            var _a, _b;
+            return (_b = (_a = this.messageParts[i]) === null || _a === void 0 ? void 0 : _a.sourceSpan) !== null && _b !== void 0 ? _b : this.sourceSpan;
+        };
+        LocalizedString.prototype.getPlaceholderSourceSpan = function (i) {
+            var _a, _b, _c, _d;
+            return (_d = (_b = (_a = this.placeHolderNames[i]) === null || _a === void 0 ? void 0 : _a.sourceSpan) !== null && _b !== void 0 ? _b : (_c = this.expressions[i]) === null || _c === void 0 ? void 0 : _c.sourceSpan) !== null && _d !== void 0 ? _d : this.sourceSpan;
         };
         /**
          * Serialize the given `placeholderName` and `messagePart` into "cooked" and "raw" strings that
@@ -1757,9 +1786,9 @@
          * @param messagePart The following message string after this placeholder
          */
         LocalizedString.prototype.serializeI18nTemplatePart = function (partIndex) {
-            var placeholderName = this.placeHolderNames[partIndex - 1];
+            var placeholderName = this.placeHolderNames[partIndex - 1].text;
             var messagePart = this.messageParts[partIndex];
-            return createCookedRawString(placeholderName, messagePart);
+            return createCookedRawString(placeholderName, messagePart.text);
         };
         return LocalizedString;
     }(Expression));
@@ -2756,18 +2785,18 @@
             return _this;
         }
         _ApplySourceSpanTransformer.prototype._clone = function (obj) {
-            var e_1, _a;
+            var e_1, _e;
             var clone = Object.create(obj.constructor.prototype);
             try {
-                for (var _b = __values(Object.keys(obj)), _c = _b.next(); !_c.done; _c = _b.next()) {
-                    var prop = _c.value;
+                for (var _f = __values(Object.keys(obj)), _g = _f.next(); !_g.done; _g = _f.next()) {
+                    var prop = _g.value;
                     clone[prop] = obj[prop];
                 }
             }
             catch (e_1_1) { e_1 = { error: e_1_1 }; }
             finally {
                 try {
-                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+                    if (_g && !_g.done && (_e = _f.return)) _e.call(_f);
                 }
                 finally { if (e_1) throw e_1.error; }
             }
@@ -2858,7 +2887,7 @@
         return out;
     }
     function serializeTags(tags) {
-        var e_2, _a;
+        var e_2, _e;
         if (tags.length === 0)
             return '';
         var out = '*\n';
@@ -2874,7 +2903,7 @@
         catch (e_2_1) { e_2 = { error: e_2_1 }; }
         finally {
             try {
-                if (tags_1_1 && !tags_1_1.done && (_a = tags_1.return)) _a.call(tags_1);
+                if (tags_1_1 && !tags_1_1.done && (_e = tags_1.return)) _e.call(tags_1);
             }
             finally { if (e_2) throw e_2.error; }
         }
@@ -4668,7 +4697,9 @@
         return Icu;
     }());
     var TagPlaceholder = /** @class */ (function () {
-        function TagPlaceholder(tag, attrs, startName, closeName, children, isVoid, sourceSpan) {
+        function TagPlaceholder(tag, attrs, startName, closeName, children, isVoid, 
+        // TODO sourceSpan should cover all (we need a startSourceSpan and endSourceSpan)
+        sourceSpan, startSourceSpan, endSourceSpan) {
             this.tag = tag;
             this.attrs = attrs;
             this.startName = startName;
@@ -4676,6 +4707,8 @@
             this.children = children;
             this.isVoid = isVoid;
             this.sourceSpan = sourceSpan;
+            this.startSourceSpan = startSourceSpan;
+            this.endSourceSpan = endSourceSpan;
         }
         TagPlaceholder.prototype.visit = function (visitor, context) {
             return visitor.visitTagPlaceholder(this, context);
@@ -4727,7 +4760,7 @@
         CloneVisitor.prototype.visitTagPlaceholder = function (ph, context) {
             var _this = this;
             var children = ph.children.map(function (n) { return n.visit(_this, context); });
-            return new TagPlaceholder(ph.tag, ph.attrs, ph.startName, ph.closeName, children, ph.isVoid, ph.sourceSpan);
+            return new TagPlaceholder(ph.tag, ph.attrs, ph.startName, ph.closeName, children, ph.isVoid, ph.sourceSpan, ph.startSourceSpan, ph.endSourceSpan);
         };
         CloneVisitor.prototype.visitPlaceholder = function (ph, context) {
             return new Placeholder(ph.value, ph.name, ph.sourceSpan);
@@ -14948,9 +14981,11 @@
     }
 
     var SplitInterpolation = /** @class */ (function () {
-        function SplitInterpolation(strings, expressions, offsets) {
+        function SplitInterpolation(strings, stringSpans, expressions, expressionsSpans, offsets) {
             this.strings = strings;
+            this.stringSpans = stringSpans;
             this.expressions = expressions;
+            this.expressionsSpans = expressionsSpans;
             this.offsets = offsets;
         }
         return SplitInterpolation;
@@ -15100,27 +15135,34 @@
             var strings = [];
             var expressions = [];
             var offsets = [];
+            var stringSpans = [];
+            var expressionSpans = [];
             var offset = 0;
             for (var i = 0; i < parts.length; i++) {
                 var part = parts[i];
                 if (i % 2 === 0) {
                     // fixed string
                     strings.push(part);
+                    var start = offset;
                     offset += part.length;
+                    stringSpans.push({ start: start, end: offset });
                 }
                 else if (part.trim().length > 0) {
+                    var start = offset;
                     offset += interpolationConfig.start.length;
                     expressions.push(part);
                     offsets.push(offset);
                     offset += part.length + interpolationConfig.end.length;
+                    expressionSpans.push({ start: start, end: offset });
                 }
                 else {
                     this._reportError('Blank expressions are not allowed in interpolated strings', input, "at column " + this._findInterpolationErrorColumn(parts, i, interpolationConfig) + " in", location);
                     expressions.push('$implicit');
                     offsets.push(offset);
+                    expressionSpans.push({ start: offset, end: offset });
                 }
             }
-            return new SplitInterpolation(strings, expressions, offsets);
+            return new SplitInterpolation(strings, stringSpans, expressions, expressionSpans, offsets);
         };
         Parser.prototype.wrapLiteralPrimitive = function (input, location, absoluteOffset) {
             var span = new ParseSpan(0, input == null ? 0 : input.length);
@@ -17264,7 +17306,7 @@
                 closePhName = context.placeholderRegistry.getCloseTagPlaceholderName(el.name);
                 context.placeholderToContent[closePhName] = "</" + el.name + ">";
             }
-            var node = new TagPlaceholder(el.name, attrs, startPhName, closePhName, children, isVoid, el.sourceSpan);
+            var node = new TagPlaceholder(el.name, attrs, startPhName, closePhName, children, isVoid, el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
             return context.visitNodeFn(el, node);
         };
         _I18nVisitor.prototype.visitAttribute = function (attribute, context) {
@@ -17324,20 +17366,27 @@
                 var phName = context.placeholderRegistry.getPlaceholderName(baseName, expression);
                 if (splitInterpolation.strings[i].length) {
                     // No need to add empty strings
-                    nodes.push(new Text$1(splitInterpolation.strings[i], sourceSpan));
+                    var stringSpan = getOffsetSourceSpan(sourceSpan, splitInterpolation.stringSpans[i]);
+                    nodes.push(new Text$1(splitInterpolation.strings[i], stringSpan));
                 }
-                nodes.push(new Placeholder(expression, phName, sourceSpan));
+                var expressionSpan = getOffsetSourceSpan(sourceSpan, splitInterpolation.expressionsSpans[i]);
+                nodes.push(new Placeholder(expression, phName, expressionSpan));
                 context.placeholderToContent[phName] = sDelimiter + expression + eDelimiter;
             }
             // The last index contains no expression
             var lastStringIdx = splitInterpolation.strings.length - 1;
             if (splitInterpolation.strings[lastStringIdx].length) {
-                nodes.push(new Text$1(splitInterpolation.strings[lastStringIdx], sourceSpan));
+                var stringSpan = getOffsetSourceSpan(sourceSpan, splitInterpolation.stringSpans[lastStringIdx]);
+                nodes.push(new Text$1(splitInterpolation.strings[lastStringIdx], stringSpan));
             }
             return container;
         };
         return _I18nVisitor;
     }());
+    function getOffsetSourceSpan(sourceSpan, _a) {
+        var start = _a.start, end = _a.end;
+        return new ParseSourceSpan(sourceSpan.start.moveBy(start), sourceSpan.start.moveBy(end));
+    }
     var _CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*("|')([\s\S]*?)\1[\s\S]*\)/g;
     function _extractPlaceholderName(input) {
         return input.split(_CUSTOM_PH_EXP)[2];
@@ -17635,33 +17684,13 @@
     }
 
     function createLocalizeStatements(variable, message, params) {
-        var _a = serializeI18nMessageForLocalize(message), messageParts = _a.messageParts, placeHolders = _a.placeHolders;
+        var _c = serializeI18nMessageForLocalize(message), messageParts = _c.messageParts, placeHolders = _c.placeHolders;
         var sourceSpan = getSourceSpan(message);
-        var expressions = placeHolders.map(function (ph) { return params[ph]; });
+        var expressions = placeHolders.map(function (ph) { return params[ph.text]; });
         var localizedString$1 = localizedString(message, messageParts, placeHolders, expressions, sourceSpan);
         var variableInitialization = variable.set(localizedString$1);
         return [new ExpressionStatement(variableInitialization)];
     }
-    var MessagePiece = /** @class */ (function () {
-        function MessagePiece(text) {
-            this.text = text;
-        }
-        return MessagePiece;
-    }());
-    var LiteralPiece = /** @class */ (function (_super) {
-        __extends(LiteralPiece, _super);
-        function LiteralPiece() {
-            return _super !== null && _super.apply(this, arguments) || this;
-        }
-        return LiteralPiece;
-    }(MessagePiece));
-    var PlaceholderPiece = /** @class */ (function (_super) {
-        __extends(PlaceholderPiece, _super);
-        function PlaceholderPiece(name) {
-            return _super.call(this, formatI18nPlaceholderName(name, /* useCamelCase */ false)) || this;
-        }
-        return PlaceholderPiece;
-    }(MessagePiece));
     /**
      * This visitor walks over an i18n tree, capturing literal strings and placeholders.
      *
@@ -17676,7 +17705,7 @@
                 context[context.length - 1].text += text.value;
             }
             else {
-                context.push(new LiteralPiece(text.value));
+                context.push(new LiteralPiece(text.value, text.sourceSpan));
             }
         };
         LocalizeSerializerVisitor.prototype.visitContainer = function (container, context) {
@@ -17684,21 +17713,25 @@
             container.children.forEach(function (child) { return child.visit(_this, context); });
         };
         LocalizeSerializerVisitor.prototype.visitIcu = function (icu, context) {
-            context.push(new LiteralPiece(serializeIcuNode(icu)));
+            context.push(new LiteralPiece(serializeIcuNode(icu), icu.sourceSpan));
         };
         LocalizeSerializerVisitor.prototype.visitTagPlaceholder = function (ph, context) {
             var _this = this;
-            context.push(new PlaceholderPiece(ph.startName));
+            var _a, _b;
+            context.push(this.createPlaceholderPiece(ph.startName, (_a = ph.startSourceSpan) !== null && _a !== void 0 ? _a : ph.sourceSpan));
             if (!ph.isVoid) {
                 ph.children.forEach(function (child) { return child.visit(_this, context); });
-                context.push(new PlaceholderPiece(ph.closeName));
+                context.push(this.createPlaceholderPiece(ph.closeName, (_b = ph.endSourceSpan) !== null && _b !== void 0 ? _b : ph.sourceSpan));
             }
         };
         LocalizeSerializerVisitor.prototype.visitPlaceholder = function (ph, context) {
-            context.push(new PlaceholderPiece(ph.name));
+            context.push(this.createPlaceholderPiece(ph.name, ph.sourceSpan));
         };
         LocalizeSerializerVisitor.prototype.visitIcuPlaceholder = function (ph, context) {
-            context.push(new PlaceholderPiece(ph.name));
+            context.push(this.createPlaceholderPiece(ph.name, ph.sourceSpan));
+        };
+        LocalizeSerializerVisitor.prototype.createPlaceholderPiece = function (name, sourceSpan) {
+            return new PlaceholderPiece(formatI18nPlaceholderName(name, /* useCamelCase */ false), sourceSpan);
         };
         return LocalizeSerializerVisitor;
     }());
@@ -17735,26 +17768,29 @@
         var placeHolders = [];
         if (pieces[0] instanceof PlaceholderPiece) {
             // The first piece was a placeholder so we need to add an initial empty message part.
-            messageParts.push('');
+            messageParts.push(createEmptyMessagePart(pieces[0].sourceSpan.start));
         }
         for (var i = 0; i < pieces.length; i++) {
             var part = pieces[i];
             if (part instanceof LiteralPiece) {
-                messageParts.push(part.text);
+                messageParts.push(part);
             }
             else {
-                placeHolders.push(part.text);
+                placeHolders.push(part);
                 if (pieces[i - 1] instanceof PlaceholderPiece) {
                     // There were two placeholders in a row, so we need to add an empty message part.
-                    messageParts.push('');
+                    messageParts.push(createEmptyMessagePart(part.sourceSpan.end));
                 }
             }
         }
         if (pieces[pieces.length - 1] instanceof PlaceholderPiece) {
             // The last piece was a placeholder so we need to add a final empty message part.
-            messageParts.push('');
+            messageParts.push(createEmptyMessagePart(pieces[pieces.length - 1].sourceSpan.end));
         }
         return { messageParts: messageParts, placeHolders: placeHolders };
+    }
+    function createEmptyMessagePart(location) {
+        return new LiteralPiece('', new ParseSourceSpan(location, location));
     }
 
     // Selector attribute name of `<ng-content>`
@@ -19366,6 +19402,9 @@
         var parseResult = htmlParser.parse(template, templateUrl, Object.assign(Object.assign({ leadingTriviaChars: LEADING_TRIVIA_CHARS }, options), { tokenizeExpansionForms: true }));
         if (parseResult.errors && parseResult.errors.length > 0) {
             return {
+                interpolationConfig: interpolationConfig,
+                preserveWhitespaces: preserveWhitespaces,
+                template: template,
                 errors: parseResult.errors,
                 nodes: [],
                 styleUrls: [],
@@ -19392,9 +19431,27 @@
         }
         var _c = htmlAstToRender3Ast(rootNodes, bindingParser), nodes = _c.nodes, errors = _c.errors, styleUrls = _c.styleUrls, styles = _c.styles, ngContentSelectors = _c.ngContentSelectors;
         if (errors && errors.length > 0) {
-            return { errors: errors, nodes: [], styleUrls: [], styles: [], ngContentSelectors: [] };
+            return {
+                interpolationConfig: interpolationConfig,
+                preserveWhitespaces: preserveWhitespaces,
+                template: template,
+                errors: errors,
+                nodes: [],
+                styleUrls: [],
+                styles: [],
+                ngContentSelectors: []
+            };
         }
-        return { nodes: nodes, styleUrls: styleUrls, styles: styles, ngContentSelectors: ngContentSelectors };
+        return {
+            interpolationConfig: interpolationConfig,
+            preserveWhitespaces: preserveWhitespaces,
+            errors: null,
+            template: template,
+            nodes: nodes,
+            styleUrls: styleUrls,
+            styles: styles,
+            ngContentSelectors: ngContentSelectors
+        };
     }
     var elementRegistry = new DomElementSchemaRegistry();
     /**
@@ -20295,7 +20352,7 @@
                 DEFAULT_INTERPOLATION_CONFIG;
             // Parse the template and check for errors.
             var template = parseTemplate(facade.template, sourceMapUrl, { preserveWhitespaces: facade.preserveWhitespaces, interpolationConfig: interpolationConfig });
-            if (template.errors !== undefined) {
+            if (template.errors !== null) {
                 var errors = template.errors.map(function (err) { return err.toString(); }).join(', ');
                 throw new Error("Errors during JIT compilation of template for " + facade.name + ": " + errors);
             }
@@ -20477,7 +20534,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.0+26.sha-83ace4e');
+    var VERSION$1 = new Version('11.0.0-next.0+39.sha-bfb7eec');
 
     /**
      * @license
@@ -25623,7 +25680,7 @@
             var startName = mapper.toPublicName(ph.startName);
             var closeName = ph.closeName ? mapper.toPublicName(ph.closeName) : ph.closeName;
             var children = ph.children.map(function (n) { return n.visit(_this, mapper); });
-            return new TagPlaceholder(ph.tag, ph.attrs, startName, closeName, children, ph.isVoid, ph.sourceSpan);
+            return new TagPlaceholder(ph.tag, ph.attrs, startName, closeName, children, ph.isVoid, ph.sourceSpan, ph.startSourceSpan, ph.endSourceSpan);
         };
         MapPlaceholderNames.prototype.visitPlaceholder = function (ph, mapper) {
             return new Placeholder(ph.value, mapper.toPublicName(ph.name), ph.sourceSpan);
@@ -30027,7 +30084,7 @@
                 }
             });
             var setAttributeBinding = function (attribute, ioType) {
-                var dir = directives.find(function (dir) { return dir[ioType].hasOwnProperty(attribute.name); });
+                var dir = directives.find(function (dir) { return dir[ioType].hasBindingPropertyName(attribute.name); });
                 var binding = dir !== undefined ? dir : node;
                 _this.bindings.set(attribute, binding);
             };

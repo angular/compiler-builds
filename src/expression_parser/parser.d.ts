@@ -10,9 +10,23 @@ import { AbsoluteSourceSpan, AST, AstVisitor, ASTWithSource, Binary, BindingPipe
 import { Lexer, Token } from './lexer';
 export declare class SplitInterpolation {
     strings: string[];
+    stringSpans: {
+        start: number;
+        end: number;
+    }[];
     expressions: string[];
+    expressionsSpans: {
+        start: number;
+        end: number;
+    }[];
     offsets: number[];
-    constructor(strings: string[], expressions: string[], offsets: number[]);
+    constructor(strings: string[], stringSpans: {
+        start: number;
+        end: number;
+    }[], expressions: string[], expressionsSpans: {
+        start: number;
+        end: number;
+    }[], offsets: number[]);
 }
 export declare class TemplateBindingParseResult {
     templateBindings: TemplateBinding[];
