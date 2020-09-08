@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.1.0+20.sha-5863537
+ * @license Angular v10.1.0+26.sha-a1c34c6
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4003,7 +4003,6 @@
     Identifiers$1.element = { name: 'ɵɵelement', moduleName: CORE$1 };
     Identifiers$1.elementStart = { name: 'ɵɵelementStart', moduleName: CORE$1 };
     Identifiers$1.elementEnd = { name: 'ɵɵelementEnd', moduleName: CORE$1 };
-    Identifiers$1.select = { name: 'ɵɵselect', moduleName: CORE$1 };
     Identifiers$1.advance = { name: 'ɵɵadvance', moduleName: CORE$1 };
     Identifiers$1.syntheticHostProperty = { name: 'ɵɵsyntheticHostProperty', moduleName: CORE$1 };
     Identifiers$1.syntheticHostListener = { name: 'ɵɵsyntheticHostListener', moduleName: CORE$1 };
@@ -20473,7 +20472,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('10.1.0+20.sha-5863537');
+    var VERSION$1 = new Version('10.1.0+26.sha-a1c34c6');
 
     /**
      * @license
@@ -30023,7 +30022,7 @@
                 }
             });
             var setAttributeBinding = function (attribute, ioType) {
-                var dir = directives.find(function (dir) { return dir[ioType].hasOwnProperty(attribute.name); });
+                var dir = directives.find(function (dir) { return dir[ioType].hasBindingPropertyName(attribute.name); });
                 var binding = dir !== undefined ? dir : node;
                 _this.bindings.set(attribute, binding);
             };

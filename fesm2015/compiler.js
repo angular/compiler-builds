@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.1.0+20.sha-5863537
+ * @license Angular v10.1.0+26.sha-a1c34c6
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3436,7 +3436,6 @@ Identifiers$1.namespaceSVG = { name: 'ɵɵnamespaceSVG', moduleName: CORE$1 };
 Identifiers$1.element = { name: 'ɵɵelement', moduleName: CORE$1 };
 Identifiers$1.elementStart = { name: 'ɵɵelementStart', moduleName: CORE$1 };
 Identifiers$1.elementEnd = { name: 'ɵɵelementEnd', moduleName: CORE$1 };
-Identifiers$1.select = { name: 'ɵɵselect', moduleName: CORE$1 };
 Identifiers$1.advance = { name: 'ɵɵadvance', moduleName: CORE$1 };
 Identifiers$1.syntheticHostProperty = { name: 'ɵɵsyntheticHostProperty', moduleName: CORE$1 };
 Identifiers$1.syntheticHostListener = { name: 'ɵɵsyntheticHostListener', moduleName: CORE$1 };
@@ -19300,7 +19299,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('10.1.0+20.sha-5863537');
+const VERSION$1 = new Version('10.1.0+26.sha-a1c34c6');
 
 /**
  * @license
@@ -28506,7 +28505,7 @@ class DirectiveBinder {
             }
         });
         const setAttributeBinding = (attribute, ioType) => {
-            const dir = directives.find(dir => dir[ioType].hasOwnProperty(attribute.name));
+            const dir = directives.find(dir => dir[ioType].hasBindingPropertyName(attribute.name));
             const binding = dir !== undefined ? dir : node;
             this.bindings.set(attribute, binding);
         };
