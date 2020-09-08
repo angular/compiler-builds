@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.0+25.sha-926ffcd
+ * @license Angular v11.0.0-next.0+28.sha-2c4a98a
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4003,7 +4003,6 @@
     Identifiers$1.element = { name: 'ɵɵelement', moduleName: CORE$1 };
     Identifiers$1.elementStart = { name: 'ɵɵelementStart', moduleName: CORE$1 };
     Identifiers$1.elementEnd = { name: 'ɵɵelementEnd', moduleName: CORE$1 };
-    Identifiers$1.select = { name: 'ɵɵselect', moduleName: CORE$1 };
     Identifiers$1.advance = { name: 'ɵɵadvance', moduleName: CORE$1 };
     Identifiers$1.syntheticHostProperty = { name: 'ɵɵsyntheticHostProperty', moduleName: CORE$1 };
     Identifiers$1.syntheticHostListener = { name: 'ɵɵsyntheticHostListener', moduleName: CORE$1 };
@@ -20478,7 +20477,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.0+25.sha-926ffcd');
+    var VERSION$1 = new Version('11.0.0-next.0+28.sha-2c4a98a');
 
     /**
      * @license
