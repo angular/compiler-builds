@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.1+19.sha-19598b4
+ * @license Angular v11.0.0-next.1+21.sha-03447ba
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -12853,8 +12853,10 @@
                         this._parsePropertyAst(key, binding.value, sourceSpan, valueSpan, targetMatchableAttrs, targetProps);
                     }
                     else {
-                        targetMatchableAttrs.push([key, '']);
-                        this.parseLiteralAttr(key, null, sourceSpan, absoluteValueOffset, undefined, targetMatchableAttrs, targetProps);
+                        targetMatchableAttrs.push([key, '' /* value */]);
+                        // Since this is a literal attribute with no RHS, source span should be
+                        // just the key span.
+                        this.parseLiteralAttr(key, null /* value */, keySpan, absoluteValueOffset, undefined /* valueSpan */, targetMatchableAttrs, targetProps);
                     }
                 }
             }
@@ -20534,7 +20536,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.1+19.sha-19598b4');
+    var VERSION$1 = new Version('11.0.0-next.1+21.sha-03447ba');
 
     /**
      * @license
