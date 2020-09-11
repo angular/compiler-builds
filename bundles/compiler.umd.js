@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.1+26.sha-66129f8
+ * @license Angular v11.0.0-next.1+27.sha-15207e3
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -20536,7 +20536,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.1+26.sha-66129f8');
+    var VERSION$1 = new Version('11.0.0-next.1+27.sha-15207e3');
 
     /**
      * @license
@@ -30221,7 +30221,11 @@
         TemplateBinder.prototype.visitText = function (text) { };
         TemplateBinder.prototype.visitContent = function (content) { };
         TemplateBinder.prototype.visitTextAttribute = function (attribute) { };
-        TemplateBinder.prototype.visitIcu = function (icu) { };
+        TemplateBinder.prototype.visitIcu = function (icu) {
+            var _this = this;
+            Object.keys(icu.vars).forEach(function (key) { return icu.vars[key].visit(_this); });
+            Object.keys(icu.placeholders).forEach(function (key) { return icu.placeholders[key].visit(_this); });
+        };
         // The remaining visitors are concerned with processing AST expressions within template bindings
         TemplateBinder.prototype.visitBoundAttribute = function (attribute) {
             attribute.value.visit(this);
