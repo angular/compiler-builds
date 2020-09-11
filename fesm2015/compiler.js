@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.1.1+15.sha-8096c63
+ * @license Angular v10.1.1+18.sha-b05d79d
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -19331,7 +19331,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('10.1.1+15.sha-8096c63');
+const VERSION$1 = new Version('10.1.1+18.sha-b05d79d');
 
 /**
  * @license
@@ -28669,7 +28669,10 @@ class TemplateBinder extends RecursiveAstVisitor$1 {
     visitText(text) { }
     visitContent(content) { }
     visitTextAttribute(attribute) { }
-    visitIcu(icu) { }
+    visitIcu(icu) {
+        Object.keys(icu.vars).forEach(key => icu.vars[key].visit(this));
+        Object.keys(icu.placeholders).forEach(key => icu.placeholders[key].visit(this));
+    }
     // The remaining visitors are concerned with processing AST expressions within template bindings
     visitBoundAttribute(attribute) {
         attribute.value.visit(this);
