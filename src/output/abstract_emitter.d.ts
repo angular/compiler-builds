@@ -42,7 +42,6 @@ export declare class EmitterVisitorContext {
 export declare abstract class AbstractEmitterVisitor implements o.StatementVisitor, o.ExpressionVisitor {
     private _escapeDollarInStrings;
     constructor(_escapeDollarInStrings: boolean);
-    protected printLeadingComments(stmt: o.Statement, ctx: EmitterVisitorContext): void;
     visitExpressionStmt(stmt: o.ExpressionStatement, ctx: EmitterVisitorContext): any;
     visitReturnStmt(stmt: o.ReturnStatement, ctx: EmitterVisitorContext): any;
     abstract visitCastExpr(ast: o.CastExpr, context: any): any;
@@ -50,6 +49,8 @@ export declare abstract class AbstractEmitterVisitor implements o.StatementVisit
     visitIfStmt(stmt: o.IfStmt, ctx: EmitterVisitorContext): any;
     abstract visitTryCatchStmt(stmt: o.TryCatchStmt, ctx: EmitterVisitorContext): any;
     visitThrowStmt(stmt: o.ThrowStmt, ctx: EmitterVisitorContext): any;
+    visitCommentStmt(stmt: o.CommentStmt, ctx: EmitterVisitorContext): any;
+    visitJSDocCommentStmt(stmt: o.JSDocCommentStmt, ctx: EmitterVisitorContext): null;
     abstract visitDeclareVarStmt(stmt: o.DeclareVarStmt, ctx: EmitterVisitorContext): any;
     visitWriteVarExpr(expr: o.WriteVarExpr, ctx: EmitterVisitorContext): any;
     visitWriteKeyExpr(expr: o.WriteKeyExpr, ctx: EmitterVisitorContext): any;
