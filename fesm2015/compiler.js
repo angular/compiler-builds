@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.2+21.sha-d3169c5
+ * @license Angular v11.0.0-next.2+18.sha-7fb388f
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -931,8 +931,11 @@ var TypeModifier;
     TypeModifier[TypeModifier["Const"] = 0] = "Const";
 })(TypeModifier || (TypeModifier = {}));
 class Type$1 {
-    constructor(modifiers = []) {
+    constructor(modifiers = null) {
         this.modifiers = modifiers;
+        if (!modifiers) {
+            this.modifiers = [];
+        }
     }
     hasModifier(modifier) {
         return this.modifiers.indexOf(modifier) !== -1;
@@ -950,7 +953,7 @@ var BuiltinTypeName;
     BuiltinTypeName[BuiltinTypeName["None"] = 7] = "None";
 })(BuiltinTypeName || (BuiltinTypeName = {}));
 class BuiltinType extends Type$1 {
-    constructor(name, modifiers) {
+    constructor(name, modifiers = null) {
         super(modifiers);
         this.name = name;
     }
@@ -959,7 +962,7 @@ class BuiltinType extends Type$1 {
     }
 }
 class ExpressionType extends Type$1 {
-    constructor(value, modifiers, typeParams = null) {
+    constructor(value, modifiers = null, typeParams = null) {
         super(modifiers);
         this.value = value;
         this.typeParams = typeParams;
@@ -969,7 +972,7 @@ class ExpressionType extends Type$1 {
     }
 }
 class ArrayType extends Type$1 {
-    constructor(of, modifiers) {
+    constructor(of, modifiers = null) {
         super(modifiers);
         this.of = of;
     }
@@ -978,7 +981,7 @@ class ArrayType extends Type$1 {
     }
 }
 class MapType extends Type$1 {
-    constructor(valueType, modifiers) {
+    constructor(valueType, modifiers = null) {
         super(modifiers);
         this.valueType = valueType || null;
     }
@@ -1544,7 +1547,7 @@ class FunctionExpr extends Expression {
     visitExpression(visitor, context) {
         return visitor.visitFunctionExpr(this, context);
     }
-    toDeclStmt(name, modifiers) {
+    toDeclStmt(name, modifiers = null) {
         return new DeclareFunctionStmt(name, this.params, this.statements, this.type, modifiers, this.sourceSpan);
     }
 }
@@ -1698,43 +1701,18 @@ var StmtModifier;
     StmtModifier[StmtModifier["Exported"] = 2] = "Exported";
     StmtModifier[StmtModifier["Static"] = 3] = "Static";
 })(StmtModifier || (StmtModifier = {}));
-class LeadingComment {
-    constructor(text, multiline, trailingNewline) {
-        this.text = text;
-        this.multiline = multiline;
-        this.trailingNewline = trailingNewline;
-    }
-    toString() {
-        return this.multiline ? ` ${this.text} ` : this.text;
-    }
-}
-class JSDocComment extends LeadingComment {
-    constructor(tags) {
-        super('', /* multiline */ true, /* trailingNewline */ true);
-        this.tags = tags;
-    }
-    toString() {
-        return serializeTags(this.tags);
-    }
-}
 class Statement {
-    constructor(modifiers = [], sourceSpan = null, leadingComments) {
-        this.modifiers = modifiers;
-        this.sourceSpan = sourceSpan;
-        this.leadingComments = leadingComments;
+    constructor(modifiers, sourceSpan) {
+        this.modifiers = modifiers || [];
+        this.sourceSpan = sourceSpan || null;
     }
     hasModifier(modifier) {
         return this.modifiers.indexOf(modifier) !== -1;
     }
-    addLeadingComment(leadingComment) {
-        var _a;
-        this.leadingComments = (_a = this.leadingComments) !== null && _a !== void 0 ? _a : [];
-        this.leadingComments.push(leadingComment);
-    }
 }
 class DeclareVarStmt extends Statement {
-    constructor(name, value, type, modifiers, sourceSpan, leadingComments) {
-        super(modifiers, sourceSpan, leadingComments);
+    constructor(name, value, type, modifiers = null, sourceSpan) {
+        super(modifiers, sourceSpan);
         this.name = name;
         this.value = value;
         this.type = type || (value && value.type) || null;
@@ -1748,8 +1726,8 @@ class DeclareVarStmt extends Statement {
     }
 }
 class DeclareFunctionStmt extends Statement {
-    constructor(name, params, statements, type, modifiers, sourceSpan, leadingComments) {
-        super(modifiers, sourceSpan, leadingComments);
+    constructor(name, params, statements, type, modifiers = null, sourceSpan) {
+        super(modifiers, sourceSpan);
         this.name = name;
         this.params = params;
         this.statements = statements;
@@ -1764,8 +1742,8 @@ class DeclareFunctionStmt extends Statement {
     }
 }
 class ExpressionStatement extends Statement {
-    constructor(expr, sourceSpan, leadingComments) {
-        super([], sourceSpan, leadingComments);
+    constructor(expr, sourceSpan) {
+        super(null, sourceSpan);
         this.expr = expr;
     }
     isEquivalent(stmt) {
@@ -1776,8 +1754,8 @@ class ExpressionStatement extends Statement {
     }
 }
 class ReturnStatement extends Statement {
-    constructor(value, sourceSpan = null, leadingComments) {
-        super([], sourceSpan, leadingComments);
+    constructor(value, sourceSpan) {
+        super(null, sourceSpan);
         this.value = value;
     }
     isEquivalent(stmt) {
@@ -1788,16 +1766,19 @@ class ReturnStatement extends Statement {
     }
 }
 class AbstractClassPart {
-    constructor(type = null, modifiers = []) {
-        this.type = type;
+    constructor(type, modifiers) {
         this.modifiers = modifiers;
+        if (!modifiers) {
+            this.modifiers = [];
+        }
+        this.type = type || null;
     }
     hasModifier(modifier) {
         return this.modifiers.indexOf(modifier) !== -1;
     }
 }
 class ClassField extends AbstractClassPart {
-    constructor(name, type, modifiers, initializer) {
+    constructor(name, type, modifiers = null, initializer) {
         super(type, modifiers);
         this.name = name;
         this.initializer = initializer;
@@ -1807,7 +1788,7 @@ class ClassField extends AbstractClassPart {
     }
 }
 class ClassMethod extends AbstractClassPart {
-    constructor(name, params, body, type, modifiers) {
+    constructor(name, params, body, type, modifiers = null) {
         super(type, modifiers);
         this.name = name;
         this.params = params;
@@ -1818,7 +1799,7 @@ class ClassMethod extends AbstractClassPart {
     }
 }
 class ClassGetter extends AbstractClassPart {
-    constructor(name, body, type, modifiers) {
+    constructor(name, body, type, modifiers = null) {
         super(type, modifiers);
         this.name = name;
         this.body = body;
@@ -1828,8 +1809,8 @@ class ClassGetter extends AbstractClassPart {
     }
 }
 class ClassStmt extends Statement {
-    constructor(name, parent, fields, getters, constructorMethod, methods, modifiers, sourceSpan, leadingComments) {
-        super(modifiers, sourceSpan, leadingComments);
+    constructor(name, parent, fields, getters, constructorMethod, methods, modifiers = null, sourceSpan) {
+        super(modifiers, sourceSpan);
         this.name = name;
         this.parent = parent;
         this.fields = fields;
@@ -1850,8 +1831,8 @@ class ClassStmt extends Statement {
     }
 }
 class IfStmt extends Statement {
-    constructor(condition, trueCase, falseCase = [], sourceSpan, leadingComments) {
-        super([], sourceSpan, leadingComments);
+    constructor(condition, trueCase, falseCase = [], sourceSpan) {
+        super(null, sourceSpan);
         this.condition = condition;
         this.trueCase = trueCase;
         this.falseCase = falseCase;
@@ -1865,9 +1846,37 @@ class IfStmt extends Statement {
         return visitor.visitIfStmt(this, context);
     }
 }
+class CommentStmt extends Statement {
+    constructor(comment, multiline = false, sourceSpan) {
+        super(null, sourceSpan);
+        this.comment = comment;
+        this.multiline = multiline;
+    }
+    isEquivalent(stmt) {
+        return stmt instanceof CommentStmt;
+    }
+    visitStatement(visitor, context) {
+        return visitor.visitCommentStmt(this, context);
+    }
+}
+class JSDocCommentStmt extends Statement {
+    constructor(tags = [], sourceSpan) {
+        super(null, sourceSpan);
+        this.tags = tags;
+    }
+    isEquivalent(stmt) {
+        return stmt instanceof JSDocCommentStmt && this.toString() === stmt.toString();
+    }
+    visitStatement(visitor, context) {
+        return visitor.visitJSDocCommentStmt(this, context);
+    }
+    toString() {
+        return serializeTags(this.tags);
+    }
+}
 class TryCatchStmt extends Statement {
-    constructor(bodyStmts, catchStmts, sourceSpan = null, leadingComments) {
-        super([], sourceSpan, leadingComments);
+    constructor(bodyStmts, catchStmts, sourceSpan) {
+        super(null, sourceSpan);
         this.bodyStmts = bodyStmts;
         this.catchStmts = catchStmts;
     }
@@ -1880,8 +1889,8 @@ class TryCatchStmt extends Statement {
     }
 }
 class ThrowStmt extends Statement {
-    constructor(error, sourceSpan = null, leadingComments) {
-        super([], sourceSpan, leadingComments);
+    constructor(error, sourceSpan) {
+        super(null, sourceSpan);
         this.error = error;
     }
     isEquivalent(stmt) {
@@ -1967,7 +1976,7 @@ class AstTransformer {
     }
     visitLiteralMapExpr(ast, context) {
         const entries = ast.entries.map((entry) => new LiteralMapEntry(entry.key, entry.value.visitExpression(this, context), entry.quoted));
-        const mapType = new MapType(ast.valueType);
+        const mapType = new MapType(ast.valueType, null);
         return this.transformExpr(new LiteralMapExpr(entries, mapType, ast.sourceSpan), context);
     }
     visitCommaExpr(ast, context) {
@@ -1978,16 +1987,16 @@ class AstTransformer {
     }
     visitDeclareVarStmt(stmt, context) {
         const value = stmt.value && stmt.value.visitExpression(this, context);
-        return this.transformStmt(new DeclareVarStmt(stmt.name, value, stmt.type, stmt.modifiers, stmt.sourceSpan, stmt.leadingComments), context);
+        return this.transformStmt(new DeclareVarStmt(stmt.name, value, stmt.type, stmt.modifiers, stmt.sourceSpan), context);
     }
     visitDeclareFunctionStmt(stmt, context) {
-        return this.transformStmt(new DeclareFunctionStmt(stmt.name, stmt.params, this.visitAllStatements(stmt.statements, context), stmt.type, stmt.modifiers, stmt.sourceSpan, stmt.leadingComments), context);
+        return this.transformStmt(new DeclareFunctionStmt(stmt.name, stmt.params, this.visitAllStatements(stmt.statements, context), stmt.type, stmt.modifiers, stmt.sourceSpan), context);
     }
     visitExpressionStmt(stmt, context) {
-        return this.transformStmt(new ExpressionStatement(stmt.expr.visitExpression(this, context), stmt.sourceSpan, stmt.leadingComments), context);
+        return this.transformStmt(new ExpressionStatement(stmt.expr.visitExpression(this, context), stmt.sourceSpan), context);
     }
     visitReturnStmt(stmt, context) {
-        return this.transformStmt(new ReturnStatement(stmt.value.visitExpression(this, context), stmt.sourceSpan, stmt.leadingComments), context);
+        return this.transformStmt(new ReturnStatement(stmt.value.visitExpression(this, context), stmt.sourceSpan), context);
     }
     visitDeclareClassStmt(stmt, context) {
         const parent = stmt.parent.visitExpression(this, context);
@@ -1998,13 +2007,19 @@ class AstTransformer {
         return this.transformStmt(new ClassStmt(stmt.name, parent, stmt.fields, getters, ctorMethod, methods, stmt.modifiers, stmt.sourceSpan), context);
     }
     visitIfStmt(stmt, context) {
-        return this.transformStmt(new IfStmt(stmt.condition.visitExpression(this, context), this.visitAllStatements(stmt.trueCase, context), this.visitAllStatements(stmt.falseCase, context), stmt.sourceSpan, stmt.leadingComments), context);
+        return this.transformStmt(new IfStmt(stmt.condition.visitExpression(this, context), this.visitAllStatements(stmt.trueCase, context), this.visitAllStatements(stmt.falseCase, context), stmt.sourceSpan), context);
     }
     visitTryCatchStmt(stmt, context) {
-        return this.transformStmt(new TryCatchStmt(this.visitAllStatements(stmt.bodyStmts, context), this.visitAllStatements(stmt.catchStmts, context), stmt.sourceSpan, stmt.leadingComments), context);
+        return this.transformStmt(new TryCatchStmt(this.visitAllStatements(stmt.bodyStmts, context), this.visitAllStatements(stmt.catchStmts, context), stmt.sourceSpan), context);
     }
     visitThrowStmt(stmt, context) {
-        return this.transformStmt(new ThrowStmt(stmt.error.visitExpression(this, context), stmt.sourceSpan, stmt.leadingComments), context);
+        return this.transformStmt(new ThrowStmt(stmt.error.visitExpression(this, context), stmt.sourceSpan), context);
+    }
+    visitCommentStmt(stmt, context) {
+        return this.transformStmt(stmt, context);
+    }
+    visitJSDocCommentStmt(stmt, context) {
+        return this.transformStmt(stmt, context);
     }
     visitAllStatements(stmts, context) {
         return stmts.map(stmt => stmt.visitStatement(this, context));
@@ -2190,6 +2205,12 @@ class RecursiveAstVisitor {
         stmt.error.visitExpression(this, context);
         return stmt;
     }
+    visitCommentStmt(stmt, context) {
+        return stmt;
+    }
+    visitJSDocCommentStmt(stmt, context) {
+        return stmt;
+    }
     visitAllStatements(stmts, context) {
         stmts.forEach(stmt => stmt.visitStatement(this, context));
     }
@@ -2275,22 +2296,16 @@ class _ApplySourceSpanTransformer extends AstTransformer {
         return stmt;
     }
 }
-function leadingComment(text, multiline = false, trailingNewline = true) {
-    return new LeadingComment(text, multiline, trailingNewline);
-}
-function jsDocComment(tags = []) {
-    return new JSDocComment(tags);
-}
 function variable(name, type, sourceSpan) {
     return new ReadVarExpr(name, type, sourceSpan);
 }
 function importExpr(id, typeParams = null, sourceSpan) {
     return new ExternalExpr(id, null, typeParams, sourceSpan);
 }
-function importType(id, typeParams, typeModifiers) {
+function importType(id, typeParams = null, typeModifiers = null) {
     return id != null ? expressionType(importExpr(id, typeParams, null), typeModifiers) : null;
 }
-function expressionType(expr, typeModifiers, typeParams) {
+function expressionType(expr, typeModifiers = null, typeParams = null) {
     return new ExpressionType(expr, typeModifiers, typeParams);
 }
 function typeofExpr(expr) {
@@ -2314,8 +2329,8 @@ function assertNotNull(expr, sourceSpan) {
 function fn(params, body, type, sourceSpan, name) {
     return new FunctionExpr(params, body, type, sourceSpan, name);
 }
-function ifStmt(condition, thenClause, elseClause, sourceSpan, leadingComments) {
-    return new IfStmt(condition, thenClause, elseClause, sourceSpan, leadingComments);
+function ifStmt(condition, thenClause, elseClause) {
+    return new IfStmt(condition, thenClause, elseClause);
 }
 function literal(value, type, sourceSpan) {
     return new LiteralExpr(value, type, sourceSpan);
@@ -2346,14 +2361,10 @@ function tagToString(tag) {
 function serializeTags(tags) {
     if (tags.length === 0)
         return '';
-    if (tags.length === 1 && tags[0].tagName && !tags[0].text) {
-        // The JSDOC comment is a single simple tag: e.g `/** @tagname */`.
-        return `*${tagToString(tags[0])} `;
-    }
     let out = '*\n';
     for (const tag of tags) {
         out += ' *';
-        // If the tagToString is multi-line, insert " * " prefixes on lines.
+        // If the tagToString is multi-line, insert " * " prefixes on subsequent lines.
         out += tagToString(tag).replace(/\n/g, '\n * ');
         out += '\n';
     }
@@ -3658,14 +3669,14 @@ function convertMetaToOutput(meta, ctx) {
     throw new Error(`Internal error: Unsupported or unknown metadata: ${meta}`);
 }
 function typeWithParameters(type, numParams) {
-    if (numParams === 0) {
-        return expressionType(type);
+    let params = null;
+    if (numParams > 0) {
+        params = [];
+        for (let i = 0; i < numParams; i++) {
+            params.push(DYNAMIC_TYPE);
+        }
     }
-    const params = [];
-    for (let i = 0; i < numParams; i++) {
-        params.push(DYNAMIC_TYPE);
-    }
-    return expressionType(type, undefined, params);
+    return expressionType(type, null, params);
 }
 const ANIMATE_SYMBOL_PREFIX = '@';
 function prepareSyntheticPropertyName(name) {
@@ -4933,7 +4944,7 @@ function getTranslationConstPrefix(extra) {
  * @param variable the name of the variable to declare.
  */
 function declareI18nVariable(variable) {
-    return new DeclareVarStmt(variable.name, undefined, INFERRED_TYPE, undefined, variable.sourceSpan);
+    return new DeclareVarStmt(variable.name, undefined, INFERRED_TYPE, null, variable.sourceSpan);
 }
 
 /**
@@ -5859,41 +5870,18 @@ class AbstractEmitterVisitor {
     constructor(_escapeDollarInStrings) {
         this._escapeDollarInStrings = _escapeDollarInStrings;
     }
-    printLeadingComments(stmt, ctx) {
-        if (stmt.leadingComments === undefined) {
-            return;
-        }
-        for (const comment of stmt.leadingComments) {
-            if (comment instanceof JSDocComment) {
-                ctx.print(stmt, `/*${comment.toString()}*/`, comment.trailingNewline);
-            }
-            else {
-                if (comment.multiline) {
-                    ctx.print(stmt, `/* ${comment.text} */`, comment.trailingNewline);
-                }
-                else {
-                    comment.text.split('\n').forEach((line) => {
-                        ctx.println(stmt, `// ${line}`);
-                    });
-                }
-            }
-        }
-    }
     visitExpressionStmt(stmt, ctx) {
-        this.printLeadingComments(stmt, ctx);
         stmt.expr.visitExpression(this, ctx);
         ctx.println(stmt, ';');
         return null;
     }
     visitReturnStmt(stmt, ctx) {
-        this.printLeadingComments(stmt, ctx);
         ctx.print(stmt, `return `);
         stmt.value.visitExpression(this, ctx);
         ctx.println(stmt, ';');
         return null;
     }
     visitIfStmt(stmt, ctx) {
-        this.printLeadingComments(stmt, ctx);
         ctx.print(stmt, `if (`);
         stmt.condition.visitExpression(this, ctx);
         ctx.print(stmt, `) {`);
@@ -5920,10 +5908,24 @@ class AbstractEmitterVisitor {
         return null;
     }
     visitThrowStmt(stmt, ctx) {
-        this.printLeadingComments(stmt, ctx);
         ctx.print(stmt, `throw `);
         stmt.error.visitExpression(this, ctx);
         ctx.println(stmt, `;`);
+        return null;
+    }
+    visitCommentStmt(stmt, ctx) {
+        if (stmt.multiline) {
+            ctx.println(stmt, `/* ${stmt.comment} */`);
+        }
+        else {
+            stmt.comment.split('\n').forEach((line) => {
+                ctx.println(stmt, `// ${line}`);
+            });
+        }
+        return null;
+    }
+    visitJSDocCommentStmt(stmt, ctx) {
+        ctx.println(stmt, `/*${stmt.toString()}*/`);
         return null;
     }
     visitWriteVarExpr(expr, ctx) {
@@ -16518,7 +16520,7 @@ function parseI18nMeta(meta = '') {
 }
 // Converts i18n meta information for a message (id, description, meaning)
 // to a JsDoc statement formatted as expected by the Closure compiler.
-function i18nMetaToJSDoc(meta) {
+function i18nMetaToDocStmt(meta) {
     const tags = [];
     if (meta.description) {
         tags.push({ tagName: "desc" /* Desc */, text: meta.description });
@@ -16526,7 +16528,7 @@ function i18nMetaToJSDoc(meta) {
     if (meta.meaning) {
         tags.push({ tagName: "meaning" /* Meaning */, text: meta.meaning });
     }
-    return tags.length == 0 ? null : jsDocComment(tags);
+    return tags.length == 0 ? null : new JSDocCommentStmt(tags);
 }
 
 /** Closure uses `goog.getMsg(message)` to lookup translations */
@@ -16543,13 +16545,14 @@ function createGoogleGetMsgStatements(variable$1, message, closureVar, params) {
     //  */
     // const MSG_... = goog.getMsg(..);
     // I18N_X = MSG_...;
-    const googGetMsgStmt = closureVar.set(variable(GOOG_GET_MSG).callFn(args)).toConstDecl();
-    const metaComment = i18nMetaToJSDoc(message);
-    if (metaComment !== null) {
-        googGetMsgStmt.addLeadingComment(metaComment);
+    const statements = [];
+    const jsdocComment = i18nMetaToDocStmt(message);
+    if (jsdocComment !== null) {
+        statements.push(jsdocComment);
     }
-    const i18nAssignmentStmt = new ExpressionStatement(variable$1.set(closureVar));
-    return [googGetMsgStmt, i18nAssignmentStmt];
+    statements.push(closureVar.set(variable(GOOG_GET_MSG).callFn(args)).toConstDecl());
+    statements.push(new ExpressionStatement(variable$1.set(closureVar)));
+    return statements;
 }
 /**
  * This visitor walks over i18n tree and generates its string representation, including ICUs and
@@ -17404,7 +17407,7 @@ class TemplateDefinitionBuilder {
         // template definition. e.g. <div *ngIf="showing">{{ foo }}</div>  <div #foo></div>
         this._nestedTemplateFns.push(() => {
             const templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables, this._ngContentReservedSlots.length + this._ngContentSelectorsOffset, template.i18n);
-            this.constantPool.statements.push(templateFunctionExpr.toDeclStmt(templateName));
+            this.constantPool.statements.push(templateFunctionExpr.toDeclStmt(templateName, null));
             if (templateVisitor._ngContentReservedSlots.length) {
                 this._ngContentReservedSlots.push(...templateVisitor._ngContentReservedSlots);
             }
@@ -19350,7 +19353,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.0.0-next.2+21.sha-d3169c5');
+const VERSION$1 = new Version('11.0.0-next.2+18.sha-7fb388f');
 
 /**
  * @license
@@ -27503,6 +27506,12 @@ class StatementInterpreter {
     visitThrowStmt(stmt, ctx) {
         throw stmt.error.visitExpression(this, ctx);
     }
+    visitCommentStmt(stmt, context) {
+        return null;
+    }
+    visitJSDocCommentStmt(stmt, context) {
+        return null;
+    }
     visitInstantiateExpr(ast, ctx) {
         const args = this.visitAllExpressions(ast.args, ctx);
         const clazz = ast.classExpr.visitExpression(this, ctx);
@@ -28817,5 +28826,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TemplateBindingParseResult, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CommentStmt, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocCommentStmt, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TemplateBindingParseResult, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
 //# sourceMappingURL=compiler.js.map
