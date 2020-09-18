@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.2+21.sha-d3169c5
+ * @license Angular v11.0.0-next.2+18.sha-7fb388f
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1259,8 +1259,11 @@
     })(TypeModifier || (TypeModifier = {}));
     var Type$1 = /** @class */ (function () {
         function Type(modifiers) {
-            if (modifiers === void 0) { modifiers = []; }
+            if (modifiers === void 0) { modifiers = null; }
             this.modifiers = modifiers;
+            if (!modifiers) {
+                this.modifiers = [];
+            }
         }
         Type.prototype.hasModifier = function (modifier) {
             return this.modifiers.indexOf(modifier) !== -1;
@@ -1280,6 +1283,7 @@
     var BuiltinType = /** @class */ (function (_super) {
         __extends(BuiltinType, _super);
         function BuiltinType(name, modifiers) {
+            if (modifiers === void 0) { modifiers = null; }
             var _this = _super.call(this, modifiers) || this;
             _this.name = name;
             return _this;
@@ -1292,6 +1296,7 @@
     var ExpressionType = /** @class */ (function (_super) {
         __extends(ExpressionType, _super);
         function ExpressionType(value, modifiers, typeParams) {
+            if (modifiers === void 0) { modifiers = null; }
             if (typeParams === void 0) { typeParams = null; }
             var _this = _super.call(this, modifiers) || this;
             _this.value = value;
@@ -1306,6 +1311,7 @@
     var ArrayType = /** @class */ (function (_super) {
         __extends(ArrayType, _super);
         function ArrayType(of, modifiers) {
+            if (modifiers === void 0) { modifiers = null; }
             var _this = _super.call(this, modifiers) || this;
             _this.of = of;
             return _this;
@@ -1318,6 +1324,7 @@
     var MapType = /** @class */ (function (_super) {
         __extends(MapType, _super);
         function MapType(valueType, modifiers) {
+            if (modifiers === void 0) { modifiers = null; }
             var _this = _super.call(this, modifiers) || this;
             _this.valueType = valueType || null;
             return _this;
@@ -1335,10 +1342,12 @@
     var STRING_TYPE = new BuiltinType(exports.BuiltinTypeName.String);
     var FUNCTION_TYPE = new BuiltinType(exports.BuiltinTypeName.Function);
     var NONE_TYPE = new BuiltinType(exports.BuiltinTypeName.None);
+    ///// Expressions
+    var UnaryOperator;
     (function (UnaryOperator) {
         UnaryOperator[UnaryOperator["Minus"] = 0] = "Minus";
         UnaryOperator[UnaryOperator["Plus"] = 1] = "Plus";
-    })(exports.UnaryOperator || (exports.UnaryOperator = {}));
+    })(UnaryOperator || (UnaryOperator = {}));
     (function (BinaryOperator) {
         BinaryOperator[BinaryOperator["Equals"] = 0] = "Equals";
         BinaryOperator[BinaryOperator["NotEquals"] = 1] = "NotEquals";
@@ -1951,6 +1960,7 @@
             return visitor.visitFunctionExpr(this, context);
         };
         FunctionExpr.prototype.toDeclStmt = function (name, modifiers) {
+            if (modifiers === void 0) { modifiers = null; }
             return new DeclareFunctionStmt(name, this.params, this.statements, this.type, modifiers, this.sourceSpan);
         };
         return FunctionExpr;
@@ -2127,51 +2137,21 @@
         StmtModifier[StmtModifier["Exported"] = 2] = "Exported";
         StmtModifier[StmtModifier["Static"] = 3] = "Static";
     })(exports.StmtModifier || (exports.StmtModifier = {}));
-    var LeadingComment = /** @class */ (function () {
-        function LeadingComment(text, multiline, trailingNewline) {
-            this.text = text;
-            this.multiline = multiline;
-            this.trailingNewline = trailingNewline;
-        }
-        LeadingComment.prototype.toString = function () {
-            return this.multiline ? " " + this.text + " " : this.text;
-        };
-        return LeadingComment;
-    }());
-    var JSDocComment = /** @class */ (function (_super) {
-        __extends(JSDocComment, _super);
-        function JSDocComment(tags) {
-            var _this = _super.call(this, '', /* multiline */ true, /* trailingNewline */ true) || this;
-            _this.tags = tags;
-            return _this;
-        }
-        JSDocComment.prototype.toString = function () {
-            return serializeTags(this.tags);
-        };
-        return JSDocComment;
-    }(LeadingComment));
     var Statement = /** @class */ (function () {
-        function Statement(modifiers, sourceSpan, leadingComments) {
-            if (modifiers === void 0) { modifiers = []; }
-            if (sourceSpan === void 0) { sourceSpan = null; }
-            this.modifiers = modifiers;
-            this.sourceSpan = sourceSpan;
-            this.leadingComments = leadingComments;
+        function Statement(modifiers, sourceSpan) {
+            this.modifiers = modifiers || [];
+            this.sourceSpan = sourceSpan || null;
         }
         Statement.prototype.hasModifier = function (modifier) {
             return this.modifiers.indexOf(modifier) !== -1;
-        };
-        Statement.prototype.addLeadingComment = function (leadingComment) {
-            var _a;
-            this.leadingComments = (_a = this.leadingComments) !== null && _a !== void 0 ? _a : [];
-            this.leadingComments.push(leadingComment);
         };
         return Statement;
     }());
     var DeclareVarStmt = /** @class */ (function (_super) {
         __extends(DeclareVarStmt, _super);
-        function DeclareVarStmt(name, value, type, modifiers, sourceSpan, leadingComments) {
-            var _this = _super.call(this, modifiers, sourceSpan, leadingComments) || this;
+        function DeclareVarStmt(name, value, type, modifiers, sourceSpan) {
+            if (modifiers === void 0) { modifiers = null; }
+            var _this = _super.call(this, modifiers, sourceSpan) || this;
             _this.name = name;
             _this.value = value;
             _this.type = type || (value && value.type) || null;
@@ -2188,8 +2168,9 @@
     }(Statement));
     var DeclareFunctionStmt = /** @class */ (function (_super) {
         __extends(DeclareFunctionStmt, _super);
-        function DeclareFunctionStmt(name, params, statements, type, modifiers, sourceSpan, leadingComments) {
-            var _this = _super.call(this, modifiers, sourceSpan, leadingComments) || this;
+        function DeclareFunctionStmt(name, params, statements, type, modifiers, sourceSpan) {
+            if (modifiers === void 0) { modifiers = null; }
+            var _this = _super.call(this, modifiers, sourceSpan) || this;
             _this.name = name;
             _this.params = params;
             _this.statements = statements;
@@ -2207,8 +2188,8 @@
     }(Statement));
     var ExpressionStatement = /** @class */ (function (_super) {
         __extends(ExpressionStatement, _super);
-        function ExpressionStatement(expr, sourceSpan, leadingComments) {
-            var _this = _super.call(this, [], sourceSpan, leadingComments) || this;
+        function ExpressionStatement(expr, sourceSpan) {
+            var _this = _super.call(this, null, sourceSpan) || this;
             _this.expr = expr;
             return _this;
         }
@@ -2222,9 +2203,8 @@
     }(Statement));
     var ReturnStatement = /** @class */ (function (_super) {
         __extends(ReturnStatement, _super);
-        function ReturnStatement(value, sourceSpan, leadingComments) {
-            if (sourceSpan === void 0) { sourceSpan = null; }
-            var _this = _super.call(this, [], sourceSpan, leadingComments) || this;
+        function ReturnStatement(value, sourceSpan) {
+            var _this = _super.call(this, null, sourceSpan) || this;
             _this.value = value;
             return _this;
         }
@@ -2238,10 +2218,11 @@
     }(Statement));
     var AbstractClassPart = /** @class */ (function () {
         function AbstractClassPart(type, modifiers) {
-            if (type === void 0) { type = null; }
-            if (modifiers === void 0) { modifiers = []; }
-            this.type = type;
             this.modifiers = modifiers;
+            if (!modifiers) {
+                this.modifiers = [];
+            }
+            this.type = type || null;
         }
         AbstractClassPart.prototype.hasModifier = function (modifier) {
             return this.modifiers.indexOf(modifier) !== -1;
@@ -2251,6 +2232,7 @@
     var ClassField = /** @class */ (function (_super) {
         __extends(ClassField, _super);
         function ClassField(name, type, modifiers, initializer) {
+            if (modifiers === void 0) { modifiers = null; }
             var _this = _super.call(this, type, modifiers) || this;
             _this.name = name;
             _this.initializer = initializer;
@@ -2264,6 +2246,7 @@
     var ClassMethod = /** @class */ (function (_super) {
         __extends(ClassMethod, _super);
         function ClassMethod(name, params, body, type, modifiers) {
+            if (modifiers === void 0) { modifiers = null; }
             var _this = _super.call(this, type, modifiers) || this;
             _this.name = name;
             _this.params = params;
@@ -2278,6 +2261,7 @@
     var ClassGetter = /** @class */ (function (_super) {
         __extends(ClassGetter, _super);
         function ClassGetter(name, body, type, modifiers) {
+            if (modifiers === void 0) { modifiers = null; }
             var _this = _super.call(this, type, modifiers) || this;
             _this.name = name;
             _this.body = body;
@@ -2290,8 +2274,9 @@
     }(AbstractClassPart));
     var ClassStmt = /** @class */ (function (_super) {
         __extends(ClassStmt, _super);
-        function ClassStmt(name, parent, fields, getters, constructorMethod, methods, modifiers, sourceSpan, leadingComments) {
-            var _this = _super.call(this, modifiers, sourceSpan, leadingComments) || this;
+        function ClassStmt(name, parent, fields, getters, constructorMethod, methods, modifiers, sourceSpan) {
+            if (modifiers === void 0) { modifiers = null; }
+            var _this = _super.call(this, modifiers, sourceSpan) || this;
             _this.name = name;
             _this.parent = parent;
             _this.fields = fields;
@@ -2315,9 +2300,9 @@
     }(Statement));
     var IfStmt = /** @class */ (function (_super) {
         __extends(IfStmt, _super);
-        function IfStmt(condition, trueCase, falseCase, sourceSpan, leadingComments) {
+        function IfStmt(condition, trueCase, falseCase, sourceSpan) {
             if (falseCase === void 0) { falseCase = []; }
-            var _this = _super.call(this, [], sourceSpan, leadingComments) || this;
+            var _this = _super.call(this, null, sourceSpan) || this;
             _this.condition = condition;
             _this.trueCase = trueCase;
             _this.falseCase = falseCase;
@@ -2333,11 +2318,46 @@
         };
         return IfStmt;
     }(Statement));
+    var CommentStmt = /** @class */ (function (_super) {
+        __extends(CommentStmt, _super);
+        function CommentStmt(comment, multiline, sourceSpan) {
+            if (multiline === void 0) { multiline = false; }
+            var _this = _super.call(this, null, sourceSpan) || this;
+            _this.comment = comment;
+            _this.multiline = multiline;
+            return _this;
+        }
+        CommentStmt.prototype.isEquivalent = function (stmt) {
+            return stmt instanceof CommentStmt;
+        };
+        CommentStmt.prototype.visitStatement = function (visitor, context) {
+            return visitor.visitCommentStmt(this, context);
+        };
+        return CommentStmt;
+    }(Statement));
+    var JSDocCommentStmt = /** @class */ (function (_super) {
+        __extends(JSDocCommentStmt, _super);
+        function JSDocCommentStmt(tags, sourceSpan) {
+            if (tags === void 0) { tags = []; }
+            var _this = _super.call(this, null, sourceSpan) || this;
+            _this.tags = tags;
+            return _this;
+        }
+        JSDocCommentStmt.prototype.isEquivalent = function (stmt) {
+            return stmt instanceof JSDocCommentStmt && this.toString() === stmt.toString();
+        };
+        JSDocCommentStmt.prototype.visitStatement = function (visitor, context) {
+            return visitor.visitJSDocCommentStmt(this, context);
+        };
+        JSDocCommentStmt.prototype.toString = function () {
+            return serializeTags(this.tags);
+        };
+        return JSDocCommentStmt;
+    }(Statement));
     var TryCatchStmt = /** @class */ (function (_super) {
         __extends(TryCatchStmt, _super);
-        function TryCatchStmt(bodyStmts, catchStmts, sourceSpan, leadingComments) {
-            if (sourceSpan === void 0) { sourceSpan = null; }
-            var _this = _super.call(this, [], sourceSpan, leadingComments) || this;
+        function TryCatchStmt(bodyStmts, catchStmts, sourceSpan) {
+            var _this = _super.call(this, null, sourceSpan) || this;
             _this.bodyStmts = bodyStmts;
             _this.catchStmts = catchStmts;
             return _this;
@@ -2353,9 +2373,8 @@
     }(Statement));
     var ThrowStmt = /** @class */ (function (_super) {
         __extends(ThrowStmt, _super);
-        function ThrowStmt(error, sourceSpan, leadingComments) {
-            if (sourceSpan === void 0) { sourceSpan = null; }
-            var _this = _super.call(this, [], sourceSpan, leadingComments) || this;
+        function ThrowStmt(error, sourceSpan) {
+            var _this = _super.call(this, null, sourceSpan) || this;
             _this.error = error;
             return _this;
         }
@@ -2446,7 +2465,7 @@
         AstTransformer.prototype.visitLiteralMapExpr = function (ast, context) {
             var _this = this;
             var entries = ast.entries.map(function (entry) { return new LiteralMapEntry(entry.key, entry.value.visitExpression(_this, context), entry.quoted); });
-            var mapType = new MapType(ast.valueType);
+            var mapType = new MapType(ast.valueType, null);
             return this.transformExpr(new LiteralMapExpr(entries, mapType, ast.sourceSpan), context);
         };
         AstTransformer.prototype.visitCommaExpr = function (ast, context) {
@@ -2458,16 +2477,16 @@
         };
         AstTransformer.prototype.visitDeclareVarStmt = function (stmt, context) {
             var value = stmt.value && stmt.value.visitExpression(this, context);
-            return this.transformStmt(new DeclareVarStmt(stmt.name, value, stmt.type, stmt.modifiers, stmt.sourceSpan, stmt.leadingComments), context);
+            return this.transformStmt(new DeclareVarStmt(stmt.name, value, stmt.type, stmt.modifiers, stmt.sourceSpan), context);
         };
         AstTransformer.prototype.visitDeclareFunctionStmt = function (stmt, context) {
-            return this.transformStmt(new DeclareFunctionStmt(stmt.name, stmt.params, this.visitAllStatements(stmt.statements, context), stmt.type, stmt.modifiers, stmt.sourceSpan, stmt.leadingComments), context);
+            return this.transformStmt(new DeclareFunctionStmt(stmt.name, stmt.params, this.visitAllStatements(stmt.statements, context), stmt.type, stmt.modifiers, stmt.sourceSpan), context);
         };
         AstTransformer.prototype.visitExpressionStmt = function (stmt, context) {
-            return this.transformStmt(new ExpressionStatement(stmt.expr.visitExpression(this, context), stmt.sourceSpan, stmt.leadingComments), context);
+            return this.transformStmt(new ExpressionStatement(stmt.expr.visitExpression(this, context), stmt.sourceSpan), context);
         };
         AstTransformer.prototype.visitReturnStmt = function (stmt, context) {
-            return this.transformStmt(new ReturnStatement(stmt.value.visitExpression(this, context), stmt.sourceSpan, stmt.leadingComments), context);
+            return this.transformStmt(new ReturnStatement(stmt.value.visitExpression(this, context), stmt.sourceSpan), context);
         };
         AstTransformer.prototype.visitDeclareClassStmt = function (stmt, context) {
             var _this = this;
@@ -2479,13 +2498,19 @@
             return this.transformStmt(new ClassStmt(stmt.name, parent, stmt.fields, getters, ctorMethod, methods, stmt.modifiers, stmt.sourceSpan), context);
         };
         AstTransformer.prototype.visitIfStmt = function (stmt, context) {
-            return this.transformStmt(new IfStmt(stmt.condition.visitExpression(this, context), this.visitAllStatements(stmt.trueCase, context), this.visitAllStatements(stmt.falseCase, context), stmt.sourceSpan, stmt.leadingComments), context);
+            return this.transformStmt(new IfStmt(stmt.condition.visitExpression(this, context), this.visitAllStatements(stmt.trueCase, context), this.visitAllStatements(stmt.falseCase, context), stmt.sourceSpan), context);
         };
         AstTransformer.prototype.visitTryCatchStmt = function (stmt, context) {
-            return this.transformStmt(new TryCatchStmt(this.visitAllStatements(stmt.bodyStmts, context), this.visitAllStatements(stmt.catchStmts, context), stmt.sourceSpan, stmt.leadingComments), context);
+            return this.transformStmt(new TryCatchStmt(this.visitAllStatements(stmt.bodyStmts, context), this.visitAllStatements(stmt.catchStmts, context), stmt.sourceSpan), context);
         };
         AstTransformer.prototype.visitThrowStmt = function (stmt, context) {
-            return this.transformStmt(new ThrowStmt(stmt.error.visitExpression(this, context), stmt.sourceSpan, stmt.leadingComments), context);
+            return this.transformStmt(new ThrowStmt(stmt.error.visitExpression(this, context), stmt.sourceSpan), context);
+        };
+        AstTransformer.prototype.visitCommentStmt = function (stmt, context) {
+            return this.transformStmt(stmt, context);
+        };
+        AstTransformer.prototype.visitJSDocCommentStmt = function (stmt, context) {
+            return this.transformStmt(stmt, context);
         };
         AstTransformer.prototype.visitAllStatements = function (stmts, context) {
             var _this = this;
@@ -2680,6 +2705,12 @@
             stmt.error.visitExpression(this, context);
             return stmt;
         };
+        RecursiveAstVisitor.prototype.visitCommentStmt = function (stmt, context) {
+            return stmt;
+        };
+        RecursiveAstVisitor.prototype.visitJSDocCommentStmt = function (stmt, context) {
+            return stmt;
+        };
         RecursiveAstVisitor.prototype.visitAllStatements = function (stmts, context) {
             var _this = this;
             stmts.forEach(function (stmt) { return stmt.visitStatement(_this, context); });
@@ -2787,15 +2818,6 @@
         };
         return _ApplySourceSpanTransformer;
     }(AstTransformer));
-    function leadingComment(text, multiline, trailingNewline) {
-        if (multiline === void 0) { multiline = false; }
-        if (trailingNewline === void 0) { trailingNewline = true; }
-        return new LeadingComment(text, multiline, trailingNewline);
-    }
-    function jsDocComment(tags) {
-        if (tags === void 0) { tags = []; }
-        return new JSDocComment(tags);
-    }
     function variable(name, type, sourceSpan) {
         return new ReadVarExpr(name, type, sourceSpan);
     }
@@ -2804,9 +2826,13 @@
         return new ExternalExpr(id, null, typeParams, sourceSpan);
     }
     function importType(id, typeParams, typeModifiers) {
+        if (typeParams === void 0) { typeParams = null; }
+        if (typeModifiers === void 0) { typeModifiers = null; }
         return id != null ? expressionType(importExpr(id, typeParams, null), typeModifiers) : null;
     }
     function expressionType(expr, typeModifiers, typeParams) {
+        if (typeModifiers === void 0) { typeModifiers = null; }
+        if (typeParams === void 0) { typeParams = null; }
         return new ExpressionType(expr, typeModifiers, typeParams);
     }
     function typeofExpr(expr) {
@@ -2831,8 +2857,8 @@
     function fn(params, body, type, sourceSpan, name) {
         return new FunctionExpr(params, body, type, sourceSpan, name);
     }
-    function ifStmt(condition, thenClause, elseClause, sourceSpan, leadingComments) {
-        return new IfStmt(condition, thenClause, elseClause, sourceSpan, leadingComments);
+    function ifStmt(condition, thenClause, elseClause) {
+        return new IfStmt(condition, thenClause, elseClause);
     }
     function literal(value, type, sourceSpan) {
         return new LiteralExpr(value, type, sourceSpan);
@@ -2864,16 +2890,12 @@
         var e_2, _e;
         if (tags.length === 0)
             return '';
-        if (tags.length === 1 && tags[0].tagName && !tags[0].text) {
-            // The JSDOC comment is a single simple tag: e.g `/** @tagname */`.
-            return "*" + tagToString(tags[0]) + " ";
-        }
         var out = '*\n';
         try {
             for (var tags_1 = __values(tags), tags_1_1 = tags_1.next(); !tags_1_1.done; tags_1_1 = tags_1.next()) {
                 var tag = tags_1_1.value;
                 out += ' *';
-                // If the tagToString is multi-line, insert " * " prefixes on lines.
+                // If the tagToString is multi-line, insert " * " prefixes on subsequent lines.
                 out += tagToString(tag).replace(/\n/g, '\n * ');
                 out += '\n';
             }
@@ -4225,14 +4247,14 @@
         throw new Error("Internal error: Unsupported or unknown metadata: " + meta);
     }
     function typeWithParameters(type, numParams) {
-        if (numParams === 0) {
-            return expressionType(type);
+        var params = null;
+        if (numParams > 0) {
+            params = [];
+            for (var i = 0; i < numParams; i++) {
+                params.push(DYNAMIC_TYPE);
+            }
         }
-        var params = [];
-        for (var i = 0; i < numParams; i++) {
-            params.push(DYNAMIC_TYPE);
-        }
-        return expressionType(type, undefined, params);
+        return expressionType(type, null, params);
     }
     var ANIMATE_SYMBOL_PREFIX = '@';
     function prepareSyntheticPropertyName(name) {
@@ -5586,7 +5608,7 @@
      * @param variable the name of the variable to declare.
      */
     function declareI18nVariable(variable) {
-        return new DeclareVarStmt(variable.name, undefined, INFERRED_TYPE, undefined, variable.sourceSpan);
+        return new DeclareVarStmt(variable.name, undefined, INFERRED_TYPE, null, variable.sourceSpan);
     }
 
     /**
@@ -6340,6 +6362,13 @@
         return B64_DIGITS[value];
     }
 
+    /**
+     * @license
+     * Copyright Google LLC All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
     var _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
     var _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
     var _INDENT_WITH = '  ';
@@ -6520,52 +6549,18 @@
         function AbstractEmitterVisitor(_escapeDollarInStrings) {
             this._escapeDollarInStrings = _escapeDollarInStrings;
         }
-        AbstractEmitterVisitor.prototype.printLeadingComments = function (stmt, ctx) {
-            var e_1, _a;
-            if (stmt.leadingComments === undefined) {
-                return;
-            }
-            try {
-                for (var _b = __values(stmt.leadingComments), _c = _b.next(); !_c.done; _c = _b.next()) {
-                    var comment = _c.value;
-                    if (comment instanceof JSDocComment) {
-                        ctx.print(stmt, "/*" + comment.toString() + "*/", comment.trailingNewline);
-                    }
-                    else {
-                        if (comment.multiline) {
-                            ctx.print(stmt, "/* " + comment.text + " */", comment.trailingNewline);
-                        }
-                        else {
-                            comment.text.split('\n').forEach(function (line) {
-                                ctx.println(stmt, "// " + line);
-                            });
-                        }
-                    }
-                }
-            }
-            catch (e_1_1) { e_1 = { error: e_1_1 }; }
-            finally {
-                try {
-                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-                }
-                finally { if (e_1) throw e_1.error; }
-            }
-        };
         AbstractEmitterVisitor.prototype.visitExpressionStmt = function (stmt, ctx) {
-            this.printLeadingComments(stmt, ctx);
             stmt.expr.visitExpression(this, ctx);
             ctx.println(stmt, ';');
             return null;
         };
         AbstractEmitterVisitor.prototype.visitReturnStmt = function (stmt, ctx) {
-            this.printLeadingComments(stmt, ctx);
             ctx.print(stmt, "return ");
             stmt.value.visitExpression(this, ctx);
             ctx.println(stmt, ';');
             return null;
         };
         AbstractEmitterVisitor.prototype.visitIfStmt = function (stmt, ctx) {
-            this.printLeadingComments(stmt, ctx);
             ctx.print(stmt, "if (");
             stmt.condition.visitExpression(this, ctx);
             ctx.print(stmt, ") {");
@@ -6592,10 +6587,24 @@
             return null;
         };
         AbstractEmitterVisitor.prototype.visitThrowStmt = function (stmt, ctx) {
-            this.printLeadingComments(stmt, ctx);
             ctx.print(stmt, "throw ");
             stmt.error.visitExpression(this, ctx);
             ctx.println(stmt, ";");
+            return null;
+        };
+        AbstractEmitterVisitor.prototype.visitCommentStmt = function (stmt, ctx) {
+            if (stmt.multiline) {
+                ctx.println(stmt, "/* " + stmt.comment + " */");
+            }
+            else {
+                stmt.comment.split('\n').forEach(function (line) {
+                    ctx.println(stmt, "// " + line);
+                });
+            }
+            return null;
+        };
+        AbstractEmitterVisitor.prototype.visitJSDocCommentStmt = function (stmt, ctx) {
+            ctx.println(stmt, "/*" + stmt.toString() + "*/");
             return null;
         };
         AbstractEmitterVisitor.prototype.visitWriteVarExpr = function (expr, ctx) {
@@ -6741,10 +6750,10 @@
         AbstractEmitterVisitor.prototype.visitUnaryOperatorExpr = function (ast, ctx) {
             var opStr;
             switch (ast.operator) {
-                case exports.UnaryOperator.Plus:
+                case UnaryOperator.Plus:
                     opStr = '+';
                     break;
-                case exports.UnaryOperator.Minus:
+                case UnaryOperator.Minus:
                     opStr = '-';
                     break;
                 default:
@@ -8926,10 +8935,10 @@
             var op;
             switch (ast.operator) {
                 case '+':
-                    op = exports.UnaryOperator.Plus;
+                    op = UnaryOperator.Plus;
                     break;
                 case '-':
-                    op = exports.UnaryOperator.Minus;
+                    op = UnaryOperator.Minus;
                     break;
                 default:
                     throw new Error("Unsupported operator " + ast.operator);
@@ -17603,7 +17612,7 @@
     }
     // Converts i18n meta information for a message (id, description, meaning)
     // to a JsDoc statement formatted as expected by the Closure compiler.
-    function i18nMetaToJSDoc(meta) {
+    function i18nMetaToDocStmt(meta) {
         var tags = [];
         if (meta.description) {
             tags.push({ tagName: "desc" /* Desc */, text: meta.description });
@@ -17611,7 +17620,7 @@
         if (meta.meaning) {
             tags.push({ tagName: "meaning" /* Meaning */, text: meta.meaning });
         }
-        return tags.length == 0 ? null : jsDocComment(tags);
+        return tags.length == 0 ? null : new JSDocCommentStmt(tags);
     }
 
     /** Closure uses `goog.getMsg(message)` to lookup translations */
@@ -17628,13 +17637,14 @@
         //  */
         // const MSG_... = goog.getMsg(..);
         // I18N_X = MSG_...;
-        var googGetMsgStmt = closureVar.set(variable(GOOG_GET_MSG).callFn(args)).toConstDecl();
-        var metaComment = i18nMetaToJSDoc(message);
-        if (metaComment !== null) {
-            googGetMsgStmt.addLeadingComment(metaComment);
+        var statements = [];
+        var jsdocComment = i18nMetaToDocStmt(message);
+        if (jsdocComment !== null) {
+            statements.push(jsdocComment);
         }
-        var i18nAssignmentStmt = new ExpressionStatement(variable$1.set(closureVar));
-        return [googGetMsgStmt, i18nAssignmentStmt];
+        statements.push(closureVar.set(variable(GOOG_GET_MSG).callFn(args)).toConstDecl());
+        statements.push(new ExpressionStatement(variable$1.set(closureVar)));
+        return statements;
     }
     /**
      * This visitor walks over i18n tree and generates its string representation, including ICUs and
@@ -18513,7 +18523,7 @@
             this._nestedTemplateFns.push(function () {
                 var _c;
                 var templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables, _this._ngContentReservedSlots.length + _this._ngContentSelectorsOffset, template.i18n);
-                _this.constantPool.statements.push(templateFunctionExpr.toDeclStmt(templateName));
+                _this.constantPool.statements.push(templateFunctionExpr.toDeclStmt(templateName, null));
                 if (templateVisitor._ngContentReservedSlots.length) {
                     (_c = _this._ngContentReservedSlots).push.apply(_c, __spread(templateVisitor._ngContentReservedSlots));
                 }
@@ -20526,7 +20536,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.2+21.sha-d3169c5');
+    var VERSION$1 = new Version('11.0.0-next.2+18.sha-7fb388f');
 
     /**
      * @license
@@ -29018,6 +29028,12 @@
         StatementInterpreter.prototype.visitThrowStmt = function (stmt, ctx) {
             throw stmt.error.visitExpression(this, ctx);
         };
+        StatementInterpreter.prototype.visitCommentStmt = function (stmt, context) {
+            return null;
+        };
+        StatementInterpreter.prototype.visitJSDocCommentStmt = function (stmt, context) {
+            return null;
+        };
         StatementInterpreter.prototype.visitInstantiateExpr = function (ast, ctx) {
             var args = this.visitAllExpressions(ast.args, ctx);
             var clazz = ast.classExpr.visitExpression(this, ctx);
@@ -29066,9 +29082,9 @@
             var _this = this;
             var rhs = function () { return ast.expr.visitExpression(_this, ctx); };
             switch (ast.operator) {
-                case exports.UnaryOperator.Plus:
+                case UnaryOperator.Plus:
                     return +rhs();
-                case exports.UnaryOperator.Minus:
+                case UnaryOperator.Minus:
                     return -rhs();
                 default:
                     throw new Error("Unknown operator " + ast.operator);
@@ -30374,6 +30390,7 @@
     exports.ClassStmt = ClassStmt;
     exports.CommaExpr = CommaExpr;
     exports.Comment = Comment;
+    exports.CommentStmt = CommentStmt;
     exports.CompileDirectiveMetadata = CompileDirectiveMetadata;
     exports.CompileMetadataResolver = CompileMetadataResolver;
     exports.CompileNgModuleMetadata = CompileNgModuleMetadata;
@@ -30429,13 +30446,12 @@
     exports.InvokeFunctionExpr = InvokeFunctionExpr;
     exports.InvokeMethodExpr = InvokeMethodExpr;
     exports.IvyParser = IvyParser;
-    exports.JSDocComment = JSDocComment;
+    exports.JSDocCommentStmt = JSDocCommentStmt;
     exports.JitCompiler = JitCompiler;
     exports.JitEvaluator = JitEvaluator;
     exports.JitSummaryResolver = JitSummaryResolver;
     exports.KeyedRead = KeyedRead;
     exports.KeyedWrite = KeyedWrite;
-    exports.LeadingComment = LeadingComment;
     exports.Lexer = Lexer;
     exports.LiteralArray = LiteralArray;
     exports.LiteralArrayExpr = LiteralArrayExpr;
@@ -30443,7 +30459,6 @@
     exports.LiteralMap = LiteralMap;
     exports.LiteralMapExpr = LiteralMapExpr;
     exports.LiteralPrimitive = LiteralPrimitive;
-    exports.LocalizedString = LocalizedString;
     exports.MapType = MapType;
     exports.MessageBundle = MessageBundle;
     exports.MethodCall = MethodCall;
@@ -30531,7 +30546,6 @@
     exports.TypeScriptEmitter = TypeScriptEmitter;
     exports.TypeofExpr = TypeofExpr;
     exports.Unary = Unary;
-    exports.UnaryOperatorExpr = UnaryOperatorExpr;
     exports.UrlResolver = UrlResolver;
     exports.VERSION = VERSION$1;
     exports.VariableAst = VariableAst;
@@ -30589,8 +30603,6 @@
     exports.isNgTemplate = isNgTemplate;
     exports.isQuote = isQuote;
     exports.isSyntaxError = isSyntaxError;
-    exports.jsDocComment = jsDocComment;
-    exports.leadingComment = leadingComment;
     exports.literalMap = literalMap;
     exports.makeBindingParser = makeBindingParser;
     exports.mergeAnalyzedFiles = mergeAnalyzedFiles;
