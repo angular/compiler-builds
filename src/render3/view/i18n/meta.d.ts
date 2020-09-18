@@ -71,4 +71,4 @@ export declare class I18nMetaVisitor implements html.Visitor {
  * @returns Object with id, meaning and description fields
  */
 export declare function parseI18nMeta(meta?: string): I18nMeta;
-export declare function i18nMetaToJSDoc(meta: I18nMeta): o.JSDocComment | null;
+export declare function i18nMetaToDocStmt(meta: I18nMeta): o.JSDocCommentStmt | null;
