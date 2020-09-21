@@ -251,10 +251,7 @@ export declare class LocalizedString extends Expression {
      * @param meta The metadata to serialize
      * @param messagePart The first part of the tagged string
      */
-    serializeI18nHead(): {
-        cooked: string;
-        raw: string;
-    };
+    serializeI18nHead(): CookedRawString;
     getMessagePartSourceSpan(i: number): ParseSourceSpan | null;
     getPlaceholderSourceSpan(i: number): ParseSourceSpan;
     /**
@@ -264,10 +261,16 @@ export declare class LocalizedString extends Expression {
      * @param placeholderName The placeholder name to serialize
      * @param messagePart The following message string after this placeholder
      */
-    serializeI18nTemplatePart(partIndex: number): {
-        cooked: string;
-        raw: string;
-    };
+    serializeI18nTemplatePart(partIndex: number): CookedRawString;
+}
+/**
+ * A structure to hold the cooked and raw strings of a template literal element, along with its
+ * source-span range.
+ */
+export interface CookedRawString {
+    cooked: string;
+    raw: string;
+    range: ParseSourceSpan | null;
 }
 export declare class ExternalExpr extends Expression {
     value: ExternalReference;
