@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.2+39.sha-49f27e3
+ * @license Angular v11.0.0-next.2+40.sha-6ae3b68
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10419,23 +10419,24 @@
         TokenType[TokenType["TAG_OPEN_END"] = 1] = "TAG_OPEN_END";
         TokenType[TokenType["TAG_OPEN_END_VOID"] = 2] = "TAG_OPEN_END_VOID";
         TokenType[TokenType["TAG_CLOSE"] = 3] = "TAG_CLOSE";
-        TokenType[TokenType["TEXT"] = 4] = "TEXT";
-        TokenType[TokenType["ESCAPABLE_RAW_TEXT"] = 5] = "ESCAPABLE_RAW_TEXT";
-        TokenType[TokenType["RAW_TEXT"] = 6] = "RAW_TEXT";
-        TokenType[TokenType["COMMENT_START"] = 7] = "COMMENT_START";
-        TokenType[TokenType["COMMENT_END"] = 8] = "COMMENT_END";
-        TokenType[TokenType["CDATA_START"] = 9] = "CDATA_START";
-        TokenType[TokenType["CDATA_END"] = 10] = "CDATA_END";
-        TokenType[TokenType["ATTR_NAME"] = 11] = "ATTR_NAME";
-        TokenType[TokenType["ATTR_QUOTE"] = 12] = "ATTR_QUOTE";
-        TokenType[TokenType["ATTR_VALUE"] = 13] = "ATTR_VALUE";
-        TokenType[TokenType["DOC_TYPE"] = 14] = "DOC_TYPE";
-        TokenType[TokenType["EXPANSION_FORM_START"] = 15] = "EXPANSION_FORM_START";
-        TokenType[TokenType["EXPANSION_CASE_VALUE"] = 16] = "EXPANSION_CASE_VALUE";
-        TokenType[TokenType["EXPANSION_CASE_EXP_START"] = 17] = "EXPANSION_CASE_EXP_START";
-        TokenType[TokenType["EXPANSION_CASE_EXP_END"] = 18] = "EXPANSION_CASE_EXP_END";
-        TokenType[TokenType["EXPANSION_FORM_END"] = 19] = "EXPANSION_FORM_END";
-        TokenType[TokenType["EOF"] = 20] = "EOF";
+        TokenType[TokenType["INCOMPLETE_TAG_OPEN"] = 4] = "INCOMPLETE_TAG_OPEN";
+        TokenType[TokenType["TEXT"] = 5] = "TEXT";
+        TokenType[TokenType["ESCAPABLE_RAW_TEXT"] = 6] = "ESCAPABLE_RAW_TEXT";
+        TokenType[TokenType["RAW_TEXT"] = 7] = "RAW_TEXT";
+        TokenType[TokenType["COMMENT_START"] = 8] = "COMMENT_START";
+        TokenType[TokenType["COMMENT_END"] = 9] = "COMMENT_END";
+        TokenType[TokenType["CDATA_START"] = 10] = "CDATA_START";
+        TokenType[TokenType["CDATA_END"] = 11] = "CDATA_END";
+        TokenType[TokenType["ATTR_NAME"] = 12] = "ATTR_NAME";
+        TokenType[TokenType["ATTR_QUOTE"] = 13] = "ATTR_QUOTE";
+        TokenType[TokenType["ATTR_VALUE"] = 14] = "ATTR_VALUE";
+        TokenType[TokenType["DOC_TYPE"] = 15] = "DOC_TYPE";
+        TokenType[TokenType["EXPANSION_FORM_START"] = 16] = "EXPANSION_FORM_START";
+        TokenType[TokenType["EXPANSION_CASE_VALUE"] = 17] = "EXPANSION_CASE_VALUE";
+        TokenType[TokenType["EXPANSION_CASE_EXP_START"] = 18] = "EXPANSION_CASE_EXP_START";
+        TokenType[TokenType["EXPANSION_CASE_EXP_END"] = 19] = "EXPANSION_CASE_EXP_END";
+        TokenType[TokenType["EXPANSION_FORM_END"] = 20] = "EXPANSION_FORM_END";
+        TokenType[TokenType["EOF"] = 21] = "EOF";
     })(TokenType || (TokenType = {}));
     var Token = /** @class */ (function () {
         function Token(type, parts, sourceSpan) {
@@ -10814,8 +10815,6 @@
             var tagName;
             var prefix;
             var openTagToken;
-            var tokensBeforeTagOpen = this.tokens.length;
-            var innerStart = this._cursor.clone();
             try {
                 if (!isAsciiLetter(this._cursor.peek())) {
                     throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(start));
@@ -10824,7 +10823,8 @@
                 prefix = openTagToken.parts[0];
                 tagName = openTagToken.parts[1];
                 this._attemptCharCodeUntilFn(isNotWhitespace);
-                while (this._cursor.peek() !== $SLASH && this._cursor.peek() !== $GT) {
+                while (this._cursor.peek() !== $SLASH && this._cursor.peek() !== $GT &&
+                    this._cursor.peek() !== $LT) {
                     this._consumeAttributeName();
                     this._attemptCharCodeUntilFn(isNotWhitespace);
                     if (this._attemptCharCode($EQ)) {
@@ -10837,14 +10837,16 @@
             }
             catch (e) {
                 if (e instanceof _ControlFlowError) {
-                    // When the start tag is invalid (including invalid "attributes"), assume we want a "<"
-                    this._cursor = innerStart;
                     if (openTagToken) {
-                        this.tokens.length = tokensBeforeTagOpen;
+                        // We errored before we could close the opening tag, so it is incomplete.
+                        openTagToken.type = TokenType.INCOMPLETE_TAG_OPEN;
                     }
-                    // Back to back text tokens are merged at the end
-                    this._beginToken(TokenType.TEXT, start);
-                    this._endToken(['<']);
+                    else {
+                        // When the start tag is invalid, assume we want a "<" as text.
+                        // Back to back text tokens are merged at the end.
+                        this._beginToken(TokenType.TEXT, start);
+                        this._endToken(['<']);
+                    }
                     return;
                 }
                 throw e;
@@ -11049,8 +11051,8 @@
         return !isWhitespace(code) || code === $EOF;
     }
     function isNameEnd(code) {
-        return isWhitespace(code) || code === $GT || code === $SLASH ||
-            code === $SQ || code === $DQ || code === $EQ;
+        return isWhitespace(code) || code === $GT || code === $LT ||
+            code === $SLASH || code === $SQ || code === $DQ || code === $EQ;
     }
     function isPrefixEnd(code) {
         return (code < $a || $z < code) && (code < $A || $Z < code) &&
@@ -11370,7 +11372,8 @@
         }
         _TreeBuilder.prototype.build = function () {
             while (this._peek.type !== TokenType.EOF) {
-                if (this._peek.type === TokenType.TAG_OPEN_START) {
+                if (this._peek.type === TokenType.TAG_OPEN_START ||
+                    this._peek.type === TokenType.INCOMPLETE_TAG_OPEN) {
                     this._consumeStartTag(this._advance());
                 }
                 else if (this._peek.type === TokenType.TAG_CLOSE) {
@@ -11523,8 +11526,7 @@
             }
         };
         _TreeBuilder.prototype._consumeStartTag = function (startTagToken) {
-            var prefix = startTagToken.parts[0];
-            var name = startTagToken.parts[1];
+            var _a = __read(startTagToken.parts, 2), prefix = _a[0], name = _a[1];
             var attrs = [];
             while (this._peek.type === TokenType.ATTR_NAME) {
                 attrs.push(this._consumeAttr(this._advance()));
@@ -11556,6 +11558,12 @@
                 // element start tag also represents the end tag.
                 this._popElement(fullName, span);
             }
+            else if (startTagToken.type === TokenType.INCOMPLETE_TAG_OPEN) {
+                // We already know the opening tag is not complete, so it is unlikely it has a corresponding
+                // close tag. Let's optimistically parse it as a full element and emit an error.
+                this._popElement(fullName, null);
+                this.errors.push(TreeError.create(fullName, span, "Opening tag \"" + fullName + "\" not terminated."));
+            }
         };
         _TreeBuilder.prototype._pushElement = function (el) {
             var parentEl = this._getParentElement();
@@ -11575,6 +11583,12 @@
                 this.errors.push(TreeError.create(fullName, endTagToken.sourceSpan, errMsg));
             }
         };
+        /**
+         * Closes the nearest element with the tag name `fullName` in the parse tree.
+         * `endSourceSpan` is the span of the closing tag, or null if the element does
+         * not have a closing tag (for example, this happens when an incomplete
+         * opening tag is recovered).
+         */
         _TreeBuilder.prototype._popElement = function (fullName, endSourceSpan) {
             for (var stackIndex = this._elementStack.length - 1; stackIndex >= 0; stackIndex--) {
                 var el = this._elementStack[stackIndex];
@@ -11583,7 +11597,7 @@
                     // removed from the element stack at this point are closed implicitly, so they won't get
                     // an end source span (as there is no explicit closing element).
                     el.endSourceSpan = endSourceSpan;
-                    el.sourceSpan.end = endSourceSpan.end || el.sourceSpan.end;
+                    el.sourceSpan.end = endSourceSpan !== null ? endSourceSpan.end : el.sourceSpan.end;
                     this._elementStack.splice(stackIndex, this._elementStack.length - stackIndex);
                     return true;
                 }
@@ -20526,7 +20540,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.2+39.sha-49f27e3');
+    var VERSION$1 = new Version('11.0.0-next.2+40.sha-6ae3b68');
 
     /**
      * @license
