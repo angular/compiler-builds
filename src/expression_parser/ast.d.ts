@@ -390,10 +390,11 @@ export declare class ParsedProperty {
     expression: ASTWithSource;
     type: ParsedPropertyType;
     sourceSpan: ParseSourceSpan;
-    valueSpan?: ParseSourceSpan | undefined;
+    readonly keySpan: ParseSourceSpan | undefined;
+    valueSpan: ParseSourceSpan | undefined;
     readonly isLiteral: boolean;
     readonly isAnimation: boolean;
-    constructor(name: string, expression: ASTWithSource, type: ParsedPropertyType, sourceSpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined);
+    constructor(name: string, expression: ASTWithSource, type: ParsedPropertyType, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan | undefined, valueSpan: ParseSourceSpan | undefined);
 }
 export declare enum ParsedPropertyType {
     DEFAULT = 0,
@@ -438,6 +439,7 @@ export declare class BoundElementProperty {
     value: ASTWithSource;
     unit: string | null;
     sourceSpan: ParseSourceSpan;
-    valueSpan?: ParseSourceSpan | undefined;
-    constructor(name: string, type: BindingType, securityContext: SecurityContext, value: ASTWithSource, unit: string | null, sourceSpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined);
+    readonly keySpan: ParseSourceSpan | undefined;
+    valueSpan: ParseSourceSpan | undefined;
+    constructor(name: string, type: BindingType, securityContext: SecurityContext, value: ASTWithSource, unit: string | null, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan | undefined, valueSpan: ParseSourceSpan | undefined);
 }
