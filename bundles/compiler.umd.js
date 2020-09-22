@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.2+53.sha-7561050
+ * @license Angular v11.0.0-next.2+51.sha-c8f056b
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4313,22 +4313,18 @@
         return TextAttribute;
     }());
     var BoundAttribute = /** @class */ (function () {
-        function BoundAttribute(name, type, securityContext, value, unit, sourceSpan, keySpan, valueSpan, i18n) {
+        function BoundAttribute(name, type, securityContext, value, unit, sourceSpan, valueSpan, i18n) {
             this.name = name;
             this.type = type;
             this.securityContext = securityContext;
             this.value = value;
             this.unit = unit;
             this.sourceSpan = sourceSpan;
-            this.keySpan = keySpan;
             this.valueSpan = valueSpan;
             this.i18n = i18n;
         }
         BoundAttribute.fromBoundElementProperty = function (prop, i18n) {
-            if (prop.keySpan === undefined) {
-                throw new Error("Unexpected state: keySpan must be defined for bound attributes but was not for " + prop.name + ": " + prop.sourceSpan);
-            }
-            return new BoundAttribute(prop.name, prop.type, prop.securityContext, prop.value, prop.unit, prop.sourceSpan, prop.keySpan, prop.valueSpan, i18n);
+            return new BoundAttribute(prop.name, prop.type, prop.securityContext, prop.value, prop.unit, prop.sourceSpan, prop.valueSpan, i18n);
         };
         BoundAttribute.prototype.visit = function (visitor) {
             return visitor.visitBoundAttribute(this);
@@ -8604,15 +8600,11 @@
     }());
     // Bindings
     var ParsedProperty = /** @class */ (function () {
-        function ParsedProperty(name, expression, type, 
-        // TODO(atscott): `keySpan` should really be required but allows `undefined` so VE does
-        // not need to be updated. Make `keySpan` required when VE is removed.
-        sourceSpan, keySpan, valueSpan) {
+        function ParsedProperty(name, expression, type, sourceSpan, valueSpan) {
             this.name = name;
             this.expression = expression;
             this.type = type;
             this.sourceSpan = sourceSpan;
-            this.keySpan = keySpan;
             this.valueSpan = valueSpan;
             this.isLiteral = this.type === exports.ParsedPropertyType.LITERAL_ATTR;
             this.isAnimation = this.type === exports.ParsedPropertyType.ANIMATION;
@@ -8651,14 +8643,13 @@
         return ParsedVariable;
     }());
     var BoundElementProperty = /** @class */ (function () {
-        function BoundElementProperty(name, type, securityContext, value, unit, sourceSpan, keySpan, valueSpan) {
+        function BoundElementProperty(name, type, securityContext, value, unit, sourceSpan, valueSpan) {
             this.name = name;
             this.type = type;
             this.securityContext = securityContext;
             this.value = value;
             this.unit = unit;
             this.sourceSpan = sourceSpan;
-            this.keySpan = keySpan;
             this.valueSpan = valueSpan;
         }
         return BoundElementProperty;
@@ -12787,14 +12778,7 @@
                 Object.keys(dirMeta.hostProperties).forEach(function (propName) {
                     var expression = dirMeta.hostProperties[propName];
                     if (typeof expression === 'string') {
-                        _this.parsePropertyBinding(propName, expression, true, sourceSpan, sourceSpan.start.offset, undefined, [], 
-                        // Use the `sourceSpan` for  `keySpan`. This isn't really accurate, but neither is the
-                        // sourceSpan, as it represents the sourceSpan of the host itself rather than the
-                        // source of the host binding (which doesn't exist in the template). Regardless,
-                        // neither of these values are used in Ivy but are only here to satisfy the function
-                        // signature. This should likely be refactored in the future so that `sourceSpan`
-                        // isn't being used inaccurately.
-                        boundProps_1, sourceSpan);
+                        _this.parsePropertyBinding(propName, expression, true, sourceSpan, sourceSpan.start.offset, undefined, [], boundProps_1);
                     }
                     else {
                         _this._reportError("Value of the host property binding \"" + propName + "\" needs to be a string representing an expression but got \"" + expression + "\" (" + typeof expression + ")", sourceSpan);
@@ -12873,13 +12857,13 @@
                     }
                     else if (binding.value) {
                         var valueSpan = moveParseSourceSpan(sourceSpan, binding.value.ast.sourceSpan);
-                        this._parsePropertyAst(key, binding.value, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
+                        this._parsePropertyAst(key, binding.value, sourceSpan, valueSpan, targetMatchableAttrs, targetProps);
                     }
                     else {
                         targetMatchableAttrs.push([key, '' /* value */]);
                         // Since this is a literal attribute with no RHS, source span should be
                         // just the key span.
-                        this.parseLiteralAttr(key, null /* value */, keySpan, absoluteValueOffset, undefined /* valueSpan */, targetMatchableAttrs, targetProps, keySpan);
+                        this.parseLiteralAttr(key, null /* value */, keySpan, absoluteValueOffset, undefined /* valueSpan */, targetMatchableAttrs, targetProps);
                     }
                 }
             }
@@ -12924,26 +12908,20 @@
                 return [];
             }
         };
-        BindingParser.prototype.parseLiteralAttr = function (name, value, sourceSpan, absoluteOffset, valueSpan, targetMatchableAttrs, 
-        // TODO(atscott): keySpan is only optional here so VE template parser implementation does not
-        // have to change This should be required when VE is removed.
-        targetProps, keySpan) {
+        BindingParser.prototype.parseLiteralAttr = function (name, value, sourceSpan, absoluteOffset, valueSpan, targetMatchableAttrs, targetProps) {
             if (isAnimationLabel(name)) {
                 name = name.substring(1);
                 if (value) {
                     this._reportError("Assigning animation triggers via @prop=\"exp\" attributes with an expression is invalid." +
                         " Use property bindings (e.g. [@prop]=\"exp\") or use an attribute without a value (e.g. @prop) instead.", sourceSpan, exports.ParseErrorLevel.ERROR);
                 }
-                this._parseAnimation(name, value, sourceSpan, absoluteOffset, keySpan, valueSpan, targetMatchableAttrs, targetProps);
+                this._parseAnimation(name, value, sourceSpan, absoluteOffset, valueSpan, targetMatchableAttrs, targetProps);
             }
             else {
-                targetProps.push(new ParsedProperty(name, this._exprParser.wrapLiteralPrimitive(value, '', absoluteOffset), exports.ParsedPropertyType.LITERAL_ATTR, sourceSpan, keySpan, valueSpan));
+                targetProps.push(new ParsedProperty(name, this._exprParser.wrapLiteralPrimitive(value, '', absoluteOffset), exports.ParsedPropertyType.LITERAL_ATTR, sourceSpan, valueSpan));
             }
         };
-        BindingParser.prototype.parsePropertyBinding = function (name, expression, isHost, sourceSpan, absoluteOffset, valueSpan, 
-        // TODO(atscott): keySpan is only optional here so VE template parser implementation does not
-        // have to change This should be required when VE is removed.
-        targetMatchableAttrs, targetProps, keySpan) {
+        BindingParser.prototype.parsePropertyBinding = function (name, expression, isHost, sourceSpan, absoluteOffset, valueSpan, targetMatchableAttrs, targetProps) {
             if (name.length === 0) {
                 this._reportError("Property name is missing in binding", sourceSpan);
             }
@@ -12957,28 +12935,25 @@
                 name = name.substring(1);
             }
             if (isAnimationProp) {
-                this._parseAnimation(name, expression, sourceSpan, absoluteOffset, keySpan, valueSpan, targetMatchableAttrs, targetProps);
+                this._parseAnimation(name, expression, sourceSpan, absoluteOffset, valueSpan, targetMatchableAttrs, targetProps);
             }
             else {
-                this._parsePropertyAst(name, this._parseBinding(expression, isHost, valueSpan || sourceSpan, absoluteOffset), sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
+                this._parsePropertyAst(name, this._parseBinding(expression, isHost, valueSpan || sourceSpan, absoluteOffset), sourceSpan, valueSpan, targetMatchableAttrs, targetProps);
             }
         };
-        BindingParser.prototype.parsePropertyInterpolation = function (name, value, sourceSpan, valueSpan, targetMatchableAttrs, 
-        // TODO(atscott): keySpan is only optional here so VE template parser implementation does not
-        // have to change This should be required when VE is removed.
-        targetProps, keySpan) {
+        BindingParser.prototype.parsePropertyInterpolation = function (name, value, sourceSpan, valueSpan, targetMatchableAttrs, targetProps) {
             var expr = this.parseInterpolation(value, valueSpan || sourceSpan);
             if (expr) {
-                this._parsePropertyAst(name, expr, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
+                this._parsePropertyAst(name, expr, sourceSpan, valueSpan, targetMatchableAttrs, targetProps);
                 return true;
             }
             return false;
         };
-        BindingParser.prototype._parsePropertyAst = function (name, ast, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps) {
+        BindingParser.prototype._parsePropertyAst = function (name, ast, sourceSpan, valueSpan, targetMatchableAttrs, targetProps) {
             targetMatchableAttrs.push([name, ast.source]);
-            targetProps.push(new ParsedProperty(name, ast, exports.ParsedPropertyType.DEFAULT, sourceSpan, keySpan, valueSpan));
+            targetProps.push(new ParsedProperty(name, ast, exports.ParsedPropertyType.DEFAULT, sourceSpan, valueSpan));
         };
-        BindingParser.prototype._parseAnimation = function (name, expression, sourceSpan, absoluteOffset, keySpan, valueSpan, targetMatchableAttrs, targetProps) {
+        BindingParser.prototype._parseAnimation = function (name, expression, sourceSpan, absoluteOffset, valueSpan, targetMatchableAttrs, targetProps) {
             if (name.length === 0) {
                 this._reportError('Animation trigger is missing', sourceSpan);
             }
@@ -12987,7 +12962,7 @@
             // states will be applied by angular when the element is attached/detached
             var ast = this._parseBinding(expression || 'undefined', false, valueSpan || sourceSpan, absoluteOffset);
             targetMatchableAttrs.push([name, ast.source]);
-            targetProps.push(new ParsedProperty(name, ast, exports.ParsedPropertyType.ANIMATION, sourceSpan, keySpan, valueSpan));
+            targetProps.push(new ParsedProperty(name, ast, exports.ParsedPropertyType.ANIMATION, sourceSpan, valueSpan));
         };
         BindingParser.prototype._parseBinding = function (value, isHostBinding, sourceSpan, absoluteOffset) {
             var sourceInfo = (sourceSpan && sourceSpan.start || '(unknown)').toString();
@@ -13009,7 +12984,7 @@
             if (skipValidation === void 0) { skipValidation = false; }
             if (mapPropertyName === void 0) { mapPropertyName = true; }
             if (boundProp.isAnimation) {
-                return new BoundElementProperty(boundProp.name, 4 /* Animation */, SecurityContext.NONE, boundProp.expression, null, boundProp.sourceSpan, boundProp.keySpan, boundProp.valueSpan);
+                return new BoundElementProperty(boundProp.name, 4 /* Animation */, SecurityContext.NONE, boundProp.expression, null, boundProp.sourceSpan, boundProp.valueSpan);
             }
             var unit = null;
             var bindingType = undefined;
@@ -13054,7 +13029,7 @@
                     this._validatePropertyOrAttributeName(mappedPropName, boundProp.sourceSpan, false);
                 }
             }
-            return new BoundElementProperty(boundPropertyName, bindingType, securityContexts[0], boundProp.expression, unit, boundProp.sourceSpan, boundProp.keySpan, boundProp.valueSpan);
+            return new BoundElementProperty(boundPropertyName, bindingType, securityContexts[0], boundProp.expression, unit, boundProp.sourceSpan, boundProp.valueSpan);
         };
         BindingParser.prototype.parseEvent = function (name, expression, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents) {
             if (name.length === 0) {
@@ -16781,22 +16756,12 @@
             var value = attribute.value;
             var srcSpan = attribute.sourceSpan;
             var absoluteOffset = attribute.valueSpan ? attribute.valueSpan.start.offset : srcSpan.start.offset;
-            function createKeySpan(srcSpan, prefix, identifier) {
-                // We need to adjust the start location for the keySpan to account for the removed 'data-'
-                // prefix from `normalizeAttributeName`.
-                var normalizationAdjustment = attribute.name.length - name.length;
-                var keySpanStart = srcSpan.start.moveBy(prefix.length + normalizationAdjustment);
-                var keySpanEnd = keySpanStart.moveBy(identifier.length);
-                return new ParseSourceSpan(keySpanStart, keySpanEnd, identifier);
-            }
             var bindParts = name.match(BIND_NAME_REGEXP$1);
             var hasBinding = false;
             if (bindParts) {
                 hasBinding = true;
                 if (bindParts[KW_BIND_IDX$1] != null) {
-                    var identifier = bindParts[IDENT_KW_IDX$1];
-                    var keySpan = createKeySpan(srcSpan, bindParts[KW_BIND_IDX$1], identifier);
-                    this.bindingParser.parsePropertyBinding(identifier, value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
+                    this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX$1], value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties);
                 }
                 else if (bindParts[KW_LET_IDX$1]) {
                     if (isTemplateElement) {
@@ -16813,28 +16778,22 @@
                 }
                 else if (bindParts[KW_ON_IDX$1]) {
                     var events = [];
-                    var identifier = bindParts[IDENT_KW_IDX$1];
-                    this.bindingParser.parseEvent(identifier, value, srcSpan, attribute.valueSpan || srcSpan, matchableAttributes, events);
+                    this.bindingParser.parseEvent(bindParts[IDENT_KW_IDX$1], value, srcSpan, attribute.valueSpan || srcSpan, matchableAttributes, events);
                     addEvents(events, boundEvents);
                 }
                 else if (bindParts[KW_BINDON_IDX$1]) {
-                    var identifier = bindParts[IDENT_KW_IDX$1];
-                    var keySpan = createKeySpan(srcSpan, bindParts[KW_BINDON_IDX$1], identifier);
-                    this.bindingParser.parsePropertyBinding(identifier, value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
-                    this.parseAssignmentEvent(identifier, value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents);
+                    this.bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX$1], value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties);
+                    this.parseAssignmentEvent(bindParts[IDENT_KW_IDX$1], value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents);
                 }
                 else if (bindParts[KW_AT_IDX$1]) {
-                    var keySpan = createKeySpan(srcSpan, '', name);
-                    this.bindingParser.parseLiteralAttr(name, value, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
+                    this.bindingParser.parseLiteralAttr(name, value, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties);
                 }
                 else if (bindParts[IDENT_BANANA_BOX_IDX$1]) {
-                    var keySpan = createKeySpan(srcSpan, '[(', bindParts[IDENT_BANANA_BOX_IDX$1]);
-                    this.bindingParser.parsePropertyBinding(bindParts[IDENT_BANANA_BOX_IDX$1], value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
+                    this.bindingParser.parsePropertyBinding(bindParts[IDENT_BANANA_BOX_IDX$1], value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties);
                     this.parseAssignmentEvent(bindParts[IDENT_BANANA_BOX_IDX$1], value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents);
                 }
                 else if (bindParts[IDENT_PROPERTY_IDX$1]) {
-                    var keySpan = createKeySpan(srcSpan, '[', bindParts[IDENT_PROPERTY_IDX$1]);
-                    this.bindingParser.parsePropertyBinding(bindParts[IDENT_PROPERTY_IDX$1], value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
+                    this.bindingParser.parsePropertyBinding(bindParts[IDENT_PROPERTY_IDX$1], value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties);
                 }
                 else if (bindParts[IDENT_EVENT_IDX$1]) {
                     var events = [];
@@ -16843,8 +16802,7 @@
                 }
             }
             else {
-                var keySpan = createKeySpan(srcSpan, '' /* prefix */, name);
-                hasBinding = this.bindingParser.parsePropertyInterpolation(name, value, srcSpan, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
+                hasBinding = this.bindingParser.parsePropertyInterpolation(name, value, srcSpan, attribute.valueSpan, matchableAttributes, parsedProperties);
             }
             return hasBinding;
         };
@@ -20020,7 +19978,8 @@
         // bindings with pipes. These calculates happen after this block.
         var totalHostVarsCount = 0;
         bindings && bindings.forEach(function (binding) {
-            var stylingInputWasSet = styleBuilder.registerInputBasedOnName(binding.name, binding.expression, hostBindingSourceSpan);
+            var name = binding.name;
+            var stylingInputWasSet = styleBuilder.registerInputBasedOnName(name, binding.expression, binding.sourceSpan);
             if (stylingInputWasSet) {
                 totalHostVarsCount += MIN_STYLING_BINDING_SLOTS_REQUIRED;
             }
@@ -20583,7 +20542,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.2+53.sha-7561050');
+    var VERSION$1 = new Version('11.0.0-next.2+51.sha-c8f056b');
 
     /**
      * @license
