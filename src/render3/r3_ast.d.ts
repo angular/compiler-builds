@@ -42,9 +42,10 @@ export declare class BoundAttribute implements Node {
     value: AST;
     unit: string | null;
     sourceSpan: ParseSourceSpan;
-    valueSpan?: ParseSourceSpan | undefined;
-    i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined;
-    constructor(name: string, type: BindingType, securityContext: SecurityContext, value: AST, unit: string | null, sourceSpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
+    readonly keySpan: ParseSourceSpan;
+    valueSpan: ParseSourceSpan | undefined;
+    i18n: I18nMeta | undefined;
+    constructor(name: string, type: BindingType, securityContext: SecurityContext, value: AST, unit: string | null, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan, valueSpan: ParseSourceSpan | undefined, i18n: I18nMeta | undefined);
     static fromBoundElementProperty(prop: BoundElementProperty, i18n?: I18nMeta): BoundAttribute;
     visit<Result>(visitor: Visitor<Result>): Result;
 }
