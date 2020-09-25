@@ -104,8 +104,9 @@ export declare class Variable implements Node {
     name: string;
     value: string;
     sourceSpan: ParseSourceSpan;
+    readonly keySpan: ParseSourceSpan;
     valueSpan?: ParseSourceSpan | undefined;
-    constructor(name: string, value: string, sourceSpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined);
+    constructor(name: string, value: string, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 export declare class Reference implements Node {
