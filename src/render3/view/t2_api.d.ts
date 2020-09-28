@@ -31,6 +31,8 @@ export interface DirectiveMeta {
      * Name of the directive class (used for debugging).
      */
     name: string;
+    /** The selector for the directive or `null` if there isn't one. */
+    selector: string | null;
     /**
      * Whether the directive is a component.
      */
