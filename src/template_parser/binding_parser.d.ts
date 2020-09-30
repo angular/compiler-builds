@@ -41,7 +41,7 @@ export declare class BindingParser {
      * @param targetProps target property bindings in the template
      * @param targetVars target variables in the template
      */
-    parseInlineTemplateBinding(tplKey: string, tplValue: string, sourceSpan: ParseSourceSpan, absoluteValueOffset: number, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], targetVars: ParsedVariable[]): void;
+    parseInlineTemplateBinding(tplKey: string, tplValue: string, sourceSpan: ParseSourceSpan, absoluteValueOffset: number, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], targetVars: ParsedVariable[], isIvyAst: boolean): void;
     /**
      * Parses the bindings in a microsyntax expression, e.g.
      * ```

@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.3+89.sha-2aeaedc
+ * @license Angular v11.0.0-next.3+94.sha-1e3f810
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -12855,7 +12855,7 @@
          * @param targetProps target property bindings in the template
          * @param targetVars target variables in the template
          */
-        BindingParser.prototype.parseInlineTemplateBinding = function (tplKey, tplValue, sourceSpan, absoluteValueOffset, targetMatchableAttrs, targetProps, targetVars) {
+        BindingParser.prototype.parseInlineTemplateBinding = function (tplKey, tplValue, sourceSpan, absoluteValueOffset, targetMatchableAttrs, targetProps, targetVars, isIvyAst) {
             var e_1, _a;
             var absoluteKeyOffset = sourceSpan.start.offset + TEMPLATE_ATTR_PREFIX.length;
             var bindings = this._parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteKeyOffset, absoluteValueOffset);
@@ -12873,8 +12873,9 @@
                         targetVars.push(new ParsedVariable(key, value, bindingSpan, keySpan, valueSpan));
                     }
                     else if (binding.value) {
+                        var srcSpan = isIvyAst ? bindingSpan : sourceSpan;
                         var valueSpan = moveParseSourceSpan(sourceSpan, binding.value.ast.sourceSpan);
-                        this._parsePropertyAst(key, binding.value, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
+                        this._parsePropertyAst(key, binding.value, srcSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
                     }
                     else {
                         targetMatchableAttrs.push([key, '' /* value */]);
@@ -13545,7 +13546,7 @@
                     hasInlineTemplates = true;
                     var parsedVariables_1 = [];
                     var absoluteOffset = (attr.valueSpan || attr.sourceSpan).start.offset;
-                    _this._bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attr.sourceSpan, absoluteOffset, templateMatchableAttrs, templateElementOrDirectiveProps, parsedVariables_1);
+                    _this._bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attr.sourceSpan, absoluteOffset, templateMatchableAttrs, templateElementOrDirectiveProps, parsedVariables_1, false /* isIvyAst */);
                     templateElementVars.push.apply(templateElementVars, __spread(parsedVariables_1.map(function (v) { return VariableAst.fromParsedVariable(v); })));
                 }
                 if (!hasBinding && !hasTemplateBinding) {
@@ -16637,7 +16638,7 @@
                             //`<div attr></div>`. In this case, point to one character beyond the last character of
                             // the attribute name.
                             attribute.sourceSpan.start.offset + attribute.name.length;
-                        this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, absoluteValueOffset, [], templateParsedProperties, parsedVariables);
+                        this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, absoluteValueOffset, [], templateParsedProperties, parsedVariables, true /* isIvyAst */);
                         templateVariables.push.apply(templateVariables, __spread(parsedVariables.map(function (v) { return new Variable(v.name, v.value, v.sourceSpan, v.keySpan, v.valueSpan); })));
                     }
                     else {
@@ -20585,7 +20586,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.3+89.sha-2aeaedc');
+    var VERSION$1 = new Version('11.0.0-next.3+94.sha-1e3f810');
 
     /**
      * @license
