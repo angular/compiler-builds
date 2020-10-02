@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.4+32.sha-4fe673d
+ * @license Angular v11.0.0-next.4+34.sha-3bbbf39
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15251,6 +15251,19 @@
         }
         return IvyParser;
     }(Parser$1));
+    /** Describes a stateful context an expression parser is in. */
+    var ParseContextFlags;
+    (function (ParseContextFlags) {
+        ParseContextFlags[ParseContextFlags["None"] = 0] = "None";
+        /**
+         * A Writable context is one in which a value may be written to an lvalue.
+         * For example, after we see a property access, we may expect a write to the
+         * property via the "=" operator.
+         *   prop
+         *        ^ possible "=" after
+         */
+        ParseContextFlags[ParseContextFlags["Writable"] = 1] = "Writable";
+    })(ParseContextFlags || (ParseContextFlags = {}));
     var _ParseAST = /** @class */ (function () {
         function _ParseAST(input, location, absoluteOffset, tokens, inputLength, parseAction, errors, offset) {
             this.input = input;
@@ -15264,6 +15277,7 @@
             this.rparensExpected = 0;
             this.rbracketsExpected = 0;
             this.rbracesExpected = 0;
+            this.context = ParseContextFlags.None;
             // Cache of expression start and input indeces to the absolute source span they map to, used to
             // prevent creating superfluous source spans in `sourceSpan`.
             // A serial of the expression start and input index is used for mapping because both are stateful
@@ -15344,6 +15358,15 @@
         _ParseAST.prototype.advance = function () {
             this.index++;
         };
+        /**
+         * Executes a callback in the provided context.
+         */
+        _ParseAST.prototype.withContext = function (context, cb) {
+            this.context |= context;
+            var ret = cb();
+            this.context ^= context;
+            return ret;
+        };
         _ParseAST.prototype.consumeOptionalCharacter = function (code) {
             if (this.next.isCharacter(code)) {
                 this.advance();
@@ -15359,6 +15382,12 @@
         _ParseAST.prototype.peekKeywordAs = function () {
             return this.next.isKeywordAs();
         };
+        /**
+         * Consumes an expected character, otherwise emits an error about the missing expected character
+         * and skips over the token stream until reaching a recoverable point.
+         *
+         * See `this.error` and `this.skip` for more details.
+         */
         _ParseAST.prototype.expectCharacter = function (code) {
             if (this.consumeOptionalCharacter(code))
                 return;
@@ -15584,6 +15613,7 @@
             return this.parseCallChain();
         };
         _ParseAST.prototype.parseCallChain = function () {
+            var _this = this;
             var result = this.parsePrimary();
             var resultStart = result.span.start;
             while (true) {
@@ -15594,17 +15624,23 @@
                     result = this.parseAccessMemberOrMethodCall(result, true);
                 }
                 else if (this.consumeOptionalCharacter($LBRACKET)) {
-                    this.rbracketsExpected++;
-                    var key = this.parsePipe();
-                    this.rbracketsExpected--;
-                    this.expectCharacter($RBRACKET);
-                    if (this.consumeOptionalOperator('=')) {
-                        var value = this.parseConditional();
-                        result = new KeyedWrite(this.span(resultStart), this.sourceSpan(resultStart), result, key, value);
-                    }
-                    else {
-                        result = new KeyedRead(this.span(resultStart), this.sourceSpan(resultStart), result, key);
-                    }
+                    this.withContext(ParseContextFlags.Writable, function () {
+                        _this.rbracketsExpected++;
+                        var key = _this.parsePipe();
+                        if (key instanceof EmptyExpr) {
+                            _this.error("Key access cannot be empty");
+                        }
+                        _this.rbracketsExpected--;
+                        _this.expectCharacter($RBRACKET);
+                        if (_this.consumeOptionalOperator('=')) {
+                            var value = _this.parseConditional();
+                            result = new KeyedWrite(_this.span(resultStart), _this.sourceSpan(resultStart), result, key, value);
+                        }
+                        else {
+                            result =
+                                new KeyedRead(_this.span(resultStart), _this.sourceSpan(resultStart), result, key);
+                        }
+                    });
                 }
                 else if (this.consumeOptionalCharacter($LPAREN)) {
                     this.rparensExpected++;
@@ -15944,6 +15980,10 @@
         _ParseAST.prototype.consumeStatementTerminator = function () {
             this.consumeOptionalCharacter($SEMICOLON) || this.consumeOptionalCharacter($COMMA);
         };
+        /**
+         * Records an error and skips over the token stream until reaching a recoverable point. See
+         * `this.skip` for more details on token skipping.
+         */
         _ParseAST.prototype.error = function (message, index) {
             if (index === void 0) { index = null; }
             this.errors.push(new ParserError(message, this.input, this.locationText(index), this.location));
@@ -15956,24 +15996,32 @@
             return (index < this.tokens.length) ? "at column " + (this.tokens[index].index + 1) + " in" :
                 "at the end of the expression";
         };
-        // Error recovery should skip tokens until it encounters a recovery point. skip() treats
-        // the end of input and a ';' as unconditionally a recovery point. It also treats ')',
-        // '}' and ']' as conditional recovery points if one of calling productions is expecting
-        // one of these symbols. This allows skip() to recover from errors such as '(a.) + 1' allowing
-        // more of the AST to be retained (it doesn't skip any tokens as the ')' is retained because
-        // of the '(' begins an '(' <expr> ')' production). The recovery points of grouping symbols
-        // must be conditional as they must be skipped if none of the calling productions are not
-        // expecting the closing token else we will never make progress in the case of an
-        // extraneous group closing symbol (such as a stray ')'). This is not the case for ';' because
-        // parseChain() is always the root production and it expects a ';'.
-        // If a production expects one of these token it increments the corresponding nesting count,
-        // and then decrements it just prior to checking if the token is in the input.
+        /**
+         * Error recovery should skip tokens until it encounters a recovery point. skip() treats
+         * the end of input and a ';' as unconditionally a recovery point. It also treats ')',
+         * '}' and ']' as conditional recovery points if one of calling productions is expecting
+         * one of these symbols. This allows skip() to recover from errors such as '(a.) + 1' allowing
+         * more of the AST to be retained (it doesn't skip any tokens as the ')' is retained because
+         * of the '(' begins an '(' <expr> ')' production). The recovery points of grouping symbols
+         * must be conditional as they must be skipped if none of the calling productions are not
+         * expecting the closing token else we will never make progress in the case of an
+         * extraneous group closing symbol (such as a stray ')'). This is not the case for ';' because
+         * parseChain() is always the root production and it expects a ';'.
+         *
+         * Furthermore, the presence of a stateful context can add more recovery points.
+         *   - in a `Writable` context, we are able to recover after seeing the `=` operator, which
+         *     signals the presence of an independent rvalue expression following the `=` operator.
+         *
+         * If a production expects one of these token it increments the corresponding nesting count,
+         * and then decrements it just prior to checking if the token is in the input.
+         */
         _ParseAST.prototype.skip = function () {
             var n = this.next;
             while (this.index < this.tokens.length && !n.isCharacter($SEMICOLON) &&
                 (this.rparensExpected <= 0 || !n.isCharacter($RPAREN)) &&
                 (this.rbracesExpected <= 0 || !n.isCharacter($RBRACE)) &&
-                (this.rbracketsExpected <= 0 || !n.isCharacter($RBRACKET))) {
+                (this.rbracketsExpected <= 0 || !n.isCharacter($RBRACKET)) &&
+                (!(this.context & ParseContextFlags.Writable) || !n.isOperator('='))) {
                 if (this.next.isError()) {
                     this.errors.push(new ParserError(this.next.toString(), this.input, this.locationText(), this.location));
                 }
@@ -20586,7 +20634,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.4+32.sha-4fe673d');
+    var VERSION$1 = new Version('11.0.0-next.4+34.sha-3bbbf39');
 
     /**
      * @license
