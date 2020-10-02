@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.4+35.sha-5dbf357
+ * @license Angular v11.0.0-next.4+36.sha-89c5255
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15161,44 +15161,78 @@
             var span = new ParseSpan(0, input == null ? 0 : input.length);
             return new ASTWithSource(new Interpolation(span, span.toAbsolute(absoluteOffset), split.strings, expressions), input, location, absoluteOffset, this.errors);
         };
+        /**
+         * Splits a string of text into "raw" text segments and expressions present in interpolations in
+         * the string.
+         * Returns `null` if there are no interpolations, otherwise a
+         * `SplitInterpolation` with splits that look like
+         *   <raw text> <expression> <raw text> ... <raw text> <expression> <raw text>
+         */
         Parser.prototype.splitInterpolation = function (input, location, interpolationConfig) {
             if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
-            var regexp = _getInterpolateRegExp(interpolationConfig);
-            var parts = input.split(regexp);
-            if (parts.length <= 1) {
-                return null;
-            }
             var strings = [];
             var expressions = [];
             var offsets = [];
             var stringSpans = [];
             var expressionSpans = [];
-            var offset = 0;
-            for (var i = 0; i < parts.length; i++) {
-                var part = parts[i];
-                if (i % 2 === 0) {
-                    // fixed string
+            var i = 0;
+            var atInterpolation = false;
+            var extendLastString = false;
+            var interpStart = interpolationConfig.start, interpEnd = interpolationConfig.end;
+            while (i < input.length) {
+                if (!atInterpolation) {
+                    // parse until starting {{
+                    var start = i;
+                    i = input.indexOf(interpStart, i);
+                    if (i === -1) {
+                        i = input.length;
+                    }
+                    var part = input.substring(start, i);
                     strings.push(part);
-                    var start = offset;
-                    offset += part.length;
-                    stringSpans.push({ start: start, end: offset });
-                }
-                else if (part.trim().length > 0) {
-                    var start = offset;
-                    offset += interpolationConfig.start.length;
-                    expressions.push(part);
-                    offsets.push(offset);
-                    offset += part.length + interpolationConfig.end.length;
-                    expressionSpans.push({ start: start, end: offset });
+                    stringSpans.push({ start: start, end: i });
+                    atInterpolation = true;
                 }
                 else {
-                    this._reportError('Blank expressions are not allowed in interpolated strings', input, "at column " + this._findInterpolationErrorColumn(parts, i, interpolationConfig) + " in", location);
-                    expressions.push('$implicit');
-                    offsets.push(offset);
-                    expressionSpans.push({ start: offset, end: offset });
+                    // parse from starting {{ to ending }}
+                    var fullStart = i;
+                    var exprStart = fullStart + interpStart.length;
+                    var exprEnd = input.indexOf(interpEnd, exprStart);
+                    if (exprEnd === -1) {
+                        // Could not find the end of the interpolation; do not parse an expression.
+                        // Instead we should extend the content on the last raw string.
+                        atInterpolation = false;
+                        extendLastString = true;
+                        break;
+                    }
+                    var fullEnd = exprEnd + interpEnd.length;
+                    var part = input.substring(exprStart, exprEnd);
+                    if (part.trim().length > 0) {
+                        expressions.push(part);
+                    }
+                    else {
+                        this._reportError('Blank expressions are not allowed in interpolated strings', input, "at column " + i + " in", location);
+                        expressions.push('$implicit');
+                    }
+                    offsets.push(exprStart);
+                    expressionSpans.push({ start: fullStart, end: fullEnd });
+                    i = fullEnd;
+                    atInterpolation = false;
                 }
             }
-            return new SplitInterpolation(strings, stringSpans, expressions, expressionSpans, offsets);
+            if (!atInterpolation) {
+                // If we are now at a text section, add the remaining content as a raw string.
+                if (extendLastString) {
+                    strings[strings.length - 1] += input.substring(i);
+                    stringSpans[stringSpans.length - 1].end = input.length;
+                }
+                else {
+                    strings.push(input.substring(i));
+                    stringSpans.push({ start: i, end: input.length });
+                }
+            }
+            return expressions.length === 0 ?
+                null :
+                new SplitInterpolation(strings, stringSpans, expressions, expressionSpans, offsets);
         };
         Parser.prototype.wrapLiteralPrimitive = function (input, location, absoluteOffset) {
             var span = new ParseSpan(0, input == null ? 0 : input.length);
@@ -20634,7 +20668,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.4+35.sha-5dbf357');
+    var VERSION$1 = new Version('11.0.0-next.4+36.sha-89c5255');
 
     /**
      * @license
