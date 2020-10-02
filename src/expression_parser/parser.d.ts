@@ -96,6 +96,7 @@ export declare class _ParseAST {
     private rparensExpected;
     private rbracketsExpected;
     private rbracesExpected;
+    private context;
     private sourceSpanCache;
     index: number;
     constructor(input: string, location: any, absoluteOffset: number, tokens: Token[], inputLength: number, parseAction: boolean, errors: ParserError[], offset: number);
@@ -120,9 +121,19 @@ export declare class _ParseAST {
     span(start: number): ParseSpan;
     sourceSpan(start: number): AbsoluteSourceSpan;
     advance(): void;
+    /**
+     * Executes a callback in the provided context.
+     */
+    private withContext;
     consumeOptionalCharacter(code: number): boolean;
     peekKeywordLet(): boolean;
     peekKeywordAs(): boolean;
+    /**
+     * Consumes an expected character, otherwise emits an error about the missing expected character
+     * and skips over the token stream until reaching a recoverable point.
+     *
+     * See `this.error` and `this.skip` for more details.
+     */
     expectCharacter(code: number): void;
     consumeOptionalOperator(op: string): boolean;
     expectOperator(operator: string): void;
@@ -226,8 +237,31 @@ export declare class _ParseAST {
      * Consume the optional statement terminator: semicolon or comma.
      */
     private consumeStatementTerminator;
+    /**
+     * Records an error and skips over the token stream until reaching a recoverable point. See
+     * `this.skip` for more details on token skipping.
+     */
     error(message: string, index?: number | null): void;
     private locationText;
+    /**
+     * Error recovery should skip tokens until it encounters a recovery point. skip() treats
+     * the end of input and a ';' as unconditionally a recovery point. It also treats ')',
+     * '}' and ']' as conditional recovery points if one of calling productions is expecting
+     * one of these symbols. This allows skip() to recover from errors such as '(a.) + 1' allowing
+     * more of the AST to be retained (it doesn't skip any tokens as the ')' is retained because
+     * of the '(' begins an '(' <expr> ')' production). The recovery points of grouping symbols
+     * must be conditional as they must be skipped if none of the calling productions are not
+     * expecting the closing token else we will never make progress in the case of an
+     * extraneous group closing symbol (such as a stray ')'). This is not the case for ';' because
+     * parseChain() is always the root production and it expects a ';'.
+     *
+     * Furthermore, the presence of a stateful context can add more recovery points.
+     *   - in a `Writable` context, we are able to recover after seeing the `=` operator, which
+     *     signals the presence of an independent rvalue expression following the `=` operator.
+     *
+     * If a production expects one of these token it increments the corresponding nesting count,
+     * and then decrements it just prior to checking if the token is in the input.
+     */
     private skip;
 }
 declare class SimpleExpressionChecker implements AstVisitor {
