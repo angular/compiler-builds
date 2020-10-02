@@ -74,6 +74,13 @@ export declare class Parser {
      */
     parseTemplateBindings(templateKey: string, templateValue: string, templateUrl: string, absoluteKeyOffset: number, absoluteValueOffset: number): TemplateBindingParseResult;
     parseInterpolation(input: string, location: any, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource | null;
+    /**
+     * Splits a string of text into "raw" text segments and expressions present in interpolations in
+     * the string.
+     * Returns `null` if there are no interpolations, otherwise a
+     * `SplitInterpolation` with splits that look like
+     *   <raw text> <expression> <raw text> ... <raw text> <expression> <raw text>
+     */
     splitInterpolation(input: string, location: string, interpolationConfig?: InterpolationConfig): SplitInterpolation | null;
     wrapLiteralPrimitive(input: string | null, location: any, absoluteOffset: number): ASTWithSource;
     private _stripComments;
