@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.4+57.sha-3975dd9
+ * @license Angular v11.0.0-next.4+60.sha-aeec223
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -20668,7 +20668,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.4+57.sha-3975dd9');
+    var VERSION$1 = new Version('11.0.0-next.4+60.sha-aeec223');
 
     /**
      * @license
@@ -29998,16 +29998,18 @@
             // First, parse the template into a `Scope` structure. This operation captures the syntactic
             // scopes in the template and makes them available for later use.
             var scope = Scope.apply(target.template);
+            // Use the `Scope` to extract the entities present at every level of the template.
+            var templateEntities = extractTemplateEntities(scope);
             // Next, perform directive matching on the template using the `DirectiveBinder`. This returns:
             //   - directives: Map of nodes (elements & ng-templates) to the directives on them.
             //   - bindings: Map of inputs, outputs, and attributes to the directive/element that claims
             //     them. TODO(alxhub): handle multiple directives claiming an input/output/etc.
             //   - references: Map of #references to their targets.
-            var _a = DirectiveBinder.apply(target.template, this.directiveMatcher), directives = _a.directives, bindings = _a.bindings, references = _a.references;
+            var _b = DirectiveBinder.apply(target.template, this.directiveMatcher), directives = _b.directives, bindings = _b.bindings, references = _b.references;
             // Finally, run the TemplateBinder to bind references, variables, and other entities within the
             // template. This extracts all the metadata that doesn't depend on directive matching.
-            var _b = TemplateBinder.apply(target.template, scope), expressions = _b.expressions, symbols = _b.symbols, nestingLevel = _b.nestingLevel, usedPipes = _b.usedPipes;
-            return new R3BoundTarget(target, directives, bindings, references, expressions, symbols, nestingLevel, usedPipes);
+            var _c = TemplateBinder.apply(target.template, scope), expressions = _c.expressions, symbols = _c.symbols, nestingLevel = _c.nestingLevel, usedPipes = _c.usedPipes;
+            return new R3BoundTarget(target, directives, bindings, references, expressions, symbols, nestingLevel, templateEntities, usedPipes);
         };
         return R3TargetBinder;
     }());
@@ -30019,8 +30021,9 @@
      * be analyzed and have their child `Scope`s available in `childScopes`.
      */
     var Scope = /** @class */ (function () {
-        function Scope(parentScope) {
+        function Scope(parentScope, template) {
             this.parentScope = parentScope;
+            this.template = template;
             /**
              * Named members of the `Scope`, such as `Reference`s or `Variable`s.
              */
@@ -30030,12 +30033,15 @@
              */
             this.childScopes = new Map();
         }
+        Scope.newRootScope = function () {
+            return new Scope(null, null);
+        };
         /**
          * Process a template (either as a `Template` sub-template with variables, or a plain array of
          * template `Node`s) and construct its `Scope`.
          */
         Scope.apply = function (template) {
-            var scope = new Scope();
+            var scope = Scope.newRootScope();
             scope.ingest(template);
             return scope;
         };
@@ -30068,7 +30074,7 @@
             // processing the template's child scope.
             template.references.forEach(function (node) { return _this.visitReference(node); });
             // Next, create an inner scope and process the template within it.
-            var scope = new Scope(this);
+            var scope = new Scope(this, template);
             scope.ingest(template);
             this.childScopes.set(template, scope);
         };
@@ -30104,7 +30110,7 @@
                 // Found in the local scope.
                 return this.namedEntities.get(name);
             }
-            else if (this.parentScope !== undefined) {
+            else if (this.parentScope !== null) {
                 // Not in the local scope, but there's a parent scope so check there.
                 return this.parentScope.lookup(name);
             }
@@ -30409,7 +30415,7 @@
      * See `BoundTarget` for documentation on the individual methods.
      */
     var R3BoundTarget = /** @class */ (function () {
-        function R3BoundTarget(target, directives, bindings, references, exprTargets, symbols, nestingLevel, usedPipes) {
+        function R3BoundTarget(target, directives, bindings, references, exprTargets, symbols, nestingLevel, templateEntities, usedPipes) {
             this.target = target;
             this.directives = directives;
             this.bindings = bindings;
@@ -30417,8 +30423,13 @@
             this.exprTargets = exprTargets;
             this.symbols = symbols;
             this.nestingLevel = nestingLevel;
+            this.templateEntities = templateEntities;
             this.usedPipes = usedPipes;
         }
+        R3BoundTarget.prototype.getEntitiesInTemplateScope = function (template) {
+            var _a;
+            return (_a = this.templateEntities.get(template)) !== null && _a !== void 0 ? _a : new Set();
+        };
         R3BoundTarget.prototype.getDirectivesOfNode = function (node) {
             return this.directives.get(node) || null;
         };
@@ -30447,6 +30458,58 @@
         };
         return R3BoundTarget;
     }());
+    function extractTemplateEntities(rootScope) {
+        var e_1, _b, e_2, _c;
+        var entityMap = new Map();
+        function extractScopeEntities(scope) {
+            if (entityMap.has(scope.template)) {
+                return entityMap.get(scope.template);
+            }
+            var currentEntities = scope.namedEntities;
+            var templateEntities;
+            if (scope.parentScope !== null) {
+                templateEntities = new Map(__spread(extractScopeEntities(scope.parentScope), currentEntities));
+            }
+            else {
+                templateEntities = new Map(currentEntities);
+            }
+            entityMap.set(scope.template, templateEntities);
+            return templateEntities;
+        }
+        var scopesToProcess = [rootScope];
+        while (scopesToProcess.length > 0) {
+            var scope = scopesToProcess.pop();
+            try {
+                for (var _d = (e_1 = void 0, __values(scope.childScopes.values())), _e = _d.next(); !_e.done; _e = _d.next()) {
+                    var childScope = _e.value;
+                    scopesToProcess.push(childScope);
+                }
+            }
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (_e && !_e.done && (_b = _d.return)) _b.call(_d);
+                }
+                finally { if (e_1) throw e_1.error; }
+            }
+            extractScopeEntities(scope);
+        }
+        var templateEntities = new Map();
+        try {
+            for (var entityMap_1 = __values(entityMap), entityMap_1_1 = entityMap_1.next(); !entityMap_1_1.done; entityMap_1_1 = entityMap_1.next()) {
+                var _f = __read(entityMap_1_1.value, 2), template = _f[0], entities = _f[1];
+                templateEntities.set(template, new Set(entities.values()));
+            }
+        }
+        catch (e_2_1) { e_2 = { error: e_2_1 }; }
+        finally {
+            try {
+                if (entityMap_1_1 && !entityMap_1_1.done && (_c = entityMap_1.return)) _c.call(entityMap_1);
+            }
+            finally { if (e_2) throw e_2.error; }
+        }
+        return templateEntities;
+    }
 
     /**
      * @license
