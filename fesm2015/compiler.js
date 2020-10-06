@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.4+57.sha-3975dd9
+ * @license Angular v11.0.0-next.4+60.sha-aeec223
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -19491,7 +19491,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.0.0-next.4+57.sha-3975dd9');
+const VERSION$1 = new Version('11.0.0-next.4+60.sha-aeec223');
 
 /**
  * @license
@@ -28484,6 +28484,8 @@ class R3TargetBinder {
         // First, parse the template into a `Scope` structure. This operation captures the syntactic
         // scopes in the template and makes them available for later use.
         const scope = Scope.apply(target.template);
+        // Use the `Scope` to extract the entities present at every level of the template.
+        const templateEntities = extractTemplateEntities(scope);
         // Next, perform directive matching on the template using the `DirectiveBinder`. This returns:
         //   - directives: Map of nodes (elements & ng-templates) to the directives on them.
         //   - bindings: Map of inputs, outputs, and attributes to the directive/element that claims
@@ -28493,7 +28495,7 @@ class R3TargetBinder {
         // Finally, run the TemplateBinder to bind references, variables, and other entities within the
         // template. This extracts all the metadata that doesn't depend on directive matching.
         const { expressions, symbols, nestingLevel, usedPipes } = TemplateBinder.apply(target.template, scope);
-        return new R3BoundTarget(target, directives, bindings, references, expressions, symbols, nestingLevel, usedPipes);
+        return new R3BoundTarget(target, directives, bindings, references, expressions, symbols, nestingLevel, templateEntities, usedPipes);
     }
 }
 /**
@@ -28504,8 +28506,9 @@ class R3TargetBinder {
  * be analyzed and have their child `Scope`s available in `childScopes`.
  */
 class Scope {
-    constructor(parentScope) {
+    constructor(parentScope, template) {
         this.parentScope = parentScope;
+        this.template = template;
         /**
          * Named members of the `Scope`, such as `Reference`s or `Variable`s.
          */
@@ -28515,12 +28518,15 @@ class Scope {
          */
         this.childScopes = new Map();
     }
+    static newRootScope() {
+        return new Scope(null, null);
+    }
     /**
      * Process a template (either as a `Template` sub-template with variables, or a plain array of
      * template `Node`s) and construct its `Scope`.
      */
     static apply(template) {
-        const scope = new Scope();
+        const scope = Scope.newRootScope();
         scope.ingest(template);
         return scope;
     }
@@ -28550,7 +28556,7 @@ class Scope {
         // processing the template's child scope.
         template.references.forEach(node => this.visitReference(node));
         // Next, create an inner scope and process the template within it.
-        const scope = new Scope(this);
+        const scope = new Scope(this, template);
         scope.ingest(template);
         this.childScopes.set(template, scope);
     }
@@ -28586,7 +28592,7 @@ class Scope {
             // Found in the local scope.
             return this.namedEntities.get(name);
         }
-        else if (this.parentScope !== undefined) {
+        else if (this.parentScope !== null) {
             // Not in the local scope, but there's a parent scope so check there.
             return this.parentScope.lookup(name);
         }
@@ -28883,7 +28889,7 @@ class TemplateBinder extends RecursiveAstVisitor$1 {
  * See `BoundTarget` for documentation on the individual methods.
  */
 class R3BoundTarget {
-    constructor(target, directives, bindings, references, exprTargets, symbols, nestingLevel, usedPipes) {
+    constructor(target, directives, bindings, references, exprTargets, symbols, nestingLevel, templateEntities, usedPipes) {
         this.target = target;
         this.directives = directives;
         this.bindings = bindings;
@@ -28891,7 +28897,12 @@ class R3BoundTarget {
         this.exprTargets = exprTargets;
         this.symbols = symbols;
         this.nestingLevel = nestingLevel;
+        this.templateEntities = templateEntities;
         this.usedPipes = usedPipes;
+    }
+    getEntitiesInTemplateScope(template) {
+        var _a;
+        return (_a = this.templateEntities.get(template)) !== null && _a !== void 0 ? _a : new Set();
     }
     getDirectivesOfNode(node) {
         return this.directives.get(node) || null;
@@ -28919,6 +28930,37 @@ class R3BoundTarget {
     getUsedPipes() {
         return Array.from(this.usedPipes);
     }
+}
+function extractTemplateEntities(rootScope) {
+    const entityMap = new Map();
+    function extractScopeEntities(scope) {
+        if (entityMap.has(scope.template)) {
+            return entityMap.get(scope.template);
+        }
+        const currentEntities = scope.namedEntities;
+        let templateEntities;
+        if (scope.parentScope !== null) {
+            templateEntities = new Map([...extractScopeEntities(scope.parentScope), ...currentEntities]);
+        }
+        else {
+            templateEntities = new Map(currentEntities);
+        }
+        entityMap.set(scope.template, templateEntities);
+        return templateEntities;
+    }
+    const scopesToProcess = [rootScope];
+    while (scopesToProcess.length > 0) {
+        const scope = scopesToProcess.pop();
+        for (const childScope of scope.childScopes.values()) {
+            scopesToProcess.push(childScope);
+        }
+        extractScopeEntities(scope);
+    }
+    const templateEntities = new Map();
+    for (const [template, entities] of entityMap) {
+        templateEntities.set(template, new Set(entities.values()));
+    }
+    return templateEntities;
 }
 
 /**
