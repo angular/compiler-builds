@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.5+8.sha-42a164f
+ * @license Angular v11.0.0-next.5+13.sha-4a1c12c
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1114,7 +1114,7 @@
     var ViewEncapsulation;
     (function (ViewEncapsulation) {
         ViewEncapsulation[ViewEncapsulation["Emulated"] = 0] = "Emulated";
-        ViewEncapsulation[ViewEncapsulation["Native"] = 1] = "Native";
+        // Historically the 1 value was for `Native` encapsulation which has been removed as of v11.
         ViewEncapsulation[ViewEncapsulation["None"] = 2] = "None";
         ViewEncapsulation[ViewEncapsulation["ShadowDom"] = 3] = "ShadowDom";
     })(ViewEncapsulation || (ViewEncapsulation = {}));
@@ -4617,7 +4617,7 @@
     var Message = /** @class */ (function () {
         /**
          * @param nodes message AST
-         * @param placeholders maps placeholder names to static content
+         * @param placeholders maps placeholder names to static content and their source spans
          * @param placeholderToMessage maps placeholder names to messages (used for nested ICU messages)
          * @param meaning
          * @param description
@@ -12844,6 +12844,25 @@
             }
         };
         /**
+         * Similar to `parseInterpolation`, but treats the provided string as a single expression
+         * element that would normally appear within the interpolation prefix and suffix (`{{` and `}}`).
+         * This is used for parsing the switch expression in ICUs.
+         */
+        BindingParser.prototype.parseInterpolationExpression = function (expression, sourceSpan) {
+            var sourceInfo = sourceSpan.start.toString();
+            try {
+                var ast = this._exprParser.parseInterpolationExpression(expression, sourceInfo, sourceSpan.start.offset);
+                if (ast)
+                    this._reportExpressionParserErrors(ast.errors, sourceSpan);
+                this._checkPipes(ast, sourceSpan);
+                return ast;
+            }
+            catch (e) {
+                this._reportError("" + e, sourceSpan);
+                return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, sourceSpan.start.offset);
+            }
+        };
+        /**
          * Parses the bindings in a microsyntax expression, and converts them to
          * `ParsedProperty` or `ParsedVariable`.
          *
@@ -15158,8 +15177,26 @@
                     .parseChain();
                 expressions.push(ast);
             }
-            var span = new ParseSpan(0, input == null ? 0 : input.length);
-            return new ASTWithSource(new Interpolation(span, span.toAbsolute(absoluteOffset), split.strings, expressions), input, location, absoluteOffset, this.errors);
+            return this.createInterpolationAst(split.strings, expressions, input, location, absoluteOffset);
+        };
+        /**
+         * Similar to `parseInterpolation`, but treats the provided string as a single expression
+         * element that would normally appear within the interpolation prefix and suffix (`{{` and `}}`).
+         * This is used for parsing the switch expression in ICUs.
+         */
+        Parser.prototype.parseInterpolationExpression = function (expression, location, absoluteOffset) {
+            var sourceToLex = this._stripComments(expression);
+            var tokens = this._lexer.tokenize(sourceToLex);
+            var ast = new _ParseAST(expression, location, absoluteOffset, tokens, sourceToLex.length, 
+            /* parseAction */ false, this.errors, 0)
+                .parseChain();
+            var strings = ['', '']; // The prefix and suffix strings are both empty
+            return this.createInterpolationAst(strings, [ast], expression, location, absoluteOffset);
+        };
+        Parser.prototype.createInterpolationAst = function (strings, expressions, input, location, absoluteOffset) {
+            var span = new ParseSpan(0, input.length);
+            var interpolation = new Interpolation(span, span.toAbsolute(absoluteOffset), strings, expressions);
+            return new ASTWithSource(interpolation, input, location, absoluteOffset, this.errors);
         };
         /**
          * Splits a string of text into "raw" text segments and expressions present in interpolations in
@@ -16815,21 +16852,17 @@
             Object.keys(message.placeholders).forEach(function (key) {
                 var value = message.placeholders[key];
                 if (key.startsWith(I18N_ICU_VAR_PREFIX)) {
-                    var config = _this.bindingParser.interpolationConfig;
-                    // ICU expression is a plain string, not wrapped into start
-                    // and end tags, so we wrap it before passing to binding parser
-                    var wrapped = "" + config.start + value + config.end;
                     // Currently when the `plural` or `select` keywords in an ICU contain trailing spaces (e.g.
                     // `{count, select , ...}`), these spaces are also included into the key names in ICU vars
                     // (e.g. "VAR_SELECT "). These trailing spaces are not desirable, since they will later be
                     // converted into `_` symbols while normalizing placeholder names, which might lead to
                     // mismatches at runtime (i.e. placeholder will not be replaced with the correct value).
                     var formattedKey = key.trim();
-                    vars[formattedKey] =
-                        _this._visitTextWithInterpolation(wrapped, expansion.sourceSpan);
+                    var ast = _this.bindingParser.parseInterpolationExpression(value.text, value.sourceSpan);
+                    vars[formattedKey] = new BoundText(ast, value.sourceSpan);
                 }
                 else {
-                    placeholders[key] = _this._visitTextWithInterpolation(value, expansion.sourceSpan);
+                    placeholders[key] = _this._visitTextWithInterpolation(value.text, value.sourceSpan);
                 }
             });
             return new Icu(vars, placeholders, expansion.sourceSpan, message);
@@ -17428,6 +17461,7 @@
             return new Message(i18nodes, context.placeholderToContent, context.placeholderToMessage, meaning, description, customId);
         };
         _I18nVisitor.prototype.visitElement = function (el, context) {
+            var _a;
             var children = visitAll$1(this, el.children, context);
             var attrs = {};
             el.attrs.forEach(function (attr) {
@@ -17436,11 +17470,17 @@
             });
             var isVoid = getHtmlTagDefinition(el.name).isVoid;
             var startPhName = context.placeholderRegistry.getStartTagPlaceholderName(el.name, attrs, isVoid);
-            context.placeholderToContent[startPhName] = el.startSourceSpan.toString();
+            context.placeholderToContent[startPhName] = {
+                text: el.startSourceSpan.toString(),
+                sourceSpan: el.startSourceSpan,
+            };
             var closePhName = '';
             if (!isVoid) {
                 closePhName = context.placeholderRegistry.getCloseTagPlaceholderName(el.name);
-                context.placeholderToContent[closePhName] = "</" + el.name + ">";
+                context.placeholderToContent[closePhName] = {
+                    text: "</" + el.name + ">",
+                    sourceSpan: (_a = el.endSourceSpan) !== null && _a !== void 0 ? _a : el.sourceSpan,
+                };
             }
             var node = new TagPlaceholder(el.name, attrs, startPhName, closePhName, children, isVoid, el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
             return context.visitNodeFn(el, node);
@@ -17471,7 +17511,10 @@
                 // - the ICU message is nested.
                 var expPh = context.placeholderRegistry.getUniquePlaceholder("VAR_" + icu.type);
                 i18nIcu.expressionPlaceholder = expPh;
-                context.placeholderToContent[expPh] = icu.switchValue;
+                context.placeholderToContent[expPh] = {
+                    text: icu.switchValue,
+                    sourceSpan: icu.switchValueSourceSpan,
+                };
                 return context.visitNodeFn(icu, i18nIcu);
             }
             // Else returns a placeholder
@@ -17495,7 +17538,7 @@
             // Return a group of text + expressions
             var nodes = [];
             var container = new Container(nodes, sourceSpan);
-            var _a = this._interpolationConfig, sDelimiter = _a.start, eDelimiter = _a.end;
+            var _b = this._interpolationConfig, sDelimiter = _b.start, eDelimiter = _b.end;
             for (var i = 0; i < splitInterpolation.strings.length - 1; i++) {
                 var expression = splitInterpolation.expressions[i];
                 var baseName = _extractPlaceholderName(expression) || 'INTERPOLATION';
@@ -17507,7 +17550,10 @@
                 }
                 var expressionSpan = getOffsetSourceSpan(sourceSpan, splitInterpolation.expressionsSpans[i]);
                 nodes.push(new Placeholder(expression, phName, expressionSpan));
-                context.placeholderToContent[phName] = sDelimiter + expression + eDelimiter;
+                context.placeholderToContent[phName] = {
+                    text: sDelimiter + expression + eDelimiter,
+                    sourceSpan: expressionSpan,
+                };
             }
             // The last index contains no expression
             var lastStringIdx = splitInterpolation.strings.length - 1;
@@ -17519,8 +17565,8 @@
         };
         return _I18nVisitor;
     }());
-    function getOffsetSourceSpan(sourceSpan, _a) {
-        var start = _a.start, end = _a.end;
+    function getOffsetSourceSpan(sourceSpan, _b) {
+        var start = _b.start, end = _b.end;
         return new ParseSourceSpan(sourceSpan.start.moveBy(start), sourceSpan.start.moveBy(end));
     }
     var _CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*("|')([\s\S]*?)\1[\s\S]*\)/g;
@@ -20668,7 +20714,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.5+8.sha-42a164f');
+    var VERSION$1 = new Version('11.0.0-next.5+13.sha-4a1c12c');
 
     /**
      * @license
@@ -22364,14 +22410,14 @@
             // TODO(vicb): Once all format switch to using expression placeholders
             // we should throw when the placeholder is not in the source message
             var exp = this._srcMsg.placeholders.hasOwnProperty(icu.expression) ?
-                this._srcMsg.placeholders[icu.expression] :
+                this._srcMsg.placeholders[icu.expression].text :
                 icu.expression;
             return "{" + exp + ", " + icu.type + ", " + cases.join(' ') + "}";
         };
         I18nToHtmlVisitor.prototype.visitPlaceholder = function (ph, context) {
             var phName = this._mapper(ph.name);
             if (this._srcMsg.placeholders.hasOwnProperty(phName)) {
-                return this._srcMsg.placeholders[phName];
+                return this._srcMsg.placeholders[phName].text;
             }
             if (this._srcMsg.placeholderToMessage.hasOwnProperty(phName)) {
                 return this._convertToText(this._srcMsg.placeholderToMessage[phName]);
@@ -30722,6 +30768,7 @@
     exports.TmplAstBoundText = BoundText;
     exports.TmplAstContent = Content;
     exports.TmplAstElement = Element;
+    exports.TmplAstIcu = Icu;
     exports.TmplAstRecursiveVisitor = RecursiveVisitor;
     exports.TmplAstReference = Reference;
     exports.TmplAstTemplate = Template;
