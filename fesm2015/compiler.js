@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.5+8.sha-42a164f
+ * @license Angular v11.0.0-next.5+13.sha-4a1c12c
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -794,7 +794,7 @@ const createDirective = makeMetadataFactory('Directive', (dir = {}) => dir);
 var ViewEncapsulation;
 (function (ViewEncapsulation) {
     ViewEncapsulation[ViewEncapsulation["Emulated"] = 0] = "Emulated";
-    ViewEncapsulation[ViewEncapsulation["Native"] = 1] = "Native";
+    // Historically the 1 value was for `Native` encapsulation which has been removed as of v11.
     ViewEncapsulation[ViewEncapsulation["None"] = 2] = "None";
     ViewEncapsulation[ViewEncapsulation["ShadowDom"] = 3] = "ShadowDom";
 })(ViewEncapsulation || (ViewEncapsulation = {}));
@@ -3998,7 +3998,7 @@ function transformAll(visitor, nodes) {
 class Message {
     /**
      * @param nodes message AST
-     * @param placeholders maps placeholder names to static content
+     * @param placeholders maps placeholder names to static content and their source spans
      * @param placeholderToMessage maps placeholder names to messages (used for nested ICU messages)
      * @param meaning
      * @param description
@@ -11906,6 +11906,25 @@ class BindingParser {
         }
     }
     /**
+     * Similar to `parseInterpolation`, but treats the provided string as a single expression
+     * element that would normally appear within the interpolation prefix and suffix (`{{` and `}}`).
+     * This is used for parsing the switch expression in ICUs.
+     */
+    parseInterpolationExpression(expression, sourceSpan) {
+        const sourceInfo = sourceSpan.start.toString();
+        try {
+            const ast = this._exprParser.parseInterpolationExpression(expression, sourceInfo, sourceSpan.start.offset);
+            if (ast)
+                this._reportExpressionParserErrors(ast.errors, sourceSpan);
+            this._checkPipes(ast, sourceSpan);
+            return ast;
+        }
+        catch (e) {
+            this._reportError(`${e}`, sourceSpan);
+            return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, sourceSpan.start.offset);
+        }
+    }
+    /**
      * Parses the bindings in a microsyntax expression, and converts them to
      * `ParsedProperty` or `ParsedVariable`.
      *
@@ -14167,8 +14186,26 @@ class Parser$1 {
                 .parseChain();
             expressions.push(ast);
         }
-        const span = new ParseSpan(0, input == null ? 0 : input.length);
-        return new ASTWithSource(new Interpolation(span, span.toAbsolute(absoluteOffset), split.strings, expressions), input, location, absoluteOffset, this.errors);
+        return this.createInterpolationAst(split.strings, expressions, input, location, absoluteOffset);
+    }
+    /**
+     * Similar to `parseInterpolation`, but treats the provided string as a single expression
+     * element that would normally appear within the interpolation prefix and suffix (`{{` and `}}`).
+     * This is used for parsing the switch expression in ICUs.
+     */
+    parseInterpolationExpression(expression, location, absoluteOffset) {
+        const sourceToLex = this._stripComments(expression);
+        const tokens = this._lexer.tokenize(sourceToLex);
+        const ast = new _ParseAST(expression, location, absoluteOffset, tokens, sourceToLex.length, 
+        /* parseAction */ false, this.errors, 0)
+            .parseChain();
+        const strings = ['', '']; // The prefix and suffix strings are both empty
+        return this.createInterpolationAst(strings, [ast], expression, location, absoluteOffset);
+    }
+    createInterpolationAst(strings, expressions, input, location, absoluteOffset) {
+        const span = new ParseSpan(0, input.length);
+        const interpolation = new Interpolation(span, span.toAbsolute(absoluteOffset), strings, expressions);
+        return new ASTWithSource(interpolation, input, location, absoluteOffset, this.errors);
     }
     /**
      * Splits a string of text into "raw" text segments and expressions present in interpolations in
@@ -15779,21 +15816,17 @@ class HtmlAstToIvyAst {
         Object.keys(message.placeholders).forEach(key => {
             const value = message.placeholders[key];
             if (key.startsWith(I18N_ICU_VAR_PREFIX)) {
-                const config = this.bindingParser.interpolationConfig;
-                // ICU expression is a plain string, not wrapped into start
-                // and end tags, so we wrap it before passing to binding parser
-                const wrapped = `${config.start}${value}${config.end}`;
                 // Currently when the `plural` or `select` keywords in an ICU contain trailing spaces (e.g.
                 // `{count, select , ...}`), these spaces are also included into the key names in ICU vars
                 // (e.g. "VAR_SELECT "). These trailing spaces are not desirable, since they will later be
                 // converted into `_` symbols while normalizing placeholder names, which might lead to
                 // mismatches at runtime (i.e. placeholder will not be replaced with the correct value).
                 const formattedKey = key.trim();
-                vars[formattedKey] =
-                    this._visitTextWithInterpolation(wrapped, expansion.sourceSpan);
+                const ast = this.bindingParser.parseInterpolationExpression(value.text, value.sourceSpan);
+                vars[formattedKey] = new BoundText(ast, value.sourceSpan);
             }
             else {
-                placeholders[key] = this._visitTextWithInterpolation(value, expansion.sourceSpan);
+                placeholders[key] = this._visitTextWithInterpolation(value.text, value.sourceSpan);
             }
         });
         return new Icu(vars, placeholders, expansion.sourceSpan, message);
@@ -16365,6 +16398,7 @@ class _I18nVisitor {
         return new Message(i18nodes, context.placeholderToContent, context.placeholderToMessage, meaning, description, customId);
     }
     visitElement(el, context) {
+        var _a;
         const children = visitAll$1(this, el.children, context);
         const attrs = {};
         el.attrs.forEach(attr => {
@@ -16373,11 +16407,17 @@ class _I18nVisitor {
         });
         const isVoid = getHtmlTagDefinition(el.name).isVoid;
         const startPhName = context.placeholderRegistry.getStartTagPlaceholderName(el.name, attrs, isVoid);
-        context.placeholderToContent[startPhName] = el.startSourceSpan.toString();
+        context.placeholderToContent[startPhName] = {
+            text: el.startSourceSpan.toString(),
+            sourceSpan: el.startSourceSpan,
+        };
         let closePhName = '';
         if (!isVoid) {
             closePhName = context.placeholderRegistry.getCloseTagPlaceholderName(el.name);
-            context.placeholderToContent[closePhName] = `</${el.name}>`;
+            context.placeholderToContent[closePhName] = {
+                text: `</${el.name}>`,
+                sourceSpan: (_a = el.endSourceSpan) !== null && _a !== void 0 ? _a : el.sourceSpan,
+            };
         }
         const node = new TagPlaceholder(el.name, attrs, startPhName, closePhName, children, isVoid, el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
         return context.visitNodeFn(el, node);
@@ -16407,7 +16447,10 @@ class _I18nVisitor {
             // - the ICU message is nested.
             const expPh = context.placeholderRegistry.getUniquePlaceholder(`VAR_${icu.type}`);
             i18nIcu.expressionPlaceholder = expPh;
-            context.placeholderToContent[expPh] = icu.switchValue;
+            context.placeholderToContent[expPh] = {
+                text: icu.switchValue,
+                sourceSpan: icu.switchValueSourceSpan,
+            };
             return context.visitNodeFn(icu, i18nIcu);
         }
         // Else returns a placeholder
@@ -16443,7 +16486,10 @@ class _I18nVisitor {
             }
             const expressionSpan = getOffsetSourceSpan(sourceSpan, splitInterpolation.expressionsSpans[i]);
             nodes.push(new Placeholder(expression, phName, expressionSpan));
-            context.placeholderToContent[phName] = sDelimiter + expression + eDelimiter;
+            context.placeholderToContent[phName] = {
+                text: sDelimiter + expression + eDelimiter,
+                sourceSpan: expressionSpan,
+            };
         }
         // The last index contains no expression
         const lastStringIdx = splitInterpolation.strings.length - 1;
@@ -19491,7 +19537,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.0.0-next.5+8.sha-42a164f');
+const VERSION$1 = new Version('11.0.0-next.5+13.sha-4a1c12c');
 
 /**
  * @license
@@ -21166,14 +21212,14 @@ class I18nToHtmlVisitor {
         // TODO(vicb): Once all format switch to using expression placeholders
         // we should throw when the placeholder is not in the source message
         const exp = this._srcMsg.placeholders.hasOwnProperty(icu.expression) ?
-            this._srcMsg.placeholders[icu.expression] :
+            this._srcMsg.placeholders[icu.expression].text :
             icu.expression;
         return `{${exp}, ${icu.type}, ${cases.join(' ')}}`;
     }
     visitPlaceholder(ph, context) {
         const phName = this._mapper(ph.name);
         if (this._srcMsg.placeholders.hasOwnProperty(phName)) {
-            return this._srcMsg.placeholders[phName];
+            return this._srcMsg.placeholders[phName].text;
         }
         if (this._srcMsg.placeholderToMessage.hasOwnProperty(phName)) {
             return this._convertToText(this._srcMsg.placeholderToMessage[phName]);
@@ -29000,5 +29046,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TemplateBindingParseResult, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TemplateBindingParseResult, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Icu as TmplAstIcu, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
 //# sourceMappingURL=compiler.js.map
