@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.5+13.sha-4a1c12c
+ * @license Angular v11.0.0-next.5+11.sha-0a16e60
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1114,7 +1114,7 @@
     var ViewEncapsulation;
     (function (ViewEncapsulation) {
         ViewEncapsulation[ViewEncapsulation["Emulated"] = 0] = "Emulated";
-        // Historically the 1 value was for `Native` encapsulation which has been removed as of v11.
+        ViewEncapsulation[ViewEncapsulation["Native"] = 1] = "Native";
         ViewEncapsulation[ViewEncapsulation["None"] = 2] = "None";
         ViewEncapsulation[ViewEncapsulation["ShadowDom"] = 3] = "ShadowDom";
     })(ViewEncapsulation || (ViewEncapsulation = {}));
@@ -20714,7 +20714,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.5+13.sha-4a1c12c');
+    var VERSION$1 = new Version('11.0.0-next.5+11.sha-0a16e60');
 
     /**
      * @license
