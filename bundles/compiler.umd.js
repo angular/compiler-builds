@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.1.5+7.sha-8913aee
+ * @license Angular v10.1.5+8.sha-52a0c6b
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10014,11 +10014,12 @@
     function extractCommentsWithHash(input) {
         return input.match(_commentWithHashRe) || [];
     }
-    var _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
-    var _curlyRe = /([{}])/g;
-    var OPEN_CURLY = '{';
-    var CLOSE_CURLY = '}';
     var BLOCK_PLACEHOLDER = '%BLOCK%';
+    var QUOTE_PLACEHOLDER = '%QUOTED%';
+    var _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
+    var _quotedRe = /%QUOTED%/g;
+    var CONTENT_PAIRS = new Map([['{', '}']]);
+    var QUOTE_PAIRS = new Map([["\"", "\""], ["'", "'"]]);
     var CssRule = /** @class */ (function () {
         function CssRule(selector, content) {
             this.selector = selector;
@@ -10027,9 +10028,12 @@
         return CssRule;
     }());
     function processRules(input, ruleCallback) {
-        var inputWithEscapedBlocks = escapeBlocks(input);
+        var inputWithEscapedQuotes = escapeBlocks(input, QUOTE_PAIRS, QUOTE_PLACEHOLDER);
+        var inputWithEscapedBlocks = escapeBlocks(inputWithEscapedQuotes.escapedString, CONTENT_PAIRS, BLOCK_PLACEHOLDER);
         var nextBlockIndex = 0;
-        return inputWithEscapedBlocks.escapedString.replace(_ruleRe, function () {
+        var nextQuoteIndex = 0;
+        return inputWithEscapedBlocks.escapedString
+            .replace(_ruleRe, function () {
             var m = [];
             for (var _i = 0; _i < arguments.length; _i++) {
                 m[_i] = arguments[_i];
@@ -10045,7 +10049,8 @@
             }
             var rule = ruleCallback(new CssRule(selector, content));
             return "" + m[1] + rule.selector + m[3] + contentPrefix + rule.content + suffix;
-        });
+        })
+            .replace(_quotedRe, function () { return inputWithEscapedQuotes.blocks[nextQuoteIndex++]; });
     }
     var StringWithEscapedBlocks = /** @class */ (function () {
         function StringWithEscapedBlocks(escapedString, blocks) {
@@ -10054,35 +10059,46 @@
         }
         return StringWithEscapedBlocks;
     }());
-    function escapeBlocks(input) {
-        var inputParts = input.split(_curlyRe);
+    function escapeBlocks(input, charPairs, placeholder) {
         var resultParts = [];
         var escapedBlocks = [];
-        var bracketCount = 0;
-        var currentBlockParts = [];
-        for (var partIndex = 0; partIndex < inputParts.length; partIndex++) {
-            var part = inputParts[partIndex];
-            if (part == CLOSE_CURLY) {
-                bracketCount--;
+        var openCharCount = 0;
+        var nonBlockStartIndex = 0;
+        var blockStartIndex = -1;
+        var openChar;
+        var closeChar;
+        for (var i = 0; i < input.length; i++) {
+            var char = input[i];
+            if (char === '\\') {
+                i++;
             }
-            if (bracketCount > 0) {
-                currentBlockParts.push(part);
-            }
-            else {
-                if (currentBlockParts.length > 0) {
-                    escapedBlocks.push(currentBlockParts.join(''));
-                    resultParts.push(BLOCK_PLACEHOLDER);
-                    currentBlockParts = [];
+            else if (char === closeChar) {
+                openCharCount--;
+                if (openCharCount === 0) {
+                    escapedBlocks.push(input.substring(blockStartIndex, i));
+                    resultParts.push(placeholder);
+                    nonBlockStartIndex = i;
+                    blockStartIndex = -1;
+                    openChar = closeChar = undefined;
                 }
-                resultParts.push(part);
             }
-            if (part == OPEN_CURLY) {
-                bracketCount++;
+            else if (char === openChar) {
+                openCharCount++;
+            }
+            else if (openCharCount === 0 && charPairs.has(char)) {
+                openChar = char;
+                closeChar = charPairs.get(char);
+                openCharCount = 1;
+                blockStartIndex = i + 1;
+                resultParts.push(input.substring(nonBlockStartIndex, blockStartIndex));
             }
         }
-        if (currentBlockParts.length > 0) {
-            escapedBlocks.push(currentBlockParts.join(''));
-            resultParts.push(BLOCK_PLACEHOLDER);
+        if (blockStartIndex !== -1) {
+            escapedBlocks.push(input.substring(blockStartIndex));
+            resultParts.push(placeholder);
+        }
+        else {
+            resultParts.push(input.substring(nonBlockStartIndex));
         }
         return new StringWithEscapedBlocks(resultParts.join(''), escapedBlocks);
     }
@@ -20580,7 +20596,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('10.1.5+7.sha-8913aee');
+    var VERSION$1 = new Version('10.1.5+8.sha-52a0c6b');
 
     /**
      * @license
