@@ -161,4 +161,7 @@ export declare class Identifiers {
     static sanitizeScript: o.ExternalReference;
     static sanitizeUrl: o.ExternalReference;
     static sanitizeUrlOrResourceUrl: o.ExternalReference;
+    static trustConstantHtml: o.ExternalReference;
+    static trustConstantScript: o.ExternalReference;
+    static trustConstantResourceUrl: o.ExternalReference;
 }
