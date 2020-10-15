@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.6+13.sha-6e18d2d
+ * @license Angular v11.0.0-next.6+11.sha-497af77
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4188,9 +4188,6 @@
     Identifiers$1.sanitizeScript = { name: 'ɵɵsanitizeScript', moduleName: CORE$1 };
     Identifiers$1.sanitizeUrl = { name: 'ɵɵsanitizeUrl', moduleName: CORE$1 };
     Identifiers$1.sanitizeUrlOrResourceUrl = { name: 'ɵɵsanitizeUrlOrResourceUrl', moduleName: CORE$1 };
-    Identifiers$1.trustConstantHtml = { name: 'ɵɵtrustConstantHtml', moduleName: CORE$1 };
-    Identifiers$1.trustConstantScript = { name: 'ɵɵtrustConstantScript', moduleName: CORE$1 };
-    Identifiers$1.trustConstantResourceUrl = { name: 'ɵɵtrustConstantResourceUrl', moduleName: CORE$1 };
 
     /**
      * @license
@@ -18434,7 +18431,7 @@
             var parameters = [literal(slot)];
             this._ngContentReservedSlots.push(ngContent.selector);
             var nonContentSelectAttributes = ngContent.attributes.filter(function (attr) { return attr.name.toLowerCase() !== NG_CONTENT_SELECT_ATTR$1; });
-            var attributes = this.getAttributeExpressions(ngContent.name, nonContentSelectAttributes, [], []);
+            var attributes = this.getAttributeExpressions(nonContentSelectAttributes, [], []);
             if (attributes.length > 0) {
                 parameters.push(literal(projectionSlotIdx), literalArr(attributes));
             }
@@ -18505,7 +18502,7 @@
                 }
             });
             // add attributes for directive and projection matching purposes
-            var attributes = this.getAttributeExpressions(element.name, outputAttrs, allOtherInputs, element.outputs, stylingBuilder, [], i18nAttrs);
+            var attributes = this.getAttributeExpressions(outputAttrs, allOtherInputs, element.outputs, stylingBuilder, [], i18nAttrs);
             parameters.push(this.addAttrsToConsts(attributes));
             // local refs (ex.: <div #foo #bar="baz">)
             var refs = this.prepareRefsArray(element.references);
@@ -18704,7 +18701,7 @@
             this.matchDirectives(NG_TEMPLATE_TAG_NAME, template);
             // prepare attributes parameter (including attributes used for directive matching)
             var _c = __read(partitionArray(template.attributes, hasI18nMeta), 2), i18nStaticAttrs = _c[0], staticAttrs = _c[1];
-            var attrsExprs = this.getAttributeExpressions(NG_TEMPLATE_TAG_NAME, staticAttrs, template.inputs, template.outputs, undefined /* styles */, template.templateAttrs, i18nStaticAttrs);
+            var attrsExprs = this.getAttributeExpressions(staticAttrs, template.inputs, template.outputs, undefined /* styles */, template.templateAttrs, i18nStaticAttrs);
             parameters.push(this.addAttrsToConsts(attrsExprs));
             // local refs (ex.: <ng-template #foo>)
             if (template.references && template.references.length) {
@@ -19031,7 +19028,7 @@
          * Note that this function will fully ignore all synthetic (@foo) attribute values
          * because those values are intended to always be generated as property instructions.
          */
-        TemplateDefinitionBuilder.prototype.getAttributeExpressions = function (elementName, renderAttributes, inputs, outputs, styles, templateAttrs, i18nAttrs) {
+        TemplateDefinitionBuilder.prototype.getAttributeExpressions = function (renderAttributes, inputs, outputs, styles, templateAttrs, i18nAttrs) {
             if (templateAttrs === void 0) { templateAttrs = []; }
             if (i18nAttrs === void 0) { i18nAttrs = []; }
             var alreadySeen = new Set();
@@ -19041,7 +19038,7 @@
                 if (attr.name === NG_PROJECT_AS_ATTR_NAME) {
                     ngProjectAsAttr = attr;
                 }
-                attrExprs.push.apply(attrExprs, __spread(getAttributeNameLiterals(attr.name), [trustedConstAttribute(elementName, attr)]));
+                attrExprs.push.apply(attrExprs, __spread(getAttributeNameLiterals(attr.name), [asLiteral(attr.value)]));
             });
             // Keep ngProjectAs next to the other name, value pairs so we can verify that we match
             // ngProjectAs marker in the attribute name slot.
@@ -19678,19 +19675,6 @@
                 return importExpr(Identifiers$1.sanitizeResourceUrl);
             default:
                 return null;
-        }
-    }
-    function trustedConstAttribute(tagName, attr) {
-        var value = asLiteral(attr.value);
-        switch (elementRegistry.securityContext(tagName, attr.name, /* isAttribute */ true)) {
-            case SecurityContext.HTML:
-                return importExpr(Identifiers$1.trustConstantHtml).callFn([value], attr.valueSpan);
-            case SecurityContext.SCRIPT:
-                return importExpr(Identifiers$1.trustConstantScript).callFn([value], attr.valueSpan);
-            case SecurityContext.RESOURCE_URL:
-                return importExpr(Identifiers$1.trustConstantResourceUrl).callFn([value], attr.valueSpan);
-            default:
-                return value;
         }
     }
     function isSingleElementTemplate(children) {
@@ -20746,7 +20730,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.6+13.sha-6e18d2d');
+    var VERSION$1 = new Version('11.0.0-next.6+11.sha-497af77');
 
     /**
      * @license
