@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.6+26.sha-a3812c6
+ * @license Angular v11.0.0-next.6+29.sha-765fa33
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7129,6 +7129,87 @@
     }(AbstractEmitterVisitor));
 
     /**
+     * The Trusted Types policy, or null if Trusted Types are not
+     * enabled/supported, or undefined if the policy has not been created yet.
+     */
+    var policy;
+    /**
+     * Returns the Trusted Types policy, or null if Trusted Types are not
+     * enabled/supported. The first call to this function will create the policy.
+     */
+    function getPolicy() {
+        if (policy === undefined) {
+            policy = null;
+            if (_global.trustedTypes) {
+                try {
+                    policy =
+                        _global.trustedTypes.createPolicy('angular#unsafe-jit', {
+                            createScript: function (s) { return s; },
+                        });
+                }
+                catch (_a) {
+                    // trustedTypes.createPolicy throws if called with a name that is
+                    // already registered, even in report-only mode. Until the API changes,
+                    // catch the error not to break the applications functionally. In such
+                    // cases, the code will fall back to using strings.
+                }
+            }
+        }
+        return policy;
+    }
+    /**
+     * Unsafely promote a string to a TrustedScript, falling back to strings when
+     * Trusted Types are not available.
+     * @security In particular, it must be assured that the provided string will
+     * never cause an XSS vulnerability if used in a context that will be
+     * interpreted and executed as a script by a browser, e.g. when calling eval.
+     */
+    function trustedScriptFromString(script) {
+        var _a;
+        return ((_a = getPolicy()) === null || _a === void 0 ? void 0 : _a.createScript(script)) || script;
+    }
+    /**
+     * Unsafely call the Function constructor with the given string arguments. It
+     * is only available in development mode, and should be stripped out of
+     * production code.
+     * @security This is a security-sensitive function; any use of this function
+     * must go through security review. In particular, it must be assured that it
+     * is only called from the JIT compiler, as use in other code can lead to XSS
+     * vulnerabilities.
+     */
+    function newTrustedFunctionForJIT() {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        if (!_global.trustedTypes) {
+            // In environments that don't support Trusted Types, fall back to the most
+            // straightforward implementation:
+            return new (Function.bind.apply(Function, __spread([void 0], args)))();
+        }
+        // Chrome currently does not support passing TrustedScript to the Function
+        // constructor. The following implements the workaround proposed on the page
+        // below, where the Chromium bug is also referenced:
+        // https://github.com/w3c/webappsec-trusted-types/wiki/Trusted-Types-for-function-constructor
+        var fnArgs = args.slice(0, -1).join(',');
+        var fnBody = args.pop().toString();
+        var body = "(function anonymous(" + fnArgs + "\n) { " + fnBody + "\n})";
+        // Using eval directly confuses the compiler and prevents this module from
+        // being stripped out of JS binaries even if not used. The global['eval']
+        // indirection fixes that.
+        var fn = _global['eval'](trustedScriptFromString(body));
+        // To completely mimic the behavior of calling "new Function", two more
+        // things need to happen:
+        // 1. Stringifying the resulting function should return its source code
+        fn.toString = function () { return body; };
+        // 2. When calling the resulting function, `this` should refer to `global`
+        return fn.bind(_global);
+        // When Trusted Types support in Function constructors is widely available,
+        // the implementation of this function can be simplified to:
+        // return new Function(...args.map(a => trustedScriptFromString(a)));
+    }
+
+    /**
      * A helper class to manage the evaluation of JIT generated code.
      */
     var JitEvaluator = /** @class */ (function () {
@@ -7180,11 +7261,11 @@
                 // function anonymous(a,b,c
                 // /**/) { ... }```
                 // We don't want to hard code this fact, so we auto detect it via an empty function first.
-                var emptyFn = new (Function.bind.apply(Function, __spread([void 0], fnArgNames.concat('return null;'))))().toString();
+                var emptyFn = newTrustedFunctionForJIT.apply(void 0, __spread(fnArgNames.concat('return null;'))).toString();
                 var headerLines = emptyFn.slice(0, emptyFn.indexOf('return null;')).split('\n').length - 1;
                 fnBody += "\n" + ctx.toSourceMapGenerator(sourceUrl, headerLines).toJsComment();
             }
-            var fn = new (Function.bind.apply(Function, __spread([void 0], fnArgNames.concat(fnBody))))();
+            var fn = newTrustedFunctionForJIT.apply(void 0, __spread(fnArgNames.concat(fnBody)));
             return this.executeFunction(fn, fnArgValues);
         };
         /**
@@ -20746,7 +20827,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.6+26.sha-a3812c6');
+    var VERSION$1 = new Version('11.0.0-next.6+29.sha-765fa33');
 
     /**
      * @license
