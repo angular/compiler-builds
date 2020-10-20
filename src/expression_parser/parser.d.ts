@@ -75,6 +75,13 @@ export declare class Parser {
     parseTemplateBindings(templateKey: string, templateValue: string, templateUrl: string, absoluteKeyOffset: number, absoluteValueOffset: number): TemplateBindingParseResult;
     parseInterpolation(input: string, location: any, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource | null;
     /**
+     * Similar to `parseInterpolation`, but treats the provided string as a single expression
+     * element that would normally appear within the interpolation prefix and suffix (`{{` and `}}`).
+     * This is used for parsing the switch expression in ICUs.
+     */
+    parseInterpolationExpression(expression: string, location: any, absoluteOffset: number): ASTWithSource;
+    private createInterpolationAst;
+    /**
      * Splits a string of text into "raw" text segments and expressions present in interpolations in
      * the string.
      * Returns `null` if there are no interpolations, otherwise a

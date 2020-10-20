@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.5+2.sha-a8c0972
+ * @license Angular v11.0.0-next.6+52.sha-0f1a18e
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -794,7 +794,7 @@ const createDirective = makeMetadataFactory('Directive', (dir = {}) => dir);
 var ViewEncapsulation;
 (function (ViewEncapsulation) {
     ViewEncapsulation[ViewEncapsulation["Emulated"] = 0] = "Emulated";
-    ViewEncapsulation[ViewEncapsulation["Native"] = 1] = "Native";
+    // Historically the 1 value was for `Native` encapsulation which has been removed as of v11.
     ViewEncapsulation[ViewEncapsulation["None"] = 2] = "None";
     ViewEncapsulation[ViewEncapsulation["ShadowDom"] = 3] = "ShadowDom";
 })(ViewEncapsulation || (ViewEncapsulation = {}));
@@ -3621,6 +3621,9 @@ Identifiers$1.sanitizeResourceUrl = { name: 'ɵɵsanitizeResourceUrl', moduleNam
 Identifiers$1.sanitizeScript = { name: 'ɵɵsanitizeScript', moduleName: CORE$1 };
 Identifiers$1.sanitizeUrl = { name: 'ɵɵsanitizeUrl', moduleName: CORE$1 };
 Identifiers$1.sanitizeUrlOrResourceUrl = { name: 'ɵɵsanitizeUrlOrResourceUrl', moduleName: CORE$1 };
+Identifiers$1.trustConstantHtml = { name: 'ɵɵtrustConstantHtml', moduleName: CORE$1 };
+Identifiers$1.trustConstantScript = { name: 'ɵɵtrustConstantScript', moduleName: CORE$1 };
+Identifiers$1.trustConstantResourceUrl = { name: 'ɵɵtrustConstantResourceUrl', moduleName: CORE$1 };
 
 /**
  * @license
@@ -3998,7 +4001,7 @@ function transformAll(visitor, nodes) {
 class Message {
     /**
      * @param nodes message AST
-     * @param placeholders maps placeholder names to static content
+     * @param placeholders maps placeholder names to static content and their source spans
      * @param placeholderToMessage maps placeholder names to messages (used for nested ICU messages)
      * @param meaning
      * @param description
@@ -6455,6 +6458,92 @@ class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
  * found in the LICENSE file at https://angular.io/license
  */
 /**
+ * The Trusted Types policy, or null if Trusted Types are not
+ * enabled/supported, or undefined if the policy has not been created yet.
+ */
+let policy;
+/**
+ * Returns the Trusted Types policy, or null if Trusted Types are not
+ * enabled/supported. The first call to this function will create the policy.
+ */
+function getPolicy() {
+    if (policy === undefined) {
+        policy = null;
+        if (_global.trustedTypes) {
+            try {
+                policy =
+                    _global.trustedTypes.createPolicy('angular#unsafe-jit', {
+                        createScript: (s) => s,
+                    });
+            }
+            catch (_a) {
+                // trustedTypes.createPolicy throws if called with a name that is
+                // already registered, even in report-only mode. Until the API changes,
+                // catch the error not to break the applications functionally. In such
+                // cases, the code will fall back to using strings.
+            }
+        }
+    }
+    return policy;
+}
+/**
+ * Unsafely promote a string to a TrustedScript, falling back to strings when
+ * Trusted Types are not available.
+ * @security In particular, it must be assured that the provided string will
+ * never cause an XSS vulnerability if used in a context that will be
+ * interpreted and executed as a script by a browser, e.g. when calling eval.
+ */
+function trustedScriptFromString(script) {
+    var _a;
+    return ((_a = getPolicy()) === null || _a === void 0 ? void 0 : _a.createScript(script)) || script;
+}
+/**
+ * Unsafely call the Function constructor with the given string arguments. It
+ * is only available in development mode, and should be stripped out of
+ * production code.
+ * @security This is a security-sensitive function; any use of this function
+ * must go through security review. In particular, it must be assured that it
+ * is only called from the JIT compiler, as use in other code can lead to XSS
+ * vulnerabilities.
+ */
+function newTrustedFunctionForJIT(...args) {
+    if (!_global.trustedTypes) {
+        // In environments that don't support Trusted Types, fall back to the most
+        // straightforward implementation:
+        return new Function(...args);
+    }
+    // Chrome currently does not support passing TrustedScript to the Function
+    // constructor. The following implements the workaround proposed on the page
+    // below, where the Chromium bug is also referenced:
+    // https://github.com/w3c/webappsec-trusted-types/wiki/Trusted-Types-for-function-constructor
+    const fnArgs = args.slice(0, -1).join(',');
+    const fnBody = args.pop().toString();
+    const body = `(function anonymous(${fnArgs}
+) { ${fnBody}
+})`;
+    // Using eval directly confuses the compiler and prevents this module from
+    // being stripped out of JS binaries even if not used. The global['eval']
+    // indirection fixes that.
+    const fn = _global['eval'](trustedScriptFromString(body));
+    // To completely mimic the behavior of calling "new Function", two more
+    // things need to happen:
+    // 1. Stringifying the resulting function should return its source code
+    fn.toString = () => body;
+    // 2. When calling the resulting function, `this` should refer to `global`
+    return fn.bind(_global);
+    // When Trusted Types support in Function constructors is widely available,
+    // the implementation of this function can be simplified to:
+    // return new Function(...args.map(a => trustedScriptFromString(a)));
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * A helper class to manage the evaluation of JIT generated code.
  */
 class JitEvaluator {
@@ -6505,11 +6594,11 @@ class JitEvaluator {
             // function anonymous(a,b,c
             // /**/) { ... }```
             // We don't want to hard code this fact, so we auto detect it via an empty function first.
-            const emptyFn = new Function(...fnArgNames.concat('return null;')).toString();
+            const emptyFn = newTrustedFunctionForJIT(...fnArgNames.concat('return null;')).toString();
             const headerLines = emptyFn.slice(0, emptyFn.indexOf('return null;')).split('\n').length - 1;
             fnBody += `\n${ctx.toSourceMapGenerator(sourceUrl, headerLines).toJsComment()}`;
         }
-        const fn = new Function(...fnArgNames.concat(fnBody));
+        const fn = newTrustedFunctionForJIT(...fnArgNames.concat(fnBody));
         return this.executeFunction(fn, fnArgValues);
     }
     /**
@@ -9185,11 +9274,12 @@ const _commentWithHashRe = /\/\*\s*#\s*source(Mapping)?URL=[\s\S]+?\*\//g;
 function extractCommentsWithHash(input) {
     return input.match(_commentWithHashRe) || [];
 }
-const _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
-const _curlyRe = /([{}])/g;
-const OPEN_CURLY = '{';
-const CLOSE_CURLY = '}';
 const BLOCK_PLACEHOLDER = '%BLOCK%';
+const QUOTE_PLACEHOLDER = '%QUOTED%';
+const _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
+const _quotedRe = /%QUOTED%/g;
+const CONTENT_PAIRS = new Map([['{', '}']]);
+const QUOTE_PAIRS = new Map([[`"`, `"`], [`'`, `'`]]);
 class CssRule {
     constructor(selector, content) {
         this.selector = selector;
@@ -9197,9 +9287,12 @@ class CssRule {
     }
 }
 function processRules(input, ruleCallback) {
-    const inputWithEscapedBlocks = escapeBlocks(input);
+    const inputWithEscapedQuotes = escapeBlocks(input, QUOTE_PAIRS, QUOTE_PLACEHOLDER);
+    const inputWithEscapedBlocks = escapeBlocks(inputWithEscapedQuotes.escapedString, CONTENT_PAIRS, BLOCK_PLACEHOLDER);
     let nextBlockIndex = 0;
-    return inputWithEscapedBlocks.escapedString.replace(_ruleRe, function (...m) {
+    let nextQuoteIndex = 0;
+    return inputWithEscapedBlocks.escapedString
+        .replace(_ruleRe, (...m) => {
         const selector = m[2];
         let content = '';
         let suffix = m[4];
@@ -9211,7 +9304,8 @@ function processRules(input, ruleCallback) {
         }
         const rule = ruleCallback(new CssRule(selector, content));
         return `${m[1]}${rule.selector}${m[3]}${contentPrefix}${rule.content}${suffix}`;
-    });
+    })
+        .replace(_quotedRe, () => inputWithEscapedQuotes.blocks[nextQuoteIndex++]);
 }
 class StringWithEscapedBlocks {
     constructor(escapedString, blocks) {
@@ -9219,35 +9313,46 @@ class StringWithEscapedBlocks {
         this.blocks = blocks;
     }
 }
-function escapeBlocks(input) {
-    const inputParts = input.split(_curlyRe);
+function escapeBlocks(input, charPairs, placeholder) {
     const resultParts = [];
     const escapedBlocks = [];
-    let bracketCount = 0;
-    let currentBlockParts = [];
-    for (let partIndex = 0; partIndex < inputParts.length; partIndex++) {
-        const part = inputParts[partIndex];
-        if (part == CLOSE_CURLY) {
-            bracketCount--;
+    let openCharCount = 0;
+    let nonBlockStartIndex = 0;
+    let blockStartIndex = -1;
+    let openChar;
+    let closeChar;
+    for (let i = 0; i < input.length; i++) {
+        const char = input[i];
+        if (char === '\\') {
+            i++;
         }
-        if (bracketCount > 0) {
-            currentBlockParts.push(part);
-        }
-        else {
-            if (currentBlockParts.length > 0) {
-                escapedBlocks.push(currentBlockParts.join(''));
-                resultParts.push(BLOCK_PLACEHOLDER);
-                currentBlockParts = [];
+        else if (char === closeChar) {
+            openCharCount--;
+            if (openCharCount === 0) {
+                escapedBlocks.push(input.substring(blockStartIndex, i));
+                resultParts.push(placeholder);
+                nonBlockStartIndex = i;
+                blockStartIndex = -1;
+                openChar = closeChar = undefined;
             }
-            resultParts.push(part);
         }
-        if (part == OPEN_CURLY) {
-            bracketCount++;
+        else if (char === openChar) {
+            openCharCount++;
+        }
+        else if (openCharCount === 0 && charPairs.has(char)) {
+            openChar = char;
+            closeChar = charPairs.get(char);
+            openCharCount = 1;
+            blockStartIndex = i + 1;
+            resultParts.push(input.substring(nonBlockStartIndex, blockStartIndex));
         }
     }
-    if (currentBlockParts.length > 0) {
-        escapedBlocks.push(currentBlockParts.join(''));
-        resultParts.push(BLOCK_PLACEHOLDER);
+    if (blockStartIndex !== -1) {
+        escapedBlocks.push(input.substring(blockStartIndex));
+        resultParts.push(placeholder);
+    }
+    else {
+        resultParts.push(input.substring(nonBlockStartIndex));
     }
     return new StringWithEscapedBlocks(resultParts.join(''), escapedBlocks);
 }
@@ -11906,6 +12011,25 @@ class BindingParser {
         }
     }
     /**
+     * Similar to `parseInterpolation`, but treats the provided string as a single expression
+     * element that would normally appear within the interpolation prefix and suffix (`{{` and `}}`).
+     * This is used for parsing the switch expression in ICUs.
+     */
+    parseInterpolationExpression(expression, sourceSpan) {
+        const sourceInfo = sourceSpan.start.toString();
+        try {
+            const ast = this._exprParser.parseInterpolationExpression(expression, sourceInfo, sourceSpan.start.offset);
+            if (ast)
+                this._reportExpressionParserErrors(ast.errors, sourceSpan);
+            this._checkPipes(ast, sourceSpan);
+            return ast;
+        }
+        catch (e) {
+            this._reportError(`${e}`, sourceSpan);
+            return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, sourceSpan.start.offset);
+        }
+    }
+    /**
      * Parses the bindings in a microsyntax expression, and converts them to
      * `ParsedProperty` or `ParsedVariable`.
      *
@@ -14167,8 +14291,26 @@ class Parser$1 {
                 .parseChain();
             expressions.push(ast);
         }
-        const span = new ParseSpan(0, input == null ? 0 : input.length);
-        return new ASTWithSource(new Interpolation(span, span.toAbsolute(absoluteOffset), split.strings, expressions), input, location, absoluteOffset, this.errors);
+        return this.createInterpolationAst(split.strings, expressions, input, location, absoluteOffset);
+    }
+    /**
+     * Similar to `parseInterpolation`, but treats the provided string as a single expression
+     * element that would normally appear within the interpolation prefix and suffix (`{{` and `}}`).
+     * This is used for parsing the switch expression in ICUs.
+     */
+    parseInterpolationExpression(expression, location, absoluteOffset) {
+        const sourceToLex = this._stripComments(expression);
+        const tokens = this._lexer.tokenize(sourceToLex);
+        const ast = new _ParseAST(expression, location, absoluteOffset, tokens, sourceToLex.length, 
+        /* parseAction */ false, this.errors, 0)
+            .parseChain();
+        const strings = ['', '']; // The prefix and suffix strings are both empty
+        return this.createInterpolationAst(strings, [ast], expression, location, absoluteOffset);
+    }
+    createInterpolationAst(strings, expressions, input, location, absoluteOffset) {
+        const span = new ParseSpan(0, input.length);
+        const interpolation = new Interpolation(span, span.toAbsolute(absoluteOffset), strings, expressions);
+        return new ASTWithSource(interpolation, input, location, absoluteOffset, this.errors);
     }
     /**
      * Splits a string of text into "raw" text segments and expressions present in interpolations in
@@ -15779,21 +15921,17 @@ class HtmlAstToIvyAst {
         Object.keys(message.placeholders).forEach(key => {
             const value = message.placeholders[key];
             if (key.startsWith(I18N_ICU_VAR_PREFIX)) {
-                const config = this.bindingParser.interpolationConfig;
-                // ICU expression is a plain string, not wrapped into start
-                // and end tags, so we wrap it before passing to binding parser
-                const wrapped = `${config.start}${value}${config.end}`;
                 // Currently when the `plural` or `select` keywords in an ICU contain trailing spaces (e.g.
                 // `{count, select , ...}`), these spaces are also included into the key names in ICU vars
                 // (e.g. "VAR_SELECT "). These trailing spaces are not desirable, since they will later be
                 // converted into `_` symbols while normalizing placeholder names, which might lead to
                 // mismatches at runtime (i.e. placeholder will not be replaced with the correct value).
                 const formattedKey = key.trim();
-                vars[formattedKey] =
-                    this._visitTextWithInterpolation(wrapped, expansion.sourceSpan);
+                const ast = this.bindingParser.parseInterpolationExpression(value.text, value.sourceSpan);
+                vars[formattedKey] = new BoundText(ast, value.sourceSpan);
             }
             else {
-                placeholders[key] = this._visitTextWithInterpolation(value, expansion.sourceSpan);
+                placeholders[key] = this._visitTextWithInterpolation(value.text, value.sourceSpan);
             }
         });
         return new Icu(vars, placeholders, expansion.sourceSpan, message);
@@ -16365,6 +16503,7 @@ class _I18nVisitor {
         return new Message(i18nodes, context.placeholderToContent, context.placeholderToMessage, meaning, description, customId);
     }
     visitElement(el, context) {
+        var _a;
         const children = visitAll$1(this, el.children, context);
         const attrs = {};
         el.attrs.forEach(attr => {
@@ -16373,11 +16512,17 @@ class _I18nVisitor {
         });
         const isVoid = getHtmlTagDefinition(el.name).isVoid;
         const startPhName = context.placeholderRegistry.getStartTagPlaceholderName(el.name, attrs, isVoid);
-        context.placeholderToContent[startPhName] = el.startSourceSpan.toString();
+        context.placeholderToContent[startPhName] = {
+            text: el.startSourceSpan.toString(),
+            sourceSpan: el.startSourceSpan,
+        };
         let closePhName = '';
         if (!isVoid) {
             closePhName = context.placeholderRegistry.getCloseTagPlaceholderName(el.name);
-            context.placeholderToContent[closePhName] = `</${el.name}>`;
+            context.placeholderToContent[closePhName] = {
+                text: `</${el.name}>`,
+                sourceSpan: (_a = el.endSourceSpan) !== null && _a !== void 0 ? _a : el.sourceSpan,
+            };
         }
         const node = new TagPlaceholder(el.name, attrs, startPhName, closePhName, children, isVoid, el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
         return context.visitNodeFn(el, node);
@@ -16407,7 +16552,10 @@ class _I18nVisitor {
             // - the ICU message is nested.
             const expPh = context.placeholderRegistry.getUniquePlaceholder(`VAR_${icu.type}`);
             i18nIcu.expressionPlaceholder = expPh;
-            context.placeholderToContent[expPh] = icu.switchValue;
+            context.placeholderToContent[expPh] = {
+                text: icu.switchValue,
+                sourceSpan: icu.switchValueSourceSpan,
+            };
             return context.visitNodeFn(icu, i18nIcu);
         }
         // Else returns a placeholder
@@ -16443,7 +16591,10 @@ class _I18nVisitor {
             }
             const expressionSpan = getOffsetSourceSpan(sourceSpan, splitInterpolation.expressionsSpans[i]);
             nodes.push(new Placeholder(expression, phName, expressionSpan));
-            context.placeholderToContent[phName] = sDelimiter + expression + eDelimiter;
+            context.placeholderToContent[phName] = {
+                text: sDelimiter + expression + eDelimiter,
+                sourceSpan: expressionSpan,
+            };
         }
         // The last index contains no expression
         const lastStringIdx = splitInterpolation.strings.length - 1;
@@ -17272,7 +17423,7 @@ class TemplateDefinitionBuilder {
         const parameters = [literal(slot)];
         this._ngContentReservedSlots.push(ngContent.selector);
         const nonContentSelectAttributes = ngContent.attributes.filter(attr => attr.name.toLowerCase() !== NG_CONTENT_SELECT_ATTR$1);
-        const attributes = this.getAttributeExpressions(nonContentSelectAttributes, [], []);
+        const attributes = this.getAttributeExpressions(ngContent.name, nonContentSelectAttributes, [], []);
         if (attributes.length > 0) {
             parameters.push(literal(projectionSlotIdx), literalArr(attributes));
         }
@@ -17331,7 +17482,7 @@ class TemplateDefinitionBuilder {
             }
         });
         // add attributes for directive and projection matching purposes
-        const attributes = this.getAttributeExpressions(outputAttrs, allOtherInputs, element.outputs, stylingBuilder, [], i18nAttrs);
+        const attributes = this.getAttributeExpressions(element.name, outputAttrs, allOtherInputs, element.outputs, stylingBuilder, [], i18nAttrs);
         parameters.push(this.addAttrsToConsts(attributes));
         // local refs (ex.: <div #foo #bar="baz">)
         const refs = this.prepareRefsArray(element.references);
@@ -17530,7 +17681,7 @@ class TemplateDefinitionBuilder {
         this.matchDirectives(NG_TEMPLATE_TAG_NAME, template);
         // prepare attributes parameter (including attributes used for directive matching)
         const [i18nStaticAttrs, staticAttrs] = partitionArray(template.attributes, hasI18nMeta);
-        const attrsExprs = this.getAttributeExpressions(staticAttrs, template.inputs, template.outputs, undefined /* styles */, template.templateAttrs, i18nStaticAttrs);
+        const attrsExprs = this.getAttributeExpressions(NG_TEMPLATE_TAG_NAME, staticAttrs, template.inputs, template.outputs, undefined /* styles */, template.templateAttrs, i18nStaticAttrs);
         parameters.push(this.addAttrsToConsts(attrsExprs));
         // local refs (ex.: <ng-template #foo>)
         if (template.references && template.references.length) {
@@ -17849,7 +18000,7 @@ class TemplateDefinitionBuilder {
      * Note that this function will fully ignore all synthetic (@foo) attribute values
      * because those values are intended to always be generated as property instructions.
      */
-    getAttributeExpressions(renderAttributes, inputs, outputs, styles, templateAttrs = [], i18nAttrs = []) {
+    getAttributeExpressions(elementName, renderAttributes, inputs, outputs, styles, templateAttrs = [], i18nAttrs = []) {
         const alreadySeen = new Set();
         const attrExprs = [];
         let ngProjectAsAttr;
@@ -17857,7 +18008,7 @@ class TemplateDefinitionBuilder {
             if (attr.name === NG_PROJECT_AS_ATTR_NAME) {
                 ngProjectAsAttr = attr;
             }
-            attrExprs.push(...getAttributeNameLiterals(attr.name), asLiteral(attr.value));
+            attrExprs.push(...getAttributeNameLiterals(attr.name), trustedConstAttribute(elementName, attr));
         });
         // Keep ngProjectAs next to the other name, value pairs so we can verify that we match
         // ngProjectAs marker in the attribute name slot.
@@ -18480,6 +18631,19 @@ function resolveSanitizationFn(context, isAttribute) {
             return importExpr(Identifiers$1.sanitizeResourceUrl);
         default:
             return null;
+    }
+}
+function trustedConstAttribute(tagName, attr) {
+    const value = asLiteral(attr.value);
+    switch (elementRegistry.securityContext(tagName, attr.name, /* isAttribute */ true)) {
+        case SecurityContext.HTML:
+            return importExpr(Identifiers$1.trustConstantHtml).callFn([value], attr.valueSpan);
+        case SecurityContext.SCRIPT:
+            return importExpr(Identifiers$1.trustConstantScript).callFn([value], attr.valueSpan);
+        case SecurityContext.RESOURCE_URL:
+            return importExpr(Identifiers$1.trustConstantResourceUrl).callFn([value], attr.valueSpan);
+        default:
+            return value;
     }
 }
 function isSingleElementTemplate(children) {
@@ -19491,7 +19655,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.0.0-next.5+2.sha-a8c0972');
+const VERSION$1 = new Version('11.0.0-next.6+52.sha-0f1a18e');
 
 /**
  * @license
@@ -21166,14 +21330,14 @@ class I18nToHtmlVisitor {
         // TODO(vicb): Once all format switch to using expression placeholders
         // we should throw when the placeholder is not in the source message
         const exp = this._srcMsg.placeholders.hasOwnProperty(icu.expression) ?
-            this._srcMsg.placeholders[icu.expression] :
+            this._srcMsg.placeholders[icu.expression].text :
             icu.expression;
         return `{${exp}, ${icu.type}, ${cases.join(' ')}}`;
     }
     visitPlaceholder(ph, context) {
         const phName = this._mapper(ph.name);
         if (this._srcMsg.placeholders.hasOwnProperty(phName)) {
-            return this._srcMsg.placeholders[phName];
+            return this._srcMsg.placeholders[phName].text;
         }
         if (this._srcMsg.placeholderToMessage.hasOwnProperty(phName)) {
             return this._convertToText(this._srcMsg.placeholderToMessage[phName]);
@@ -29000,5 +29164,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TemplateBindingParseResult, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TemplateBindingParseResult, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Icu as TmplAstIcu, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
 //# sourceMappingURL=compiler.js.map

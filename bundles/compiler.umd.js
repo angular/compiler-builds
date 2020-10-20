@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.5+2.sha-a8c0972
+ * @license Angular v11.0.0-next.6+52.sha-0f1a18e
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1114,7 +1114,7 @@
     var ViewEncapsulation;
     (function (ViewEncapsulation) {
         ViewEncapsulation[ViewEncapsulation["Emulated"] = 0] = "Emulated";
-        ViewEncapsulation[ViewEncapsulation["Native"] = 1] = "Native";
+        // Historically the 1 value was for `Native` encapsulation which has been removed as of v11.
         ViewEncapsulation[ViewEncapsulation["None"] = 2] = "None";
         ViewEncapsulation[ViewEncapsulation["ShadowDom"] = 3] = "ShadowDom";
     })(ViewEncapsulation || (ViewEncapsulation = {}));
@@ -4188,6 +4188,9 @@
     Identifiers$1.sanitizeScript = { name: 'ɵɵsanitizeScript', moduleName: CORE$1 };
     Identifiers$1.sanitizeUrl = { name: 'ɵɵsanitizeUrl', moduleName: CORE$1 };
     Identifiers$1.sanitizeUrlOrResourceUrl = { name: 'ɵɵsanitizeUrlOrResourceUrl', moduleName: CORE$1 };
+    Identifiers$1.trustConstantHtml = { name: 'ɵɵtrustConstantHtml', moduleName: CORE$1 };
+    Identifiers$1.trustConstantScript = { name: 'ɵɵtrustConstantScript', moduleName: CORE$1 };
+    Identifiers$1.trustConstantResourceUrl = { name: 'ɵɵtrustConstantResourceUrl', moduleName: CORE$1 };
 
     /**
      * @license
@@ -4617,7 +4620,7 @@
     var Message = /** @class */ (function () {
         /**
          * @param nodes message AST
-         * @param placeholders maps placeholder names to static content
+         * @param placeholders maps placeholder names to static content and their source spans
          * @param placeholderToMessage maps placeholder names to messages (used for nested ICU messages)
          * @param meaning
          * @param description
@@ -7126,6 +7129,87 @@
     }(AbstractEmitterVisitor));
 
     /**
+     * The Trusted Types policy, or null if Trusted Types are not
+     * enabled/supported, or undefined if the policy has not been created yet.
+     */
+    var policy;
+    /**
+     * Returns the Trusted Types policy, or null if Trusted Types are not
+     * enabled/supported. The first call to this function will create the policy.
+     */
+    function getPolicy() {
+        if (policy === undefined) {
+            policy = null;
+            if (_global.trustedTypes) {
+                try {
+                    policy =
+                        _global.trustedTypes.createPolicy('angular#unsafe-jit', {
+                            createScript: function (s) { return s; },
+                        });
+                }
+                catch (_a) {
+                    // trustedTypes.createPolicy throws if called with a name that is
+                    // already registered, even in report-only mode. Until the API changes,
+                    // catch the error not to break the applications functionally. In such
+                    // cases, the code will fall back to using strings.
+                }
+            }
+        }
+        return policy;
+    }
+    /**
+     * Unsafely promote a string to a TrustedScript, falling back to strings when
+     * Trusted Types are not available.
+     * @security In particular, it must be assured that the provided string will
+     * never cause an XSS vulnerability if used in a context that will be
+     * interpreted and executed as a script by a browser, e.g. when calling eval.
+     */
+    function trustedScriptFromString(script) {
+        var _a;
+        return ((_a = getPolicy()) === null || _a === void 0 ? void 0 : _a.createScript(script)) || script;
+    }
+    /**
+     * Unsafely call the Function constructor with the given string arguments. It
+     * is only available in development mode, and should be stripped out of
+     * production code.
+     * @security This is a security-sensitive function; any use of this function
+     * must go through security review. In particular, it must be assured that it
+     * is only called from the JIT compiler, as use in other code can lead to XSS
+     * vulnerabilities.
+     */
+    function newTrustedFunctionForJIT() {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        if (!_global.trustedTypes) {
+            // In environments that don't support Trusted Types, fall back to the most
+            // straightforward implementation:
+            return new (Function.bind.apply(Function, __spread([void 0], args)))();
+        }
+        // Chrome currently does not support passing TrustedScript to the Function
+        // constructor. The following implements the workaround proposed on the page
+        // below, where the Chromium bug is also referenced:
+        // https://github.com/w3c/webappsec-trusted-types/wiki/Trusted-Types-for-function-constructor
+        var fnArgs = args.slice(0, -1).join(',');
+        var fnBody = args.pop().toString();
+        var body = "(function anonymous(" + fnArgs + "\n) { " + fnBody + "\n})";
+        // Using eval directly confuses the compiler and prevents this module from
+        // being stripped out of JS binaries even if not used. The global['eval']
+        // indirection fixes that.
+        var fn = _global['eval'](trustedScriptFromString(body));
+        // To completely mimic the behavior of calling "new Function", two more
+        // things need to happen:
+        // 1. Stringifying the resulting function should return its source code
+        fn.toString = function () { return body; };
+        // 2. When calling the resulting function, `this` should refer to `global`
+        return fn.bind(_global);
+        // When Trusted Types support in Function constructors is widely available,
+        // the implementation of this function can be simplified to:
+        // return new Function(...args.map(a => trustedScriptFromString(a)));
+    }
+
+    /**
      * A helper class to manage the evaluation of JIT generated code.
      */
     var JitEvaluator = /** @class */ (function () {
@@ -7177,11 +7261,11 @@
                 // function anonymous(a,b,c
                 // /**/) { ... }```
                 // We don't want to hard code this fact, so we auto detect it via an empty function first.
-                var emptyFn = new (Function.bind.apply(Function, __spread([void 0], fnArgNames.concat('return null;'))))().toString();
+                var emptyFn = newTrustedFunctionForJIT.apply(void 0, __spread(fnArgNames.concat('return null;'))).toString();
                 var headerLines = emptyFn.slice(0, emptyFn.indexOf('return null;')).split('\n').length - 1;
                 fnBody += "\n" + ctx.toSourceMapGenerator(sourceUrl, headerLines).toJsComment();
             }
-            var fn = new (Function.bind.apply(Function, __spread([void 0], fnArgNames.concat(fnBody))))();
+            var fn = newTrustedFunctionForJIT.apply(void 0, __spread(fnArgNames.concat(fnBody)));
             return this.executeFunction(fn, fnArgValues);
         };
         /**
@@ -10029,11 +10113,12 @@
     function extractCommentsWithHash(input) {
         return input.match(_commentWithHashRe) || [];
     }
-    var _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
-    var _curlyRe = /([{}])/g;
-    var OPEN_CURLY = '{';
-    var CLOSE_CURLY = '}';
     var BLOCK_PLACEHOLDER = '%BLOCK%';
+    var QUOTE_PLACEHOLDER = '%QUOTED%';
+    var _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
+    var _quotedRe = /%QUOTED%/g;
+    var CONTENT_PAIRS = new Map([['{', '}']]);
+    var QUOTE_PAIRS = new Map([["\"", "\""], ["'", "'"]]);
     var CssRule = /** @class */ (function () {
         function CssRule(selector, content) {
             this.selector = selector;
@@ -10042,9 +10127,12 @@
         return CssRule;
     }());
     function processRules(input, ruleCallback) {
-        var inputWithEscapedBlocks = escapeBlocks(input);
+        var inputWithEscapedQuotes = escapeBlocks(input, QUOTE_PAIRS, QUOTE_PLACEHOLDER);
+        var inputWithEscapedBlocks = escapeBlocks(inputWithEscapedQuotes.escapedString, CONTENT_PAIRS, BLOCK_PLACEHOLDER);
         var nextBlockIndex = 0;
-        return inputWithEscapedBlocks.escapedString.replace(_ruleRe, function () {
+        var nextQuoteIndex = 0;
+        return inputWithEscapedBlocks.escapedString
+            .replace(_ruleRe, function () {
             var m = [];
             for (var _i = 0; _i < arguments.length; _i++) {
                 m[_i] = arguments[_i];
@@ -10060,7 +10148,8 @@
             }
             var rule = ruleCallback(new CssRule(selector, content));
             return "" + m[1] + rule.selector + m[3] + contentPrefix + rule.content + suffix;
-        });
+        })
+            .replace(_quotedRe, function () { return inputWithEscapedQuotes.blocks[nextQuoteIndex++]; });
     }
     var StringWithEscapedBlocks = /** @class */ (function () {
         function StringWithEscapedBlocks(escapedString, blocks) {
@@ -10069,35 +10158,46 @@
         }
         return StringWithEscapedBlocks;
     }());
-    function escapeBlocks(input) {
-        var inputParts = input.split(_curlyRe);
+    function escapeBlocks(input, charPairs, placeholder) {
         var resultParts = [];
         var escapedBlocks = [];
-        var bracketCount = 0;
-        var currentBlockParts = [];
-        for (var partIndex = 0; partIndex < inputParts.length; partIndex++) {
-            var part = inputParts[partIndex];
-            if (part == CLOSE_CURLY) {
-                bracketCount--;
+        var openCharCount = 0;
+        var nonBlockStartIndex = 0;
+        var blockStartIndex = -1;
+        var openChar;
+        var closeChar;
+        for (var i = 0; i < input.length; i++) {
+            var char = input[i];
+            if (char === '\\') {
+                i++;
             }
-            if (bracketCount > 0) {
-                currentBlockParts.push(part);
-            }
-            else {
-                if (currentBlockParts.length > 0) {
-                    escapedBlocks.push(currentBlockParts.join(''));
-                    resultParts.push(BLOCK_PLACEHOLDER);
-                    currentBlockParts = [];
+            else if (char === closeChar) {
+                openCharCount--;
+                if (openCharCount === 0) {
+                    escapedBlocks.push(input.substring(blockStartIndex, i));
+                    resultParts.push(placeholder);
+                    nonBlockStartIndex = i;
+                    blockStartIndex = -1;
+                    openChar = closeChar = undefined;
                 }
-                resultParts.push(part);
             }
-            if (part == OPEN_CURLY) {
-                bracketCount++;
+            else if (char === openChar) {
+                openCharCount++;
+            }
+            else if (openCharCount === 0 && charPairs.has(char)) {
+                openChar = char;
+                closeChar = charPairs.get(char);
+                openCharCount = 1;
+                blockStartIndex = i + 1;
+                resultParts.push(input.substring(nonBlockStartIndex, blockStartIndex));
             }
         }
-        if (currentBlockParts.length > 0) {
-            escapedBlocks.push(currentBlockParts.join(''));
-            resultParts.push(BLOCK_PLACEHOLDER);
+        if (blockStartIndex !== -1) {
+            escapedBlocks.push(input.substring(blockStartIndex));
+            resultParts.push(placeholder);
+        }
+        else {
+            resultParts.push(input.substring(nonBlockStartIndex));
         }
         return new StringWithEscapedBlocks(resultParts.join(''), escapedBlocks);
     }
@@ -12844,6 +12944,25 @@
             }
         };
         /**
+         * Similar to `parseInterpolation`, but treats the provided string as a single expression
+         * element that would normally appear within the interpolation prefix and suffix (`{{` and `}}`).
+         * This is used for parsing the switch expression in ICUs.
+         */
+        BindingParser.prototype.parseInterpolationExpression = function (expression, sourceSpan) {
+            var sourceInfo = sourceSpan.start.toString();
+            try {
+                var ast = this._exprParser.parseInterpolationExpression(expression, sourceInfo, sourceSpan.start.offset);
+                if (ast)
+                    this._reportExpressionParserErrors(ast.errors, sourceSpan);
+                this._checkPipes(ast, sourceSpan);
+                return ast;
+            }
+            catch (e) {
+                this._reportError("" + e, sourceSpan);
+                return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, sourceSpan.start.offset);
+            }
+        };
+        /**
          * Parses the bindings in a microsyntax expression, and converts them to
          * `ParsedProperty` or `ParsedVariable`.
          *
@@ -15158,8 +15277,26 @@
                     .parseChain();
                 expressions.push(ast);
             }
-            var span = new ParseSpan(0, input == null ? 0 : input.length);
-            return new ASTWithSource(new Interpolation(span, span.toAbsolute(absoluteOffset), split.strings, expressions), input, location, absoluteOffset, this.errors);
+            return this.createInterpolationAst(split.strings, expressions, input, location, absoluteOffset);
+        };
+        /**
+         * Similar to `parseInterpolation`, but treats the provided string as a single expression
+         * element that would normally appear within the interpolation prefix and suffix (`{{` and `}}`).
+         * This is used for parsing the switch expression in ICUs.
+         */
+        Parser.prototype.parseInterpolationExpression = function (expression, location, absoluteOffset) {
+            var sourceToLex = this._stripComments(expression);
+            var tokens = this._lexer.tokenize(sourceToLex);
+            var ast = new _ParseAST(expression, location, absoluteOffset, tokens, sourceToLex.length, 
+            /* parseAction */ false, this.errors, 0)
+                .parseChain();
+            var strings = ['', '']; // The prefix and suffix strings are both empty
+            return this.createInterpolationAst(strings, [ast], expression, location, absoluteOffset);
+        };
+        Parser.prototype.createInterpolationAst = function (strings, expressions, input, location, absoluteOffset) {
+            var span = new ParseSpan(0, input.length);
+            var interpolation = new Interpolation(span, span.toAbsolute(absoluteOffset), strings, expressions);
+            return new ASTWithSource(interpolation, input, location, absoluteOffset, this.errors);
         };
         /**
          * Splits a string of text into "raw" text segments and expressions present in interpolations in
@@ -16815,21 +16952,17 @@
             Object.keys(message.placeholders).forEach(function (key) {
                 var value = message.placeholders[key];
                 if (key.startsWith(I18N_ICU_VAR_PREFIX)) {
-                    var config = _this.bindingParser.interpolationConfig;
-                    // ICU expression is a plain string, not wrapped into start
-                    // and end tags, so we wrap it before passing to binding parser
-                    var wrapped = "" + config.start + value + config.end;
                     // Currently when the `plural` or `select` keywords in an ICU contain trailing spaces (e.g.
                     // `{count, select , ...}`), these spaces are also included into the key names in ICU vars
                     // (e.g. "VAR_SELECT "). These trailing spaces are not desirable, since they will later be
                     // converted into `_` symbols while normalizing placeholder names, which might lead to
                     // mismatches at runtime (i.e. placeholder will not be replaced with the correct value).
                     var formattedKey = key.trim();
-                    vars[formattedKey] =
-                        _this._visitTextWithInterpolation(wrapped, expansion.sourceSpan);
+                    var ast = _this.bindingParser.parseInterpolationExpression(value.text, value.sourceSpan);
+                    vars[formattedKey] = new BoundText(ast, value.sourceSpan);
                 }
                 else {
-                    placeholders[key] = _this._visitTextWithInterpolation(value, expansion.sourceSpan);
+                    placeholders[key] = _this._visitTextWithInterpolation(value.text, value.sourceSpan);
                 }
             });
             return new Icu(vars, placeholders, expansion.sourceSpan, message);
@@ -17428,6 +17561,7 @@
             return new Message(i18nodes, context.placeholderToContent, context.placeholderToMessage, meaning, description, customId);
         };
         _I18nVisitor.prototype.visitElement = function (el, context) {
+            var _a;
             var children = visitAll$1(this, el.children, context);
             var attrs = {};
             el.attrs.forEach(function (attr) {
@@ -17436,11 +17570,17 @@
             });
             var isVoid = getHtmlTagDefinition(el.name).isVoid;
             var startPhName = context.placeholderRegistry.getStartTagPlaceholderName(el.name, attrs, isVoid);
-            context.placeholderToContent[startPhName] = el.startSourceSpan.toString();
+            context.placeholderToContent[startPhName] = {
+                text: el.startSourceSpan.toString(),
+                sourceSpan: el.startSourceSpan,
+            };
             var closePhName = '';
             if (!isVoid) {
                 closePhName = context.placeholderRegistry.getCloseTagPlaceholderName(el.name);
-                context.placeholderToContent[closePhName] = "</" + el.name + ">";
+                context.placeholderToContent[closePhName] = {
+                    text: "</" + el.name + ">",
+                    sourceSpan: (_a = el.endSourceSpan) !== null && _a !== void 0 ? _a : el.sourceSpan,
+                };
             }
             var node = new TagPlaceholder(el.name, attrs, startPhName, closePhName, children, isVoid, el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
             return context.visitNodeFn(el, node);
@@ -17471,7 +17611,10 @@
                 // - the ICU message is nested.
                 var expPh = context.placeholderRegistry.getUniquePlaceholder("VAR_" + icu.type);
                 i18nIcu.expressionPlaceholder = expPh;
-                context.placeholderToContent[expPh] = icu.switchValue;
+                context.placeholderToContent[expPh] = {
+                    text: icu.switchValue,
+                    sourceSpan: icu.switchValueSourceSpan,
+                };
                 return context.visitNodeFn(icu, i18nIcu);
             }
             // Else returns a placeholder
@@ -17495,7 +17638,7 @@
             // Return a group of text + expressions
             var nodes = [];
             var container = new Container(nodes, sourceSpan);
-            var _a = this._interpolationConfig, sDelimiter = _a.start, eDelimiter = _a.end;
+            var _b = this._interpolationConfig, sDelimiter = _b.start, eDelimiter = _b.end;
             for (var i = 0; i < splitInterpolation.strings.length - 1; i++) {
                 var expression = splitInterpolation.expressions[i];
                 var baseName = _extractPlaceholderName(expression) || 'INTERPOLATION';
@@ -17507,7 +17650,10 @@
                 }
                 var expressionSpan = getOffsetSourceSpan(sourceSpan, splitInterpolation.expressionsSpans[i]);
                 nodes.push(new Placeholder(expression, phName, expressionSpan));
-                context.placeholderToContent[phName] = sDelimiter + expression + eDelimiter;
+                context.placeholderToContent[phName] = {
+                    text: sDelimiter + expression + eDelimiter,
+                    sourceSpan: expressionSpan,
+                };
             }
             // The last index contains no expression
             var lastStringIdx = splitInterpolation.strings.length - 1;
@@ -17519,8 +17665,8 @@
         };
         return _I18nVisitor;
     }());
-    function getOffsetSourceSpan(sourceSpan, _a) {
-        var start = _a.start, end = _a.end;
+    function getOffsetSourceSpan(sourceSpan, _b) {
+        var start = _b.start, end = _b.end;
         return new ParseSourceSpan(sourceSpan.start.moveBy(start), sourceSpan.start.moveBy(end));
     }
     var _CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*("|')([\s\S]*?)\1[\s\S]*\)/g;
@@ -18369,7 +18515,7 @@
             var parameters = [literal(slot)];
             this._ngContentReservedSlots.push(ngContent.selector);
             var nonContentSelectAttributes = ngContent.attributes.filter(function (attr) { return attr.name.toLowerCase() !== NG_CONTENT_SELECT_ATTR$1; });
-            var attributes = this.getAttributeExpressions(nonContentSelectAttributes, [], []);
+            var attributes = this.getAttributeExpressions(ngContent.name, nonContentSelectAttributes, [], []);
             if (attributes.length > 0) {
                 parameters.push(literal(projectionSlotIdx), literalArr(attributes));
             }
@@ -18440,7 +18586,7 @@
                 }
             });
             // add attributes for directive and projection matching purposes
-            var attributes = this.getAttributeExpressions(outputAttrs, allOtherInputs, element.outputs, stylingBuilder, [], i18nAttrs);
+            var attributes = this.getAttributeExpressions(element.name, outputAttrs, allOtherInputs, element.outputs, stylingBuilder, [], i18nAttrs);
             parameters.push(this.addAttrsToConsts(attributes));
             // local refs (ex.: <div #foo #bar="baz">)
             var refs = this.prepareRefsArray(element.references);
@@ -18639,7 +18785,7 @@
             this.matchDirectives(NG_TEMPLATE_TAG_NAME, template);
             // prepare attributes parameter (including attributes used for directive matching)
             var _c = __read(partitionArray(template.attributes, hasI18nMeta), 2), i18nStaticAttrs = _c[0], staticAttrs = _c[1];
-            var attrsExprs = this.getAttributeExpressions(staticAttrs, template.inputs, template.outputs, undefined /* styles */, template.templateAttrs, i18nStaticAttrs);
+            var attrsExprs = this.getAttributeExpressions(NG_TEMPLATE_TAG_NAME, staticAttrs, template.inputs, template.outputs, undefined /* styles */, template.templateAttrs, i18nStaticAttrs);
             parameters.push(this.addAttrsToConsts(attrsExprs));
             // local refs (ex.: <ng-template #foo>)
             if (template.references && template.references.length) {
@@ -18966,7 +19112,7 @@
          * Note that this function will fully ignore all synthetic (@foo) attribute values
          * because those values are intended to always be generated as property instructions.
          */
-        TemplateDefinitionBuilder.prototype.getAttributeExpressions = function (renderAttributes, inputs, outputs, styles, templateAttrs, i18nAttrs) {
+        TemplateDefinitionBuilder.prototype.getAttributeExpressions = function (elementName, renderAttributes, inputs, outputs, styles, templateAttrs, i18nAttrs) {
             if (templateAttrs === void 0) { templateAttrs = []; }
             if (i18nAttrs === void 0) { i18nAttrs = []; }
             var alreadySeen = new Set();
@@ -18976,7 +19122,7 @@
                 if (attr.name === NG_PROJECT_AS_ATTR_NAME) {
                     ngProjectAsAttr = attr;
                 }
-                attrExprs.push.apply(attrExprs, __spread(getAttributeNameLiterals(attr.name), [asLiteral(attr.value)]));
+                attrExprs.push.apply(attrExprs, __spread(getAttributeNameLiterals(attr.name), [trustedConstAttribute(elementName, attr)]));
             });
             // Keep ngProjectAs next to the other name, value pairs so we can verify that we match
             // ngProjectAs marker in the attribute name slot.
@@ -19613,6 +19759,19 @@
                 return importExpr(Identifiers$1.sanitizeResourceUrl);
             default:
                 return null;
+        }
+    }
+    function trustedConstAttribute(tagName, attr) {
+        var value = asLiteral(attr.value);
+        switch (elementRegistry.securityContext(tagName, attr.name, /* isAttribute */ true)) {
+            case SecurityContext.HTML:
+                return importExpr(Identifiers$1.trustConstantHtml).callFn([value], attr.valueSpan);
+            case SecurityContext.SCRIPT:
+                return importExpr(Identifiers$1.trustConstantScript).callFn([value], attr.valueSpan);
+            case SecurityContext.RESOURCE_URL:
+                return importExpr(Identifiers$1.trustConstantResourceUrl).callFn([value], attr.valueSpan);
+            default:
+                return value;
         }
     }
     function isSingleElementTemplate(children) {
@@ -20668,7 +20827,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.5+2.sha-a8c0972');
+    var VERSION$1 = new Version('11.0.0-next.6+52.sha-0f1a18e');
 
     /**
      * @license
@@ -22364,14 +22523,14 @@
             // TODO(vicb): Once all format switch to using expression placeholders
             // we should throw when the placeholder is not in the source message
             var exp = this._srcMsg.placeholders.hasOwnProperty(icu.expression) ?
-                this._srcMsg.placeholders[icu.expression] :
+                this._srcMsg.placeholders[icu.expression].text :
                 icu.expression;
             return "{" + exp + ", " + icu.type + ", " + cases.join(' ') + "}";
         };
         I18nToHtmlVisitor.prototype.visitPlaceholder = function (ph, context) {
             var phName = this._mapper(ph.name);
             if (this._srcMsg.placeholders.hasOwnProperty(phName)) {
-                return this._srcMsg.placeholders[phName];
+                return this._srcMsg.placeholders[phName].text;
             }
             if (this._srcMsg.placeholderToMessage.hasOwnProperty(phName)) {
                 return this._convertToText(this._srcMsg.placeholderToMessage[phName]);
@@ -30722,6 +30881,7 @@
     exports.TmplAstBoundText = BoundText;
     exports.TmplAstContent = Content;
     exports.TmplAstElement = Element;
+    exports.TmplAstIcu = Icu;
     exports.TmplAstRecursiveVisitor = RecursiveVisitor;
     exports.TmplAstReference = Reference;
     exports.TmplAstTemplate = Template;
