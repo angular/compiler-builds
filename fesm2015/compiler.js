@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.6+81.sha-08f3d62
+ * @license Angular v11.0.0-next.6+95.sha-b989ba2
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -14567,10 +14567,13 @@ class _ParseAST {
             return;
         this.error(`Missing expected operator ${operator}`);
     }
+    prettyPrintToken(tok) {
+        return tok === EOF ? 'end of input' : `token ${tok}`;
+    }
     expectIdentifierOrKeyword() {
         const n = this.next;
         if (!n.isIdentifier() && !n.isKeyword()) {
-            this.error(`Unexpected token ${n}, expected identifier or keyword`);
+            this.error(`Unexpected ${this.prettyPrintToken(n)}, expected identifier or keyword`);
             return '';
         }
         this.advance();
@@ -14579,7 +14582,7 @@ class _ParseAST {
     expectIdentifierOrKeywordOrString() {
         const n = this.next;
         if (!n.isIdentifier() && !n.isKeyword() && !n.isString()) {
-            this.error(`Unexpected token ${n}, expected identifier, keyword, or string`);
+            this.error(`Unexpected ${this.prettyPrintToken(n)}, expected identifier, keyword, or string`);
             return '';
         }
         this.advance();
@@ -14909,7 +14912,13 @@ class _ParseAST {
     parseAccessMemberOrMethodCall(receiver, isSafe = false) {
         const start = receiver.span.start;
         const nameStart = this.inputIndex;
-        const id = this.expectIdentifierOrKeyword();
+        const id = this.withContext(ParseContextFlags.Writable, () => {
+            const id = this.expectIdentifierOrKeyword();
+            if (id.length === 0) {
+                this.error(`Expected identifier for property access`, receiver.span.end);
+            }
+            return id;
+        });
         const nameSpan = this.sourceSpan(nameStart);
         if (this.consumeOptionalCharacter($LPAREN)) {
             this.rparensExpected++;
@@ -19655,7 +19664,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.0.0-next.6+81.sha-08f3d62');
+const VERSION$1 = new Version('11.0.0-next.6+95.sha-b989ba2');
 
 /**
  * @license
