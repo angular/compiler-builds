@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.6+81.sha-08f3d62
+ * @license Angular v11.0.0-next.6+95.sha-b989ba2
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15578,10 +15578,13 @@
                 return;
             this.error("Missing expected operator " + operator);
         };
+        _ParseAST.prototype.prettyPrintToken = function (tok) {
+            return tok === EOF ? 'end of input' : "token " + tok;
+        };
         _ParseAST.prototype.expectIdentifierOrKeyword = function () {
             var n = this.next;
             if (!n.isIdentifier() && !n.isKeyword()) {
-                this.error("Unexpected token " + n + ", expected identifier or keyword");
+                this.error("Unexpected " + this.prettyPrintToken(n) + ", expected identifier or keyword");
                 return '';
             }
             this.advance();
@@ -15590,7 +15593,7 @@
         _ParseAST.prototype.expectIdentifierOrKeywordOrString = function () {
             var n = this.next;
             if (!n.isIdentifier() && !n.isKeyword() && !n.isString()) {
-                this.error("Unexpected token " + n + ", expected identifier, keyword, or string");
+                this.error("Unexpected " + this.prettyPrintToken(n) + ", expected identifier, keyword, or string");
                 return '';
             }
             this.advance();
@@ -15919,10 +15922,17 @@
             return new LiteralMap(this.span(start), this.sourceSpan(start), keys, values);
         };
         _ParseAST.prototype.parseAccessMemberOrMethodCall = function (receiver, isSafe) {
+            var _this = this;
             if (isSafe === void 0) { isSafe = false; }
             var start = receiver.span.start;
             var nameStart = this.inputIndex;
-            var id = this.expectIdentifierOrKeyword();
+            var id = this.withContext(ParseContextFlags.Writable, function () {
+                var id = _this.expectIdentifierOrKeyword();
+                if (id.length === 0) {
+                    _this.error("Expected identifier for property access", receiver.span.end);
+                }
+                return id;
+            });
             var nameSpan = this.sourceSpan(nameStart);
             if (this.consumeOptionalCharacter($LPAREN)) {
                 this.rparensExpected++;
@@ -20827,7 +20837,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.6+81.sha-08f3d62');
+    var VERSION$1 = new Version('11.0.0-next.6+95.sha-b989ba2');
 
     /**
      * @license
