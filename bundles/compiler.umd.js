@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.2.0+1.sha-513ed49
+ * @license Angular v10.2.0+17.sha-308b930
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15409,10 +15409,13 @@
                 return;
             this.error("Missing expected operator " + operator);
         };
+        _ParseAST.prototype.prettyPrintToken = function (tok) {
+            return tok === EOF ? 'end of input' : "token " + tok;
+        };
         _ParseAST.prototype.expectIdentifierOrKeyword = function () {
             var n = this.next;
             if (!n.isIdentifier() && !n.isKeyword()) {
-                this.error("Unexpected token " + n + ", expected identifier or keyword");
+                this.error("Unexpected " + this.prettyPrintToken(n) + ", expected identifier or keyword");
                 return '';
             }
             this.advance();
@@ -15421,7 +15424,7 @@
         _ParseAST.prototype.expectIdentifierOrKeywordOrString = function () {
             var n = this.next;
             if (!n.isIdentifier() && !n.isKeyword() && !n.isString()) {
-                this.error("Unexpected token " + n + ", expected identifier, keyword, or string");
+                this.error("Unexpected " + this.prettyPrintToken(n) + ", expected identifier, keyword, or string");
                 return '';
             }
             this.advance();
@@ -20596,7 +20599,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('10.2.0+1.sha-513ed49');
+    var VERSION$1 = new Version('10.2.0+17.sha-308b930');
 
     /**
      * @license

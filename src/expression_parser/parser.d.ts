@@ -144,6 +144,7 @@ export declare class _ParseAST {
     expectCharacter(code: number): void;
     consumeOptionalOperator(op: string): boolean;
     expectOperator(operator: string): void;
+    prettyPrintToken(tok: Token): string;
     expectIdentifierOrKeyword(): string;
     expectIdentifierOrKeywordOrString(): string;
     parseChain(): AST;
