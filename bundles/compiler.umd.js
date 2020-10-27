@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-rc.0+35.sha-3fbf325
+ * @license Angular v11.0.0-rc.0+58.sha-399f491
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3110,11 +3110,22 @@
      * boolean value.
      */
     function partitionArray(arr, conditionFn) {
+        var e_1, _a;
         var truthy = [];
         var falsy = [];
-        arr.forEach(function (item) {
-            (conditionFn(item) ? truthy : falsy).push(item);
-        });
+        try {
+            for (var arr_1 = __values(arr), arr_1_1 = arr_1.next(); !arr_1_1.done; arr_1_1 = arr_1.next()) {
+                var item = arr_1_1.value;
+                (conditionFn(item) ? truthy : falsy).push(item);
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (arr_1_1 && !arr_1_1.done && (_a = arr_1.return)) _a.call(arr_1);
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
         return [truthy, falsy];
     }
 
@@ -5471,6 +5482,9 @@
     }
     function hasI18nMeta(node) {
         return !!node.i18n;
+    }
+    function isBoundI18nAttribute(node) {
+        return node.i18n !== undefined && node instanceof BoundAttribute;
     }
     function hasI18nAttrs(element) {
         return element.attrs.some(function (attr) { return isI18nAttribute(attr.name); });
@@ -17082,7 +17096,6 @@
     (function (TagType) {
         TagType[TagType["ELEMENT"] = 0] = "ELEMENT";
         TagType[TagType["TEMPLATE"] = 1] = "TEMPLATE";
-        TagType[TagType["PROJECTION"] = 2] = "PROJECTION";
     })(TagType || (TagType = {}));
     /**
      * Generates an object that is used as a shared state between parent and all child contexts.
@@ -17179,10 +17192,12 @@
             this.appendTag(TagType.ELEMENT, node, index, closed);
         };
         I18nContext.prototype.appendProjection = function (node, index) {
-            // add open and close tags at the same time,
-            // since we process projected content separately
-            this.appendTag(TagType.PROJECTION, node, index, false);
-            this.appendTag(TagType.PROJECTION, node, index, true);
+            // Add open and close tags at the same time, since `<ng-content>` has no content,
+            // so when we come across `<ng-content>` we can register both open and close tags.
+            // Note: runtime i18n logic doesn't distinguish `<ng-content>` tag placeholders and
+            // regular element tag placeholders, so we generate element placeholders for both types.
+            this.appendTag(TagType.ELEMENT, node, index, false);
+            this.appendTag(TagType.ELEMENT, node, index, true);
         };
         /**
          * Generates an instance of a child context based on the root one,
@@ -17283,8 +17298,6 @@
                 return element(value);
             case TagType.TEMPLATE:
                 return template(value, value.closed);
-            case TagType.PROJECTION:
-                return projection(value, value.closed);
             default:
                 return value;
         }
@@ -18377,24 +18390,19 @@
             var bindings = [];
             attrs.forEach(function (attr) {
                 var message = attr.i18n;
-                if (attr instanceof TextAttribute) {
-                    i18nAttrArgs.push(literal(attr.name), _this.i18nTranslate(message));
-                }
-                else {
-                    var converted = attr.value.visit(_this._valueConverter);
-                    _this.allocateBindingSlots(converted);
-                    if (converted instanceof Interpolation) {
-                        var placeholders = assembleBoundTextPlaceholders(message);
-                        var params = placeholdersToParams(placeholders);
-                        i18nAttrArgs.push(literal(attr.name), _this.i18nTranslate(message, params));
-                        converted.expressions.forEach(function (expression) {
-                            hasBindings = true;
-                            bindings.push({
-                                sourceSpan: sourceSpan,
-                                value: function () { return _this.convertPropertyBinding(expression); },
-                            });
+                var converted = attr.value.visit(_this._valueConverter);
+                _this.allocateBindingSlots(converted);
+                if (converted instanceof Interpolation) {
+                    var placeholders = assembleBoundTextPlaceholders(message);
+                    var params = placeholdersToParams(placeholders);
+                    i18nAttrArgs.push(literal(attr.name), _this.i18nTranslate(message, params));
+                    converted.expressions.forEach(function (expression) {
+                        hasBindings = true;
+                        bindings.push({
+                            sourceSpan: sourceSpan,
+                            value: function () { return _this.convertPropertyBinding(expression); },
                         });
-                    }
+                    });
                 }
             });
             if (bindings.length > 0) {
@@ -18457,7 +18465,7 @@
             var stylingBuilder = new StylingBuilder(null);
             var isNonBindableMode = false;
             var isI18nRootElement = isI18nRootNode(element.i18n) && !isSingleI18nIcu(element.i18n);
-            var i18nAttrs = [];
+            var boundI18nAttrs = [];
             var outputAttrs = [];
             var _d = __read(splitNsName(element.name), 2), namespaceKey = _d[0], elementName = _d[1];
             var isNgContainer$1 = isNgContainer(element.name);
@@ -18475,8 +18483,13 @@
                     else if (name === 'class') {
                         stylingBuilder.registerClassAttr(value);
                     }
+                    else if (isBoundI18nAttribute(attr)) {
+                        // Note that we don't collect static i18n attributes here, because
+                        // they can be treated in the same way as regular attributes.
+                        boundI18nAttrs.push(attr);
+                    }
                     else {
-                        (attr.i18n ? i18nAttrs : outputAttrs).push(attr);
+                        outputAttrs.push(attr);
                     }
                 }
             }
@@ -18500,7 +18513,7 @@
                 var stylingInputWasSet = stylingBuilder.registerBoundInput(input);
                 if (!stylingInputWasSet) {
                     if (input.type === 0 /* Property */ && input.i18n) {
-                        i18nAttrs.push(input);
+                        boundI18nAttrs.push(input);
                     }
                     else {
                         allOtherInputs.push(input);
@@ -18508,7 +18521,7 @@
                 }
             });
             // add attributes for directive and projection matching purposes
-            var attributes = this.getAttributeExpressions(element.name, outputAttrs, allOtherInputs, element.outputs, stylingBuilder, [], i18nAttrs);
+            var attributes = this.getAttributeExpressions(element.name, outputAttrs, allOtherInputs, element.outputs, stylingBuilder, [], boundI18nAttrs);
             parameters.push(this.addAttrsToConsts(attributes));
             // local refs (ex.: <div #foo #bar="baz">)
             var refs = this.prepareRefsArray(element.references);
@@ -18528,7 +18541,7 @@
             var hasChildren = (!isI18nRootElement && this.i18n) ? !hasTextChildrenOnly(element.children) :
                 element.children.length > 0;
             var createSelfClosingInstruction = !stylingBuilder.hasBindingsWithPipes &&
-                element.outputs.length === 0 && i18nAttrs.length === 0 && !hasChildren;
+                element.outputs.length === 0 && boundI18nAttrs.length === 0 && !hasChildren;
             var createSelfClosingI18nInstruction = !createSelfClosingInstruction && hasTextChildrenOnly(element.children);
             if (createSelfClosingInstruction) {
                 this.creationInstruction(element.sourceSpan, isNgContainer$1 ? Identifiers$1.elementContainer : Identifiers$1.element, trimTrailingNulls(parameters));
@@ -18538,8 +18551,8 @@
                 if (isNonBindableMode) {
                     this.creationInstruction(element.startSourceSpan, Identifiers$1.disableBindings);
                 }
-                if (i18nAttrs.length > 0) {
-                    this.i18nAttributesInstruction(elementIndex, i18nAttrs, (_a = element.startSourceSpan) !== null && _a !== void 0 ? _a : element.sourceSpan);
+                if (boundI18nAttrs.length > 0) {
+                    this.i18nAttributesInstruction(elementIndex, boundI18nAttrs, (_a = element.startSourceSpan) !== null && _a !== void 0 ? _a : element.sourceSpan);
                 }
                 // Generate Listeners (outputs)
                 if (element.outputs.length > 0) {
@@ -18706,8 +18719,8 @@
             // find directives matching on a given <ng-template> node
             this.matchDirectives(NG_TEMPLATE_TAG_NAME, template);
             // prepare attributes parameter (including attributes used for directive matching)
-            var _c = __read(partitionArray(template.attributes, hasI18nMeta), 2), i18nStaticAttrs = _c[0], staticAttrs = _c[1];
-            var attrsExprs = this.getAttributeExpressions(NG_TEMPLATE_TAG_NAME, staticAttrs, template.inputs, template.outputs, undefined /* styles */, template.templateAttrs, i18nStaticAttrs);
+            var _c = __read(partitionArray(template.attributes, isBoundI18nAttribute), 2), boundI18nAttrs = _c[0], attrs = _c[1];
+            var attrsExprs = this.getAttributeExpressions(NG_TEMPLATE_TAG_NAME, attrs, template.inputs, template.outputs, undefined /* styles */, template.templateAttrs, boundI18nAttrs);
             parameters.push(this.addAttrsToConsts(attrsExprs));
             // local refs (ex.: <ng-template #foo>)
             if (template.references && template.references.length) {
@@ -18739,7 +18752,7 @@
             // Only add normal input/output binding instructions on explicit <ng-template> elements.
             if (template.tagName === NG_TEMPLATE_TAG_NAME) {
                 var _d = __read(partitionArray(template.inputs, hasI18nMeta), 2), i18nInputs = _d[0], inputs = _d[1];
-                var i18nAttrs = __spread(i18nStaticAttrs, i18nInputs);
+                var i18nAttrs = __spread(boundI18nAttrs, i18nInputs);
                 // Add i18n attributes that may act as inputs to directives. If such attributes are present,
                 // generate `i18nAttributes` instruction. Note: we generate it only for explicit <ng-template>
                 // elements, in case of inline templates, corresponding instructions will be generated in the
@@ -19034,18 +19047,36 @@
          * Note that this function will fully ignore all synthetic (@foo) attribute values
          * because those values are intended to always be generated as property instructions.
          */
-        TemplateDefinitionBuilder.prototype.getAttributeExpressions = function (elementName, renderAttributes, inputs, outputs, styles, templateAttrs, i18nAttrs) {
+        TemplateDefinitionBuilder.prototype.getAttributeExpressions = function (elementName, renderAttributes, inputs, outputs, styles, templateAttrs, boundI18nAttrs) {
+            var e_2, _c;
             if (templateAttrs === void 0) { templateAttrs = []; }
-            if (i18nAttrs === void 0) { i18nAttrs = []; }
+            if (boundI18nAttrs === void 0) { boundI18nAttrs = []; }
             var alreadySeen = new Set();
             var attrExprs = [];
             var ngProjectAsAttr;
-            renderAttributes.forEach(function (attr) {
-                if (attr.name === NG_PROJECT_AS_ATTR_NAME) {
-                    ngProjectAsAttr = attr;
+            try {
+                for (var renderAttributes_1 = __values(renderAttributes), renderAttributes_1_1 = renderAttributes_1.next(); !renderAttributes_1_1.done; renderAttributes_1_1 = renderAttributes_1.next()) {
+                    var attr = renderAttributes_1_1.value;
+                    if (attr.name === NG_PROJECT_AS_ATTR_NAME) {
+                        ngProjectAsAttr = attr;
+                    }
+                    // Note that static i18n attributes aren't in the i18n array,
+                    // because they're treated in the same way as regular attributes.
+                    if (attr.i18n) {
+                        attrExprs.push(literal(attr.name), this.i18nTranslate(attr.i18n));
+                    }
+                    else {
+                        attrExprs.push.apply(attrExprs, __spread(getAttributeNameLiterals(attr.name), [trustedConstAttribute(elementName, attr)]));
+                    }
                 }
-                attrExprs.push.apply(attrExprs, __spread(getAttributeNameLiterals(attr.name), [trustedConstAttribute(elementName, attr)]));
-            });
+            }
+            catch (e_2_1) { e_2 = { error: e_2_1 }; }
+            finally {
+                try {
+                    if (renderAttributes_1_1 && !renderAttributes_1_1.done && (_c = renderAttributes_1.return)) _c.call(renderAttributes_1);
+                }
+                finally { if (e_2) throw e_2.error; }
+            }
             // Keep ngProjectAs next to the other name, value pairs so we can verify that we match
             // ngProjectAs marker in the attribute name slot.
             if (ngProjectAsAttr) {
@@ -19097,9 +19128,9 @@
                 attrExprs.push(literal(4 /* Template */));
                 templateAttrs.forEach(function (attr) { return addAttrExpr(attr.name); });
             }
-            if (i18nAttrs.length) {
+            if (boundI18nAttrs.length) {
                 attrExprs.push(literal(6 /* I18n */));
-                i18nAttrs.forEach(function (attr) { return addAttrExpr(attr.name); });
+                boundI18nAttrs.forEach(function (attr) { return addAttrExpr(attr.name); });
             }
             return attrExprs;
         };
@@ -19604,6 +19635,8 @@
         var htmlParser = new HtmlParser();
         var parseResult = htmlParser.parse(template, templateUrl, Object.assign(Object.assign({ leadingTriviaChars: LEADING_TRIVIA_CHARS }, options), { tokenizeExpansionForms: true }));
         if (parseResult.errors && parseResult.errors.length > 0) {
+            // TODO(ayazhafiz): we may not always want to bail out at this point (e.g. in
+            // the context of a language service).
             return {
                 interpolationConfig: interpolationConfig,
                 preserveWhitespaces: preserveWhitespaces,
@@ -19633,22 +19666,10 @@
             }
         }
         var _c = htmlAstToRender3Ast(rootNodes, bindingParser), nodes = _c.nodes, errors = _c.errors, styleUrls = _c.styleUrls, styles = _c.styles, ngContentSelectors = _c.ngContentSelectors;
-        if (errors && errors.length > 0) {
-            return {
-                interpolationConfig: interpolationConfig,
-                preserveWhitespaces: preserveWhitespaces,
-                template: template,
-                errors: errors,
-                nodes: [],
-                styleUrls: [],
-                styles: [],
-                ngContentSelectors: []
-            };
-        }
         return {
             interpolationConfig: interpolationConfig,
             preserveWhitespaces: preserveWhitespaces,
-            errors: null,
+            errors: errors.length > 0 ? errors : null,
             template: template,
             nodes: nodes,
             styleUrls: styleUrls,
@@ -20749,7 +20770,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-rc.0+35.sha-3fbf325');
+    var VERSION$1 = new Version('11.0.0-rc.0+58.sha-399f491');
 
     /**
      * @license
