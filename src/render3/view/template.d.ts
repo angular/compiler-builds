@@ -392,6 +392,8 @@ export interface ParsedTemplate {
     template: string;
     /**
      * Any errors from parsing the template the first time.
+     *
+     * `null` if there are no errors. Otherwise, the array of errors is guaranteed to be non-empty.
      */
     errors: ParseError[] | null;
     /**

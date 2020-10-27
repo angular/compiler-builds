@@ -82,4 +82,4 @@ export declare function newArray<T>(size: number, value: T): T[];
  * @param conditionFn Condition function that is called for each item in a given array and returns a
  * boolean value.
  */
-export declare function partitionArray<T>(arr: T[], conditionFn: <K extends T>(value: K) => boolean): [T[], T[]];
+export declare function partitionArray<T, F = T>(arr: (T | F)[], conditionFn: (value: T | F) => boolean): [T[], F[]];
