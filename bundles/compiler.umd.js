@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.6+149.sha-e3d2f46
+ * @license Angular v11.0.0-next.6+150.sha-dd0ba3f
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -19739,7 +19739,7 @@
         var rootNodes = parseResult.rootNodes;
         // process i18n meta information (scan attributes, generate ids)
         // before we run whitespace removal process, because existing i18n
-        // extraction process (ng xi18n) relies on a raw content to generate
+        // extraction process (ng extract-i18n) relies on a raw content to generate
         // message ids
         var i18nMetaVisitor = new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ !preserveWhitespaces, enableI18nLegacyMessageIdFormat);
         rootNodes = visitAll$1(i18nMetaVisitor, rootNodes);
@@ -19748,7 +19748,7 @@
             // run i18n meta visitor again in case whitespaces are removed (because that might affect
             // generated i18n message content) and first pass indicated that i18n content is present in a
             // template. During this pass i18n IDs generated at the first pass will be preserved, so we can
-            // mimic existing extraction process (ng xi18n)
+            // mimic existing extraction process (ng extract-i18n)
             if (i18nMetaVisitor.hasI18nMeta) {
                 rootNodes = visitAll$1(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), rootNodes);
             }
@@ -20858,7 +20858,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.6+149.sha-e3d2f46');
+    var VERSION$1 = new Version('11.0.0-next.6+150.sha-dd0ba3f');
 
     /**
      * @license
