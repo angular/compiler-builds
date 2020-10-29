@@ -30,7 +30,6 @@ export declare function isSingleI18nIcu(meta?: i18n.I18nMeta): boolean;
 export declare function hasI18nMeta(node: t.Node & {
     i18n?: i18n.I18nMeta;
 }): boolean;
-export declare function isBoundI18nAttribute(node: t.TextAttribute | t.BoundAttribute): node is t.BoundAttribute;
 export declare function hasI18nAttrs(element: html.Element): boolean;
 export declare function icuFromI18nMessage(message: i18n.Message): i18n.IcuPlaceholder;
 export declare function wrapI18nPlaceholder(content: string | number, contextId?: number): string;
