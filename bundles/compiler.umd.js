@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.6+165.sha-c83b2ad
+ * @license Angular v11.0.0-next.6+166.sha-3241d92
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16774,7 +16774,7 @@
         }
     }
 
-    var BIND_NAME_REGEXP$1 = /^(?:(?:(?:(bind-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.*))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
+    var BIND_NAME_REGEXP$1 = /^(?:(bind-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.*)$/;
     // Group 1 = "bind-"
     var KW_BIND_IDX$1 = 1;
     // Group 2 = "let-"
@@ -16789,12 +16789,11 @@
     var KW_AT_IDX$1 = 6;
     // Group 7 = the identifier after "bind-", "let-", "ref-/#", "on-", "bindon-" or "@"
     var IDENT_KW_IDX$1 = 7;
-    // Group 8 = identifier inside [()]
-    var IDENT_BANANA_BOX_IDX$1 = 8;
-    // Group 9 = identifier inside []
-    var IDENT_PROPERTY_IDX$1 = 9;
-    // Group 10 = identifier inside ()
-    var IDENT_EVENT_IDX$1 = 10;
+    var BINDING_DELIMS = {
+        BANANA_BOX: { start: '[(', end: ')]' },
+        PROPERTY: { start: '[', end: ']' },
+        EVENT: { start: '(', end: ')' },
+    };
     var TEMPLATE_ATTR_PREFIX$2 = '*';
     function htmlAstToRender3Ast(htmlNodes, bindingParser) {
         var transformer = new HtmlAstToIvyAst(bindingParser);
@@ -17033,19 +17032,17 @@
                 return new ParseSourceSpan(keySpanStart, keySpanEnd, identifier);
             }
             var bindParts = name.match(BIND_NAME_REGEXP$1);
-            var hasBinding = false;
             if (bindParts) {
-                hasBinding = true;
                 if (bindParts[KW_BIND_IDX$1] != null) {
                     var identifier = bindParts[IDENT_KW_IDX$1];
-                    var keySpan = createKeySpan(srcSpan, bindParts[KW_BIND_IDX$1], identifier);
-                    this.bindingParser.parsePropertyBinding(identifier, value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
+                    var keySpan_1 = createKeySpan(srcSpan, bindParts[KW_BIND_IDX$1], identifier);
+                    this.bindingParser.parsePropertyBinding(identifier, value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan_1);
                 }
                 else if (bindParts[KW_LET_IDX$1]) {
                     if (isTemplateElement) {
                         var identifier = bindParts[IDENT_KW_IDX$1];
-                        var keySpan = createKeySpan(srcSpan, bindParts[KW_LET_IDX$1], identifier);
-                        this.parseVariable(identifier, value, srcSpan, keySpan, attribute.valueSpan, variables);
+                        var keySpan_2 = createKeySpan(srcSpan, bindParts[KW_LET_IDX$1], identifier);
+                        this.parseVariable(identifier, value, srcSpan, keySpan_2, attribute.valueSpan, variables);
                     }
                     else {
                         this.reportError("\"let-\" is only supported on ng-template elements.", srcSpan);
@@ -17063,33 +17060,54 @@
                 }
                 else if (bindParts[KW_BINDON_IDX$1]) {
                     var identifier = bindParts[IDENT_KW_IDX$1];
-                    var keySpan = createKeySpan(srcSpan, bindParts[KW_BINDON_IDX$1], identifier);
-                    this.bindingParser.parsePropertyBinding(identifier, value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
+                    var keySpan_3 = createKeySpan(srcSpan, bindParts[KW_BINDON_IDX$1], identifier);
+                    this.bindingParser.parsePropertyBinding(identifier, value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan_3);
                     this.parseAssignmentEvent(identifier, value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents);
                 }
                 else if (bindParts[KW_AT_IDX$1]) {
-                    var keySpan = createKeySpan(srcSpan, '', name);
-                    this.bindingParser.parseLiteralAttr(name, value, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
+                    var keySpan_4 = createKeySpan(srcSpan, '', name);
+                    this.bindingParser.parseLiteralAttr(name, value, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan_4);
                 }
-                else if (bindParts[IDENT_BANANA_BOX_IDX$1]) {
-                    var keySpan = createKeySpan(srcSpan, '[(', bindParts[IDENT_BANANA_BOX_IDX$1]);
-                    this.bindingParser.parsePropertyBinding(bindParts[IDENT_BANANA_BOX_IDX$1], value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
-                    this.parseAssignmentEvent(bindParts[IDENT_BANANA_BOX_IDX$1], value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents);
+                return true;
+            }
+            // We didn't see a kw-prefixed property binding, but we have not yet checked
+            // for the []/()/[()] syntax.
+            var delims = null;
+            if (name.startsWith(BINDING_DELIMS.BANANA_BOX.start)) {
+                delims = BINDING_DELIMS.BANANA_BOX;
+            }
+            else if (name.startsWith(BINDING_DELIMS.PROPERTY.start)) {
+                delims = BINDING_DELIMS.PROPERTY;
+            }
+            else if (name.startsWith(BINDING_DELIMS.EVENT.start)) {
+                delims = BINDING_DELIMS.EVENT;
+            }
+            if (delims !== null &&
+                // NOTE: older versions of the parser would match a start/end delimited
+                // binding iff the property name was terminated by the ending delimiter
+                // and the identifier in the binding was non-empty.
+                // TODO(ayazhafiz): update this to handle malformed bindings.
+                name.endsWith(delims.end) && name.length > delims.start.length + delims.end.length) {
+                var identifier = name.substring(delims.start.length, name.length - delims.end.length);
+                if (delims.start === BINDING_DELIMS.BANANA_BOX.start) {
+                    var keySpan_5 = createKeySpan(srcSpan, delims.start, identifier);
+                    this.bindingParser.parsePropertyBinding(identifier, value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan_5);
+                    this.parseAssignmentEvent(identifier, value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents);
                 }
-                else if (bindParts[IDENT_PROPERTY_IDX$1]) {
-                    var keySpan = createKeySpan(srcSpan, '[', bindParts[IDENT_PROPERTY_IDX$1]);
-                    this.bindingParser.parsePropertyBinding(bindParts[IDENT_PROPERTY_IDX$1], value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
+                else if (delims.start === BINDING_DELIMS.PROPERTY.start) {
+                    var keySpan_6 = createKeySpan(srcSpan, delims.start, identifier);
+                    this.bindingParser.parsePropertyBinding(identifier, value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan_6);
                 }
-                else if (bindParts[IDENT_EVENT_IDX$1]) {
+                else {
                     var events = [];
-                    this.bindingParser.parseEvent(bindParts[IDENT_EVENT_IDX$1], value, srcSpan, attribute.valueSpan || srcSpan, matchableAttributes, events);
+                    this.bindingParser.parseEvent(identifier, value, srcSpan, attribute.valueSpan || srcSpan, matchableAttributes, events);
                     addEvents(events, boundEvents);
                 }
+                return true;
             }
-            else {
-                var keySpan = createKeySpan(srcSpan, '' /* prefix */, name);
-                hasBinding = this.bindingParser.parsePropertyInterpolation(name, value, srcSpan, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
-            }
+            // No explicit binding found.
+            var keySpan = createKeySpan(srcSpan, '' /* prefix */, name);
+            var hasBinding = this.bindingParser.parsePropertyInterpolation(name, value, srcSpan, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
             return hasBinding;
         };
         HtmlAstToIvyAst.prototype._visitTextWithInterpolation = function (value, sourceSpan, i18n) {
@@ -20853,7 +20871,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.6+165.sha-c83b2ad');
+    var VERSION$1 = new Version('11.0.0-next.6+166.sha-3241d92');
 
     /**
      * @license
