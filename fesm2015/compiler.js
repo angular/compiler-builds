@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-rc.1+17.sha-feda78e
+ * @license Angular v11.0.0-rc.1+18.sha-a8e0db7
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7199,6 +7199,20 @@ class ImplicitReceiver extends AST {
     }
 }
 /**
+ * Receiver when something is accessed through `this` (e.g. `this.foo`). Note that this class
+ * inherits from `ImplicitReceiver`, because accessing something through `this` is treated the
+ * same as accessing it implicitly inside of an Angular template (e.g. `[attr.title]="this.title"`
+ * is the same as `[attr.title]="title"`.). Inheriting allows for the `this` accesses to be treated
+ * the same as implicit ones, except for a couple of exceptions like `$event` and `$any`.
+ * TODO: we should find a way for this class not to extend from `ImplicitReceiver` in the future.
+ */
+class ThisReceiver extends ImplicitReceiver {
+    visit(visitor, context = null) {
+        var _a;
+        return (_a = visitor.visitThisReceiver) === null || _a === void 0 ? void 0 : _a.call(visitor, this, context);
+    }
+}
+/**
  * Multiple expressions separated by a semicolon.
  */
 class Chain extends AST {
@@ -7507,6 +7521,7 @@ class RecursiveAstVisitor$1 {
         this.visitAll(ast.args, context);
     }
     visitImplicitReceiver(ast, context) { }
+    visitThisReceiver(ast, context) { }
     visitInterpolation(ast, context) {
         this.visitAll(ast.expressions, context);
     }
@@ -7560,6 +7575,9 @@ class RecursiveAstVisitor$1 {
 }
 class AstTransformer$1 {
     visitImplicitReceiver(ast, context) {
+        return ast;
+    }
+    visitThisReceiver(ast, context) {
         return ast;
     }
     visitInterpolation(ast, context) {
@@ -7641,6 +7659,9 @@ class AstTransformer$1 {
 // a change is made a child node.
 class AstMemoryEfficientTransformer {
     visitImplicitReceiver(ast, context) {
+        return ast;
+    }
+    visitThisReceiver(ast, context) {
         return ast;
     }
     visitInterpolation(ast, context) {
@@ -7917,9 +7938,9 @@ class ConvertActionBindingResult {
  * Converts the given expression AST into an executable output AST, assuming the expression is
  * used in an action binding (e.g. an event handler).
  */
-function convertActionBinding(localResolver, implicitReceiver, action, bindingId, interpolationFunction, baseSourceSpan, implicitReceiverAccesses) {
+function convertActionBinding(localResolver, implicitReceiver, action, bindingId, interpolationFunction, baseSourceSpan, implicitReceiverAccesses, globals) {
     if (!localResolver) {
-        localResolver = new DefaultLocalResolver();
+        localResolver = new DefaultLocalResolver(globals);
     }
     const actionWithoutBuiltins = convertPropertyBindingBuiltins({
         createLiteralArrayConverter: (argCount) => {
@@ -8223,6 +8244,9 @@ class _AstToIrVisitor {
         this.usesImplicitReceiver = true;
         return this._implicitReceiver;
     }
+    visitThisReceiver(ast, mode) {
+        return this.visitImplicitReceiver(ast, mode);
+    }
     visitInterpolation(ast, mode) {
         ensureExpressionMode(mode, ast);
         const args = [literal(ast.expressions.length)];
@@ -8269,11 +8293,16 @@ class _AstToIrVisitor {
             undefined;
         return convertToStatementIfNeeded(mode, literal(ast.value, type, this.convertSourceSpan(ast.span)));
     }
-    _getLocal(name) {
+    _getLocal(name, receiver) {
+        var _a;
+        if (((_a = this._localResolver.globals) === null || _a === void 0 ? void 0 : _a.has(name)) && receiver instanceof ThisReceiver) {
+            return null;
+        }
         return this._localResolver.getLocal(name);
     }
     visitMethodCall(ast, mode) {
-        if (ast.receiver instanceof ImplicitReceiver && ast.name == '$any') {
+        if (ast.receiver instanceof ImplicitReceiver &&
+            !(ast.receiver instanceof ThisReceiver) && ast.name === '$any') {
             const args = this.visitAll(ast.args, _Mode.Expression);
             if (args.length != 1) {
                 throw new Error(`Invalid call to $any, expected 1 argument but received ${args.length || 'none'}`);
@@ -8290,14 +8319,14 @@ class _AstToIrVisitor {
             let result = null;
             const receiver = this._visit(ast.receiver, _Mode.Expression);
             if (receiver === this._implicitReceiver) {
-                const varExpr = this._getLocal(ast.name);
+                const varExpr = this._getLocal(ast.name, ast.receiver);
                 if (varExpr) {
                     // Restore the previous "usesImplicitReceiver" state since the implicit
                     // receiver has been replaced with a resolved local expression.
                     this.usesImplicitReceiver = prevUsesImplicitReceiver;
                     result = varExpr.callFn(args);
+                    this.addImplicitReceiverAccess(ast.name);
                 }
-                this.addImplicitReceiverAccess(ast.name);
             }
             if (result == null) {
                 result = receiver.callMethod(ast.name, args, this.convertSourceSpan(ast.span));
@@ -8321,13 +8350,13 @@ class _AstToIrVisitor {
             const prevUsesImplicitReceiver = this.usesImplicitReceiver;
             const receiver = this._visit(ast.receiver, _Mode.Expression);
             if (receiver === this._implicitReceiver) {
-                result = this._getLocal(ast.name);
+                result = this._getLocal(ast.name, ast.receiver);
                 if (result) {
                     // Restore the previous "usesImplicitReceiver" state since the implicit
                     // receiver has been replaced with a resolved local expression.
                     this.usesImplicitReceiver = prevUsesImplicitReceiver;
+                    this.addImplicitReceiverAccess(ast.name);
                 }
-                this.addImplicitReceiverAccess(ast.name);
             }
             if (result == null) {
                 result = receiver.prop(ast.name);
@@ -8340,7 +8369,7 @@ class _AstToIrVisitor {
         const prevUsesImplicitReceiver = this.usesImplicitReceiver;
         let varExpr = null;
         if (receiver === this._implicitReceiver) {
-            const localExpr = this._getLocal(ast.name);
+            const localExpr = this._getLocal(ast.name, ast.receiver);
             if (localExpr) {
                 if (localExpr instanceof ReadPropExpr) {
                     // If the local variable is a property read expression, it's a reference
@@ -8484,6 +8513,9 @@ class _AstToIrVisitor {
             visitImplicitReceiver(ast) {
                 return null;
             },
+            visitThisReceiver(ast) {
+                return null;
+            },
             visitInterpolation(ast) {
                 return null;
             },
@@ -8558,6 +8590,9 @@ class _AstToIrVisitor {
                 return true;
             },
             visitImplicitReceiver(ast) {
+                return false;
+            },
+            visitThisReceiver(ast) {
                 return false;
             },
             visitInterpolation(ast) {
@@ -8655,6 +8690,9 @@ function flattenStatements(arg, output) {
     }
 }
 class DefaultLocalResolver {
+    constructor(globals) {
+        this.globals = globals;
+    }
     notifyImplicitReceiverUse() { }
     getLocal(name) {
         if (name === EventHandlerVars.event.name) {
@@ -14761,7 +14799,7 @@ class _ParseAST {
         }
         else if (this.next.isKeywordThis()) {
             this.advance();
-            return new ImplicitReceiver(this.span(start), this.sourceSpan(start));
+            return new ThisReceiver(this.span(start), this.sourceSpan(start));
         }
         else if (this.consumeOptionalCharacter($LBRACKET)) {
             this.rbracketsExpected++;
@@ -15108,6 +15146,7 @@ class SimpleExpressionChecker {
         this.errors = [];
     }
     visitImplicitReceiver(ast, context) { }
+    visitThisReceiver(ast, context) { }
     visitInterpolation(ast, context) { }
     visitLiteralPrimitive(ast, context) { }
     visitPropertyRead(ast, context) { }
@@ -16910,6 +16949,8 @@ function createEmptyMessagePart(location) {
 const NG_CONTENT_SELECT_ATTR$1 = 'select';
 // Attribute name of `ngProjectAs`.
 const NG_PROJECT_AS_ATTR_NAME = 'ngProjectAs';
+// Global symbols available only inside event bindings.
+const EVENT_BINDING_SCOPE_GLOBALS = new Set(['$event']);
 // List of supported global targets for event listeners
 const GLOBAL_TARGET_RESOLVERS = new Map([['window', Identifiers$1.resolveWindow], ['document', Identifiers$1.resolveDocument], ['body', Identifiers$1.resolveBody]]);
 const LEADING_TRIVIA_CHARS = [' ', '\n', '\r', '\t'];
@@ -16928,7 +16969,7 @@ function prepareEventListenerParameters(eventAst, handlerName = null, scope = nu
     const implicitReceiverExpr = (scope === null || scope.bindingLevel === 0) ?
         variable(CONTEXT_NAME) :
         scope.getOrCreateSharedContextVar(0);
-    const bindingExpr = convertActionBinding(scope, implicitReceiverExpr, handler, 'b', () => error('Unexpected interpolation'), eventAst.handlerSpan, implicitReceiverAccesses);
+    const bindingExpr = convertActionBinding(scope, implicitReceiverExpr, handler, 'b', () => error('Unexpected interpolation'), eventAst.handlerSpan, implicitReceiverAccesses, EVENT_BINDING_SCOPE_GLOBALS);
     const statements = [];
     if (scope) {
         statements.push(...scope.restoreViewStatement());
@@ -18028,7 +18069,7 @@ class TemplateDefinitionBuilder {
                 prepareSyntheticListenerFunctionName(eventName, outputAst.phase) :
                 sanitizeIdentifier(eventName);
             const handlerName = `${this.templateName}_${tagName}_${bindingFnName}_${index}_listener`;
-            const scope = this._bindingScope.nestedScope(this._bindingScope.bindingLevel);
+            const scope = this._bindingScope.nestedScope(this._bindingScope.bindingLevel, EVENT_BINDING_SCOPE_GLOBALS);
             return prepareEventListenerParameters(outputAst, handlerName, scope);
         };
     }
@@ -18154,16 +18195,22 @@ function getAttributeNameLiterals(name) {
 /** The prefix used to get a shared context in BindingScope's map. */
 const SHARED_CONTEXT_KEY = '$$shared_ctx$$';
 class BindingScope {
-    constructor(bindingLevel = 0, parent = null) {
+    constructor(bindingLevel = 0, parent = null, globals) {
         this.bindingLevel = bindingLevel;
         this.parent = parent;
+        this.globals = globals;
         /** Keeps a map from local variables to their BindingData. */
         this.map = new Map();
         this.referenceNameIndex = 0;
         this.restoreViewVariable = null;
+        if (globals !== undefined) {
+            for (const name of globals) {
+                this.set(0, name, variable(name));
+            }
+        }
     }
     static createRootScope() {
-        return new BindingScope().set(0, '$event', variable('$event'));
+        return new BindingScope();
     }
     get(name) {
         let current = this;
@@ -18241,8 +18288,8 @@ class BindingScope {
             this.map.get(SHARED_CONTEXT_KEY + 0).declare = true;
         }
     }
-    nestedScope(level) {
-        const newScope = new BindingScope(level, this);
+    nestedScope(level, globals) {
+        const newScope = new BindingScope(level, this, globals);
         if (level > 0)
             newScope.generateSharedContextVar(0);
         return newScope;
@@ -19561,7 +19608,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.0.0-rc.1+17.sha-feda78e');
+const VERSION$1 = new Version('11.0.0-rc.1+18.sha-a8e0db7');
 
 /**
  * @license
@@ -29070,5 +29117,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TemplateBindingParseResult, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Icu as TmplAstIcu, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TemplateBindingParseResult, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThisReceiver, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Icu as TmplAstIcu, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
 //# sourceMappingURL=compiler.js.map
