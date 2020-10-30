@@ -216,6 +216,7 @@ declare type BindingData = {
 export declare class BindingScope implements LocalResolver {
     bindingLevel: number;
     private parent;
+    globals?: Set<string> | undefined;
     /** Keeps a map from local variables to their BindingData. */
     private map;
     private referenceNameIndex;
@@ -236,7 +237,7 @@ export declare class BindingScope implements LocalResolver {
     set(retrievalLevel: number, name: string, lhs: o.Expression, priority?: number, declareLocalCallback?: DeclareLocalVarCallback, localRef?: true): BindingScope;
     getLocal(name: string): (o.Expression | null);
     notifyImplicitReceiverUse(): void;
-    nestedScope(level: number): BindingScope;
+    nestedScope(level: number, globals?: Set<string>): BindingScope;
     /**
      * Gets or creates a shared context variable and returns its expression. Note that
      * this does not mean that the shared variable will be declared. Variables in the
