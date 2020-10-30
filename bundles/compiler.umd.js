@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.6+168.sha-4e68254
+ * @license Angular v11.0.0-next.6+169.sha-cbc0907
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7990,6 +7990,26 @@
         return ImplicitReceiver;
     }(AST));
     /**
+     * Receiver when something is accessed through `this` (e.g. `this.foo`). Note that this class
+     * inherits from `ImplicitReceiver`, because accessing something through `this` is treated the
+     * same as accessing it implicitly inside of an Angular template (e.g. `[attr.title]="this.title"`
+     * is the same as `[attr.title]="title"`.). Inheriting allows for the `this` accesses to be treated
+     * the same as implicit ones, except for a couple of exceptions like `$event` and `$any`.
+     * TODO: we should find a way for this class not to extend from `ImplicitReceiver` in the future.
+     */
+    var ThisReceiver = /** @class */ (function (_super) {
+        __extends(ThisReceiver, _super);
+        function ThisReceiver() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        ThisReceiver.prototype.visit = function (visitor, context) {
+            if (context === void 0) { context = null; }
+            var _a;
+            return (_a = visitor.visitThisReceiver) === null || _a === void 0 ? void 0 : _a.call(visitor, this, context);
+        };
+        return ThisReceiver;
+    }(ImplicitReceiver));
+    /**
      * Multiple expressions separated by a semicolon.
      */
     var Chain = /** @class */ (function (_super) {
@@ -8383,6 +8403,7 @@
             this.visitAll(ast.args, context);
         };
         RecursiveAstVisitor.prototype.visitImplicitReceiver = function (ast, context) { };
+        RecursiveAstVisitor.prototype.visitThisReceiver = function (ast, context) { };
         RecursiveAstVisitor.prototype.visitInterpolation = function (ast, context) {
             this.visitAll(ast.expressions, context);
         };
@@ -8429,7 +8450,7 @@
         RecursiveAstVisitor.prototype.visitQuote = function (ast, context) { };
         // This is not part of the AstVisitor interface, just a helper method
         RecursiveAstVisitor.prototype.visitAll = function (asts, context) {
-            var e_1, _a;
+            var e_1, _b;
             try {
                 for (var asts_1 = __values(asts), asts_1_1 = asts_1.next(); !asts_1_1.done; asts_1_1 = asts_1.next()) {
                     var ast = asts_1_1.value;
@@ -8439,7 +8460,7 @@
             catch (e_1_1) { e_1 = { error: e_1_1 }; }
             finally {
                 try {
-                    if (asts_1_1 && !asts_1_1.done && (_a = asts_1.return)) _a.call(asts_1);
+                    if (asts_1_1 && !asts_1_1.done && (_b = asts_1.return)) _b.call(asts_1);
                 }
                 finally { if (e_1) throw e_1.error; }
             }
@@ -8450,6 +8471,9 @@
         function AstTransformer() {
         }
         AstTransformer.prototype.visitImplicitReceiver = function (ast, context) {
+            return ast;
+        };
+        AstTransformer.prototype.visitThisReceiver = function (ast, context) {
             return ast;
         };
         AstTransformer.prototype.visitInterpolation = function (ast, context) {
@@ -8534,6 +8558,9 @@
         function AstMemoryEfficientTransformer() {
         }
         AstMemoryEfficientTransformer.prototype.visitImplicitReceiver = function (ast, context) {
+            return ast;
+        };
+        AstMemoryEfficientTransformer.prototype.visitThisReceiver = function (ast, context) {
             return ast;
         };
         AstMemoryEfficientTransformer.prototype.visitInterpolation = function (ast, context) {
@@ -8811,9 +8838,9 @@
      * Converts the given expression AST into an executable output AST, assuming the expression is
      * used in an action binding (e.g. an event handler).
      */
-    function convertActionBinding(localResolver, implicitReceiver, action, bindingId, interpolationFunction, baseSourceSpan, implicitReceiverAccesses) {
+    function convertActionBinding(localResolver, implicitReceiver, action, bindingId, interpolationFunction, baseSourceSpan, implicitReceiverAccesses, globals) {
         if (!localResolver) {
-            localResolver = new DefaultLocalResolver();
+            localResolver = new DefaultLocalResolver(globals);
         }
         var actionWithoutBuiltins = convertPropertyBindingBuiltins({
             createLiteralArrayConverter: function (argCount) {
@@ -9124,6 +9151,9 @@
             this.usesImplicitReceiver = true;
             return this._implicitReceiver;
         };
+        _AstToIrVisitor.prototype.visitThisReceiver = function (ast, mode) {
+            return this.visitImplicitReceiver(ast, mode);
+        };
         _AstToIrVisitor.prototype.visitInterpolation = function (ast, mode) {
             ensureExpressionMode(mode, ast);
             var args = [literal(ast.expressions.length)];
@@ -9170,11 +9200,16 @@
                 undefined;
             return convertToStatementIfNeeded(mode, literal(ast.value, type, this.convertSourceSpan(ast.span)));
         };
-        _AstToIrVisitor.prototype._getLocal = function (name) {
+        _AstToIrVisitor.prototype._getLocal = function (name, receiver) {
+            var _a;
+            if (((_a = this._localResolver.globals) === null || _a === void 0 ? void 0 : _a.has(name)) && receiver instanceof ThisReceiver) {
+                return null;
+            }
             return this._localResolver.getLocal(name);
         };
         _AstToIrVisitor.prototype.visitMethodCall = function (ast, mode) {
-            if (ast.receiver instanceof ImplicitReceiver && ast.name == '$any') {
+            if (ast.receiver instanceof ImplicitReceiver &&
+                !(ast.receiver instanceof ThisReceiver) && ast.name === '$any') {
                 var args = this.visitAll(ast.args, _Mode.Expression);
                 if (args.length != 1) {
                     throw new Error("Invalid call to $any, expected 1 argument but received " + (args.length || 'none'));
@@ -9191,14 +9226,14 @@
                 var result = null;
                 var receiver = this._visit(ast.receiver, _Mode.Expression);
                 if (receiver === this._implicitReceiver) {
-                    var varExpr = this._getLocal(ast.name);
+                    var varExpr = this._getLocal(ast.name, ast.receiver);
                     if (varExpr) {
                         // Restore the previous "usesImplicitReceiver" state since the implicit
                         // receiver has been replaced with a resolved local expression.
                         this.usesImplicitReceiver = prevUsesImplicitReceiver;
                         result = varExpr.callFn(args);
+                        this.addImplicitReceiverAccess(ast.name);
                     }
-                    this.addImplicitReceiverAccess(ast.name);
                 }
                 if (result == null) {
                     result = receiver.callMethod(ast.name, args, this.convertSourceSpan(ast.span));
@@ -9222,13 +9257,13 @@
                 var prevUsesImplicitReceiver = this.usesImplicitReceiver;
                 var receiver = this._visit(ast.receiver, _Mode.Expression);
                 if (receiver === this._implicitReceiver) {
-                    result = this._getLocal(ast.name);
+                    result = this._getLocal(ast.name, ast.receiver);
                     if (result) {
                         // Restore the previous "usesImplicitReceiver" state since the implicit
                         // receiver has been replaced with a resolved local expression.
                         this.usesImplicitReceiver = prevUsesImplicitReceiver;
+                        this.addImplicitReceiverAccess(ast.name);
                     }
-                    this.addImplicitReceiverAccess(ast.name);
                 }
                 if (result == null) {
                     result = receiver.prop(ast.name);
@@ -9241,7 +9276,7 @@
             var prevUsesImplicitReceiver = this.usesImplicitReceiver;
             var varExpr = null;
             if (receiver === this._implicitReceiver) {
-                var localExpr = this._getLocal(ast.name);
+                var localExpr = this._getLocal(ast.name, ast.receiver);
                 if (localExpr) {
                     if (localExpr instanceof ReadPropExpr) {
                         // If the local variable is a property read expression, it's a reference
@@ -9386,6 +9421,9 @@
                 visitImplicitReceiver: function (ast) {
                     return null;
                 },
+                visitThisReceiver: function (ast) {
+                    return null;
+                },
                 visitInterpolation: function (ast) {
                     return null;
                 },
@@ -9461,6 +9499,9 @@
                     return true;
                 },
                 visitImplicitReceiver: function (ast) {
+                    return false;
+                },
+                visitThisReceiver: function (ast) {
                     return false;
                 },
                 visitInterpolation: function (ast) {
@@ -9559,7 +9600,8 @@
         }
     }
     var DefaultLocalResolver = /** @class */ (function () {
-        function DefaultLocalResolver() {
+        function DefaultLocalResolver(globals) {
+            this.globals = globals;
         }
         DefaultLocalResolver.prototype.notifyImplicitReceiverUse = function () { };
         DefaultLocalResolver.prototype.getLocal = function (name) {
@@ -15870,7 +15912,7 @@
             }
             else if (this.next.isKeywordThis()) {
                 this.advance();
-                return new ImplicitReceiver(this.span(start), this.sourceSpan(start));
+                return new ThisReceiver(this.span(start), this.sourceSpan(start));
             }
             else if (this.consumeOptionalCharacter($LBRACKET)) {
                 this.rbracketsExpected++;
@@ -16233,6 +16275,7 @@
             this.errors = [];
         }
         SimpleExpressionChecker.prototype.visitImplicitReceiver = function (ast, context) { };
+        SimpleExpressionChecker.prototype.visitThisReceiver = function (ast, context) { };
         SimpleExpressionChecker.prototype.visitInterpolation = function (ast, context) { };
         SimpleExpressionChecker.prototype.visitLiteralPrimitive = function (ast, context) { };
         SimpleExpressionChecker.prototype.visitPropertyRead = function (ast, context) { };
@@ -18121,6 +18164,8 @@
     var NG_CONTENT_SELECT_ATTR$1 = 'select';
     // Attribute name of `ngProjectAs`.
     var NG_PROJECT_AS_ATTR_NAME = 'ngProjectAs';
+    // Global symbols available only inside event bindings.
+    var EVENT_BINDING_SCOPE_GLOBALS = new Set(['$event']);
     // List of supported global targets for event listeners
     var GLOBAL_TARGET_RESOLVERS = new Map([['window', Identifiers$1.resolveWindow], ['document', Identifiers$1.resolveDocument], ['body', Identifiers$1.resolveBody]]);
     var LEADING_TRIVIA_CHARS = [' ', '\n', '\r', '\t'];
@@ -18140,7 +18185,7 @@
         var implicitReceiverExpr = (scope === null || scope.bindingLevel === 0) ?
             variable(CONTEXT_NAME) :
             scope.getOrCreateSharedContextVar(0);
-        var bindingExpr = convertActionBinding(scope, implicitReceiverExpr, handler, 'b', function () { return error('Unexpected interpolation'); }, eventAst.handlerSpan, implicitReceiverAccesses);
+        var bindingExpr = convertActionBinding(scope, implicitReceiverExpr, handler, 'b', function () { return error('Unexpected interpolation'); }, eventAst.handlerSpan, implicitReceiverAccesses, EVENT_BINDING_SCOPE_GLOBALS);
         var statements = [];
         if (scope) {
             statements.push.apply(statements, __spread(scope.restoreViewStatement()));
@@ -19282,7 +19327,7 @@
                     prepareSyntheticListenerFunctionName(eventName, outputAst.phase) :
                     sanitizeIdentifier(eventName);
                 var handlerName = _this.templateName + "_" + tagName + "_" + bindingFnName + "_" + index + "_listener";
-                var scope = _this._bindingScope.nestedScope(_this._bindingScope.bindingLevel);
+                var scope = _this._bindingScope.nestedScope(_this._bindingScope.bindingLevel, EVENT_BINDING_SCOPE_GLOBALS);
                 return prepareEventListenerParameters(outputAst, handlerName, scope);
             };
         };
@@ -19413,18 +19458,35 @@
     /** The prefix used to get a shared context in BindingScope's map. */
     var SHARED_CONTEXT_KEY = '$$shared_ctx$$';
     var BindingScope = /** @class */ (function () {
-        function BindingScope(bindingLevel, parent) {
+        function BindingScope(bindingLevel, parent, globals) {
+            var e_3, _c;
             if (bindingLevel === void 0) { bindingLevel = 0; }
             if (parent === void 0) { parent = null; }
             this.bindingLevel = bindingLevel;
             this.parent = parent;
+            this.globals = globals;
             /** Keeps a map from local variables to their BindingData. */
             this.map = new Map();
             this.referenceNameIndex = 0;
             this.restoreViewVariable = null;
+            if (globals !== undefined) {
+                try {
+                    for (var globals_1 = __values(globals), globals_1_1 = globals_1.next(); !globals_1_1.done; globals_1_1 = globals_1.next()) {
+                        var name = globals_1_1.value;
+                        this.set(0, name, variable(name));
+                    }
+                }
+                catch (e_3_1) { e_3 = { error: e_3_1 }; }
+                finally {
+                    try {
+                        if (globals_1_1 && !globals_1_1.done && (_c = globals_1.return)) _c.call(globals_1);
+                    }
+                    finally { if (e_3) throw e_3.error; }
+                }
+            }
         }
         BindingScope.createRootScope = function () {
-            return new BindingScope().set(0, '$event', variable('$event'));
+            return new BindingScope();
         };
         BindingScope.prototype.get = function (name) {
             var current = this;
@@ -19503,8 +19565,8 @@
                 this.map.get(SHARED_CONTEXT_KEY + 0).declare = true;
             }
         };
-        BindingScope.prototype.nestedScope = function (level) {
-            var newScope = new BindingScope(level, this);
+        BindingScope.prototype.nestedScope = function (level, globals) {
+            var newScope = new BindingScope(level, this, globals);
             if (level > 0)
                 newScope.generateSharedContextVar(0);
             return newScope;
@@ -20871,7 +20933,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.6+168.sha-4e68254');
+    var VERSION$1 = new Version('11.0.0-next.6+169.sha-cbc0907');
 
     /**
      * @license
@@ -30919,6 +30981,7 @@
     exports.TemplateParser = TemplateParser;
     exports.Text = Text$3;
     exports.TextAst = TextAst;
+    exports.ThisReceiver = ThisReceiver;
     exports.ThrowStmt = ThrowStmt;
     exports.TmplAstBoundAttribute = BoundAttribute;
     exports.TmplAstBoundEvent = BoundEvent;
