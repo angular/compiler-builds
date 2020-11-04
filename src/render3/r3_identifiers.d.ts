@@ -10,6 +10,7 @@ export declare class Identifiers {
     static NEW_METHOD: string;
     static TRANSFORM_METHOD: string;
     static PATCH_DEPS: string;
+    static core: o.ExternalReference;
     static namespaceHTML: o.ExternalReference;
     static namespaceMathML: o.ExternalReference;
     static namespaceSVG: o.ExternalReference;
@@ -133,6 +134,7 @@ export declare class Identifiers {
     static ComponentDefWithMeta: o.ExternalReference;
     static FactoryDef: o.ExternalReference;
     static defineDirective: o.ExternalReference;
+    static declareDirective: o.ExternalReference;
     static DirectiveDefWithMeta: o.ExternalReference;
     static InjectorDef: o.ExternalReference;
     static defineInjector: o.ExternalReference;
