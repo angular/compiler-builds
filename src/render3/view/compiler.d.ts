@@ -38,6 +38,7 @@ export declare function compileDirectiveFromRender2(outputCtx: OutputContext, di
  * information.
  */
 export declare function compileComponentFromRender2(outputCtx: OutputContext, component: CompileDirectiveMetadata, render3Ast: Render3ParseResult, reflector: CompileReflector, bindingParser: BindingParser, directiveTypeBySel: Map<string, any>, pipeTypeByName: Map<string, any>): void;
+export declare function createDirectiveTypeParams(meta: R3DirectiveMetadata): o.Type[];
 export interface ParsedHostBindings {
     attributes: {
         [key: string]: o.Expression;

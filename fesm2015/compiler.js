@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.6+195.sha-2d79780
+ * @license Angular v11.0.0-next.6+205.sha-27ae060
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3438,6 +3438,7 @@ class Identifiers$1 {
 Identifiers$1.NEW_METHOD = 'factory';
 Identifiers$1.TRANSFORM_METHOD = 'transform';
 Identifiers$1.PATCH_DEPS = 'patchedDeps';
+Identifiers$1.core = { name: null, moduleName: CORE$1 };
 /* Instructions */
 Identifiers$1.namespaceHTML = { name: 'ɵɵnamespaceHTML', moduleName: CORE$1 };
 Identifiers$1.namespaceMathML = { name: 'ɵɵnamespaceMathML', moduleName: CORE$1 };
@@ -3567,10 +3568,8 @@ Identifiers$1.FactoryDef = {
     name: 'ɵɵFactoryDef',
     moduleName: CORE$1,
 };
-Identifiers$1.defineDirective = {
-    name: 'ɵɵdefineDirective',
-    moduleName: CORE$1,
-};
+Identifiers$1.defineDirective = { name: 'ɵɵdefineDirective', moduleName: CORE$1 };
+Identifiers$1.declareDirective = { name: 'ɵɵngDeclareDirective', moduleName: CORE$1 };
 Identifiers$1.DirectiveDefWithMeta = {
     name: 'ɵɵDirectiveDefWithMeta',
     moduleName: CORE$1,
@@ -19723,7 +19722,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.0.0-next.6+195.sha-2d79780');
+const VERSION$1 = new Version('11.0.0-next.6+205.sha-27ae060');
 
 /**
  * @license
@@ -29202,6 +29201,122 @@ function extractTemplateEntities(rootScope) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/**
+ * Compile a directive declaration defined by the `R3DirectiveMetadata`.
+ */
+function compileDeclareDirectiveFromMetadata(meta) {
+    const definitionMap = createDirectiveDefinitionMap(meta);
+    const expression = importExpr(Identifiers$1.declareDirective).callFn([definitionMap.toLiteralMap()]);
+    const typeParams = createDirectiveTypeParams(meta);
+    const type = expressionType(importExpr(Identifiers$1.DirectiveDefWithMeta, typeParams));
+    return { expression, type };
+}
+/**
+ * Gathers the declaration fields for a directive into a `DefinitionMap`. This allows for reusing
+ * this logic for components, as they extend the directive metadata.
+ */
+function createDirectiveDefinitionMap(meta) {
+    const definitionMap = new DefinitionMap();
+    definitionMap.set('version', literal(1));
+    // e.g. `type: MyDirective`
+    definitionMap.set('type', meta.internalType);
+    // e.g. `selector: 'some-dir'`
+    if (meta.selector !== null) {
+        definitionMap.set('selector', literal(meta.selector));
+    }
+    definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs, true));
+    definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
+    definitionMap.set('host', compileHostMetadata(meta.host));
+    definitionMap.set('providers', meta.providers);
+    if (meta.queries.length > 0) {
+        definitionMap.set('queries', literalArr(meta.queries.map(compileQuery)));
+    }
+    if (meta.viewQueries.length > 0) {
+        definitionMap.set('viewQueries', literalArr(meta.viewQueries.map(compileQuery)));
+    }
+    if (meta.exportAs !== null) {
+        definitionMap.set('exportAs', asLiteral(meta.exportAs));
+    }
+    if (meta.usesInheritance) {
+        definitionMap.set('usesInheritance', literal(true));
+    }
+    if (meta.lifecycle.usesOnChanges) {
+        definitionMap.set('usesOnChanges', literal(true));
+    }
+    definitionMap.set('ngImport', importExpr(Identifiers$1.core));
+    return definitionMap;
+}
+/**
+ * Compiles the metadata of a single query into its partial declaration form as declared
+ * by `R3DeclareQueryMetadata`.
+ */
+function compileQuery(query) {
+    const meta = new DefinitionMap();
+    meta.set('propertyName', literal(query.propertyName));
+    if (query.first) {
+        meta.set('first', literal(true));
+    }
+    meta.set('predicate', Array.isArray(query.predicate) ? asLiteral(query.predicate) : query.predicate);
+    if (query.descendants) {
+        meta.set('descendants', literal(true));
+    }
+    meta.set('read', query.read);
+    if (query.static) {
+        meta.set('static', literal(true));
+    }
+    return meta.toLiteralMap();
+}
+/**
+ * Compiles the host metadata into its partial declaration form as declared
+ * in `R3DeclareDirectiveMetadata['host']`
+ */
+function compileHostMetadata(meta) {
+    const hostMetadata = new DefinitionMap();
+    hostMetadata.set('attributes', toOptionalLiteralMap(meta.attributes, expression => expression));
+    hostMetadata.set('listeners', toOptionalLiteralMap(meta.listeners, literal));
+    hostMetadata.set('properties', toOptionalLiteralMap(meta.properties, literal));
+    if (meta.specialAttributes.styleAttr) {
+        hostMetadata.set('styleAttribute', literal(meta.specialAttributes.styleAttr));
+    }
+    if (meta.specialAttributes.classAttr) {
+        hostMetadata.set('classAttribute', literal(meta.specialAttributes.classAttr));
+    }
+    if (hostMetadata.values.length > 0) {
+        return hostMetadata.toLiteralMap();
+    }
+    else {
+        return null;
+    }
+}
+/**
+ * Creates an object literal expression from the given object, mapping all values to an expression
+ * using the provided mapping function. If the object has no keys, then null is returned.
+ *
+ * @param object The object to transfer into an object literal expression.
+ * @param mapper The logic to use for creating an expression for the object's values.
+ * @returns An object literal expression representing `object`, or null if `object` does not have
+ * any keys.
+ */
+function toOptionalLiteralMap(object, mapper) {
+    const entries = Object.keys(object).map(key => {
+        const value = object[key];
+        return { key, value: mapper(value), quoted: true };
+    });
+    if (entries.length > 0) {
+        return literalMap(entries);
+    }
+    else {
+        return null;
+    }
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 // This file only reexports content of the `src` folder. Keep it that way.
 // This function call has a global side effects and publishes the compiler into global namespace for
 // the late binding of the Compiler to the @angular/core for jit compilation.
@@ -29232,5 +29347,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TemplateBindingParseResult, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThisReceiver, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Icu as TmplAstIcu, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TemplateBindingParseResult, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThisReceiver, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Icu as TmplAstIcu, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
 //# sourceMappingURL=compiler.js.map
