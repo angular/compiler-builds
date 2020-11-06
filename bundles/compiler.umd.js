@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.6+210.sha-27358eb
+ * @license Angular v11.0.0-next.6+214.sha-1f95618
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7545,10 +7545,35 @@
         return ParseSourceFile;
     }());
     var ParseSourceSpan = /** @class */ (function () {
-        function ParseSourceSpan(start, end, details) {
+        /**
+         * Create an object that holds information about spans of tokens/nodes captured during
+         * lexing/parsing of text.
+         *
+         * @param start
+         * The location of the start of the span (having skipped leading trivia).
+         * Skipping leading trivia makes source-spans more "user friendly", since things like HTML
+         * elements will appear to begin at the start of the opening tag, rather than at the start of any
+         * leading trivia, which could include newlines.
+         *
+         * @param end
+         * The location of the end of the span.
+         *
+         * @param fullStart
+         * The start of the token without skipping the leading trivia.
+         * This is used by tooling that splits tokens further, such as extracting Angular interpolations
+         * from text tokens. Such tooling creates new source-spans relative to the original token's
+         * source-span. If leading trivia characters have been skipped then the new source-spans may be
+         * incorrectly offset.
+         *
+         * @param details
+         * Additional information (such as identifier names) that should be associated with the span.
+         */
+        function ParseSourceSpan(start, end, fullStart, details) {
+            if (fullStart === void 0) { fullStart = start; }
             if (details === void 0) { details = null; }
             this.start = start;
             this.end = end;
+            this.fullStart = fullStart;
             this.details = details;
         }
         ParseSourceSpan.prototype.toString = function () {
@@ -9576,7 +9601,8 @@
             if (this.baseSourceSpan) {
                 var start = this.baseSourceSpan.start.moveBy(span.start);
                 var end = this.baseSourceSpan.start.moveBy(span.end);
-                return new ParseSourceSpan(start, end);
+                var fullStart = this.baseSourceSpan.fullStart.moveBy(span.start);
+                return new ParseSourceSpan(start, end, fullStart);
             }
             else {
                 return null;
@@ -11306,17 +11332,19 @@
         };
         PlainCharacterCursor.prototype.getSpan = function (start, leadingTriviaCodePoints) {
             start = start || this;
-            var cloned = false;
+            var fullStart = start;
             if (leadingTriviaCodePoints) {
                 while (this.diff(start) > 0 && leadingTriviaCodePoints.indexOf(start.peek()) !== -1) {
-                    if (!cloned) {
+                    if (fullStart === start) {
                         start = start.clone();
-                        cloned = true;
                     }
                     start.advance();
                 }
             }
-            return new ParseSourceSpan(new ParseLocation(start.file, start.state.offset, start.state.line, start.state.column), new ParseLocation(this.file, this.state.offset, this.state.line, this.state.column));
+            var startLocation = this.locationFromCursor(start);
+            var endLocation = this.locationFromCursor(this);
+            var fullStartLocation = fullStart !== start ? this.locationFromCursor(fullStart) : startLocation;
+            return new ParseSourceSpan(startLocation, endLocation, fullStartLocation);
         };
         PlainCharacterCursor.prototype.getChars = function (start) {
             return this.input.substring(start.state.offset, this.state.offset);
@@ -11342,6 +11370,9 @@
         };
         PlainCharacterCursor.prototype.updatePeek = function (state) {
             state.peek = state.offset >= this.end ? $EOF : this.charAt(state.offset);
+        };
+        PlainCharacterCursor.prototype.locationFromCursor = function (cursor) {
+            return new ParseLocation(cursor.file, cursor.state.offset, cursor.state.line, cursor.state.column);
         };
         return PlainCharacterCursor;
     }());
@@ -11606,7 +11637,7 @@
                 this.errors.push(TreeError.create(null, this._peek.sourceSpan, "Invalid ICU message. Missing '}'."));
                 return;
             }
-            var sourceSpan = new ParseSourceSpan(token.sourceSpan.start, this._peek.sourceSpan.end);
+            var sourceSpan = new ParseSourceSpan(token.sourceSpan.start, this._peek.sourceSpan.end, token.sourceSpan.fullStart);
             this._addToParent(new Expansion(switchValue.parts[0], type.parts[0], cases, sourceSpan, switchValue.sourceSpan));
             this._advance();
         };
@@ -11631,8 +11662,8 @@
                 this.errors = this.errors.concat(expansionCaseParser.errors);
                 return null;
             }
-            var sourceSpan = new ParseSourceSpan(value.sourceSpan.start, end.sourceSpan.end);
-            var expSourceSpan = new ParseSourceSpan(start.sourceSpan.start, end.sourceSpan.end);
+            var sourceSpan = new ParseSourceSpan(value.sourceSpan.start, end.sourceSpan.end, value.sourceSpan.fullStart);
+            var expSourceSpan = new ParseSourceSpan(start.sourceSpan.start, end.sourceSpan.end, start.sourceSpan.fullStart);
             return new ExpansionCase(value.parts[0], expansionCaseParser.rootNodes, sourceSpan, value.sourceSpan, expSourceSpan);
         };
         _TreeBuilder.prototype._collectExpansionExpTokens = function (start) {
@@ -11712,9 +11743,9 @@
                 selfClosing = false;
             }
             var end = this._peek.sourceSpan.start;
-            var span = new ParseSourceSpan(startTagToken.sourceSpan.start, end);
+            var span = new ParseSourceSpan(startTagToken.sourceSpan.start, end, startTagToken.sourceSpan.fullStart);
             // Create a separate `startSpan` because `span` will be modified when there is an `end` span.
-            var startSpan = new ParseSourceSpan(startTagToken.sourceSpan.start, end);
+            var startSpan = new ParseSourceSpan(startTagToken.sourceSpan.start, end, startTagToken.sourceSpan.fullStart);
             var el = new Element$1(fullName, attrs, [], span, startSpan, undefined);
             this._pushElement(el);
             if (selfClosing) {
@@ -11789,7 +11820,7 @@
                 var quoteToken = this._advance();
                 end = quoteToken.sourceSpan.end;
             }
-            return new Attribute(fullName, value, new ParseSourceSpan(attrName.sourceSpan.start, end), valueSpan);
+            return new Attribute(fullName, value, new ParseSourceSpan(attrName.sourceSpan.start, end, attrName.sourceSpan.fullStart), valueSpan);
         };
         _TreeBuilder.prototype._getParentElement = function () {
             return this._elementStack.length > 0 ? this._elementStack[this._elementStack.length - 1] : null;
@@ -13385,7 +13416,7 @@
         // The difference of two absolute offsets provide the relative offset
         var startDiff = absoluteSpan.start - sourceSpan.start.offset;
         var endDiff = absoluteSpan.end - sourceSpan.end.offset;
-        return new ParseSourceSpan(sourceSpan.start.moveBy(startDiff), sourceSpan.end.moveBy(endDiff));
+        return new ParseSourceSpan(sourceSpan.start.moveBy(startDiff), sourceSpan.end.moveBy(endDiff), sourceSpan.fullStart.moveBy(startDiff), sourceSpan.details);
     }
 
     /**
@@ -13879,7 +13910,7 @@
             var matchedReferences = new Set();
             var component = null;
             var directiveAsts = directives.map(function (directive) {
-                var sourceSpan = new ParseSourceSpan(elementSourceSpan.start, elementSourceSpan.end, "Directive " + identifierName(directive.type));
+                var sourceSpan = new ParseSourceSpan(elementSourceSpan.start, elementSourceSpan.end, elementSourceSpan.fullStart, "Directive " + identifierName(directive.type));
                 if (directive.isComponent) {
                     component = directive;
                 }
@@ -17071,7 +17102,7 @@
                 var normalizationAdjustment = attribute.name.length - name.length;
                 var keySpanStart = srcSpan.start.moveBy(prefix.length + normalizationAdjustment);
                 var keySpanEnd = keySpanStart.moveBy(identifier.length);
-                return new ParseSourceSpan(keySpanStart, keySpanEnd, identifier);
+                return new ParseSourceSpan(keySpanStart, keySpanEnd, keySpanStart, identifier);
             }
             var bindParts = name.match(BIND_NAME_REGEXP$1);
             if (bindParts) {
@@ -17752,7 +17783,7 @@
     }());
     function getOffsetSourceSpan(sourceSpan, _b) {
         var start = _b.start, end = _b.end;
-        return new ParseSourceSpan(sourceSpan.start.moveBy(start), sourceSpan.start.moveBy(end));
+        return new ParseSourceSpan(sourceSpan.fullStart.moveBy(start), sourceSpan.fullStart.moveBy(end));
     }
     var _CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*("|')([\s\S]*?)\1[\s\S]*\)/g;
     function _extractPlaceholderName(input) {
@@ -18118,7 +18149,7 @@
     function getSourceSpan(message) {
         var startNode = message.nodes[0];
         var endNode = message.nodes[message.nodes.length - 1];
-        return new ParseSourceSpan(startNode.sourceSpan.start, endNode.sourceSpan.end, startNode.sourceSpan.details);
+        return new ParseSourceSpan(startNode.sourceSpan.start, endNode.sourceSpan.end, startNode.sourceSpan.fullStart, startNode.sourceSpan.details);
     }
     /**
      * Convert the list of serialized MessagePieces into two arrays.
@@ -18145,7 +18176,7 @@
                 placeHolders.push(part);
                 if (pieces[i - 1] instanceof PlaceholderPiece) {
                     // There were two placeholders in a row, so we need to add an empty message part.
-                    messageParts.push(createEmptyMessagePart(part.sourceSpan.end));
+                    messageParts.push(createEmptyMessagePart(pieces[i - 1].sourceSpan.end));
                 }
             }
         }
@@ -20932,7 +20963,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.6+210.sha-27358eb');
+    var VERSION$1 = new Version('11.0.0-next.6+214.sha-1f95618');
 
     /**
      * @license
