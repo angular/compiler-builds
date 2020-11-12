@@ -26,13 +26,20 @@ export declare class BoundText implements Node {
     constructor(value: AST, sourceSpan: ParseSourceSpan, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
+/**
+ * Represents a text attribute in the template.
+ *
+ * `valueSpan` may not be present in cases where there is no value `<div a></div>`.
+ * `keySpan` may also not be present for synthetic attributes from ICU expansions.
+ */
 export declare class TextAttribute implements Node {
     name: string;
     value: string;
     sourceSpan: ParseSourceSpan;
+    readonly keySpan: ParseSourceSpan | undefined;
     valueSpan?: ParseSourceSpan | undefined;
     i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined;
-    constructor(name: string, value: string, sourceSpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
+    constructor(name: string, value: string, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan | undefined, valueSpan?: ParseSourceSpan | undefined, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 export declare class BoundAttribute implements Node {
