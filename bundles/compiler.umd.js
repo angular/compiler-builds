@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.6+249.sha-c33326c
+ * @license Angular v11.0.0-next.6+250.sha-8a1c98c
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4444,10 +4444,11 @@
         return Variable;
     }());
     var Reference = /** @class */ (function () {
-        function Reference(name, value, sourceSpan, valueSpan) {
+        function Reference(name, value, sourceSpan, keySpan, valueSpan) {
             this.name = name;
             this.value = value;
             this.sourceSpan = sourceSpan;
+            this.keySpan = keySpan;
             this.valueSpan = valueSpan;
         }
         Reference.prototype.visit = function (visitor) {
@@ -17145,24 +17146,25 @@
                 }
                 else if (bindParts[KW_REF_IDX$1]) {
                     var identifier = bindParts[IDENT_KW_IDX$1];
-                    this.parseReference(identifier, value, srcSpan, attribute.valueSpan, references);
+                    var keySpan_3 = createKeySpan(srcSpan, bindParts[KW_REF_IDX$1], identifier);
+                    this.parseReference(identifier, value, srcSpan, keySpan_3, attribute.valueSpan, references);
                 }
                 else if (bindParts[KW_ON_IDX$1]) {
                     var events = [];
                     var identifier = bindParts[IDENT_KW_IDX$1];
-                    var keySpan_3 = createKeySpan(srcSpan, bindParts[KW_ON_IDX$1], identifier);
-                    this.bindingParser.parseEvent(identifier, value, srcSpan, attribute.valueSpan || srcSpan, matchableAttributes, events, keySpan_3);
+                    var keySpan_4 = createKeySpan(srcSpan, bindParts[KW_ON_IDX$1], identifier);
+                    this.bindingParser.parseEvent(identifier, value, srcSpan, attribute.valueSpan || srcSpan, matchableAttributes, events, keySpan_4);
                     addEvents(events, boundEvents);
                 }
                 else if (bindParts[KW_BINDON_IDX$1]) {
                     var identifier = bindParts[IDENT_KW_IDX$1];
-                    var keySpan_4 = createKeySpan(srcSpan, bindParts[KW_BINDON_IDX$1], identifier);
-                    this.bindingParser.parsePropertyBinding(identifier, value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan_4);
-                    this.parseAssignmentEvent(identifier, value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents, keySpan_4);
+                    var keySpan_5 = createKeySpan(srcSpan, bindParts[KW_BINDON_IDX$1], identifier);
+                    this.bindingParser.parsePropertyBinding(identifier, value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan_5);
+                    this.parseAssignmentEvent(identifier, value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents, keySpan_5);
                 }
                 else if (bindParts[KW_AT_IDX$1]) {
-                    var keySpan_5 = createKeySpan(srcSpan, '', name);
-                    this.bindingParser.parseLiteralAttr(name, value, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan_5);
+                    var keySpan_6 = createKeySpan(srcSpan, '', name);
+                    this.bindingParser.parseLiteralAttr(name, value, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan_6);
                 }
                 return true;
             }
@@ -17185,17 +17187,17 @@
                 // TODO(ayazhafiz): update this to handle malformed bindings.
                 name.endsWith(delims.end) && name.length > delims.start.length + delims.end.length) {
                 var identifier = name.substring(delims.start.length, name.length - delims.end.length);
-                var keySpan_6 = createKeySpan(srcSpan, delims.start, identifier);
+                var keySpan_7 = createKeySpan(srcSpan, delims.start, identifier);
                 if (delims.start === BINDING_DELIMS.BANANA_BOX.start) {
-                    this.bindingParser.parsePropertyBinding(identifier, value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan_6);
-                    this.parseAssignmentEvent(identifier, value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents, keySpan_6);
+                    this.bindingParser.parsePropertyBinding(identifier, value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan_7);
+                    this.parseAssignmentEvent(identifier, value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents, keySpan_7);
                 }
                 else if (delims.start === BINDING_DELIMS.PROPERTY.start) {
-                    this.bindingParser.parsePropertyBinding(identifier, value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan_6);
+                    this.bindingParser.parsePropertyBinding(identifier, value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan_7);
                 }
                 else {
                     var events = [];
-                    this.bindingParser.parseEvent(identifier, value, srcSpan, attribute.valueSpan || srcSpan, matchableAttributes, events, keySpan_6);
+                    this.bindingParser.parseEvent(identifier, value, srcSpan, attribute.valueSpan || srcSpan, matchableAttributes, events, keySpan_7);
                     addEvents(events, boundEvents);
                 }
                 return true;
@@ -17219,14 +17221,14 @@
             }
             variables.push(new Variable(identifier, value, sourceSpan, keySpan, valueSpan));
         };
-        HtmlAstToIvyAst.prototype.parseReference = function (identifier, value, sourceSpan, valueSpan, references) {
+        HtmlAstToIvyAst.prototype.parseReference = function (identifier, value, sourceSpan, keySpan, valueSpan, references) {
             if (identifier.indexOf('-') > -1) {
                 this.reportError("\"-\" is not allowed in reference names", sourceSpan);
             }
             else if (identifier.length === 0) {
                 this.reportError("Reference does not have a name", sourceSpan);
             }
-            references.push(new Reference(identifier, value, sourceSpan, valueSpan));
+            references.push(new Reference(identifier, value, sourceSpan, keySpan, valueSpan));
         };
         HtmlAstToIvyAst.prototype.parseAssignmentEvent = function (name, expression, sourceSpan, valueSpan, targetMatchableAttrs, boundEvents, keySpan) {
             var events = [];
@@ -20985,7 +20987,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.6+249.sha-c33326c');
+    var VERSION$1 = new Version('11.0.0-next.6+250.sha-8a1c98c');
 
     /**
      * @license
