@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.6+247.sha-ade6da9
+ * @license Angular v11.0.0-next.6+248.sha-21651d3
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4312,11 +4312,18 @@
         };
         return BoundText;
     }());
+    /**
+     * Represents a text attribute in the template.
+     *
+     * `valueSpan` may not be present in cases where there is no value `<div a></div>`.
+     * `keySpan` may also not be present for synthetic attributes from ICU expansions.
+     */
     var TextAttribute = /** @class */ (function () {
-        function TextAttribute(name, value, sourceSpan, valueSpan, i18n) {
+        function TextAttribute(name, value, sourceSpan, keySpan, valueSpan, i18n) {
             this.name = name;
             this.value = value;
             this.sourceSpan = sourceSpan;
+            this.keySpan = keySpan;
             this.valueSpan = valueSpan;
             this.i18n = i18n;
         }
@@ -10484,10 +10491,11 @@
     }());
     var Attribute = /** @class */ (function (_super) {
         __extends(Attribute, _super);
-        function Attribute(name, value, sourceSpan, valueSpan, i18n) {
+        function Attribute(name, value, sourceSpan, keySpan, valueSpan, i18n) {
             var _this = _super.call(this, sourceSpan, i18n) || this;
             _this.name = name;
             _this.value = value;
+            _this.keySpan = keySpan;
             _this.valueSpan = valueSpan;
             return _this;
         }
@@ -11820,7 +11828,8 @@
                 var quoteToken = this._advance();
                 end = quoteToken.sourceSpan.end;
             }
-            return new Attribute(fullName, value, new ParseSourceSpan(attrName.sourceSpan.start, end, attrName.sourceSpan.fullStart), valueSpan);
+            var keySpan = new ParseSourceSpan(attrName.sourceSpan.start, attrName.sourceSpan.end);
+            return new Attribute(fullName, value, new ParseSourceSpan(attrName.sourceSpan.start, end, attrName.sourceSpan.fullStart), keySpan, valueSpan);
         };
         _TreeBuilder.prototype._getParentElement = function () {
             return this._elementStack.length > 0 ? this._elementStack[this._elementStack.length - 1] : null;
@@ -12038,9 +12047,9 @@
             }
             var expansionResult = expandNodes(c.expression);
             errors.push.apply(errors, __spread(expansionResult.errors));
-            return new Element$1("ng-template", [new Attribute('ngPluralCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+            return new Element$1("ng-template", [new Attribute('ngPluralCase', "" + c.value, c.valueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
         });
-        var switchAttr = new Attribute('[ngPlural]', ast.switchValue, ast.switchValueSourceSpan);
+        var switchAttr = new Attribute('[ngPlural]', ast.switchValue, ast.switchValueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */);
         return new Element$1('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
     }
     // ICU messages (excluding plural form) are expanded to `NgSwitch`  and `NgSwitchCase`s
@@ -12050,11 +12059,11 @@
             errors.push.apply(errors, __spread(expansionResult.errors));
             if (c.value === 'other') {
                 // other is the default case when no values match
-                return new Element$1("ng-template", [new Attribute('ngSwitchDefault', '', c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+                return new Element$1("ng-template", [new Attribute('ngSwitchDefault', '', c.valueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
             }
-            return new Element$1("ng-template", [new Attribute('ngSwitchCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+            return new Element$1("ng-template", [new Attribute('ngSwitchCase', "" + c.value, c.valueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
         });
-        var switchAttr = new Attribute('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan);
+        var switchAttr = new Attribute('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */);
         return new Element$1('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
     }
 
@@ -17026,7 +17035,7 @@
             return parsedElement;
         };
         HtmlAstToIvyAst.prototype.visitAttribute = function (attribute) {
-            return new TextAttribute(attribute.name, attribute.value, attribute.sourceSpan, attribute.valueSpan, attribute.i18n);
+            return new TextAttribute(attribute.name, attribute.value, attribute.sourceSpan, attribute.keySpan, attribute.valueSpan, attribute.i18n);
         };
         HtmlAstToIvyAst.prototype.visitText = function (text) {
             return this._visitTextWithInterpolation(text.value, text.sourceSpan, text.i18n);
@@ -17079,7 +17088,7 @@
             properties.forEach(function (prop) {
                 var i18n = i18nPropsMeta[prop.name];
                 if (prop.isLiteral) {
-                    literal.push(new TextAttribute(prop.name, prop.expression.source || '', prop.sourceSpan, undefined, i18n));
+                    literal.push(new TextAttribute(prop.name, prop.expression.source || '', prop.sourceSpan, prop.keySpan, prop.valueSpan, i18n));
                 }
                 else {
                     // Note that validation is skipped and property mapping is disabled
@@ -17238,7 +17247,7 @@
             return null;
         };
         NonBindableVisitor.prototype.visitAttribute = function (attribute) {
-            return new TextAttribute(attribute.name, attribute.value, attribute.sourceSpan, undefined, attribute.i18n);
+            return new TextAttribute(attribute.name, attribute.value, attribute.sourceSpan, attribute.keySpan, attribute.valueSpan, attribute.i18n);
         };
         NonBindableVisitor.prototype.visitText = function (text) {
             return new Text(text.value, text.sourceSpan);
@@ -20963,7 +20972,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.0-next.6+247.sha-ade6da9');
+    var VERSION$1 = new Version('11.0.0-next.6+248.sha-21651d3');
 
     /**
      * @license
@@ -21689,11 +21698,11 @@
                     var nodes = _this._translations.get(message);
                     if (nodes) {
                         if (nodes.length == 0) {
-                            translatedAttributes.push(new Attribute(attr.name, '', attr.sourceSpan));
+                            translatedAttributes.push(new Attribute(attr.name, '', attr.sourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */));
                         }
                         else if (nodes[0] instanceof Text$3) {
                             var value = nodes[0].value;
-                            translatedAttributes.push(new Attribute(attr.name, value, attr.sourceSpan));
+                            translatedAttributes.push(new Attribute(attr.name, value, attr.sourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */));
                         }
                         else {
                             _this._reportError(el, "Unexpected translation for attribute \"" + attr.name + "\" (id=\"" + (id || _this._translations.digest(message)) + "\")");
