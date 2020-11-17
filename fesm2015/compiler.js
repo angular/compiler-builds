@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.0-next.6+280.sha-9f20942
+ * @license Angular v11.0.0-next.6+282.sha-d281ea8
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2464,7 +2464,7 @@ function isStrictStringMap(obj) {
     return typeof obj === 'object' && obj !== null && Object.getPrototypeOf(obj) === STRING_MAP_PROTO;
 }
 function utf8Encode(str) {
-    let encoded = '';
+    let encoded = [];
     for (let index = 0; index < str.length; index++) {
         let codePoint = str.charCodeAt(index);
         // decode surrogate
@@ -2477,16 +2477,16 @@ function utf8Encode(str) {
             }
         }
         if (codePoint <= 0x7f) {
-            encoded += String.fromCharCode(codePoint);
+            encoded.push(codePoint);
         }
         else if (codePoint <= 0x7ff) {
-            encoded += String.fromCharCode(((codePoint >> 6) & 0x1F) | 0xc0, (codePoint & 0x3f) | 0x80);
+            encoded.push(((codePoint >> 6) & 0x1F) | 0xc0, (codePoint & 0x3f) | 0x80);
         }
         else if (codePoint <= 0xffff) {
-            encoded += String.fromCharCode((codePoint >> 12) | 0xe0, ((codePoint >> 6) & 0x3f) | 0x80, (codePoint & 0x3f) | 0x80);
+            encoded.push((codePoint >> 12) | 0xe0, ((codePoint >> 6) & 0x3f) | 0x80, (codePoint & 0x3f) | 0x80);
         }
         else if (codePoint <= 0x1fffff) {
-            encoded += String.fromCharCode(((codePoint >> 18) & 0x07) | 0xf0, ((codePoint >> 12) & 0x3f) | 0x80, ((codePoint >> 6) & 0x3f) | 0x80, (codePoint & 0x3f) | 0x80);
+            encoded.push(((codePoint >> 18) & 0x07) | 0xf0, ((codePoint >> 12) & 0x3f) | 0x80, ((codePoint >> 6) & 0x3f) | 0x80, (codePoint & 0x3f) | 0x80);
         }
     }
     return encoded;
@@ -4163,6 +4163,186 @@ class RecurseVisitor {
  * found in the LICENSE file at https://angular.io/license
  */
 /**
+ * Represents a big integer using a buffer of its individual digits, with the least significant
+ * digit stored at the beginning of the array (little endian).
+ *
+ * For performance reasons, each instance is mutable. The addition operation can be done in-place
+ * to reduce memory pressure of allocation for the digits array.
+ */
+class BigInteger {
+    /**
+     * Creates a big integer using its individual digits in little endian storage.
+     */
+    constructor(digits) {
+        this.digits = digits;
+    }
+    static zero() {
+        return new BigInteger([0]);
+    }
+    static one() {
+        return new BigInteger([1]);
+    }
+    /**
+     * Creates a clone of this instance.
+     */
+    clone() {
+        return new BigInteger(this.digits.slice());
+    }
+    /**
+     * Returns a new big integer with the sum of `this` and `other` as its value. This does not mutate
+     * `this` but instead returns a new instance, unlike `addToSelf`.
+     */
+    add(other) {
+        const result = this.clone();
+        result.addToSelf(other);
+        return result;
+    }
+    /**
+     * Adds `other` to the instance itself, thereby mutating its value.
+     */
+    addToSelf(other) {
+        const maxNrOfDigits = Math.max(this.digits.length, other.digits.length);
+        let carry = 0;
+        for (let i = 0; i < maxNrOfDigits; i++) {
+            let digitSum = carry;
+            if (i < this.digits.length) {
+                digitSum += this.digits[i];
+            }
+            if (i < other.digits.length) {
+                digitSum += other.digits[i];
+            }
+            if (digitSum >= 10) {
+                this.digits[i] = digitSum - 10;
+                carry = 1;
+            }
+            else {
+                this.digits[i] = digitSum;
+                carry = 0;
+            }
+        }
+        // Apply a remaining carry if needed.
+        if (carry > 0) {
+            this.digits[maxNrOfDigits] = 1;
+        }
+    }
+    /**
+     * Builds the decimal string representation of the big integer. As this is stored in
+     * little endian, the digits are concatenated in reverse order.
+     */
+    toString() {
+        let res = '';
+        for (let i = this.digits.length - 1; i >= 0; i--) {
+            res += this.digits[i];
+        }
+        return res;
+    }
+}
+/**
+ * Represents a big integer which is optimized for multiplication operations, as its power-of-twos
+ * are memoized. See `multiplyBy()` for details on the multiplication algorithm.
+ */
+class BigIntForMultiplication {
+    constructor(value) {
+        this.powerOfTwos = [value];
+    }
+    /**
+     * Returns the big integer itself.
+     */
+    getValue() {
+        return this.powerOfTwos[0];
+    }
+    /**
+     * Computes the value for `num * b`, where `num` is a JS number and `b` is a big integer. The
+     * value for `b` is represented by a storage model that is optimized for this computation.
+     *
+     * This operation is implemented in N(log2(num)) by continuous halving of the number, where the
+     * least-significant bit (LSB) is tested in each iteration. If the bit is set, the bit's index is
+     * used as exponent into the power-of-two multiplication of `b`.
+     *
+     * As an example, consider the multiplication num=42, b=1337. In binary 42 is 0b00101010 and the
+     * algorithm unrolls into the following iterations:
+     *
+     *  Iteration | num        | LSB  | b * 2^iter | Add? | product
+     * -----------|------------|------|------------|------|--------
+     *  0         | 0b00101010 | 0    | 1337       | No   | 0
+     *  1         | 0b00010101 | 1    | 2674       | Yes  | 2674
+     *  2         | 0b00001010 | 0    | 5348       | No   | 2674
+     *  3         | 0b00000101 | 1    | 10696      | Yes  | 13370
+     *  4         | 0b00000010 | 0    | 21392      | No   | 13370
+     *  5         | 0b00000001 | 1    | 42784      | Yes  | 56154
+     *  6         | 0b00000000 | 0    | 85568      | No   | 56154
+     *
+     * The computed product of 56154 is indeed the correct result.
+     *
+     * The `BigIntForMultiplication` representation for a big integer provides memoized access to the
+     * power-of-two values to reduce the workload in computing those values.
+     */
+    multiplyBy(num) {
+        const product = BigInteger.zero();
+        this.multiplyByAndAddTo(num, product);
+        return product;
+    }
+    /**
+     * See `multiplyBy()` for details. This function allows for the computed product to be added
+     * directly to the provided result big integer.
+     */
+    multiplyByAndAddTo(num, result) {
+        for (let exponent = 0; num !== 0; num = num >>> 1, exponent++) {
+            if (num & 1) {
+                const value = this.getMultipliedByPowerOfTwo(exponent);
+                result.addToSelf(value);
+            }
+        }
+    }
+    /**
+     * Computes and memoizes the big integer value for `this.number * 2^exponent`.
+     */
+    getMultipliedByPowerOfTwo(exponent) {
+        // Compute the powers up until the requested exponent, where each value is computed from its
+        // predecessor. This is simple as `this.number * 2^(exponent - 1)` only has to be doubled (i.e.
+        // added to itself) to reach `this.number * 2^exponent`.
+        for (let i = this.powerOfTwos.length; i <= exponent; i++) {
+            const previousPower = this.powerOfTwos[i - 1];
+            this.powerOfTwos[i] = previousPower.add(previousPower);
+        }
+        return this.powerOfTwos[exponent];
+    }
+}
+/**
+ * Represents an exponentiation operation for the provided base, of which exponents are computed and
+ * memoized. The results are represented by a `BigIntForMultiplication` which is tailored for
+ * multiplication operations by memoizing the power-of-twos. This effectively results in a matrix
+ * representation that is lazily computed upon request.
+ */
+class BigIntExponentiation {
+    constructor(base) {
+        this.base = base;
+        this.exponents = [new BigIntForMultiplication(BigInteger.one())];
+    }
+    /**
+     * Compute the value for `this.base^exponent`, resulting in a big integer that is optimized for
+     * further multiplication operations.
+     */
+    toThePowerOf(exponent) {
+        // Compute the results up until the requested exponent, where every value is computed from its
+        // predecessor. This is because `this.base^(exponent - 1)` only has to be multiplied by `base`
+        // to reach `this.base^exponent`.
+        for (let i = this.exponents.length; i <= exponent; i++) {
+            const value = this.exponents[i - 1].multiplyBy(this.base);
+            this.exponents[i] = new BigIntForMultiplication(value);
+        }
+        return this.exponents[exponent];
+    }
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * Return the message id or compute it using the XLIFF1 digest.
  */
 function digest(message) {
@@ -4246,7 +4426,7 @@ class _SerializerIgnoreIcuExpVisitor extends _SerializerVisitor {
  */
 function sha1(str) {
     const utf8 = utf8Encode(str);
-    const words32 = stringToWords32(utf8, Endian.Big);
+    const words32 = bytesToWords32(utf8, Endian.Big);
     const len = utf8.length * 8;
     const w = newArray(80);
     let a = 0x67452301, b = 0xefcdab89, c = 0x98badcfe, d = 0x10325476, e = 0xc3d2e1f0;
@@ -4277,7 +4457,7 @@ function sha1(str) {
         d = add32(d, h3);
         e = add32(e, h4);
     }
-    return byteStringToHexString(words32ToByteString([a, b, c, d, e]));
+    return bytesToHexString(words32ToByteString([a, b, c, d, e]));
 }
 function fk(index, b, c, d) {
     if (index < 20) {
@@ -4317,24 +4497,24 @@ function computeMsgId(msg, meaning = '') {
     }
     const hi = msgFingerprint[0];
     const lo = msgFingerprint[1];
-    return byteStringToDecString(words32ToByteString([hi & 0x7fffffff, lo]));
+    return wordsToDecimalString(hi & 0x7fffffff, lo);
 }
-function hash32(str, c) {
+function hash32(bytes, c) {
     let a = 0x9e3779b9, b = 0x9e3779b9;
     let i;
-    const len = str.length;
+    const len = bytes.length;
     for (i = 0; i + 12 <= len; i += 12) {
-        a = add32(a, wordAt(str, i, Endian.Little));
-        b = add32(b, wordAt(str, i + 4, Endian.Little));
-        c = add32(c, wordAt(str, i + 8, Endian.Little));
+        a = add32(a, wordAt(bytes, i, Endian.Little));
+        b = add32(b, wordAt(bytes, i + 4, Endian.Little));
+        c = add32(c, wordAt(bytes, i + 8, Endian.Little));
         const res = mix(a, b, c);
         a = res[0], b = res[1], c = res[2];
     }
-    a = add32(a, wordAt(str, i, Endian.Little));
-    b = add32(b, wordAt(str, i + 4, Endian.Little));
+    a = add32(a, wordAt(bytes, i, Endian.Little));
+    b = add32(b, wordAt(bytes, i + 4, Endian.Little));
     // the first byte of c is reserved for the length
     c = add32(c, len);
-    c = add32(c, wordAt(str, i + 8, Endian.Little) << 8);
+    c = add32(c, wordAt(bytes, i + 8, Endian.Little) << 8);
     return mix(a, b, c)[2];
 }
 // clang-format off
@@ -4408,85 +4588,73 @@ function rol64(num, count) {
     const l = (lo << count) | (hi >>> (32 - count));
     return [h, l];
 }
-function stringToWords32(str, endian) {
-    const size = (str.length + 3) >>> 2;
+function bytesToWords32(bytes, endian) {
+    const size = (bytes.length + 3) >>> 2;
     const words32 = [];
     for (let i = 0; i < size; i++) {
-        words32[i] = wordAt(str, i * 4, endian);
+        words32[i] = wordAt(bytes, i * 4, endian);
     }
     return words32;
 }
-function byteAt(str, index) {
-    return index >= str.length ? 0 : str.charCodeAt(index) & 0xff;
+function byteAt(bytes, index) {
+    return index >= bytes.length ? 0 : bytes[index];
 }
-function wordAt(str, index, endian) {
+function wordAt(bytes, index, endian) {
     let word = 0;
     if (endian === Endian.Big) {
         for (let i = 0; i < 4; i++) {
-            word += byteAt(str, index + i) << (24 - 8 * i);
+            word += byteAt(bytes, index + i) << (24 - 8 * i);
         }
     }
     else {
         for (let i = 0; i < 4; i++) {
-            word += byteAt(str, index + i) << 8 * i;
+            word += byteAt(bytes, index + i) << 8 * i;
         }
     }
     return word;
 }
 function words32ToByteString(words32) {
-    return words32.reduce((str, word) => str + word32ToByteString(word), '');
+    return words32.reduce((bytes, word) => bytes.concat(word32ToByteString(word)), []);
 }
 function word32ToByteString(word) {
-    let str = '';
+    let bytes = [];
     for (let i = 0; i < 4; i++) {
-        str += String.fromCharCode((word >>> 8 * (3 - i)) & 0xff);
+        bytes.push((word >>> 8 * (3 - i)) & 0xff);
     }
-    return str;
+    return bytes;
 }
-function byteStringToHexString(str) {
+function bytesToHexString(bytes) {
     let hex = '';
-    for (let i = 0; i < str.length; i++) {
-        const b = byteAt(str, i);
+    for (let i = 0; i < bytes.length; i++) {
+        const b = byteAt(bytes, i);
         hex += (b >>> 4).toString(16) + (b & 0x0f).toString(16);
     }
     return hex.toLowerCase();
 }
-// based on http://www.danvk.org/hex2dec.html (JS can not handle more than 56b)
-function byteStringToDecString(str) {
-    let decimal = '';
-    let toThePower = '1';
-    for (let i = str.length - 1; i >= 0; i--) {
-        decimal = addBigInt(decimal, numberTimesBigInt(byteAt(str, i), toThePower));
-        toThePower = numberTimesBigInt(256, toThePower);
-    }
-    return decimal.split('').reverse().join('');
-}
-// x and y decimal, lowest significant digit first
-function addBigInt(x, y) {
-    let sum = '';
-    const len = Math.max(x.length, y.length);
-    for (let i = 0, carry = 0; i < len || carry; i++) {
-        const tmpSum = carry + +(x[i] || 0) + +(y[i] || 0);
-        if (tmpSum >= 10) {
-            carry = 1;
-            sum += tmpSum - 10;
-        }
-        else {
-            carry = 0;
-            sum += tmpSum;
-        }
-    }
-    return sum;
-}
-function numberTimesBigInt(num, b) {
-    let product = '';
-    let bToThePower = b;
-    for (; num !== 0; num = num >>> 1) {
-        if (num & 1)
-            product = addBigInt(product, bToThePower);
-        bToThePower = addBigInt(bToThePower, bToThePower);
-    }
-    return product;
+/**
+ * Create a shared exponentiation pool for base-256 computations. This shared pool provides memoized
+ * power-of-256 results with memoized power-of-two computations for efficient multiplication.
+ *
+ * For our purposes, this can be safely stored as a global without memory concerns. The reason is
+ * that we encode two words, so only need the 0th (for the low word) and 4th (for the high word)
+ * exponent.
+ */
+const base256 = new BigIntExponentiation(256);
+/**
+ * Represents two 32-bit words as a single decimal number. This requires a big integer storage
+ * model as JS numbers are not accurate enough to represent the 64-bit number.
+ *
+ * Based on http://www.danvk.org/hex2dec.html
+ */
+function wordsToDecimalString(hi, lo) {
+    // Encode the four bytes in lo in the lower digits of the decimal number.
+    // Note: the multiplication results in lo itself but represented by a big integer using its
+    // decimal digits.
+    const decimal = base256.toThePowerOf(0).multiplyBy(lo);
+    // Encode the four bytes in hi above the four lo bytes. lo is a maximum of (2^8)^4, which is why
+    // this multiplication factor is applied.
+    base256.toThePowerOf(4).multiplyByAndAddTo(hi, decimal);
+    return decimal.toString();
 }
 
 /**
@@ -5677,15 +5845,15 @@ class SourceMapGenerator {
 }
 function toBase64String(value) {
     let b64 = '';
-    value = utf8Encode(value);
-    for (let i = 0; i < value.length;) {
-        const i1 = value.charCodeAt(i++);
-        const i2 = value.charCodeAt(i++);
-        const i3 = value.charCodeAt(i++);
+    const encoded = utf8Encode(value);
+    for (let i = 0; i < encoded.length;) {
+        const i1 = encoded[i++];
+        const i2 = i < encoded.length ? encoded[i++] : null;
+        const i3 = i < encoded.length ? encoded[i++] : null;
         b64 += toBase64Digit(i1 >> 2);
-        b64 += toBase64Digit(((i1 & 3) << 4) | (isNaN(i2) ? 0 : i2 >> 4));
-        b64 += isNaN(i2) ? '=' : toBase64Digit(((i2 & 15) << 2) | (i3 >> 6));
-        b64 += isNaN(i2) || isNaN(i3) ? '=' : toBase64Digit(i3 & 63);
+        b64 += toBase64Digit(((i1 & 3) << 4) | (i2 === null ? 0 : i2 >> 4));
+        b64 += i2 === null ? '=' : toBase64Digit(((i2 & 15) << 2) | (i3 === null ? 0 : i3 >> 6));
+        b64 += i2 === null || i3 === null ? '=' : toBase64Digit(i3 & 63);
     }
     return b64;
 }
@@ -19776,7 +19944,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.0.0-next.6+280.sha-9f20942');
+const VERSION$1 = new Version('11.0.0-next.6+282.sha-d281ea8');
 
 /**
  * @license

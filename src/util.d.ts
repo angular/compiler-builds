@@ -41,7 +41,8 @@ export declare function syntaxError(msg: string, parseErrors?: ParseError[]): Er
 export declare function isSyntaxError(error: Error): boolean;
 export declare function getParseErrors(error: Error): ParseError[];
 export declare function escapeRegExp(s: string): string;
-export declare function utf8Encode(str: string): string;
+export declare type Byte = number;
+export declare function utf8Encode(str: string): Byte[];
 export interface OutputContext {
     genFilePath: string;
     statements: o.Statement[];
