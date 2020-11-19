@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.2
+ * @license Angular v11.0.2+17.sha-27152e2
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5889,7 +5889,6 @@
             return query.predicate;
         }
     }
-    function noop() { }
     var DefinitionMap = /** @class */ (function () {
         function DefinitionMap() {
             this.values = [];
@@ -21024,7 +21023,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.2');
+    var VERSION$1 = new Version('11.0.2+17.sha-27152e2');
 
     /**
      * @license
