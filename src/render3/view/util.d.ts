@@ -40,7 +40,6 @@ export declare function conditionallyCreateMapObjectLiteral(keys: {
  */
 export declare function trimTrailingNulls(parameters: o.Expression[]): o.Expression[];
 export declare function getQueryPredicate(query: R3QueryMetadata, constantPool: ConstantPool): o.Expression;
-export declare function noop(): void;
 export declare class DefinitionMap {
     values: {
         key: string;
