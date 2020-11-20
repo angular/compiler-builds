@@ -8,25 +8,16 @@
 import { InterpolationConfig } from '../ml_parser/interpolation_config';
 import { AbsoluteSourceSpan, AST, AstVisitor, ASTWithSource, Binary, BindingPipe, Chain, Conditional, FunctionCall, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, MethodCall, NonNullAssert, ParserError, ParseSpan, PrefixNot, PropertyRead, PropertyWrite, Quote, RecursiveAstVisitor, SafeMethodCall, SafePropertyRead, TemplateBinding, TemplateBindingIdentifier, ThisReceiver, Unary } from './ast';
 import { Lexer, Token } from './lexer';
+export interface InterpolationPiece {
+    text: string;
+    start: number;
+    end: number;
+}
 export declare class SplitInterpolation {
-    strings: string[];
-    stringSpans: {
-        start: number;
-        end: number;
-    }[];
-    expressions: string[];
-    expressionsSpans: {
-        start: number;
-        end: number;
-    }[];
+    strings: InterpolationPiece[];
+    expressions: InterpolationPiece[];
     offsets: number[];
-    constructor(strings: string[], stringSpans: {
-        start: number;
-        end: number;
-    }[], expressions: string[], expressionsSpans: {
-        start: number;
-        end: number;
-    }[], offsets: number[]);
+    constructor(strings: InterpolationPiece[], expressions: InterpolationPiece[], offsets: number[]);
 }
 export declare class TemplateBindingParseResult {
     templateBindings: TemplateBinding[];
@@ -39,8 +30,8 @@ export declare class Parser {
     private errors;
     constructor(_lexer: Lexer);
     simpleExpressionChecker: typeof SimpleExpressionChecker;
-    parseAction(input: string, location: any, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
-    parseBinding(input: string, location: any, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
+    parseAction(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
+    parseBinding(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
     private checkSimpleExpression;
     parseSimpleBinding(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
     private _reportError;
@@ -73,13 +64,13 @@ export declare class Parser {
      * @param absoluteValueOffset start of the `templateValue`
      */
     parseTemplateBindings(templateKey: string, templateValue: string, templateUrl: string, absoluteKeyOffset: number, absoluteValueOffset: number): TemplateBindingParseResult;
-    parseInterpolation(input: string, location: any, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource | null;
+    parseInterpolation(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource | null;
     /**
      * Similar to `parseInterpolation`, but treats the provided string as a single expression
      * element that would normally appear within the interpolation prefix and suffix (`{{` and `}}`).
      * This is used for parsing the switch expression in ICUs.
      */
-    parseInterpolationExpression(expression: string, location: any, absoluteOffset: number): ASTWithSource;
+    parseInterpolationExpression(expression: string, location: string, absoluteOffset: number): ASTWithSource;
     private createInterpolationAst;
     /**
      * Splits a string of text into "raw" text segments and expressions present in interpolations in
@@ -88,8 +79,8 @@ export declare class Parser {
      * `SplitInterpolation` with splits that look like
      *   <raw text> <expression> <raw text> ... <raw text> <expression> <raw text>
      */
-    splitInterpolation(input: string, location: string, interpolationConfig?: InterpolationConfig): SplitInterpolation | null;
-    wrapLiteralPrimitive(input: string | null, location: any, absoluteOffset: number): ASTWithSource;
+    splitInterpolation(input: string, location: string, interpolationConfig?: InterpolationConfig): SplitInterpolation;
+    wrapLiteralPrimitive(input: string | null, location: string, absoluteOffset: number): ASTWithSource;
     private _stripComments;
     private _commentStart;
     private _checkNoInterpolation;
@@ -100,7 +91,7 @@ export declare class IvyParser extends Parser {
 }
 export declare class _ParseAST {
     input: string;
-    location: any;
+    location: string;
     absoluteOffset: number;
     tokens: Token[];
     inputLength: number;
@@ -113,7 +104,7 @@ export declare class _ParseAST {
     private context;
     private sourceSpanCache;
     index: number;
-    constructor(input: string, location: any, absoluteOffset: number, tokens: Token[], inputLength: number, parseAction: boolean, errors: ParserError[], offset: number);
+    constructor(input: string, location: string, absoluteOffset: number, tokens: Token[], inputLength: number, parseAction: boolean, errors: ParserError[], offset: number);
     peek(offset: number): Token;
     get next(): Token;
     /** Whether all the parser input has been processed. */
