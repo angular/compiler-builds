@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.0+39.sha-1cba56e
+ * @license Angular v11.1.0-next.0+43.sha-c33a823
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15412,11 +15412,9 @@
     }
 
     var SplitInterpolation = /** @class */ (function () {
-        function SplitInterpolation(strings, stringSpans, expressions, expressionsSpans, offsets) {
+        function SplitInterpolation(strings, expressions, offsets) {
             this.strings = strings;
-            this.stringSpans = stringSpans;
             this.expressions = expressions;
-            this.expressionsSpans = expressionsSpans;
             this.offsets = offsets;
         }
         return SplitInterpolation;
@@ -15541,19 +15539,19 @@
         };
         Parser.prototype.parseInterpolation = function (input, location, absoluteOffset, interpolationConfig) {
             if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
-            var split = this.splitInterpolation(input, location, interpolationConfig);
-            if (split == null)
+            var _a = this.splitInterpolation(input, location, interpolationConfig), strings = _a.strings, expressions = _a.expressions, offsets = _a.offsets;
+            if (expressions.length === 0)
                 return null;
-            var expressions = [];
-            for (var i = 0; i < split.expressions.length; ++i) {
-                var expressionText = split.expressions[i];
+            var expressionNodes = [];
+            for (var i = 0; i < expressions.length; ++i) {
+                var expressionText = expressions[i].text;
                 var sourceToLex = this._stripComments(expressionText);
                 var tokens = this._lexer.tokenize(sourceToLex);
-                var ast = new _ParseAST(input, location, absoluteOffset, tokens, sourceToLex.length, false, this.errors, split.offsets[i] + (expressionText.length - sourceToLex.length))
+                var ast = new _ParseAST(input, location, absoluteOffset, tokens, sourceToLex.length, false, this.errors, offsets[i] + (expressionText.length - sourceToLex.length))
                     .parseChain();
-                expressions.push(ast);
+                expressionNodes.push(ast);
             }
-            return this.createInterpolationAst(split.strings, expressions, input, location, absoluteOffset);
+            return this.createInterpolationAst(strings.map(function (s) { return s.text; }), expressionNodes, input, location, absoluteOffset);
         };
         /**
          * Similar to `parseInterpolation`, but treats the provided string as a single expression
@@ -15586,8 +15584,6 @@
             var strings = [];
             var expressions = [];
             var offsets = [];
-            var stringSpans = [];
-            var expressionSpans = [];
             var i = 0;
             var atInterpolation = false;
             var extendLastString = false;
@@ -15600,9 +15596,8 @@
                     if (i === -1) {
                         i = input.length;
                     }
-                    var part = input.substring(start, i);
-                    strings.push(part);
-                    stringSpans.push({ start: start, end: i });
+                    var text = input.substring(start, i);
+                    strings.push({ text: text, start: start, end: i });
                     atInterpolation = true;
                 }
                 else {
@@ -15618,16 +15613,15 @@
                         break;
                     }
                     var fullEnd = exprEnd + interpEnd.length;
-                    var part = input.substring(exprStart, exprEnd);
-                    if (part.trim().length > 0) {
-                        expressions.push(part);
+                    var text = input.substring(exprStart, exprEnd);
+                    if (text.trim().length > 0) {
+                        expressions.push({ text: text, start: fullStart, end: fullEnd });
                     }
                     else {
                         this._reportError('Blank expressions are not allowed in interpolated strings', input, "at column " + i + " in", location);
-                        expressions.push('$implicit');
+                        expressions.push({ text: '$implicit', start: fullStart, end: fullEnd });
                     }
                     offsets.push(exprStart);
-                    expressionSpans.push({ start: fullStart, end: fullEnd });
                     i = fullEnd;
                     atInterpolation = false;
                 }
@@ -15635,17 +15629,15 @@
             if (!atInterpolation) {
                 // If we are now at a text section, add the remaining content as a raw string.
                 if (extendLastString) {
-                    strings[strings.length - 1] += input.substring(i);
-                    stringSpans[stringSpans.length - 1].end = input.length;
+                    var piece = strings[strings.length - 1];
+                    piece.text += input.substring(i);
+                    piece.end = input.length;
                 }
                 else {
-                    strings.push(input.substring(i));
-                    stringSpans.push({ start: i, end: input.length });
+                    strings.push({ text: input.substring(i), start: i, end: input.length });
                 }
             }
-            return expressions.length === 0 ?
-                null :
-                new SplitInterpolation(strings, stringSpans, expressions, expressionSpans, offsets);
+            return new SplitInterpolation(strings, expressions, offsets);
         };
         Parser.prototype.wrapLiteralPrimitive = function (input, location, absoluteOffset) {
             var span = new ParseSpan(0, input == null ? 0 : input.length);
@@ -17896,11 +17888,11 @@
             return context.visitNodeFn(el, node);
         };
         _I18nVisitor.prototype.visitAttribute = function (attribute, context) {
-            var node = this._visitTextWithInterpolation(attribute.value, attribute.sourceSpan, context);
+            var node = this._visitTextWithInterpolation(attribute.value, attribute.valueSpan || attribute.sourceSpan, context, attribute.i18n);
             return context.visitNodeFn(attribute, node);
         };
         _I18nVisitor.prototype.visitText = function (text, context) {
-            var node = this._visitTextWithInterpolation(text.value, text.sourceSpan, context);
+            var node = this._visitTextWithInterpolation(text.value, text.sourceSpan, context, text.i18n);
             return context.visitNodeFn(text, node);
         };
         _I18nVisitor.prototype.visitComment = function (comment, context) {
@@ -17939,48 +17931,122 @@
         _I18nVisitor.prototype.visitExpansionCase = function (_icuCase, _context) {
             throw new Error('Unreachable code');
         };
-        _I18nVisitor.prototype._visitTextWithInterpolation = function (text, sourceSpan, context) {
-            var splitInterpolation = this._expressionParser.splitInterpolation(text, sourceSpan.start.toString(), this._interpolationConfig);
-            if (!splitInterpolation) {
-                // No expression, return a single text
+        /**
+         * Split the, potentially interpolated, text up into text and placeholder pieces.
+         *
+         * @param text The potentially interpolated string to be split.
+         * @param sourceSpan The span of the whole of the `text` string.
+         * @param context The current context of the visitor, used to compute and store placeholders.
+         * @param previousI18n Any i18n metadata associated with this `text` from a previous pass.
+         */
+        _I18nVisitor.prototype._visitTextWithInterpolation = function (text, sourceSpan, context, previousI18n) {
+            var _b = this._expressionParser.splitInterpolation(text, sourceSpan.start.toString(), this._interpolationConfig), strings = _b.strings, expressions = _b.expressions;
+            // No expressions, return a single text.
+            if (expressions.length === 0) {
                 return new Text$1(text, sourceSpan);
             }
-            // Return a group of text + expressions
+            // Return a sequence of `Text` and `Placeholder` nodes grouped in a `Container`.
             var nodes = [];
-            var container = new Container(nodes, sourceSpan);
-            var _b = this._interpolationConfig, sDelimiter = _b.start, eDelimiter = _b.end;
-            for (var i = 0; i < splitInterpolation.strings.length - 1; i++) {
-                var expression = splitInterpolation.expressions[i];
-                var baseName = _extractPlaceholderName(expression) || 'INTERPOLATION';
-                var phName = context.placeholderRegistry.getPlaceholderName(baseName, expression);
-                if (splitInterpolation.strings[i].length) {
-                    // No need to add empty strings
-                    var stringSpan = getOffsetSourceSpan(sourceSpan, splitInterpolation.stringSpans[i]);
-                    nodes.push(new Text$1(splitInterpolation.strings[i], stringSpan));
-                }
-                var expressionSpan = getOffsetSourceSpan(sourceSpan, splitInterpolation.expressionsSpans[i]);
-                nodes.push(new Placeholder(expression, phName, expressionSpan));
-                context.placeholderToContent[phName] = {
-                    text: sDelimiter + expression + eDelimiter,
-                    sourceSpan: expressionSpan,
-                };
+            for (var i = 0; i < strings.length - 1; i++) {
+                this._addText(nodes, strings[i], sourceSpan);
+                this._addPlaceholder(nodes, context, expressions[i], sourceSpan);
             }
             // The last index contains no expression
-            var lastStringIdx = splitInterpolation.strings.length - 1;
-            if (splitInterpolation.strings[lastStringIdx].length) {
-                var stringSpan = getOffsetSourceSpan(sourceSpan, splitInterpolation.stringSpans[lastStringIdx]);
-                nodes.push(new Text$1(splitInterpolation.strings[lastStringIdx], stringSpan));
+            this._addText(nodes, strings[strings.length - 1], sourceSpan);
+            // Whitespace removal may have invalidated the interpolation source-spans.
+            reusePreviousSourceSpans(nodes, previousI18n);
+            return new Container(nodes, sourceSpan);
+        };
+        /**
+         * Create a new `Text` node from the `textPiece` and add it to the `nodes` collection.
+         *
+         * @param nodes The nodes to which the created `Text` node should be added.
+         * @param textPiece The text and relative span information for this `Text` node.
+         * @param interpolationSpan The span of the whole interpolated text.
+         */
+        _I18nVisitor.prototype._addText = function (nodes, textPiece, interpolationSpan) {
+            if (textPiece.text.length > 0) {
+                // No need to add empty strings
+                var stringSpan = getOffsetSourceSpan(interpolationSpan, textPiece);
+                nodes.push(new Text$1(textPiece.text, stringSpan));
             }
-            return container;
+        };
+        /**
+         * Create a new `Placeholder` node from the `expression` and add it to the `nodes` collection.
+         *
+         * @param nodes The nodes to which the created `Text` node should be added.
+         * @param context The current context of the visitor, used to compute and store placeholders.
+         * @param expression The expression text and relative span information for this `Placeholder`
+         *     node.
+         * @param interpolationSpan The span of the whole interpolated text.
+         */
+        _I18nVisitor.prototype._addPlaceholder = function (nodes, context, expression, interpolationSpan) {
+            var sourceSpan = getOffsetSourceSpan(interpolationSpan, expression);
+            var baseName = extractPlaceholderName(expression.text) || 'INTERPOLATION';
+            var phName = context.placeholderRegistry.getPlaceholderName(baseName, expression.text);
+            var text = this._interpolationConfig.start + expression.text + this._interpolationConfig.end;
+            context.placeholderToContent[phName] = { text: text, sourceSpan: sourceSpan };
+            nodes.push(new Placeholder(expression.text, phName, sourceSpan));
         };
         return _I18nVisitor;
     }());
+    /**
+     * Re-use the source-spans from `previousI18n` metadata for the `nodes`.
+     *
+     * Whitespace removal can invalidate the source-spans of interpolation nodes, so we
+     * reuse the source-span stored from a previous pass before the whitespace was removed.
+     *
+     * @param nodes The `Text` and `Placeholder` nodes to be processed.
+     * @param previousI18n Any i18n metadata for these `nodes` stored from a previous pass.
+     */
+    function reusePreviousSourceSpans(nodes, previousI18n) {
+        if (previousI18n instanceof Message) {
+            // The `previousI18n` is an i18n `Message`, so we are processing an `Attribute` with i18n
+            // metadata. The `Message` should consist only of a single `Container` that contains the
+            // parts (`Text` and `Placeholder`) to process.
+            assertSingleContainerMessage(previousI18n);
+            previousI18n = previousI18n.nodes[0];
+        }
+        if (previousI18n instanceof Container) {
+            // The `previousI18n` is a `Container`, which means that this is a second i18n extraction pass
+            // after whitespace has been removed from the AST ndoes.
+            assertEquivalentNodes(previousI18n.children, nodes);
+            // Reuse the source-spans from the first pass.
+            for (var i = 0; i < nodes.length; i++) {
+                nodes[i].sourceSpan = previousI18n.children[i].sourceSpan;
+            }
+        }
+    }
+    /**
+     * Asserts that the `message` contains exactly one `Container` node.
+     */
+    function assertSingleContainerMessage(message) {
+        var nodes = message.nodes;
+        if (nodes.length !== 1 || !(nodes[0] instanceof Container)) {
+            throw new Error('Unexpected previous i18n message - expected it to consist of only a single `Container` node.');
+        }
+    }
+    /**
+     * Asserts that the `previousNodes` and `node` collections have the same number of elements and
+     * corresponding elements have the same node type.
+     */
+    function assertEquivalentNodes(previousNodes, nodes) {
+        if (previousNodes.length !== nodes.length) {
+            throw new Error('The number of i18n message children changed between first and second pass.');
+        }
+        if (previousNodes.some(function (node, i) { return nodes[i].constructor !== node.constructor; })) {
+            throw new Error('The types of the i18n message children changed between first and second pass.');
+        }
+    }
+    /**
+     * Create a new `ParseSourceSpan` from the `sourceSpan`, offset by the `start` and `end` values.
+     */
     function getOffsetSourceSpan(sourceSpan, _b) {
         var start = _b.start, end = _b.end;
         return new ParseSourceSpan(sourceSpan.fullStart.moveBy(start), sourceSpan.fullStart.moveBy(end));
     }
     var _CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*("|')([\s\S]*?)\1[\s\S]*\)/g;
-    function _extractPlaceholderName(input) {
+    function extractPlaceholderName(input) {
         return input.split(_CUSTOM_PH_EXP)[2];
     }
 
@@ -21157,7 +21223,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.0+39.sha-1cba56e');
+    var VERSION$1 = new Version('11.1.0-next.0+43.sha-c33a823');
 
     /**
      * @license
