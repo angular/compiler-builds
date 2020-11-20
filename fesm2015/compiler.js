@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.2+31.sha-3114b0a
+ * @license Angular v11.0.2+36.sha-e32fe1a
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -45,7 +45,7 @@ function getNsPrefix(fullName) {
 function mergeNsAndName(prefix, localName) {
     return prefix ? `:${prefix}:${localName}` : localName;
 }
-// see http://www.w3.org/TR/html51/syntax.html#named-character-references
+// see https://www.w3.org/TR/html51/syntax.html#named-character-references
 // see https://html.spec.whatwg.org/multipage/entities.json
 // This list is not exhaustive to keep the compiler footprint low.
 // The `&#123;` / `&#x1ab;` syntax should be used when the named character reference does not
@@ -336,7 +336,7 @@ class HtmlTagDefinition {
     }
 }
 let _DEFAULT_TAG_DEFINITION;
-// see http://www.w3.org/TR/html51/syntax.html#optional-tags
+// see https://www.w3.org/TR/html51/syntax.html#optional-tags
 // This implementation does not fully conform to the HTML5 spec.
 let TAG_DEFINITIONS;
 function getHtmlTagDefinition(tagName) {
@@ -4408,7 +4408,7 @@ class _SerializerIgnoreIcuExpVisitor extends _SerializerVisitor {
 /**
  * Compute the SHA1 of the given string
  *
- * see http://csrc.nist.gov/publications/fips/fips180-4/fips-180-4.pdf
+ * see https://csrc.nist.gov/publications/fips/fips180-4/fips-180-4.pdf
  *
  * WARNING: this function has not been designed not tested with security in mind.
  *          DO NOT USE IT IN A SECURITY SENSITIVE CONTEXT.
@@ -4633,7 +4633,7 @@ const base256 = new BigIntExponentiation(256);
  * Represents two 32-bit words as a single decimal number. This requires a big integer storage
  * model as JS numbers are not accurate enough to represent the 64-bit number.
  *
- * Based on http://www.danvk.org/hex2dec.html
+ * Based on https://www.danvk.org/hex2dec.html
  */
 function wordsToDecimalString(hi, lo) {
     // Encode the four bytes in lo in the lower digits of the decimal number.
@@ -9866,7 +9866,7 @@ class _ControlFlowError {
         this.error = error;
     }
 }
-// See http://www.w3.org/TR/html51/syntax.html#writing
+// See https://www.w3.org/TR/html51/syntax.html#writing-html-documents
 class _Tokenizer {
     /**
      * @param _file The html source file being tokenized.
@@ -9903,7 +9903,7 @@ class _Tokenizer {
         if (this._preserveLineEndings) {
             return content;
         }
-        // http://www.w3.org/TR/html5/syntax.html#preprocessing-the-input-stream
+        // https://www.w3.org/TR/html51/syntax.html#preprocessing-the-input-stream
         // In order to keep the original position in the source, we can not
         // pre-process it.
         // Instead CRs are processed right before instantiating the tokens.
@@ -19871,7 +19871,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.0.2+31.sha-3114b0a');
+const VERSION$1 = new Version('11.0.2+36.sha-e32fe1a');
 
 /**
  * @license
@@ -20769,8 +20769,8 @@ const _TARGET_TAG = 'target';
 const _UNIT_TAG = 'trans-unit';
 const _CONTEXT_GROUP_TAG = 'context-group';
 const _CONTEXT_TAG = 'context';
-// http://docs.oasis-open.org/xliff/v1.2/os/xliff-core.html
-// http://docs.oasis-open.org/xliff/v1.2/xliff-profile-html/xliff-profile-html-1.2.html
+// https://docs.oasis-open.org/xliff/v1.2/os/xliff-core.html
+// https://docs.oasis-open.org/xliff/v1.2/xliff-profile-html/xliff-profile-html-1.2.html
 class Xliff extends Serializer {
     write(messages, locale) {
         const visitor = new _WriteVisitor();
@@ -21018,7 +21018,7 @@ const _XLIFF_TAG = 'xliff';
 const _SOURCE_TAG$2 = 'source';
 const _TARGET_TAG$1 = 'target';
 const _UNIT_TAG$1 = 'unit';
-// http://docs.oasis-open.org/xliff/xliff-core/v2.0/os/xliff-core-v2.0-os.html
+// https://docs.oasis-open.org/xliff/xliff-core/v2.0/os/xliff-core-v2.0-os.html
 class Xliff2 extends Serializer {
     write(messages, locale) {
         const visitor = new _WriteVisitor$1();
@@ -28174,7 +28174,7 @@ const CATCH_STACK_VAR$2 = 'stack';
  *
  * @security  When compiling templates at runtime, you must ensure that the entire template comes
  * from a trusted source. Attacker-controlled data introduced by a template could expose your
- * application to XSS risks.  For more detail, see the [Security Guide](http://g.co/ng/security).
+ * application to XSS risks.  For more detail, see the [Security Guide](https://g.co/ng/security).
  */
 class JitCompiler {
     constructor(_metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _summaryResolver, _reflector, _jitEvaluator, _compilerConfig, _console, getExtraNgModuleProviders) {
@@ -28560,7 +28560,7 @@ function _buildFromEncodedParts(opt_scheme, opt_userInfo, opt_domain, opt_port, 
 /**
  * A regular expression for breaking a URI into its component parts.
  *
- * {@link http://www.gbiv.com/protocols/uri/rfc/rfc3986.html#RFC2234} says
+ * {@link https://tools.ietf.org/html/rfc3986#appendix-B} says
  * As the "first-match-wins" algorithm is identical to the "greedy"
  * disambiguation method used by POSIX regular expressions, it is natural and
  * commonplace to use a regular expression for parsing the potential five
