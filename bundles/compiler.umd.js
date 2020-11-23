@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.0+51.sha-3e1e5a1
+ * @license Angular v11.1.0-next.0+60.sha-938abc0
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4199,7 +4199,6 @@
     Identifiers$1.sanitizeUrl = { name: 'ɵɵsanitizeUrl', moduleName: CORE$1 };
     Identifiers$1.sanitizeUrlOrResourceUrl = { name: 'ɵɵsanitizeUrlOrResourceUrl', moduleName: CORE$1 };
     Identifiers$1.trustConstantHtml = { name: 'ɵɵtrustConstantHtml', moduleName: CORE$1 };
-    Identifiers$1.trustConstantScript = { name: 'ɵɵtrustConstantScript', moduleName: CORE$1 };
     Identifiers$1.trustConstantResourceUrl = { name: 'ɵɵtrustConstantResourceUrl', moduleName: CORE$1 };
 
     /**
@@ -16553,7 +16552,7 @@
     //                               Reach out to mprobst for details.
     //
     // =================================================================================================
-    /** Map from tagName|propertyName SecurityContext. Properties applying to all tags use '*'. */
+    /** Map from tagName|propertyName to SecurityContext. Properties applying to all tags use '*'. */
     var _SECURITY_SCHEMA;
     function SECURITY_SCHEMA() {
         if (!_SECURITY_SCHEMA) {
@@ -17030,6 +17029,48 @@
             default:
                 return false;
         }
+    }
+
+    /**
+     * @license
+     * Copyright Google LLC All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    /**
+     * Set of tagName|propertyName corresponding to Trusted Types sinks. Properties applying to all
+     * tags use '*'.
+     *
+     * Extracted from, and should be kept in sync with
+     * https://w3c.github.io/webappsec-trusted-types/dist/spec/#integrations
+     */
+    var TRUSTED_TYPES_SINKS = new Set([
+        // NOTE: All strings in this set *must* be lowercase!
+        // TrustedHTML
+        'iframe|srcdoc',
+        '*|innerhtml',
+        '*|outerhtml',
+        // NB: no TrustedScript here, as the corresponding tags are stripped by the compiler.
+        // TrustedScriptURL
+        'embed|src',
+        'object|codebase',
+        'object|data',
+    ]);
+    /**
+     * isTrustedTypesSink returns true if the given property on the given DOM tag is a Trusted Types
+     * sink. In that case, use `ElementSchemaRegistry.securityContext` to determine which particular
+     * Trusted Type is required for values passed to the sink:
+     * - SecurityContext.HTML corresponds to TrustedHTML
+     * - SecurityContext.RESOURCE_URL corresponds to TrustedScriptURL
+     */
+    function isTrustedTypesSink(tagName, propName) {
+        // Make sure comparisons are case insensitive, so that case differences between attribute and
+        // property names do not have a security impact.
+        tagName = tagName.toLowerCase();
+        propName = propName.toLowerCase();
+        return TRUSTED_TYPES_SINKS.has(tagName + '|' + propName) ||
+            TRUSTED_TYPES_SINKS.has('*|' + propName);
     }
 
     var BIND_NAME_REGEXP$1 = /^(?:(bind-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.*)$/;
@@ -18050,6 +18091,17 @@
         return input.split(_CUSTOM_PH_EXP)[2];
     }
 
+    /**
+     * An i18n error.
+     */
+    var I18nError = /** @class */ (function (_super) {
+        __extends(I18nError, _super);
+        function I18nError(span, msg) {
+            return _super.call(this, span, msg) || this;
+        }
+        return I18nError;
+    }(ParseError));
+
     var setI18nRefs = function (htmlNode, i18nNode) {
         if (htmlNode instanceof NodeWithI18n) {
             if (i18nNode instanceof IcuPlaceholder && htmlNode.i18n instanceof Message) {
@@ -18078,6 +18130,7 @@
             this.enableI18nLegacyMessageIdFormat = enableI18nLegacyMessageIdFormat;
             // whether visited nodes contain i18n information
             this.hasI18nMeta = false;
+            this._errors = [];
             // i18n message generation factory
             this._createI18nMessage = createI18nMessageFactory(this.interpolationConfig);
         }
@@ -18088,6 +18141,11 @@
             this._setMessageId(message, meta);
             this._setLegacyIds(message, meta);
             return message;
+        };
+        I18nMetaVisitor.prototype.visitAllWithErrors = function (nodes) {
+            var _this = this;
+            var result = nodes.map(function (node) { return node.visit(_this, null); });
+            return new ParseTreeResult(result, this._errors);
         };
         I18nMetaVisitor.prototype.visitElement = function (element) {
             var e_1, _a, e_2, _b;
@@ -18109,8 +18167,13 @@
                         }
                         else if (attr.name.startsWith(I18N_ATTR_PREFIX)) {
                             // 'i18n-*' attributes
-                            var key = attr.name.slice(I18N_ATTR_PREFIX.length);
-                            attrsMeta[key] = attr.value;
+                            var name = attr.name.slice(I18N_ATTR_PREFIX.length);
+                            if (isTrustedTypesSink(element.name, name)) {
+                                this._reportError(attr, "Translating attribute '" + name + "' is disallowed for security reasons.");
+                            }
+                            else {
+                                attrsMeta[name] = attr.value;
+                            }
                         }
                         else {
                             // non-i18n attributes
@@ -18232,6 +18295,9 @@
                     meta instanceof IcuPlaceholder ? meta.previousMessage : undefined;
                 message.legacyIds = previousMessage ? previousMessage.legacyIds : [];
             }
+        };
+        I18nMetaVisitor.prototype._reportError = function (node, msg) {
+            this._errors.push(new I18nError(node.sourceSpan, msg));
         };
         return I18nMetaVisitor;
     }());
@@ -20107,7 +20173,20 @@
         // extraction process (ng extract-i18n) relies on a raw content to generate
         // message ids
         var i18nMetaVisitor = new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ !preserveWhitespaces, enableI18nLegacyMessageIdFormat);
-        rootNodes = visitAll$1(i18nMetaVisitor, rootNodes);
+        var i18nMetaResult = i18nMetaVisitor.visitAllWithErrors(rootNodes);
+        if (i18nMetaResult.errors && i18nMetaResult.errors.length > 0) {
+            return {
+                interpolationConfig: interpolationConfig,
+                preserveWhitespaces: preserveWhitespaces,
+                template: template,
+                errors: i18nMetaResult.errors,
+                nodes: [],
+                styleUrls: [],
+                styles: [],
+                ngContentSelectors: []
+            };
+        }
+        rootNodes = i18nMetaResult.rootNodes;
         if (!preserveWhitespaces) {
             rootNodes = visitAll$1(new WhitespaceVisitor(), rootNodes);
             // run i18n meta visitor again in case whitespaces are removed (because that might affect
@@ -20159,15 +20238,19 @@
     }
     function trustedConstAttribute(tagName, attr) {
         var value = asLiteral(attr.value);
-        switch (elementRegistry.securityContext(tagName, attr.name, /* isAttribute */ true)) {
-            case SecurityContext.HTML:
-                return importExpr(Identifiers$1.trustConstantHtml).callFn([value], attr.valueSpan);
-            case SecurityContext.SCRIPT:
-                return importExpr(Identifiers$1.trustConstantScript).callFn([value], attr.valueSpan);
-            case SecurityContext.RESOURCE_URL:
-                return importExpr(Identifiers$1.trustConstantResourceUrl).callFn([value], attr.valueSpan);
-            default:
-                return value;
+        if (isTrustedTypesSink(tagName, attr.name)) {
+            switch (elementRegistry.securityContext(tagName, attr.name, /* isAttribute */ true)) {
+                case SecurityContext.HTML:
+                    return importExpr(Identifiers$1.trustConstantHtml).callFn([value], attr.valueSpan);
+                // NB: no SecurityContext.SCRIPT here, as the corresponding tags are stripped by the compiler.
+                case SecurityContext.RESOURCE_URL:
+                    return importExpr(Identifiers$1.trustConstantResourceUrl).callFn([value], attr.valueSpan);
+                default:
+                    return value;
+            }
+        }
+        else {
+            return value;
         }
     }
     function isSingleElementTemplate(children) {
@@ -21223,7 +21306,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.0+51.sha-3e1e5a1');
+    var VERSION$1 = new Version('11.1.0-next.0+60.sha-938abc0');
 
     /**
      * @license
@@ -21651,17 +21734,6 @@
         }
         return null;
     }
-
-    /**
-     * An i18n error.
-     */
-    var I18nError = /** @class */ (function (_super) {
-        __extends(I18nError, _super);
-        function I18nError(span, msg) {
-            return _super.call(this, span, msg) || this;
-        }
-        return I18nError;
-    }(ParseError));
 
     var _I18N_ATTR = 'i18n';
     var _I18N_ATTR_PREFIX = 'i18n-';
