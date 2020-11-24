@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.0+72.sha-39a47c2
+ * @license Angular v11.1.0-next.0+82.sha-e75244e
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4137,7 +4137,16 @@
     Identifiers$1.resolveDocument = { name: 'ɵɵresolveDocument', moduleName: CORE$1 };
     Identifiers$1.resolveBody = { name: 'ɵɵresolveBody', moduleName: CORE$1 };
     Identifiers$1.defineComponent = { name: 'ɵɵdefineComponent', moduleName: CORE$1 };
+    Identifiers$1.declareComponent = { name: 'ɵɵngDeclareComponent', moduleName: CORE$1 };
     Identifiers$1.setComponentScope = { name: 'ɵɵsetComponentScope', moduleName: CORE$1 };
+    Identifiers$1.ChangeDetectionStrategy = {
+        name: 'ChangeDetectionStrategy',
+        moduleName: CORE$1,
+    };
+    Identifiers$1.ViewEncapsulation = {
+        name: 'ViewEncapsulation',
+        moduleName: CORE$1,
+    };
     Identifiers$1.ComponentDefWithMeta = {
         name: 'ɵɵComponentDefWithMeta',
         moduleName: CORE$1,
@@ -20149,7 +20158,9 @@
      */
     function parseTemplate(template, templateUrl, options) {
         if (options === void 0) { options = {}; }
+        var _a;
         var interpolationConfig = options.interpolationConfig, preserveWhitespaces = options.preserveWhitespaces, enableI18nLegacyMessageIdFormat = options.enableI18nLegacyMessageIdFormat;
+        var isInline = (_a = options.isInline) !== null && _a !== void 0 ? _a : false;
         var bindingParser = makeBindingParser(interpolationConfig);
         var htmlParser = new HtmlParser();
         var parseResult = htmlParser.parse(template, templateUrl, Object.assign(Object.assign({ leadingTriviaChars: LEADING_TRIVIA_CHARS }, options), { tokenizeExpansionForms: true }));
@@ -20160,6 +20171,7 @@
                 interpolationConfig: interpolationConfig,
                 preserveWhitespaces: preserveWhitespaces,
                 template: template,
+                isInline: isInline,
                 errors: parseResult.errors,
                 nodes: [],
                 styleUrls: [],
@@ -20179,6 +20191,7 @@
                 interpolationConfig: interpolationConfig,
                 preserveWhitespaces: preserveWhitespaces,
                 template: template,
+                isInline: isInline,
                 errors: i18nMetaResult.errors,
                 nodes: [],
                 styleUrls: [],
@@ -20203,6 +20216,7 @@
             preserveWhitespaces: preserveWhitespaces,
             errors: errors.length > 0 ? errors : null,
             template: template,
+            isInline: isInline,
             nodes: nodes,
             styleUrls: styleUrls,
             styles: styles,
@@ -20381,8 +20395,7 @@
         var definitionMap = baseDirectiveFields(meta, constantPool, bindingParser);
         addFeatures(definitionMap, meta);
         var expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()]);
-        var typeParams = createDirectiveTypeParams(meta);
-        var type = expressionType(importExpr(Identifiers$1.DirectiveDefWithMeta, typeParams));
+        var type = createDirectiveType(meta);
         return { expression: expression, type: type };
     }
     /**
@@ -20409,8 +20422,8 @@
             var matcher = new SelectorMatcher();
             try {
                 for (var _b = __values(meta.directives), _c = _b.next(); !_c.done; _c = _b.next()) {
-                    var _d = _c.value, selector_1 = _d.selector, expression_1 = _d.expression;
-                    matcher.addSelectables(CssSelector.parse(selector_1), expression_1);
+                    var _d = _c.value, selector_1 = _d.selector, type_1 = _d.type;
+                    matcher.addSelectables(CssSelector.parse(selector_1), type_1);
                 }
             }
             catch (e_1_1) { e_1 = { error: e_1_1 }; }
@@ -20500,10 +20513,17 @@
             definitionMap.set('changeDetection', literal(changeDetection));
         }
         var expression = importExpr(Identifiers$1.defineComponent).callFn([definitionMap.toLiteralMap()]);
+        var type = createComponentType(meta);
+        return { expression: expression, type: type };
+    }
+    /**
+     * Creates the type specification from the component meta. This type is inserted into .d.ts files
+     * to be consumed by upstream compilations.
+     */
+    function createComponentType(meta) {
         var typeParams = createDirectiveTypeParams(meta);
         typeParams.push(stringArrayAsType(meta.template.ngContentSelectors));
-        var type = expressionType(importExpr(Identifiers$1.ComponentDefWithMeta, typeParams));
-        return { expression: expression, type: type };
+        return expressionType(importExpr(Identifiers$1.ComponentDefWithMeta, typeParams));
     }
     /**
      * A wrapper around `compileDirective` which depends on render2 global analysis data as its input
@@ -20687,6 +20707,14 @@
             stringMapAsType(meta.outputs),
             stringArrayAsType(meta.queries.map(function (q) { return q.propertyName; })),
         ];
+    }
+    /**
+     * Creates the type specification from the directive meta. This type is inserted into .d.ts files
+     * to be consumed by upstream compilations.
+     */
+    function createDirectiveType(meta) {
+        var typeParams = createDirectiveTypeParams(meta);
+        return expressionType(importExpr(Identifiers$1.DirectiveDefWithMeta, typeParams));
     }
     // Define and update any view queries
     function createViewQueriesFunction(viewQueries, constantPool, name) {
@@ -21306,7 +21334,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.0+72.sha-39a47c2');
+    var VERSION$1 = new Version('11.1.0-next.0+82.sha-e75244e');
 
     /**
      * @license
@@ -31146,13 +31174,56 @@
      * found in the LICENSE file at https://angular.io/license
      */
     /**
+     * Creates an array literal expression from the given array, mapping all values to an expression
+     * using the provided mapping function. If the array is empty or null, then null is returned.
+     *
+     * @param values The array to transfer into literal array expression.
+     * @param mapper The logic to use for creating an expression for the array's values.
+     * @returns An array literal expression representing `values`, or null if `values` is empty or
+     * is itself null.
+     */
+    function toOptionalLiteralArray(values, mapper) {
+        if (values === null || values.length === 0) {
+            return null;
+        }
+        return literalArr(values.map(function (value) { return mapper(value); }));
+    }
+    /**
+     * Creates an object literal expression from the given object, mapping all values to an expression
+     * using the provided mapping function. If the object has no keys, then null is returned.
+     *
+     * @param object The object to transfer into an object literal expression.
+     * @param mapper The logic to use for creating an expression for the object's values.
+     * @returns An object literal expression representing `object`, or null if `object` does not have
+     * any keys.
+     */
+    function toOptionalLiteralMap(object, mapper) {
+        var entries = Object.keys(object).map(function (key) {
+            var value = object[key];
+            return { key: key, value: mapper(value), quoted: true };
+        });
+        if (entries.length > 0) {
+            return literalMap(entries);
+        }
+        else {
+            return null;
+        }
+    }
+
+    /**
+     * @license
+     * Copyright Google LLC All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    /**
      * Compile a directive declaration defined by the `R3DirectiveMetadata`.
      */
     function compileDeclareDirectiveFromMetadata(meta) {
         var definitionMap = createDirectiveDefinitionMap(meta);
         var expression = importExpr(Identifiers$1.declareDirective).callFn([definitionMap.toLiteralMap()]);
-        var typeParams = createDirectiveTypeParams(meta);
-        var type = expressionType(importExpr(Identifiers$1.DirectiveDefWithMeta, typeParams));
+        var type = createDirectiveType(meta);
         return { expression: expression, type: type };
     }
     /**
@@ -31232,26 +31303,99 @@
             return null;
         }
     }
+
     /**
-     * Creates an object literal expression from the given object, mapping all values to an expression
-     * using the provided mapping function. If the object has no keys, then null is returned.
-     *
-     * @param object The object to transfer into an object literal expression.
-     * @param mapper The logic to use for creating an expression for the object's values.
-     * @returns An object literal expression representing `object`, or null if `object` does not have
-     * any keys.
+     * Compile a component declaration defined by the `R3ComponentMetadata`.
      */
-    function toOptionalLiteralMap(object, mapper) {
-        var entries = Object.keys(object).map(function (key) {
-            var value = object[key];
-            return { key: key, value: mapper(value), quoted: true };
-        });
-        if (entries.length > 0) {
-            return literalMap(entries);
+    function compileDeclareComponentFromMetadata(meta, template) {
+        var definitionMap = createComponentDefinitionMap(meta, template);
+        var expression = importExpr(Identifiers$1.declareComponent).callFn([definitionMap.toLiteralMap()]);
+        var type = createComponentType(meta);
+        return { expression: expression, type: type };
+    }
+    /**
+     * Gathers the declaration fields for a component into a `DefinitionMap`.
+     */
+    function createComponentDefinitionMap(meta, template) {
+        var definitionMap = createDirectiveDefinitionMap(meta);
+        var templateMap = compileTemplateDefinition(template);
+        definitionMap.set('template', templateMap);
+        definitionMap.set('styles', toOptionalLiteralArray(meta.styles, literal));
+        definitionMap.set('directives', compileUsedDirectiveMetadata(meta));
+        definitionMap.set('pipes', compileUsedPipeMetadata(meta));
+        definitionMap.set('viewProviders', meta.viewProviders);
+        definitionMap.set('animations', meta.animations);
+        if (meta.changeDetection !== undefined) {
+            definitionMap.set('changeDetection', importExpr(Identifiers$1.ChangeDetectionStrategy)
+                .prop(ChangeDetectionStrategy[meta.changeDetection]));
         }
-        else {
+        if (meta.encapsulation !== ViewEncapsulation.Emulated) {
+            definitionMap.set('encapsulation', importExpr(Identifiers$1.ViewEncapsulation).prop(ViewEncapsulation[meta.encapsulation]));
+        }
+        if (meta.interpolation !== DEFAULT_INTERPOLATION_CONFIG) {
+            definitionMap.set('interpolation', literalArr([literal(meta.interpolation.start), literal(meta.interpolation.end)]));
+        }
+        if (template.preserveWhitespaces === true) {
+            definitionMap.set('preserveWhitespaces', literal(true));
+        }
+        return definitionMap;
+    }
+    /**
+     * Compiles the provided template into its partial definition.
+     */
+    function compileTemplateDefinition(template) {
+        var templateMap = new DefinitionMap();
+        var templateExpr = typeof template.template === 'string' ? literal(template.template) : template.template;
+        templateMap.set('source', templateExpr);
+        templateMap.set('isInline', literal(template.isInline));
+        return templateMap.toLiteralMap();
+    }
+    /**
+     * Compiles the directives as registered in the component metadata into an array literal of the
+     * individual directives. If the component does not use any directives, then null is returned.
+     */
+    function compileUsedDirectiveMetadata(meta) {
+        var wrapType = meta.wrapDirectivesAndPipesInClosure ?
+            function (expr) { return fn([], [new ReturnStatement(expr)]); } :
+            function (expr) { return expr; };
+        return toOptionalLiteralArray(meta.directives, function (directive) {
+            var dirMeta = new DefinitionMap();
+            dirMeta.set('type', wrapType(directive.type));
+            dirMeta.set('selector', literal(directive.selector));
+            dirMeta.set('inputs', toOptionalLiteralArray(directive.inputs, literal));
+            dirMeta.set('outputs', toOptionalLiteralArray(directive.outputs, literal));
+            dirMeta.set('exportAs', toOptionalLiteralArray(directive.exportAs, literal));
+            return dirMeta.toLiteralMap();
+        });
+    }
+    /**
+     * Compiles the pipes as registered in the component metadata into an object literal, where the
+     * pipe's name is used as key and a reference to its type as value. If the component does not use
+     * any pipes, then null is returned.
+     */
+    function compileUsedPipeMetadata(meta) {
+        var e_1, _a;
+        if (meta.pipes.size === 0) {
             return null;
         }
+        var wrapType = meta.wrapDirectivesAndPipesInClosure ?
+            function (expr) { return fn([], [new ReturnStatement(expr)]); } :
+            function (expr) { return expr; };
+        var entries = [];
+        try {
+            for (var _b = __values(meta.pipes), _c = _b.next(); !_c.done; _c = _b.next()) {
+                var _d = __read(_c.value, 2), name = _d[0], pipe = _d[1];
+                entries.push({ key: name, value: wrapType(pipe), quoted: true });
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+        return literalMap(entries);
     }
 
     /**
@@ -31504,6 +31648,7 @@
     exports.analyzeNgModules = analyzeNgModules;
     exports.collectExternalReferences = collectExternalReferences;
     exports.compileComponentFromMetadata = compileComponentFromMetadata;
+    exports.compileDeclareComponentFromMetadata = compileDeclareComponentFromMetadata;
     exports.compileDeclareDirectiveFromMetadata = compileDeclareDirectiveFromMetadata;
     exports.compileDirectiveFromMetadata = compileDirectiveFromMetadata;
     exports.compileFactoryFunction = compileFactoryFunction;
