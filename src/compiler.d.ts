@@ -91,5 +91,6 @@ export { compilePipeFromMetadata, R3PipeMetadata } from './render3/r3_pipe_compi
 export { makeBindingParser, ParsedTemplate, parseTemplate, ParseTemplateOptions } from './render3/view/template';
 export { R3Reference } from './render3/util';
 export { compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, ParsedHostBindings, verifyHostBindings } from './render3/view/compiler';
+export { compileDeclareComponentFromMetadata } from './render3/partial/component';
 export { compileDeclareDirectiveFromMetadata } from './render3/partial/directive';
 export { publishFacade } from './jit_compiler_facade';
