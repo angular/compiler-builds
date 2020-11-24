@@ -130,10 +130,7 @@ export declare class Identifiers {
     static resolveDocument: o.ExternalReference;
     static resolveBody: o.ExternalReference;
     static defineComponent: o.ExternalReference;
-    static declareComponent: o.ExternalReference;
     static setComponentScope: o.ExternalReference;
-    static ChangeDetectionStrategy: o.ExternalReference;
-    static ViewEncapsulation: o.ExternalReference;
     static ComponentDefWithMeta: o.ExternalReference;
     static FactoryDef: o.ExternalReference;
     static defineDirective: o.ExternalReference;
