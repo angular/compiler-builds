@@ -327,6 +327,10 @@ export interface ParseTemplateOptions {
      * The default is `false`, but this will be switched in a future major release.
      */
     i18nNormalizeLineEndingsInICUs?: boolean;
+    /**
+     * Whether the template was inline.
+     */
+    isInline?: boolean;
 }
 /**
  * Parse a template into render3 `Node`s and additional metadata, with no other dependencies.
@@ -386,12 +390,17 @@ export interface ParsedTemplate {
      */
     interpolationConfig?: InterpolationConfig;
     /**
-     * The string contents of the template.
+     * The string contents of the template, or an expression that represents the string/template
+     * literal as it occurs in the source.
      *
      * This is the "logical" template string, after expansion of any escaped characters (for inline
      * templates). This may differ from the actual template bytes as they appear in the .ts file.
      */
-    template: string;
+    template: string | o.Expression;
+    /**
+     * Whether the template was inline (using `template`) or external (using `templateUrl`).
+     */
+    isInline: boolean;
     /**
      * Any errors from parsing the template the first time.
      *
