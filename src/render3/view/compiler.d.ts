@@ -23,11 +23,6 @@ export declare function compileDirectiveFromMetadata(meta: R3DirectiveMetadata, 
  */
 export declare function compileComponentFromMetadata(meta: R3ComponentMetadata, constantPool: ConstantPool, bindingParser: BindingParser): R3ComponentDef;
 /**
- * Creates the type specification from the component meta. This type is inserted into .d.ts files
- * to be consumed by upstream compilations.
- */
-export declare function createComponentType(meta: R3ComponentMetadata): o.Type;
-/**
  * A wrapper around `compileDirective` which depends on render2 global analysis data as its input
  * instead of the `R3DirectiveMetadata`.
  *
@@ -44,11 +39,6 @@ export declare function compileDirectiveFromRender2(outputCtx: OutputContext, di
  */
 export declare function compileComponentFromRender2(outputCtx: OutputContext, component: CompileDirectiveMetadata, render3Ast: Render3ParseResult, reflector: CompileReflector, bindingParser: BindingParser, directiveTypeBySel: Map<string, any>, pipeTypeByName: Map<string, any>): void;
 export declare function createDirectiveTypeParams(meta: R3DirectiveMetadata): o.Type[];
-/**
- * Creates the type specification from the directive meta. This type is inserted into .d.ts files
- * to be consumed by upstream compilations.
- */
-export declare function createDirectiveType(meta: R3DirectiveMetadata): o.Type;
 export interface ParsedHostBindings {
     attributes: {
         [key: string]: o.Expression;
