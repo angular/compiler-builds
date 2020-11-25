@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.0+92.sha-bfa197f
+ * @license Angular v11.1.0-next.0+93.sha-bf12f51
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -21335,7 +21335,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.0+92.sha-bfa197f');
+    var VERSION$1 = new Version('11.1.0-next.0+93.sha-bf12f51');
 
     /**
      * @license
