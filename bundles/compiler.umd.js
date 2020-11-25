@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.0+89.sha-23c36a2
+ * @license Angular v11.1.0-next.0+91.sha-5684ac5
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16322,7 +16322,8 @@
                     else {
                         // Otherwise the key must be a directive keyword, like "of". Transform
                         // the key to actual key. Eg. of -> ngForOf, trackBy -> ngForTrackBy
-                        key.source = templateKey.source + key.source[0].toUpperCase() + key.source.substring(1);
+                        key.source =
+                            templateKey.source + key.source.charAt(0).toUpperCase() + key.source.substring(1);
                         bindings.push.apply(bindings, __spread(this.parseDirectiveKeywordBindings(key)));
                     }
                 }
@@ -21334,7 +21335,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.0+89.sha-23c36a2');
+    var VERSION$1 = new Version('11.1.0-next.0+91.sha-5684ac5');
 
     /**
      * @license
