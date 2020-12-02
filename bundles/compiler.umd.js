@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.1+22.sha-744f46c
+ * @license Angular v11.1.0-next.1+25.sha-8d613c1
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16171,11 +16171,14 @@
         };
         _ParseAST.prototype.parseExpressionList = function (terminator) {
             var result = [];
-            if (!this.next.isCharacter(terminator)) {
-                do {
+            do {
+                if (!this.next.isCharacter(terminator)) {
                     result.push(this.parsePipe());
-                } while (this.consumeOptionalCharacter($COMMA));
-            }
+                }
+                else {
+                    break;
+                }
+            } while (this.consumeOptionalCharacter($COMMA));
             return result;
         };
         _ParseAST.prototype.parseLiteralMap = function () {
@@ -21335,7 +21338,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.1+22.sha-744f46c');
+    var VERSION$1 = new Version('11.1.0-next.1+25.sha-8d613c1');
 
     /**
      * @license
