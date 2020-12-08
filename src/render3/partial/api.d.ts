@@ -6,21 +6,26 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ChangeDetectionStrategy, ViewEncapsulation } from '../../core';
-import { InterpolationConfig } from '../../ml_parser/interpolation_config';
 import * as o from '../../output/output_ast';
+export interface R3PartialDeclaration {
+    /**
+     * Version number of the Angular compiler that was used to compile this declaration. The linker
+     * will be able to detect which version a library is using and interpret its metadata accordingly.
+     */
+    version: string;
+    /**
+     * A reference to the `@angular/core` ES module, which allows access
+     * to all Angular exports, including Ivy instructions.
+     */
+    ngImport: o.Expression;
+}
 /**
  * This interface describes the shape of the object that partial directive declarations are compiled
  * into. This serves only as documentation, as conformance of this interface is not enforced during
  * the generation of the partial declaration, nor when the linker applies full compilation from the
  * partial declaration.
  */
-export interface R3DeclareDirectiveMetadata {
-    /**
-     * Version number of the metadata format. This is used to evolve the metadata
-     * interface later - the linker will be able to detect which version a library
-     * is using and interpret its metadata accordingly.
-     */
-    version: string;
+export interface R3DeclareDirectiveMetadata extends R3PartialDeclaration {
     /**
      * Unparsed selector of the directive.
      */
@@ -100,11 +105,6 @@ export interface R3DeclareDirectiveMetadata {
      * Whether the directive implements the `ngOnChanges` hook. Defaults to false.
      */
     usesOnChanges?: boolean;
-    /**
-     * A reference to the `@angular/core` ES module, which allows access
-     * to all Angular exports, including Ivy instructions.
-     */
-    ngImport: o.Expression;
 }
 /**
  * An extension of `R3DeclareDirectiveMetadata` that declares the shape of a partial declaration of
@@ -187,7 +187,7 @@ export interface R3DeclareComponentMetadata extends R3DeclareDirectiveMetadata {
     /**
      * Overrides the default interpolation start and end delimiters. Defaults to {{ and }}.
      */
-    interpolation?: InterpolationConfig;
+    interpolation?: [string, string];
     /**
      * Whether whitespace in the template should be preserved. Defaults to false.
      */
