@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.3+73.sha-b2090fd
+ * @license Angular v11.0.4+1.sha-eba7de6
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1363,20 +1363,17 @@
         }
         return base.isEquivalent(other);
     }
-    function areAllEquivalentPredicate(base, other, equivalentPredicate) {
+    function areAllEquivalent(base, other) {
         var len = base.length;
         if (len !== other.length) {
             return false;
         }
         for (var i = 0; i < len; i++) {
-            if (!equivalentPredicate(base[i], other[i])) {
+            if (!base[i].isEquivalent(other[i])) {
                 return false;
             }
         }
         return true;
-    }
-    function areAllEquivalent(base, other) {
-        return areAllEquivalentPredicate(base, other, function (baseElement, otherElement) { return baseElement.isEquivalent(otherElement); });
     }
     var Expression = /** @class */ (function () {
         function Expression(type, sourceSpan) {
@@ -1659,27 +1656,6 @@
         };
         return InvokeFunctionExpr;
     }(Expression));
-    var TaggedTemplateExpr = /** @class */ (function (_super) {
-        __extends(TaggedTemplateExpr, _super);
-        function TaggedTemplateExpr(tag, template, type, sourceSpan) {
-            var _this = _super.call(this, type, sourceSpan) || this;
-            _this.tag = tag;
-            _this.template = template;
-            return _this;
-        }
-        TaggedTemplateExpr.prototype.isEquivalent = function (e) {
-            return e instanceof TaggedTemplateExpr && this.tag.isEquivalent(e.tag) &&
-                areAllEquivalentPredicate(this.template.elements, e.template.elements, function (a, b) { return a.text === b.text; }) &&
-                areAllEquivalent(this.template.expressions, e.template.expressions);
-        };
-        TaggedTemplateExpr.prototype.isConstant = function () {
-            return false;
-        };
-        TaggedTemplateExpr.prototype.visitExpression = function (visitor, context) {
-            return visitor.visitTaggedTemplateExpr(this, context);
-        };
-        return TaggedTemplateExpr;
-    }(Expression));
     var InstantiateExpr = /** @class */ (function (_super) {
         __extends(InstantiateExpr, _super);
         function InstantiateExpr(classExpr, args, type, sourceSpan) {
@@ -1718,28 +1694,6 @@
         };
         return LiteralExpr;
     }(Expression));
-    var TemplateLiteral = /** @class */ (function () {
-        function TemplateLiteral(elements, expressions) {
-            this.elements = elements;
-            this.expressions = expressions;
-        }
-        return TemplateLiteral;
-    }());
-    var TemplateLiteralElement = /** @class */ (function () {
-        function TemplateLiteralElement(text, sourceSpan, rawText) {
-            var _a;
-            this.text = text;
-            this.sourceSpan = sourceSpan;
-            // If `rawText` is not provided, try to extract the raw string from its
-            // associated `sourceSpan`. If that is also not available, "fake" the raw
-            // string instead by escaping the following control sequences:
-            // - "\" would otherwise indicate that the next character is a control character.
-            // - "`" and "${" are template string control sequences that would otherwise prematurely
-            // indicate the end of the template literal element.
-            this.rawText = (_a = rawText !== null && rawText !== void 0 ? rawText : sourceSpan === null || sourceSpan === void 0 ? void 0 : sourceSpan.toString()) !== null && _a !== void 0 ? _a : escapeForTemplateLiteral(escapeSlashes(text));
-        }
-        return TemplateLiteralElement;
-    }());
     var MessagePiece = /** @class */ (function () {
         function MessagePiece(text, sourceSpan) {
             this.text = text;
@@ -1832,7 +1786,7 @@
     var escapeSlashes = function (str) { return str.replace(/\\/g, '\\\\'); };
     var escapeStartingColon = function (str) { return str.replace(/^:/, '\\:'); };
     var escapeColons = function (str) { return str.replace(/:/g, '\\:'); };
-    var escapeForTemplateLiteral = function (str) { return str.replace(/`/g, '\\`').replace(/\${/g, '$\\{'); };
+    var escapeForMessagePart = function (str) { return str.replace(/`/g, '\\`').replace(/\${/g, '$\\{'); };
     /**
      * Creates a `{cooked, raw}` object from the `metaBlock` and `messagePart`.
      *
@@ -1851,14 +1805,14 @@
         if (metaBlock === '') {
             return {
                 cooked: messagePart,
-                raw: escapeForTemplateLiteral(escapeStartingColon(escapeSlashes(messagePart))),
+                raw: escapeForMessagePart(escapeStartingColon(escapeSlashes(messagePart))),
                 range: range,
             };
         }
         else {
             return {
                 cooked: ":" + metaBlock + ":" + messagePart,
-                raw: escapeForTemplateLiteral(":" + escapeColons(escapeSlashes(metaBlock)) + ":" + escapeSlashes(messagePart)),
+                raw: escapeForMessagePart(":" + escapeColons(escapeSlashes(metaBlock)) + ":" + escapeSlashes(messagePart)),
                 range: range,
             };
         }
@@ -2449,10 +2403,6 @@
         AstTransformer.prototype.visitInvokeFunctionExpr = function (ast, context) {
             return this.transformExpr(new InvokeFunctionExpr(ast.fn.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan), context);
         };
-        AstTransformer.prototype.visitTaggedTemplateExpr = function (ast, context) {
-            var _this = this;
-            return this.transformExpr(new TaggedTemplateExpr(ast.tag.visitExpression(this, context), new TemplateLiteral(ast.template.elements, ast.template.expressions.map(function (e) { return e.visitExpression(_this, context); })), ast.type, ast.sourceSpan), context);
-        };
         AstTransformer.prototype.visitInstantiateExpr = function (ast, context) {
             return this.transformExpr(new InstantiateExpr(ast.classExpr.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan), context);
         };
@@ -2606,11 +2556,6 @@
         RecursiveAstVisitor.prototype.visitInvokeFunctionExpr = function (ast, context) {
             ast.fn.visitExpression(this, context);
             this.visitAllExpressions(ast.args, context);
-            return this.visitExpression(ast, context);
-        };
-        RecursiveAstVisitor.prototype.visitTaggedTemplateExpr = function (ast, context) {
-            ast.tag.visitExpression(this, context);
-            this.visitAllExpressions(ast.template.expressions, context);
             return this.visitExpression(ast, context);
         };
         RecursiveAstVisitor.prototype.visitInstantiateExpr = function (ast, context) {
@@ -2890,9 +2835,6 @@
     }
     function ifStmt(condition, thenClause, elseClause, sourceSpan, leadingComments) {
         return new IfStmt(condition, thenClause, elseClause, sourceSpan, leadingComments);
-    }
-    function taggedTemplate(tag, template, type, sourceSpan) {
-        return new TaggedTemplateExpr(tag, template, type, sourceSpan);
     }
     function literal(value, type, sourceSpan) {
         return new LiteralExpr(value, type, sourceSpan);
@@ -3434,7 +3376,6 @@
             this.visitWritePropExpr = invalid;
             this.visitInvokeMethodExpr = invalid;
             this.visitInvokeFunctionExpr = invalid;
-            this.visitTaggedTemplateExpr = invalid;
             this.visitInstantiateExpr = invalid;
             this.visitConditionalExpr = invalid;
             this.visitNotExpr = invalid;
@@ -6910,17 +6851,6 @@
             ctx.print(expr, ")");
             return null;
         };
-        AbstractEmitterVisitor.prototype.visitTaggedTemplateExpr = function (expr, ctx) {
-            expr.tag.visitExpression(this, ctx);
-            ctx.print(expr, '`' + expr.template.elements[0].rawText);
-            for (var i = 1; i < expr.template.elements.length; i++) {
-                ctx.print(expr, '${');
-                expr.template.expressions[i - 1].visitExpression(this, ctx);
-                ctx.print(expr, "}" + expr.template.elements[i].rawText);
-            }
-            ctx.print(expr, '`');
-            return null;
-        };
         AbstractEmitterVisitor.prototype.visitWrappedNodeExpr = function (ast, ctx) {
             throw new Error('Abstract emitter cannot visit WrappedNodeExpr.');
         };
@@ -7186,19 +7116,6 @@
         return res;
     }
 
-    /**
-     * In TypeScript, tagged template functions expect a "template object", which is an array of
-     * "cooked" strings plus a `raw` property that contains an array of "raw" strings. This is
-     * typically constructed with a function called `__makeTemplateObject(cooked, raw)`, but it may not
-     * be available in all environments.
-     *
-     * This is a JavaScript polyfill that uses __makeTemplateObject when it's available, but otherwise
-     * creates an inline helper with the same functionality.
-     *
-     * In the inline function, if `Object.defineProperty` is available we use that to attach the `raw`
-     * array.
-     */
-    var makeTemplateObjectPolyfill = '(this&&this.__makeTemplateObject||function(e,t){return Object.defineProperty?Object.defineProperty(e,"raw",{value:t}):e.raw=t,e})';
     var AbstractJsEmitterVisitor = /** @class */ (function (_super) {
         __extends(AbstractJsEmitterVisitor, _super);
         function AbstractJsEmitterVisitor() {
@@ -7300,28 +7217,6 @@
             }
             return null;
         };
-        AbstractJsEmitterVisitor.prototype.visitTaggedTemplateExpr = function (ast, ctx) {
-            var _this = this;
-            // The following convoluted piece of code is effectively the downlevelled equivalent of
-            // ```
-            // tag`...`
-            // ```
-            // which is effectively like:
-            // ```
-            // tag(__makeTemplateObject(cooked, raw), expression1, expression2, ...);
-            // ```
-            var elements = ast.template.elements;
-            ast.tag.visitExpression(this, ctx);
-            ctx.print(ast, "(" + makeTemplateObjectPolyfill + "(");
-            ctx.print(ast, "[" + elements.map(function (part) { return escapeIdentifier(part.text, false); }).join(', ') + "], ");
-            ctx.print(ast, "[" + elements.map(function (part) { return escapeIdentifier(part.rawText, false); }).join(', ') + "])");
-            ast.template.expressions.forEach(function (expression) {
-                ctx.print(ast, ', ');
-                expression.visitExpression(_this, ctx);
-            });
-            ctx.print(ast, ')');
-            return null;
-        };
         AbstractJsEmitterVisitor.prototype.visitFunctionExpr = function (ast, ctx) {
             ctx.print(ast, "function" + (ast.name ? ' ' + ast.name : '') + "(");
             this._visitParams(ast.params, ctx);
@@ -7367,7 +7262,17 @@
             // ```
             // $localize(__makeTemplateObject(cooked, raw), expression1, expression2, ...);
             // ```
-            ctx.print(ast, "$localize(" + makeTemplateObjectPolyfill + "(");
+            //
+            // The `$localize` function expects a "template object", which is an array of "cooked" strings
+            // plus a `raw` property that contains an array of "raw" strings.
+            //
+            // In some environments a helper function called `__makeTemplateObject(cooked, raw)` might be
+            // available, in which case we use that. Otherwise we must create our own helper function
+            // inline.
+            //
+            // In the inline function, if `Object.defineProperty` is available we use that to attach the
+            // `raw` array.
+            ctx.print(ast, '$localize((this&&this.__makeTemplateObject||function(e,t){return Object.defineProperty?Object.defineProperty(e,"raw",{value:t}):e.raw=t,e})(');
             var parts = [ast.serializeI18nHead()];
             for (var i = 1; i < ast.messageParts.length; i++) {
                 parts.push(ast.serializeI18nTemplatePart(i));
@@ -16155,14 +16060,11 @@
         };
         _ParseAST.prototype.parseExpressionList = function (terminator) {
             var result = [];
-            do {
-                if (!this.next.isCharacter(terminator)) {
+            if (!this.next.isCharacter(terminator)) {
+                do {
                     result.push(this.parsePipe());
-                }
-                else {
-                    break;
-                }
-            } while (this.consumeOptionalCharacter($COMMA));
+                } while (this.consumeOptionalCharacter($COMMA));
+            }
             return result;
         };
         _ParseAST.prototype.parseLiteralMap = function () {
@@ -21188,7 +21090,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.3+73.sha-b2090fd');
+    var VERSION$1 = new Version('11.0.4+1.sha-eba7de6');
 
     /**
      * @license
@@ -29642,14 +29544,6 @@
                 return fn.apply(null, args);
             }
         };
-        StatementInterpreter.prototype.visitTaggedTemplateExpr = function (expr, ctx) {
-            var templateElements = expr.template.elements.map(function (e) { return e.text; });
-            Object.defineProperty(templateElements, 'raw', { value: expr.template.elements.map(function (e) { return e.rawText; }) });
-            var args = this.visitAllExpressions(expr.template.expressions, ctx);
-            args.unshift(templateElements);
-            var tag = expr.tag.visitExpression(this, ctx);
-            return tag.apply(null, args);
-        };
         StatementInterpreter.prototype.visitReturnStmt = function (stmt, ctx) {
             return new ReturnValue(stmt.value.visitExpression(this, ctx));
         };
@@ -31238,10 +31132,7 @@
     exports.StyleCompiler = StyleCompiler;
     exports.StylesCompileDependency = StylesCompileDependency;
     exports.SummaryResolver = SummaryResolver;
-    exports.TaggedTemplateExpr = TaggedTemplateExpr;
     exports.TemplateBindingParseResult = TemplateBindingParseResult;
-    exports.TemplateLiteral = TemplateLiteral;
-    exports.TemplateLiteralElement = TemplateLiteralElement;
     exports.TemplateParseError = TemplateParseError;
     exports.TemplateParseResult = TemplateParseResult;
     exports.TemplateParser = TemplateParser;

@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.3+73.sha-b2090fd
+ * @license Angular v11.0.4+1.sha-eba7de6
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1025,20 +1025,17 @@ function nullSafeIsEquivalent(base, other) {
     }
     return base.isEquivalent(other);
 }
-function areAllEquivalentPredicate(base, other, equivalentPredicate) {
+function areAllEquivalent(base, other) {
     const len = base.length;
     if (len !== other.length) {
         return false;
     }
     for (let i = 0; i < len; i++) {
-        if (!equivalentPredicate(base[i], other[i])) {
+        if (!base[i].isEquivalent(other[i])) {
             return false;
         }
     }
     return true;
-}
-function areAllEquivalent(base, other) {
-    return areAllEquivalentPredicate(base, other, (baseElement, otherElement) => baseElement.isEquivalent(otherElement));
 }
 class Expression {
     constructor(type, sourceSpan) {
@@ -1295,24 +1292,6 @@ class InvokeFunctionExpr extends Expression {
         return visitor.visitInvokeFunctionExpr(this, context);
     }
 }
-class TaggedTemplateExpr extends Expression {
-    constructor(tag, template, type, sourceSpan) {
-        super(type, sourceSpan);
-        this.tag = tag;
-        this.template = template;
-    }
-    isEquivalent(e) {
-        return e instanceof TaggedTemplateExpr && this.tag.isEquivalent(e.tag) &&
-            areAllEquivalentPredicate(this.template.elements, e.template.elements, (a, b) => a.text === b.text) &&
-            areAllEquivalent(this.template.expressions, e.template.expressions);
-    }
-    isConstant() {
-        return false;
-    }
-    visitExpression(visitor, context) {
-        return visitor.visitTaggedTemplateExpr(this, context);
-    }
-}
 class InstantiateExpr extends Expression {
     constructor(classExpr, args, type, sourceSpan) {
         super(type, sourceSpan);
@@ -1343,26 +1322,6 @@ class LiteralExpr extends Expression {
     }
     visitExpression(visitor, context) {
         return visitor.visitLiteralExpr(this, context);
-    }
-}
-class TemplateLiteral {
-    constructor(elements, expressions) {
-        this.elements = elements;
-        this.expressions = expressions;
-    }
-}
-class TemplateLiteralElement {
-    constructor(text, sourceSpan, rawText) {
-        var _a;
-        this.text = text;
-        this.sourceSpan = sourceSpan;
-        // If `rawText` is not provided, try to extract the raw string from its
-        // associated `sourceSpan`. If that is also not available, "fake" the raw
-        // string instead by escaping the following control sequences:
-        // - "\" would otherwise indicate that the next character is a control character.
-        // - "`" and "${" are template string control sequences that would otherwise prematurely
-        // indicate the end of the template literal element.
-        this.rawText = (_a = rawText !== null && rawText !== void 0 ? rawText : sourceSpan === null || sourceSpan === void 0 ? void 0 : sourceSpan.toString()) !== null && _a !== void 0 ? _a : escapeForTemplateLiteral(escapeSlashes(text));
     }
 }
 class MessagePiece {
@@ -1443,7 +1402,7 @@ class LocalizedString extends Expression {
 const escapeSlashes = (str) => str.replace(/\\/g, '\\\\');
 const escapeStartingColon = (str) => str.replace(/^:/, '\\:');
 const escapeColons = (str) => str.replace(/:/g, '\\:');
-const escapeForTemplateLiteral = (str) => str.replace(/`/g, '\\`').replace(/\${/g, '$\\{');
+const escapeForMessagePart = (str) => str.replace(/`/g, '\\`').replace(/\${/g, '$\\{');
 /**
  * Creates a `{cooked, raw}` object from the `metaBlock` and `messagePart`.
  *
@@ -1462,14 +1421,14 @@ function createCookedRawString(metaBlock, messagePart, range) {
     if (metaBlock === '') {
         return {
             cooked: messagePart,
-            raw: escapeForTemplateLiteral(escapeStartingColon(escapeSlashes(messagePart))),
+            raw: escapeForMessagePart(escapeStartingColon(escapeSlashes(messagePart))),
             range,
         };
     }
     else {
         return {
             cooked: `:${metaBlock}:${messagePart}`,
-            raw: escapeForTemplateLiteral(`:${escapeColons(escapeSlashes(metaBlock))}:${escapeSlashes(messagePart)}`),
+            raw: escapeForMessagePart(`:${escapeColons(escapeSlashes(metaBlock))}:${escapeSlashes(messagePart)}`),
             range,
         };
     }
@@ -1966,9 +1925,6 @@ class AstTransformer {
     visitInvokeFunctionExpr(ast, context) {
         return this.transformExpr(new InvokeFunctionExpr(ast.fn.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan), context);
     }
-    visitTaggedTemplateExpr(ast, context) {
-        return this.transformExpr(new TaggedTemplateExpr(ast.tag.visitExpression(this, context), new TemplateLiteral(ast.template.elements, ast.template.expressions.map((e) => e.visitExpression(this, context))), ast.type, ast.sourceSpan), context);
-    }
     visitInstantiateExpr(ast, context) {
         return this.transformExpr(new InstantiateExpr(ast.classExpr.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan), context);
     }
@@ -2114,11 +2070,6 @@ class RecursiveAstVisitor {
     visitInvokeFunctionExpr(ast, context) {
         ast.fn.visitExpression(this, context);
         this.visitAllExpressions(ast.args, context);
-        return this.visitExpression(ast, context);
-    }
-    visitTaggedTemplateExpr(ast, context) {
-        ast.tag.visitExpression(this, context);
-        this.visitAllExpressions(ast.template.expressions, context);
         return this.visitExpression(ast, context);
     }
     visitInstantiateExpr(ast, context) {
@@ -2367,9 +2318,6 @@ function fn(params, body, type, sourceSpan, name) {
 }
 function ifStmt(condition, thenClause, elseClause, sourceSpan, leadingComments) {
     return new IfStmt(condition, thenClause, elseClause, sourceSpan, leadingComments);
-}
-function taggedTemplate(tag, template, type, sourceSpan) {
-    return new TaggedTemplateExpr(tag, template, type, sourceSpan);
 }
 function literal(value, type, sourceSpan) {
     return new LiteralExpr(value, type, sourceSpan);
@@ -2877,7 +2825,6 @@ class KeyVisitor {
         this.visitWritePropExpr = invalid;
         this.visitInvokeMethodExpr = invalid;
         this.visitInvokeFunctionExpr = invalid;
-        this.visitTaggedTemplateExpr = invalid;
         this.visitInstantiateExpr = invalid;
         this.visitConditionalExpr = invalid;
         this.visitNotExpr = invalid;
@@ -6218,17 +6165,6 @@ class AbstractEmitterVisitor {
         ctx.print(expr, `)`);
         return null;
     }
-    visitTaggedTemplateExpr(expr, ctx) {
-        expr.tag.visitExpression(this, ctx);
-        ctx.print(expr, '`' + expr.template.elements[0].rawText);
-        for (let i = 1; i < expr.template.elements.length; i++) {
-            ctx.print(expr, '${');
-            expr.template.expressions[i - 1].visitExpression(this, ctx);
-            ctx.print(expr, `}${expr.template.elements[i].rawText}`);
-        }
-        ctx.print(expr, '`');
-        return null;
-    }
     visitWrappedNodeExpr(ast, ctx) {
         throw new Error('Abstract emitter cannot visit WrappedNodeExpr.');
     }
@@ -6492,19 +6428,6 @@ function _createIndent(count) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * In TypeScript, tagged template functions expect a "template object", which is an array of
- * "cooked" strings plus a `raw` property that contains an array of "raw" strings. This is
- * typically constructed with a function called `__makeTemplateObject(cooked, raw)`, but it may not
- * be available in all environments.
- *
- * This is a JavaScript polyfill that uses __makeTemplateObject when it's available, but otherwise
- * creates an inline helper with the same functionality.
- *
- * In the inline function, if `Object.defineProperty` is available we use that to attach the `raw`
- * array.
- */
-const makeTemplateObjectPolyfill = '(this&&this.__makeTemplateObject||function(e,t){return Object.defineProperty?Object.defineProperty(e,"raw",{value:t}):e.raw=t,e})';
 class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
     constructor() {
         super(false);
@@ -6604,27 +6527,6 @@ class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
         }
         return null;
     }
-    visitTaggedTemplateExpr(ast, ctx) {
-        // The following convoluted piece of code is effectively the downlevelled equivalent of
-        // ```
-        // tag`...`
-        // ```
-        // which is effectively like:
-        // ```
-        // tag(__makeTemplateObject(cooked, raw), expression1, expression2, ...);
-        // ```
-        const elements = ast.template.elements;
-        ast.tag.visitExpression(this, ctx);
-        ctx.print(ast, `(${makeTemplateObjectPolyfill}(`);
-        ctx.print(ast, `[${elements.map(part => escapeIdentifier(part.text, false)).join(', ')}], `);
-        ctx.print(ast, `[${elements.map(part => escapeIdentifier(part.rawText, false)).join(', ')}])`);
-        ast.template.expressions.forEach(expression => {
-            ctx.print(ast, ', ');
-            expression.visitExpression(this, ctx);
-        });
-        ctx.print(ast, ')');
-        return null;
-    }
     visitFunctionExpr(ast, ctx) {
         ctx.print(ast, `function${ast.name ? ' ' + ast.name : ''}(`);
         this._visitParams(ast.params, ctx);
@@ -6669,7 +6571,17 @@ class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
         // ```
         // $localize(__makeTemplateObject(cooked, raw), expression1, expression2, ...);
         // ```
-        ctx.print(ast, `$localize(${makeTemplateObjectPolyfill}(`);
+        //
+        // The `$localize` function expects a "template object", which is an array of "cooked" strings
+        // plus a `raw` property that contains an array of "raw" strings.
+        //
+        // In some environments a helper function called `__makeTemplateObject(cooked, raw)` might be
+        // available, in which case we use that. Otherwise we must create our own helper function
+        // inline.
+        //
+        // In the inline function, if `Object.defineProperty` is available we use that to attach the
+        // `raw` array.
+        ctx.print(ast, '$localize((this&&this.__makeTemplateObject||function(e,t){return Object.defineProperty?Object.defineProperty(e,"raw",{value:t}):e.raw=t,e})(');
         const parts = [ast.serializeI18nHead()];
         for (let i = 1; i < ast.messageParts.length; i++) {
             parts.push(ast.serializeI18nTemplatePart(i));
@@ -15112,14 +15024,11 @@ class _ParseAST {
     }
     parseExpressionList(terminator) {
         const result = [];
-        do {
-            if (!this.next.isCharacter(terminator)) {
+        if (!this.next.isCharacter(terminator)) {
+            do {
                 result.push(this.parsePipe());
-            }
-            else {
-                break;
-            }
-        } while (this.consumeOptionalCharacter($COMMA));
+            } while (this.consumeOptionalCharacter($COMMA));
+        }
         return result;
     }
     parseLiteralMap() {
@@ -19963,7 +19872,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.0.3+73.sha-b2090fd');
+const VERSION$1 = new Version('11.0.4+1.sha-eba7de6');
 
 /**
  * @license
@@ -28078,14 +27987,6 @@ class StatementInterpreter {
             return fn.apply(null, args);
         }
     }
-    visitTaggedTemplateExpr(expr, ctx) {
-        const templateElements = expr.template.elements.map((e) => e.text);
-        Object.defineProperty(templateElements, 'raw', { value: expr.template.elements.map((e) => e.rawText) });
-        const args = this.visitAllExpressions(expr.template.expressions, ctx);
-        args.unshift(templateElements);
-        const tag = expr.tag.visitExpression(this, ctx);
-        return tag.apply(null, args);
-    }
     visitReturnStmt(stmt, ctx) {
         return new ReturnValue(stmt.value.visitExpression(this, ctx));
     }
@@ -29480,5 +29381,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThisReceiver, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Icu as TmplAstIcu, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TemplateBindingParseResult, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThisReceiver, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Icu as TmplAstIcu, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
 //# sourceMappingURL=compiler.js.map
