@@ -85,6 +85,11 @@ export declare class Parser {
     private _commentStart;
     private _checkNoInterpolation;
     private _findInterpolationErrorColumn;
+    /**
+     * Finds the index of the end of an interpolation expression
+     * while ignoring comments and quoted content.
+     */
+    private _getExpressiondEndIndex;
 }
 export declare class IvyParser extends Parser {
     simpleExpressionChecker: typeof IvySimpleExpressionChecker;
