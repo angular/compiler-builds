@@ -30,4 +30,6 @@ export declare function isSyntheticPropertyOrListener(name: string): boolean;
 export declare function getSyntheticPropertyName(name: string): string;
 export declare function prepareSyntheticListenerFunctionName(name: string, phase: string): string;
 export declare function jitOnlyGuardedExpression(expr: o.Expression): o.Expression;
+export declare function devOnlyGuardedExpression(expr: o.Expression): o.Expression;
+export declare function guardedExpression(guard: string, expr: o.Expression): o.Expression;
 export declare function wrapReference(value: any): R3Reference;

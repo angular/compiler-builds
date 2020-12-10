@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.2+8.sha-85b07ad
+ * @license Angular v11.1.0-next.2+9.sha-1f73af7
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4340,11 +4340,17 @@
         return "animation_" + name + "_" + phase;
     }
     function jitOnlyGuardedExpression(expr) {
-        var ngJitMode = new ExternalExpr({ name: 'ngJitMode', moduleName: null });
-        var jitFlagNotDefined = new BinaryOperatorExpr(exports.BinaryOperator.Identical, new TypeofExpr(ngJitMode), literal('undefined'));
-        var jitFlagUndefinedOrTrue = new BinaryOperatorExpr(exports.BinaryOperator.Or, jitFlagNotDefined, ngJitMode, /* type */ undefined, 
+        return guardedExpression('ngJitMode', expr);
+    }
+    function devOnlyGuardedExpression(expr) {
+        return guardedExpression('ngDevMode', expr);
+    }
+    function guardedExpression(guard, expr) {
+        var guardExpr = new ExternalExpr({ name: guard, moduleName: null });
+        var guardNotDefined = new BinaryOperatorExpr(exports.BinaryOperator.Identical, new TypeofExpr(guardExpr), literal('undefined'));
+        var guardUndefinedOrTrue = new BinaryOperatorExpr(exports.BinaryOperator.Or, guardNotDefined, guardExpr, /* type */ undefined, 
         /* sourceSpan */ undefined, true);
-        return new BinaryOperatorExpr(exports.BinaryOperator.And, jitFlagUndefinedOrTrue, expr);
+        return new BinaryOperatorExpr(exports.BinaryOperator.And, guardUndefinedOrTrue, expr);
     }
     function wrapReference(value) {
         var wrapped = new WrappedNodeExpr(value);
@@ -21467,7 +21473,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.2+8.sha-85b07ad');
+    var VERSION$1 = new Version('11.1.0-next.2+9.sha-1f73af7');
 
     /**
      * @license
@@ -31373,7 +31379,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.1.0-next.2+8.sha-85b07ad'));
+        definitionMap.set('version', literal('11.1.0-next.2+9.sha-1f73af7'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -31810,6 +31816,7 @@
     exports.createOfflineCompileUrlResolver = createOfflineCompileUrlResolver;
     exports.createUrlResolverWithoutPackagePrefix = createUrlResolverWithoutPackagePrefix;
     exports.debugOutputAstAsTypeScript = debugOutputAstAsTypeScript;
+    exports.devOnlyGuardedExpression = devOnlyGuardedExpression;
     exports.findNode = findNode;
     exports.flatten = flatten;
     exports.formattedError = formattedError;
