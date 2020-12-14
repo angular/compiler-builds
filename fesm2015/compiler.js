@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.2+38.sha-524d581
+ * @license Angular v11.1.0-next.2+46.sha-2a74431
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15939,6 +15939,11 @@ const _ATTR_TO_PROP = {
     'readonly': 'readOnly',
     'tabindex': 'tabIndex',
 };
+// Invert _ATTR_TO_PROP.
+const _PROP_TO_ATTR = Object.keys(_ATTR_TO_PROP).reduce((inverted, attr) => {
+    inverted[_ATTR_TO_PROP[attr]] = attr;
+    return inverted;
+}, {});
 class DomElementSchemaRegistry extends ElementSchemaRegistry {
     constructor() {
         super();
@@ -16069,6 +16074,11 @@ class DomElementSchemaRegistry extends ElementSchemaRegistry {
     }
     allKnownElementNames() {
         return Object.keys(this._schema);
+    }
+    allKnownAttributesOfElement(tagName) {
+        const elementProperties = this._schema[tagName.toLowerCase()] || this._schema['unknown'];
+        // Convert properties to attributes.
+        return Object.keys(elementProperties).map(prop => { var _a; return (_a = _PROP_TO_ATTR[prop]) !== null && _a !== void 0 ? _a : prop; });
     }
     normalizeAnimationStyleProperty(propName) {
         return dashCaseToCamelCase(propName);
@@ -20256,7 +20266,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.1.0-next.2+38.sha-524d581');
+const VERSION$1 = new Version('11.1.0-next.2+46.sha-2a74431');
 
 /**
  * @license
@@ -29786,7 +29796,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('11.1.0-next.2+38.sha-524d581'));
+    definitionMap.set('version', literal('11.1.0-next.2+46.sha-2a74431'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`

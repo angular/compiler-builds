@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.2+38.sha-524d581
+ * @license Angular v11.1.0-next.2+46.sha-2a74431
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16988,6 +16988,11 @@
         'readonly': 'readOnly',
         'tabindex': 'tabIndex',
     };
+    // Invert _ATTR_TO_PROP.
+    var _PROP_TO_ATTR = Object.keys(_ATTR_TO_PROP).reduce(function (inverted, attr) {
+        inverted[_ATTR_TO_PROP[attr]] = attr;
+        return inverted;
+    }, {});
     var DomElementSchemaRegistry = /** @class */ (function (_super) {
         __extends(DomElementSchemaRegistry, _super);
         function DomElementSchemaRegistry() {
@@ -16995,9 +17000,9 @@
             _this._schema = {};
             SCHEMA.forEach(function (encodedType) {
                 var type = {};
-                var _a = __read(encodedType.split('|'), 2), strType = _a[0], strProperties = _a[1];
+                var _b = __read(encodedType.split('|'), 2), strType = _b[0], strProperties = _b[1];
                 var properties = strProperties.split(',');
-                var _b = __read(strType.split('^'), 2), typeNames = _b[0], superName = _b[1];
+                var _c = __read(strType.split('^'), 2), typeNames = _c[0], superName = _c[1];
                 typeNames.split(',').forEach(function (tag) { return _this._schema[tag.toLowerCase()] = type; });
                 var superType = superName && _this._schema[superName.toLowerCase()];
                 if (superType) {
@@ -17120,6 +17125,11 @@
         };
         DomElementSchemaRegistry.prototype.allKnownElementNames = function () {
             return Object.keys(this._schema);
+        };
+        DomElementSchemaRegistry.prototype.allKnownAttributesOfElement = function (tagName) {
+            var elementProperties = this._schema[tagName.toLowerCase()] || this._schema['unknown'];
+            // Convert properties to attributes.
+            return Object.keys(elementProperties).map(function (prop) { var _a; return (_a = _PROP_TO_ATTR[prop]) !== null && _a !== void 0 ? _a : prop; });
         };
         DomElementSchemaRegistry.prototype.normalizeAnimationStyleProperty = function (propName) {
             return dashCaseToCamelCase(propName);
@@ -21473,7 +21483,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.2+38.sha-524d581');
+    var VERSION$1 = new Version('11.1.0-next.2+46.sha-2a74431');
 
     /**
      * @license
@@ -31379,7 +31389,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.1.0-next.2+38.sha-524d581'));
+        definitionMap.set('version', literal('11.1.0-next.2+46.sha-2a74431'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
