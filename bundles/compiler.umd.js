@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.2+52.sha-245dccc
+ * @license Angular v11.1.0-next.2+53.sha-caa4666
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -18721,7 +18721,11 @@
         return params;
     }
     function createComponentDefConsts() {
-        return { prepareStatements: [], constExpressions: [] };
+        return {
+            prepareStatements: [],
+            constExpressions: [],
+            i18nVarRefsCache: new Map(),
+        };
     }
     var TemplateDefinitionBuilder = /** @class */ (function () {
         function TemplateDefinitionBuilder(constantPool, parentBindingScope, level, contextName, i18nContext, templateIndex, templateName, directiveMatcher, directives, pipeTypeByName, pipes, _namespace, relativeContextFilePath, i18nUseExternalIds, _constants) {
@@ -19723,7 +19727,21 @@
                     // Note that static i18n attributes aren't in the i18n array,
                     // because they're treated in the same way as regular attributes.
                     if (attr.i18n) {
-                        attrExprs.push(literal(attr.name), this.i18nTranslate(attr.i18n));
+                        // When i18n attributes are present on elements with structural directives
+                        // (e.g. `<div *ngIf title="Hello" i18n-title>`), we want to avoid generating
+                        // duplicate i18n translation blocks for `ɵɵtemplate` and `ɵɵelement` instruction
+                        // attributes. So we do a cache lookup to see if suitable i18n translation block
+                        // already exists.
+                        var i18nVarRefsCache = this._constants.i18nVarRefsCache;
+                        var i18nVarRef = void 0;
+                        if (i18nVarRefsCache.has(attr.i18n)) {
+                            i18nVarRef = i18nVarRefsCache.get(attr.i18n);
+                        }
+                        else {
+                            i18nVarRef = this.i18nTranslate(attr.i18n);
+                            i18nVarRefsCache.set(attr.i18n, i18nVarRef);
+                        }
+                        attrExprs.push(literal(attr.name), i18nVarRef);
                     }
                     else {
                         attrExprs.push.apply(attrExprs, __spread(getAttributeNameLiterals(attr.name), [trustedConstAttribute(elementName, attr)]));
@@ -21483,7 +21501,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.2+52.sha-245dccc');
+    var VERSION$1 = new Version('11.1.0-next.2+53.sha-caa4666');
 
     /**
      * @license
@@ -31389,7 +31407,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.1.0-next.2+52.sha-245dccc'));
+        definitionMap.set('version', literal('11.1.0-next.2+53.sha-caa4666'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
