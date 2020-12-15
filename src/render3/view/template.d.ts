@@ -23,8 +23,20 @@ export declare const LEADING_TRIVIA_CHARS: string[];
 export declare function renderFlagCheckIfStmt(flags: core.RenderFlags, statements: o.Statement[]): o.IfStmt;
 export declare function prepareEventListenerParameters(eventAst: t.BoundEvent, handlerName?: string | null, scope?: BindingScope | null): o.Expression[];
 export interface ComponentDefConsts {
+    /**
+     * When a constant requires some pre-processing (e.g. i18n translation block that includes
+     * goog.getMsg and $localize calls), the `prepareStatements` section contains corresponding
+     * statements.
+     */
     prepareStatements: o.Statement[];
+    /**
+     * Actual expressions that represent constants.
+     */
     constExpressions: o.Expression[];
+    /**
+     * Cache to avoid generating duplicated i18n translation blocks.
+     */
+    i18nVarRefsCache: Map<i18n.I18nMeta, o.ReadVarExpr>;
 }
 export declare class TemplateDefinitionBuilder implements t.Visitor<void>, LocalResolver {
     private constantPool;
