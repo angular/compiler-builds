@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.3+12.sha-7413cb4
+ * @license Angular v11.1.0-next.3+24.sha-382f906
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4192,6 +4192,7 @@
     Identifiers$1.invalidFactory = { name: 'ɵɵinvalidFactory', moduleName: CORE$1 };
     Identifiers$1.invalidFactoryDep = { name: 'ɵɵinvalidFactoryDep', moduleName: CORE$1 };
     Identifiers$1.templateRefExtractor = { name: 'ɵɵtemplateRefExtractor', moduleName: CORE$1 };
+    Identifiers$1.forwardRef = { name: 'forwardRef', moduleName: CORE$1 };
     Identifiers$1.resolveWindow = { name: 'ɵɵresolveWindow', moduleName: CORE$1 };
     Identifiers$1.resolveDocument = { name: 'ɵɵresolveDocument', moduleName: CORE$1 };
     Identifiers$1.resolveBody = { name: 'ɵɵresolveBody', moduleName: CORE$1 };
@@ -21501,7 +21502,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.3+12.sha-7413cb4');
+    var VERSION$1 = new Version('11.1.0-next.3+24.sha-382f906');
 
     /**
      * @license
@@ -31407,7 +31408,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.1.0-next.3+12.sha-7413cb4'));
+        definitionMap.set('version', literal('11.1.0-next.3+24.sha-382f906'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -31530,9 +31531,7 @@
      * individual directives. If the component does not use any directives, then null is returned.
      */
     function compileUsedDirectiveMetadata(meta) {
-        var wrapType = meta.wrapDirectivesAndPipesInClosure ?
-            function (expr) { return fn([], [new ReturnStatement(expr)]); } :
-            function (expr) { return expr; };
+        var wrapType = meta.wrapDirectivesAndPipesInClosure ? generateForwardRef : function (expr) { return expr; };
         return toOptionalLiteralArray(meta.directives, function (directive) {
             var dirMeta = new DefinitionMap();
             dirMeta.set('type', wrapType(directive.type));
@@ -31553,9 +31552,7 @@
         if (meta.pipes.size === 0) {
             return null;
         }
-        var wrapType = meta.wrapDirectivesAndPipesInClosure ?
-            function (expr) { return fn([], [new ReturnStatement(expr)]); } :
-            function (expr) { return expr; };
+        var wrapType = meta.wrapDirectivesAndPipesInClosure ? generateForwardRef : function (expr) { return expr; };
         var entries = [];
         try {
             for (var _b = __values(meta.pipes), _c = _b.next(); !_c.done; _c = _b.next()) {
@@ -31571,6 +31568,9 @@
             finally { if (e_1) throw e_1.error; }
         }
         return literalMap(entries);
+    }
+    function generateForwardRef(expr) {
+        return importExpr(Identifiers$1.forwardRef).callFn([fn([], [new ReturnStatement(expr)])]);
     }
 
     /**

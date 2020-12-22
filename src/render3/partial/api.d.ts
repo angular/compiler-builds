@@ -143,7 +143,8 @@ export interface R3DeclareComponentMetadata extends R3DeclareDirectiveMetadata {
          */
         selector: string;
         /**
-         * Reference to the directive class (possibly a forward reference).
+         * Reference to the directive class (possibly a forward reference wrapped in a `forwardRef`
+         * invocation).
          */
         type: o.Expression | (() => o.Expression);
         /**
@@ -160,8 +161,8 @@ export interface R3DeclareComponentMetadata extends R3DeclareDirectiveMetadata {
         exportAs?: string[];
     }[];
     /**
-     * A map of pipe names to an expression referencing the pipe type (possibly a forward reference)
-     * which are used in the template.
+     * A map of pipe names to an expression referencing the pipe type (possibly a forward reference
+     * wrapped in a `forwardRef` invocation) which are used in the template.
      */
     pipes?: {
         [pipeName: string]: o.Expression | (() => o.Expression);
