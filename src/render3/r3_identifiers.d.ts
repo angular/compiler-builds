@@ -126,6 +126,7 @@ export declare class Identifiers {
     static invalidFactory: o.ExternalReference;
     static invalidFactoryDep: o.ExternalReference;
     static templateRefExtractor: o.ExternalReference;
+    static forwardRef: o.ExternalReference;
     static resolveWindow: o.ExternalReference;
     static resolveDocument: o.ExternalReference;
     static resolveBody: o.ExternalReference;
