@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.3+30.sha-e54261b
+ * @license Angular v11.1.0-next.3+31.sha-9186f1f
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5265,18 +5265,25 @@ function mapToExpression(map, keepDeclared) {
         let declaredName;
         let publicName;
         let minifiedName;
+        let needsDeclaredName;
         if (Array.isArray(value)) {
             [publicName, declaredName] = value;
+            minifiedName = key;
+            needsDeclaredName = publicName !== declaredName;
         }
         else {
             [declaredName, publicName] = splitAtColon(key, [key, value]);
+            minifiedName = declaredName;
+            // Only include the declared name if extracted from the key, i.e. the key contains a colon.
+            // Otherwise the declared name should be omitted even if it is different from the public name,
+            // as it may have already been minified.
+            needsDeclaredName = publicName !== declaredName && key.includes(':');
         }
-        minifiedName = declaredName;
         return {
             key: minifiedName,
             // put quotes around keys that contain potentially unsafe characters
             quoted: UNSAFE_OBJECT_KEY_NAME_REGEXP.test(minifiedName),
-            value: (keepDeclared && publicName !== declaredName) ?
+            value: (keepDeclared && needsDeclaredName) ?
                 literalArr([asLiteral(publicName), asLiteral(declaredName)]) :
                 asLiteral(publicName)
         };
@@ -20095,9 +20102,17 @@ class CompilerFacadeImpl {
         return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, []);
     }
     compileDirective(angularCoreEnv, sourceMapUrl, facade) {
+        const meta = convertDirectiveFacadeToMetadata(facade);
+        return this.compileDirectiveFromMeta(angularCoreEnv, sourceMapUrl, meta);
+    }
+    compileDirectiveDeclaration(angularCoreEnv, sourceMapUrl, declaration) {
+        const typeSourceSpan = this.createParseSourceSpan('Directive', declaration.type.name, sourceMapUrl);
+        const meta = convertDeclareDirectiveFacadeToMetadata(declaration, typeSourceSpan);
+        return this.compileDirectiveFromMeta(angularCoreEnv, sourceMapUrl, meta);
+    }
+    compileDirectiveFromMeta(angularCoreEnv, sourceMapUrl, meta) {
         const constantPool = new ConstantPool();
         const bindingParser = makeBindingParser();
-        const meta = convertDirectiveFacadeToMetadata(facade);
         const res = compileDirectiveFromMetadata(meta, constantPool, bindingParser);
         return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, constantPool.statements);
     }
@@ -20170,6 +20185,18 @@ function convertToR3QueryMetadata(facade) {
     return Object.assign(Object.assign({}, facade), { predicate: Array.isArray(facade.predicate) ? facade.predicate :
             new WrappedNodeExpr(facade.predicate), read: facade.read ? new WrappedNodeExpr(facade.read) : null, static: facade.static });
 }
+function convertQueryDeclarationToMetadata(declaration) {
+    var _a, _b, _c;
+    return {
+        propertyName: declaration.propertyName,
+        first: (_a = declaration.first) !== null && _a !== void 0 ? _a : false,
+        predicate: Array.isArray(declaration.predicate) ? declaration.predicate :
+            new WrappedNodeExpr(declaration.predicate),
+        descendants: (_b = declaration.descendants) !== null && _b !== void 0 ? _b : false,
+        read: declaration.read ? new WrappedNodeExpr(declaration.read) : null,
+        static: (_c = declaration.static) !== null && _c !== void 0 ? _c : false,
+    };
+}
 function convertDirectiveFacadeToMetadata(facade) {
     const inputsFromMetadata = parseInputOutputs(facade.inputs || []);
     const outputsFromMetadata = parseInputOutputs(facade.outputs || []);
@@ -20190,6 +20217,48 @@ function convertDirectiveFacadeToMetadata(facade) {
         }
     }
     return Object.assign(Object.assign({}, facade), { typeSourceSpan: facade.typeSourceSpan, type: wrapReference$1(facade.type), internalType: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: Object.assign(Object.assign({}, inputsFromMetadata), inputsFromType), outputs: Object.assign(Object.assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), fullInheritance: false });
+}
+function convertDeclareDirectiveFacadeToMetadata(declaration, typeSourceSpan) {
+    var _a, _b, _c, _d, _e, _f, _g, _h;
+    return {
+        name: declaration.type.name,
+        type: wrapReference$1(declaration.type),
+        typeSourceSpan,
+        internalType: new WrappedNodeExpr(declaration.type),
+        selector: (_a = declaration.selector) !== null && _a !== void 0 ? _a : null,
+        inputs: (_b = declaration.inputs) !== null && _b !== void 0 ? _b : {},
+        outputs: (_c = declaration.outputs) !== null && _c !== void 0 ? _c : {},
+        host: convertHostDeclarationToMetadata(declaration.host),
+        queries: ((_d = declaration.queries) !== null && _d !== void 0 ? _d : []).map(convertQueryDeclarationToMetadata),
+        viewQueries: ((_e = declaration.viewQueries) !== null && _e !== void 0 ? _e : []).map(convertQueryDeclarationToMetadata),
+        providers: declaration.providers !== undefined ? new WrappedNodeExpr(declaration.providers) :
+            null,
+        exportAs: (_f = declaration.exportAs) !== null && _f !== void 0 ? _f : null,
+        usesInheritance: (_g = declaration.usesInheritance) !== null && _g !== void 0 ? _g : false,
+        lifecycle: { usesOnChanges: (_h = declaration.usesOnChanges) !== null && _h !== void 0 ? _h : false },
+        deps: null,
+        typeArgumentCount: 0,
+        fullInheritance: false,
+    };
+}
+function convertHostDeclarationToMetadata(host = {}) {
+    var _a, _b, _c;
+    return {
+        attributes: convertOpaqueValuesToExpressions((_a = host.attributes) !== null && _a !== void 0 ? _a : {}),
+        listeners: (_b = host.listeners) !== null && _b !== void 0 ? _b : {},
+        properties: (_c = host.properties) !== null && _c !== void 0 ? _c : {},
+        specialAttributes: {
+            classAttr: host.classAttribute,
+            styleAttr: host.styleAttribute,
+        },
+    };
+}
+function convertOpaqueValuesToExpressions(obj) {
+    const result = {};
+    for (const key of Object.keys(obj)) {
+        result[key] = new WrappedNodeExpr(obj[key]);
+    }
+    return result;
 }
 function wrapExpression(obj, property) {
     if (obj.hasOwnProperty(property)) {
@@ -20285,7 +20354,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.1.0-next.3+30.sha-e54261b');
+const VERSION$1 = new Version('11.1.0-next.3+31.sha-9186f1f');
 
 /**
  * @license
@@ -29815,7 +29884,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('11.1.0-next.3+30.sha-e54261b'));
+    definitionMap.set('version', literal('11.1.0-next.3+31.sha-9186f1f'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
