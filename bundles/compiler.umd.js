@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.3+53.sha-8cdfd77
+ * @license Angular v11.1.0-next.3+54.sha-6a9d7e5
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -20430,10 +20430,10 @@
         if (isTrustedTypesSink(tagName, attr.name)) {
             switch (elementRegistry.securityContext(tagName, attr.name, /* isAttribute */ true)) {
                 case SecurityContext.HTML:
-                    return importExpr(Identifiers$1.trustConstantHtml).callFn([value], attr.valueSpan);
+                    return taggedTemplate(importExpr(Identifiers$1.trustConstantHtml), new TemplateLiteral([new TemplateLiteralElement(attr.value)], []), undefined, attr.valueSpan);
                 // NB: no SecurityContext.SCRIPT here, as the corresponding tags are stripped by the compiler.
                 case SecurityContext.RESOURCE_URL:
-                    return importExpr(Identifiers$1.trustConstantResourceUrl).callFn([value], attr.valueSpan);
+                    return taggedTemplate(importExpr(Identifiers$1.trustConstantResourceUrl), new TemplateLiteral([new TemplateLiteralElement(attr.value)], []), undefined, attr.valueSpan);
                 default:
                     return value;
             }
@@ -21583,7 +21583,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.3+53.sha-8cdfd77');
+    var VERSION$1 = new Version('11.1.0-next.3+54.sha-6a9d7e5');
 
     /**
      * @license
@@ -31489,7 +31489,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.1.0-next.3+53.sha-8cdfd77'));
+        definitionMap.set('version', literal('11.1.0-next.3+54.sha-6a9d7e5'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
