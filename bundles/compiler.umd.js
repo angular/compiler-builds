@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.3+51.sha-6057753
+ * @license Angular v11.1.0-next.3+55.sha-6abc133
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15549,19 +15549,6 @@
         }
         return TemplateBindingParseResult;
     }());
-    var defaultInterpolateRegExp = _createInterpolateRegExp(DEFAULT_INTERPOLATION_CONFIG);
-    function _getInterpolateRegExp(config) {
-        if (config === DEFAULT_INTERPOLATION_CONFIG) {
-            return defaultInterpolateRegExp;
-        }
-        else {
-            return _createInterpolateRegExp(config);
-        }
-    }
-    function _createInterpolateRegExp(config) {
-        var pattern = escapeRegExp(config.start) + '([\\s\\S]*?)' + escapeRegExp(config.end);
-        return new RegExp(pattern, 'g');
-    }
     var Parser$1 = /** @class */ (function () {
         function Parser(_lexer) {
             this._lexer = _lexer;
@@ -15726,7 +15713,7 @@
                     // parse from starting {{ to ending }} while ignoring content inside quotes.
                     var fullStart = i;
                     var exprStart = fullStart + interpStart.length;
-                    var exprEnd = this._getExpressiondEndIndex(input, interpEnd, exprStart);
+                    var exprEnd = this._getInterpolationEndIndex(input, interpEnd, exprStart);
                     if (exprEnd === -1) {
                         // Could not find the end of the interpolation; do not parse an expression.
                         // Instead we should extend the content on the last raw string.
@@ -15785,50 +15772,102 @@
             }
             return null;
         };
-        Parser.prototype._checkNoInterpolation = function (input, location, interpolationConfig) {
-            var regexp = _getInterpolateRegExp(interpolationConfig);
-            var parts = input.split(regexp);
-            if (parts.length > 1) {
-                this._reportError("Got interpolation (" + interpolationConfig.start + interpolationConfig.end + ") where expression was expected", input, "at column " + this._findInterpolationErrorColumn(parts, 1, interpolationConfig) + " in", location);
+        Parser.prototype._checkNoInterpolation = function (input, location, _a) {
+            var e_1, _b;
+            var start = _a.start, end = _a.end;
+            var startIndex = -1;
+            var endIndex = -1;
+            try {
+                for (var _c = __values(this._forEachUnquotedChar(input, 0)), _d = _c.next(); !_d.done; _d = _c.next()) {
+                    var charIndex = _d.value;
+                    if (startIndex === -1) {
+                        if (input.startsWith(start)) {
+                            startIndex = charIndex;
+                        }
+                    }
+                    else {
+                        endIndex = this._getInterpolationEndIndex(input, end, charIndex);
+                        if (endIndex > -1) {
+                            break;
+                        }
+                    }
+                }
             }
-        };
-        Parser.prototype._findInterpolationErrorColumn = function (parts, partInErrIdx, interpolationConfig) {
-            var errLocation = '';
-            for (var j = 0; j < partInErrIdx; j++) {
-                errLocation += j % 2 === 0 ?
-                    parts[j] :
-                    "" + interpolationConfig.start + parts[j] + interpolationConfig.end;
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (_d && !_d.done && (_b = _c.return)) _b.call(_c);
+                }
+                finally { if (e_1) throw e_1.error; }
             }
-            return errLocation.length;
+            if (startIndex > -1 && endIndex > -1) {
+                this._reportError("Got interpolation (" + start + end + ") where expression was expected", input, "at column " + startIndex + " in", location);
+            }
         };
         /**
          * Finds the index of the end of an interpolation expression
          * while ignoring comments and quoted content.
          */
-        Parser.prototype._getExpressiondEndIndex = function (input, expressionEnd, start) {
-            var currentQuote = null;
-            var escapeCount = 0;
-            for (var i = start; i < input.length; i++) {
-                var char = input[i];
-                // Skip the characters inside quotes. Note that we only care about the
-                // outer-most quotes matching up and we need to account for escape characters.
-                if (isQuote(input.charCodeAt(i)) && (currentQuote === null || currentQuote === char) &&
-                    escapeCount % 2 === 0) {
-                    currentQuote = currentQuote === null ? char : null;
-                }
-                else if (currentQuote === null) {
-                    if (input.startsWith(expressionEnd, i)) {
-                        return i;
+        Parser.prototype._getInterpolationEndIndex = function (input, expressionEnd, start) {
+            var e_2, _a;
+            try {
+                for (var _b = __values(this._forEachUnquotedChar(input, start)), _c = _b.next(); !_c.done; _c = _b.next()) {
+                    var charIndex = _c.value;
+                    if (input.startsWith(expressionEnd, charIndex)) {
+                        return charIndex;
                     }
                     // Nothing else in the expression matters after we've
                     // hit a comment so look directly for the end token.
-                    if (input.startsWith('//', i)) {
-                        return input.indexOf(expressionEnd, i);
+                    if (input.startsWith('//', charIndex)) {
+                        return input.indexOf(expressionEnd, charIndex);
                     }
                 }
-                escapeCount = char === '\\' ? escapeCount + 1 : 0;
+            }
+            catch (e_2_1) { e_2 = { error: e_2_1 }; }
+            finally {
+                try {
+                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+                }
+                finally { if (e_2) throw e_2.error; }
             }
             return -1;
+        };
+        /**
+         * Generator used to iterate over the character indexes of a string that are outside of quotes.
+         * @param input String to loop through.
+         * @param start Index within the string at which to start.
+         */
+        Parser.prototype._forEachUnquotedChar = function (input, start) {
+            var currentQuote, escapeCount, i, char;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        currentQuote = null;
+                        escapeCount = 0;
+                        i = start;
+                        _a.label = 1;
+                    case 1:
+                        if (!(i < input.length)) return [3 /*break*/, 6];
+                        char = input[i];
+                        if (!(isQuote(input.charCodeAt(i)) && (currentQuote === null || currentQuote === char) &&
+                            escapeCount % 2 === 0)) return [3 /*break*/, 2];
+                        currentQuote = currentQuote === null ? char : null;
+                        return [3 /*break*/, 4];
+                    case 2:
+                        if (!(currentQuote === null)) return [3 /*break*/, 4];
+                        return [4 /*yield*/, i];
+                    case 3:
+                        _a.sent();
+                        _a.label = 4;
+                    case 4:
+                        escapeCount = char === '\\' ? escapeCount + 1 : 0;
+                        _a.label = 5;
+                    case 5:
+                        i++;
+                        return [3 /*break*/, 1];
+                    case 6: return [2 /*return*/];
+                }
+            });
         };
         return Parser;
     }());
@@ -20430,10 +20469,10 @@
         if (isTrustedTypesSink(tagName, attr.name)) {
             switch (elementRegistry.securityContext(tagName, attr.name, /* isAttribute */ true)) {
                 case SecurityContext.HTML:
-                    return importExpr(Identifiers$1.trustConstantHtml).callFn([value], attr.valueSpan);
+                    return taggedTemplate(importExpr(Identifiers$1.trustConstantHtml), new TemplateLiteral([new TemplateLiteralElement(attr.value)], []), undefined, attr.valueSpan);
                 // NB: no SecurityContext.SCRIPT here, as the corresponding tags are stripped by the compiler.
                 case SecurityContext.RESOURCE_URL:
-                    return importExpr(Identifiers$1.trustConstantResourceUrl).callFn([value], attr.valueSpan);
+                    return taggedTemplate(importExpr(Identifiers$1.trustConstantResourceUrl), new TemplateLiteral([new TemplateLiteralElement(attr.value)], []), undefined, attr.valueSpan);
                 default:
                     return value;
             }
@@ -21583,7 +21622,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.3+51.sha-6057753');
+    var VERSION$1 = new Version('11.1.0-next.3+55.sha-6abc133');
 
     /**
      * @license
@@ -31489,7 +31528,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.1.0-next.3+51.sha-6057753'));
+        definitionMap.set('version', literal('11.1.0-next.3+55.sha-6abc133'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`

@@ -84,12 +84,17 @@ export declare class Parser {
     private _stripComments;
     private _commentStart;
     private _checkNoInterpolation;
-    private _findInterpolationErrorColumn;
     /**
      * Finds the index of the end of an interpolation expression
      * while ignoring comments and quoted content.
      */
-    private _getExpressiondEndIndex;
+    private _getInterpolationEndIndex;
+    /**
+     * Generator used to iterate over the character indexes of a string that are outside of quotes.
+     * @param input String to loop through.
+     * @param start Index within the string at which to start.
+     */
+    private _forEachUnquotedChar;
 }
 export declare class IvyParser extends Parser {
     simpleExpressionChecker: typeof IvySimpleExpressionChecker;
