@@ -25,7 +25,7 @@ export function compileDeclareDirectiveFromMetadata(meta) {
  */
 export function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', o.literal('11.1.0-next.3+70.sha-0264f76'));
+    definitionMap.set('version', o.literal('11.1.0-next.3+71.sha-183fb7e'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
