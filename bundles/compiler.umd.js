@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.5+51.sha-bad1717
+ * @license Angular v11.0.5+55.sha-b6a9717
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10221,12 +10221,13 @@
             this.index = 0;
             // Replaces attribute selectors with placeholders.
             // The WS in [attr="va lue"] would otherwise be interpreted as a selector separator.
-            selector = selector.replace(/(\[[^\]]*\])/g, function (_, keep) {
-                var replaceBy = "__ph-" + _this.index + "__";
-                _this.placeholders.push(keep);
-                _this.index++;
-                return replaceBy;
-            });
+            selector = this._escapeRegexMatches(selector, /(\[[^\]]*\])/g);
+            // CSS allows for certain special characters to be used in selectors if they're escaped.
+            // E.g. `.foo:blue` won't match a class called `foo:blue`, because the colon denotes a
+            // pseudo-class, but writing `.foo\:blue` will match, because the colon was escaped.
+            // Replace all escape sequences (`\` followed by a character) with a placeholder so
+            // that our handling of pseudo-selectors doesn't mess with them.
+            selector = this._escapeRegexMatches(selector, /(\\.)/g);
             // Replaces the expression in `:nth-child(2n + 1)` with a placeholder.
             // WS and "+" would otherwise be interpreted as selector separators.
             this._content = selector.replace(/(:nth-[-\w]+)(\([^)]+\))/g, function (_, pseudo, exp) {
@@ -10238,10 +10239,23 @@
         }
         SafeSelector.prototype.restore = function (content) {
             var _this = this;
-            return content.replace(/__ph-(\d+)__/g, function (ph, index) { return _this.placeholders[+index]; });
+            return content.replace(/__ph-(\d+)__/g, function (_ph, index) { return _this.placeholders[+index]; });
         };
         SafeSelector.prototype.content = function () {
             return this._content;
+        };
+        /**
+         * Replaces all of the substrings that match a regex within a
+         * special string (e.g. `__ph-0__`, `__ph-1__`, etc).
+         */
+        SafeSelector.prototype._escapeRegexMatches = function (content, pattern) {
+            var _this = this;
+            return content.replace(pattern, function (_, keep) {
+                var replaceBy = "__ph-" + _this.index + "__";
+                _this.placeholders.push(keep);
+                _this.index++;
+                return replaceBy;
+            });
         };
         return SafeSelector;
     }());
@@ -21158,7 +21172,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.5+51.sha-bad1717');
+    var VERSION$1 = new Version('11.0.5+55.sha-b6a9717');
 
     /**
      * @license
