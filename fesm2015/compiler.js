@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.4+21.sha-266cc9b
+ * @license Angular v11.1.0-next.4+29.sha-5704372
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3694,6 +3694,721 @@ Identifiers$1.trustConstantResourceUrl = { name: 'ɵɵtrustConstantResourceUrl',
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+// https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit
+const VERSION = 3;
+const JS_B64_PREFIX = '# sourceMappingURL=data:application/json;base64,';
+class SourceMapGenerator {
+    constructor(file = null) {
+        this.file = file;
+        this.sourcesContent = new Map();
+        this.lines = [];
+        this.lastCol0 = 0;
+        this.hasMappings = false;
+    }
+    // The content is `null` when the content is expected to be loaded using the URL
+    addSource(url, content = null) {
+        if (!this.sourcesContent.has(url)) {
+            this.sourcesContent.set(url, content);
+        }
+        return this;
+    }
+    addLine() {
+        this.lines.push([]);
+        this.lastCol0 = 0;
+        return this;
+    }
+    addMapping(col0, sourceUrl, sourceLine0, sourceCol0) {
+        if (!this.currentLine) {
+            throw new Error(`A line must be added before mappings can be added`);
+        }
+        if (sourceUrl != null && !this.sourcesContent.has(sourceUrl)) {
+            throw new Error(`Unknown source file "${sourceUrl}"`);
+        }
+        if (col0 == null) {
+            throw new Error(`The column in the generated code must be provided`);
+        }
+        if (col0 < this.lastCol0) {
+            throw new Error(`Mapping should be added in output order`);
+        }
+        if (sourceUrl && (sourceLine0 == null || sourceCol0 == null)) {
+            throw new Error(`The source location must be provided when a source url is provided`);
+        }
+        this.hasMappings = true;
+        this.lastCol0 = col0;
+        this.currentLine.push({ col0, sourceUrl, sourceLine0, sourceCol0 });
+        return this;
+    }
+    /**
+     * @internal strip this from published d.ts files due to
+     * https://github.com/microsoft/TypeScript/issues/36216
+     */
+    get currentLine() {
+        return this.lines.slice(-1)[0];
+    }
+    toJSON() {
+        if (!this.hasMappings) {
+            return null;
+        }
+        const sourcesIndex = new Map();
+        const sources = [];
+        const sourcesContent = [];
+        Array.from(this.sourcesContent.keys()).forEach((url, i) => {
+            sourcesIndex.set(url, i);
+            sources.push(url);
+            sourcesContent.push(this.sourcesContent.get(url) || null);
+        });
+        let mappings = '';
+        let lastCol0 = 0;
+        let lastSourceIndex = 0;
+        let lastSourceLine0 = 0;
+        let lastSourceCol0 = 0;
+        this.lines.forEach(segments => {
+            lastCol0 = 0;
+            mappings += segments
+                .map(segment => {
+                // zero-based starting column of the line in the generated code
+                let segAsStr = toBase64VLQ(segment.col0 - lastCol0);
+                lastCol0 = segment.col0;
+                if (segment.sourceUrl != null) {
+                    // zero-based index into the “sources” list
+                    segAsStr +=
+                        toBase64VLQ(sourcesIndex.get(segment.sourceUrl) - lastSourceIndex);
+                    lastSourceIndex = sourcesIndex.get(segment.sourceUrl);
+                    // the zero-based starting line in the original source
+                    segAsStr += toBase64VLQ(segment.sourceLine0 - lastSourceLine0);
+                    lastSourceLine0 = segment.sourceLine0;
+                    // the zero-based starting column in the original source
+                    segAsStr += toBase64VLQ(segment.sourceCol0 - lastSourceCol0);
+                    lastSourceCol0 = segment.sourceCol0;
+                }
+                return segAsStr;
+            })
+                .join(',');
+            mappings += ';';
+        });
+        mappings = mappings.slice(0, -1);
+        return {
+            'file': this.file || '',
+            'version': VERSION,
+            'sourceRoot': '',
+            'sources': sources,
+            'sourcesContent': sourcesContent,
+            'mappings': mappings,
+        };
+    }
+    toJsComment() {
+        return this.hasMappings ? '//' + JS_B64_PREFIX + toBase64String(JSON.stringify(this, null, 0)) :
+            '';
+    }
+}
+function toBase64String(value) {
+    let b64 = '';
+    const encoded = utf8Encode(value);
+    for (let i = 0; i < encoded.length;) {
+        const i1 = encoded[i++];
+        const i2 = i < encoded.length ? encoded[i++] : null;
+        const i3 = i < encoded.length ? encoded[i++] : null;
+        b64 += toBase64Digit(i1 >> 2);
+        b64 += toBase64Digit(((i1 & 3) << 4) | (i2 === null ? 0 : i2 >> 4));
+        b64 += i2 === null ? '=' : toBase64Digit(((i2 & 15) << 2) | (i3 === null ? 0 : i3 >> 6));
+        b64 += i2 === null || i3 === null ? '=' : toBase64Digit(i3 & 63);
+    }
+    return b64;
+}
+function toBase64VLQ(value) {
+    value = value < 0 ? ((-value) << 1) + 1 : value << 1;
+    let out = '';
+    do {
+        let digit = value & 31;
+        value = value >> 5;
+        if (value > 0) {
+            digit = digit | 32;
+        }
+        out += toBase64Digit(digit);
+    } while (value > 0);
+    return out;
+}
+const B64_DIGITS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+function toBase64Digit(value) {
+    if (value < 0 || value >= 64) {
+        throw new Error(`Can only encode value in the range [0, 63]`);
+    }
+    return B64_DIGITS[value];
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
+const _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
+const _INDENT_WITH = '  ';
+const CATCH_ERROR_VAR$1 = variable('error', null, null);
+const CATCH_STACK_VAR$1 = variable('stack', null, null);
+class _EmittedLine {
+    constructor(indent) {
+        this.indent = indent;
+        this.partsLength = 0;
+        this.parts = [];
+        this.srcSpans = [];
+    }
+}
+class EmitterVisitorContext {
+    constructor(_indent) {
+        this._indent = _indent;
+        this._classes = [];
+        this._preambleLineCount = 0;
+        this._lines = [new _EmittedLine(_indent)];
+    }
+    static createRoot() {
+        return new EmitterVisitorContext(0);
+    }
+    /**
+     * @internal strip this from published d.ts files due to
+     * https://github.com/microsoft/TypeScript/issues/36216
+     */
+    get _currentLine() {
+        return this._lines[this._lines.length - 1];
+    }
+    println(from, lastPart = '') {
+        this.print(from || null, lastPart, true);
+    }
+    lineIsEmpty() {
+        return this._currentLine.parts.length === 0;
+    }
+    lineLength() {
+        return this._currentLine.indent * _INDENT_WITH.length + this._currentLine.partsLength;
+    }
+    print(from, part, newLine = false) {
+        if (part.length > 0) {
+            this._currentLine.parts.push(part);
+            this._currentLine.partsLength += part.length;
+            this._currentLine.srcSpans.push(from && from.sourceSpan || null);
+        }
+        if (newLine) {
+            this._lines.push(new _EmittedLine(this._indent));
+        }
+    }
+    removeEmptyLastLine() {
+        if (this.lineIsEmpty()) {
+            this._lines.pop();
+        }
+    }
+    incIndent() {
+        this._indent++;
+        if (this.lineIsEmpty()) {
+            this._currentLine.indent = this._indent;
+        }
+    }
+    decIndent() {
+        this._indent--;
+        if (this.lineIsEmpty()) {
+            this._currentLine.indent = this._indent;
+        }
+    }
+    pushClass(clazz) {
+        this._classes.push(clazz);
+    }
+    popClass() {
+        return this._classes.pop();
+    }
+    get currentClass() {
+        return this._classes.length > 0 ? this._classes[this._classes.length - 1] : null;
+    }
+    toSource() {
+        return this.sourceLines
+            .map(l => l.parts.length > 0 ? _createIndent(l.indent) + l.parts.join('') : '')
+            .join('\n');
+    }
+    toSourceMapGenerator(genFilePath, startsAtLine = 0) {
+        const map = new SourceMapGenerator(genFilePath);
+        let firstOffsetMapped = false;
+        const mapFirstOffsetIfNeeded = () => {
+            if (!firstOffsetMapped) {
+                // Add a single space so that tools won't try to load the file from disk.
+                // Note: We are using virtual urls like `ng:///`, so we have to
+                // provide a content here.
+                map.addSource(genFilePath, ' ').addMapping(0, genFilePath, 0, 0);
+                firstOffsetMapped = true;
+            }
+        };
+        for (let i = 0; i < startsAtLine; i++) {
+            map.addLine();
+            mapFirstOffsetIfNeeded();
+        }
+        this.sourceLines.forEach((line, lineIdx) => {
+            map.addLine();
+            const spans = line.srcSpans;
+            const parts = line.parts;
+            let col0 = line.indent * _INDENT_WITH.length;
+            let spanIdx = 0;
+            // skip leading parts without source spans
+            while (spanIdx < spans.length && !spans[spanIdx]) {
+                col0 += parts[spanIdx].length;
+                spanIdx++;
+            }
+            if (spanIdx < spans.length && lineIdx === 0 && col0 === 0) {
+                firstOffsetMapped = true;
+            }
+            else {
+                mapFirstOffsetIfNeeded();
+            }
+            while (spanIdx < spans.length) {
+                const span = spans[spanIdx];
+                const source = span.start.file;
+                const sourceLine = span.start.line;
+                const sourceCol = span.start.col;
+                map.addSource(source.url, source.content)
+                    .addMapping(col0, source.url, sourceLine, sourceCol);
+                col0 += parts[spanIdx].length;
+                spanIdx++;
+                // assign parts without span or the same span to the previous segment
+                while (spanIdx < spans.length && (span === spans[spanIdx] || !spans[spanIdx])) {
+                    col0 += parts[spanIdx].length;
+                    spanIdx++;
+                }
+            }
+        });
+        return map;
+    }
+    setPreambleLineCount(count) {
+        return this._preambleLineCount = count;
+    }
+    spanOf(line, column) {
+        const emittedLine = this._lines[line - this._preambleLineCount];
+        if (emittedLine) {
+            let columnsLeft = column - _createIndent(emittedLine.indent).length;
+            for (let partIndex = 0; partIndex < emittedLine.parts.length; partIndex++) {
+                const part = emittedLine.parts[partIndex];
+                if (part.length > columnsLeft) {
+                    return emittedLine.srcSpans[partIndex];
+                }
+                columnsLeft -= part.length;
+            }
+        }
+        return null;
+    }
+    /**
+     * @internal strip this from published d.ts files due to
+     * https://github.com/microsoft/TypeScript/issues/36216
+     */
+    get sourceLines() {
+        if (this._lines.length && this._lines[this._lines.length - 1].parts.length === 0) {
+            return this._lines.slice(0, -1);
+        }
+        return this._lines;
+    }
+}
+class AbstractEmitterVisitor {
+    constructor(_escapeDollarInStrings) {
+        this._escapeDollarInStrings = _escapeDollarInStrings;
+    }
+    printLeadingComments(stmt, ctx) {
+        if (stmt.leadingComments === undefined) {
+            return;
+        }
+        for (const comment of stmt.leadingComments) {
+            if (comment instanceof JSDocComment) {
+                ctx.print(stmt, `/*${comment.toString()}*/`, comment.trailingNewline);
+            }
+            else {
+                if (comment.multiline) {
+                    ctx.print(stmt, `/* ${comment.text} */`, comment.trailingNewline);
+                }
+                else {
+                    comment.text.split('\n').forEach((line) => {
+                        ctx.println(stmt, `// ${line}`);
+                    });
+                }
+            }
+        }
+    }
+    visitExpressionStmt(stmt, ctx) {
+        this.printLeadingComments(stmt, ctx);
+        stmt.expr.visitExpression(this, ctx);
+        ctx.println(stmt, ';');
+        return null;
+    }
+    visitReturnStmt(stmt, ctx) {
+        this.printLeadingComments(stmt, ctx);
+        ctx.print(stmt, `return `);
+        stmt.value.visitExpression(this, ctx);
+        ctx.println(stmt, ';');
+        return null;
+    }
+    visitIfStmt(stmt, ctx) {
+        this.printLeadingComments(stmt, ctx);
+        ctx.print(stmt, `if (`);
+        stmt.condition.visitExpression(this, ctx);
+        ctx.print(stmt, `) {`);
+        const hasElseCase = stmt.falseCase != null && stmt.falseCase.length > 0;
+        if (stmt.trueCase.length <= 1 && !hasElseCase) {
+            ctx.print(stmt, ` `);
+            this.visitAllStatements(stmt.trueCase, ctx);
+            ctx.removeEmptyLastLine();
+            ctx.print(stmt, ` `);
+        }
+        else {
+            ctx.println();
+            ctx.incIndent();
+            this.visitAllStatements(stmt.trueCase, ctx);
+            ctx.decIndent();
+            if (hasElseCase) {
+                ctx.println(stmt, `} else {`);
+                ctx.incIndent();
+                this.visitAllStatements(stmt.falseCase, ctx);
+                ctx.decIndent();
+            }
+        }
+        ctx.println(stmt, `}`);
+        return null;
+    }
+    visitThrowStmt(stmt, ctx) {
+        this.printLeadingComments(stmt, ctx);
+        ctx.print(stmt, `throw `);
+        stmt.error.visitExpression(this, ctx);
+        ctx.println(stmt, `;`);
+        return null;
+    }
+    visitWriteVarExpr(expr, ctx) {
+        const lineWasEmpty = ctx.lineIsEmpty();
+        if (!lineWasEmpty) {
+            ctx.print(expr, '(');
+        }
+        ctx.print(expr, `${expr.name} = `);
+        expr.value.visitExpression(this, ctx);
+        if (!lineWasEmpty) {
+            ctx.print(expr, ')');
+        }
+        return null;
+    }
+    visitWriteKeyExpr(expr, ctx) {
+        const lineWasEmpty = ctx.lineIsEmpty();
+        if (!lineWasEmpty) {
+            ctx.print(expr, '(');
+        }
+        expr.receiver.visitExpression(this, ctx);
+        ctx.print(expr, `[`);
+        expr.index.visitExpression(this, ctx);
+        ctx.print(expr, `] = `);
+        expr.value.visitExpression(this, ctx);
+        if (!lineWasEmpty) {
+            ctx.print(expr, ')');
+        }
+        return null;
+    }
+    visitWritePropExpr(expr, ctx) {
+        const lineWasEmpty = ctx.lineIsEmpty();
+        if (!lineWasEmpty) {
+            ctx.print(expr, '(');
+        }
+        expr.receiver.visitExpression(this, ctx);
+        ctx.print(expr, `.${expr.name} = `);
+        expr.value.visitExpression(this, ctx);
+        if (!lineWasEmpty) {
+            ctx.print(expr, ')');
+        }
+        return null;
+    }
+    visitInvokeMethodExpr(expr, ctx) {
+        expr.receiver.visitExpression(this, ctx);
+        let name = expr.name;
+        if (expr.builtin != null) {
+            name = this.getBuiltinMethodName(expr.builtin);
+            if (name == null) {
+                // some builtins just mean to skip the call.
+                return null;
+            }
+        }
+        ctx.print(expr, `.${name}(`);
+        this.visitAllExpressions(expr.args, ctx, `,`);
+        ctx.print(expr, `)`);
+        return null;
+    }
+    visitInvokeFunctionExpr(expr, ctx) {
+        expr.fn.visitExpression(this, ctx);
+        ctx.print(expr, `(`);
+        this.visitAllExpressions(expr.args, ctx, ',');
+        ctx.print(expr, `)`);
+        return null;
+    }
+    visitTaggedTemplateExpr(expr, ctx) {
+        expr.tag.visitExpression(this, ctx);
+        ctx.print(expr, '`' + expr.template.elements[0].rawText);
+        for (let i = 1; i < expr.template.elements.length; i++) {
+            ctx.print(expr, '${');
+            expr.template.expressions[i - 1].visitExpression(this, ctx);
+            ctx.print(expr, `}${expr.template.elements[i].rawText}`);
+        }
+        ctx.print(expr, '`');
+        return null;
+    }
+    visitWrappedNodeExpr(ast, ctx) {
+        throw new Error('Abstract emitter cannot visit WrappedNodeExpr.');
+    }
+    visitTypeofExpr(expr, ctx) {
+        ctx.print(expr, 'typeof ');
+        expr.expr.visitExpression(this, ctx);
+    }
+    visitReadVarExpr(ast, ctx) {
+        let varName = ast.name;
+        if (ast.builtin != null) {
+            switch (ast.builtin) {
+                case BuiltinVar.Super:
+                    varName = 'super';
+                    break;
+                case BuiltinVar.This:
+                    varName = 'this';
+                    break;
+                case BuiltinVar.CatchError:
+                    varName = CATCH_ERROR_VAR$1.name;
+                    break;
+                case BuiltinVar.CatchStack:
+                    varName = CATCH_STACK_VAR$1.name;
+                    break;
+                default:
+                    throw new Error(`Unknown builtin variable ${ast.builtin}`);
+            }
+        }
+        ctx.print(ast, varName);
+        return null;
+    }
+    visitInstantiateExpr(ast, ctx) {
+        ctx.print(ast, `new `);
+        ast.classExpr.visitExpression(this, ctx);
+        ctx.print(ast, `(`);
+        this.visitAllExpressions(ast.args, ctx, ',');
+        ctx.print(ast, `)`);
+        return null;
+    }
+    visitLiteralExpr(ast, ctx) {
+        const value = ast.value;
+        if (typeof value === 'string') {
+            ctx.print(ast, escapeIdentifier(value, this._escapeDollarInStrings));
+        }
+        else {
+            ctx.print(ast, `${value}`);
+        }
+        return null;
+    }
+    visitLocalizedString(ast, ctx) {
+        const head = ast.serializeI18nHead();
+        ctx.print(ast, '$localize `' + head.raw);
+        for (let i = 1; i < ast.messageParts.length; i++) {
+            ctx.print(ast, '${');
+            ast.expressions[i - 1].visitExpression(this, ctx);
+            ctx.print(ast, `}${ast.serializeI18nTemplatePart(i).raw}`);
+        }
+        ctx.print(ast, '`');
+        return null;
+    }
+    visitConditionalExpr(ast, ctx) {
+        ctx.print(ast, `(`);
+        ast.condition.visitExpression(this, ctx);
+        ctx.print(ast, '? ');
+        ast.trueCase.visitExpression(this, ctx);
+        ctx.print(ast, ': ');
+        ast.falseCase.visitExpression(this, ctx);
+        ctx.print(ast, `)`);
+        return null;
+    }
+    visitNotExpr(ast, ctx) {
+        ctx.print(ast, '!');
+        ast.condition.visitExpression(this, ctx);
+        return null;
+    }
+    visitAssertNotNullExpr(ast, ctx) {
+        ast.condition.visitExpression(this, ctx);
+        return null;
+    }
+    visitUnaryOperatorExpr(ast, ctx) {
+        let opStr;
+        switch (ast.operator) {
+            case UnaryOperator.Plus:
+                opStr = '+';
+                break;
+            case UnaryOperator.Minus:
+                opStr = '-';
+                break;
+            default:
+                throw new Error(`Unknown operator ${ast.operator}`);
+        }
+        if (ast.parens)
+            ctx.print(ast, `(`);
+        ctx.print(ast, opStr);
+        ast.expr.visitExpression(this, ctx);
+        if (ast.parens)
+            ctx.print(ast, `)`);
+        return null;
+    }
+    visitBinaryOperatorExpr(ast, ctx) {
+        let opStr;
+        switch (ast.operator) {
+            case BinaryOperator.Equals:
+                opStr = '==';
+                break;
+            case BinaryOperator.Identical:
+                opStr = '===';
+                break;
+            case BinaryOperator.NotEquals:
+                opStr = '!=';
+                break;
+            case BinaryOperator.NotIdentical:
+                opStr = '!==';
+                break;
+            case BinaryOperator.And:
+                opStr = '&&';
+                break;
+            case BinaryOperator.BitwiseAnd:
+                opStr = '&';
+                break;
+            case BinaryOperator.Or:
+                opStr = '||';
+                break;
+            case BinaryOperator.Plus:
+                opStr = '+';
+                break;
+            case BinaryOperator.Minus:
+                opStr = '-';
+                break;
+            case BinaryOperator.Divide:
+                opStr = '/';
+                break;
+            case BinaryOperator.Multiply:
+                opStr = '*';
+                break;
+            case BinaryOperator.Modulo:
+                opStr = '%';
+                break;
+            case BinaryOperator.Lower:
+                opStr = '<';
+                break;
+            case BinaryOperator.LowerEquals:
+                opStr = '<=';
+                break;
+            case BinaryOperator.Bigger:
+                opStr = '>';
+                break;
+            case BinaryOperator.BiggerEquals:
+                opStr = '>=';
+                break;
+            default:
+                throw new Error(`Unknown operator ${ast.operator}`);
+        }
+        if (ast.parens)
+            ctx.print(ast, `(`);
+        ast.lhs.visitExpression(this, ctx);
+        ctx.print(ast, ` ${opStr} `);
+        ast.rhs.visitExpression(this, ctx);
+        if (ast.parens)
+            ctx.print(ast, `)`);
+        return null;
+    }
+    visitReadPropExpr(ast, ctx) {
+        ast.receiver.visitExpression(this, ctx);
+        ctx.print(ast, `.`);
+        ctx.print(ast, ast.name);
+        return null;
+    }
+    visitReadKeyExpr(ast, ctx) {
+        ast.receiver.visitExpression(this, ctx);
+        ctx.print(ast, `[`);
+        ast.index.visitExpression(this, ctx);
+        ctx.print(ast, `]`);
+        return null;
+    }
+    visitLiteralArrayExpr(ast, ctx) {
+        ctx.print(ast, `[`);
+        this.visitAllExpressions(ast.entries, ctx, ',');
+        ctx.print(ast, `]`);
+        return null;
+    }
+    visitLiteralMapExpr(ast, ctx) {
+        ctx.print(ast, `{`);
+        this.visitAllObjects(entry => {
+            ctx.print(ast, `${escapeIdentifier(entry.key, this._escapeDollarInStrings, entry.quoted)}:`);
+            entry.value.visitExpression(this, ctx);
+        }, ast.entries, ctx, ',');
+        ctx.print(ast, `}`);
+        return null;
+    }
+    visitCommaExpr(ast, ctx) {
+        ctx.print(ast, '(');
+        this.visitAllExpressions(ast.parts, ctx, ',');
+        ctx.print(ast, ')');
+        return null;
+    }
+    visitAllExpressions(expressions, ctx, separator) {
+        this.visitAllObjects(expr => expr.visitExpression(this, ctx), expressions, ctx, separator);
+    }
+    visitAllObjects(handler, expressions, ctx, separator) {
+        let incrementedIndent = false;
+        for (let i = 0; i < expressions.length; i++) {
+            if (i > 0) {
+                if (ctx.lineLength() > 80) {
+                    ctx.print(null, separator, true);
+                    if (!incrementedIndent) {
+                        // continuation are marked with double indent.
+                        ctx.incIndent();
+                        ctx.incIndent();
+                        incrementedIndent = true;
+                    }
+                }
+                else {
+                    ctx.print(null, separator, false);
+                }
+            }
+            handler(expressions[i]);
+        }
+        if (incrementedIndent) {
+            // continuation are marked with double indent.
+            ctx.decIndent();
+            ctx.decIndent();
+        }
+    }
+    visitAllStatements(statements, ctx) {
+        statements.forEach((stmt) => stmt.visitStatement(this, ctx));
+    }
+}
+function escapeIdentifier(input, escapeDollar, alwaysQuote = true) {
+    if (input == null) {
+        return null;
+    }
+    const body = input.replace(_SINGLE_QUOTE_ESCAPE_STRING_RE, (...match) => {
+        if (match[0] == '$') {
+            return escapeDollar ? '\\$' : '$';
+        }
+        else if (match[0] == '\n') {
+            return '\\n';
+        }
+        else if (match[0] == '\r') {
+            return '\\r';
+        }
+        else {
+            return `\\${match[0]}`;
+        }
+    });
+    const requiresQuotes = alwaysQuote || !_LEGAL_IDENTIFIER_RE.test(body);
+    return requiresQuotes ? `'${body}'` : body;
+}
+function _createIndent(count) {
+    let res = '';
+    for (let i = 0; i < count; i++) {
+        res += _INDENT_WITH;
+    }
+    return res;
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * Convert an object map with `Expression` values into a `LiteralMapExpr`.
  */
@@ -3753,6 +4468,10 @@ function getSyntheticPropertyName(name) {
         name = ANIMATE_SYMBOL_PREFIX + name;
     }
     return name;
+}
+function getSafePropertyAccessString(accessor, name) {
+    const escapedName = escapeIdentifier(name, false, false);
+    return escapedName !== name ? `${accessor}[${escapedName}]` : `${accessor}.${name}`;
 }
 function prepareSyntheticListenerFunctionName(name, phase) {
     return `animation_${name}_${phase}`;
@@ -5808,721 +6527,6 @@ class InterpolationConfig {
     }
 }
 const DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-// https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit
-const VERSION = 3;
-const JS_B64_PREFIX = '# sourceMappingURL=data:application/json;base64,';
-class SourceMapGenerator {
-    constructor(file = null) {
-        this.file = file;
-        this.sourcesContent = new Map();
-        this.lines = [];
-        this.lastCol0 = 0;
-        this.hasMappings = false;
-    }
-    // The content is `null` when the content is expected to be loaded using the URL
-    addSource(url, content = null) {
-        if (!this.sourcesContent.has(url)) {
-            this.sourcesContent.set(url, content);
-        }
-        return this;
-    }
-    addLine() {
-        this.lines.push([]);
-        this.lastCol0 = 0;
-        return this;
-    }
-    addMapping(col0, sourceUrl, sourceLine0, sourceCol0) {
-        if (!this.currentLine) {
-            throw new Error(`A line must be added before mappings can be added`);
-        }
-        if (sourceUrl != null && !this.sourcesContent.has(sourceUrl)) {
-            throw new Error(`Unknown source file "${sourceUrl}"`);
-        }
-        if (col0 == null) {
-            throw new Error(`The column in the generated code must be provided`);
-        }
-        if (col0 < this.lastCol0) {
-            throw new Error(`Mapping should be added in output order`);
-        }
-        if (sourceUrl && (sourceLine0 == null || sourceCol0 == null)) {
-            throw new Error(`The source location must be provided when a source url is provided`);
-        }
-        this.hasMappings = true;
-        this.lastCol0 = col0;
-        this.currentLine.push({ col0, sourceUrl, sourceLine0, sourceCol0 });
-        return this;
-    }
-    /**
-     * @internal strip this from published d.ts files due to
-     * https://github.com/microsoft/TypeScript/issues/36216
-     */
-    get currentLine() {
-        return this.lines.slice(-1)[0];
-    }
-    toJSON() {
-        if (!this.hasMappings) {
-            return null;
-        }
-        const sourcesIndex = new Map();
-        const sources = [];
-        const sourcesContent = [];
-        Array.from(this.sourcesContent.keys()).forEach((url, i) => {
-            sourcesIndex.set(url, i);
-            sources.push(url);
-            sourcesContent.push(this.sourcesContent.get(url) || null);
-        });
-        let mappings = '';
-        let lastCol0 = 0;
-        let lastSourceIndex = 0;
-        let lastSourceLine0 = 0;
-        let lastSourceCol0 = 0;
-        this.lines.forEach(segments => {
-            lastCol0 = 0;
-            mappings += segments
-                .map(segment => {
-                // zero-based starting column of the line in the generated code
-                let segAsStr = toBase64VLQ(segment.col0 - lastCol0);
-                lastCol0 = segment.col0;
-                if (segment.sourceUrl != null) {
-                    // zero-based index into the “sources” list
-                    segAsStr +=
-                        toBase64VLQ(sourcesIndex.get(segment.sourceUrl) - lastSourceIndex);
-                    lastSourceIndex = sourcesIndex.get(segment.sourceUrl);
-                    // the zero-based starting line in the original source
-                    segAsStr += toBase64VLQ(segment.sourceLine0 - lastSourceLine0);
-                    lastSourceLine0 = segment.sourceLine0;
-                    // the zero-based starting column in the original source
-                    segAsStr += toBase64VLQ(segment.sourceCol0 - lastSourceCol0);
-                    lastSourceCol0 = segment.sourceCol0;
-                }
-                return segAsStr;
-            })
-                .join(',');
-            mappings += ';';
-        });
-        mappings = mappings.slice(0, -1);
-        return {
-            'file': this.file || '',
-            'version': VERSION,
-            'sourceRoot': '',
-            'sources': sources,
-            'sourcesContent': sourcesContent,
-            'mappings': mappings,
-        };
-    }
-    toJsComment() {
-        return this.hasMappings ? '//' + JS_B64_PREFIX + toBase64String(JSON.stringify(this, null, 0)) :
-            '';
-    }
-}
-function toBase64String(value) {
-    let b64 = '';
-    const encoded = utf8Encode(value);
-    for (let i = 0; i < encoded.length;) {
-        const i1 = encoded[i++];
-        const i2 = i < encoded.length ? encoded[i++] : null;
-        const i3 = i < encoded.length ? encoded[i++] : null;
-        b64 += toBase64Digit(i1 >> 2);
-        b64 += toBase64Digit(((i1 & 3) << 4) | (i2 === null ? 0 : i2 >> 4));
-        b64 += i2 === null ? '=' : toBase64Digit(((i2 & 15) << 2) | (i3 === null ? 0 : i3 >> 6));
-        b64 += i2 === null || i3 === null ? '=' : toBase64Digit(i3 & 63);
-    }
-    return b64;
-}
-function toBase64VLQ(value) {
-    value = value < 0 ? ((-value) << 1) + 1 : value << 1;
-    let out = '';
-    do {
-        let digit = value & 31;
-        value = value >> 5;
-        if (value > 0) {
-            digit = digit | 32;
-        }
-        out += toBase64Digit(digit);
-    } while (value > 0);
-    return out;
-}
-const B64_DIGITS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-function toBase64Digit(value) {
-    if (value < 0 || value >= 64) {
-        throw new Error(`Can only encode value in the range [0, 63]`);
-    }
-    return B64_DIGITS[value];
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-const _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
-const _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
-const _INDENT_WITH = '  ';
-const CATCH_ERROR_VAR$1 = variable('error', null, null);
-const CATCH_STACK_VAR$1 = variable('stack', null, null);
-class _EmittedLine {
-    constructor(indent) {
-        this.indent = indent;
-        this.partsLength = 0;
-        this.parts = [];
-        this.srcSpans = [];
-    }
-}
-class EmitterVisitorContext {
-    constructor(_indent) {
-        this._indent = _indent;
-        this._classes = [];
-        this._preambleLineCount = 0;
-        this._lines = [new _EmittedLine(_indent)];
-    }
-    static createRoot() {
-        return new EmitterVisitorContext(0);
-    }
-    /**
-     * @internal strip this from published d.ts files due to
-     * https://github.com/microsoft/TypeScript/issues/36216
-     */
-    get _currentLine() {
-        return this._lines[this._lines.length - 1];
-    }
-    println(from, lastPart = '') {
-        this.print(from || null, lastPart, true);
-    }
-    lineIsEmpty() {
-        return this._currentLine.parts.length === 0;
-    }
-    lineLength() {
-        return this._currentLine.indent * _INDENT_WITH.length + this._currentLine.partsLength;
-    }
-    print(from, part, newLine = false) {
-        if (part.length > 0) {
-            this._currentLine.parts.push(part);
-            this._currentLine.partsLength += part.length;
-            this._currentLine.srcSpans.push(from && from.sourceSpan || null);
-        }
-        if (newLine) {
-            this._lines.push(new _EmittedLine(this._indent));
-        }
-    }
-    removeEmptyLastLine() {
-        if (this.lineIsEmpty()) {
-            this._lines.pop();
-        }
-    }
-    incIndent() {
-        this._indent++;
-        if (this.lineIsEmpty()) {
-            this._currentLine.indent = this._indent;
-        }
-    }
-    decIndent() {
-        this._indent--;
-        if (this.lineIsEmpty()) {
-            this._currentLine.indent = this._indent;
-        }
-    }
-    pushClass(clazz) {
-        this._classes.push(clazz);
-    }
-    popClass() {
-        return this._classes.pop();
-    }
-    get currentClass() {
-        return this._classes.length > 0 ? this._classes[this._classes.length - 1] : null;
-    }
-    toSource() {
-        return this.sourceLines
-            .map(l => l.parts.length > 0 ? _createIndent(l.indent) + l.parts.join('') : '')
-            .join('\n');
-    }
-    toSourceMapGenerator(genFilePath, startsAtLine = 0) {
-        const map = new SourceMapGenerator(genFilePath);
-        let firstOffsetMapped = false;
-        const mapFirstOffsetIfNeeded = () => {
-            if (!firstOffsetMapped) {
-                // Add a single space so that tools won't try to load the file from disk.
-                // Note: We are using virtual urls like `ng:///`, so we have to
-                // provide a content here.
-                map.addSource(genFilePath, ' ').addMapping(0, genFilePath, 0, 0);
-                firstOffsetMapped = true;
-            }
-        };
-        for (let i = 0; i < startsAtLine; i++) {
-            map.addLine();
-            mapFirstOffsetIfNeeded();
-        }
-        this.sourceLines.forEach((line, lineIdx) => {
-            map.addLine();
-            const spans = line.srcSpans;
-            const parts = line.parts;
-            let col0 = line.indent * _INDENT_WITH.length;
-            let spanIdx = 0;
-            // skip leading parts without source spans
-            while (spanIdx < spans.length && !spans[spanIdx]) {
-                col0 += parts[spanIdx].length;
-                spanIdx++;
-            }
-            if (spanIdx < spans.length && lineIdx === 0 && col0 === 0) {
-                firstOffsetMapped = true;
-            }
-            else {
-                mapFirstOffsetIfNeeded();
-            }
-            while (spanIdx < spans.length) {
-                const span = spans[spanIdx];
-                const source = span.start.file;
-                const sourceLine = span.start.line;
-                const sourceCol = span.start.col;
-                map.addSource(source.url, source.content)
-                    .addMapping(col0, source.url, sourceLine, sourceCol);
-                col0 += parts[spanIdx].length;
-                spanIdx++;
-                // assign parts without span or the same span to the previous segment
-                while (spanIdx < spans.length && (span === spans[spanIdx] || !spans[spanIdx])) {
-                    col0 += parts[spanIdx].length;
-                    spanIdx++;
-                }
-            }
-        });
-        return map;
-    }
-    setPreambleLineCount(count) {
-        return this._preambleLineCount = count;
-    }
-    spanOf(line, column) {
-        const emittedLine = this._lines[line - this._preambleLineCount];
-        if (emittedLine) {
-            let columnsLeft = column - _createIndent(emittedLine.indent).length;
-            for (let partIndex = 0; partIndex < emittedLine.parts.length; partIndex++) {
-                const part = emittedLine.parts[partIndex];
-                if (part.length > columnsLeft) {
-                    return emittedLine.srcSpans[partIndex];
-                }
-                columnsLeft -= part.length;
-            }
-        }
-        return null;
-    }
-    /**
-     * @internal strip this from published d.ts files due to
-     * https://github.com/microsoft/TypeScript/issues/36216
-     */
-    get sourceLines() {
-        if (this._lines.length && this._lines[this._lines.length - 1].parts.length === 0) {
-            return this._lines.slice(0, -1);
-        }
-        return this._lines;
-    }
-}
-class AbstractEmitterVisitor {
-    constructor(_escapeDollarInStrings) {
-        this._escapeDollarInStrings = _escapeDollarInStrings;
-    }
-    printLeadingComments(stmt, ctx) {
-        if (stmt.leadingComments === undefined) {
-            return;
-        }
-        for (const comment of stmt.leadingComments) {
-            if (comment instanceof JSDocComment) {
-                ctx.print(stmt, `/*${comment.toString()}*/`, comment.trailingNewline);
-            }
-            else {
-                if (comment.multiline) {
-                    ctx.print(stmt, `/* ${comment.text} */`, comment.trailingNewline);
-                }
-                else {
-                    comment.text.split('\n').forEach((line) => {
-                        ctx.println(stmt, `// ${line}`);
-                    });
-                }
-            }
-        }
-    }
-    visitExpressionStmt(stmt, ctx) {
-        this.printLeadingComments(stmt, ctx);
-        stmt.expr.visitExpression(this, ctx);
-        ctx.println(stmt, ';');
-        return null;
-    }
-    visitReturnStmt(stmt, ctx) {
-        this.printLeadingComments(stmt, ctx);
-        ctx.print(stmt, `return `);
-        stmt.value.visitExpression(this, ctx);
-        ctx.println(stmt, ';');
-        return null;
-    }
-    visitIfStmt(stmt, ctx) {
-        this.printLeadingComments(stmt, ctx);
-        ctx.print(stmt, `if (`);
-        stmt.condition.visitExpression(this, ctx);
-        ctx.print(stmt, `) {`);
-        const hasElseCase = stmt.falseCase != null && stmt.falseCase.length > 0;
-        if (stmt.trueCase.length <= 1 && !hasElseCase) {
-            ctx.print(stmt, ` `);
-            this.visitAllStatements(stmt.trueCase, ctx);
-            ctx.removeEmptyLastLine();
-            ctx.print(stmt, ` `);
-        }
-        else {
-            ctx.println();
-            ctx.incIndent();
-            this.visitAllStatements(stmt.trueCase, ctx);
-            ctx.decIndent();
-            if (hasElseCase) {
-                ctx.println(stmt, `} else {`);
-                ctx.incIndent();
-                this.visitAllStatements(stmt.falseCase, ctx);
-                ctx.decIndent();
-            }
-        }
-        ctx.println(stmt, `}`);
-        return null;
-    }
-    visitThrowStmt(stmt, ctx) {
-        this.printLeadingComments(stmt, ctx);
-        ctx.print(stmt, `throw `);
-        stmt.error.visitExpression(this, ctx);
-        ctx.println(stmt, `;`);
-        return null;
-    }
-    visitWriteVarExpr(expr, ctx) {
-        const lineWasEmpty = ctx.lineIsEmpty();
-        if (!lineWasEmpty) {
-            ctx.print(expr, '(');
-        }
-        ctx.print(expr, `${expr.name} = `);
-        expr.value.visitExpression(this, ctx);
-        if (!lineWasEmpty) {
-            ctx.print(expr, ')');
-        }
-        return null;
-    }
-    visitWriteKeyExpr(expr, ctx) {
-        const lineWasEmpty = ctx.lineIsEmpty();
-        if (!lineWasEmpty) {
-            ctx.print(expr, '(');
-        }
-        expr.receiver.visitExpression(this, ctx);
-        ctx.print(expr, `[`);
-        expr.index.visitExpression(this, ctx);
-        ctx.print(expr, `] = `);
-        expr.value.visitExpression(this, ctx);
-        if (!lineWasEmpty) {
-            ctx.print(expr, ')');
-        }
-        return null;
-    }
-    visitWritePropExpr(expr, ctx) {
-        const lineWasEmpty = ctx.lineIsEmpty();
-        if (!lineWasEmpty) {
-            ctx.print(expr, '(');
-        }
-        expr.receiver.visitExpression(this, ctx);
-        ctx.print(expr, `.${expr.name} = `);
-        expr.value.visitExpression(this, ctx);
-        if (!lineWasEmpty) {
-            ctx.print(expr, ')');
-        }
-        return null;
-    }
-    visitInvokeMethodExpr(expr, ctx) {
-        expr.receiver.visitExpression(this, ctx);
-        let name = expr.name;
-        if (expr.builtin != null) {
-            name = this.getBuiltinMethodName(expr.builtin);
-            if (name == null) {
-                // some builtins just mean to skip the call.
-                return null;
-            }
-        }
-        ctx.print(expr, `.${name}(`);
-        this.visitAllExpressions(expr.args, ctx, `,`);
-        ctx.print(expr, `)`);
-        return null;
-    }
-    visitInvokeFunctionExpr(expr, ctx) {
-        expr.fn.visitExpression(this, ctx);
-        ctx.print(expr, `(`);
-        this.visitAllExpressions(expr.args, ctx, ',');
-        ctx.print(expr, `)`);
-        return null;
-    }
-    visitTaggedTemplateExpr(expr, ctx) {
-        expr.tag.visitExpression(this, ctx);
-        ctx.print(expr, '`' + expr.template.elements[0].rawText);
-        for (let i = 1; i < expr.template.elements.length; i++) {
-            ctx.print(expr, '${');
-            expr.template.expressions[i - 1].visitExpression(this, ctx);
-            ctx.print(expr, `}${expr.template.elements[i].rawText}`);
-        }
-        ctx.print(expr, '`');
-        return null;
-    }
-    visitWrappedNodeExpr(ast, ctx) {
-        throw new Error('Abstract emitter cannot visit WrappedNodeExpr.');
-    }
-    visitTypeofExpr(expr, ctx) {
-        ctx.print(expr, 'typeof ');
-        expr.expr.visitExpression(this, ctx);
-    }
-    visitReadVarExpr(ast, ctx) {
-        let varName = ast.name;
-        if (ast.builtin != null) {
-            switch (ast.builtin) {
-                case BuiltinVar.Super:
-                    varName = 'super';
-                    break;
-                case BuiltinVar.This:
-                    varName = 'this';
-                    break;
-                case BuiltinVar.CatchError:
-                    varName = CATCH_ERROR_VAR$1.name;
-                    break;
-                case BuiltinVar.CatchStack:
-                    varName = CATCH_STACK_VAR$1.name;
-                    break;
-                default:
-                    throw new Error(`Unknown builtin variable ${ast.builtin}`);
-            }
-        }
-        ctx.print(ast, varName);
-        return null;
-    }
-    visitInstantiateExpr(ast, ctx) {
-        ctx.print(ast, `new `);
-        ast.classExpr.visitExpression(this, ctx);
-        ctx.print(ast, `(`);
-        this.visitAllExpressions(ast.args, ctx, ',');
-        ctx.print(ast, `)`);
-        return null;
-    }
-    visitLiteralExpr(ast, ctx) {
-        const value = ast.value;
-        if (typeof value === 'string') {
-            ctx.print(ast, escapeIdentifier(value, this._escapeDollarInStrings));
-        }
-        else {
-            ctx.print(ast, `${value}`);
-        }
-        return null;
-    }
-    visitLocalizedString(ast, ctx) {
-        const head = ast.serializeI18nHead();
-        ctx.print(ast, '$localize `' + head.raw);
-        for (let i = 1; i < ast.messageParts.length; i++) {
-            ctx.print(ast, '${');
-            ast.expressions[i - 1].visitExpression(this, ctx);
-            ctx.print(ast, `}${ast.serializeI18nTemplatePart(i).raw}`);
-        }
-        ctx.print(ast, '`');
-        return null;
-    }
-    visitConditionalExpr(ast, ctx) {
-        ctx.print(ast, `(`);
-        ast.condition.visitExpression(this, ctx);
-        ctx.print(ast, '? ');
-        ast.trueCase.visitExpression(this, ctx);
-        ctx.print(ast, ': ');
-        ast.falseCase.visitExpression(this, ctx);
-        ctx.print(ast, `)`);
-        return null;
-    }
-    visitNotExpr(ast, ctx) {
-        ctx.print(ast, '!');
-        ast.condition.visitExpression(this, ctx);
-        return null;
-    }
-    visitAssertNotNullExpr(ast, ctx) {
-        ast.condition.visitExpression(this, ctx);
-        return null;
-    }
-    visitUnaryOperatorExpr(ast, ctx) {
-        let opStr;
-        switch (ast.operator) {
-            case UnaryOperator.Plus:
-                opStr = '+';
-                break;
-            case UnaryOperator.Minus:
-                opStr = '-';
-                break;
-            default:
-                throw new Error(`Unknown operator ${ast.operator}`);
-        }
-        if (ast.parens)
-            ctx.print(ast, `(`);
-        ctx.print(ast, opStr);
-        ast.expr.visitExpression(this, ctx);
-        if (ast.parens)
-            ctx.print(ast, `)`);
-        return null;
-    }
-    visitBinaryOperatorExpr(ast, ctx) {
-        let opStr;
-        switch (ast.operator) {
-            case BinaryOperator.Equals:
-                opStr = '==';
-                break;
-            case BinaryOperator.Identical:
-                opStr = '===';
-                break;
-            case BinaryOperator.NotEquals:
-                opStr = '!=';
-                break;
-            case BinaryOperator.NotIdentical:
-                opStr = '!==';
-                break;
-            case BinaryOperator.And:
-                opStr = '&&';
-                break;
-            case BinaryOperator.BitwiseAnd:
-                opStr = '&';
-                break;
-            case BinaryOperator.Or:
-                opStr = '||';
-                break;
-            case BinaryOperator.Plus:
-                opStr = '+';
-                break;
-            case BinaryOperator.Minus:
-                opStr = '-';
-                break;
-            case BinaryOperator.Divide:
-                opStr = '/';
-                break;
-            case BinaryOperator.Multiply:
-                opStr = '*';
-                break;
-            case BinaryOperator.Modulo:
-                opStr = '%';
-                break;
-            case BinaryOperator.Lower:
-                opStr = '<';
-                break;
-            case BinaryOperator.LowerEquals:
-                opStr = '<=';
-                break;
-            case BinaryOperator.Bigger:
-                opStr = '>';
-                break;
-            case BinaryOperator.BiggerEquals:
-                opStr = '>=';
-                break;
-            default:
-                throw new Error(`Unknown operator ${ast.operator}`);
-        }
-        if (ast.parens)
-            ctx.print(ast, `(`);
-        ast.lhs.visitExpression(this, ctx);
-        ctx.print(ast, ` ${opStr} `);
-        ast.rhs.visitExpression(this, ctx);
-        if (ast.parens)
-            ctx.print(ast, `)`);
-        return null;
-    }
-    visitReadPropExpr(ast, ctx) {
-        ast.receiver.visitExpression(this, ctx);
-        ctx.print(ast, `.`);
-        ctx.print(ast, ast.name);
-        return null;
-    }
-    visitReadKeyExpr(ast, ctx) {
-        ast.receiver.visitExpression(this, ctx);
-        ctx.print(ast, `[`);
-        ast.index.visitExpression(this, ctx);
-        ctx.print(ast, `]`);
-        return null;
-    }
-    visitLiteralArrayExpr(ast, ctx) {
-        ctx.print(ast, `[`);
-        this.visitAllExpressions(ast.entries, ctx, ',');
-        ctx.print(ast, `]`);
-        return null;
-    }
-    visitLiteralMapExpr(ast, ctx) {
-        ctx.print(ast, `{`);
-        this.visitAllObjects(entry => {
-            ctx.print(ast, `${escapeIdentifier(entry.key, this._escapeDollarInStrings, entry.quoted)}:`);
-            entry.value.visitExpression(this, ctx);
-        }, ast.entries, ctx, ',');
-        ctx.print(ast, `}`);
-        return null;
-    }
-    visitCommaExpr(ast, ctx) {
-        ctx.print(ast, '(');
-        this.visitAllExpressions(ast.parts, ctx, ',');
-        ctx.print(ast, ')');
-        return null;
-    }
-    visitAllExpressions(expressions, ctx, separator) {
-        this.visitAllObjects(expr => expr.visitExpression(this, ctx), expressions, ctx, separator);
-    }
-    visitAllObjects(handler, expressions, ctx, separator) {
-        let incrementedIndent = false;
-        for (let i = 0; i < expressions.length; i++) {
-            if (i > 0) {
-                if (ctx.lineLength() > 80) {
-                    ctx.print(null, separator, true);
-                    if (!incrementedIndent) {
-                        // continuation are marked with double indent.
-                        ctx.incIndent();
-                        ctx.incIndent();
-                        incrementedIndent = true;
-                    }
-                }
-                else {
-                    ctx.print(null, separator, false);
-                }
-            }
-            handler(expressions[i]);
-        }
-        if (incrementedIndent) {
-            // continuation are marked with double indent.
-            ctx.decIndent();
-            ctx.decIndent();
-        }
-    }
-    visitAllStatements(statements, ctx) {
-        statements.forEach((stmt) => stmt.visitStatement(this, ctx));
-    }
-}
-function escapeIdentifier(input, escapeDollar, alwaysQuote = true) {
-    if (input == null) {
-        return null;
-    }
-    const body = input.replace(_SINGLE_QUOTE_ESCAPE_STRING_RE, (...match) => {
-        if (match[0] == '$') {
-            return escapeDollar ? '\\$' : '$';
-        }
-        else if (match[0] == '\n') {
-            return '\\n';
-        }
-        else if (match[0] == '\r') {
-            return '\\r';
-        }
-        else {
-            return `\\${match[0]}`;
-        }
-    });
-    const requiresQuotes = alwaysQuote || !_LEGAL_IDENTIFIER_RE.test(body);
-    return requiresQuotes ? `'${body}'` : body;
-}
-function _createIndent(count) {
-    let res = '';
-    for (let i = 0; i < count; i++) {
-        res += _INDENT_WITH;
-    }
-    return res;
-}
 
 /**
  * @license
@@ -20384,7 +20388,11 @@ function extractHostBindings(propMetadata, sourceSpan, host) {
         if (propMetadata.hasOwnProperty(field)) {
             propMetadata[field].forEach(ann => {
                 if (isHostBinding(ann)) {
-                    bindings.properties[ann.hostPropertyName || field] = field;
+                    // Since this is a decorator, we know that the value is a class member. Always access it
+                    // through `this` so that further down the line it can't be confused for a literal value
+                    // (e.g. if there's a property called `true`).
+                    bindings.properties[ann.hostPropertyName || field] =
+                        getSafePropertyAccessString('this', field);
                 }
                 else if (isHostListener(ann)) {
                     bindings.listeners[ann.eventName || field] = `${field}(${(ann.args || []).join(',')})`;
@@ -20425,7 +20433,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.1.0-next.4+21.sha-266cc9b');
+const VERSION$1 = new Version('11.1.0-next.4+29.sha-5704372');
 
 /**
  * @license
@@ -29955,7 +29963,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('11.1.0-next.4+21.sha-266cc9b'));
+    definitionMap.set('version', literal('11.1.0-next.4+29.sha-5704372'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -30194,5 +30202,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThisReceiver, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Icu as TmplAstIcu, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, devOnlyGuardedExpression, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThisReceiver, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Icu as TmplAstIcu, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, devOnlyGuardedExpression, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getSafePropertyAccessString, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
 //# sourceMappingURL=compiler.js.map
