@@ -410,6 +410,13 @@ export interface ParsedTemplate {
      */
     template: string | o.Expression;
     /**
+     * A full path to the file which contains the template.
+     *
+     * This can be either the original .ts file if the template is inline, or the .html file if an
+     * external file was used.
+     */
+    templateUrl: string;
+    /**
      * Whether the template was inline (using `template`) or external (using `templateUrl`).
      */
     isInline: boolean;

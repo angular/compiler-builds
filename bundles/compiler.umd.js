@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.4+11.sha-335c1ab
+ * @license Angular v11.1.0-next.4+21.sha-266cc9b
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -20400,6 +20400,7 @@
                 interpolationConfig: interpolationConfig,
                 preserveWhitespaces: preserveWhitespaces,
                 template: template,
+                templateUrl: templateUrl,
                 isInline: isInline,
                 errors: parseResult.errors,
                 nodes: [],
@@ -20420,6 +20421,7 @@
                 interpolationConfig: interpolationConfig,
                 preserveWhitespaces: preserveWhitespaces,
                 template: template,
+                templateUrl: templateUrl,
                 isInline: isInline,
                 errors: i18nMetaResult.errors,
                 nodes: [],
@@ -20445,6 +20447,7 @@
             preserveWhitespaces: preserveWhitespaces,
             errors: errors.length > 0 ? errors : null,
             template: template,
+            templateUrl: templateUrl,
             isInline: isInline,
             nodes: nodes,
             styleUrls: styleUrls,
@@ -21701,7 +21704,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.4+11.sha-335c1ab');
+    var VERSION$1 = new Version('11.1.0-next.4+21.sha-266cc9b');
 
     /**
      * @license
@@ -31607,7 +31610,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.1.0-next.4+11.sha-335c1ab'));
+        definitionMap.set('version', literal('11.1.0-next.4+21.sha-266cc9b'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -31720,10 +31723,47 @@
      */
     function compileTemplateDefinition(template) {
         var templateMap = new DefinitionMap();
-        var templateExpr = typeof template.template === 'string' ? literal(template.template) : template.template;
+        var templateExpr = getTemplateExpression(template);
         templateMap.set('source', templateExpr);
         templateMap.set('isInline', literal(template.isInline));
         return templateMap.toLiteralMap();
+    }
+    function getTemplateExpression(template) {
+        if (typeof template.template === 'string') {
+            if (template.isInline) {
+                // The template is inline but not a simple literal string, so give up with trying to
+                // source-map it and just return a simple literal here.
+                return literal(template.template);
+            }
+            else {
+                // The template is external so we must synthesize an expression node with the appropriate
+                // source-span.
+                var contents = template.template;
+                var file = new ParseSourceFile(contents, template.templateUrl);
+                var start = new ParseLocation(file, 0, 0, 0);
+                var end = computeEndLocation(file, contents);
+                var span = new ParseSourceSpan(start, end);
+                return literal(contents, null, span);
+            }
+        }
+        else {
+            // The template is inline so we can just reuse the current expression node.
+            return template.template;
+        }
+    }
+    function computeEndLocation(file, contents) {
+        var length = contents.length;
+        var lineStart = 0;
+        var lastLineStart = 0;
+        var line = 0;
+        do {
+            lineStart = contents.indexOf('\n', lastLineStart);
+            if (lineStart !== -1) {
+                lastLineStart = lineStart + 1;
+                line++;
+            }
+        } while (lineStart !== -1);
+        return new ParseLocation(file, length, line, length - lastLineStart);
     }
     /**
      * Compiles the directives as registered in the component metadata into an array literal of the

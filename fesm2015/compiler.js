@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.4+11.sha-335c1ab
+ * @license Angular v11.1.0-next.4+21.sha-266cc9b
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -19189,6 +19189,7 @@ function parseTemplate(template, templateUrl, options = {}) {
             interpolationConfig,
             preserveWhitespaces,
             template,
+            templateUrl,
             isInline,
             errors: parseResult.errors,
             nodes: [],
@@ -19209,6 +19210,7 @@ function parseTemplate(template, templateUrl, options = {}) {
             interpolationConfig,
             preserveWhitespaces,
             template,
+            templateUrl,
             isInline,
             errors: i18nMetaResult.errors,
             nodes: [],
@@ -19234,6 +19236,7 @@ function parseTemplate(template, templateUrl, options = {}) {
         preserveWhitespaces,
         errors: errors.length > 0 ? errors : null,
         template,
+        templateUrl,
         isInline,
         nodes,
         styleUrls,
@@ -20422,7 +20425,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.1.0-next.4+11.sha-335c1ab');
+const VERSION$1 = new Version('11.1.0-next.4+21.sha-266cc9b');
 
 /**
  * @license
@@ -29952,7 +29955,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('11.1.0-next.4+11.sha-335c1ab'));
+    definitionMap.set('version', literal('11.1.0-next.4+21.sha-266cc9b'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -30072,10 +30075,47 @@ function createComponentDefinitionMap(meta, template) {
  */
 function compileTemplateDefinition(template) {
     const templateMap = new DefinitionMap();
-    const templateExpr = typeof template.template === 'string' ? literal(template.template) : template.template;
+    const templateExpr = getTemplateExpression(template);
     templateMap.set('source', templateExpr);
     templateMap.set('isInline', literal(template.isInline));
     return templateMap.toLiteralMap();
+}
+function getTemplateExpression(template) {
+    if (typeof template.template === 'string') {
+        if (template.isInline) {
+            // The template is inline but not a simple literal string, so give up with trying to
+            // source-map it and just return a simple literal here.
+            return literal(template.template);
+        }
+        else {
+            // The template is external so we must synthesize an expression node with the appropriate
+            // source-span.
+            const contents = template.template;
+            const file = new ParseSourceFile(contents, template.templateUrl);
+            const start = new ParseLocation(file, 0, 0, 0);
+            const end = computeEndLocation(file, contents);
+            const span = new ParseSourceSpan(start, end);
+            return literal(contents, null, span);
+        }
+    }
+    else {
+        // The template is inline so we can just reuse the current expression node.
+        return template.template;
+    }
+}
+function computeEndLocation(file, contents) {
+    const length = contents.length;
+    let lineStart = 0;
+    let lastLineStart = 0;
+    let line = 0;
+    do {
+        lineStart = contents.indexOf('\n', lastLineStart);
+        if (lineStart !== -1) {
+            lastLineStart = lineStart + 1;
+            line++;
+        }
+    } while (lineStart !== -1);
+    return new ParseLocation(file, length, line, length - lastLineStart);
 }
 /**
  * Compiles the directives as registered in the component metadata into an array literal of the
