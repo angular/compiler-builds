@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.4+29.sha-5704372
+ * @license Angular v11.1.0-next.4+30.sha-15b15be
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13614,16 +13614,14 @@
             var matches = splitAtPeriod(name, [name, '']);
             var eventName = matches[0];
             var phase = matches[1].toLowerCase();
+            var ast = this._parseAction(expression, handlerSpan);
+            targetEvents.push(new ParsedEvent(eventName, phase, 1 /* Animation */, ast, sourceSpan, handlerSpan, keySpan));
+            if (eventName.length === 0) {
+                this._reportError("Animation event name is missing in binding", sourceSpan);
+            }
             if (phase) {
-                switch (phase) {
-                    case 'start':
-                    case 'done':
-                        var ast = this._parseAction(expression, handlerSpan);
-                        targetEvents.push(new ParsedEvent(eventName, phase, 1 /* Animation */, ast, sourceSpan, handlerSpan, keySpan));
-                        break;
-                    default:
-                        this._reportError("The provided animation output phase value \"" + phase + "\" for \"@" + eventName + "\" is not supported (use start or done)", sourceSpan);
-                        break;
+                if (phase !== 'start' && phase !== 'done') {
+                    this._reportError("The provided animation output phase value \"" + phase + "\" for \"@" + eventName + "\" is not supported (use start or done)", sourceSpan);
                 }
             }
             else {
@@ -21712,7 +21710,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.4+29.sha-5704372');
+    var VERSION$1 = new Version('11.1.0-next.4+30.sha-15b15be');
 
     /**
      * @license
@@ -31618,7 +31616,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.1.0-next.4+29.sha-5704372'));
+        definitionMap.set('version', literal('11.1.0-next.4+30.sha-15b15be'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
