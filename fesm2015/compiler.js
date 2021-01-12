@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.4+77.sha-184d0e5
+ * @license Angular v11.1.0-next.4+78.sha-66c27ff
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -334,6 +334,13 @@ class HtmlTagDefinition {
     isClosedByChild(name) {
         return this.isVoid || name.toLowerCase() in this.closedByChildren;
     }
+    getContentType(prefix) {
+        if (typeof this.contentType === 'object') {
+            const overrideType = prefix == null ? undefined : this.contentType[prefix];
+            return overrideType !== null && overrideType !== void 0 ? overrideType : this.contentType.default;
+        }
+        return this.contentType;
+    }
 }
 let _DEFAULT_TAG_DEFINITION;
 // see https://www.w3.org/TR/html51/syntax.html#optional-tags
@@ -399,7 +406,11 @@ function getHtmlTagDefinition(tagName) {
             'listing': new HtmlTagDefinition({ ignoreFirstLf: true }),
             'style': new HtmlTagDefinition({ contentType: TagContentType.RAW_TEXT }),
             'script': new HtmlTagDefinition({ contentType: TagContentType.RAW_TEXT }),
-            'title': new HtmlTagDefinition({ contentType: TagContentType.ESCAPABLE_RAW_TEXT }),
+            'title': new HtmlTagDefinition({
+                // The browser supports two separate `title` tags which have to use
+                // a different content type: `HTMLTitleElement` and `SVGTitleElement`
+                contentType: { default: TagContentType.ESCAPABLE_RAW_TEXT, svg: TagContentType.PARSABLE_DATA }
+            }),
             'textarea': new HtmlTagDefinition({ contentType: TagContentType.ESCAPABLE_RAW_TEXT, ignoreFirstLf: true }),
         };
     }
@@ -10457,7 +10468,7 @@ class _Tokenizer {
             }
             throw e;
         }
-        const contentTokenType = this._getTagDefinition(tagName).contentType;
+        const contentTokenType = this._getTagDefinition(tagName).getContentType(prefix);
         if (contentTokenType === TagContentType.RAW_TEXT) {
             this._consumeRawTextWithTagClose(prefix, tagName, false);
         }
@@ -10466,7 +10477,7 @@ class _Tokenizer {
         }
     }
     _consumeRawTextWithTagClose(prefix, tagName, decodeEntities) {
-        const textToken = this._consumeRawText(decodeEntities, () => {
+        this._consumeRawText(decodeEntities, () => {
             if (!this._attemptCharCode($LT))
                 return false;
             if (!this._attemptCharCode($SLASH))
@@ -20431,7 +20442,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.1.0-next.4+77.sha-184d0e5');
+const VERSION$1 = new Version('11.1.0-next.4+78.sha-66c27ff');
 
 /**
  * @license
@@ -21258,7 +21269,6 @@ function _parseMessageMeta(i18n) {
 class XmlTagDefinition {
     constructor() {
         this.closedByParent = false;
-        this.contentType = TagContentType.PARSABLE_DATA;
         this.isVoid = false;
         this.ignoreFirstLf = false;
         this.canSelfClose = true;
@@ -21269,6 +21279,9 @@ class XmlTagDefinition {
     }
     isClosedByChild(name) {
         return false;
+    }
+    getContentType() {
+        return TagContentType.PARSABLE_DATA;
     }
 }
 const _TAG_DEFINITION = new XmlTagDefinition();
@@ -29961,7 +29974,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('11.1.0-next.4+77.sha-184d0e5'));
+    definitionMap.set('version', literal('11.1.0-next.4+78.sha-66c27ff'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
