@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.0.8+20.sha-f8495ca
+ * @license Angular v11.0.8+30.sha-642c45b
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -642,6 +642,13 @@
         HtmlTagDefinition.prototype.isClosedByChild = function (name) {
             return this.isVoid || name.toLowerCase() in this.closedByChildren;
         };
+        HtmlTagDefinition.prototype.getContentType = function (prefix) {
+            if (typeof this.contentType === 'object') {
+                var overrideType = prefix == null ? undefined : this.contentType[prefix];
+                return overrideType !== null && overrideType !== void 0 ? overrideType : this.contentType.default;
+            }
+            return this.contentType;
+        };
         return HtmlTagDefinition;
     }());
     var _DEFAULT_TAG_DEFINITION;
@@ -708,7 +715,11 @@
                 'listing': new HtmlTagDefinition({ ignoreFirstLf: true }),
                 'style': new HtmlTagDefinition({ contentType: exports.TagContentType.RAW_TEXT }),
                 'script': new HtmlTagDefinition({ contentType: exports.TagContentType.RAW_TEXT }),
-                'title': new HtmlTagDefinition({ contentType: exports.TagContentType.ESCAPABLE_RAW_TEXT }),
+                'title': new HtmlTagDefinition({
+                    // The browser supports two separate `title` tags which have to use
+                    // a different content type: `HTMLTitleElement` and `SVGTitleElement`
+                    contentType: { default: exports.TagContentType.ESCAPABLE_RAW_TEXT, svg: exports.TagContentType.PARSABLE_DATA }
+                }),
                 'textarea': new HtmlTagDefinition({ contentType: exports.TagContentType.ESCAPABLE_RAW_TEXT, ignoreFirstLf: true }),
             };
         }
@@ -11145,7 +11156,7 @@
                 }
                 throw e;
             }
-            var contentTokenType = this._getTagDefinition(tagName).contentType;
+            var contentTokenType = this._getTagDefinition(tagName).getContentType(prefix);
             if (contentTokenType === exports.TagContentType.RAW_TEXT) {
                 this._consumeRawTextWithTagClose(prefix, tagName, false);
             }
@@ -11155,7 +11166,7 @@
         };
         _Tokenizer.prototype._consumeRawTextWithTagClose = function (prefix, tagName, decodeEntities) {
             var _this = this;
-            var textToken = this._consumeRawText(decodeEntities, function () {
+            this._consumeRawText(decodeEntities, function () {
                 if (!_this._attemptCharCode($LT))
                     return false;
                 if (!_this._attemptCharCode($SLASH))
@@ -21172,7 +21183,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.0.8+20.sha-f8495ca');
+    var VERSION$1 = new Version('11.0.8+30.sha-642c45b');
 
     /**
      * @license
@@ -22022,7 +22033,6 @@
     var XmlTagDefinition = /** @class */ (function () {
         function XmlTagDefinition() {
             this.closedByParent = false;
-            this.contentType = exports.TagContentType.PARSABLE_DATA;
             this.isVoid = false;
             this.ignoreFirstLf = false;
             this.canSelfClose = true;
@@ -22033,6 +22043,9 @@
         };
         XmlTagDefinition.prototype.isClosedByChild = function (name) {
             return false;
+        };
+        XmlTagDefinition.prototype.getContentType = function () {
+            return exports.TagContentType.PARSABLE_DATA;
         };
         return XmlTagDefinition;
     }());
