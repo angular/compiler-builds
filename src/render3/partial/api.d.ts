@@ -208,6 +208,10 @@ export interface R3DeclareQueryMetadata {
      */
     descendants?: boolean;
     /**
+     * True to only fire changes if there are underlying changes to the query.
+     */
+    emitDistinctChangesOnly?: boolean;
+    /**
      * An expression representing a type to read from each matched node, or null if the default value
      * for a given node is to be returned.
      */
