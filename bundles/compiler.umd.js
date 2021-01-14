@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.4+104.sha-cf02cf1
+ * @license Angular v11.1.0-next.4+106.sha-d516113
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1105,9 +1105,13 @@
     var createInject = makeMetadataFactory('Inject', function (token) { return ({ token: token }); });
     var createInjectionToken = makeMetadataFactory('InjectionToken', function (desc) { return ({ _desc: desc, ɵprov: undefined }); });
     var createAttribute = makeMetadataFactory('Attribute', function (attributeName) { return ({ attributeName: attributeName }); });
+    // Stores the default value of `emitDistinctChangesOnly` when the `emitDistinctChangesOnly` is not
+    // explicitly set. This value will be changed to `true` in v12.
+    // TODO(misko): switch the default in v12 to `true`. See: packages/core/src/metadata/di.ts
+    var emitDistinctChangesOnlyDefaultValue = false;
     var createContentChildren = makeMetadataFactory('ContentChildren', function (selector, data) {
         if (data === void 0) { data = {}; }
-        return (Object.assign({ selector: selector, first: false, isViewQuery: false, descendants: false }, data));
+        return (Object.assign({ selector: selector, first: false, isViewQuery: false, descendants: false, emitDistinctChangesOnly: emitDistinctChangesOnlyDefaultValue }, data));
     });
     var createContentChild = makeMetadataFactory('ContentChild', function (selector, data) {
         if (data === void 0) { data = {}; }
@@ -1115,7 +1119,7 @@
     });
     var createViewChildren = makeMetadataFactory('ViewChildren', function (selector, data) {
         if (data === void 0) { data = {}; }
-        return (Object.assign({ selector: selector, first: false, isViewQuery: true, descendants: true }, data));
+        return (Object.assign({ selector: selector, first: false, isViewQuery: true, descendants: true, emitDistinctChangesOnly: emitDistinctChangesOnlyDefaultValue }, data));
     });
     var createViewChild = makeMetadataFactory('ViewChild', function (selector, data) { return (Object.assign({ selector: selector, first: true, isViewQuery: true, descendants: true }, data)); });
     var createDirective = makeMetadataFactory('Directive', function (dir) {
@@ -1229,6 +1233,7 @@
         createInject: createInject,
         createInjectionToken: createInjectionToken,
         createAttribute: createAttribute,
+        emitDistinctChangesOnlyDefaultValue: emitDistinctChangesOnlyDefaultValue,
         createContentChildren: createContentChildren,
         createContentChild: createContentChild,
         createViewChildren: createViewChildren,
@@ -4255,8 +4260,6 @@
     Identifiers$1.definePipe = { name: 'ɵɵdefinePipe', moduleName: CORE$1 };
     Identifiers$1.queryRefresh = { name: 'ɵɵqueryRefresh', moduleName: CORE$1 };
     Identifiers$1.viewQuery = { name: 'ɵɵviewQuery', moduleName: CORE$1 };
-    Identifiers$1.staticViewQuery = { name: 'ɵɵstaticViewQuery', moduleName: CORE$1 };
-    Identifiers$1.staticContentQuery = { name: 'ɵɵstaticContentQuery', moduleName: CORE$1 };
     Identifiers$1.loadQuery = { name: 'ɵɵloadQuery', moduleName: CORE$1 };
     Identifiers$1.contentQuery = { name: 'ɵɵcontentQuery', moduleName: CORE$1 };
     Identifiers$1.NgOnChangesFeature = { name: 'ɵɵNgOnChangesFeature', moduleName: CORE$1 };
@@ -20846,6 +20849,7 @@
                 predicate: selectorsFromGlobalMetadata(query.selectors, outputCtx),
                 descendants: query.descendants,
                 read: read,
+                emitDistinctChangesOnly: !!query.emitDistinctChangesOnly,
                 static: !!query.static
             };
         });
@@ -20871,11 +20875,20 @@
         return NULL_EXPR;
     }
     function prepareQueryParams(query, constantPool) {
-        var parameters = [getQueryPredicate(query, constantPool), literal(query.descendants)];
+        var parameters = [getQueryPredicate(query, constantPool), literal(toQueryFlags(query))];
         if (query.read) {
             parameters.push(query.read);
         }
         return parameters;
+    }
+    /**
+     * Translates query flags into `TQueryFlags` type in packages/core/src/render3/interfaces/query.ts
+     * @param query
+     */
+    function toQueryFlags(query) {
+        return (query.descendants ? 1 /* descendants */ : 0 /* none */) |
+            (query.static ? 2 /* isStatic */ : 0 /* none */) |
+            (query.emitDistinctChangesOnly ? 4 /* emitDistinctChangesOnly */ : 0 /* none */);
     }
     function convertAttributesToExpressions(attributes) {
         var e_2, _a;
@@ -20905,9 +20918,8 @@
         try {
             for (var queries_1 = __values(queries), queries_1_1 = queries_1.next(); !queries_1_1.done; queries_1_1 = queries_1.next()) {
                 var query = queries_1_1.value;
-                var queryInstruction = query.static ? Identifiers$1.staticContentQuery : Identifiers$1.contentQuery;
                 // creation, e.g. r3.contentQuery(dirIndex, somePredicate, true, null);
-                createStatements.push(importExpr(queryInstruction)
+                createStatements.push(importExpr(Identifiers$1.contentQuery)
                     .callFn(__spread([variable('dirIndex')], prepareQueryParams(query, constantPool)))
                     .toStmt());
                 // update, e.g. (r3.queryRefresh(tmp = r3.loadQuery()) && (ctx.someDir = tmp));
@@ -20981,9 +20993,8 @@
         var updateStatements = [];
         var tempAllocator = temporaryAllocator(updateStatements, TEMPORARY_NAME);
         viewQueries.forEach(function (query) {
-            var queryInstruction = query.static ? Identifiers$1.staticViewQuery : Identifiers$1.viewQuery;
             // creation, e.g. r3.viewQuery(somePredicate, true);
-            var queryDefinition = importExpr(queryInstruction).callFn(prepareQueryParams(query, constantPool));
+            var queryDefinition = importExpr(Identifiers$1.viewQuery).callFn(prepareQueryParams(query, constantPool));
             createStatements.push(queryDefinition.toStmt());
             // update, e.g. (r3.queryRefresh(tmp = r3.loadQuery()) && (ctx.someDir = tmp));
             var temporary = tempAllocator();
@@ -21478,10 +21489,10 @@
     };
     function convertToR3QueryMetadata(facade) {
         return Object.assign(Object.assign({}, facade), { predicate: Array.isArray(facade.predicate) ? facade.predicate :
-                new WrappedNodeExpr(facade.predicate), read: facade.read ? new WrappedNodeExpr(facade.read) : null, static: facade.static });
+                new WrappedNodeExpr(facade.predicate), read: facade.read ? new WrappedNodeExpr(facade.read) : null, static: facade.static, emitDistinctChangesOnly: facade.emitDistinctChangesOnly });
     }
     function convertQueryDeclarationToMetadata(declaration) {
-        var _a, _b, _c;
+        var _a, _b, _c, _d;
         return {
             propertyName: declaration.propertyName,
             first: (_a = declaration.first) !== null && _a !== void 0 ? _a : false,
@@ -21490,6 +21501,7 @@
             descendants: (_b = declaration.descendants) !== null && _b !== void 0 ? _b : false,
             read: declaration.read ? new WrappedNodeExpr(declaration.read) : null,
             static: (_c = declaration.static) !== null && _c !== void 0 ? _c : false,
+            emitDistinctChangesOnly: (_d = declaration.emitDistinctChangesOnly) !== null && _d !== void 0 ? _d : true,
         };
     }
     function convertDirectiveFacadeToMetadata(facade) {
@@ -21721,7 +21733,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.4+104.sha-cf02cf1');
+    var VERSION$1 = new Version('11.1.0-next.4+106.sha-d516113');
 
     /**
      * @license
@@ -24828,6 +24840,7 @@
                 selectors: selectors,
                 first: q.first,
                 descendants: q.descendants,
+                emitDistinctChangesOnly: q.emitDistinctChangesOnly,
                 propertyName: propertyName,
                 read: q.read ? this._getTokenMetadata(q.read) : null,
                 static: q.static
@@ -26041,7 +26054,7 @@
                     // Note: queries start with id 1 so we can use the number in a Bloom filter!
                     var queryId = queryIndex + 1;
                     var bindingType = query.first ? 0 /* First */ : 1 /* All */;
-                    var flags = 134217728 /* TypeViewQuery */ | calcStaticDynamicQueryFlags(query);
+                    var flags = 134217728 /* TypeViewQuery */ | calcQueryFlags(query);
                     _this.nodes.push(function () { return ({
                         sourceSpan: null,
                         nodeFlags: flags,
@@ -26325,7 +26338,7 @@
             this.nodes.push(null);
             dirAst.directive.queries.forEach(function (query, queryIndex) {
                 var queryId = dirAst.contentQueryStartId + queryIndex;
-                var flags = 67108864 /* TypeContentQuery */ | calcStaticDynamicQueryFlags(query);
+                var flags = 67108864 /* TypeContentQuery */ | calcQueryFlags(query);
                 var bindingType = query.first ? 0 /* First */ : 1 /* All */;
                 _this.nodes.push(function () { return ({
                     sourceSpan: dirAst.sourceSpan,
@@ -26767,7 +26780,7 @@
             return eventAst;
         }
     }
-    function calcStaticDynamicQueryFlags(query) {
+    function calcQueryFlags(query) {
         var flags = 0 /* None */;
         // Note: We only make queries static that query for a single item and the user specifically
         // set the to be static. This is because of backwards compatibility with the old view compiler...
@@ -26776,6 +26789,9 @@
         }
         else {
             flags |= 536870912 /* DynamicQuery */;
+        }
+        if (query.emitDistinctChangesOnly) {
+            flags |= -2147483648 /* EmitDistinctChangesOnly */;
         }
         return flags;
     }
@@ -31629,7 +31645,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.1.0-next.4+104.sha-cf02cf1'));
+        definitionMap.set('version', literal('11.1.0-next.4+106.sha-d516113'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -31669,6 +31685,11 @@
             meta.set('first', literal(true));
         }
         meta.set('predicate', Array.isArray(query.predicate) ? asLiteral(query.predicate) : query.predicate);
+        if (!query.emitDistinctChangesOnly) {
+            // `emitDistinctChangesOnly` is special because in future we expect it to be `true`. For this
+            // reason the absence should be interpreted as `true`.
+            meta.set('emitDistinctChangesOnly', literal(false));
+        }
         if (query.descendants) {
             meta.set('descendants', literal(true));
         }
