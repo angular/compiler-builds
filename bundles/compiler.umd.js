@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.4+113.sha-61792cc
+ * @license Angular v11.1.0-next.4+114.sha-40e0bfd
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13481,6 +13481,9 @@
         targetProps, keySpan) {
             if (isAnimationLabel(name)) {
                 name = name.substring(1);
+                if (keySpan !== undefined) {
+                    keySpan = moveParseSourceSpan(keySpan, new AbsoluteSourceSpan(keySpan.start.offset + 1, keySpan.end.offset));
+                }
                 if (value) {
                     this._reportError("Assigning animation triggers via @prop=\"exp\" attributes with an expression is invalid." +
                         " Use property bindings (e.g. [@prop]=\"exp\") or use an attribute without a value (e.g. @prop) instead.", sourceSpan, exports.ParseErrorLevel.ERROR);
@@ -13502,10 +13505,16 @@
             if (name.startsWith(ANIMATE_PROP_PREFIX)) {
                 isAnimationProp = true;
                 name = name.substring(ANIMATE_PROP_PREFIX.length);
+                if (keySpan !== undefined) {
+                    keySpan = moveParseSourceSpan(keySpan, new AbsoluteSourceSpan(keySpan.start.offset + ANIMATE_PROP_PREFIX.length, keySpan.end.offset));
+                }
             }
             else if (isAnimationLabel(name)) {
                 isAnimationProp = true;
                 name = name.substring(1);
+                if (keySpan !== undefined) {
+                    keySpan = moveParseSourceSpan(keySpan, new AbsoluteSourceSpan(keySpan.start.offset + 1, keySpan.end.offset));
+                }
             }
             if (isAnimationProp) {
                 this._parseAnimation(name, expression, sourceSpan, absoluteOffset, keySpan, valueSpan, targetMatchableAttrs, targetProps);
@@ -13614,6 +13623,9 @@
             }
             if (isAnimationLabel(name)) {
                 name = name.substr(1);
+                if (keySpan !== undefined) {
+                    keySpan = moveParseSourceSpan(keySpan, new AbsoluteSourceSpan(keySpan.start.offset + 1, keySpan.end.offset));
+                }
                 this._parseAnimationEvent(name, expression, sourceSpan, handlerSpan, targetEvents, keySpan);
             }
             else {
@@ -21733,7 +21745,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.4+113.sha-61792cc');
+    var VERSION$1 = new Version('11.1.0-next.4+114.sha-40e0bfd');
 
     /**
      * @license
@@ -31645,7 +31657,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.1.0-next.4+113.sha-61792cc'));
+        definitionMap.set('version', literal('11.1.0-next.4+114.sha-40e0bfd'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
