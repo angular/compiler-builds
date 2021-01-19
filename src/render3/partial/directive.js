@@ -38,7 +38,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new util_1.DefinitionMap();
-        definitionMap.set('version', o.literal('11.1.0-rc.0+34.sha-106df61'));
+        definitionMap.set('version', o.literal('11.1.0-rc.0+35.sha-2c5ad5c'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
