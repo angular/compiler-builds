@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.4+151.sha-2b2a847
+ * @license Angular v11.1.0-next.4+154.sha-07b7af3
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10249,14 +10249,40 @@
          * .foo<scopeName> > .bar
          */
         ShadowCss.prototype._convertColonHost = function (cssText) {
-            return this._convertColonRule(cssText, _cssColonHostRe, this._colonHostPartReplacer);
+            return cssText.replace(_cssColonHostRe, function (_, hostSelectors, otherSelectors) {
+                var e_1, _a;
+                if (hostSelectors) {
+                    var convertedSelectors = [];
+                    var hostSelectorArray = hostSelectors.split(',').map(function (p) { return p.trim(); });
+                    try {
+                        for (var hostSelectorArray_1 = __values(hostSelectorArray), hostSelectorArray_1_1 = hostSelectorArray_1.next(); !hostSelectorArray_1_1.done; hostSelectorArray_1_1 = hostSelectorArray_1.next()) {
+                            var hostSelector = hostSelectorArray_1_1.value;
+                            if (!hostSelector)
+                                break;
+                            var convertedSelector = _polyfillHostNoCombinator + hostSelector.replace(_polyfillHost, '') + otherSelectors;
+                            convertedSelectors.push(convertedSelector);
+                        }
+                    }
+                    catch (e_1_1) { e_1 = { error: e_1_1 }; }
+                    finally {
+                        try {
+                            if (hostSelectorArray_1_1 && !hostSelectorArray_1_1.done && (_a = hostSelectorArray_1.return)) _a.call(hostSelectorArray_1);
+                        }
+                        finally { if (e_1) throw e_1.error; }
+                    }
+                    return convertedSelectors.join(',');
+                }
+                else {
+                    return _polyfillHostNoCombinator + otherSelectors;
+                }
+            });
         };
         /*
          * convert a rule like :host-context(.foo) > .bar { }
          *
          * to
          *
-         * .foo<scopeName> > .bar, .foo scopeName > .bar { }
+         * .foo<scopeName> > .bar, .foo <scopeName> > .bar { }
          *
          * and
          *
@@ -10267,41 +10293,23 @@
          * .foo<scopeName> .bar { ... }
          */
         ShadowCss.prototype._convertColonHostContext = function (cssText) {
-            return this._convertColonRule(cssText, _cssColonHostContextRe, this._colonHostContextPartReplacer);
-        };
-        ShadowCss.prototype._convertColonRule = function (cssText, regExp, partReplacer) {
-            // m[1] = :host(-context), m[2] = contents of (), m[3] rest of rule
-            return cssText.replace(regExp, function () {
-                var m = [];
-                for (var _i = 0; _i < arguments.length; _i++) {
-                    m[_i] = arguments[_i];
+            return cssText.replace(_cssColonHostContextReGlobal, function (selectorText) {
+                // We have captured a selector that contains a `:host-context` rule.
+                // There may be more than one so `selectorText` could look like:
+                // `:host-context(.one):host-context(.two)`.
+                var contextSelectors = [];
+                var match;
+                // Execute `_cssColonHostContextRe` over and over until we have extracted all the
+                // `:host-context` selectors from this selector.
+                while (match = _cssColonHostContextRe.exec(selectorText)) {
+                    // `match` = [':host-context(<selectors>)<rest>', <selectors>, <rest>]
+                    contextSelectors.push(match[1].trim());
+                    selectorText = match[2];
                 }
-                if (m[2]) {
-                    var parts = m[2].split(',');
-                    var r = [];
-                    for (var i = 0; i < parts.length; i++) {
-                        var p = parts[i].trim();
-                        if (!p)
-                            break;
-                        r.push(partReplacer(_polyfillHostNoCombinator, p, m[3]));
-                    }
-                    return r.join(',');
-                }
-                else {
-                    return _polyfillHostNoCombinator + m[3];
-                }
+                // The context selectors now must be combined with each other to capture all the possible
+                // selectors that `:host-context` can match.
+                return combineHostContextSelectors(_polyfillHostNoCombinator, contextSelectors, selectorText);
             });
-        };
-        ShadowCss.prototype._colonHostContextPartReplacer = function (host, part, suffix) {
-            if (part.indexOf(_polyfillHost) > -1) {
-                return this._colonHostPartReplacer(host, part, suffix);
-            }
-            else {
-                return host + part + suffix + ', ' + part + ' ' + host + suffix;
-            }
-        };
-        ShadowCss.prototype._colonHostPartReplacer = function (host, part, suffix) {
-            return host + part.replace(_polyfillHost, '') + suffix;
         };
         /*
          * Convert combinators like ::shadow and pseudo-elements like ::content
@@ -10501,11 +10509,12 @@
     var _polyfillHost = '-shadowcsshost';
     // note: :host-context pre-processed to -shadowcsshostcontext.
     var _polyfillHostContext = '-shadowcsscontext';
-    var _parenSuffix = ')(?:\\((' +
+    var _parenSuffix = '(?:\\((' +
         '(?:\\([^)(]*\\)|[^)(]*)+?' +
         ')\\))?([^,{]*)';
-    var _cssColonHostRe = new RegExp('(' + _polyfillHost + _parenSuffix, 'gim');
-    var _cssColonHostContextRe = new RegExp('(' + _polyfillHostContext + _parenSuffix, 'gim');
+    var _cssColonHostRe = new RegExp(_polyfillHost + _parenSuffix, 'gim');
+    var _cssColonHostContextReGlobal = new RegExp(_polyfillHostContext + _parenSuffix, 'gim');
+    var _cssColonHostContextRe = new RegExp(_polyfillHostContext + _parenSuffix, 'im');
     var _polyfillHostNoCombinator = _polyfillHost + '-no-combinator';
     var _polyfillHostNoCombinatorRe = /-shadowcsshost-no-combinator([^\s]*)/;
     var _shadowDOMSelectorsRe = [
@@ -10618,6 +10627,52 @@
             resultParts.push(input.substring(nonBlockStartIndex));
         }
         return new StringWithEscapedBlocks(resultParts.join(''), escapedBlocks);
+    }
+    /**
+     * Combine the `contextSelectors` with the `hostMarker` and the `otherSelectors`
+     * to create a selector that matches the same as `:host-context()`.
+     *
+     * Given a single context selector `A` we need to output selectors that match on the host and as an
+     * ancestor of the host:
+     *
+     * ```
+     * A <hostMarker>, A<hostMarker> {}
+     * ```
+     *
+     * When there is more than one context selector we also have to create combinations of those
+     * selectors with each other. For example if there are `A` and `B` selectors the output is:
+     *
+     * ```
+     * AB<hostMarker>, AB <hostMarker>, A B<hostMarker>,
+     * B A<hostMarker>, A B <hostMarker>, B A <hostMarker> {}
+     * ```
+     *
+     * And so on...
+     *
+     * @param hostMarker the string that selects the host element.
+     * @param contextSelectors an array of context selectors that will be combined.
+     * @param otherSelectors the rest of the selectors that are not context selectors.
+     */
+    function combineHostContextSelectors(hostMarker, contextSelectors, otherSelectors) {
+        var combined = [contextSelectors.pop() || ''];
+        while (contextSelectors.length > 0) {
+            var length = combined.length;
+            var contextSelector = contextSelectors.pop();
+            for (var i = 0; i < length; i++) {
+                var previousSelectors = combined[i];
+                // Add the new selector as a descendant of the previous selectors
+                combined[length * 2 + i] = previousSelectors + ' ' + contextSelector;
+                // Add the new selector as an ancestor of the previous selectors
+                combined[length + i] = contextSelector + ' ' + previousSelectors;
+                // Add the new selector to act on the same element as the previous selectors
+                combined[i] = contextSelector + previousSelectors;
+            }
+        }
+        // Finally connect the selector to the `hostMarker`s: either acting directly on the host
+        // (A<hostMarker>) or as an ancestor (A <hostMarker>).
+        return combined
+            .map(function (s) { return "" + s + hostMarker + otherSelectors + ", " + s + " " + hostMarker + otherSelectors; })
+            .join(',');
     }
 
     /**
@@ -21745,7 +21800,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.4+151.sha-2b2a847');
+    var VERSION$1 = new Version('11.1.0-next.4+154.sha-07b7af3');
 
     /**
      * @license
@@ -31657,7 +31712,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.1.0-next.4+151.sha-2b2a847'));
+        definitionMap.set('version', literal('11.1.0-next.4+154.sha-07b7af3'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
