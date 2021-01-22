@@ -26,9 +26,6 @@ export declare class ShadowCss {
     private _extractUnscopedRulesFromCssText;
     private _convertColonHost;
     private _convertColonHostContext;
-    private _convertColonRule;
-    private _colonHostContextPartReplacer;
-    private _colonHostPartReplacer;
     private _convertShadowDOMSelectors;
     private _scopeSelectors;
     private _scopeSelector;
