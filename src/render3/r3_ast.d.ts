@@ -1,13 +1,13 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
 import { SecurityContext } from '../core';
 import { AST, BindingType, BoundElementProperty, ParsedEvent, ParsedEventType } from '../expression_parser/ast';
-import { AST as I18nAST } from '../i18n/i18n_ast';
+import { I18nMeta } from '../i18n/i18n_ast';
 import { ParseSourceSpan } from '../parse_util';
 export interface Node {
     sourceSpan: ParseSourceSpan;
@@ -26,13 +26,20 @@ export declare class BoundText implements Node {
     constructor(value: AST, sourceSpan: ParseSourceSpan, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
+/**
+ * Represents a text attribute in the template.
+ *
+ * `valueSpan` may not be present in cases where there is no value `<div a></div>`.
+ * `keySpan` may also not be present for synthetic attributes from ICU expansions.
+ */
 export declare class TextAttribute implements Node {
     name: string;
     value: string;
     sourceSpan: ParseSourceSpan;
+    readonly keySpan: ParseSourceSpan | undefined;
     valueSpan?: ParseSourceSpan | undefined;
     i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined;
-    constructor(name: string, value: string, sourceSpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
+    constructor(name: string, value: string, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan | undefined, valueSpan?: ParseSourceSpan | undefined, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 export declare class BoundAttribute implements Node {
@@ -42,9 +49,11 @@ export declare class BoundAttribute implements Node {
     value: AST;
     unit: string | null;
     sourceSpan: ParseSourceSpan;
-    i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined;
-    constructor(name: string, type: BindingType, securityContext: SecurityContext, value: AST, unit: string | null, sourceSpan: ParseSourceSpan, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
-    static fromBoundElementProperty(prop: BoundElementProperty, i18n?: I18nAST): BoundAttribute;
+    readonly keySpan: ParseSourceSpan;
+    valueSpan: ParseSourceSpan | undefined;
+    i18n: I18nMeta | undefined;
+    constructor(name: string, type: BindingType, securityContext: SecurityContext, value: AST, unit: string | null, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan, valueSpan: ParseSourceSpan | undefined, i18n: I18nMeta | undefined);
+    static fromBoundElementProperty(prop: BoundElementProperty, i18n?: I18nMeta): BoundAttribute;
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 export declare class BoundEvent implements Node {
@@ -55,7 +64,8 @@ export declare class BoundEvent implements Node {
     phase: string | null;
     sourceSpan: ParseSourceSpan;
     handlerSpan: ParseSourceSpan;
-    constructor(name: string, type: ParsedEventType, handler: AST, target: string | null, phase: string | null, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan);
+    readonly keySpan: ParseSourceSpan;
+    constructor(name: string, type: ParsedEventType, handler: AST, target: string | null, phase: string | null, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan, keySpan: ParseSourceSpan);
     static fromParsedEvent(event: ParsedEvent): BoundEvent;
     visit<Result>(visitor: Visitor<Result>): Result;
 }
@@ -67,10 +77,10 @@ export declare class Element implements Node {
     children: Node[];
     references: Reference[];
     sourceSpan: ParseSourceSpan;
-    startSourceSpan: ParseSourceSpan | null;
+    startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
     i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined;
-    constructor(name: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], children: Node[], references: Reference[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan | null, endSourceSpan: ParseSourceSpan | null, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
+    constructor(name: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], children: Node[], references: Reference[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 export declare class Template implements Node {
@@ -83,10 +93,10 @@ export declare class Template implements Node {
     references: Reference[];
     variables: Variable[];
     sourceSpan: ParseSourceSpan;
-    startSourceSpan: ParseSourceSpan | null;
+    startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
     i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined;
-    constructor(tagName: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], templateAttrs: (BoundAttribute | TextAttribute)[], children: Node[], references: Reference[], variables: Variable[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan | null, endSourceSpan: ParseSourceSpan | null, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
+    constructor(tagName: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], templateAttrs: (BoundAttribute | TextAttribute)[], children: Node[], references: Reference[], variables: Variable[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 export declare class Content implements Node {
@@ -94,6 +104,7 @@ export declare class Content implements Node {
     attributes: TextAttribute[];
     sourceSpan: ParseSourceSpan;
     i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined;
+    readonly name = "ng-content";
     constructor(selector: string, attributes: TextAttribute[], sourceSpan: ParseSourceSpan, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
@@ -101,14 +112,18 @@ export declare class Variable implements Node {
     name: string;
     value: string;
     sourceSpan: ParseSourceSpan;
-    constructor(name: string, value: string, sourceSpan: ParseSourceSpan);
+    readonly keySpan: ParseSourceSpan;
+    valueSpan?: ParseSourceSpan | undefined;
+    constructor(name: string, value: string, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 export declare class Reference implements Node {
     name: string;
     value: string;
     sourceSpan: ParseSourceSpan;
-    constructor(name: string, value: string, sourceSpan: ParseSourceSpan);
+    readonly keySpan: ParseSourceSpan;
+    valueSpan?: ParseSourceSpan | undefined;
+    constructor(name: string, value: string, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 export declare class Icu implements Node {

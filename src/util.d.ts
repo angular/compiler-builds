@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -33,15 +33,16 @@ export declare class ValueTransformer implements ValueVisitor {
 export declare type SyncAsync<T> = T | Promise<T>;
 export declare const SyncAsync: {
     assertSync: <T>(value: SyncAsync<T>) => T;
-    then: <T, R>(value: SyncAsync<T>, cb: (value: T) => SyncAsync<R>) => SyncAsync<R>;
-    all: <T>(syncAsyncValues: SyncAsync<T>[]) => SyncAsync<T[]>;
+    then: <T_1, R>(value: SyncAsync<T_1>, cb: (value: T_1) => SyncAsync<R>) => SyncAsync<R>;
+    all: <T_2>(syncAsyncValues: SyncAsync<T_2>[]) => SyncAsync<T_2[]>;
 };
 export declare function error(msg: string): never;
 export declare function syntaxError(msg: string, parseErrors?: ParseError[]): Error;
 export declare function isSyntaxError(error: Error): boolean;
 export declare function getParseErrors(error: Error): ParseError[];
 export declare function escapeRegExp(s: string): string;
-export declare function utf8Encode(str: string): string;
+export declare type Byte = number;
+export declare function utf8Encode(str: string): Byte[];
 export interface OutputContext {
     genFilePath: string;
     statements: o.Statement[];
@@ -56,7 +57,7 @@ export declare function resolveForwardRef(type: any): any;
 /**
  * Determine if the argument is shaped like a Promise
  */
-export declare function isPromise(obj: any): obj is Promise<any>;
+export declare function isPromise<T = any>(obj: any): obj is Promise<T>;
 export declare class Version {
     full: string;
     readonly major: string;
@@ -72,3 +73,14 @@ declare const _global: {
     [name: string]: any;
 };
 export { _global as global };
+export declare function newArray<T = any>(size: number): T[];
+export declare function newArray<T>(size: number, value: T): T[];
+/**
+ * Partitions a given array into 2 arrays, based on a boolean value returned by the condition
+ * function.
+ *
+ * @param arr Input array that should be partitioned
+ * @param conditionFn Condition function that is called for each item in a given array and returns a
+ * boolean value.
+ */
+export declare function partitionArray<T, F = T>(arr: (T | F)[], conditionFn: (value: T | F) => boolean): [T[], F[]];

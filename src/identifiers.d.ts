@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -27,6 +27,7 @@ export declare class Identifiers {
     static moduleProviderDef: o.ExternalReference;
     static RegisterModuleFactoryFn: o.ExternalReference;
     static inject: o.ExternalReference;
+    static directiveInject: o.ExternalReference;
     static INJECTOR: o.ExternalReference;
     static Injector: o.ExternalReference;
     static ɵɵdefineInjectable: o.ExternalReference;

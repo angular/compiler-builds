@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -13,23 +13,24 @@ export declare enum TokenType {
     TAG_OPEN_END = 1,
     TAG_OPEN_END_VOID = 2,
     TAG_CLOSE = 3,
-    TEXT = 4,
-    ESCAPABLE_RAW_TEXT = 5,
-    RAW_TEXT = 6,
-    COMMENT_START = 7,
-    COMMENT_END = 8,
-    CDATA_START = 9,
-    CDATA_END = 10,
-    ATTR_NAME = 11,
-    ATTR_QUOTE = 12,
-    ATTR_VALUE = 13,
-    DOC_TYPE = 14,
-    EXPANSION_FORM_START = 15,
-    EXPANSION_CASE_VALUE = 16,
-    EXPANSION_CASE_EXP_START = 17,
-    EXPANSION_CASE_EXP_END = 18,
-    EXPANSION_FORM_END = 19,
-    EOF = 20
+    INCOMPLETE_TAG_OPEN = 4,
+    TEXT = 5,
+    ESCAPABLE_RAW_TEXT = 6,
+    RAW_TEXT = 7,
+    COMMENT_START = 8,
+    COMMENT_END = 9,
+    CDATA_START = 10,
+    CDATA_END = 11,
+    ATTR_NAME = 12,
+    ATTR_QUOTE = 13,
+    ATTR_VALUE = 14,
+    DOC_TYPE = 15,
+    EXPANSION_FORM_START = 16,
+    EXPANSION_CASE_VALUE = 17,
+    EXPANSION_CASE_EXP_START = 18,
+    EXPANSION_CASE_EXP_END = 19,
+    EXPANSION_FORM_END = 20,
+    EOF = 21
 }
 export declare class Token {
     type: TokenType | null;
@@ -44,7 +45,8 @@ export declare class TokenError extends ParseError {
 export declare class TokenizeResult {
     tokens: Token[];
     errors: TokenError[];
-    constructor(tokens: Token[], errors: TokenError[]);
+    nonNormalizedIcuExpressions: Token[];
+    constructor(tokens: Token[], errors: TokenError[], nonNormalizedIcuExpressions: Token[]);
 }
 export interface LexerRange {
     startPos: number;
@@ -90,11 +92,24 @@ export interface TokenizeOptions {
      */
     escapedString?: boolean;
     /**
+     * If this text is stored in an external template (e.g. via `templateUrl`) then we need to decide
+     * whether or not to normalize the line-endings (from `\r\n` to `\n`) when processing ICU
+     * expressions.
+     *
+     * If `true` then we will normalize ICU expression line endings.
+     * The default is `false`, but this will be switched in a future major release.
+     */
+    i18nNormalizeLineEndingsInICUs?: boolean;
+    /**
      * An array of characters that should be considered as leading trivia.
      * Leading trivia are characters that are not important to the developer, and so should not be
      * included in source-map segments.  A common example is whitespace.
      */
     leadingTriviaChars?: string[];
+    /**
+     * If true, do not convert CRLF to LF.
+     */
+    preserveLineEndings?: boolean;
 }
 export declare function tokenize(source: string, url: string, getTagDefinition: (tagName: string) => TagDefinition, options?: TokenizeOptions): TokenizeResult;
 /**

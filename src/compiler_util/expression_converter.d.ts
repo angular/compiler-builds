@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -13,6 +13,8 @@ export declare class EventHandlerVars {
 }
 export interface LocalResolver {
     getLocal(name: string): o.Expression | null;
+    notifyImplicitReceiverUse(): void;
+    globals?: Set<string>;
 }
 export declare class ConvertActionBindingResult {
     /**
@@ -42,7 +44,7 @@ export declare type InterpolationFunction = (args: o.Expression[]) => o.Expressi
  * Converts the given expression AST into an executable output AST, assuming the expression is
  * used in an action binding (e.g. an event handler).
  */
-export declare function convertActionBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, action: cdAst.AST, bindingId: string, interpolationFunction?: InterpolationFunction, baseSourceSpan?: ParseSourceSpan): ConvertActionBindingResult;
+export declare function convertActionBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, action: cdAst.AST, bindingId: string, interpolationFunction?: InterpolationFunction, baseSourceSpan?: ParseSourceSpan, implicitReceiverAccesses?: Set<string>, globals?: Set<string>): ConvertActionBindingResult;
 export interface BuiltinConverter {
     (args: o.Expression[]): o.Expression;
 }
@@ -62,7 +64,8 @@ export declare class ConvertPropertyBindingResult {
 }
 export declare enum BindingForm {
     General = 0,
-    TrySimple = 1
+    TrySimple = 1,
+    Expression = 2
 }
 /**
  * Converts the given expression AST into an executable output AST, assuming the expression
@@ -94,5 +97,5 @@ export declare function temporaryDeclaration(bindingId: string, temporaryNumber:
 export declare class BuiltinFunctionCall extends cdAst.FunctionCall {
     args: cdAst.AST[];
     converter: BuiltinConverter;
-    constructor(span: cdAst.ParseSpan, args: cdAst.AST[], converter: BuiltinConverter);
+    constructor(span: cdAst.ParseSpan, sourceSpan: cdAst.AbsoluteSourceSpan, args: cdAst.AST[], converter: BuiltinConverter);
 }

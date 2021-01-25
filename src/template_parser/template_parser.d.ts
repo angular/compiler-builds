@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -35,8 +35,8 @@ export declare class TemplateParser {
     private _htmlParser;
     private _console;
     transforms: t.TemplateAstVisitor[];
-    constructor(_config: CompilerConfig, _reflector: CompileReflector, _exprParser: Parser, _schemaRegistry: ElementSchemaRegistry, _htmlParser: HtmlParser, _console: Console, transforms: t.TemplateAstVisitor[]);
-    readonly expressionParser: Parser;
+    constructor(_config: CompilerConfig, _reflector: CompileReflector, _exprParser: Parser, _schemaRegistry: ElementSchemaRegistry, _htmlParser: HtmlParser, _console: Console | null, transforms: t.TemplateAstVisitor[]);
+    get expressionParser(): Parser;
     parse(component: CompileDirectiveMetadata, template: string | ParseTreeResult, directives: CompileDirectiveSummary[], pipes: CompilePipeSummary[], schemas: SchemaMetadata[], templateUrl: string, preserveWhitespaces: boolean): {
         template: t.TemplateAst[];
         pipes: CompilePipeSummary[];

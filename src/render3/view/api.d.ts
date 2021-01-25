@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -11,6 +11,7 @@ import * as o from '../../output/output_ast';
 import { ParseSourceSpan } from '../../parse_util';
 import * as t from '../r3_ast';
 import { R3DependencyMetadata } from '../r3_factory';
+import { R3Reference } from '../util';
 /**
  * Information needed to compile a directive for the render3 runtime.
  */
@@ -22,7 +23,15 @@ export interface R3DirectiveMetadata {
     /**
      * An expression representing a reference to the directive itself.
      */
-    type: o.Expression;
+    type: R3Reference;
+    /**
+     * An expression representing a reference to the directive being compiled, intended for use within
+     * a class definition itself.
+     *
+     * This can differ from the outer `type` if the class is being compiled by ngcc and is inside
+     * an IIFE structure that uses a different name internally.
+     */
+    internalType: o.Expression;
     /**
      * Number of generic type parameters of the type itself.
      */
@@ -34,7 +43,7 @@ export interface R3DirectiveMetadata {
     /**
      * Dependencies of the directive's constructor.
      */
-    deps: R3DependencyMetadata[] | null;
+    deps: R3DependencyMetadata[] | 'invalid' | null;
     /**
      * Unparsed selector of the directive, or `null` if there was no selector.
      */
@@ -63,13 +72,15 @@ export interface R3DirectiveMetadata {
         usesOnChanges: boolean;
     };
     /**
-     * A mapping of input field names to the property names.
+     * A mapping of inputs from class property names to binding property names, or to a tuple of
+     * binding property name and class property name if the names are different.
      */
     inputs: {
         [field: string]: string | [string, string];
     };
     /**
-     * A mapping of output field names to the property names.
+     * A mapping of outputs from class property names to binding property names, or to a tuple of
+     * binding property name and class property name if the names are different.
      */
     outputs: {
         [field: string]: string;
@@ -79,6 +90,10 @@ export interface R3DirectiveMetadata {
      */
     usesInheritance: boolean;
     /**
+     * Whether or not the component or directive inherits its entire decorator from its base class.
+     */
+    fullInheritance: boolean;
+    /**
      * Reference name under which to export the directive's type in a template,
      * if any.
      */
@@ -87,6 +102,47 @@ export interface R3DirectiveMetadata {
      * The list of providers defined in the directive.
      */
     providers: o.Expression | null;
+}
+/**
+ * Specifies how a list of declaration type references should be emitted into the generated code.
+ */
+export declare const enum DeclarationListEmitMode {
+    /**
+     * The list of declarations is emitted into the generated code as is.
+     *
+     * ```
+     * directives: [MyDir],
+     * ```
+     */
+    Direct = 0,
+    /**
+     * The list of declarations is emitted into the generated code wrapped inside a closure, which
+     * is needed when at least one declaration is a forward reference.
+     *
+     * ```
+     * directives: function () { return [MyDir, ForwardDir]; },
+     * ```
+     */
+    Closure = 1,
+    /**
+     * Similar to `Closure`, with the addition that the list of declarations can contain individual
+     * items that are themselves forward references. This is relevant for JIT compilations, as
+     * unwrapping the forwardRef cannot be done statically so must be deferred. This mode emits
+     * the declaration list using a mapping transform through `resolveForwardRef` to ensure that
+     * any forward references within the list are resolved when the outer closure is invoked.
+     *
+     * Consider the case where the runtime has captured two declarations in two distinct values:
+     * ```
+     * const dirA = MyDir;
+     * const dirB = forwardRef(function() { return ForwardRef; });
+     * ```
+     *
+     * This mode would emit the declarations captured in `dirA` and `dirB` as follows:
+     * ```
+     * directives: function () { return [dirA, dirB].map(ng.resolveForwardRef); },
+     * ```
+     */
+    ClosureResolved = 2
 }
 /**
  * Information needed to compile a component for the render3 runtime.
@@ -100,6 +156,11 @@ export interface R3ComponentMetadata extends R3DirectiveMetadata {
          * Parsed nodes of the template.
          */
         nodes: t.Node[];
+        /**
+         * Any ng-content selectors extracted from the template. Contains `null` when an ng-content
+         * element without selector is present.
+         */
+        ngContentSelectors: string[];
     };
     /**
      * A map of pipe names to an expression referencing the pipe type which are in the scope of the
@@ -110,24 +171,17 @@ export interface R3ComponentMetadata extends R3DirectiveMetadata {
      * A list of directive selectors and an expression referencing the directive type which are in the
      * scope of the compilation.
      */
-    directives: {
-        selector: string;
-        expression: o.Expression;
-    }[];
+    directives: R3UsedDirectiveMetadata[];
     /**
-     * Whether to wrap the 'directives' and/or `pipes` array, if one is generated, in a closure.
-     *
-     * This is done when the directives or pipes contain forward references.
+     * Specifies how the 'directives' and/or `pipes` array, if generated, need to be emitted.
      */
-    wrapDirectivesAndPipesInClosure: boolean;
+    declarationListEmitMode: DeclarationListEmitMode;
     /**
      * A collection of styling data that will be applied and scoped to the component.
      */
     styles: string[];
     /**
      * An encapsulation policy for the template and CSS styles. One of:
-     * - `ViewEncapsulation.Native`: Use shadow roots. This works only if natively available on the
-     *   platform (note that this is marked the as the "deprecated shadow DOM" as of Angular v6.1.
      * - `ViewEncapsulation.Emulated`: Use shimmed CSS that emulates the native behavior.
      * - `ViewEncapsulation.None`: Use global CSS without any encapsulation.
      * - `ViewEncapsulation.ShadowDom`: Use the latest ShadowDOM API to natively encapsulate styles
@@ -163,6 +217,32 @@ export interface R3ComponentMetadata extends R3DirectiveMetadata {
     changeDetection?: ChangeDetectionStrategy;
 }
 /**
+ * Information about a directive that is used in a component template. Only the stable, public
+ * facing information of the directive is stored here.
+ */
+export interface R3UsedDirectiveMetadata {
+    /**
+     * The type of the directive as an expression.
+     */
+    type: o.Expression;
+    /**
+     * The selector of the directive.
+     */
+    selector: string;
+    /**
+     * The binding property names of the inputs of the directive.
+     */
+    inputs: string[];
+    /**
+     * The binding property names of the outputs of the directive.
+     */
+    outputs: string[];
+    /**
+     * Name under which the directive is exported, if any (exportAs in Angular). Null otherwise.
+     */
+    exportAs: string[] | null;
+}
+/**
  * Information needed to compile a query (view or content).
  */
 export interface R3QueryMetadata {
@@ -175,13 +255,20 @@ export interface R3QueryMetadata {
      */
     first: boolean;
     /**
-     * Either an expression representing a type for the query predicate, or a set of string selectors.
+     * Either an expression representing a type or `InjectionToken` for the query
+     * predicate, or a set of string selectors.
      */
     predicate: o.Expression | string[];
     /**
      * Whether to include only direct children or all descendants.
      */
     descendants: boolean;
+    /**
+     * If the `QueryList` should fire change event only if actual change to query was computed (vs old
+     * behavior where the change was fired whenever the query was recomputed, even if the recomputed
+     * query resulted in the same list.)
+     */
+    emitDistinctChangesOnly: boolean;
     /**
      * An expression representing a type to read from each matched node, or null if the default value
      * for a given node is to be returned.
@@ -208,7 +295,6 @@ export interface R3QueryMetadata {
 export interface R3DirectiveDef {
     expression: o.Expression;
     type: o.Type;
-    statements: o.Statement[];
 }
 /**
  * Output of render3 component compilation.
@@ -216,7 +302,6 @@ export interface R3DirectiveDef {
 export interface R3ComponentDef {
     expression: o.Expression;
     type: o.Type;
-    statements: o.Statement[];
 }
 /**
  * Mappings indicating how the class interacts with its

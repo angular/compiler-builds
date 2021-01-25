@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -10,6 +10,7 @@ import { CompileReflector } from '../compile_reflector';
 import * as o from '../output/output_ast';
 import { OutputContext } from '../util';
 import { R3DependencyMetadata } from './r3_factory';
+import { R3Reference } from './util';
 export interface R3PipeMetadata {
     /**
      * Name of the pipe type.
@@ -18,7 +19,15 @@ export interface R3PipeMetadata {
     /**
      * An expression representing a reference to the pipe itself.
      */
-    type: o.Expression;
+    type: R3Reference;
+    /**
+     * An expression representing the pipe being compiled, intended for use within a class definition
+     * itself.
+     *
+     * This can differ from the outer `type` if the class is being compiled by ngcc and is inside an
+     * IIFE structure that uses a different name internally.
+     */
+    internalType: o.Expression;
     /**
      * Number of generic type parameters of the type itself.
      */
@@ -39,7 +48,6 @@ export interface R3PipeMetadata {
 export declare function compilePipeFromMetadata(metadata: R3PipeMetadata): {
     expression: o.InvokeFunctionExpr;
     type: o.ExpressionType;
-    statements: o.Statement[];
 };
 /**
  * Write a pipe definition to the output context.

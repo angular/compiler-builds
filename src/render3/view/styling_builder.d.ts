@@ -1,24 +1,71 @@
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-import { ConstantPool } from '../../constant_pool';
 import { AST } from '../../expression_parser/ast';
 import * as o from '../../output/output_ast';
 import { ParseSourceSpan } from '../../parse_util';
 import * as t from '../r3_ast';
 import { ValueConverter } from './template';
+import { DefinitionMap } from './util';
+/**
+ * Minimum amount of binding slots required in the runtime for style/class bindings.
+ *
+ * Styling in Angular uses up two slots in the runtime LView/TData data structures to
+ * record binding data, property information and metadata.
+ *
+ * When a binding is registered it will place the following information in the `LView`:
+ *
+ * slot 1) binding value
+ * slot 2) cached value (all other values collected before it in string form)
+ *
+ * When a binding is registered it will place the following information in the `TData`:
+ *
+ * slot 1) prop name
+ * slot 2) binding index that points to the previous style/class binding (and some extra config
+ * values)
+ *
+ * Let's imagine we have a binding that looks like so:
+ *
+ * ```
+ * <div [style.width]="x" [style.height]="y">
+ * ```
+ *
+ * Our `LView` and `TData` data-structures look like so:
+ *
+ * ```typescript
+ * LView = [
+ *   // ...
+ *   x, // value of x
+ *   "width: x",
+ *
+ *   y, // value of y
+ *   "width: x; height: y",
+ *   // ...
+ * ];
+ *
+ * TData = [
+ *   // ...
+ *   "width", // binding slot 20
+ *   0,
+ *
+ *   "height",
+ *   20,
+ *   // ...
+ * ];
+ * ```
+ *
+ * */
+export declare const MIN_STYLING_BINDING_SLOTS_REQUIRED = 2;
 /**
  * A styling expression summary that is to be processed by the compiler
  */
-export interface Instruction {
-    sourceSpan: ParseSourceSpan | null;
+export interface StylingInstruction {
     reference: o.ExternalReference;
+    /** Calls to individual styling instructions. Used when chaining calls to the same instruction. */
+    calls: StylingInstructionCall[];
+}
+export interface StylingInstructionCall {
+    sourceSpan: ParseSourceSpan | null;
+    supportsInterpolation: boolean;
     allocateBindingSlots: number;
-    buildParams(convertFn: (value: any) => o.Expression): o.Expression[];
+    params: ((convertFn: (value: any) => o.Expression | o.Expression[]) => o.Expression[]);
 }
 /**
  * An internal record of the input data for a styling binding
@@ -26,7 +73,7 @@ export interface Instruction {
 interface BoundStylingEntry {
     hasOverrideFlag: boolean;
     name: string | null;
-    unit: string | null;
+    suffix: string | null;
     sourceSpan: ParseSourceSpan;
     value: AST;
 }
@@ -48,19 +95,18 @@ interface BoundStylingEntry {
  * order which these must be generated is as follows:
  *
  * if (createMode) {
- *   elementStyling(...)
+ *   styling(...)
  * }
  * if (updateMode) {
- *   elementStylingMap(...)
- *   elementStyleProp(...)
- *   elementClassProp(...)
- *   elementStylingApp(...)
+ *   styleMap(...)
+ *   classMap(...)
+ *   styleProp(...)
+ *   classProp(...)
  * }
  *
  * The creation/update methods within the builder class produce these instructions.
  */
 export declare class StylingBuilder {
-    private _elementIndexExpr;
     private _directiveExpr;
     /** Whether or not there are any static styling values present */
     private _hasInitialValues;
@@ -69,6 +115,7 @@ export declare class StylingBuilder {
      *  (i.e. `[style]`, `[class]`, `[style.prop]` or `[class.name]`)
      */
     hasBindings: boolean;
+    hasBindingsWithPipes: boolean;
     /** the input for [class] (if it exists) */
     private _classMapInput;
     /** the input for [style] (if it exists) */
@@ -78,6 +125,7 @@ export declare class StylingBuilder {
     /** an array of each [class.name] input */
     private _singleClassInputs;
     private _lastStylingInput;
+    private _firstStylingInput;
     /**
      * Represents the location of each style binding in the template
      * (e.g. `<div [style.width]="w" [style.height]="h">` implies
@@ -92,8 +140,7 @@ export declare class StylingBuilder {
     private _classesIndex;
     private _initialStyleValues;
     private _initialClassValues;
-    private _useDefaultSanitizer;
-    constructor(_elementIndexExpr: o.Expression, _directiveExpr: o.Expression | null);
+    constructor(_directiveExpr: o.Expression | null);
     /**
      * Registers a given input to the styling builder to be later used when producing AOT code.
      *
@@ -102,8 +149,9 @@ export declare class StylingBuilder {
      */
     registerBoundInput(input: t.BoundAttribute): boolean;
     registerInputBasedOnName(name: string, expression: AST, sourceSpan: ParseSourceSpan): BoundStylingEntry | null;
-    registerStyleInput(name: string, isMapBased: boolean, value: AST, sourceSpan: ParseSourceSpan, unit?: string | null): BoundStylingEntry | null;
+    registerStyleInput(name: string, isMapBased: boolean, value: AST, sourceSpan: ParseSourceSpan, suffix?: string | null): BoundStylingEntry | null;
     registerClassInput(name: string, isMapBased: boolean, value: AST, sourceSpan: ParseSourceSpan): BoundStylingEntry | null;
+    private _checkForPipes;
     /**
      * Registers the element's static style string value to the builder.
      *
@@ -130,35 +178,34 @@ export declare class StylingBuilder {
      * responsible for registering initial styles (within a directive hostBindings' creation block),
      * as well as any of the provided attribute values, to the directive host element.
      */
-    buildHostAttrsInstruction(sourceSpan: ParseSourceSpan | null, attrs: o.Expression[], constantPool: ConstantPool): Instruction | null;
+    assignHostAttrs(attrs: o.Expression[], definitionMap: DefinitionMap): void;
     /**
-     * Builds an instruction with all the expressions and parameters for `elementStyling`.
+     * Builds an instruction with all the expressions and parameters for `classMap`.
      *
-     * The instruction generation code below is used for producing the AOT statement code which is
-     * responsible for registering style/class bindings to an element.
+     * The instruction data will contain all expressions for `classMap` to function
+     * which includes the `[class]` expression params.
      */
-    buildElementStylingInstruction(sourceSpan: ParseSourceSpan | null, constantPool: ConstantPool): Instruction | null;
+    buildClassMapInstruction(valueConverter: ValueConverter): StylingInstruction | null;
     /**
-     * Builds an instruction with all the expressions and parameters for `elementStylingMap`.
+     * Builds an instruction with all the expressions and parameters for `styleMap`.
      *
-     * The instruction data will contain all expressions for `elementStylingMap` to function
-     * which include the `[style]` and `[class]` expression params (if they exist) as well as
-     * the sanitizer and directive reference expression.
+     * The instruction data will contain all expressions for `styleMap` to function
+     * which includes the `[style]` expression params.
      */
-    buildElementStylingMapInstruction(valueConverter: ValueConverter): Instruction | null;
+    buildStyleMapInstruction(valueConverter: ValueConverter): StylingInstruction | null;
+    private _buildMapBasedInstruction;
     private _buildSingleInputs;
     private _buildClassInputs;
     private _buildStyleInputs;
-    private _buildApplyFn;
     /**
      * Constructs all instructions which contain the expressions that will be placed
      * into the update block of a template function or a directive hostBindings function.
      */
-    buildUpdateLevelInstructions(valueConverter: ValueConverter): Instruction[];
+    buildUpdateLevelInstructions(valueConverter: ValueConverter): StylingInstruction[];
 }
 export declare function parseProperty(name: string): {
     property: string;
-    unit: string;
+    suffix: string | null;
     hasOverrideFlag: boolean;
 };
 export {};

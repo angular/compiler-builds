@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -20,11 +20,4 @@ export declare class ViewCompiler {
     constructor(_reflector: CompileReflector);
     compileComponent(outputCtx: OutputContext, component: CompileDirectiveMetadata, template: TemplateAst[], styles: o.Expression, usedPipes: CompilePipeSummary[]): ViewCompileResult;
 }
-interface StaticAndDynamicQueryIds {
-    staticQueryIds: Set<number>;
-    dynamicQueryIds: Set<number>;
-}
-export declare function findStaticQueryIds(nodes: TemplateAst[], result?: Map<TemplateAst, StaticAndDynamicQueryIds>): Map<TemplateAst, StaticAndDynamicQueryIds>;
-export declare function staticViewQueryIds(nodeStaticQueryIds: Map<TemplateAst, StaticAndDynamicQueryIds>): StaticAndDynamicQueryIds;
 export declare function elementEventFullName(target: string | null, name: string): string;
-export {};

@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -28,7 +28,7 @@ export declare class I18nContext {
     readonly ref: o.ReadVarExpr;
     readonly level: number;
     readonly templateIndex: number | null;
-    readonly meta: i18n.AST;
+    readonly meta: i18n.I18nMeta;
     private registry?;
     readonly id: number;
     bindings: Set<AST>;
@@ -36,17 +36,18 @@ export declare class I18nContext {
     isEmitted: boolean;
     private _registry;
     private _unresolvedCtxCount;
-    constructor(index: number, ref: o.ReadVarExpr, level: number, templateIndex: number | null, meta: i18n.AST, registry?: any);
+    constructor(index: number, ref: o.ReadVarExpr, level: number, templateIndex: number | null, meta: i18n.I18nMeta, registry?: any);
     private appendTag;
-    readonly icus: any;
-    readonly isRoot: boolean;
-    readonly isResolved: boolean;
+    get icus(): any;
+    get isRoot(): boolean;
+    get isResolved(): boolean;
     getSerializedPlaceholders(): Map<string, any[]>;
     appendBinding(binding: AST): void;
     appendIcu(name: string, ref: o.Expression): void;
-    appendBoundText(node: i18n.AST): void;
-    appendTemplate(node: i18n.AST, index: number): void;
-    appendElement(node: i18n.AST, index: number, closed?: boolean): void;
+    appendBoundText(node: i18n.I18nMeta): void;
+    appendTemplate(node: i18n.I18nMeta, index: number): void;
+    appendElement(node: i18n.I18nMeta, index: number, closed?: boolean): void;
+    appendProjection(node: i18n.I18nMeta, index: number): void;
     /**
      * Generates an instance of a child context based on the root one,
      * when we enter a nested template within I18n section.
@@ -57,7 +58,7 @@ export declare class I18nContext {
      *
      * @returns I18nContext instance
      */
-    forkChildContext(index: number, templateIndex: number, meta: i18n.AST): I18nContext;
+    forkChildContext(index: number, templateIndex: number, meta: i18n.I18nMeta): I18nContext;
     /**
      * Reconciles child context into parent one once the end of the i18n block is reached (i18nEnd).
      *

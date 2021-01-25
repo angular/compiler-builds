@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -36,11 +36,13 @@ export declare class R3BoundTarget<DirectiveT extends DirectiveMeta> implements 
     private exprTargets;
     private symbols;
     private nestingLevel;
+    private templateEntities;
     private usedPipes;
     constructor(target: Target, directives: Map<Element | Template, DirectiveT[]>, bindings: Map<BoundAttribute | BoundEvent | TextAttribute, DirectiveT | Element | Template>, references: Map<BoundAttribute | BoundEvent | Reference | TextAttribute, {
         directive: DirectiveT;
         node: Element | Template;
-    } | Element | Template>, exprTargets: Map<AST, Reference | Variable>, symbols: Map<Reference | Variable, Template>, nestingLevel: Map<Template, number>, usedPipes: Set<string>);
+    } | Element | Template>, exprTargets: Map<AST, Reference | Variable>, symbols: Map<Reference | Variable, Template>, nestingLevel: Map<Template, number>, templateEntities: Map<Template | null, ReadonlySet<Reference | Variable>>, usedPipes: Set<string>);
+    getEntitiesInTemplateScope(template: Template | null): ReadonlySet<Reference | Variable>;
     getDirectivesOfNode(node: Element | Template): DirectiveT[] | null;
     getReferenceTarget(ref: Reference): {
         directive: DirectiveT;

@@ -1,12 +1,14 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
 import { ConstantPool } from '../../constant_pool';
+import { Interpolation } from '../../expression_parser/ast';
 import * as o from '../../output/output_ast';
+import { ParseSourceSpan } from '../../parse_util';
 import * as t from '../r3_ast';
 import { R3QueryMetadata } from './api';
 /** Name of the temporary to use during data binding */
@@ -27,8 +29,8 @@ export declare const NON_BINDABLE_ATTR = "ngNonBindable";
  * A variable declaration is added to the statements the first time the allocator is invoked.
  */
 export declare function temporaryAllocator(statements: o.Statement[], name: string): () => o.ReadVarExpr;
-export declare function unsupported(feature: string): never;
-export declare function invalid<T>(arg: o.Expression | o.Statement | t.Node): never;
+export declare function unsupported(this: void | Function, feature: string): never;
+export declare function invalid<T>(this: t.Visitor, arg: o.Expression | o.Statement | t.Node): never;
 export declare function asLiteral(value: any): o.Expression;
 export declare function conditionallyCreateMapObjectLiteral(keys: {
     [key: string]: string | string[];
@@ -38,14 +40,18 @@ export declare function conditionallyCreateMapObjectLiteral(keys: {
  */
 export declare function trimTrailingNulls(parameters: o.Expression[]): o.Expression[];
 export declare function getQueryPredicate(query: R3QueryMetadata, constantPool: ConstantPool): o.Expression;
-export declare function noop(): void;
-export declare class DefinitionMap {
+/**
+ * A representation for an object literal used during codegen of definition objects. The generic
+ * type `T` allows to reference a documented type of the generated structure, such that the
+ * property names that are set can be resolved to their documented declaration.
+ */
+export declare class DefinitionMap<T = any> {
     values: {
         key: string;
         quoted: boolean;
         value: o.Expression;
     }[];
-    set(key: string, value: o.Expression | null): void;
+    set(key: keyof T, value: o.Expression | null): void;
     toLiteralMap(): o.LiteralMapExpr;
 }
 /**
@@ -60,3 +66,11 @@ export declare class DefinitionMap {
 export declare function getAttrsForDirectiveMatching(elOrTpl: t.Element | t.Template): {
     [name: string]: string;
 };
+/** Returns a call expression to a chained instruction, e.g. `property(params[0])(params[1])`. */
+export declare function chainedInstruction(reference: o.ExternalReference, calls: o.Expression[][], span?: ParseSourceSpan | null): o.Expression;
+/**
+ * Gets the number of arguments expected to be passed to a generated instruction in the case of
+ * interpolation instructions.
+ * @param interpolation An interpolation ast
+ */
+export declare function getInterpolationArgsLength(interpolation: Interpolation): number;

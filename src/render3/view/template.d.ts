@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -13,14 +13,31 @@ import * as i18n from '../../i18n/i18n_ast';
 import { InterpolationConfig } from '../../ml_parser/interpolation_config';
 import { LexerRange } from '../../ml_parser/lexer';
 import * as o from '../../output/output_ast';
-import { ParseError, ParseSourceSpan } from '../../parse_util';
-import { SelectorMatcher } from '../../selector';
+import { ParseError } from '../../parse_util';
+import { CssSelector, SelectorMatcher } from '../../selector';
 import { BindingParser } from '../../template_parser/binding_parser';
 import * as t from '../r3_ast';
 import { I18nContext } from './i18n/context';
 import { invalid } from './util';
+export declare const LEADING_TRIVIA_CHARS: string[];
 export declare function renderFlagCheckIfStmt(flags: core.RenderFlags, statements: o.Statement[]): o.IfStmt;
-export declare function prepareEventListenerParameters(eventAst: t.BoundEvent, bindingContext: o.Expression, handlerName?: string | null, scope?: BindingScope | null): o.Expression[];
+export declare function prepareEventListenerParameters(eventAst: t.BoundEvent, handlerName?: string | null, scope?: BindingScope | null): o.Expression[];
+export interface ComponentDefConsts {
+    /**
+     * When a constant requires some pre-processing (e.g. i18n translation block that includes
+     * goog.getMsg and $localize calls), the `prepareStatements` section contains corresponding
+     * statements.
+     */
+    prepareStatements: o.Statement[];
+    /**
+     * Actual expressions that represent constants.
+     */
+    constExpressions: o.Expression[];
+    /**
+     * Cache to avoid generating duplicated i18n translation blocks.
+     */
+    i18nVarRefsCache: Map<i18n.I18nMeta, o.ReadVarExpr>;
+}
 export declare class TemplateDefinitionBuilder implements t.Visitor<void>, LocalResolver {
     private constantPool;
     private level;
@@ -33,8 +50,8 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private pipeTypeByName;
     private pipes;
     private _namespace;
-    private relativeContextFilePath;
     private i18nUseExternalIds;
+    private _constants;
     private _dataIndex;
     private _bindingContext;
     private _prefixCode;
@@ -50,12 +67,8 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
      * all local refs and context variables are available for matching.
      */
     private _updateCodeFns;
-    /**
-     * Memorizes the last node index for which a select instruction has been generated.
-     * We're initializing this to -1 to ensure the `select(0)` instruction is generated before any
-     * relevant update instructions.
-     */
-    private _lastNodeIndexWithFlush;
+    /** Index of the currently-selected node. */
+    private _currentIndex;
     /** Temporary variable declarations generated from visiting pipes, literals, etc. */
     private _tempVariables;
     /**
@@ -76,29 +89,31 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private _pureFunctionSlots;
     private _bindingSlots;
     private fileBasedI18nSuffix;
-    private _hasNgContent;
-    private _ngContentSelectors;
+    private _ngContentReservedSlots;
     private _ngContentSelectorsOffset;
-    constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, i18nContext: I18nContext | null, templateIndex: number | null, templateName: string | null, directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference, relativeContextFilePath: string, i18nUseExternalIds: boolean);
-    registerContextVariables(variable: t.Variable): void;
-    buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], ngContentSelectorsOffset?: number, i18n?: i18n.AST): o.FunctionExpr;
+    private _implicitReceiverExpr;
+    constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, i18nContext: I18nContext | null, templateIndex: number | null, templateName: string | null, directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference, relativeContextFilePath: string, i18nUseExternalIds: boolean, _constants?: ComponentDefConsts);
+    buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], ngContentSelectorsOffset?: number, i18n?: i18n.I18nMeta): o.FunctionExpr;
     getLocal(name: string): o.Expression | null;
-    i18nTranslate(message: i18n.Message, params?: {
-        [name: string]: o.Expression;
-    }, ref?: o.ReadVarExpr, transformFn?: (raw: o.ReadVarExpr) => o.Expression): o.ReadVarExpr;
-    i18nAppendBindings(expressions: AST[]): void;
-    i18nBindProps(props: {
-        [key: string]: t.Text | t.BoundText;
-    }): {
-        [key: string]: o.Expression;
-    };
-    i18nGenerateClosureVar(messageId: string): o.ReadVarExpr;
-    i18nUpdateRef(context: I18nContext): void;
-    i18nStart(span: ParseSourceSpan | null | undefined, meta: i18n.AST, selfClosing?: boolean): void;
-    i18nEnd(span?: ParseSourceSpan | null, selfClosing?: boolean): void;
+    notifyImplicitReceiverUse(): void;
+    private i18nTranslate;
+    private registerContextVariables;
+    private i18nAppendBindings;
+    private i18nBindProps;
+    private i18nGenerateMainBlockVar;
+    private i18nGenerateClosureVar;
+    private i18nUpdateRef;
+    private i18nStart;
+    private i18nEnd;
+    private i18nAttributesInstruction;
+    private getNamespaceInstruction;
+    private addNamespaceInstruction;
+    /**
+     * Adds an update instruction for an interpolated property or attribute, such as
+     * `prop="{{value}}"` or `attr.title="{{value}}"`
+     */
+    private interpolatedUpdateInstruction;
     visitContent(ngContent: t.Content): void;
-    getNamespaceInstruction(namespaceKey: string | null): o.ExternalReference;
-    addNamespaceInstruction(nsInstruction: o.ExternalReference, element: t.Element): void;
     visitElement(element: t.Element): void;
     visitTemplate(template: t.Template): void;
     readonly visitReference: typeof invalid;
@@ -112,22 +127,31 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private allocateDataSlot;
     getConstCount(): number;
     getVarCount(): number;
+    getConsts(): ComponentDefConsts;
     getNgContentSelectors(): o.Expression | null;
     private bindingContext;
     private templatePropertyBindings;
     private instructionFn;
-    private processStylingInstruction;
+    private processStylingUpdateInstruction;
     private creationInstruction;
+    private creationInstructionChain;
+    private updateInstructionWithAdvance;
     private updateInstruction;
+    private updateInstructionChain;
+    private updateInstructionChainWithAdvance;
+    private addAdvanceInstructionIfNecessary;
     private allocatePureFunctionSlots;
     private allocateBindingSlots;
-    private convertExpressionBinding;
+    /**
+     * Gets an expression that refers to the implicit receiver. The implicit
+     * receiver is always the root level context.
+     */
+    private getImplicitReceiverExpr;
     private convertPropertyBinding;
     /**
      * Gets a list of argument expressions to pass to an update instruction expression. Also updates
      * the temp variables state with temp variables that were identified as needing to be created
      * while visiting the arguments.
-     * @param contextExpression The expression for the context variable used to create arguments
      * @param value The original expression we will be resolving an arguments list from.
      */
     private getUpdateInstructionArguments;
@@ -144,18 +168,21 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
      *
      * ```
      * attrs = [prop, value, prop2, value2,
+     *   PROJECT_AS, selector,
      *   CLASSES, class1, class2,
      *   STYLES, style1, value1, style2, value2,
      *   BINDINGS, name1, name2, name3,
-     *   TEMPLATE, name4, name5, ...]
+     *   TEMPLATE, name4, name5, name6,
+     *   I18N, name7, name8, ...]
      * ```
      *
      * Note that this function will fully ignore all synthetic (@foo) attribute values
      * because those values are intended to always be generated as property instructions.
      */
-    private prepareNonRenderAttrs;
-    private toAttrsParam;
-    private prepareRefsParameter;
+    private getAttributeExpressions;
+    private addToConsts;
+    private addAttrsToConsts;
+    private prepareRefsArray;
     private prepareListenerParameter;
 }
 export declare class ValueConverter extends AstMemoryEfficientTransformer {
@@ -193,7 +220,7 @@ export declare type DeclareLocalVarCallback = (scope: BindingScope, relativeLeve
  */
 declare type BindingData = {
     retrievalLevel: number;
-    lhs: o.ReadVarExpr;
+    lhs: o.Expression;
     declareLocalCallback?: DeclareLocalVarCallback;
     declare: boolean;
     priority: number;
@@ -202,12 +229,12 @@ declare type BindingData = {
 export declare class BindingScope implements LocalResolver {
     bindingLevel: number;
     private parent;
+    globals?: Set<string> | undefined;
     /** Keeps a map from local variables to their BindingData. */
     private map;
     private referenceNameIndex;
     private restoreViewVariable;
-    private static _ROOT_SCOPE;
-    static readonly ROOT_SCOPE: BindingScope;
+    static createRootScope(): BindingScope;
     private constructor();
     get(name: string): o.Expression | null;
     /**
@@ -220,9 +247,16 @@ export declare class BindingScope implements LocalResolver {
      * @param declareLocalCallback The callback to invoke when declaring this local var
      * @param localRef Whether or not this is a local ref
      */
-    set(retrievalLevel: number, name: string, lhs: o.ReadVarExpr, priority?: number, declareLocalCallback?: DeclareLocalVarCallback, localRef?: true): BindingScope;
+    set(retrievalLevel: number, name: string, lhs: o.Expression, priority?: number, declareLocalCallback?: DeclareLocalVarCallback, localRef?: true): BindingScope;
     getLocal(name: string): (o.Expression | null);
-    nestedScope(level: number): BindingScope;
+    notifyImplicitReceiverUse(): void;
+    nestedScope(level: number, globals?: Set<string>): BindingScope;
+    /**
+     * Gets or creates a shared context variable and returns its expression. Note that
+     * this does not mean that the shared variable will be declared. Variables in the
+     * binding scope will be only declared if they are used.
+     */
+    getOrCreateSharedContextVar(retrievalLevel: number): o.ReadVarExpr;
     getSharedContextName(retrievalLevel: number): o.ReadVarExpr | null;
     maybeGenerateSharedContextVar(value: BindingData): void;
     generateSharedContextVar(retrievalLevel: number): void;
@@ -234,6 +268,12 @@ export declare class BindingScope implements LocalResolver {
     variableDeclarations(): o.Statement[];
     freshReferenceName(): string;
 }
+/**
+ * Creates a `CssSelector` given a tag name and a map of attributes
+ */
+export declare function createCssSelector(elementName: string, attributes: {
+    [name: string]: string;
+}): CssSelector;
 /**
  * Options that can be used to modify how a template is parsed by `parseTemplate()`.
  */
@@ -275,6 +315,34 @@ export interface ParseTemplateOptions {
      * but the new line should increment the current line for source mapping.
      */
     escapedString?: boolean;
+    /**
+     * An array of characters that should be considered as leading trivia.
+     * Leading trivia are characters that are not important to the developer, and so should not be
+     * included in source-map segments.  A common example is whitespace.
+     */
+    leadingTriviaChars?: string[];
+    /**
+     * Render `$localize` message ids with additional legacy message ids.
+     *
+     * This option defaults to `true` but in the future the defaul will be flipped.
+     *
+     * For now set this option to false if you have migrated the translation files to use the new
+     * `$localize` message id format and you are not using compile time translation merging.
+     */
+    enableI18nLegacyMessageIdFormat?: boolean;
+    /**
+     * If this text is stored in an external template (e.g. via `templateUrl`) then we need to decide
+     * whether or not to normalize the line-endings (from `\r\n` to `\n`) when processing ICU
+     * expressions.
+     *
+     * If `true` then we will normalize ICU expression line endings.
+     * The default is `false`, but this will be switched in a future major release.
+     */
+    i18nNormalizeLineEndingsInICUs?: boolean;
+    /**
+     * Whether the template was inline.
+     */
+    isInline?: boolean;
 }
 /**
  * Parse a template into render3 `Node`s and additional metadata, with no other dependencies.
@@ -283,15 +351,96 @@ export interface ParseTemplateOptions {
  * @param templateUrl URL to use for source mapping of the parsed template
  * @param options options to modify how the template is parsed
  */
-export declare function parseTemplate(template: string, templateUrl: string, options?: ParseTemplateOptions): {
-    errors?: ParseError[];
-    nodes: t.Node[];
-    styleUrls: string[];
-    styles: string[];
-};
+export declare function parseTemplate(template: string, templateUrl: string, options?: ParseTemplateOptions): ParsedTemplate;
 /**
  * Construct a `BindingParser` with a default configuration.
  */
 export declare function makeBindingParser(interpolationConfig?: InterpolationConfig): BindingParser;
 export declare function resolveSanitizationFn(context: core.SecurityContext, isAttribute?: boolean): o.ExternalExpr | null;
+/**
+ * Generate statements that define a given translation message.
+ *
+ * ```
+ * var I18N_1;
+ * if (typeof ngI18nClosureMode !== undefined && ngI18nClosureMode) {
+ *     var MSG_EXTERNAL_XXX = goog.getMsg(
+ *          "Some message with {$interpolation}!",
+ *          { "interpolation": "\uFFFD0\uFFFD" }
+ *     );
+ *     I18N_1 = MSG_EXTERNAL_XXX;
+ * }
+ * else {
+ *     I18N_1 = $localize`Some message with ${'\uFFFD0\uFFFD'}!`;
+ * }
+ * ```
+ *
+ * @param message The original i18n AST message node
+ * @param variable The variable that will be assigned the translation, e.g. `I18N_1`.
+ * @param closureVar The variable for Closure `goog.getMsg` calls, e.g. `MSG_EXTERNAL_XXX`.
+ * @param params Object mapping placeholder names to their values (e.g.
+ * `{ "interpolation": "\uFFFD0\uFFFD" }`).
+ * @param transformFn Optional transformation function that will be applied to the translation (e.g.
+ * post-processing).
+ * @returns An array of statements that defined a given translation.
+ */
+export declare function getTranslationDeclStmts(message: i18n.Message, variable: o.ReadVarExpr, closureVar: o.ReadVarExpr, params?: {
+    [name: string]: o.Expression;
+}, transformFn?: (raw: o.ReadVarExpr) => o.Expression): o.Statement[];
+/**
+ * Information about the template which was extracted during parsing.
+ *
+ * This contains the actual parsed template as well as any metadata collected during its parsing,
+ * some of which might be useful for re-parsing the template with different options.
+ */
+export interface ParsedTemplate {
+    /**
+     * Include whitespace nodes in the parsed output.
+     */
+    preserveWhitespaces?: boolean;
+    /**
+     * How to parse interpolation markers.
+     */
+    interpolationConfig?: InterpolationConfig;
+    /**
+     * The string contents of the template, or an expression that represents the string/template
+     * literal as it occurs in the source.
+     *
+     * This is the "logical" template string, after expansion of any escaped characters (for inline
+     * templates). This may differ from the actual template bytes as they appear in the .ts file.
+     */
+    template: string | o.Expression;
+    /**
+     * A full path to the file which contains the template.
+     *
+     * This can be either the original .ts file if the template is inline, or the .html file if an
+     * external file was used.
+     */
+    templateUrl: string;
+    /**
+     * Whether the template was inline (using `template`) or external (using `templateUrl`).
+     */
+    isInline: boolean;
+    /**
+     * Any errors from parsing the template the first time.
+     *
+     * `null` if there are no errors. Otherwise, the array of errors is guaranteed to be non-empty.
+     */
+    errors: ParseError[] | null;
+    /**
+     * The template AST, parsed from the template.
+     */
+    nodes: t.Node[];
+    /**
+     * Any styleUrls extracted from the metadata.
+     */
+    styleUrls: string[];
+    /**
+     * Any inline styles extracted from the metadata.
+     */
+    styles: string[];
+    /**
+     * Any ng-content selectors extracted from the template.
+     */
+    ngContentSelectors: string[];
+}
 export {};

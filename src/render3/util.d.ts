@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -11,7 +11,7 @@ import { OutputContext } from '../util';
  * Convert an object map with `Expression` values into a `LiteralMapExpr`.
  */
 export declare function mapToMapExpression(map: {
-    [key: string]: o.Expression;
+    [key: string]: o.Expression | undefined;
 }): o.LiteralMapExpr;
 /**
  * Convert metadata into an `Expression` in the given `OutputContext`.
@@ -28,4 +28,9 @@ export declare function prepareSyntheticPropertyName(name: string): string;
 export declare function prepareSyntheticListenerName(name: string, phase: string): string;
 export declare function isSyntheticPropertyOrListener(name: string): boolean;
 export declare function getSyntheticPropertyName(name: string): string;
+export declare function getSafePropertyAccessString(accessor: string, name: string): string;
 export declare function prepareSyntheticListenerFunctionName(name: string, phase: string): string;
+export declare function jitOnlyGuardedExpression(expr: o.Expression): o.Expression;
+export declare function devOnlyGuardedExpression(expr: o.Expression): o.Expression;
+export declare function guardedExpression(guard: string, expr: o.Expression): o.Expression;
+export declare function wrapReference(value: any): R3Reference;

@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -34,6 +34,7 @@ export declare class DomElementSchemaRegistry extends ElementSchemaRegistry {
         msg?: string;
     };
     allKnownElementNames(): string[];
+    allKnownAttributesOfElement(tagName: string): string[];
     normalizeAnimationStyleProperty(propName: string): string;
     normalizeAnimationStyleValue(camelCaseProp: string, userProvidedProp: string, val: string | number): {
         error: string;

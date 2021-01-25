@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -20,7 +20,6 @@ export declare class EmitterVisitorContext {
     private _classes;
     private _preambleLineCount;
     constructor(_indent: number);
-    private readonly _currentLine;
     println(from?: {
         sourceSpan: ParseSourceSpan | null;
     } | null, lastPart?: string): void;
@@ -34,16 +33,16 @@ export declare class EmitterVisitorContext {
     decIndent(): void;
     pushClass(clazz: o.ClassStmt): void;
     popClass(): o.ClassStmt;
-    readonly currentClass: o.ClassStmt | null;
+    get currentClass(): o.ClassStmt | null;
     toSource(): string;
     toSourceMapGenerator(genFilePath: string, startsAtLine?: number): SourceMapGenerator;
     setPreambleLineCount(count: number): number;
     spanOf(line: number, column: number): ParseSourceSpan | null;
-    private readonly sourceLines;
 }
 export declare abstract class AbstractEmitterVisitor implements o.StatementVisitor, o.ExpressionVisitor {
     private _escapeDollarInStrings;
     constructor(_escapeDollarInStrings: boolean);
+    protected printLeadingComments(stmt: o.Statement, ctx: EmitterVisitorContext): void;
     visitExpressionStmt(stmt: o.ExpressionStatement, ctx: EmitterVisitorContext): any;
     visitReturnStmt(stmt: o.ReturnStatement, ctx: EmitterVisitorContext): any;
     abstract visitCastExpr(ast: o.CastExpr, context: any): any;
@@ -51,8 +50,6 @@ export declare abstract class AbstractEmitterVisitor implements o.StatementVisit
     visitIfStmt(stmt: o.IfStmt, ctx: EmitterVisitorContext): any;
     abstract visitTryCatchStmt(stmt: o.TryCatchStmt, ctx: EmitterVisitorContext): any;
     visitThrowStmt(stmt: o.ThrowStmt, ctx: EmitterVisitorContext): any;
-    visitCommentStmt(stmt: o.CommentStmt, ctx: EmitterVisitorContext): any;
-    visitJSDocCommentStmt(stmt: o.JSDocCommentStmt, ctx: EmitterVisitorContext): null;
     abstract visitDeclareVarStmt(stmt: o.DeclareVarStmt, ctx: EmitterVisitorContext): any;
     visitWriteVarExpr(expr: o.WriteVarExpr, ctx: EmitterVisitorContext): any;
     visitWriteKeyExpr(expr: o.WriteKeyExpr, ctx: EmitterVisitorContext): any;
@@ -60,17 +57,20 @@ export declare abstract class AbstractEmitterVisitor implements o.StatementVisit
     visitInvokeMethodExpr(expr: o.InvokeMethodExpr, ctx: EmitterVisitorContext): any;
     abstract getBuiltinMethodName(method: o.BuiltinMethod): string;
     visitInvokeFunctionExpr(expr: o.InvokeFunctionExpr, ctx: EmitterVisitorContext): any;
+    visitTaggedTemplateExpr(expr: o.TaggedTemplateExpr, ctx: EmitterVisitorContext): any;
     visitWrappedNodeExpr(ast: o.WrappedNodeExpr<any>, ctx: EmitterVisitorContext): any;
     visitTypeofExpr(expr: o.TypeofExpr, ctx: EmitterVisitorContext): any;
     visitReadVarExpr(ast: o.ReadVarExpr, ctx: EmitterVisitorContext): any;
     visitInstantiateExpr(ast: o.InstantiateExpr, ctx: EmitterVisitorContext): any;
     visitLiteralExpr(ast: o.LiteralExpr, ctx: EmitterVisitorContext): any;
+    visitLocalizedString(ast: o.LocalizedString, ctx: EmitterVisitorContext): any;
     abstract visitExternalExpr(ast: o.ExternalExpr, ctx: EmitterVisitorContext): any;
     visitConditionalExpr(ast: o.ConditionalExpr, ctx: EmitterVisitorContext): any;
     visitNotExpr(ast: o.NotExpr, ctx: EmitterVisitorContext): any;
     visitAssertNotNullExpr(ast: o.AssertNotNull, ctx: EmitterVisitorContext): any;
     abstract visitFunctionExpr(ast: o.FunctionExpr, ctx: EmitterVisitorContext): any;
     abstract visitDeclareFunctionStmt(stmt: o.DeclareFunctionStmt, context: any): any;
+    visitUnaryOperatorExpr(ast: o.UnaryOperatorExpr, ctx: EmitterVisitorContext): any;
     visitBinaryOperatorExpr(ast: o.BinaryOperatorExpr, ctx: EmitterVisitorContext): any;
     visitReadPropExpr(ast: o.ReadPropExpr, ctx: EmitterVisitorContext): any;
     visitReadKeyExpr(ast: o.ReadKeyExpr, ctx: EmitterVisitorContext): any;

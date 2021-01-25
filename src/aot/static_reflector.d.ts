@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -41,6 +41,11 @@ export declare class StaticReflector implements CompileReflector {
         fn: any;
     }[], errorRecorder?: ((error: any, fileName?: string | undefined) => void) | undefined);
     componentModuleUrl(typeOrFunc: StaticSymbol): string;
+    /**
+     * Invalidate the specified `symbols` on program change.
+     * @param symbols
+     */
+    invalidateSymbols(symbols: StaticSymbol[]): void;
     resolveExternalReference(ref: o.ExternalReference, containingFile?: string): StaticSymbol;
     findDeclaration(moduleUrl: string, name: string, containingFile?: string): StaticSymbol;
     tryFindDeclaration(moduleUrl: string, name: string, containingFile?: string): StaticSymbol;
