@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.4+189.sha-e43cba5
+ * @license Angular v11.1.0-next.4+194.sha-be979c9
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15691,7 +15691,7 @@
         };
         Parser.prototype.parseInterpolation = function (input, location, absoluteOffset, interpolationConfig) {
             if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
-            var _a = this.splitInterpolation(input, location, interpolationConfig), strings = _a.strings, expressions = _a.expressions, offsets = _a.offsets;
+            var _b = this.splitInterpolation(input, location, interpolationConfig), strings = _b.strings, expressions = _b.expressions, offsets = _b.offsets;
             if (expressions.length === 0)
                 return null;
             var expressionNodes = [];
@@ -15815,14 +15815,14 @@
             }
             return null;
         };
-        Parser.prototype._checkNoInterpolation = function (input, location, _a) {
-            var e_1, _b;
-            var start = _a.start, end = _a.end;
+        Parser.prototype._checkNoInterpolation = function (input, location, _b) {
+            var e_1, _c;
+            var start = _b.start, end = _b.end;
             var startIndex = -1;
             var endIndex = -1;
             try {
-                for (var _c = __values(this._forEachUnquotedChar(input, 0)), _d = _c.next(); !_d.done; _d = _c.next()) {
-                    var charIndex = _d.value;
+                for (var _d = __values(this._forEachUnquotedChar(input, 0)), _e = _d.next(); !_e.done; _e = _d.next()) {
+                    var charIndex = _e.value;
                     if (startIndex === -1) {
                         if (input.startsWith(start)) {
                             startIndex = charIndex;
@@ -15839,7 +15839,7 @@
             catch (e_1_1) { e_1 = { error: e_1_1 }; }
             finally {
                 try {
-                    if (_d && !_d.done && (_b = _c.return)) _b.call(_c);
+                    if (_e && !_e.done && (_c = _d.return)) _c.call(_d);
                 }
                 finally { if (e_1) throw e_1.error; }
             }
@@ -15852,10 +15852,10 @@
          * while ignoring comments and quoted content.
          */
         Parser.prototype._getInterpolationEndIndex = function (input, expressionEnd, start) {
-            var e_2, _a;
+            var e_2, _b;
             try {
-                for (var _b = __values(this._forEachUnquotedChar(input, start)), _c = _b.next(); !_c.done; _c = _b.next()) {
-                    var charIndex = _c.value;
+                for (var _c = __values(this._forEachUnquotedChar(input, start)), _d = _c.next(); !_d.done; _d = _c.next()) {
+                    var charIndex = _d.value;
                     if (input.startsWith(expressionEnd, charIndex)) {
                         return charIndex;
                     }
@@ -15869,7 +15869,7 @@
             catch (e_2_1) { e_2 = { error: e_2_1 }; }
             finally {
                 try {
-                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+                    if (_d && !_d.done && (_b = _c.return)) _b.call(_c);
                 }
                 finally { if (e_2) throw e_2.error; }
             }
@@ -15882,13 +15882,13 @@
          */
         Parser.prototype._forEachUnquotedChar = function (input, start) {
             var currentQuote, escapeCount, i, char;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
                         currentQuote = null;
                         escapeCount = 0;
                         i = start;
-                        _a.label = 1;
+                        _b.label = 1;
                     case 1:
                         if (!(i < input.length)) return [3 /*break*/, 6];
                         char = input[i];
@@ -15900,11 +15900,11 @@
                         if (!(currentQuote === null)) return [3 /*break*/, 4];
                         return [4 /*yield*/, i];
                     case 3:
-                        _a.sent();
-                        _a.label = 4;
+                        _b.sent();
+                        _b.label = 4;
                     case 4:
                         escapeCount = char === '\\' ? escapeCount + 1 : 0;
-                        _a.label = 5;
+                        _b.label = 5;
                     case 5:
                         i++;
                         return [3 /*break*/, 1];
@@ -16017,13 +16017,25 @@
             enumerable: false,
             configurable: true
         });
-        _ParseAST.prototype.span = function (start) {
-            return new ParseSpan(start, this.currentEndIndex);
+        /**
+         * Retrieve a `ParseSpan` from `start` to the current position (or to `artificialEndIndex` if
+         * provided).
+         *
+         * @param start Position from which the `ParseSpan` will start.
+         * @param artificialEndIndex Optional ending index to be used if provided (and if greater than the
+         *     natural ending index)
+         */
+        _ParseAST.prototype.span = function (start, artificialEndIndex) {
+            var endIndex = this.currentEndIndex;
+            if (artificialEndIndex !== undefined && artificialEndIndex > this.currentEndIndex) {
+                endIndex = artificialEndIndex;
+            }
+            return new ParseSpan(start, endIndex);
         };
-        _ParseAST.prototype.sourceSpan = function (start) {
-            var serial = start + "@" + this.inputIndex;
+        _ParseAST.prototype.sourceSpan = function (start, artificialEndIndex) {
+            var serial = start + "@" + this.inputIndex + ":" + artificialEndIndex;
             if (!this.sourceSpanCache.has(serial)) {
-                this.sourceSpanCache.set(serial, this.span(start).toAbsolute(this.absoluteOffset));
+                this.sourceSpanCache.set(serial, this.span(start, artificialEndIndex).toAbsolute(this.absoluteOffset));
             }
             return this.sourceSpanCache.get(serial);
         };
@@ -16086,7 +16098,7 @@
             var n = this.next;
             if (!n.isIdentifier() && !n.isKeyword()) {
                 this.error("Unexpected " + this.prettyPrintToken(n) + ", expected identifier or keyword");
-                return '';
+                return null;
             }
             this.advance();
             return n.toString();
@@ -16131,15 +16143,36 @@
                 }
                 do {
                     var nameStart = this.inputIndex;
-                    var name = this.expectIdentifierOrKeyword();
-                    var nameSpan = this.sourceSpan(nameStart);
+                    var nameId = this.expectIdentifierOrKeyword();
+                    var nameSpan = void 0;
+                    var fullSpanEnd = undefined;
+                    if (nameId !== null) {
+                        nameSpan = this.sourceSpan(nameStart);
+                    }
+                    else {
+                        // No valid identifier was found, so we'll assume an empty pipe name ('').
+                        nameId = '';
+                        // However, there may have been whitespace present between the pipe character and the next
+                        // token in the sequence (or the end of input). We want to track this whitespace so that
+                        // the `BindingPipe` we produce covers not just the pipe character, but any trailing
+                        // whitespace beyond it. Another way of thinking about this is that the zero-length name
+                        // is assumed to be at the end of any whitespace beyond the pipe character.
+                        //
+                        // Therefore, we push the end of the `ParseSpan` for this pipe all the way up to the
+                        // beginning of the next token, or until the end of input if the next token is EOF.
+                        fullSpanEnd = this.next.index !== -1 ? this.next.index : this.inputLength + this.offset;
+                        // The `nameSpan` for an empty pipe name is zero-length at the end of any whitespace
+                        // beyond the pipe character.
+                        nameSpan = new ParseSpan(fullSpanEnd, fullSpanEnd).toAbsolute(this.absoluteOffset);
+                    }
                     var args = [];
                     while (this.consumeOptionalCharacter($COLON)) {
                         args.push(this.parseExpression());
+                        // If there are additional expressions beyond the name, then the artificial end for the
+                        // name is no longer relevant.
                     }
                     var start = result.span.start;
-                    result =
-                        new BindingPipe(this.span(start), this.sourceSpan(start), result, name, args, nameSpan);
+                    result = new BindingPipe(this.span(start), this.sourceSpan(start, fullSpanEnd), result, nameId, args, nameSpan);
                 } while (this.consumeOptionalOperator('|'));
             }
             return result;
@@ -16431,7 +16464,8 @@
             var start = receiver.span.start;
             var nameStart = this.inputIndex;
             var id = this.withContext(ParseContextFlags.Writable, function () {
-                var id = _this.expectIdentifierOrKeyword();
+                var _a;
+                var id = (_a = _this.expectIdentifierOrKeyword()) !== null && _a !== void 0 ? _a : '';
                 if (id.length === 0) {
                     _this.error("Expected identifier for property access", receiver.span.end);
                 }
@@ -16610,7 +16644,7 @@
                 return null;
             }
             var ast = this.parsePipe(); // example: "condition | async"
-            var _a = ast.span, start = _a.start, end = _a.end;
+            var _b = ast.span, start = _b.start, end = _b.end;
             var value = this.input.substring(start, end);
             return new ASTWithSource(ast, value, this.location, this.absoluteOffset + start, this.errors);
         };
@@ -21745,7 +21779,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.4+189.sha-e43cba5');
+    var VERSION$1 = new Version('11.1.0-next.4+194.sha-be979c9');
 
     /**
      * @license
@@ -31657,7 +31691,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.1.0-next.4+189.sha-e43cba5'));
+        definitionMap.set('version', literal('11.1.0-next.4+194.sha-be979c9'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
