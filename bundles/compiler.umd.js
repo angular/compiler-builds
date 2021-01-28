@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.4+197.sha-d4bb4a0
+ * @license Angular v11.1.0-next.4+208.sha-88f8ddd
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -12083,7 +12083,7 @@
                 this._advance();
                 selfClosing = false;
             }
-            var end = this._peek.sourceSpan.start;
+            var end = this._peek.sourceSpan.fullStart;
             var span = new ParseSourceSpan(startTagToken.sourceSpan.start, end, startTagToken.sourceSpan.fullStart);
             // Create a separate `startSpan` because `span` will be modified when there is an `end` span.
             var startSpan = new ParseSourceSpan(startTagToken.sourceSpan.start, end, startTagToken.sourceSpan.fullStart);
@@ -13361,8 +13361,9 @@
         };
         BindingParser.prototype.parseInterpolation = function (value, sourceSpan) {
             var sourceInfo = sourceSpan.start.toString();
+            var absoluteOffset = sourceSpan.fullStart.offset;
             try {
-                var ast = this._exprParser.parseInterpolation(value, sourceInfo, sourceSpan.start.offset, this._interpolationConfig);
+                var ast = this._exprParser.parseInterpolation(value, sourceInfo, absoluteOffset, this._interpolationConfig);
                 if (ast)
                     this._reportExpressionParserErrors(ast.errors, sourceSpan);
                 this._checkPipes(ast, sourceSpan);
@@ -13370,7 +13371,7 @@
             }
             catch (e) {
                 this._reportError("" + e, sourceSpan);
-                return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, sourceSpan.start.offset);
+                return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, absoluteOffset);
             }
         };
         /**
@@ -13380,8 +13381,9 @@
          */
         BindingParser.prototype.parseInterpolationExpression = function (expression, sourceSpan) {
             var sourceInfo = sourceSpan.start.toString();
+            var absoluteOffset = sourceSpan.start.offset;
             try {
-                var ast = this._exprParser.parseInterpolationExpression(expression, sourceInfo, sourceSpan.start.offset);
+                var ast = this._exprParser.parseInterpolationExpression(expression, sourceInfo, absoluteOffset);
                 if (ast)
                     this._reportExpressionParserErrors(ast.errors, sourceSpan);
                 this._checkPipes(ast, sourceSpan);
@@ -13389,7 +13391,7 @@
             }
             catch (e) {
                 this._reportError("" + e, sourceSpan);
-                return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, sourceSpan.start.offset);
+                return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, absoluteOffset);
             }
         };
         /**
@@ -15766,13 +15768,10 @@
                     }
                     var fullEnd = exprEnd + interpEnd.length;
                     var text = input.substring(exprStart, exprEnd);
-                    if (text.trim().length > 0) {
-                        expressions.push({ text: text, start: fullStart, end: fullEnd });
-                    }
-                    else {
+                    if (text.trim().length === 0) {
                         this._reportError('Blank expressions are not allowed in interpolated strings', input, "at column " + i + " in", location);
-                        expressions.push({ text: '$implicit', start: fullStart, end: fullEnd });
                     }
+                    expressions.push({ text: text, start: fullStart, end: fullEnd });
                     offsets.push(exprStart);
                     i = fullEnd;
                     atInterpolation = false;
@@ -16129,8 +16128,12 @@
                     this.error("Unexpected token '" + this.next + "'");
                 }
             }
-            if (exprs.length == 0)
-                return new EmptyExpr(this.span(start), this.sourceSpan(start));
+            if (exprs.length == 0) {
+                // We have no expressions so create an empty expression that spans the entire input length
+                var artificialStart = this.offset;
+                var artificialEnd = this.offset + this.inputLength;
+                return new EmptyExpr(this.span(artificialStart, artificialEnd), this.sourceSpan(artificialStart, artificialEnd));
+            }
             if (exprs.length == 1)
                 return exprs[0];
             return new Chain(this.span(start), this.sourceSpan(start), exprs);
@@ -21779,7 +21782,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.4+197.sha-d4bb4a0');
+    var VERSION$1 = new Version('11.1.0-next.4+208.sha-88f8ddd');
 
     /**
      * @license
@@ -31691,7 +31694,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.1.0-next.4+197.sha-d4bb4a0'));
+        definitionMap.set('version', literal('11.1.0-next.4+208.sha-88f8ddd'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
