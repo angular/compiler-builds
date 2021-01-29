@@ -283,6 +283,10 @@ export interface ParseTemplateOptions {
      */
     preserveWhitespaces?: boolean;
     /**
+     * Preserve original line endings instead of normalizing '\r\n' endings to '\n'.
+     */
+    preserveLineEndings?: boolean;
+    /**
      * How to parse interpolation markers.
      */
     interpolationConfig?: InterpolationConfig;
