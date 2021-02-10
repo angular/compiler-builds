@@ -178,7 +178,7 @@ export declare class _ParseAST {
     parsePrimary(): AST;
     parseExpressionList(terminator: number): AST[];
     parseLiteralMap(): LiteralMap;
-    parseAccessMemberOrMethodCall(receiver: AST, isSafe?: boolean): AST;
+    parseAccessMemberOrMethodCall(receiver: AST, start: number, isSafe?: boolean): AST;
     parseCallArguments(): BindingPipe[];
     /**
      * Parses an identifier, a keyword, a string with an optional `-` in between,
