@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.4+324.sha-fface51
+ * @license Angular v11.1.0-next.4+321.sha-7a8821c
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -21782,7 +21782,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.4+324.sha-fface51');
+    var VERSION$1 = new Version('11.1.0-next.4+321.sha-7a8821c');
 
     /**
      * @license
@@ -31694,7 +31694,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.1.0-next.4+324.sha-fface51'));
+        definitionMap.set('version', literal('11.1.0-next.4+321.sha-7a8821c'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
