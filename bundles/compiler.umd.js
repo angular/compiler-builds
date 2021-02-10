@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.2+4.sha-0fc5a16
+ * @license Angular v11.1.2+79.sha-e8c8a8d
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16139,6 +16139,7 @@
             return new Chain(this.span(start), this.sourceSpan(start), exprs);
         };
         _ParseAST.prototype.parsePipe = function () {
+            var start = this.inputIndex;
             var result = this.parseExpression();
             if (this.consumeOptionalOperator('|')) {
                 if (this.parseAction) {
@@ -16174,7 +16175,6 @@
                         // If there are additional expressions beyond the name, then the artificial end for the
                         // name is no longer relevant.
                     }
-                    var start = result.span.start;
                     result = new BindingPipe(this.span(start), this.sourceSpan(start, fullSpanEnd), result, nameId, args, nameSpan);
                 } while (this.consumeOptionalOperator('|'));
             }
@@ -16206,26 +16206,27 @@
         };
         _ParseAST.prototype.parseLogicalOr = function () {
             // '||'
+            var start = this.inputIndex;
             var result = this.parseLogicalAnd();
             while (this.consumeOptionalOperator('||')) {
                 var right = this.parseLogicalAnd();
-                var start = result.span.start;
                 result = new Binary(this.span(start), this.sourceSpan(start), '||', result, right);
             }
             return result;
         };
         _ParseAST.prototype.parseLogicalAnd = function () {
             // '&&'
+            var start = this.inputIndex;
             var result = this.parseEquality();
             while (this.consumeOptionalOperator('&&')) {
                 var right = this.parseEquality();
-                var start = result.span.start;
                 result = new Binary(this.span(start), this.sourceSpan(start), '&&', result, right);
             }
             return result;
         };
         _ParseAST.prototype.parseEquality = function () {
             // '==','!=','===','!=='
+            var start = this.inputIndex;
             var result = this.parseRelational();
             while (this.next.type == exports.TokenType.Operator) {
                 var operator = this.next.strValue;
@@ -16236,7 +16237,6 @@
                     case '!==':
                         this.advance();
                         var right = this.parseRelational();
-                        var start = result.span.start;
                         result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
                         continue;
                 }
@@ -16246,6 +16246,7 @@
         };
         _ParseAST.prototype.parseRelational = function () {
             // '<', '>', '<=', '>='
+            var start = this.inputIndex;
             var result = this.parseAdditive();
             while (this.next.type == exports.TokenType.Operator) {
                 var operator = this.next.strValue;
@@ -16256,7 +16257,6 @@
                     case '>=':
                         this.advance();
                         var right = this.parseAdditive();
-                        var start = result.span.start;
                         result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
                         continue;
                 }
@@ -16266,6 +16266,7 @@
         };
         _ParseAST.prototype.parseAdditive = function () {
             // '+', '-'
+            var start = this.inputIndex;
             var result = this.parseMultiplicative();
             while (this.next.type == exports.TokenType.Operator) {
                 var operator = this.next.strValue;
@@ -16274,7 +16275,6 @@
                     case '-':
                         this.advance();
                         var right = this.parseMultiplicative();
-                        var start = result.span.start;
                         result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
                         continue;
                 }
@@ -16284,6 +16284,7 @@
         };
         _ParseAST.prototype.parseMultiplicative = function () {
             // '*', '%', '/'
+            var start = this.inputIndex;
             var result = this.parsePrefix();
             while (this.next.type == exports.TokenType.Operator) {
                 var operator = this.next.strValue;
@@ -16293,7 +16294,6 @@
                     case '/':
                         this.advance();
                         var right = this.parsePrefix();
-                        var start = result.span.start;
                         result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
                         continue;
                 }
@@ -16325,14 +16325,14 @@
         };
         _ParseAST.prototype.parseCallChain = function () {
             var _this = this;
+            var start = this.inputIndex;
             var result = this.parsePrimary();
-            var resultStart = result.span.start;
             while (true) {
                 if (this.consumeOptionalCharacter($PERIOD)) {
-                    result = this.parseAccessMemberOrMethodCall(result, false);
+                    result = this.parseAccessMemberOrMethodCall(result, start, false);
                 }
                 else if (this.consumeOptionalOperator('?.')) {
-                    result = this.parseAccessMemberOrMethodCall(result, true);
+                    result = this.parseAccessMemberOrMethodCall(result, start, true);
                 }
                 else if (this.consumeOptionalCharacter($LBRACKET)) {
                     this.withContext(ParseContextFlags.Writable, function () {
@@ -16345,11 +16345,10 @@
                         _this.expectCharacter($RBRACKET);
                         if (_this.consumeOptionalOperator('=')) {
                             var value = _this.parseConditional();
-                            result = new KeyedWrite(_this.span(resultStart), _this.sourceSpan(resultStart), result, key, value);
+                            result = new KeyedWrite(_this.span(start), _this.sourceSpan(start), result, key, value);
                         }
                         else {
-                            result =
-                                new KeyedRead(_this.span(resultStart), _this.sourceSpan(resultStart), result, key);
+                            result = new KeyedRead(_this.span(start), _this.sourceSpan(start), result, key);
                         }
                     });
                 }
@@ -16358,11 +16357,10 @@
                     var args = this.parseCallArguments();
                     this.rparensExpected--;
                     this.expectCharacter($RPAREN);
-                    result =
-                        new FunctionCall(this.span(resultStart), this.sourceSpan(resultStart), result, args);
+                    result = new FunctionCall(this.span(start), this.sourceSpan(start), result, args);
                 }
                 else if (this.consumeOptionalOperator('!')) {
-                    result = new NonNullAssert(this.span(resultStart), this.sourceSpan(resultStart), result);
+                    result = new NonNullAssert(this.span(start), this.sourceSpan(start), result);
                 }
                 else {
                     return result;
@@ -16409,7 +16407,7 @@
                 return this.parseLiteralMap();
             }
             else if (this.next.isIdentifier()) {
-                return this.parseAccessMemberOrMethodCall(new ImplicitReceiver(this.span(start), this.sourceSpan(start)), false);
+                return this.parseAccessMemberOrMethodCall(new ImplicitReceiver(this.span(start), this.sourceSpan(start)), start, false);
             }
             else if (this.next.isNumber()) {
                 var value = this.next.toNumber();
@@ -16461,10 +16459,9 @@
             }
             return new LiteralMap(this.span(start), this.sourceSpan(start), keys, values);
         };
-        _ParseAST.prototype.parseAccessMemberOrMethodCall = function (receiver, isSafe) {
+        _ParseAST.prototype.parseAccessMemberOrMethodCall = function (receiver, start, isSafe) {
             var _this = this;
             if (isSafe === void 0) { isSafe = false; }
-            var start = receiver.span.start;
             var nameStart = this.inputIndex;
             var id = this.withContext(ParseContextFlags.Writable, function () {
                 var _a;
@@ -17715,6 +17712,9 @@
             }
             else if (identifier.length === 0) {
                 this.reportError("Reference does not have a name", sourceSpan);
+            }
+            else if (references.some(function (reference) { return reference.name === identifier; })) {
+                this.reportError("Reference \"#" + identifier + "\" is defined more than once", sourceSpan);
             }
             references.push(new Reference(identifier, value, sourceSpan, keySpan, valueSpan));
         };
@@ -21782,7 +21782,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.2+4.sha-0fc5a16');
+    var VERSION$1 = new Version('11.1.2+79.sha-e8c8a8d');
 
     /**
      * @license
@@ -31694,7 +31694,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.1.2+4.sha-0fc5a16'));
+        definitionMap.set('version', literal('11.1.2+79.sha-e8c8a8d'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`

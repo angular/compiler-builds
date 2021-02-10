@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.2+4.sha-0fc5a16
+ * @license Angular v11.1.2+79.sha-e8c8a8d
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15063,6 +15063,7 @@ class _ParseAST {
         return new Chain(this.span(start), this.sourceSpan(start), exprs);
     }
     parsePipe() {
+        const start = this.inputIndex;
         let result = this.parseExpression();
         if (this.consumeOptionalOperator('|')) {
             if (this.parseAction) {
@@ -15098,7 +15099,6 @@ class _ParseAST {
                     // If there are additional expressions beyond the name, then the artificial end for the
                     // name is no longer relevant.
                 }
-                const { start } = result.span;
                 result = new BindingPipe(this.span(start), this.sourceSpan(start, fullSpanEnd), result, nameId, args, nameSpan);
             } while (this.consumeOptionalOperator('|'));
         }
@@ -15130,26 +15130,27 @@ class _ParseAST {
     }
     parseLogicalOr() {
         // '||'
+        const start = this.inputIndex;
         let result = this.parseLogicalAnd();
         while (this.consumeOptionalOperator('||')) {
             const right = this.parseLogicalAnd();
-            const { start } = result.span;
             result = new Binary(this.span(start), this.sourceSpan(start), '||', result, right);
         }
         return result;
     }
     parseLogicalAnd() {
         // '&&'
+        const start = this.inputIndex;
         let result = this.parseEquality();
         while (this.consumeOptionalOperator('&&')) {
             const right = this.parseEquality();
-            const { start } = result.span;
             result = new Binary(this.span(start), this.sourceSpan(start), '&&', result, right);
         }
         return result;
     }
     parseEquality() {
         // '==','!=','===','!=='
+        const start = this.inputIndex;
         let result = this.parseRelational();
         while (this.next.type == TokenType$1.Operator) {
             const operator = this.next.strValue;
@@ -15160,7 +15161,6 @@ class _ParseAST {
                 case '!==':
                     this.advance();
                     const right = this.parseRelational();
-                    const { start } = result.span;
                     result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
                     continue;
             }
@@ -15170,6 +15170,7 @@ class _ParseAST {
     }
     parseRelational() {
         // '<', '>', '<=', '>='
+        const start = this.inputIndex;
         let result = this.parseAdditive();
         while (this.next.type == TokenType$1.Operator) {
             const operator = this.next.strValue;
@@ -15180,7 +15181,6 @@ class _ParseAST {
                 case '>=':
                     this.advance();
                     const right = this.parseAdditive();
-                    const { start } = result.span;
                     result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
                     continue;
             }
@@ -15190,6 +15190,7 @@ class _ParseAST {
     }
     parseAdditive() {
         // '+', '-'
+        const start = this.inputIndex;
         let result = this.parseMultiplicative();
         while (this.next.type == TokenType$1.Operator) {
             const operator = this.next.strValue;
@@ -15198,7 +15199,6 @@ class _ParseAST {
                 case '-':
                     this.advance();
                     let right = this.parseMultiplicative();
-                    const { start } = result.span;
                     result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
                     continue;
             }
@@ -15208,6 +15208,7 @@ class _ParseAST {
     }
     parseMultiplicative() {
         // '*', '%', '/'
+        const start = this.inputIndex;
         let result = this.parsePrefix();
         while (this.next.type == TokenType$1.Operator) {
             const operator = this.next.strValue;
@@ -15217,7 +15218,6 @@ class _ParseAST {
                 case '/':
                     this.advance();
                     let right = this.parsePrefix();
-                    const { start } = result.span;
                     result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
                     continue;
             }
@@ -15248,14 +15248,14 @@ class _ParseAST {
         return this.parseCallChain();
     }
     parseCallChain() {
+        const start = this.inputIndex;
         let result = this.parsePrimary();
-        const resultStart = result.span.start;
         while (true) {
             if (this.consumeOptionalCharacter($PERIOD)) {
-                result = this.parseAccessMemberOrMethodCall(result, false);
+                result = this.parseAccessMemberOrMethodCall(result, start, false);
             }
             else if (this.consumeOptionalOperator('?.')) {
-                result = this.parseAccessMemberOrMethodCall(result, true);
+                result = this.parseAccessMemberOrMethodCall(result, start, true);
             }
             else if (this.consumeOptionalCharacter($LBRACKET)) {
                 this.withContext(ParseContextFlags.Writable, () => {
@@ -15268,11 +15268,10 @@ class _ParseAST {
                     this.expectCharacter($RBRACKET);
                     if (this.consumeOptionalOperator('=')) {
                         const value = this.parseConditional();
-                        result = new KeyedWrite(this.span(resultStart), this.sourceSpan(resultStart), result, key, value);
+                        result = new KeyedWrite(this.span(start), this.sourceSpan(start), result, key, value);
                     }
                     else {
-                        result =
-                            new KeyedRead(this.span(resultStart), this.sourceSpan(resultStart), result, key);
+                        result = new KeyedRead(this.span(start), this.sourceSpan(start), result, key);
                     }
                 });
             }
@@ -15281,11 +15280,10 @@ class _ParseAST {
                 const args = this.parseCallArguments();
                 this.rparensExpected--;
                 this.expectCharacter($RPAREN);
-                result =
-                    new FunctionCall(this.span(resultStart), this.sourceSpan(resultStart), result, args);
+                result = new FunctionCall(this.span(start), this.sourceSpan(start), result, args);
             }
             else if (this.consumeOptionalOperator('!')) {
-                result = new NonNullAssert(this.span(resultStart), this.sourceSpan(resultStart), result);
+                result = new NonNullAssert(this.span(start), this.sourceSpan(start), result);
             }
             else {
                 return result;
@@ -15332,7 +15330,7 @@ class _ParseAST {
             return this.parseLiteralMap();
         }
         else if (this.next.isIdentifier()) {
-            return this.parseAccessMemberOrMethodCall(new ImplicitReceiver(this.span(start), this.sourceSpan(start)), false);
+            return this.parseAccessMemberOrMethodCall(new ImplicitReceiver(this.span(start), this.sourceSpan(start)), start, false);
         }
         else if (this.next.isNumber()) {
             const value = this.next.toNumber();
@@ -15384,8 +15382,7 @@ class _ParseAST {
         }
         return new LiteralMap(this.span(start), this.sourceSpan(start), keys, values);
     }
-    parseAccessMemberOrMethodCall(receiver, isSafe = false) {
-        const start = receiver.span.start;
+    parseAccessMemberOrMethodCall(receiver, start, isSafe = false) {
         const nameStart = this.inputIndex;
         const id = this.withContext(ParseContextFlags.Writable, () => {
             var _a;
@@ -16617,6 +16614,9 @@ class HtmlAstToIvyAst {
         }
         else if (identifier.length === 0) {
             this.reportError(`Reference does not have a name`, sourceSpan);
+        }
+        else if (references.some(reference => reference.name === identifier)) {
+            this.reportError(`Reference "#${identifier}" is defined more than once`, sourceSpan);
         }
         references.push(new Reference(identifier, value, sourceSpan, keySpan, valueSpan));
     }
@@ -20503,7 +20503,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.1.2+4.sha-0fc5a16');
+const VERSION$1 = new Version('11.1.2+79.sha-e8c8a8d');
 
 /**
  * @license
@@ -30039,7 +30039,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('11.1.2+4.sha-0fc5a16'));
+    definitionMap.set('version', literal('11.1.2+79.sha-e8c8a8d'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
