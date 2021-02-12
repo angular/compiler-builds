@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.0+26.sha-6425a6d
+ * @license Angular v12.0.0-next.0+27.sha-9cb43fb
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4258,6 +4258,7 @@
     Identifiers$1.setNgModuleScope = { name: 'ɵɵsetNgModuleScope', moduleName: CORE$1 };
     Identifiers$1.PipeDefWithMeta = { name: 'ɵɵPipeDefWithMeta', moduleName: CORE$1 };
     Identifiers$1.definePipe = { name: 'ɵɵdefinePipe', moduleName: CORE$1 };
+    Identifiers$1.declarePipe = { name: 'ɵɵngDeclarePipe', moduleName: CORE$1 };
     Identifiers$1.queryRefresh = { name: 'ɵɵqueryRefresh', moduleName: CORE$1 };
     Identifiers$1.viewQuery = { name: 'ɵɵviewQuery', moduleName: CORE$1 };
     Identifiers$1.loadQuery = { name: 'ɵɵloadQuery', moduleName: CORE$1 };
@@ -8177,11 +8178,14 @@
         // e.g. `pure: true`
         definitionMapValues.push({ key: 'pure', value: literal(metadata.pure), quoted: false });
         var expression = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]);
-        var type = new ExpressionType(importExpr(Identifiers$1.PipeDefWithMeta, [
+        var type = createPipeType(metadata);
+        return { expression: expression, type: type };
+    }
+    function createPipeType(metadata) {
+        return new ExpressionType(importExpr(Identifiers$1.PipeDefWithMeta, [
             typeWithParameters(metadata.type.type, metadata.typeArgumentCount),
             new ExpressionType(new LiteralExpr(metadata.pipeName)),
         ]));
-        return { expression: expression, type: type };
     }
     /**
      * Write a pipe definition to the output context.
@@ -21412,6 +21416,10 @@
             var res = compilePipeFromMetadata(metadata);
             return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, []);
         };
+        CompilerFacadeImpl.prototype.compilePipeDeclaration = function (angularCoreEnv, sourceMapUrl, declaration) {
+            var meta = convertDeclarePipeFacadeToMetadata(declaration);
+            return compilePipeFromMetadata(meta);
+        };
         CompilerFacadeImpl.prototype.compileInjectable = function (angularCoreEnv, sourceMapUrl, facade) {
             var _j = compileInjectable({
                 name: facade.name,
@@ -21770,6 +21778,18 @@
             return map;
         }, {});
     }
+    function convertDeclarePipeFacadeToMetadata(declaration) {
+        var _a;
+        return {
+            name: declaration.type.name,
+            type: wrapReference$1(declaration.type),
+            internalType: new WrappedNodeExpr(declaration.type),
+            typeArgumentCount: 0,
+            pipeName: declaration.name,
+            deps: null,
+            pure: (_a = declaration.pure) !== null && _a !== void 0 ? _a : true,
+        };
+    }
     function publishFacade(global) {
         var ng = global.ng || (global.ng = {});
         ng.ɵcompilerFacade = new CompilerFacadeImpl();
@@ -21782,7 +21802,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.0.0-next.0+26.sha-6425a6d');
+    var VERSION$1 = new Version('12.0.0-next.0+27.sha-9cb43fb');
 
     /**
      * @license
@@ -31694,7 +31714,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.0+26.sha-6425a6d'));
+        definitionMap.set('version', literal('12.0.0-next.0+27.sha-9cb43fb'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -31895,6 +31915,41 @@
     }
     function generateForwardRef(expr) {
         return importExpr(Identifiers$1.forwardRef).callFn([fn([], [new ReturnStatement(expr)])]);
+    }
+
+    /**
+     * @license
+     * Copyright Google LLC All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    /**
+     * Compile a Pipe declaration defined by the `R3PipeMetadata`.
+     */
+    function compileDeclarePipeFromMetadata(meta) {
+        var definitionMap = createPipeDefinitionMap(meta);
+        var expression = importExpr(Identifiers$1.declarePipe).callFn([definitionMap.toLiteralMap()]);
+        var type = createPipeType(meta);
+        return { expression: expression, type: type };
+    }
+    /**
+     * Gathers the declaration fields for a Pipe into a `DefinitionMap`. This allows for reusing
+     * this logic for components, as they extend the Pipe metadata.
+     */
+    function createPipeDefinitionMap(meta) {
+        var definitionMap = new DefinitionMap();
+        definitionMap.set('version', literal('12.0.0-next.0+27.sha-9cb43fb'));
+        definitionMap.set('ngImport', importExpr(Identifiers$1.core));
+        // e.g. `type: MyPipe`
+        definitionMap.set('type', meta.internalType);
+        // e.g. `name: "myPipe"`
+        definitionMap.set('name', literal(meta.pipeName));
+        if (meta.pure === false) {
+            // e.g. `pure: false`
+            definitionMap.set('pure', literal(meta.pure));
+        }
+        return definitionMap;
     }
 
     /**
@@ -32152,6 +32207,7 @@
     exports.compileComponentFromMetadata = compileComponentFromMetadata;
     exports.compileDeclareComponentFromMetadata = compileDeclareComponentFromMetadata;
     exports.compileDeclareDirectiveFromMetadata = compileDeclareDirectiveFromMetadata;
+    exports.compileDeclarePipeFromMetadata = compileDeclarePipeFromMetadata;
     exports.compileDirectiveFromMetadata = compileDirectiveFromMetadata;
     exports.compileFactoryFunction = compileFactoryFunction;
     exports.compileInjectable = compileInjectable;
