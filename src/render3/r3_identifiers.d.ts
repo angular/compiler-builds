@@ -149,6 +149,7 @@ export declare class Identifiers {
     static setNgModuleScope: o.ExternalReference;
     static PipeDefWithMeta: o.ExternalReference;
     static definePipe: o.ExternalReference;
+    static declarePipe: o.ExternalReference;
     static queryRefresh: o.ExternalReference;
     static viewQuery: o.ExternalReference;
     static loadQuery: o.ExternalReference;

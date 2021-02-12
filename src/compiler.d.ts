@@ -94,4 +94,5 @@ export { R3Reference, devOnlyGuardedExpression, getSafePropertyAccessString } fr
 export { compileComponentFromMetadata, compileDirectiveFromMetadata, parseHostBindings, ParsedHostBindings, verifyHostBindings } from './render3/view/compiler';
 export { compileDeclareComponentFromMetadata } from './render3/partial/component';
 export { compileDeclareDirectiveFromMetadata } from './render3/partial/directive';
+export { compileDeclarePipeFromMetadata } from './render3/partial/pipe';
 export { publishFacade } from './jit_compiler_facade';
