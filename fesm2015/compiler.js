@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.2.0+25.sha-a2fba9e
+ * @license Angular v11.2.0+29.sha-91c68f4
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -6811,9 +6811,7 @@ function trustedScriptFromString(script) {
     return ((_a = getPolicy()) === null || _a === void 0 ? void 0 : _a.createScript(script)) || script;
 }
 /**
- * Unsafely call the Function constructor with the given string arguments. It
- * is only available in development mode, and should be stripped out of
- * production code.
+ * Unsafely call the Function constructor with the given string arguments.
  * @security This is a security-sensitive function; any use of this function
  * must go through security review. In particular, it must be assured that it
  * is only called from the JIT compiler, as use in other code can lead to XSS
@@ -6830,7 +6828,7 @@ function newTrustedFunctionForJIT(...args) {
     // below, where the Chromium bug is also referenced:
     // https://github.com/w3c/webappsec-trusted-types/wiki/Trusted-Types-for-function-constructor
     const fnArgs = args.slice(0, -1).join(',');
-    const fnBody = args.pop().toString();
+    const fnBody = args[args.length - 1];
     const body = `(function anonymous(${fnArgs}
 ) { ${fnBody}
 })`;
@@ -6838,6 +6836,13 @@ function newTrustedFunctionForJIT(...args) {
     // being stripped out of JS binaries even if not used. The global['eval']
     // indirection fixes that.
     const fn = _global['eval'](trustedScriptFromString(body));
+    if (fn.bind === undefined) {
+        // Workaround for a browser bug that only exists in Chrome 83, where passing
+        // a TrustedScript to eval just returns the TrustedScript back without
+        // evaluating it. In that case, fall back to the most straightforward
+        // implementation:
+        return new Function(...args);
+    }
     // To completely mimic the behavior of calling "new Function", two more
     // things need to happen:
     // 1. Stringifying the resulting function should return its source code
@@ -20523,7 +20528,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.2.0+25.sha-a2fba9e');
+const VERSION$1 = new Version('11.2.0+29.sha-91c68f4');
 
 /**
  * @license
@@ -30059,7 +30064,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('11.2.0+25.sha-a2fba9e'));
+    definitionMap.set('version', literal('11.2.0+29.sha-91c68f4'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -30280,7 +30285,7 @@ function compileDeclarePipeFromMetadata(meta) {
  */
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('11.2.0+25.sha-a2fba9e'));
+    definitionMap.set('version', literal('11.2.0+29.sha-91c68f4'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
