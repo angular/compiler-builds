@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.1.0-next.4+308.sha-0d8e6b4
+ * @license Angular v12.0.0-next.0+37.sha-1646f8d
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4258,6 +4258,7 @@
     Identifiers$1.setNgModuleScope = { name: 'ɵɵsetNgModuleScope', moduleName: CORE$1 };
     Identifiers$1.PipeDefWithMeta = { name: 'ɵɵPipeDefWithMeta', moduleName: CORE$1 };
     Identifiers$1.definePipe = { name: 'ɵɵdefinePipe', moduleName: CORE$1 };
+    Identifiers$1.declarePipe = { name: 'ɵɵngDeclarePipe', moduleName: CORE$1 };
     Identifiers$1.queryRefresh = { name: 'ɵɵqueryRefresh', moduleName: CORE$1 };
     Identifiers$1.viewQuery = { name: 'ɵɵviewQuery', moduleName: CORE$1 };
     Identifiers$1.loadQuery = { name: 'ɵɵloadQuery', moduleName: CORE$1 };
@@ -7502,9 +7503,7 @@
         return ((_a = getPolicy()) === null || _a === void 0 ? void 0 : _a.createScript(script)) || script;
     }
     /**
-     * Unsafely call the Function constructor with the given string arguments. It
-     * is only available in development mode, and should be stripped out of
-     * production code.
+     * Unsafely call the Function constructor with the given string arguments.
      * @security This is a security-sensitive function; any use of this function
      * must go through security review. In particular, it must be assured that it
      * is only called from the JIT compiler, as use in other code can lead to XSS
@@ -7525,12 +7524,19 @@
         // below, where the Chromium bug is also referenced:
         // https://github.com/w3c/webappsec-trusted-types/wiki/Trusted-Types-for-function-constructor
         var fnArgs = args.slice(0, -1).join(',');
-        var fnBody = args.pop().toString();
+        var fnBody = args[args.length - 1];
         var body = "(function anonymous(" + fnArgs + "\n) { " + fnBody + "\n})";
         // Using eval directly confuses the compiler and prevents this module from
         // being stripped out of JS binaries even if not used. The global['eval']
         // indirection fixes that.
         var fn = _global['eval'](trustedScriptFromString(body));
+        if (fn.bind === undefined) {
+            // Workaround for a browser bug that only exists in Chrome 83, where passing
+            // a TrustedScript to eval just returns the TrustedScript back without
+            // evaluating it. In that case, fall back to the most straightforward
+            // implementation:
+            return new (Function.bind.apply(Function, __spread([void 0], args)))();
+        }
         // To completely mimic the behavior of calling "new Function", two more
         // things need to happen:
         // 1. Stringifying the resulting function should return its source code
@@ -8177,11 +8183,14 @@
         // e.g. `pure: true`
         definitionMapValues.push({ key: 'pure', value: literal(metadata.pure), quoted: false });
         var expression = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]);
-        var type = new ExpressionType(importExpr(Identifiers$1.PipeDefWithMeta, [
+        var type = createPipeType(metadata);
+        return { expression: expression, type: type };
+    }
+    function createPipeType(metadata) {
+        return new ExpressionType(importExpr(Identifiers$1.PipeDefWithMeta, [
             typeWithParameters(metadata.type.type, metadata.typeArgumentCount),
             new ExpressionType(new LiteralExpr(metadata.pipeName)),
         ]));
-        return { expression: expression, type: type };
     }
     /**
      * Write a pipe definition to the output context.
@@ -16139,6 +16148,7 @@
             return new Chain(this.span(start), this.sourceSpan(start), exprs);
         };
         _ParseAST.prototype.parsePipe = function () {
+            var start = this.inputIndex;
             var result = this.parseExpression();
             if (this.consumeOptionalOperator('|')) {
                 if (this.parseAction) {
@@ -16174,7 +16184,6 @@
                         // If there are additional expressions beyond the name, then the artificial end for the
                         // name is no longer relevant.
                     }
-                    var start = result.span.start;
                     result = new BindingPipe(this.span(start), this.sourceSpan(start, fullSpanEnd), result, nameId, args, nameSpan);
                 } while (this.consumeOptionalOperator('|'));
             }
@@ -16206,26 +16215,27 @@
         };
         _ParseAST.prototype.parseLogicalOr = function () {
             // '||'
+            var start = this.inputIndex;
             var result = this.parseLogicalAnd();
             while (this.consumeOptionalOperator('||')) {
                 var right = this.parseLogicalAnd();
-                var start = result.span.start;
                 result = new Binary(this.span(start), this.sourceSpan(start), '||', result, right);
             }
             return result;
         };
         _ParseAST.prototype.parseLogicalAnd = function () {
             // '&&'
+            var start = this.inputIndex;
             var result = this.parseEquality();
             while (this.consumeOptionalOperator('&&')) {
                 var right = this.parseEquality();
-                var start = result.span.start;
                 result = new Binary(this.span(start), this.sourceSpan(start), '&&', result, right);
             }
             return result;
         };
         _ParseAST.prototype.parseEquality = function () {
             // '==','!=','===','!=='
+            var start = this.inputIndex;
             var result = this.parseRelational();
             while (this.next.type == exports.TokenType.Operator) {
                 var operator = this.next.strValue;
@@ -16236,7 +16246,6 @@
                     case '!==':
                         this.advance();
                         var right = this.parseRelational();
-                        var start = result.span.start;
                         result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
                         continue;
                 }
@@ -16246,6 +16255,7 @@
         };
         _ParseAST.prototype.parseRelational = function () {
             // '<', '>', '<=', '>='
+            var start = this.inputIndex;
             var result = this.parseAdditive();
             while (this.next.type == exports.TokenType.Operator) {
                 var operator = this.next.strValue;
@@ -16256,7 +16266,6 @@
                     case '>=':
                         this.advance();
                         var right = this.parseAdditive();
-                        var start = result.span.start;
                         result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
                         continue;
                 }
@@ -16266,6 +16275,7 @@
         };
         _ParseAST.prototype.parseAdditive = function () {
             // '+', '-'
+            var start = this.inputIndex;
             var result = this.parseMultiplicative();
             while (this.next.type == exports.TokenType.Operator) {
                 var operator = this.next.strValue;
@@ -16274,7 +16284,6 @@
                     case '-':
                         this.advance();
                         var right = this.parseMultiplicative();
-                        var start = result.span.start;
                         result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
                         continue;
                 }
@@ -16284,6 +16293,7 @@
         };
         _ParseAST.prototype.parseMultiplicative = function () {
             // '*', '%', '/'
+            var start = this.inputIndex;
             var result = this.parsePrefix();
             while (this.next.type == exports.TokenType.Operator) {
                 var operator = this.next.strValue;
@@ -16293,7 +16303,6 @@
                     case '/':
                         this.advance();
                         var right = this.parsePrefix();
-                        var start = result.span.start;
                         result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
                         continue;
                 }
@@ -16325,14 +16334,14 @@
         };
         _ParseAST.prototype.parseCallChain = function () {
             var _this = this;
+            var start = this.inputIndex;
             var result = this.parsePrimary();
-            var resultStart = result.span.start;
             while (true) {
                 if (this.consumeOptionalCharacter($PERIOD)) {
-                    result = this.parseAccessMemberOrMethodCall(result, false);
+                    result = this.parseAccessMemberOrMethodCall(result, start, false);
                 }
                 else if (this.consumeOptionalOperator('?.')) {
-                    result = this.parseAccessMemberOrMethodCall(result, true);
+                    result = this.parseAccessMemberOrMethodCall(result, start, true);
                 }
                 else if (this.consumeOptionalCharacter($LBRACKET)) {
                     this.withContext(ParseContextFlags.Writable, function () {
@@ -16345,11 +16354,10 @@
                         _this.expectCharacter($RBRACKET);
                         if (_this.consumeOptionalOperator('=')) {
                             var value = _this.parseConditional();
-                            result = new KeyedWrite(_this.span(resultStart), _this.sourceSpan(resultStart), result, key, value);
+                            result = new KeyedWrite(_this.span(start), _this.sourceSpan(start), result, key, value);
                         }
                         else {
-                            result =
-                                new KeyedRead(_this.span(resultStart), _this.sourceSpan(resultStart), result, key);
+                            result = new KeyedRead(_this.span(start), _this.sourceSpan(start), result, key);
                         }
                     });
                 }
@@ -16358,11 +16366,10 @@
                     var args = this.parseCallArguments();
                     this.rparensExpected--;
                     this.expectCharacter($RPAREN);
-                    result =
-                        new FunctionCall(this.span(resultStart), this.sourceSpan(resultStart), result, args);
+                    result = new FunctionCall(this.span(start), this.sourceSpan(start), result, args);
                 }
                 else if (this.consumeOptionalOperator('!')) {
-                    result = new NonNullAssert(this.span(resultStart), this.sourceSpan(resultStart), result);
+                    result = new NonNullAssert(this.span(start), this.sourceSpan(start), result);
                 }
                 else {
                     return result;
@@ -16409,7 +16416,7 @@
                 return this.parseLiteralMap();
             }
             else if (this.next.isIdentifier()) {
-                return this.parseAccessMemberOrMethodCall(new ImplicitReceiver(this.span(start), this.sourceSpan(start)), false);
+                return this.parseAccessMemberOrMethodCall(new ImplicitReceiver(this.span(start), this.sourceSpan(start)), start, false);
             }
             else if (this.next.isNumber()) {
                 var value = this.next.toNumber();
@@ -16461,10 +16468,9 @@
             }
             return new LiteralMap(this.span(start), this.sourceSpan(start), keys, values);
         };
-        _ParseAST.prototype.parseAccessMemberOrMethodCall = function (receiver, isSafe) {
+        _ParseAST.prototype.parseAccessMemberOrMethodCall = function (receiver, start, isSafe) {
             var _this = this;
             if (isSafe === void 0) { isSafe = false; }
-            var start = receiver.span.start;
             var nameStart = this.inputIndex;
             var id = this.withContext(ParseContextFlags.Writable, function () {
                 var _a;
@@ -17715,6 +17721,9 @@
             }
             else if (identifier.length === 0) {
                 this.reportError("Reference does not have a name", sourceSpan);
+            }
+            else if (references.some(function (reference) { return reference.name === identifier; })) {
+                this.reportError("Reference \"#" + identifier + "\" is defined more than once", sourceSpan);
             }
             references.push(new Reference(identifier, value, sourceSpan, keySpan, valueSpan));
         };
@@ -21412,6 +21421,10 @@
             var res = compilePipeFromMetadata(metadata);
             return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, []);
         };
+        CompilerFacadeImpl.prototype.compilePipeDeclaration = function (angularCoreEnv, sourceMapUrl, declaration) {
+            var meta = convertDeclarePipeFacadeToMetadata(declaration);
+            return compilePipeFromMetadata(meta);
+        };
         CompilerFacadeImpl.prototype.compileInjectable = function (angularCoreEnv, sourceMapUrl, facade) {
             var _j = compileInjectable({
                 name: facade.name,
@@ -21770,6 +21783,18 @@
             return map;
         }, {});
     }
+    function convertDeclarePipeFacadeToMetadata(declaration) {
+        var _a;
+        return {
+            name: declaration.type.name,
+            type: wrapReference$1(declaration.type),
+            internalType: new WrappedNodeExpr(declaration.type),
+            typeArgumentCount: 0,
+            pipeName: declaration.name,
+            deps: null,
+            pure: (_a = declaration.pure) !== null && _a !== void 0 ? _a : true,
+        };
+    }
     function publishFacade(global) {
         var ng = global.ng || (global.ng = {});
         ng.ɵcompilerFacade = new CompilerFacadeImpl();
@@ -21782,7 +21807,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.1.0-next.4+308.sha-0d8e6b4');
+    var VERSION$1 = new Version('12.0.0-next.0+37.sha-1646f8d');
 
     /**
      * @license
@@ -31694,7 +31719,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.1.0-next.4+308.sha-0d8e6b4'));
+        definitionMap.set('version', literal('12.0.0-next.0+37.sha-1646f8d'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -31895,6 +31920,41 @@
     }
     function generateForwardRef(expr) {
         return importExpr(Identifiers$1.forwardRef).callFn([fn([], [new ReturnStatement(expr)])]);
+    }
+
+    /**
+     * @license
+     * Copyright Google LLC All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    /**
+     * Compile a Pipe declaration defined by the `R3PipeMetadata`.
+     */
+    function compileDeclarePipeFromMetadata(meta) {
+        var definitionMap = createPipeDefinitionMap(meta);
+        var expression = importExpr(Identifiers$1.declarePipe).callFn([definitionMap.toLiteralMap()]);
+        var type = createPipeType(meta);
+        return { expression: expression, type: type };
+    }
+    /**
+     * Gathers the declaration fields for a Pipe into a `DefinitionMap`. This allows for reusing
+     * this logic for components, as they extend the Pipe metadata.
+     */
+    function createPipeDefinitionMap(meta) {
+        var definitionMap = new DefinitionMap();
+        definitionMap.set('version', literal('12.0.0-next.0+37.sha-1646f8d'));
+        definitionMap.set('ngImport', importExpr(Identifiers$1.core));
+        // e.g. `type: MyPipe`
+        definitionMap.set('type', meta.internalType);
+        // e.g. `name: "myPipe"`
+        definitionMap.set('name', literal(meta.pipeName));
+        if (meta.pure === false) {
+            // e.g. `pure: false`
+            definitionMap.set('pure', literal(meta.pure));
+        }
+        return definitionMap;
     }
 
     /**
@@ -32152,6 +32212,7 @@
     exports.compileComponentFromMetadata = compileComponentFromMetadata;
     exports.compileDeclareComponentFromMetadata = compileDeclareComponentFromMetadata;
     exports.compileDeclareDirectiveFromMetadata = compileDeclareDirectiveFromMetadata;
+    exports.compileDeclarePipeFromMetadata = compileDeclarePipeFromMetadata;
     exports.compileDirectiveFromMetadata = compileDirectiveFromMetadata;
     exports.compileFactoryFunction = compileFactoryFunction;
     exports.compileInjectable = compileInjectable;

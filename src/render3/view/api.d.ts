@@ -304,6 +304,13 @@ export interface R3ComponentDef {
     type: o.Type;
 }
 /**
+ * Output of render3 pipe compilation.
+ */
+export interface R3PipeDef {
+    expression: o.Expression;
+    type: o.Type;
+}
+/**
  * Mappings indicating how the class interacts with its
  * host element (host bindings, listeners, etc).
  */

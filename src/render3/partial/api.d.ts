@@ -20,10 +20,10 @@ export interface R3PartialDeclaration {
     ngImport: o.Expression;
 }
 /**
- * This interface describes the shape of the object that partial directive declarations are compiled
- * into. This serves only as documentation, as conformance of this interface is not enforced during
- * the generation of the partial declaration, nor when the linker applies full compilation from the
- * partial declaration.
+ * Describes the shape of the object that the `ɵɵngDeclareDirective() function accepts.
+ *
+ * This interface serves primarily as documentation, as conformance to this interface is not
+ * enforced during linking.
  */
 export interface R3DeclareDirectiveMetadata extends R3PartialDeclaration {
     /**
@@ -106,8 +106,10 @@ export interface R3DeclareDirectiveMetadata extends R3PartialDeclaration {
     usesOnChanges?: boolean;
 }
 /**
- * An extension of `R3DeclareDirectiveMetadata` that declares the shape of a partial declaration of
- * a component.
+ * Describes the shape of the object that the `ɵɵngDeclareComponent()` function accepts.
+ *
+ * This interface serves primarily as documentation, as conformance to this interface is not
+ * enforced during linking.
  */
 export interface R3DeclareComponentMetadata extends R3DeclareDirectiveMetadata {
     /**
@@ -230,4 +232,28 @@ export interface R3DeclareQueryMetadata {
      * content hooks and ngAfterViewInit for view hooks).
      */
     static?: boolean;
+}
+/**
+ * Describes the shape of the object that the `ɵɵngDeclarePipe()` function accepts.
+ *
+ * This interface serves primarily as documentation, as conformance to this interface is not
+ * enforced during linking.
+ */
+export interface R3DeclarePipeMetadata extends R3PartialDeclaration {
+    /**
+     * Reference to the pipe class itself.
+     */
+    type: o.Expression;
+    /**
+     * The name to use in templates to refer to this pipe.
+     */
+    name: string;
+    /**
+     * Whether this pipe is "pure".
+     *
+     * A pure pipe's `transform()` method is only invoked when its input arguments change.
+     *
+     * Default: true.
+     */
+    pure?: boolean;
 }
