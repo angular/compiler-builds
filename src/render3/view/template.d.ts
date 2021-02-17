@@ -234,7 +234,6 @@ export declare class BindingScope implements LocalResolver {
     private map;
     private referenceNameIndex;
     private restoreViewVariable;
-    private usesRestoredViewContext;
     static createRootScope(): BindingScope;
     private constructor();
     get(name: string): o.Expression | null;
@@ -268,8 +267,6 @@ export declare class BindingScope implements LocalResolver {
     isListenerScope(): boolean | null;
     variableDeclarations(): o.Statement[];
     freshReferenceName(): string;
-    hasRestoreViewVariable(): boolean;
-    notifyRestoredViewContextUse(): void;
 }
 /**
  * Creates a `CssSelector` given a tag name and a map of attributes

@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.1+3.sha-cdf1ea1
+ * @license Angular v12.0.0-next.1+2.sha-b7a2d0d
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -6660,8 +6660,6 @@
     var IMPLICIT_REFERENCE = '$implicit';
     /** Non bindable attribute name **/
     var NON_BINDABLE_ATTR = 'ngNonBindable';
-    /** Name for the variable keeping track of the context returned by `ɵɵrestoreView`. */
-    var RESTORED_VIEW_CONTEXT_NAME = 'restoredCtx';
     /**
      * Creates an allocator for a temporary variable.
      *
@@ -18957,10 +18955,8 @@
         var bindingExpr = convertActionBinding(scope, implicitReceiverExpr, handler, 'b', function () { return error('Unexpected interpolation'); }, eventAst.handlerSpan, implicitReceiverAccesses, EVENT_BINDING_SCOPE_GLOBALS);
         var statements = [];
         if (scope) {
-            // `variableDeclarations` needs to run first, because
-            // `restoreViewStatement` depends on the result.
+            statements.push.apply(statements, __spread(scope.restoreViewStatement()));
             statements.push.apply(statements, __spread(scope.variableDeclarations()));
-            statements.unshift.apply(statements, __spread(scope.restoreViewStatement()));
         }
         statements.push.apply(statements, __spread(bindingExpr.render3Stmts));
         var eventName = type === 1 /* Animation */ ? prepareSyntheticListenerName(name, phase) : name;
@@ -19164,18 +19160,8 @@
             this._bindingScope.set(retrievalLevel, variable$1.name, lhs, 1 /* CONTEXT */, function (scope, relativeLevel) {
                 var rhs;
                 if (scope.bindingLevel === retrievalLevel) {
-                    if (scope.isListenerScope() && scope.hasRestoreViewVariable()) {
-                        // e.g. restoredCtx.
-                        // We have to get the context from a view reference, if one is available, because
-                        // the context that was passed in during creation may not be correct anymore.
-                        // For more information see: https://github.com/angular/angular/pull/40360.
-                        rhs = variable(RESTORED_VIEW_CONTEXT_NAME);
-                        scope.notifyRestoredViewContextUse();
-                    }
-                    else {
-                        // e.g. ctx
-                        rhs = variable(CONTEXT_NAME);
-                    }
+                    // e.g. ctx
+                    rhs = variable(CONTEXT_NAME);
                 }
                 else {
                     var sharedCtxVar = scope.getSharedContextName(retrievalLevel);
@@ -20268,7 +20254,6 @@
             this.map = new Map();
             this.referenceNameIndex = 0;
             this.restoreViewVariable = null;
-            this.usesRestoredViewContext = false;
             if (globals !== undefined) {
                 try {
                     for (var globals_1 = __values(globals), globals_1_1 = globals_1.next(); !globals_1_1.done; globals_1_1 = globals_1.next()) {
@@ -20436,21 +20421,16 @@
             }
         };
         BindingScope.prototype.restoreViewStatement = function () {
-            var statements = [];
-            if (this.restoreViewVariable) {
-                var restoreCall = instruction(null, Identifiers$1.restoreView, [this.restoreViewVariable]);
-                // Either `const restoredCtx = restoreView($state$);` or `restoreView($state$);`
-                // depending on whether it is being used.
-                statements.push(this.usesRestoredViewContext ?
-                    variable(RESTORED_VIEW_CONTEXT_NAME).set(restoreCall).toConstDecl() :
-                    restoreCall.toStmt());
-            }
-            return statements;
+            // restoreView($state$);
+            return this.restoreViewVariable ?
+                [instruction(null, Identifiers$1.restoreView, [this.restoreViewVariable]).toStmt()] :
+                [];
         };
         BindingScope.prototype.viewSnapshotStatements = function () {
             // const $state$ = getCurrentView();
+            var getCurrentViewInstruction = instruction(null, Identifiers$1.getCurrentView, []);
             return this.restoreViewVariable ?
-                [this.restoreViewVariable.set(instruction(null, Identifiers$1.getCurrentView, [])).toConstDecl()] :
+                [this.restoreViewVariable.set(getCurrentViewInstruction).toConstDecl()] :
                 [];
         };
         BindingScope.prototype.isListenerScope = function () {
@@ -20476,12 +20456,6 @@
                 current = current.parent;
             var ref = "" + REFERENCE_PREFIX + current.referenceNameIndex++;
             return ref;
-        };
-        BindingScope.prototype.hasRestoreViewVariable = function () {
-            return !!this.restoreViewVariable;
-        };
-        BindingScope.prototype.notifyRestoredViewContextUse = function () {
-            this.usesRestoredViewContext = true;
         };
         return BindingScope;
     }());
@@ -21950,7 +21924,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.0.0-next.1+3.sha-cdf1ea1');
+    var VERSION$1 = new Version('12.0.0-next.1+2.sha-b7a2d0d');
 
     /**
      * @license
@@ -31862,7 +31836,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.1+3.sha-cdf1ea1'));
+        definitionMap.set('version', literal('12.0.0-next.1+2.sha-b7a2d0d'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -32087,7 +32061,7 @@
      */
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.1+3.sha-cdf1ea1'));
+        definitionMap.set('version', literal('12.0.0-next.1+2.sha-b7a2d0d'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
