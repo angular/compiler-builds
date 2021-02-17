@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.1+1.sha-8658cd5
+ * @license Angular v12.0.0-next.1+3.sha-cdf1ea1
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5956,6 +5956,8 @@ const REFERENCE_PREFIX = '_r';
 const IMPLICIT_REFERENCE = '$implicit';
 /** Non bindable attribute name **/
 const NON_BINDABLE_ATTR = 'ngNonBindable';
+/** Name for the variable keeping track of the context returned by `ɵɵrestoreView`. */
+const RESTORED_VIEW_CONTEXT_NAME = 'restoredCtx';
 /**
  * Creates an allocator for a temporary variable.
  *
@@ -17801,8 +17803,10 @@ function prepareEventListenerParameters(eventAst, handlerName = null, scope = nu
     const bindingExpr = convertActionBinding(scope, implicitReceiverExpr, handler, 'b', () => error('Unexpected interpolation'), eventAst.handlerSpan, implicitReceiverAccesses, EVENT_BINDING_SCOPE_GLOBALS);
     const statements = [];
     if (scope) {
-        statements.push(...scope.restoreViewStatement());
+        // `variableDeclarations` needs to run first, because
+        // `restoreViewStatement` depends on the result.
         statements.push(...scope.variableDeclarations());
+        statements.unshift(...scope.restoreViewStatement());
     }
     statements.push(...bindingExpr.render3Stmts);
     const eventName = type === 1 /* Animation */ ? prepareSyntheticListenerName(name, phase) : name;
@@ -18006,8 +18010,18 @@ class TemplateDefinitionBuilder {
         this._bindingScope.set(retrievalLevel, variable$1.name, lhs, 1 /* CONTEXT */, (scope, relativeLevel) => {
             let rhs;
             if (scope.bindingLevel === retrievalLevel) {
-                // e.g. ctx
-                rhs = variable(CONTEXT_NAME);
+                if (scope.isListenerScope() && scope.hasRestoreViewVariable()) {
+                    // e.g. restoredCtx.
+                    // We have to get the context from a view reference, if one is available, because
+                    // the context that was passed in during creation may not be correct anymore.
+                    // For more information see: https://github.com/angular/angular/pull/40360.
+                    rhs = variable(RESTORED_VIEW_CONTEXT_NAME);
+                    scope.notifyRestoredViewContextUse();
+                }
+                else {
+                    // e.g. ctx
+                    rhs = variable(CONTEXT_NAME);
+                }
             }
             else {
                 const sharedCtxVar = scope.getSharedContextName(retrievalLevel);
@@ -19050,6 +19064,7 @@ class BindingScope {
         this.map = new Map();
         this.referenceNameIndex = 0;
         this.restoreViewVariable = null;
+        this.usesRestoredViewContext = false;
         if (globals !== undefined) {
             for (const name of globals) {
                 this.set(0, name, variable(name));
@@ -19206,16 +19221,21 @@ class BindingScope {
         }
     }
     restoreViewStatement() {
-        // restoreView($state$);
-        return this.restoreViewVariable ?
-            [instruction(null, Identifiers$1.restoreView, [this.restoreViewVariable]).toStmt()] :
-            [];
+        const statements = [];
+        if (this.restoreViewVariable) {
+            const restoreCall = instruction(null, Identifiers$1.restoreView, [this.restoreViewVariable]);
+            // Either `const restoredCtx = restoreView($state$);` or `restoreView($state$);`
+            // depending on whether it is being used.
+            statements.push(this.usesRestoredViewContext ?
+                variable(RESTORED_VIEW_CONTEXT_NAME).set(restoreCall).toConstDecl() :
+                restoreCall.toStmt());
+        }
+        return statements;
     }
     viewSnapshotStatements() {
         // const $state$ = getCurrentView();
-        const getCurrentViewInstruction = instruction(null, Identifiers$1.getCurrentView, []);
         return this.restoreViewVariable ?
-            [this.restoreViewVariable.set(getCurrentViewInstruction).toConstDecl()] :
+            [this.restoreViewVariable.set(instruction(null, Identifiers$1.getCurrentView, [])).toConstDecl()] :
             [];
     }
     isListenerScope() {
@@ -19240,6 +19260,12 @@ class BindingScope {
             current = current.parent;
         const ref = `${REFERENCE_PREFIX}${current.referenceNameIndex++}`;
         return ref;
+    }
+    hasRestoreViewVariable() {
+        return !!this.restoreViewVariable;
+    }
+    notifyRestoredViewContextUse() {
+        this.usesRestoredViewContext = true;
     }
 }
 /**
@@ -20638,7 +20664,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('12.0.0-next.1+1.sha-8658cd5');
+const VERSION$1 = new Version('12.0.0-next.1+3.sha-cdf1ea1');
 
 /**
  * @license
@@ -30174,7 +30200,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.1+1.sha-8658cd5'));
+    definitionMap.set('version', literal('12.0.0-next.1+3.sha-cdf1ea1'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -30395,7 +30421,7 @@ function compileDeclarePipeFromMetadata(meta) {
  */
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.1+1.sha-8658cd5'));
+    definitionMap.set('version', literal('12.0.0-next.1+3.sha-cdf1ea1'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
