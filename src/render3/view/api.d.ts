@@ -241,6 +241,10 @@ export interface R3UsedDirectiveMetadata {
      * Name under which the directive is exported, if any (exportAs in Angular). Null otherwise.
      */
     exportAs: string[] | null;
+    /**
+     * If true then this directive is actually a component; otherwise it is not.
+     */
+    isComponent?: boolean;
 }
 /**
  * Information needed to compile a query (view or content).
