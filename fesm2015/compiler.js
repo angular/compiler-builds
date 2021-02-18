@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.2.1+2.sha-c8a2e3a
+ * @license Angular v11.2.1+3.sha-a970c19
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -20638,7 +20638,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.2.1+2.sha-c8a2e3a');
+const VERSION$1 = new Version('11.2.1+3.sha-a970c19');
 
 /**
  * @license
@@ -30174,7 +30174,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('11.2.1+2.sha-c8a2e3a'));
+    definitionMap.set('version', literal('11.2.1+3.sha-a970c19'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -30395,7 +30395,7 @@ function compileDeclarePipeFromMetadata(meta) {
  */
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('11.2.1+2.sha-c8a2e3a'));
+    definitionMap.set('version', literal('11.2.1+3.sha-a970c19'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
