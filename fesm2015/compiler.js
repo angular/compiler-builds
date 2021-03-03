@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.2+51.sha-ffbacbb
+ * @license Angular v12.0.0-next.2+52.sha-736b1f9
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10561,7 +10561,7 @@ class _Tokenizer {
             tagName = openTagToken.parts[1];
             this._attemptCharCodeUntilFn(isNotWhitespace);
             while (this._cursor.peek() !== $SLASH && this._cursor.peek() !== $GT &&
-                this._cursor.peek() !== $LT) {
+                this._cursor.peek() !== $LT && this._cursor.peek() !== $EOF) {
                 this._consumeAttributeName();
                 this._attemptCharCodeUntilFn(isNotWhitespace);
                 if (this._attemptCharCode($EQ)) {
@@ -10787,7 +10787,8 @@ function isNotWhitespace(code) {
 }
 function isNameEnd(code) {
     return isWhitespace(code) || code === $GT || code === $LT ||
-        code === $SLASH || code === $SQ || code === $DQ || code === $EQ;
+        code === $SLASH || code === $SQ || code === $DQ || code === $EQ ||
+        code === $EOF;
 }
 function isPrefixEnd(code) {
     return (code < $a || $z < code) && (code < $A || $Z < code) &&
@@ -20660,7 +20661,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('12.0.0-next.2+51.sha-ffbacbb');
+const VERSION$1 = new Version('12.0.0-next.2+52.sha-736b1f9');
 
 /**
  * @license
@@ -30196,7 +30197,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.2+51.sha-ffbacbb'));
+    definitionMap.set('version', literal('12.0.0-next.2+52.sha-736b1f9'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -30417,7 +30418,7 @@ function compileDeclarePipeFromMetadata(meta) {
  */
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.2+51.sha-ffbacbb'));
+    definitionMap.set('version', literal('12.0.0-next.2+52.sha-736b1f9'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
