@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.2.3+38.sha-78bf697
+ * @license Angular v11.2.3+46.sha-e4774da
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -11477,7 +11477,7 @@
                 tagName = openTagToken.parts[1];
                 this._attemptCharCodeUntilFn(isNotWhitespace);
                 while (this._cursor.peek() !== $SLASH && this._cursor.peek() !== $GT &&
-                    this._cursor.peek() !== $LT) {
+                    this._cursor.peek() !== $LT && this._cursor.peek() !== $EOF) {
                     this._consumeAttributeName();
                     this._attemptCharCodeUntilFn(isNotWhitespace);
                     if (this._attemptCharCode($EQ)) {
@@ -11705,7 +11705,8 @@
     }
     function isNameEnd(code) {
         return isWhitespace(code) || code === $GT || code === $LT ||
-            code === $SLASH || code === $SQ || code === $DQ || code === $EQ;
+            code === $SLASH || code === $SQ || code === $DQ || code === $EQ ||
+            code === $EOF;
     }
     function isPrefixEnd(code) {
         return (code < $a || $z < code) && (code < $A || $Z < code) &&
@@ -17136,7 +17137,7 @@
         'progress^[HTMLElement]|#max,#value',
         'q,blockquote,cite^[HTMLElement]|',
         'script^[HTMLElement]|!async,charset,%crossOrigin,!defer,event,htmlFor,integrity,src,text,type',
-        'select^[HTMLElement]|!autofocus,!disabled,#length,!multiple,name,!required,#selectedIndex,#size,value',
+        'select^[HTMLElement]|autocomplete,!autofocus,!disabled,#length,!multiple,name,!required,#selectedIndex,#size,value',
         'shadow^[HTMLElement]|',
         'slot^[HTMLElement]|name',
         'source^[HTMLElement]|media,sizes,src,srcset,type',
@@ -17149,7 +17150,7 @@
         'tr^[HTMLElement]|align,bgColor,ch,chOff,vAlign',
         'tfoot,thead,tbody^[HTMLElement]|align,ch,chOff,vAlign',
         'template^[HTMLElement]|',
-        'textarea^[HTMLElement]|autocapitalize,!autofocus,#cols,defaultValue,dirName,!disabled,#maxLength,#minLength,name,placeholder,!readOnly,!required,#rows,selectionDirection,#selectionEnd,#selectionStart,value,wrap',
+        'textarea^[HTMLElement]|autocapitalize,autocomplete,!autofocus,#cols,defaultValue,dirName,!disabled,#maxLength,#minLength,name,placeholder,!readOnly,!required,#rows,selectionDirection,#selectionEnd,#selectionStart,value,wrap',
         'title^[HTMLElement]|text',
         'track^[HTMLElement]|!default,kind,label,src,srclang',
         'ul^[HTMLElement]|!compact,type',
@@ -21920,7 +21921,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.2.3+38.sha-78bf697');
+    var VERSION$1 = new Version('11.2.3+46.sha-e4774da');
 
     /**
      * @license
@@ -31832,7 +31833,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.2.3+38.sha-78bf697'));
+        definitionMap.set('version', literal('11.2.3+46.sha-e4774da'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -32057,7 +32058,7 @@
      */
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.2.3+38.sha-78bf697'));
+        definitionMap.set('version', literal('11.2.3+46.sha-e4774da'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
