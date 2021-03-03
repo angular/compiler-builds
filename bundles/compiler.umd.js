@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.2+55.sha-7765b64
+ * @license Angular v12.0.0-next.2+57.sha-0847a03
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -20607,9 +20607,8 @@
         var bindingParser = makeBindingParser(interpolationConfig);
         var htmlParser = new HtmlParser();
         var parseResult = htmlParser.parse(template, templateUrl, Object.assign(Object.assign({ leadingTriviaChars: LEADING_TRIVIA_CHARS }, options), { tokenizeExpansionForms: true }));
-        if (parseResult.errors && parseResult.errors.length > 0) {
-            // TODO(ayazhafiz): we may not always want to bail out at this point (e.g. in
-            // the context of a language service).
+        if (!options.alwaysAttemptHtmlToR3AstConversion && parseResult.errors &&
+            parseResult.errors.length > 0) {
             return {
                 interpolationConfig: interpolationConfig,
                 preserveWhitespaces: preserveWhitespaces,
@@ -20630,7 +20629,8 @@
         // message ids
         var i18nMetaVisitor = new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ !preserveWhitespaces, enableI18nLegacyMessageIdFormat);
         var i18nMetaResult = i18nMetaVisitor.visitAllWithErrors(rootNodes);
-        if (i18nMetaResult.errors && i18nMetaResult.errors.length > 0) {
+        if (!options.alwaysAttemptHtmlToR3AstConversion && i18nMetaResult.errors &&
+            i18nMetaResult.errors.length > 0) {
             return {
                 interpolationConfig: interpolationConfig,
                 preserveWhitespaces: preserveWhitespaces,
@@ -20656,6 +20656,7 @@
             }
         }
         var _c = htmlAstToRender3Ast(rootNodes, bindingParser), nodes = _c.nodes, errors = _c.errors, styleUrls = _c.styleUrls, styles = _c.styles, ngContentSelectors = _c.ngContentSelectors;
+        errors.push.apply(errors, __spread(parseResult.errors, i18nMetaResult.errors));
         return {
             interpolationConfig: interpolationConfig,
             preserveWhitespaces: preserveWhitespaces,
@@ -21947,7 +21948,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.0.0-next.2+55.sha-7765b64');
+    var VERSION$1 = new Version('12.0.0-next.2+57.sha-0847a03');
 
     /**
      * @license
@@ -31859,7 +31860,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.2+55.sha-7765b64'));
+        definitionMap.set('version', literal('12.0.0-next.2+57.sha-0847a03'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -32084,7 +32085,7 @@
      */
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.2+55.sha-7765b64'));
+        definitionMap.set('version', literal('12.0.0-next.2+57.sha-0847a03'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);

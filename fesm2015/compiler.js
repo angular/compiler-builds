@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.2+55.sha-7765b64
+ * @license Angular v12.0.0-next.2+57.sha-0847a03
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -19389,9 +19389,8 @@ function parseTemplate(template, templateUrl, options = {}) {
     const bindingParser = makeBindingParser(interpolationConfig);
     const htmlParser = new HtmlParser();
     const parseResult = htmlParser.parse(template, templateUrl, Object.assign(Object.assign({ leadingTriviaChars: LEADING_TRIVIA_CHARS }, options), { tokenizeExpansionForms: true }));
-    if (parseResult.errors && parseResult.errors.length > 0) {
-        // TODO(ayazhafiz): we may not always want to bail out at this point (e.g. in
-        // the context of a language service).
+    if (!options.alwaysAttemptHtmlToR3AstConversion && parseResult.errors &&
+        parseResult.errors.length > 0) {
         return {
             interpolationConfig,
             preserveWhitespaces,
@@ -19412,7 +19411,8 @@ function parseTemplate(template, templateUrl, options = {}) {
     // message ids
     const i18nMetaVisitor = new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ !preserveWhitespaces, enableI18nLegacyMessageIdFormat);
     const i18nMetaResult = i18nMetaVisitor.visitAllWithErrors(rootNodes);
-    if (i18nMetaResult.errors && i18nMetaResult.errors.length > 0) {
+    if (!options.alwaysAttemptHtmlToR3AstConversion && i18nMetaResult.errors &&
+        i18nMetaResult.errors.length > 0) {
         return {
             interpolationConfig,
             preserveWhitespaces,
@@ -19438,6 +19438,7 @@ function parseTemplate(template, templateUrl, options = {}) {
         }
     }
     const { nodes, errors, styleUrls, styles, ngContentSelectors } = htmlAstToRender3Ast(rootNodes, bindingParser);
+    errors.push(...parseResult.errors, ...i18nMetaResult.errors);
     return {
         interpolationConfig,
         preserveWhitespaces,
@@ -20661,7 +20662,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('12.0.0-next.2+55.sha-7765b64');
+const VERSION$1 = new Version('12.0.0-next.2+57.sha-0847a03');
 
 /**
  * @license
@@ -30197,7 +30198,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.2+55.sha-7765b64'));
+    definitionMap.set('version', literal('12.0.0-next.2+57.sha-0847a03'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -30418,7 +30419,7 @@ function compileDeclarePipeFromMetadata(meta) {
  */
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.2+55.sha-7765b64'));
+    definitionMap.set('version', literal('12.0.0-next.2+57.sha-0847a03'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
