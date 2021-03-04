@@ -159,7 +159,6 @@ export declare class Identifiers {
     static CopyDefinitionFeature: o.ExternalReference;
     static ProvidersFeature: o.ExternalReference;
     static listener: o.ExternalReference;
-    static getFactoryOf: o.ExternalReference;
     static getInheritedFactory: o.ExternalReference;
     static sanitizeHtml: o.ExternalReference;
     static sanitizeStyle: o.ExternalReference;
