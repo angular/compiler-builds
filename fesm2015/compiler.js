@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.3+4.sha-d9acaa8
+ * @license Angular v12.0.0-next.3+10.sha-d44c7c2
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3680,10 +3680,6 @@ Identifiers$1.InheritDefinitionFeature = { name: 'ɵɵInheritDefinitionFeature',
 Identifiers$1.CopyDefinitionFeature = { name: 'ɵɵCopyDefinitionFeature', moduleName: CORE$1 };
 Identifiers$1.ProvidersFeature = { name: 'ɵɵProvidersFeature', moduleName: CORE$1 };
 Identifiers$1.listener = { name: 'ɵɵlistener', moduleName: CORE$1 };
-Identifiers$1.getFactoryOf = {
-    name: 'ɵɵgetFactoryOf',
-    moduleName: CORE$1,
-};
 Identifiers$1.getInheritedFactory = {
     name: 'ɵɵgetInheritedFactory',
     moduleName: CORE$1,
@@ -6137,7 +6133,6 @@ var R3FactoryDelegateType;
 (function (R3FactoryDelegateType) {
     R3FactoryDelegateType[R3FactoryDelegateType["Class"] = 0] = "Class";
     R3FactoryDelegateType[R3FactoryDelegateType["Function"] = 1] = "Function";
-    R3FactoryDelegateType[R3FactoryDelegateType["Factory"] = 2] = "Factory";
 })(R3FactoryDelegateType || (R3FactoryDelegateType = {}));
 var R3FactoryTarget;
 (function (R3FactoryTarget) {
@@ -6225,19 +6220,7 @@ function compileFactoryFunction(meta) {
         body.push(ifStmt(t, [ctorStmt], [r.set(nonCtorExpr).toStmt()]));
         return r;
     }
-    if (isDelegatedMetadata(meta) && meta.delegateType === R3FactoryDelegateType.Factory) {
-        const delegateFactory = variable(`ɵ${meta.name}_BaseFactory`);
-        const getFactoryOf = importExpr(Identifiers$1.getFactoryOf);
-        if (meta.delegate.isEquivalent(meta.internalType)) {
-            throw new Error(`Illegal state: compiling factory that delegates to itself`);
-        }
-        const delegateFactoryStmt = delegateFactory.set(getFactoryOf.callFn([meta.delegate])).toDeclStmt(INFERRED_TYPE, [
-            StmtModifier.Exported, StmtModifier.Final
-        ]);
-        statements.push(delegateFactoryStmt);
-        retExpr = makeConditionalFactory(delegateFactory.callFn([]));
-    }
-    else if (isDelegatedMetadata(meta)) {
+    if (isDelegatedMetadata(meta)) {
         // This type is created with a delegated factory. If a type parameter is not specified, call
         // the factory instead.
         const delegateArgs = injectDependencies(meta.delegateDeps, meta.injectFn, meta.target === R3FactoryTarget.Pipe);
@@ -7313,24 +7296,6 @@ class R3JitReflector {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-function mapEntry(key, value) {
-    return { key, value, quoted: false };
-}
-function mapLiteral(obj, quoted = false) {
-    return literalMap(Object.keys(obj).map(key => ({
-        key,
-        quoted,
-        value: obj[key],
-    })));
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
  */
@@ -7436,33 +7401,6 @@ function compileInjector(meta) {
     const type = new ExpressionType(importExpr(Identifiers$1.InjectorDef, [new ExpressionType(meta.type.type)]));
     return { expression, type, statements: result.statements };
 }
-// TODO(alxhub): integrate this with `compileNgModule`. Currently the two are separate operations.
-function compileNgModuleFromRender2(ctx, ngModule, injectableCompiler) {
-    const className = identifierName(ngModule.type);
-    const rawImports = ngModule.rawImports ? [ngModule.rawImports] : [];
-    const rawExports = ngModule.rawExports ? [ngModule.rawExports] : [];
-    const injectorDefArg = mapLiteral({
-        'factory': injectableCompiler.factoryFor({ type: ngModule.type, symbol: ngModule.type.reference }, ctx),
-        'providers': convertMetaToOutput(ngModule.rawProviders, ctx),
-        'imports': convertMetaToOutput([...rawImports, ...rawExports], ctx),
-    });
-    const injectorDef = importExpr(Identifiers$1.defineInjector).callFn([injectorDefArg]);
-    ctx.statements.push(new ClassStmt(
-    /* name */ className, 
-    /* parent */ null, 
-    /* fields */ [new ClassField(
-        /* name */ 'ɵinj', 
-        /* type */ INFERRED_TYPE, 
-        /* modifiers */ [StmtModifier.Static], 
-        /* initializer */ injectorDef)], 
-    /* getters */ [], 
-    /* constructorMethod */ new ClassMethod(null, [], []), 
-    /* methods */ []));
-}
-function accessExportScope(module) {
-    const selectorScope = new ReadPropExpr(module, 'ɵmod');
-    return new ReadPropExpr(selectorScope, 'exported');
-}
 function tupleTypeOf(exp) {
     const types = exp.map(ref => typeofExpr(ref.type));
     return exp.length > 0 ? expressionType(literalArr(types)) : NONE_TYPE;
@@ -7496,52 +7434,6 @@ function createPipeType(metadata) {
         typeWithParameters(metadata.type.type, metadata.typeArgumentCount),
         new ExpressionType(new LiteralExpr(metadata.pipeName)),
     ]));
-}
-/**
- * Write a pipe definition to the output context.
- */
-function compilePipeFromRender2(outputCtx, pipe, reflector) {
-    const name = identifierName(pipe.type);
-    if (!name) {
-        return error(`Cannot resolve the name of ${pipe.type}`);
-    }
-    const type = outputCtx.importExpr(pipe.type.reference);
-    const metadata = {
-        name,
-        type: wrapReference(type),
-        internalType: type,
-        pipeName: pipe.name,
-        typeArgumentCount: 0,
-        deps: dependenciesFromGlobalMetadata(pipe.type, outputCtx, reflector),
-        pure: pipe.pure,
-    };
-    const res = compilePipeFromMetadata(metadata);
-    const factoryRes = compileFactoryFunction(Object.assign(Object.assign({}, metadata), { injectFn: Identifiers$1.directiveInject, target: R3FactoryTarget.Pipe }));
-    const definitionField = outputCtx.constantPool.propertyNameOf(3 /* Pipe */);
-    const ngFactoryDefStatement = new ClassStmt(
-    /* name */ name, 
-    /* parent */ null, 
-    /* fields */
-    [new ClassField(
-        /* name */ 'ɵfac', 
-        /* type */ INFERRED_TYPE, 
-        /* modifiers */ [StmtModifier.Static], 
-        /* initializer */ factoryRes.factory)], 
-    /* getters */ [], 
-    /* constructorMethod */ new ClassMethod(null, [], []), 
-    /* methods */ []);
-    const pipeDefStatement = new ClassStmt(
-    /* name */ name, 
-    /* parent */ null, 
-    /* fields */ [new ClassField(
-        /* name */ definitionField, 
-        /* type */ INFERRED_TYPE, 
-        /* modifiers */ [StmtModifier.Static], 
-        /* initializer */ res.expression)], 
-    /* getters */ [], 
-    /* constructorMethod */ new ClassMethod(null, [], []), 
-    /* methods */ []);
-    outputCtx.statements.push(ngFactoryDefStatement, pipeDefStatement);
 }
 
 /**
@@ -15852,6 +15744,24 @@ class IvySimpleExpressionChecker extends RecursiveAstVisitor$1 {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+function mapEntry(key, value) {
+    return { key, value, quoted: false };
+}
+function mapLiteral(obj, quoted = false) {
+    return literalMap(Object.keys(obj).map(key => ({
+        key,
+        quoted,
+        value: obj[key],
+    })));
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 // =================================================================================================
 // =================================================================================================
 // =========== S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P  ===========
@@ -19563,7 +19473,6 @@ function createClosureModeGuard() {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const EMPTY_ARRAY = [];
 // This regex matches any binding names that contain the "attr." prefix, e.g. "attr.required"
 // If there is a match, the first matching group will contain the attribute name to bind.
 const ATTR_REGEX = /attr\.([^\]]+)/;
@@ -19761,92 +19670,6 @@ function compileDeclarationList(list, mode) {
             const resolvedList = list.callMethod('map', [importExpr(Identifiers$1.resolveForwardRef)]);
             return fn([], [new ReturnStatement(resolvedList)]);
     }
-}
-/**
- * A wrapper around `compileDirective` which depends on render2 global analysis data as its input
- * instead of the `R3DirectiveMetadata`.
- *
- * `R3DirectiveMetadata` is computed from `CompileDirectiveMetadata` and other statically reflected
- * information.
- */
-function compileDirectiveFromRender2(outputCtx, directive, reflector, bindingParser) {
-    const name = identifierName(directive.type);
-    name || error(`Cannot resolver the name of ${directive.type}`);
-    const definitionField = outputCtx.constantPool.propertyNameOf(1 /* Directive */);
-    const meta = directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector);
-    const res = compileDirectiveFromMetadata(meta, outputCtx.constantPool, bindingParser);
-    const factoryRes = compileFactoryFunction(Object.assign(Object.assign({}, meta), { injectFn: Identifiers$1.directiveInject, target: R3FactoryTarget.Directive }));
-    const ngFactoryDefStatement = new ClassStmt(name, null, [new ClassField('ɵfac', INFERRED_TYPE, [StmtModifier.Static], factoryRes.factory)], [], new ClassMethod(null, [], []), []);
-    const directiveDefStatement = new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []);
-    // Create the partial class to be merged with the actual class.
-    outputCtx.statements.push(ngFactoryDefStatement, directiveDefStatement);
-}
-/**
- * A wrapper around `compileComponent` which depends on render2 global analysis data as its input
- * instead of the `R3DirectiveMetadata`.
- *
- * `R3ComponentMetadata` is computed from `CompileDirectiveMetadata` and other statically reflected
- * information.
- */
-function compileComponentFromRender2(outputCtx, component, render3Ast, reflector, bindingParser, directiveTypeBySel, pipeTypeByName) {
-    const name = identifierName(component.type);
-    name || error(`Cannot resolver the name of ${component.type}`);
-    const definitionField = outputCtx.constantPool.propertyNameOf(2 /* Component */);
-    const summary = component.toSummary();
-    // Compute the R3ComponentMetadata from the CompileDirectiveMetadata
-    const meta = Object.assign(Object.assign({}, directiveMetadataFromGlobalMetadata(component, outputCtx, reflector)), { selector: component.selector, template: { nodes: render3Ast.nodes, ngContentSelectors: render3Ast.ngContentSelectors }, directives: [], pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx), viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx), declarationListEmitMode: 0 /* Direct */, styles: (summary.template && summary.template.styles) || EMPTY_ARRAY, encapsulation: (summary.template && summary.template.encapsulation) || ViewEncapsulation.Emulated, interpolation: DEFAULT_INTERPOLATION_CONFIG, animations: null, viewProviders: component.viewProviders.length > 0 ? new WrappedNodeExpr(component.viewProviders) : null, relativeContextFilePath: '', i18nUseExternalIds: true });
-    const res = compileComponentFromMetadata(meta, outputCtx.constantPool, bindingParser);
-    const factoryRes = compileFactoryFunction(Object.assign(Object.assign({}, meta), { injectFn: Identifiers$1.directiveInject, target: R3FactoryTarget.Directive }));
-    const ngFactoryDefStatement = new ClassStmt(name, null, [new ClassField('ɵfac', INFERRED_TYPE, [StmtModifier.Static], factoryRes.factory)], [], new ClassMethod(null, [], []), []);
-    const componentDefStatement = new ClassStmt(name, null, [new ClassField(definitionField, INFERRED_TYPE, [StmtModifier.Static], res.expression)], [], new ClassMethod(null, [], []), []);
-    // Create the partial class to be merged with the actual class.
-    outputCtx.statements.push(ngFactoryDefStatement, componentDefStatement);
-}
-/**
- * Compute `R3DirectiveMetadata` given `CompileDirectiveMetadata` and a `CompileReflector`.
- */
-function directiveMetadataFromGlobalMetadata(directive, outputCtx, reflector) {
-    // The global-analysis based Ivy mode in ngc is no longer utilized/supported.
-    throw new Error('unsupported');
-}
-/**
- * Convert `CompileQueryMetadata` into `R3QueryMetadata`.
- */
-function queriesFromGlobalMetadata(queries, outputCtx) {
-    return queries.map(query => {
-        let read = null;
-        if (query.read && query.read.identifier) {
-            read = outputCtx.importExpr(query.read.identifier.reference);
-        }
-        return {
-            propertyName: query.propertyName,
-            first: query.first,
-            predicate: selectorsFromGlobalMetadata(query.selectors, outputCtx),
-            descendants: query.descendants,
-            read,
-            emitDistinctChangesOnly: !!query.emitDistinctChangesOnly,
-            static: !!query.static
-        };
-    });
-}
-/**
- * Convert `CompileTokenMetadata` for query selectors into either an expression for a predicate
- * type, or a list of string predicates.
- */
-function selectorsFromGlobalMetadata(selectors, outputCtx) {
-    if (selectors.length > 1 || (selectors.length == 1 && selectors[0].value)) {
-        const selectorStrings = selectors.map(value => value.value);
-        selectorStrings.some(value => !value) &&
-            error('Found a type among the string selectors expected');
-        return outputCtx.constantPool.getConstLiteral(literalArr(selectorStrings.map(value => literal(value))));
-    }
-    if (selectors.length == 1) {
-        const first = selectors[0];
-        if (first.identifier) {
-            return outputCtx.importExpr(first.identifier.reference);
-        }
-    }
-    error('Unexpected query form');
 }
 function prepareQueryParams(query, constantPool) {
     const parameters = [getQueryPredicate(query, constantPool), literal(toQueryFlags(query))];
@@ -20175,11 +19998,6 @@ function metadataAsSummary(meta) {
         hostProperties: meta.properties,
     };
     // clang-format on
-}
-function typeMapToExpressionMap(map, outputCtx) {
-    // Convert each map entry into another entry where the value is an expression importing the type.
-    const entries = Array.from(map).map(([key, type]) => [key, outputCtx.importExpr(type)]);
-    return new Map(entries);
 }
 const HOST_REG_EXP$1 = /^(?:\[([^\]]+)\])|(?:\(([^\)]+)\))$/;
 function parseHostBindings(host) {
@@ -20662,7 +20480,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('12.0.0-next.3+4.sha-d9acaa8');
+const VERSION$1 = new Version('12.0.0-next.3+10.sha-d44c7c2');
 
 /**
  * @license
@@ -26915,70 +26733,6 @@ class AotCompiler {
         }
         return messageBundle;
     }
-    emitAllPartialModules({ ngModuleByPipeOrDirective, files }, r3Files) {
-        const contextMap = new Map();
-        const getContext = (fileName) => {
-            if (!contextMap.has(fileName)) {
-                contextMap.set(fileName, this._createOutputContext(fileName));
-            }
-            return contextMap.get(fileName);
-        };
-        files.forEach(file => this._compilePartialModule(file.fileName, ngModuleByPipeOrDirective, file.directives, file.pipes, file.ngModules, file.injectables, getContext(file.fileName)));
-        r3Files.forEach(file => this._compileShallowModules(file.fileName, file.shallowModules, getContext(file.fileName)));
-        return Array.from(contextMap.values())
-            .map(context => ({
-            fileName: context.genFilePath,
-            statements: [...context.constantPool.statements, ...context.statements],
-        }));
-    }
-    _compileShallowModules(fileName, shallowModules, context) {
-        shallowModules.forEach(module => compileNgModuleFromRender2(context, module, this._injectableCompiler));
-    }
-    _compilePartialModule(fileName, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables, context) {
-        const errors = [];
-        const schemaRegistry = new DomElementSchemaRegistry();
-        const hostBindingParser = new BindingParser(this._templateParser.expressionParser, DEFAULT_INTERPOLATION_CONFIG, schemaRegistry, [], errors);
-        // Process all components and directives
-        directives.forEach(directiveType => {
-            const directiveMetadata = this._metadataResolver.getDirectiveMetadata(directiveType);
-            if (directiveMetadata.isComponent) {
-                const module = ngModuleByPipeOrDirective.get(directiveType);
-                module ||
-                    error(`Cannot determine the module for component '${identifierName(directiveMetadata.type)}'`);
-                let htmlAst = directiveMetadata.template.htmlAst;
-                const preserveWhitespaces = directiveMetadata.template.preserveWhitespaces;
-                if (!preserveWhitespaces) {
-                    htmlAst = removeWhitespaces(htmlAst);
-                }
-                const render3Ast = htmlAstToRender3Ast(htmlAst.rootNodes, hostBindingParser);
-                // Map of StaticType by directive selectors
-                const directiveTypeBySel = new Map();
-                const directives = module.transitiveModule.directives.map(dir => this._metadataResolver.getDirectiveSummary(dir.reference));
-                directives.forEach(directive => {
-                    if (directive.selector) {
-                        directiveTypeBySel.set(directive.selector, directive.type.reference);
-                    }
-                });
-                // Map of StaticType by pipe names
-                const pipeTypeByName = new Map();
-                const pipes = module.transitiveModule.pipes.map(pipe => this._metadataResolver.getPipeSummary(pipe.reference));
-                pipes.forEach(pipe => {
-                    pipeTypeByName.set(pipe.name, pipe.type.reference);
-                });
-                compileComponentFromRender2(context, directiveMetadata, render3Ast, this.reflector, hostBindingParser, directiveTypeBySel, pipeTypeByName);
-            }
-            else {
-                compileDirectiveFromRender2(context, directiveMetadata, this.reflector, hostBindingParser);
-            }
-        });
-        pipes.forEach(pipeType => {
-            const pipeMetadata = this._metadataResolver.getPipeMetadata(pipeType);
-            if (pipeMetadata) {
-                compilePipeFromRender2(context, pipeMetadata, this.reflector);
-            }
-        });
-        injectables.forEach(injectable => this._injectableCompiler.compile(injectable, context));
-    }
     emitAllPartialModules2(files) {
         // Using reduce like this is a select many pattern (where map is a select pattern)
         return files.reduce((r, file) => {
@@ -30198,7 +29952,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.3+4.sha-d9acaa8'));
+    definitionMap.set('version', literal('12.0.0-next.3+10.sha-d44c7c2'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -30419,7 +30173,7 @@ function compileDeclarePipeFromMetadata(meta) {
  */
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.3+4.sha-d9acaa8'));
+    definitionMap.set('version', literal('12.0.0-next.3+10.sha-d44c7c2'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
