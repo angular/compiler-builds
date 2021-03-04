@@ -5,10 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { CompileShallowModuleMetadata } from '../compile_metadata';
-import { InjectableCompiler } from '../injectable_compiler';
 import * as o from '../output/output_ast';
-import { OutputContext } from '../util';
 import { R3DependencyMetadata } from './r3_factory';
 import { R3Reference } from './util';
 export interface R3NgModuleDef {
@@ -91,4 +88,3 @@ export interface R3InjectorMetadata {
     imports: o.Expression[];
 }
 export declare function compileInjector(meta: R3InjectorMetadata): R3InjectorDef;
-export declare function compileNgModuleFromRender2(ctx: OutputContext, ngModule: CompileShallowModuleMetadata, injectableCompiler: InjectableCompiler): void;
