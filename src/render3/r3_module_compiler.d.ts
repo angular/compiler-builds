@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import * as o from '../output/output_ast';
-import { R3DependencyMetadata } from './r3_factory';
 import { R3Reference } from './util';
 export interface R3NgModuleDef {
     expression: o.Expression;
@@ -77,13 +76,11 @@ export declare function compileNgModule(meta: R3NgModuleMetadata): R3NgModuleDef
 export interface R3InjectorDef {
     expression: o.Expression;
     type: o.Type;
-    statements: o.Statement[];
 }
 export interface R3InjectorMetadata {
     name: string;
     type: R3Reference;
     internalType: o.Expression;
-    deps: R3DependencyMetadata[] | null;
     providers: o.Expression | null;
     imports: o.Expression[];
 }
