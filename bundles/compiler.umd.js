@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.3+33.sha-1735430
+ * @license Angular v12.0.0-next.3+36.sha-03d47d5
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7139,7 +7139,8 @@
         if (meta.providedIn.value !== null) {
             injectableProps.providedIn = meta.providedIn;
         }
-        var expression = importExpr(Identifiers.ɵɵdefineInjectable).callFn([mapToMapExpression(injectableProps)]);
+        var expression = importExpr(Identifiers.ɵɵdefineInjectable)
+            .callFn([mapToMapExpression(injectableProps)], undefined, true);
         var type = new ExpressionType(importExpr(Identifiers.InjectableDef, [typeWithParameters(meta.type.type, meta.typeArgumentCount)]));
         return {
             expression: expression,
@@ -8033,7 +8034,7 @@
         if (id) {
             definitionMap.id = id;
         }
-        var expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression(definitionMap)]);
+        var expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression(definitionMap)], undefined, true);
         var type = new ExpressionType(importExpr(Identifiers$1.NgModuleDefWithMeta, [
             new ExpressionType(moduleType.type), tupleTypeOf(declarations), tupleTypeOf(imports),
             tupleTypeOf(exports)
@@ -8096,7 +8097,7 @@
         if (meta.imports.length > 0) {
             definitionMap.imports = literalArr(meta.imports);
         }
-        var expression = importExpr(Identifiers$1.defineInjector).callFn([mapToMapExpression(definitionMap)]);
+        var expression = importExpr(Identifiers$1.defineInjector).callFn([mapToMapExpression(definitionMap)], undefined, true);
         var type = new ExpressionType(importExpr(Identifiers$1.InjectorDef, [new ExpressionType(meta.type.type)]));
         return { expression: expression, type: type, statements: result.statements };
     }
@@ -8124,7 +8125,7 @@
         definitionMapValues.push({ key: 'type', value: metadata.type.value, quoted: false });
         // e.g. `pure: true`
         definitionMapValues.push({ key: 'pure', value: literal(metadata.pure), quoted: false });
-        var expression = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]);
+        var expression = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)], undefined, true);
         var type = createPipeType(metadata);
         return { expression: expression, type: type };
     }
@@ -20757,7 +20758,7 @@
     function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
         var definitionMap = baseDirectiveFields(meta, constantPool, bindingParser);
         addFeatures(definitionMap, meta);
-        var expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()]);
+        var expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()], undefined, true);
         var type = createDirectiveType(meta);
         return { expression: expression, type: type };
     }
@@ -20871,7 +20872,7 @@
         if (changeDetection != null && changeDetection !== ChangeDetectionStrategy.Default) {
             definitionMap.set('changeDetection', literal(changeDetection));
         }
-        var expression = importExpr(Identifiers$1.defineComponent).callFn([definitionMap.toLiteralMap()]);
+        var expression = importExpr(Identifiers$1.defineComponent).callFn([definitionMap.toLiteralMap()], undefined, true);
         var type = createComponentType(meta);
         return { expression: expression, type: type };
     }
@@ -21770,7 +21771,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.0.0-next.3+33.sha-1735430');
+    var VERSION$1 = new Version('12.0.0-next.3+36.sha-03d47d5');
 
     /**
      * @license
@@ -23745,7 +23746,8 @@
                 mapEntry$1('token', ctx.importExpr(injectable.type.reference)),
                 mapEntry$1('providedIn', providedIn),
             ];
-            return importExpr(Identifiers.ɵɵdefineInjectable).callFn([literalMap(def)]);
+            return importExpr(Identifiers.ɵɵdefineInjectable)
+                .callFn([literalMap(def)], undefined, true);
         };
         InjectableCompiler.prototype.compile = function (injectable, ctx) {
             if (this.alwaysGenerateDef || injectable.providedIn !== undefined) {
@@ -31614,7 +31616,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.3+33.sha-1735430'));
+        definitionMap.set('version', literal('12.0.0-next.3+36.sha-03d47d5'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -31839,7 +31841,7 @@
      */
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.3+33.sha-1735430'));
+        definitionMap.set('version', literal('12.0.0-next.3+36.sha-03d47d5'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
