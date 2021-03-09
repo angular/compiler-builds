@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.2.4+31.sha-c5ead38
+ * @license Angular v11.2.4+50.sha-e7ce857
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8076,18 +8076,7 @@
         return iifeCall.toStmt();
     }
     function compileInjector(meta) {
-        var result = compileFactoryFunction({
-            name: meta.name,
-            type: meta.type,
-            internalType: meta.internalType,
-            typeArgumentCount: 0,
-            deps: meta.deps,
-            injectFn: Identifiers$1.inject,
-            target: exports.R3FactoryTarget.NgModule,
-        });
-        var definitionMap = {
-            factory: result.factory,
-        };
+        var definitionMap = {};
         if (meta.providers !== null) {
             definitionMap.providers = meta.providers;
         }
@@ -8096,7 +8085,7 @@
         }
         var expression = importExpr(Identifiers$1.defineInjector).callFn([mapToMapExpression(definitionMap)]);
         var type = new ExpressionType(importExpr(Identifiers$1.InjectorDef, [new ExpressionType(meta.type.type)]));
-        return { expression: expression, type: type, statements: result.statements };
+        return { expression: expression, type: type };
     }
     function tupleTypeOf(exp) {
         var types = exp.map(function (ref) { return typeofExpr(ref.type); });
@@ -21382,12 +21371,11 @@
                 name: facade.name,
                 type: wrapReference$1(facade.type),
                 internalType: new WrappedNodeExpr(facade.type),
-                deps: convertR3DependencyMetadataArray(facade.deps),
                 providers: new WrappedNodeExpr(facade.providers),
                 imports: facade.imports.map(function (i) { return new WrappedNodeExpr(i); }),
             };
             var res = compileInjector(meta);
-            return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, res.statements);
+            return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, []);
         };
         CompilerFacadeImpl.prototype.compileNgModule = function (angularCoreEnv, sourceMapUrl, facade) {
             var meta = {
@@ -21744,7 +21732,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.2.4+31.sha-c5ead38');
+    var VERSION$1 = new Version('11.2.4+50.sha-e7ce857');
 
     /**
      * @license
@@ -31588,7 +31576,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.2.4+31.sha-c5ead38'));
+        definitionMap.set('version', literal('11.2.4+50.sha-e7ce857'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -31813,7 +31801,7 @@
      */
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.2.4+31.sha-c5ead38'));
+        definitionMap.set('version', literal('11.2.4+50.sha-e7ce857'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);

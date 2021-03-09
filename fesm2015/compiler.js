@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.2.4+31.sha-c5ead38
+ * @license Angular v11.2.4+50.sha-e7ce857
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7377,18 +7377,7 @@ function generateSetNgModuleScopeCall(meta) {
     return iifeCall.toStmt();
 }
 function compileInjector(meta) {
-    const result = compileFactoryFunction({
-        name: meta.name,
-        type: meta.type,
-        internalType: meta.internalType,
-        typeArgumentCount: 0,
-        deps: meta.deps,
-        injectFn: Identifiers$1.inject,
-        target: R3FactoryTarget.NgModule,
-    });
-    const definitionMap = {
-        factory: result.factory,
-    };
+    const definitionMap = {};
     if (meta.providers !== null) {
         definitionMap.providers = meta.providers;
     }
@@ -7397,7 +7386,7 @@ function compileInjector(meta) {
     }
     const expression = importExpr(Identifiers$1.defineInjector).callFn([mapToMapExpression(definitionMap)]);
     const type = new ExpressionType(importExpr(Identifiers$1.InjectorDef, [new ExpressionType(meta.type.type)]));
-    return { expression, type, statements: result.statements };
+    return { expression, type };
 }
 function tupleTypeOf(exp) {
     const types = exp.map(ref => typeofExpr(ref.type));
@@ -20121,12 +20110,11 @@ class CompilerFacadeImpl {
             name: facade.name,
             type: wrapReference$1(facade.type),
             internalType: new WrappedNodeExpr(facade.type),
-            deps: convertR3DependencyMetadataArray(facade.deps),
             providers: new WrappedNodeExpr(facade.providers),
             imports: facade.imports.map(i => new WrappedNodeExpr(i)),
         };
         const res = compileInjector(meta);
-        return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, res.statements);
+        return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, []);
     }
     compileNgModule(angularCoreEnv, sourceMapUrl, facade) {
         const meta = {
@@ -20454,7 +20442,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.2.4+31.sha-c5ead38');
+const VERSION$1 = new Version('11.2.4+50.sha-e7ce857');
 
 /**
  * @license
@@ -29926,7 +29914,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('11.2.4+31.sha-c5ead38'));
+    definitionMap.set('version', literal('11.2.4+50.sha-e7ce857'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -30147,7 +30135,7 @@ function compileDeclarePipeFromMetadata(meta) {
  */
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('11.2.4+31.sha-c5ead38'));
+    definitionMap.set('version', literal('11.2.4+50.sha-e7ce857'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
