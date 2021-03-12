@@ -14,7 +14,7 @@ export interface Attribute {
     attributeName: string;
 }
 export declare const createAttribute: MetadataFactory<Attribute>;
-export declare const emitDistinctChangesOnlyDefaultValue = false;
+export declare const emitDistinctChangesOnlyDefaultValue = true;
 export interface Query {
     descendants: boolean;
     first: boolean;

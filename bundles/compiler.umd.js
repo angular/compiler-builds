@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.4+11.sha-012a2b5
+ * @license Angular v12.0.0-next.4+12.sha-7096246
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1106,9 +1106,8 @@
     var createInjectionToken = makeMetadataFactory('InjectionToken', function (desc) { return ({ _desc: desc, ɵprov: undefined }); });
     var createAttribute = makeMetadataFactory('Attribute', function (attributeName) { return ({ attributeName: attributeName }); });
     // Stores the default value of `emitDistinctChangesOnly` when the `emitDistinctChangesOnly` is not
-    // explicitly set. This value will be changed to `true` in v12.
-    // TODO(misko): switch the default in v12 to `true`. See: packages/core/src/metadata/di.ts
-    var emitDistinctChangesOnlyDefaultValue = false;
+    // explicitly set.
+    var emitDistinctChangesOnlyDefaultValue = true;
     var createContentChildren = makeMetadataFactory('ContentChildren', function (selector, data) {
         if (data === void 0) { data = {}; }
         return (Object.assign({ selector: selector, first: false, isViewQuery: false, descendants: false, emitDistinctChangesOnly: emitDistinctChangesOnlyDefaultValue }, data));
@@ -21759,7 +21758,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.0.0-next.4+11.sha-012a2b5');
+    var VERSION$1 = new Version('12.0.0-next.4+12.sha-7096246');
 
     /**
      * @license
@@ -31604,7 +31603,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.4+11.sha-012a2b5'));
+        definitionMap.set('version', literal('12.0.0-next.4+12.sha-7096246'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -31645,9 +31644,12 @@
         }
         meta.set('predicate', Array.isArray(query.predicate) ? asLiteral(query.predicate) : query.predicate);
         if (!query.emitDistinctChangesOnly) {
-            // `emitDistinctChangesOnly` is special because in future we expect it to be `true`. For this
-            // reason the absence should be interpreted as `true`.
+            // `emitDistinctChangesOnly` is special because we expect it to be `true`.
+            // Therefore we explicitly emit the field, and explicitly place it only when it's `false`.
             meta.set('emitDistinctChangesOnly', literal(false));
+        }
+        else {
+            // The linker will assume that an absent `emitDistinctChangesOnly` flag is by default `true`.
         }
         if (query.descendants) {
             meta.set('descendants', literal(true));
@@ -31829,7 +31831,7 @@
      */
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.4+11.sha-012a2b5'));
+        definitionMap.set('version', literal('12.0.0-next.4+12.sha-7096246'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
