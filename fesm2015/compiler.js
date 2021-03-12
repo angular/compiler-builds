@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.4+11.sha-012a2b5
+ * @license Angular v12.0.0-next.4+12.sha-7096246
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -798,9 +798,8 @@ const createInject = makeMetadataFactory('Inject', (token) => ({ token }));
 const createInjectionToken = makeMetadataFactory('InjectionToken', (desc) => ({ _desc: desc, ɵprov: undefined }));
 const createAttribute = makeMetadataFactory('Attribute', (attributeName) => ({ attributeName }));
 // Stores the default value of `emitDistinctChangesOnly` when the `emitDistinctChangesOnly` is not
-// explicitly set. This value will be changed to `true` in v12.
-// TODO(misko): switch the default in v12 to `true`. See: packages/core/src/metadata/di.ts
-const emitDistinctChangesOnlyDefaultValue = false;
+// explicitly set.
+const emitDistinctChangesOnlyDefaultValue = true;
 const createContentChildren = makeMetadataFactory('ContentChildren', (selector, data = {}) => (Object.assign({ selector, first: false, isViewQuery: false, descendants: false, emitDistinctChangesOnly: emitDistinctChangesOnlyDefaultValue }, data)));
 const createContentChild = makeMetadataFactory('ContentChild', (selector, data = {}) => (Object.assign({ selector, first: true, isViewQuery: false, descendants: true }, data)));
 const createViewChildren = makeMetadataFactory('ViewChildren', (selector, data = {}) => (Object.assign({ selector, first: false, isViewQuery: true, descendants: true, emitDistinctChangesOnly: emitDistinctChangesOnlyDefaultValue }, data)));
@@ -20469,7 +20468,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('12.0.0-next.4+11.sha-012a2b5');
+const VERSION$1 = new Version('12.0.0-next.4+12.sha-7096246');
 
 /**
  * @license
@@ -29942,7 +29941,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.4+11.sha-012a2b5'));
+    definitionMap.set('version', literal('12.0.0-next.4+12.sha-7096246'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -29983,9 +29982,12 @@ function compileQuery(query) {
     }
     meta.set('predicate', Array.isArray(query.predicate) ? asLiteral(query.predicate) : query.predicate);
     if (!query.emitDistinctChangesOnly) {
-        // `emitDistinctChangesOnly` is special because in future we expect it to be `true`. For this
-        // reason the absence should be interpreted as `true`.
+        // `emitDistinctChangesOnly` is special because we expect it to be `true`.
+        // Therefore we explicitly emit the field, and explicitly place it only when it's `false`.
         meta.set('emitDistinctChangesOnly', literal(false));
+    }
+    else {
+        // The linker will assume that an absent `emitDistinctChangesOnly` flag is by default `true`.
     }
     if (query.descendants) {
         meta.set('descendants', literal(true));
@@ -30163,7 +30165,7 @@ function compileDeclarePipeFromMetadata(meta) {
  */
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.4+11.sha-012a2b5'));
+    definitionMap.set('version', literal('12.0.0-next.4+12.sha-7096246'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
