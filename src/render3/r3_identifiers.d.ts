@@ -143,9 +143,11 @@ export declare class Identifiers {
     static DirectiveDefWithMeta: o.ExternalReference;
     static InjectorDef: o.ExternalReference;
     static defineInjector: o.ExternalReference;
+    static declareInjector: o.ExternalReference;
     static NgModuleDefWithMeta: o.ExternalReference;
     static ModuleWithProviders: o.ExternalReference;
     static defineNgModule: o.ExternalReference;
+    static declareNgModule: o.ExternalReference;
     static setNgModuleScope: o.ExternalReference;
     static PipeDefWithMeta: o.ExternalReference;
     static definePipe: o.ExternalReference;

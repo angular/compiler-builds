@@ -9,15 +9,16 @@ import { ConstantPool } from '../../constant_pool';
 import * as o from '../../output/output_ast';
 import { ParseError, ParseSourceSpan } from '../../parse_util';
 import { BindingParser } from '../../template_parser/binding_parser';
-import { R3ComponentDef, R3ComponentMetadata, R3DirectiveDef, R3DirectiveMetadata } from './api';
+import { R3CompiledExpression } from '../util';
+import { R3ComponentMetadata, R3DirectiveMetadata } from './api';
 /**
  * Compile a directive for the render3 runtime as defined by the `R3DirectiveMetadata`.
  */
-export declare function compileDirectiveFromMetadata(meta: R3DirectiveMetadata, constantPool: ConstantPool, bindingParser: BindingParser): R3DirectiveDef;
+export declare function compileDirectiveFromMetadata(meta: R3DirectiveMetadata, constantPool: ConstantPool, bindingParser: BindingParser): R3CompiledExpression;
 /**
  * Compile a component for the render3 runtime as defined by the `R3ComponentMetadata`.
  */
-export declare function compileComponentFromMetadata(meta: R3ComponentMetadata, constantPool: ConstantPool, bindingParser: BindingParser): R3ComponentDef;
+export declare function compileComponentFromMetadata(meta: R3ComponentMetadata, constantPool: ConstantPool, bindingParser: BindingParser): R3CompiledExpression;
 /**
  * Creates the type specification from the component meta. This type is inserted into .d.ts files
  * to be consumed by upstream compilations.
