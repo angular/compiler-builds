@@ -5,13 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import { R3DeclareNgModuleFacade } from '../compiler_facade_interface';
 import * as o from '../output/output_ast';
-import { R3Reference } from './util';
-export interface R3NgModuleDef {
-    expression: o.Expression;
-    type: o.Type;
-    additionalStatements: o.Statement[];
-}
+import { R3CompiledExpression, R3Reference } from './util';
 /**
  * Metadata required by the module compiler to generate a module def (`ɵmod`) for a type.
  */
@@ -72,16 +68,10 @@ export interface R3NgModuleMetadata {
 /**
  * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
  */
-export declare function compileNgModule(meta: R3NgModuleMetadata): R3NgModuleDef;
-export interface R3InjectorDef {
-    expression: o.Expression;
-    type: o.Type;
-}
-export interface R3InjectorMetadata {
-    name: string;
-    type: R3Reference;
-    internalType: o.Expression;
-    providers: o.Expression | null;
-    imports: o.Expression[];
-}
-export declare function compileInjector(meta: R3InjectorMetadata): R3InjectorDef;
+export declare function compileNgModule(meta: R3NgModuleMetadata): R3CompiledExpression;
+/**
+ * This function is used in JIT mode to generate the call to `ɵɵdefineNgModule()` from a call to
+ * `ɵɵngDeclareNgModule()`.
+ */
+export declare function compileNgModuleDeclarationExpression(meta: R3DeclareNgModuleFacade): o.Expression;
+export declare function createNgModuleType({ type: moduleType, declarations, imports, exports }: R3NgModuleMetadata): o.ExpressionType;

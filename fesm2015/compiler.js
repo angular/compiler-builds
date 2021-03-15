@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.4+26.sha-cc75e1d
+ * @license Angular v12.0.0-next.4+34.sha-1a9f526
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3653,10 +3653,8 @@ Identifiers$1.InjectorDef = {
     name: 'ɵɵInjectorDef',
     moduleName: CORE$1,
 };
-Identifiers$1.defineInjector = {
-    name: 'ɵɵdefineInjector',
-    moduleName: CORE$1,
-};
+Identifiers$1.defineInjector = { name: 'ɵɵdefineInjector', moduleName: CORE$1 };
+Identifiers$1.declareInjector = { name: 'ɵɵngDeclareInjector', moduleName: CORE$1 };
 Identifiers$1.NgModuleDefWithMeta = {
     name: 'ɵɵNgModuleDefWithMeta',
     moduleName: CORE$1,
@@ -3666,6 +3664,7 @@ Identifiers$1.ModuleWithProviders = {
     moduleName: CORE$1,
 };
 Identifiers$1.defineNgModule = { name: 'ɵɵdefineNgModule', moduleName: CORE$1 };
+Identifiers$1.declareNgModule = { name: 'ɵɵngDeclareNgModule', moduleName: CORE$1 };
 Identifiers$1.setNgModuleScope = { name: 'ɵɵsetNgModuleScope', moduleName: CORE$1 };
 Identifiers$1.PipeDefWithMeta = { name: 'ɵɵPipeDefWithMeta', moduleName: CORE$1 };
 Identifiers$1.definePipe = { name: 'ɵɵdefinePipe', moduleName: CORE$1 };
@@ -4415,36 +4414,6 @@ function _createIndent(count) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * Convert an object map with `Expression` values into a `LiteralMapExpr`.
- */
-function mapToMapExpression(map) {
-    const result = Object.keys(map).map(key => ({
-        key,
-        // The assertion here is because really TypeScript doesn't allow us to express that if the
-        // key is present, it will have a value, but this is true in reality.
-        value: map[key],
-        quoted: false,
-    }));
-    return literalMap(result);
-}
-/**
- * Convert metadata into an `Expression` in the given `OutputContext`.
- *
- * This operation will handle arrays, references to symbols, or literal `null` or `undefined`.
- */
-function convertMetaToOutput(meta, ctx) {
-    if (Array.isArray(meta)) {
-        return literalArr(meta.map(entry => convertMetaToOutput(entry, ctx)));
-    }
-    if (meta instanceof StaticSymbol) {
-        return ctx.importExpr(meta);
-    }
-    if (meta == null) {
-        return literal(meta);
-    }
-    throw new Error(`Internal error: Unsupported or unknown metadata: ${meta}`);
-}
 function typeWithParameters(type, numParams) {
     if (numParams === 0) {
         return expressionType(type);
@@ -4461,19 +4430,6 @@ function prepareSyntheticPropertyName(name) {
 }
 function prepareSyntheticListenerName(name, phase) {
     return `${ANIMATE_SYMBOL_PREFIX}${name}.${phase}`;
-}
-function isSyntheticPropertyOrListener(name) {
-    return name.charAt(0) == ANIMATE_SYMBOL_PREFIX;
-}
-function getSyntheticPropertyName(name) {
-    // this will strip out listener phase values...
-    // @foo.start => @foo
-    const i = name.indexOf('.');
-    name = i > 0 ? name.substring(0, i) : name;
-    if (name.charAt(0) !== ANIMATE_SYMBOL_PREFIX) {
-        name = ANIMATE_SYMBOL_PREFIX + name;
-    }
-    return name;
 }
 function getSafePropertyAccessString(accessor, name) {
     const escapedName = escapeIdentifier(name, false, false);
@@ -4498,6 +4454,10 @@ function guardedExpression(guard, expr) {
 function wrapReference(value) {
     const wrapped = new WrappedNodeExpr(value);
     return { value: wrapped, type: wrapped };
+}
+function refsToArray(refs, shouldForwardDeclare) {
+    const values = literalArr(refs.map(ref => ref.value));
+    return shouldForwardDeclare ? fn([], [new ReturnStatement(values)]) : values;
 }
 
 /**
@@ -6243,7 +6203,7 @@ function compileFactoryFunction(meta) {
         body.push(importExpr(Identifiers$1.invalidFactory).callFn([]).toStmt());
     }
     return {
-        factory: fn([new FnParam('t', DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, `${meta.name}_Factory`),
+        expression: fn([new FnParam('t', DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, `${meta.name}_Factory`),
         statements,
         type: expressionType(importExpr(Identifiers$1.FactoryDef, [typeWithParameters(meta.type.type, meta.typeArgumentCount), ctorDepsType]))
     };
@@ -6415,7 +6375,7 @@ function compileInjectable(meta) {
         else {
             result = {
                 statements: [],
-                factory: fn([], [new ReturnStatement(meta.useFactory.callFn([]))])
+                expression: fn([], [new ReturnStatement(meta.useFactory.callFn([]))])
             };
         }
     }
@@ -6433,13 +6393,15 @@ function compileInjectable(meta) {
         result = delegateToFactory(meta.type.value, meta.internalType);
     }
     const token = meta.internalType;
-    const injectableProps = { token, factory: result.factory };
+    const injectableProps = new DefinitionMap();
+    injectableProps.set('token', token);
+    injectableProps.set('factory', result.expression);
     // Only generate providedIn property if it has a non-null value
     if (meta.providedIn.value !== null) {
-        injectableProps.providedIn = meta.providedIn;
+        injectableProps.set('providedIn', meta.providedIn);
     }
     const expression = importExpr(Identifiers.ɵɵdefineInjectable)
-        .callFn([mapToMapExpression(injectableProps)], undefined, true);
+        .callFn([injectableProps.toLiteralMap()], undefined, true);
     const type = new ExpressionType(importExpr(Identifiers.InjectableDef, [typeWithParameters(meta.type.type, meta.typeArgumentCount)]));
     return {
         expression,
@@ -6453,7 +6415,7 @@ function delegateToFactory(type, internalType) {
         // If types are the same, we can generate `factory: type.ɵfac`
         // If types are different, we have to generate a wrapper function to ensure
         // the internal type has been resolved (`factory: function(t) { return type.ɵfac(t); }`)
-        factory: type.node === internalType.node ?
+        expression: type.node === internalType.node ?
             internalType.prop('ɵfac') :
             fn([new FnParam('t', DYNAMIC_TYPE)], [new ReturnStatement(internalType.callMethod('ɵfac', [variable('t')]))])
     };
@@ -7243,6 +7205,29 @@ function r3JitTypeSourceSpan(kind, typeName, sourceUrl) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+function compileInjector(meta) {
+    const definitionMap = new DefinitionMap();
+    if (meta.providers !== null) {
+        definitionMap.set('providers', meta.providers);
+    }
+    if (meta.imports.length > 0) {
+        definitionMap.set('imports', literalArr(meta.imports));
+    }
+    const expression = importExpr(Identifiers$1.defineInjector).callFn([definitionMap.toLiteralMap()], undefined, true);
+    const type = createInjectorType(meta);
+    return { expression, type, statements: [] };
+}
+function createInjectorType(meta) {
+    return new ExpressionType(importExpr(Identifiers$1.InjectorDef, [new ExpressionType(meta.type.type)]));
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * Implementation of `CompileReflector` which resolves references to @angular/core
  * symbols at runtime, according to a consumer-provided mapping.
@@ -7300,24 +7285,24 @@ class R3JitReflector {
  * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
  */
 function compileNgModule(meta) {
-    const { internalType, type: moduleType, bootstrap, declarations, imports, exports, schemas, containsForwardDecls, emitInline, id } = meta;
-    const additionalStatements = [];
-    const definitionMap = { type: internalType };
-    // Only generate the keys in the metadata if the arrays have values.
-    if (bootstrap.length) {
-        definitionMap.bootstrap = refsToArray(bootstrap, containsForwardDecls);
+    const { internalType, bootstrap, declarations, imports, exports, schemas, containsForwardDecls, emitInline, id } = meta;
+    const statements = [];
+    const definitionMap = new DefinitionMap();
+    definitionMap.set('type', internalType);
+    if (bootstrap.length > 0) {
+        definitionMap.set('bootstrap', refsToArray(bootstrap, containsForwardDecls));
     }
-    // If requested to emit scope information inline, pass the declarations, imports and exports to
-    // the `ɵɵdefineNgModule` call. The JIT compilation uses this.
+    // If requested to emit scope information inline, pass the `declarations`, `imports` and `exports`
+    // to the `ɵɵdefineNgModule()` call. The JIT compilation uses this.
     if (emitInline) {
-        if (declarations.length) {
-            definitionMap.declarations = refsToArray(declarations, containsForwardDecls);
+        if (declarations.length > 0) {
+            definitionMap.set('declarations', refsToArray(declarations, containsForwardDecls));
         }
-        if (imports.length) {
-            definitionMap.imports = refsToArray(imports, containsForwardDecls);
+        if (imports.length > 0) {
+            definitionMap.set('imports', refsToArray(imports, containsForwardDecls));
         }
-        if (exports.length) {
-            definitionMap.exports = refsToArray(exports, containsForwardDecls);
+        if (exports.length > 0) {
+            definitionMap.set('exports', refsToArray(exports, containsForwardDecls));
         }
     }
     // If not emitting inline, the scope information is not passed into `ɵɵdefineNgModule` as it would
@@ -7325,21 +7310,51 @@ function compileNgModule(meta) {
     else {
         const setNgModuleScopeCall = generateSetNgModuleScopeCall(meta);
         if (setNgModuleScopeCall !== null) {
-            additionalStatements.push(setNgModuleScopeCall);
+            statements.push(setNgModuleScopeCall);
         }
     }
-    if (schemas && schemas.length) {
-        definitionMap.schemas = literalArr(schemas.map(ref => ref.value));
+    if (schemas !== null && schemas.length > 0) {
+        definitionMap.set('schemas', literalArr(schemas.map(ref => ref.value)));
     }
-    if (id) {
-        definitionMap.id = id;
+    if (id !== null) {
+        definitionMap.set('id', id);
     }
-    const expression = importExpr(Identifiers$1.defineNgModule).callFn([mapToMapExpression(definitionMap)], undefined, true);
-    const type = new ExpressionType(importExpr(Identifiers$1.NgModuleDefWithMeta, [
+    const expression = importExpr(Identifiers$1.defineNgModule).callFn([definitionMap.toLiteralMap()], undefined, true);
+    const type = createNgModuleType(meta);
+    return { expression, type, statements };
+}
+/**
+ * This function is used in JIT mode to generate the call to `ɵɵdefineNgModule()` from a call to
+ * `ɵɵngDeclareNgModule()`.
+ */
+function compileNgModuleDeclarationExpression(meta) {
+    const definitionMap = new DefinitionMap();
+    definitionMap.set('type', new WrappedNodeExpr(meta.type));
+    if (meta.bootstrap !== undefined) {
+        definitionMap.set('bootstrap', new WrappedNodeExpr(meta.bootstrap));
+    }
+    if (meta.declarations !== undefined) {
+        definitionMap.set('declarations', new WrappedNodeExpr(meta.declarations));
+    }
+    if (meta.imports !== undefined) {
+        definitionMap.set('imports', new WrappedNodeExpr(meta.imports));
+    }
+    if (meta.exports !== undefined) {
+        definitionMap.set('exports', new WrappedNodeExpr(meta.exports));
+    }
+    if (meta.schemas !== undefined) {
+        definitionMap.set('schemas', new WrappedNodeExpr(meta.schemas));
+    }
+    if (meta.id !== undefined) {
+        definitionMap.set('id', new WrappedNodeExpr(meta.id));
+    }
+    return importExpr(Identifiers$1.defineNgModule).callFn([definitionMap.toLiteralMap()]);
+}
+function createNgModuleType({ type: moduleType, declarations, imports, exports }) {
+    return new ExpressionType(importExpr(Identifiers$1.NgModuleDefWithMeta, [
         new ExpressionType(moduleType.type), tupleTypeOf(declarations), tupleTypeOf(imports),
         tupleTypeOf(exports)
     ]));
-    return { expression, type, additionalStatements };
 }
 /**
  * Generates a function call to `ɵɵsetNgModuleScope` with all necessary information so that the
@@ -7349,23 +7364,23 @@ function compileNgModule(meta) {
  */
 function generateSetNgModuleScopeCall(meta) {
     const { adjacentType: moduleType, declarations, imports, exports, containsForwardDecls } = meta;
-    const scopeMap = {};
-    if (declarations.length) {
-        scopeMap.declarations = refsToArray(declarations, containsForwardDecls);
+    const scopeMap = new DefinitionMap();
+    if (declarations.length > 0) {
+        scopeMap.set('declarations', refsToArray(declarations, containsForwardDecls));
     }
-    if (imports.length) {
-        scopeMap.imports = refsToArray(imports, containsForwardDecls);
+    if (imports.length > 0) {
+        scopeMap.set('imports', refsToArray(imports, containsForwardDecls));
     }
-    if (exports.length) {
-        scopeMap.exports = refsToArray(exports, containsForwardDecls);
+    if (exports.length > 0) {
+        scopeMap.set('exports', refsToArray(exports, containsForwardDecls));
     }
-    if (Object.keys(scopeMap).length === 0) {
+    if (Object.keys(scopeMap.values).length === 0) {
         return null;
     }
     // setNgModuleScope(...)
     const fnCall = new InvokeFunctionExpr(
     /* fn */ importExpr(Identifiers$1.setNgModuleScope), 
-    /* args */ [moduleType, mapToMapExpression(scopeMap)]);
+    /* args */ [moduleType, scopeMap.toLiteralMap()]);
     // (ngJitMode guard) && setNgModuleScope(...)
     const guardedCall = jitOnlyGuardedExpression(fnCall);
     // function() { (ngJitMode guard) && setNgModuleScope(...); }
@@ -7378,25 +7393,9 @@ function generateSetNgModuleScopeCall(meta) {
     /* args */ []);
     return iifeCall.toStmt();
 }
-function compileInjector(meta) {
-    const definitionMap = {};
-    if (meta.providers !== null) {
-        definitionMap.providers = meta.providers;
-    }
-    if (meta.imports.length > 0) {
-        definitionMap.imports = literalArr(meta.imports);
-    }
-    const expression = importExpr(Identifiers$1.defineInjector).callFn([mapToMapExpression(definitionMap)], undefined, true);
-    const type = new ExpressionType(importExpr(Identifiers$1.InjectorDef, [new ExpressionType(meta.type.type)]));
-    return { expression, type };
-}
 function tupleTypeOf(exp) {
     const types = exp.map(ref => typeofExpr(ref.type));
     return exp.length > 0 ? expressionType(literalArr(types)) : NONE_TYPE;
-}
-function refsToArray(refs, shouldForwardDeclare) {
-    const values = literalArr(refs.map(ref => ref.value));
-    return shouldForwardDeclare ? fn([], [new ReturnStatement(values)]) : values;
 }
 
 /**
@@ -7416,7 +7415,7 @@ function compilePipeFromMetadata(metadata) {
     definitionMapValues.push({ key: 'pure', value: literal(metadata.pure), quoted: false });
     const expression = importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)], undefined, true);
     const type = createPipeType(metadata);
-    return { expression, type };
+    return { expression, type, statements: [] };
 }
 function createPipeType(metadata) {
     return new ExpressionType(importExpr(Identifiers$1.PipeDefWithMeta, [
@@ -19528,7 +19527,7 @@ function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
     addFeatures(definitionMap, meta);
     const expression = importExpr(Identifiers$1.defineDirective).callFn([definitionMap.toLiteralMap()], undefined, true);
     const type = createDirectiveType(meta);
-    return { expression, type };
+    return { expression, type, statements: [] };
 }
 /**
  * Compile a component for the render3 runtime as defined by the `R3ComponentMetadata`.
@@ -19631,7 +19630,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     }
     const expression = importExpr(Identifiers$1.defineComponent).callFn([definitionMap.toLiteralMap()], undefined, true);
     const type = createComponentType(meta);
-    return { expression, type };
+    return { expression, type, statements: [] };
 }
 /**
  * Creates the type specification from the component meta. This type is inserted into .d.ts files
@@ -20101,7 +20100,7 @@ class CompilerFacadeImpl {
     compilePipe(angularCoreEnv, sourceMapUrl, facade) {
         const metadata = {
             name: facade.name,
-            type: wrapReference$1(facade.type),
+            type: wrapReference(facade.type),
             internalType: new WrappedNodeExpr(facade.type),
             typeArgumentCount: facade.typeArgumentCount,
             deps: convertR3DependencyMetadataArray(facade.deps),
@@ -20119,7 +20118,7 @@ class CompilerFacadeImpl {
     compileInjectable(angularCoreEnv, sourceMapUrl, facade) {
         const { expression, statements } = compileInjectable({
             name: facade.name,
-            type: wrapReference$1(facade.type),
+            type: wrapReference(facade.type),
             internalType: new WrappedNodeExpr(facade.type),
             typeArgumentCount: facade.typeArgumentCount,
             providedIn: computeProvidedIn(facade.providedIn),
@@ -20134,7 +20133,7 @@ class CompilerFacadeImpl {
     compileInjector(angularCoreEnv, sourceMapUrl, facade) {
         const meta = {
             name: facade.name,
-            type: wrapReference$1(facade.type),
+            type: wrapReference(facade.type),
             internalType: new WrappedNodeExpr(facade.type),
             providers: new WrappedNodeExpr(facade.providers),
             imports: facade.imports.map(i => new WrappedNodeExpr(i)),
@@ -20142,22 +20141,31 @@ class CompilerFacadeImpl {
         const res = compileInjector(meta);
         return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, []);
     }
+    compileInjectorDeclaration(angularCoreEnv, sourceMapUrl, declaration) {
+        const meta = convertDeclareInjectorFacadeToMetadata(declaration);
+        const res = compileInjector(meta);
+        return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, []);
+    }
     compileNgModule(angularCoreEnv, sourceMapUrl, facade) {
         const meta = {
-            type: wrapReference$1(facade.type),
+            type: wrapReference(facade.type),
             internalType: new WrappedNodeExpr(facade.type),
             adjacentType: new WrappedNodeExpr(facade.type),
-            bootstrap: facade.bootstrap.map(wrapReference$1),
-            declarations: facade.declarations.map(wrapReference$1),
-            imports: facade.imports.map(wrapReference$1),
-            exports: facade.exports.map(wrapReference$1),
+            bootstrap: facade.bootstrap.map(wrapReference),
+            declarations: facade.declarations.map(wrapReference),
+            imports: facade.imports.map(wrapReference),
+            exports: facade.exports.map(wrapReference),
             emitInline: true,
             containsForwardDecls: false,
-            schemas: facade.schemas ? facade.schemas.map(wrapReference$1) : null,
+            schemas: facade.schemas ? facade.schemas.map(wrapReference) : null,
             id: facade.id ? new WrappedNodeExpr(facade.id) : null,
         };
         const res = compileNgModule(meta);
         return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, []);
+    }
+    compileNgModuleDeclaration(angularCoreEnv, sourceMapUrl, declaration) {
+        const expression = compileNgModuleDeclarationExpression(declaration);
+        return this.jitExpression(expression, angularCoreEnv, sourceMapUrl, []);
     }
     compileDirective(angularCoreEnv, sourceMapUrl, facade) {
         const meta = convertDirectiveFacadeToMetadata(facade);
@@ -20197,7 +20205,7 @@ class CompilerFacadeImpl {
     compileFactory(angularCoreEnv, sourceMapUrl, meta) {
         const factoryRes = compileFactoryFunction({
             name: meta.name,
-            type: wrapReference$1(meta.type),
+            type: wrapReference(meta.type),
             internalType: new WrappedNodeExpr(meta.type),
             typeArgumentCount: meta.typeArgumentCount,
             deps: convertR3DependencyMetadataArray(meta.deps),
@@ -20205,7 +20213,7 @@ class CompilerFacadeImpl {
                 Identifiers.inject,
             target: meta.target,
         });
-        return this.jitExpression(factoryRes.factory, angularCoreEnv, sourceMapUrl, factoryRes.statements);
+        return this.jitExpression(factoryRes.expression, angularCoreEnv, sourceMapUrl, factoryRes.statements);
     }
     createParseSourceSpan(kind, typeName, sourceUrl) {
         return r3JitTypeSourceSpan(kind, typeName, sourceUrl);
@@ -20235,10 +20243,6 @@ const USE_CLASS = Object.keys({ useClass: null })[0];
 const USE_FACTORY = Object.keys({ useFactory: null })[0];
 const USE_VALUE = Object.keys({ useValue: null })[0];
 const USE_EXISTING = Object.keys({ useExisting: null })[0];
-const wrapReference$1 = function (value) {
-    const wrapped = new WrappedNodeExpr(value);
-    return { value: wrapped, type: wrapped };
-};
 function convertToR3QueryMetadata(facade) {
     return Object.assign(Object.assign({}, facade), { predicate: Array.isArray(facade.predicate) ? facade.predicate :
             new WrappedNodeExpr(facade.predicate), read: facade.read ? new WrappedNodeExpr(facade.read) : null, static: facade.static, emitDistinctChangesOnly: facade.emitDistinctChangesOnly });
@@ -20275,13 +20279,13 @@ function convertDirectiveFacadeToMetadata(facade) {
             });
         }
     }
-    return Object.assign(Object.assign({}, facade), { typeSourceSpan: facade.typeSourceSpan, type: wrapReference$1(facade.type), internalType: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: Object.assign(Object.assign({}, inputsFromMetadata), inputsFromType), outputs: Object.assign(Object.assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), fullInheritance: false });
+    return Object.assign(Object.assign({}, facade), { typeSourceSpan: facade.typeSourceSpan, type: wrapReference(facade.type), internalType: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: Object.assign(Object.assign({}, inputsFromMetadata), inputsFromType), outputs: Object.assign(Object.assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), fullInheritance: false });
 }
 function convertDeclareDirectiveFacadeToMetadata(declaration, typeSourceSpan) {
     var _a, _b, _c, _d, _e, _f, _g, _h;
     return {
         name: declaration.type.name,
-        type: wrapReference$1(declaration.type),
+        type: wrapReference(declaration.type),
         typeSourceSpan,
         internalType: new WrappedNodeExpr(declaration.type),
         selector: (_a = declaration.selector) !== null && _a !== void 0 ? _a : null,
@@ -20448,12 +20452,24 @@ function convertDeclarePipeFacadeToMetadata(declaration) {
     var _a;
     return {
         name: declaration.type.name,
-        type: wrapReference$1(declaration.type),
+        type: wrapReference(declaration.type),
         internalType: new WrappedNodeExpr(declaration.type),
         typeArgumentCount: 0,
         pipeName: declaration.name,
         deps: null,
         pure: (_a = declaration.pure) !== null && _a !== void 0 ? _a : true,
+    };
+}
+function convertDeclareInjectorFacadeToMetadata(declaration) {
+    return {
+        name: declaration.type.name,
+        type: wrapReference(declaration.type),
+        internalType: new WrappedNodeExpr(declaration.type),
+        providers: declaration.providers !== undefined ? new WrappedNodeExpr(declaration.providers) :
+            null,
+        imports: declaration.imports !== undefined ?
+            declaration.imports.map(i => new WrappedNodeExpr(i)) :
+            [],
     };
 }
 function publishFacade(global) {
@@ -20468,7 +20484,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('12.0.0-next.4+26.sha-cc75e1d');
+const VERSION$1 = new Version('12.0.0-next.4+34.sha-1a9f526');
 
 /**
  * @license
@@ -29933,7 +29949,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
     const definitionMap = createDirectiveDefinitionMap(meta);
     const expression = importExpr(Identifiers$1.declareDirective).callFn([definitionMap.toLiteralMap()]);
     const type = createDirectiveType(meta);
-    return { expression, type };
+    return { expression, type, statements: [] };
 }
 /**
  * Gathers the declaration fields for a directive into a `DefinitionMap`. This allows for reusing
@@ -29941,7 +29957,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.4+26.sha-cc75e1d'));
+    definitionMap.set('version', literal('12.0.0-next.4+34.sha-1a9f526'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -30035,7 +30051,7 @@ function compileDeclareComponentFromMetadata(meta, template) {
     const definitionMap = createComponentDefinitionMap(meta, template);
     const expression = importExpr(Identifiers$1.declareComponent).callFn([definitionMap.toLiteralMap()]);
     const type = createComponentType(meta);
-    return { expression, type };
+    return { expression, type, statements: [] };
 }
 /**
  * Gathers the declaration fields for a component into a `DefinitionMap`.
@@ -30150,6 +30166,74 @@ function generateForwardRef(expr) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+function compileDeclareInjectorFromMetadata(meta) {
+    const definitionMap = createInjectorDefinitionMap(meta);
+    const expression = importExpr(Identifiers$1.declareInjector).callFn([definitionMap.toLiteralMap()]);
+    const type = createInjectorType(meta);
+    return { expression, type, statements: [] };
+}
+function createInjectorDefinitionMap(meta) {
+    const definitionMap = new DefinitionMap();
+    definitionMap.set('version', literal('12.0.0-next.4+34.sha-1a9f526'));
+    definitionMap.set('ngImport', importExpr(Identifiers$1.core));
+    definitionMap.set('type', meta.internalType);
+    definitionMap.set('providers', meta.providers);
+    if (meta.imports.length > 0) {
+        definitionMap.set('imports', literalArr(meta.imports));
+    }
+    return definitionMap;
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+function compileDeclareNgModuleFromMetadata(meta) {
+    const definitionMap = createNgModuleDefinitionMap(meta);
+    const expression = importExpr(Identifiers$1.declareNgModule).callFn([definitionMap.toLiteralMap()]);
+    const type = createNgModuleType(meta);
+    return { expression, type, statements: [] };
+}
+function createNgModuleDefinitionMap(meta) {
+    const definitionMap = new DefinitionMap();
+    definitionMap.set('version', literal('12.0.0-next.4+34.sha-1a9f526'));
+    definitionMap.set('ngImport', importExpr(Identifiers$1.core));
+    definitionMap.set('type', meta.internalType);
+    // We only generate the keys in the metadata if the arrays contain values.
+    // We must wrap the arrays inside a function if any of the values are a forward reference to a
+    // not-yet-declared class. This is to support JIT execution of the `ɵɵngDeclareNgModule()` call.
+    // In the linker these wrappers are stripped and then reapplied for the `ɵɵdefineNgModule()` call.
+    if (meta.bootstrap.length > 0) {
+        definitionMap.set('bootstrap', refsToArray(meta.bootstrap, meta.containsForwardDecls));
+    }
+    if (meta.declarations.length > 0) {
+        definitionMap.set('declarations', refsToArray(meta.declarations, meta.containsForwardDecls));
+    }
+    if (meta.imports.length > 0) {
+        definitionMap.set('imports', refsToArray(meta.imports, meta.containsForwardDecls));
+    }
+    if (meta.exports.length > 0) {
+        definitionMap.set('exports', refsToArray(meta.exports, meta.containsForwardDecls));
+    }
+    if (meta.schemas !== null && meta.schemas.length > 0) {
+        definitionMap.set('schemas', literalArr(meta.schemas.map(ref => ref.value)));
+    }
+    if (meta.id !== null) {
+        definitionMap.set('id', meta.id);
+    }
+    return definitionMap;
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * Compile a Pipe declaration defined by the `R3PipeMetadata`.
  */
@@ -30157,7 +30241,7 @@ function compileDeclarePipeFromMetadata(meta) {
     const definitionMap = createPipeDefinitionMap(meta);
     const expression = importExpr(Identifiers$1.declarePipe).callFn([definitionMap.toLiteralMap()]);
     const type = createPipeType(meta);
-    return { expression, type };
+    return { expression, type, statements: [] };
 }
 /**
  * Gathers the declaration fields for a Pipe into a `DefinitionMap`. This allows for reusing
@@ -30165,7 +30249,7 @@ function compileDeclarePipeFromMetadata(meta) {
  */
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.4+26.sha-cc75e1d'));
+    definitionMap.set('version', literal('12.0.0-next.4+34.sha-1a9f526'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
@@ -30215,5 +30299,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThisReceiver, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Icu as TmplAstIcu, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, devOnlyGuardedExpression, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getSafePropertyAccessString, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThisReceiver, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Icu as TmplAstIcu, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, devOnlyGuardedExpression, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getSafePropertyAccessString, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
 //# sourceMappingURL=compiler.js.map

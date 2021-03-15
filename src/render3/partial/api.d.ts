@@ -18,22 +18,19 @@ export interface R3PartialDeclaration {
      * to all Angular exports, including Ivy instructions.
      */
     ngImport: o.Expression;
+    /**
+     * Reference to the decorated class, which is subject to this partial declaration.
+     */
+    type: o.Expression;
 }
 /**
- * Describes the shape of the object that the `ɵɵngDeclareDirective() function accepts.
- *
- * This interface serves primarily as documentation, as conformance to this interface is not
- * enforced during linking.
+ * Describes the shape of the object that the `ɵɵngDeclareDirective()` function accepts.
  */
 export interface R3DeclareDirectiveMetadata extends R3PartialDeclaration {
     /**
      * Unparsed selector of the directive.
      */
     selector?: string;
-    /**
-     * Reference to the directive class itself.
-     */
-    type: o.Expression;
     /**
      * A mapping of inputs from class property names to binding property names, or to a tuple of
      * binding property name and class property name if the names are different.
@@ -107,9 +104,6 @@ export interface R3DeclareDirectiveMetadata extends R3PartialDeclaration {
 }
 /**
  * Describes the shape of the object that the `ɵɵngDeclareComponent()` function accepts.
- *
- * This interface serves primarily as documentation, as conformance to this interface is not
- * enforced during linking.
  */
 export interface R3DeclareComponentMetadata extends R3DeclareDirectiveMetadata {
     /**
@@ -234,16 +228,52 @@ export interface R3DeclareQueryMetadata {
     static?: boolean;
 }
 /**
+ * Describes the shape of the objects that the `ɵɵngDeclareNgModule()` accepts.
+ */
+export interface R3DeclareNgModuleMetadata extends R3PartialDeclaration {
+    /**
+     * An array of expressions representing the bootstrap components specified by the module.
+     */
+    bootstrap?: o.Expression[];
+    /**
+     * An array of expressions representing the directives and pipes declared by the module.
+     */
+    declarations?: o.Expression[];
+    /**
+     * An array of expressions representing the imports of the module.
+     */
+    imports?: o.Expression[];
+    /**
+     * An array of expressions representing the exports of the module.
+     */
+    exports?: o.Expression[];
+    /**
+     * The set of schemas that declare elements to be allowed in the NgModule.
+     */
+    schemas?: o.Expression[];
+    /** Unique ID or expression representing the unique ID of an NgModule. */
+    id?: o.Expression;
+}
+/**
+ * Describes the shape of the objects that the `ɵɵngDeclareInjector()` accepts.
+ */
+export interface R3DeclareInjectorMetadata extends R3PartialDeclaration {
+    /**
+     * The list of providers provided by the injector.
+     */
+    providers?: o.Expression;
+    /**
+     * The list of imports into the injector.
+     */
+    imports?: o.Expression[];
+}
+/**
  * Describes the shape of the object that the `ɵɵngDeclarePipe()` function accepts.
  *
  * This interface serves primarily as documentation, as conformance to this interface is not
  * enforced during linking.
  */
 export interface R3DeclarePipeMetadata extends R3PartialDeclaration {
-    /**
-     * Reference to the pipe class itself.
-     */
-    type: o.Expression;
     /**
      * The name to use in templates to refer to this pipe.
      */
