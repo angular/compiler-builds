@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.4+47.sha-98de4cb
+ * @license Angular v12.0.0-next.4+48.sha-eb74a96
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -21775,7 +21775,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.0.0-next.4+47.sha-98de4cb');
+    var VERSION$1 = new Version('12.0.0-next.4+48.sha-eb74a96');
 
     /**
      * @license
@@ -31620,7 +31620,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.4+47.sha-98de4cb'));
+        definitionMap.set('version', literal('12.0.0-next.4+48.sha-eb74a96'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -31719,7 +31719,8 @@
             definitionMap.set('isInline', literal(true));
         }
         definitionMap.set('styles', toOptionalLiteralArray(meta.styles, literal));
-        definitionMap.set('directives', compileUsedDirectiveMetadata(meta));
+        definitionMap.set('components', compileUsedDirectiveMetadata(meta, function (directive) { return directive.isComponent === true; }));
+        definitionMap.set('directives', compileUsedDirectiveMetadata(meta, function (directive) { return directive.isComponent !== true; }));
         definitionMap.set('pipes', compileUsedPipeMetadata(meta));
         definitionMap.set('viewProviders', meta.viewProviders);
         definitionMap.set('animations', meta.animations);
@@ -31779,11 +31780,12 @@
      * Compiles the directives as registered in the component metadata into an array literal of the
      * individual directives. If the component does not use any directives, then null is returned.
      */
-    function compileUsedDirectiveMetadata(meta) {
+    function compileUsedDirectiveMetadata(meta, predicate) {
         var wrapType = meta.declarationListEmitMode !== 0 /* Direct */ ?
             generateForwardRef :
             function (expr) { return expr; };
-        return toOptionalLiteralArray(meta.directives, function (directive) {
+        var directives = meta.directives.filter(predicate);
+        return toOptionalLiteralArray(directives, function (directive) {
             var dirMeta = new DefinitionMap();
             dirMeta.set('type', wrapType(directive.type));
             dirMeta.set('selector', literal(directive.selector));
@@ -31841,7 +31843,7 @@
     }
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.4+47.sha-98de4cb'));
+        definitionMap.set('version', literal('12.0.0-next.4+48.sha-eb74a96'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -31866,7 +31868,7 @@
     }
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.4+47.sha-98de4cb'));
+        definitionMap.set('version', literal('12.0.0-next.4+48.sha-eb74a96'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -31916,7 +31918,7 @@
      */
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.4+47.sha-98de4cb'));
+        definitionMap.set('version', literal('12.0.0-next.4+48.sha-eb74a96'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
