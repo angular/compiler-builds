@@ -17,7 +17,7 @@ export function compileDeclareInjectorFromMetadata(meta) {
 }
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', o.literal('12.0.0-next.5+6.sha-ac9c428'));
+    definitionMap.set('version', o.literal('12.0.0-next.5+7.sha-ac9a250'));
     definitionMap.set('ngImport', o.importExpr(R3.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
