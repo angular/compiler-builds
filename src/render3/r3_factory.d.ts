@@ -9,7 +9,7 @@ import { CompileTypeMetadata } from '../compile_metadata';
 import { CompileReflector } from '../compile_reflector';
 import * as o from '../output/output_ast';
 import { OutputContext } from '../util';
-import { R3Reference } from './util';
+import { R3CompiledExpression, R3Reference } from './util';
 /**
  * Metadata required by the factory generator to generate a `factory` function for a type.
  */
@@ -53,12 +53,7 @@ export interface R3ConstructorFactoryMetadata {
 }
 export declare enum R3FactoryDelegateType {
     Class = 0,
-    Function = 1,
-    Factory = 2
-}
-export interface R3DelegatedFactoryMetadata extends R3ConstructorFactoryMetadata {
-    delegate: o.Expression;
-    delegateType: R3FactoryDelegateType.Factory;
+    Function = 1
 }
 export interface R3DelegatedFnOrClassMetadata extends R3ConstructorFactoryMetadata {
     delegate: o.Expression;
@@ -68,7 +63,7 @@ export interface R3DelegatedFnOrClassMetadata extends R3ConstructorFactoryMetada
 export interface R3ExpressionFactoryMetadata extends R3ConstructorFactoryMetadata {
     expression: o.Expression;
 }
-export declare type R3FactoryMetadata = R3ConstructorFactoryMetadata | R3DelegatedFactoryMetadata | R3DelegatedFnOrClassMetadata | R3ExpressionFactoryMetadata;
+export declare type R3FactoryMetadata = R3ConstructorFactoryMetadata | R3DelegatedFnOrClassMetadata | R3ExpressionFactoryMetadata;
 export declare enum R3FactoryTarget {
     Directive = 0,
     Component = 1,
@@ -140,15 +135,10 @@ export interface R3DependencyMetadata {
      */
     skipSelf: boolean;
 }
-export interface R3FactoryFn {
-    factory: o.Expression;
-    statements: o.Statement[];
-    type: o.ExpressionType;
-}
 /**
  * Construct a factory function expression for the given `R3FactoryMetadata`.
  */
-export declare function compileFactoryFunction(meta: R3FactoryMetadata): R3FactoryFn;
+export declare function compileFactoryFunction(meta: R3FactoryMetadata): R3CompiledExpression;
 /**
  * A helper function useful for extracting `R3DependencyMetadata` from a Render2
  * `CompileTypeMetadata` instance.

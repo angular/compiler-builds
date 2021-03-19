@@ -14,8 +14,8 @@ export interface Node {
 }
 export declare abstract class NodeWithI18n implements Node {
     sourceSpan: ParseSourceSpan;
-    i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined;
-    constructor(sourceSpan: ParseSourceSpan, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
+    i18n?: I18nMeta | undefined;
+    constructor(sourceSpan: ParseSourceSpan, i18n?: I18nMeta | undefined);
     abstract visit(visitor: Visitor, context: any): any;
 }
 export declare class Text extends NodeWithI18n {
@@ -43,17 +43,18 @@ export declare class ExpansionCase implements Node {
 export declare class Attribute extends NodeWithI18n {
     name: string;
     value: string;
+    readonly keySpan: ParseSourceSpan | undefined;
     valueSpan?: ParseSourceSpan | undefined;
-    constructor(name: string, value: string, sourceSpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined, i18n?: I18nMeta);
+    constructor(name: string, value: string, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan | undefined, valueSpan?: ParseSourceSpan | undefined, i18n?: I18nMeta);
     visit(visitor: Visitor, context: any): any;
 }
 export declare class Element extends NodeWithI18n {
     name: string;
     attrs: Attribute[];
     children: Node[];
-    startSourceSpan: ParseSourceSpan | null;
+    startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
-    constructor(name: string, attrs: Attribute[], children: Node[], sourceSpan: ParseSourceSpan, startSourceSpan?: ParseSourceSpan | null, endSourceSpan?: ParseSourceSpan | null, i18n?: I18nMeta);
+    constructor(name: string, attrs: Attribute[], children: Node[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan?: ParseSourceSpan | null, i18n?: I18nMeta);
     visit(visitor: Visitor, context: any): any;
 }
 export declare class Comment implements Node {

@@ -19,6 +19,6 @@ export declare function createLocalizeStatements(variable: o.ReadVarExpr, messag
  * @returns an object containing the messageParts and placeholders.
  */
 export declare function serializeI18nMessageForLocalize(message: i18n.Message): {
-    messageParts: string[];
-    placeHolders: string[];
+    messageParts: o.LiteralPiece[];
+    placeHolders: o.PlaceholderPiece[];
 };

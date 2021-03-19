@@ -16,7 +16,7 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.HtmlParser = void 0;
+    exports.HtmlParser = exports.TreeError = exports.ParseTreeResult = void 0;
     var tslib_1 = require("tslib");
     var html_tags_1 = require("@angular/compiler/src/ml_parser/html_tags");
     var parser_1 = require("@angular/compiler/src/ml_parser/parser");

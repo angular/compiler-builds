@@ -30,6 +30,12 @@ export declare class BindingParser {
     createDirectiveHostEventAsts(dirMeta: CompileDirectiveSummary, sourceSpan: ParseSourceSpan): ParsedEvent[] | null;
     parseInterpolation(value: string, sourceSpan: ParseSourceSpan): ASTWithSource;
     /**
+     * Similar to `parseInterpolation`, but treats the provided string as a single expression
+     * element that would normally appear within the interpolation prefix and suffix (`{{` and `}}`).
+     * This is used for parsing the switch expression in ICUs.
+     */
+    parseInterpolationExpression(expression: string, sourceSpan: ParseSourceSpan): ASTWithSource;
+    /**
      * Parses the bindings in a microsyntax expression, and converts them to
      * `ParsedProperty` or `ParsedVariable`.
      *
@@ -41,7 +47,7 @@ export declare class BindingParser {
      * @param targetProps target property bindings in the template
      * @param targetVars target variables in the template
      */
-    parseInlineTemplateBinding(tplKey: string, tplValue: string, sourceSpan: ParseSourceSpan, absoluteValueOffset: number, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], targetVars: ParsedVariable[]): void;
+    parseInlineTemplateBinding(tplKey: string, tplValue: string, sourceSpan: ParseSourceSpan, absoluteValueOffset: number, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], targetVars: ParsedVariable[], isIvyAst: boolean): void;
     /**
      * Parses the bindings in a microsyntax expression, e.g.
      * ```
@@ -55,14 +61,14 @@ export declare class BindingParser {
      * @param absoluteValueOffset start of the `tplValue`
      */
     private _parseTemplateBindings;
-    parseLiteralAttr(name: string, value: string | null, sourceSpan: ParseSourceSpan, absoluteOffset: number, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[]): void;
-    parsePropertyBinding(name: string, expression: string, isHost: boolean, sourceSpan: ParseSourceSpan, absoluteOffset: number, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[]): void;
-    parsePropertyInterpolation(name: string, value: string, sourceSpan: ParseSourceSpan, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[]): boolean;
+    parseLiteralAttr(name: string, value: string | null, sourceSpan: ParseSourceSpan, absoluteOffset: number, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], keySpan?: ParseSourceSpan): void;
+    parsePropertyBinding(name: string, expression: string, isHost: boolean, sourceSpan: ParseSourceSpan, absoluteOffset: number, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], keySpan?: ParseSourceSpan): void;
+    parsePropertyInterpolation(name: string, value: string, sourceSpan: ParseSourceSpan, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], keySpan?: ParseSourceSpan): boolean;
     private _parsePropertyAst;
     private _parseAnimation;
     private _parseBinding;
     createBoundElementProperty(elementSelector: string, boundProp: ParsedProperty, skipValidation?: boolean, mapPropertyName?: boolean): BoundElementProperty;
-    parseEvent(name: string, expression: string, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan, targetMatchableAttrs: string[][], targetEvents: ParsedEvent[]): void;
+    parseEvent(name: string, expression: string, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan, targetMatchableAttrs: string[][], targetEvents: ParsedEvent[], keySpan?: ParseSourceSpan): void;
     calcPossibleSecurityContexts(selector: string, propName: string, isAttribute: boolean): SecurityContext[];
     private _parseAnimationEvent;
     private _parseRegularEvent;

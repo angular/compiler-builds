@@ -6,10 +6,20 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ParseSourceSpan } from '../parse_util';
+/**
+ * Describes the text contents of a placeholder as it appears in an ICU expression, including its
+ * source span information.
+ */
+export interface MessagePlaceholder {
+    /** The text contents of the placeholder */
+    text: string;
+    /** The source span of the placeholder */
+    sourceSpan: ParseSourceSpan;
+}
 export declare class Message {
     nodes: Node[];
     placeholders: {
-        [phName: string]: string;
+        [phName: string]: MessagePlaceholder;
     };
     placeholderToMessage: {
         [phName: string]: Message;
@@ -23,14 +33,14 @@ export declare class Message {
     legacyIds: string[];
     /**
      * @param nodes message AST
-     * @param placeholders maps placeholder names to static content
+     * @param placeholders maps placeholder names to static content and their source spans
      * @param placeholderToMessage maps placeholder names to messages (used for nested ICU messages)
      * @param meaning
      * @param description
      * @param customId
      */
     constructor(nodes: Node[], placeholders: {
-        [phName: string]: string;
+        [phName: string]: MessagePlaceholder;
     }, placeholderToMessage: {
         [phName: string]: Message;
     }, meaning: string, description: string, customId: string);
@@ -81,9 +91,11 @@ export declare class TagPlaceholder implements Node {
     children: Node[];
     isVoid: boolean;
     sourceSpan: ParseSourceSpan;
+    startSourceSpan: ParseSourceSpan | null;
+    endSourceSpan: ParseSourceSpan | null;
     constructor(tag: string, attrs: {
         [k: string]: string;
-    }, startName: string, closeName: string, children: Node[], isVoid: boolean, sourceSpan: ParseSourceSpan);
+    }, startName: string, closeName: string, children: Node[], isVoid: boolean, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan | null, endSourceSpan: ParseSourceSpan | null);
     visit(visitor: Visitor, context?: any): any;
 }
 export declare class Placeholder implements Node {

@@ -6,13 +6,18 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { InterpolationConfig } from '../ml_parser/interpolation_config';
-import { AbsoluteSourceSpan, AST, AstVisitor, ASTWithSource, Binary, BindingPipe, Chain, Conditional, FunctionCall, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, MethodCall, NonNullAssert, ParserError, ParseSpan, PrefixNot, PropertyRead, PropertyWrite, Quote, RecursiveAstVisitor, SafeMethodCall, SafePropertyRead, TemplateBinding, TemplateBindingIdentifier } from './ast';
+import { AbsoluteSourceSpan, AST, AstVisitor, ASTWithSource, Binary, BindingPipe, Chain, Conditional, FunctionCall, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, MethodCall, NonNullAssert, ParserError, ParseSpan, PrefixNot, PropertyRead, PropertyWrite, Quote, RecursiveAstVisitor, SafeMethodCall, SafePropertyRead, TemplateBinding, TemplateBindingIdentifier, ThisReceiver, Unary } from './ast';
 import { Lexer, Token } from './lexer';
+export interface InterpolationPiece {
+    text: string;
+    start: number;
+    end: number;
+}
 export declare class SplitInterpolation {
-    strings: string[];
-    expressions: string[];
+    strings: InterpolationPiece[];
+    expressions: InterpolationPiece[];
     offsets: number[];
-    constructor(strings: string[], expressions: string[], offsets: number[]);
+    constructor(strings: InterpolationPiece[], expressions: InterpolationPiece[], offsets: number[]);
 }
 export declare class TemplateBindingParseResult {
     templateBindings: TemplateBinding[];
@@ -25,8 +30,8 @@ export declare class Parser {
     private errors;
     constructor(_lexer: Lexer);
     simpleExpressionChecker: typeof SimpleExpressionChecker;
-    parseAction(input: string, location: any, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
-    parseBinding(input: string, location: any, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
+    parseAction(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
+    parseBinding(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
     private checkSimpleExpression;
     parseSimpleBinding(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
     private _reportError;
@@ -59,20 +64,44 @@ export declare class Parser {
      * @param absoluteValueOffset start of the `templateValue`
      */
     parseTemplateBindings(templateKey: string, templateValue: string, templateUrl: string, absoluteKeyOffset: number, absoluteValueOffset: number): TemplateBindingParseResult;
-    parseInterpolation(input: string, location: any, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource | null;
-    splitInterpolation(input: string, location: string, interpolationConfig?: InterpolationConfig): SplitInterpolation | null;
-    wrapLiteralPrimitive(input: string | null, location: any, absoluteOffset: number): ASTWithSource;
+    parseInterpolation(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource | null;
+    /**
+     * Similar to `parseInterpolation`, but treats the provided string as a single expression
+     * element that would normally appear within the interpolation prefix and suffix (`{{` and `}}`).
+     * This is used for parsing the switch expression in ICUs.
+     */
+    parseInterpolationExpression(expression: string, location: string, absoluteOffset: number): ASTWithSource;
+    private createInterpolationAst;
+    /**
+     * Splits a string of text into "raw" text segments and expressions present in interpolations in
+     * the string.
+     * Returns `null` if there are no interpolations, otherwise a
+     * `SplitInterpolation` with splits that look like
+     *   <raw text> <expression> <raw text> ... <raw text> <expression> <raw text>
+     */
+    splitInterpolation(input: string, location: string, interpolationConfig?: InterpolationConfig): SplitInterpolation;
+    wrapLiteralPrimitive(input: string | null, location: string, absoluteOffset: number): ASTWithSource;
     private _stripComments;
     private _commentStart;
     private _checkNoInterpolation;
-    private _findInterpolationErrorColumn;
+    /**
+     * Finds the index of the end of an interpolation expression
+     * while ignoring comments and quoted content.
+     */
+    private _getInterpolationEndIndex;
+    /**
+     * Generator used to iterate over the character indexes of a string that are outside of quotes.
+     * @param input String to loop through.
+     * @param start Index within the string at which to start.
+     */
+    private _forEachUnquotedChar;
 }
 export declare class IvyParser extends Parser {
     simpleExpressionChecker: typeof IvySimpleExpressionChecker;
 }
 export declare class _ParseAST {
     input: string;
-    location: any;
+    location: string;
     absoluteOffset: number;
     tokens: Token[];
     inputLength: number;
@@ -82,9 +111,10 @@ export declare class _ParseAST {
     private rparensExpected;
     private rbracketsExpected;
     private rbracesExpected;
+    private context;
     private sourceSpanCache;
     index: number;
-    constructor(input: string, location: any, absoluteOffset: number, tokens: Token[], inputLength: number, parseAction: boolean, errors: ParserError[], offset: number);
+    constructor(input: string, location: string, absoluteOffset: number, tokens: Token[], inputLength: number, parseAction: boolean, errors: ParserError[], offset: number);
     peek(offset: number): Token;
     get next(): Token;
     /** Whether all the parser input has been processed. */
@@ -103,16 +133,35 @@ export declare class _ParseAST {
      * Returns the absolute offset of the start of the current token.
      */
     get currentAbsoluteOffset(): number;
-    span(start: number): ParseSpan;
-    sourceSpan(start: number): AbsoluteSourceSpan;
+    /**
+     * Retrieve a `ParseSpan` from `start` to the current position (or to `artificialEndIndex` if
+     * provided).
+     *
+     * @param start Position from which the `ParseSpan` will start.
+     * @param artificialEndIndex Optional ending index to be used if provided (and if greater than the
+     *     natural ending index)
+     */
+    span(start: number, artificialEndIndex?: number): ParseSpan;
+    sourceSpan(start: number, artificialEndIndex?: number): AbsoluteSourceSpan;
     advance(): void;
+    /**
+     * Executes a callback in the provided context.
+     */
+    private withContext;
     consumeOptionalCharacter(code: number): boolean;
     peekKeywordLet(): boolean;
     peekKeywordAs(): boolean;
+    /**
+     * Consumes an expected character, otherwise emits an error about the missing expected character
+     * and skips over the token stream until reaching a recoverable point.
+     *
+     * See `this.error` and `this.skip` for more details.
+     */
     expectCharacter(code: number): void;
     consumeOptionalOperator(op: string): boolean;
     expectOperator(operator: string): void;
-    expectIdentifierOrKeyword(): string;
+    prettyPrintToken(tok: Token): string;
+    expectIdentifierOrKeyword(): string | null;
     expectIdentifierOrKeywordOrString(): string;
     parseChain(): AST;
     parsePipe(): AST;
@@ -129,7 +178,7 @@ export declare class _ParseAST {
     parsePrimary(): AST;
     parseExpressionList(terminator: number): AST[];
     parseLiteralMap(): LiteralMap;
-    parseAccessMemberOrMethodCall(receiver: AST, isSafe?: boolean): AST;
+    parseAccessMemberOrMethodCall(receiver: AST, start: number, isSafe?: boolean): AST;
     parseCallArguments(): BindingPipe[];
     /**
      * Parses an identifier, a keyword, a string with an optional `-` in between,
@@ -212,13 +261,42 @@ export declare class _ParseAST {
      * Consume the optional statement terminator: semicolon or comma.
      */
     private consumeStatementTerminator;
+    /**
+     * Records an error and skips over the token stream until reaching a recoverable point. See
+     * `this.skip` for more details on token skipping.
+     */
     error(message: string, index?: number | null): void;
     private locationText;
+    /**
+     * Error recovery should skip tokens until it encounters a recovery point.
+     *
+     * The following are treated as unconditional recovery points:
+     *   - end of input
+     *   - ';' (parseChain() is always the root production, and it expects a ';')
+     *   - '|' (since pipes may be chained and each pipe expression may be treated independently)
+     *
+     * The following are conditional recovery points:
+     *   - ')', '}', ']' if one of calling productions is expecting one of these symbols
+     *     - This allows skip() to recover from errors such as '(a.) + 1' allowing more of the AST to
+     *       be retained (it doesn't skip any tokens as the ')' is retained because of the '(' begins
+     *       an '(' <expr> ')' production).
+     *       The recovery points of grouping symbols must be conditional as they must be skipped if
+     *       none of the calling productions are not expecting the closing token else we will never
+     *       make progress in the case of an extraneous group closing symbol (such as a stray ')').
+     *       That is, we skip a closing symbol if we are not in a grouping production.
+     *   - '=' in a `Writable` context
+     *     - In this context, we are able to recover after seeing the `=` operator, which
+     *       signals the presence of an independent rvalue expression following the `=` operator.
+     *
+     * If a production expects one of these token it increments the corresponding nesting count,
+     * and then decrements it just prior to checking if the token is in the input.
+     */
     private skip;
 }
 declare class SimpleExpressionChecker implements AstVisitor {
     errors: string[];
     visitImplicitReceiver(ast: ImplicitReceiver, context: any): void;
+    visitThisReceiver(ast: ThisReceiver, context: any): void;
     visitInterpolation(ast: Interpolation, context: any): void;
     visitLiteralPrimitive(ast: LiteralPrimitive, context: any): void;
     visitPropertyRead(ast: PropertyRead, context: any): void;
@@ -229,6 +307,7 @@ declare class SimpleExpressionChecker implements AstVisitor {
     visitFunctionCall(ast: FunctionCall, context: any): void;
     visitLiteralArray(ast: LiteralArray, context: any): void;
     visitLiteralMap(ast: LiteralMap, context: any): void;
+    visitUnary(ast: Unary, context: any): void;
     visitBinary(ast: Binary, context: any): void;
     visitPrefixNot(ast: PrefixNot, context: any): void;
     visitNonNullAssert(ast: NonNullAssert, context: any): void;

@@ -66,6 +66,17 @@ export declare class ImplicitReceiver extends AST {
     visit(visitor: AstVisitor, context?: any): any;
 }
 /**
+ * Receiver when something is accessed through `this` (e.g. `this.foo`). Note that this class
+ * inherits from `ImplicitReceiver`, because accessing something through `this` is treated the
+ * same as accessing it implicitly inside of an Angular template (e.g. `[attr.title]="this.title"`
+ * is the same as `[attr.title]="title"`.). Inheriting allows for the `this` accesses to be treated
+ * the same as implicit ones, except for a couple of exceptions like `$event` and `$any`.
+ * TODO: we should find a way for this class not to extend from `ImplicitReceiver` in the future.
+ */
+export declare class ThisReceiver extends ImplicitReceiver {
+    visit(visitor: AstVisitor, context?: any): any;
+}
+/**
  * Multiple expressions separated by a semicolon.
  */
 export declare class Chain extends AST {
@@ -150,6 +161,32 @@ export declare class Binary extends AST {
     left: AST;
     right: AST;
     constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, operation: string, left: AST, right: AST);
+    visit(visitor: AstVisitor, context?: any): any;
+}
+/**
+ * For backwards compatibility reasons, `Unary` inherits from `Binary` and mimics the binary AST
+ * node that was originally used. This inheritance relation can be deleted in some future major,
+ * after consumers have been given a chance to fully support Unary.
+ */
+export declare class Unary extends Binary {
+    operator: string;
+    expr: AST;
+    left: never;
+    right: never;
+    operation: never;
+    /**
+     * Creates a unary minus expression "-x", represented as `Binary` using "0 - x".
+     */
+    static createMinus(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expr: AST): Unary;
+    /**
+     * Creates a unary plus expression "+x", represented as `Binary` using "x - 0".
+     */
+    static createPlus(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expr: AST): Unary;
+    /**
+     * During the deprecation period this constructor is private, to avoid consumers from creating
+     * a `Unary` with the fallback properties for `Binary`.
+     */
+    private constructor();
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class PrefixNot extends AST {
@@ -252,10 +289,20 @@ export interface TemplateBindingIdentifier {
     span: AbsoluteSourceSpan;
 }
 export interface AstVisitor {
+    /**
+     * The `visitUnary` method is declared as optional for backwards compatibility. In an upcoming
+     * major release, this method will be made required.
+     */
+    visitUnary?(ast: Unary, context: any): any;
     visitBinary(ast: Binary, context: any): any;
     visitChain(ast: Chain, context: any): any;
     visitConditional(ast: Conditional, context: any): any;
     visitFunctionCall(ast: FunctionCall, context: any): any;
+    /**
+     * The `visitThisReceiver` method is declared as optional for backwards compatibility.
+     * In an upcoming major release, this method will be made required.
+     */
+    visitThisReceiver?(ast: ThisReceiver, context: any): any;
     visitImplicitReceiver(ast: ImplicitReceiver, context: any): any;
     visitInterpolation(ast: Interpolation, context: any): any;
     visitKeyedRead(ast: KeyedRead, context: any): any;
@@ -283,12 +330,14 @@ export interface AstVisitor {
 }
 export declare class RecursiveAstVisitor implements AstVisitor {
     visit(ast: AST, context?: any): any;
+    visitUnary(ast: Unary, context: any): any;
     visitBinary(ast: Binary, context: any): any;
     visitChain(ast: Chain, context: any): any;
     visitConditional(ast: Conditional, context: any): any;
     visitPipe(ast: BindingPipe, context: any): any;
     visitFunctionCall(ast: FunctionCall, context: any): any;
-    visitImplicitReceiver(ast: ImplicitReceiver, context: any): any;
+    visitImplicitReceiver(ast: ThisReceiver, context: any): any;
+    visitThisReceiver(ast: ThisReceiver, context: any): any;
     visitInterpolation(ast: Interpolation, context: any): any;
     visitKeyedRead(ast: KeyedRead, context: any): any;
     visitKeyedWrite(ast: KeyedWrite, context: any): any;
@@ -307,6 +356,7 @@ export declare class RecursiveAstVisitor implements AstVisitor {
 }
 export declare class AstTransformer implements AstVisitor {
     visitImplicitReceiver(ast: ImplicitReceiver, context: any): AST;
+    visitThisReceiver(ast: ThisReceiver, context: any): AST;
     visitInterpolation(ast: Interpolation, context: any): AST;
     visitLiteralPrimitive(ast: LiteralPrimitive, context: any): AST;
     visitPropertyRead(ast: PropertyRead, context: any): AST;
@@ -317,6 +367,7 @@ export declare class AstTransformer implements AstVisitor {
     visitFunctionCall(ast: FunctionCall, context: any): AST;
     visitLiteralArray(ast: LiteralArray, context: any): AST;
     visitLiteralMap(ast: LiteralMap, context: any): AST;
+    visitUnary(ast: Unary, context: any): AST;
     visitBinary(ast: Binary, context: any): AST;
     visitPrefixNot(ast: PrefixNot, context: any): AST;
     visitNonNullAssert(ast: NonNullAssert, context: any): AST;
@@ -330,6 +381,7 @@ export declare class AstTransformer implements AstVisitor {
 }
 export declare class AstMemoryEfficientTransformer implements AstVisitor {
     visitImplicitReceiver(ast: ImplicitReceiver, context: any): AST;
+    visitThisReceiver(ast: ThisReceiver, context: any): AST;
     visitInterpolation(ast: Interpolation, context: any): Interpolation;
     visitLiteralPrimitive(ast: LiteralPrimitive, context: any): AST;
     visitPropertyRead(ast: PropertyRead, context: any): AST;
@@ -340,6 +392,7 @@ export declare class AstMemoryEfficientTransformer implements AstVisitor {
     visitFunctionCall(ast: FunctionCall, context: any): AST;
     visitLiteralArray(ast: LiteralArray, context: any): AST;
     visitLiteralMap(ast: LiteralMap, context: any): AST;
+    visitUnary(ast: Unary, context: any): AST;
     visitBinary(ast: Binary, context: any): AST;
     visitPrefixNot(ast: PrefixNot, context: any): AST;
     visitNonNullAssert(ast: NonNullAssert, context: any): AST;
@@ -356,10 +409,11 @@ export declare class ParsedProperty {
     expression: ASTWithSource;
     type: ParsedPropertyType;
     sourceSpan: ParseSourceSpan;
-    valueSpan?: ParseSourceSpan | undefined;
+    readonly keySpan: ParseSourceSpan | undefined;
+    valueSpan: ParseSourceSpan | undefined;
     readonly isLiteral: boolean;
     readonly isAnimation: boolean;
-    constructor(name: string, expression: ASTWithSource, type: ParsedPropertyType, sourceSpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined);
+    constructor(name: string, expression: ASTWithSource, type: ParsedPropertyType, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan | undefined, valueSpan: ParseSourceSpan | undefined);
 }
 export declare enum ParsedPropertyType {
     DEFAULT = 0,
@@ -377,7 +431,8 @@ export declare class ParsedEvent {
     handler: ASTWithSource;
     sourceSpan: ParseSourceSpan;
     handlerSpan: ParseSourceSpan;
-    constructor(name: string, targetOrPhase: string, type: ParsedEventType, handler: ASTWithSource, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan);
+    readonly keySpan: ParseSourceSpan | undefined;
+    constructor(name: string, targetOrPhase: string, type: ParsedEventType, handler: ASTWithSource, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan, keySpan: ParseSourceSpan | undefined);
 }
 /**
  * ParsedVariable represents a variable declaration in a microsyntax expression.
@@ -404,6 +459,7 @@ export declare class BoundElementProperty {
     value: ASTWithSource;
     unit: string | null;
     sourceSpan: ParseSourceSpan;
-    valueSpan?: ParseSourceSpan | undefined;
-    constructor(name: string, type: BindingType, securityContext: SecurityContext, value: ASTWithSource, unit: string | null, sourceSpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined);
+    readonly keySpan: ParseSourceSpan | undefined;
+    valueSpan: ParseSourceSpan | undefined;
+    constructor(name: string, type: BindingType, securityContext: SecurityContext, value: ASTWithSource, unit: string | null, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan | undefined, valueSpan: ParseSourceSpan | undefined);
 }
