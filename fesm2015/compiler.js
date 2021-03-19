@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.2.6+5.sha-4690b6d
+ * @license Angular v11.2.6+12.sha-72c9565
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9697,6 +9697,7 @@ function escapeBlocks(input, charPairs, placeholder) {
  */
 function combineHostContextSelectors(contextSelectors, otherSelectors) {
     const hostMarker = _polyfillHostNoCombinator;
+    _polyfillHostRe.lastIndex = 0; // reset the regex to ensure we get an accurate test
     const otherSelectorsHasHost = _polyfillHostRe.test(otherSelectors);
     // If there are no context selectors then just output a host marker
     if (contextSelectors.length === 0) {
@@ -13859,9 +13860,6 @@ class StylingBuilder {
         const { property, hasOverrideFlag } = parseProperty(name);
         const entry = { name: property, value, sourceSpan, hasOverrideFlag, suffix: null };
         if (isMapBased) {
-            if (this._classMapInput) {
-                throw new Error('[class] and [className] bindings cannot be used on the same element simultaneously');
-            }
             this._classMapInput = entry;
         }
         else {
@@ -20442,7 +20440,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.2.6+5.sha-4690b6d');
+const VERSION$1 = new Version('11.2.6+12.sha-72c9565');
 
 /**
  * @license
@@ -29914,7 +29912,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('11.2.6+5.sha-4690b6d'));
+    definitionMap.set('version', literal('11.2.6+12.sha-72c9565'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -30135,7 +30133,7 @@ function compileDeclarePipeFromMetadata(meta) {
  */
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('11.2.6+5.sha-4690b6d'));
+    definitionMap.set('version', literal('11.2.6+12.sha-72c9565'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);

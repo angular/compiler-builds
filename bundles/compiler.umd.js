@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.2.6+5.sha-4690b6d
+ * @license Angular v11.2.6+12.sha-72c9565
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10582,6 +10582,7 @@
      */
     function combineHostContextSelectors(contextSelectors, otherSelectors) {
         var hostMarker = _polyfillHostNoCombinator;
+        _polyfillHostRe.lastIndex = 0; // reset the regex to ensure we get an accurate test
         var otherSelectorsHasHost = _polyfillHostRe.test(otherSelectors);
         // If there are no context selectors then just output a host marker
         if (contextSelectors.length === 0) {
@@ -14881,9 +14882,6 @@
             var _a = parseProperty(name), property = _a.property, hasOverrideFlag = _a.hasOverrideFlag;
             var entry = { name: property, value: value, sourceSpan: sourceSpan, hasOverrideFlag: hasOverrideFlag, suffix: null };
             if (isMapBased) {
-                if (this._classMapInput) {
-                    throw new Error('[class] and [className] bindings cannot be used on the same element simultaneously');
-                }
                 this._classMapInput = entry;
             }
             else {
@@ -21732,7 +21730,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.2.6+5.sha-4690b6d');
+    var VERSION$1 = new Version('11.2.6+12.sha-72c9565');
 
     /**
      * @license
@@ -31576,7 +31574,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.2.6+5.sha-4690b6d'));
+        definitionMap.set('version', literal('11.2.6+12.sha-72c9565'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -31801,7 +31799,7 @@
      */
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.2.6+5.sha-4690b6d'));
+        definitionMap.set('version', literal('11.2.6+12.sha-72c9565'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
