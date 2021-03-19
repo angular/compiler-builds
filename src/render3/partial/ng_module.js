@@ -31,7 +31,7 @@
     exports.compileDeclareNgModuleFromMetadata = compileDeclareNgModuleFromMetadata;
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new util_2.DefinitionMap();
-        definitionMap.set('version', o.literal('12.0.0-next.5+11.sha-3a55698'));
+        definitionMap.set('version', o.literal('12.0.0-next.5+14.sha-e8cae22'));
         definitionMap.set('ngImport', o.importExpr(r3_identifiers_1.Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
