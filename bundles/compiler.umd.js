@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.5+11.sha-3a55698
+ * @license Angular v12.0.0-next.5+14.sha-e8cae22
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10593,6 +10593,7 @@
      */
     function combineHostContextSelectors(contextSelectors, otherSelectors) {
         var hostMarker = _polyfillHostNoCombinator;
+        _polyfillHostRe.lastIndex = 0; // reset the regex to ensure we get an accurate test
         var otherSelectorsHasHost = _polyfillHostRe.test(otherSelectors);
         // If there are no context selectors then just output a host marker
         if (contextSelectors.length === 0) {
@@ -21781,7 +21782,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.0.0-next.5+11.sha-3a55698');
+    var VERSION$1 = new Version('12.0.0-next.5+14.sha-e8cae22');
 
     /**
      * @license
@@ -31626,7 +31627,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.5+11.sha-3a55698'));
+        definitionMap.set('version', literal('12.0.0-next.5+14.sha-e8cae22'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -31849,7 +31850,7 @@
     }
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.5+11.sha-3a55698'));
+        definitionMap.set('version', literal('12.0.0-next.5+14.sha-e8cae22'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -31874,7 +31875,7 @@
     }
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.5+11.sha-3a55698'));
+        definitionMap.set('version', literal('12.0.0-next.5+14.sha-e8cae22'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -31924,7 +31925,7 @@
      */
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.5+11.sha-3a55698'));
+        definitionMap.set('version', literal('12.0.0-next.5+14.sha-e8cae22'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
