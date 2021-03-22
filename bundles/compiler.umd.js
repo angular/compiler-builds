@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.5+19.sha-efe02d8
+ * @license Angular v12.0.0-next.5+23.sha-e7b1d43
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4228,28 +4228,26 @@
         name: 'ViewEncapsulation',
         moduleName: CORE$1,
     };
-    Identifiers$1.ComponentDefWithMeta = {
-        name: 'ɵɵComponentDefWithMeta',
+    Identifiers$1.ComponentDeclaration = {
+        name: 'ɵɵComponentDeclaration',
         moduleName: CORE$1,
     };
-    Identifiers$1.FactoryDef = {
-        name: 'ɵɵFactoryDef',
+    Identifiers$1.FactoryDeclaration = {
+        name: 'ɵɵFactoryDeclaration',
         moduleName: CORE$1,
     };
     Identifiers$1.defineDirective = { name: 'ɵɵdefineDirective', moduleName: CORE$1 };
     Identifiers$1.declareDirective = { name: 'ɵɵngDeclareDirective', moduleName: CORE$1 };
-    Identifiers$1.DirectiveDefWithMeta = {
-        name: 'ɵɵDirectiveDefWithMeta',
+    Identifiers$1.DirectiveDeclaration = {
+        name: 'ɵɵDirectiveDeclaration',
         moduleName: CORE$1,
     };
-    Identifiers$1.InjectorDef = {
-        name: 'ɵɵInjectorDef',
-        moduleName: CORE$1,
-    };
+    Identifiers$1.InjectorDef = { name: 'ɵɵInjectorDef', moduleName: CORE$1 };
+    Identifiers$1.InjectorDeclaration = { name: 'ɵɵInjectorDeclaration', moduleName: CORE$1 };
     Identifiers$1.defineInjector = { name: 'ɵɵdefineInjector', moduleName: CORE$1 };
     Identifiers$1.declareInjector = { name: 'ɵɵngDeclareInjector', moduleName: CORE$1 };
-    Identifiers$1.NgModuleDefWithMeta = {
-        name: 'ɵɵNgModuleDefWithMeta',
+    Identifiers$1.NgModuleDeclaration = {
+        name: 'ɵɵNgModuleDeclaration',
         moduleName: CORE$1,
     };
     Identifiers$1.ModuleWithProviders = {
@@ -4259,7 +4257,7 @@
     Identifiers$1.defineNgModule = { name: 'ɵɵdefineNgModule', moduleName: CORE$1 };
     Identifiers$1.declareNgModule = { name: 'ɵɵngDeclareNgModule', moduleName: CORE$1 };
     Identifiers$1.setNgModuleScope = { name: 'ɵɵsetNgModuleScope', moduleName: CORE$1 };
-    Identifiers$1.PipeDefWithMeta = { name: 'ɵɵPipeDefWithMeta', moduleName: CORE$1 };
+    Identifiers$1.PipeDeclaration = { name: 'ɵɵPipeDeclaration', moduleName: CORE$1 };
     Identifiers$1.definePipe = { name: 'ɵɵdefinePipe', moduleName: CORE$1 };
     Identifiers$1.declarePipe = { name: 'ɵɵngDeclarePipe', moduleName: CORE$1 };
     Identifiers$1.queryRefresh = { name: 'ɵɵqueryRefresh', moduleName: CORE$1 };
@@ -6903,7 +6901,7 @@
         return {
             expression: fn([new FnParam('t', DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, meta.name + "_Factory"),
             statements: statements,
-            type: expressionType(importExpr(Identifiers$1.FactoryDef, [typeWithParameters(meta.type.type, meta.typeArgumentCount), ctorDepsType]))
+            type: expressionType(importExpr(Identifiers$1.FactoryDeclaration, [typeWithParameters(meta.type.type, meta.typeArgumentCount), ctorDepsType]))
         };
     }
     function injectDependencies(deps, injectFn, isPipe) {
@@ -7925,7 +7923,7 @@
         return { expression: expression, type: type, statements: [] };
     }
     function createInjectorType(meta) {
-        return new ExpressionType(importExpr(Identifiers$1.InjectorDef, [new ExpressionType(meta.type.type)]));
+        return new ExpressionType(importExpr(Identifiers$1.InjectorDeclaration, [new ExpressionType(meta.type.type)]));
     }
 
     /**
@@ -8060,7 +8058,7 @@
     }
     function createNgModuleType(_a) {
         var moduleType = _a.type, declarations = _a.declarations, imports = _a.imports, exports = _a.exports;
-        return new ExpressionType(importExpr(Identifiers$1.NgModuleDefWithMeta, [
+        return new ExpressionType(importExpr(Identifiers$1.NgModuleDeclaration, [
             new ExpressionType(moduleType.type), tupleTypeOf(declarations), tupleTypeOf(imports),
             tupleTypeOf(exports)
         ]));
@@ -8127,7 +8125,7 @@
         return { expression: expression, type: type, statements: [] };
     }
     function createPipeType(metadata) {
-        return new ExpressionType(importExpr(Identifiers$1.PipeDefWithMeta, [
+        return new ExpressionType(importExpr(Identifiers$1.PipeDeclaration, [
             typeWithParameters(metadata.type.type, metadata.typeArgumentCount),
             new ExpressionType(new LiteralExpr(metadata.pipeName)),
         ]));
@@ -20878,7 +20876,7 @@
     function createComponentType(meta) {
         var typeParams = createDirectiveTypeParams(meta);
         typeParams.push(stringArrayAsType(meta.template.ngContentSelectors));
-        return expressionType(importExpr(Identifiers$1.ComponentDefWithMeta, typeParams));
+        return expressionType(importExpr(Identifiers$1.ComponentDeclaration, typeParams));
     }
     /**
      * Compiles the array literal of declarations into an expression according to the provided emit
@@ -21009,7 +21007,7 @@
      */
     function createDirectiveType(meta) {
         var typeParams = createDirectiveTypeParams(meta);
-        return expressionType(importExpr(Identifiers$1.DirectiveDefWithMeta, typeParams));
+        return expressionType(importExpr(Identifiers$1.DirectiveDeclaration, typeParams));
     }
     // Define and update any view queries
     function createViewQueriesFunction(viewQueries, constantPool, name) {
@@ -21782,7 +21780,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.0.0-next.5+19.sha-efe02d8');
+    var VERSION$1 = new Version('12.0.0-next.5+23.sha-e7b1d43');
 
     /**
      * @license
@@ -31627,7 +31625,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.5+19.sha-efe02d8'));
+        definitionMap.set('version', literal('12.0.0-next.5+23.sha-e7b1d43'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -31850,7 +31848,7 @@
     }
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.5+19.sha-efe02d8'));
+        definitionMap.set('version', literal('12.0.0-next.5+23.sha-e7b1d43'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -31875,7 +31873,7 @@
     }
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.5+19.sha-efe02d8'));
+        definitionMap.set('version', literal('12.0.0-next.5+23.sha-e7b1d43'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -31925,7 +31923,7 @@
      */
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.5+19.sha-efe02d8'));
+        definitionMap.set('version', literal('12.0.0-next.5+23.sha-e7b1d43'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
