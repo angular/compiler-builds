@@ -362,6 +362,15 @@ export interface ParseTemplateOptions {
      * output, but this is done after converting the HTML AST to R3 AST.
      */
     alwaysAttemptHtmlToR3AstConversion?: boolean;
+    /**
+     * Include HTML Comment nodes in a top-level comments array on the returned R3 AST.
+     *
+     * This option is required by tooling that needs to know the location of comment nodes within the
+     * AST. A concrete example is @angular-eslint which requires this in order to enable
+     * "eslint-disable" comments within HTML templates, which then allows users to turn off specific
+     * rules on a case by case basis, instead of for their whole project within a configuration file.
+     */
+    collectCommentNodes?: boolean;
 }
 /**
  * Parse a template into render3 `Node`s and additional metadata, with no other dependencies.
@@ -461,5 +470,10 @@ export interface ParsedTemplate {
      * Any ng-content selectors extracted from the template.
      */
     ngContentSelectors: string[];
+    /**
+     * Any R3 Comment Nodes extracted from the template when the `collectCommentNodes` parse template
+     * option is enabled.
+     */
+    commentNodes?: t.Comment[];
 }
 export {};
