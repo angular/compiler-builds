@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.6+7.sha-81a88c0
+ * @license Angular v12.0.0-next.6+8.sha-5e46901
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5096,6 +5096,22 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
+    /**
+     * This is an R3 `Node`-like wrapper for a raw `html.Comment` node. We do not currently
+     * require the implementation of a visitor for Comments as they are only collected at
+     * the top-level of the R3 AST, and only if `Render3ParseOptions['collectCommentNodes']`
+     * is true.
+     */
+    var Comment = /** @class */ (function () {
+        function Comment(value, sourceSpan) {
+            this.value = value;
+            this.sourceSpan = sourceSpan;
+        }
+        Comment.prototype.visit = function (_visitor) {
+            throw new Error('visit() not implemented for Comment');
+        };
+        return Comment;
+    }());
     var Text = /** @class */ (function () {
         function Text(value, sourceSpan) {
             this.value = value;
@@ -10873,7 +10889,7 @@
         };
         return Element;
     }(NodeWithI18n));
-    var Comment = /** @class */ (function () {
+    var Comment$1 = /** @class */ (function () {
         function Comment(value, sourceSpan) {
             this.value = value;
             this.sourceSpan = sourceSpan;
@@ -11980,7 +11996,7 @@
             var text = this._advanceIf(TokenType.RAW_TEXT);
             this._advanceIf(TokenType.COMMENT_END);
             var value = text != null ? text.parts[0].trim() : null;
-            this._addToParent(new Comment(value, token.sourceSpan));
+            this._addToParent(new Comment$1(value, token.sourceSpan));
         };
         _TreeBuilder.prototype._consumeExpansion = function (token) {
             var switchValue = this._advance();
@@ -17412,26 +17428,33 @@
         EVENT: { start: '(', end: ')' },
     };
     var TEMPLATE_ATTR_PREFIX$2 = '*';
-    function htmlAstToRender3Ast(htmlNodes, bindingParser) {
-        var transformer = new HtmlAstToIvyAst(bindingParser);
+    function htmlAstToRender3Ast(htmlNodes, bindingParser, options) {
+        var transformer = new HtmlAstToIvyAst(bindingParser, options);
         var ivyNodes = visitAll$1(transformer, htmlNodes);
         // Errors might originate in either the binding parser or the html to ivy transformer
         var allErrors = bindingParser.errors.concat(transformer.errors);
-        return {
+        var result = {
             nodes: ivyNodes,
             errors: allErrors,
             styleUrls: transformer.styleUrls,
             styles: transformer.styles,
-            ngContentSelectors: transformer.ngContentSelectors,
+            ngContentSelectors: transformer.ngContentSelectors
         };
+        if (options.collectCommentNodes) {
+            result.commentNodes = transformer.commentNodes;
+        }
+        return result;
     }
     var HtmlAstToIvyAst = /** @class */ (function () {
-        function HtmlAstToIvyAst(bindingParser) {
+        function HtmlAstToIvyAst(bindingParser, options) {
             this.bindingParser = bindingParser;
+            this.options = options;
             this.errors = [];
             this.styles = [];
             this.styleUrls = [];
             this.ngContentSelectors = [];
+            // This array will be populated if `Render3ParseOptions['collectCommentNodes']` is true
+            this.commentNodes = [];
             this.inI18nBlock = false;
         }
         // HTML visitor
@@ -17613,6 +17636,9 @@
             return null;
         };
         HtmlAstToIvyAst.prototype.visitComment = function (comment) {
+            if (this.options.collectCommentNodes) {
+                this.commentNodes.push(new Comment(comment.value || '', comment.sourceSpan));
+            }
             return null;
         };
         // convert view engine `ParsedProperty` to a format suitable for IVY
@@ -17810,7 +17836,7 @@
         return node instanceof Text$3 && node.value.trim().length == 0;
     }
     function isCommentNode(node) {
-        return node instanceof Comment;
+        return node instanceof Comment$1;
     }
     function textContents(node) {
         if (node.children.length !== 1 || !(node.children[0] instanceof Text$3)) {
@@ -20520,7 +20546,7 @@
         var parseResult = htmlParser.parse(template, templateUrl, Object.assign(Object.assign({ leadingTriviaChars: LEADING_TRIVIA_CHARS }, options), { tokenizeExpansionForms: true }));
         if (!options.alwaysAttemptHtmlToR3AstConversion && parseResult.errors &&
             parseResult.errors.length > 0) {
-            return {
+            var parsedTemplate_1 = {
                 interpolationConfig: interpolationConfig,
                 preserveWhitespaces: preserveWhitespaces,
                 template: template,
@@ -20532,6 +20558,10 @@
                 styles: [],
                 ngContentSelectors: []
             };
+            if (options.collectCommentNodes) {
+                parsedTemplate_1.commentNodes = [];
+            }
+            return parsedTemplate_1;
         }
         var rootNodes = parseResult.rootNodes;
         // process i18n meta information (scan attributes, generate ids)
@@ -20542,7 +20572,7 @@
         var i18nMetaResult = i18nMetaVisitor.visitAllWithErrors(rootNodes);
         if (!options.alwaysAttemptHtmlToR3AstConversion && i18nMetaResult.errors &&
             i18nMetaResult.errors.length > 0) {
-            return {
+            var parsedTemplate_2 = {
                 interpolationConfig: interpolationConfig,
                 preserveWhitespaces: preserveWhitespaces,
                 template: template,
@@ -20554,6 +20584,10 @@
                 styles: [],
                 ngContentSelectors: []
             };
+            if (options.collectCommentNodes) {
+                parsedTemplate_2.commentNodes = [];
+            }
+            return parsedTemplate_2;
         }
         rootNodes = i18nMetaResult.rootNodes;
         if (!preserveWhitespaces) {
@@ -20566,9 +20600,9 @@
                 rootNodes = visitAll$1(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), rootNodes);
             }
         }
-        var _c = htmlAstToRender3Ast(rootNodes, bindingParser), nodes = _c.nodes, errors = _c.errors, styleUrls = _c.styleUrls, styles = _c.styles, ngContentSelectors = _c.ngContentSelectors;
+        var _c = htmlAstToRender3Ast(rootNodes, bindingParser, { collectCommentNodes: !!options.collectCommentNodes }), nodes = _c.nodes, errors = _c.errors, styleUrls = _c.styleUrls, styles = _c.styles, ngContentSelectors = _c.ngContentSelectors, commentNodes = _c.commentNodes;
         errors.push.apply(errors, __spreadArray(__spreadArray([], __read(parseResult.errors)), __read(i18nMetaResult.errors)));
-        return {
+        var parsedTemplate = {
             interpolationConfig: interpolationConfig,
             preserveWhitespaces: preserveWhitespaces,
             errors: errors.length > 0 ? errors : null,
@@ -20580,6 +20614,10 @@
             styles: styles,
             ngContentSelectors: ngContentSelectors
         };
+        if (options.collectCommentNodes) {
+            parsedTemplate.commentNodes = commentNodes;
+        }
+        return parsedTemplate;
     }
     var elementRegistry = new DomElementSchemaRegistry();
     /**
@@ -21780,7 +21818,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.0.0-next.6+7.sha-81a88c0');
+    var VERSION$1 = new Version('12.0.0-next.6+8.sha-5e46901');
 
     /**
      * @license
@@ -22571,7 +22609,7 @@
                 return;
             }
             var startIndex = this._msgCountAtSectionStart;
-            var significantChildren = directChildren.reduce(function (count, node) { return count + (node instanceof Comment ? 0 : 1); }, 0);
+            var significantChildren = directChildren.reduce(function (count, node) { return count + (node instanceof Comment$1 ? 0 : 1); }, 0);
             if (significantChildren == 1) {
                 for (var i = this._messages.length - 1; i >= startIndex; i--) {
                     var ast = this._messages[i].nodes;
@@ -22589,10 +22627,10 @@
         return _Visitor;
     }());
     function _isOpeningComment(n) {
-        return !!(n instanceof Comment && n.value && n.value.startsWith('i18n'));
+        return !!(n instanceof Comment$1 && n.value && n.value.startsWith('i18n'));
     }
     function _isClosingComment(n) {
-        return !!(n instanceof Comment && n.value && n.value === '/i18n');
+        return !!(n instanceof Comment$1 && n.value && n.value === '/i18n');
     }
     function _getI18nAttr(p) {
         return p.attrs.find(function (attr) { return attr.name === _I18N_ATTR; }) || null;
@@ -31625,7 +31663,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.6+7.sha-81a88c0'));
+        definitionMap.set('version', literal('12.0.0-next.6+8.sha-5e46901'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -31848,7 +31886,7 @@
     }
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.6+7.sha-81a88c0'));
+        definitionMap.set('version', literal('12.0.0-next.6+8.sha-5e46901'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -31873,7 +31911,7 @@
     }
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.6+7.sha-81a88c0'));
+        definitionMap.set('version', literal('12.0.0-next.6+8.sha-5e46901'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -31923,7 +31961,7 @@
      */
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.6+7.sha-81a88c0'));
+        definitionMap.set('version', literal('12.0.0-next.6+8.sha-5e46901'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
@@ -32003,7 +32041,7 @@
     exports.ClassMethod = ClassMethod;
     exports.ClassStmt = ClassStmt;
     exports.CommaExpr = CommaExpr;
-    exports.Comment = Comment;
+    exports.Comment = Comment$1;
     exports.CompileDirectiveMetadata = CompileDirectiveMetadata;
     exports.CompileMetadataResolver = CompileMetadataResolver;
     exports.CompileNgModuleMetadata = CompileNgModuleMetadata;
