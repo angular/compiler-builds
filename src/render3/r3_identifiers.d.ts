@@ -121,7 +121,6 @@ export declare class Identifiers {
     static reference: o.ExternalReference;
     static inject: o.ExternalReference;
     static injectAttribute: o.ExternalReference;
-    static injectPipeChangeDetectorRef: o.ExternalReference;
     static directiveInject: o.ExternalReference;
     static invalidFactory: o.ExternalReference;
     static invalidFactoryDep: o.ExternalReference;
@@ -138,6 +137,8 @@ export declare class Identifiers {
     static ViewEncapsulation: o.ExternalReference;
     static ComponentDeclaration: o.ExternalReference;
     static FactoryDeclaration: o.ExternalReference;
+    static declareFactory: o.ExternalReference;
+    static FactoryTarget: o.ExternalReference;
     static defineDirective: o.ExternalReference;
     static declareDirective: o.ExternalReference;
     static DirectiveDeclaration: o.ExternalReference;
