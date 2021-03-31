@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.2.7+9.sha-06e5132
+ * @license Angular v11.2.7+13.sha-723bfc7
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -13851,7 +13851,11 @@ class StylingBuilder {
         if (isEmptyExpression(value)) {
             return null;
         }
-        name = normalizePropName(name);
+        // CSS custom properties are case-sensitive so we shouldn't normalize them.
+        // See: https://www.w3.org/TR/css-variables-1/#defining-variables
+        if (!isCssCustomProperty(name)) {
+            name = hyphenate(name);
+        }
         const { property, hasOverrideFlag, suffix: bindingSuffix } = parseProperty(name);
         suffix = typeof suffix === 'string' && suffix.length !== 0 ? suffix : bindingSuffix;
         const entry = { name: property, suffix: suffix, value, sourceSpan, hasOverrideFlag };
@@ -14196,8 +14200,12 @@ function getStylePropInterpolationExpression(interpolation) {
             return Identifiers$1.stylePropInterpolateV;
     }
 }
-function normalizePropName(prop) {
-    return hyphenate(prop);
+/**
+ * Checks whether property name is a custom CSS property.
+ * See: https://www.w3.org/TR/css-variables-1
+ */
+function isCssCustomProperty(name) {
+    return name.startsWith('--');
 }
 
 /**
@@ -20477,7 +20485,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('11.2.7+9.sha-06e5132');
+const VERSION$1 = new Version('11.2.7+13.sha-723bfc7');
 
 /**
  * @license
@@ -29949,7 +29957,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('11.2.7+9.sha-06e5132'));
+    definitionMap.set('version', literal('11.2.7+13.sha-723bfc7'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -30170,7 +30178,7 @@ function compileDeclarePipeFromMetadata(meta) {
  */
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('11.2.7+9.sha-06e5132'));
+    definitionMap.set('version', literal('11.2.7+13.sha-723bfc7'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
