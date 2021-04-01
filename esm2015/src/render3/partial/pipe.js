@@ -24,7 +24,7 @@ export function compileDeclarePipeFromMetadata(meta) {
  */
 export function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', o.literal('11.2.7+31.sha-bef92f9'));
+    definitionMap.set('version', o.literal('11.2.7+32.sha-4bac297'));
     definitionMap.set('ngImport', o.importExpr(R3.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
