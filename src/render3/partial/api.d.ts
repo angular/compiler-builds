@@ -295,3 +295,70 @@ export interface R3DeclarePipeMetadata extends R3PartialDeclaration {
      */
     pure?: boolean;
 }
+/**
+ * Describes the shape of the object that the `ɵɵngDeclareFactory()` function accepts.
+ *
+ * This interface serves primarily as documentation, as conformance to this interface is not
+ * enforced during linking.
+ */
+export interface R3DeclareFactoryMetadata extends R3PartialDeclaration {
+    /**
+     * A collection of dependencies that this factory relies upon.
+     *
+     * If this is `null`, then the type's constructor is nonexistent and will be inherited from an
+     * ancestor of the type.
+     *
+     * If this is `'invalid'`, then one or more of the parameters wasn't resolvable and any attempt to
+     * use these deps will result in a runtime error.
+     */
+    deps: R3DeclareDependencyMetadata[] | 'invalid' | null;
+    /**
+     * Type of the target being created by the factory.
+     */
+    target: FactoryTarget;
+}
+export declare enum FactoryTarget {
+    Directive = 0,
+    Component = 1,
+    Injectable = 2,
+    Pipe = 3,
+    NgModule = 4
+}
+/**
+ * Metadata indicating how a dependency should be injected into a factory.
+ */
+export interface R3DeclareDependencyMetadata {
+    /**
+     * An expression representing the token or value to be injected, or `null` if the dependency is
+     * not valid.
+     *
+     * If this dependency is due to the `@Attribute()` decorator, then this is an expression
+     * evaluating to the name of the attribute.
+     */
+    token: o.Expression | null;
+    /**
+     * Whether the dependency is injecting an attribute value.
+     * Default: false.
+     */
+    attribute?: boolean;
+    /**
+     * Whether the dependency has an @Host qualifier.
+     * Default: false,
+     */
+    host?: boolean;
+    /**
+     * Whether the dependency has an @Optional qualifier.
+     * Default: false,
+     */
+    optional?: boolean;
+    /**
+     * Whether the dependency has an @Self qualifier.
+     * Default: false,
+     */
+    self?: boolean;
+    /**
+     * Whether the dependency has an @SkipSelf qualifier.
+     * Default: false,
+     */
+    skipSelf?: boolean;
+}

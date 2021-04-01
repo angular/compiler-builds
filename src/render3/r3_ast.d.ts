@@ -13,6 +13,18 @@ export interface Node {
     sourceSpan: ParseSourceSpan;
     visit<Result>(visitor: Visitor<Result>): Result;
 }
+/**
+ * This is an R3 `Node`-like wrapper for a raw `html.Comment` node. We do not currently
+ * require the implementation of a visitor for Comments as they are only collected at
+ * the top-level of the R3 AST, and only if `Render3ParseOptions['collectCommentNodes']`
+ * is true.
+ */
+export declare class Comment implements Node {
+    value: string;
+    sourceSpan: ParseSourceSpan;
+    constructor(value: string, sourceSpan: ParseSourceSpan);
+    visit<Result>(_visitor: Visitor<Result>): Result;
+}
 export declare class Text implements Node {
     value: string;
     sourceSpan: ParseSourceSpan;

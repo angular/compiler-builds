@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.6+3.sha-b61c009
+ * @license Angular v12.0.0-next.6+36.sha-18bc9ff
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2847,43 +2847,201 @@ function createTokenForExternalReference(reflector, reference) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * A token representing the a reference to a static type.
- *
- * This token is unique for a filePath and name and can be used as a hash table key.
- */
-class StaticSymbol {
-    constructor(filePath, name, members) {
-        this.filePath = filePath;
-        this.name = name;
-        this.members = members;
-    }
-    assertNoMembers() {
-        if (this.members.length) {
-            throw new Error(`Illegal state: symbol without members expected, but got ${JSON.stringify(this)}.`);
-        }
-    }
+const CORE$1 = '@angular/core';
+class Identifiers$1 {
 }
-/**
- * A cache of static symbol used by the StaticReflector to return the same symbol for the
- * same symbol values.
- */
-class StaticSymbolCache {
-    constructor() {
-        this.cache = new Map();
-    }
-    get(declarationFile, name, members) {
-        members = members || [];
-        const memberSuffix = members.length ? `.${members.join('.')}` : '';
-        const key = `"${declarationFile}".${name}${memberSuffix}`;
-        let result = this.cache.get(key);
-        if (!result) {
-            result = new StaticSymbol(declarationFile, name, members);
-            this.cache.set(key, result);
-        }
-        return result;
-    }
-}
+/* Methods */
+Identifiers$1.NEW_METHOD = 'factory';
+Identifiers$1.TRANSFORM_METHOD = 'transform';
+Identifiers$1.PATCH_DEPS = 'patchedDeps';
+Identifiers$1.core = { name: null, moduleName: CORE$1 };
+/* Instructions */
+Identifiers$1.namespaceHTML = { name: 'ɵɵnamespaceHTML', moduleName: CORE$1 };
+Identifiers$1.namespaceMathML = { name: 'ɵɵnamespaceMathML', moduleName: CORE$1 };
+Identifiers$1.namespaceSVG = { name: 'ɵɵnamespaceSVG', moduleName: CORE$1 };
+Identifiers$1.element = { name: 'ɵɵelement', moduleName: CORE$1 };
+Identifiers$1.elementStart = { name: 'ɵɵelementStart', moduleName: CORE$1 };
+Identifiers$1.elementEnd = { name: 'ɵɵelementEnd', moduleName: CORE$1 };
+Identifiers$1.advance = { name: 'ɵɵadvance', moduleName: CORE$1 };
+Identifiers$1.syntheticHostProperty = { name: 'ɵɵsyntheticHostProperty', moduleName: CORE$1 };
+Identifiers$1.syntheticHostListener = { name: 'ɵɵsyntheticHostListener', moduleName: CORE$1 };
+Identifiers$1.attribute = { name: 'ɵɵattribute', moduleName: CORE$1 };
+Identifiers$1.attributeInterpolate1 = { name: 'ɵɵattributeInterpolate1', moduleName: CORE$1 };
+Identifiers$1.attributeInterpolate2 = { name: 'ɵɵattributeInterpolate2', moduleName: CORE$1 };
+Identifiers$1.attributeInterpolate3 = { name: 'ɵɵattributeInterpolate3', moduleName: CORE$1 };
+Identifiers$1.attributeInterpolate4 = { name: 'ɵɵattributeInterpolate4', moduleName: CORE$1 };
+Identifiers$1.attributeInterpolate5 = { name: 'ɵɵattributeInterpolate5', moduleName: CORE$1 };
+Identifiers$1.attributeInterpolate6 = { name: 'ɵɵattributeInterpolate6', moduleName: CORE$1 };
+Identifiers$1.attributeInterpolate7 = { name: 'ɵɵattributeInterpolate7', moduleName: CORE$1 };
+Identifiers$1.attributeInterpolate8 = { name: 'ɵɵattributeInterpolate8', moduleName: CORE$1 };
+Identifiers$1.attributeInterpolateV = { name: 'ɵɵattributeInterpolateV', moduleName: CORE$1 };
+Identifiers$1.classProp = { name: 'ɵɵclassProp', moduleName: CORE$1 };
+Identifiers$1.elementContainerStart = { name: 'ɵɵelementContainerStart', moduleName: CORE$1 };
+Identifiers$1.elementContainerEnd = { name: 'ɵɵelementContainerEnd', moduleName: CORE$1 };
+Identifiers$1.elementContainer = { name: 'ɵɵelementContainer', moduleName: CORE$1 };
+Identifiers$1.styleMap = { name: 'ɵɵstyleMap', moduleName: CORE$1 };
+Identifiers$1.styleMapInterpolate1 = { name: 'ɵɵstyleMapInterpolate1', moduleName: CORE$1 };
+Identifiers$1.styleMapInterpolate2 = { name: 'ɵɵstyleMapInterpolate2', moduleName: CORE$1 };
+Identifiers$1.styleMapInterpolate3 = { name: 'ɵɵstyleMapInterpolate3', moduleName: CORE$1 };
+Identifiers$1.styleMapInterpolate4 = { name: 'ɵɵstyleMapInterpolate4', moduleName: CORE$1 };
+Identifiers$1.styleMapInterpolate5 = { name: 'ɵɵstyleMapInterpolate5', moduleName: CORE$1 };
+Identifiers$1.styleMapInterpolate6 = { name: 'ɵɵstyleMapInterpolate6', moduleName: CORE$1 };
+Identifiers$1.styleMapInterpolate7 = { name: 'ɵɵstyleMapInterpolate7', moduleName: CORE$1 };
+Identifiers$1.styleMapInterpolate8 = { name: 'ɵɵstyleMapInterpolate8', moduleName: CORE$1 };
+Identifiers$1.styleMapInterpolateV = { name: 'ɵɵstyleMapInterpolateV', moduleName: CORE$1 };
+Identifiers$1.classMap = { name: 'ɵɵclassMap', moduleName: CORE$1 };
+Identifiers$1.classMapInterpolate1 = { name: 'ɵɵclassMapInterpolate1', moduleName: CORE$1 };
+Identifiers$1.classMapInterpolate2 = { name: 'ɵɵclassMapInterpolate2', moduleName: CORE$1 };
+Identifiers$1.classMapInterpolate3 = { name: 'ɵɵclassMapInterpolate3', moduleName: CORE$1 };
+Identifiers$1.classMapInterpolate4 = { name: 'ɵɵclassMapInterpolate4', moduleName: CORE$1 };
+Identifiers$1.classMapInterpolate5 = { name: 'ɵɵclassMapInterpolate5', moduleName: CORE$1 };
+Identifiers$1.classMapInterpolate6 = { name: 'ɵɵclassMapInterpolate6', moduleName: CORE$1 };
+Identifiers$1.classMapInterpolate7 = { name: 'ɵɵclassMapInterpolate7', moduleName: CORE$1 };
+Identifiers$1.classMapInterpolate8 = { name: 'ɵɵclassMapInterpolate8', moduleName: CORE$1 };
+Identifiers$1.classMapInterpolateV = { name: 'ɵɵclassMapInterpolateV', moduleName: CORE$1 };
+Identifiers$1.styleProp = { name: 'ɵɵstyleProp', moduleName: CORE$1 };
+Identifiers$1.stylePropInterpolate1 = { name: 'ɵɵstylePropInterpolate1', moduleName: CORE$1 };
+Identifiers$1.stylePropInterpolate2 = { name: 'ɵɵstylePropInterpolate2', moduleName: CORE$1 };
+Identifiers$1.stylePropInterpolate3 = { name: 'ɵɵstylePropInterpolate3', moduleName: CORE$1 };
+Identifiers$1.stylePropInterpolate4 = { name: 'ɵɵstylePropInterpolate4', moduleName: CORE$1 };
+Identifiers$1.stylePropInterpolate5 = { name: 'ɵɵstylePropInterpolate5', moduleName: CORE$1 };
+Identifiers$1.stylePropInterpolate6 = { name: 'ɵɵstylePropInterpolate6', moduleName: CORE$1 };
+Identifiers$1.stylePropInterpolate7 = { name: 'ɵɵstylePropInterpolate7', moduleName: CORE$1 };
+Identifiers$1.stylePropInterpolate8 = { name: 'ɵɵstylePropInterpolate8', moduleName: CORE$1 };
+Identifiers$1.stylePropInterpolateV = { name: 'ɵɵstylePropInterpolateV', moduleName: CORE$1 };
+Identifiers$1.nextContext = { name: 'ɵɵnextContext', moduleName: CORE$1 };
+Identifiers$1.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE$1 };
+Identifiers$1.text = { name: 'ɵɵtext', moduleName: CORE$1 };
+Identifiers$1.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE$1 };
+Identifiers$1.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE$1 };
+Identifiers$1.getCurrentView = { name: 'ɵɵgetCurrentView', moduleName: CORE$1 };
+Identifiers$1.textInterpolate = { name: 'ɵɵtextInterpolate', moduleName: CORE$1 };
+Identifiers$1.textInterpolate1 = { name: 'ɵɵtextInterpolate1', moduleName: CORE$1 };
+Identifiers$1.textInterpolate2 = { name: 'ɵɵtextInterpolate2', moduleName: CORE$1 };
+Identifiers$1.textInterpolate3 = { name: 'ɵɵtextInterpolate3', moduleName: CORE$1 };
+Identifiers$1.textInterpolate4 = { name: 'ɵɵtextInterpolate4', moduleName: CORE$1 };
+Identifiers$1.textInterpolate5 = { name: 'ɵɵtextInterpolate5', moduleName: CORE$1 };
+Identifiers$1.textInterpolate6 = { name: 'ɵɵtextInterpolate6', moduleName: CORE$1 };
+Identifiers$1.textInterpolate7 = { name: 'ɵɵtextInterpolate7', moduleName: CORE$1 };
+Identifiers$1.textInterpolate8 = { name: 'ɵɵtextInterpolate8', moduleName: CORE$1 };
+Identifiers$1.textInterpolateV = { name: 'ɵɵtextInterpolateV', moduleName: CORE$1 };
+Identifiers$1.restoreView = { name: 'ɵɵrestoreView', moduleName: CORE$1 };
+Identifiers$1.pureFunction0 = { name: 'ɵɵpureFunction0', moduleName: CORE$1 };
+Identifiers$1.pureFunction1 = { name: 'ɵɵpureFunction1', moduleName: CORE$1 };
+Identifiers$1.pureFunction2 = { name: 'ɵɵpureFunction2', moduleName: CORE$1 };
+Identifiers$1.pureFunction3 = { name: 'ɵɵpureFunction3', moduleName: CORE$1 };
+Identifiers$1.pureFunction4 = { name: 'ɵɵpureFunction4', moduleName: CORE$1 };
+Identifiers$1.pureFunction5 = { name: 'ɵɵpureFunction5', moduleName: CORE$1 };
+Identifiers$1.pureFunction6 = { name: 'ɵɵpureFunction6', moduleName: CORE$1 };
+Identifiers$1.pureFunction7 = { name: 'ɵɵpureFunction7', moduleName: CORE$1 };
+Identifiers$1.pureFunction8 = { name: 'ɵɵpureFunction8', moduleName: CORE$1 };
+Identifiers$1.pureFunctionV = { name: 'ɵɵpureFunctionV', moduleName: CORE$1 };
+Identifiers$1.pipeBind1 = { name: 'ɵɵpipeBind1', moduleName: CORE$1 };
+Identifiers$1.pipeBind2 = { name: 'ɵɵpipeBind2', moduleName: CORE$1 };
+Identifiers$1.pipeBind3 = { name: 'ɵɵpipeBind3', moduleName: CORE$1 };
+Identifiers$1.pipeBind4 = { name: 'ɵɵpipeBind4', moduleName: CORE$1 };
+Identifiers$1.pipeBindV = { name: 'ɵɵpipeBindV', moduleName: CORE$1 };
+Identifiers$1.hostProperty = { name: 'ɵɵhostProperty', moduleName: CORE$1 };
+Identifiers$1.property = { name: 'ɵɵproperty', moduleName: CORE$1 };
+Identifiers$1.propertyInterpolate = { name: 'ɵɵpropertyInterpolate', moduleName: CORE$1 };
+Identifiers$1.propertyInterpolate1 = { name: 'ɵɵpropertyInterpolate1', moduleName: CORE$1 };
+Identifiers$1.propertyInterpolate2 = { name: 'ɵɵpropertyInterpolate2', moduleName: CORE$1 };
+Identifiers$1.propertyInterpolate3 = { name: 'ɵɵpropertyInterpolate3', moduleName: CORE$1 };
+Identifiers$1.propertyInterpolate4 = { name: 'ɵɵpropertyInterpolate4', moduleName: CORE$1 };
+Identifiers$1.propertyInterpolate5 = { name: 'ɵɵpropertyInterpolate5', moduleName: CORE$1 };
+Identifiers$1.propertyInterpolate6 = { name: 'ɵɵpropertyInterpolate6', moduleName: CORE$1 };
+Identifiers$1.propertyInterpolate7 = { name: 'ɵɵpropertyInterpolate7', moduleName: CORE$1 };
+Identifiers$1.propertyInterpolate8 = { name: 'ɵɵpropertyInterpolate8', moduleName: CORE$1 };
+Identifiers$1.propertyInterpolateV = { name: 'ɵɵpropertyInterpolateV', moduleName: CORE$1 };
+Identifiers$1.i18n = { name: 'ɵɵi18n', moduleName: CORE$1 };
+Identifiers$1.i18nAttributes = { name: 'ɵɵi18nAttributes', moduleName: CORE$1 };
+Identifiers$1.i18nExp = { name: 'ɵɵi18nExp', moduleName: CORE$1 };
+Identifiers$1.i18nStart = { name: 'ɵɵi18nStart', moduleName: CORE$1 };
+Identifiers$1.i18nEnd = { name: 'ɵɵi18nEnd', moduleName: CORE$1 };
+Identifiers$1.i18nApply = { name: 'ɵɵi18nApply', moduleName: CORE$1 };
+Identifiers$1.i18nPostprocess = { name: 'ɵɵi18nPostprocess', moduleName: CORE$1 };
+Identifiers$1.pipe = { name: 'ɵɵpipe', moduleName: CORE$1 };
+Identifiers$1.projection = { name: 'ɵɵprojection', moduleName: CORE$1 };
+Identifiers$1.projectionDef = { name: 'ɵɵprojectionDef', moduleName: CORE$1 };
+Identifiers$1.reference = { name: 'ɵɵreference', moduleName: CORE$1 };
+Identifiers$1.inject = { name: 'ɵɵinject', moduleName: CORE$1 };
+Identifiers$1.injectAttribute = { name: 'ɵɵinjectAttribute', moduleName: CORE$1 };
+Identifiers$1.directiveInject = { name: 'ɵɵdirectiveInject', moduleName: CORE$1 };
+Identifiers$1.invalidFactory = { name: 'ɵɵinvalidFactory', moduleName: CORE$1 };
+Identifiers$1.invalidFactoryDep = { name: 'ɵɵinvalidFactoryDep', moduleName: CORE$1 };
+Identifiers$1.templateRefExtractor = { name: 'ɵɵtemplateRefExtractor', moduleName: CORE$1 };
+Identifiers$1.forwardRef = { name: 'forwardRef', moduleName: CORE$1 };
+Identifiers$1.resolveForwardRef = { name: 'resolveForwardRef', moduleName: CORE$1 };
+Identifiers$1.resolveWindow = { name: 'ɵɵresolveWindow', moduleName: CORE$1 };
+Identifiers$1.resolveDocument = { name: 'ɵɵresolveDocument', moduleName: CORE$1 };
+Identifiers$1.resolveBody = { name: 'ɵɵresolveBody', moduleName: CORE$1 };
+Identifiers$1.defineComponent = { name: 'ɵɵdefineComponent', moduleName: CORE$1 };
+Identifiers$1.declareComponent = { name: 'ɵɵngDeclareComponent', moduleName: CORE$1 };
+Identifiers$1.setComponentScope = { name: 'ɵɵsetComponentScope', moduleName: CORE$1 };
+Identifiers$1.ChangeDetectionStrategy = {
+    name: 'ChangeDetectionStrategy',
+    moduleName: CORE$1,
+};
+Identifiers$1.ViewEncapsulation = {
+    name: 'ViewEncapsulation',
+    moduleName: CORE$1,
+};
+Identifiers$1.ComponentDeclaration = {
+    name: 'ɵɵComponentDeclaration',
+    moduleName: CORE$1,
+};
+Identifiers$1.FactoryDeclaration = {
+    name: 'ɵɵFactoryDeclaration',
+    moduleName: CORE$1,
+};
+Identifiers$1.declareFactory = { name: 'ɵɵngDeclareFactory', moduleName: CORE$1 };
+Identifiers$1.FactoryTarget = { name: 'ɵɵFactoryTarget', moduleName: CORE$1 };
+Identifiers$1.defineDirective = { name: 'ɵɵdefineDirective', moduleName: CORE$1 };
+Identifiers$1.declareDirective = { name: 'ɵɵngDeclareDirective', moduleName: CORE$1 };
+Identifiers$1.DirectiveDeclaration = {
+    name: 'ɵɵDirectiveDeclaration',
+    moduleName: CORE$1,
+};
+Identifiers$1.InjectorDef = { name: 'ɵɵInjectorDef', moduleName: CORE$1 };
+Identifiers$1.InjectorDeclaration = { name: 'ɵɵInjectorDeclaration', moduleName: CORE$1 };
+Identifiers$1.defineInjector = { name: 'ɵɵdefineInjector', moduleName: CORE$1 };
+Identifiers$1.declareInjector = { name: 'ɵɵngDeclareInjector', moduleName: CORE$1 };
+Identifiers$1.NgModuleDeclaration = {
+    name: 'ɵɵNgModuleDeclaration',
+    moduleName: CORE$1,
+};
+Identifiers$1.ModuleWithProviders = {
+    name: 'ModuleWithProviders',
+    moduleName: CORE$1,
+};
+Identifiers$1.defineNgModule = { name: 'ɵɵdefineNgModule', moduleName: CORE$1 };
+Identifiers$1.declareNgModule = { name: 'ɵɵngDeclareNgModule', moduleName: CORE$1 };
+Identifiers$1.setNgModuleScope = { name: 'ɵɵsetNgModuleScope', moduleName: CORE$1 };
+Identifiers$1.PipeDeclaration = { name: 'ɵɵPipeDeclaration', moduleName: CORE$1 };
+Identifiers$1.definePipe = { name: 'ɵɵdefinePipe', moduleName: CORE$1 };
+Identifiers$1.declarePipe = { name: 'ɵɵngDeclarePipe', moduleName: CORE$1 };
+Identifiers$1.queryRefresh = { name: 'ɵɵqueryRefresh', moduleName: CORE$1 };
+Identifiers$1.viewQuery = { name: 'ɵɵviewQuery', moduleName: CORE$1 };
+Identifiers$1.loadQuery = { name: 'ɵɵloadQuery', moduleName: CORE$1 };
+Identifiers$1.contentQuery = { name: 'ɵɵcontentQuery', moduleName: CORE$1 };
+Identifiers$1.NgOnChangesFeature = { name: 'ɵɵNgOnChangesFeature', moduleName: CORE$1 };
+Identifiers$1.InheritDefinitionFeature = { name: 'ɵɵInheritDefinitionFeature', moduleName: CORE$1 };
+Identifiers$1.CopyDefinitionFeature = { name: 'ɵɵCopyDefinitionFeature', moduleName: CORE$1 };
+Identifiers$1.ProvidersFeature = { name: 'ɵɵProvidersFeature', moduleName: CORE$1 };
+Identifiers$1.listener = { name: 'ɵɵlistener', moduleName: CORE$1 };
+Identifiers$1.getInheritedFactory = {
+    name: 'ɵɵgetInheritedFactory',
+    moduleName: CORE$1,
+};
+// sanitization-related functions
+Identifiers$1.sanitizeHtml = { name: 'ɵɵsanitizeHtml', moduleName: CORE$1 };
+Identifiers$1.sanitizeStyle = { name: 'ɵɵsanitizeStyle', moduleName: CORE$1 };
+Identifiers$1.sanitizeResourceUrl = { name: 'ɵɵsanitizeResourceUrl', moduleName: CORE$1 };
+Identifiers$1.sanitizeScript = { name: 'ɵɵsanitizeScript', moduleName: CORE$1 };
+Identifiers$1.sanitizeUrl = { name: 'ɵɵsanitizeUrl', moduleName: CORE$1 };
+Identifiers$1.sanitizeUrlOrResourceUrl = { name: 'ɵɵsanitizeUrlOrResourceUrl', moduleName: CORE$1 };
+Identifiers$1.trustConstantHtml = { name: 'ɵɵtrustConstantHtml', moduleName: CORE$1 };
+Identifiers$1.trustConstantResourceUrl = { name: 'ɵɵtrustConstantResourceUrl', moduleName: CORE$1 };
 
 /**
  * @license
@@ -3099,597 +3257,6 @@ function partitionArray(arr, conditionFn) {
     }
     return [truthy, falsy];
 }
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-// group 0: "[prop] or (event) or @trigger"
-// group 1: "prop" from "[prop]"
-// group 2: "event" from "(event)"
-// group 3: "@trigger" from "@trigger"
-const HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
-function sanitizeIdentifier(name) {
-    return name.replace(/\W/g, '_');
-}
-let _anonymousTypeIndex = 0;
-function identifierName(compileIdentifier) {
-    if (!compileIdentifier || !compileIdentifier.reference) {
-        return null;
-    }
-    const ref = compileIdentifier.reference;
-    if (ref instanceof StaticSymbol) {
-        return ref.name;
-    }
-    if (ref['__anonymousType']) {
-        return ref['__anonymousType'];
-    }
-    let identifier = stringify(ref);
-    if (identifier.indexOf('(') >= 0) {
-        // case: anonymous functions!
-        identifier = `anonymous_${_anonymousTypeIndex++}`;
-        ref['__anonymousType'] = identifier;
-    }
-    else {
-        identifier = sanitizeIdentifier(identifier);
-    }
-    return identifier;
-}
-function identifierModuleUrl(compileIdentifier) {
-    const ref = compileIdentifier.reference;
-    if (ref instanceof StaticSymbol) {
-        return ref.filePath;
-    }
-    // Runtime type
-    return `./${stringify(ref)}`;
-}
-function viewClassName(compType, embeddedTemplateIndex) {
-    return `View_${identifierName({ reference: compType })}_${embeddedTemplateIndex}`;
-}
-function rendererTypeName(compType) {
-    return `RenderType_${identifierName({ reference: compType })}`;
-}
-function hostViewClassName(compType) {
-    return `HostView_${identifierName({ reference: compType })}`;
-}
-function componentFactoryName(compType) {
-    return `${identifierName({ reference: compType })}NgFactory`;
-}
-var CompileSummaryKind;
-(function (CompileSummaryKind) {
-    CompileSummaryKind[CompileSummaryKind["Pipe"] = 0] = "Pipe";
-    CompileSummaryKind[CompileSummaryKind["Directive"] = 1] = "Directive";
-    CompileSummaryKind[CompileSummaryKind["NgModule"] = 2] = "NgModule";
-    CompileSummaryKind[CompileSummaryKind["Injectable"] = 3] = "Injectable";
-})(CompileSummaryKind || (CompileSummaryKind = {}));
-function tokenName(token) {
-    return token.value != null ? sanitizeIdentifier(token.value) : identifierName(token.identifier);
-}
-function tokenReference(token) {
-    if (token.identifier != null) {
-        return token.identifier.reference;
-    }
-    else {
-        return token.value;
-    }
-}
-/**
- * Metadata about a stylesheet
- */
-class CompileStylesheetMetadata {
-    constructor({ moduleUrl, styles, styleUrls } = {}) {
-        this.moduleUrl = moduleUrl || null;
-        this.styles = _normalizeArray(styles);
-        this.styleUrls = _normalizeArray(styleUrls);
-    }
-}
-/**
- * Metadata regarding compilation of a template.
- */
-class CompileTemplateMetadata {
-    constructor({ encapsulation, template, templateUrl, htmlAst, styles, styleUrls, externalStylesheets, animations, ngContentSelectors, interpolation, isInline, preserveWhitespaces }) {
-        this.encapsulation = encapsulation;
-        this.template = template;
-        this.templateUrl = templateUrl;
-        this.htmlAst = htmlAst;
-        this.styles = _normalizeArray(styles);
-        this.styleUrls = _normalizeArray(styleUrls);
-        this.externalStylesheets = _normalizeArray(externalStylesheets);
-        this.animations = animations ? flatten(animations) : [];
-        this.ngContentSelectors = ngContentSelectors || [];
-        if (interpolation && interpolation.length != 2) {
-            throw new Error(`'interpolation' should have a start and an end symbol.`);
-        }
-        this.interpolation = interpolation;
-        this.isInline = isInline;
-        this.preserveWhitespaces = preserveWhitespaces;
-    }
-    toSummary() {
-        return {
-            ngContentSelectors: this.ngContentSelectors,
-            encapsulation: this.encapsulation,
-            styles: this.styles,
-            animations: this.animations
-        };
-    }
-}
-/**
- * Metadata regarding compilation of a directive.
- */
-class CompileDirectiveMetadata {
-    constructor({ isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, guards, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory }) {
-        this.isHost = !!isHost;
-        this.type = type;
-        this.isComponent = isComponent;
-        this.selector = selector;
-        this.exportAs = exportAs;
-        this.changeDetection = changeDetection;
-        this.inputs = inputs;
-        this.outputs = outputs;
-        this.hostListeners = hostListeners;
-        this.hostProperties = hostProperties;
-        this.hostAttributes = hostAttributes;
-        this.providers = _normalizeArray(providers);
-        this.viewProviders = _normalizeArray(viewProviders);
-        this.queries = _normalizeArray(queries);
-        this.guards = guards;
-        this.viewQueries = _normalizeArray(viewQueries);
-        this.entryComponents = _normalizeArray(entryComponents);
-        this.template = template;
-        this.componentViewType = componentViewType;
-        this.rendererType = rendererType;
-        this.componentFactory = componentFactory;
-    }
-    static create({ isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, providers, viewProviders, queries, guards, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory }) {
-        const hostListeners = {};
-        const hostProperties = {};
-        const hostAttributes = {};
-        if (host != null) {
-            Object.keys(host).forEach(key => {
-                const value = host[key];
-                const matches = key.match(HOST_REG_EXP);
-                if (matches === null) {
-                    hostAttributes[key] = value;
-                }
-                else if (matches[1] != null) {
-                    hostProperties[matches[1]] = value;
-                }
-                else if (matches[2] != null) {
-                    hostListeners[matches[2]] = value;
-                }
-            });
-        }
-        const inputsMap = {};
-        if (inputs != null) {
-            inputs.forEach((bindConfig) => {
-                // canonical syntax: `dirProp: elProp`
-                // if there is no `:`, use dirProp = elProp
-                const parts = splitAtColon(bindConfig, [bindConfig, bindConfig]);
-                inputsMap[parts[0]] = parts[1];
-            });
-        }
-        const outputsMap = {};
-        if (outputs != null) {
-            outputs.forEach((bindConfig) => {
-                // canonical syntax: `dirProp: elProp`
-                // if there is no `:`, use dirProp = elProp
-                const parts = splitAtColon(bindConfig, [bindConfig, bindConfig]);
-                outputsMap[parts[0]] = parts[1];
-            });
-        }
-        return new CompileDirectiveMetadata({
-            isHost,
-            type,
-            isComponent: !!isComponent,
-            selector,
-            exportAs,
-            changeDetection,
-            inputs: inputsMap,
-            outputs: outputsMap,
-            hostListeners,
-            hostProperties,
-            hostAttributes,
-            providers,
-            viewProviders,
-            queries,
-            guards,
-            viewQueries,
-            entryComponents,
-            template,
-            componentViewType,
-            rendererType,
-            componentFactory,
-        });
-    }
-    toSummary() {
-        return {
-            summaryKind: CompileSummaryKind.Directive,
-            type: this.type,
-            isComponent: this.isComponent,
-            selector: this.selector,
-            exportAs: this.exportAs,
-            inputs: this.inputs,
-            outputs: this.outputs,
-            hostListeners: this.hostListeners,
-            hostProperties: this.hostProperties,
-            hostAttributes: this.hostAttributes,
-            providers: this.providers,
-            viewProviders: this.viewProviders,
-            queries: this.queries,
-            guards: this.guards,
-            viewQueries: this.viewQueries,
-            entryComponents: this.entryComponents,
-            changeDetection: this.changeDetection,
-            template: this.template && this.template.toSummary(),
-            componentViewType: this.componentViewType,
-            rendererType: this.rendererType,
-            componentFactory: this.componentFactory
-        };
-    }
-}
-class CompilePipeMetadata {
-    constructor({ type, name, pure }) {
-        this.type = type;
-        this.name = name;
-        this.pure = !!pure;
-    }
-    toSummary() {
-        return {
-            summaryKind: CompileSummaryKind.Pipe,
-            type: this.type,
-            name: this.name,
-            pure: this.pure
-        };
-    }
-}
-class CompileShallowModuleMetadata {
-}
-/**
- * Metadata regarding compilation of a module.
- */
-class CompileNgModuleMetadata {
-    constructor({ type, providers, declaredDirectives, exportedDirectives, declaredPipes, exportedPipes, entryComponents, bootstrapComponents, importedModules, exportedModules, schemas, transitiveModule, id }) {
-        this.type = type || null;
-        this.declaredDirectives = _normalizeArray(declaredDirectives);
-        this.exportedDirectives = _normalizeArray(exportedDirectives);
-        this.declaredPipes = _normalizeArray(declaredPipes);
-        this.exportedPipes = _normalizeArray(exportedPipes);
-        this.providers = _normalizeArray(providers);
-        this.entryComponents = _normalizeArray(entryComponents);
-        this.bootstrapComponents = _normalizeArray(bootstrapComponents);
-        this.importedModules = _normalizeArray(importedModules);
-        this.exportedModules = _normalizeArray(exportedModules);
-        this.schemas = _normalizeArray(schemas);
-        this.id = id || null;
-        this.transitiveModule = transitiveModule || null;
-    }
-    toSummary() {
-        const module = this.transitiveModule;
-        return {
-            summaryKind: CompileSummaryKind.NgModule,
-            type: this.type,
-            entryComponents: module.entryComponents,
-            providers: module.providers,
-            modules: module.modules,
-            exportedDirectives: module.exportedDirectives,
-            exportedPipes: module.exportedPipes
-        };
-    }
-}
-class TransitiveCompileNgModuleMetadata {
-    constructor() {
-        this.directivesSet = new Set();
-        this.directives = [];
-        this.exportedDirectivesSet = new Set();
-        this.exportedDirectives = [];
-        this.pipesSet = new Set();
-        this.pipes = [];
-        this.exportedPipesSet = new Set();
-        this.exportedPipes = [];
-        this.modulesSet = new Set();
-        this.modules = [];
-        this.entryComponentsSet = new Set();
-        this.entryComponents = [];
-        this.providers = [];
-    }
-    addProvider(provider, module) {
-        this.providers.push({ provider: provider, module: module });
-    }
-    addDirective(id) {
-        if (!this.directivesSet.has(id.reference)) {
-            this.directivesSet.add(id.reference);
-            this.directives.push(id);
-        }
-    }
-    addExportedDirective(id) {
-        if (!this.exportedDirectivesSet.has(id.reference)) {
-            this.exportedDirectivesSet.add(id.reference);
-            this.exportedDirectives.push(id);
-        }
-    }
-    addPipe(id) {
-        if (!this.pipesSet.has(id.reference)) {
-            this.pipesSet.add(id.reference);
-            this.pipes.push(id);
-        }
-    }
-    addExportedPipe(id) {
-        if (!this.exportedPipesSet.has(id.reference)) {
-            this.exportedPipesSet.add(id.reference);
-            this.exportedPipes.push(id);
-        }
-    }
-    addModule(id) {
-        if (!this.modulesSet.has(id.reference)) {
-            this.modulesSet.add(id.reference);
-            this.modules.push(id);
-        }
-    }
-    addEntryComponent(ec) {
-        if (!this.entryComponentsSet.has(ec.componentType)) {
-            this.entryComponentsSet.add(ec.componentType);
-            this.entryComponents.push(ec);
-        }
-    }
-}
-function _normalizeArray(obj) {
-    return obj || [];
-}
-class ProviderMeta {
-    constructor(token, { useClass, useValue, useExisting, useFactory, deps, multi }) {
-        this.token = token;
-        this.useClass = useClass || null;
-        this.useValue = useValue;
-        this.useExisting = useExisting;
-        this.useFactory = useFactory || null;
-        this.dependencies = deps || null;
-        this.multi = !!multi;
-    }
-}
-function flatten(list) {
-    return list.reduce((flat, item) => {
-        const flatItem = Array.isArray(item) ? flatten(item) : item;
-        return flat.concat(flatItem);
-    }, []);
-}
-function jitSourceUrl(url) {
-    // Note: We need 3 "/" so that ng shows up as a separate domain
-    // in the chrome dev tools.
-    return url.replace(/(\w+:\/\/[\w:-]+)?(\/+)?/, 'ng:///');
-}
-function templateSourceUrl(ngModuleType, compMeta, templateMeta) {
-    let url;
-    if (templateMeta.isInline) {
-        if (compMeta.type.reference instanceof StaticSymbol) {
-            // Note: a .ts file might contain multiple components with inline templates,
-            // so we need to give them unique urls, as these will be used for sourcemaps.
-            url = `${compMeta.type.reference.filePath}.${compMeta.type.reference.name}.html`;
-        }
-        else {
-            url = `${identifierName(ngModuleType)}/${identifierName(compMeta.type)}.html`;
-        }
-    }
-    else {
-        url = templateMeta.templateUrl;
-    }
-    return compMeta.type.reference instanceof StaticSymbol ? url : jitSourceUrl(url);
-}
-function sharedStylesheetJitUrl(meta, id) {
-    const pathParts = meta.moduleUrl.split(/\/\\/g);
-    const baseName = pathParts[pathParts.length - 1];
-    return jitSourceUrl(`css/${id}${baseName}.ngstyle.js`);
-}
-function ngModuleJitUrl(moduleMeta) {
-    return jitSourceUrl(`${identifierName(moduleMeta.type)}/module.ngfactory.js`);
-}
-function templateJitUrl(ngModuleType, compMeta) {
-    return jitSourceUrl(`${identifierName(ngModuleType)}/${identifierName(compMeta.type)}.ngfactory.js`);
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-const CORE$1 = '@angular/core';
-class Identifiers$1 {
-}
-/* Methods */
-Identifiers$1.NEW_METHOD = 'factory';
-Identifiers$1.TRANSFORM_METHOD = 'transform';
-Identifiers$1.PATCH_DEPS = 'patchedDeps';
-Identifiers$1.core = { name: null, moduleName: CORE$1 };
-/* Instructions */
-Identifiers$1.namespaceHTML = { name: 'ɵɵnamespaceHTML', moduleName: CORE$1 };
-Identifiers$1.namespaceMathML = { name: 'ɵɵnamespaceMathML', moduleName: CORE$1 };
-Identifiers$1.namespaceSVG = { name: 'ɵɵnamespaceSVG', moduleName: CORE$1 };
-Identifiers$1.element = { name: 'ɵɵelement', moduleName: CORE$1 };
-Identifiers$1.elementStart = { name: 'ɵɵelementStart', moduleName: CORE$1 };
-Identifiers$1.elementEnd = { name: 'ɵɵelementEnd', moduleName: CORE$1 };
-Identifiers$1.advance = { name: 'ɵɵadvance', moduleName: CORE$1 };
-Identifiers$1.syntheticHostProperty = { name: 'ɵɵsyntheticHostProperty', moduleName: CORE$1 };
-Identifiers$1.syntheticHostListener = { name: 'ɵɵsyntheticHostListener', moduleName: CORE$1 };
-Identifiers$1.attribute = { name: 'ɵɵattribute', moduleName: CORE$1 };
-Identifiers$1.attributeInterpolate1 = { name: 'ɵɵattributeInterpolate1', moduleName: CORE$1 };
-Identifiers$1.attributeInterpolate2 = { name: 'ɵɵattributeInterpolate2', moduleName: CORE$1 };
-Identifiers$1.attributeInterpolate3 = { name: 'ɵɵattributeInterpolate3', moduleName: CORE$1 };
-Identifiers$1.attributeInterpolate4 = { name: 'ɵɵattributeInterpolate4', moduleName: CORE$1 };
-Identifiers$1.attributeInterpolate5 = { name: 'ɵɵattributeInterpolate5', moduleName: CORE$1 };
-Identifiers$1.attributeInterpolate6 = { name: 'ɵɵattributeInterpolate6', moduleName: CORE$1 };
-Identifiers$1.attributeInterpolate7 = { name: 'ɵɵattributeInterpolate7', moduleName: CORE$1 };
-Identifiers$1.attributeInterpolate8 = { name: 'ɵɵattributeInterpolate8', moduleName: CORE$1 };
-Identifiers$1.attributeInterpolateV = { name: 'ɵɵattributeInterpolateV', moduleName: CORE$1 };
-Identifiers$1.classProp = { name: 'ɵɵclassProp', moduleName: CORE$1 };
-Identifiers$1.elementContainerStart = { name: 'ɵɵelementContainerStart', moduleName: CORE$1 };
-Identifiers$1.elementContainerEnd = { name: 'ɵɵelementContainerEnd', moduleName: CORE$1 };
-Identifiers$1.elementContainer = { name: 'ɵɵelementContainer', moduleName: CORE$1 };
-Identifiers$1.styleMap = { name: 'ɵɵstyleMap', moduleName: CORE$1 };
-Identifiers$1.styleMapInterpolate1 = { name: 'ɵɵstyleMapInterpolate1', moduleName: CORE$1 };
-Identifiers$1.styleMapInterpolate2 = { name: 'ɵɵstyleMapInterpolate2', moduleName: CORE$1 };
-Identifiers$1.styleMapInterpolate3 = { name: 'ɵɵstyleMapInterpolate3', moduleName: CORE$1 };
-Identifiers$1.styleMapInterpolate4 = { name: 'ɵɵstyleMapInterpolate4', moduleName: CORE$1 };
-Identifiers$1.styleMapInterpolate5 = { name: 'ɵɵstyleMapInterpolate5', moduleName: CORE$1 };
-Identifiers$1.styleMapInterpolate6 = { name: 'ɵɵstyleMapInterpolate6', moduleName: CORE$1 };
-Identifiers$1.styleMapInterpolate7 = { name: 'ɵɵstyleMapInterpolate7', moduleName: CORE$1 };
-Identifiers$1.styleMapInterpolate8 = { name: 'ɵɵstyleMapInterpolate8', moduleName: CORE$1 };
-Identifiers$1.styleMapInterpolateV = { name: 'ɵɵstyleMapInterpolateV', moduleName: CORE$1 };
-Identifiers$1.classMap = { name: 'ɵɵclassMap', moduleName: CORE$1 };
-Identifiers$1.classMapInterpolate1 = { name: 'ɵɵclassMapInterpolate1', moduleName: CORE$1 };
-Identifiers$1.classMapInterpolate2 = { name: 'ɵɵclassMapInterpolate2', moduleName: CORE$1 };
-Identifiers$1.classMapInterpolate3 = { name: 'ɵɵclassMapInterpolate3', moduleName: CORE$1 };
-Identifiers$1.classMapInterpolate4 = { name: 'ɵɵclassMapInterpolate4', moduleName: CORE$1 };
-Identifiers$1.classMapInterpolate5 = { name: 'ɵɵclassMapInterpolate5', moduleName: CORE$1 };
-Identifiers$1.classMapInterpolate6 = { name: 'ɵɵclassMapInterpolate6', moduleName: CORE$1 };
-Identifiers$1.classMapInterpolate7 = { name: 'ɵɵclassMapInterpolate7', moduleName: CORE$1 };
-Identifiers$1.classMapInterpolate8 = { name: 'ɵɵclassMapInterpolate8', moduleName: CORE$1 };
-Identifiers$1.classMapInterpolateV = { name: 'ɵɵclassMapInterpolateV', moduleName: CORE$1 };
-Identifiers$1.styleProp = { name: 'ɵɵstyleProp', moduleName: CORE$1 };
-Identifiers$1.stylePropInterpolate1 = { name: 'ɵɵstylePropInterpolate1', moduleName: CORE$1 };
-Identifiers$1.stylePropInterpolate2 = { name: 'ɵɵstylePropInterpolate2', moduleName: CORE$1 };
-Identifiers$1.stylePropInterpolate3 = { name: 'ɵɵstylePropInterpolate3', moduleName: CORE$1 };
-Identifiers$1.stylePropInterpolate4 = { name: 'ɵɵstylePropInterpolate4', moduleName: CORE$1 };
-Identifiers$1.stylePropInterpolate5 = { name: 'ɵɵstylePropInterpolate5', moduleName: CORE$1 };
-Identifiers$1.stylePropInterpolate6 = { name: 'ɵɵstylePropInterpolate6', moduleName: CORE$1 };
-Identifiers$1.stylePropInterpolate7 = { name: 'ɵɵstylePropInterpolate7', moduleName: CORE$1 };
-Identifiers$1.stylePropInterpolate8 = { name: 'ɵɵstylePropInterpolate8', moduleName: CORE$1 };
-Identifiers$1.stylePropInterpolateV = { name: 'ɵɵstylePropInterpolateV', moduleName: CORE$1 };
-Identifiers$1.nextContext = { name: 'ɵɵnextContext', moduleName: CORE$1 };
-Identifiers$1.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE$1 };
-Identifiers$1.text = { name: 'ɵɵtext', moduleName: CORE$1 };
-Identifiers$1.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE$1 };
-Identifiers$1.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE$1 };
-Identifiers$1.getCurrentView = { name: 'ɵɵgetCurrentView', moduleName: CORE$1 };
-Identifiers$1.textInterpolate = { name: 'ɵɵtextInterpolate', moduleName: CORE$1 };
-Identifiers$1.textInterpolate1 = { name: 'ɵɵtextInterpolate1', moduleName: CORE$1 };
-Identifiers$1.textInterpolate2 = { name: 'ɵɵtextInterpolate2', moduleName: CORE$1 };
-Identifiers$1.textInterpolate3 = { name: 'ɵɵtextInterpolate3', moduleName: CORE$1 };
-Identifiers$1.textInterpolate4 = { name: 'ɵɵtextInterpolate4', moduleName: CORE$1 };
-Identifiers$1.textInterpolate5 = { name: 'ɵɵtextInterpolate5', moduleName: CORE$1 };
-Identifiers$1.textInterpolate6 = { name: 'ɵɵtextInterpolate6', moduleName: CORE$1 };
-Identifiers$1.textInterpolate7 = { name: 'ɵɵtextInterpolate7', moduleName: CORE$1 };
-Identifiers$1.textInterpolate8 = { name: 'ɵɵtextInterpolate8', moduleName: CORE$1 };
-Identifiers$1.textInterpolateV = { name: 'ɵɵtextInterpolateV', moduleName: CORE$1 };
-Identifiers$1.restoreView = { name: 'ɵɵrestoreView', moduleName: CORE$1 };
-Identifiers$1.pureFunction0 = { name: 'ɵɵpureFunction0', moduleName: CORE$1 };
-Identifiers$1.pureFunction1 = { name: 'ɵɵpureFunction1', moduleName: CORE$1 };
-Identifiers$1.pureFunction2 = { name: 'ɵɵpureFunction2', moduleName: CORE$1 };
-Identifiers$1.pureFunction3 = { name: 'ɵɵpureFunction3', moduleName: CORE$1 };
-Identifiers$1.pureFunction4 = { name: 'ɵɵpureFunction4', moduleName: CORE$1 };
-Identifiers$1.pureFunction5 = { name: 'ɵɵpureFunction5', moduleName: CORE$1 };
-Identifiers$1.pureFunction6 = { name: 'ɵɵpureFunction6', moduleName: CORE$1 };
-Identifiers$1.pureFunction7 = { name: 'ɵɵpureFunction7', moduleName: CORE$1 };
-Identifiers$1.pureFunction8 = { name: 'ɵɵpureFunction8', moduleName: CORE$1 };
-Identifiers$1.pureFunctionV = { name: 'ɵɵpureFunctionV', moduleName: CORE$1 };
-Identifiers$1.pipeBind1 = { name: 'ɵɵpipeBind1', moduleName: CORE$1 };
-Identifiers$1.pipeBind2 = { name: 'ɵɵpipeBind2', moduleName: CORE$1 };
-Identifiers$1.pipeBind3 = { name: 'ɵɵpipeBind3', moduleName: CORE$1 };
-Identifiers$1.pipeBind4 = { name: 'ɵɵpipeBind4', moduleName: CORE$1 };
-Identifiers$1.pipeBindV = { name: 'ɵɵpipeBindV', moduleName: CORE$1 };
-Identifiers$1.hostProperty = { name: 'ɵɵhostProperty', moduleName: CORE$1 };
-Identifiers$1.property = { name: 'ɵɵproperty', moduleName: CORE$1 };
-Identifiers$1.propertyInterpolate = { name: 'ɵɵpropertyInterpolate', moduleName: CORE$1 };
-Identifiers$1.propertyInterpolate1 = { name: 'ɵɵpropertyInterpolate1', moduleName: CORE$1 };
-Identifiers$1.propertyInterpolate2 = { name: 'ɵɵpropertyInterpolate2', moduleName: CORE$1 };
-Identifiers$1.propertyInterpolate3 = { name: 'ɵɵpropertyInterpolate3', moduleName: CORE$1 };
-Identifiers$1.propertyInterpolate4 = { name: 'ɵɵpropertyInterpolate4', moduleName: CORE$1 };
-Identifiers$1.propertyInterpolate5 = { name: 'ɵɵpropertyInterpolate5', moduleName: CORE$1 };
-Identifiers$1.propertyInterpolate6 = { name: 'ɵɵpropertyInterpolate6', moduleName: CORE$1 };
-Identifiers$1.propertyInterpolate7 = { name: 'ɵɵpropertyInterpolate7', moduleName: CORE$1 };
-Identifiers$1.propertyInterpolate8 = { name: 'ɵɵpropertyInterpolate8', moduleName: CORE$1 };
-Identifiers$1.propertyInterpolateV = { name: 'ɵɵpropertyInterpolateV', moduleName: CORE$1 };
-Identifiers$1.i18n = { name: 'ɵɵi18n', moduleName: CORE$1 };
-Identifiers$1.i18nAttributes = { name: 'ɵɵi18nAttributes', moduleName: CORE$1 };
-Identifiers$1.i18nExp = { name: 'ɵɵi18nExp', moduleName: CORE$1 };
-Identifiers$1.i18nStart = { name: 'ɵɵi18nStart', moduleName: CORE$1 };
-Identifiers$1.i18nEnd = { name: 'ɵɵi18nEnd', moduleName: CORE$1 };
-Identifiers$1.i18nApply = { name: 'ɵɵi18nApply', moduleName: CORE$1 };
-Identifiers$1.i18nPostprocess = { name: 'ɵɵi18nPostprocess', moduleName: CORE$1 };
-Identifiers$1.pipe = { name: 'ɵɵpipe', moduleName: CORE$1 };
-Identifiers$1.projection = { name: 'ɵɵprojection', moduleName: CORE$1 };
-Identifiers$1.projectionDef = { name: 'ɵɵprojectionDef', moduleName: CORE$1 };
-Identifiers$1.reference = { name: 'ɵɵreference', moduleName: CORE$1 };
-Identifiers$1.inject = { name: 'ɵɵinject', moduleName: CORE$1 };
-Identifiers$1.injectAttribute = { name: 'ɵɵinjectAttribute', moduleName: CORE$1 };
-Identifiers$1.injectPipeChangeDetectorRef = { name: 'ɵɵinjectPipeChangeDetectorRef', moduleName: CORE$1 };
-Identifiers$1.directiveInject = { name: 'ɵɵdirectiveInject', moduleName: CORE$1 };
-Identifiers$1.invalidFactory = { name: 'ɵɵinvalidFactory', moduleName: CORE$1 };
-Identifiers$1.invalidFactoryDep = { name: 'ɵɵinvalidFactoryDep', moduleName: CORE$1 };
-Identifiers$1.templateRefExtractor = { name: 'ɵɵtemplateRefExtractor', moduleName: CORE$1 };
-Identifiers$1.forwardRef = { name: 'forwardRef', moduleName: CORE$1 };
-Identifiers$1.resolveForwardRef = { name: 'resolveForwardRef', moduleName: CORE$1 };
-Identifiers$1.resolveWindow = { name: 'ɵɵresolveWindow', moduleName: CORE$1 };
-Identifiers$1.resolveDocument = { name: 'ɵɵresolveDocument', moduleName: CORE$1 };
-Identifiers$1.resolveBody = { name: 'ɵɵresolveBody', moduleName: CORE$1 };
-Identifiers$1.defineComponent = { name: 'ɵɵdefineComponent', moduleName: CORE$1 };
-Identifiers$1.declareComponent = { name: 'ɵɵngDeclareComponent', moduleName: CORE$1 };
-Identifiers$1.setComponentScope = { name: 'ɵɵsetComponentScope', moduleName: CORE$1 };
-Identifiers$1.ChangeDetectionStrategy = {
-    name: 'ChangeDetectionStrategy',
-    moduleName: CORE$1,
-};
-Identifiers$1.ViewEncapsulation = {
-    name: 'ViewEncapsulation',
-    moduleName: CORE$1,
-};
-Identifiers$1.ComponentDeclaration = {
-    name: 'ɵɵComponentDeclaration',
-    moduleName: CORE$1,
-};
-Identifiers$1.FactoryDeclaration = {
-    name: 'ɵɵFactoryDeclaration',
-    moduleName: CORE$1,
-};
-Identifiers$1.defineDirective = { name: 'ɵɵdefineDirective', moduleName: CORE$1 };
-Identifiers$1.declareDirective = { name: 'ɵɵngDeclareDirective', moduleName: CORE$1 };
-Identifiers$1.DirectiveDeclaration = {
-    name: 'ɵɵDirectiveDeclaration',
-    moduleName: CORE$1,
-};
-Identifiers$1.InjectorDef = { name: 'ɵɵInjectorDef', moduleName: CORE$1 };
-Identifiers$1.InjectorDeclaration = { name: 'ɵɵInjectorDeclaration', moduleName: CORE$1 };
-Identifiers$1.defineInjector = { name: 'ɵɵdefineInjector', moduleName: CORE$1 };
-Identifiers$1.declareInjector = { name: 'ɵɵngDeclareInjector', moduleName: CORE$1 };
-Identifiers$1.NgModuleDeclaration = {
-    name: 'ɵɵNgModuleDeclaration',
-    moduleName: CORE$1,
-};
-Identifiers$1.ModuleWithProviders = {
-    name: 'ModuleWithProviders',
-    moduleName: CORE$1,
-};
-Identifiers$1.defineNgModule = { name: 'ɵɵdefineNgModule', moduleName: CORE$1 };
-Identifiers$1.declareNgModule = { name: 'ɵɵngDeclareNgModule', moduleName: CORE$1 };
-Identifiers$1.setNgModuleScope = { name: 'ɵɵsetNgModuleScope', moduleName: CORE$1 };
-Identifiers$1.PipeDeclaration = { name: 'ɵɵPipeDeclaration', moduleName: CORE$1 };
-Identifiers$1.definePipe = { name: 'ɵɵdefinePipe', moduleName: CORE$1 };
-Identifiers$1.declarePipe = { name: 'ɵɵngDeclarePipe', moduleName: CORE$1 };
-Identifiers$1.queryRefresh = { name: 'ɵɵqueryRefresh', moduleName: CORE$1 };
-Identifiers$1.viewQuery = { name: 'ɵɵviewQuery', moduleName: CORE$1 };
-Identifiers$1.loadQuery = { name: 'ɵɵloadQuery', moduleName: CORE$1 };
-Identifiers$1.contentQuery = { name: 'ɵɵcontentQuery', moduleName: CORE$1 };
-Identifiers$1.NgOnChangesFeature = { name: 'ɵɵNgOnChangesFeature', moduleName: CORE$1 };
-Identifiers$1.InheritDefinitionFeature = { name: 'ɵɵInheritDefinitionFeature', moduleName: CORE$1 };
-Identifiers$1.CopyDefinitionFeature = { name: 'ɵɵCopyDefinitionFeature', moduleName: CORE$1 };
-Identifiers$1.ProvidersFeature = { name: 'ɵɵProvidersFeature', moduleName: CORE$1 };
-Identifiers$1.listener = { name: 'ɵɵlistener', moduleName: CORE$1 };
-Identifiers$1.getInheritedFactory = {
-    name: 'ɵɵgetInheritedFactory',
-    moduleName: CORE$1,
-};
-// sanitization-related functions
-Identifiers$1.sanitizeHtml = { name: 'ɵɵsanitizeHtml', moduleName: CORE$1 };
-Identifiers$1.sanitizeStyle = { name: 'ɵɵsanitizeStyle', moduleName: CORE$1 };
-Identifiers$1.sanitizeResourceUrl = { name: 'ɵɵsanitizeResourceUrl', moduleName: CORE$1 };
-Identifiers$1.sanitizeScript = { name: 'ɵɵsanitizeScript', moduleName: CORE$1 };
-Identifiers$1.sanitizeUrl = { name: 'ɵɵsanitizeUrl', moduleName: CORE$1 };
-Identifiers$1.sanitizeUrlOrResourceUrl = { name: 'ɵɵsanitizeUrlOrResourceUrl', moduleName: CORE$1 };
-Identifiers$1.trustConstantHtml = { name: 'ɵɵtrustConstantHtml', moduleName: CORE$1 };
-Identifiers$1.trustConstantResourceUrl = { name: 'ɵɵtrustConstantResourceUrl', moduleName: CORE$1 };
 
 /**
  * @license
@@ -4466,6 +4033,222 @@ function refsToArray(refs, shouldForwardDeclare) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+var R3FactoryDelegateType;
+(function (R3FactoryDelegateType) {
+    R3FactoryDelegateType[R3FactoryDelegateType["Class"] = 0] = "Class";
+    R3FactoryDelegateType[R3FactoryDelegateType["Function"] = 1] = "Function";
+})(R3FactoryDelegateType || (R3FactoryDelegateType = {}));
+var FactoryTarget;
+(function (FactoryTarget) {
+    FactoryTarget[FactoryTarget["Directive"] = 0] = "Directive";
+    FactoryTarget[FactoryTarget["Component"] = 1] = "Component";
+    FactoryTarget[FactoryTarget["Injectable"] = 2] = "Injectable";
+    FactoryTarget[FactoryTarget["Pipe"] = 3] = "Pipe";
+    FactoryTarget[FactoryTarget["NgModule"] = 4] = "NgModule";
+})(FactoryTarget || (FactoryTarget = {}));
+/**
+ * Construct a factory function expression for the given `R3FactoryMetadata`.
+ */
+function compileFactoryFunction(meta) {
+    const t = variable('t');
+    let baseFactoryVar = null;
+    // The type to instantiate via constructor invocation. If there is no delegated factory, meaning
+    // this type is always created by constructor invocation, then this is the type-to-create
+    // parameter provided by the user (t) if specified, or the current type if not. If there is a
+    // delegated factory (which is used to create the current type) then this is only the type-to-
+    // create parameter (t).
+    const typeForCtor = !isDelegatedFactoryMetadata(meta) ?
+        new BinaryOperatorExpr(BinaryOperator.Or, t, meta.internalType) :
+        t;
+    let ctorExpr = null;
+    if (meta.deps !== null) {
+        // There is a constructor (either explicitly or implicitly defined).
+        if (meta.deps !== 'invalid') {
+            ctorExpr = new InstantiateExpr(typeForCtor, injectDependencies(meta.deps, meta.target));
+        }
+    }
+    else {
+        // There is no constructor, use the base class' factory to construct typeForCtor.
+        baseFactoryVar = variable(`ɵ${meta.name}_BaseFactory`);
+        ctorExpr = baseFactoryVar.callFn([typeForCtor]);
+    }
+    const body = [];
+    let retExpr = null;
+    function makeConditionalFactory(nonCtorExpr) {
+        const r = variable('r');
+        body.push(r.set(NULL_EXPR).toDeclStmt());
+        const ctorStmt = ctorExpr !== null ? r.set(ctorExpr).toStmt() :
+            importExpr(Identifiers$1.invalidFactory).callFn([]).toStmt();
+        body.push(ifStmt(t, [ctorStmt], [r.set(nonCtorExpr).toStmt()]));
+        return r;
+    }
+    if (isDelegatedFactoryMetadata(meta)) {
+        // This type is created with a delegated factory. If a type parameter is not specified, call
+        // the factory instead.
+        const delegateArgs = injectDependencies(meta.delegateDeps, meta.target);
+        // Either call `new delegate(...)` or `delegate(...)` depending on meta.delegateType.
+        const factoryExpr = new (meta.delegateType === R3FactoryDelegateType.Class ?
+            InstantiateExpr :
+            InvokeFunctionExpr)(meta.delegate, delegateArgs);
+        retExpr = makeConditionalFactory(factoryExpr);
+    }
+    else if (isExpressionFactoryMetadata(meta)) {
+        // TODO(alxhub): decide whether to lower the value here or in the caller
+        retExpr = makeConditionalFactory(meta.expression);
+    }
+    else {
+        retExpr = ctorExpr;
+    }
+    if (retExpr === null) {
+        // The expression cannot be formed so render an `ɵɵinvalidFactory()` call.
+        body.push(importExpr(Identifiers$1.invalidFactory).callFn([]).toStmt());
+    }
+    else if (baseFactoryVar !== null) {
+        // This factory uses a base factory, so call `ɵɵgetInheritedFactory()` to compute it.
+        const getInheritedFactoryCall = importExpr(Identifiers$1.getInheritedFactory).callFn([meta.internalType]);
+        // Memoize the base factoryFn: `baseFactory || (baseFactory = ɵɵgetInheritedFactory(...))`
+        const baseFactory = new BinaryOperatorExpr(BinaryOperator.Or, baseFactoryVar, baseFactoryVar.set(getInheritedFactoryCall));
+        body.push(new ReturnStatement(baseFactory.callFn([typeForCtor])));
+    }
+    else {
+        // This is straightforward factory, just return it.
+        body.push(new ReturnStatement(retExpr));
+    }
+    let factoryFn = fn([new FnParam('t', DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, `${meta.name}_Factory`);
+    if (baseFactoryVar !== null) {
+        // There is a base factory variable so wrap its declaration along with the factory function into
+        // an IIFE.
+        factoryFn = fn([], [
+            new DeclareVarStmt(baseFactoryVar.name),
+            new ReturnStatement(factoryFn)
+        ]).callFn([], /* sourceSpan */ undefined, /* pure */ true);
+    }
+    return {
+        expression: factoryFn,
+        statements: [],
+        type: createFactoryType(meta),
+    };
+}
+function createFactoryType(meta) {
+    const ctorDepsType = meta.deps !== null && meta.deps !== 'invalid' ? createCtorDepsType(meta.deps) : NONE_TYPE;
+    return expressionType(importExpr(Identifiers$1.FactoryDeclaration, [typeWithParameters(meta.type.type, meta.typeArgumentCount), ctorDepsType]));
+}
+function injectDependencies(deps, target) {
+    return deps.map((dep, index) => compileInjectDependency(dep, target, index));
+}
+function compileInjectDependency(dep, target, index) {
+    // Interpret the dependency according to its resolved type.
+    if (dep.token === null) {
+        return importExpr(Identifiers$1.invalidFactoryDep).callFn([literal(index)]);
+    }
+    else if (dep.attributeNameType === null) {
+        // Build up the injection flags according to the metadata.
+        const flags = 0 /* Default */ | (dep.self ? 2 /* Self */ : 0) |
+            (dep.skipSelf ? 4 /* SkipSelf */ : 0) | (dep.host ? 1 /* Host */ : 0) |
+            (dep.optional ? 8 /* Optional */ : 0) |
+            (target === FactoryTarget.Pipe ? 16 /* ForPipe */ : 0);
+        // If this dependency is optional or otherwise has non-default flags, then additional
+        // parameters describing how to inject the dependency must be passed to the inject function
+        // that's being used.
+        let flagsParam = (flags !== 0 /* Default */ || dep.optional) ? literal(flags) : null;
+        // Build up the arguments to the injectFn call.
+        const injectArgs = [dep.token];
+        if (flagsParam) {
+            injectArgs.push(flagsParam);
+        }
+        const injectFn = getInjectFn(target);
+        return importExpr(injectFn).callFn(injectArgs);
+    }
+    else {
+        // The `dep.attributeTypeName` value is defined, which indicates that this is an `@Attribute()`
+        // type dependency. For the generated JS we still want to use the `dep.token` value in case the
+        // name given for the attribute is not a string literal. For example given `@Attribute(foo())`,
+        // we want to generate `ɵɵinjectAttribute(foo())`.
+        //
+        // The `dep.attributeTypeName` is only actually used (in `createCtorDepType()`) to generate
+        // typings.
+        return importExpr(Identifiers$1.injectAttribute).callFn([dep.token]);
+    }
+}
+function createCtorDepsType(deps) {
+    let hasTypes = false;
+    const attributeTypes = deps.map(dep => {
+        const type = createCtorDepType(dep);
+        if (type !== null) {
+            hasTypes = true;
+            return type;
+        }
+        else {
+            return literal(null);
+        }
+    });
+    if (hasTypes) {
+        return expressionType(literalArr(attributeTypes));
+    }
+    else {
+        return NONE_TYPE;
+    }
+}
+function createCtorDepType(dep) {
+    const entries = [];
+    if (dep.attributeNameType !== null) {
+        entries.push({ key: 'attribute', value: dep.attributeNameType, quoted: false });
+    }
+    if (dep.optional) {
+        entries.push({ key: 'optional', value: literal(true), quoted: false });
+    }
+    if (dep.host) {
+        entries.push({ key: 'host', value: literal(true), quoted: false });
+    }
+    if (dep.self) {
+        entries.push({ key: 'self', value: literal(true), quoted: false });
+    }
+    if (dep.skipSelf) {
+        entries.push({ key: 'skipSelf', value: literal(true), quoted: false });
+    }
+    return entries.length > 0 ? literalMap(entries) : null;
+}
+function isDelegatedFactoryMetadata(meta) {
+    return meta.delegateType !== undefined;
+}
+function isExpressionFactoryMetadata(meta) {
+    return meta.expression !== undefined;
+}
+function getInjectFn(target) {
+    switch (target) {
+        case FactoryTarget.Component:
+        case FactoryTarget.Directive:
+        case FactoryTarget.Pipe:
+            return Identifiers$1.directiveInject;
+        case FactoryTarget.NgModule:
+        case FactoryTarget.Injectable:
+        default:
+            return Identifiers$1.inject;
+    }
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * This is an R3 `Node`-like wrapper for a raw `html.Comment` node. We do not currently
+ * require the implementation of a visitor for Comments as they are only collected at
+ * the top-level of the R3 AST, and only if `Render3ParseOptions['collectCommentNodes']`
+ * is true.
+ */
+class Comment {
+    constructor(value, sourceSpan) {
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+    }
+    visit(_visitor) {
+        throw new Error('visit() not implemented for Comment');
+    }
+}
 class Text {
     constructor(value, sourceSpan) {
         this.value = value;
@@ -6087,252 +5870,6 @@ function getInterpolationArgsLength(interpolation) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var R3FactoryDelegateType;
-(function (R3FactoryDelegateType) {
-    R3FactoryDelegateType[R3FactoryDelegateType["Class"] = 0] = "Class";
-    R3FactoryDelegateType[R3FactoryDelegateType["Function"] = 1] = "Function";
-})(R3FactoryDelegateType || (R3FactoryDelegateType = {}));
-var R3FactoryTarget;
-(function (R3FactoryTarget) {
-    R3FactoryTarget[R3FactoryTarget["Directive"] = 0] = "Directive";
-    R3FactoryTarget[R3FactoryTarget["Component"] = 1] = "Component";
-    R3FactoryTarget[R3FactoryTarget["Injectable"] = 2] = "Injectable";
-    R3FactoryTarget[R3FactoryTarget["Pipe"] = 3] = "Pipe";
-    R3FactoryTarget[R3FactoryTarget["NgModule"] = 4] = "NgModule";
-})(R3FactoryTarget || (R3FactoryTarget = {}));
-/**
- * Resolved type of a dependency.
- *
- * Occasionally, dependencies will have special significance which is known statically. In that
- * case the `R3ResolvedDependencyType` informs the factory generator that a particular dependency
- * should be generated specially (usually by calling a special injection function instead of the
- * standard one).
- */
-var R3ResolvedDependencyType;
-(function (R3ResolvedDependencyType) {
-    /**
-     * A normal token dependency.
-     */
-    R3ResolvedDependencyType[R3ResolvedDependencyType["Token"] = 0] = "Token";
-    /**
-     * The dependency is for an attribute.
-     *
-     * The token expression is a string representing the attribute name.
-     */
-    R3ResolvedDependencyType[R3ResolvedDependencyType["Attribute"] = 1] = "Attribute";
-    /**
-     * Injecting the `ChangeDetectorRef` token. Needs special handling when injected into a pipe.
-     */
-    R3ResolvedDependencyType[R3ResolvedDependencyType["ChangeDetectorRef"] = 2] = "ChangeDetectorRef";
-    /**
-     * An invalid dependency (no token could be determined). An error should be thrown at runtime.
-     */
-    R3ResolvedDependencyType[R3ResolvedDependencyType["Invalid"] = 3] = "Invalid";
-})(R3ResolvedDependencyType || (R3ResolvedDependencyType = {}));
-/**
- * Construct a factory function expression for the given `R3FactoryMetadata`.
- */
-function compileFactoryFunction(meta) {
-    const t = variable('t');
-    const statements = [];
-    let ctorDepsType = NONE_TYPE;
-    // The type to instantiate via constructor invocation. If there is no delegated factory, meaning
-    // this type is always created by constructor invocation, then this is the type-to-create
-    // parameter provided by the user (t) if specified, or the current type if not. If there is a
-    // delegated factory (which is used to create the current type) then this is only the type-to-
-    // create parameter (t).
-    const typeForCtor = !isDelegatedMetadata(meta) ?
-        new BinaryOperatorExpr(BinaryOperator.Or, t, meta.internalType) :
-        t;
-    let ctorExpr = null;
-    if (meta.deps !== null) {
-        // There is a constructor (either explicitly or implicitly defined).
-        if (meta.deps !== 'invalid') {
-            ctorExpr = new InstantiateExpr(typeForCtor, injectDependencies(meta.deps, meta.injectFn, meta.target === R3FactoryTarget.Pipe));
-            ctorDepsType = createCtorDepsType(meta.deps);
-        }
-    }
-    else {
-        const baseFactory = variable(`ɵ${meta.name}_BaseFactory`);
-        const getInheritedFactory = importExpr(Identifiers$1.getInheritedFactory);
-        const baseFactoryStmt = baseFactory
-            .set(getInheritedFactory.callFn([meta.internalType], /* sourceSpan */ undefined, /* pure */ true))
-            .toDeclStmt(INFERRED_TYPE, [StmtModifier.Exported, StmtModifier.Final]);
-        statements.push(baseFactoryStmt);
-        // There is no constructor, use the base class' factory to construct typeForCtor.
-        ctorExpr = baseFactory.callFn([typeForCtor]);
-    }
-    const ctorExprFinal = ctorExpr;
-    const body = [];
-    let retExpr = null;
-    function makeConditionalFactory(nonCtorExpr) {
-        const r = variable('r');
-        body.push(r.set(NULL_EXPR).toDeclStmt());
-        let ctorStmt = null;
-        if (ctorExprFinal !== null) {
-            ctorStmt = r.set(ctorExprFinal).toStmt();
-        }
-        else {
-            ctorStmt = importExpr(Identifiers$1.invalidFactory).callFn([]).toStmt();
-        }
-        body.push(ifStmt(t, [ctorStmt], [r.set(nonCtorExpr).toStmt()]));
-        return r;
-    }
-    if (isDelegatedMetadata(meta)) {
-        // This type is created with a delegated factory. If a type parameter is not specified, call
-        // the factory instead.
-        const delegateArgs = injectDependencies(meta.delegateDeps, meta.injectFn, meta.target === R3FactoryTarget.Pipe);
-        // Either call `new delegate(...)` or `delegate(...)` depending on meta.delegateType.
-        const factoryExpr = new (meta.delegateType === R3FactoryDelegateType.Class ?
-            InstantiateExpr :
-            InvokeFunctionExpr)(meta.delegate, delegateArgs);
-        retExpr = makeConditionalFactory(factoryExpr);
-    }
-    else if (isExpressionFactoryMetadata(meta)) {
-        // TODO(alxhub): decide whether to lower the value here or in the caller
-        retExpr = makeConditionalFactory(meta.expression);
-    }
-    else {
-        retExpr = ctorExpr;
-    }
-    if (retExpr !== null) {
-        body.push(new ReturnStatement(retExpr));
-    }
-    else {
-        body.push(importExpr(Identifiers$1.invalidFactory).callFn([]).toStmt());
-    }
-    return {
-        expression: fn([new FnParam('t', DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, `${meta.name}_Factory`),
-        statements,
-        type: expressionType(importExpr(Identifiers$1.FactoryDeclaration, [typeWithParameters(meta.type.type, meta.typeArgumentCount), ctorDepsType]))
-    };
-}
-function injectDependencies(deps, injectFn, isPipe) {
-    return deps.map((dep, index) => compileInjectDependency(dep, injectFn, isPipe, index));
-}
-function compileInjectDependency(dep, injectFn, isPipe, index) {
-    // Interpret the dependency according to its resolved type.
-    switch (dep.resolved) {
-        case R3ResolvedDependencyType.Token:
-        case R3ResolvedDependencyType.ChangeDetectorRef:
-            // Build up the injection flags according to the metadata.
-            const flags = 0 /* Default */ | (dep.self ? 2 /* Self */ : 0) |
-                (dep.skipSelf ? 4 /* SkipSelf */ : 0) | (dep.host ? 1 /* Host */ : 0) |
-                (dep.optional ? 8 /* Optional */ : 0);
-            // If this dependency is optional or otherwise has non-default flags, then additional
-            // parameters describing how to inject the dependency must be passed to the inject function
-            // that's being used.
-            let flagsParam = (flags !== 0 /* Default */ || dep.optional) ? literal(flags) : null;
-            // We have a separate instruction for injecting ChangeDetectorRef into a pipe.
-            if (isPipe && dep.resolved === R3ResolvedDependencyType.ChangeDetectorRef) {
-                return importExpr(Identifiers$1.injectPipeChangeDetectorRef).callFn(flagsParam ? [flagsParam] : []);
-            }
-            // Build up the arguments to the injectFn call.
-            const injectArgs = [dep.token];
-            if (flagsParam) {
-                injectArgs.push(flagsParam);
-            }
-            return importExpr(injectFn).callFn(injectArgs);
-        case R3ResolvedDependencyType.Attribute:
-            // In the case of attributes, the attribute name in question is given as the token.
-            return importExpr(Identifiers$1.injectAttribute).callFn([dep.token]);
-        case R3ResolvedDependencyType.Invalid:
-            return importExpr(Identifiers$1.invalidFactoryDep).callFn([literal(index)]);
-        default:
-            return unsupported(`Unknown R3ResolvedDependencyType: ${R3ResolvedDependencyType[dep.resolved]}`);
-    }
-}
-function createCtorDepsType(deps) {
-    let hasTypes = false;
-    const attributeTypes = deps.map(dep => {
-        const type = createCtorDepType(dep);
-        if (type !== null) {
-            hasTypes = true;
-            return type;
-        }
-        else {
-            return literal(null);
-        }
-    });
-    if (hasTypes) {
-        return expressionType(literalArr(attributeTypes));
-    }
-    else {
-        return NONE_TYPE;
-    }
-}
-function createCtorDepType(dep) {
-    const entries = [];
-    if (dep.resolved === R3ResolvedDependencyType.Attribute) {
-        if (dep.attribute !== null) {
-            entries.push({ key: 'attribute', value: dep.attribute, quoted: false });
-        }
-    }
-    if (dep.optional) {
-        entries.push({ key: 'optional', value: literal(true), quoted: false });
-    }
-    if (dep.host) {
-        entries.push({ key: 'host', value: literal(true), quoted: false });
-    }
-    if (dep.self) {
-        entries.push({ key: 'self', value: literal(true), quoted: false });
-    }
-    if (dep.skipSelf) {
-        entries.push({ key: 'skipSelf', value: literal(true), quoted: false });
-    }
-    return entries.length > 0 ? literalMap(entries) : null;
-}
-/**
- * A helper function useful for extracting `R3DependencyMetadata` from a Render2
- * `CompileTypeMetadata` instance.
- */
-function dependenciesFromGlobalMetadata(type, outputCtx, reflector) {
-    // Use the `CompileReflector` to look up references to some well-known Angular types. These will
-    // be compared with the token to statically determine whether the token has significance to
-    // Angular, and set the correct `R3ResolvedDependencyType` as a result.
-    const injectorRef = reflector.resolveExternalReference(Identifiers.Injector);
-    // Iterate through the type's DI dependencies and produce `R3DependencyMetadata` for each of them.
-    const deps = [];
-    for (let dependency of type.diDeps) {
-        if (dependency.token) {
-            const tokenRef = tokenReference(dependency.token);
-            let resolved = dependency.isAttribute ?
-                R3ResolvedDependencyType.Attribute :
-                R3ResolvedDependencyType.Token;
-            // In the case of most dependencies, the token will be a reference to a type. Sometimes,
-            // however, it can be a string, in the case of older Angular code or @Attribute injection.
-            const token = tokenRef instanceof StaticSymbol ? outputCtx.importExpr(tokenRef) : literal(tokenRef);
-            // Construct the dependency.
-            deps.push({
-                token,
-                attribute: null,
-                resolved,
-                host: !!dependency.isHost,
-                optional: !!dependency.isOptional,
-                self: !!dependency.isSelf,
-                skipSelf: !!dependency.isSkipSelf,
-            });
-        }
-        else {
-            unsupported('dependency without a token');
-        }
-    }
-    return deps;
-}
-function isDelegatedMetadata(meta) {
-    return meta.delegateType !== undefined;
-}
-function isExpressionFactoryMetadata(meta) {
-    return meta.expression !== undefined;
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 function compileInjectable(meta) {
     let result = null;
     const factoryMeta = {
@@ -6341,8 +5878,7 @@ function compileInjectable(meta) {
         internalType: meta.internalType,
         typeArgumentCount: meta.typeArgumentCount,
         deps: [],
-        injectFn: Identifiers.inject,
-        target: R3FactoryTarget.Injectable,
+        target: FactoryTarget.Injectable,
     };
     if (meta.useClass !== undefined) {
         // meta.useClass has two modes of operation. Either deps are specified, in which case `new` is
@@ -6484,6 +6020,440 @@ class InterpolationConfig {
     }
 }
 const DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * A token representing the a reference to a static type.
+ *
+ * This token is unique for a filePath and name and can be used as a hash table key.
+ */
+class StaticSymbol {
+    constructor(filePath, name, members) {
+        this.filePath = filePath;
+        this.name = name;
+        this.members = members;
+    }
+    assertNoMembers() {
+        if (this.members.length) {
+            throw new Error(`Illegal state: symbol without members expected, but got ${JSON.stringify(this)}.`);
+        }
+    }
+}
+/**
+ * A cache of static symbol used by the StaticReflector to return the same symbol for the
+ * same symbol values.
+ */
+class StaticSymbolCache {
+    constructor() {
+        this.cache = new Map();
+    }
+    get(declarationFile, name, members) {
+        members = members || [];
+        const memberSuffix = members.length ? `.${members.join('.')}` : '';
+        const key = `"${declarationFile}".${name}${memberSuffix}`;
+        let result = this.cache.get(key);
+        if (!result) {
+            result = new StaticSymbol(declarationFile, name, members);
+            this.cache.set(key, result);
+        }
+        return result;
+    }
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+// group 0: "[prop] or (event) or @trigger"
+// group 1: "prop" from "[prop]"
+// group 2: "event" from "(event)"
+// group 3: "@trigger" from "@trigger"
+const HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
+function sanitizeIdentifier(name) {
+    return name.replace(/\W/g, '_');
+}
+let _anonymousTypeIndex = 0;
+function identifierName(compileIdentifier) {
+    if (!compileIdentifier || !compileIdentifier.reference) {
+        return null;
+    }
+    const ref = compileIdentifier.reference;
+    if (ref instanceof StaticSymbol) {
+        return ref.name;
+    }
+    if (ref['__anonymousType']) {
+        return ref['__anonymousType'];
+    }
+    let identifier = stringify(ref);
+    if (identifier.indexOf('(') >= 0) {
+        // case: anonymous functions!
+        identifier = `anonymous_${_anonymousTypeIndex++}`;
+        ref['__anonymousType'] = identifier;
+    }
+    else {
+        identifier = sanitizeIdentifier(identifier);
+    }
+    return identifier;
+}
+function identifierModuleUrl(compileIdentifier) {
+    const ref = compileIdentifier.reference;
+    if (ref instanceof StaticSymbol) {
+        return ref.filePath;
+    }
+    // Runtime type
+    return `./${stringify(ref)}`;
+}
+function viewClassName(compType, embeddedTemplateIndex) {
+    return `View_${identifierName({ reference: compType })}_${embeddedTemplateIndex}`;
+}
+function rendererTypeName(compType) {
+    return `RenderType_${identifierName({ reference: compType })}`;
+}
+function hostViewClassName(compType) {
+    return `HostView_${identifierName({ reference: compType })}`;
+}
+function componentFactoryName(compType) {
+    return `${identifierName({ reference: compType })}NgFactory`;
+}
+var CompileSummaryKind;
+(function (CompileSummaryKind) {
+    CompileSummaryKind[CompileSummaryKind["Pipe"] = 0] = "Pipe";
+    CompileSummaryKind[CompileSummaryKind["Directive"] = 1] = "Directive";
+    CompileSummaryKind[CompileSummaryKind["NgModule"] = 2] = "NgModule";
+    CompileSummaryKind[CompileSummaryKind["Injectable"] = 3] = "Injectable";
+})(CompileSummaryKind || (CompileSummaryKind = {}));
+function tokenName(token) {
+    return token.value != null ? sanitizeIdentifier(token.value) : identifierName(token.identifier);
+}
+function tokenReference(token) {
+    if (token.identifier != null) {
+        return token.identifier.reference;
+    }
+    else {
+        return token.value;
+    }
+}
+/**
+ * Metadata about a stylesheet
+ */
+class CompileStylesheetMetadata {
+    constructor({ moduleUrl, styles, styleUrls } = {}) {
+        this.moduleUrl = moduleUrl || null;
+        this.styles = _normalizeArray(styles);
+        this.styleUrls = _normalizeArray(styleUrls);
+    }
+}
+/**
+ * Metadata regarding compilation of a template.
+ */
+class CompileTemplateMetadata {
+    constructor({ encapsulation, template, templateUrl, htmlAst, styles, styleUrls, externalStylesheets, animations, ngContentSelectors, interpolation, isInline, preserveWhitespaces }) {
+        this.encapsulation = encapsulation;
+        this.template = template;
+        this.templateUrl = templateUrl;
+        this.htmlAst = htmlAst;
+        this.styles = _normalizeArray(styles);
+        this.styleUrls = _normalizeArray(styleUrls);
+        this.externalStylesheets = _normalizeArray(externalStylesheets);
+        this.animations = animations ? flatten(animations) : [];
+        this.ngContentSelectors = ngContentSelectors || [];
+        if (interpolation && interpolation.length != 2) {
+            throw new Error(`'interpolation' should have a start and an end symbol.`);
+        }
+        this.interpolation = interpolation;
+        this.isInline = isInline;
+        this.preserveWhitespaces = preserveWhitespaces;
+    }
+    toSummary() {
+        return {
+            ngContentSelectors: this.ngContentSelectors,
+            encapsulation: this.encapsulation,
+            styles: this.styles,
+            animations: this.animations
+        };
+    }
+}
+/**
+ * Metadata regarding compilation of a directive.
+ */
+class CompileDirectiveMetadata {
+    constructor({ isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, guards, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory }) {
+        this.isHost = !!isHost;
+        this.type = type;
+        this.isComponent = isComponent;
+        this.selector = selector;
+        this.exportAs = exportAs;
+        this.changeDetection = changeDetection;
+        this.inputs = inputs;
+        this.outputs = outputs;
+        this.hostListeners = hostListeners;
+        this.hostProperties = hostProperties;
+        this.hostAttributes = hostAttributes;
+        this.providers = _normalizeArray(providers);
+        this.viewProviders = _normalizeArray(viewProviders);
+        this.queries = _normalizeArray(queries);
+        this.guards = guards;
+        this.viewQueries = _normalizeArray(viewQueries);
+        this.entryComponents = _normalizeArray(entryComponents);
+        this.template = template;
+        this.componentViewType = componentViewType;
+        this.rendererType = rendererType;
+        this.componentFactory = componentFactory;
+    }
+    static create({ isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, providers, viewProviders, queries, guards, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory }) {
+        const hostListeners = {};
+        const hostProperties = {};
+        const hostAttributes = {};
+        if (host != null) {
+            Object.keys(host).forEach(key => {
+                const value = host[key];
+                const matches = key.match(HOST_REG_EXP);
+                if (matches === null) {
+                    hostAttributes[key] = value;
+                }
+                else if (matches[1] != null) {
+                    hostProperties[matches[1]] = value;
+                }
+                else if (matches[2] != null) {
+                    hostListeners[matches[2]] = value;
+                }
+            });
+        }
+        const inputsMap = {};
+        if (inputs != null) {
+            inputs.forEach((bindConfig) => {
+                // canonical syntax: `dirProp: elProp`
+                // if there is no `:`, use dirProp = elProp
+                const parts = splitAtColon(bindConfig, [bindConfig, bindConfig]);
+                inputsMap[parts[0]] = parts[1];
+            });
+        }
+        const outputsMap = {};
+        if (outputs != null) {
+            outputs.forEach((bindConfig) => {
+                // canonical syntax: `dirProp: elProp`
+                // if there is no `:`, use dirProp = elProp
+                const parts = splitAtColon(bindConfig, [bindConfig, bindConfig]);
+                outputsMap[parts[0]] = parts[1];
+            });
+        }
+        return new CompileDirectiveMetadata({
+            isHost,
+            type,
+            isComponent: !!isComponent,
+            selector,
+            exportAs,
+            changeDetection,
+            inputs: inputsMap,
+            outputs: outputsMap,
+            hostListeners,
+            hostProperties,
+            hostAttributes,
+            providers,
+            viewProviders,
+            queries,
+            guards,
+            viewQueries,
+            entryComponents,
+            template,
+            componentViewType,
+            rendererType,
+            componentFactory,
+        });
+    }
+    toSummary() {
+        return {
+            summaryKind: CompileSummaryKind.Directive,
+            type: this.type,
+            isComponent: this.isComponent,
+            selector: this.selector,
+            exportAs: this.exportAs,
+            inputs: this.inputs,
+            outputs: this.outputs,
+            hostListeners: this.hostListeners,
+            hostProperties: this.hostProperties,
+            hostAttributes: this.hostAttributes,
+            providers: this.providers,
+            viewProviders: this.viewProviders,
+            queries: this.queries,
+            guards: this.guards,
+            viewQueries: this.viewQueries,
+            entryComponents: this.entryComponents,
+            changeDetection: this.changeDetection,
+            template: this.template && this.template.toSummary(),
+            componentViewType: this.componentViewType,
+            rendererType: this.rendererType,
+            componentFactory: this.componentFactory
+        };
+    }
+}
+class CompilePipeMetadata {
+    constructor({ type, name, pure }) {
+        this.type = type;
+        this.name = name;
+        this.pure = !!pure;
+    }
+    toSummary() {
+        return {
+            summaryKind: CompileSummaryKind.Pipe,
+            type: this.type,
+            name: this.name,
+            pure: this.pure
+        };
+    }
+}
+class CompileShallowModuleMetadata {
+}
+/**
+ * Metadata regarding compilation of a module.
+ */
+class CompileNgModuleMetadata {
+    constructor({ type, providers, declaredDirectives, exportedDirectives, declaredPipes, exportedPipes, entryComponents, bootstrapComponents, importedModules, exportedModules, schemas, transitiveModule, id }) {
+        this.type = type || null;
+        this.declaredDirectives = _normalizeArray(declaredDirectives);
+        this.exportedDirectives = _normalizeArray(exportedDirectives);
+        this.declaredPipes = _normalizeArray(declaredPipes);
+        this.exportedPipes = _normalizeArray(exportedPipes);
+        this.providers = _normalizeArray(providers);
+        this.entryComponents = _normalizeArray(entryComponents);
+        this.bootstrapComponents = _normalizeArray(bootstrapComponents);
+        this.importedModules = _normalizeArray(importedModules);
+        this.exportedModules = _normalizeArray(exportedModules);
+        this.schemas = _normalizeArray(schemas);
+        this.id = id || null;
+        this.transitiveModule = transitiveModule || null;
+    }
+    toSummary() {
+        const module = this.transitiveModule;
+        return {
+            summaryKind: CompileSummaryKind.NgModule,
+            type: this.type,
+            entryComponents: module.entryComponents,
+            providers: module.providers,
+            modules: module.modules,
+            exportedDirectives: module.exportedDirectives,
+            exportedPipes: module.exportedPipes
+        };
+    }
+}
+class TransitiveCompileNgModuleMetadata {
+    constructor() {
+        this.directivesSet = new Set();
+        this.directives = [];
+        this.exportedDirectivesSet = new Set();
+        this.exportedDirectives = [];
+        this.pipesSet = new Set();
+        this.pipes = [];
+        this.exportedPipesSet = new Set();
+        this.exportedPipes = [];
+        this.modulesSet = new Set();
+        this.modules = [];
+        this.entryComponentsSet = new Set();
+        this.entryComponents = [];
+        this.providers = [];
+    }
+    addProvider(provider, module) {
+        this.providers.push({ provider: provider, module: module });
+    }
+    addDirective(id) {
+        if (!this.directivesSet.has(id.reference)) {
+            this.directivesSet.add(id.reference);
+            this.directives.push(id);
+        }
+    }
+    addExportedDirective(id) {
+        if (!this.exportedDirectivesSet.has(id.reference)) {
+            this.exportedDirectivesSet.add(id.reference);
+            this.exportedDirectives.push(id);
+        }
+    }
+    addPipe(id) {
+        if (!this.pipesSet.has(id.reference)) {
+            this.pipesSet.add(id.reference);
+            this.pipes.push(id);
+        }
+    }
+    addExportedPipe(id) {
+        if (!this.exportedPipesSet.has(id.reference)) {
+            this.exportedPipesSet.add(id.reference);
+            this.exportedPipes.push(id);
+        }
+    }
+    addModule(id) {
+        if (!this.modulesSet.has(id.reference)) {
+            this.modulesSet.add(id.reference);
+            this.modules.push(id);
+        }
+    }
+    addEntryComponent(ec) {
+        if (!this.entryComponentsSet.has(ec.componentType)) {
+            this.entryComponentsSet.add(ec.componentType);
+            this.entryComponents.push(ec);
+        }
+    }
+}
+function _normalizeArray(obj) {
+    return obj || [];
+}
+class ProviderMeta {
+    constructor(token, { useClass, useValue, useExisting, useFactory, deps, multi }) {
+        this.token = token;
+        this.useClass = useClass || null;
+        this.useValue = useValue;
+        this.useExisting = useExisting;
+        this.useFactory = useFactory || null;
+        this.dependencies = deps || null;
+        this.multi = !!multi;
+    }
+}
+function flatten(list) {
+    return list.reduce((flat, item) => {
+        const flatItem = Array.isArray(item) ? flatten(item) : item;
+        return flat.concat(flatItem);
+    }, []);
+}
+function jitSourceUrl(url) {
+    // Note: We need 3 "/" so that ng shows up as a separate domain
+    // in the chrome dev tools.
+    return url.replace(/(\w+:\/\/[\w:-]+)?(\/+)?/, 'ng:///');
+}
+function templateSourceUrl(ngModuleType, compMeta, templateMeta) {
+    let url;
+    if (templateMeta.isInline) {
+        if (compMeta.type.reference instanceof StaticSymbol) {
+            // Note: a .ts file might contain multiple components with inline templates,
+            // so we need to give them unique urls, as these will be used for sourcemaps.
+            url = `${compMeta.type.reference.filePath}.${compMeta.type.reference.name}.html`;
+        }
+        else {
+            url = `${identifierName(ngModuleType)}/${identifierName(compMeta.type)}.html`;
+        }
+    }
+    else {
+        url = templateMeta.templateUrl;
+    }
+    return compMeta.type.reference instanceof StaticSymbol ? url : jitSourceUrl(url);
+}
+function sharedStylesheetJitUrl(meta, id) {
+    const pathParts = meta.moduleUrl.split(/\/\\/g);
+    const baseName = pathParts[pathParts.length - 1];
+    return jitSourceUrl(`css/${id}${baseName}.ngstyle.js`);
+}
+function ngModuleJitUrl(moduleMeta) {
+    return jitSourceUrl(`${identifierName(moduleMeta.type)}/module.ngfactory.js`);
+}
+function templateJitUrl(ngModuleType, compMeta) {
+    return jitSourceUrl(`${identifierName(ngModuleType)}/${identifierName(compMeta.type)}.ngfactory.js`);
+}
 
 /**
  * @license
@@ -9952,7 +9922,7 @@ class Element$1 extends NodeWithI18n {
         return visitor.visitElement(this, context);
     }
 }
-class Comment {
+class Comment$1 {
     constructor(value, sourceSpan) {
         this.value = value;
         this.sourceSpan = sourceSpan;
@@ -11040,7 +11010,7 @@ class _TreeBuilder {
         const text = this._advanceIf(TokenType.RAW_TEXT);
         this._advanceIf(TokenType.COMMENT_END);
         const value = text != null ? text.parts[0].trim() : null;
-        this._addToParent(new Comment(value, token.sourceSpan));
+        this._addToParent(new Comment$1(value, token.sourceSpan));
     }
     _consumeExpansion(token) {
         const switchValue = this._advance();
@@ -13836,7 +13806,11 @@ class StylingBuilder {
         if (isEmptyExpression(value)) {
             return null;
         }
-        name = normalizePropName(name);
+        // CSS custom properties are case-sensitive so we shouldn't normalize them.
+        // See: https://www.w3.org/TR/css-variables-1/#defining-variables
+        if (!isCssCustomProperty(name)) {
+            name = hyphenate(name);
+        }
         const { property, hasOverrideFlag, suffix: bindingSuffix } = parseProperty(name);
         suffix = typeof suffix === 'string' && suffix.length !== 0 ? suffix : bindingSuffix;
         const entry = { name: property, suffix: suffix, value, sourceSpan, hasOverrideFlag };
@@ -14181,8 +14155,12 @@ function getStylePropInterpolationExpression(interpolation) {
             return Identifiers$1.stylePropInterpolateV;
     }
 }
-function normalizePropName(prop) {
-    return hyphenate(prop);
+/**
+ * Checks whether property name is a custom CSS property.
+ * See: https://www.w3.org/TR/css-variables-1
+ */
+function isCssCustomProperty(name) {
+    return name.startsWith('--');
 }
 
 /**
@@ -16305,26 +16283,33 @@ const BINDING_DELIMS = {
     EVENT: { start: '(', end: ')' },
 };
 const TEMPLATE_ATTR_PREFIX$2 = '*';
-function htmlAstToRender3Ast(htmlNodes, bindingParser) {
-    const transformer = new HtmlAstToIvyAst(bindingParser);
+function htmlAstToRender3Ast(htmlNodes, bindingParser, options) {
+    const transformer = new HtmlAstToIvyAst(bindingParser, options);
     const ivyNodes = visitAll$1(transformer, htmlNodes);
     // Errors might originate in either the binding parser or the html to ivy transformer
     const allErrors = bindingParser.errors.concat(transformer.errors);
-    return {
+    const result = {
         nodes: ivyNodes,
         errors: allErrors,
         styleUrls: transformer.styleUrls,
         styles: transformer.styles,
-        ngContentSelectors: transformer.ngContentSelectors,
+        ngContentSelectors: transformer.ngContentSelectors
     };
+    if (options.collectCommentNodes) {
+        result.commentNodes = transformer.commentNodes;
+    }
+    return result;
 }
 class HtmlAstToIvyAst {
-    constructor(bindingParser) {
+    constructor(bindingParser, options) {
         this.bindingParser = bindingParser;
+        this.options = options;
         this.errors = [];
         this.styles = [];
         this.styleUrls = [];
         this.ngContentSelectors = [];
+        // This array will be populated if `Render3ParseOptions['collectCommentNodes']` is true
+        this.commentNodes = [];
         this.inI18nBlock = false;
     }
     // HTML visitor
@@ -16493,6 +16478,9 @@ class HtmlAstToIvyAst {
         return null;
     }
     visitComment(comment) {
+        if (this.options.collectCommentNodes) {
+            this.commentNodes.push(new Comment(comment.value || '', comment.sourceSpan));
+        }
         return null;
     }
     // convert view engine `ParsedProperty` to a format suitable for IVY
@@ -16684,7 +16672,7 @@ function isEmptyTextNode(node) {
     return node instanceof Text$3 && node.value.trim().length == 0;
 }
 function isCommentNode(node) {
-    return node instanceof Comment;
+    return node instanceof Comment$1;
 }
 function textContents(node) {
     if (node.children.length !== 1 || !(node.children[0] instanceof Text$3)) {
@@ -19286,7 +19274,7 @@ function parseTemplate(template, templateUrl, options = {}) {
     const parseResult = htmlParser.parse(template, templateUrl, Object.assign(Object.assign({ leadingTriviaChars: LEADING_TRIVIA_CHARS }, options), { tokenizeExpansionForms: true }));
     if (!options.alwaysAttemptHtmlToR3AstConversion && parseResult.errors &&
         parseResult.errors.length > 0) {
-        return {
+        const parsedTemplate = {
             interpolationConfig,
             preserveWhitespaces,
             template,
@@ -19298,6 +19286,10 @@ function parseTemplate(template, templateUrl, options = {}) {
             styles: [],
             ngContentSelectors: []
         };
+        if (options.collectCommentNodes) {
+            parsedTemplate.commentNodes = [];
+        }
+        return parsedTemplate;
     }
     let rootNodes = parseResult.rootNodes;
     // process i18n meta information (scan attributes, generate ids)
@@ -19308,7 +19300,7 @@ function parseTemplate(template, templateUrl, options = {}) {
     const i18nMetaResult = i18nMetaVisitor.visitAllWithErrors(rootNodes);
     if (!options.alwaysAttemptHtmlToR3AstConversion && i18nMetaResult.errors &&
         i18nMetaResult.errors.length > 0) {
-        return {
+        const parsedTemplate = {
             interpolationConfig,
             preserveWhitespaces,
             template,
@@ -19320,6 +19312,10 @@ function parseTemplate(template, templateUrl, options = {}) {
             styles: [],
             ngContentSelectors: []
         };
+        if (options.collectCommentNodes) {
+            parsedTemplate.commentNodes = [];
+        }
+        return parsedTemplate;
     }
     rootNodes = i18nMetaResult.rootNodes;
     if (!preserveWhitespaces) {
@@ -19332,9 +19328,9 @@ function parseTemplate(template, templateUrl, options = {}) {
             rootNodes = visitAll$1(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), rootNodes);
         }
     }
-    const { nodes, errors, styleUrls, styles, ngContentSelectors } = htmlAstToRender3Ast(rootNodes, bindingParser);
+    const { nodes, errors, styleUrls, styles, ngContentSelectors, commentNodes } = htmlAstToRender3Ast(rootNodes, bindingParser, { collectCommentNodes: !!options.collectCommentNodes });
     errors.push(...parseResult.errors, ...i18nMetaResult.errors);
-    return {
+    const parsedTemplate = {
         interpolationConfig,
         preserveWhitespaces,
         errors: errors.length > 0 ? errors : null,
@@ -19346,6 +19342,10 @@ function parseTemplate(template, templateUrl, options = {}) {
         styles,
         ngContentSelectors
     };
+    if (options.collectCommentNodes) {
+        parsedTemplate.commentNodes = commentNodes;
+    }
+    return parsedTemplate;
 }
 const elementRegistry = new DomElementSchemaRegistry();
 /**
@@ -20089,8 +20089,7 @@ class ResourceLoader {
 class CompilerFacadeImpl {
     constructor(jitEvaluator = new JitEvaluator()) {
         this.jitEvaluator = jitEvaluator;
-        this.R3ResolvedDependencyType = R3ResolvedDependencyType;
-        this.R3FactoryTarget = R3FactoryTarget;
+        this.FactoryTarget = FactoryTarget;
         this.ResourceLoader = ResourceLoader;
         this.elementSchemaRegistry = new DomElementSchemaRegistry();
     }
@@ -20099,8 +20098,8 @@ class CompilerFacadeImpl {
             name: facade.name,
             type: wrapReference(facade.type),
             internalType: new WrappedNodeExpr(facade.type),
-            typeArgumentCount: facade.typeArgumentCount,
-            deps: convertR3DependencyMetadataArray(facade.deps),
+            typeArgumentCount: 0,
+            deps: null,
             pipeName: facade.pipeName,
             pure: facade.pure,
         };
@@ -20206,8 +20205,17 @@ class CompilerFacadeImpl {
             internalType: new WrappedNodeExpr(meta.type),
             typeArgumentCount: meta.typeArgumentCount,
             deps: convertR3DependencyMetadataArray(meta.deps),
-            injectFn: meta.injectFn === 'directiveInject' ? Identifiers.directiveInject :
-                Identifiers.inject,
+            target: meta.target,
+        });
+        return this.jitExpression(factoryRes.expression, angularCoreEnv, sourceMapUrl, factoryRes.statements);
+    }
+    compileFactoryDeclaration(angularCoreEnv, sourceMapUrl, meta) {
+        const factoryRes = compileFactoryFunction({
+            name: meta.type.name,
+            type: wrapReference(meta.type),
+            internalType: new WrappedNodeExpr(meta.type),
+            typeArgumentCount: 0,
+            deps: meta.deps && meta.deps.map(convertR3DeclareDependencyMetadata),
             target: meta.target,
         });
         return this.jitExpression(factoryRes.expression, angularCoreEnv, sourceMapUrl, factoryRes.statements);
@@ -20276,7 +20284,7 @@ function convertDirectiveFacadeToMetadata(facade) {
             });
         }
     }
-    return Object.assign(Object.assign({}, facade), { typeSourceSpan: facade.typeSourceSpan, type: wrapReference(facade.type), internalType: new WrappedNodeExpr(facade.type), deps: convertR3DependencyMetadataArray(facade.deps), host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: Object.assign(Object.assign({}, inputsFromMetadata), inputsFromType), outputs: Object.assign(Object.assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), fullInheritance: false });
+    return Object.assign(Object.assign({}, facade), { typeArgumentCount: 0, typeSourceSpan: facade.typeSourceSpan, type: wrapReference(facade.type), internalType: new WrappedNodeExpr(facade.type), deps: null, host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: Object.assign(Object.assign({}, inputsFromMetadata), inputsFromType), outputs: Object.assign(Object.assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), fullInheritance: false });
 }
 function convertDeclareDirectiveFacadeToMetadata(declaration, typeSourceSpan) {
     var _a, _b, _c, _d, _e, _f, _g, _h;
@@ -20375,29 +20383,29 @@ function computeProvidedIn(providedIn) {
         return new WrappedNodeExpr(providedIn);
     }
 }
-function convertR3DependencyMetadata(facade) {
-    let tokenExpr;
-    if (facade.token === null) {
-        tokenExpr = new LiteralExpr(null);
-    }
-    else if (facade.resolved === R3ResolvedDependencyType.Attribute) {
-        tokenExpr = new LiteralExpr(facade.token);
-    }
-    else {
-        tokenExpr = new WrappedNodeExpr(facade.token);
-    }
-    return {
-        token: tokenExpr,
-        attribute: null,
-        resolved: facade.resolved,
-        host: facade.host,
-        optional: facade.optional,
-        self: facade.self,
-        skipSelf: facade.skipSelf,
-    };
-}
 function convertR3DependencyMetadataArray(facades) {
     return facades == null ? null : facades.map(convertR3DependencyMetadata);
+}
+function convertR3DependencyMetadata(facade) {
+    const isAttributeDep = facade.attribute != null; // both `null` and `undefined`
+    const rawToken = facade.token === null ? null : new WrappedNodeExpr(facade.token);
+    // In JIT mode, if the dep is an `@Attribute()` then we use the attribute name given in
+    // `attribute` rather than the `token`.
+    const token = isAttributeDep ? new WrappedNodeExpr(facade.attribute) : rawToken;
+    return createR3DependencyMetadata(token, isAttributeDep, facade.host, facade.optional, facade.self, facade.skipSelf);
+}
+function convertR3DeclareDependencyMetadata(facade) {
+    var _a, _b, _c, _d, _e;
+    const isAttributeDep = (_a = facade.attribute) !== null && _a !== void 0 ? _a : false;
+    const token = facade.token === null ? null : new WrappedNodeExpr(facade.token);
+    return createR3DependencyMetadata(token, isAttributeDep, (_b = facade.host) !== null && _b !== void 0 ? _b : false, (_c = facade.optional) !== null && _c !== void 0 ? _c : false, (_d = facade.self) !== null && _d !== void 0 ? _d : false, (_e = facade.skipSelf) !== null && _e !== void 0 ? _e : false);
+}
+function createR3DependencyMetadata(token, isAttributeDep, host, optional, self, skipSelf) {
+    // If the dep is an `@Attribute()` the `attributeNameType` ought to be the `unknown` type.
+    // But types are not available at runtime so we just use a literal `"<unknown>"` string as a dummy
+    // marker.
+    const attributeNameType = isAttributeDep ? literal('unknown') : null;
+    return { token, attributeNameType, host, optional, self, skipSelf };
 }
 function extractHostBindings(propMetadata, sourceSpan, host) {
     // First parse the declarations from the metadata.
@@ -20481,7 +20489,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('12.0.0-next.6+3.sha-b61c009');
+const VERSION$1 = new Version('12.0.0-next.6+36.sha-18bc9ff');
 
 /**
  * @license
@@ -21261,7 +21269,7 @@ class _Visitor$2 {
             return;
         }
         const startIndex = this._msgCountAtSectionStart;
-        const significantChildren = directChildren.reduce((count, node) => count + (node instanceof Comment ? 0 : 1), 0);
+        const significantChildren = directChildren.reduce((count, node) => count + (node instanceof Comment$1 ? 0 : 1), 0);
         if (significantChildren == 1) {
             for (let i = this._messages.length - 1; i >= startIndex; i--) {
                 const ast = this._messages[i].nodes;
@@ -21278,10 +21286,10 @@ class _Visitor$2 {
     }
 }
 function _isOpeningComment(n) {
-    return !!(n instanceof Comment && n.value && n.value.startsWith('i18n'));
+    return !!(n instanceof Comment$1 && n.value && n.value.startsWith('i18n'));
 }
 function _isClosingComment(n) {
-    return !!(n instanceof Comment && n.value && n.value === '/i18n');
+    return !!(n instanceof Comment$1 && n.value && n.value === '/i18n');
 }
 function _getI18nAttr(p) {
     return p.attrs.find(attr => attr.name === _I18N_ATTR) || null;
@@ -29365,6 +29373,15 @@ class Extractor {
  * found in the LICENSE file at https://angular.io/license
  */
 
+var FactoryTarget$1;
+(function (FactoryTarget) {
+    FactoryTarget[FactoryTarget["Directive"] = 0] = "Directive";
+    FactoryTarget[FactoryTarget["Component"] = 1] = "Component";
+    FactoryTarget[FactoryTarget["Injectable"] = 2] = "Injectable";
+    FactoryTarget[FactoryTarget["Pipe"] = 3] = "Pipe";
+    FactoryTarget[FactoryTarget["NgModule"] = 4] = "NgModule";
+})(FactoryTarget$1 || (FactoryTarget$1 = {}));
+
 /**
  * @license
  * Copyright Google LLC All Rights Reserved.
@@ -29954,7 +29971,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.6+3.sha-b61c009'));
+    definitionMap.set('version', literal('12.0.0-next.6+36.sha-18bc9ff'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -30165,6 +30182,58 @@ function generateForwardRef(expr) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+function compileDeclareFactoryFunction(meta) {
+    const definitionMap = new DefinitionMap();
+    definitionMap.set('version', literal('12.0.0-next.6+36.sha-18bc9ff'));
+    definitionMap.set('ngImport', importExpr(Identifiers$1.core));
+    definitionMap.set('type', meta.internalType);
+    definitionMap.set('deps', compileDependencies(meta.deps));
+    definitionMap.set('target', importExpr(Identifiers$1.FactoryTarget).prop(FactoryTarget[meta.target]));
+    return {
+        expression: importExpr(Identifiers$1.declareFactory).callFn([definitionMap.toLiteralMap()]),
+        statements: [],
+        type: createFactoryType(meta),
+    };
+}
+function compileDependencies(deps) {
+    if (deps === 'invalid') {
+        return literal('invalid');
+    }
+    else if (deps === null) {
+        return literal(null);
+    }
+    else {
+        return literalArr(deps.map(compileDependency));
+    }
+}
+function compileDependency(dep) {
+    const depMeta = new DefinitionMap();
+    depMeta.set('token', dep.token);
+    if (dep.attributeNameType !== null) {
+        depMeta.set('attribute', literal(true));
+    }
+    if (dep.host) {
+        depMeta.set('host', literal(true));
+    }
+    if (dep.optional) {
+        depMeta.set('optional', literal(true));
+    }
+    if (dep.self) {
+        depMeta.set('self', literal(true));
+    }
+    if (dep.skipSelf) {
+        depMeta.set('skipSelf', literal(true));
+    }
+    return depMeta.toLiteralMap();
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 function compileDeclareInjectorFromMetadata(meta) {
     const definitionMap = createInjectorDefinitionMap(meta);
     const expression = importExpr(Identifiers$1.declareInjector).callFn([definitionMap.toLiteralMap()]);
@@ -30173,7 +30242,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 }
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.6+3.sha-b61c009'));
+    definitionMap.set('version', literal('12.0.0-next.6+36.sha-18bc9ff'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -30198,7 +30267,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 }
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.6+3.sha-b61c009'));
+    definitionMap.set('version', literal('12.0.0-next.6+36.sha-18bc9ff'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30248,7 +30317,7 @@ function compileDeclarePipeFromMetadata(meta) {
  */
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.6+3.sha-b61c009'));
+    definitionMap.set('version', literal('12.0.0-next.6+36.sha-18bc9ff'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
@@ -30298,5 +30367,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, R3FactoryTarget, Identifiers$1 as R3Identifiers, R3ResolvedDependencyType, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThisReceiver, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Icu as TmplAstIcu, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, devOnlyGuardedExpression, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getSafePropertyAccessString, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment$1 as Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FactoryTarget, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, MethodCall, NAMED_ENTITIES, NGSP_UNICODE, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, Identifiers$1 as R3Identifiers, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThisReceiver, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Icu as TmplAstIcu, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileComponentFromMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createLoweredSymbol, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, devOnlyGuardedExpression, findNode, flatten, formattedError, getHtmlTagDefinition, getNsPrefix, getParseErrors, getSafePropertyAccessString, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
 //# sourceMappingURL=compiler.js.map
