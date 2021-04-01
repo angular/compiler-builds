@@ -23,7 +23,7 @@
     var util_1 = require("@angular/compiler/src/render3/view/util");
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new util_1.DefinitionMap();
-        definitionMap.set('version', o.literal('12.0.0-next.6+36.sha-18bc9ff'));
+        definitionMap.set('version', o.literal('12.0.0-next.6+38.sha-db55f8e'));
         definitionMap.set('ngImport', o.importExpr(r3_identifiers_1.Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
