@@ -11,7 +11,7 @@ import { Identifiers as R3 } from '../r3_identifiers';
 import { DefinitionMap } from '../view/util';
 export function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', o.literal('12.0.0-next.7+12.sha-180c1b5'));
+    definitionMap.set('version', o.literal('12.0.0-next.7+11.sha-ab47f41'));
     definitionMap.set('ngImport', o.importExpr(R3.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
