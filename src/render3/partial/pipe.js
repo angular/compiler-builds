@@ -37,7 +37,7 @@
      */
     function createPipeDefinitionMap(meta) {
         var definitionMap = new util_1.DefinitionMap();
-        definitionMap.set('version', o.literal('11.2.8+11.sha-6eb3dc7'));
+        definitionMap.set('version', o.literal('11.2.8+17.sha-0eecbed'));
         definitionMap.set('ngImport', o.importExpr(r3_identifiers_1.Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
