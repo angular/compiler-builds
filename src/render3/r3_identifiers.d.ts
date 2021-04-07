@@ -127,6 +127,9 @@ export declare class Identifiers {
     static templateRefExtractor: o.ExternalReference;
     static forwardRef: o.ExternalReference;
     static resolveForwardRef: o.ExternalReference;
+    static ɵɵdefineInjectable: o.ExternalReference;
+    static declareInjectable: o.ExternalReference;
+    static InjectableDeclaration: o.ExternalReference;
     static resolveWindow: o.ExternalReference;
     static resolveDocument: o.ExternalReference;
     static resolveBody: o.ExternalReference;
