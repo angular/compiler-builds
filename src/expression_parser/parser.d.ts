@@ -169,6 +169,7 @@ export declare class _ParseAST {
     parseConditional(): AST;
     parseLogicalOr(): AST;
     parseLogicalAnd(): AST;
+    parseNullishCoalescing(): AST;
     parseEquality(): AST;
     parseRelational(): AST;
     parseAdditive(): AST;
