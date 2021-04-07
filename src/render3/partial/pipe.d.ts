@@ -7,7 +7,6 @@ import { R3DeclarePipeMetadata } from './api';
  */
 export declare function compileDeclarePipeFromMetadata(meta: R3PipeMetadata): R3CompiledExpression;
 /**
- * Gathers the declaration fields for a Pipe into a `DefinitionMap`. This allows for reusing
- * this logic for components, as they extend the Pipe metadata.
+ * Gathers the declaration fields for a Pipe into a `DefinitionMap`.
  */
 export declare function createPipeDefinitionMap(meta: R3PipeMetadata): DefinitionMap<R3DeclarePipeMetadata>;

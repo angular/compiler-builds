@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import * as o from '../../output/output_ast';
+import { R3DependencyMetadata } from '../r3_factory';
 /**
  * Creates an array literal expression from the given array, mapping all values to an expression
  * using the provided mapping function. If the array is empty or null, then null is returned.
@@ -28,3 +29,13 @@ export declare function toOptionalLiteralArray<T>(values: T[] | null, mapper: (v
 export declare function toOptionalLiteralMap<T>(object: {
     [key: string]: T;
 }, mapper: (value: T) => o.Expression): o.LiteralMapExpr | null;
+export declare function compileDependencies(deps: R3DependencyMetadata[] | 'invalid' | null): o.LiteralExpr | o.LiteralArrayExpr;
+export declare function compileDependency(dep: R3DependencyMetadata): o.LiteralMapExpr;
+/**
+ * Generate an expression that has the given `expr` wrapped in the following form:
+ *
+ * ```
+ * forwardRef(() => expr)
+ * ```
+ */
+export declare function generateForwardRef(expr: o.Expression): o.Expression;
