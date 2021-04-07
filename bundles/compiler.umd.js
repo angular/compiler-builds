@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.8+7.sha-d641542
+ * @license Angular v12.0.0-next.8+9.sha-c385e74
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1379,6 +1379,7 @@
         BinaryOperator[BinaryOperator["LowerEquals"] = 13] = "LowerEquals";
         BinaryOperator[BinaryOperator["Bigger"] = 14] = "Bigger";
         BinaryOperator[BinaryOperator["BiggerEquals"] = 15] = "BiggerEquals";
+        BinaryOperator[BinaryOperator["NullishCoalesce"] = 16] = "NullishCoalesce";
     })(exports.BinaryOperator || (exports.BinaryOperator = {}));
     function nullSafeIsEquivalent(base, other) {
         if (base == null || other == null) {
@@ -1481,6 +1482,9 @@
         };
         Expression.prototype.cast = function (type, sourceSpan) {
             return new CastExpr(this, type, sourceSpan);
+        };
+        Expression.prototype.nullishCoalesce = function (rhs, sourceSpan) {
+            return new BinaryOperatorExpr(exports.BinaryOperator.NullishCoalesce, this, rhs, null, sourceSpan);
         };
         Expression.prototype.toStmt = function () {
             return new ExpressionStatement(this, null);
@@ -4468,6 +4472,9 @@
                     break;
                 case exports.BinaryOperator.BiggerEquals:
                     opStr = '>=';
+                    break;
+                case exports.BinaryOperator.NullishCoalesce:
+                    opStr = '??';
                     break;
                 default:
                     throw new Error("Unknown operator " + ast.operator);
@@ -9345,6 +9352,8 @@
                 case '>=':
                     op = exports.BinaryOperator.BiggerEquals;
                     break;
+                case '??':
+                    return this.convertNullishCoalesce(ast, mode);
                 default:
                     throw new Error("Unsupported operation " + ast.operation);
             }
@@ -9587,7 +9596,7 @@
             // which comes in as leftMostSafe to this routine.
             var guardedExpression = this._visit(leftMostSafe.receiver, _Mode.Expression);
             var temporary = undefined;
-            if (this.needsTemporary(leftMostSafe.receiver)) {
+            if (this.needsTemporaryInSafeAccess(leftMostSafe.receiver)) {
                 // If the expression has method calls or pipes then we need to save the result into a
                 // temporary variable to avoid calling stateful or impure code more than once.
                 temporary = this.allocateTemporary();
@@ -9616,6 +9625,22 @@
             }
             // Produce the conditional
             return convertToStatementIfNeeded(mode, condition.conditional(literal(null), access));
+        };
+        _AstToIrVisitor.prototype.convertNullishCoalesce = function (ast, mode) {
+            // Allocate the temporary variable before visiting the LHS and RHS, because they
+            // may allocate temporary variables too and we don't want them to be reused.
+            var temporary = this.allocateTemporary();
+            var left = this._visit(ast.left, _Mode.Expression);
+            var right = this._visit(ast.right, _Mode.Expression);
+            this.releaseTemporary(temporary);
+            // Generate the following expression. It is identical to how TS
+            // transpiles binary expressions with a nullish coalescing operator.
+            // let temp;
+            // (temp = a) !== null && temp !== undefined ? temp : b;
+            return convertToStatementIfNeeded(mode, temporary.set(left)
+                .notIdentical(NULL_EXPR)
+                .and(temporary.notIdentical(literal(undefined)))
+                .conditional(temporary, right));
         };
         // Given an expression of the form a?.b.c?.d.e then the left most safe node is
         // the (a?.b). The . and ?. are left associative thus can be rewritten as:
@@ -9701,7 +9726,7 @@
         // Returns true of the AST includes a method or a pipe indicating that, if the
         // expression is used as the target of a safe property or method access then
         // the expression should be stored into a temporary variable.
-        _AstToIrVisitor.prototype.needsTemporary = function (ast) {
+        _AstToIrVisitor.prototype.needsTemporaryInSafeAccess = function (ast) {
             var _this = this;
             var visit = function (visitor, ast) {
                 return ast && (_this._nodeMap.get(ast) || ast).visit(visitor);
@@ -15387,7 +15412,7 @@
                 case $CARET:
                     return this.scanOperator(start, String.fromCharCode(peek));
                 case $QUESTION:
-                    return this.scanComplexOperator(start, '?', $PERIOD, '.');
+                    return this.scanQuestion(start);
                 case $LT:
                 case $GT:
                     return this.scanComplexOperator(start, String.fromCharCode(peek), $EQ, '=');
@@ -15517,6 +15542,16 @@
             var last = input.substring(marker, this.index);
             this.advance(); // Skip terminating quote.
             return newStringToken(start, this.index, buffer + last);
+        };
+        _Scanner.prototype.scanQuestion = function (start) {
+            this.advance();
+            var str = '?';
+            // Either `a ?? b` or 'a?.b'.
+            if (this.peek === $QUESTION || this.peek === $PERIOD) {
+                str += this.peek === $PERIOD ? '.' : '?';
+                this.advance();
+            }
+            return newOperatorToken(start, this.index, str);
         };
         _Scanner.prototype.error = function (message, offset) {
             var position = this.index + offset;
@@ -16218,10 +16253,20 @@
         _ParseAST.prototype.parseLogicalAnd = function () {
             // '&&'
             var start = this.inputIndex;
-            var result = this.parseEquality();
+            var result = this.parseNullishCoalescing();
             while (this.consumeOptionalOperator('&&')) {
-                var right = this.parseEquality();
+                var right = this.parseNullishCoalescing();
                 result = new Binary(this.span(start), this.sourceSpan(start), '&&', result, right);
+            }
+            return result;
+        };
+        _ParseAST.prototype.parseNullishCoalescing = function () {
+            // '??'
+            var start = this.inputIndex;
+            var result = this.parseEquality();
+            while (this.consumeOptionalOperator('??')) {
+                var right = this.parseEquality();
+                result = new Binary(this.span(start), this.sourceSpan(start), '??', result, right);
             }
             return result;
         };
@@ -21796,7 +21841,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.0.0-next.8+7.sha-d641542');
+    var VERSION$1 = new Version('12.0.0-next.8+9.sha-c385e74');
 
     /**
      * @license
@@ -29435,6 +29480,8 @@
                                             return left / right;
                                         case '%':
                                             return left % right;
+                                        case '??':
+                                            return left !== null && left !== void 0 ? left : right;
                                     }
                                     return null;
                                 case 'if':
@@ -30282,6 +30329,7 @@
         };
         StatementInterpreter.prototype.visitBinaryOperatorExpr = function (ast, ctx) {
             var _this = this;
+            var _a;
             var lhs = function () { return ast.lhs.visitExpression(_this, ctx); };
             var rhs = function () { return ast.rhs.visitExpression(_this, ctx); };
             switch (ast.operator) {
@@ -30315,6 +30363,8 @@
                     return lhs() > rhs();
                 case exports.BinaryOperator.BiggerEquals:
                     return lhs() >= rhs();
+                case exports.BinaryOperator.NullishCoalesce:
+                    return (_a = lhs()) !== null && _a !== void 0 ? _a : rhs();
                 default:
                     throw new Error("Unknown operator " + ast.operator);
             }
@@ -31650,7 +31700,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+7.sha-d641542'));
+        definitionMap.set('version', literal('12.0.0-next.8+9.sha-c385e74'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -31867,7 +31917,7 @@
      */
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+7.sha-d641542'));
+        definitionMap.set('version', literal('12.0.0-next.8+9.sha-c385e74'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -31925,7 +31975,7 @@
     }
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+7.sha-d641542'));
+        definitionMap.set('version', literal('12.0.0-next.8+9.sha-c385e74'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -31950,7 +32000,7 @@
     }
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+7.sha-d641542'));
+        definitionMap.set('version', literal('12.0.0-next.8+9.sha-c385e74'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -32000,7 +32050,7 @@
      */
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+7.sha-d641542'));
+        definitionMap.set('version', literal('12.0.0-next.8+9.sha-c385e74'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
