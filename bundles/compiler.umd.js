@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.8+33.sha-6ba67c6
+ * @license Angular v12.0.0-next.8+36.sha-c20db69
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3459,6 +3459,8 @@
     Identifiers.PipeDeclaration = { name: 'ɵɵPipeDeclaration', moduleName: CORE };
     Identifiers.definePipe = { name: 'ɵɵdefinePipe', moduleName: CORE };
     Identifiers.declarePipe = { name: 'ɵɵngDeclarePipe', moduleName: CORE };
+    Identifiers.declareClassMetadata = { name: 'ɵɵngDeclareClassMetadata', moduleName: CORE };
+    Identifiers.setClassMetadata = { name: 'ɵsetClassMetadata', moduleName: CORE };
     Identifiers.queryRefresh = { name: 'ɵɵqueryRefresh', moduleName: CORE };
     Identifiers.viewQuery = { name: 'ɵɵviewQuery', moduleName: CORE };
     Identifiers.loadQuery = { name: 'ɵɵloadQuery', moduleName: CORE };
@@ -9134,7 +9136,6 @@
         moduleName: CORE$1,
     };
     Identifiers$1.createComponentFactory = { name: 'ɵccf', moduleName: CORE$1 };
-    Identifiers$1.setClassMetadata = { name: 'ɵsetClassMetadata', moduleName: CORE$1 };
     function createTokenForReference(reference) {
         return { identifier: { reference: reference } };
     }
@@ -21996,7 +21997,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.0.0-next.8+33.sha-6ba67c6');
+    var VERSION$1 = new Version('12.0.0-next.8+36.sha-c20db69');
 
     /**
      * @license
@@ -31795,6 +31796,45 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
+    function compileClassMetadata(metadata) {
+        var _a, _b;
+        // Generate an ngDevMode guarded call to setClassMetadata with the class identifier and its
+        // metadata.
+        var fnCall = importExpr(Identifiers.setClassMetadata).callFn([
+            metadata.type,
+            metadata.decorators,
+            (_a = metadata.ctorParameters) !== null && _a !== void 0 ? _a : literal(null),
+            (_b = metadata.propDecorators) !== null && _b !== void 0 ? _b : literal(null),
+        ]);
+        var iife = fn([], [devOnlyGuardedExpression(fnCall).toStmt()]);
+        return iife.callFn([]);
+    }
+
+    /**
+     * @license
+     * Copyright Google LLC All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    function compileDeclareClassMetadata(metadata) {
+        var definitionMap = new DefinitionMap();
+        definitionMap.set('version', literal('12.0.0-next.8+36.sha-c20db69'));
+        definitionMap.set('ngImport', importExpr(Identifiers.core));
+        definitionMap.set('type', metadata.type);
+        definitionMap.set('decorators', metadata.decorators);
+        definitionMap.set('ctorParameters', metadata.ctorParameters);
+        definitionMap.set('propDecorators', metadata.propDecorators);
+        return importExpr(Identifiers.declareClassMetadata).callFn([definitionMap.toLiteralMap()]);
+    }
+
+    /**
+     * @license
+     * Copyright Google LLC All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
     /**
      * Compile a directive declaration defined by the `R3DirectiveMetadata`.
      */
@@ -31810,7 +31850,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+33.sha-6ba67c6'));
+        definitionMap.set('version', literal('12.0.0-next.8+36.sha-c20db69'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -32024,7 +32064,7 @@
      */
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+33.sha-6ba67c6'));
+        definitionMap.set('version', literal('12.0.0-next.8+36.sha-c20db69'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32057,7 +32097,7 @@
      */
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+33.sha-6ba67c6'));
+        definitionMap.set('version', literal('12.0.0-next.8+36.sha-c20db69'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
@@ -32128,7 +32168,7 @@
      */
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+33.sha-6ba67c6'));
+        definitionMap.set('version', literal('12.0.0-next.8+36.sha-c20db69'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -32156,7 +32196,7 @@
      */
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+33.sha-6ba67c6'));
+        definitionMap.set('version', literal('12.0.0-next.8+36.sha-c20db69'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -32205,7 +32245,7 @@
      */
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+33.sha-6ba67c6'));
+        definitionMap.set('version', literal('12.0.0-next.8+36.sha-c20db69'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
@@ -32470,7 +32510,9 @@
     exports.analyzeFileForInjectables = analyzeFileForInjectables;
     exports.analyzeNgModules = analyzeNgModules;
     exports.collectExternalReferences = collectExternalReferences;
+    exports.compileClassMetadata = compileClassMetadata;
     exports.compileComponentFromMetadata = compileComponentFromMetadata;
+    exports.compileDeclareClassMetadata = compileDeclareClassMetadata;
     exports.compileDeclareComponentFromMetadata = compileDeclareComponentFromMetadata;
     exports.compileDeclareDirectiveFromMetadata = compileDeclareDirectiveFromMetadata;
     exports.compileDeclareFactoryFunction = compileDeclareFactoryFunction;
