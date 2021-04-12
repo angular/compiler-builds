@@ -157,6 +157,8 @@ export declare class Identifiers {
     static PipeDeclaration: o.ExternalReference;
     static definePipe: o.ExternalReference;
     static declarePipe: o.ExternalReference;
+    static declareClassMetadata: o.ExternalReference;
+    static setClassMetadata: o.ExternalReference;
     static queryRefresh: o.ExternalReference;
     static viewQuery: o.ExternalReference;
     static loadQuery: o.ExternalReference;
