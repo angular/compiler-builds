@@ -10,7 +10,7 @@ import { Identifiers as R3 } from '../r3_identifiers';
 import { DefinitionMap } from '../view/util';
 export function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', o.literal('12.0.0-next.8+57.sha-c9aa87c'));
+    definitionMap.set('version', o.literal('12.0.0-next.8+58.sha-15c307b'));
     definitionMap.set('ngImport', o.importExpr(R3.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
