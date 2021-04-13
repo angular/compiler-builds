@@ -12,7 +12,7 @@ import { DefinitionMap } from '../view/util';
 import { compileDependencies } from './util';
 export function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', o.literal('12.0.0-next.8+64.sha-c7f9516'));
+    definitionMap.set('version', o.literal('12.0.0-next.8+65.sha-71b8c9a'));
     definitionMap.set('ngImport', o.importExpr(R3.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
