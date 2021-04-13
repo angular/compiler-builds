@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.8+60.sha-60d0234
+ * @license Angular v12.0.0-next.8+64.sha-c7f9516
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7694,22 +7694,24 @@ class NonNullAssert extends AST {
     }
 }
 class MethodCall extends ASTWithName {
-    constructor(span, sourceSpan, nameSpan, receiver, name, args) {
+    constructor(span, sourceSpan, nameSpan, receiver, name, args, argumentSpan) {
         super(span, sourceSpan, nameSpan);
         this.receiver = receiver;
         this.name = name;
         this.args = args;
+        this.argumentSpan = argumentSpan;
     }
     visit(visitor, context = null) {
         return visitor.visitMethodCall(this, context);
     }
 }
 class SafeMethodCall extends ASTWithName {
-    constructor(span, sourceSpan, nameSpan, receiver, name, args) {
+    constructor(span, sourceSpan, nameSpan, receiver, name, args, argumentSpan) {
         super(span, sourceSpan, nameSpan);
         this.receiver = receiver;
         this.name = name;
         this.args = args;
+        this.argumentSpan = argumentSpan;
     }
     visit(visitor, context = null) {
         return visitor.visitSafeMethodCall(this, context);
@@ -7890,10 +7892,10 @@ class AstTransformer$1 {
         return new SafePropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name);
     }
     visitMethodCall(ast, context) {
-        return new MethodCall(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, this.visitAll(ast.args));
+        return new MethodCall(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, this.visitAll(ast.args), ast.argumentSpan);
     }
     visitSafeMethodCall(ast, context) {
-        return new SafeMethodCall(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, this.visitAll(ast.args));
+        return new SafeMethodCall(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, this.visitAll(ast.args), ast.argumentSpan);
     }
     visitFunctionCall(ast, context) {
         return new FunctionCall(ast.span, ast.sourceSpan, ast.target.visit(this), this.visitAll(ast.args));
@@ -7993,7 +7995,7 @@ class AstMemoryEfficientTransformer {
         const receiver = ast.receiver.visit(this);
         const args = this.visitAll(ast.args);
         if (receiver !== ast.receiver || args !== ast.args) {
-            return new MethodCall(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, args);
+            return new MethodCall(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, args, ast.argumentSpan);
         }
         return ast;
     }
@@ -8001,7 +8003,7 @@ class AstMemoryEfficientTransformer {
         const receiver = ast.receiver.visit(this);
         const args = this.visitAll(ast.args);
         if (receiver !== ast.receiver || args !== ast.args) {
-            return new SafeMethodCall(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, args);
+            return new SafeMethodCall(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, args, ast.argumentSpan);
         }
         return ast;
     }
@@ -8878,7 +8880,7 @@ class _AstToIrVisitor {
         // Convert the ast to an unguarded access to the receiver's member. The map will substitute
         // leftMostNode with its unguarded version in the call to `this.visit()`.
         if (leftMostSafe instanceof SafeMethodCall) {
-            this._nodeMap.set(leftMostSafe, new MethodCall(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.nameSpan, leftMostSafe.receiver, leftMostSafe.name, leftMostSafe.args));
+            this._nodeMap.set(leftMostSafe, new MethodCall(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.nameSpan, leftMostSafe.receiver, leftMostSafe.name, leftMostSafe.args, leftMostSafe.argumentSpan));
         }
         else {
             this._nodeMap.set(leftMostSafe, new PropertyRead(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.nameSpan, leftMostSafe.receiver, leftMostSafe.name));
@@ -15083,6 +15085,17 @@ class _ParseAST {
         if (artificialEndIndex !== undefined && artificialEndIndex > this.currentEndIndex) {
             endIndex = artificialEndIndex;
         }
+        // In some unusual parsing scenarios (like when certain tokens are missing and an `EmptyExpr` is
+        // being created), the current token may already be advanced beyond the `currentEndIndex`. This
+        // appears to be a deep-seated parser bug.
+        //
+        // As a workaround for now, swap the start and end indices to ensure a valid `ParseSpan`.
+        // TODO(alxhub): fix the bug upstream in the parser state, and remove this workaround.
+        if (start > endIndex) {
+            const tmp = endIndex;
+            endIndex = start;
+            start = tmp;
+        }
         return new ParseSpan(start, endIndex);
     }
     sourceSpan(start, artificialEndIndex) {
@@ -15534,14 +15547,17 @@ class _ParseAST {
         });
         const nameSpan = this.sourceSpan(nameStart);
         if (this.consumeOptionalCharacter($LPAREN)) {
+            const argumentStart = this.inputIndex;
             this.rparensExpected++;
             const args = this.parseCallArguments();
+            const argumentSpan = this.span(argumentStart, this.inputIndex).toAbsolute(this.absoluteOffset);
             this.expectCharacter($RPAREN);
             this.rparensExpected--;
             const span = this.span(start);
             const sourceSpan = this.sourceSpan(start);
-            return isSafe ? new SafeMethodCall(span, sourceSpan, nameSpan, receiver, id, args) :
-                new MethodCall(span, sourceSpan, nameSpan, receiver, id, args);
+            return isSafe ?
+                new SafeMethodCall(span, sourceSpan, nameSpan, receiver, id, args, argumentSpan) :
+                new MethodCall(span, sourceSpan, nameSpan, receiver, id, args, argumentSpan);
         }
         else {
             if (isSafe) {
@@ -20692,7 +20708,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('12.0.0-next.8+60.sha-60d0234');
+const VERSION$1 = new Version('12.0.0-next.8+64.sha-c7f9516');
 
 /**
  * @license
@@ -30156,7 +30172,7 @@ function compileClassMetadata(metadata) {
  */
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.8+60.sha-60d0234'));
+    definitionMap.set('version', literal('12.0.0-next.8+64.sha-c7f9516'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30187,7 +30203,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.8+60.sha-60d0234'));
+    definitionMap.set('version', literal('12.0.0-next.8+64.sha-c7f9516'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -30397,7 +30413,7 @@ function compileUsedPipeMetadata(meta) {
  */
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.8+60.sha-60d0234'));
+    definitionMap.set('version', literal('12.0.0-next.8+64.sha-c7f9516'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30430,7 +30446,7 @@ function compileDeclareInjectableFromMetadata(meta) {
  */
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.8+60.sha-60d0234'));
+    definitionMap.set('version', literal('12.0.0-next.8+64.sha-c7f9516'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -30500,7 +30516,7 @@ function compileDeclareInjectorFromMetadata(meta) {
  */
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.8+60.sha-60d0234'));
+    definitionMap.set('version', literal('12.0.0-next.8+64.sha-c7f9516'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -30528,7 +30544,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
  */
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.8+60.sha-60d0234'));
+    definitionMap.set('version', literal('12.0.0-next.8+64.sha-c7f9516'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30577,7 +30593,7 @@ function compileDeclarePipeFromMetadata(meta) {
  */
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('version', literal('12.0.0-next.8+60.sha-60d0234'));
+    definitionMap.set('version', literal('12.0.0-next.8+64.sha-c7f9516'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);

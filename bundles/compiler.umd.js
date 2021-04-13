@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.8+60.sha-60d0234
+ * @license Angular v12.0.0-next.8+64.sha-c7f9516
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8502,11 +8502,12 @@
     }(AST));
     var MethodCall = /** @class */ (function (_super) {
         __extends(MethodCall, _super);
-        function MethodCall(span, sourceSpan, nameSpan, receiver, name, args) {
+        function MethodCall(span, sourceSpan, nameSpan, receiver, name, args, argumentSpan) {
             var _this = _super.call(this, span, sourceSpan, nameSpan) || this;
             _this.receiver = receiver;
             _this.name = name;
             _this.args = args;
+            _this.argumentSpan = argumentSpan;
             return _this;
         }
         MethodCall.prototype.visit = function (visitor, context) {
@@ -8517,11 +8518,12 @@
     }(ASTWithName));
     var SafeMethodCall = /** @class */ (function (_super) {
         __extends(SafeMethodCall, _super);
-        function SafeMethodCall(span, sourceSpan, nameSpan, receiver, name, args) {
+        function SafeMethodCall(span, sourceSpan, nameSpan, receiver, name, args, argumentSpan) {
             var _this = _super.call(this, span, sourceSpan, nameSpan) || this;
             _this.receiver = receiver;
             _this.name = name;
             _this.args = args;
+            _this.argumentSpan = argumentSpan;
             return _this;
         }
         SafeMethodCall.prototype.visit = function (visitor, context) {
@@ -8732,10 +8734,10 @@
             return new SafePropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name);
         };
         AstTransformer.prototype.visitMethodCall = function (ast, context) {
-            return new MethodCall(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, this.visitAll(ast.args));
+            return new MethodCall(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, this.visitAll(ast.args), ast.argumentSpan);
         };
         AstTransformer.prototype.visitSafeMethodCall = function (ast, context) {
-            return new SafeMethodCall(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, this.visitAll(ast.args));
+            return new SafeMethodCall(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, this.visitAll(ast.args), ast.argumentSpan);
         };
         AstTransformer.prototype.visitFunctionCall = function (ast, context) {
             return new FunctionCall(ast.span, ast.sourceSpan, ast.target.visit(this), this.visitAll(ast.args));
@@ -8838,7 +8840,7 @@
             var receiver = ast.receiver.visit(this);
             var args = this.visitAll(ast.args);
             if (receiver !== ast.receiver || args !== ast.args) {
-                return new MethodCall(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, args);
+                return new MethodCall(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, args, ast.argumentSpan);
             }
             return ast;
         };
@@ -8846,7 +8848,7 @@
             var receiver = ast.receiver.visit(this);
             var args = this.visitAll(ast.args);
             if (receiver !== ast.receiver || args !== ast.args) {
-                return new SafeMethodCall(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, args);
+                return new SafeMethodCall(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, args, ast.argumentSpan);
             }
             return ast;
         };
@@ -9734,7 +9736,7 @@
             // Convert the ast to an unguarded access to the receiver's member. The map will substitute
             // leftMostNode with its unguarded version in the call to `this.visit()`.
             if (leftMostSafe instanceof SafeMethodCall) {
-                this._nodeMap.set(leftMostSafe, new MethodCall(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.nameSpan, leftMostSafe.receiver, leftMostSafe.name, leftMostSafe.args));
+                this._nodeMap.set(leftMostSafe, new MethodCall(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.nameSpan, leftMostSafe.receiver, leftMostSafe.name, leftMostSafe.args, leftMostSafe.argumentSpan));
             }
             else {
                 this._nodeMap.set(leftMostSafe, new PropertyRead(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.nameSpan, leftMostSafe.receiver, leftMostSafe.name));
@@ -16190,6 +16192,17 @@
             if (artificialEndIndex !== undefined && artificialEndIndex > this.currentEndIndex) {
                 endIndex = artificialEndIndex;
             }
+            // In some unusual parsing scenarios (like when certain tokens are missing and an `EmptyExpr` is
+            // being created), the current token may already be advanced beyond the `currentEndIndex`. This
+            // appears to be a deep-seated parser bug.
+            //
+            // As a workaround for now, swap the start and end indices to ensure a valid `ParseSpan`.
+            // TODO(alxhub): fix the bug upstream in the parser state, and remove this workaround.
+            if (start > endIndex) {
+                var tmp = endIndex;
+                endIndex = start;
+                start = tmp;
+            }
             return new ParseSpan(start, endIndex);
         };
         _ParseAST.prototype.sourceSpan = function (start, artificialEndIndex) {
@@ -16644,14 +16657,17 @@
             });
             var nameSpan = this.sourceSpan(nameStart);
             if (this.consumeOptionalCharacter($LPAREN)) {
+                var argumentStart = this.inputIndex;
                 this.rparensExpected++;
                 var args = this.parseCallArguments();
+                var argumentSpan = this.span(argumentStart, this.inputIndex).toAbsolute(this.absoluteOffset);
                 this.expectCharacter($RPAREN);
                 this.rparensExpected--;
                 var span = this.span(start);
                 var sourceSpan = this.sourceSpan(start);
-                return isSafe ? new SafeMethodCall(span, sourceSpan, nameSpan, receiver, id, args) :
-                    new MethodCall(span, sourceSpan, nameSpan, receiver, id, args);
+                return isSafe ?
+                    new SafeMethodCall(span, sourceSpan, nameSpan, receiver, id, args, argumentSpan) :
+                    new MethodCall(span, sourceSpan, nameSpan, receiver, id, args, argumentSpan);
             }
             else {
                 if (isSafe) {
@@ -22000,7 +22016,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.0.0-next.8+60.sha-60d0234');
+    var VERSION$1 = new Version('12.0.0-next.8+64.sha-c7f9516');
 
     /**
      * @license
@@ -31836,7 +31852,7 @@
      */
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+60.sha-60d0234'));
+        definitionMap.set('version', literal('12.0.0-next.8+64.sha-c7f9516'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
@@ -31867,7 +31883,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+60.sha-60d0234'));
+        definitionMap.set('version', literal('12.0.0-next.8+64.sha-c7f9516'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -32081,7 +32097,7 @@
      */
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+60.sha-60d0234'));
+        definitionMap.set('version', literal('12.0.0-next.8+64.sha-c7f9516'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32114,7 +32130,7 @@
      */
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+60.sha-60d0234'));
+        definitionMap.set('version', literal('12.0.0-next.8+64.sha-c7f9516'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
@@ -32185,7 +32201,7 @@
      */
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+60.sha-60d0234'));
+        definitionMap.set('version', literal('12.0.0-next.8+64.sha-c7f9516'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -32213,7 +32229,7 @@
      */
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+60.sha-60d0234'));
+        definitionMap.set('version', literal('12.0.0-next.8+64.sha-c7f9516'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -32262,7 +32278,7 @@
      */
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+60.sha-60d0234'));
+        definitionMap.set('version', literal('12.0.0-next.8+64.sha-c7f9516'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
