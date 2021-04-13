@@ -22,7 +22,7 @@
     var util_1 = require("@angular/compiler/src/render3/view/util");
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new util_1.DefinitionMap();
-        definitionMap.set('version', o.literal('12.0.0-next.8+52.sha-bfbdb8f'));
+        definitionMap.set('version', o.literal('12.0.0-next.8+50.sha-0f54d6c'));
         definitionMap.set('ngImport', o.importExpr(r3_identifiers_1.Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
