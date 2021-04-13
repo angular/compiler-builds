@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.8+51.sha-ffea31f
+ * @license Angular v12.0.0-next.8+57.sha-c9aa87c
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -22000,7 +22000,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.0.0-next.8+51.sha-ffea31f');
+    var VERSION$1 = new Version('12.0.0-next.8+57.sha-c9aa87c');
 
     /**
      * @license
@@ -24109,6 +24109,11 @@
     }
 
     var ERROR_COMPONENT_TYPE = 'ngComponentType';
+    var MISSING_NG_MODULE_METADATA_ERROR_DATA = 'ngMissingNgModuleMetadataErrorData';
+    function getMissingNgModuleMetadataErrorData(error) {
+        var _a;
+        return (_a = error[MISSING_NG_MODULE_METADATA_ERROR_DATA]) !== null && _a !== void 0 ? _a : null;
+    }
     // Design notes:
     // - don't lazily create metadata:
     //   For some metadata, we need to do async work sometimes,
@@ -24223,9 +24228,9 @@
             }
         };
         CompileMetadataResolver.prototype.initComponentFactory = function (factory, ngContentSelectors) {
-            var _a;
+            var _b;
             if (!(factory instanceof StaticSymbol)) {
-                (_a = factory.ngContentSelectors).push.apply(_a, __spreadArray([], __read(ngContentSelectors)));
+                (_b = factory.ngContentSelectors).push.apply(_b, __spreadArray([], __read(ngContentSelectors)));
             }
         };
         CompileMetadataResolver.prototype._loadSummary = function (type, kind) {
@@ -24288,7 +24293,7 @@
                 return null;
             }
             directiveType = resolveForwardRef(directiveType);
-            var _a = this.getNonNormalizedDirectiveMetadata(directiveType), annotation = _a.annotation, metadata = _a.metadata;
+            var _b = this.getNonNormalizedDirectiveMetadata(directiveType), annotation = _b.annotation, metadata = _b.metadata;
             var createDirectiveMetadata = function (templateMetadata) {
                 var normalizedDirMeta = new CompileDirectiveMetadata({
                     isHost: false,
@@ -24585,7 +24590,16 @@
                         var importedModuleSummary = _this.getNgModuleSummary(importedModuleType, alreadyCollecting);
                         alreadyCollecting.delete(importedModuleType);
                         if (!importedModuleSummary) {
-                            _this._reportError(syntaxError("Unexpected " + _this._getTypeDescriptor(importedType) + " '" + stringifyType(importedType) + "' imported by the module '" + stringifyType(moduleType) + "'. Please add a @NgModule annotation."), moduleType);
+                            var err = syntaxError("Unexpected " + _this._getTypeDescriptor(importedType) + " '" + stringifyType(importedType) + "' imported by the module '" + stringifyType(moduleType) + "'. Please add a @NgModule annotation.");
+                            // If possible, record additional context for this error to enable more useful
+                            // diagnostics on the compiler side.
+                            if (importedType instanceof StaticSymbol) {
+                                err[MISSING_NG_MODULE_METADATA_ERROR_DATA] = {
+                                    fileName: importedType.filePath,
+                                    className: importedType.name,
+                                };
+                            }
+                            _this._reportError(err, moduleType);
                             return;
                         }
                         importedModules.push(importedModuleSummary);
@@ -31822,7 +31836,7 @@
      */
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+51.sha-ffea31f'));
+        definitionMap.set('version', literal('12.0.0-next.8+57.sha-c9aa87c'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
@@ -31853,7 +31867,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+51.sha-ffea31f'));
+        definitionMap.set('version', literal('12.0.0-next.8+57.sha-c9aa87c'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -32067,7 +32081,7 @@
      */
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+51.sha-ffea31f'));
+        definitionMap.set('version', literal('12.0.0-next.8+57.sha-c9aa87c'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32100,7 +32114,7 @@
      */
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+51.sha-ffea31f'));
+        definitionMap.set('version', literal('12.0.0-next.8+57.sha-c9aa87c'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
@@ -32171,7 +32185,7 @@
      */
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+51.sha-ffea31f'));
+        definitionMap.set('version', literal('12.0.0-next.8+57.sha-c9aa87c'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -32199,7 +32213,7 @@
      */
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+51.sha-ffea31f'));
+        definitionMap.set('version', literal('12.0.0-next.8+57.sha-c9aa87c'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -32248,7 +32262,7 @@
      */
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+51.sha-ffea31f'));
+        definitionMap.set('version', literal('12.0.0-next.8+57.sha-c9aa87c'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
@@ -32546,6 +32560,7 @@
     exports.flatten = flatten;
     exports.formattedError = formattedError;
     exports.getHtmlTagDefinition = getHtmlTagDefinition;
+    exports.getMissingNgModuleMetadataErrorData = getMissingNgModuleMetadataErrorData;
     exports.getNsPrefix = getNsPrefix;
     exports.getParseErrors = getParseErrors;
     exports.getSafePropertyAccessString = getSafePropertyAccessString;
