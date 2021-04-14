@@ -7,8 +7,7 @@
  */
 import * as o from '../output/output_ast';
 import { R3DependencyMetadata } from './r3_factory';
-import { R3Reference } from './util';
-import { R3PipeDef } from './view/api';
+import { R3CompiledExpression, R3Reference } from './util';
 export interface R3PipeMetadata {
     /**
      * Name of the pipe type.
@@ -43,5 +42,5 @@ export interface R3PipeMetadata {
      */
     pure: boolean;
 }
-export declare function compilePipeFromMetadata(metadata: R3PipeMetadata): R3PipeDef;
+export declare function compilePipeFromMetadata(metadata: R3PipeMetadata): R3CompiledExpression;
 export declare function createPipeType(metadata: R3PipeMetadata): o.Type;

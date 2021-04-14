@@ -14,8 +14,8 @@ export interface Node {
 }
 export declare abstract class NodeWithI18n implements Node {
     sourceSpan: ParseSourceSpan;
-    i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined;
-    constructor(sourceSpan: ParseSourceSpan, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
+    i18n?: I18nMeta | undefined;
+    constructor(sourceSpan: ParseSourceSpan, i18n?: I18nMeta | undefined);
     abstract visit(visitor: Visitor, context: any): any;
 }
 export declare class Text extends NodeWithI18n {
