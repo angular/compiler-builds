@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.8+104.sha-1b43158
+ * @license Angular v12.0.0-next.8+107.sha-b649273
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9349,7 +9349,7 @@
         return "tmp_" + bindingId + "_" + temporaryNumber;
     }
     function temporaryDeclaration(bindingId, temporaryNumber) {
-        return new DeclareVarStmt(temporaryName(bindingId, temporaryNumber), NULL_EXPR);
+        return new DeclareVarStmt(temporaryName(bindingId, temporaryNumber));
     }
     function prependTemporaryDecls(temporaryCount, bindingId, statements) {
         for (var i = temporaryCount - 1; i >= 0; i--) {
@@ -9751,14 +9751,12 @@
                 this.releaseTemporary(temporary);
             }
             // Produce the conditional
-            return convertToStatementIfNeeded(mode, condition.conditional(literal(null), access));
+            return convertToStatementIfNeeded(mode, condition.conditional(NULL_EXPR, access));
         };
         _AstToIrVisitor.prototype.convertNullishCoalesce = function (ast, mode) {
-            // Allocate the temporary variable before visiting the LHS and RHS, because they
-            // may allocate temporary variables too and we don't want them to be reused.
-            var temporary = this.allocateTemporary();
             var left = this._visit(ast.left, _Mode.Expression);
             var right = this._visit(ast.right, _Mode.Expression);
+            var temporary = this.allocateTemporary();
             this.releaseTemporary(temporary);
             // Generate the following expression. It is identical to how TS
             // transpiles binary expressions with a nullish coalescing operator.
@@ -22016,7 +22014,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.0.0-next.8+104.sha-1b43158');
+    var VERSION$1 = new Version('12.0.0-next.8+107.sha-b649273');
 
     /**
      * @license
@@ -31861,7 +31859,7 @@
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', literal('12.0.0-next.8+104.sha-1b43158'));
+        definitionMap.set('version', literal('12.0.0-next.8+107.sha-b649273'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
@@ -31901,7 +31899,7 @@
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-        definitionMap.set('version', literal('12.0.0-next.8+104.sha-1b43158'));
+        definitionMap.set('version', literal('12.0.0-next.8+107.sha-b649273'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -32124,7 +32122,7 @@
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-        definitionMap.set('version', literal('12.0.0-next.8+104.sha-1b43158'));
+        definitionMap.set('version', literal('12.0.0-next.8+107.sha-b649273'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32166,7 +32164,7 @@
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-        definitionMap.set('version', literal('12.0.0-next.8+104.sha-1b43158'));
+        definitionMap.set('version', literal('12.0.0-next.8+107.sha-b649273'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
@@ -32246,7 +32244,7 @@
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-        definitionMap.set('version', literal('12.0.0-next.8+104.sha-1b43158'));
+        definitionMap.set('version', literal('12.0.0-next.8+107.sha-b649273'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -32283,7 +32281,7 @@
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-        definitionMap.set('version', literal('12.0.0-next.8+104.sha-1b43158'));
+        definitionMap.set('version', literal('12.0.0-next.8+107.sha-b649273'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -32341,7 +32339,7 @@
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-        definitionMap.set('version', literal('12.0.0-next.8+104.sha-1b43158'));
+        definitionMap.set('version', literal('12.0.0-next.8+107.sha-b649273'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
