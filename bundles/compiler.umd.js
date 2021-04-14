@@ -1,5 +1,5 @@
 /**
- * @license Angular v10.2.4+1.sha-ba8da74
+ * @license Angular v10.2.4+2.sha-f630f33
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -20632,7 +20632,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('10.2.4+1.sha-ba8da74');
+    var VERSION$1 = new Version('10.2.4+2.sha-f630f33');
 
     /**
      * @license
@@ -22750,6 +22750,11 @@
     }
 
     var ERROR_COMPONENT_TYPE = 'ngComponentType';
+    var MISSING_NG_MODULE_METADATA_ERROR_DATA = 'ngMissingNgModuleMetadataErrorData';
+    function getMissingNgModuleMetadataErrorData(error) {
+        var _a;
+        return (_a = error[MISSING_NG_MODULE_METADATA_ERROR_DATA]) !== null && _a !== void 0 ? _a : null;
+    }
     // Design notes:
     // - don't lazily create metadata:
     //   For some metadata, we need to do async work sometimes,
@@ -22864,9 +22869,9 @@
             }
         };
         CompileMetadataResolver.prototype.initComponentFactory = function (factory, ngContentSelectors) {
-            var _a;
+            var _b;
             if (!(factory instanceof StaticSymbol)) {
-                (_a = factory.ngContentSelectors).push.apply(_a, __spread(ngContentSelectors));
+                (_b = factory.ngContentSelectors).push.apply(_b, __spread(ngContentSelectors));
             }
         };
         CompileMetadataResolver.prototype._loadSummary = function (type, kind) {
@@ -22929,7 +22934,7 @@
                 return null;
             }
             directiveType = resolveForwardRef(directiveType);
-            var _a = this.getNonNormalizedDirectiveMetadata(directiveType), annotation = _a.annotation, metadata = _a.metadata;
+            var _b = this.getNonNormalizedDirectiveMetadata(directiveType), annotation = _b.annotation, metadata = _b.metadata;
             var createDirectiveMetadata = function (templateMetadata) {
                 var normalizedDirMeta = new CompileDirectiveMetadata({
                     isHost: false,
@@ -23226,7 +23231,16 @@
                         var importedModuleSummary = _this.getNgModuleSummary(importedModuleType, alreadyCollecting);
                         alreadyCollecting.delete(importedModuleType);
                         if (!importedModuleSummary) {
-                            _this._reportError(syntaxError("Unexpected " + _this._getTypeDescriptor(importedType) + " '" + stringifyType(importedType) + "' imported by the module '" + stringifyType(moduleType) + "'. Please add a @NgModule annotation."), moduleType);
+                            var err = syntaxError("Unexpected " + _this._getTypeDescriptor(importedType) + " '" + stringifyType(importedType) + "' imported by the module '" + stringifyType(moduleType) + "'. Please add a @NgModule annotation.");
+                            // If possible, record additional context for this error to enable more useful
+                            // diagnostics on the compiler side.
+                            if (importedType instanceof StaticSymbol) {
+                                err[MISSING_NG_MODULE_METADATA_ERROR_DATA] = {
+                                    fileName: importedType.filePath,
+                                    className: importedType.name,
+                                };
+                            }
+                            _this._reportError(err, moduleType);
                             return;
                         }
                         importedModules.push(importedModuleSummary);
@@ -30680,6 +30694,7 @@
     exports.flatten = flatten;
     exports.formattedError = formattedError;
     exports.getHtmlTagDefinition = getHtmlTagDefinition;
+    exports.getMissingNgModuleMetadataErrorData = getMissingNgModuleMetadataErrorData;
     exports.getNsPrefix = getNsPrefix;
     exports.getParseErrors = getParseErrors;
     exports.getUrlScheme = getUrlScheme;
