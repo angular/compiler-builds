@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.8+96.sha-5a8bc1b
+ * @license Angular v12.0.0-next.8+97.sha-3923201
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -22016,7 +22016,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.0.0-next.8+96.sha-5a8bc1b');
+    var VERSION$1 = new Version('12.0.0-next.8+97.sha-3923201');
 
     /**
      * @license
@@ -31850,9 +31850,18 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
+    /**
+     * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
+     * must update this constant to prevent old partial-linkers from incorrectly processing the
+     * declaration.
+     *
+     * Do not include any prerelease in these versions as they are ignored.
+     */
+    var MINIMUM_PARTIAL_LINKER_VERSION = '12.0.0';
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+96.sha-5a8bc1b'));
+        definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
+        definitionMap.set('version', literal('12.0.0-next.8+97.sha-3923201'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
@@ -31869,6 +31878,14 @@
      * found in the LICENSE file at https://angular.io/license
      */
     /**
+     * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
+     * must update this constant to prevent old partial-linkers from incorrectly processing the
+     * declaration.
+     *
+     * Do not include any prerelease in these versions as they are ignored.
+     */
+    var MINIMUM_PARTIAL_LINKER_VERSION$1 = '12.0.0';
+    /**
      * Compile a directive declaration defined by the `R3DirectiveMetadata`.
      */
     function compileDeclareDirectiveFromMetadata(meta) {
@@ -31883,7 +31900,8 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+96.sha-5a8bc1b'));
+        definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
+        definitionMap.set('version', literal('12.0.0-next.8+97.sha-3923201'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -32095,9 +32113,18 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
+    /**
+     * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
+     * must update this constant to prevent old partial-linkers from incorrectly processing the
+     * declaration.
+     *
+     * Do not include any prerelease in these versions as they are ignored.
+     */
+    var MINIMUM_PARTIAL_LINKER_VERSION$2 = '12.0.0';
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+96.sha-5a8bc1b'));
+        definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
+        definitionMap.set('version', literal('12.0.0-next.8+97.sha-3923201'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32117,6 +32144,14 @@
      * found in the LICENSE file at https://angular.io/license
      */
     /**
+     * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
+     * must update this constant to prevent old partial-linkers from incorrectly processing the
+     * declaration.
+     *
+     * Do not include any prerelease in these versions as they are ignored.
+     */
+    var MINIMUM_PARTIAL_LINKER_VERSION$3 = '12.0.0';
+    /**
      * Compile a Injectable declaration defined by the `R3InjectableMetadata`.
      */
     function compileDeclareInjectableFromMetadata(meta) {
@@ -32130,7 +32165,8 @@
      */
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+96.sha-5a8bc1b'));
+        definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
+        definitionMap.set('version', literal('12.0.0-next.8+97.sha-3923201'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
@@ -32190,6 +32226,14 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
+    /**
+     * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
+     * must update this constant to prevent old partial-linkers from incorrectly processing the
+     * declaration.
+     *
+     * Do not include any prerelease in these versions as they are ignored.
+     */
+    var MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
     function compileDeclareInjectorFromMetadata(meta) {
         var definitionMap = createInjectorDefinitionMap(meta);
         var expression = importExpr(Identifiers.declareInjector).callFn([definitionMap.toLiteralMap()]);
@@ -32201,7 +32245,8 @@
      */
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+96.sha-5a8bc1b'));
+        definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
+        definitionMap.set('version', literal('12.0.0-next.8+97.sha-3923201'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -32218,6 +32263,14 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
+    /**
+     * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
+     * must update this constant to prevent old partial-linkers from incorrectly processing the
+     * declaration.
+     *
+     * Do not include any prerelease in these versions as they are ignored.
+     */
+    var MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
     function compileDeclareNgModuleFromMetadata(meta) {
         var definitionMap = createNgModuleDefinitionMap(meta);
         var expression = importExpr(Identifiers.declareNgModule).callFn([definitionMap.toLiteralMap()]);
@@ -32229,7 +32282,8 @@
      */
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+96.sha-5a8bc1b'));
+        definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
+        definitionMap.set('version', literal('12.0.0-next.8+97.sha-3923201'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -32265,6 +32319,14 @@
      * found in the LICENSE file at https://angular.io/license
      */
     /**
+     * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
+     * must update this constant to prevent old partial-linkers from incorrectly processing the
+     * declaration.
+     *
+     * Do not include any prerelease in these versions as they are ignored.
+     */
+    var MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
+    /**
      * Compile a Pipe declaration defined by the `R3PipeMetadata`.
      */
     function compileDeclarePipeFromMetadata(meta) {
@@ -32278,7 +32340,8 @@
      */
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+96.sha-5a8bc1b'));
+        definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
+        definitionMap.set('version', literal('12.0.0-next.8+97.sha-3923201'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);

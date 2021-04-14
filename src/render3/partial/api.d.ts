@@ -9,6 +9,10 @@ import { ChangeDetectionStrategy, ViewEncapsulation } from '../../core';
 import * as o from '../../output/output_ast';
 export interface R3PartialDeclaration {
     /**
+     * The minimum version of the compiler that can process this partial declaration.
+     */
+    minVersion: string;
+    /**
      * Version number of the Angular compiler that was used to compile this declaration. The linker
      * will be able to detect which version a library is using and interpret its metadata accordingly.
      */
