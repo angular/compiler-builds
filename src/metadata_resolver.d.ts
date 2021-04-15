@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -20,6 +20,11 @@ import { SummaryResolver } from './summary_resolver';
 import { Console, SyncAsync } from './util';
 export declare type ErrorCollector = (error: any, type?: any) => void;
 export declare const ERROR_COMPONENT_TYPE = "ngComponentType";
+export interface MissingNgModuleMetadataErrorData {
+    fileName: string;
+    className: string;
+}
+export declare function getMissingNgModuleMetadataErrorData(error: any): MissingNgModuleMetadataErrorData | null;
 export declare class CompileMetadataResolver {
     private _config;
     private _htmlParser;

@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -8,11 +8,12 @@
 import * as i18n from '../../../i18n/i18n_ast';
 import * as html from '../../../ml_parser/ast';
 import { InterpolationConfig } from '../../../ml_parser/interpolation_config';
+import { ParseTreeResult } from '../../../ml_parser/parser';
 import * as o from '../../../output/output_ast';
 export declare type I18nMeta = {
     id?: string;
     customId?: string;
-    legacyId?: string;
+    legacyIds?: string[];
     description?: string;
     meaning?: string;
 };
@@ -24,11 +25,13 @@ export declare type I18nMeta = {
 export declare class I18nMetaVisitor implements html.Visitor {
     private interpolationConfig;
     private keepI18nAttrs;
-    private i18nLegacyMessageIdFormat;
+    private enableI18nLegacyMessageIdFormat;
     hasI18nMeta: boolean;
+    private _errors;
     private _createI18nMessage;
-    constructor(interpolationConfig?: InterpolationConfig, keepI18nAttrs?: boolean, i18nLegacyMessageIdFormat?: string);
+    constructor(interpolationConfig?: InterpolationConfig, keepI18nAttrs?: boolean, enableI18nLegacyMessageIdFormat?: boolean);
     private _generateI18nMessage;
+    visitAllWithErrors(nodes: html.Node[]): ParseTreeResult;
     visitElement(element: html.Element): any;
     visitExpansion(expansion: html.Expansion, currentMessage: i18n.Message | undefined): any;
     visitText(text: html.Text): any;
@@ -58,9 +61,9 @@ export declare class I18nMetaVisitor implements html.Visitor {
      * @param message the message whose legacy id should be set
      * @param meta information about the message being processed
      */
-    private _setLegacyId;
+    private _setLegacyIds;
+    private _reportError;
 }
-export declare function metaFromI18nMessage(message: i18n.Message, id?: string | null): I18nMeta;
 /**
  * Parses i18n metas like:
  *  - "@@id",
@@ -72,22 +75,4 @@ export declare function metaFromI18nMessage(message: i18n.Message, id?: string |
  * @returns Object with id, meaning and description fields
  */
 export declare function parseI18nMeta(meta?: string): I18nMeta;
-/**
- * Serialize the given `meta` and `messagePart` a string that can be used in a `$localize`
- * tagged string. The format of the metadata is the same as that parsed by `parseI18nMeta()`.
- *
- * @param meta The metadata to serialize
- * @param messagePart The first part of the tagged string
- */
-export declare function serializeI18nHead(meta: I18nMeta, messagePart: string): string;
-/**
- * Serialize the given `placeholderName` and `messagePart` into strings that can be used in a
- * `$localize` tagged string.
- *
- * @param placeholderName The placeholder name to serialize
- * @param messagePart The following message string after this placeholder
- */
-export declare function serializeI18nTemplatePart(placeholderName: string, messagePart: string): string;
-export declare function i18nMetaToDocStmt(meta: I18nMeta): o.JSDocCommentStmt | null;
-export declare function escapeStartingColon(str: string): string;
-export declare function escapeColons(str: string): string;
+export declare function i18nMetaToJSDoc(meta: I18nMeta): o.JSDocComment | null;

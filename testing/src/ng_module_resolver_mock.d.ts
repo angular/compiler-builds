@@ -1,11 +1,11 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { CompileReflector, NgModuleResolver, core } from '@angular/compiler';
+import { CompileReflector, core, NgModuleResolver } from '@angular/compiler';
 export declare class MockNgModuleResolver extends NgModuleResolver {
     private _ngModules;
     constructor(reflector: CompileReflector);

@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -14,5 +14,11 @@ export interface Render3ParseResult {
     errors: ParseError[];
     styles: string[];
     styleUrls: string[];
+    ngContentSelectors: string[];
+    commentNodes?: t.Comment[];
 }
-export declare function htmlAstToRender3Ast(htmlNodes: html.Node[], bindingParser: BindingParser): Render3ParseResult;
+interface Render3ParseOptions {
+    collectCommentNodes: boolean;
+}
+export declare function htmlAstToRender3Ast(htmlNodes: html.Node[], bindingParser: BindingParser, options: Render3ParseOptions): Render3ParseResult;
+export {};

@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -64,9 +64,6 @@ export declare class AotCompiler {
     private _externalIdentifierReferences;
     private _createTypeCheckBlock;
     emitMessageBundle(analyzeResult: NgAnalyzedModules, locale: string | null): MessageBundle;
-    emitAllPartialModules({ ngModuleByPipeOrDirective, files }: NgAnalyzedModules, r3Files: NgAnalyzedFileWithInjectables[]): PartialModule[];
-    private _compileShallowModules;
-    private _compilePartialModule;
     emitAllPartialModules2(files: NgAnalyzedFileWithInjectables[]): PartialModule[];
     private _emitPartialModule2;
     emitAllImpls(analyzeResult: NgAnalyzedModules): GeneratedFile[];

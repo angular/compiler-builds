@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -13,11 +13,12 @@ export declare enum TagContentType {
 export interface TagDefinition {
     closedByParent: boolean;
     implicitNamespacePrefix: string | null;
-    contentType: TagContentType;
     isVoid: boolean;
     ignoreFirstLf: boolean;
     canSelfClose: boolean;
+    preventNamespaceInheritance: boolean;
     isClosedByChild(name: string): boolean;
+    getContentType(prefix?: string): TagContentType;
 }
 export declare function splitNsName(elementName: string): [string | null, string];
 export declare function isNgContainer(tagName: string): boolean;

@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -26,9 +26,6 @@ export declare class ShadowCss {
     private _extractUnscopedRulesFromCssText;
     private _convertColonHost;
     private _convertColonHostContext;
-    private _convertColonRule;
-    private _colonHostContextPartReplacer;
-    private _colonHostPartReplacer;
     private _convertShadowDOMSelectors;
     private _scopeSelectors;
     private _scopeSelector;
@@ -44,3 +41,15 @@ export declare class CssRule {
     constructor(selector: string, content: string);
 }
 export declare function processRules(input: string, ruleCallback: (rule: CssRule) => CssRule): string;
+/**
+ * Mutate the given `groups` array so that there are `multiples` clones of the original array
+ * stored.
+ *
+ * For example `repeatGroups([a, b], 3)` will result in `[a, b, a, b, a, b]` - but importantly the
+ * newly added groups will be clones of the original.
+ *
+ * @param groups An array of groups of strings that will be repeated. This array is mutated
+ *     in-place.
+ * @param multiples The number of times the current groups should appear.
+ */
+export declare function repeatGroups<T>(groups: string[][], multiples: number): void;

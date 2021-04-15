@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -11,9 +11,10 @@ export interface Inject {
 export declare const createInject: MetadataFactory<Inject>;
 export declare const createInjectionToken: MetadataFactory<object>;
 export interface Attribute {
-    attributeName?: string;
+    attributeName: string;
 }
 export declare const createAttribute: MetadataFactory<Attribute>;
+export declare const emitDistinctChangesOnlyDefaultValue = true;
 export interface Query {
     descendants: boolean;
     first: boolean;
@@ -21,6 +22,7 @@ export interface Query {
     isViewQuery: boolean;
     selector: any;
     static?: boolean;
+    emitDistinctChangesOnly: boolean;
 }
 export declare const createContentChildren: MetadataFactory<Query>;
 export declare const createContentChild: MetadataFactory<Query>;
@@ -59,7 +61,6 @@ export interface Component extends Directive {
 }
 export declare enum ViewEncapsulation {
     Emulated = 0,
-    Native = 1,
     None = 2,
     ShadowDom = 3
 }
@@ -173,6 +174,7 @@ export declare const enum NodeFlags {
     StaticQuery = 268435456,
     DynamicQuery = 536870912,
     TypeModuleProvider = 1073741824,
+    EmitDistinctChangesOnly = -2147483648,
     CatQuery = 201326592,
     Types = 201347067
 }
