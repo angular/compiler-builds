@@ -234,6 +234,7 @@ export declare class BindingScope implements LocalResolver {
     private map;
     private referenceNameIndex;
     private restoreViewVariable;
+    private usesRestoredViewContext;
     static createRootScope(): BindingScope;
     private constructor();
     get(name: string): o.Expression | null;
@@ -267,6 +268,8 @@ export declare class BindingScope implements LocalResolver {
     isListenerScope(): boolean | null;
     variableDeclarations(): o.Statement[];
     freshReferenceName(): string;
+    hasRestoreViewVariable(): boolean;
+    notifyRestoredViewContextUse(): void;
 }
 /**
  * Creates a `CssSelector` given a tag name and a map of attributes
@@ -282,6 +285,10 @@ export interface ParseTemplateOptions {
      * Include whitespace nodes in the parsed output.
      */
     preserveWhitespaces?: boolean;
+    /**
+     * Preserve original line endings instead of normalizing '\r\n' endings to '\n'.
+     */
+    preserveLineEndings?: boolean;
     /**
      * How to parse interpolation markers.
      */
@@ -340,9 +347,29 @@ export interface ParseTemplateOptions {
      */
     i18nNormalizeLineEndingsInICUs?: boolean;
     /**
-     * Whether the template was inline.
+     * Whether to always attempt to convert the parsed HTML AST to an R3 AST, despite HTML or i18n
+     * Meta parse errors.
+     *
+     *
+     * This option is useful in the context of the language service, where we want to get as much
+     * information as possible, despite any errors in the HTML. As an example, a user may be adding
+     * a new tag and expecting autocomplete on that tag. In this scenario, the HTML is in an errored
+     * state, as there is an incomplete open tag. However, we're still able to convert the HTML AST
+     * nodes to R3 AST nodes in order to provide information for the language service.
+     *
+     * Note that even when `true` the HTML parse and i18n errors are still appended to the errors
+     * output, but this is done after converting the HTML AST to R3 AST.
      */
-    isInline?: boolean;
+    alwaysAttemptHtmlToR3AstConversion?: boolean;
+    /**
+     * Include HTML Comment nodes in a top-level comments array on the returned R3 AST.
+     *
+     * This option is required by tooling that needs to know the location of comment nodes within the
+     * AST. A concrete example is @angular-eslint which requires this in order to enable
+     * "eslint-disable" comments within HTML templates, which then allows users to turn off specific
+     * rules on a case by case basis, instead of for their whole project within a configuration file.
+     */
+    collectCommentNodes?: boolean;
 }
 /**
  * Parse a template into render3 `Node`s and additional metadata, with no other dependencies.
@@ -402,25 +429,6 @@ export interface ParsedTemplate {
      */
     interpolationConfig?: InterpolationConfig;
     /**
-     * The string contents of the template, or an expression that represents the string/template
-     * literal as it occurs in the source.
-     *
-     * This is the "logical" template string, after expansion of any escaped characters (for inline
-     * templates). This may differ from the actual template bytes as they appear in the .ts file.
-     */
-    template: string | o.Expression;
-    /**
-     * A full path to the file which contains the template.
-     *
-     * This can be either the original .ts file if the template is inline, or the .html file if an
-     * external file was used.
-     */
-    templateUrl: string;
-    /**
-     * Whether the template was inline (using `template`) or external (using `templateUrl`).
-     */
-    isInline: boolean;
-    /**
      * Any errors from parsing the template the first time.
      *
      * `null` if there are no errors. Otherwise, the array of errors is guaranteed to be non-empty.
@@ -442,5 +450,10 @@ export interface ParsedTemplate {
      * Any ng-content selectors extracted from the template.
      */
     ngContentSelectors: string[];
+    /**
+     * Any R3 Comment Nodes extracted from the template when the `collectCommentNodes` parse template
+     * option is enabled.
+     */
+    commentNodes?: t.Comment[];
 }
 export {};

@@ -133,8 +133,16 @@ export declare class _ParseAST {
      * Returns the absolute offset of the start of the current token.
      */
     get currentAbsoluteOffset(): number;
-    span(start: number): ParseSpan;
-    sourceSpan(start: number): AbsoluteSourceSpan;
+    /**
+     * Retrieve a `ParseSpan` from `start` to the current position (or to `artificialEndIndex` if
+     * provided).
+     *
+     * @param start Position from which the `ParseSpan` will start.
+     * @param artificialEndIndex Optional ending index to be used if provided (and if greater than the
+     *     natural ending index)
+     */
+    span(start: number, artificialEndIndex?: number): ParseSpan;
+    sourceSpan(start: number, artificialEndIndex?: number): AbsoluteSourceSpan;
     advance(): void;
     /**
      * Executes a callback in the provided context.
@@ -153,7 +161,7 @@ export declare class _ParseAST {
     consumeOptionalOperator(op: string): boolean;
     expectOperator(operator: string): void;
     prettyPrintToken(tok: Token): string;
-    expectIdentifierOrKeyword(): string;
+    expectIdentifierOrKeyword(): string | null;
     expectIdentifierOrKeywordOrString(): string;
     parseChain(): AST;
     parsePipe(): AST;
@@ -161,6 +169,7 @@ export declare class _ParseAST {
     parseConditional(): AST;
     parseLogicalOr(): AST;
     parseLogicalAnd(): AST;
+    parseNullishCoalescing(): AST;
     parseEquality(): AST;
     parseRelational(): AST;
     parseAdditive(): AST;
@@ -170,7 +179,7 @@ export declare class _ParseAST {
     parsePrimary(): AST;
     parseExpressionList(terminator: number): AST[];
     parseLiteralMap(): LiteralMap;
-    parseAccessMemberOrMethodCall(receiver: AST, isSafe?: boolean): AST;
+    parseAccessMemberOrMethodCall(receiver: AST, start: number, isSafe?: boolean): AST;
     parseCallArguments(): BindingPipe[];
     /**
      * Parses an identifier, a keyword, a string with an optional `-` in between,

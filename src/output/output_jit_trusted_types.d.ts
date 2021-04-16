@@ -34,9 +34,7 @@ export declare interface TrustedTypePolicy {
     createScript(input: string): TrustedScript;
 }
 /**
- * Unsafely call the Function constructor with the given string arguments. It
- * is only available in development mode, and should be stripped out of
- * production code.
+ * Unsafely call the Function constructor with the given string arguments.
  * @security This is a security-sensitive function; any use of this function
  * must go through security review. In particular, it must be assured that it
  * is only called from the JIT compiler, as use in other code can lead to XSS

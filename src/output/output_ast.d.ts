@@ -81,7 +81,8 @@ export declare enum BinaryOperator {
     Lower = 12,
     LowerEquals = 13,
     Bigger = 14,
-    BiggerEquals = 15
+    BiggerEquals = 15,
+    NullishCoalesce = 16
 }
 export declare function nullSafeIsEquivalent<T extends {
     isEquivalent(other: T): boolean;
@@ -127,6 +128,7 @@ export declare abstract class Expression {
     biggerEquals(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     isBlank(sourceSpan?: ParseSourceSpan | null): Expression;
     cast(type: Type, sourceSpan?: ParseSourceSpan | null): Expression;
+    nullishCoalesce(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     toStmt(): Statement;
 }
 export declare enum BuiltinVar {

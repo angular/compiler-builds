@@ -241,6 +241,10 @@ export interface R3UsedDirectiveMetadata {
      * Name under which the directive is exported, if any (exportAs in Angular). Null otherwise.
      */
     exportAs: string[] | null;
+    /**
+     * If true then this directive is actually a component; otherwise it is not.
+     */
+    isComponent?: boolean;
 }
 /**
  * Information needed to compile a query (view or content).
@@ -288,20 +292,6 @@ export interface R3QueryMetadata {
      * content hooks and ngAfterViewInit for view hooks).
      */
     static: boolean;
-}
-/**
- * Output of render3 directive compilation.
- */
-export interface R3DirectiveDef {
-    expression: o.Expression;
-    type: o.Type;
-}
-/**
- * Output of render3 component compilation.
- */
-export interface R3ComponentDef {
-    expression: o.Expression;
-    type: o.Type;
 }
 /**
  * Mappings indicating how the class interacts with its
