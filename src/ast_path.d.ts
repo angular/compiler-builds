@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -26,9 +26,9 @@ export declare class AstPath<T> {
     private path;
     position: number;
     constructor(path: T[], position?: number);
-    readonly empty: boolean;
-    readonly head: T | undefined;
-    readonly tail: T | undefined;
+    get empty(): boolean;
+    get head(): T | undefined;
+    get tail(): T | undefined;
     parentOf(node: T | undefined): T | undefined;
     childOf(node: T): T | undefined;
     first<N extends T>(ctor: {

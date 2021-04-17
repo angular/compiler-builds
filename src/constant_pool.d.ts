@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -19,6 +19,7 @@ export declare const enum DefinitionKind {
  * The constant pool also supports sharing access to ivy definitions references.
  */
 export declare class ConstantPool {
+    private readonly isClosureCompilerEnabled;
     statements: o.Statement[];
     private literals;
     private literalFactories;
@@ -27,6 +28,7 @@ export declare class ConstantPool {
     private componentDefinitions;
     private pipeDefinitions;
     private nextNameIndex;
+    constructor(isClosureCompilerEnabled?: boolean);
     getConstLiteral(literal: o.Expression, forceShared?: boolean): o.Expression;
     getDefinition(type: any, kind: DefinitionKind, ctx: OutputContext, forceShared?: boolean): o.Expression;
     getLiteralFactory(literal: o.LiteralArrayExpr | o.LiteralMapExpr): {

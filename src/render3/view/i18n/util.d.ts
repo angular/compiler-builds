@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -8,7 +8,13 @@
 import * as i18n from '../../../i18n/i18n_ast';
 import * as html from '../../../ml_parser/ast';
 import * as o from '../../../output/output_ast';
-export declare const TRANSLATION_PREFIX = "I18N_";
+import * as t from '../../r3_ast';
+/**
+ * Prefix for non-`goog.getMsg` i18n-related vars.
+ * Note: the prefix uses lowercase characters intentionally due to a Closure behavior that
+ * considers variables like `I18N_0` as constants and throws an error when their value changes.
+ */
+export declare const TRANSLATION_VAR_PREFIX = "i18n_";
 /** Name of the i18n attributes **/
 export declare const I18N_ATTR = "i18n";
 export declare const I18N_ATTR_PREFIX = "i18n-";
@@ -21,6 +27,9 @@ export declare const I18N_PLACEHOLDER_SYMBOL = "\uFFFD";
 export declare function isI18nAttribute(name: string): boolean;
 export declare function isI18nRootNode(meta?: i18n.I18nMeta): meta is i18n.Message;
 export declare function isSingleI18nIcu(meta?: i18n.I18nMeta): boolean;
+export declare function hasI18nMeta(node: t.Node & {
+    i18n?: i18n.I18nMeta;
+}): boolean;
 export declare function hasI18nAttrs(element: html.Element): boolean;
 export declare function icuFromI18nMessage(message: i18n.Message): i18n.IcuPlaceholder;
 export declare function wrapI18nPlaceholder(content: string | number, contextId?: number): string;

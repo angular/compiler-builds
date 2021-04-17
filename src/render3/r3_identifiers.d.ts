@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -10,16 +10,16 @@ export declare class Identifiers {
     static NEW_METHOD: string;
     static TRANSFORM_METHOD: string;
     static PATCH_DEPS: string;
+    static core: o.ExternalReference;
     static namespaceHTML: o.ExternalReference;
     static namespaceMathML: o.ExternalReference;
     static namespaceSVG: o.ExternalReference;
     static element: o.ExternalReference;
     static elementStart: o.ExternalReference;
     static elementEnd: o.ExternalReference;
-    static select: o.ExternalReference;
     static advance: o.ExternalReference;
-    static updateSyntheticHostBinding: o.ExternalReference;
-    static componentHostSyntheticListener: o.ExternalReference;
+    static syntheticHostProperty: o.ExternalReference;
+    static syntheticHostListener: o.ExternalReference;
     static attribute: o.ExternalReference;
     static attributeInterpolate1: o.ExternalReference;
     static attributeInterpolate2: o.ExternalReference;
@@ -35,6 +35,15 @@ export declare class Identifiers {
     static elementContainerEnd: o.ExternalReference;
     static elementContainer: o.ExternalReference;
     static styleMap: o.ExternalReference;
+    static styleMapInterpolate1: o.ExternalReference;
+    static styleMapInterpolate2: o.ExternalReference;
+    static styleMapInterpolate3: o.ExternalReference;
+    static styleMapInterpolate4: o.ExternalReference;
+    static styleMapInterpolate5: o.ExternalReference;
+    static styleMapInterpolate6: o.ExternalReference;
+    static styleMapInterpolate7: o.ExternalReference;
+    static styleMapInterpolate8: o.ExternalReference;
+    static styleMapInterpolateV: o.ExternalReference;
     static classMap: o.ExternalReference;
     static classMapInterpolate1: o.ExternalReference;
     static classMapInterpolate2: o.ExternalReference;
@@ -55,15 +64,11 @@ export declare class Identifiers {
     static stylePropInterpolate7: o.ExternalReference;
     static stylePropInterpolate8: o.ExternalReference;
     static stylePropInterpolateV: o.ExternalReference;
-    static styleSanitizer: o.ExternalReference;
-    static elementHostAttrs: o.ExternalReference;
-    static containerCreate: o.ExternalReference;
     static nextContext: o.ExternalReference;
     static templateCreate: o.ExternalReference;
     static text: o.ExternalReference;
     static enableBindings: o.ExternalReference;
     static disableBindings: o.ExternalReference;
-    static allocHostVars: o.ExternalReference;
     static getCurrentView: o.ExternalReference;
     static textInterpolate: o.ExternalReference;
     static textInterpolate1: o.ExternalReference;
@@ -116,30 +121,46 @@ export declare class Identifiers {
     static reference: o.ExternalReference;
     static inject: o.ExternalReference;
     static injectAttribute: o.ExternalReference;
-    static injectPipeChangeDetectorRef: o.ExternalReference;
     static directiveInject: o.ExternalReference;
     static invalidFactory: o.ExternalReference;
+    static invalidFactoryDep: o.ExternalReference;
     static templateRefExtractor: o.ExternalReference;
+    static forwardRef: o.ExternalReference;
+    static resolveForwardRef: o.ExternalReference;
+    static ɵɵdefineInjectable: o.ExternalReference;
+    static declareInjectable: o.ExternalReference;
+    static InjectableDeclaration: o.ExternalReference;
     static resolveWindow: o.ExternalReference;
     static resolveDocument: o.ExternalReference;
     static resolveBody: o.ExternalReference;
     static defineComponent: o.ExternalReference;
+    static declareComponent: o.ExternalReference;
     static setComponentScope: o.ExternalReference;
-    static ComponentDefWithMeta: o.ExternalReference;
-    static FactoryDef: o.ExternalReference;
+    static ChangeDetectionStrategy: o.ExternalReference;
+    static ViewEncapsulation: o.ExternalReference;
+    static ComponentDeclaration: o.ExternalReference;
+    static FactoryDeclaration: o.ExternalReference;
+    static declareFactory: o.ExternalReference;
+    static FactoryTarget: o.ExternalReference;
     static defineDirective: o.ExternalReference;
-    static DirectiveDefWithMeta: o.ExternalReference;
+    static declareDirective: o.ExternalReference;
+    static DirectiveDeclaration: o.ExternalReference;
     static InjectorDef: o.ExternalReference;
+    static InjectorDeclaration: o.ExternalReference;
     static defineInjector: o.ExternalReference;
-    static NgModuleDefWithMeta: o.ExternalReference;
+    static declareInjector: o.ExternalReference;
+    static NgModuleDeclaration: o.ExternalReference;
+    static ModuleWithProviders: o.ExternalReference;
     static defineNgModule: o.ExternalReference;
+    static declareNgModule: o.ExternalReference;
     static setNgModuleScope: o.ExternalReference;
-    static PipeDefWithMeta: o.ExternalReference;
+    static PipeDeclaration: o.ExternalReference;
     static definePipe: o.ExternalReference;
+    static declarePipe: o.ExternalReference;
+    static declareClassMetadata: o.ExternalReference;
+    static setClassMetadata: o.ExternalReference;
     static queryRefresh: o.ExternalReference;
     static viewQuery: o.ExternalReference;
-    static staticViewQuery: o.ExternalReference;
-    static staticContentQuery: o.ExternalReference;
     static loadQuery: o.ExternalReference;
     static contentQuery: o.ExternalReference;
     static NgOnChangesFeature: o.ExternalReference;
@@ -147,13 +168,13 @@ export declare class Identifiers {
     static CopyDefinitionFeature: o.ExternalReference;
     static ProvidersFeature: o.ExternalReference;
     static listener: o.ExternalReference;
-    static getFactoryOf: o.ExternalReference;
     static getInheritedFactory: o.ExternalReference;
     static sanitizeHtml: o.ExternalReference;
     static sanitizeStyle: o.ExternalReference;
-    static defaultStyleSanitizer: o.ExternalReference;
     static sanitizeResourceUrl: o.ExternalReference;
     static sanitizeScript: o.ExternalReference;
     static sanitizeUrl: o.ExternalReference;
     static sanitizeUrlOrResourceUrl: o.ExternalReference;
+    static trustConstantHtml: o.ExternalReference;
+    static trustConstantResourceUrl: o.ExternalReference;
 }

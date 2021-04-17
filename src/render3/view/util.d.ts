@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright Google Inc. All Rights Reserved.
+ * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
@@ -23,6 +23,8 @@ export declare const REFERENCE_PREFIX = "_r";
 export declare const IMPLICIT_REFERENCE = "$implicit";
 /** Non bindable attribute name **/
 export declare const NON_BINDABLE_ATTR = "ngNonBindable";
+/** Name for the variable keeping track of the context returned by `ɵɵrestoreView`. */
+export declare const RESTORED_VIEW_CONTEXT_NAME = "restoredCtx";
 /**
  * Creates an allocator for a temporary variable.
  *
@@ -40,14 +42,18 @@ export declare function conditionallyCreateMapObjectLiteral(keys: {
  */
 export declare function trimTrailingNulls(parameters: o.Expression[]): o.Expression[];
 export declare function getQueryPredicate(query: R3QueryMetadata, constantPool: ConstantPool): o.Expression;
-export declare function noop(): void;
-export declare class DefinitionMap {
+/**
+ * A representation for an object literal used during codegen of definition objects. The generic
+ * type `T` allows to reference a documented type of the generated structure, such that the
+ * property names that are set can be resolved to their documented declaration.
+ */
+export declare class DefinitionMap<T = any> {
     values: {
         key: string;
         quoted: boolean;
         value: o.Expression;
     }[];
-    set(key: string, value: o.Expression | null): void;
+    set(key: keyof T, value: o.Expression | null): void;
     toLiteralMap(): o.LiteralMapExpr;
 }
 /**
