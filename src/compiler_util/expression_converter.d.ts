@@ -93,7 +93,6 @@ export declare function convertUpdateArguments(localResolver: LocalResolver, con
     stmts: o.Statement[];
     args: o.Expression[];
 };
-export declare function temporaryDeclaration(bindingId: string, temporaryNumber: number): o.Statement;
 export declare class BuiltinFunctionCall extends cdAst.FunctionCall {
     args: cdAst.AST[];
     converter: BuiltinConverter;
