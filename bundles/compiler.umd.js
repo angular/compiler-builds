@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.8+77.sha-d451ed2
+ * @license Angular v12.0.0-next.8+163.sha-9be78d1
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9349,7 +9349,7 @@
         return "tmp_" + bindingId + "_" + temporaryNumber;
     }
     function temporaryDeclaration(bindingId, temporaryNumber) {
-        return new DeclareVarStmt(temporaryName(bindingId, temporaryNumber), NULL_EXPR);
+        return new DeclareVarStmt(temporaryName(bindingId, temporaryNumber));
     }
     function prependTemporaryDecls(temporaryCount, bindingId, statements) {
         for (var i = temporaryCount - 1; i >= 0; i--) {
@@ -9751,14 +9751,12 @@
                 this.releaseTemporary(temporary);
             }
             // Produce the conditional
-            return convertToStatementIfNeeded(mode, condition.conditional(literal(null), access));
+            return convertToStatementIfNeeded(mode, condition.conditional(NULL_EXPR, access));
         };
         _AstToIrVisitor.prototype.convertNullishCoalesce = function (ast, mode) {
-            // Allocate the temporary variable before visiting the LHS and RHS, because they
-            // may allocate temporary variables too and we don't want them to be reused.
-            var temporary = this.allocateTemporary();
             var left = this._visit(ast.left, _Mode.Expression);
             var right = this._visit(ast.right, _Mode.Expression);
+            var temporary = this.allocateTemporary();
             this.releaseTemporary(temporary);
             // Generate the following expression. It is identical to how TS
             // transpiles binary expressions with a nullish coalescing operator.
@@ -20692,9 +20690,7 @@
      */
     function parseTemplate(template, templateUrl, options) {
         if (options === void 0) { options = {}; }
-        var _a;
         var interpolationConfig = options.interpolationConfig, preserveWhitespaces = options.preserveWhitespaces, enableI18nLegacyMessageIdFormat = options.enableI18nLegacyMessageIdFormat;
-        var isInline = (_a = options.isInline) !== null && _a !== void 0 ? _a : false;
         var bindingParser = makeBindingParser(interpolationConfig);
         var htmlParser = new HtmlParser();
         var parseResult = htmlParser.parse(template, templateUrl, Object.assign(Object.assign({ leadingTriviaChars: LEADING_TRIVIA_CHARS }, options), { tokenizeExpansionForms: true }));
@@ -20703,9 +20699,6 @@
             var parsedTemplate_1 = {
                 interpolationConfig: interpolationConfig,
                 preserveWhitespaces: preserveWhitespaces,
-                template: template,
-                templateUrl: templateUrl,
-                isInline: isInline,
                 errors: parseResult.errors,
                 nodes: [],
                 styleUrls: [],
@@ -20729,9 +20722,6 @@
             var parsedTemplate_2 = {
                 interpolationConfig: interpolationConfig,
                 preserveWhitespaces: preserveWhitespaces,
-                template: template,
-                templateUrl: templateUrl,
-                isInline: isInline,
                 errors: i18nMetaResult.errors,
                 nodes: [],
                 styleUrls: [],
@@ -20760,9 +20750,6 @@
             interpolationConfig: interpolationConfig,
             preserveWhitespaces: preserveWhitespaces,
             errors: errors.length > 0 ? errors : null,
-            template: template,
-            templateUrl: templateUrl,
-            isInline: isInline,
             nodes: nodes,
             styleUrls: styleUrls,
             styles: styles,
@@ -22016,7 +22003,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.0.0-next.8+77.sha-d451ed2');
+    var VERSION$1 = new Version('12.0.0-next.8+163.sha-9be78d1');
 
     /**
      * @license
@@ -31850,9 +31837,18 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
+    /**
+     * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
+     * must update this constant to prevent old partial-linkers from incorrectly processing the
+     * declaration.
+     *
+     * Do not include any prerelease in these versions as they are ignored.
+     */
+    var MINIMUM_PARTIAL_LINKER_VERSION = '12.0.0';
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+77.sha-d451ed2'));
+        definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
+        definitionMap.set('version', literal('12.0.0-next.8+163.sha-9be78d1'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
@@ -31869,6 +31865,14 @@
      * found in the LICENSE file at https://angular.io/license
      */
     /**
+     * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
+     * must update this constant to prevent old partial-linkers from incorrectly processing the
+     * declaration.
+     *
+     * Do not include any prerelease in these versions as they are ignored.
+     */
+    var MINIMUM_PARTIAL_LINKER_VERSION$1 = '12.0.0';
+    /**
      * Compile a directive declaration defined by the `R3DirectiveMetadata`.
      */
     function compileDeclareDirectiveFromMetadata(meta) {
@@ -31883,7 +31887,8 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+77.sha-d451ed2'));
+        definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
+        definitionMap.set('version', literal('12.0.0-next.8+163.sha-9be78d1'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -31966,8 +31971,8 @@
     /**
      * Compile a component declaration defined by the `R3ComponentMetadata`.
      */
-    function compileDeclareComponentFromMetadata(meta, template) {
-        var definitionMap = createComponentDefinitionMap(meta, template);
+    function compileDeclareComponentFromMetadata(meta, template, additionalTemplateInfo) {
+        var definitionMap = createComponentDefinitionMap(meta, template, additionalTemplateInfo);
         var expression = importExpr(Identifiers.declareComponent).callFn([definitionMap.toLiteralMap()]);
         var type = createComponentType(meta);
         return { expression: expression, type: type, statements: [] };
@@ -31975,10 +31980,10 @@
     /**
      * Gathers the declaration fields for a component into a `DefinitionMap`.
      */
-    function createComponentDefinitionMap(meta, template) {
+    function createComponentDefinitionMap(meta, template, templateInfo) {
         var definitionMap = createDirectiveDefinitionMap(meta);
-        definitionMap.set('template', getTemplateExpression(template));
-        if (template.isInline) {
+        definitionMap.set('template', getTemplateExpression(template, templateInfo));
+        if (templateInfo.isInline) {
             definitionMap.set('isInline', literal(true));
         }
         definitionMap.set('styles', toOptionalLiteralArray(meta.styles, literal));
@@ -32002,28 +32007,29 @@
         }
         return definitionMap;
     }
-    function getTemplateExpression(template) {
-        if (typeof template.template === 'string') {
-            if (template.isInline) {
-                // The template is inline but not a simple literal string, so give up with trying to
-                // source-map it and just return a simple literal here.
-                return literal(template.template);
-            }
-            else {
-                // The template is external so we must synthesize an expression node with the appropriate
-                // source-span.
-                var contents = template.template;
-                var file = new ParseSourceFile(contents, template.templateUrl);
-                var start = new ParseLocation(file, 0, 0, 0);
-                var end = computeEndLocation(file, contents);
-                var span = new ParseSourceSpan(start, end);
-                return literal(contents, null, span);
-            }
+    function getTemplateExpression(template, templateInfo) {
+        // If the template has been defined using a direct literal, we use that expression directly
+        // without any modifications. This is ensures proper source mapping from the partially
+        // compiled code to the source file declaring the template. Note that this does not capture
+        // template literals referenced indirectly through an identifier.
+        if (templateInfo.inlineTemplateLiteralExpression !== null) {
+            return templateInfo.inlineTemplateLiteralExpression;
         }
-        else {
-            // The template is inline so we can just reuse the current expression node.
-            return template.template;
+        // If the template is defined inline but not through a literal, the template has been resolved
+        // through static interpretation. We create a literal but cannot provide any source span. Note
+        // that we cannot use the expression defining the template because the linker expects the template
+        // to be defined as a literal in the declaration.
+        if (templateInfo.isInline) {
+            return literal(templateInfo.content, null, null);
         }
+        // The template is external so we must synthesize an expression node with
+        // the appropriate source-span.
+        var contents = templateInfo.content;
+        var file = new ParseSourceFile(contents, templateInfo.sourceUrl);
+        var start = new ParseLocation(file, 0, 0, 0);
+        var end = computeEndLocation(file, contents);
+        var span = new ParseSourceSpan(start, end);
+        return literal(contents, null, span);
     }
     function computeEndLocation(file, contents) {
         var length = contents.length;
@@ -32095,9 +32101,18 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
+    /**
+     * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
+     * must update this constant to prevent old partial-linkers from incorrectly processing the
+     * declaration.
+     *
+     * Do not include any prerelease in these versions as they are ignored.
+     */
+    var MINIMUM_PARTIAL_LINKER_VERSION$2 = '12.0.0';
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+77.sha-d451ed2'));
+        definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
+        definitionMap.set('version', literal('12.0.0-next.8+163.sha-9be78d1'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32117,6 +32132,14 @@
      * found in the LICENSE file at https://angular.io/license
      */
     /**
+     * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
+     * must update this constant to prevent old partial-linkers from incorrectly processing the
+     * declaration.
+     *
+     * Do not include any prerelease in these versions as they are ignored.
+     */
+    var MINIMUM_PARTIAL_LINKER_VERSION$3 = '12.0.0';
+    /**
      * Compile a Injectable declaration defined by the `R3InjectableMetadata`.
      */
     function compileDeclareInjectableFromMetadata(meta) {
@@ -32130,7 +32153,8 @@
      */
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+77.sha-d451ed2'));
+        definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
+        definitionMap.set('version', literal('12.0.0-next.8+163.sha-9be78d1'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
@@ -32190,6 +32214,14 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
+    /**
+     * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
+     * must update this constant to prevent old partial-linkers from incorrectly processing the
+     * declaration.
+     *
+     * Do not include any prerelease in these versions as they are ignored.
+     */
+    var MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
     function compileDeclareInjectorFromMetadata(meta) {
         var definitionMap = createInjectorDefinitionMap(meta);
         var expression = importExpr(Identifiers.declareInjector).callFn([definitionMap.toLiteralMap()]);
@@ -32201,7 +32233,8 @@
      */
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+77.sha-d451ed2'));
+        definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
+        definitionMap.set('version', literal('12.0.0-next.8+163.sha-9be78d1'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -32218,6 +32251,14 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
+    /**
+     * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
+     * must update this constant to prevent old partial-linkers from incorrectly processing the
+     * declaration.
+     *
+     * Do not include any prerelease in these versions as they are ignored.
+     */
+    var MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
     function compileDeclareNgModuleFromMetadata(meta) {
         var definitionMap = createNgModuleDefinitionMap(meta);
         var expression = importExpr(Identifiers.declareNgModule).callFn([definitionMap.toLiteralMap()]);
@@ -32229,7 +32270,8 @@
      */
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+77.sha-d451ed2'));
+        definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
+        definitionMap.set('version', literal('12.0.0-next.8+163.sha-9be78d1'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -32265,6 +32307,14 @@
      * found in the LICENSE file at https://angular.io/license
      */
     /**
+     * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
+     * must update this constant to prevent old partial-linkers from incorrectly processing the
+     * declaration.
+     *
+     * Do not include any prerelease in these versions as they are ignored.
+     */
+    var MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
+    /**
      * Compile a Pipe declaration defined by the `R3PipeMetadata`.
      */
     function compileDeclarePipeFromMetadata(meta) {
@@ -32278,7 +32328,8 @@
      */
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('12.0.0-next.8+77.sha-d451ed2'));
+        definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
+        definitionMap.set('version', literal('12.0.0-next.8+163.sha-9be78d1'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
