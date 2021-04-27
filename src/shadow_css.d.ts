@@ -28,6 +28,24 @@ export declare class ShadowCss {
     private _convertColonHostContext;
     private _convertShadowDOMSelectors;
     private _scopeSelectors;
+    /**
+     * Handle a css text that is within a rule that should not contain scope selectors by simply
+     * removing them! An example of such a rule is `@font-face`.
+     *
+     * `@font-face` rules cannot contain nested selectors. Nor can they be nested under a selector.
+     * Normally this would be a syntax error by the author of the styles. But in some rare cases, such
+     * as importing styles from a library, and applying `:host ::ng-deep` to the imported styles, we
+     * can end up with broken css if the imported styles happen to contain @font-face rules.
+     *
+     * For example:
+     *
+     * ```
+     * :host ::ng-deep {
+     *   import 'some/lib/containing/font-face';
+     * }
+     * ```
+     */
+    private _stripScopingSelectors;
     private _scopeSelector;
     private _selectorNeedsScoping;
     private _makeScopeMatcher;
