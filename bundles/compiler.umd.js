@@ -1,5 +1,5 @@
 /**
- * @license Angular v11.2.11+20.sha-7756ead
+ * @license Angular v11.2.11+23.sha-84a44a9
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10275,6 +10275,35 @@
                     rule.selector.startsWith('@page') || rule.selector.startsWith('@document')) {
                     content = _this._scopeSelectors(rule.content, scopeSelector, hostSelector);
                 }
+                else if (rule.selector.startsWith('@font-face')) {
+                    content = _this._stripScopingSelectors(rule.content, scopeSelector, hostSelector);
+                }
+                return new CssRule(selector, content);
+            });
+        };
+        /**
+         * Handle a css text that is within a rule that should not contain scope selectors by simply
+         * removing them! An example of such a rule is `@font-face`.
+         *
+         * `@font-face` rules cannot contain nested selectors. Nor can they be nested under a selector.
+         * Normally this would be a syntax error by the author of the styles. But in some rare cases, such
+         * as importing styles from a library, and applying `:host ::ng-deep` to the imported styles, we
+         * can end up with broken css if the imported styles happen to contain @font-face rules.
+         *
+         * For example:
+         *
+         * ```
+         * :host ::ng-deep {
+         *   import 'some/lib/containing/font-face';
+         * }
+         * ```
+         */
+        ShadowCss.prototype._stripScopingSelectors = function (cssText, scopeSelector, hostSelector) {
+            var _this = this;
+            return processRules(cssText, function (rule) {
+                var selector = rule.selector.replace(_shadowDeepSelectors, ' ')
+                    .replace(_polyfillHostNoCombinatorRe, ' ');
+                var content = _this._scopeSelectors(rule.content, scopeSelector, hostSelector);
                 return new CssRule(selector, content);
             });
         };
@@ -21776,7 +21805,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('11.2.11+20.sha-7756ead');
+    var VERSION$1 = new Version('11.2.11+23.sha-84a44a9');
 
     /**
      * @license
@@ -31634,7 +31663,7 @@
      */
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.2.11+20.sha-7756ead'));
+        definitionMap.set('version', literal('11.2.11+23.sha-84a44a9'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -31859,7 +31888,7 @@
      */
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
-        definitionMap.set('version', literal('11.2.11+20.sha-7756ead'));
+        definitionMap.set('version', literal('11.2.11+23.sha-84a44a9'));
         definitionMap.set('ngImport', importExpr(Identifiers$1.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
