@@ -347,10 +347,6 @@ export interface ParseTemplateOptions {
      */
     i18nNormalizeLineEndingsInICUs?: boolean;
     /**
-     * Whether the template was inline.
-     */
-    isInline?: boolean;
-    /**
      * Whether to always attempt to convert the parsed HTML AST to an R3 AST, despite HTML or i18n
      * Meta parse errors.
      *
@@ -432,25 +428,6 @@ export interface ParsedTemplate {
      * How to parse interpolation markers.
      */
     interpolationConfig?: InterpolationConfig;
-    /**
-     * The string contents of the template, or an expression that represents the string/template
-     * literal as it occurs in the source.
-     *
-     * This is the "logical" template string, after expansion of any escaped characters (for inline
-     * templates). This may differ from the actual template bytes as they appear in the .ts file.
-     */
-    template: string | o.Expression;
-    /**
-     * A full path to the file which contains the template.
-     *
-     * This can be either the original .ts file if the template is inline, or the .html file if an
-     * external file was used.
-     */
-    templateUrl: string;
-    /**
-     * Whether the template was inline (using `template`) or external (using `templateUrl`).
-     */
-    isInline: boolean;
     /**
      * Any errors from parsing the template the first time.
      *
