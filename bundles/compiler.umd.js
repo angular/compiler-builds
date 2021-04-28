@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.8+213.sha-45ffab5
+ * @license Angular v12.0.0-next.8+272.sha-083ceec
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10394,6 +10394,35 @@
                     rule.selector.startsWith('@page') || rule.selector.startsWith('@document')) {
                     content = _this._scopeSelectors(rule.content, scopeSelector, hostSelector);
                 }
+                else if (rule.selector.startsWith('@font-face')) {
+                    content = _this._stripScopingSelectors(rule.content, scopeSelector, hostSelector);
+                }
+                return new CssRule(selector, content);
+            });
+        };
+        /**
+         * Handle a css text that is within a rule that should not contain scope selectors by simply
+         * removing them! An example of such a rule is `@font-face`.
+         *
+         * `@font-face` rules cannot contain nested selectors. Nor can they be nested under a selector.
+         * Normally this would be a syntax error by the author of the styles. But in some rare cases, such
+         * as importing styles from a library, and applying `:host ::ng-deep` to the imported styles, we
+         * can end up with broken css if the imported styles happen to contain @font-face rules.
+         *
+         * For example:
+         *
+         * ```
+         * :host ::ng-deep {
+         *   import 'some/lib/containing/font-face';
+         * }
+         * ```
+         */
+        ShadowCss.prototype._stripScopingSelectors = function (cssText, scopeSelector, hostSelector) {
+            var _this = this;
+            return processRules(cssText, function (rule) {
+                var selector = rule.selector.replace(_shadowDeepSelectors, ' ')
+                    .replace(_polyfillHostNoCombinatorRe, ' ');
+                var content = _this._scopeSelectors(rule.content, scopeSelector, hostSelector);
                 return new CssRule(selector, content);
             });
         };
@@ -22003,7 +22032,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.0.0-next.8+213.sha-45ffab5');
+    var VERSION$1 = new Version('12.0.0-next.8+272.sha-083ceec');
 
     /**
      * @license
@@ -31848,7 +31877,7 @@
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', literal('12.0.0-next.8+213.sha-45ffab5'));
+        definitionMap.set('version', literal('12.0.0-next.8+272.sha-083ceec'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
@@ -31888,7 +31917,7 @@
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-        definitionMap.set('version', literal('12.0.0-next.8+213.sha-45ffab5'));
+        definitionMap.set('version', literal('12.0.0-next.8+272.sha-083ceec'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -32112,7 +32141,7 @@
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-        definitionMap.set('version', literal('12.0.0-next.8+213.sha-45ffab5'));
+        definitionMap.set('version', literal('12.0.0-next.8+272.sha-083ceec'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32154,7 +32183,7 @@
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-        definitionMap.set('version', literal('12.0.0-next.8+213.sha-45ffab5'));
+        definitionMap.set('version', literal('12.0.0-next.8+272.sha-083ceec'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
@@ -32234,7 +32263,7 @@
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-        definitionMap.set('version', literal('12.0.0-next.8+213.sha-45ffab5'));
+        definitionMap.set('version', literal('12.0.0-next.8+272.sha-083ceec'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -32271,7 +32300,7 @@
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-        definitionMap.set('version', literal('12.0.0-next.8+213.sha-45ffab5'));
+        definitionMap.set('version', literal('12.0.0-next.8+272.sha-083ceec'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -32329,7 +32358,7 @@
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-        definitionMap.set('version', literal('12.0.0-next.8+213.sha-45ffab5'));
+        definitionMap.set('version', literal('12.0.0-next.8+272.sha-083ceec'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
