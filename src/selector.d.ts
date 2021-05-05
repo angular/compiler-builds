@@ -27,6 +27,28 @@ export declare class CssSelector {
     attrs: string[];
     notSelectors: CssSelector[];
     static parse(selector: string): CssSelector[];
+    /**
+     * Unescape `\$` sequences from the CSS attribute selector.
+     *
+     * This is needed because `$` can have a special meaning in CSS selectors,
+     * but we might want to match an attribute that contains `$`.
+     * [MDN web link for more
+     * info](https://developer.mozilla.org/en-US/docs/Web/CSS/Attribute_selectors).
+     * @param attr the attribute to unescape.
+     * @returns the unescaped string.
+     */
+    unescapeAttribute(attr: string): string;
+    /**
+     * Escape `$` sequences from the CSS attribute selector.
+     *
+     * This is needed because `$` can have a special meaning in CSS selectors,
+     * with this method we are escaping `$` with `\$'.
+     * [MDN web link for more
+     * info](https://developer.mozilla.org/en-US/docs/Web/CSS/Attribute_selectors).
+     * @param attr the attribute to escape.
+     * @returns the escaped string.
+     */
+    escapeAttribute(attr: string): string;
     isElementSelector(): boolean;
     hasElementSelector(): boolean;
     setElement(element?: string | null): void;

@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-next.8+327.sha-43cc5a1
+ * @license Angular v12.0.0-next.8+330.sha-378bb04
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -430,7 +430,7 @@ const _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' + // 1: ":not("
     '(([\\.\\#]?)[-\\w]+)|' + // 2: "tag"; 3: "."/"#";
     // "-" should appear first in the regexp below as FF31 parses "[.-\w]" as a range
     // 4: attribute; 5: attribute_string; 6: attribute_value
-    '(?:\\[([-.\\w*]+)(?:=([\"\']?)([^\\]\"\']*)\\5)?\\])|' + // "[name]", "[name=value]",
+    '(?:\\[([-.\\w*\\\\$]+)(?:=([\"\']?)([^\\]\"\']*)\\5)?\\])|' + // "[name]", "[name=value]",
     // "[name="value"]",
     // "[name='value']"
     '(\\))|' + // 7: ")"
@@ -500,7 +500,7 @@ class CssSelector {
             }
             const attribute = match[4 /* ATTRIBUTE */];
             if (attribute) {
-                current.addAttribute(attribute, match[6 /* ATTRIBUTE_VALUE */]);
+                current.addAttribute(current.unescapeAttribute(attribute), match[6 /* ATTRIBUTE_VALUE */]);
             }
             if (match[7 /* NOT_END */]) {
                 inNot = false;
@@ -516,6 +516,47 @@ class CssSelector {
         }
         _addResult(results, cssSelector);
         return results;
+    }
+    /**
+     * Unescape `\$` sequences from the CSS attribute selector.
+     *
+     * This is needed because `$` can have a special meaning in CSS selectors,
+     * but we might want to match an attribute that contains `$`.
+     * [MDN web link for more
+     * info](https://developer.mozilla.org/en-US/docs/Web/CSS/Attribute_selectors).
+     * @param attr the attribute to unescape.
+     * @returns the unescaped string.
+     */
+    unescapeAttribute(attr) {
+        let result = '';
+        let escaping = false;
+        for (let i = 0; i < attr.length; i++) {
+            const char = attr.charAt(i);
+            if (char === '\\') {
+                escaping = true;
+                continue;
+            }
+            if (char === '$' && !escaping) {
+                throw new Error(`Error in attribute selector "${attr}". ` +
+                    `Unescaped "$" is not supported. Please escape with "\\$".`);
+            }
+            escaping = false;
+            result += char;
+        }
+        return result;
+    }
+    /**
+     * Escape `$` sequences from the CSS attribute selector.
+     *
+     * This is needed because `$` can have a special meaning in CSS selectors,
+     * with this method we are escaping `$` with `\$'.
+     * [MDN web link for more
+     * info](https://developer.mozilla.org/en-US/docs/Web/CSS/Attribute_selectors).
+     * @param attr the attribute to escape.
+     * @returns the escaped string.
+     */
+    escapeAttribute(attr) {
+        return attr.replace(/\\/g, '\\\\').replace(/\$/g, '\\$');
     }
     isElementSelector() {
         return this.hasElementSelector() && this.classNames.length == 0 && this.attrs.length == 0 &&
@@ -560,7 +601,7 @@ class CssSelector {
         }
         if (this.attrs) {
             for (let i = 0; i < this.attrs.length; i += 2) {
-                const name = this.attrs[i];
+                const name = this.escapeAttribute(this.attrs[i]);
                 const value = this.attrs[i + 1];
                 res += `[${name}${value ? '=' + value : ''}]`;
             }
@@ -20723,7 +20764,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('12.0.0-next.8+327.sha-43cc5a1');
+const VERSION$1 = new Version('12.0.0-next.8+330.sha-378bb04');
 
 /**
  * @license
@@ -30196,7 +30237,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('12.0.0-next.8+327.sha-43cc5a1'));
+    definitionMap.set('version', literal('12.0.0-next.8+330.sha-378bb04'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30236,7 +30277,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('12.0.0-next.8+327.sha-43cc5a1'));
+    definitionMap.set('version', literal('12.0.0-next.8+330.sha-378bb04'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -30456,7 +30497,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$2 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('12.0.0-next.8+327.sha-43cc5a1'));
+    definitionMap.set('version', literal('12.0.0-next.8+330.sha-378bb04'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30498,7 +30539,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('12.0.0-next.8+327.sha-43cc5a1'));
+    definitionMap.set('version', literal('12.0.0-next.8+330.sha-378bb04'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -30577,7 +30618,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('12.0.0-next.8+327.sha-43cc5a1'));
+    definitionMap.set('version', literal('12.0.0-next.8+330.sha-378bb04'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -30614,7 +30655,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('12.0.0-next.8+327.sha-43cc5a1'));
+    definitionMap.set('version', literal('12.0.0-next.8+330.sha-378bb04'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30672,7 +30713,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('12.0.0-next.8+327.sha-43cc5a1'));
+    definitionMap.set('version', literal('12.0.0-next.8+330.sha-378bb04'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
