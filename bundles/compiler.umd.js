@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0-rc.2
+ * @license Angular v12.0.0-rc.2+8.sha-cbe01a3
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10386,16 +10386,16 @@
             return processRules(cssText, function (rule) {
                 var selector = rule.selector;
                 var content = rule.content;
-                if (rule.selector[0] != '@') {
+                if (rule.selector[0] !== '@') {
                     selector =
                         _this._scopeSelector(rule.selector, scopeSelector, hostSelector, _this.strictStyling);
                 }
                 else if (rule.selector.startsWith('@media') || rule.selector.startsWith('@supports') ||
-                    rule.selector.startsWith('@page') || rule.selector.startsWith('@document')) {
+                    rule.selector.startsWith('@document')) {
                     content = _this._scopeSelectors(rule.content, scopeSelector, hostSelector);
                 }
-                else if (rule.selector.startsWith('@font-face')) {
-                    content = _this._stripScopingSelectors(rule.content, scopeSelector, hostSelector);
+                else if (rule.selector.startsWith('@font-face') || rule.selector.startsWith('@page')) {
+                    content = _this._stripScopingSelectors(rule.content);
                 }
                 return new CssRule(selector, content);
             });
@@ -10415,15 +10415,17 @@
          * :host ::ng-deep {
          *   import 'some/lib/containing/font-face';
          * }
+         *
+         * Similar logic applies to `@page` rules which can contain a particular set of properties,
+         * as well as some specific at-rules. Since they can't be encapsulated, we have to strip
+         * any scoping selectors from them. For more information: https://www.w3.org/TR/css-page-3
          * ```
          */
-        ShadowCss.prototype._stripScopingSelectors = function (cssText, scopeSelector, hostSelector) {
-            var _this = this;
+        ShadowCss.prototype._stripScopingSelectors = function (cssText) {
             return processRules(cssText, function (rule) {
                 var selector = rule.selector.replace(_shadowDeepSelectors, ' ')
                     .replace(_polyfillHostNoCombinatorRe, ' ');
-                var content = _this._scopeSelectors(rule.content, scopeSelector, hostSelector);
-                return new CssRule(selector, content);
+                return new CssRule(selector, rule.content);
             });
         };
         ShadowCss.prototype._scopeSelector = function (selector, scopeSelector, hostSelector, strict) {
@@ -22032,7 +22034,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.0.0-rc.2');
+    var VERSION$1 = new Version('12.0.0-rc.2+8.sha-cbe01a3');
 
     /**
      * @license
@@ -31877,7 +31879,7 @@
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', literal('12.0.0-rc.2'));
+        definitionMap.set('version', literal('12.0.0-rc.2+8.sha-cbe01a3'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
@@ -31917,7 +31919,7 @@
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-        definitionMap.set('version', literal('12.0.0-rc.2'));
+        definitionMap.set('version', literal('12.0.0-rc.2+8.sha-cbe01a3'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -32141,7 +32143,7 @@
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-        definitionMap.set('version', literal('12.0.0-rc.2'));
+        definitionMap.set('version', literal('12.0.0-rc.2+8.sha-cbe01a3'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32183,7 +32185,7 @@
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-        definitionMap.set('version', literal('12.0.0-rc.2'));
+        definitionMap.set('version', literal('12.0.0-rc.2+8.sha-cbe01a3'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
@@ -32263,7 +32265,7 @@
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-        definitionMap.set('version', literal('12.0.0-rc.2'));
+        definitionMap.set('version', literal('12.0.0-rc.2+8.sha-cbe01a3'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -32300,7 +32302,7 @@
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-        definitionMap.set('version', literal('12.0.0-rc.2'));
+        definitionMap.set('version', literal('12.0.0-rc.2+8.sha-cbe01a3'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -32358,7 +32360,7 @@
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-        definitionMap.set('version', literal('12.0.0-rc.2'));
+        definitionMap.set('version', literal('12.0.0-rc.2+8.sha-cbe01a3'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
