@@ -8,11 +8,12 @@
 import { AstPath } from '../ast_path';
 import { I18nMeta } from '../i18n/i18n_ast';
 import { ParseSourceSpan } from '../parse_util';
-export interface Node {
+interface BaseNode {
     sourceSpan: ParseSourceSpan;
     visit(visitor: Visitor, context: any): any;
 }
-export declare abstract class NodeWithI18n implements Node {
+export declare type Node = Attribute | Comment | Element | Expansion | ExpansionCase | Text;
+export declare abstract class NodeWithI18n implements BaseNode {
     sourceSpan: ParseSourceSpan;
     i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined;
     constructor(sourceSpan: ParseSourceSpan, i18n?: import("@angular/compiler/src/i18n/i18n_ast").Message | import("@angular/compiler/src/i18n/i18n_ast").Node | undefined);
@@ -31,7 +32,7 @@ export declare class Expansion extends NodeWithI18n {
     constructor(switchValue: string, type: string, cases: ExpansionCase[], sourceSpan: ParseSourceSpan, switchValueSourceSpan: ParseSourceSpan, i18n?: I18nMeta);
     visit(visitor: Visitor, context: any): any;
 }
-export declare class ExpansionCase implements Node {
+export declare class ExpansionCase implements BaseNode {
     value: string;
     expression: Node[];
     sourceSpan: ParseSourceSpan;
@@ -57,7 +58,7 @@ export declare class Element extends NodeWithI18n {
     constructor(name: string, attrs: Attribute[], children: Node[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan?: ParseSourceSpan | null, i18n?: I18nMeta);
     visit(visitor: Visitor, context: any): any;
 }
-export declare class Comment implements Node {
+export declare class Comment implements BaseNode {
     value: string | null;
     sourceSpan: ParseSourceSpan;
     constructor(value: string | null, sourceSpan: ParseSourceSpan);
@@ -85,3 +86,4 @@ export declare class RecursiveVisitor implements Visitor {
 }
 export declare type HtmlAstPath = AstPath<Node>;
 export declare function findNode(nodes: Node[], position: number): HtmlAstPath;
+export {};
