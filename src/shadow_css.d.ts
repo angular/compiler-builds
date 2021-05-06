@@ -17,7 +17,6 @@
  */
 export declare class ShadowCss {
     strictStyling: boolean;
-    constructor();
     shimCssText(cssText: string, selector: string, hostSelector?: string): string;
     private _insertDirectives;
     private _insertPolyfillDirectivesInCssText;
@@ -43,6 +42,10 @@ export declare class ShadowCss {
      * :host ::ng-deep {
      *   import 'some/lib/containing/font-face';
      * }
+     *
+     * Similar logic applies to `@page` rules which can contain a particular set of properties,
+     * as well as some specific at-rules. Since they can't be encapsulated, we have to strip
+     * any scoping selectors from them. For more information: https://www.w3.org/TR/css-page-3
      * ```
      */
     private _stripScopingSelectors;
@@ -70,4 +73,4 @@ export declare function processRules(input: string, ruleCallback: (rule: CssRule
  *     in-place.
  * @param multiples The number of times the current groups should appear.
  */
-export declare function repeatGroups<T>(groups: string[][], multiples: number): void;
+export declare function repeatGroups(groups: string[][], multiples: number): void;
