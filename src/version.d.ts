@@ -8,7 +8,7 @@
 /**
  * @module
  * @description
- * Entry point for all public APIs of the common package.
+ * Entry point for all public APIs of the compiler package.
  */
 import { Version } from './util';
 export declare const VERSION: Version;
