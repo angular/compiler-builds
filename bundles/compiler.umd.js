@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0+12.sha-3a46ad9
+ * @license Angular v12.0.0+13.sha-678bce2
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -22034,7 +22034,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.0.0+12.sha-3a46ad9');
+    var VERSION$1 = new Version('12.0.0+13.sha-678bce2');
 
     /**
      * @license
@@ -31879,7 +31879,7 @@
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', literal('12.0.0+12.sha-3a46ad9'));
+        definitionMap.set('version', literal('12.0.0+13.sha-678bce2'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
@@ -31919,7 +31919,7 @@
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-        definitionMap.set('version', literal('12.0.0+12.sha-3a46ad9'));
+        definitionMap.set('version', literal('12.0.0+13.sha-678bce2'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -32143,7 +32143,7 @@
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-        definitionMap.set('version', literal('12.0.0+12.sha-3a46ad9'));
+        definitionMap.set('version', literal('12.0.0+13.sha-678bce2'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32185,7 +32185,7 @@
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-        definitionMap.set('version', literal('12.0.0+12.sha-3a46ad9'));
+        definitionMap.set('version', literal('12.0.0+13.sha-678bce2'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
@@ -32265,7 +32265,7 @@
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-        definitionMap.set('version', literal('12.0.0+12.sha-3a46ad9'));
+        definitionMap.set('version', literal('12.0.0+13.sha-678bce2'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -32302,7 +32302,7 @@
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-        definitionMap.set('version', literal('12.0.0+12.sha-3a46ad9'));
+        definitionMap.set('version', literal('12.0.0+13.sha-678bce2'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -32360,7 +32360,7 @@
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-        definitionMap.set('version', literal('12.0.0+12.sha-3a46ad9'));
+        definitionMap.set('version', literal('12.0.0+13.sha-678bce2'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
