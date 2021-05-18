@@ -269,6 +269,12 @@ export declare class _ParseAST {
     error(message: string, index?: number | null): void;
     private locationText;
     /**
+     * Records an error for an unexpected private identifier being discovered.
+     * @param token Token representing a private identifier.
+     * @param extraMessage Optional additional message being appended to the error.
+     */
+    private _reportErrorForPrivateIdentifier;
+    /**
      * Error recovery should skip tokens until it encounters a recovery point.
      *
      * The following are treated as unconditional recovery points:

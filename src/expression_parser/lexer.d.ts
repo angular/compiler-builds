@@ -8,11 +8,12 @@
 export declare enum TokenType {
     Character = 0,
     Identifier = 1,
-    Keyword = 2,
-    String = 3,
-    Operator = 4,
-    Number = 5,
-    Error = 6
+    PrivateIdentifier = 2,
+    Keyword = 3,
+    String = 4,
+    Operator = 5,
+    Number = 6,
+    Error = 7
 }
 export declare class Lexer {
     tokenize(text: string): Token[];
@@ -29,6 +30,7 @@ export declare class Token {
     isString(): boolean;
     isOperator(operator: string): boolean;
     isIdentifier(): boolean;
+    isPrivateIdentifier(): boolean;
     isKeyword(): boolean;
     isKeywordLet(): boolean;
     isKeywordAs(): boolean;
