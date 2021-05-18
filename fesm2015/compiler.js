@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.0+26.sha-6861911
+ * @license Angular v12.0.0+32.sha-c58e15a
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -14352,11 +14352,12 @@ var TokenType$1;
 (function (TokenType) {
     TokenType[TokenType["Character"] = 0] = "Character";
     TokenType[TokenType["Identifier"] = 1] = "Identifier";
-    TokenType[TokenType["Keyword"] = 2] = "Keyword";
-    TokenType[TokenType["String"] = 3] = "String";
-    TokenType[TokenType["Operator"] = 4] = "Operator";
-    TokenType[TokenType["Number"] = 5] = "Number";
-    TokenType[TokenType["Error"] = 6] = "Error";
+    TokenType[TokenType["PrivateIdentifier"] = 2] = "PrivateIdentifier";
+    TokenType[TokenType["Keyword"] = 3] = "Keyword";
+    TokenType[TokenType["String"] = 4] = "String";
+    TokenType[TokenType["Operator"] = 5] = "Operator";
+    TokenType[TokenType["Number"] = 6] = "Number";
+    TokenType[TokenType["Error"] = 7] = "Error";
 })(TokenType$1 || (TokenType$1 = {}));
 const KEYWORDS = ['var', 'let', 'as', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this'];
 class Lexer {
@@ -14394,6 +14395,9 @@ class Token$1 {
     isIdentifier() {
         return this.type == TokenType$1.Identifier;
     }
+    isPrivateIdentifier() {
+        return this.type == TokenType$1.PrivateIdentifier;
+    }
     isKeyword() {
         return this.type == TokenType$1.Keyword;
     }
@@ -14430,6 +14434,7 @@ class Token$1 {
             case TokenType$1.Identifier:
             case TokenType$1.Keyword:
             case TokenType$1.Operator:
+            case TokenType$1.PrivateIdentifier:
             case TokenType$1.String:
             case TokenType$1.Error:
                 return this.strValue;
@@ -14445,6 +14450,9 @@ function newCharacterToken(index, end, code) {
 }
 function newIdentifierToken(index, end, text) {
     return new Token$1(index, end, TokenType$1.Identifier, 0, text);
+}
+function newPrivateIdentifierToken(index, end, text) {
+    return new Token$1(index, end, TokenType$1.PrivateIdentifier, 0, text);
 }
 function newKeywordToken(index, end, text) {
     return new Token$1(index, end, TokenType$1.Keyword, 0, text);
@@ -14516,6 +14524,7 @@ class _Scanner {
             case $DQ:
                 return this.scanString();
             case $HASH:
+                return this.scanPrivateIdentifier();
             case $PLUS:
             case $MINUS:
             case $STAR:
@@ -14582,6 +14591,18 @@ class _Scanner {
         const str = this.input.substring(start, this.index);
         return KEYWORDS.indexOf(str) > -1 ? newKeywordToken(start, this.index, str) :
             newIdentifierToken(start, this.index, str);
+    }
+    /** Scans an ECMAScript private identifier. */
+    scanPrivateIdentifier() {
+        const start = this.index;
+        this.advance();
+        if (!isIdentifierStart(this.peek)) {
+            return this.error('Invalid character [#]', -1);
+        }
+        while (isIdentifierPart(this.peek))
+            this.advance();
+        const identifierName = this.input.substring(start, this.index);
+        return newPrivateIdentifierToken(start, this.index, identifierName);
     }
     scanNumber(start) {
         let simple = (this.index === start);
@@ -15192,7 +15213,12 @@ class _ParseAST {
     expectIdentifierOrKeyword() {
         const n = this.next;
         if (!n.isIdentifier() && !n.isKeyword()) {
-            this.error(`Unexpected ${this.prettyPrintToken(n)}, expected identifier or keyword`);
+            if (n.isPrivateIdentifier()) {
+                this._reportErrorForPrivateIdentifier(n, 'expected identifier or keyword');
+            }
+            else {
+                this.error(`Unexpected ${this.prettyPrintToken(n)}, expected identifier or keyword`);
+            }
             return null;
         }
         this.advance();
@@ -15201,7 +15227,12 @@ class _ParseAST {
     expectIdentifierOrKeywordOrString() {
         const n = this.next;
         if (!n.isIdentifier() && !n.isKeyword() && !n.isString()) {
-            this.error(`Unexpected ${this.prettyPrintToken(n)}, expected identifier, keyword, or string`);
+            if (n.isPrivateIdentifier()) {
+                this._reportErrorForPrivateIdentifier(n, 'expected identifier, keyword or string');
+            }
+            else {
+                this.error(`Unexpected ${this.prettyPrintToken(n)}, expected identifier, keyword, or string`);
+            }
             return '';
         }
         this.advance();
@@ -15524,6 +15555,10 @@ class _ParseAST {
             this.advance();
             return new LiteralPrimitive(this.span(start), this.sourceSpan(start), literalValue);
         }
+        else if (this.next.isPrivateIdentifier()) {
+            this._reportErrorForPrivateIdentifier(this.next, null);
+            return new EmptyExpr(this.span(start), this.sourceSpan(start));
+        }
         else if (this.index >= this.tokens.length) {
             this.error(`Unexpected end of expression: ${this.input}`);
             return new EmptyExpr(this.span(start), this.sourceSpan(start));
@@ -15819,6 +15854,18 @@ class _ParseAST {
             index = this.index;
         return (index < this.tokens.length) ? `at column ${this.tokens[index].index + 1} in` :
             `at the end of the expression`;
+    }
+    /**
+     * Records an error for an unexpected private identifier being discovered.
+     * @param token Token representing a private identifier.
+     * @param extraMessage Optional additional message being appended to the error.
+     */
+    _reportErrorForPrivateIdentifier(token, extraMessage) {
+        let errorMessage = `Private identifiers are not supported. Unexpected private identifier: ${token}`;
+        if (extraMessage !== null) {
+            errorMessage += `, ${extraMessage}`;
+        }
+        this.error(errorMessage);
     }
     /**
      * Error recovery should skip tokens until it encounters a recovery point.
@@ -20726,7 +20773,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('12.0.0+26.sha-6861911');
+const VERSION$1 = new Version('12.0.0+32.sha-c58e15a');
 
 /**
  * @license
@@ -30199,7 +30246,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('12.0.0+26.sha-6861911'));
+    definitionMap.set('version', literal('12.0.0+32.sha-c58e15a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30239,7 +30286,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('12.0.0+26.sha-6861911'));
+    definitionMap.set('version', literal('12.0.0+32.sha-c58e15a'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -30459,7 +30506,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$2 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('12.0.0+26.sha-6861911'));
+    definitionMap.set('version', literal('12.0.0+32.sha-c58e15a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30501,7 +30548,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('12.0.0+26.sha-6861911'));
+    definitionMap.set('version', literal('12.0.0+32.sha-c58e15a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -30580,7 +30627,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('12.0.0+26.sha-6861911'));
+    definitionMap.set('version', literal('12.0.0+32.sha-c58e15a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -30617,7 +30664,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('12.0.0+26.sha-6861911'));
+    definitionMap.set('version', literal('12.0.0+32.sha-c58e15a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30675,7 +30722,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('12.0.0+26.sha-6861911'));
+    definitionMap.set('version', literal('12.0.0+32.sha-c58e15a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
