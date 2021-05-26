@@ -43,7 +43,7 @@
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new util_2.DefinitionMap();
         definitionMap.set('minVersion', o.literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', o.literal('12.1.0-next.3+16.sha-1572659'));
+        definitionMap.set('version', o.literal('12.1.0-next.3+18.sha-516923e'));
         definitionMap.set('ngImport', o.importExpr(r3_identifiers_1.Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
