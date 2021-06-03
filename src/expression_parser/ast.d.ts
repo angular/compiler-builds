@@ -111,16 +111,22 @@ export declare class SafePropertyRead extends ASTWithName {
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class KeyedRead extends AST {
-    obj: AST;
+    receiver: AST;
     key: AST;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, obj: AST, key: AST);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, receiver: AST, key: AST);
+    visit(visitor: AstVisitor, context?: any): any;
+}
+export declare class SafeKeyedRead extends AST {
+    receiver: AST;
+    key: AST;
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, receiver: AST, key: AST);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class KeyedWrite extends AST {
-    obj: AST;
+    receiver: AST;
     key: AST;
     value: AST;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, obj: AST, key: AST, value: AST);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, receiver: AST, key: AST, value: AST);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class BindingPipe extends ASTWithName {
@@ -321,6 +327,7 @@ export interface AstVisitor {
     visitQuote(ast: Quote, context: any): any;
     visitSafeMethodCall(ast: SafeMethodCall, context: any): any;
     visitSafePropertyRead(ast: SafePropertyRead, context: any): any;
+    visitSafeKeyedRead(ast: SafeKeyedRead, context: any): any;
     visitASTWithSource?(ast: ASTWithSource, context: any): any;
     /**
      * This function is optionally defined to allow classes that implement this
@@ -353,6 +360,7 @@ export declare class RecursiveAstVisitor implements AstVisitor {
     visitPropertyWrite(ast: PropertyWrite, context: any): any;
     visitSafePropertyRead(ast: SafePropertyRead, context: any): any;
     visitSafeMethodCall(ast: SafeMethodCall, context: any): any;
+    visitSafeKeyedRead(ast: SafeKeyedRead, context: any): any;
     visitQuote(ast: Quote, context: any): any;
     visitAll(asts: AST[], context: any): any;
 }
@@ -380,6 +388,7 @@ export declare class AstTransformer implements AstVisitor {
     visitAll(asts: any[]): any[];
     visitChain(ast: Chain, context: any): AST;
     visitQuote(ast: Quote, context: any): AST;
+    visitSafeKeyedRead(ast: SafeKeyedRead, context: any): AST;
 }
 export declare class AstMemoryEfficientTransformer implements AstVisitor {
     visitImplicitReceiver(ast: ImplicitReceiver, context: any): AST;
@@ -405,6 +414,7 @@ export declare class AstMemoryEfficientTransformer implements AstVisitor {
     visitAll(asts: any[]): any[];
     visitChain(ast: Chain, context: any): AST;
     visitQuote(ast: Quote, context: any): AST;
+    visitSafeKeyedRead(ast: SafeKeyedRead, context: any): AST;
 }
 export declare class ParsedProperty {
     name: string;
