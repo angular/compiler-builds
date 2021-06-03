@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { InterpolationConfig } from '../ml_parser/interpolation_config';
-import { AbsoluteSourceSpan, AST, AstVisitor, ASTWithSource, Binary, BindingPipe, Chain, Conditional, FunctionCall, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, MethodCall, NonNullAssert, ParserError, ParseSpan, PrefixNot, PropertyRead, PropertyWrite, Quote, RecursiveAstVisitor, SafeMethodCall, SafePropertyRead, TemplateBinding, TemplateBindingIdentifier, ThisReceiver, Unary } from './ast';
+import { AbsoluteSourceSpan, AST, AstVisitor, ASTWithSource, Binary, BindingPipe, Chain, Conditional, FunctionCall, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, MethodCall, NonNullAssert, ParserError, ParseSpan, PrefixNot, PropertyRead, PropertyWrite, Quote, RecursiveAstVisitor, SafeKeyedRead, SafeMethodCall, SafePropertyRead, TemplateBinding, TemplateBindingIdentifier, ThisReceiver, Unary } from './ast';
 import { Lexer, Token } from './lexer';
 export interface InterpolationPiece {
     text: string;
@@ -179,7 +179,7 @@ export declare class _ParseAST {
     parsePrimary(): AST;
     parseExpressionList(terminator: number): AST[];
     parseLiteralMap(): LiteralMap;
-    parseAccessMemberOrMethodCall(receiver: AST, start: number, isSafe?: boolean): AST;
+    parseAccessMemberOrMethodCall(receiver: AST, start: number, isSafe: boolean): AST;
     parseCallArguments(): BindingPipe[];
     /**
      * Parses an identifier, a keyword, a string with an optional `-` in between,
@@ -208,6 +208,7 @@ export declare class _ParseAST {
      * without the *, along with its absolute span.
      */
     parseTemplateBindings(templateKey: TemplateBindingIdentifier): TemplateBindingParseResult;
+    parseKeyedReadOrWrite(receiver: AST, start: number, isSafe: boolean): AST;
     /**
      * Parse a directive keyword, followed by a mandatory expression.
      * For example, "of items", "trackBy: func".
@@ -325,6 +326,7 @@ declare class SimpleExpressionChecker implements AstVisitor {
     visitAll(asts: any[], context: any): any[];
     visitChain(ast: Chain, context: any): void;
     visitQuote(ast: Quote, context: any): void;
+    visitSafeKeyedRead(ast: SafeKeyedRead, context: any): void;
 }
 /**
  * This class implements SimpleExpressionChecker used in View Engine and performs more strict checks

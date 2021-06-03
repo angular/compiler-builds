@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.1.0-next.4+33.sha-47270d9
+ * @license Angular v12.1.0-next.4+34.sha-ba08485
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8366,9 +8366,9 @@
     }(ASTWithName));
     var KeyedRead = /** @class */ (function (_super) {
         __extends(KeyedRead, _super);
-        function KeyedRead(span, sourceSpan, obj, key) {
+        function KeyedRead(span, sourceSpan, receiver, key) {
             var _this = _super.call(this, span, sourceSpan) || this;
-            _this.obj = obj;
+            _this.receiver = receiver;
             _this.key = key;
             return _this;
         }
@@ -8378,11 +8378,25 @@
         };
         return KeyedRead;
     }(AST));
+    var SafeKeyedRead = /** @class */ (function (_super) {
+        __extends(SafeKeyedRead, _super);
+        function SafeKeyedRead(span, sourceSpan, receiver, key) {
+            var _this = _super.call(this, span, sourceSpan) || this;
+            _this.receiver = receiver;
+            _this.key = key;
+            return _this;
+        }
+        SafeKeyedRead.prototype.visit = function (visitor, context) {
+            if (context === void 0) { context = null; }
+            return visitor.visitSafeKeyedRead(this, context);
+        };
+        return SafeKeyedRead;
+    }(AST));
     var KeyedWrite = /** @class */ (function (_super) {
         __extends(KeyedWrite, _super);
-        function KeyedWrite(span, sourceSpan, obj, key, value) {
+        function KeyedWrite(span, sourceSpan, receiver, key, value) {
             var _this = _super.call(this, span, sourceSpan) || this;
-            _this.obj = obj;
+            _this.receiver = receiver;
             _this.key = key;
             _this.value = value;
             return _this;
@@ -8691,11 +8705,11 @@
             this.visitAll(ast.expressions, context);
         };
         RecursiveAstVisitor.prototype.visitKeyedRead = function (ast, context) {
-            this.visit(ast.obj, context);
+            this.visit(ast.receiver, context);
             this.visit(ast.key, context);
         };
         RecursiveAstVisitor.prototype.visitKeyedWrite = function (ast, context) {
-            this.visit(ast.obj, context);
+            this.visit(ast.receiver, context);
             this.visit(ast.key, context);
             this.visit(ast.value, context);
         };
@@ -8729,6 +8743,10 @@
         RecursiveAstVisitor.prototype.visitSafeMethodCall = function (ast, context) {
             this.visit(ast.receiver, context);
             this.visitAll(ast.args, context);
+        };
+        RecursiveAstVisitor.prototype.visitSafeKeyedRead = function (ast, context) {
+            this.visit(ast.receiver, context);
+            this.visit(ast.key, context);
         };
         RecursiveAstVisitor.prototype.visitQuote = function (ast, context) { };
         // This is not part of the AstVisitor interface, just a helper method
@@ -8815,10 +8833,10 @@
             return new BindingPipe(ast.span, ast.sourceSpan, ast.exp.visit(this), ast.name, this.visitAll(ast.args), ast.nameSpan);
         };
         AstTransformer.prototype.visitKeyedRead = function (ast, context) {
-            return new KeyedRead(ast.span, ast.sourceSpan, ast.obj.visit(this), ast.key.visit(this));
+            return new KeyedRead(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.key.visit(this));
         };
         AstTransformer.prototype.visitKeyedWrite = function (ast, context) {
-            return new KeyedWrite(ast.span, ast.sourceSpan, ast.obj.visit(this), ast.key.visit(this), ast.value.visit(this));
+            return new KeyedWrite(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.key.visit(this), ast.value.visit(this));
         };
         AstTransformer.prototype.visitAll = function (asts) {
             var res = [];
@@ -8832,6 +8850,9 @@
         };
         AstTransformer.prototype.visitQuote = function (ast, context) {
             return new Quote(ast.span, ast.sourceSpan, ast.prefix, ast.uninterpretedExpression, ast.location);
+        };
+        AstTransformer.prototype.visitSafeKeyedRead = function (ast, context) {
+            return new SafeKeyedRead(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.key.visit(this));
         };
         return AstTransformer;
     }());
@@ -8969,18 +8990,18 @@
             return ast;
         };
         AstMemoryEfficientTransformer.prototype.visitKeyedRead = function (ast, context) {
-            var obj = ast.obj.visit(this);
+            var obj = ast.receiver.visit(this);
             var key = ast.key.visit(this);
-            if (obj !== ast.obj || key !== ast.key) {
+            if (obj !== ast.receiver || key !== ast.key) {
                 return new KeyedRead(ast.span, ast.sourceSpan, obj, key);
             }
             return ast;
         };
         AstMemoryEfficientTransformer.prototype.visitKeyedWrite = function (ast, context) {
-            var obj = ast.obj.visit(this);
+            var obj = ast.receiver.visit(this);
             var key = ast.key.visit(this);
             var value = ast.value.visit(this);
-            if (obj !== ast.obj || key !== ast.key || value !== ast.value) {
+            if (obj !== ast.receiver || key !== ast.key || value !== ast.value) {
                 return new KeyedWrite(ast.span, ast.sourceSpan, obj, key, value);
             }
             return ast;
@@ -9004,6 +9025,14 @@
             return ast;
         };
         AstMemoryEfficientTransformer.prototype.visitQuote = function (ast, context) {
+            return ast;
+        };
+        AstMemoryEfficientTransformer.prototype.visitSafeKeyedRead = function (ast, context) {
+            var obj = ast.receiver.visit(this);
+            var key = ast.key.visit(this);
+            if (obj !== ast.receiver || key !== ast.key) {
+                return new SafeKeyedRead(ast.span, ast.sourceSpan, obj, key);
+            }
             return ast;
         };
         return AstMemoryEfficientTransformer;
@@ -9581,11 +9610,11 @@
                 return this.convertSafeAccess(ast, leftMostSafe, mode);
             }
             else {
-                return convertToStatementIfNeeded(mode, this._visit(ast.obj, _Mode.Expression).key(this._visit(ast.key, _Mode.Expression)));
+                return convertToStatementIfNeeded(mode, this._visit(ast.receiver, _Mode.Expression).key(this._visit(ast.key, _Mode.Expression)));
             }
         };
         _AstToIrVisitor.prototype.visitKeyedWrite = function (ast, mode) {
-            var obj = this._visit(ast.obj, _Mode.Expression);
+            var obj = this._visit(ast.receiver, _Mode.Expression);
             var key = this._visit(ast.key, _Mode.Expression);
             var value = this._visit(ast.value, _Mode.Expression);
             return convertToStatementIfNeeded(mode, obj.key(key).set(value));
@@ -9713,6 +9742,9 @@
         _AstToIrVisitor.prototype.visitSafeMethodCall = function (ast, mode) {
             return this.convertSafeAccess(ast, this.leftMostSafeNode(ast), mode);
         };
+        _AstToIrVisitor.prototype.visitSafeKeyedRead = function (ast, mode) {
+            return this.convertSafeAccess(ast, this.leftMostSafeNode(ast), mode);
+        };
         _AstToIrVisitor.prototype.visitAll = function (asts, mode) {
             var _this = this;
             return asts.map(function (ast) { return _this._visit(ast, mode); });
@@ -9778,6 +9810,9 @@
             // leftMostNode with its unguarded version in the call to `this.visit()`.
             if (leftMostSafe instanceof SafeMethodCall) {
                 this._nodeMap.set(leftMostSafe, new MethodCall(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.nameSpan, leftMostSafe.receiver, leftMostSafe.name, leftMostSafe.args, leftMostSafe.argumentSpan));
+            }
+            else if (leftMostSafe instanceof SafeKeyedRead) {
+                this._nodeMap.set(leftMostSafe, new KeyedRead(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.receiver, leftMostSafe.key));
             }
             else {
                 this._nodeMap.set(leftMostSafe, new PropertyRead(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.nameSpan, leftMostSafe.receiver, leftMostSafe.name));
@@ -9846,7 +9881,7 @@
                     return null;
                 },
                 visitKeyedRead: function (ast) {
-                    return visit(this, ast.obj);
+                    return visit(this, ast.receiver);
                 },
                 visitKeyedWrite: function (ast) {
                     return null;
@@ -9885,6 +9920,9 @@
                     return visit(this, ast.receiver) || ast;
                 },
                 visitSafePropertyRead: function (ast) {
+                    return visit(this, ast.receiver) || ast;
+                },
+                visitSafeKeyedRead: function (ast) {
                     return visit(this, ast.receiver) || ast;
                 }
             });
@@ -9965,6 +10003,9 @@
                     return true;
                 },
                 visitSafePropertyRead: function (ast) {
+                    return false;
+                },
+                visitSafeKeyedRead: function (ast) {
                     return false;
                 }
             });
@@ -16609,7 +16650,6 @@
             return this.parseCallChain();
         };
         _ParseAST.prototype.parseCallChain = function () {
-            var _this = this;
             var start = this.inputIndex;
             var result = this.parsePrimary();
             while (true) {
@@ -16617,25 +16657,12 @@
                     result = this.parseAccessMemberOrMethodCall(result, start, false);
                 }
                 else if (this.consumeOptionalOperator('?.')) {
-                    result = this.parseAccessMemberOrMethodCall(result, start, true);
+                    result = this.consumeOptionalCharacter($LBRACKET) ?
+                        this.parseKeyedReadOrWrite(result, start, true) :
+                        this.parseAccessMemberOrMethodCall(result, start, true);
                 }
                 else if (this.consumeOptionalCharacter($LBRACKET)) {
-                    this.withContext(ParseContextFlags.Writable, function () {
-                        _this.rbracketsExpected++;
-                        var key = _this.parsePipe();
-                        if (key instanceof EmptyExpr) {
-                            _this.error("Key access cannot be empty");
-                        }
-                        _this.rbracketsExpected--;
-                        _this.expectCharacter($RBRACKET);
-                        if (_this.consumeOptionalOperator('=')) {
-                            var value = _this.parseConditional();
-                            result = new KeyedWrite(_this.span(start), _this.sourceSpan(start), result, key, value);
-                        }
-                        else {
-                            result = new KeyedRead(_this.span(start), _this.sourceSpan(start), result, key);
-                        }
-                    });
+                    result = this.parseKeyedReadOrWrite(result, start, false);
                 }
                 else if (this.consumeOptionalCharacter($LPAREN)) {
                     this.rparensExpected++;
@@ -16750,7 +16777,6 @@
         };
         _ParseAST.prototype.parseAccessMemberOrMethodCall = function (receiver, start, isSafe) {
             var _this = this;
-            if (isSafe === void 0) { isSafe = false; }
             var nameStart = this.inputIndex;
             var id = this.withContext(ParseContextFlags.Writable, function () {
                 var _a;
@@ -16884,6 +16910,32 @@
                 this.consumeStatementTerminator();
             }
             return new TemplateBindingParseResult(bindings, [] /* warnings */, this.errors);
+        };
+        _ParseAST.prototype.parseKeyedReadOrWrite = function (receiver, start, isSafe) {
+            var _this = this;
+            return this.withContext(ParseContextFlags.Writable, function () {
+                _this.rbracketsExpected++;
+                var key = _this.parsePipe();
+                if (key instanceof EmptyExpr) {
+                    _this.error("Key access cannot be empty");
+                }
+                _this.rbracketsExpected--;
+                _this.expectCharacter($RBRACKET);
+                if (_this.consumeOptionalOperator('=')) {
+                    if (isSafe) {
+                        _this.error('The \'?.\' operator cannot be used in the assignment');
+                    }
+                    else {
+                        var value = _this.parseConditional();
+                        return new KeyedWrite(_this.span(start), _this.sourceSpan(start), receiver, key, value);
+                    }
+                }
+                else {
+                    return isSafe ? new SafeKeyedRead(_this.span(start), _this.sourceSpan(start), receiver, key) :
+                        new KeyedRead(_this.span(start), _this.sourceSpan(start), receiver, key);
+                }
+                return new EmptyExpr(_this.span(start), _this.sourceSpan(start));
+            });
         };
         /**
          * Parse a directive keyword, followed by a mandatory expression.
@@ -17096,6 +17148,7 @@
         };
         SimpleExpressionChecker.prototype.visitChain = function (ast, context) { };
         SimpleExpressionChecker.prototype.visitQuote = function (ast, context) { };
+        SimpleExpressionChecker.prototype.visitSafeKeyedRead = function (ast, context) { };
         return SimpleExpressionChecker;
     }());
     /**
@@ -22122,7 +22175,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.1.0-next.4+33.sha-47270d9');
+    var VERSION$1 = new Version('12.1.0-next.4+34.sha-ba08485');
 
     /**
      * @license
@@ -31967,7 +32020,7 @@
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', literal('12.1.0-next.4+33.sha-47270d9'));
+        definitionMap.set('version', literal('12.1.0-next.4+34.sha-ba08485'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
@@ -32007,7 +32060,7 @@
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-        definitionMap.set('version', literal('12.1.0-next.4+33.sha-47270d9'));
+        definitionMap.set('version', literal('12.1.0-next.4+34.sha-ba08485'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -32231,7 +32284,7 @@
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-        definitionMap.set('version', literal('12.1.0-next.4+33.sha-47270d9'));
+        definitionMap.set('version', literal('12.1.0-next.4+34.sha-ba08485'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32273,7 +32326,7 @@
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-        definitionMap.set('version', literal('12.1.0-next.4+33.sha-47270d9'));
+        definitionMap.set('version', literal('12.1.0-next.4+34.sha-ba08485'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
@@ -32353,7 +32406,7 @@
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-        definitionMap.set('version', literal('12.1.0-next.4+33.sha-47270d9'));
+        definitionMap.set('version', literal('12.1.0-next.4+34.sha-ba08485'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -32390,7 +32443,7 @@
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-        definitionMap.set('version', literal('12.1.0-next.4+33.sha-47270d9'));
+        definitionMap.set('version', literal('12.1.0-next.4+34.sha-ba08485'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -32448,7 +32501,7 @@
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-        definitionMap.set('version', literal('12.1.0-next.4+33.sha-47270d9'));
+        definitionMap.set('version', literal('12.1.0-next.4+34.sha-ba08485'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
@@ -32645,6 +32698,7 @@
     exports.ResourceLoader = ResourceLoader;
     exports.ReturnStatement = ReturnStatement;
     exports.STRING_TYPE = STRING_TYPE;
+    exports.SafeKeyedRead = SafeKeyedRead;
     exports.SafeMethodCall = SafeMethodCall;
     exports.SafePropertyRead = SafePropertyRead;
     exports.SelectorContext = SelectorContext;
