@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.1.0-next.6+28.sha-8793d1a
+ * @license Angular v12.1.0-next.6+33.sha-6b2a475
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9616,6 +9616,9 @@
             var obj = this._visit(ast.receiver, _Mode.Expression);
             var key = this._visit(ast.key, _Mode.Expression);
             var value = this._visit(ast.value, _Mode.Expression);
+            if (obj === this._implicitReceiver) {
+                this._localResolver.maybeRestoreView(0, false);
+            }
             return convertToStatementIfNeeded(mode, obj.key(key).set(value));
         };
         _AstToIrVisitor.prototype.visitLiteralArray = function (ast, mode) {
@@ -10063,6 +10066,7 @@
             this.globals = globals;
         }
         DefaultLocalResolver.prototype.notifyImplicitReceiverUse = function () { };
+        DefaultLocalResolver.prototype.maybeRestoreView = function () { };
         DefaultLocalResolver.prototype.getLocal = function (name) {
             if (name === EventHandlerVars.event.name) {
                 return EventHandlerVars.event;
@@ -19407,6 +19411,10 @@
         TemplateDefinitionBuilder.prototype.notifyImplicitReceiverUse = function () {
             this._bindingScope.notifyImplicitReceiverUse();
         };
+        // LocalResolver
+        TemplateDefinitionBuilder.prototype.maybeRestoreView = function (retrievalLevel, localRefLookup) {
+            this._bindingScope.maybeRestoreView(retrievalLevel, localRefLookup);
+        };
         TemplateDefinitionBuilder.prototype.i18nTranslate = function (message, params, ref, transformFn) {
             var _c;
             if (params === void 0) { params = {}; }
@@ -22178,7 +22186,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.1.0-next.6+28.sha-8793d1a');
+    var VERSION$1 = new Version('12.1.0-next.6+33.sha-6b2a475');
 
     /**
      * @license
@@ -26130,6 +26138,7 @@
         function TypeCheckLocalResolver() {
         }
         TypeCheckLocalResolver.prototype.notifyImplicitReceiverUse = function () { };
+        TypeCheckLocalResolver.prototype.maybeRestoreView = function () { };
         TypeCheckLocalResolver.prototype.getLocal = function (name) {
             if (name === EventHandlerVars.event.name) {
                 // References to the event should not be type-checked.
@@ -26349,6 +26358,7 @@
             }
         };
         ViewBuilder.prototype.notifyImplicitReceiverUse = function () { };
+        ViewBuilder.prototype.maybeRestoreView = function () { };
         ViewBuilder.prototype.getLocal = function (name) {
             if (name == EventHandlerVars.event.name) {
                 return variable(this.getOutputVar(exports.BuiltinTypeName.Dynamic));
@@ -26951,9 +26961,12 @@
             return null;
         };
         ViewBuilder.prototype.notifyImplicitReceiverUse = function () {
-            // Not needed in View Engine as View Engine walks through the generated
+            // Not needed in ViewEngine as ViewEngine walks through the generated
             // expressions to figure out if the implicit receiver is used and needs
             // to be generated as part of the pre-update statements.
+        };
+        ViewBuilder.prototype.maybeRestoreView = function () {
+            // Not necessary in ViewEngine, because view restoration is an Ivy concept.
         };
         ViewBuilder.prototype._createLiteralArrayConverter = function (sourceSpan, argCount) {
             if (argCount === 0) {
@@ -32023,7 +32036,7 @@
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', literal('12.1.0-next.6+28.sha-8793d1a'));
+        definitionMap.set('version', literal('12.1.0-next.6+33.sha-6b2a475'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
@@ -32063,7 +32076,7 @@
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-        definitionMap.set('version', literal('12.1.0-next.6+28.sha-8793d1a'));
+        definitionMap.set('version', literal('12.1.0-next.6+33.sha-6b2a475'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -32287,7 +32300,7 @@
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-        definitionMap.set('version', literal('12.1.0-next.6+28.sha-8793d1a'));
+        definitionMap.set('version', literal('12.1.0-next.6+33.sha-6b2a475'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32329,7 +32342,7 @@
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-        definitionMap.set('version', literal('12.1.0-next.6+28.sha-8793d1a'));
+        definitionMap.set('version', literal('12.1.0-next.6+33.sha-6b2a475'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
@@ -32409,7 +32422,7 @@
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-        definitionMap.set('version', literal('12.1.0-next.6+28.sha-8793d1a'));
+        definitionMap.set('version', literal('12.1.0-next.6+33.sha-6b2a475'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -32446,7 +32459,7 @@
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-        definitionMap.set('version', literal('12.1.0-next.6+28.sha-8793d1a'));
+        definitionMap.set('version', literal('12.1.0-next.6+33.sha-6b2a475'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -32504,7 +32517,7 @@
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-        definitionMap.set('version', literal('12.1.0-next.6+28.sha-8793d1a'));
+        definitionMap.set('version', literal('12.1.0-next.6+33.sha-6b2a475'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
