@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.0.5+28.sha-1ce5c20
+ * @license Angular v12.0.5+34.sha-2dc7b45
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -11711,10 +11711,13 @@
                     parts.push(this._readChar(true));
                 }
             } while (!this._isTextEnd());
+            // It is possible that an interpolation was started but not ended inside this text token.
+            // Make sure that we reset the state of the lexer correctly.
+            this._inInterpolation = false;
             this._endToken([this._processCarriageReturns(parts.join(''))]);
         };
         _Tokenizer.prototype._isTextEnd = function () {
-            if (this._cursor.peek() === $LT || this._cursor.peek() === $EOF) {
+            if (this._isTagStart() || this._cursor.peek() === $EOF) {
                 return true;
             }
             if (this._tokenizeIcu && !this._inInterpolation) {
@@ -11724,6 +11727,24 @@
                 }
                 if (this._cursor.peek() === $RBRACE && this._isInExpansionCase()) {
                     // end of and expansion case
+                    return true;
+                }
+            }
+            return false;
+        };
+        /**
+         * Returns true if the current cursor is pointing to the start of a tag
+         * (opening/closing/comments/cdata/etc).
+         */
+        _Tokenizer.prototype._isTagStart = function () {
+            if (this._cursor.peek() === $LT) {
+                // We assume that `<` followed by whitespace is not the start of an HTML element.
+                var tmp = this._cursor.clone();
+                tmp.advance();
+                // If the next character is alphabetic, ! nor / then it is a tag start
+                var code = tmp.peek();
+                if (($a <= code && code <= $z) || ($A <= code && code <= $Z) ||
+                    code === $SLASH || code === $BANG) {
                     return true;
                 }
             }
@@ -22093,7 +22114,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.0.5+28.sha-1ce5c20');
+    var VERSION$1 = new Version('12.0.5+34.sha-2dc7b45');
 
     /**
      * @license
@@ -31943,7 +31964,7 @@
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', literal('12.0.5+28.sha-1ce5c20'));
+        definitionMap.set('version', literal('12.0.5+34.sha-2dc7b45'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
@@ -31983,7 +32004,7 @@
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-        definitionMap.set('version', literal('12.0.5+28.sha-1ce5c20'));
+        definitionMap.set('version', literal('12.0.5+34.sha-2dc7b45'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -32207,7 +32228,7 @@
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-        definitionMap.set('version', literal('12.0.5+28.sha-1ce5c20'));
+        definitionMap.set('version', literal('12.0.5+34.sha-2dc7b45'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32249,7 +32270,7 @@
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-        definitionMap.set('version', literal('12.0.5+28.sha-1ce5c20'));
+        definitionMap.set('version', literal('12.0.5+34.sha-2dc7b45'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
@@ -32329,7 +32350,7 @@
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-        definitionMap.set('version', literal('12.0.5+28.sha-1ce5c20'));
+        definitionMap.set('version', literal('12.0.5+34.sha-2dc7b45'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -32366,7 +32387,7 @@
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-        definitionMap.set('version', literal('12.0.5+28.sha-1ce5c20'));
+        definitionMap.set('version', literal('12.0.5+34.sha-2dc7b45'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -32424,7 +32445,7 @@
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-        definitionMap.set('version', literal('12.0.5+28.sha-1ce5c20'));
+        definitionMap.set('version', literal('12.0.5+34.sha-2dc7b45'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
