@@ -15,6 +15,7 @@ export interface LocalResolver {
     getLocal(name: string): o.Expression | null;
     notifyImplicitReceiverUse(): void;
     globals?: Set<string>;
+    maybeRestoreView(retrievalLevel: number, localRefLookup: boolean): void;
 }
 export declare class ConvertActionBindingResult {
     /**

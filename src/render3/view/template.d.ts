@@ -96,6 +96,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], ngContentSelectorsOffset?: number, i18n?: i18n.I18nMeta): o.FunctionExpr;
     getLocal(name: string): o.Expression | null;
     notifyImplicitReceiverUse(): void;
+    maybeRestoreView(retrievalLevel: number, localRefLookup: boolean): void;
     private i18nTranslate;
     private registerContextVariables;
     private i18nAppendBindings;

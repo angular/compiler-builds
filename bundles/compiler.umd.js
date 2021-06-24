@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.1.0-next.5+49.sha-18fe044
+ * @license Angular v12.1.0-next.6+60.sha-d71d521
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -236,10 +236,16 @@
                 r[k] = a[j];
         return r;
     }
-    function __spreadArray(to, from) {
-        for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
-            to[j] = from[i];
-        return to;
+    function __spreadArray(to, from, pack) {
+        if (pack || arguments.length === 2)
+            for (var i = 0, l = from.length, ar; i < l; i++) {
+                if (ar || !(i in from)) {
+                    if (!ar)
+                        ar = Array.prototype.slice.call(from, 0, i);
+                    ar[i] = from[i];
+                }
+            }
+        return to.concat(ar || from);
     }
     function __await(v) {
         return this instanceof __await ? (this.v = v, this) : new __await(v);
@@ -9616,6 +9622,9 @@
             var obj = this._visit(ast.receiver, _Mode.Expression);
             var key = this._visit(ast.key, _Mode.Expression);
             var value = this._visit(ast.value, _Mode.Expression);
+            if (obj === this._implicitReceiver) {
+                this._localResolver.maybeRestoreView(0, false);
+            }
             return convertToStatementIfNeeded(mode, obj.key(key).set(value));
         };
         _AstToIrVisitor.prototype.visitLiteralArray = function (ast, mode) {
@@ -10063,6 +10072,7 @@
             this.globals = globals;
         }
         DefaultLocalResolver.prototype.notifyImplicitReceiverUse = function () { };
+        DefaultLocalResolver.prototype.maybeRestoreView = function () { };
         DefaultLocalResolver.prototype.getLocal = function (name) {
             if (name === EventHandlerVars.event.name) {
                 return EventHandlerVars.event;
@@ -11788,10 +11798,13 @@
                     parts.push(this._readChar(true));
                 }
             } while (!this._isTextEnd());
+            // It is possible that an interpolation was started but not ended inside this text token.
+            // Make sure that we reset the state of the lexer correctly.
+            this._inInterpolation = false;
             this._endToken([this._processCarriageReturns(parts.join(''))]);
         };
         _Tokenizer.prototype._isTextEnd = function () {
-            if (this._cursor.peek() === $LT || this._cursor.peek() === $EOF) {
+            if (this._isTagStart() || this._cursor.peek() === $EOF) {
                 return true;
             }
             if (this._tokenizeIcu && !this._inInterpolation) {
@@ -11801,6 +11814,24 @@
                 }
                 if (this._cursor.peek() === $RBRACE && this._isInExpansionCase()) {
                     // end of and expansion case
+                    return true;
+                }
+            }
+            return false;
+        };
+        /**
+         * Returns true if the current cursor is pointing to the start of a tag
+         * (opening/closing/comments/cdata/etc).
+         */
+        _Tokenizer.prototype._isTagStart = function () {
+            if (this._cursor.peek() === $LT) {
+                // We assume that `<` followed by whitespace is not the start of an HTML element.
+                var tmp = this._cursor.clone();
+                tmp.advance();
+                // If the next character is alphabetic, ! nor / then it is a tag start
+                var code = tmp.peek();
+                if (($a <= code && code <= $z) || ($A <= code && code <= $Z) ||
+                    code === $SLASH || code === $BANG) {
                     return true;
                 }
             }
@@ -16767,11 +16798,23 @@
             if (!this.consumeOptionalCharacter($RBRACE)) {
                 this.rbracesExpected++;
                 do {
+                    var keyStart = this.inputIndex;
                     var quoted = this.next.isString();
                     var key = this.expectIdentifierOrKeywordOrString();
                     keys.push({ key: key, quoted: quoted });
-                    this.expectCharacter($COLON);
-                    values.push(this.parsePipe());
+                    // Properties with quoted keys can't use the shorthand syntax.
+                    if (quoted) {
+                        this.expectCharacter($COLON);
+                        values.push(this.parsePipe());
+                    }
+                    else if (this.consumeOptionalCharacter($COLON)) {
+                        values.push(this.parsePipe());
+                    }
+                    else {
+                        var span = this.span(keyStart);
+                        var sourceSpan = this.sourceSpan(keyStart);
+                        values.push(new PropertyRead(span, sourceSpan, sourceSpan, new ImplicitReceiver(span, sourceSpan), key));
+                    }
                 } while (this.consumeOptionalCharacter($COMMA));
                 this.rbracesExpected--;
                 this.expectCharacter($RBRACE);
@@ -19406,6 +19449,10 @@
         // LocalResolver
         TemplateDefinitionBuilder.prototype.notifyImplicitReceiverUse = function () {
             this._bindingScope.notifyImplicitReceiverUse();
+        };
+        // LocalResolver
+        TemplateDefinitionBuilder.prototype.maybeRestoreView = function (retrievalLevel, localRefLookup) {
+            this._bindingScope.maybeRestoreView(retrievalLevel, localRefLookup);
         };
         TemplateDefinitionBuilder.prototype.i18nTranslate = function (message, params, ref, transformFn) {
             var _c;
@@ -22178,7 +22225,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.1.0-next.5+49.sha-18fe044');
+    var VERSION$1 = new Version('12.1.0-next.6+60.sha-d71d521');
 
     /**
      * @license
@@ -26130,6 +26177,7 @@
         function TypeCheckLocalResolver() {
         }
         TypeCheckLocalResolver.prototype.notifyImplicitReceiverUse = function () { };
+        TypeCheckLocalResolver.prototype.maybeRestoreView = function () { };
         TypeCheckLocalResolver.prototype.getLocal = function (name) {
             if (name === EventHandlerVars.event.name) {
                 // References to the event should not be type-checked.
@@ -26349,6 +26397,7 @@
             }
         };
         ViewBuilder.prototype.notifyImplicitReceiverUse = function () { };
+        ViewBuilder.prototype.maybeRestoreView = function () { };
         ViewBuilder.prototype.getLocal = function (name) {
             if (name == EventHandlerVars.event.name) {
                 return variable(this.getOutputVar(exports.BuiltinTypeName.Dynamic));
@@ -26951,9 +27000,12 @@
             return null;
         };
         ViewBuilder.prototype.notifyImplicitReceiverUse = function () {
-            // Not needed in View Engine as View Engine walks through the generated
+            // Not needed in ViewEngine as ViewEngine walks through the generated
             // expressions to figure out if the implicit receiver is used and needs
             // to be generated as part of the pre-update statements.
+        };
+        ViewBuilder.prototype.maybeRestoreView = function () {
+            // Not necessary in ViewEngine, because view restoration is an Ivy concept.
         };
         ViewBuilder.prototype._createLiteralArrayConverter = function (sourceSpan, argCount) {
             if (argCount === 0) {
@@ -32023,7 +32075,7 @@
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', literal('12.1.0-next.5+49.sha-18fe044'));
+        definitionMap.set('version', literal('12.1.0-next.6+60.sha-d71d521'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
@@ -32063,7 +32115,7 @@
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-        definitionMap.set('version', literal('12.1.0-next.5+49.sha-18fe044'));
+        definitionMap.set('version', literal('12.1.0-next.6+60.sha-d71d521'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -32287,7 +32339,7 @@
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-        definitionMap.set('version', literal('12.1.0-next.5+49.sha-18fe044'));
+        definitionMap.set('version', literal('12.1.0-next.6+60.sha-d71d521'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32329,7 +32381,7 @@
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-        definitionMap.set('version', literal('12.1.0-next.5+49.sha-18fe044'));
+        definitionMap.set('version', literal('12.1.0-next.6+60.sha-d71d521'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
@@ -32409,7 +32461,7 @@
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-        definitionMap.set('version', literal('12.1.0-next.5+49.sha-18fe044'));
+        definitionMap.set('version', literal('12.1.0-next.6+60.sha-d71d521'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -32446,7 +32498,7 @@
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-        definitionMap.set('version', literal('12.1.0-next.5+49.sha-18fe044'));
+        definitionMap.set('version', literal('12.1.0-next.6+60.sha-d71d521'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -32504,7 +32556,7 @@
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-        definitionMap.set('version', literal('12.1.0-next.5+49.sha-18fe044'));
+        definitionMap.set('version', literal('12.1.0-next.6+60.sha-d71d521'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
