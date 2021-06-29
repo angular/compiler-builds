@@ -42,7 +42,7 @@
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new util_1.DefinitionMap();
         definitionMap.set('minVersion', o.literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', o.literal('12.2.0-next.0+19.sha-f29fe5c'));
+        definitionMap.set('version', o.literal('12.2.0-next.0+20.sha-8528073'));
         definitionMap.set('ngImport', o.importExpr(r3_identifiers_1.Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
