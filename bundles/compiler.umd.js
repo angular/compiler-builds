@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.2.0-next.0+22.sha-234b5ed
+ * @license Angular v12.2.0-next.0+23.sha-9f5cc7c
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15766,12 +15766,25 @@
         };
         _Scanner.prototype.scanNumber = function (start) {
             var simple = (this.index === start);
+            var hasSeparators = false;
             this.advance(); // Skip initial digit.
             while (true) {
                 if (isDigit(this.peek)) {
                     // Do nothing.
                 }
-                else if (this.peek == $PERIOD) {
+                else if (this.peek === $_) {
+                    // Separators are only valid when they're surrounded by digits. E.g. `1_0_1` is
+                    // valid while `_101` and `101_` are not. The separator can't be next to the decimal
+                    // point or another separator either. Note that it's unlikely that we'll hit a case where
+                    // the underscore is at the start, because that's a valid identifier and it will be picked
+                    // up earlier in the parsing. We validate for it anyway just in case.
+                    if (!isDigit(this.input.charCodeAt(this.index - 1)) ||
+                        !isDigit(this.input.charCodeAt(this.index + 1))) {
+                        return this.error('Invalid numeric separator', 0);
+                    }
+                    hasSeparators = true;
+                }
+                else if (this.peek === $PERIOD) {
                     simple = false;
                 }
                 else if (isExponentStart(this.peek)) {
@@ -15788,6 +15801,9 @@
                 this.advance();
             }
             var str = this.input.substring(start, this.index);
+            if (hasSeparators) {
+                str = str.replace(/_/g, '');
+            }
             var value = simple ? parseIntAutoRadix(str) : parseFloat(str);
             return newNumberToken(start, this.index, value);
         };
@@ -22225,7 +22241,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.2.0-next.0+22.sha-234b5ed');
+    var VERSION$1 = new Version('12.2.0-next.0+23.sha-9f5cc7c');
 
     /**
      * @license
@@ -32075,7 +32091,7 @@
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', literal('12.2.0-next.0+22.sha-234b5ed'));
+        definitionMap.set('version', literal('12.2.0-next.0+23.sha-9f5cc7c'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
@@ -32115,7 +32131,7 @@
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-        definitionMap.set('version', literal('12.2.0-next.0+22.sha-234b5ed'));
+        definitionMap.set('version', literal('12.2.0-next.0+23.sha-9f5cc7c'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -32339,7 +32355,7 @@
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-        definitionMap.set('version', literal('12.2.0-next.0+22.sha-234b5ed'));
+        definitionMap.set('version', literal('12.2.0-next.0+23.sha-9f5cc7c'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32381,7 +32397,7 @@
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-        definitionMap.set('version', literal('12.2.0-next.0+22.sha-234b5ed'));
+        definitionMap.set('version', literal('12.2.0-next.0+23.sha-9f5cc7c'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
@@ -32461,7 +32477,7 @@
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-        definitionMap.set('version', literal('12.2.0-next.0+22.sha-234b5ed'));
+        definitionMap.set('version', literal('12.2.0-next.0+23.sha-9f5cc7c'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -32498,7 +32514,7 @@
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-        definitionMap.set('version', literal('12.2.0-next.0+22.sha-234b5ed'));
+        definitionMap.set('version', literal('12.2.0-next.0+23.sha-9f5cc7c'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -32556,7 +32572,7 @@
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-        definitionMap.set('version', literal('12.2.0-next.0+22.sha-234b5ed'));
+        definitionMap.set('version', literal('12.2.0-next.0+23.sha-9f5cc7c'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
