@@ -46,7 +46,7 @@
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new util_1.DefinitionMap();
         definitionMap.set('minVersion', o.literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', o.literal('12.2.0-next.1+16.sha-c9b47f2'));
+        definitionMap.set('version', o.literal('12.2.0-next.1+17.sha-0c0c32d'));
         definitionMap.set('ngImport', o.importExpr(r3_identifiers_1.Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
