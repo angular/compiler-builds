@@ -96,7 +96,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], ngContentSelectorsOffset?: number, i18n?: i18n.I18nMeta): o.FunctionExpr;
     getLocal(name: string): o.Expression | null;
     notifyImplicitReceiverUse(): void;
-    maybeRestoreView(retrievalLevel: number, localRefLookup: boolean): void;
+    maybeRestoreView(): void;
     private i18nTranslate;
     private registerContextVariables;
     private i18nAppendBindings;
@@ -225,7 +225,6 @@ declare type BindingData = {
     declareLocalCallback?: DeclareLocalVarCallback;
     declare: boolean;
     priority: number;
-    localRef: boolean;
 };
 export declare class BindingScope implements LocalResolver {
     bindingLevel: number;
@@ -263,7 +262,7 @@ export declare class BindingScope implements LocalResolver {
     maybeGenerateSharedContextVar(value: BindingData): void;
     generateSharedContextVar(retrievalLevel: number): void;
     getComponentProperty(name: string): o.Expression;
-    maybeRestoreView(retrievalLevel: number, localRefLookup: boolean): void;
+    maybeRestoreView(): void;
     restoreViewStatement(): o.Statement[];
     viewSnapshotStatements(): o.Statement[];
     isListenerScope(): boolean | null;

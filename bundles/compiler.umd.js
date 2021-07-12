@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.1.1+55.sha-2ed5a2d
+ * @license Angular v12.1.1+60.sha-91a576d
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9623,7 +9623,7 @@
             var key = this._visit(ast.key, _Mode.Expression);
             var value = this._visit(ast.value, _Mode.Expression);
             if (obj === this._implicitReceiver) {
-                this._localResolver.maybeRestoreView(0, false);
+                this._localResolver.maybeRestoreView();
             }
             return convertToStatementIfNeeded(mode, obj.key(key).set(value));
         };
@@ -19451,8 +19451,8 @@
             this._bindingScope.notifyImplicitReceiverUse();
         };
         // LocalResolver
-        TemplateDefinitionBuilder.prototype.maybeRestoreView = function (retrievalLevel, localRefLookup) {
-            this._bindingScope.maybeRestoreView(retrievalLevel, localRefLookup);
+        TemplateDefinitionBuilder.prototype.maybeRestoreView = function () {
+            this._bindingScope.maybeRestoreView();
         };
         TemplateDefinitionBuilder.prototype.i18nTranslate = function (message, params, ref, transformFn) {
             var _c;
@@ -20608,14 +20608,13 @@
                             lhs: value.lhs,
                             declareLocalCallback: value.declareLocalCallback,
                             declare: false,
-                            priority: value.priority,
-                            localRef: value.localRef
+                            priority: value.priority
                         };
                         // Cache the value locally.
                         this.map.set(name, value);
                         // Possibly generate a shared context var
                         this.maybeGenerateSharedContextVar(value);
-                        this.maybeRestoreView(value.retrievalLevel, value.localRef);
+                        this.maybeRestoreView();
                     }
                     if (value.declareLocalCallback && !value.declare) {
                         value.declare = true;
@@ -20656,7 +20655,6 @@
                 declare: false,
                 declareLocalCallback: declareLocalCallback,
                 priority: priority,
-                localRef: localRef || false
             });
             return this;
         };
@@ -20720,22 +20718,20 @@
                 },
                 declare: false,
                 priority: 2 /* SHARED_CONTEXT */,
-                localRef: false
             });
         };
         BindingScope.prototype.getComponentProperty = function (name) {
             var componentValue = this.map.get(SHARED_CONTEXT_KEY + 0);
             componentValue.declare = true;
-            this.maybeRestoreView(0, false);
+            this.maybeRestoreView();
             return componentValue.lhs.prop(name);
         };
-        BindingScope.prototype.maybeRestoreView = function (retrievalLevel, localRefLookup) {
-            // We want to restore the current view in listener fns if:
-            // 1 - we are accessing a value in a parent view, which requires walking the view tree rather
-            // than using the ctx arg. In this case, the retrieval and binding level will be different.
-            // 2 - we are looking up a local ref, which requires restoring the view where the local
-            // ref is stored
-            if (this.isListenerScope() && (retrievalLevel < this.bindingLevel || localRefLookup)) {
+        BindingScope.prototype.maybeRestoreView = function () {
+            // View restoration is required for listener instructions inside embedded views, because
+            // they only run in creation mode and they can have references to the context object.
+            // If the context object changes in update mode, the reference will be incorrect, because
+            // it was established during creation.
+            if (this.isListenerScope()) {
                 if (!this.parent.restoreViewVariable) {
                     // parent saves variable to generate a shared `const $s$ = getCurrentView();` instruction
                     this.parent.restoreViewVariable = variable(this.parent.freshReferenceName());
@@ -22225,7 +22221,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.1.1+55.sha-2ed5a2d');
+    var VERSION$1 = new Version('12.1.1+60.sha-91a576d');
 
     /**
      * @license
@@ -32075,7 +32071,7 @@
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', literal('12.1.1+55.sha-2ed5a2d'));
+        definitionMap.set('version', literal('12.1.1+60.sha-91a576d'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
@@ -32115,7 +32111,7 @@
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-        definitionMap.set('version', literal('12.1.1+55.sha-2ed5a2d'));
+        definitionMap.set('version', literal('12.1.1+60.sha-91a576d'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -32339,7 +32335,7 @@
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-        definitionMap.set('version', literal('12.1.1+55.sha-2ed5a2d'));
+        definitionMap.set('version', literal('12.1.1+60.sha-91a576d'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32381,7 +32377,7 @@
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-        definitionMap.set('version', literal('12.1.1+55.sha-2ed5a2d'));
+        definitionMap.set('version', literal('12.1.1+60.sha-91a576d'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
@@ -32461,7 +32457,7 @@
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-        definitionMap.set('version', literal('12.1.1+55.sha-2ed5a2d'));
+        definitionMap.set('version', literal('12.1.1+60.sha-91a576d'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -32498,7 +32494,7 @@
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-        definitionMap.set('version', literal('12.1.1+55.sha-2ed5a2d'));
+        definitionMap.set('version', literal('12.1.1+60.sha-91a576d'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -32556,7 +32552,7 @@
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-        definitionMap.set('version', literal('12.1.1+55.sha-2ed5a2d'));
+        definitionMap.set('version', literal('12.1.1+60.sha-91a576d'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
