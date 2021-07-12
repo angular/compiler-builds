@@ -39,8 +39,8 @@ export interface CompilerFacade {
     compileFactoryDeclaration(angularCoreEnv: CoreEnvironment, sourceMapUrl: string, meta: R3DeclareFactoryFacade): any;
     createParseSourceSpan(kind: string, typeName: string, sourceUrl: string): ParseSourceSpan;
     FactoryTarget: typeof FactoryTarget;
-    ResourceLoader: {
-        new (): ResourceLoader;
+    ResourceLoader: Function & {
+        prototype: ResourceLoader;
     };
 }
 export interface CoreEnvironment {
