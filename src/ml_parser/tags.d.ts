@@ -27,7 +27,3 @@ export declare function isNgTemplate(tagName: string): boolean;
 export declare function getNsPrefix(fullName: string): string;
 export declare function getNsPrefix(fullName: null): null;
 export declare function mergeNsAndName(prefix: string, localName: string): string;
-export declare const NAMED_ENTITIES: {
-    [k: string]: string;
-};
-export declare const NGSP_UNICODE = "\uE500";
