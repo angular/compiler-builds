@@ -20,7 +20,7 @@ export declare class ParseSpan {
     constructor(start: number, end: number);
     toAbsolute(absoluteOffset: number): AbsoluteSourceSpan;
 }
-export declare class AST {
+export declare abstract class AST {
     span: ParseSpan;
     /**
      * Absolute location of the expression AST in a source code file.
@@ -31,7 +31,7 @@ export declare class AST {
      * Absolute location of the expression AST in a source code file.
      */
     sourceSpan: AbsoluteSourceSpan);
-    visit(visitor: AstVisitor, context?: any): any;
+    abstract visit(visitor: AstVisitor, context?: any): any;
     toString(): string;
 }
 export declare abstract class ASTWithName extends AST {
