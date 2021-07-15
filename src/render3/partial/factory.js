@@ -33,7 +33,7 @@
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new util_1.DefinitionMap();
         definitionMap.set('minVersion', o.literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', o.literal('12.2.0-next.2+15.sha-642362a'));
+        definitionMap.set('version', o.literal('12.2.0-next.2+13.sha-7422821'));
         definitionMap.set('ngImport', o.importExpr(r3_identifiers_1.Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', util_2.compileDependencies(meta.deps));
