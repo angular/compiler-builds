@@ -32,7 +32,7 @@ export function compileDeclarePipeFromMetadata(meta) {
 export function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', o.literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', o.literal('12.2.0-next.3+9.sha-7e9673d.with-local-changes'));
+    definitionMap.set('version', o.literal('12.2.0-next.3+7.sha-b5f1779.with-local-changes'));
     definitionMap.set('ngImport', o.importExpr(R3.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
