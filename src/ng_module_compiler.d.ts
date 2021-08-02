@@ -7,7 +7,7 @@
  */
 import { CompileNgModuleMetadata, CompileProviderMetadata } from './compile_metadata';
 import { CompileReflector } from './compile_reflector';
-import { OutputContext } from './util';
+import { OutputContext } from './constant_pool';
 export declare class NgModuleCompileResult {
     ngModuleFactoryVar: string;
     constructor(ngModuleFactoryVar: string);

@@ -72,3 +72,4 @@ export declare function isAsciiLetter(code: number): boolean;
 export declare function isAsciiHexDigit(code: number): boolean;
 export declare function isNewLine(code: number): boolean;
 export declare function isOctalDigit(code: number): boolean;
+export declare function isQuote(code: number): boolean;

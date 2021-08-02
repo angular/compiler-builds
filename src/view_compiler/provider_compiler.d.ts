@@ -7,11 +7,11 @@
  */
 import { CompileDiDependencyMetadata, CompileEntryComponentMetadata } from '../compile_metadata';
 import { CompileReflector } from '../compile_reflector';
+import { OutputContext } from '../constant_pool';
 import { NodeFlags } from '../core';
 import { LifecycleHooks } from '../lifecycle_reflector';
 import * as o from '../output/output_ast';
 import { ProviderAst } from '../template_parser/template_ast';
-import { OutputContext } from '../util';
 export declare function providerDef(ctx: OutputContext, providerAst: ProviderAst): {
     providerExpr: o.Expression;
     flags: NodeFlags;
