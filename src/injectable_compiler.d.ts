@@ -7,8 +7,8 @@
  */
 import { CompileInjectableMetadata } from './compile_metadata';
 import { CompileReflector } from './compile_reflector';
+import { OutputContext } from './constant_pool';
 import * as o from './output/output_ast';
-import { OutputContext } from './util';
 export declare class InjectableCompiler {
     private reflector;
     private alwaysGenerateDef;

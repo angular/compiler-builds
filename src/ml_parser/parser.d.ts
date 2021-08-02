@@ -7,7 +7,7 @@
  */
 import { ParseError, ParseSourceSpan } from '../parse_util';
 import * as html from './ast';
-import * as lex from './lexer';
+import { TokenizeOptions } from './lexer';
 import { TagDefinition } from './tags';
 export declare class TreeError extends ParseError {
     elementName: string | null;
@@ -22,5 +22,5 @@ export declare class ParseTreeResult {
 export declare class Parser {
     getTagDefinition: (tagName: string) => TagDefinition;
     constructor(getTagDefinition: (tagName: string) => TagDefinition);
-    parse(source: string, url: string, options?: lex.TokenizeOptions): ParseTreeResult;
+    parse(source: string, url: string, options?: TokenizeOptions): ParseTreeResult;
 }
