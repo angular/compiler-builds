@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import * as o from './output/output_ast';
-import { OutputContext } from './util';
 export declare const enum DefinitionKind {
     Injector = 0,
     Directive = 1,
@@ -48,4 +47,10 @@ export declare class ConstantPool {
     propertyNameOf(kind: DefinitionKind): string;
     private freshName;
     private keyOf;
+}
+export interface OutputContext {
+    genFilePath: string;
+    statements: o.Statement[];
+    constantPool: ConstantPool;
+    importExpr(reference: any, typeParams?: o.Type[] | null, useSummaries?: boolean): o.Expression;
 }

@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.1.1+68.sha-a926402.with-local-changes
+ * @license Angular v12.1.1+82.sha-04472d2.with-local-changes
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -345,7 +345,7 @@
             return [null, elementName];
         }
         var colonIndex = elementName.indexOf(':', 1);
-        if (colonIndex == -1) {
+        if (colonIndex === -1) {
             throw new Error("Unsupported format \"" + elementName + "\" expecting \":namespace:name\"");
         }
         return [elementName.slice(1, colonIndex), elementName.slice(colonIndex + 1)];
@@ -398,7 +398,7 @@
         };
         HtmlTagDefinition.prototype.getContentType = function (prefix) {
             if (typeof this.contentType === 'object') {
-                var overrideType = prefix == null ? undefined : this.contentType[prefix];
+                var overrideType = prefix === undefined ? undefined : this.contentType[prefix];
                 return overrideType !== null && overrideType !== void 0 ? overrideType : this.contentType.default;
             }
             return this.contentType;
@@ -3359,21 +3359,6 @@
     function error(msg) {
         throw new Error("Internal Error: " + msg);
     }
-    function syntaxError(msg, parseErrors) {
-        var error = Error(msg);
-        error[ERROR_SYNTAX_ERROR] = true;
-        if (parseErrors)
-            error[ERROR_PARSE_ERRORS] = parseErrors;
-        return error;
-    }
-    var ERROR_SYNTAX_ERROR = 'ngSyntaxError';
-    var ERROR_PARSE_ERRORS = 'ngParseErrors';
-    function isSyntaxError(error) {
-        return error[ERROR_SYNTAX_ERROR];
-    }
-    function getParseErrors(error) {
-        return error[ERROR_PARSE_ERRORS] || [];
-    }
     // Escape characters that have a special meaning in Regular Expressions
     function escapeRegExp(s) {
         return s.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
@@ -6126,13 +6111,6 @@
         return shouldForwardDeclare ? fn([], [new ReturnStatement(values)]) : values;
     }
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var R3FactoryDelegateType;
     (function (R3FactoryDelegateType) {
         R3FactoryDelegateType[R3FactoryDelegateType["Class"] = 0] = "Class";
@@ -6566,13 +6544,280 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    // group 0: "[prop] or (event) or @trigger"
-    // group 1: "prop" from "[prop]"
-    // group 2: "event" from "(event)"
-    // group 3: "@trigger" from "@trigger"
-    var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
-    function sanitizeIdentifier(name) {
-        return name.replace(/\W/g, '_');
+    var $EOF = 0;
+    var $BSPACE = 8;
+    var $TAB = 9;
+    var $LF = 10;
+    var $VTAB = 11;
+    var $FF = 12;
+    var $CR = 13;
+    var $SPACE = 32;
+    var $BANG = 33;
+    var $DQ = 34;
+    var $HASH = 35;
+    var $$ = 36;
+    var $PERCENT = 37;
+    var $AMPERSAND = 38;
+    var $SQ = 39;
+    var $LPAREN = 40;
+    var $RPAREN = 41;
+    var $STAR = 42;
+    var $PLUS = 43;
+    var $COMMA = 44;
+    var $MINUS = 45;
+    var $PERIOD = 46;
+    var $SLASH = 47;
+    var $COLON = 58;
+    var $SEMICOLON = 59;
+    var $LT = 60;
+    var $EQ = 61;
+    var $GT = 62;
+    var $QUESTION = 63;
+    var $0 = 48;
+    var $7 = 55;
+    var $9 = 57;
+    var $A = 65;
+    var $E = 69;
+    var $F = 70;
+    var $X = 88;
+    var $Z = 90;
+    var $LBRACKET = 91;
+    var $BACKSLASH = 92;
+    var $RBRACKET = 93;
+    var $CARET = 94;
+    var $_ = 95;
+    var $a = 97;
+    var $b = 98;
+    var $e = 101;
+    var $f = 102;
+    var $n = 110;
+    var $r = 114;
+    var $t = 116;
+    var $u = 117;
+    var $v = 118;
+    var $x = 120;
+    var $z = 122;
+    var $LBRACE = 123;
+    var $BAR = 124;
+    var $RBRACE = 125;
+    var $NBSP = 160;
+    var $PIPE = 124;
+    var $TILDA = 126;
+    var $AT = 64;
+    var $BT = 96;
+    function isWhitespace(code) {
+        return (code >= $TAB && code <= $SPACE) || (code == $NBSP);
+    }
+    function isDigit(code) {
+        return $0 <= code && code <= $9;
+    }
+    function isAsciiLetter(code) {
+        return code >= $a && code <= $z || code >= $A && code <= $Z;
+    }
+    function isAsciiHexDigit(code) {
+        return code >= $a && code <= $f || code >= $A && code <= $F || isDigit(code);
+    }
+    function isNewLine(code) {
+        return code === $LF || code === $CR;
+    }
+    function isOctalDigit(code) {
+        return $0 <= code && code <= $7;
+    }
+    function isQuote(code) {
+        return code === $SQ || code === $DQ || code === $BT;
+    }
+
+    /**
+     * @license
+     * Copyright Google LLC All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    var ParseLocation = /** @class */ (function () {
+        function ParseLocation(file, offset, line, col) {
+            this.file = file;
+            this.offset = offset;
+            this.line = line;
+            this.col = col;
+        }
+        ParseLocation.prototype.toString = function () {
+            return this.offset != null ? this.file.url + "@" + this.line + ":" + this.col : this.file.url;
+        };
+        ParseLocation.prototype.moveBy = function (delta) {
+            var source = this.file.content;
+            var len = source.length;
+            var offset = this.offset;
+            var line = this.line;
+            var col = this.col;
+            while (offset > 0 && delta < 0) {
+                offset--;
+                delta++;
+                var ch = source.charCodeAt(offset);
+                if (ch == $LF) {
+                    line--;
+                    var priorLine = source.substr(0, offset - 1).lastIndexOf(String.fromCharCode($LF));
+                    col = priorLine > 0 ? offset - priorLine : offset;
+                }
+                else {
+                    col--;
+                }
+            }
+            while (offset < len && delta > 0) {
+                var ch = source.charCodeAt(offset);
+                offset++;
+                delta--;
+                if (ch == $LF) {
+                    line++;
+                    col = 0;
+                }
+                else {
+                    col++;
+                }
+            }
+            return new ParseLocation(this.file, offset, line, col);
+        };
+        // Return the source around the location
+        // Up to `maxChars` or `maxLines` on each side of the location
+        ParseLocation.prototype.getContext = function (maxChars, maxLines) {
+            var content = this.file.content;
+            var startOffset = this.offset;
+            if (startOffset != null) {
+                if (startOffset > content.length - 1) {
+                    startOffset = content.length - 1;
+                }
+                var endOffset = startOffset;
+                var ctxChars = 0;
+                var ctxLines = 0;
+                while (ctxChars < maxChars && startOffset > 0) {
+                    startOffset--;
+                    ctxChars++;
+                    if (content[startOffset] == '\n') {
+                        if (++ctxLines == maxLines) {
+                            break;
+                        }
+                    }
+                }
+                ctxChars = 0;
+                ctxLines = 0;
+                while (ctxChars < maxChars && endOffset < content.length - 1) {
+                    endOffset++;
+                    ctxChars++;
+                    if (content[endOffset] == '\n') {
+                        if (++ctxLines == maxLines) {
+                            break;
+                        }
+                    }
+                }
+                return {
+                    before: content.substring(startOffset, this.offset),
+                    after: content.substring(this.offset, endOffset + 1),
+                };
+            }
+            return null;
+        };
+        return ParseLocation;
+    }());
+    var ParseSourceFile = /** @class */ (function () {
+        function ParseSourceFile(content, url) {
+            this.content = content;
+            this.url = url;
+        }
+        return ParseSourceFile;
+    }());
+    var ParseSourceSpan = /** @class */ (function () {
+        /**
+         * Create an object that holds information about spans of tokens/nodes captured during
+         * lexing/parsing of text.
+         *
+         * @param start
+         * The location of the start of the span (having skipped leading trivia).
+         * Skipping leading trivia makes source-spans more "user friendly", since things like HTML
+         * elements will appear to begin at the start of the opening tag, rather than at the start of any
+         * leading trivia, which could include newlines.
+         *
+         * @param end
+         * The location of the end of the span.
+         *
+         * @param fullStart
+         * The start of the token without skipping the leading trivia.
+         * This is used by tooling that splits tokens further, such as extracting Angular interpolations
+         * from text tokens. Such tooling creates new source-spans relative to the original token's
+         * source-span. If leading trivia characters have been skipped then the new source-spans may be
+         * incorrectly offset.
+         *
+         * @param details
+         * Additional information (such as identifier names) that should be associated with the span.
+         */
+        function ParseSourceSpan(start, end, fullStart, details) {
+            if (fullStart === void 0) { fullStart = start; }
+            if (details === void 0) { details = null; }
+            this.start = start;
+            this.end = end;
+            this.fullStart = fullStart;
+            this.details = details;
+        }
+        ParseSourceSpan.prototype.toString = function () {
+            return this.start.file.content.substring(this.start.offset, this.end.offset);
+        };
+        return ParseSourceSpan;
+    }());
+    (function (ParseErrorLevel) {
+        ParseErrorLevel[ParseErrorLevel["WARNING"] = 0] = "WARNING";
+        ParseErrorLevel[ParseErrorLevel["ERROR"] = 1] = "ERROR";
+    })(exports.ParseErrorLevel || (exports.ParseErrorLevel = {}));
+    var ParseError = /** @class */ (function () {
+        function ParseError(span, msg, level) {
+            if (level === void 0) { level = exports.ParseErrorLevel.ERROR; }
+            this.span = span;
+            this.msg = msg;
+            this.level = level;
+        }
+        ParseError.prototype.contextualMessage = function () {
+            var ctx = this.span.start.getContext(100, 3);
+            return ctx ? this.msg + " (\"" + ctx.before + "[" + exports.ParseErrorLevel[this.level] + " ->]" + ctx.after + "\")" :
+                this.msg;
+        };
+        ParseError.prototype.toString = function () {
+            var details = this.span.details ? ", " + this.span.details : '';
+            return this.contextualMessage() + ": " + this.span.start + details;
+        };
+        return ParseError;
+    }());
+    function typeSourceSpan(kind, type) {
+        var moduleUrl = identifierModuleUrl(type);
+        var sourceFileName = moduleUrl != null ? "in " + kind + " " + identifierName(type) + " in " + moduleUrl :
+            "in " + kind + " " + identifierName(type);
+        var sourceFile = new ParseSourceFile('', sourceFileName);
+        return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
+    }
+    /**
+     * Generates Source Span object for a given R3 Type for JIT mode.
+     *
+     * @param kind Component or Directive.
+     * @param typeName name of the Component or Directive.
+     * @param sourceUrl reference to Component or Directive source.
+     * @returns instance of ParseSourceSpan that represent a given Component or Directive.
+     */
+    function r3JitTypeSourceSpan(kind, typeName, sourceUrl) {
+        var sourceFileName = "in " + kind + " " + typeName + " in " + sourceUrl;
+        var sourceFile = new ParseSourceFile('', sourceFileName);
+        return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
+    }
+    function syntaxError(msg, parseErrors) {
+        var error = Error(msg);
+        error[ERROR_SYNTAX_ERROR] = true;
+        if (parseErrors)
+            error[ERROR_PARSE_ERRORS] = parseErrors;
+        return error;
+    }
+    var ERROR_SYNTAX_ERROR = 'ngSyntaxError';
+    var ERROR_PARSE_ERRORS = 'ngParseErrors';
+    function isSyntaxError(error) {
+        return error[ERROR_SYNTAX_ERROR];
+    }
+    function getParseErrors(error) {
+        return error[ERROR_PARSE_ERRORS] || [];
     }
     var _anonymousTypeIndex = 0;
     function identifierName(compileIdentifier) {
@@ -6610,363 +6855,8 @@
         // Runtime type
         return "./" + stringify(ref);
     }
-    function viewClassName(compType, embeddedTemplateIndex) {
-        return "View_" + identifierName({ reference: compType }) + "_" + embeddedTemplateIndex;
-    }
-    function rendererTypeName(compType) {
-        return "RenderType_" + identifierName({ reference: compType });
-    }
-    function hostViewClassName(compType) {
-        return "HostView_" + identifierName({ reference: compType });
-    }
-    function componentFactoryName(compType) {
-        return identifierName({ reference: compType }) + "NgFactory";
-    }
-    (function (CompileSummaryKind) {
-        CompileSummaryKind[CompileSummaryKind["Pipe"] = 0] = "Pipe";
-        CompileSummaryKind[CompileSummaryKind["Directive"] = 1] = "Directive";
-        CompileSummaryKind[CompileSummaryKind["NgModule"] = 2] = "NgModule";
-        CompileSummaryKind[CompileSummaryKind["Injectable"] = 3] = "Injectable";
-    })(exports.CompileSummaryKind || (exports.CompileSummaryKind = {}));
-    function tokenName(token) {
-        return token.value != null ? sanitizeIdentifier(token.value) : identifierName(token.identifier);
-    }
-    function tokenReference(token) {
-        if (token.identifier != null) {
-            return token.identifier.reference;
-        }
-        else {
-            return token.value;
-        }
-    }
-    /**
-     * Metadata about a stylesheet
-     */
-    var CompileStylesheetMetadata = /** @class */ (function () {
-        function CompileStylesheetMetadata(_a) {
-            var _b = _a === void 0 ? {} : _a, moduleUrl = _b.moduleUrl, styles = _b.styles, styleUrls = _b.styleUrls;
-            this.moduleUrl = moduleUrl || null;
-            this.styles = _normalizeArray(styles);
-            this.styleUrls = _normalizeArray(styleUrls);
-        }
-        return CompileStylesheetMetadata;
-    }());
-    /**
-     * Metadata regarding compilation of a template.
-     */
-    var CompileTemplateMetadata = /** @class */ (function () {
-        function CompileTemplateMetadata(_a) {
-            var encapsulation = _a.encapsulation, template = _a.template, templateUrl = _a.templateUrl, htmlAst = _a.htmlAst, styles = _a.styles, styleUrls = _a.styleUrls, externalStylesheets = _a.externalStylesheets, animations = _a.animations, ngContentSelectors = _a.ngContentSelectors, interpolation = _a.interpolation, isInline = _a.isInline, preserveWhitespaces = _a.preserveWhitespaces;
-            this.encapsulation = encapsulation;
-            this.template = template;
-            this.templateUrl = templateUrl;
-            this.htmlAst = htmlAst;
-            this.styles = _normalizeArray(styles);
-            this.styleUrls = _normalizeArray(styleUrls);
-            this.externalStylesheets = _normalizeArray(externalStylesheets);
-            this.animations = animations ? flatten(animations) : [];
-            this.ngContentSelectors = ngContentSelectors || [];
-            if (interpolation && interpolation.length != 2) {
-                throw new Error("'interpolation' should have a start and an end symbol.");
-            }
-            this.interpolation = interpolation;
-            this.isInline = isInline;
-            this.preserveWhitespaces = preserveWhitespaces;
-        }
-        CompileTemplateMetadata.prototype.toSummary = function () {
-            return {
-                ngContentSelectors: this.ngContentSelectors,
-                encapsulation: this.encapsulation,
-                styles: this.styles,
-                animations: this.animations
-            };
-        };
-        return CompileTemplateMetadata;
-    }());
-    /**
-     * Metadata regarding compilation of a directive.
-     */
-    var CompileDirectiveMetadata = /** @class */ (function () {
-        function CompileDirectiveMetadata(_a) {
-            var isHost = _a.isHost, type = _a.type, isComponent = _a.isComponent, selector = _a.selector, exportAs = _a.exportAs, changeDetection = _a.changeDetection, inputs = _a.inputs, outputs = _a.outputs, hostListeners = _a.hostListeners, hostProperties = _a.hostProperties, hostAttributes = _a.hostAttributes, providers = _a.providers, viewProviders = _a.viewProviders, queries = _a.queries, guards = _a.guards, viewQueries = _a.viewQueries, entryComponents = _a.entryComponents, template = _a.template, componentViewType = _a.componentViewType, rendererType = _a.rendererType, componentFactory = _a.componentFactory;
-            this.isHost = !!isHost;
-            this.type = type;
-            this.isComponent = isComponent;
-            this.selector = selector;
-            this.exportAs = exportAs;
-            this.changeDetection = changeDetection;
-            this.inputs = inputs;
-            this.outputs = outputs;
-            this.hostListeners = hostListeners;
-            this.hostProperties = hostProperties;
-            this.hostAttributes = hostAttributes;
-            this.providers = _normalizeArray(providers);
-            this.viewProviders = _normalizeArray(viewProviders);
-            this.queries = _normalizeArray(queries);
-            this.guards = guards;
-            this.viewQueries = _normalizeArray(viewQueries);
-            this.entryComponents = _normalizeArray(entryComponents);
-            this.template = template;
-            this.componentViewType = componentViewType;
-            this.rendererType = rendererType;
-            this.componentFactory = componentFactory;
-        }
-        CompileDirectiveMetadata.create = function (_a) {
-            var isHost = _a.isHost, type = _a.type, isComponent = _a.isComponent, selector = _a.selector, exportAs = _a.exportAs, changeDetection = _a.changeDetection, inputs = _a.inputs, outputs = _a.outputs, host = _a.host, providers = _a.providers, viewProviders = _a.viewProviders, queries = _a.queries, guards = _a.guards, viewQueries = _a.viewQueries, entryComponents = _a.entryComponents, template = _a.template, componentViewType = _a.componentViewType, rendererType = _a.rendererType, componentFactory = _a.componentFactory;
-            var hostListeners = {};
-            var hostProperties = {};
-            var hostAttributes = {};
-            if (host != null) {
-                Object.keys(host).forEach(function (key) {
-                    var value = host[key];
-                    var matches = key.match(HOST_REG_EXP);
-                    if (matches === null) {
-                        hostAttributes[key] = value;
-                    }
-                    else if (matches[1] != null) {
-                        hostProperties[matches[1]] = value;
-                    }
-                    else if (matches[2] != null) {
-                        hostListeners[matches[2]] = value;
-                    }
-                });
-            }
-            var inputsMap = {};
-            if (inputs != null) {
-                inputs.forEach(function (bindConfig) {
-                    // canonical syntax: `dirProp: elProp`
-                    // if there is no `:`, use dirProp = elProp
-                    var parts = splitAtColon(bindConfig, [bindConfig, bindConfig]);
-                    inputsMap[parts[0]] = parts[1];
-                });
-            }
-            var outputsMap = {};
-            if (outputs != null) {
-                outputs.forEach(function (bindConfig) {
-                    // canonical syntax: `dirProp: elProp`
-                    // if there is no `:`, use dirProp = elProp
-                    var parts = splitAtColon(bindConfig, [bindConfig, bindConfig]);
-                    outputsMap[parts[0]] = parts[1];
-                });
-            }
-            return new CompileDirectiveMetadata({
-                isHost: isHost,
-                type: type,
-                isComponent: !!isComponent,
-                selector: selector,
-                exportAs: exportAs,
-                changeDetection: changeDetection,
-                inputs: inputsMap,
-                outputs: outputsMap,
-                hostListeners: hostListeners,
-                hostProperties: hostProperties,
-                hostAttributes: hostAttributes,
-                providers: providers,
-                viewProviders: viewProviders,
-                queries: queries,
-                guards: guards,
-                viewQueries: viewQueries,
-                entryComponents: entryComponents,
-                template: template,
-                componentViewType: componentViewType,
-                rendererType: rendererType,
-                componentFactory: componentFactory,
-            });
-        };
-        CompileDirectiveMetadata.prototype.toSummary = function () {
-            return {
-                summaryKind: exports.CompileSummaryKind.Directive,
-                type: this.type,
-                isComponent: this.isComponent,
-                selector: this.selector,
-                exportAs: this.exportAs,
-                inputs: this.inputs,
-                outputs: this.outputs,
-                hostListeners: this.hostListeners,
-                hostProperties: this.hostProperties,
-                hostAttributes: this.hostAttributes,
-                providers: this.providers,
-                viewProviders: this.viewProviders,
-                queries: this.queries,
-                guards: this.guards,
-                viewQueries: this.viewQueries,
-                entryComponents: this.entryComponents,
-                changeDetection: this.changeDetection,
-                template: this.template && this.template.toSummary(),
-                componentViewType: this.componentViewType,
-                rendererType: this.rendererType,
-                componentFactory: this.componentFactory
-            };
-        };
-        return CompileDirectiveMetadata;
-    }());
-    var CompilePipeMetadata = /** @class */ (function () {
-        function CompilePipeMetadata(_a) {
-            var type = _a.type, name = _a.name, pure = _a.pure;
-            this.type = type;
-            this.name = name;
-            this.pure = !!pure;
-        }
-        CompilePipeMetadata.prototype.toSummary = function () {
-            return {
-                summaryKind: exports.CompileSummaryKind.Pipe,
-                type: this.type,
-                name: this.name,
-                pure: this.pure
-            };
-        };
-        return CompilePipeMetadata;
-    }());
-    var CompileShallowModuleMetadata = /** @class */ (function () {
-        function CompileShallowModuleMetadata() {
-        }
-        return CompileShallowModuleMetadata;
-    }());
-    /**
-     * Metadata regarding compilation of a module.
-     */
-    var CompileNgModuleMetadata = /** @class */ (function () {
-        function CompileNgModuleMetadata(_a) {
-            var type = _a.type, providers = _a.providers, declaredDirectives = _a.declaredDirectives, exportedDirectives = _a.exportedDirectives, declaredPipes = _a.declaredPipes, exportedPipes = _a.exportedPipes, entryComponents = _a.entryComponents, bootstrapComponents = _a.bootstrapComponents, importedModules = _a.importedModules, exportedModules = _a.exportedModules, schemas = _a.schemas, transitiveModule = _a.transitiveModule, id = _a.id;
-            this.type = type || null;
-            this.declaredDirectives = _normalizeArray(declaredDirectives);
-            this.exportedDirectives = _normalizeArray(exportedDirectives);
-            this.declaredPipes = _normalizeArray(declaredPipes);
-            this.exportedPipes = _normalizeArray(exportedPipes);
-            this.providers = _normalizeArray(providers);
-            this.entryComponents = _normalizeArray(entryComponents);
-            this.bootstrapComponents = _normalizeArray(bootstrapComponents);
-            this.importedModules = _normalizeArray(importedModules);
-            this.exportedModules = _normalizeArray(exportedModules);
-            this.schemas = _normalizeArray(schemas);
-            this.id = id || null;
-            this.transitiveModule = transitiveModule || null;
-        }
-        CompileNgModuleMetadata.prototype.toSummary = function () {
-            var module = this.transitiveModule;
-            return {
-                summaryKind: exports.CompileSummaryKind.NgModule,
-                type: this.type,
-                entryComponents: module.entryComponents,
-                providers: module.providers,
-                modules: module.modules,
-                exportedDirectives: module.exportedDirectives,
-                exportedPipes: module.exportedPipes
-            };
-        };
-        return CompileNgModuleMetadata;
-    }());
-    var TransitiveCompileNgModuleMetadata = /** @class */ (function () {
-        function TransitiveCompileNgModuleMetadata() {
-            this.directivesSet = new Set();
-            this.directives = [];
-            this.exportedDirectivesSet = new Set();
-            this.exportedDirectives = [];
-            this.pipesSet = new Set();
-            this.pipes = [];
-            this.exportedPipesSet = new Set();
-            this.exportedPipes = [];
-            this.modulesSet = new Set();
-            this.modules = [];
-            this.entryComponentsSet = new Set();
-            this.entryComponents = [];
-            this.providers = [];
-        }
-        TransitiveCompileNgModuleMetadata.prototype.addProvider = function (provider, module) {
-            this.providers.push({ provider: provider, module: module });
-        };
-        TransitiveCompileNgModuleMetadata.prototype.addDirective = function (id) {
-            if (!this.directivesSet.has(id.reference)) {
-                this.directivesSet.add(id.reference);
-                this.directives.push(id);
-            }
-        };
-        TransitiveCompileNgModuleMetadata.prototype.addExportedDirective = function (id) {
-            if (!this.exportedDirectivesSet.has(id.reference)) {
-                this.exportedDirectivesSet.add(id.reference);
-                this.exportedDirectives.push(id);
-            }
-        };
-        TransitiveCompileNgModuleMetadata.prototype.addPipe = function (id) {
-            if (!this.pipesSet.has(id.reference)) {
-                this.pipesSet.add(id.reference);
-                this.pipes.push(id);
-            }
-        };
-        TransitiveCompileNgModuleMetadata.prototype.addExportedPipe = function (id) {
-            if (!this.exportedPipesSet.has(id.reference)) {
-                this.exportedPipesSet.add(id.reference);
-                this.exportedPipes.push(id);
-            }
-        };
-        TransitiveCompileNgModuleMetadata.prototype.addModule = function (id) {
-            if (!this.modulesSet.has(id.reference)) {
-                this.modulesSet.add(id.reference);
-                this.modules.push(id);
-            }
-        };
-        TransitiveCompileNgModuleMetadata.prototype.addEntryComponent = function (ec) {
-            if (!this.entryComponentsSet.has(ec.componentType)) {
-                this.entryComponentsSet.add(ec.componentType);
-                this.entryComponents.push(ec);
-            }
-        };
-        return TransitiveCompileNgModuleMetadata;
-    }());
-    function _normalizeArray(obj) {
-        return obj || [];
-    }
-    var ProviderMeta = /** @class */ (function () {
-        function ProviderMeta(token, _a) {
-            var useClass = _a.useClass, useValue = _a.useValue, useExisting = _a.useExisting, useFactory = _a.useFactory, deps = _a.deps, multi = _a.multi;
-            this.token = token;
-            this.useClass = useClass || null;
-            this.useValue = useValue;
-            this.useExisting = useExisting;
-            this.useFactory = useFactory || null;
-            this.dependencies = deps || null;
-            this.multi = !!multi;
-        }
-        return ProviderMeta;
-    }());
-    function flatten(list) {
-        return list.reduce(function (flat, item) {
-            var flatItem = Array.isArray(item) ? flatten(item) : item;
-            return flat.concat(flatItem);
-        }, []);
-    }
-    function jitSourceUrl(url) {
-        // Note: We need 3 "/" so that ng shows up as a separate domain
-        // in the chrome dev tools.
-        return url.replace(/(\w+:\/\/[\w:-]+)?(\/+)?/, 'ng:///');
-    }
-    function templateSourceUrl(ngModuleType, compMeta, templateMeta) {
-        var url;
-        if (templateMeta.isInline) {
-            if (compMeta.type.reference instanceof StaticSymbol) {
-                // Note: a .ts file might contain multiple components with inline templates,
-                // so we need to give them unique urls, as these will be used for sourcemaps.
-                url = compMeta.type.reference.filePath + "." + compMeta.type.reference.name + ".html";
-            }
-            else {
-                url = identifierName(ngModuleType) + "/" + identifierName(compMeta.type) + ".html";
-            }
-        }
-        else {
-            url = templateMeta.templateUrl;
-        }
-        return compMeta.type.reference instanceof StaticSymbol ? url : jitSourceUrl(url);
-    }
-    function sharedStylesheetJitUrl(meta, id) {
-        var pathParts = meta.moduleUrl.split(/\/\\/g);
-        var baseName = pathParts[pathParts.length - 1];
-        return jitSourceUrl("css/" + id + baseName + ".ngstyle.js");
-    }
-    function ngModuleJitUrl(moduleMeta) {
-        return jitSourceUrl(identifierName(moduleMeta.type) + "/module.ngfactory.js");
-    }
-    function templateJitUrl(ngModuleType, compMeta) {
-        return jitSourceUrl(identifierName(ngModuleType) + "/" + identifierName(compMeta.type) + ".ngfactory.js");
+    function sanitizeIdentifier(name) {
+        return name.replace(/\W/g, '_');
     }
 
     /**
@@ -7411,271 +7301,6 @@
     }(AbstractJsEmitterVisitor));
     function isUseStrictStatement(statement) {
         return statement.isEquivalent(literal('use strict').toStmt());
-    }
-
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    var $EOF = 0;
-    var $BSPACE = 8;
-    var $TAB = 9;
-    var $LF = 10;
-    var $VTAB = 11;
-    var $FF = 12;
-    var $CR = 13;
-    var $SPACE = 32;
-    var $BANG = 33;
-    var $DQ = 34;
-    var $HASH = 35;
-    var $$ = 36;
-    var $PERCENT = 37;
-    var $AMPERSAND = 38;
-    var $SQ = 39;
-    var $LPAREN = 40;
-    var $RPAREN = 41;
-    var $STAR = 42;
-    var $PLUS = 43;
-    var $COMMA = 44;
-    var $MINUS = 45;
-    var $PERIOD = 46;
-    var $SLASH = 47;
-    var $COLON = 58;
-    var $SEMICOLON = 59;
-    var $LT = 60;
-    var $EQ = 61;
-    var $GT = 62;
-    var $QUESTION = 63;
-    var $0 = 48;
-    var $7 = 55;
-    var $9 = 57;
-    var $A = 65;
-    var $E = 69;
-    var $F = 70;
-    var $X = 88;
-    var $Z = 90;
-    var $LBRACKET = 91;
-    var $BACKSLASH = 92;
-    var $RBRACKET = 93;
-    var $CARET = 94;
-    var $_ = 95;
-    var $a = 97;
-    var $b = 98;
-    var $e = 101;
-    var $f = 102;
-    var $n = 110;
-    var $r = 114;
-    var $t = 116;
-    var $u = 117;
-    var $v = 118;
-    var $x = 120;
-    var $z = 122;
-    var $LBRACE = 123;
-    var $BAR = 124;
-    var $RBRACE = 125;
-    var $NBSP = 160;
-    var $PIPE = 124;
-    var $TILDA = 126;
-    var $AT = 64;
-    var $BT = 96;
-    function isWhitespace(code) {
-        return (code >= $TAB && code <= $SPACE) || (code == $NBSP);
-    }
-    function isDigit(code) {
-        return $0 <= code && code <= $9;
-    }
-    function isAsciiLetter(code) {
-        return code >= $a && code <= $z || code >= $A && code <= $Z;
-    }
-    function isAsciiHexDigit(code) {
-        return code >= $a && code <= $f || code >= $A && code <= $F || isDigit(code);
-    }
-    function isNewLine(code) {
-        return code === $LF || code === $CR;
-    }
-    function isOctalDigit(code) {
-        return $0 <= code && code <= $7;
-    }
-
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    var ParseLocation = /** @class */ (function () {
-        function ParseLocation(file, offset, line, col) {
-            this.file = file;
-            this.offset = offset;
-            this.line = line;
-            this.col = col;
-        }
-        ParseLocation.prototype.toString = function () {
-            return this.offset != null ? this.file.url + "@" + this.line + ":" + this.col : this.file.url;
-        };
-        ParseLocation.prototype.moveBy = function (delta) {
-            var source = this.file.content;
-            var len = source.length;
-            var offset = this.offset;
-            var line = this.line;
-            var col = this.col;
-            while (offset > 0 && delta < 0) {
-                offset--;
-                delta++;
-                var ch = source.charCodeAt(offset);
-                if (ch == $LF) {
-                    line--;
-                    var priorLine = source.substr(0, offset - 1).lastIndexOf(String.fromCharCode($LF));
-                    col = priorLine > 0 ? offset - priorLine : offset;
-                }
-                else {
-                    col--;
-                }
-            }
-            while (offset < len && delta > 0) {
-                var ch = source.charCodeAt(offset);
-                offset++;
-                delta--;
-                if (ch == $LF) {
-                    line++;
-                    col = 0;
-                }
-                else {
-                    col++;
-                }
-            }
-            return new ParseLocation(this.file, offset, line, col);
-        };
-        // Return the source around the location
-        // Up to `maxChars` or `maxLines` on each side of the location
-        ParseLocation.prototype.getContext = function (maxChars, maxLines) {
-            var content = this.file.content;
-            var startOffset = this.offset;
-            if (startOffset != null) {
-                if (startOffset > content.length - 1) {
-                    startOffset = content.length - 1;
-                }
-                var endOffset = startOffset;
-                var ctxChars = 0;
-                var ctxLines = 0;
-                while (ctxChars < maxChars && startOffset > 0) {
-                    startOffset--;
-                    ctxChars++;
-                    if (content[startOffset] == '\n') {
-                        if (++ctxLines == maxLines) {
-                            break;
-                        }
-                    }
-                }
-                ctxChars = 0;
-                ctxLines = 0;
-                while (ctxChars < maxChars && endOffset < content.length - 1) {
-                    endOffset++;
-                    ctxChars++;
-                    if (content[endOffset] == '\n') {
-                        if (++ctxLines == maxLines) {
-                            break;
-                        }
-                    }
-                }
-                return {
-                    before: content.substring(startOffset, this.offset),
-                    after: content.substring(this.offset, endOffset + 1),
-                };
-            }
-            return null;
-        };
-        return ParseLocation;
-    }());
-    var ParseSourceFile = /** @class */ (function () {
-        function ParseSourceFile(content, url) {
-            this.content = content;
-            this.url = url;
-        }
-        return ParseSourceFile;
-    }());
-    var ParseSourceSpan = /** @class */ (function () {
-        /**
-         * Create an object that holds information about spans of tokens/nodes captured during
-         * lexing/parsing of text.
-         *
-         * @param start
-         * The location of the start of the span (having skipped leading trivia).
-         * Skipping leading trivia makes source-spans more "user friendly", since things like HTML
-         * elements will appear to begin at the start of the opening tag, rather than at the start of any
-         * leading trivia, which could include newlines.
-         *
-         * @param end
-         * The location of the end of the span.
-         *
-         * @param fullStart
-         * The start of the token without skipping the leading trivia.
-         * This is used by tooling that splits tokens further, such as extracting Angular interpolations
-         * from text tokens. Such tooling creates new source-spans relative to the original token's
-         * source-span. If leading trivia characters have been skipped then the new source-spans may be
-         * incorrectly offset.
-         *
-         * @param details
-         * Additional information (such as identifier names) that should be associated with the span.
-         */
-        function ParseSourceSpan(start, end, fullStart, details) {
-            if (fullStart === void 0) { fullStart = start; }
-            if (details === void 0) { details = null; }
-            this.start = start;
-            this.end = end;
-            this.fullStart = fullStart;
-            this.details = details;
-        }
-        ParseSourceSpan.prototype.toString = function () {
-            return this.start.file.content.substring(this.start.offset, this.end.offset);
-        };
-        return ParseSourceSpan;
-    }());
-    (function (ParseErrorLevel) {
-        ParseErrorLevel[ParseErrorLevel["WARNING"] = 0] = "WARNING";
-        ParseErrorLevel[ParseErrorLevel["ERROR"] = 1] = "ERROR";
-    })(exports.ParseErrorLevel || (exports.ParseErrorLevel = {}));
-    var ParseError = /** @class */ (function () {
-        function ParseError(span, msg, level) {
-            if (level === void 0) { level = exports.ParseErrorLevel.ERROR; }
-            this.span = span;
-            this.msg = msg;
-            this.level = level;
-        }
-        ParseError.prototype.contextualMessage = function () {
-            var ctx = this.span.start.getContext(100, 3);
-            return ctx ? this.msg + " (\"" + ctx.before + "[" + exports.ParseErrorLevel[this.level] + " ->]" + ctx.after + "\")" :
-                this.msg;
-        };
-        ParseError.prototype.toString = function () {
-            var details = this.span.details ? ", " + this.span.details : '';
-            return this.contextualMessage() + ": " + this.span.start + details;
-        };
-        return ParseError;
-    }());
-    function typeSourceSpan(kind, type) {
-        var moduleUrl = identifierModuleUrl(type);
-        var sourceFileName = moduleUrl != null ? "in " + kind + " " + identifierName(type) + " in " + moduleUrl :
-            "in " + kind + " " + identifierName(type);
-        var sourceFile = new ParseSourceFile('', sourceFileName);
-        return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
-    }
-    /**
-     * Generates Source Span object for a given R3 Type for JIT mode.
-     *
-     * @param kind Component or Directive.
-     * @param typeName name of the Component or Directive.
-     * @param sourceUrl reference to Component or Directive source.
-     * @returns instance of ParseSourceSpan that represent a given Component or Directive.
-     */
-    function r3JitTypeSourceSpan(kind, typeName, sourceUrl) {
-        var sourceFileName = "in " + kind + " " + typeName + " in " + sourceUrl;
-        var sourceFile = new ParseSourceFile('', sourceFileName);
-        return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
     }
 
     /**
@@ -10626,6 +10251,377 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
+    // group 0: "[prop] or (event) or @trigger"
+    // group 1: "prop" from "[prop]"
+    // group 2: "event" from "(event)"
+    // group 3: "@trigger" from "@trigger"
+    var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
+    function viewClassName(compType, embeddedTemplateIndex) {
+        return "View_" + identifierName({ reference: compType }) + "_" + embeddedTemplateIndex;
+    }
+    function rendererTypeName(compType) {
+        return "RenderType_" + identifierName({ reference: compType });
+    }
+    function hostViewClassName(compType) {
+        return "HostView_" + identifierName({ reference: compType });
+    }
+    function componentFactoryName(compType) {
+        return identifierName({ reference: compType }) + "NgFactory";
+    }
+    (function (CompileSummaryKind) {
+        CompileSummaryKind[CompileSummaryKind["Pipe"] = 0] = "Pipe";
+        CompileSummaryKind[CompileSummaryKind["Directive"] = 1] = "Directive";
+        CompileSummaryKind[CompileSummaryKind["NgModule"] = 2] = "NgModule";
+        CompileSummaryKind[CompileSummaryKind["Injectable"] = 3] = "Injectable";
+    })(exports.CompileSummaryKind || (exports.CompileSummaryKind = {}));
+    function tokenName(token) {
+        return token.value != null ? sanitizeIdentifier(token.value) : identifierName(token.identifier);
+    }
+    function tokenReference(token) {
+        if (token.identifier != null) {
+            return token.identifier.reference;
+        }
+        else {
+            return token.value;
+        }
+    }
+    /**
+     * Metadata about a stylesheet
+     */
+    var CompileStylesheetMetadata = /** @class */ (function () {
+        function CompileStylesheetMetadata(_a) {
+            var _b = _a === void 0 ? {} : _a, moduleUrl = _b.moduleUrl, styles = _b.styles, styleUrls = _b.styleUrls;
+            this.moduleUrl = moduleUrl || null;
+            this.styles = _normalizeArray(styles);
+            this.styleUrls = _normalizeArray(styleUrls);
+        }
+        return CompileStylesheetMetadata;
+    }());
+    /**
+     * Metadata regarding compilation of a template.
+     */
+    var CompileTemplateMetadata = /** @class */ (function () {
+        function CompileTemplateMetadata(_a) {
+            var encapsulation = _a.encapsulation, template = _a.template, templateUrl = _a.templateUrl, htmlAst = _a.htmlAst, styles = _a.styles, styleUrls = _a.styleUrls, externalStylesheets = _a.externalStylesheets, animations = _a.animations, ngContentSelectors = _a.ngContentSelectors, interpolation = _a.interpolation, isInline = _a.isInline, preserveWhitespaces = _a.preserveWhitespaces;
+            this.encapsulation = encapsulation;
+            this.template = template;
+            this.templateUrl = templateUrl;
+            this.htmlAst = htmlAst;
+            this.styles = _normalizeArray(styles);
+            this.styleUrls = _normalizeArray(styleUrls);
+            this.externalStylesheets = _normalizeArray(externalStylesheets);
+            this.animations = animations ? flatten(animations) : [];
+            this.ngContentSelectors = ngContentSelectors || [];
+            if (interpolation && interpolation.length != 2) {
+                throw new Error("'interpolation' should have a start and an end symbol.");
+            }
+            this.interpolation = interpolation;
+            this.isInline = isInline;
+            this.preserveWhitespaces = preserveWhitespaces;
+        }
+        CompileTemplateMetadata.prototype.toSummary = function () {
+            return {
+                ngContentSelectors: this.ngContentSelectors,
+                encapsulation: this.encapsulation,
+                styles: this.styles,
+                animations: this.animations
+            };
+        };
+        return CompileTemplateMetadata;
+    }());
+    /**
+     * Metadata regarding compilation of a directive.
+     */
+    var CompileDirectiveMetadata = /** @class */ (function () {
+        function CompileDirectiveMetadata(_a) {
+            var isHost = _a.isHost, type = _a.type, isComponent = _a.isComponent, selector = _a.selector, exportAs = _a.exportAs, changeDetection = _a.changeDetection, inputs = _a.inputs, outputs = _a.outputs, hostListeners = _a.hostListeners, hostProperties = _a.hostProperties, hostAttributes = _a.hostAttributes, providers = _a.providers, viewProviders = _a.viewProviders, queries = _a.queries, guards = _a.guards, viewQueries = _a.viewQueries, entryComponents = _a.entryComponents, template = _a.template, componentViewType = _a.componentViewType, rendererType = _a.rendererType, componentFactory = _a.componentFactory;
+            this.isHost = !!isHost;
+            this.type = type;
+            this.isComponent = isComponent;
+            this.selector = selector;
+            this.exportAs = exportAs;
+            this.changeDetection = changeDetection;
+            this.inputs = inputs;
+            this.outputs = outputs;
+            this.hostListeners = hostListeners;
+            this.hostProperties = hostProperties;
+            this.hostAttributes = hostAttributes;
+            this.providers = _normalizeArray(providers);
+            this.viewProviders = _normalizeArray(viewProviders);
+            this.queries = _normalizeArray(queries);
+            this.guards = guards;
+            this.viewQueries = _normalizeArray(viewQueries);
+            this.entryComponents = _normalizeArray(entryComponents);
+            this.template = template;
+            this.componentViewType = componentViewType;
+            this.rendererType = rendererType;
+            this.componentFactory = componentFactory;
+        }
+        CompileDirectiveMetadata.create = function (_a) {
+            var isHost = _a.isHost, type = _a.type, isComponent = _a.isComponent, selector = _a.selector, exportAs = _a.exportAs, changeDetection = _a.changeDetection, inputs = _a.inputs, outputs = _a.outputs, host = _a.host, providers = _a.providers, viewProviders = _a.viewProviders, queries = _a.queries, guards = _a.guards, viewQueries = _a.viewQueries, entryComponents = _a.entryComponents, template = _a.template, componentViewType = _a.componentViewType, rendererType = _a.rendererType, componentFactory = _a.componentFactory;
+            var hostListeners = {};
+            var hostProperties = {};
+            var hostAttributes = {};
+            if (host != null) {
+                Object.keys(host).forEach(function (key) {
+                    var value = host[key];
+                    var matches = key.match(HOST_REG_EXP);
+                    if (matches === null) {
+                        hostAttributes[key] = value;
+                    }
+                    else if (matches[1] != null) {
+                        hostProperties[matches[1]] = value;
+                    }
+                    else if (matches[2] != null) {
+                        hostListeners[matches[2]] = value;
+                    }
+                });
+            }
+            var inputsMap = {};
+            if (inputs != null) {
+                inputs.forEach(function (bindConfig) {
+                    // canonical syntax: `dirProp: elProp`
+                    // if there is no `:`, use dirProp = elProp
+                    var parts = splitAtColon(bindConfig, [bindConfig, bindConfig]);
+                    inputsMap[parts[0]] = parts[1];
+                });
+            }
+            var outputsMap = {};
+            if (outputs != null) {
+                outputs.forEach(function (bindConfig) {
+                    // canonical syntax: `dirProp: elProp`
+                    // if there is no `:`, use dirProp = elProp
+                    var parts = splitAtColon(bindConfig, [bindConfig, bindConfig]);
+                    outputsMap[parts[0]] = parts[1];
+                });
+            }
+            return new CompileDirectiveMetadata({
+                isHost: isHost,
+                type: type,
+                isComponent: !!isComponent,
+                selector: selector,
+                exportAs: exportAs,
+                changeDetection: changeDetection,
+                inputs: inputsMap,
+                outputs: outputsMap,
+                hostListeners: hostListeners,
+                hostProperties: hostProperties,
+                hostAttributes: hostAttributes,
+                providers: providers,
+                viewProviders: viewProviders,
+                queries: queries,
+                guards: guards,
+                viewQueries: viewQueries,
+                entryComponents: entryComponents,
+                template: template,
+                componentViewType: componentViewType,
+                rendererType: rendererType,
+                componentFactory: componentFactory,
+            });
+        };
+        CompileDirectiveMetadata.prototype.toSummary = function () {
+            return {
+                summaryKind: exports.CompileSummaryKind.Directive,
+                type: this.type,
+                isComponent: this.isComponent,
+                selector: this.selector,
+                exportAs: this.exportAs,
+                inputs: this.inputs,
+                outputs: this.outputs,
+                hostListeners: this.hostListeners,
+                hostProperties: this.hostProperties,
+                hostAttributes: this.hostAttributes,
+                providers: this.providers,
+                viewProviders: this.viewProviders,
+                queries: this.queries,
+                guards: this.guards,
+                viewQueries: this.viewQueries,
+                entryComponents: this.entryComponents,
+                changeDetection: this.changeDetection,
+                template: this.template && this.template.toSummary(),
+                componentViewType: this.componentViewType,
+                rendererType: this.rendererType,
+                componentFactory: this.componentFactory
+            };
+        };
+        return CompileDirectiveMetadata;
+    }());
+    var CompilePipeMetadata = /** @class */ (function () {
+        function CompilePipeMetadata(_a) {
+            var type = _a.type, name = _a.name, pure = _a.pure;
+            this.type = type;
+            this.name = name;
+            this.pure = !!pure;
+        }
+        CompilePipeMetadata.prototype.toSummary = function () {
+            return {
+                summaryKind: exports.CompileSummaryKind.Pipe,
+                type: this.type,
+                name: this.name,
+                pure: this.pure
+            };
+        };
+        return CompilePipeMetadata;
+    }());
+    var CompileShallowModuleMetadata = /** @class */ (function () {
+        function CompileShallowModuleMetadata() {
+        }
+        return CompileShallowModuleMetadata;
+    }());
+    /**
+     * Metadata regarding compilation of a module.
+     */
+    var CompileNgModuleMetadata = /** @class */ (function () {
+        function CompileNgModuleMetadata(_a) {
+            var type = _a.type, providers = _a.providers, declaredDirectives = _a.declaredDirectives, exportedDirectives = _a.exportedDirectives, declaredPipes = _a.declaredPipes, exportedPipes = _a.exportedPipes, entryComponents = _a.entryComponents, bootstrapComponents = _a.bootstrapComponents, importedModules = _a.importedModules, exportedModules = _a.exportedModules, schemas = _a.schemas, transitiveModule = _a.transitiveModule, id = _a.id;
+            this.type = type || null;
+            this.declaredDirectives = _normalizeArray(declaredDirectives);
+            this.exportedDirectives = _normalizeArray(exportedDirectives);
+            this.declaredPipes = _normalizeArray(declaredPipes);
+            this.exportedPipes = _normalizeArray(exportedPipes);
+            this.providers = _normalizeArray(providers);
+            this.entryComponents = _normalizeArray(entryComponents);
+            this.bootstrapComponents = _normalizeArray(bootstrapComponents);
+            this.importedModules = _normalizeArray(importedModules);
+            this.exportedModules = _normalizeArray(exportedModules);
+            this.schemas = _normalizeArray(schemas);
+            this.id = id || null;
+            this.transitiveModule = transitiveModule || null;
+        }
+        CompileNgModuleMetadata.prototype.toSummary = function () {
+            var module = this.transitiveModule;
+            return {
+                summaryKind: exports.CompileSummaryKind.NgModule,
+                type: this.type,
+                entryComponents: module.entryComponents,
+                providers: module.providers,
+                modules: module.modules,
+                exportedDirectives: module.exportedDirectives,
+                exportedPipes: module.exportedPipes
+            };
+        };
+        return CompileNgModuleMetadata;
+    }());
+    var TransitiveCompileNgModuleMetadata = /** @class */ (function () {
+        function TransitiveCompileNgModuleMetadata() {
+            this.directivesSet = new Set();
+            this.directives = [];
+            this.exportedDirectivesSet = new Set();
+            this.exportedDirectives = [];
+            this.pipesSet = new Set();
+            this.pipes = [];
+            this.exportedPipesSet = new Set();
+            this.exportedPipes = [];
+            this.modulesSet = new Set();
+            this.modules = [];
+            this.entryComponentsSet = new Set();
+            this.entryComponents = [];
+            this.providers = [];
+        }
+        TransitiveCompileNgModuleMetadata.prototype.addProvider = function (provider, module) {
+            this.providers.push({ provider: provider, module: module });
+        };
+        TransitiveCompileNgModuleMetadata.prototype.addDirective = function (id) {
+            if (!this.directivesSet.has(id.reference)) {
+                this.directivesSet.add(id.reference);
+                this.directives.push(id);
+            }
+        };
+        TransitiveCompileNgModuleMetadata.prototype.addExportedDirective = function (id) {
+            if (!this.exportedDirectivesSet.has(id.reference)) {
+                this.exportedDirectivesSet.add(id.reference);
+                this.exportedDirectives.push(id);
+            }
+        };
+        TransitiveCompileNgModuleMetadata.prototype.addPipe = function (id) {
+            if (!this.pipesSet.has(id.reference)) {
+                this.pipesSet.add(id.reference);
+                this.pipes.push(id);
+            }
+        };
+        TransitiveCompileNgModuleMetadata.prototype.addExportedPipe = function (id) {
+            if (!this.exportedPipesSet.has(id.reference)) {
+                this.exportedPipesSet.add(id.reference);
+                this.exportedPipes.push(id);
+            }
+        };
+        TransitiveCompileNgModuleMetadata.prototype.addModule = function (id) {
+            if (!this.modulesSet.has(id.reference)) {
+                this.modulesSet.add(id.reference);
+                this.modules.push(id);
+            }
+        };
+        TransitiveCompileNgModuleMetadata.prototype.addEntryComponent = function (ec) {
+            if (!this.entryComponentsSet.has(ec.componentType)) {
+                this.entryComponentsSet.add(ec.componentType);
+                this.entryComponents.push(ec);
+            }
+        };
+        return TransitiveCompileNgModuleMetadata;
+    }());
+    function _normalizeArray(obj) {
+        return obj || [];
+    }
+    var ProviderMeta = /** @class */ (function () {
+        function ProviderMeta(token, _a) {
+            var useClass = _a.useClass, useValue = _a.useValue, useExisting = _a.useExisting, useFactory = _a.useFactory, deps = _a.deps, multi = _a.multi;
+            this.token = token;
+            this.useClass = useClass || null;
+            this.useValue = useValue;
+            this.useExisting = useExisting;
+            this.useFactory = useFactory || null;
+            this.dependencies = deps || null;
+            this.multi = !!multi;
+        }
+        return ProviderMeta;
+    }());
+    function flatten(list) {
+        return list.reduce(function (flat, item) {
+            var flatItem = Array.isArray(item) ? flatten(item) : item;
+            return flat.concat(flatItem);
+        }, []);
+    }
+    function jitSourceUrl(url) {
+        // Note: We need 3 "/" so that ng shows up as a separate domain
+        // in the chrome dev tools.
+        return url.replace(/(\w+:\/\/[\w:-]+)?(\/+)?/, 'ng:///');
+    }
+    function templateSourceUrl(ngModuleType, compMeta, templateMeta) {
+        var url;
+        if (templateMeta.isInline) {
+            if (compMeta.type.reference instanceof StaticSymbol) {
+                // Note: a .ts file might contain multiple components with inline templates,
+                // so we need to give them unique urls, as these will be used for sourcemaps.
+                url = compMeta.type.reference.filePath + "." + compMeta.type.reference.name + ".html";
+            }
+            else {
+                url = identifierName(ngModuleType) + "/" + identifierName(compMeta.type) + ".html";
+            }
+        }
+        else {
+            url = templateMeta.templateUrl;
+        }
+        return compMeta.type.reference instanceof StaticSymbol ? url : jitSourceUrl(url);
+    }
+    function sharedStylesheetJitUrl(meta, id) {
+        var pathParts = meta.moduleUrl.split(/\/\\/g);
+        var baseName = pathParts[pathParts.length - 1];
+        return jitSourceUrl("css/" + id + baseName + ".ngstyle.js");
+    }
+    function ngModuleJitUrl(moduleMeta) {
+        return jitSourceUrl(identifierName(moduleMeta.type) + "/module.ngfactory.js");
+    }
+    function templateJitUrl(ngModuleType, compMeta) {
+        return jitSourceUrl(identifierName(ngModuleType) + "/" + identifierName(compMeta.type) + ".ngfactory.js");
+    }
+
+    /**
+     * @license
+     * Copyright Google LLC All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
     var COMPONENT_VARIABLE = '%COMP%';
     var HOST_ATTR = "_nghost-" + COMPONENT_VARIABLE;
     var CONTENT_ATTR = "_ngcontent-" + COMPONENT_VARIABLE;
@@ -10783,9 +10779,10 @@
     }());
     var Text$3 = /** @class */ (function (_super) {
         __extends(Text, _super);
-        function Text(value, sourceSpan, i18n) {
+        function Text(value, sourceSpan, tokens, i18n) {
             var _this = _super.call(this, sourceSpan, i18n) || this;
             _this.value = value;
+            _this.tokens = tokens;
             return _this;
         }
         Text.prototype.visit = function (visitor, context) {
@@ -10823,12 +10820,13 @@
     }());
     var Attribute = /** @class */ (function (_super) {
         __extends(Attribute, _super);
-        function Attribute(name, value, sourceSpan, keySpan, valueSpan, i18n) {
+        function Attribute(name, value, sourceSpan, keySpan, valueSpan, valueTokens, i18n) {
             var _this = _super.call(this, sourceSpan, i18n) || this;
             _this.name = name;
             _this.value = value;
             _this.keySpan = keySpan;
             _this.valueSpan = valueSpan;
+            _this.valueTokens = valueTokens;
             return _this;
         }
         Attribute.prototype.visit = function (visitor, context) {
@@ -13086,39 +13084,6 @@
     var NGSP_UNICODE = '\uE500';
     NAMED_ENTITIES['ngsp'] = NGSP_UNICODE;
 
-    var TokenType;
-    (function (TokenType) {
-        TokenType[TokenType["TAG_OPEN_START"] = 0] = "TAG_OPEN_START";
-        TokenType[TokenType["TAG_OPEN_END"] = 1] = "TAG_OPEN_END";
-        TokenType[TokenType["TAG_OPEN_END_VOID"] = 2] = "TAG_OPEN_END_VOID";
-        TokenType[TokenType["TAG_CLOSE"] = 3] = "TAG_CLOSE";
-        TokenType[TokenType["INCOMPLETE_TAG_OPEN"] = 4] = "INCOMPLETE_TAG_OPEN";
-        TokenType[TokenType["TEXT"] = 5] = "TEXT";
-        TokenType[TokenType["ESCAPABLE_RAW_TEXT"] = 6] = "ESCAPABLE_RAW_TEXT";
-        TokenType[TokenType["RAW_TEXT"] = 7] = "RAW_TEXT";
-        TokenType[TokenType["COMMENT_START"] = 8] = "COMMENT_START";
-        TokenType[TokenType["COMMENT_END"] = 9] = "COMMENT_END";
-        TokenType[TokenType["CDATA_START"] = 10] = "CDATA_START";
-        TokenType[TokenType["CDATA_END"] = 11] = "CDATA_END";
-        TokenType[TokenType["ATTR_NAME"] = 12] = "ATTR_NAME";
-        TokenType[TokenType["ATTR_QUOTE"] = 13] = "ATTR_QUOTE";
-        TokenType[TokenType["ATTR_VALUE"] = 14] = "ATTR_VALUE";
-        TokenType[TokenType["DOC_TYPE"] = 15] = "DOC_TYPE";
-        TokenType[TokenType["EXPANSION_FORM_START"] = 16] = "EXPANSION_FORM_START";
-        TokenType[TokenType["EXPANSION_CASE_VALUE"] = 17] = "EXPANSION_CASE_VALUE";
-        TokenType[TokenType["EXPANSION_CASE_EXP_START"] = 18] = "EXPANSION_CASE_EXP_START";
-        TokenType[TokenType["EXPANSION_CASE_EXP_END"] = 19] = "EXPANSION_CASE_EXP_END";
-        TokenType[TokenType["EXPANSION_FORM_END"] = 20] = "EXPANSION_FORM_END";
-        TokenType[TokenType["EOF"] = 21] = "EOF";
-    })(TokenType || (TokenType = {}));
-    var Token = /** @class */ (function () {
-        function Token(type, parts, sourceSpan) {
-            this.type = type;
-            this.parts = parts;
-            this.sourceSpan = sourceSpan;
-        }
-        return Token;
-    }());
     var TokenError = /** @class */ (function (_super) {
         __extends(TokenError, _super);
         function TokenError(errorMsg, tokenType, span) {
@@ -13208,6 +13173,7 @@
             return content.replace(_CR_OR_CRLF_REGEXP, '\n');
         };
         _Tokenizer.prototype.tokenize = function () {
+            var _this = this;
             while (this._cursor.peek() !== $EOF) {
                 var start = this._cursor.clone();
                 try {
@@ -13231,14 +13197,16 @@
                         }
                     }
                     else if (!(this._tokenizeIcu && this._tokenizeExpansionForm())) {
-                        this._consumeText();
+                        // In (possibly interpolated) text the end of the text is given by `isTextEnd()`, while
+                        // the premature end of an interpolation is given by the start of a new HTML element.
+                        this._consumeWithInterpolation(5 /* TEXT */, 8 /* INTERPOLATION */, function () { return _this._isTextEnd(); }, function () { return _this._isTagStart(); });
                     }
                 }
                 catch (e) {
                     this.handleError(e);
                 }
             }
-            this._beginToken(TokenType.EOF);
+            this._beginToken(24 /* EOF */);
             this._endToken([]);
         };
         /**
@@ -13278,7 +13246,11 @@
             if (this._currentTokenType === null) {
                 throw new TokenError('Programming error - attempted to end a token which has no token type', null, this._cursor.getSpan(this._currentTokenStart));
             }
-            var token = new Token(this._currentTokenType, parts, this._cursor.getSpan(this._currentTokenStart, this._leadingTriviaCodePoints));
+            var token = {
+                type: this._currentTokenType,
+                parts: parts,
+                sourceSpan: (end !== null && end !== void 0 ? end : this._cursor).getSpan(this._currentTokenStart, this._leadingTriviaCodePoints),
+            };
             this.tokens.push(token);
             this._currentTokenStart = null;
             this._currentTokenType = null;
@@ -13371,19 +13343,15 @@
                 this._cursor.advance();
             }
         };
-        _Tokenizer.prototype._readChar = function (decodeEntities) {
-            if (decodeEntities && this._cursor.peek() === $AMPERSAND) {
-                return this._decodeEntity();
-            }
-            else {
-                // Don't rely upon reading directly from `_input` as the actual char value
-                // may have been generated from an escape sequence.
-                var char = String.fromCodePoint(this._cursor.peek());
-                this._cursor.advance();
-                return char;
-            }
+        _Tokenizer.prototype._readChar = function () {
+            // Don't rely upon reading directly from `_input` as the actual char value
+            // may have been generated from an escape sequence.
+            var char = String.fromCodePoint(this._cursor.peek());
+            this._cursor.advance();
+            return char;
         };
-        _Tokenizer.prototype._decodeEntity = function () {
+        _Tokenizer.prototype._consumeEntity = function (textTokenType) {
+            this._beginToken(9 /* ENCODED_ENTITY */);
             var start = this._cursor.clone();
             this._cursor.advance();
             if (this._attemptCharCode($HASH)) {
@@ -13401,7 +13369,7 @@
                 this._cursor.advance();
                 try {
                     var charCode = parseInt(strNum, isHex ? 16 : 10);
-                    return String.fromCharCode(charCode);
+                    this._endToken([String.fromCharCode(charCode), this._cursor.getChars(start)]);
                 }
                 catch (_a) {
                     throw this._createError(_unknownEntityErrorMsg(this._cursor.getChars(start)), this._cursor.getSpan());
@@ -13411,20 +13379,25 @@
                 var nameStart = this._cursor.clone();
                 this._attemptCharCodeUntilFn(isNamedEntityEnd);
                 if (this._cursor.peek() != $SEMICOLON) {
+                    // No semicolon was found so abort the encoded entity token that was in progress, and treat
+                    // this as a text token
+                    this._beginToken(textTokenType, start);
                     this._cursor = nameStart;
-                    return '&';
+                    this._endToken(['&']);
                 }
-                var name = this._cursor.getChars(nameStart);
-                this._cursor.advance();
-                var char = NAMED_ENTITIES[name];
-                if (!char) {
-                    throw this._createError(_unknownEntityErrorMsg(name), this._cursor.getSpan(start));
+                else {
+                    var name = this._cursor.getChars(nameStart);
+                    this._cursor.advance();
+                    var char = NAMED_ENTITIES[name];
+                    if (!char) {
+                        throw this._createError(_unknownEntityErrorMsg(name), this._cursor.getSpan(start));
+                    }
+                    this._endToken([char, "&" + name + ";"]);
                 }
-                return char;
             }
         };
-        _Tokenizer.prototype._consumeRawText = function (decodeEntities, endMarkerPredicate) {
-            this._beginToken(decodeEntities ? TokenType.ESCAPABLE_RAW_TEXT : TokenType.RAW_TEXT);
+        _Tokenizer.prototype._consumeRawText = function (consumeEntities, endMarkerPredicate) {
+            this._beginToken(consumeEntities ? 6 /* ESCAPABLE_RAW_TEXT */ : 7 /* RAW_TEXT */);
             var parts = [];
             while (true) {
                 var tagCloseStart = this._cursor.clone();
@@ -13433,32 +13406,40 @@
                 if (foundEndMarker) {
                     break;
                 }
-                parts.push(this._readChar(decodeEntities));
+                if (consumeEntities && this._cursor.peek() === $AMPERSAND) {
+                    this._endToken([this._processCarriageReturns(parts.join(''))]);
+                    parts.length = 0;
+                    this._consumeEntity(6 /* ESCAPABLE_RAW_TEXT */);
+                    this._beginToken(6 /* ESCAPABLE_RAW_TEXT */);
+                }
+                else {
+                    parts.push(this._readChar());
+                }
             }
-            return this._endToken([this._processCarriageReturns(parts.join(''))]);
+            this._endToken([this._processCarriageReturns(parts.join(''))]);
         };
         _Tokenizer.prototype._consumeComment = function (start) {
             var _this = this;
-            this._beginToken(TokenType.COMMENT_START, start);
+            this._beginToken(10 /* COMMENT_START */, start);
             this._requireCharCode($MINUS);
             this._endToken([]);
             this._consumeRawText(false, function () { return _this._attemptStr('-->'); });
-            this._beginToken(TokenType.COMMENT_END);
+            this._beginToken(11 /* COMMENT_END */);
             this._requireStr('-->');
             this._endToken([]);
         };
         _Tokenizer.prototype._consumeCdata = function (start) {
             var _this = this;
-            this._beginToken(TokenType.CDATA_START, start);
+            this._beginToken(12 /* CDATA_START */, start);
             this._requireStr('CDATA[');
             this._endToken([]);
             this._consumeRawText(false, function () { return _this._attemptStr(']]>'); });
-            this._beginToken(TokenType.CDATA_END);
+            this._beginToken(13 /* CDATA_END */);
             this._requireStr(']]>');
             this._endToken([]);
         };
         _Tokenizer.prototype._consumeDocType = function (start) {
-            this._beginToken(TokenType.DOC_TYPE, start);
+            this._beginToken(18 /* DOC_TYPE */, start);
             var contentStart = this._cursor.clone();
             this._attemptUntilChar($GT);
             var content = this._cursor.getChars(contentStart);
@@ -13512,12 +13493,12 @@
                 if (e instanceof _ControlFlowError) {
                     if (openTagToken) {
                         // We errored before we could close the opening tag, so it is incomplete.
-                        openTagToken.type = TokenType.INCOMPLETE_TAG_OPEN;
+                        openTagToken.type = 4 /* INCOMPLETE_TAG_OPEN */;
                     }
                     else {
                         // When the start tag is invalid, assume we want a "<" as text.
                         // Back to back text tokens are merged at the end.
-                        this._beginToken(TokenType.TEXT, start);
+                        this._beginToken(5 /* TEXT */, start);
                         this._endToken(['<']);
                     }
                     return;
@@ -13532,9 +13513,9 @@
                 this._consumeRawTextWithTagClose(prefix, tagName, true);
             }
         };
-        _Tokenizer.prototype._consumeRawTextWithTagClose = function (prefix, tagName, decodeEntities) {
+        _Tokenizer.prototype._consumeRawTextWithTagClose = function (prefix, tagName, consumeEntities) {
             var _this = this;
-            this._consumeRawText(decodeEntities, function () {
+            this._consumeRawText(consumeEntities, function () {
                 if (!_this._attemptCharCode($LT))
                     return false;
                 if (!_this._attemptCharCode($SLASH))
@@ -13545,13 +13526,13 @@
                 _this._attemptCharCodeUntilFn(isNotWhitespace);
                 return _this._attemptCharCode($GT);
             });
-            this._beginToken(TokenType.TAG_CLOSE);
+            this._beginToken(3 /* TAG_CLOSE */);
             this._requireCharCodeUntilFn(function (code) { return code === $GT; }, 3);
             this._cursor.advance(); // Consume the `>`
             this._endToken([prefix, tagName]);
         };
         _Tokenizer.prototype._consumeTagOpenStart = function (start) {
-            this._beginToken(TokenType.TAG_OPEN_START, start);
+            this._beginToken(0 /* TAG_OPEN_START */, start);
             var parts = this._consumePrefixAndName();
             return this._endToken(parts);
         };
@@ -13560,44 +13541,40 @@
             if (attrNameStart === $SQ || attrNameStart === $DQ) {
                 throw this._createError(_unexpectedCharacterErrorMsg(attrNameStart), this._cursor.getSpan());
             }
-            this._beginToken(TokenType.ATTR_NAME);
+            this._beginToken(14 /* ATTR_NAME */);
             var prefixAndName = this._consumePrefixAndName();
             this._endToken(prefixAndName);
         };
         _Tokenizer.prototype._consumeAttributeValue = function () {
+            var _this = this;
             var value;
             if (this._cursor.peek() === $SQ || this._cursor.peek() === $DQ) {
-                this._beginToken(TokenType.ATTR_QUOTE);
-                var quoteChar = this._cursor.peek();
-                this._cursor.advance();
-                this._endToken([String.fromCodePoint(quoteChar)]);
-                this._beginToken(TokenType.ATTR_VALUE);
-                var parts = [];
-                while (this._cursor.peek() !== quoteChar) {
-                    parts.push(this._readChar(true));
-                }
-                value = parts.join('');
-                this._endToken([this._processCarriageReturns(value)]);
-                this._beginToken(TokenType.ATTR_QUOTE);
-                this._cursor.advance();
-                this._endToken([String.fromCodePoint(quoteChar)]);
+                var quoteChar_1 = this._cursor.peek();
+                this._consumeQuote(quoteChar_1);
+                // In an attribute then end of the attribute value and the premature end to an interpolation
+                // are both triggered by the `quoteChar`.
+                var endPredicate = function () { return _this._cursor.peek() === quoteChar_1; };
+                this._consumeWithInterpolation(16 /* ATTR_VALUE_TEXT */, 17 /* ATTR_VALUE_INTERPOLATION */, endPredicate, endPredicate);
+                this._consumeQuote(quoteChar_1);
             }
             else {
-                this._beginToken(TokenType.ATTR_VALUE);
-                var valueStart = this._cursor.clone();
-                this._requireCharCodeUntilFn(isNameEnd, 1);
-                value = this._cursor.getChars(valueStart);
-                this._endToken([this._processCarriageReturns(value)]);
+                var endPredicate = function () { return isNameEnd(_this._cursor.peek()); };
+                this._consumeWithInterpolation(16 /* ATTR_VALUE_TEXT */, 17 /* ATTR_VALUE_INTERPOLATION */, endPredicate, endPredicate);
             }
         };
+        _Tokenizer.prototype._consumeQuote = function (quoteChar) {
+            this._beginToken(15 /* ATTR_QUOTE */);
+            this._requireCharCode(quoteChar);
+            this._endToken([String.fromCodePoint(quoteChar)]);
+        };
         _Tokenizer.prototype._consumeTagOpenEnd = function () {
-            var tokenType = this._attemptCharCode($SLASH) ? TokenType.TAG_OPEN_END_VOID : TokenType.TAG_OPEN_END;
+            var tokenType = this._attemptCharCode($SLASH) ? 2 /* TAG_OPEN_END_VOID */ : 1 /* TAG_OPEN_END */;
             this._beginToken(tokenType);
             this._requireCharCode($GT);
             this._endToken([]);
         };
         _Tokenizer.prototype._consumeTagClose = function (start) {
-            this._beginToken(TokenType.TAG_CLOSE, start);
+            this._beginToken(3 /* TAG_CLOSE */, start);
             this._attemptCharCodeUntilFn(isNotWhitespace);
             var prefixAndName = this._consumePrefixAndName();
             this._attemptCharCodeUntilFn(isNotWhitespace);
@@ -13605,11 +13582,11 @@
             this._endToken(prefixAndName);
         };
         _Tokenizer.prototype._consumeExpansionFormStart = function () {
-            this._beginToken(TokenType.EXPANSION_FORM_START);
+            this._beginToken(19 /* EXPANSION_FORM_START */);
             this._requireCharCode($LBRACE);
             this._endToken([]);
-            this._expansionCaseStack.push(TokenType.EXPANSION_FORM_START);
-            this._beginToken(TokenType.RAW_TEXT);
+            this._expansionCaseStack.push(19 /* EXPANSION_FORM_START */);
+            this._beginToken(7 /* RAW_TEXT */);
             var condition = this._readUntil($COMMA);
             var normalizedCondition = this._processCarriageReturns(condition);
             if (this._i18nNormalizeLineEndingsInICUs) {
@@ -13625,58 +13602,138 @@
             }
             this._requireCharCode($COMMA);
             this._attemptCharCodeUntilFn(isNotWhitespace);
-            this._beginToken(TokenType.RAW_TEXT);
+            this._beginToken(7 /* RAW_TEXT */);
             var type = this._readUntil($COMMA);
             this._endToken([type]);
             this._requireCharCode($COMMA);
             this._attemptCharCodeUntilFn(isNotWhitespace);
         };
         _Tokenizer.prototype._consumeExpansionCaseStart = function () {
-            this._beginToken(TokenType.EXPANSION_CASE_VALUE);
+            this._beginToken(20 /* EXPANSION_CASE_VALUE */);
             var value = this._readUntil($LBRACE).trim();
             this._endToken([value]);
             this._attemptCharCodeUntilFn(isNotWhitespace);
-            this._beginToken(TokenType.EXPANSION_CASE_EXP_START);
+            this._beginToken(21 /* EXPANSION_CASE_EXP_START */);
             this._requireCharCode($LBRACE);
             this._endToken([]);
             this._attemptCharCodeUntilFn(isNotWhitespace);
-            this._expansionCaseStack.push(TokenType.EXPANSION_CASE_EXP_START);
+            this._expansionCaseStack.push(21 /* EXPANSION_CASE_EXP_START */);
         };
         _Tokenizer.prototype._consumeExpansionCaseEnd = function () {
-            this._beginToken(TokenType.EXPANSION_CASE_EXP_END);
+            this._beginToken(22 /* EXPANSION_CASE_EXP_END */);
             this._requireCharCode($RBRACE);
             this._endToken([]);
             this._attemptCharCodeUntilFn(isNotWhitespace);
             this._expansionCaseStack.pop();
         };
         _Tokenizer.prototype._consumeExpansionFormEnd = function () {
-            this._beginToken(TokenType.EXPANSION_FORM_END);
+            this._beginToken(23 /* EXPANSION_FORM_END */);
             this._requireCharCode($RBRACE);
             this._endToken([]);
             this._expansionCaseStack.pop();
         };
-        _Tokenizer.prototype._consumeText = function () {
-            var start = this._cursor.clone();
-            this._beginToken(TokenType.TEXT, start);
+        /**
+         * Consume a string that may contain interpolation expressions.
+         *
+         * The first token consumed will be of `tokenType` and then there will be alternating
+         * `interpolationTokenType` and `tokenType` tokens until the `endPredicate()` returns true.
+         *
+         * If an interpolation token ends prematurely it will have no end marker in its `parts` array.
+         *
+         * @param textTokenType the kind of tokens to interleave around interpolation tokens.
+         * @param interpolationTokenType the kind of tokens that contain interpolation.
+         * @param endPredicate a function that should return true when we should stop consuming.
+         * @param endInterpolation a function that should return true if there is a premature end to an
+         *     interpolation expression - i.e. before we get to the normal interpolation closing marker.
+         */
+        _Tokenizer.prototype._consumeWithInterpolation = function (textTokenType, interpolationTokenType, endPredicate, endInterpolation) {
+            this._beginToken(textTokenType);
             var parts = [];
-            do {
+            while (!endPredicate()) {
+                var current = this._cursor.clone();
                 if (this._interpolationConfig && this._attemptStr(this._interpolationConfig.start)) {
-                    parts.push(this._interpolationConfig.start);
-                    this._inInterpolation = true;
+                    this._endToken([this._processCarriageReturns(parts.join(''))], current);
+                    parts.length = 0;
+                    this._consumeInterpolation(interpolationTokenType, current, endInterpolation);
+                    this._beginToken(textTokenType);
                 }
-                else if (this._interpolationConfig && this._inInterpolation &&
-                    this._attemptStr(this._interpolationConfig.end)) {
-                    parts.push(this._interpolationConfig.end);
-                    this._inInterpolation = false;
+                else if (this._cursor.peek() === $AMPERSAND) {
+                    this._endToken([this._processCarriageReturns(parts.join(''))]);
+                    parts.length = 0;
+                    this._consumeEntity(textTokenType);
+                    this._beginToken(textTokenType);
                 }
                 else {
-                    parts.push(this._readChar(true));
+                    parts.push(this._readChar());
                 }
-            } while (!this._isTextEnd());
+            }
             // It is possible that an interpolation was started but not ended inside this text token.
             // Make sure that we reset the state of the lexer correctly.
             this._inInterpolation = false;
             this._endToken([this._processCarriageReturns(parts.join(''))]);
+        };
+        /**
+         * Consume a block of text that has been interpreted as an Angular interpolation.
+         *
+         * @param interpolationTokenType the type of the interpolation token to generate.
+         * @param interpolationStart a cursor that points to the start of this interpolation.
+         * @param prematureEndPredicate a function that should return true if the next characters indicate
+         *     an end to the interpolation before its normal closing marker.
+         */
+        _Tokenizer.prototype._consumeInterpolation = function (interpolationTokenType, interpolationStart, prematureEndPredicate) {
+            var parts = [];
+            this._beginToken(interpolationTokenType, interpolationStart);
+            parts.push(this._interpolationConfig.start);
+            // Find the end of the interpolation, ignoring content inside quotes.
+            var expressionStart = this._cursor.clone();
+            var inQuote = null;
+            var inComment = false;
+            while (this._cursor.peek() !== $EOF &&
+                (prematureEndPredicate === null || !prematureEndPredicate())) {
+                var current = this._cursor.clone();
+                if (this._isTagStart()) {
+                    // We are starting what looks like an HTML element in the middle of this interpolation.
+                    // Reset the cursor to before the `<` character and end the interpolation token.
+                    // (This is actually wrong but here for backward compatibility).
+                    this._cursor = current;
+                    parts.push(this._getProcessedChars(expressionStart, current));
+                    this._endToken(parts);
+                    return;
+                }
+                if (inQuote === null) {
+                    if (this._attemptStr(this._interpolationConfig.end)) {
+                        // We are not in a string, and we hit the end interpolation marker
+                        parts.push(this._getProcessedChars(expressionStart, current));
+                        parts.push(this._interpolationConfig.end);
+                        this._endToken(parts);
+                        return;
+                    }
+                    else if (this._attemptStr('//')) {
+                        // Once we are in a comment we ignore any quotes
+                        inComment = true;
+                    }
+                }
+                var char = this._cursor.peek();
+                this._cursor.advance();
+                if (char === $BACKSLASH) {
+                    // Skip the next character because it was escaped.
+                    this._cursor.advance();
+                }
+                else if (char === inQuote) {
+                    // Exiting the current quoted string
+                    inQuote = null;
+                }
+                else if (!inComment && inQuote === null && isQuote(char)) {
+                    // Entering a new quoted string
+                    inQuote = char;
+                }
+            }
+            // We hit EOF without finding a closing interpolation marker
+            parts.push(this._getProcessedChars(expressionStart, this._cursor));
+            this._endToken(parts);
+        };
+        _Tokenizer.prototype._getProcessedChars = function (start, end) {
+            return this._processCarriageReturns(end.getChars(start));
         };
         _Tokenizer.prototype._isTextEnd = function () {
             if (this._isTagStart() || this._cursor.peek() === $EOF) {
@@ -13720,12 +13777,12 @@
         _Tokenizer.prototype._isInExpansionCase = function () {
             return this._expansionCaseStack.length > 0 &&
                 this._expansionCaseStack[this._expansionCaseStack.length - 1] ===
-                    TokenType.EXPANSION_CASE_EXP_START;
+                    21 /* EXPANSION_CASE_EXP_START */;
         };
         _Tokenizer.prototype._isInExpansionForm = function () {
             return this._expansionCaseStack.length > 0 &&
                 this._expansionCaseStack[this._expansionCaseStack.length - 1] ===
-                    TokenType.EXPANSION_FORM_START;
+                    19 /* EXPANSION_FORM_START */;
         };
         _Tokenizer.prototype.isExpansionFormStart = function () {
             if (this._cursor.peek() !== $LBRACE) {
@@ -13754,16 +13811,16 @@
             (code < $0 || code > $9);
     }
     function isDigitEntityEnd(code) {
-        return code == $SEMICOLON || code == $EOF || !isAsciiHexDigit(code);
+        return code === $SEMICOLON || code === $EOF || !isAsciiHexDigit(code);
     }
     function isNamedEntityEnd(code) {
-        return code == $SEMICOLON || code == $EOF || !isAsciiLetter(code);
+        return code === $SEMICOLON || code === $EOF || !isAsciiLetter(code);
     }
     function isExpansionCaseStart(peek) {
         return peek !== $RBRACE;
     }
     function compareCharCodeCaseInsensitive(code1, code2) {
-        return toUpperCaseCharCode(code1) == toUpperCaseCharCode(code2);
+        return toUpperCaseCharCode(code1) === toUpperCaseCharCode(code2);
     }
     function toUpperCaseCharCode(code) {
         return code >= $a && code <= $z ? code - $a + $A : code;
@@ -13773,7 +13830,9 @@
         var lastDstToken = undefined;
         for (var i = 0; i < srcTokens.length; i++) {
             var token = srcTokens[i];
-            if (lastDstToken && lastDstToken.type == TokenType.TEXT && token.type == TokenType.TEXT) {
+            if ((lastDstToken && lastDstToken.type === 5 /* TEXT */ && token.type === 5 /* TEXT */) ||
+                (lastDstToken && lastDstToken.type === 16 /* ATTR_VALUE_TEXT */ &&
+                    token.type === 16 /* ATTR_VALUE_TEXT */)) {
                 lastDstToken.parts[0] += token.parts[0];
                 lastDstToken.sourceSpan.end = token.sourceSpan.end;
             }
@@ -14071,28 +14130,28 @@
             this._advance();
         }
         _TreeBuilder.prototype.build = function () {
-            while (this._peek.type !== TokenType.EOF) {
-                if (this._peek.type === TokenType.TAG_OPEN_START ||
-                    this._peek.type === TokenType.INCOMPLETE_TAG_OPEN) {
+            while (this._peek.type !== 24 /* EOF */) {
+                if (this._peek.type === 0 /* TAG_OPEN_START */ ||
+                    this._peek.type === 4 /* INCOMPLETE_TAG_OPEN */) {
                     this._consumeStartTag(this._advance());
                 }
-                else if (this._peek.type === TokenType.TAG_CLOSE) {
+                else if (this._peek.type === 3 /* TAG_CLOSE */) {
                     this._consumeEndTag(this._advance());
                 }
-                else if (this._peek.type === TokenType.CDATA_START) {
+                else if (this._peek.type === 12 /* CDATA_START */) {
                     this._closeVoidElement();
                     this._consumeCdata(this._advance());
                 }
-                else if (this._peek.type === TokenType.COMMENT_START) {
+                else if (this._peek.type === 10 /* COMMENT_START */) {
                     this._closeVoidElement();
                     this._consumeComment(this._advance());
                 }
-                else if (this._peek.type === TokenType.TEXT || this._peek.type === TokenType.RAW_TEXT ||
-                    this._peek.type === TokenType.ESCAPABLE_RAW_TEXT) {
+                else if (this._peek.type === 5 /* TEXT */ || this._peek.type === 7 /* RAW_TEXT */ ||
+                    this._peek.type === 6 /* ESCAPABLE_RAW_TEXT */) {
                     this._closeVoidElement();
                     this._consumeText(this._advance());
                 }
-                else if (this._peek.type === TokenType.EXPANSION_FORM_START) {
+                else if (this._peek.type === 19 /* EXPANSION_FORM_START */) {
                     this._consumeExpansion(this._advance());
                 }
                 else {
@@ -14118,11 +14177,11 @@
         };
         _TreeBuilder.prototype._consumeCdata = function (_startToken) {
             this._consumeText(this._advance());
-            this._advanceIf(TokenType.CDATA_END);
+            this._advanceIf(13 /* CDATA_END */);
         };
         _TreeBuilder.prototype._consumeComment = function (token) {
-            var text = this._advanceIf(TokenType.RAW_TEXT);
-            this._advanceIf(TokenType.COMMENT_END);
+            var text = this._advanceIf(7 /* RAW_TEXT */);
+            this._advanceIf(11 /* COMMENT_END */);
             var value = text != null ? text.parts[0].trim() : null;
             this._addToParent(new Comment$1(value, token.sourceSpan));
         };
@@ -14131,14 +14190,14 @@
             var type = this._advance();
             var cases = [];
             // read =
-            while (this._peek.type === TokenType.EXPANSION_CASE_VALUE) {
+            while (this._peek.type === 20 /* EXPANSION_CASE_VALUE */) {
                 var expCase = this._parseExpansionCase();
                 if (!expCase)
                     return; // error
                 cases.push(expCase);
             }
             // read the final }
-            if (this._peek.type !== TokenType.EXPANSION_FORM_END) {
+            if (this._peek.type !== 23 /* EXPANSION_FORM_END */) {
                 this.errors.push(TreeError.create(null, this._peek.sourceSpan, "Invalid ICU message. Missing '}'."));
                 return;
             }
@@ -14149,7 +14208,7 @@
         _TreeBuilder.prototype._parseExpansionCase = function () {
             var value = this._advance();
             // read {
-            if (this._peek.type !== TokenType.EXPANSION_CASE_EXP_START) {
+            if (this._peek.type !== 21 /* EXPANSION_CASE_EXP_START */) {
                 this.errors.push(TreeError.create(null, this._peek.sourceSpan, "Invalid ICU message. Missing '{'."));
                 return null;
             }
@@ -14159,7 +14218,7 @@
             if (!exp)
                 return null;
             var end = this._advance();
-            exp.push(new Token(TokenType.EOF, [], end.sourceSpan));
+            exp.push({ type: 24 /* EOF */, parts: [], sourceSpan: end.sourceSpan });
             // parse everything in between { and }
             var expansionCaseParser = new _TreeBuilder(exp, this.getTagDefinition);
             expansionCaseParser.build();
@@ -14173,16 +14232,16 @@
         };
         _TreeBuilder.prototype._collectExpansionExpTokens = function (start) {
             var exp = [];
-            var expansionFormStack = [TokenType.EXPANSION_CASE_EXP_START];
+            var expansionFormStack = [21 /* EXPANSION_CASE_EXP_START */];
             while (true) {
-                if (this._peek.type === TokenType.EXPANSION_FORM_START ||
-                    this._peek.type === TokenType.EXPANSION_CASE_EXP_START) {
+                if (this._peek.type === 19 /* EXPANSION_FORM_START */ ||
+                    this._peek.type === 21 /* EXPANSION_CASE_EXP_START */) {
                     expansionFormStack.push(this._peek.type);
                 }
-                if (this._peek.type === TokenType.EXPANSION_CASE_EXP_END) {
-                    if (lastOnStack(expansionFormStack, TokenType.EXPANSION_CASE_EXP_START)) {
+                if (this._peek.type === 22 /* EXPANSION_CASE_EXP_END */) {
+                    if (lastOnStack(expansionFormStack, 21 /* EXPANSION_CASE_EXP_START */)) {
                         expansionFormStack.pop();
-                        if (expansionFormStack.length == 0)
+                        if (expansionFormStack.length === 0)
                             return exp;
                     }
                     else {
@@ -14190,8 +14249,8 @@
                         return null;
                     }
                 }
-                if (this._peek.type === TokenType.EXPANSION_FORM_END) {
-                    if (lastOnStack(expansionFormStack, TokenType.EXPANSION_FORM_START)) {
+                if (this._peek.type === 23 /* EXPANSION_FORM_END */) {
+                    if (lastOnStack(expansionFormStack, 19 /* EXPANSION_FORM_START */)) {
                         expansionFormStack.pop();
                     }
                     else {
@@ -14199,7 +14258,7 @@
                         return null;
                     }
                 }
-                if (this._peek.type === TokenType.EOF) {
+                if (this._peek.type === 24 /* EOF */) {
                     this.errors.push(TreeError.create(null, start.sourceSpan, "Invalid ICU message. Missing '}'."));
                     return null;
                 }
@@ -14207,16 +14266,38 @@
             }
         };
         _TreeBuilder.prototype._consumeText = function (token) {
+            var tokens = [token];
+            var startSpan = token.sourceSpan;
             var text = token.parts[0];
-            if (text.length > 0 && text[0] == '\n') {
+            if (text.length > 0 && text[0] === '\n') {
                 var parent = this._getParentElement();
-                if (parent != null && parent.children.length == 0 &&
+                if (parent != null && parent.children.length === 0 &&
                     this.getTagDefinition(parent.name).ignoreFirstLf) {
                     text = text.substring(1);
+                    tokens[0] = { type: token.type, sourceSpan: token.sourceSpan, parts: [text] };
+                }
+            }
+            while (this._peek.type === 8 /* INTERPOLATION */ || this._peek.type === 5 /* TEXT */ ||
+                this._peek.type === 9 /* ENCODED_ENTITY */) {
+                token = this._advance();
+                tokens.push(token);
+                if (token.type === 8 /* INTERPOLATION */) {
+                    // For backward compatibility we decode HTML entities that appear in interpolation
+                    // expressions. This is arguably a bug, but it could be a considerable breaking change to
+                    // fix it. It should be addressed in a larger project to refactor the entire parser/lexer
+                    // chain after View Engine has been removed.
+                    text += token.parts.join('').replace(/&([^;]+);/g, decodeEntity);
+                }
+                else if (token.type === 9 /* ENCODED_ENTITY */) {
+                    text += token.parts[0];
+                }
+                else {
+                    text += token.parts.join('');
                 }
             }
             if (text.length > 0) {
-                this._addToParent(new Text$3(text, token.sourceSpan));
+                var endSpan = token.sourceSpan;
+                this._addToParent(new Text$3(text, new ParseSourceSpan(startSpan.start, endSpan.end, startSpan.fullStart, startSpan.details), tokens));
             }
         };
         _TreeBuilder.prototype._closeVoidElement = function () {
@@ -14228,14 +14309,14 @@
         _TreeBuilder.prototype._consumeStartTag = function (startTagToken) {
             var _a = __read(startTagToken.parts, 2), prefix = _a[0], name = _a[1];
             var attrs = [];
-            while (this._peek.type === TokenType.ATTR_NAME) {
+            while (this._peek.type === 14 /* ATTR_NAME */) {
                 attrs.push(this._consumeAttr(this._advance()));
             }
             var fullName = this._getElementFullName(prefix, name, this._getParentElement());
             var selfClosing = false;
             // Note: There could have been a tokenizer error
             // so that we don't get a token for the end tag...
-            if (this._peek.type === TokenType.TAG_OPEN_END_VOID) {
+            if (this._peek.type === 2 /* TAG_OPEN_END_VOID */) {
                 this._advance();
                 selfClosing = true;
                 var tagDef = this.getTagDefinition(fullName);
@@ -14243,7 +14324,7 @@
                     this.errors.push(TreeError.create(fullName, startTagToken.sourceSpan, "Only void and foreign elements can be self closed \"" + startTagToken.parts[1] + "\""));
                 }
             }
-            else if (this._peek.type === TokenType.TAG_OPEN_END) {
+            else if (this._peek.type === 1 /* TAG_OPEN_END */) {
                 this._advance();
                 selfClosing = false;
             }
@@ -14258,7 +14339,7 @@
                 // element start tag also represents the end tag.
                 this._popElement(fullName, span);
             }
-            else if (startTagToken.type === TokenType.INCOMPLETE_TAG_OPEN) {
+            else if (startTagToken.type === 4 /* INCOMPLETE_TAG_OPEN */) {
                 // We already know the opening tag is not complete, so it is unlikely it has a corresponding
                 // close tag. Let's optimistically parse it as a full element and emit an error.
                 this._popElement(fullName, null);
@@ -14293,7 +14374,7 @@
             var unexpectedCloseTagDetected = false;
             for (var stackIndex = this._elementStack.length - 1; stackIndex >= 0; stackIndex--) {
                 var el = this._elementStack[stackIndex];
-                if (el.name == fullName) {
+                if (el.name === fullName) {
                     // Record the parse span with the element that is being closed. Any elements that are
                     // removed from the element stack at this point are closed implicitly, so they won't get
                     // an end source span (as there is no explicit closing element).
@@ -14313,24 +14394,53 @@
         };
         _TreeBuilder.prototype._consumeAttr = function (attrName) {
             var fullName = mergeNsAndName(attrName.parts[0], attrName.parts[1]);
-            var end = attrName.sourceSpan.end;
-            var value = '';
-            var valueSpan = undefined;
-            if (this._peek.type === TokenType.ATTR_QUOTE) {
+            var attrEnd = attrName.sourceSpan.end;
+            // Consume any quote
+            if (this._peek.type === 15 /* ATTR_QUOTE */) {
                 this._advance();
             }
-            if (this._peek.type === TokenType.ATTR_VALUE) {
-                var valueToken = this._advance();
-                value = valueToken.parts[0];
-                end = valueToken.sourceSpan.end;
-                valueSpan = valueToken.sourceSpan;
+            // Consume the attribute value
+            var value = '';
+            var valueTokens = [];
+            var valueStartSpan = undefined;
+            var valueEnd = undefined;
+            // NOTE: We need to use a new variable `nextTokenType` here to hide the actual type of
+            // `_peek.type` from TS. Otherwise TS will narrow the type of `_peek.type` preventing it from
+            // being able to consider `ATTR_VALUE_INTERPOLATION` as an option. This is because TS is not
+            // able to see that `_advance()` will actually mutate `_peek`.
+            var nextTokenType = this._peek.type;
+            if (nextTokenType === 16 /* ATTR_VALUE_TEXT */) {
+                valueStartSpan = this._peek.sourceSpan;
+                valueEnd = this._peek.sourceSpan.end;
+                while (this._peek.type === 16 /* ATTR_VALUE_TEXT */ ||
+                    this._peek.type === 17 /* ATTR_VALUE_INTERPOLATION */ ||
+                    this._peek.type === 9 /* ENCODED_ENTITY */) {
+                    var valueToken = this._advance();
+                    valueTokens.push(valueToken);
+                    if (valueToken.type === 17 /* ATTR_VALUE_INTERPOLATION */) {
+                        // For backward compatibility we decode HTML entities that appear in interpolation
+                        // expressions. This is arguably a bug, but it could be a considerable breaking change to
+                        // fix it. It should be addressed in a larger project to refactor the entire parser/lexer
+                        // chain after View Engine has been removed.
+                        value += valueToken.parts.join('').replace(/&([^;]+);/g, decodeEntity);
+                    }
+                    else if (valueToken.type === 9 /* ENCODED_ENTITY */) {
+                        value += valueToken.parts[0];
+                    }
+                    else {
+                        value += valueToken.parts.join('');
+                    }
+                    valueEnd = attrEnd = valueToken.sourceSpan.end;
+                }
             }
-            if (this._peek.type === TokenType.ATTR_QUOTE) {
+            // Consume any quote
+            if (this._peek.type === 15 /* ATTR_QUOTE */) {
                 var quoteToken = this._advance();
-                end = quoteToken.sourceSpan.end;
+                attrEnd = quoteToken.sourceSpan.end;
             }
-            var keySpan = new ParseSourceSpan(attrName.sourceSpan.start, attrName.sourceSpan.end);
-            return new Attribute(fullName, value, new ParseSourceSpan(attrName.sourceSpan.start, end, attrName.sourceSpan.fullStart), keySpan, valueSpan);
+            var valueSpan = valueStartSpan && valueEnd &&
+                new ParseSourceSpan(valueStartSpan.start, valueEnd, valueStartSpan.fullStart);
+            return new Attribute(fullName, value, new ParseSourceSpan(attrName.sourceSpan.start, attrEnd, attrName.sourceSpan.fullStart), attrName.sourceSpan, valueSpan, valueTokens.length > 0 ? valueTokens : undefined, undefined);
         };
         _TreeBuilder.prototype._getParentElement = function () {
             return this._elementStack.length > 0 ? this._elementStack[this._elementStack.length - 1] : null;
@@ -14361,6 +14471,23 @@
     }());
     function lastOnStack(stack, element) {
         return stack.length > 0 && stack[stack.length - 1] === element;
+    }
+    /**
+     * Decode the `entity` string, which we believe is the contents of an HTML entity.
+     *
+     * If the string is not actually a valid/known entity then just return the original `match` string.
+     */
+    function decodeEntity(match, entity) {
+        if (NAMED_ENTITIES[entity] !== undefined) {
+            return NAMED_ENTITIES[entity] || match;
+        }
+        if (/^#x[a-f0-9]+$/i.test(entity)) {
+            return String.fromCodePoint(parseInt(entity.slice(2), 16));
+        }
+        if (/^#\d+$/.test(entity)) {
+            return String.fromCodePoint(parseInt(entity.slice(1), 10));
+        }
+        return match;
     }
 
     var HtmlParser = /** @class */ (function (_super) {
@@ -14434,7 +14561,11 @@
             var hasExpansionSibling = context &&
                 (context.prev instanceof Expansion || context.next instanceof Expansion);
             if (isNotBlank || hasExpansionSibling) {
-                return new Text$3(replaceNgsp(text.value).replace(WS_REPLACE_REGEXP, ' '), text.sourceSpan, text.i18n);
+                // Process the whitespace in the tokens of this Text node
+                var tokens = text.tokens.map(function (token) { return token.type === 5 /* TEXT */ ? createWhitespaceProcessedTextToken(token) : token; });
+                // Process the whitespace of the value of this Text node
+                var value = processWhitespace(text.value);
+                return new Text$3(value, text.sourceSpan, tokens, text.i18n);
             }
             return null;
         };
@@ -14449,6 +14580,13 @@
         };
         return WhitespaceVisitor;
     }());
+    function createWhitespaceProcessedTextToken(_a) {
+        var type = _a.type, parts = _a.parts, sourceSpan = _a.sourceSpan;
+        return { type: type, parts: [processWhitespace(parts[0])], sourceSpan: sourceSpan };
+    }
+    function processWhitespace(text) {
+        return replaceNgsp(text).replace(WS_REPLACE_REGEXP, ' ');
+    }
     function removeWhitespaces(htmlAstWithErrors) {
         return new ParseTreeResult(visitAll$1(new WhitespaceVisitor(), htmlAstWithErrors.rootNodes), htmlAstWithErrors.errors);
     }
@@ -14532,7 +14670,7 @@
         };
         _Expander.prototype.visitExpansion = function (icu, context) {
             this.isExpanded = true;
-            return icu.type == 'plural' ? _expandPluralForm(icu, this.errors) :
+            return icu.type === 'plural' ? _expandPluralForm(icu, this.errors) :
                 _expandDefaultForm(icu, this.errors);
         };
         _Expander.prototype.visitExpansionCase = function (icuCase, context) {
@@ -14543,14 +14681,14 @@
     // Plural forms are expanded to `NgPlural` and `NgPluralCase`s
     function _expandPluralForm(ast, errors) {
         var children = ast.cases.map(function (c) {
-            if (PLURAL_CASES.indexOf(c.value) == -1 && !c.value.match(/^=\d+$/)) {
+            if (PLURAL_CASES.indexOf(c.value) === -1 && !c.value.match(/^=\d+$/)) {
                 errors.push(new ExpansionError(c.valueSourceSpan, "Plural cases should be \"=<number>\" or one of " + PLURAL_CASES.join(', ')));
             }
             var expansionResult = expandNodes(c.expression);
             errors.push.apply(errors, __spreadArray([], __read(expansionResult.errors)));
-            return new Element$1("ng-template", [new Attribute('ngPluralCase', "" + c.value, c.valueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+            return new Element$1("ng-template", [new Attribute('ngPluralCase', "" + c.value, c.valueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* valueTokens */, undefined /* i18n */)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
         });
-        var switchAttr = new Attribute('[ngPlural]', ast.switchValue, ast.switchValueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */);
+        var switchAttr = new Attribute('[ngPlural]', ast.switchValue, ast.switchValueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* valueTokens */, undefined /* i18n */);
         return new Element$1('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
     }
     // ICU messages (excluding plural form) are expanded to `NgSwitch`  and `NgSwitchCase`s
@@ -14560,11 +14698,11 @@
             errors.push.apply(errors, __spreadArray([], __read(expansionResult.errors)));
             if (c.value === 'other') {
                 // other is the default case when no values match
-                return new Element$1("ng-template", [new Attribute('ngSwitchDefault', '', c.valueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+                return new Element$1("ng-template", [new Attribute('ngSwitchDefault', '', c.valueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* valueTokens */, undefined /* i18n */)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
             }
-            return new Element$1("ng-template", [new Attribute('ngSwitchCase', "" + c.value, c.valueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+            return new Element$1("ng-template", [new Attribute('ngSwitchCase', "" + c.value, c.valueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* valueTokens */, undefined /* i18n */)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
         });
-        var switchAttr = new Attribute('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */);
+        var switchAttr = new Attribute('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* valueTokens */, undefined /* i18n */);
         return new Element$1('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
     }
 
@@ -17406,7 +17544,7 @@
         };
         return Lexer;
     }());
-    var Token$1 = /** @class */ (function () {
+    var Token = /** @class */ (function () {
         function Token(index, end, type, numValue, strValue) {
             this.index = index;
             this.end = end;
@@ -17481,30 +17619,30 @@
         return Token;
     }());
     function newCharacterToken(index, end, code) {
-        return new Token$1(index, end, exports.TokenType.Character, code, String.fromCharCode(code));
+        return new Token(index, end, exports.TokenType.Character, code, String.fromCharCode(code));
     }
     function newIdentifierToken(index, end, text) {
-        return new Token$1(index, end, exports.TokenType.Identifier, 0, text);
+        return new Token(index, end, exports.TokenType.Identifier, 0, text);
     }
     function newPrivateIdentifierToken(index, end, text) {
-        return new Token$1(index, end, exports.TokenType.PrivateIdentifier, 0, text);
+        return new Token(index, end, exports.TokenType.PrivateIdentifier, 0, text);
     }
     function newKeywordToken(index, end, text) {
-        return new Token$1(index, end, exports.TokenType.Keyword, 0, text);
+        return new Token(index, end, exports.TokenType.Keyword, 0, text);
     }
     function newOperatorToken(index, end, text) {
-        return new Token$1(index, end, exports.TokenType.Operator, 0, text);
+        return new Token(index, end, exports.TokenType.Operator, 0, text);
     }
     function newStringToken(index, end, text) {
-        return new Token$1(index, end, exports.TokenType.String, 0, text);
+        return new Token(index, end, exports.TokenType.String, 0, text);
     }
     function newNumberToken(index, end, n) {
-        return new Token$1(index, end, exports.TokenType.Number, n, '');
+        return new Token(index, end, exports.TokenType.Number, n, '');
     }
     function newErrorToken(index, end, message) {
-        return new Token$1(index, end, exports.TokenType.Error, 0, message);
+        return new Token(index, end, exports.TokenType.Error, 0, message);
     }
-    var EOF = new Token$1(-1, -1, exports.TokenType.Character, 0, '');
+    var EOF = new Token(-1, -1, exports.TokenType.Character, 0, '');
     var _Scanner = /** @class */ (function () {
         function _Scanner(input) {
             this.input = input;
@@ -17754,9 +17892,6 @@
     }
     function isExponentSign(code) {
         return code == $MINUS || code == $PLUS;
-    }
-    function isQuote(code) {
-        return code === $SQ || code === $DQ || code === $BT;
     }
     function unescape(code) {
         switch (code) {
@@ -20457,13 +20592,6 @@
         return PlaceholderRegistry;
     }());
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var _expParser = new Parser$1(new Lexer());
     /**
      * Returns a function converting html nodes to an i18n Message given an interpolationConfig
@@ -20521,11 +20649,15 @@
             return context.visitNodeFn(el, node);
         };
         _I18nVisitor.prototype.visitAttribute = function (attribute, context) {
-            var node = this._visitTextWithInterpolation(attribute.value, attribute.valueSpan || attribute.sourceSpan, context, attribute.i18n);
+            var node = attribute.valueTokens === undefined || attribute.valueTokens.length === 1 ?
+                new Text$1(attribute.value, attribute.valueSpan || attribute.sourceSpan) :
+                this._visitTextWithInterpolation(attribute.valueTokens, attribute.valueSpan || attribute.sourceSpan, context, attribute.i18n);
             return context.visitNodeFn(attribute, node);
         };
         _I18nVisitor.prototype.visitText = function (text, context) {
-            var node = this._visitTextWithInterpolation(text.value, text.sourceSpan, context, text.i18n);
+            var node = text.tokens.length === 1 ?
+                new Text$1(text.value, text.sourceSpan) :
+                this._visitTextWithInterpolation(text.tokens, text.sourceSpan, context, text.i18n);
             return context.visitNodeFn(text, node);
         };
         _I18nVisitor.prototype.visitComment = function (comment, context) {
@@ -20565,61 +20697,50 @@
             throw new Error('Unreachable code');
         };
         /**
-         * Split the, potentially interpolated, text up into text and placeholder pieces.
+         * Convert, text and interpolated tokens up into text and placeholder pieces.
          *
-         * @param text The potentially interpolated string to be split.
+         * @param tokens The text and interpolated tokens.
          * @param sourceSpan The span of the whole of the `text` string.
          * @param context The current context of the visitor, used to compute and store placeholders.
          * @param previousI18n Any i18n metadata associated with this `text` from a previous pass.
          */
-        _I18nVisitor.prototype._visitTextWithInterpolation = function (text, sourceSpan, context, previousI18n) {
-            var _b = this._expressionParser.splitInterpolation(text, sourceSpan.start.toString(), this._interpolationConfig), strings = _b.strings, expressions = _b.expressions;
-            // No expressions, return a single text.
-            if (expressions.length === 0) {
-                return new Text$1(text, sourceSpan);
-            }
+        _I18nVisitor.prototype._visitTextWithInterpolation = function (tokens, sourceSpan, context, previousI18n) {
+            var e_1, _b;
             // Return a sequence of `Text` and `Placeholder` nodes grouped in a `Container`.
             var nodes = [];
-            for (var i = 0; i < strings.length - 1; i++) {
-                this._addText(nodes, strings[i], sourceSpan);
-                this._addPlaceholder(nodes, context, expressions[i], sourceSpan);
+            try {
+                for (var tokens_1 = __values(tokens), tokens_1_1 = tokens_1.next(); !tokens_1_1.done; tokens_1_1 = tokens_1.next()) {
+                    var token = tokens_1_1.value;
+                    switch (token.type) {
+                        case 8 /* INTERPOLATION */:
+                        case 17 /* ATTR_VALUE_INTERPOLATION */:
+                            var expression = token.parts[1];
+                            var baseName = extractPlaceholderName(expression) || 'INTERPOLATION';
+                            var phName = context.placeholderRegistry.getPlaceholderName(baseName, expression);
+                            context.placeholderToContent[phName] = {
+                                text: token.parts.join(''),
+                                sourceSpan: token.sourceSpan
+                            };
+                            nodes.push(new Placeholder(expression, phName, token.sourceSpan));
+                            break;
+                        default:
+                            if (token.parts[0].length > 0) {
+                                nodes.push(new Text$1(token.parts[0], token.sourceSpan));
+                            }
+                            break;
+                    }
+                }
             }
-            // The last index contains no expression
-            this._addText(nodes, strings[strings.length - 1], sourceSpan);
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (tokens_1_1 && !tokens_1_1.done && (_b = tokens_1.return)) _b.call(tokens_1);
+                }
+                finally { if (e_1) throw e_1.error; }
+            }
             // Whitespace removal may have invalidated the interpolation source-spans.
             reusePreviousSourceSpans(nodes, previousI18n);
             return new Container(nodes, sourceSpan);
-        };
-        /**
-         * Create a new `Text` node from the `textPiece` and add it to the `nodes` collection.
-         *
-         * @param nodes The nodes to which the created `Text` node should be added.
-         * @param textPiece The text and relative span information for this `Text` node.
-         * @param interpolationSpan The span of the whole interpolated text.
-         */
-        _I18nVisitor.prototype._addText = function (nodes, textPiece, interpolationSpan) {
-            if (textPiece.text.length > 0) {
-                // No need to add empty strings
-                var stringSpan = getOffsetSourceSpan(interpolationSpan, textPiece);
-                nodes.push(new Text$1(textPiece.text, stringSpan));
-            }
-        };
-        /**
-         * Create a new `Placeholder` node from the `expression` and add it to the `nodes` collection.
-         *
-         * @param nodes The nodes to which the created `Text` node should be added.
-         * @param context The current context of the visitor, used to compute and store placeholders.
-         * @param expression The expression text and relative span information for this `Placeholder`
-         *     node.
-         * @param interpolationSpan The span of the whole interpolated text.
-         */
-        _I18nVisitor.prototype._addPlaceholder = function (nodes, context, expression, interpolationSpan) {
-            var sourceSpan = getOffsetSourceSpan(interpolationSpan, expression);
-            var baseName = extractPlaceholderName(expression.text) || 'INTERPOLATION';
-            var phName = context.placeholderRegistry.getPlaceholderName(baseName, expression.text);
-            var text = this._interpolationConfig.start + expression.text + this._interpolationConfig.end;
-            context.placeholderToContent[phName] = { text: text, sourceSpan: sourceSpan };
-            nodes.push(new Placeholder(expression.text, phName, sourceSpan));
         };
         return _I18nVisitor;
     }());
@@ -20642,7 +20763,7 @@
         }
         if (previousI18n instanceof Container) {
             // The `previousI18n` is a `Container`, which means that this is a second i18n extraction pass
-            // after whitespace has been removed from the AST ndoes.
+            // after whitespace has been removed from the AST nodes.
             assertEquivalentNodes(previousI18n.children, nodes);
             // Reuse the source-spans from the first pass.
             for (var i = 0; i < nodes.length; i++) {
@@ -20670,13 +20791,6 @@
         if (previousNodes.some(function (node, i) { return nodes[i].constructor !== node.constructor; })) {
             throw new Error('The types of the i18n message children changed between first and second pass.');
         }
-    }
-    /**
-     * Create a new `ParseSourceSpan` from the `sourceSpan`, offset by the `start` and `end` values.
-     */
-    function getOffsetSourceSpan(sourceSpan, _b) {
-        var start = _b.start, end = _b.end;
-        return new ParseSourceSpan(sourceSpan.fullStart.moveBy(start), sourceSpan.fullStart.moveBy(end));
     }
     var _CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*("|')([\s\S]*?)\1[\s\S]*\)/g;
     function extractPlaceholderName(input) {
@@ -21020,7 +21134,8 @@
                 context[context.length - 1].text += text.value;
             }
             else {
-                context.push(new LiteralPiece(text.value, text.sourceSpan));
+                var sourceSpan = new ParseSourceSpan(text.sourceSpan.fullStart, text.sourceSpan.end, text.sourceSpan.fullStart, text.sourceSpan.details);
+                context.push(new LiteralPiece(text.value, sourceSpan));
             }
         };
         LocalizeSerializerVisitor.prototype.visitContainer = function (container, context) {
@@ -21067,7 +21182,7 @@
     function getSourceSpan(message) {
         var startNode = message.nodes[0];
         var endNode = message.nodes[message.nodes.length - 1];
-        return new ParseSourceSpan(startNode.sourceSpan.start, endNode.sourceSpan.end, startNode.sourceSpan.fullStart, startNode.sourceSpan.details);
+        return new ParseSourceSpan(startNode.sourceSpan.fullStart, endNode.sourceSpan.end, startNode.sourceSpan.fullStart, startNode.sourceSpan.details);
     }
     /**
      * Convert the list of serialized MessagePieces into two arrays.
@@ -24096,7 +24211,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('12.1.1+68.sha-a926402.with-local-changes');
+    var VERSION$1 = new Version('12.1.1+82.sha-04472d2.with-local-changes');
 
     /**
      * @license
@@ -24811,11 +24926,11 @@
                     var nodes = _this._translations.get(message);
                     if (nodes) {
                         if (nodes.length == 0) {
-                            translatedAttributes.push(new Attribute(attr.name, '', attr.sourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */));
+                            translatedAttributes.push(new Attribute(attr.name, '', attr.sourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* valueTokens */, undefined /* i18n */));
                         }
                         else if (nodes[0] instanceof Text$3) {
                             var value = nodes[0].value;
-                            translatedAttributes.push(new Attribute(attr.name, value, attr.sourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */));
+                            translatedAttributes.push(new Attribute(attr.name, value, attr.sourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* valueTokens */, undefined /* i18n */));
                         }
                         else {
                             _this._reportError(el, "Unexpected translation for attribute \"" + attr.name + "\" (id=\"" + (id || _this._translations.digest(message)) + "\")");
@@ -33946,7 +34061,7 @@
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', literal('12.1.1+68.sha-a926402.with-local-changes'));
+        definitionMap.set('version', literal('12.1.1+82.sha-04472d2.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
@@ -33986,7 +34101,7 @@
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-        definitionMap.set('version', literal('12.1.1+68.sha-a926402.with-local-changes'));
+        definitionMap.set('version', literal('12.1.1+82.sha-04472d2.with-local-changes'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -34210,7 +34325,7 @@
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-        definitionMap.set('version', literal('12.1.1+68.sha-a926402.with-local-changes'));
+        definitionMap.set('version', literal('12.1.1+82.sha-04472d2.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34252,7 +34367,7 @@
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-        definitionMap.set('version', literal('12.1.1+68.sha-a926402.with-local-changes'));
+        definitionMap.set('version', literal('12.1.1+82.sha-04472d2.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
@@ -34332,7 +34447,7 @@
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-        definitionMap.set('version', literal('12.1.1+68.sha-a926402.with-local-changes'));
+        definitionMap.set('version', literal('12.1.1+82.sha-04472d2.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -34369,7 +34484,7 @@
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-        definitionMap.set('version', literal('12.1.1+68.sha-a926402.with-local-changes'));
+        definitionMap.set('version', literal('12.1.1+82.sha-04472d2.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -34427,7 +34542,7 @@
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-        definitionMap.set('version', literal('12.1.1+68.sha-a926402.with-local-changes'));
+        definitionMap.set('version', literal('12.1.1+82.sha-04472d2.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
@@ -34661,7 +34776,7 @@
     exports.TmplAstText = Text;
     exports.TmplAstTextAttribute = TextAttribute;
     exports.TmplAstVariable = Variable;
-    exports.Token = Token$1;
+    exports.Token = Token;
     exports.TransitiveCompileNgModuleMetadata = TransitiveCompileNgModuleMetadata;
     exports.TreeError = TreeError;
     exports.TryCatchStmt = TryCatchStmt;
@@ -34739,7 +34854,6 @@
     exports.isNgContainer = isNgContainer;
     exports.isNgContent = isNgContent;
     exports.isNgTemplate = isNgTemplate;
-    exports.isQuote = isQuote;
     exports.isSyntaxError = isSyntaxError;
     exports.jsDocComment = jsDocComment;
     exports.leadingComment = leadingComment;

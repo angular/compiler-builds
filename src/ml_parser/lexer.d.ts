@@ -8,36 +8,7 @@
 import { ParseError, ParseSourceSpan } from '../parse_util';
 import { InterpolationConfig } from './interpolation_config';
 import { TagDefinition } from './tags';
-export declare enum TokenType {
-    TAG_OPEN_START = 0,
-    TAG_OPEN_END = 1,
-    TAG_OPEN_END_VOID = 2,
-    TAG_CLOSE = 3,
-    INCOMPLETE_TAG_OPEN = 4,
-    TEXT = 5,
-    ESCAPABLE_RAW_TEXT = 6,
-    RAW_TEXT = 7,
-    COMMENT_START = 8,
-    COMMENT_END = 9,
-    CDATA_START = 10,
-    CDATA_END = 11,
-    ATTR_NAME = 12,
-    ATTR_QUOTE = 13,
-    ATTR_VALUE = 14,
-    DOC_TYPE = 15,
-    EXPANSION_FORM_START = 16,
-    EXPANSION_CASE_VALUE = 17,
-    EXPANSION_CASE_EXP_START = 18,
-    EXPANSION_CASE_EXP_END = 19,
-    EXPANSION_FORM_END = 20,
-    EOF = 21
-}
-export declare class Token {
-    type: TokenType | null;
-    parts: string[];
-    sourceSpan: ParseSourceSpan;
-    constructor(type: TokenType | null, parts: string[], sourceSpan: ParseSourceSpan);
-}
+import { Token, TokenType } from './tokens';
 export declare class TokenError extends ParseError {
     tokenType: TokenType | null;
     constructor(errorMsg: string, tokenType: TokenType | null, span: ParseSourceSpan);

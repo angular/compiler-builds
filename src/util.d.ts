@@ -5,9 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ConstantPool } from './constant_pool';
-import * as o from './output/output_ast';
-import { ParseError } from './parse_util';
 export declare function dashCaseToCamelCase(input: string): string;
 export declare function splitAtColon(input: string, defaultValues: string[]): string[];
 export declare function splitAtPeriod(input: string, defaultValues: string[]): string[];
@@ -37,18 +34,9 @@ export declare const SyncAsync: {
     all: <T_2>(syncAsyncValues: SyncAsync<T_2>[]) => SyncAsync<T_2[]>;
 };
 export declare function error(msg: string): never;
-export declare function syntaxError(msg: string, parseErrors?: ParseError[]): Error;
-export declare function isSyntaxError(error: Error): boolean;
-export declare function getParseErrors(error: Error): ParseError[];
 export declare function escapeRegExp(s: string): string;
 export declare type Byte = number;
 export declare function utf8Encode(str: string): Byte[];
-export interface OutputContext {
-    genFilePath: string;
-    statements: o.Statement[];
-    constantPool: ConstantPool;
-    importExpr(reference: any, typeParams?: o.Type[] | null, useSummaries?: boolean): o.Expression;
-}
 export declare function stringify(token: any): string;
 /**
  * Lazily retrieves the reference value from a forwardRef.

@@ -9,9 +9,9 @@ import { AotCompilerOptions } from '../aot/compiler_options';
 import { StaticReflector } from '../aot/static_reflector';
 import { StaticSymbol } from '../aot/static_symbol';
 import { CompileDirectiveMetadata, CompilePipeSummary } from '../compile_metadata';
+import { OutputContext } from '../constant_pool';
 import * as o from '../output/output_ast';
 import { TemplateAst } from '../template_parser/template_ast';
-import { OutputContext } from '../util';
 /**
  * Generates code that is used to type check templates.
  */

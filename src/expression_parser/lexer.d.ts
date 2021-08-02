@@ -45,4 +45,3 @@ export declare class Token {
 }
 export declare const EOF: Token;
 export declare function isIdentifier(input: string): boolean;
-export declare function isQuote(code: number): boolean;
