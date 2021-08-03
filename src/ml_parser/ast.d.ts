@@ -8,7 +8,6 @@
 import { AstPath } from '../ast_path';
 import { I18nMeta } from '../i18n/i18n_ast';
 import { ParseSourceSpan } from '../parse_util';
-import { InterpolatedAttributeToken, InterpolatedTextToken } from './tokens';
 interface BaseNode {
     sourceSpan: ParseSourceSpan;
     visit(visitor: Visitor, context: any): any;
@@ -22,8 +21,7 @@ export declare abstract class NodeWithI18n implements BaseNode {
 }
 export declare class Text extends NodeWithI18n {
     value: string;
-    tokens: InterpolatedTextToken[];
-    constructor(value: string, sourceSpan: ParseSourceSpan, tokens: InterpolatedTextToken[], i18n?: I18nMeta);
+    constructor(value: string, sourceSpan: ParseSourceSpan, i18n?: I18nMeta);
     visit(visitor: Visitor, context: any): any;
 }
 export declare class Expansion extends NodeWithI18n {
@@ -47,9 +45,8 @@ export declare class Attribute extends NodeWithI18n {
     name: string;
     value: string;
     readonly keySpan: ParseSourceSpan | undefined;
-    valueSpan: ParseSourceSpan | undefined;
-    valueTokens: InterpolatedAttributeToken[] | undefined;
-    constructor(name: string, value: string, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan | undefined, valueSpan: ParseSourceSpan | undefined, valueTokens: InterpolatedAttributeToken[] | undefined, i18n: I18nMeta | undefined);
+    valueSpan?: ParseSourceSpan | undefined;
+    constructor(name: string, value: string, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan | undefined, valueSpan?: ParseSourceSpan | undefined, i18n?: I18nMeta);
     visit(visitor: Visitor, context: any): any;
 }
 export declare class Element extends NodeWithI18n {
