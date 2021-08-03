@@ -1,3 +1,4 @@
+import { CompileIdentifierMetadata } from './compile_metadata';
 export declare class ParseLocation {
     file: ParseSourceFile;
     offset: number;
@@ -69,12 +70,3 @@ export declare function typeSourceSpan(kind: string, type: CompileIdentifierMeta
  * @returns instance of ParseSourceSpan that represent a given Component or Directive.
  */
 export declare function r3JitTypeSourceSpan(kind: string, typeName: string, sourceUrl: string): ParseSourceSpan;
-export declare function syntaxError(msg: string, parseErrors?: ParseError[]): Error;
-export declare function isSyntaxError(error: Error): boolean;
-export declare function getParseErrors(error: Error): ParseError[];
-export declare function identifierName(compileIdentifier: CompileIdentifierMetadata | null | undefined): string | null;
-export declare function identifierModuleUrl(compileIdentifier: CompileIdentifierMetadata): string;
-export interface CompileIdentifierMetadata {
-    reference: any;
-}
-export declare function sanitizeIdentifier(name: string): string;
