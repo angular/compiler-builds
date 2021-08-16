@@ -7,9 +7,9 @@
  */
 import { CompileDirectiveMetadata, CompilePipeSummary } from '../compile_metadata';
 import { CompileReflector } from '../compile_reflector';
+import { OutputContext } from '../constant_pool';
 import * as o from '../output/output_ast';
 import { TemplateAst } from '../template_parser/template_ast';
-import { OutputContext } from '../util';
 export declare class ViewCompileResult {
     viewClassVar: string;
     rendererTypeVar: string;

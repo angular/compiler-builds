@@ -1,5 +1,5 @@
 /**
- * @license Angular v12.2.1+12.sha-83fa3ee.with-local-changes
+ * @license Angular v12.2.1+19.sha-cd10a4c.with-local-changes
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -22,7 +22,7 @@ function splitNsName(elementName) {
         return [null, elementName];
     }
     const colonIndex = elementName.indexOf(':', 1);
-    if (colonIndex == -1) {
+    if (colonIndex === -1) {
         throw new Error(`Unsupported format "${elementName}" expecting ":namespace:name"`);
     }
     return [elementName.slice(1, colonIndex), elementName.slice(colonIndex + 1)];
@@ -73,7 +73,7 @@ class HtmlTagDefinition {
     }
     getContentType(prefix) {
         if (typeof this.contentType === 'object') {
-            const overrideType = prefix == null ? undefined : this.contentType[prefix];
+            const overrideType = prefix === undefined ? undefined : this.contentType[prefix];
             return overrideType !== null && overrideType !== void 0 ? overrideType : this.contentType.default;
         }
         return this.contentType;
@@ -2791,21 +2791,6 @@ const SyncAsync = {
 function error(msg) {
     throw new Error(`Internal Error: ${msg}`);
 }
-function syntaxError(msg, parseErrors) {
-    const error = Error(msg);
-    error[ERROR_SYNTAX_ERROR] = true;
-    if (parseErrors)
-        error[ERROR_PARSE_ERRORS] = parseErrors;
-    return error;
-}
-const ERROR_SYNTAX_ERROR = 'ngSyntaxError';
-const ERROR_PARSE_ERRORS = 'ngParseErrors';
-function isSyntaxError(error) {
-    return error[ERROR_SYNTAX_ERROR];
-}
-function getParseErrors(error) {
-    return error[ERROR_PARSE_ERRORS] || [];
-}
 // Escape characters that have a special meaning in Regular Expressions
 function escapeRegExp(s) {
     return s.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
@@ -5427,13 +5412,6 @@ function refsToArray(refs, shouldForwardDeclare) {
     return shouldForwardDeclare ? fn([], [new ReturnStatement(values)]) : values;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 var R3FactoryDelegateType;
 (function (R3FactoryDelegateType) {
     R3FactoryDelegateType[R3FactoryDelegateType["Class"] = 0] = "Class";
@@ -5865,13 +5843,274 @@ class StaticSymbolCache {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-// group 0: "[prop] or (event) or @trigger"
-// group 1: "prop" from "[prop]"
-// group 2: "event" from "(event)"
-// group 3: "@trigger" from "@trigger"
-const HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
-function sanitizeIdentifier(name) {
-    return name.replace(/\W/g, '_');
+const $EOF = 0;
+const $BSPACE = 8;
+const $TAB = 9;
+const $LF = 10;
+const $VTAB = 11;
+const $FF = 12;
+const $CR = 13;
+const $SPACE = 32;
+const $BANG = 33;
+const $DQ = 34;
+const $HASH = 35;
+const $$ = 36;
+const $PERCENT = 37;
+const $AMPERSAND = 38;
+const $SQ = 39;
+const $LPAREN = 40;
+const $RPAREN = 41;
+const $STAR = 42;
+const $PLUS = 43;
+const $COMMA = 44;
+const $MINUS = 45;
+const $PERIOD = 46;
+const $SLASH = 47;
+const $COLON = 58;
+const $SEMICOLON = 59;
+const $LT = 60;
+const $EQ = 61;
+const $GT = 62;
+const $QUESTION = 63;
+const $0 = 48;
+const $7 = 55;
+const $9 = 57;
+const $A = 65;
+const $E = 69;
+const $F = 70;
+const $X = 88;
+const $Z = 90;
+const $LBRACKET = 91;
+const $BACKSLASH = 92;
+const $RBRACKET = 93;
+const $CARET = 94;
+const $_ = 95;
+const $a = 97;
+const $b = 98;
+const $e = 101;
+const $f = 102;
+const $n = 110;
+const $r = 114;
+const $t = 116;
+const $u = 117;
+const $v = 118;
+const $x = 120;
+const $z = 122;
+const $LBRACE = 123;
+const $BAR = 124;
+const $RBRACE = 125;
+const $NBSP = 160;
+const $PIPE = 124;
+const $TILDA = 126;
+const $AT = 64;
+const $BT = 96;
+function isWhitespace(code) {
+    return (code >= $TAB && code <= $SPACE) || (code == $NBSP);
+}
+function isDigit(code) {
+    return $0 <= code && code <= $9;
+}
+function isAsciiLetter(code) {
+    return code >= $a && code <= $z || code >= $A && code <= $Z;
+}
+function isAsciiHexDigit(code) {
+    return code >= $a && code <= $f || code >= $A && code <= $F || isDigit(code);
+}
+function isNewLine(code) {
+    return code === $LF || code === $CR;
+}
+function isOctalDigit(code) {
+    return $0 <= code && code <= $7;
+}
+function isQuote(code) {
+    return code === $SQ || code === $DQ || code === $BT;
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+class ParseLocation {
+    constructor(file, offset, line, col) {
+        this.file = file;
+        this.offset = offset;
+        this.line = line;
+        this.col = col;
+    }
+    toString() {
+        return this.offset != null ? `${this.file.url}@${this.line}:${this.col}` : this.file.url;
+    }
+    moveBy(delta) {
+        const source = this.file.content;
+        const len = source.length;
+        let offset = this.offset;
+        let line = this.line;
+        let col = this.col;
+        while (offset > 0 && delta < 0) {
+            offset--;
+            delta++;
+            const ch = source.charCodeAt(offset);
+            if (ch == $LF) {
+                line--;
+                const priorLine = source.substr(0, offset - 1).lastIndexOf(String.fromCharCode($LF));
+                col = priorLine > 0 ? offset - priorLine : offset;
+            }
+            else {
+                col--;
+            }
+        }
+        while (offset < len && delta > 0) {
+            const ch = source.charCodeAt(offset);
+            offset++;
+            delta--;
+            if (ch == $LF) {
+                line++;
+                col = 0;
+            }
+            else {
+                col++;
+            }
+        }
+        return new ParseLocation(this.file, offset, line, col);
+    }
+    // Return the source around the location
+    // Up to `maxChars` or `maxLines` on each side of the location
+    getContext(maxChars, maxLines) {
+        const content = this.file.content;
+        let startOffset = this.offset;
+        if (startOffset != null) {
+            if (startOffset > content.length - 1) {
+                startOffset = content.length - 1;
+            }
+            let endOffset = startOffset;
+            let ctxChars = 0;
+            let ctxLines = 0;
+            while (ctxChars < maxChars && startOffset > 0) {
+                startOffset--;
+                ctxChars++;
+                if (content[startOffset] == '\n') {
+                    if (++ctxLines == maxLines) {
+                        break;
+                    }
+                }
+            }
+            ctxChars = 0;
+            ctxLines = 0;
+            while (ctxChars < maxChars && endOffset < content.length - 1) {
+                endOffset++;
+                ctxChars++;
+                if (content[endOffset] == '\n') {
+                    if (++ctxLines == maxLines) {
+                        break;
+                    }
+                }
+            }
+            return {
+                before: content.substring(startOffset, this.offset),
+                after: content.substring(this.offset, endOffset + 1),
+            };
+        }
+        return null;
+    }
+}
+class ParseSourceFile {
+    constructor(content, url) {
+        this.content = content;
+        this.url = url;
+    }
+}
+class ParseSourceSpan {
+    /**
+     * Create an object that holds information about spans of tokens/nodes captured during
+     * lexing/parsing of text.
+     *
+     * @param start
+     * The location of the start of the span (having skipped leading trivia).
+     * Skipping leading trivia makes source-spans more "user friendly", since things like HTML
+     * elements will appear to begin at the start of the opening tag, rather than at the start of any
+     * leading trivia, which could include newlines.
+     *
+     * @param end
+     * The location of the end of the span.
+     *
+     * @param fullStart
+     * The start of the token without skipping the leading trivia.
+     * This is used by tooling that splits tokens further, such as extracting Angular interpolations
+     * from text tokens. Such tooling creates new source-spans relative to the original token's
+     * source-span. If leading trivia characters have been skipped then the new source-spans may be
+     * incorrectly offset.
+     *
+     * @param details
+     * Additional information (such as identifier names) that should be associated with the span.
+     */
+    constructor(start, end, fullStart = start, details = null) {
+        this.start = start;
+        this.end = end;
+        this.fullStart = fullStart;
+        this.details = details;
+    }
+    toString() {
+        return this.start.file.content.substring(this.start.offset, this.end.offset);
+    }
+}
+var ParseErrorLevel;
+(function (ParseErrorLevel) {
+    ParseErrorLevel[ParseErrorLevel["WARNING"] = 0] = "WARNING";
+    ParseErrorLevel[ParseErrorLevel["ERROR"] = 1] = "ERROR";
+})(ParseErrorLevel || (ParseErrorLevel = {}));
+class ParseError {
+    constructor(span, msg, level = ParseErrorLevel.ERROR) {
+        this.span = span;
+        this.msg = msg;
+        this.level = level;
+    }
+    contextualMessage() {
+        const ctx = this.span.start.getContext(100, 3);
+        return ctx ? `${this.msg} ("${ctx.before}[${ParseErrorLevel[this.level]} ->]${ctx.after}")` :
+            this.msg;
+    }
+    toString() {
+        const details = this.span.details ? `, ${this.span.details}` : '';
+        return `${this.contextualMessage()}: ${this.span.start}${details}`;
+    }
+}
+function typeSourceSpan(kind, type) {
+    const moduleUrl = identifierModuleUrl(type);
+    const sourceFileName = moduleUrl != null ? `in ${kind} ${identifierName(type)} in ${moduleUrl}` :
+        `in ${kind} ${identifierName(type)}`;
+    const sourceFile = new ParseSourceFile('', sourceFileName);
+    return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
+}
+/**
+ * Generates Source Span object for a given R3 Type for JIT mode.
+ *
+ * @param kind Component or Directive.
+ * @param typeName name of the Component or Directive.
+ * @param sourceUrl reference to Component or Directive source.
+ * @returns instance of ParseSourceSpan that represent a given Component or Directive.
+ */
+function r3JitTypeSourceSpan(kind, typeName, sourceUrl) {
+    const sourceFileName = `in ${kind} ${typeName} in ${sourceUrl}`;
+    const sourceFile = new ParseSourceFile('', sourceFileName);
+    return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
+}
+function syntaxError(msg, parseErrors) {
+    const error = Error(msg);
+    error[ERROR_SYNTAX_ERROR] = true;
+    if (parseErrors)
+        error[ERROR_PARSE_ERRORS] = parseErrors;
+    return error;
+}
+const ERROR_SYNTAX_ERROR = 'ngSyntaxError';
+const ERROR_PARSE_ERRORS = 'ngParseErrors';
+function isSyntaxError(error) {
+    return error[ERROR_SYNTAX_ERROR];
+}
+function getParseErrors(error) {
+    return error[ERROR_PARSE_ERRORS] || [];
 }
 let _anonymousTypeIndex = 0;
 function identifierName(compileIdentifier) {
@@ -5909,347 +6148,8 @@ function identifierModuleUrl(compileIdentifier) {
     // Runtime type
     return `./${stringify(ref)}`;
 }
-function viewClassName(compType, embeddedTemplateIndex) {
-    return `View_${identifierName({ reference: compType })}_${embeddedTemplateIndex}`;
-}
-function rendererTypeName(compType) {
-    return `RenderType_${identifierName({ reference: compType })}`;
-}
-function hostViewClassName(compType) {
-    return `HostView_${identifierName({ reference: compType })}`;
-}
-function componentFactoryName(compType) {
-    return `${identifierName({ reference: compType })}NgFactory`;
-}
-var CompileSummaryKind;
-(function (CompileSummaryKind) {
-    CompileSummaryKind[CompileSummaryKind["Pipe"] = 0] = "Pipe";
-    CompileSummaryKind[CompileSummaryKind["Directive"] = 1] = "Directive";
-    CompileSummaryKind[CompileSummaryKind["NgModule"] = 2] = "NgModule";
-    CompileSummaryKind[CompileSummaryKind["Injectable"] = 3] = "Injectable";
-})(CompileSummaryKind || (CompileSummaryKind = {}));
-function tokenName(token) {
-    return token.value != null ? sanitizeIdentifier(token.value) : identifierName(token.identifier);
-}
-function tokenReference(token) {
-    if (token.identifier != null) {
-        return token.identifier.reference;
-    }
-    else {
-        return token.value;
-    }
-}
-/**
- * Metadata about a stylesheet
- */
-class CompileStylesheetMetadata {
-    constructor({ moduleUrl, styles, styleUrls } = {}) {
-        this.moduleUrl = moduleUrl || null;
-        this.styles = _normalizeArray(styles);
-        this.styleUrls = _normalizeArray(styleUrls);
-    }
-}
-/**
- * Metadata regarding compilation of a template.
- */
-class CompileTemplateMetadata {
-    constructor({ encapsulation, template, templateUrl, htmlAst, styles, styleUrls, externalStylesheets, animations, ngContentSelectors, interpolation, isInline, preserveWhitespaces }) {
-        this.encapsulation = encapsulation;
-        this.template = template;
-        this.templateUrl = templateUrl;
-        this.htmlAst = htmlAst;
-        this.styles = _normalizeArray(styles);
-        this.styleUrls = _normalizeArray(styleUrls);
-        this.externalStylesheets = _normalizeArray(externalStylesheets);
-        this.animations = animations ? flatten(animations) : [];
-        this.ngContentSelectors = ngContentSelectors || [];
-        if (interpolation && interpolation.length != 2) {
-            throw new Error(`'interpolation' should have a start and an end symbol.`);
-        }
-        this.interpolation = interpolation;
-        this.isInline = isInline;
-        this.preserveWhitespaces = preserveWhitespaces;
-    }
-    toSummary() {
-        return {
-            ngContentSelectors: this.ngContentSelectors,
-            encapsulation: this.encapsulation,
-            styles: this.styles,
-            animations: this.animations
-        };
-    }
-}
-/**
- * Metadata regarding compilation of a directive.
- */
-class CompileDirectiveMetadata {
-    constructor({ isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, guards, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory }) {
-        this.isHost = !!isHost;
-        this.type = type;
-        this.isComponent = isComponent;
-        this.selector = selector;
-        this.exportAs = exportAs;
-        this.changeDetection = changeDetection;
-        this.inputs = inputs;
-        this.outputs = outputs;
-        this.hostListeners = hostListeners;
-        this.hostProperties = hostProperties;
-        this.hostAttributes = hostAttributes;
-        this.providers = _normalizeArray(providers);
-        this.viewProviders = _normalizeArray(viewProviders);
-        this.queries = _normalizeArray(queries);
-        this.guards = guards;
-        this.viewQueries = _normalizeArray(viewQueries);
-        this.entryComponents = _normalizeArray(entryComponents);
-        this.template = template;
-        this.componentViewType = componentViewType;
-        this.rendererType = rendererType;
-        this.componentFactory = componentFactory;
-    }
-    static create({ isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, providers, viewProviders, queries, guards, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory }) {
-        const hostListeners = {};
-        const hostProperties = {};
-        const hostAttributes = {};
-        if (host != null) {
-            Object.keys(host).forEach(key => {
-                const value = host[key];
-                const matches = key.match(HOST_REG_EXP);
-                if (matches === null) {
-                    hostAttributes[key] = value;
-                }
-                else if (matches[1] != null) {
-                    hostProperties[matches[1]] = value;
-                }
-                else if (matches[2] != null) {
-                    hostListeners[matches[2]] = value;
-                }
-            });
-        }
-        const inputsMap = {};
-        if (inputs != null) {
-            inputs.forEach((bindConfig) => {
-                // canonical syntax: `dirProp: elProp`
-                // if there is no `:`, use dirProp = elProp
-                const parts = splitAtColon(bindConfig, [bindConfig, bindConfig]);
-                inputsMap[parts[0]] = parts[1];
-            });
-        }
-        const outputsMap = {};
-        if (outputs != null) {
-            outputs.forEach((bindConfig) => {
-                // canonical syntax: `dirProp: elProp`
-                // if there is no `:`, use dirProp = elProp
-                const parts = splitAtColon(bindConfig, [bindConfig, bindConfig]);
-                outputsMap[parts[0]] = parts[1];
-            });
-        }
-        return new CompileDirectiveMetadata({
-            isHost,
-            type,
-            isComponent: !!isComponent,
-            selector,
-            exportAs,
-            changeDetection,
-            inputs: inputsMap,
-            outputs: outputsMap,
-            hostListeners,
-            hostProperties,
-            hostAttributes,
-            providers,
-            viewProviders,
-            queries,
-            guards,
-            viewQueries,
-            entryComponents,
-            template,
-            componentViewType,
-            rendererType,
-            componentFactory,
-        });
-    }
-    toSummary() {
-        return {
-            summaryKind: CompileSummaryKind.Directive,
-            type: this.type,
-            isComponent: this.isComponent,
-            selector: this.selector,
-            exportAs: this.exportAs,
-            inputs: this.inputs,
-            outputs: this.outputs,
-            hostListeners: this.hostListeners,
-            hostProperties: this.hostProperties,
-            hostAttributes: this.hostAttributes,
-            providers: this.providers,
-            viewProviders: this.viewProviders,
-            queries: this.queries,
-            guards: this.guards,
-            viewQueries: this.viewQueries,
-            entryComponents: this.entryComponents,
-            changeDetection: this.changeDetection,
-            template: this.template && this.template.toSummary(),
-            componentViewType: this.componentViewType,
-            rendererType: this.rendererType,
-            componentFactory: this.componentFactory
-        };
-    }
-}
-class CompilePipeMetadata {
-    constructor({ type, name, pure }) {
-        this.type = type;
-        this.name = name;
-        this.pure = !!pure;
-    }
-    toSummary() {
-        return {
-            summaryKind: CompileSummaryKind.Pipe,
-            type: this.type,
-            name: this.name,
-            pure: this.pure
-        };
-    }
-}
-class CompileShallowModuleMetadata {
-}
-/**
- * Metadata regarding compilation of a module.
- */
-class CompileNgModuleMetadata {
-    constructor({ type, providers, declaredDirectives, exportedDirectives, declaredPipes, exportedPipes, entryComponents, bootstrapComponents, importedModules, exportedModules, schemas, transitiveModule, id }) {
-        this.type = type || null;
-        this.declaredDirectives = _normalizeArray(declaredDirectives);
-        this.exportedDirectives = _normalizeArray(exportedDirectives);
-        this.declaredPipes = _normalizeArray(declaredPipes);
-        this.exportedPipes = _normalizeArray(exportedPipes);
-        this.providers = _normalizeArray(providers);
-        this.entryComponents = _normalizeArray(entryComponents);
-        this.bootstrapComponents = _normalizeArray(bootstrapComponents);
-        this.importedModules = _normalizeArray(importedModules);
-        this.exportedModules = _normalizeArray(exportedModules);
-        this.schemas = _normalizeArray(schemas);
-        this.id = id || null;
-        this.transitiveModule = transitiveModule || null;
-    }
-    toSummary() {
-        const module = this.transitiveModule;
-        return {
-            summaryKind: CompileSummaryKind.NgModule,
-            type: this.type,
-            entryComponents: module.entryComponents,
-            providers: module.providers,
-            modules: module.modules,
-            exportedDirectives: module.exportedDirectives,
-            exportedPipes: module.exportedPipes
-        };
-    }
-}
-class TransitiveCompileNgModuleMetadata {
-    constructor() {
-        this.directivesSet = new Set();
-        this.directives = [];
-        this.exportedDirectivesSet = new Set();
-        this.exportedDirectives = [];
-        this.pipesSet = new Set();
-        this.pipes = [];
-        this.exportedPipesSet = new Set();
-        this.exportedPipes = [];
-        this.modulesSet = new Set();
-        this.modules = [];
-        this.entryComponentsSet = new Set();
-        this.entryComponents = [];
-        this.providers = [];
-    }
-    addProvider(provider, module) {
-        this.providers.push({ provider: provider, module: module });
-    }
-    addDirective(id) {
-        if (!this.directivesSet.has(id.reference)) {
-            this.directivesSet.add(id.reference);
-            this.directives.push(id);
-        }
-    }
-    addExportedDirective(id) {
-        if (!this.exportedDirectivesSet.has(id.reference)) {
-            this.exportedDirectivesSet.add(id.reference);
-            this.exportedDirectives.push(id);
-        }
-    }
-    addPipe(id) {
-        if (!this.pipesSet.has(id.reference)) {
-            this.pipesSet.add(id.reference);
-            this.pipes.push(id);
-        }
-    }
-    addExportedPipe(id) {
-        if (!this.exportedPipesSet.has(id.reference)) {
-            this.exportedPipesSet.add(id.reference);
-            this.exportedPipes.push(id);
-        }
-    }
-    addModule(id) {
-        if (!this.modulesSet.has(id.reference)) {
-            this.modulesSet.add(id.reference);
-            this.modules.push(id);
-        }
-    }
-    addEntryComponent(ec) {
-        if (!this.entryComponentsSet.has(ec.componentType)) {
-            this.entryComponentsSet.add(ec.componentType);
-            this.entryComponents.push(ec);
-        }
-    }
-}
-function _normalizeArray(obj) {
-    return obj || [];
-}
-class ProviderMeta {
-    constructor(token, { useClass, useValue, useExisting, useFactory, deps, multi }) {
-        this.token = token;
-        this.useClass = useClass || null;
-        this.useValue = useValue;
-        this.useExisting = useExisting;
-        this.useFactory = useFactory || null;
-        this.dependencies = deps || null;
-        this.multi = !!multi;
-    }
-}
-function flatten(list) {
-    return list.reduce((flat, item) => {
-        const flatItem = Array.isArray(item) ? flatten(item) : item;
-        return flat.concat(flatItem);
-    }, []);
-}
-function jitSourceUrl(url) {
-    // Note: We need 3 "/" so that ng shows up as a separate domain
-    // in the chrome dev tools.
-    return url.replace(/(\w+:\/\/[\w:-]+)?(\/+)?/, 'ng:///');
-}
-function templateSourceUrl(ngModuleType, compMeta, templateMeta) {
-    let url;
-    if (templateMeta.isInline) {
-        if (compMeta.type.reference instanceof StaticSymbol) {
-            // Note: a .ts file might contain multiple components with inline templates,
-            // so we need to give them unique urls, as these will be used for sourcemaps.
-            url = `${compMeta.type.reference.filePath}.${compMeta.type.reference.name}.html`;
-        }
-        else {
-            url = `${identifierName(ngModuleType)}/${identifierName(compMeta.type)}.html`;
-        }
-    }
-    else {
-        url = templateMeta.templateUrl;
-    }
-    return compMeta.type.reference instanceof StaticSymbol ? url : jitSourceUrl(url);
-}
-function sharedStylesheetJitUrl(meta, id) {
-    const pathParts = meta.moduleUrl.split(/\/\\/g);
-    const baseName = pathParts[pathParts.length - 1];
-    return jitSourceUrl(`css/${id}${baseName}.ngstyle.js`);
-}
-function ngModuleJitUrl(moduleMeta) {
-    return jitSourceUrl(`${identifierName(moduleMeta.type)}/module.ngfactory.js`);
-}
-function templateJitUrl(ngModuleType, compMeta) {
-    return jitSourceUrl(`${identifierName(ngModuleType)}/${identifierName(compMeta.type)}.ngfactory.js`);
+function sanitizeIdentifier(name) {
+    return name.replace(/\W/g, '_');
 }
 
 /**
@@ -6703,265 +6603,6 @@ class JitEmitterVisitor extends AbstractJsEmitterVisitor {
 }
 function isUseStrictStatement(statement) {
     return statement.isEquivalent(literal('use strict').toStmt());
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-const $EOF = 0;
-const $BSPACE = 8;
-const $TAB = 9;
-const $LF = 10;
-const $VTAB = 11;
-const $FF = 12;
-const $CR = 13;
-const $SPACE = 32;
-const $BANG = 33;
-const $DQ = 34;
-const $HASH = 35;
-const $$ = 36;
-const $PERCENT = 37;
-const $AMPERSAND = 38;
-const $SQ = 39;
-const $LPAREN = 40;
-const $RPAREN = 41;
-const $STAR = 42;
-const $PLUS = 43;
-const $COMMA = 44;
-const $MINUS = 45;
-const $PERIOD = 46;
-const $SLASH = 47;
-const $COLON = 58;
-const $SEMICOLON = 59;
-const $LT = 60;
-const $EQ = 61;
-const $GT = 62;
-const $QUESTION = 63;
-const $0 = 48;
-const $7 = 55;
-const $9 = 57;
-const $A = 65;
-const $E = 69;
-const $F = 70;
-const $X = 88;
-const $Z = 90;
-const $LBRACKET = 91;
-const $BACKSLASH = 92;
-const $RBRACKET = 93;
-const $CARET = 94;
-const $_ = 95;
-const $a = 97;
-const $b = 98;
-const $e = 101;
-const $f = 102;
-const $n = 110;
-const $r = 114;
-const $t = 116;
-const $u = 117;
-const $v = 118;
-const $x = 120;
-const $z = 122;
-const $LBRACE = 123;
-const $BAR = 124;
-const $RBRACE = 125;
-const $NBSP = 160;
-const $PIPE = 124;
-const $TILDA = 126;
-const $AT = 64;
-const $BT = 96;
-function isWhitespace(code) {
-    return (code >= $TAB && code <= $SPACE) || (code == $NBSP);
-}
-function isDigit(code) {
-    return $0 <= code && code <= $9;
-}
-function isAsciiLetter(code) {
-    return code >= $a && code <= $z || code >= $A && code <= $Z;
-}
-function isAsciiHexDigit(code) {
-    return code >= $a && code <= $f || code >= $A && code <= $F || isDigit(code);
-}
-function isNewLine(code) {
-    return code === $LF || code === $CR;
-}
-function isOctalDigit(code) {
-    return $0 <= code && code <= $7;
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-class ParseLocation {
-    constructor(file, offset, line, col) {
-        this.file = file;
-        this.offset = offset;
-        this.line = line;
-        this.col = col;
-    }
-    toString() {
-        return this.offset != null ? `${this.file.url}@${this.line}:${this.col}` : this.file.url;
-    }
-    moveBy(delta) {
-        const source = this.file.content;
-        const len = source.length;
-        let offset = this.offset;
-        let line = this.line;
-        let col = this.col;
-        while (offset > 0 && delta < 0) {
-            offset--;
-            delta++;
-            const ch = source.charCodeAt(offset);
-            if (ch == $LF) {
-                line--;
-                const priorLine = source.substr(0, offset - 1).lastIndexOf(String.fromCharCode($LF));
-                col = priorLine > 0 ? offset - priorLine : offset;
-            }
-            else {
-                col--;
-            }
-        }
-        while (offset < len && delta > 0) {
-            const ch = source.charCodeAt(offset);
-            offset++;
-            delta--;
-            if (ch == $LF) {
-                line++;
-                col = 0;
-            }
-            else {
-                col++;
-            }
-        }
-        return new ParseLocation(this.file, offset, line, col);
-    }
-    // Return the source around the location
-    // Up to `maxChars` or `maxLines` on each side of the location
-    getContext(maxChars, maxLines) {
-        const content = this.file.content;
-        let startOffset = this.offset;
-        if (startOffset != null) {
-            if (startOffset > content.length - 1) {
-                startOffset = content.length - 1;
-            }
-            let endOffset = startOffset;
-            let ctxChars = 0;
-            let ctxLines = 0;
-            while (ctxChars < maxChars && startOffset > 0) {
-                startOffset--;
-                ctxChars++;
-                if (content[startOffset] == '\n') {
-                    if (++ctxLines == maxLines) {
-                        break;
-                    }
-                }
-            }
-            ctxChars = 0;
-            ctxLines = 0;
-            while (ctxChars < maxChars && endOffset < content.length - 1) {
-                endOffset++;
-                ctxChars++;
-                if (content[endOffset] == '\n') {
-                    if (++ctxLines == maxLines) {
-                        break;
-                    }
-                }
-            }
-            return {
-                before: content.substring(startOffset, this.offset),
-                after: content.substring(this.offset, endOffset + 1),
-            };
-        }
-        return null;
-    }
-}
-class ParseSourceFile {
-    constructor(content, url) {
-        this.content = content;
-        this.url = url;
-    }
-}
-class ParseSourceSpan {
-    /**
-     * Create an object that holds information about spans of tokens/nodes captured during
-     * lexing/parsing of text.
-     *
-     * @param start
-     * The location of the start of the span (having skipped leading trivia).
-     * Skipping leading trivia makes source-spans more "user friendly", since things like HTML
-     * elements will appear to begin at the start of the opening tag, rather than at the start of any
-     * leading trivia, which could include newlines.
-     *
-     * @param end
-     * The location of the end of the span.
-     *
-     * @param fullStart
-     * The start of the token without skipping the leading trivia.
-     * This is used by tooling that splits tokens further, such as extracting Angular interpolations
-     * from text tokens. Such tooling creates new source-spans relative to the original token's
-     * source-span. If leading trivia characters have been skipped then the new source-spans may be
-     * incorrectly offset.
-     *
-     * @param details
-     * Additional information (such as identifier names) that should be associated with the span.
-     */
-    constructor(start, end, fullStart = start, details = null) {
-        this.start = start;
-        this.end = end;
-        this.fullStart = fullStart;
-        this.details = details;
-    }
-    toString() {
-        return this.start.file.content.substring(this.start.offset, this.end.offset);
-    }
-}
-var ParseErrorLevel;
-(function (ParseErrorLevel) {
-    ParseErrorLevel[ParseErrorLevel["WARNING"] = 0] = "WARNING";
-    ParseErrorLevel[ParseErrorLevel["ERROR"] = 1] = "ERROR";
-})(ParseErrorLevel || (ParseErrorLevel = {}));
-class ParseError {
-    constructor(span, msg, level = ParseErrorLevel.ERROR) {
-        this.span = span;
-        this.msg = msg;
-        this.level = level;
-    }
-    contextualMessage() {
-        const ctx = this.span.start.getContext(100, 3);
-        return ctx ? `${this.msg} ("${ctx.before}[${ParseErrorLevel[this.level]} ->]${ctx.after}")` :
-            this.msg;
-    }
-    toString() {
-        const details = this.span.details ? `, ${this.span.details}` : '';
-        return `${this.contextualMessage()}: ${this.span.start}${details}`;
-    }
-}
-function typeSourceSpan(kind, type) {
-    const moduleUrl = identifierModuleUrl(type);
-    const sourceFileName = moduleUrl != null ? `in ${kind} ${identifierName(type)} in ${moduleUrl}` :
-        `in ${kind} ${identifierName(type)}`;
-    const sourceFile = new ParseSourceFile('', sourceFileName);
-    return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
-}
-/**
- * Generates Source Span object for a given R3 Type for JIT mode.
- *
- * @param kind Component or Directive.
- * @param typeName name of the Component or Directive.
- * @param sourceUrl reference to Component or Directive source.
- * @returns instance of ParseSourceSpan that represent a given Component or Directive.
- */
-function r3JitTypeSourceSpan(kind, typeName, sourceUrl) {
-    const sourceFileName = `in ${kind} ${typeName} in ${sourceUrl}`;
-    const sourceFile = new ParseSourceFile('', sourceFileName);
-    return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
 }
 
 /**
@@ -9709,6 +9350,361 @@ function repeatGroups(groups, multiples) {
             groups[j + (i * length)] = groups[j].slice(0);
         }
     }
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+// group 0: "[prop] or (event) or @trigger"
+// group 1: "prop" from "[prop]"
+// group 2: "event" from "(event)"
+// group 3: "@trigger" from "@trigger"
+const HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
+function viewClassName(compType, embeddedTemplateIndex) {
+    return `View_${identifierName({ reference: compType })}_${embeddedTemplateIndex}`;
+}
+function rendererTypeName(compType) {
+    return `RenderType_${identifierName({ reference: compType })}`;
+}
+function hostViewClassName(compType) {
+    return `HostView_${identifierName({ reference: compType })}`;
+}
+function componentFactoryName(compType) {
+    return `${identifierName({ reference: compType })}NgFactory`;
+}
+var CompileSummaryKind;
+(function (CompileSummaryKind) {
+    CompileSummaryKind[CompileSummaryKind["Pipe"] = 0] = "Pipe";
+    CompileSummaryKind[CompileSummaryKind["Directive"] = 1] = "Directive";
+    CompileSummaryKind[CompileSummaryKind["NgModule"] = 2] = "NgModule";
+    CompileSummaryKind[CompileSummaryKind["Injectable"] = 3] = "Injectable";
+})(CompileSummaryKind || (CompileSummaryKind = {}));
+function tokenName(token) {
+    return token.value != null ? sanitizeIdentifier(token.value) : identifierName(token.identifier);
+}
+function tokenReference(token) {
+    if (token.identifier != null) {
+        return token.identifier.reference;
+    }
+    else {
+        return token.value;
+    }
+}
+/**
+ * Metadata about a stylesheet
+ */
+class CompileStylesheetMetadata {
+    constructor({ moduleUrl, styles, styleUrls } = {}) {
+        this.moduleUrl = moduleUrl || null;
+        this.styles = _normalizeArray(styles);
+        this.styleUrls = _normalizeArray(styleUrls);
+    }
+}
+/**
+ * Metadata regarding compilation of a template.
+ */
+class CompileTemplateMetadata {
+    constructor({ encapsulation, template, templateUrl, htmlAst, styles, styleUrls, externalStylesheets, animations, ngContentSelectors, interpolation, isInline, preserveWhitespaces }) {
+        this.encapsulation = encapsulation;
+        this.template = template;
+        this.templateUrl = templateUrl;
+        this.htmlAst = htmlAst;
+        this.styles = _normalizeArray(styles);
+        this.styleUrls = _normalizeArray(styleUrls);
+        this.externalStylesheets = _normalizeArray(externalStylesheets);
+        this.animations = animations ? flatten(animations) : [];
+        this.ngContentSelectors = ngContentSelectors || [];
+        if (interpolation && interpolation.length != 2) {
+            throw new Error(`'interpolation' should have a start and an end symbol.`);
+        }
+        this.interpolation = interpolation;
+        this.isInline = isInline;
+        this.preserveWhitespaces = preserveWhitespaces;
+    }
+    toSummary() {
+        return {
+            ngContentSelectors: this.ngContentSelectors,
+            encapsulation: this.encapsulation,
+            styles: this.styles,
+            animations: this.animations
+        };
+    }
+}
+/**
+ * Metadata regarding compilation of a directive.
+ */
+class CompileDirectiveMetadata {
+    constructor({ isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, guards, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory }) {
+        this.isHost = !!isHost;
+        this.type = type;
+        this.isComponent = isComponent;
+        this.selector = selector;
+        this.exportAs = exportAs;
+        this.changeDetection = changeDetection;
+        this.inputs = inputs;
+        this.outputs = outputs;
+        this.hostListeners = hostListeners;
+        this.hostProperties = hostProperties;
+        this.hostAttributes = hostAttributes;
+        this.providers = _normalizeArray(providers);
+        this.viewProviders = _normalizeArray(viewProviders);
+        this.queries = _normalizeArray(queries);
+        this.guards = guards;
+        this.viewQueries = _normalizeArray(viewQueries);
+        this.entryComponents = _normalizeArray(entryComponents);
+        this.template = template;
+        this.componentViewType = componentViewType;
+        this.rendererType = rendererType;
+        this.componentFactory = componentFactory;
+    }
+    static create({ isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, providers, viewProviders, queries, guards, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory }) {
+        const hostListeners = {};
+        const hostProperties = {};
+        const hostAttributes = {};
+        if (host != null) {
+            Object.keys(host).forEach(key => {
+                const value = host[key];
+                const matches = key.match(HOST_REG_EXP);
+                if (matches === null) {
+                    hostAttributes[key] = value;
+                }
+                else if (matches[1] != null) {
+                    hostProperties[matches[1]] = value;
+                }
+                else if (matches[2] != null) {
+                    hostListeners[matches[2]] = value;
+                }
+            });
+        }
+        const inputsMap = {};
+        if (inputs != null) {
+            inputs.forEach((bindConfig) => {
+                // canonical syntax: `dirProp: elProp`
+                // if there is no `:`, use dirProp = elProp
+                const parts = splitAtColon(bindConfig, [bindConfig, bindConfig]);
+                inputsMap[parts[0]] = parts[1];
+            });
+        }
+        const outputsMap = {};
+        if (outputs != null) {
+            outputs.forEach((bindConfig) => {
+                // canonical syntax: `dirProp: elProp`
+                // if there is no `:`, use dirProp = elProp
+                const parts = splitAtColon(bindConfig, [bindConfig, bindConfig]);
+                outputsMap[parts[0]] = parts[1];
+            });
+        }
+        return new CompileDirectiveMetadata({
+            isHost,
+            type,
+            isComponent: !!isComponent,
+            selector,
+            exportAs,
+            changeDetection,
+            inputs: inputsMap,
+            outputs: outputsMap,
+            hostListeners,
+            hostProperties,
+            hostAttributes,
+            providers,
+            viewProviders,
+            queries,
+            guards,
+            viewQueries,
+            entryComponents,
+            template,
+            componentViewType,
+            rendererType,
+            componentFactory,
+        });
+    }
+    toSummary() {
+        return {
+            summaryKind: CompileSummaryKind.Directive,
+            type: this.type,
+            isComponent: this.isComponent,
+            selector: this.selector,
+            exportAs: this.exportAs,
+            inputs: this.inputs,
+            outputs: this.outputs,
+            hostListeners: this.hostListeners,
+            hostProperties: this.hostProperties,
+            hostAttributes: this.hostAttributes,
+            providers: this.providers,
+            viewProviders: this.viewProviders,
+            queries: this.queries,
+            guards: this.guards,
+            viewQueries: this.viewQueries,
+            entryComponents: this.entryComponents,
+            changeDetection: this.changeDetection,
+            template: this.template && this.template.toSummary(),
+            componentViewType: this.componentViewType,
+            rendererType: this.rendererType,
+            componentFactory: this.componentFactory
+        };
+    }
+}
+class CompilePipeMetadata {
+    constructor({ type, name, pure }) {
+        this.type = type;
+        this.name = name;
+        this.pure = !!pure;
+    }
+    toSummary() {
+        return {
+            summaryKind: CompileSummaryKind.Pipe,
+            type: this.type,
+            name: this.name,
+            pure: this.pure
+        };
+    }
+}
+class CompileShallowModuleMetadata {
+}
+/**
+ * Metadata regarding compilation of a module.
+ */
+class CompileNgModuleMetadata {
+    constructor({ type, providers, declaredDirectives, exportedDirectives, declaredPipes, exportedPipes, entryComponents, bootstrapComponents, importedModules, exportedModules, schemas, transitiveModule, id }) {
+        this.type = type || null;
+        this.declaredDirectives = _normalizeArray(declaredDirectives);
+        this.exportedDirectives = _normalizeArray(exportedDirectives);
+        this.declaredPipes = _normalizeArray(declaredPipes);
+        this.exportedPipes = _normalizeArray(exportedPipes);
+        this.providers = _normalizeArray(providers);
+        this.entryComponents = _normalizeArray(entryComponents);
+        this.bootstrapComponents = _normalizeArray(bootstrapComponents);
+        this.importedModules = _normalizeArray(importedModules);
+        this.exportedModules = _normalizeArray(exportedModules);
+        this.schemas = _normalizeArray(schemas);
+        this.id = id || null;
+        this.transitiveModule = transitiveModule || null;
+    }
+    toSummary() {
+        const module = this.transitiveModule;
+        return {
+            summaryKind: CompileSummaryKind.NgModule,
+            type: this.type,
+            entryComponents: module.entryComponents,
+            providers: module.providers,
+            modules: module.modules,
+            exportedDirectives: module.exportedDirectives,
+            exportedPipes: module.exportedPipes
+        };
+    }
+}
+class TransitiveCompileNgModuleMetadata {
+    constructor() {
+        this.directivesSet = new Set();
+        this.directives = [];
+        this.exportedDirectivesSet = new Set();
+        this.exportedDirectives = [];
+        this.pipesSet = new Set();
+        this.pipes = [];
+        this.exportedPipesSet = new Set();
+        this.exportedPipes = [];
+        this.modulesSet = new Set();
+        this.modules = [];
+        this.entryComponentsSet = new Set();
+        this.entryComponents = [];
+        this.providers = [];
+    }
+    addProvider(provider, module) {
+        this.providers.push({ provider: provider, module: module });
+    }
+    addDirective(id) {
+        if (!this.directivesSet.has(id.reference)) {
+            this.directivesSet.add(id.reference);
+            this.directives.push(id);
+        }
+    }
+    addExportedDirective(id) {
+        if (!this.exportedDirectivesSet.has(id.reference)) {
+            this.exportedDirectivesSet.add(id.reference);
+            this.exportedDirectives.push(id);
+        }
+    }
+    addPipe(id) {
+        if (!this.pipesSet.has(id.reference)) {
+            this.pipesSet.add(id.reference);
+            this.pipes.push(id);
+        }
+    }
+    addExportedPipe(id) {
+        if (!this.exportedPipesSet.has(id.reference)) {
+            this.exportedPipesSet.add(id.reference);
+            this.exportedPipes.push(id);
+        }
+    }
+    addModule(id) {
+        if (!this.modulesSet.has(id.reference)) {
+            this.modulesSet.add(id.reference);
+            this.modules.push(id);
+        }
+    }
+    addEntryComponent(ec) {
+        if (!this.entryComponentsSet.has(ec.componentType)) {
+            this.entryComponentsSet.add(ec.componentType);
+            this.entryComponents.push(ec);
+        }
+    }
+}
+function _normalizeArray(obj) {
+    return obj || [];
+}
+class ProviderMeta {
+    constructor(token, { useClass, useValue, useExisting, useFactory, deps, multi }) {
+        this.token = token;
+        this.useClass = useClass || null;
+        this.useValue = useValue;
+        this.useExisting = useExisting;
+        this.useFactory = useFactory || null;
+        this.dependencies = deps || null;
+        this.multi = !!multi;
+    }
+}
+function flatten(list) {
+    return list.reduce((flat, item) => {
+        const flatItem = Array.isArray(item) ? flatten(item) : item;
+        return flat.concat(flatItem);
+    }, []);
+}
+function jitSourceUrl(url) {
+    // Note: We need 3 "/" so that ng shows up as a separate domain
+    // in the chrome dev tools.
+    return url.replace(/(\w+:\/\/[\w:-]+)?(\/+)?/, 'ng:///');
+}
+function templateSourceUrl(ngModuleType, compMeta, templateMeta) {
+    let url;
+    if (templateMeta.isInline) {
+        if (compMeta.type.reference instanceof StaticSymbol) {
+            // Note: a .ts file might contain multiple components with inline templates,
+            // so we need to give them unique urls, as these will be used for sourcemaps.
+            url = `${compMeta.type.reference.filePath}.${compMeta.type.reference.name}.html`;
+        }
+        else {
+            url = `${identifierName(ngModuleType)}/${identifierName(compMeta.type)}.html`;
+        }
+    }
+    else {
+        url = templateMeta.templateUrl;
+    }
+    return compMeta.type.reference instanceof StaticSymbol ? url : jitSourceUrl(url);
+}
+function sharedStylesheetJitUrl(meta, id) {
+    const pathParts = meta.moduleUrl.split(/\/\\/g);
+    const baseName = pathParts[pathParts.length - 1];
+    return jitSourceUrl(`css/${id}${baseName}.ngstyle.js`);
+}
+function ngModuleJitUrl(moduleMeta) {
+    return jitSourceUrl(`${identifierName(moduleMeta.type)}/module.ngfactory.js`);
+}
+function templateJitUrl(ngModuleType, compMeta) {
+    return jitSourceUrl(`${identifierName(ngModuleType)}/${identifierName(compMeta.type)}.ngfactory.js`);
 }
 
 /**
@@ -12805,16 +12801,16 @@ function isPrefixEnd(code) {
         (code < $0 || code > $9);
 }
 function isDigitEntityEnd(code) {
-    return code == $SEMICOLON || code == $EOF || !isAsciiHexDigit(code);
+    return code === $SEMICOLON || code === $EOF || !isAsciiHexDigit(code);
 }
 function isNamedEntityEnd(code) {
-    return code == $SEMICOLON || code == $EOF || !isAsciiLetter(code);
+    return code === $SEMICOLON || code === $EOF || !isAsciiLetter(code);
 }
 function isExpansionCaseStart(peek) {
     return peek !== $RBRACE;
 }
 function compareCharCodeCaseInsensitive(code1, code2) {
-    return toUpperCaseCharCode(code1) == toUpperCaseCharCode(code2);
+    return toUpperCaseCharCode(code1) === toUpperCaseCharCode(code2);
 }
 function toUpperCaseCharCode(code) {
     return code >= $a && code <= $z ? code - $a + $A : code;
@@ -12824,7 +12820,7 @@ function mergeTextTokens(srcTokens) {
     let lastDstToken = undefined;
     for (let i = 0; i < srcTokens.length; i++) {
         const token = srcTokens[i];
-        if (lastDstToken && lastDstToken.type == TokenType.TEXT && token.type == TokenType.TEXT) {
+        if (lastDstToken && lastDstToken.type === TokenType.TEXT && token.type === TokenType.TEXT) {
             lastDstToken.parts[0] += token.parts[0];
             lastDstToken.sourceSpan.end = token.sourceSpan.end;
         }
@@ -13228,7 +13224,7 @@ class _TreeBuilder {
             if (this._peek.type === TokenType.EXPANSION_CASE_EXP_END) {
                 if (lastOnStack(expansionFormStack, TokenType.EXPANSION_CASE_EXP_START)) {
                     expansionFormStack.pop();
-                    if (expansionFormStack.length == 0)
+                    if (expansionFormStack.length === 0)
                         return exp;
                 }
                 else {
@@ -13254,9 +13250,9 @@ class _TreeBuilder {
     }
     _consumeText(token) {
         let text = token.parts[0];
-        if (text.length > 0 && text[0] == '\n') {
+        if (text.length > 0 && text[0] === '\n') {
             const parent = this._getParentElement();
-            if (parent != null && parent.children.length == 0 &&
+            if (parent != null && parent.children.length === 0 &&
                 this.getTagDefinition(parent.name).ignoreFirstLf) {
                 text = text.substring(1);
             }
@@ -13339,7 +13335,7 @@ class _TreeBuilder {
         let unexpectedCloseTagDetected = false;
         for (let stackIndex = this._elementStack.length - 1; stackIndex >= 0; stackIndex--) {
             const el = this._elementStack[stackIndex];
-            if (el.name == fullName) {
+            if (el.name === fullName) {
                 // Record the parse span with the element that is being closed. Any elements that are
                 // removed from the element stack at this point are closed implicitly, so they won't get
                 // an end source span (as there is no explicit closing element).
@@ -13583,7 +13579,7 @@ class _Expander {
     }
     visitExpansion(icu, context) {
         this.isExpanded = true;
-        return icu.type == 'plural' ? _expandPluralForm(icu, this.errors) :
+        return icu.type === 'plural' ? _expandPluralForm(icu, this.errors) :
             _expandDefaultForm(icu, this.errors);
     }
     visitExpansionCase(icuCase, context) {
@@ -13593,7 +13589,7 @@ class _Expander {
 // Plural forms are expanded to `NgPlural` and `NgPluralCase`s
 function _expandPluralForm(ast, errors) {
     const children = ast.cases.map(c => {
-        if (PLURAL_CASES.indexOf(c.value) == -1 && !c.value.match(/^=\d+$/)) {
+        if (PLURAL_CASES.indexOf(c.value) === -1 && !c.value.match(/^=\d+$/)) {
             errors.push(new ExpansionError(c.valueSourceSpan, `Plural cases should be "=<number>" or one of ${PLURAL_CASES.join(', ')}`));
         }
         const expansionResult = expandNodes(c.expression);
@@ -16720,9 +16716,6 @@ function isExponentStart(code) {
 }
 function isExponentSign(code) {
     return code == $MINUS || code == $PLUS;
-}
-function isQuote(code) {
-    return code === $SQ || code === $DQ || code === $BT;
 }
 function unescape(code) {
     switch (code) {
@@ -22800,7 +22793,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('12.2.1+12.sha-83fa3ee.with-local-changes');
+const VERSION$1 = new Version('12.2.1+19.sha-cd10a4c.with-local-changes');
 
 /**
  * @license
@@ -32278,7 +32271,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('12.2.1+12.sha-83fa3ee.with-local-changes'));
+    definitionMap.set('version', literal('12.2.1+19.sha-cd10a4c.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32318,7 +32311,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('12.2.1+12.sha-83fa3ee.with-local-changes'));
+    definitionMap.set('version', literal('12.2.1+19.sha-cd10a4c.with-local-changes'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -32538,7 +32531,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$2 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('12.2.1+12.sha-83fa3ee.with-local-changes'));
+    definitionMap.set('version', literal('12.2.1+19.sha-cd10a4c.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32580,7 +32573,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('12.2.1+12.sha-83fa3ee.with-local-changes'));
+    definitionMap.set('version', literal('12.2.1+19.sha-cd10a4c.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -32659,7 +32652,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('12.2.1+12.sha-83fa3ee.with-local-changes'));
+    definitionMap.set('version', literal('12.2.1+19.sha-cd10a4c.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -32696,7 +32689,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('12.2.1+12.sha-83fa3ee.with-local-changes'));
+    definitionMap.set('version', literal('12.2.1+19.sha-cd10a4c.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -32754,7 +32747,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('12.2.1+12.sha-83fa3ee.with-local-changes'));
+    definitionMap.set('version', literal('12.2.1+19.sha-cd10a4c.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
@@ -32804,5 +32797,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment$1 as Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FactoryTarget, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers$1 as Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, MethodCall, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, Identifiers as R3Identifiers, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeKeyedRead, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThisReceiver, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Icu as TmplAstIcu, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createInjectableType, createLoweredSymbol, createOfflineCompileUrlResolver, createR3ProviderExpression, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, devOnlyGuardedExpression, findNode, flatten, formattedError, getHtmlTagDefinition, getMissingNgModuleMetadataErrorData, getNsPrefix, getParseErrors, getSafePropertyAccessString, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isQuote, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment$1 as Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FactoryTarget, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers$1 as Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, MethodCall, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, Identifiers as R3Identifiers, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeKeyedRead, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThisReceiver, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Icu as TmplAstIcu, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token$1 as Token, TokenType$1 as TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createInjectableType, createLoweredSymbol, createOfflineCompileUrlResolver, createR3ProviderExpression, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, devOnlyGuardedExpression, findNode, flatten, formattedError, getHtmlTagDefinition, getMissingNgModuleMetadataErrorData, getNsPrefix, getParseErrors, getSafePropertyAccessString, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
 //# sourceMappingURL=compiler.js.map

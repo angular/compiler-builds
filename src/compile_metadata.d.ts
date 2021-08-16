@@ -9,18 +9,13 @@ import { StaticSymbol } from './aot/static_symbol';
 import { ChangeDetectionStrategy, SchemaMetadata, Type, ViewEncapsulation } from './core';
 import { LifecycleHooks } from './lifecycle_reflector';
 import { ParseTreeResult as HtmlParseTreeResult } from './ml_parser/parser';
-export declare function sanitizeIdentifier(name: string): string;
-export declare function identifierName(compileIdentifier: CompileIdentifierMetadata | null | undefined): string | null;
-export declare function identifierModuleUrl(compileIdentifier: CompileIdentifierMetadata): string;
+import { CompileIdentifierMetadata } from './parse_util';
 export declare function viewClassName(compType: any, embeddedTemplateIndex: number): string;
 export declare function rendererTypeName(compType: any): string;
 export declare function hostViewClassName(compType: any): string;
 export declare function componentFactoryName(compType: any): string;
 export interface ProxyClass {
     setDelegate(delegate: any): void;
-}
-export interface CompileIdentifierMetadata {
-    reference: any;
 }
 export declare enum CompileSummaryKind {
     Pipe = 0,
