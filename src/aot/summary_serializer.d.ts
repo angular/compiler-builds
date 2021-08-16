@@ -6,8 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { CompileDirectiveMetadata, CompileNgModuleMetadata, CompilePipeMetadata, CompileTypeMetadata, CompileTypeSummary } from '../compile_metadata';
+import { OutputContext } from '../constant_pool';
 import { Summary, SummaryResolver } from '../summary_resolver';
-import { OutputContext } from '../util';
 import { StaticSymbol, StaticSymbolCache } from './static_symbol';
 import { ResolvedStaticSymbol, StaticSymbolResolver } from './static_symbol_resolver';
 export declare function serializeSummaries(srcFileName: string, forJitCtx: OutputContext | null, summaryResolver: SummaryResolver<StaticSymbol>, symbolResolver: StaticSymbolResolver, symbols: ResolvedStaticSymbol[], types: {
