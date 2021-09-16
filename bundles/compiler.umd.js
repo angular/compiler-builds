@@ -1,5 +1,5 @@
 /**
- * @license Angular v13.0.0-next.6+20.sha-2292a9c.with-local-changes
+ * @license Angular v13.0.0-next.6+27.sha-e55d052.with-local-changes
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10783,9 +10783,10 @@
     }());
     var Text$3 = /** @class */ (function (_super) {
         __extends(Text, _super);
-        function Text(value, sourceSpan, i18n) {
+        function Text(value, sourceSpan, tokens, i18n) {
             var _this = _super.call(this, sourceSpan, i18n) || this;
             _this.value = value;
+            _this.tokens = tokens;
             return _this;
         }
         Text.prototype.visit = function (visitor, context) {
@@ -10823,12 +10824,13 @@
     }());
     var Attribute = /** @class */ (function (_super) {
         __extends(Attribute, _super);
-        function Attribute(name, value, sourceSpan, keySpan, valueSpan, i18n) {
+        function Attribute(name, value, sourceSpan, keySpan, valueSpan, valueTokens, i18n) {
             var _this = _super.call(this, sourceSpan, i18n) || this;
             _this.name = name;
             _this.value = value;
             _this.keySpan = keySpan;
             _this.valueSpan = valueSpan;
+            _this.valueTokens = valueTokens;
             return _this;
         }
         Attribute.prototype.visit = function (visitor, context) {
@@ -13086,39 +13088,6 @@
     var NGSP_UNICODE = '\uE500';
     NAMED_ENTITIES['ngsp'] = NGSP_UNICODE;
 
-    var TokenType;
-    (function (TokenType) {
-        TokenType[TokenType["TAG_OPEN_START"] = 0] = "TAG_OPEN_START";
-        TokenType[TokenType["TAG_OPEN_END"] = 1] = "TAG_OPEN_END";
-        TokenType[TokenType["TAG_OPEN_END_VOID"] = 2] = "TAG_OPEN_END_VOID";
-        TokenType[TokenType["TAG_CLOSE"] = 3] = "TAG_CLOSE";
-        TokenType[TokenType["INCOMPLETE_TAG_OPEN"] = 4] = "INCOMPLETE_TAG_OPEN";
-        TokenType[TokenType["TEXT"] = 5] = "TEXT";
-        TokenType[TokenType["ESCAPABLE_RAW_TEXT"] = 6] = "ESCAPABLE_RAW_TEXT";
-        TokenType[TokenType["RAW_TEXT"] = 7] = "RAW_TEXT";
-        TokenType[TokenType["COMMENT_START"] = 8] = "COMMENT_START";
-        TokenType[TokenType["COMMENT_END"] = 9] = "COMMENT_END";
-        TokenType[TokenType["CDATA_START"] = 10] = "CDATA_START";
-        TokenType[TokenType["CDATA_END"] = 11] = "CDATA_END";
-        TokenType[TokenType["ATTR_NAME"] = 12] = "ATTR_NAME";
-        TokenType[TokenType["ATTR_QUOTE"] = 13] = "ATTR_QUOTE";
-        TokenType[TokenType["ATTR_VALUE"] = 14] = "ATTR_VALUE";
-        TokenType[TokenType["DOC_TYPE"] = 15] = "DOC_TYPE";
-        TokenType[TokenType["EXPANSION_FORM_START"] = 16] = "EXPANSION_FORM_START";
-        TokenType[TokenType["EXPANSION_CASE_VALUE"] = 17] = "EXPANSION_CASE_VALUE";
-        TokenType[TokenType["EXPANSION_CASE_EXP_START"] = 18] = "EXPANSION_CASE_EXP_START";
-        TokenType[TokenType["EXPANSION_CASE_EXP_END"] = 19] = "EXPANSION_CASE_EXP_END";
-        TokenType[TokenType["EXPANSION_FORM_END"] = 20] = "EXPANSION_FORM_END";
-        TokenType[TokenType["EOF"] = 21] = "EOF";
-    })(TokenType || (TokenType = {}));
-    var Token = /** @class */ (function () {
-        function Token(type, parts, sourceSpan) {
-            this.type = type;
-            this.parts = parts;
-            this.sourceSpan = sourceSpan;
-        }
-        return Token;
-    }());
     var TokenError = /** @class */ (function (_super) {
         __extends(TokenError, _super);
         function TokenError(errorMsg, tokenType, span) {
@@ -13208,6 +13177,7 @@
             return content.replace(_CR_OR_CRLF_REGEXP, '\n');
         };
         _Tokenizer.prototype.tokenize = function () {
+            var _this = this;
             while (this._cursor.peek() !== $EOF) {
                 var start = this._cursor.clone();
                 try {
@@ -13231,14 +13201,16 @@
                         }
                     }
                     else if (!(this._tokenizeIcu && this._tokenizeExpansionForm())) {
-                        this._consumeText();
+                        // In (possibly interpolated) text the end of the text is given by `isTextEnd()`, while
+                        // the premature end of an interpolation is given by the start of a new HTML element.
+                        this._consumeWithInterpolation(5 /* TEXT */, 8 /* INTERPOLATION */, function () { return _this._isTextEnd(); }, function () { return _this._isTagStart(); });
                     }
                 }
                 catch (e) {
                     this.handleError(e);
                 }
             }
-            this._beginToken(TokenType.EOF);
+            this._beginToken(24 /* EOF */);
             this._endToken([]);
         };
         /**
@@ -13278,7 +13250,11 @@
             if (this._currentTokenType === null) {
                 throw new TokenError('Programming error - attempted to end a token which has no token type', null, this._cursor.getSpan(this._currentTokenStart));
             }
-            var token = new Token(this._currentTokenType, parts, this._cursor.getSpan(this._currentTokenStart, this._leadingTriviaCodePoints));
+            var token = {
+                type: this._currentTokenType,
+                parts: parts,
+                sourceSpan: (end !== null && end !== void 0 ? end : this._cursor).getSpan(this._currentTokenStart, this._leadingTriviaCodePoints),
+            };
             this.tokens.push(token);
             this._currentTokenStart = null;
             this._currentTokenType = null;
@@ -13371,19 +13347,15 @@
                 this._cursor.advance();
             }
         };
-        _Tokenizer.prototype._readChar = function (decodeEntities) {
-            if (decodeEntities && this._cursor.peek() === $AMPERSAND) {
-                return this._decodeEntity();
-            }
-            else {
-                // Don't rely upon reading directly from `_input` as the actual char value
-                // may have been generated from an escape sequence.
-                var char = String.fromCodePoint(this._cursor.peek());
-                this._cursor.advance();
-                return char;
-            }
+        _Tokenizer.prototype._readChar = function () {
+            // Don't rely upon reading directly from `_input` as the actual char value
+            // may have been generated from an escape sequence.
+            var char = String.fromCodePoint(this._cursor.peek());
+            this._cursor.advance();
+            return char;
         };
-        _Tokenizer.prototype._decodeEntity = function () {
+        _Tokenizer.prototype._consumeEntity = function (textTokenType) {
+            this._beginToken(9 /* ENCODED_ENTITY */);
             var start = this._cursor.clone();
             this._cursor.advance();
             if (this._attemptCharCode($HASH)) {
@@ -13401,7 +13373,7 @@
                 this._cursor.advance();
                 try {
                     var charCode = parseInt(strNum, isHex ? 16 : 10);
-                    return String.fromCharCode(charCode);
+                    this._endToken([String.fromCharCode(charCode), this._cursor.getChars(start)]);
                 }
                 catch (_a) {
                     throw this._createError(_unknownEntityErrorMsg(this._cursor.getChars(start)), this._cursor.getSpan());
@@ -13411,20 +13383,25 @@
                 var nameStart = this._cursor.clone();
                 this._attemptCharCodeUntilFn(isNamedEntityEnd);
                 if (this._cursor.peek() != $SEMICOLON) {
+                    // No semicolon was found so abort the encoded entity token that was in progress, and treat
+                    // this as a text token
+                    this._beginToken(textTokenType, start);
                     this._cursor = nameStart;
-                    return '&';
+                    this._endToken(['&']);
                 }
-                var name = this._cursor.getChars(nameStart);
-                this._cursor.advance();
-                var char = NAMED_ENTITIES[name];
-                if (!char) {
-                    throw this._createError(_unknownEntityErrorMsg(name), this._cursor.getSpan(start));
+                else {
+                    var name = this._cursor.getChars(nameStart);
+                    this._cursor.advance();
+                    var char = NAMED_ENTITIES[name];
+                    if (!char) {
+                        throw this._createError(_unknownEntityErrorMsg(name), this._cursor.getSpan(start));
+                    }
+                    this._endToken([char, "&" + name + ";"]);
                 }
-                return char;
             }
         };
-        _Tokenizer.prototype._consumeRawText = function (decodeEntities, endMarkerPredicate) {
-            this._beginToken(decodeEntities ? TokenType.ESCAPABLE_RAW_TEXT : TokenType.RAW_TEXT);
+        _Tokenizer.prototype._consumeRawText = function (consumeEntities, endMarkerPredicate) {
+            this._beginToken(consumeEntities ? 6 /* ESCAPABLE_RAW_TEXT */ : 7 /* RAW_TEXT */);
             var parts = [];
             while (true) {
                 var tagCloseStart = this._cursor.clone();
@@ -13433,32 +13410,40 @@
                 if (foundEndMarker) {
                     break;
                 }
-                parts.push(this._readChar(decodeEntities));
+                if (consumeEntities && this._cursor.peek() === $AMPERSAND) {
+                    this._endToken([this._processCarriageReturns(parts.join(''))]);
+                    parts.length = 0;
+                    this._consumeEntity(6 /* ESCAPABLE_RAW_TEXT */);
+                    this._beginToken(6 /* ESCAPABLE_RAW_TEXT */);
+                }
+                else {
+                    parts.push(this._readChar());
+                }
             }
-            return this._endToken([this._processCarriageReturns(parts.join(''))]);
+            this._endToken([this._processCarriageReturns(parts.join(''))]);
         };
         _Tokenizer.prototype._consumeComment = function (start) {
             var _this = this;
-            this._beginToken(TokenType.COMMENT_START, start);
+            this._beginToken(10 /* COMMENT_START */, start);
             this._requireCharCode($MINUS);
             this._endToken([]);
             this._consumeRawText(false, function () { return _this._attemptStr('-->'); });
-            this._beginToken(TokenType.COMMENT_END);
+            this._beginToken(11 /* COMMENT_END */);
             this._requireStr('-->');
             this._endToken([]);
         };
         _Tokenizer.prototype._consumeCdata = function (start) {
             var _this = this;
-            this._beginToken(TokenType.CDATA_START, start);
+            this._beginToken(12 /* CDATA_START */, start);
             this._requireStr('CDATA[');
             this._endToken([]);
             this._consumeRawText(false, function () { return _this._attemptStr(']]>'); });
-            this._beginToken(TokenType.CDATA_END);
+            this._beginToken(13 /* CDATA_END */);
             this._requireStr(']]>');
             this._endToken([]);
         };
         _Tokenizer.prototype._consumeDocType = function (start) {
-            this._beginToken(TokenType.DOC_TYPE, start);
+            this._beginToken(18 /* DOC_TYPE */, start);
             var contentStart = this._cursor.clone();
             this._attemptUntilChar($GT);
             var content = this._cursor.getChars(contentStart);
@@ -13512,12 +13497,12 @@
                 if (e instanceof _ControlFlowError) {
                     if (openTagToken) {
                         // We errored before we could close the opening tag, so it is incomplete.
-                        openTagToken.type = TokenType.INCOMPLETE_TAG_OPEN;
+                        openTagToken.type = 4 /* INCOMPLETE_TAG_OPEN */;
                     }
                     else {
                         // When the start tag is invalid, assume we want a "<" as text.
                         // Back to back text tokens are merged at the end.
-                        this._beginToken(TokenType.TEXT, start);
+                        this._beginToken(5 /* TEXT */, start);
                         this._endToken(['<']);
                     }
                     return;
@@ -13532,9 +13517,9 @@
                 this._consumeRawTextWithTagClose(prefix, tagName, true);
             }
         };
-        _Tokenizer.prototype._consumeRawTextWithTagClose = function (prefix, tagName, decodeEntities) {
+        _Tokenizer.prototype._consumeRawTextWithTagClose = function (prefix, tagName, consumeEntities) {
             var _this = this;
-            this._consumeRawText(decodeEntities, function () {
+            this._consumeRawText(consumeEntities, function () {
                 if (!_this._attemptCharCode($LT))
                     return false;
                 if (!_this._attemptCharCode($SLASH))
@@ -13545,13 +13530,13 @@
                 _this._attemptCharCodeUntilFn(isNotWhitespace);
                 return _this._attemptCharCode($GT);
             });
-            this._beginToken(TokenType.TAG_CLOSE);
+            this._beginToken(3 /* TAG_CLOSE */);
             this._requireCharCodeUntilFn(function (code) { return code === $GT; }, 3);
             this._cursor.advance(); // Consume the `>`
             this._endToken([prefix, tagName]);
         };
         _Tokenizer.prototype._consumeTagOpenStart = function (start) {
-            this._beginToken(TokenType.TAG_OPEN_START, start);
+            this._beginToken(0 /* TAG_OPEN_START */, start);
             var parts = this._consumePrefixAndName();
             return this._endToken(parts);
         };
@@ -13560,44 +13545,40 @@
             if (attrNameStart === $SQ || attrNameStart === $DQ) {
                 throw this._createError(_unexpectedCharacterErrorMsg(attrNameStart), this._cursor.getSpan());
             }
-            this._beginToken(TokenType.ATTR_NAME);
+            this._beginToken(14 /* ATTR_NAME */);
             var prefixAndName = this._consumePrefixAndName();
             this._endToken(prefixAndName);
         };
         _Tokenizer.prototype._consumeAttributeValue = function () {
+            var _this = this;
             var value;
             if (this._cursor.peek() === $SQ || this._cursor.peek() === $DQ) {
-                this._beginToken(TokenType.ATTR_QUOTE);
-                var quoteChar = this._cursor.peek();
-                this._cursor.advance();
-                this._endToken([String.fromCodePoint(quoteChar)]);
-                this._beginToken(TokenType.ATTR_VALUE);
-                var parts = [];
-                while (this._cursor.peek() !== quoteChar) {
-                    parts.push(this._readChar(true));
-                }
-                value = parts.join('');
-                this._endToken([this._processCarriageReturns(value)]);
-                this._beginToken(TokenType.ATTR_QUOTE);
-                this._cursor.advance();
-                this._endToken([String.fromCodePoint(quoteChar)]);
+                var quoteChar_1 = this._cursor.peek();
+                this._consumeQuote(quoteChar_1);
+                // In an attribute then end of the attribute value and the premature end to an interpolation
+                // are both triggered by the `quoteChar`.
+                var endPredicate = function () { return _this._cursor.peek() === quoteChar_1; };
+                this._consumeWithInterpolation(16 /* ATTR_VALUE_TEXT */, 17 /* ATTR_VALUE_INTERPOLATION */, endPredicate, endPredicate);
+                this._consumeQuote(quoteChar_1);
             }
             else {
-                this._beginToken(TokenType.ATTR_VALUE);
-                var valueStart = this._cursor.clone();
-                this._requireCharCodeUntilFn(isNameEnd, 1);
-                value = this._cursor.getChars(valueStart);
-                this._endToken([this._processCarriageReturns(value)]);
+                var endPredicate = function () { return isNameEnd(_this._cursor.peek()); };
+                this._consumeWithInterpolation(16 /* ATTR_VALUE_TEXT */, 17 /* ATTR_VALUE_INTERPOLATION */, endPredicate, endPredicate);
             }
         };
+        _Tokenizer.prototype._consumeQuote = function (quoteChar) {
+            this._beginToken(15 /* ATTR_QUOTE */);
+            this._requireCharCode(quoteChar);
+            this._endToken([String.fromCodePoint(quoteChar)]);
+        };
         _Tokenizer.prototype._consumeTagOpenEnd = function () {
-            var tokenType = this._attemptCharCode($SLASH) ? TokenType.TAG_OPEN_END_VOID : TokenType.TAG_OPEN_END;
+            var tokenType = this._attemptCharCode($SLASH) ? 2 /* TAG_OPEN_END_VOID */ : 1 /* TAG_OPEN_END */;
             this._beginToken(tokenType);
             this._requireCharCode($GT);
             this._endToken([]);
         };
         _Tokenizer.prototype._consumeTagClose = function (start) {
-            this._beginToken(TokenType.TAG_CLOSE, start);
+            this._beginToken(3 /* TAG_CLOSE */, start);
             this._attemptCharCodeUntilFn(isNotWhitespace);
             var prefixAndName = this._consumePrefixAndName();
             this._attemptCharCodeUntilFn(isNotWhitespace);
@@ -13605,11 +13586,11 @@
             this._endToken(prefixAndName);
         };
         _Tokenizer.prototype._consumeExpansionFormStart = function () {
-            this._beginToken(TokenType.EXPANSION_FORM_START);
+            this._beginToken(19 /* EXPANSION_FORM_START */);
             this._requireCharCode($LBRACE);
             this._endToken([]);
-            this._expansionCaseStack.push(TokenType.EXPANSION_FORM_START);
-            this._beginToken(TokenType.RAW_TEXT);
+            this._expansionCaseStack.push(19 /* EXPANSION_FORM_START */);
+            this._beginToken(7 /* RAW_TEXT */);
             var condition = this._readUntil($COMMA);
             var normalizedCondition = this._processCarriageReturns(condition);
             if (this._i18nNormalizeLineEndingsInICUs) {
@@ -13625,58 +13606,138 @@
             }
             this._requireCharCode($COMMA);
             this._attemptCharCodeUntilFn(isNotWhitespace);
-            this._beginToken(TokenType.RAW_TEXT);
+            this._beginToken(7 /* RAW_TEXT */);
             var type = this._readUntil($COMMA);
             this._endToken([type]);
             this._requireCharCode($COMMA);
             this._attemptCharCodeUntilFn(isNotWhitespace);
         };
         _Tokenizer.prototype._consumeExpansionCaseStart = function () {
-            this._beginToken(TokenType.EXPANSION_CASE_VALUE);
+            this._beginToken(20 /* EXPANSION_CASE_VALUE */);
             var value = this._readUntil($LBRACE).trim();
             this._endToken([value]);
             this._attemptCharCodeUntilFn(isNotWhitespace);
-            this._beginToken(TokenType.EXPANSION_CASE_EXP_START);
+            this._beginToken(21 /* EXPANSION_CASE_EXP_START */);
             this._requireCharCode($LBRACE);
             this._endToken([]);
             this._attemptCharCodeUntilFn(isNotWhitespace);
-            this._expansionCaseStack.push(TokenType.EXPANSION_CASE_EXP_START);
+            this._expansionCaseStack.push(21 /* EXPANSION_CASE_EXP_START */);
         };
         _Tokenizer.prototype._consumeExpansionCaseEnd = function () {
-            this._beginToken(TokenType.EXPANSION_CASE_EXP_END);
+            this._beginToken(22 /* EXPANSION_CASE_EXP_END */);
             this._requireCharCode($RBRACE);
             this._endToken([]);
             this._attemptCharCodeUntilFn(isNotWhitespace);
             this._expansionCaseStack.pop();
         };
         _Tokenizer.prototype._consumeExpansionFormEnd = function () {
-            this._beginToken(TokenType.EXPANSION_FORM_END);
+            this._beginToken(23 /* EXPANSION_FORM_END */);
             this._requireCharCode($RBRACE);
             this._endToken([]);
             this._expansionCaseStack.pop();
         };
-        _Tokenizer.prototype._consumeText = function () {
-            var start = this._cursor.clone();
-            this._beginToken(TokenType.TEXT, start);
+        /**
+         * Consume a string that may contain interpolation expressions.
+         *
+         * The first token consumed will be of `tokenType` and then there will be alternating
+         * `interpolationTokenType` and `tokenType` tokens until the `endPredicate()` returns true.
+         *
+         * If an interpolation token ends prematurely it will have no end marker in its `parts` array.
+         *
+         * @param textTokenType the kind of tokens to interleave around interpolation tokens.
+         * @param interpolationTokenType the kind of tokens that contain interpolation.
+         * @param endPredicate a function that should return true when we should stop consuming.
+         * @param endInterpolation a function that should return true if there is a premature end to an
+         *     interpolation expression - i.e. before we get to the normal interpolation closing marker.
+         */
+        _Tokenizer.prototype._consumeWithInterpolation = function (textTokenType, interpolationTokenType, endPredicate, endInterpolation) {
+            this._beginToken(textTokenType);
             var parts = [];
-            do {
+            while (!endPredicate()) {
+                var current = this._cursor.clone();
                 if (this._interpolationConfig && this._attemptStr(this._interpolationConfig.start)) {
-                    parts.push(this._interpolationConfig.start);
-                    this._inInterpolation = true;
+                    this._endToken([this._processCarriageReturns(parts.join(''))], current);
+                    parts.length = 0;
+                    this._consumeInterpolation(interpolationTokenType, current, endInterpolation);
+                    this._beginToken(textTokenType);
                 }
-                else if (this._interpolationConfig && this._inInterpolation &&
-                    this._attemptStr(this._interpolationConfig.end)) {
-                    parts.push(this._interpolationConfig.end);
-                    this._inInterpolation = false;
+                else if (this._cursor.peek() === $AMPERSAND) {
+                    this._endToken([this._processCarriageReturns(parts.join(''))]);
+                    parts.length = 0;
+                    this._consumeEntity(textTokenType);
+                    this._beginToken(textTokenType);
                 }
                 else {
-                    parts.push(this._readChar(true));
+                    parts.push(this._readChar());
                 }
-            } while (!this._isTextEnd());
+            }
             // It is possible that an interpolation was started but not ended inside this text token.
             // Make sure that we reset the state of the lexer correctly.
             this._inInterpolation = false;
             this._endToken([this._processCarriageReturns(parts.join(''))]);
+        };
+        /**
+         * Consume a block of text that has been interpreted as an Angular interpolation.
+         *
+         * @param interpolationTokenType the type of the interpolation token to generate.
+         * @param interpolationStart a cursor that points to the start of this interpolation.
+         * @param prematureEndPredicate a function that should return true if the next characters indicate
+         *     an end to the interpolation before its normal closing marker.
+         */
+        _Tokenizer.prototype._consumeInterpolation = function (interpolationTokenType, interpolationStart, prematureEndPredicate) {
+            var parts = [];
+            this._beginToken(interpolationTokenType, interpolationStart);
+            parts.push(this._interpolationConfig.start);
+            // Find the end of the interpolation, ignoring content inside quotes.
+            var expressionStart = this._cursor.clone();
+            var inQuote = null;
+            var inComment = false;
+            while (this._cursor.peek() !== $EOF &&
+                (prematureEndPredicate === null || !prematureEndPredicate())) {
+                var current = this._cursor.clone();
+                if (this._isTagStart()) {
+                    // We are starting what looks like an HTML element in the middle of this interpolation.
+                    // Reset the cursor to before the `<` character and end the interpolation token.
+                    // (This is actually wrong but here for backward compatibility).
+                    this._cursor = current;
+                    parts.push(this._getProcessedChars(expressionStart, current));
+                    this._endToken(parts);
+                    return;
+                }
+                if (inQuote === null) {
+                    if (this._attemptStr(this._interpolationConfig.end)) {
+                        // We are not in a string, and we hit the end interpolation marker
+                        parts.push(this._getProcessedChars(expressionStart, current));
+                        parts.push(this._interpolationConfig.end);
+                        this._endToken(parts);
+                        return;
+                    }
+                    else if (this._attemptStr('//')) {
+                        // Once we are in a comment we ignore any quotes
+                        inComment = true;
+                    }
+                }
+                var char = this._cursor.peek();
+                this._cursor.advance();
+                if (char === $BACKSLASH) {
+                    // Skip the next character because it was escaped.
+                    this._cursor.advance();
+                }
+                else if (char === inQuote) {
+                    // Exiting the current quoted string
+                    inQuote = null;
+                }
+                else if (!inComment && inQuote === null && isQuote(char)) {
+                    // Entering a new quoted string
+                    inQuote = char;
+                }
+            }
+            // We hit EOF without finding a closing interpolation marker
+            parts.push(this._getProcessedChars(expressionStart, this._cursor));
+            this._endToken(parts);
+        };
+        _Tokenizer.prototype._getProcessedChars = function (start, end) {
+            return this._processCarriageReturns(end.getChars(start));
         };
         _Tokenizer.prototype._isTextEnd = function () {
             if (this._isTagStart() || this._cursor.peek() === $EOF) {
@@ -13720,12 +13781,12 @@
         _Tokenizer.prototype._isInExpansionCase = function () {
             return this._expansionCaseStack.length > 0 &&
                 this._expansionCaseStack[this._expansionCaseStack.length - 1] ===
-                    TokenType.EXPANSION_CASE_EXP_START;
+                    21 /* EXPANSION_CASE_EXP_START */;
         };
         _Tokenizer.prototype._isInExpansionForm = function () {
             return this._expansionCaseStack.length > 0 &&
                 this._expansionCaseStack[this._expansionCaseStack.length - 1] ===
-                    TokenType.EXPANSION_FORM_START;
+                    19 /* EXPANSION_FORM_START */;
         };
         _Tokenizer.prototype.isExpansionFormStart = function () {
             if (this._cursor.peek() !== $LBRACE) {
@@ -13773,7 +13834,9 @@
         var lastDstToken = undefined;
         for (var i = 0; i < srcTokens.length; i++) {
             var token = srcTokens[i];
-            if (lastDstToken && lastDstToken.type === TokenType.TEXT && token.type === TokenType.TEXT) {
+            if ((lastDstToken && lastDstToken.type === 5 /* TEXT */ && token.type === 5 /* TEXT */) ||
+                (lastDstToken && lastDstToken.type === 16 /* ATTR_VALUE_TEXT */ &&
+                    token.type === 16 /* ATTR_VALUE_TEXT */)) {
                 lastDstToken.parts[0] += token.parts[0];
                 lastDstToken.sourceSpan.end = token.sourceSpan.end;
             }
@@ -14071,28 +14134,28 @@
             this._advance();
         }
         _TreeBuilder.prototype.build = function () {
-            while (this._peek.type !== TokenType.EOF) {
-                if (this._peek.type === TokenType.TAG_OPEN_START ||
-                    this._peek.type === TokenType.INCOMPLETE_TAG_OPEN) {
+            while (this._peek.type !== 24 /* EOF */) {
+                if (this._peek.type === 0 /* TAG_OPEN_START */ ||
+                    this._peek.type === 4 /* INCOMPLETE_TAG_OPEN */) {
                     this._consumeStartTag(this._advance());
                 }
-                else if (this._peek.type === TokenType.TAG_CLOSE) {
+                else if (this._peek.type === 3 /* TAG_CLOSE */) {
                     this._consumeEndTag(this._advance());
                 }
-                else if (this._peek.type === TokenType.CDATA_START) {
+                else if (this._peek.type === 12 /* CDATA_START */) {
                     this._closeVoidElement();
                     this._consumeCdata(this._advance());
                 }
-                else if (this._peek.type === TokenType.COMMENT_START) {
+                else if (this._peek.type === 10 /* COMMENT_START */) {
                     this._closeVoidElement();
                     this._consumeComment(this._advance());
                 }
-                else if (this._peek.type === TokenType.TEXT || this._peek.type === TokenType.RAW_TEXT ||
-                    this._peek.type === TokenType.ESCAPABLE_RAW_TEXT) {
+                else if (this._peek.type === 5 /* TEXT */ || this._peek.type === 7 /* RAW_TEXT */ ||
+                    this._peek.type === 6 /* ESCAPABLE_RAW_TEXT */) {
                     this._closeVoidElement();
                     this._consumeText(this._advance());
                 }
-                else if (this._peek.type === TokenType.EXPANSION_FORM_START) {
+                else if (this._peek.type === 19 /* EXPANSION_FORM_START */) {
                     this._consumeExpansion(this._advance());
                 }
                 else {
@@ -14118,11 +14181,11 @@
         };
         _TreeBuilder.prototype._consumeCdata = function (_startToken) {
             this._consumeText(this._advance());
-            this._advanceIf(TokenType.CDATA_END);
+            this._advanceIf(13 /* CDATA_END */);
         };
         _TreeBuilder.prototype._consumeComment = function (token) {
-            var text = this._advanceIf(TokenType.RAW_TEXT);
-            this._advanceIf(TokenType.COMMENT_END);
+            var text = this._advanceIf(7 /* RAW_TEXT */);
+            this._advanceIf(11 /* COMMENT_END */);
             var value = text != null ? text.parts[0].trim() : null;
             this._addToParent(new Comment$1(value, token.sourceSpan));
         };
@@ -14131,14 +14194,14 @@
             var type = this._advance();
             var cases = [];
             // read =
-            while (this._peek.type === TokenType.EXPANSION_CASE_VALUE) {
+            while (this._peek.type === 20 /* EXPANSION_CASE_VALUE */) {
                 var expCase = this._parseExpansionCase();
                 if (!expCase)
                     return; // error
                 cases.push(expCase);
             }
             // read the final }
-            if (this._peek.type !== TokenType.EXPANSION_FORM_END) {
+            if (this._peek.type !== 23 /* EXPANSION_FORM_END */) {
                 this.errors.push(TreeError.create(null, this._peek.sourceSpan, "Invalid ICU message. Missing '}'."));
                 return;
             }
@@ -14149,7 +14212,7 @@
         _TreeBuilder.prototype._parseExpansionCase = function () {
             var value = this._advance();
             // read {
-            if (this._peek.type !== TokenType.EXPANSION_CASE_EXP_START) {
+            if (this._peek.type !== 21 /* EXPANSION_CASE_EXP_START */) {
                 this.errors.push(TreeError.create(null, this._peek.sourceSpan, "Invalid ICU message. Missing '{'."));
                 return null;
             }
@@ -14159,7 +14222,7 @@
             if (!exp)
                 return null;
             var end = this._advance();
-            exp.push(new Token(TokenType.EOF, [], end.sourceSpan));
+            exp.push({ type: 24 /* EOF */, parts: [], sourceSpan: end.sourceSpan });
             // parse everything in between { and }
             var expansionCaseParser = new _TreeBuilder(exp, this.getTagDefinition);
             expansionCaseParser.build();
@@ -14173,14 +14236,14 @@
         };
         _TreeBuilder.prototype._collectExpansionExpTokens = function (start) {
             var exp = [];
-            var expansionFormStack = [TokenType.EXPANSION_CASE_EXP_START];
+            var expansionFormStack = [21 /* EXPANSION_CASE_EXP_START */];
             while (true) {
-                if (this._peek.type === TokenType.EXPANSION_FORM_START ||
-                    this._peek.type === TokenType.EXPANSION_CASE_EXP_START) {
+                if (this._peek.type === 19 /* EXPANSION_FORM_START */ ||
+                    this._peek.type === 21 /* EXPANSION_CASE_EXP_START */) {
                     expansionFormStack.push(this._peek.type);
                 }
-                if (this._peek.type === TokenType.EXPANSION_CASE_EXP_END) {
-                    if (lastOnStack(expansionFormStack, TokenType.EXPANSION_CASE_EXP_START)) {
+                if (this._peek.type === 22 /* EXPANSION_CASE_EXP_END */) {
+                    if (lastOnStack(expansionFormStack, 21 /* EXPANSION_CASE_EXP_START */)) {
                         expansionFormStack.pop();
                         if (expansionFormStack.length === 0)
                             return exp;
@@ -14190,8 +14253,8 @@
                         return null;
                     }
                 }
-                if (this._peek.type === TokenType.EXPANSION_FORM_END) {
-                    if (lastOnStack(expansionFormStack, TokenType.EXPANSION_FORM_START)) {
+                if (this._peek.type === 23 /* EXPANSION_FORM_END */) {
+                    if (lastOnStack(expansionFormStack, 19 /* EXPANSION_FORM_START */)) {
                         expansionFormStack.pop();
                     }
                     else {
@@ -14199,7 +14262,7 @@
                         return null;
                     }
                 }
-                if (this._peek.type === TokenType.EOF) {
+                if (this._peek.type === 24 /* EOF */) {
                     this.errors.push(TreeError.create(null, start.sourceSpan, "Invalid ICU message. Missing '}'."));
                     return null;
                 }
@@ -14207,16 +14270,38 @@
             }
         };
         _TreeBuilder.prototype._consumeText = function (token) {
+            var tokens = [token];
+            var startSpan = token.sourceSpan;
             var text = token.parts[0];
             if (text.length > 0 && text[0] === '\n') {
                 var parent = this._getParentElement();
                 if (parent != null && parent.children.length === 0 &&
                     this.getTagDefinition(parent.name).ignoreFirstLf) {
                     text = text.substring(1);
+                    tokens[0] = { type: token.type, sourceSpan: token.sourceSpan, parts: [text] };
+                }
+            }
+            while (this._peek.type === 8 /* INTERPOLATION */ || this._peek.type === 5 /* TEXT */ ||
+                this._peek.type === 9 /* ENCODED_ENTITY */) {
+                token = this._advance();
+                tokens.push(token);
+                if (token.type === 8 /* INTERPOLATION */) {
+                    // For backward compatibility we decode HTML entities that appear in interpolation
+                    // expressions. This is arguably a bug, but it could be a considerable breaking change to
+                    // fix it. It should be addressed in a larger project to refactor the entire parser/lexer
+                    // chain after View Engine has been removed.
+                    text += token.parts.join('').replace(/&([^;]+);/g, decodeEntity);
+                }
+                else if (token.type === 9 /* ENCODED_ENTITY */) {
+                    text += token.parts[0];
+                }
+                else {
+                    text += token.parts.join('');
                 }
             }
             if (text.length > 0) {
-                this._addToParent(new Text$3(text, token.sourceSpan));
+                var endSpan = token.sourceSpan;
+                this._addToParent(new Text$3(text, new ParseSourceSpan(startSpan.start, endSpan.end, startSpan.fullStart, startSpan.details), tokens));
             }
         };
         _TreeBuilder.prototype._closeVoidElement = function () {
@@ -14228,14 +14313,14 @@
         _TreeBuilder.prototype._consumeStartTag = function (startTagToken) {
             var _a = __read(startTagToken.parts, 2), prefix = _a[0], name = _a[1];
             var attrs = [];
-            while (this._peek.type === TokenType.ATTR_NAME) {
+            while (this._peek.type === 14 /* ATTR_NAME */) {
                 attrs.push(this._consumeAttr(this._advance()));
             }
             var fullName = this._getElementFullName(prefix, name, this._getParentElement());
             var selfClosing = false;
             // Note: There could have been a tokenizer error
             // so that we don't get a token for the end tag...
-            if (this._peek.type === TokenType.TAG_OPEN_END_VOID) {
+            if (this._peek.type === 2 /* TAG_OPEN_END_VOID */) {
                 this._advance();
                 selfClosing = true;
                 var tagDef = this.getTagDefinition(fullName);
@@ -14243,7 +14328,7 @@
                     this.errors.push(TreeError.create(fullName, startTagToken.sourceSpan, "Only void and foreign elements can be self closed \"" + startTagToken.parts[1] + "\""));
                 }
             }
-            else if (this._peek.type === TokenType.TAG_OPEN_END) {
+            else if (this._peek.type === 1 /* TAG_OPEN_END */) {
                 this._advance();
                 selfClosing = false;
             }
@@ -14258,7 +14343,7 @@
                 // element start tag also represents the end tag.
                 this._popElement(fullName, span);
             }
-            else if (startTagToken.type === TokenType.INCOMPLETE_TAG_OPEN) {
+            else if (startTagToken.type === 4 /* INCOMPLETE_TAG_OPEN */) {
                 // We already know the opening tag is not complete, so it is unlikely it has a corresponding
                 // close tag. Let's optimistically parse it as a full element and emit an error.
                 this._popElement(fullName, null);
@@ -14313,24 +14398,53 @@
         };
         _TreeBuilder.prototype._consumeAttr = function (attrName) {
             var fullName = mergeNsAndName(attrName.parts[0], attrName.parts[1]);
-            var end = attrName.sourceSpan.end;
-            var value = '';
-            var valueSpan = undefined;
-            if (this._peek.type === TokenType.ATTR_QUOTE) {
+            var attrEnd = attrName.sourceSpan.end;
+            // Consume any quote
+            if (this._peek.type === 15 /* ATTR_QUOTE */) {
                 this._advance();
             }
-            if (this._peek.type === TokenType.ATTR_VALUE) {
-                var valueToken = this._advance();
-                value = valueToken.parts[0];
-                end = valueToken.sourceSpan.end;
-                valueSpan = valueToken.sourceSpan;
+            // Consume the attribute value
+            var value = '';
+            var valueTokens = [];
+            var valueStartSpan = undefined;
+            var valueEnd = undefined;
+            // NOTE: We need to use a new variable `nextTokenType` here to hide the actual type of
+            // `_peek.type` from TS. Otherwise TS will narrow the type of `_peek.type` preventing it from
+            // being able to consider `ATTR_VALUE_INTERPOLATION` as an option. This is because TS is not
+            // able to see that `_advance()` will actually mutate `_peek`.
+            var nextTokenType = this._peek.type;
+            if (nextTokenType === 16 /* ATTR_VALUE_TEXT */) {
+                valueStartSpan = this._peek.sourceSpan;
+                valueEnd = this._peek.sourceSpan.end;
+                while (this._peek.type === 16 /* ATTR_VALUE_TEXT */ ||
+                    this._peek.type === 17 /* ATTR_VALUE_INTERPOLATION */ ||
+                    this._peek.type === 9 /* ENCODED_ENTITY */) {
+                    var valueToken = this._advance();
+                    valueTokens.push(valueToken);
+                    if (valueToken.type === 17 /* ATTR_VALUE_INTERPOLATION */) {
+                        // For backward compatibility we decode HTML entities that appear in interpolation
+                        // expressions. This is arguably a bug, but it could be a considerable breaking change to
+                        // fix it. It should be addressed in a larger project to refactor the entire parser/lexer
+                        // chain after View Engine has been removed.
+                        value += valueToken.parts.join('').replace(/&([^;]+);/g, decodeEntity);
+                    }
+                    else if (valueToken.type === 9 /* ENCODED_ENTITY */) {
+                        value += valueToken.parts[0];
+                    }
+                    else {
+                        value += valueToken.parts.join('');
+                    }
+                    valueEnd = attrEnd = valueToken.sourceSpan.end;
+                }
             }
-            if (this._peek.type === TokenType.ATTR_QUOTE) {
+            // Consume any quote
+            if (this._peek.type === 15 /* ATTR_QUOTE */) {
                 var quoteToken = this._advance();
-                end = quoteToken.sourceSpan.end;
+                attrEnd = quoteToken.sourceSpan.end;
             }
-            var keySpan = new ParseSourceSpan(attrName.sourceSpan.start, attrName.sourceSpan.end);
-            return new Attribute(fullName, value, new ParseSourceSpan(attrName.sourceSpan.start, end, attrName.sourceSpan.fullStart), keySpan, valueSpan);
+            var valueSpan = valueStartSpan && valueEnd &&
+                new ParseSourceSpan(valueStartSpan.start, valueEnd, valueStartSpan.fullStart);
+            return new Attribute(fullName, value, new ParseSourceSpan(attrName.sourceSpan.start, attrEnd, attrName.sourceSpan.fullStart), attrName.sourceSpan, valueSpan, valueTokens.length > 0 ? valueTokens : undefined, undefined);
         };
         _TreeBuilder.prototype._getParentElement = function () {
             return this._elementStack.length > 0 ? this._elementStack[this._elementStack.length - 1] : null;
@@ -14361,6 +14475,23 @@
     }());
     function lastOnStack(stack, element) {
         return stack.length > 0 && stack[stack.length - 1] === element;
+    }
+    /**
+     * Decode the `entity` string, which we believe is the contents of an HTML entity.
+     *
+     * If the string is not actually a valid/known entity then just return the original `match` string.
+     */
+    function decodeEntity(match, entity) {
+        if (NAMED_ENTITIES[entity] !== undefined) {
+            return NAMED_ENTITIES[entity] || match;
+        }
+        if (/^#x[a-f0-9]+$/i.test(entity)) {
+            return String.fromCodePoint(parseInt(entity.slice(2), 16));
+        }
+        if (/^#\d+$/.test(entity)) {
+            return String.fromCodePoint(parseInt(entity.slice(1), 10));
+        }
+        return match;
     }
 
     var HtmlParser = /** @class */ (function (_super) {
@@ -14434,7 +14565,11 @@
             var hasExpansionSibling = context &&
                 (context.prev instanceof Expansion || context.next instanceof Expansion);
             if (isNotBlank || hasExpansionSibling) {
-                return new Text$3(replaceNgsp(text.value).replace(WS_REPLACE_REGEXP, ' '), text.sourceSpan, text.i18n);
+                // Process the whitespace in the tokens of this Text node
+                var tokens = text.tokens.map(function (token) { return token.type === 5 /* TEXT */ ? createWhitespaceProcessedTextToken(token) : token; });
+                // Process the whitespace of the value of this Text node
+                var value = processWhitespace(text.value);
+                return new Text$3(value, text.sourceSpan, tokens, text.i18n);
             }
             return null;
         };
@@ -14449,6 +14584,13 @@
         };
         return WhitespaceVisitor;
     }());
+    function createWhitespaceProcessedTextToken(_a) {
+        var type = _a.type, parts = _a.parts, sourceSpan = _a.sourceSpan;
+        return { type: type, parts: [processWhitespace(parts[0])], sourceSpan: sourceSpan };
+    }
+    function processWhitespace(text) {
+        return replaceNgsp(text).replace(WS_REPLACE_REGEXP, ' ');
+    }
     function removeWhitespaces(htmlAstWithErrors) {
         return new ParseTreeResult(visitAll$1(new WhitespaceVisitor(), htmlAstWithErrors.rootNodes), htmlAstWithErrors.errors);
     }
@@ -14548,9 +14690,9 @@
             }
             var expansionResult = expandNodes(c.expression);
             errors.push.apply(errors, __spreadArray([], __read(expansionResult.errors)));
-            return new Element$1("ng-template", [new Attribute('ngPluralCase', "" + c.value, c.valueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+            return new Element$1("ng-template", [new Attribute('ngPluralCase', "" + c.value, c.valueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* valueTokens */, undefined /* i18n */)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
         });
-        var switchAttr = new Attribute('[ngPlural]', ast.switchValue, ast.switchValueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */);
+        var switchAttr = new Attribute('[ngPlural]', ast.switchValue, ast.switchValueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* valueTokens */, undefined /* i18n */);
         return new Element$1('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
     }
     // ICU messages (excluding plural form) are expanded to `NgSwitch`  and `NgSwitchCase`s
@@ -14560,11 +14702,11 @@
             errors.push.apply(errors, __spreadArray([], __read(expansionResult.errors)));
             if (c.value === 'other') {
                 // other is the default case when no values match
-                return new Element$1("ng-template", [new Attribute('ngSwitchDefault', '', c.valueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+                return new Element$1("ng-template", [new Attribute('ngSwitchDefault', '', c.valueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* valueTokens */, undefined /* i18n */)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
             }
-            return new Element$1("ng-template", [new Attribute('ngSwitchCase', "" + c.value, c.valueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+            return new Element$1("ng-template", [new Attribute('ngSwitchCase', "" + c.value, c.valueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* valueTokens */, undefined /* i18n */)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
         });
-        var switchAttr = new Attribute('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */);
+        var switchAttr = new Attribute('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* valueTokens */, undefined /* i18n */);
         return new Element$1('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
     }
 
@@ -17406,7 +17548,7 @@
         };
         return Lexer;
     }());
-    var Token$1 = /** @class */ (function () {
+    var Token = /** @class */ (function () {
         function Token(index, end, type, numValue, strValue) {
             this.index = index;
             this.end = end;
@@ -17481,30 +17623,30 @@
         return Token;
     }());
     function newCharacterToken(index, end, code) {
-        return new Token$1(index, end, exports.TokenType.Character, code, String.fromCharCode(code));
+        return new Token(index, end, exports.TokenType.Character, code, String.fromCharCode(code));
     }
     function newIdentifierToken(index, end, text) {
-        return new Token$1(index, end, exports.TokenType.Identifier, 0, text);
+        return new Token(index, end, exports.TokenType.Identifier, 0, text);
     }
     function newPrivateIdentifierToken(index, end, text) {
-        return new Token$1(index, end, exports.TokenType.PrivateIdentifier, 0, text);
+        return new Token(index, end, exports.TokenType.PrivateIdentifier, 0, text);
     }
     function newKeywordToken(index, end, text) {
-        return new Token$1(index, end, exports.TokenType.Keyword, 0, text);
+        return new Token(index, end, exports.TokenType.Keyword, 0, text);
     }
     function newOperatorToken(index, end, text) {
-        return new Token$1(index, end, exports.TokenType.Operator, 0, text);
+        return new Token(index, end, exports.TokenType.Operator, 0, text);
     }
     function newStringToken(index, end, text) {
-        return new Token$1(index, end, exports.TokenType.String, 0, text);
+        return new Token(index, end, exports.TokenType.String, 0, text);
     }
     function newNumberToken(index, end, n) {
-        return new Token$1(index, end, exports.TokenType.Number, n, '');
+        return new Token(index, end, exports.TokenType.Number, n, '');
     }
     function newErrorToken(index, end, message) {
-        return new Token$1(index, end, exports.TokenType.Error, 0, message);
+        return new Token(index, end, exports.TokenType.Error, 0, message);
     }
-    var EOF = new Token$1(-1, -1, exports.TokenType.Character, 0, '');
+    var EOF = new Token(-1, -1, exports.TokenType.Character, 0, '');
     var _Scanner = /** @class */ (function () {
         function _Scanner(input) {
             this.input = input;
@@ -20470,13 +20612,6 @@
         return PlaceholderRegistry;
     }());
 
-    /**
-     * @license
-     * Copyright Google LLC All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var _expParser = new Parser$1(new Lexer());
     /**
      * Returns a function converting html nodes to an i18n Message given an interpolationConfig
@@ -20534,11 +20669,15 @@
             return context.visitNodeFn(el, node);
         };
         _I18nVisitor.prototype.visitAttribute = function (attribute, context) {
-            var node = this._visitTextWithInterpolation(attribute.value, attribute.valueSpan || attribute.sourceSpan, context, attribute.i18n);
+            var node = attribute.valueTokens === undefined || attribute.valueTokens.length === 1 ?
+                new Text$1(attribute.value, attribute.valueSpan || attribute.sourceSpan) :
+                this._visitTextWithInterpolation(attribute.valueTokens, attribute.valueSpan || attribute.sourceSpan, context, attribute.i18n);
             return context.visitNodeFn(attribute, node);
         };
         _I18nVisitor.prototype.visitText = function (text, context) {
-            var node = this._visitTextWithInterpolation(text.value, text.sourceSpan, context, text.i18n);
+            var node = text.tokens.length === 1 ?
+                new Text$1(text.value, text.sourceSpan) :
+                this._visitTextWithInterpolation(text.tokens, text.sourceSpan, context, text.i18n);
             return context.visitNodeFn(text, node);
         };
         _I18nVisitor.prototype.visitComment = function (comment, context) {
@@ -20578,61 +20717,69 @@
             throw new Error('Unreachable code');
         };
         /**
-         * Split the, potentially interpolated, text up into text and placeholder pieces.
+         * Convert, text and interpolated tokens up into text and placeholder pieces.
          *
-         * @param text The potentially interpolated string to be split.
+         * @param tokens The text and interpolated tokens.
          * @param sourceSpan The span of the whole of the `text` string.
          * @param context The current context of the visitor, used to compute and store placeholders.
          * @param previousI18n Any i18n metadata associated with this `text` from a previous pass.
          */
-        _I18nVisitor.prototype._visitTextWithInterpolation = function (text, sourceSpan, context, previousI18n) {
-            var _b = this._expressionParser.splitInterpolation(text, sourceSpan.start.toString(), this._interpolationConfig), strings = _b.strings, expressions = _b.expressions;
-            // No expressions, return a single text.
-            if (expressions.length === 0) {
-                return new Text$1(text, sourceSpan);
-            }
+        _I18nVisitor.prototype._visitTextWithInterpolation = function (tokens, sourceSpan, context, previousI18n) {
+            var e_1, _b;
             // Return a sequence of `Text` and `Placeholder` nodes grouped in a `Container`.
             var nodes = [];
-            for (var i = 0; i < strings.length - 1; i++) {
-                this._addText(nodes, strings[i], sourceSpan);
-                this._addPlaceholder(nodes, context, expressions[i], sourceSpan);
+            // We will only create a container if there are actually interpolations,
+            // so this flag tracks that.
+            var hasInterpolation = false;
+            try {
+                for (var tokens_1 = __values(tokens), tokens_1_1 = tokens_1.next(); !tokens_1_1.done; tokens_1_1 = tokens_1.next()) {
+                    var token = tokens_1_1.value;
+                    switch (token.type) {
+                        case 8 /* INTERPOLATION */:
+                        case 17 /* ATTR_VALUE_INTERPOLATION */:
+                            hasInterpolation = true;
+                            var expression = token.parts[1];
+                            var baseName = extractPlaceholderName(expression) || 'INTERPOLATION';
+                            var phName = context.placeholderRegistry.getPlaceholderName(baseName, expression);
+                            context.placeholderToContent[phName] = {
+                                text: token.parts.join(''),
+                                sourceSpan: token.sourceSpan
+                            };
+                            nodes.push(new Placeholder(expression, phName, token.sourceSpan));
+                            break;
+                        default:
+                            if (token.parts[0].length > 0) {
+                                // This token is text or an encoded entity.
+                                // If it is following on from a previous text node then merge it into that node
+                                // Otherwise, if it is following an interpolation, then add a new node.
+                                var previous = nodes[nodes.length - 1];
+                                if (previous instanceof Text$1) {
+                                    previous.value += token.parts[0];
+                                    previous.sourceSpan = new ParseSourceSpan(previous.sourceSpan.start, token.sourceSpan.end, previous.sourceSpan.fullStart, previous.sourceSpan.details);
+                                }
+                                else {
+                                    nodes.push(new Text$1(token.parts[0], token.sourceSpan));
+                                }
+                            }
+                            break;
+                    }
+                }
             }
-            // The last index contains no expression
-            this._addText(nodes, strings[strings.length - 1], sourceSpan);
-            // Whitespace removal may have invalidated the interpolation source-spans.
-            reusePreviousSourceSpans(nodes, previousI18n);
-            return new Container(nodes, sourceSpan);
-        };
-        /**
-         * Create a new `Text` node from the `textPiece` and add it to the `nodes` collection.
-         *
-         * @param nodes The nodes to which the created `Text` node should be added.
-         * @param textPiece The text and relative span information for this `Text` node.
-         * @param interpolationSpan The span of the whole interpolated text.
-         */
-        _I18nVisitor.prototype._addText = function (nodes, textPiece, interpolationSpan) {
-            if (textPiece.text.length > 0) {
-                // No need to add empty strings
-                var stringSpan = getOffsetSourceSpan(interpolationSpan, textPiece);
-                nodes.push(new Text$1(textPiece.text, stringSpan));
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (tokens_1_1 && !tokens_1_1.done && (_b = tokens_1.return)) _b.call(tokens_1);
+                }
+                finally { if (e_1) throw e_1.error; }
             }
-        };
-        /**
-         * Create a new `Placeholder` node from the `expression` and add it to the `nodes` collection.
-         *
-         * @param nodes The nodes to which the created `Text` node should be added.
-         * @param context The current context of the visitor, used to compute and store placeholders.
-         * @param expression The expression text and relative span information for this `Placeholder`
-         *     node.
-         * @param interpolationSpan The span of the whole interpolated text.
-         */
-        _I18nVisitor.prototype._addPlaceholder = function (nodes, context, expression, interpolationSpan) {
-            var sourceSpan = getOffsetSourceSpan(interpolationSpan, expression);
-            var baseName = extractPlaceholderName(expression.text) || 'INTERPOLATION';
-            var phName = context.placeholderRegistry.getPlaceholderName(baseName, expression.text);
-            var text = this._interpolationConfig.start + expression.text + this._interpolationConfig.end;
-            context.placeholderToContent[phName] = { text: text, sourceSpan: sourceSpan };
-            nodes.push(new Placeholder(expression.text, phName, sourceSpan));
+            if (hasInterpolation) {
+                // Whitespace removal may have invalidated the interpolation source-spans.
+                reusePreviousSourceSpans(nodes, previousI18n);
+                return new Container(nodes, sourceSpan);
+            }
+            else {
+                return nodes[0];
+            }
         };
         return _I18nVisitor;
     }());
@@ -20655,7 +20802,7 @@
         }
         if (previousI18n instanceof Container) {
             // The `previousI18n` is a `Container`, which means that this is a second i18n extraction pass
-            // after whitespace has been removed from the AST ndoes.
+            // after whitespace has been removed from the AST nodes.
             assertEquivalentNodes(previousI18n.children, nodes);
             // Reuse the source-spans from the first pass.
             for (var i = 0; i < nodes.length; i++) {
@@ -20683,13 +20830,6 @@
         if (previousNodes.some(function (node, i) { return nodes[i].constructor !== node.constructor; })) {
             throw new Error('The types of the i18n message children changed between first and second pass.');
         }
-    }
-    /**
-     * Create a new `ParseSourceSpan` from the `sourceSpan`, offset by the `start` and `end` values.
-     */
-    function getOffsetSourceSpan(sourceSpan, _b) {
-        var start = _b.start, end = _b.end;
-        return new ParseSourceSpan(sourceSpan.fullStart.moveBy(start), sourceSpan.fullStart.moveBy(end));
     }
     var _CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*("|')([\s\S]*?)\1[\s\S]*\)/g;
     function extractPlaceholderName(input) {
@@ -21033,7 +21173,8 @@
                 context[context.length - 1].text += text.value;
             }
             else {
-                context.push(new LiteralPiece(text.value, text.sourceSpan));
+                var sourceSpan = new ParseSourceSpan(text.sourceSpan.fullStart, text.sourceSpan.end, text.sourceSpan.fullStart, text.sourceSpan.details);
+                context.push(new LiteralPiece(text.value, sourceSpan));
             }
         };
         LocalizeSerializerVisitor.prototype.visitContainer = function (container, context) {
@@ -21080,7 +21221,7 @@
     function getSourceSpan(message) {
         var startNode = message.nodes[0];
         var endNode = message.nodes[message.nodes.length - 1];
-        return new ParseSourceSpan(startNode.sourceSpan.start, endNode.sourceSpan.end, startNode.sourceSpan.fullStart, startNode.sourceSpan.details);
+        return new ParseSourceSpan(startNode.sourceSpan.fullStart, endNode.sourceSpan.end, startNode.sourceSpan.fullStart, startNode.sourceSpan.details);
     }
     /**
      * Convert the list of serialized MessagePieces into two arrays.
@@ -24109,7 +24250,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('13.0.0-next.6+20.sha-2292a9c.with-local-changes');
+    var VERSION$1 = new Version('13.0.0-next.6+27.sha-e55d052.with-local-changes');
 
     /**
      * @license
@@ -24824,11 +24965,11 @@
                     var nodes = _this._translations.get(message);
                     if (nodes) {
                         if (nodes.length == 0) {
-                            translatedAttributes.push(new Attribute(attr.name, '', attr.sourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */));
+                            translatedAttributes.push(new Attribute(attr.name, '', attr.sourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* valueTokens */, undefined /* i18n */));
                         }
                         else if (nodes[0] instanceof Text$3) {
                             var value = nodes[0].value;
-                            translatedAttributes.push(new Attribute(attr.name, value, attr.sourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* i18n */));
+                            translatedAttributes.push(new Attribute(attr.name, value, attr.sourceSpan, undefined /* keySpan */, undefined /* valueSpan */, undefined /* valueTokens */, undefined /* i18n */));
                         }
                         else {
                             _this._reportError(el, "Unexpected translation for attribute \"" + attr.name + "\" (id=\"" + (id || _this._translations.digest(message)) + "\")");
@@ -33959,7 +34100,7 @@
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', literal('13.0.0-next.6+20.sha-2292a9c.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.6+27.sha-e55d052.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
@@ -33999,7 +34140,7 @@
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-        definitionMap.set('version', literal('13.0.0-next.6+20.sha-2292a9c.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.6+27.sha-e55d052.with-local-changes'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -34223,7 +34364,7 @@
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-        definitionMap.set('version', literal('13.0.0-next.6+20.sha-2292a9c.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.6+27.sha-e55d052.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34265,7 +34406,7 @@
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-        definitionMap.set('version', literal('13.0.0-next.6+20.sha-2292a9c.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.6+27.sha-e55d052.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
@@ -34345,7 +34486,7 @@
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-        definitionMap.set('version', literal('13.0.0-next.6+20.sha-2292a9c.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.6+27.sha-e55d052.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -34382,7 +34523,7 @@
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-        definitionMap.set('version', literal('13.0.0-next.6+20.sha-2292a9c.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.6+27.sha-e55d052.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -34440,7 +34581,7 @@
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-        definitionMap.set('version', literal('13.0.0-next.6+20.sha-2292a9c.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.6+27.sha-e55d052.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
@@ -34674,7 +34815,7 @@
     exports.TmplAstText = Text;
     exports.TmplAstTextAttribute = TextAttribute;
     exports.TmplAstVariable = Variable;
-    exports.Token = Token$1;
+    exports.Token = Token;
     exports.TransitiveCompileNgModuleMetadata = TransitiveCompileNgModuleMetadata;
     exports.TreeError = TreeError;
     exports.TryCatchStmt = TryCatchStmt;
