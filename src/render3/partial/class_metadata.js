@@ -31,7 +31,7 @@
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new util_1.DefinitionMap();
         definitionMap.set('minVersion', o.literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', o.literal('12.2.6+38.sha-020f0d3.with-local-changes'));
+        definitionMap.set('version', o.literal('12.2.6+41.sha-2690315.with-local-changes'));
         definitionMap.set('ngImport', o.importExpr(r3_identifiers_1.Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
