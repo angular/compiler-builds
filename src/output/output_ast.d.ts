@@ -106,7 +106,6 @@ export declare abstract class Expression {
     abstract isConstant(): boolean;
     prop(name: string, sourceSpan?: ParseSourceSpan | null): ReadPropExpr;
     key(index: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null): ReadKeyExpr;
-    callMethod(name: string | BuiltinMethod, params: Expression[], sourceSpan?: ParseSourceSpan | null): InvokeMethodExpr;
     callFn(params: Expression[], sourceSpan?: ParseSourceSpan | null, pure?: boolean): InvokeFunctionExpr;
     instantiate(params: Expression[], type?: Type | null, sourceSpan?: ParseSourceSpan | null): InstantiateExpr;
     conditional(trueCase: Expression, falseCase?: Expression | null, sourceSpan?: ParseSourceSpan | null): ConditionalExpr;
@@ -192,16 +191,6 @@ export declare enum BuiltinMethod {
     ConcatArray = 0,
     SubscribeObservable = 1,
     Bind = 2
-}
-export declare class InvokeMethodExpr extends Expression {
-    receiver: Expression;
-    args: Expression[];
-    name: string | null;
-    builtin: BuiltinMethod | null;
-    constructor(receiver: Expression, method: string | BuiltinMethod, args: Expression[], type?: Type | null, sourceSpan?: ParseSourceSpan | null);
-    isEquivalent(e: Expression): boolean;
-    isConstant(): boolean;
-    visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
 export declare class InvokeFunctionExpr extends Expression {
     fn: Expression;
@@ -424,7 +413,6 @@ export interface ExpressionVisitor {
     visitWriteVarExpr(expr: WriteVarExpr, context: any): any;
     visitWriteKeyExpr(expr: WriteKeyExpr, context: any): any;
     visitWritePropExpr(expr: WritePropExpr, context: any): any;
-    visitInvokeMethodExpr(ast: InvokeMethodExpr, context: any): any;
     visitInvokeFunctionExpr(ast: InvokeFunctionExpr, context: any): any;
     visitTaggedTemplateExpr(ast: TaggedTemplateExpr, context: any): any;
     visitInstantiateExpr(ast: InstantiateExpr, context: any): any;
@@ -589,7 +577,6 @@ export declare class AstTransformer implements StatementVisitor, ExpressionVisit
     visitWriteVarExpr(expr: WriteVarExpr, context: any): any;
     visitWriteKeyExpr(expr: WriteKeyExpr, context: any): any;
     visitWritePropExpr(expr: WritePropExpr, context: any): any;
-    visitInvokeMethodExpr(ast: InvokeMethodExpr, context: any): any;
     visitInvokeFunctionExpr(ast: InvokeFunctionExpr, context: any): any;
     visitTaggedTemplateExpr(ast: TaggedTemplateExpr, context: any): any;
     visitInstantiateExpr(ast: InstantiateExpr, context: any): any;
@@ -632,7 +619,6 @@ export declare class RecursiveAstVisitor implements StatementVisitor, Expression
     visitWriteVarExpr(ast: WriteVarExpr, context: any): any;
     visitWriteKeyExpr(ast: WriteKeyExpr, context: any): any;
     visitWritePropExpr(ast: WritePropExpr, context: any): any;
-    visitInvokeMethodExpr(ast: InvokeMethodExpr, context: any): any;
     visitInvokeFunctionExpr(ast: InvokeFunctionExpr, context: any): any;
     visitTaggedTemplateExpr(ast: TaggedTemplateExpr, context: any): any;
     visitInstantiateExpr(ast: InstantiateExpr, context: any): any;

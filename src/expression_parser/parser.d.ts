@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { InterpolationConfig } from '../ml_parser/interpolation_config';
-import { AbsoluteSourceSpan, AST, AstVisitor, ASTWithSource, Binary, BindingPipe, Chain, Conditional, FunctionCall, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, MethodCall, NonNullAssert, ParserError, ParseSpan, PrefixNot, PropertyRead, PropertyWrite, Quote, RecursiveAstVisitor, SafeKeyedRead, SafeMethodCall, SafePropertyRead, TemplateBinding, TemplateBindingIdentifier, ThisReceiver, Unary } from './ast';
+import { AbsoluteSourceSpan, AST, AstVisitor, ASTWithSource, Binary, BindingPipe, Call, Chain, Conditional, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, NonNullAssert, ParserError, ParseSpan, PrefixNot, PropertyRead, PropertyWrite, Quote, RecursiveAstVisitor, SafeKeyedRead, SafePropertyRead, TemplateBinding, TemplateBindingIdentifier, ThisReceiver, Unary } from './ast';
 import { Lexer, Token } from './lexer';
 export interface InterpolationPiece {
     text: string;
@@ -179,7 +179,7 @@ export declare class _ParseAST {
     parsePrimary(): AST;
     parseExpressionList(terminator: number): AST[];
     parseLiteralMap(): LiteralMap;
-    parseAccessMemberOrMethodCall(receiver: AST, start: number, isSafe: boolean): AST;
+    parseAccessMemberOrCall(readReceiver: AST, start: number, isSafe: boolean): AST;
     parseCallArguments(): BindingPipe[];
     /**
      * Parses an identifier, a keyword, a string with an optional `-` in between,
@@ -310,9 +310,7 @@ declare class SimpleExpressionChecker implements AstVisitor {
     visitPropertyRead(ast: PropertyRead, context: any): void;
     visitPropertyWrite(ast: PropertyWrite, context: any): void;
     visitSafePropertyRead(ast: SafePropertyRead, context: any): void;
-    visitMethodCall(ast: MethodCall, context: any): void;
-    visitSafeMethodCall(ast: SafeMethodCall, context: any): void;
-    visitFunctionCall(ast: FunctionCall, context: any): void;
+    visitCall(ast: Call, context: any): void;
     visitLiteralArray(ast: LiteralArray, context: any): void;
     visitLiteralMap(ast: LiteralMap, context: any): void;
     visitUnary(ast: Unary, context: any): void;

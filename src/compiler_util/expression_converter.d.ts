@@ -94,7 +94,7 @@ export declare function convertUpdateArguments(localResolver: LocalResolver, con
     stmts: o.Statement[];
     args: o.Expression[];
 };
-export declare class BuiltinFunctionCall extends cdAst.FunctionCall {
+export declare class BuiltinFunctionCall extends cdAst.Call {
     converter: BuiltinConverter;
     constructor(span: cdAst.ParseSpan, sourceSpan: cdAst.AbsoluteSourceSpan, args: cdAst.AST[], converter: BuiltinConverter);
 }

@@ -1,5 +1,5 @@
 /**
- * @license Angular v13.0.0-next.6+56.sha-77bd253.with-local-changes
+ * @license Angular v13.0.0-next.6+57.sha-2028c39.with-local-changes
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -845,9 +845,6 @@ class Expression {
     key(index, type, sourceSpan) {
         return new ReadKeyExpr(this, index, type, sourceSpan);
     }
-    callMethod(name, params, sourceSpan) {
-        return new InvokeMethodExpr(this, name, params, null, sourceSpan);
-    }
     callFn(params, sourceSpan, pure) {
         return new InvokeFunctionExpr(this, params, null, sourceSpan, pure);
     }
@@ -1049,31 +1046,6 @@ var BuiltinMethod;
     BuiltinMethod[BuiltinMethod["SubscribeObservable"] = 1] = "SubscribeObservable";
     BuiltinMethod[BuiltinMethod["Bind"] = 2] = "Bind";
 })(BuiltinMethod || (BuiltinMethod = {}));
-class InvokeMethodExpr extends Expression {
-    constructor(receiver, method, args, type, sourceSpan) {
-        super(type, sourceSpan);
-        this.receiver = receiver;
-        this.args = args;
-        if (typeof method === 'string') {
-            this.name = method;
-            this.builtin = null;
-        }
-        else {
-            this.name = null;
-            this.builtin = method;
-        }
-    }
-    isEquivalent(e) {
-        return e instanceof InvokeMethodExpr && this.receiver.isEquivalent(e.receiver) &&
-            this.name === e.name && this.builtin === e.builtin && areAllEquivalent(this.args, e.args);
-    }
-    isConstant() {
-        return false;
-    }
-    visitExpression(visitor, context) {
-        return visitor.visitInvokeMethodExpr(this, context);
-    }
-}
 class InvokeFunctionExpr extends Expression {
     constructor(fn, args, type, sourceSpan, pure = false) {
         super(type, sourceSpan);
@@ -1757,10 +1729,6 @@ class AstTransformer {
     visitWritePropExpr(expr, context) {
         return this.transformExpr(new WritePropExpr(expr.receiver.visitExpression(this, context), expr.name, expr.value.visitExpression(this, context), expr.type, expr.sourceSpan), context);
     }
-    visitInvokeMethodExpr(ast, context) {
-        const method = ast.builtin || ast.name;
-        return this.transformExpr(new InvokeMethodExpr(ast.receiver.visitExpression(this, context), method, this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan), context);
-    }
     visitInvokeFunctionExpr(ast, context) {
         return this.transformExpr(new InvokeFunctionExpr(ast.fn.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan), context);
     }
@@ -1902,11 +1870,6 @@ class RecursiveAstVisitor {
     visitWritePropExpr(ast, context) {
         ast.receiver.visitExpression(this, context);
         ast.value.visitExpression(this, context);
-        return this.visitExpression(ast, context);
-    }
-    visitInvokeMethodExpr(ast, context) {
-        ast.receiver.visitExpression(this, context);
-        this.visitAllExpressions(ast.args, context);
         return this.visitExpression(ast, context);
     }
     visitInvokeFunctionExpr(ast, context) {
@@ -2454,7 +2417,6 @@ class KeyVisitor {
         this.visitWriteVarExpr = invalid;
         this.visitWriteKeyExpr = invalid;
         this.visitWritePropExpr = invalid;
-        this.visitInvokeMethodExpr = invalid;
         this.visitInvokeFunctionExpr = invalid;
         this.visitTaggedTemplateExpr = invalid;
         this.visitInstantiateExpr = invalid;
@@ -5067,21 +5029,6 @@ class AbstractEmitterVisitor {
         }
         return null;
     }
-    visitInvokeMethodExpr(expr, ctx) {
-        expr.receiver.visitExpression(this, ctx);
-        let name = expr.name;
-        if (expr.builtin != null) {
-            name = this.getBuiltinMethodName(expr.builtin);
-            if (name == null) {
-                // some builtins just mean to skip the call.
-                return null;
-            }
-        }
-        ctx.print(expr, `.${name}(`);
-        this.visitAllExpressions(expr.args, ctx, `,`);
-        ctx.print(expr, `)`);
-        return null;
-    }
     visitInvokeFunctionExpr(expr, ctx) {
         expr.fn.visitExpression(this, ctx);
         ctx.print(expr, `(`);
@@ -5723,7 +5670,7 @@ function delegateToFactory(type, internalType, unwrapForwardRefs) {
     return createFactoryFunction(unwrappedType);
 }
 function createFactoryFunction(type) {
-    return fn([new FnParam('t', DYNAMIC_TYPE)], [new ReturnStatement(type.callMethod('ɵfac', [variable('t')]))]);
+    return fn([new FnParam('t', DYNAMIC_TYPE)], [new ReturnStatement(type.prop('ɵfac').callFn([variable('t')]))]);
 }
 
 /**
@@ -7122,38 +7069,15 @@ class NonNullAssert extends AST {
         return visitor.visitNonNullAssert(this, context);
     }
 }
-class MethodCall extends ASTWithName {
-    constructor(span, sourceSpan, nameSpan, receiver, name, args, argumentSpan) {
-        super(span, sourceSpan, nameSpan);
-        this.receiver = receiver;
-        this.name = name;
-        this.args = args;
-        this.argumentSpan = argumentSpan;
-    }
-    visit(visitor, context = null) {
-        return visitor.visitMethodCall(this, context);
-    }
-}
-class SafeMethodCall extends ASTWithName {
-    constructor(span, sourceSpan, nameSpan, receiver, name, args, argumentSpan) {
-        super(span, sourceSpan, nameSpan);
-        this.receiver = receiver;
-        this.name = name;
-        this.args = args;
-        this.argumentSpan = argumentSpan;
-    }
-    visit(visitor, context = null) {
-        return visitor.visitSafeMethodCall(this, context);
-    }
-}
-class FunctionCall extends AST {
-    constructor(span, sourceSpan, target, args) {
+class Call extends AST {
+    constructor(span, sourceSpan, receiver, args, argumentSpan) {
         super(span, sourceSpan);
-        this.target = target;
+        this.receiver = receiver;
         this.args = args;
+        this.argumentSpan = argumentSpan;
     }
     visit(visitor, context = null) {
-        return visitor.visitFunctionCall(this, context);
+        return visitor.visitCall(this, context);
     }
 }
 /**
@@ -7239,12 +7163,6 @@ class RecursiveAstVisitor$1 {
         this.visit(ast.exp, context);
         this.visitAll(ast.args, context);
     }
-    visitFunctionCall(ast, context) {
-        if (ast.target) {
-            this.visit(ast.target, context);
-        }
-        this.visitAll(ast.args, context);
-    }
     visitImplicitReceiver(ast, context) { }
     visitThisReceiver(ast, context) { }
     visitInterpolation(ast, context) {
@@ -7266,10 +7184,6 @@ class RecursiveAstVisitor$1 {
         this.visitAll(ast.values, context);
     }
     visitLiteralPrimitive(ast, context) { }
-    visitMethodCall(ast, context) {
-        this.visit(ast.receiver, context);
-        this.visitAll(ast.args, context);
-    }
     visitPrefixNot(ast, context) {
         this.visit(ast.expression, context);
     }
@@ -7286,13 +7200,13 @@ class RecursiveAstVisitor$1 {
     visitSafePropertyRead(ast, context) {
         this.visit(ast.receiver, context);
     }
-    visitSafeMethodCall(ast, context) {
-        this.visit(ast.receiver, context);
-        this.visitAll(ast.args, context);
-    }
     visitSafeKeyedRead(ast, context) {
         this.visit(ast.receiver, context);
         this.visit(ast.key, context);
+    }
+    visitCall(ast, context) {
+        this.visit(ast.receiver, context);
+        this.visitAll(ast.args, context);
     }
     visitQuote(ast, context) { }
     // This is not part of the AstVisitor interface, just a helper method
@@ -7323,15 +7237,6 @@ class AstTransformer$1 {
     }
     visitSafePropertyRead(ast, context) {
         return new SafePropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name);
-    }
-    visitMethodCall(ast, context) {
-        return new MethodCall(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, this.visitAll(ast.args), ast.argumentSpan);
-    }
-    visitSafeMethodCall(ast, context) {
-        return new SafeMethodCall(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, this.visitAll(ast.args), ast.argumentSpan);
-    }
-    visitFunctionCall(ast, context) {
-        return new FunctionCall(ast.span, ast.sourceSpan, ast.target.visit(this), this.visitAll(ast.args));
     }
     visitLiteralArray(ast, context) {
         return new LiteralArray(ast.span, ast.sourceSpan, this.visitAll(ast.expressions));
@@ -7369,6 +7274,9 @@ class AstTransformer$1 {
     }
     visitKeyedWrite(ast, context) {
         return new KeyedWrite(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.key.visit(this), ast.value.visit(this));
+    }
+    visitCall(ast, context) {
+        return new Call(ast.span, ast.sourceSpan, ast.receiver.visit(this), this.visitAll(ast.args), ast.argumentSpan);
     }
     visitAll(asts) {
         const res = [];
@@ -7424,30 +7332,6 @@ class AstMemoryEfficientTransformer {
         const receiver = ast.receiver.visit(this);
         if (receiver !== ast.receiver) {
             return new SafePropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name);
-        }
-        return ast;
-    }
-    visitMethodCall(ast, context) {
-        const receiver = ast.receiver.visit(this);
-        const args = this.visitAll(ast.args);
-        if (receiver !== ast.receiver || args !== ast.args) {
-            return new MethodCall(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, args, ast.argumentSpan);
-        }
-        return ast;
-    }
-    visitSafeMethodCall(ast, context) {
-        const receiver = ast.receiver.visit(this);
-        const args = this.visitAll(ast.args);
-        if (receiver !== ast.receiver || args !== ast.args) {
-            return new SafeMethodCall(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, args, ast.argumentSpan);
-        }
-        return ast;
-    }
-    visitFunctionCall(ast, context) {
-        const target = ast.target && ast.target.visit(this);
-        const args = this.visitAll(ast.args);
-        if (target !== ast.target || args !== ast.args) {
-            return new FunctionCall(ast.span, ast.sourceSpan, target, args);
         }
         return ast;
     }
@@ -7550,6 +7434,14 @@ class AstMemoryEfficientTransformer {
         const expressions = this.visitAll(ast.expressions);
         if (expressions !== ast.expressions) {
             return new Chain(ast.span, ast.sourceSpan, expressions);
+        }
+        return ast;
+    }
+    visitCall(ast, context) {
+        const receiver = ast.receiver.visit(this);
+        const args = this.visitAll(ast.args);
+        if (receiver !== ast.receiver || args !== ast.args) {
+            return new Call(ast.span, ast.sourceSpan, receiver, args, ast.argumentSpan);
         }
         return ast;
     }
@@ -8085,18 +7977,6 @@ class _AstToIrVisitor {
     visitPipe(ast, mode) {
         throw new Error(`Illegal state: Pipes should have been converted into functions. Pipe: ${ast.name}`);
     }
-    visitFunctionCall(ast, mode) {
-        const convertedArgs = this.visitAll(ast.args, _Mode.Expression);
-        let fnResult;
-        if (ast instanceof BuiltinFunctionCall) {
-            fnResult = ast.converter(convertedArgs);
-        }
-        else {
-            fnResult = this._visit(ast.target, _Mode.Expression)
-                .callFn(convertedArgs, this.convertSourceSpan(ast.span));
-        }
-        return convertToStatementIfNeeded(mode, fnResult);
-    }
     visitImplicitReceiver(ast, mode) {
         ensureExpressionMode(mode, ast);
         this.usesImplicitReceiver = true;
@@ -8161,40 +8041,6 @@ class _AstToIrVisitor {
         }
         return this._localResolver.getLocal(name);
     }
-    visitMethodCall(ast, mode) {
-        if (ast.receiver instanceof ImplicitReceiver &&
-            !(ast.receiver instanceof ThisReceiver) && ast.name === '$any') {
-            const args = this.visitAll(ast.args, _Mode.Expression);
-            if (args.length != 1) {
-                throw new Error(`Invalid call to $any, expected 1 argument but received ${args.length || 'none'}`);
-            }
-            return args[0].cast(DYNAMIC_TYPE, this.convertSourceSpan(ast.span));
-        }
-        const leftMostSafe = this.leftMostSafeNode(ast);
-        if (leftMostSafe) {
-            return this.convertSafeAccess(ast, leftMostSafe, mode);
-        }
-        else {
-            const args = this.visitAll(ast.args, _Mode.Expression);
-            const prevUsesImplicitReceiver = this.usesImplicitReceiver;
-            let result = null;
-            const receiver = this._visit(ast.receiver, _Mode.Expression);
-            if (receiver === this._implicitReceiver) {
-                const varExpr = this._getLocal(ast.name, ast.receiver);
-                if (varExpr) {
-                    // Restore the previous "usesImplicitReceiver" state since the implicit
-                    // receiver has been replaced with a resolved local expression.
-                    this.usesImplicitReceiver = prevUsesImplicitReceiver;
-                    result = varExpr.callFn(args);
-                    this.addImplicitReceiverAccess(ast.name);
-                }
-            }
-            if (result == null) {
-                result = receiver.callMethod(ast.name, args, this.convertSourceSpan(ast.span));
-            }
-            return convertToStatementIfNeeded(mode, result);
-        }
-    }
     visitPrefixNot(ast, mode) {
         return convertToStatementIfNeeded(mode, not(this._visit(ast.expression, _Mode.Expression)));
     }
@@ -8220,7 +8066,7 @@ class _AstToIrVisitor {
                 }
             }
             if (result == null) {
-                result = receiver.prop(ast.name);
+                result = receiver.prop(ast.name, this.convertSourceSpan(ast.span));
             }
             return convertToStatementIfNeeded(mode, result);
         }
@@ -8253,14 +8099,11 @@ class _AstToIrVisitor {
         // If no local expression could be produced, use the original receiver's
         // property as the target.
         if (varExpr === null) {
-            varExpr = receiver.prop(ast.name);
+            varExpr = receiver.prop(ast.name, this.convertSourceSpan(ast.span));
         }
         return convertToStatementIfNeeded(mode, varExpr.set(this._visit(ast.value, _Mode.Expression)));
     }
     visitSafePropertyRead(ast, mode) {
-        return this.convertSafeAccess(ast, this.leftMostSafeNode(ast), mode);
-    }
-    visitSafeMethodCall(ast, mode) {
         return this.convertSafeAccess(ast, this.leftMostSafeNode(ast), mode);
     }
     visitSafeKeyedRead(ast, mode) {
@@ -8272,6 +8115,29 @@ class _AstToIrVisitor {
     visitQuote(ast, mode) {
         throw new Error(`Quotes are not supported for evaluation!
         Statement: ${ast.uninterpretedExpression} located at ${ast.location}`);
+    }
+    visitCall(ast, mode) {
+        const convertedArgs = this.visitAll(ast.args, _Mode.Expression);
+        if (ast instanceof BuiltinFunctionCall) {
+            return convertToStatementIfNeeded(mode, ast.converter(convertedArgs));
+        }
+        const receiver = ast.receiver;
+        if (receiver instanceof PropertyRead &&
+            receiver.receiver instanceof ImplicitReceiver &&
+            !(receiver.receiver instanceof ThisReceiver) && receiver.name === '$any') {
+            if (convertedArgs.length !== 1) {
+                throw new Error(`Invalid call to $any, expected 1 argument but received ${convertedArgs.length || 'none'}`);
+            }
+            return convertedArgs[0]
+                .cast(DYNAMIC_TYPE, this.convertSourceSpan(ast.span));
+        }
+        const leftMostSafe = this.leftMostSafeNode(ast);
+        if (leftMostSafe) {
+            return this.convertSafeAccess(ast, leftMostSafe, mode);
+        }
+        const call = this._visit(receiver, _Mode.Expression)
+            .callFn(convertedArgs, this.convertSourceSpan(ast.span));
+        return convertToStatementIfNeeded(mode, call);
     }
     _visit(ast, mode) {
         const result = this._resultMap.get(ast);
@@ -8329,10 +8195,7 @@ class _AstToIrVisitor {
         const condition = guardedExpression.isBlank();
         // Convert the ast to an unguarded access to the receiver's member. The map will substitute
         // leftMostNode with its unguarded version in the call to `this.visit()`.
-        if (leftMostSafe instanceof SafeMethodCall) {
-            this._nodeMap.set(leftMostSafe, new MethodCall(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.nameSpan, leftMostSafe.receiver, leftMostSafe.name, leftMostSafe.args, leftMostSafe.argumentSpan));
-        }
-        else if (leftMostSafe instanceof SafeKeyedRead) {
+        if (leftMostSafe instanceof SafeKeyedRead) {
             this._nodeMap.set(leftMostSafe, new KeyedRead(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.receiver, leftMostSafe.key));
         }
         else {
@@ -8388,8 +8251,8 @@ class _AstToIrVisitor {
             visitConditional(ast) {
                 return null;
             },
-            visitFunctionCall(ast) {
-                return null;
+            visitCall(ast) {
+                return visit(this, ast.receiver);
             },
             visitImplicitReceiver(ast) {
                 return null;
@@ -8415,9 +8278,6 @@ class _AstToIrVisitor {
             visitLiteralPrimitive(ast) {
                 return null;
             },
-            visitMethodCall(ast) {
-                return visit(this, ast.receiver);
-            },
             visitPipe(ast) {
                 return null;
             },
@@ -8435,9 +8295,6 @@ class _AstToIrVisitor {
             },
             visitQuote(ast) {
                 return null;
-            },
-            visitSafeMethodCall(ast) {
-                return visit(this, ast.receiver) || ast;
             },
             visitSafePropertyRead(ast) {
                 return visit(this, ast.receiver) || ast;
@@ -8470,7 +8327,7 @@ class _AstToIrVisitor {
             visitConditional(ast) {
                 return visit(this, ast.condition) || visit(this, ast.trueExp) || visit(this, ast.falseExp);
             },
-            visitFunctionCall(ast) {
+            visitCall(ast) {
                 return true;
             },
             visitImplicitReceiver(ast) {
@@ -8497,9 +8354,6 @@ class _AstToIrVisitor {
             visitLiteralPrimitive(ast) {
                 return false;
             },
-            visitMethodCall(ast) {
-                return true;
-            },
             visitPipe(ast) {
                 return true;
             },
@@ -8517,9 +8371,6 @@ class _AstToIrVisitor {
             },
             visitQuote(ast) {
                 return false;
-            },
-            visitSafeMethodCall(ast) {
-                return true;
             },
             visitSafePropertyRead(ast) {
                 return false;
@@ -8605,9 +8456,9 @@ function convertStmtIntoExpression(stmt) {
     }
     return null;
 }
-class BuiltinFunctionCall extends FunctionCall {
+class BuiltinFunctionCall extends Call {
     constructor(span, sourceSpan, args, converter) {
-        super(span, sourceSpan, null, args);
+        super(span, sourceSpan, new EmptyExpr(span, sourceSpan), args, null);
         this.converter = converter;
     }
 }
@@ -17600,22 +17451,24 @@ class _ParseAST {
         let result = this.parsePrimary();
         while (true) {
             if (this.consumeOptionalCharacter($PERIOD)) {
-                result = this.parseAccessMemberOrMethodCall(result, start, false);
+                result = this.parseAccessMemberOrCall(result, start, false);
             }
             else if (this.consumeOptionalOperator('?.')) {
                 result = this.consumeOptionalCharacter($LBRACKET) ?
                     this.parseKeyedReadOrWrite(result, start, true) :
-                    this.parseAccessMemberOrMethodCall(result, start, true);
+                    this.parseAccessMemberOrCall(result, start, true);
             }
             else if (this.consumeOptionalCharacter($LBRACKET)) {
                 result = this.parseKeyedReadOrWrite(result, start, false);
             }
             else if (this.consumeOptionalCharacter($LPAREN)) {
+                const argumentStart = this.inputIndex;
                 this.rparensExpected++;
                 const args = this.parseCallArguments();
+                const argumentSpan = this.span(argumentStart, this.inputIndex).toAbsolute(this.absoluteOffset);
                 this.rparensExpected--;
                 this.expectCharacter($RPAREN);
-                result = new FunctionCall(this.span(start), this.sourceSpan(start), result, args);
+                result = new Call(this.span(start), this.sourceSpan(start), result, args, argumentSpan);
             }
             else if (this.consumeOptionalOperator('!')) {
                 result = new NonNullAssert(this.span(start), this.sourceSpan(start), result);
@@ -17665,7 +17518,7 @@ class _ParseAST {
             return this.parseLiteralMap();
         }
         else if (this.next.isIdentifier()) {
-            return this.parseAccessMemberOrMethodCall(new ImplicitReceiver(this.span(start), this.sourceSpan(start)), start, false);
+            return this.parseAccessMemberOrCall(new ImplicitReceiver(this.span(start), this.sourceSpan(start)), start, false);
         }
         else if (this.next.isNumber()) {
             const value = this.next.toNumber();
@@ -17733,17 +17586,41 @@ class _ParseAST {
         }
         return new LiteralMap(this.span(start), this.sourceSpan(start), keys, values);
     }
-    parseAccessMemberOrMethodCall(receiver, start, isSafe) {
+    parseAccessMemberOrCall(readReceiver, start, isSafe) {
         const nameStart = this.inputIndex;
         const id = this.withContext(ParseContextFlags.Writable, () => {
             var _a;
             const id = (_a = this.expectIdentifierOrKeyword()) !== null && _a !== void 0 ? _a : '';
             if (id.length === 0) {
-                this.error(`Expected identifier for property access`, receiver.span.end);
+                this.error(`Expected identifier for property access`, readReceiver.span.end);
             }
             return id;
         });
         const nameSpan = this.sourceSpan(nameStart);
+        let receiver;
+        if (isSafe) {
+            if (this.consumeOptionalOperator('=')) {
+                this.error('The \'?.\' operator cannot be used in the assignment');
+                receiver = new EmptyExpr(this.span(start), this.sourceSpan(start));
+            }
+            else {
+                receiver = new SafePropertyRead(this.span(start), this.sourceSpan(start), nameSpan, readReceiver, id);
+            }
+        }
+        else {
+            if (this.consumeOptionalOperator('=')) {
+                if (!this.parseAction) {
+                    this.error('Bindings cannot contain assignments');
+                    return new EmptyExpr(this.span(start), this.sourceSpan(start));
+                }
+                const value = this.parseConditional();
+                receiver = new PropertyWrite(this.span(start), this.sourceSpan(start), nameSpan, readReceiver, id, value);
+            }
+            else {
+                receiver =
+                    new PropertyRead(this.span(start), this.sourceSpan(start), nameSpan, readReceiver, id);
+            }
+        }
         if (this.consumeOptionalCharacter($LPAREN)) {
             const argumentStart = this.inputIndex;
             this.rparensExpected++;
@@ -17753,34 +17630,9 @@ class _ParseAST {
             this.rparensExpected--;
             const span = this.span(start);
             const sourceSpan = this.sourceSpan(start);
-            return isSafe ?
-                new SafeMethodCall(span, sourceSpan, nameSpan, receiver, id, args, argumentSpan) :
-                new MethodCall(span, sourceSpan, nameSpan, receiver, id, args, argumentSpan);
+            return new Call(span, sourceSpan, receiver, args, argumentSpan);
         }
-        else {
-            if (isSafe) {
-                if (this.consumeOptionalOperator('=')) {
-                    this.error('The \'?.\' operator cannot be used in the assignment');
-                    return new EmptyExpr(this.span(start), this.sourceSpan(start));
-                }
-                else {
-                    return new SafePropertyRead(this.span(start), this.sourceSpan(start), nameSpan, receiver, id);
-                }
-            }
-            else {
-                if (this.consumeOptionalOperator('=')) {
-                    if (!this.parseAction) {
-                        this.error('Bindings cannot contain assignments');
-                        return new EmptyExpr(this.span(start), this.sourceSpan(start));
-                    }
-                    const value = this.parseConditional();
-                    return new PropertyWrite(this.span(start), this.sourceSpan(start), nameSpan, receiver, id, value);
-                }
-                else {
-                    return new PropertyRead(this.span(start), this.sourceSpan(start), nameSpan, receiver, id);
-                }
-            }
-        }
+        return receiver;
     }
     parseCallArguments() {
         if (this.next.isCharacter($RPAREN))
@@ -18076,9 +17928,7 @@ class SimpleExpressionChecker {
     visitPropertyRead(ast, context) { }
     visitPropertyWrite(ast, context) { }
     visitSafePropertyRead(ast, context) { }
-    visitMethodCall(ast, context) { }
-    visitSafeMethodCall(ast, context) { }
-    visitFunctionCall(ast, context) { }
+    visitCall(ast, context) { }
     visitLiteralArray(ast, context) {
         this.visitAll(ast.expressions, context);
     }
@@ -21257,11 +21107,11 @@ class ValueConverter extends AstMemoryEfficientTransformer {
         const convertedArgs = isVarLength ?
             this.visitAll([new LiteralArray(pipe.span, pipe.sourceSpan, args)]) :
             this.visitAll(args);
-        const pipeBindExpr = new FunctionCall(pipe.span, pipe.sourceSpan, target, [
+        const pipeBindExpr = new Call(pipe.span, pipe.sourceSpan, target, [
             new LiteralPrimitive(pipe.span, pipe.sourceSpan, slot),
             new LiteralPrimitive(pipe.span, pipe.sourceSpan, pureFunctionSlot),
             ...convertedArgs,
-        ]);
+        ], null);
         this._pipeBindExprs.push(pipeBindExpr);
         return pipeBindExpr;
     }
@@ -22056,7 +21906,7 @@ function compileDeclarationList(list, mode) {
             return fn([], [new ReturnStatement(list)]);
         case 2 /* ClosureResolved */:
             // directives: function () { return [MyDir].map(ng.resolveForwardRef); }
-            const resolvedList = list.callMethod('map', [importExpr(Identifiers.resolveForwardRef)]);
+            const resolvedList = list.prop('map').callFn([importExpr(Identifiers.resolveForwardRef)]);
             return fn([], [new ReturnStatement(resolvedList)]);
     }
 }
@@ -22929,7 +22779,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('13.0.0-next.6+56.sha-77bd253.with-local-changes');
+const VERSION$1 = new Version('13.0.0-next.6+57.sha-2028c39.with-local-changes');
 
 /**
  * @license
@@ -27047,7 +26897,7 @@ class ViewBuilder {
                     const pipeExpr = this.options.fullTemplateTypeCheck ?
                         variable(this.pipeOutputVar(name)) :
                         variable(this.getOutputVar(BuiltinTypeName.Dynamic));
-                    return pipeExpr.callMethod('transform', args);
+                    return pipeExpr.prop('transform').callFn(args);
                 },
             }, expression.value)
         };
@@ -27650,7 +27500,7 @@ class ViewBuilder$1 {
         else {
             const nodeIndex = this._createPipe(expression.sourceSpan, pipe);
             const nodeValueExpr = importExpr(Identifiers$1.nodeValue).callFn([VIEW_VAR, literal(nodeIndex)]);
-            return (args) => callUnwrapValue(expression.nodeIndex, expression.bindingIndex, nodeValueExpr.callMethod('transform', args));
+            return (args) => callUnwrapValue(expression.nodeIndex, expression.bindingIndex, nodeValueExpr.prop('transform').callFn(args));
         }
     }
     _createPipe(sourceSpan, pipe) {
@@ -30955,30 +30805,6 @@ class StatementInterpreter {
         receiver[expr.name] = value;
         return value;
     }
-    visitInvokeMethodExpr(expr, ctx) {
-        const receiver = expr.receiver.visitExpression(this, ctx);
-        const args = this.visitAllExpressions(expr.args, ctx);
-        let result;
-        if (expr.builtin != null) {
-            switch (expr.builtin) {
-                case BuiltinMethod.ConcatArray:
-                    result = receiver.concat(...args);
-                    break;
-                case BuiltinMethod.SubscribeObservable:
-                    result = receiver.subscribe({ next: args[0] });
-                    break;
-                case BuiltinMethod.Bind:
-                    result = receiver.bind(...args);
-                    break;
-                default:
-                    throw new Error(`Unknown builtin method ${expr.builtin}`);
-            }
-        }
-        else {
-            result = receiver[expr.name].apply(receiver, args);
-        }
-        return result;
-    }
     visitInvokeFunctionExpr(stmt, ctx) {
         const args = this.visitAllExpressions(stmt.args, ctx);
         const fnExpr = stmt.fn;
@@ -30987,8 +30813,12 @@ class StatementInterpreter {
             return null;
         }
         else {
-            const fn = stmt.fn.visitExpression(this, ctx);
-            return fn.apply(null, args);
+            const fn = fnExpr.visitExpression(this, ctx);
+            let context = null;
+            if (fnExpr.receiver) {
+                context = fnExpr.receiver.visitExpression(this, ctx);
+            }
+            return fn.apply(context, args);
         }
     }
     visitTaggedTemplateExpr(expr, ctx) {
@@ -32266,14 +32096,6 @@ class TemplateBinder extends RecursiveAstVisitor$1 {
         this.maybeMap(context, ast, ast.name);
         return super.visitPropertyWrite(ast, context);
     }
-    visitMethodCall(ast, context) {
-        this.maybeMap(context, ast, ast.name);
-        return super.visitMethodCall(ast, context);
-    }
-    visitSafeMethodCall(ast, context) {
-        this.maybeMap(context, ast, ast.name);
-        return super.visitSafeMethodCall(ast, context);
-    }
     maybeMap(scope, ast, name) {
         // If the receiver of the expression isn't the `ImplicitReceiver`, this isn't the root of an
         // `AST` expression that maps to a `Variable` or `Reference`.
@@ -32407,7 +32229,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('13.0.0-next.6+56.sha-77bd253.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.6+57.sha-2028c39.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32447,7 +32269,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('13.0.0-next.6+56.sha-77bd253.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.6+57.sha-2028c39.with-local-changes'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -32667,7 +32489,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$2 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('13.0.0-next.6+56.sha-77bd253.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.6+57.sha-2028c39.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32709,7 +32531,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('13.0.0-next.6+56.sha-77bd253.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.6+57.sha-2028c39.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -32788,7 +32610,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('13.0.0-next.6+56.sha-77bd253.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.6+57.sha-2028c39.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -32825,7 +32647,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('13.0.0-next.6+56.sha-77bd253.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.6+57.sha-2028c39.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -32883,7 +32705,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('13.0.0-next.6+56.sha-77bd253.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.6+57.sha-2028c39.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
@@ -32933,5 +32755,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment$1 as Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FactoryTarget, FunctionCall, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers$1 as Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, InvokeMethodExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, MethodCall, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, Identifiers as R3Identifiers, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeKeyedRead, SafeMethodCall, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThisReceiver, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Icu as TmplAstIcu, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token, TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createInjectableType, createLoweredSymbol, createOfflineCompileUrlResolver, createR3ProviderExpression, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, devOnlyGuardedExpression, findNode, flatten, formattedError, getHtmlTagDefinition, getMissingNgModuleMetadataErrorData, getNsPrefix, getParseErrors, getSafePropertyAccessString, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer$1 as AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, Call, CastExpr, Chain, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment$1 as Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element$1 as Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FactoryTarget, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers$1 as Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, Identifiers as R3Identifiers, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateParseError, TemplateParseResult, TemplateParser, Text$3 as Text, TextAst, ThisReceiver, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element as TmplAstElement, Icu as TmplAstIcu, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token, TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type$1 as Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION$1 as VERSION, VariableAst, VariableBinding, Version, ViewCompiler, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createInjectableType, createLoweredSymbol, createOfflineCompileUrlResolver, createR3ProviderExpression, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, devOnlyGuardedExpression, findNode, flatten, formattedError, getHtmlTagDefinition, getMissingNgModuleMetadataErrorData, getNsPrefix, getParseErrors, getSafePropertyAccessString, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll$1 as visitAll };
 //# sourceMappingURL=compiler.js.map
