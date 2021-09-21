@@ -205,26 +205,11 @@ export declare class NonNullAssert extends AST {
     constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expression: AST);
     visit(visitor: AstVisitor, context?: any): any;
 }
-export declare class MethodCall extends ASTWithName {
+export declare class Call extends AST {
     receiver: AST;
-    name: string;
     args: any[];
     argumentSpan: AbsoluteSourceSpan;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, nameSpan: AbsoluteSourceSpan, receiver: AST, name: string, args: any[], argumentSpan: AbsoluteSourceSpan);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-export declare class SafeMethodCall extends ASTWithName {
-    receiver: AST;
-    name: string;
-    args: any[];
-    argumentSpan: AbsoluteSourceSpan;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, nameSpan: AbsoluteSourceSpan, receiver: AST, name: string, args: any[], argumentSpan: AbsoluteSourceSpan);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-export declare class FunctionCall extends AST {
-    target: AST | null;
-    args: any[];
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, target: AST | null, args: any[]);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, receiver: AST, args: any[], argumentSpan: AbsoluteSourceSpan);
     visit(visitor: AstVisitor, context?: any): any;
 }
 /**
@@ -305,7 +290,6 @@ export interface AstVisitor {
     visitBinary(ast: Binary, context: any): any;
     visitChain(ast: Chain, context: any): any;
     visitConditional(ast: Conditional, context: any): any;
-    visitFunctionCall(ast: FunctionCall, context: any): any;
     /**
      * The `visitThisReceiver` method is declared as optional for backwards compatibility.
      * In an upcoming major release, this method will be made required.
@@ -318,16 +302,15 @@ export interface AstVisitor {
     visitLiteralArray(ast: LiteralArray, context: any): any;
     visitLiteralMap(ast: LiteralMap, context: any): any;
     visitLiteralPrimitive(ast: LiteralPrimitive, context: any): any;
-    visitMethodCall(ast: MethodCall, context: any): any;
     visitPipe(ast: BindingPipe, context: any): any;
     visitPrefixNot(ast: PrefixNot, context: any): any;
     visitNonNullAssert(ast: NonNullAssert, context: any): any;
     visitPropertyRead(ast: PropertyRead, context: any): any;
     visitPropertyWrite(ast: PropertyWrite, context: any): any;
     visitQuote(ast: Quote, context: any): any;
-    visitSafeMethodCall(ast: SafeMethodCall, context: any): any;
     visitSafePropertyRead(ast: SafePropertyRead, context: any): any;
     visitSafeKeyedRead(ast: SafeKeyedRead, context: any): any;
+    visitCall(ast: Call, context: any): any;
     visitASTWithSource?(ast: ASTWithSource, context: any): any;
     /**
      * This function is optionally defined to allow classes that implement this
@@ -344,7 +327,6 @@ export declare class RecursiveAstVisitor implements AstVisitor {
     visitChain(ast: Chain, context: any): any;
     visitConditional(ast: Conditional, context: any): any;
     visitPipe(ast: BindingPipe, context: any): any;
-    visitFunctionCall(ast: FunctionCall, context: any): any;
     visitImplicitReceiver(ast: ThisReceiver, context: any): any;
     visitThisReceiver(ast: ThisReceiver, context: any): any;
     visitInterpolation(ast: Interpolation, context: any): any;
@@ -353,14 +335,13 @@ export declare class RecursiveAstVisitor implements AstVisitor {
     visitLiteralArray(ast: LiteralArray, context: any): any;
     visitLiteralMap(ast: LiteralMap, context: any): any;
     visitLiteralPrimitive(ast: LiteralPrimitive, context: any): any;
-    visitMethodCall(ast: MethodCall, context: any): any;
     visitPrefixNot(ast: PrefixNot, context: any): any;
     visitNonNullAssert(ast: NonNullAssert, context: any): any;
     visitPropertyRead(ast: PropertyRead, context: any): any;
     visitPropertyWrite(ast: PropertyWrite, context: any): any;
     visitSafePropertyRead(ast: SafePropertyRead, context: any): any;
-    visitSafeMethodCall(ast: SafeMethodCall, context: any): any;
     visitSafeKeyedRead(ast: SafeKeyedRead, context: any): any;
+    visitCall(ast: Call, context: any): any;
     visitQuote(ast: Quote, context: any): any;
     visitAll(asts: AST[], context: any): any;
 }
@@ -372,9 +353,6 @@ export declare class AstTransformer implements AstVisitor {
     visitPropertyRead(ast: PropertyRead, context: any): AST;
     visitPropertyWrite(ast: PropertyWrite, context: any): AST;
     visitSafePropertyRead(ast: SafePropertyRead, context: any): AST;
-    visitMethodCall(ast: MethodCall, context: any): AST;
-    visitSafeMethodCall(ast: SafeMethodCall, context: any): AST;
-    visitFunctionCall(ast: FunctionCall, context: any): AST;
     visitLiteralArray(ast: LiteralArray, context: any): AST;
     visitLiteralMap(ast: LiteralMap, context: any): AST;
     visitUnary(ast: Unary, context: any): AST;
@@ -385,6 +363,7 @@ export declare class AstTransformer implements AstVisitor {
     visitPipe(ast: BindingPipe, context: any): AST;
     visitKeyedRead(ast: KeyedRead, context: any): AST;
     visitKeyedWrite(ast: KeyedWrite, context: any): AST;
+    visitCall(ast: Call, context: any): AST;
     visitAll(asts: any[]): any[];
     visitChain(ast: Chain, context: any): AST;
     visitQuote(ast: Quote, context: any): AST;
@@ -398,9 +377,6 @@ export declare class AstMemoryEfficientTransformer implements AstVisitor {
     visitPropertyRead(ast: PropertyRead, context: any): AST;
     visitPropertyWrite(ast: PropertyWrite, context: any): AST;
     visitSafePropertyRead(ast: SafePropertyRead, context: any): AST;
-    visitMethodCall(ast: MethodCall, context: any): AST;
-    visitSafeMethodCall(ast: SafeMethodCall, context: any): AST;
-    visitFunctionCall(ast: FunctionCall, context: any): AST;
     visitLiteralArray(ast: LiteralArray, context: any): AST;
     visitLiteralMap(ast: LiteralMap, context: any): AST;
     visitUnary(ast: Unary, context: any): AST;
@@ -413,6 +389,7 @@ export declare class AstMemoryEfficientTransformer implements AstVisitor {
     visitKeyedWrite(ast: KeyedWrite, context: any): AST;
     visitAll(asts: any[]): any[];
     visitChain(ast: Chain, context: any): AST;
+    visitCall(ast: Call, context: any): AST;
     visitQuote(ast: Quote, context: any): AST;
     visitSafeKeyedRead(ast: SafeKeyedRead, context: any): AST;
 }

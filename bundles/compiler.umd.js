@@ -1,5 +1,5 @@
 /**
- * @license Angular v13.0.0-next.6+56.sha-77bd253.with-local-changes
+ * @license Angular v13.0.0-next.6+57.sha-2028c39.with-local-changes
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1200,9 +1200,6 @@
         Expression.prototype.key = function (index, type, sourceSpan) {
             return new ReadKeyExpr(this, index, type, sourceSpan);
         };
-        Expression.prototype.callMethod = function (name, params, sourceSpan) {
-            return new InvokeMethodExpr(this, name, params, null, sourceSpan);
-        };
         Expression.prototype.callFn = function (params, sourceSpan, pure) {
             return new InvokeFunctionExpr(this, params, null, sourceSpan, pure);
         };
@@ -1423,34 +1420,6 @@
         BuiltinMethod[BuiltinMethod["SubscribeObservable"] = 1] = "SubscribeObservable";
         BuiltinMethod[BuiltinMethod["Bind"] = 2] = "Bind";
     })(exports.BuiltinMethod || (exports.BuiltinMethod = {}));
-    var InvokeMethodExpr = /** @class */ (function (_super) {
-        __extends(InvokeMethodExpr, _super);
-        function InvokeMethodExpr(receiver, method, args, type, sourceSpan) {
-            var _this = _super.call(this, type, sourceSpan) || this;
-            _this.receiver = receiver;
-            _this.args = args;
-            if (typeof method === 'string') {
-                _this.name = method;
-                _this.builtin = null;
-            }
-            else {
-                _this.name = null;
-                _this.builtin = method;
-            }
-            return _this;
-        }
-        InvokeMethodExpr.prototype.isEquivalent = function (e) {
-            return e instanceof InvokeMethodExpr && this.receiver.isEquivalent(e.receiver) &&
-                this.name === e.name && this.builtin === e.builtin && areAllEquivalent(this.args, e.args);
-        };
-        InvokeMethodExpr.prototype.isConstant = function () {
-            return false;
-        };
-        InvokeMethodExpr.prototype.visitExpression = function (visitor, context) {
-            return visitor.visitInvokeMethodExpr(this, context);
-        };
-        return InvokeMethodExpr;
-    }(Expression));
     var InvokeFunctionExpr = /** @class */ (function (_super) {
         __extends(InvokeFunctionExpr, _super);
         function InvokeFunctionExpr(fn, args, type, sourceSpan, pure) {
@@ -2257,10 +2226,6 @@
         AstTransformer.prototype.visitWritePropExpr = function (expr, context) {
             return this.transformExpr(new WritePropExpr(expr.receiver.visitExpression(this, context), expr.name, expr.value.visitExpression(this, context), expr.type, expr.sourceSpan), context);
         };
-        AstTransformer.prototype.visitInvokeMethodExpr = function (ast, context) {
-            var method = ast.builtin || ast.name;
-            return this.transformExpr(new InvokeMethodExpr(ast.receiver.visitExpression(this, context), method, this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan), context);
-        };
         AstTransformer.prototype.visitInvokeFunctionExpr = function (ast, context) {
             return this.transformExpr(new InvokeFunctionExpr(ast.fn.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan), context);
         };
@@ -2411,11 +2376,6 @@
         RecursiveAstVisitor.prototype.visitWritePropExpr = function (ast, context) {
             ast.receiver.visitExpression(this, context);
             ast.value.visitExpression(this, context);
-            return this.visitExpression(ast, context);
-        };
-        RecursiveAstVisitor.prototype.visitInvokeMethodExpr = function (ast, context) {
-            ast.receiver.visitExpression(this, context);
-            this.visitAllExpressions(ast.args, context);
             return this.visitExpression(ast, context);
         };
         RecursiveAstVisitor.prototype.visitInvokeFunctionExpr = function (ast, context) {
@@ -3005,7 +2965,6 @@
             this.visitWriteVarExpr = invalid;
             this.visitWriteKeyExpr = invalid;
             this.visitWritePropExpr = invalid;
-            this.visitInvokeMethodExpr = invalid;
             this.visitInvokeFunctionExpr = invalid;
             this.visitTaggedTemplateExpr = invalid;
             this.visitInstantiateExpr = invalid;
@@ -5761,21 +5720,6 @@
             }
             return null;
         };
-        AbstractEmitterVisitor.prototype.visitInvokeMethodExpr = function (expr, ctx) {
-            expr.receiver.visitExpression(this, ctx);
-            var name = expr.name;
-            if (expr.builtin != null) {
-                name = this.getBuiltinMethodName(expr.builtin);
-                if (name == null) {
-                    // some builtins just mean to skip the call.
-                    return null;
-                }
-            }
-            ctx.print(expr, "." + name + "(");
-            this.visitAllExpressions(expr.args, ctx, ",");
-            ctx.print(expr, ")");
-            return null;
-        };
         AbstractEmitterVisitor.prototype.visitInvokeFunctionExpr = function (expr, ctx) {
             expr.fn.visitExpression(this, ctx);
             ctx.print(expr, "(");
@@ -6425,7 +6369,7 @@
         return createFactoryFunction(unwrappedType);
     }
     function createFactoryFunction(type) {
-        return fn([new FnParam('t', DYNAMIC_TYPE)], [new ReturnStatement(type.callMethod('ɵfac', [variable('t')]))]);
+        return fn([new FnParam('t', DYNAMIC_TYPE)], [new ReturnStatement(type.prop('ɵfac').callFn([variable('t')]))]);
     }
 
     /**
@@ -7922,51 +7866,20 @@
         };
         return NonNullAssert;
     }(AST));
-    var MethodCall = /** @class */ (function (_super) {
-        __extends(MethodCall, _super);
-        function MethodCall(span, sourceSpan, nameSpan, receiver, name, args, argumentSpan) {
-            var _this = _super.call(this, span, sourceSpan, nameSpan) || this;
-            _this.receiver = receiver;
-            _this.name = name;
-            _this.args = args;
-            _this.argumentSpan = argumentSpan;
-            return _this;
-        }
-        MethodCall.prototype.visit = function (visitor, context) {
-            if (context === void 0) { context = null; }
-            return visitor.visitMethodCall(this, context);
-        };
-        return MethodCall;
-    }(ASTWithName));
-    var SafeMethodCall = /** @class */ (function (_super) {
-        __extends(SafeMethodCall, _super);
-        function SafeMethodCall(span, sourceSpan, nameSpan, receiver, name, args, argumentSpan) {
-            var _this = _super.call(this, span, sourceSpan, nameSpan) || this;
-            _this.receiver = receiver;
-            _this.name = name;
-            _this.args = args;
-            _this.argumentSpan = argumentSpan;
-            return _this;
-        }
-        SafeMethodCall.prototype.visit = function (visitor, context) {
-            if (context === void 0) { context = null; }
-            return visitor.visitSafeMethodCall(this, context);
-        };
-        return SafeMethodCall;
-    }(ASTWithName));
-    var FunctionCall = /** @class */ (function (_super) {
-        __extends(FunctionCall, _super);
-        function FunctionCall(span, sourceSpan, target, args) {
+    var Call = /** @class */ (function (_super) {
+        __extends(Call, _super);
+        function Call(span, sourceSpan, receiver, args, argumentSpan) {
             var _this = _super.call(this, span, sourceSpan) || this;
-            _this.target = target;
+            _this.receiver = receiver;
             _this.args = args;
+            _this.argumentSpan = argumentSpan;
             return _this;
         }
-        FunctionCall.prototype.visit = function (visitor, context) {
+        Call.prototype.visit = function (visitor, context) {
             if (context === void 0) { context = null; }
-            return visitor.visitFunctionCall(this, context);
+            return visitor.visitCall(this, context);
         };
-        return FunctionCall;
+        return Call;
     }(AST));
     /**
      * Records the absolute position of a text span in a source file, where `start` and `end` are the
@@ -8060,12 +7973,6 @@
             this.visit(ast.exp, context);
             this.visitAll(ast.args, context);
         };
-        RecursiveAstVisitor.prototype.visitFunctionCall = function (ast, context) {
-            if (ast.target) {
-                this.visit(ast.target, context);
-            }
-            this.visitAll(ast.args, context);
-        };
         RecursiveAstVisitor.prototype.visitImplicitReceiver = function (ast, context) { };
         RecursiveAstVisitor.prototype.visitThisReceiver = function (ast, context) { };
         RecursiveAstVisitor.prototype.visitInterpolation = function (ast, context) {
@@ -8087,10 +7994,6 @@
             this.visitAll(ast.values, context);
         };
         RecursiveAstVisitor.prototype.visitLiteralPrimitive = function (ast, context) { };
-        RecursiveAstVisitor.prototype.visitMethodCall = function (ast, context) {
-            this.visit(ast.receiver, context);
-            this.visitAll(ast.args, context);
-        };
         RecursiveAstVisitor.prototype.visitPrefixNot = function (ast, context) {
             this.visit(ast.expression, context);
         };
@@ -8107,13 +8010,13 @@
         RecursiveAstVisitor.prototype.visitSafePropertyRead = function (ast, context) {
             this.visit(ast.receiver, context);
         };
-        RecursiveAstVisitor.prototype.visitSafeMethodCall = function (ast, context) {
-            this.visit(ast.receiver, context);
-            this.visitAll(ast.args, context);
-        };
         RecursiveAstVisitor.prototype.visitSafeKeyedRead = function (ast, context) {
             this.visit(ast.receiver, context);
             this.visit(ast.key, context);
+        };
+        RecursiveAstVisitor.prototype.visitCall = function (ast, context) {
+            this.visit(ast.receiver, context);
+            this.visitAll(ast.args, context);
         };
         RecursiveAstVisitor.prototype.visitQuote = function (ast, context) { };
         // This is not part of the AstVisitor interface, just a helper method
@@ -8159,15 +8062,6 @@
         AstTransformer.prototype.visitSafePropertyRead = function (ast, context) {
             return new SafePropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name);
         };
-        AstTransformer.prototype.visitMethodCall = function (ast, context) {
-            return new MethodCall(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, this.visitAll(ast.args), ast.argumentSpan);
-        };
-        AstTransformer.prototype.visitSafeMethodCall = function (ast, context) {
-            return new SafeMethodCall(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, this.visitAll(ast.args), ast.argumentSpan);
-        };
-        AstTransformer.prototype.visitFunctionCall = function (ast, context) {
-            return new FunctionCall(ast.span, ast.sourceSpan, ast.target.visit(this), this.visitAll(ast.args));
-        };
         AstTransformer.prototype.visitLiteralArray = function (ast, context) {
             return new LiteralArray(ast.span, ast.sourceSpan, this.visitAll(ast.expressions));
         };
@@ -8204,6 +8098,9 @@
         };
         AstTransformer.prototype.visitKeyedWrite = function (ast, context) {
             return new KeyedWrite(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.key.visit(this), ast.value.visit(this));
+        };
+        AstTransformer.prototype.visitCall = function (ast, context) {
+            return new Call(ast.span, ast.sourceSpan, ast.receiver.visit(this), this.visitAll(ast.args), ast.argumentSpan);
         };
         AstTransformer.prototype.visitAll = function (asts) {
             var res = [];
@@ -8262,30 +8159,6 @@
             var receiver = ast.receiver.visit(this);
             if (receiver !== ast.receiver) {
                 return new SafePropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name);
-            }
-            return ast;
-        };
-        AstMemoryEfficientTransformer.prototype.visitMethodCall = function (ast, context) {
-            var receiver = ast.receiver.visit(this);
-            var args = this.visitAll(ast.args);
-            if (receiver !== ast.receiver || args !== ast.args) {
-                return new MethodCall(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, args, ast.argumentSpan);
-            }
-            return ast;
-        };
-        AstMemoryEfficientTransformer.prototype.visitSafeMethodCall = function (ast, context) {
-            var receiver = ast.receiver.visit(this);
-            var args = this.visitAll(ast.args);
-            if (receiver !== ast.receiver || args !== ast.args) {
-                return new SafeMethodCall(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, args, ast.argumentSpan);
-            }
-            return ast;
-        };
-        AstMemoryEfficientTransformer.prototype.visitFunctionCall = function (ast, context) {
-            var target = ast.target && ast.target.visit(this);
-            var args = this.visitAll(ast.args);
-            if (target !== ast.target || args !== ast.args) {
-                return new FunctionCall(ast.span, ast.sourceSpan, target, args);
             }
             return ast;
         };
@@ -8388,6 +8261,14 @@
             var expressions = this.visitAll(ast.expressions);
             if (expressions !== ast.expressions) {
                 return new Chain(ast.span, ast.sourceSpan, expressions);
+            }
+            return ast;
+        };
+        AstMemoryEfficientTransformer.prototype.visitCall = function (ast, context) {
+            var receiver = ast.receiver.visit(this);
+            var args = this.visitAll(ast.args);
+            if (receiver !== ast.receiver || args !== ast.args) {
+                return new Call(ast.span, ast.sourceSpan, receiver, args, ast.argumentSpan);
             }
             return ast;
         };
@@ -8934,18 +8815,6 @@
         _AstToIrVisitor.prototype.visitPipe = function (ast, mode) {
             throw new Error("Illegal state: Pipes should have been converted into functions. Pipe: " + ast.name);
         };
-        _AstToIrVisitor.prototype.visitFunctionCall = function (ast, mode) {
-            var convertedArgs = this.visitAll(ast.args, _Mode.Expression);
-            var fnResult;
-            if (ast instanceof BuiltinFunctionCall) {
-                fnResult = ast.converter(convertedArgs);
-            }
-            else {
-                fnResult = this._visit(ast.target, _Mode.Expression)
-                    .callFn(convertedArgs, this.convertSourceSpan(ast.span));
-            }
-            return convertToStatementIfNeeded(mode, fnResult);
-        };
         _AstToIrVisitor.prototype.visitImplicitReceiver = function (ast, mode) {
             ensureExpressionMode(mode, ast);
             this.usesImplicitReceiver = true;
@@ -9010,40 +8879,6 @@
             }
             return this._localResolver.getLocal(name);
         };
-        _AstToIrVisitor.prototype.visitMethodCall = function (ast, mode) {
-            if (ast.receiver instanceof ImplicitReceiver &&
-                !(ast.receiver instanceof ThisReceiver) && ast.name === '$any') {
-                var args = this.visitAll(ast.args, _Mode.Expression);
-                if (args.length != 1) {
-                    throw new Error("Invalid call to $any, expected 1 argument but received " + (args.length || 'none'));
-                }
-                return args[0].cast(DYNAMIC_TYPE, this.convertSourceSpan(ast.span));
-            }
-            var leftMostSafe = this.leftMostSafeNode(ast);
-            if (leftMostSafe) {
-                return this.convertSafeAccess(ast, leftMostSafe, mode);
-            }
-            else {
-                var args = this.visitAll(ast.args, _Mode.Expression);
-                var prevUsesImplicitReceiver = this.usesImplicitReceiver;
-                var result = null;
-                var receiver = this._visit(ast.receiver, _Mode.Expression);
-                if (receiver === this._implicitReceiver) {
-                    var varExpr = this._getLocal(ast.name, ast.receiver);
-                    if (varExpr) {
-                        // Restore the previous "usesImplicitReceiver" state since the implicit
-                        // receiver has been replaced with a resolved local expression.
-                        this.usesImplicitReceiver = prevUsesImplicitReceiver;
-                        result = varExpr.callFn(args);
-                        this.addImplicitReceiverAccess(ast.name);
-                    }
-                }
-                if (result == null) {
-                    result = receiver.callMethod(ast.name, args, this.convertSourceSpan(ast.span));
-                }
-                return convertToStatementIfNeeded(mode, result);
-            }
-        };
         _AstToIrVisitor.prototype.visitPrefixNot = function (ast, mode) {
             return convertToStatementIfNeeded(mode, not(this._visit(ast.expression, _Mode.Expression)));
         };
@@ -9069,7 +8904,7 @@
                     }
                 }
                 if (result == null) {
-                    result = receiver.prop(ast.name);
+                    result = receiver.prop(ast.name, this.convertSourceSpan(ast.span));
                 }
                 return convertToStatementIfNeeded(mode, result);
             }
@@ -9102,14 +8937,11 @@
             // If no local expression could be produced, use the original receiver's
             // property as the target.
             if (varExpr === null) {
-                varExpr = receiver.prop(ast.name);
+                varExpr = receiver.prop(ast.name, this.convertSourceSpan(ast.span));
             }
             return convertToStatementIfNeeded(mode, varExpr.set(this._visit(ast.value, _Mode.Expression)));
         };
         _AstToIrVisitor.prototype.visitSafePropertyRead = function (ast, mode) {
-            return this.convertSafeAccess(ast, this.leftMostSafeNode(ast), mode);
-        };
-        _AstToIrVisitor.prototype.visitSafeMethodCall = function (ast, mode) {
             return this.convertSafeAccess(ast, this.leftMostSafeNode(ast), mode);
         };
         _AstToIrVisitor.prototype.visitSafeKeyedRead = function (ast, mode) {
@@ -9121,6 +8953,29 @@
         };
         _AstToIrVisitor.prototype.visitQuote = function (ast, mode) {
             throw new Error("Quotes are not supported for evaluation!\n        Statement: " + ast.uninterpretedExpression + " located at " + ast.location);
+        };
+        _AstToIrVisitor.prototype.visitCall = function (ast, mode) {
+            var convertedArgs = this.visitAll(ast.args, _Mode.Expression);
+            if (ast instanceof BuiltinFunctionCall) {
+                return convertToStatementIfNeeded(mode, ast.converter(convertedArgs));
+            }
+            var receiver = ast.receiver;
+            if (receiver instanceof PropertyRead &&
+                receiver.receiver instanceof ImplicitReceiver &&
+                !(receiver.receiver instanceof ThisReceiver) && receiver.name === '$any') {
+                if (convertedArgs.length !== 1) {
+                    throw new Error("Invalid call to $any, expected 1 argument but received " + (convertedArgs.length || 'none'));
+                }
+                return convertedArgs[0]
+                    .cast(DYNAMIC_TYPE, this.convertSourceSpan(ast.span));
+            }
+            var leftMostSafe = this.leftMostSafeNode(ast);
+            if (leftMostSafe) {
+                return this.convertSafeAccess(ast, leftMostSafe, mode);
+            }
+            var call = this._visit(receiver, _Mode.Expression)
+                .callFn(convertedArgs, this.convertSourceSpan(ast.span));
+            return convertToStatementIfNeeded(mode, call);
         };
         _AstToIrVisitor.prototype._visit = function (ast, mode) {
             var result = this._resultMap.get(ast);
@@ -9178,10 +9033,7 @@
             var condition = guardedExpression.isBlank();
             // Convert the ast to an unguarded access to the receiver's member. The map will substitute
             // leftMostNode with its unguarded version in the call to `this.visit()`.
-            if (leftMostSafe instanceof SafeMethodCall) {
-                this._nodeMap.set(leftMostSafe, new MethodCall(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.nameSpan, leftMostSafe.receiver, leftMostSafe.name, leftMostSafe.args, leftMostSafe.argumentSpan));
-            }
-            else if (leftMostSafe instanceof SafeKeyedRead) {
+            if (leftMostSafe instanceof SafeKeyedRead) {
                 this._nodeMap.set(leftMostSafe, new KeyedRead(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.receiver, leftMostSafe.key));
             }
             else {
@@ -9238,8 +9090,8 @@
                 visitConditional: function (ast) {
                     return null;
                 },
-                visitFunctionCall: function (ast) {
-                    return null;
+                visitCall: function (ast) {
+                    return visit(this, ast.receiver);
                 },
                 visitImplicitReceiver: function (ast) {
                     return null;
@@ -9265,9 +9117,6 @@
                 visitLiteralPrimitive: function (ast) {
                     return null;
                 },
-                visitMethodCall: function (ast) {
-                    return visit(this, ast.receiver);
-                },
                 visitPipe: function (ast) {
                     return null;
                 },
@@ -9285,9 +9134,6 @@
                 },
                 visitQuote: function (ast) {
                     return null;
-                },
-                visitSafeMethodCall: function (ast) {
-                    return visit(this, ast.receiver) || ast;
                 },
                 visitSafePropertyRead: function (ast) {
                     return visit(this, ast.receiver) || ast;
@@ -9321,7 +9167,7 @@
                 visitConditional: function (ast) {
                     return visit(this, ast.condition) || visit(this, ast.trueExp) || visit(this, ast.falseExp);
                 },
-                visitFunctionCall: function (ast) {
+                visitCall: function (ast) {
                     return true;
                 },
                 visitImplicitReceiver: function (ast) {
@@ -9348,9 +9194,6 @@
                 visitLiteralPrimitive: function (ast) {
                     return false;
                 },
-                visitMethodCall: function (ast) {
-                    return true;
-                },
                 visitPipe: function (ast) {
                     return true;
                 },
@@ -9368,9 +9211,6 @@
                 },
                 visitQuote: function (ast) {
                     return false;
-                },
-                visitSafeMethodCall: function (ast) {
-                    return true;
                 },
                 visitSafePropertyRead: function (ast) {
                     return false;
@@ -9461,12 +9301,12 @@
     var BuiltinFunctionCall = /** @class */ (function (_super) {
         __extends(BuiltinFunctionCall, _super);
         function BuiltinFunctionCall(span, sourceSpan, args, converter) {
-            var _this = _super.call(this, span, sourceSpan, null, args) || this;
+            var _this = _super.call(this, span, sourceSpan, new EmptyExpr(span, sourceSpan), args, null) || this;
             _this.converter = converter;
             return _this;
         }
         return BuiltinFunctionCall;
-    }(FunctionCall));
+    }(Call));
 
     /**
      * @license
@@ -18718,22 +18558,24 @@
             var result = this.parsePrimary();
             while (true) {
                 if (this.consumeOptionalCharacter($PERIOD)) {
-                    result = this.parseAccessMemberOrMethodCall(result, start, false);
+                    result = this.parseAccessMemberOrCall(result, start, false);
                 }
                 else if (this.consumeOptionalOperator('?.')) {
                     result = this.consumeOptionalCharacter($LBRACKET) ?
                         this.parseKeyedReadOrWrite(result, start, true) :
-                        this.parseAccessMemberOrMethodCall(result, start, true);
+                        this.parseAccessMemberOrCall(result, start, true);
                 }
                 else if (this.consumeOptionalCharacter($LBRACKET)) {
                     result = this.parseKeyedReadOrWrite(result, start, false);
                 }
                 else if (this.consumeOptionalCharacter($LPAREN)) {
+                    var argumentStart = this.inputIndex;
                     this.rparensExpected++;
                     var args = this.parseCallArguments();
+                    var argumentSpan = this.span(argumentStart, this.inputIndex).toAbsolute(this.absoluteOffset);
                     this.rparensExpected--;
                     this.expectCharacter($RPAREN);
-                    result = new FunctionCall(this.span(start), this.sourceSpan(start), result, args);
+                    result = new Call(this.span(start), this.sourceSpan(start), result, args, argumentSpan);
                 }
                 else if (this.consumeOptionalOperator('!')) {
                     result = new NonNullAssert(this.span(start), this.sourceSpan(start), result);
@@ -18783,7 +18625,7 @@
                 return this.parseLiteralMap();
             }
             else if (this.next.isIdentifier()) {
-                return this.parseAccessMemberOrMethodCall(new ImplicitReceiver(this.span(start), this.sourceSpan(start)), start, false);
+                return this.parseAccessMemberOrCall(new ImplicitReceiver(this.span(start), this.sourceSpan(start)), start, false);
             }
             else if (this.next.isNumber()) {
                 var value = this.next.toNumber();
@@ -18851,18 +18693,42 @@
             }
             return new LiteralMap(this.span(start), this.sourceSpan(start), keys, values);
         };
-        _ParseAST.prototype.parseAccessMemberOrMethodCall = function (receiver, start, isSafe) {
+        _ParseAST.prototype.parseAccessMemberOrCall = function (readReceiver, start, isSafe) {
             var _this = this;
             var nameStart = this.inputIndex;
             var id = this.withContext(ParseContextFlags.Writable, function () {
                 var _a;
                 var id = (_a = _this.expectIdentifierOrKeyword()) !== null && _a !== void 0 ? _a : '';
                 if (id.length === 0) {
-                    _this.error("Expected identifier for property access", receiver.span.end);
+                    _this.error("Expected identifier for property access", readReceiver.span.end);
                 }
                 return id;
             });
             var nameSpan = this.sourceSpan(nameStart);
+            var receiver;
+            if (isSafe) {
+                if (this.consumeOptionalOperator('=')) {
+                    this.error('The \'?.\' operator cannot be used in the assignment');
+                    receiver = new EmptyExpr(this.span(start), this.sourceSpan(start));
+                }
+                else {
+                    receiver = new SafePropertyRead(this.span(start), this.sourceSpan(start), nameSpan, readReceiver, id);
+                }
+            }
+            else {
+                if (this.consumeOptionalOperator('=')) {
+                    if (!this.parseAction) {
+                        this.error('Bindings cannot contain assignments');
+                        return new EmptyExpr(this.span(start), this.sourceSpan(start));
+                    }
+                    var value = this.parseConditional();
+                    receiver = new PropertyWrite(this.span(start), this.sourceSpan(start), nameSpan, readReceiver, id, value);
+                }
+                else {
+                    receiver =
+                        new PropertyRead(this.span(start), this.sourceSpan(start), nameSpan, readReceiver, id);
+                }
+            }
             if (this.consumeOptionalCharacter($LPAREN)) {
                 var argumentStart = this.inputIndex;
                 this.rparensExpected++;
@@ -18872,34 +18738,9 @@
                 this.rparensExpected--;
                 var span = this.span(start);
                 var sourceSpan = this.sourceSpan(start);
-                return isSafe ?
-                    new SafeMethodCall(span, sourceSpan, nameSpan, receiver, id, args, argumentSpan) :
-                    new MethodCall(span, sourceSpan, nameSpan, receiver, id, args, argumentSpan);
+                return new Call(span, sourceSpan, receiver, args, argumentSpan);
             }
-            else {
-                if (isSafe) {
-                    if (this.consumeOptionalOperator('=')) {
-                        this.error('The \'?.\' operator cannot be used in the assignment');
-                        return new EmptyExpr(this.span(start), this.sourceSpan(start));
-                    }
-                    else {
-                        return new SafePropertyRead(this.span(start), this.sourceSpan(start), nameSpan, receiver, id);
-                    }
-                }
-                else {
-                    if (this.consumeOptionalOperator('=')) {
-                        if (!this.parseAction) {
-                            this.error('Bindings cannot contain assignments');
-                            return new EmptyExpr(this.span(start), this.sourceSpan(start));
-                        }
-                        var value = this.parseConditional();
-                        return new PropertyWrite(this.span(start), this.sourceSpan(start), nameSpan, receiver, id, value);
-                    }
-                    else {
-                        return new PropertyRead(this.span(start), this.sourceSpan(start), nameSpan, receiver, id);
-                    }
-                }
-            }
+            return receiver;
         };
         _ParseAST.prototype.parseCallArguments = function () {
             if (this.next.isCharacter($RPAREN))
@@ -19199,9 +19040,7 @@
         SimpleExpressionChecker.prototype.visitPropertyRead = function (ast, context) { };
         SimpleExpressionChecker.prototype.visitPropertyWrite = function (ast, context) { };
         SimpleExpressionChecker.prototype.visitSafePropertyRead = function (ast, context) { };
-        SimpleExpressionChecker.prototype.visitMethodCall = function (ast, context) { };
-        SimpleExpressionChecker.prototype.visitSafeMethodCall = function (ast, context) { };
-        SimpleExpressionChecker.prototype.visitFunctionCall = function (ast, context) { };
+        SimpleExpressionChecker.prototype.visitCall = function (ast, context) { };
         SimpleExpressionChecker.prototype.visitLiteralArray = function (ast, context) {
             this.visitAll(ast.expressions, context);
         };
@@ -22494,10 +22333,10 @@
             var convertedArgs = isVarLength ?
                 this.visitAll([new LiteralArray(pipe.span, pipe.sourceSpan, args)]) :
                 this.visitAll(args);
-            var pipeBindExpr = new FunctionCall(pipe.span, pipe.sourceSpan, target, __spreadArray([
+            var pipeBindExpr = new Call(pipe.span, pipe.sourceSpan, target, __spreadArray([
                 new LiteralPrimitive(pipe.span, pipe.sourceSpan, slot),
                 new LiteralPrimitive(pipe.span, pipe.sourceSpan, pureFunctionSlot)
-            ], __read(convertedArgs)));
+            ], __read(convertedArgs)), null);
             this._pipeBindExprs.push(pipeBindExpr);
             return pipeBindExpr;
         };
@@ -23318,7 +23157,7 @@
                 return fn([], [new ReturnStatement(list)]);
             case 2 /* ClosureResolved */:
                 // directives: function () { return [MyDir].map(ng.resolveForwardRef); }
-                var resolvedList = list.callMethod('map', [importExpr(Identifiers.resolveForwardRef)]);
+                var resolvedList = list.prop('map').callFn([importExpr(Identifiers.resolveForwardRef)]);
                 return fn([], [new ReturnStatement(resolvedList)]);
         }
     }
@@ -24250,7 +24089,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('13.0.0-next.6+56.sha-77bd253.with-local-changes');
+    var VERSION$1 = new Version('13.0.0-next.6+57.sha-2028c39.with-local-changes');
 
     /**
      * @license
@@ -28480,7 +28319,7 @@
                         var pipeExpr = _this.options.fullTemplateTypeCheck ?
                             variable(_this.pipeOutputVar(name)) :
                             variable(_this.getOutputVar(exports.BuiltinTypeName.Dynamic));
-                        return pipeExpr.callMethod('transform', args);
+                        return pipeExpr.prop('transform').callFn(args);
                     }; },
                 }, expression.value)
             };
@@ -29091,7 +28930,7 @@
             else {
                 var nodeIndex = this._createPipe(expression.sourceSpan, pipe);
                 var nodeValueExpr_1 = importExpr(Identifiers$1.nodeValue).callFn([VIEW_VAR, literal(nodeIndex)]);
-                return function (args) { return callUnwrapValue(expression.nodeIndex, expression.bindingIndex, nodeValueExpr_1.callMethod('transform', args)); };
+                return function (args) { return callUnwrapValue(expression.nodeIndex, expression.bindingIndex, nodeValueExpr_1.prop('transform').callFn(args)); };
             }
         };
         ViewBuilder.prototype._createPipe = function (sourceSpan, pipe) {
@@ -32616,30 +32455,6 @@
             receiver[expr.name] = value;
             return value;
         };
-        StatementInterpreter.prototype.visitInvokeMethodExpr = function (expr, ctx) {
-            var receiver = expr.receiver.visitExpression(this, ctx);
-            var args = this.visitAllExpressions(expr.args, ctx);
-            var result;
-            if (expr.builtin != null) {
-                switch (expr.builtin) {
-                    case exports.BuiltinMethod.ConcatArray:
-                        result = receiver.concat.apply(receiver, __spreadArray([], __read(args)));
-                        break;
-                    case exports.BuiltinMethod.SubscribeObservable:
-                        result = receiver.subscribe({ next: args[0] });
-                        break;
-                    case exports.BuiltinMethod.Bind:
-                        result = receiver.bind.apply(receiver, __spreadArray([], __read(args)));
-                        break;
-                    default:
-                        throw new Error("Unknown builtin method " + expr.builtin);
-                }
-            }
-            else {
-                result = receiver[expr.name].apply(receiver, args);
-            }
-            return result;
-        };
         StatementInterpreter.prototype.visitInvokeFunctionExpr = function (stmt, ctx) {
             var args = this.visitAllExpressions(stmt.args, ctx);
             var fnExpr = stmt.fn;
@@ -32648,8 +32463,12 @@
                 return null;
             }
             else {
-                var fn = stmt.fn.visitExpression(this, ctx);
-                return fn.apply(null, args);
+                var fn = fnExpr.visitExpression(this, ctx);
+                var context = null;
+                if (fnExpr.receiver) {
+                    context = fnExpr.receiver.visitExpression(this, ctx);
+                }
+                return fn.apply(context, args);
             }
         };
         StatementInterpreter.prototype.visitTaggedTemplateExpr = function (expr, ctx) {
@@ -33936,14 +33755,6 @@
             this.maybeMap(context, ast, ast.name);
             return _super.prototype.visitPropertyWrite.call(this, ast, context);
         };
-        TemplateBinder.prototype.visitMethodCall = function (ast, context) {
-            this.maybeMap(context, ast, ast.name);
-            return _super.prototype.visitMethodCall.call(this, ast, context);
-        };
-        TemplateBinder.prototype.visitSafeMethodCall = function (ast, context) {
-            this.maybeMap(context, ast, ast.name);
-            return _super.prototype.visitSafeMethodCall.call(this, ast, context);
-        };
         TemplateBinder.prototype.maybeMap = function (scope, ast, name) {
             // If the receiver of the expression isn't the `ImplicitReceiver`, this isn't the root of an
             // `AST` expression that maps to a `Variable` or `Reference`.
@@ -34100,7 +33911,7 @@
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', literal('13.0.0-next.6+56.sha-77bd253.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.6+57.sha-2028c39.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
@@ -34140,7 +33951,7 @@
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-        definitionMap.set('version', literal('13.0.0-next.6+56.sha-77bd253.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.6+57.sha-2028c39.with-local-changes'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -34364,7 +34175,7 @@
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-        definitionMap.set('version', literal('13.0.0-next.6+56.sha-77bd253.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.6+57.sha-2028c39.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34406,7 +34217,7 @@
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-        definitionMap.set('version', literal('13.0.0-next.6+56.sha-77bd253.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.6+57.sha-2028c39.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
@@ -34486,7 +34297,7 @@
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-        definitionMap.set('version', literal('13.0.0-next.6+56.sha-77bd253.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.6+57.sha-2028c39.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -34523,7 +34334,7 @@
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-        definitionMap.set('version', literal('13.0.0-next.6+56.sha-77bd253.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.6+57.sha-2028c39.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -34581,7 +34392,7 @@
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-        definitionMap.set('version', literal('13.0.0-next.6+56.sha-77bd253.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.6+57.sha-2028c39.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);
@@ -34655,6 +34466,7 @@
     exports.BuiltinType = BuiltinType;
     exports.CONTENT_ATTR = CONTENT_ATTR;
     exports.CUSTOM_ELEMENTS_SCHEMA = CUSTOM_ELEMENTS_SCHEMA;
+    exports.Call = Call;
     exports.CastExpr = CastExpr;
     exports.Chain = Chain;
     exports.ClassField = ClassField;
@@ -34701,7 +34513,6 @@
     exports.ExternalExpr = ExternalExpr;
     exports.ExternalReference = ExternalReference;
     exports.Extractor = Extractor;
-    exports.FunctionCall = FunctionCall;
     exports.FunctionExpr = FunctionExpr;
     exports.GeneratedFile = GeneratedFile;
     exports.HOST_ATTR = HOST_ATTR;
@@ -34715,7 +34526,6 @@
     exports.Interpolation = Interpolation;
     exports.InterpolationConfig = InterpolationConfig;
     exports.InvokeFunctionExpr = InvokeFunctionExpr;
-    exports.InvokeMethodExpr = InvokeMethodExpr;
     exports.IvyParser = IvyParser;
     exports.JSDocComment = JSDocComment;
     exports.JitCompiler = JitCompiler;
@@ -34734,7 +34544,6 @@
     exports.LocalizedString = LocalizedString;
     exports.MapType = MapType;
     exports.MessageBundle = MessageBundle;
-    exports.MethodCall = MethodCall;
     exports.NONE_TYPE = NONE_TYPE;
     exports.NO_ERRORS_SCHEMA = NO_ERRORS_SCHEMA;
     exports.NgContentAst = NgContentAst;
@@ -34777,7 +34586,6 @@
     exports.ReturnStatement = ReturnStatement;
     exports.STRING_TYPE = STRING_TYPE;
     exports.SafeKeyedRead = SafeKeyedRead;
-    exports.SafeMethodCall = SafeMethodCall;
     exports.SafePropertyRead = SafePropertyRead;
     exports.SelectorContext = SelectorContext;
     exports.SelectorListContext = SelectorListContext;

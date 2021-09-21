@@ -54,7 +54,6 @@ export declare abstract class AbstractEmitterVisitor implements o.StatementVisit
     visitWriteVarExpr(expr: o.WriteVarExpr, ctx: EmitterVisitorContext): any;
     visitWriteKeyExpr(expr: o.WriteKeyExpr, ctx: EmitterVisitorContext): any;
     visitWritePropExpr(expr: o.WritePropExpr, ctx: EmitterVisitorContext): any;
-    visitInvokeMethodExpr(expr: o.InvokeMethodExpr, ctx: EmitterVisitorContext): any;
     abstract getBuiltinMethodName(method: o.BuiltinMethod): string;
     visitInvokeFunctionExpr(expr: o.InvokeFunctionExpr, ctx: EmitterVisitorContext): any;
     visitTaggedTemplateExpr(expr: o.TaggedTemplateExpr, ctx: EmitterVisitorContext): any;
