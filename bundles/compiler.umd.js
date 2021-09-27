@@ -1,5 +1,5 @@
 /**
- * @license Angular v13.0.0-next.8+1.sha-353cad2.with-local-changes
+ * @license Angular v13.0.0-next.8+2.sha-3e37e89.with-local-changes
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -19187,6 +19187,7 @@
         return ElementSchemaRegistry;
     }());
 
+    var EVENT = 'event';
     var BOOLEAN = 'boolean';
     var NUMBER = 'number';
     var STRING = 'string';
@@ -19418,27 +19419,44 @@
         function DomElementSchemaRegistry() {
             var _this = _super.call(this) || this;
             _this._schema = {};
+            // We don't allow binding to events for security reasons. Allowing event bindings would almost
+            // certainly introduce bad XSS vulnerabilities. Instead, we store events in a separate schema.
+            _this._eventSchema = {};
             SCHEMA.forEach(function (encodedType) {
+                var e_1, _b;
                 var type = {};
-                var _b = __read(encodedType.split('|'), 2), strType = _b[0], strProperties = _b[1];
+                var events = new Set();
+                var _c = __read(encodedType.split('|'), 2), strType = _c[0], strProperties = _c[1];
                 var properties = strProperties.split(',');
-                var _c = __read(strType.split('^'), 2), typeNames = _c[0], superName = _c[1];
-                typeNames.split(',').forEach(function (tag) { return _this._schema[tag.toLowerCase()] = type; });
+                var _d = __read(strType.split('^'), 2), typeNames = _d[0], superName = _d[1];
+                typeNames.split(',').forEach(function (tag) {
+                    _this._schema[tag.toLowerCase()] = type;
+                    _this._eventSchema[tag.toLowerCase()] = events;
+                });
                 var superType = superName && _this._schema[superName.toLowerCase()];
                 if (superType) {
                     Object.keys(superType).forEach(function (prop) {
                         type[prop] = superType[prop];
                     });
+                    try {
+                        for (var _e = __values(_this._eventSchema[superName.toLowerCase()]), _f = _e.next(); !_f.done; _f = _e.next()) {
+                            var superEvent = _f.value;
+                            events.add(superEvent);
+                        }
+                    }
+                    catch (e_1_1) { e_1 = { error: e_1_1 }; }
+                    finally {
+                        try {
+                            if (_f && !_f.done && (_b = _e.return)) _b.call(_e);
+                        }
+                        finally { if (e_1) throw e_1.error; }
+                    }
                 }
                 properties.forEach(function (property) {
                     if (property.length > 0) {
                         switch (property[0]) {
                             case '*':
-                                // We don't yet support events.
-                                // If ever allowing to bind to events, GO THROUGH A SECURITY REVIEW, allowing events
-                                // will
-                                // almost certainly introduce bad XSS vulnerabilities.
-                                // type[property.substring(1)] = EVENT;
+                                events.add(property.substring(1));
                                 break;
                             case '!':
                                 type[property.substring(1)] = BOOLEAN;
@@ -19550,6 +19568,10 @@
             var elementProperties = this._schema[tagName.toLowerCase()] || this._schema['unknown'];
             // Convert properties to attributes.
             return Object.keys(elementProperties).map(function (prop) { var _a; return (_a = _PROP_TO_ATTR[prop]) !== null && _a !== void 0 ? _a : prop; });
+        };
+        DomElementSchemaRegistry.prototype.allKnownEventsOfElement = function (tagName) {
+            var _a;
+            return Array.from((_a = this._eventSchema[tagName.toLowerCase()]) !== null && _a !== void 0 ? _a : []);
         };
         DomElementSchemaRegistry.prototype.normalizeAnimationStyleProperty = function (propName) {
             return dashCaseToCamelCase(propName);
@@ -24094,7 +24116,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('13.0.0-next.8+1.sha-353cad2.with-local-changes');
+    var VERSION$1 = new Version('13.0.0-next.8+2.sha-3e37e89.with-local-changes');
 
     /**
      * @license
@@ -33916,7 +33938,7 @@
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', literal('13.0.0-next.8+1.sha-353cad2.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.8+2.sha-3e37e89.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
@@ -33956,7 +33978,7 @@
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-        definitionMap.set('version', literal('13.0.0-next.8+1.sha-353cad2.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.8+2.sha-3e37e89.with-local-changes'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -34180,7 +34202,7 @@
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-        definitionMap.set('version', literal('13.0.0-next.8+1.sha-353cad2.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.8+2.sha-3e37e89.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34222,7 +34244,7 @@
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-        definitionMap.set('version', literal('13.0.0-next.8+1.sha-353cad2.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.8+2.sha-3e37e89.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
@@ -34302,7 +34324,7 @@
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-        definitionMap.set('version', literal('13.0.0-next.8+1.sha-353cad2.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.8+2.sha-3e37e89.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -34339,7 +34361,7 @@
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-        definitionMap.set('version', literal('13.0.0-next.8+1.sha-353cad2.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.8+2.sha-3e37e89.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -34397,7 +34419,7 @@
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-        definitionMap.set('version', literal('13.0.0-next.8+1.sha-353cad2.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.8+2.sha-3e37e89.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);

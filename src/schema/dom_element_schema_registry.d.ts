@@ -9,6 +9,7 @@ import { SchemaMetadata, SecurityContext } from '../core';
 import { ElementSchemaRegistry } from './element_schema_registry';
 export declare class DomElementSchemaRegistry extends ElementSchemaRegistry {
     private _schema;
+    private _eventSchema;
     constructor();
     hasProperty(tagName: string, propName: string, schemaMetas: SchemaMetadata[]): boolean;
     hasElement(tagName: string, schemaMetas: SchemaMetadata[]): boolean;
@@ -35,6 +36,7 @@ export declare class DomElementSchemaRegistry extends ElementSchemaRegistry {
     };
     allKnownElementNames(): string[];
     allKnownAttributesOfElement(tagName: string): string[];
+    allKnownEventsOfElement(tagName: string): string[];
     normalizeAnimationStyleProperty(propName: string): string;
     normalizeAnimationStyleValue(camelCaseProp: string, userProvidedProp: string, val: string | number): {
         error: string;
