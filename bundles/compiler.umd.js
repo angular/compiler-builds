@@ -1,5 +1,5 @@
 /**
- * @license Angular v13.0.0-next.8+31.sha-7dccbdd.with-local-changes
+ * @license Angular v13.0.0-next.8+34.sha-94c6dee.with-local-changes
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -24116,7 +24116,7 @@
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var VERSION$1 = new Version('13.0.0-next.8+31.sha-7dccbdd.with-local-changes');
+    var VERSION$1 = new Version('13.0.0-next.8+34.sha-94c6dee.with-local-changes');
 
     /**
      * @license
@@ -29331,77 +29331,6 @@
         return new TypeScriptEmitter().emitStatements(file.genFileUrl, file.stmts, preamble);
     }
 
-    function listLazyRoutes(moduleMeta, reflector) {
-        var e_1, _a, e_2, _b;
-        var allLazyRoutes = [];
-        try {
-            for (var _c = __values(moduleMeta.transitiveModule.providers), _d = _c.next(); !_d.done; _d = _c.next()) {
-                var _e = _d.value, provider = _e.provider, module = _e.module;
-                if (tokenReference(provider.token) === reflector.ROUTES) {
-                    var loadChildren = _collectLoadChildren(provider.useValue);
-                    try {
-                        for (var loadChildren_1 = (e_2 = void 0, __values(loadChildren)), loadChildren_1_1 = loadChildren_1.next(); !loadChildren_1_1.done; loadChildren_1_1 = loadChildren_1.next()) {
-                            var route = loadChildren_1_1.value;
-                            allLazyRoutes.push(parseLazyRoute(route, reflector, module.reference));
-                        }
-                    }
-                    catch (e_2_1) { e_2 = { error: e_2_1 }; }
-                    finally {
-                        try {
-                            if (loadChildren_1_1 && !loadChildren_1_1.done && (_b = loadChildren_1.return)) _b.call(loadChildren_1);
-                        }
-                        finally { if (e_2) throw e_2.error; }
-                    }
-                }
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
-            }
-            finally { if (e_1) throw e_1.error; }
-        }
-        return allLazyRoutes;
-    }
-    function _collectLoadChildren(routes, target) {
-        var e_3, _a;
-        if (target === void 0) { target = []; }
-        if (typeof routes === 'string') {
-            target.push(routes);
-        }
-        else if (Array.isArray(routes)) {
-            try {
-                for (var routes_1 = __values(routes), routes_1_1 = routes_1.next(); !routes_1_1.done; routes_1_1 = routes_1.next()) {
-                    var route = routes_1_1.value;
-                    _collectLoadChildren(route, target);
-                }
-            }
-            catch (e_3_1) { e_3 = { error: e_3_1 }; }
-            finally {
-                try {
-                    if (routes_1_1 && !routes_1_1.done && (_a = routes_1.return)) _a.call(routes_1);
-                }
-                finally { if (e_3) throw e_3.error; }
-            }
-        }
-        else if (routes.loadChildren) {
-            _collectLoadChildren(routes.loadChildren, target);
-        }
-        else if (routes.children) {
-            _collectLoadChildren(routes.children, target);
-        }
-        return target;
-    }
-    function parseLazyRoute(route, reflector, module) {
-        var _a = __read(route.split('#'), 2), routePath = _a[0], routeName = _a[1];
-        var referencedModule = reflector.resolveExternalReference({
-            moduleName: routePath,
-            name: routeName,
-        }, module ? module.filePath : undefined);
-        return { route: route, module: module || referencedModule, referencedModule: referencedModule };
-    }
-
     var TS = /^(?!.*\.d\.ts$).*\.ts$/;
     var ResolvedStaticSymbol = /** @class */ (function () {
         function ResolvedStaticSymbol(symbol, metadata) {
@@ -30835,74 +30764,6 @@
         };
         AotCompiler.prototype._codegenSourceModule = function (srcFileUrl, ctx) {
             return new GeneratedFile(srcFileUrl, ctx.genFilePath, ctx.statements);
-        };
-        AotCompiler.prototype.listLazyRoutes = function (entryRoute, analyzedModules) {
-            var e_2, _a, e_3, _b;
-            var self = this;
-            if (entryRoute) {
-                var symbol = parseLazyRoute(entryRoute, this.reflector).referencedModule;
-                return visitLazyRoute(symbol);
-            }
-            else if (analyzedModules) {
-                var allLazyRoutes = [];
-                try {
-                    for (var _c = __values(analyzedModules.ngModules), _d = _c.next(); !_d.done; _d = _c.next()) {
-                        var ngModule = _d.value;
-                        var lazyRoutes = listLazyRoutes(ngModule, this.reflector);
-                        try {
-                            for (var lazyRoutes_1 = (e_3 = void 0, __values(lazyRoutes)), lazyRoutes_1_1 = lazyRoutes_1.next(); !lazyRoutes_1_1.done; lazyRoutes_1_1 = lazyRoutes_1.next()) {
-                                var lazyRoute = lazyRoutes_1_1.value;
-                                allLazyRoutes.push(lazyRoute);
-                            }
-                        }
-                        catch (e_3_1) { e_3 = { error: e_3_1 }; }
-                        finally {
-                            try {
-                                if (lazyRoutes_1_1 && !lazyRoutes_1_1.done && (_b = lazyRoutes_1.return)) _b.call(lazyRoutes_1);
-                            }
-                            finally { if (e_3) throw e_3.error; }
-                        }
-                    }
-                }
-                catch (e_2_1) { e_2 = { error: e_2_1 }; }
-                finally {
-                    try {
-                        if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
-                    }
-                    finally { if (e_2) throw e_2.error; }
-                }
-                return allLazyRoutes;
-            }
-            else {
-                throw new Error("Either route or analyzedModules has to be specified!");
-            }
-            function visitLazyRoute(symbol, seenRoutes, allLazyRoutes) {
-                var e_4, _a;
-                if (seenRoutes === void 0) { seenRoutes = new Set(); }
-                if (allLazyRoutes === void 0) { allLazyRoutes = []; }
-                // Support pointing to default exports, but stop recursing there,
-                // as the StaticReflector does not yet support default exports.
-                if (seenRoutes.has(symbol) || !symbol.name) {
-                    return allLazyRoutes;
-                }
-                seenRoutes.add(symbol);
-                var lazyRoutes = listLazyRoutes(self._metadataResolver.getNgModuleMetadata(symbol, true), self.reflector);
-                try {
-                    for (var lazyRoutes_2 = __values(lazyRoutes), lazyRoutes_2_1 = lazyRoutes_2.next(); !lazyRoutes_2_1.done; lazyRoutes_2_1 = lazyRoutes_2.next()) {
-                        var lazyRoute = lazyRoutes_2_1.value;
-                        allLazyRoutes.push(lazyRoute);
-                        visitLazyRoute(lazyRoute.referencedModule, seenRoutes, allLazyRoutes);
-                    }
-                }
-                catch (e_4_1) { e_4 = { error: e_4_1 }; }
-                finally {
-                    try {
-                        if (lazyRoutes_2_1 && !lazyRoutes_2_1.done && (_a = lazyRoutes_2.return)) _a.call(lazyRoutes_2);
-                    }
-                    finally { if (e_4) throw e_4.error; }
-                }
-                return allLazyRoutes;
-            }
         };
         return AotCompiler;
     }());
@@ -33938,7 +33799,7 @@
     function compileDeclareClassMetadata(metadata) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', literal('13.0.0-next.8+31.sha-7dccbdd.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.8+34.sha-94c6dee.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', metadata.type);
         definitionMap.set('decorators', metadata.decorators);
@@ -33978,7 +33839,7 @@
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-        definitionMap.set('version', literal('13.0.0-next.8+31.sha-7dccbdd.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.8+34.sha-94c6dee.with-local-changes'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
@@ -34202,7 +34063,7 @@
     function compileDeclareFactoryFunction(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-        definitionMap.set('version', literal('13.0.0-next.8+31.sha-7dccbdd.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.8+34.sha-94c6dee.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34244,7 +34105,7 @@
     function createInjectableDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-        definitionMap.set('version', literal('13.0.0-next.8+31.sha-7dccbdd.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.8+34.sha-94c6dee.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // Only generate providedIn property if it has a non-null value
@@ -34324,7 +34185,7 @@
     function createInjectorDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-        definitionMap.set('version', literal('13.0.0-next.8+31.sha-7dccbdd.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.8+34.sha-94c6dee.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         definitionMap.set('providers', meta.providers);
@@ -34361,7 +34222,7 @@
     function createNgModuleDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-        definitionMap.set('version', literal('13.0.0-next.8+31.sha-7dccbdd.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.8+34.sha-94c6dee.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         definitionMap.set('type', meta.internalType);
         // We only generate the keys in the metadata if the arrays contain values.
@@ -34419,7 +34280,7 @@
     function createPipeDefinitionMap(meta) {
         var definitionMap = new DefinitionMap();
         definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-        definitionMap.set('version', literal('13.0.0-next.8+31.sha-7dccbdd.with-local-changes'));
+        definitionMap.set('version', literal('13.0.0-next.8+34.sha-94c6dee.with-local-changes'));
         definitionMap.set('ngImport', importExpr(Identifiers.core));
         // e.g. `type: MyPipe`
         definitionMap.set('type', meta.internalType);

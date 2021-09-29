@@ -1,5 +1,5 @@
 /**
- * @license Angular v13.0.0-next.8+31.sha-7dccbdd.with-local-changes
+ * @license Angular v13.0.0-next.8+34.sha-94c6dee.with-local-changes
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -22795,7 +22795,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION$1 = new Version('13.0.0-next.8+31.sha-7dccbdd.with-local-changes');
+const VERSION$1 = new Version('13.0.0-next.8+34.sha-94c6dee.with-local-changes');
 
 /**
  * @license
@@ -27885,51 +27885,6 @@ function toTypeScript(file, preamble = '') {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-function listLazyRoutes(moduleMeta, reflector) {
-    const allLazyRoutes = [];
-    for (const { provider, module } of moduleMeta.transitiveModule.providers) {
-        if (tokenReference(provider.token) === reflector.ROUTES) {
-            const loadChildren = _collectLoadChildren(provider.useValue);
-            for (const route of loadChildren) {
-                allLazyRoutes.push(parseLazyRoute(route, reflector, module.reference));
-            }
-        }
-    }
-    return allLazyRoutes;
-}
-function _collectLoadChildren(routes, target = []) {
-    if (typeof routes === 'string') {
-        target.push(routes);
-    }
-    else if (Array.isArray(routes)) {
-        for (const route of routes) {
-            _collectLoadChildren(route, target);
-        }
-    }
-    else if (routes.loadChildren) {
-        _collectLoadChildren(routes.loadChildren, target);
-    }
-    else if (routes.children) {
-        _collectLoadChildren(routes.children, target);
-    }
-    return target;
-}
-function parseLazyRoute(route, reflector, module) {
-    const [routePath, routeName] = route.split('#');
-    const referencedModule = reflector.resolveExternalReference({
-        moduleName: routePath,
-        name: routeName,
-    }, module ? module.filePath : undefined);
-    return { route: route, module: module || referencedModule, referencedModule };
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const TS = /^(?!.*\.d\.ts$).*\.ts$/;
 class ResolvedStaticSymbol {
     constructor(symbol, metadata) {
@@ -29265,40 +29220,6 @@ class AotCompiler {
     }
     _codegenSourceModule(srcFileUrl, ctx) {
         return new GeneratedFile(srcFileUrl, ctx.genFilePath, ctx.statements);
-    }
-    listLazyRoutes(entryRoute, analyzedModules) {
-        const self = this;
-        if (entryRoute) {
-            const symbol = parseLazyRoute(entryRoute, this.reflector).referencedModule;
-            return visitLazyRoute(symbol);
-        }
-        else if (analyzedModules) {
-            const allLazyRoutes = [];
-            for (const ngModule of analyzedModules.ngModules) {
-                const lazyRoutes = listLazyRoutes(ngModule, this.reflector);
-                for (const lazyRoute of lazyRoutes) {
-                    allLazyRoutes.push(lazyRoute);
-                }
-            }
-            return allLazyRoutes;
-        }
-        else {
-            throw new Error(`Either route or analyzedModules has to be specified!`);
-        }
-        function visitLazyRoute(symbol, seenRoutes = new Set(), allLazyRoutes = []) {
-            // Support pointing to default exports, but stop recursing there,
-            // as the StaticReflector does not yet support default exports.
-            if (seenRoutes.has(symbol) || !symbol.name) {
-                return allLazyRoutes;
-            }
-            seenRoutes.add(symbol);
-            const lazyRoutes = listLazyRoutes(self._metadataResolver.getNgModuleMetadata(symbol, true), self.reflector);
-            for (const lazyRoute of lazyRoutes) {
-                allLazyRoutes.push(lazyRoute);
-                visitLazyRoute(lazyRoute.referencedModule, seenRoutes, allLazyRoutes);
-            }
-            return allLazyRoutes;
-        }
     }
 }
 function _createEmptyStub(outputCtx) {
@@ -32245,7 +32166,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('13.0.0-next.8+31.sha-7dccbdd.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.8+34.sha-94c6dee.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32285,7 +32206,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('13.0.0-next.8+31.sha-7dccbdd.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.8+34.sha-94c6dee.with-local-changes'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -32505,7 +32426,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$2 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('13.0.0-next.8+31.sha-7dccbdd.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.8+34.sha-94c6dee.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32547,7 +32468,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('13.0.0-next.8+31.sha-7dccbdd.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.8+34.sha-94c6dee.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -32626,7 +32547,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('13.0.0-next.8+31.sha-7dccbdd.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.8+34.sha-94c6dee.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -32663,7 +32584,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('13.0.0-next.8+31.sha-7dccbdd.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.8+34.sha-94c6dee.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -32721,7 +32642,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('13.0.0-next.8+31.sha-7dccbdd.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.8+34.sha-94c6dee.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
