@@ -20,7 +20,6 @@ import { ViewCompiler } from '../view_compiler/view_compiler';
 import { AotCompilerHost } from './compiler_host';
 import { AotCompilerOptions } from './compiler_options';
 import { GeneratedFile } from './generated_file';
-import { LazyRoute } from './lazy_routes';
 import { PartialModule } from './partial_module';
 import { StaticReflector } from './static_reflector';
 import { StaticSymbol } from './static_symbol';
@@ -77,7 +76,6 @@ export declare class AotCompiler {
     private _fileNameToModuleName;
     private _codegenStyles;
     private _codegenSourceModule;
-    listLazyRoutes(entryRoute?: string, analyzedModules?: NgAnalyzedModules): LazyRoute[];
 }
 export interface NgAnalyzedModules {
     ngModules: CompileNgModuleMetadata[];
