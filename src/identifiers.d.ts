@@ -53,7 +53,6 @@ export declare class Identifiers {
     static pipeDef: o.ExternalReference;
     static nodeValue: o.ExternalReference;
     static ngContentDef: o.ExternalReference;
-    static unwrapValue: o.ExternalReference;
     static createRendererType2: o.ExternalReference;
     static RendererType2: o.ExternalReference;
     static ViewDefinition: o.ExternalReference;
