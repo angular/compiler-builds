@@ -7,7 +7,6 @@
  */
 import { TokenizeOptions } from './lexer';
 import { Parser, ParseTreeResult } from './parser';
-export { ParseTreeResult, TreeError } from './parser';
 export declare class XmlParser extends Parser {
     constructor();
     parse(source: string, url: string, options?: TokenizeOptions): ParseTreeResult;

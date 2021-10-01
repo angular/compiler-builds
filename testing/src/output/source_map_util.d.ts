@@ -12,7 +12,7 @@ export interface SourceLocation {
     source: string;
 }
 export declare function originalPositionFor(sourceMap: SourceMap, genPosition: {
-    line: number | null;
-    column: number | null;
+    line: number;
+    column: number;
 }): SourceLocation;
 export declare function extractSourceMap(source: string): SourceMap | null;
