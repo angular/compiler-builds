@@ -1,11 +1,11 @@
 {
   "name": "@angular/compiler",
-  "version": "13.0.0-next.12+14.sha-841c5ae.with-local-changes",
+  "version": "13.0.0-next.12+16.sha-e0a0d05.with-local-changes",
   "description": "Angular - the compiler library",
   "author": "angular",
   "license": "MIT",
   "engines": {
-    "node": "^12.14.1 || >=14.0.0"
+    "node": "^12.20.0 || ^14.15.0 || >=16.10.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"
@@ -49,12 +49,16 @@
     },
     ".": {
       "types": "./index.d.ts",
+      "esm2020": "./esm2020/index.mjs",
+      "es2020": "./fesm2020/compiler.mjs",
       "es2015": "./fesm2015/compiler.mjs",
       "node": "./fesm2015/compiler.mjs",
       "default": "./fesm2020/compiler.mjs"
     },
     "./testing": {
       "types": "./testing/testing.d.ts",
+      "esm2020": "./esm2020/testing/testing.mjs",
+      "es2020": "./fesm2020/testing.mjs",
       "es2015": "./fesm2015/testing.mjs",
       "node": "./fesm2015/testing.mjs",
       "default": "./fesm2020/testing.mjs"
