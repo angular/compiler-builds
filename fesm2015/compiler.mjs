@@ -1,5 +1,5 @@
 /**
- * @license Angular v13.0.0-rc.0+20.sha-db57e39.with-local-changes
+ * @license Angular v13.0.0-rc.0+25.sha-fc6519c.with-local-changes
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4285,12 +4285,6 @@ const TRANSLATION_VAR_PREFIX = 'i18n_';
 /** Name of the i18n attributes **/
 const I18N_ATTR = 'i18n';
 const I18N_ATTR_PREFIX = 'i18n-';
-/**
- * Matches the prefix used when binding to an attribute rather than a property.
- *
- * For example: `[attr.title]="expression"`.
- * */
-const ATTR_BINDING_MATCHER = /^attr\./i;
 /** Prefix of var expressions used in ICUs */
 const I18N_ICU_VAR_PREFIX = 'VAR_';
 /** Prefix of ICU expressions for post processing */
@@ -8242,8 +8236,8 @@ class _AstToIrVisitor {
             if (convertedArgs.length !== 1) {
                 throw new Error(`Invalid call to $any, expected 1 argument but received ${convertedArgs.length || 'none'}`);
             }
-            return convertedArgs[0]
-                .cast(DYNAMIC_TYPE, this.convertSourceSpan(ast.span));
+            return convertToStatementIfNeeded(mode, convertedArgs[0]
+                .cast(DYNAMIC_TYPE, this.convertSourceSpan(ast.span)));
         }
         const leftMostSafe = this.leftMostSafeNode(ast);
         if (leftMostSafe) {
@@ -19703,14 +19697,13 @@ class I18nMetaVisitor {
         return new ParseTreeResult(result, this._errors);
     }
     visitElement(element) {
-        var _a;
         if (hasI18nAttrs(element)) {
             this.hasI18nMeta = true;
             const attrs = [];
             const attrsMeta = {};
             for (const attr of element.attrs) {
                 if (attr.name === I18N_ATTR) {
-                    // 'i18n' attribute that marks the element contents as an i18n message
+                    // root 'i18n' node attribute
                     const i18n = element.i18n || attr.value;
                     const message = this._generateI18nMessage(element.children, i18n, setI18nRefs);
                     // do not assign empty i18n meta
@@ -19736,9 +19729,7 @@ class I18nMetaVisitor {
             // set i18n meta for attributes
             if (Object.keys(attrsMeta).length) {
                 for (const attr of attrs) {
-                    // First try to match the metadata to the attribute name as-is.
-                    // If that cannot be found try removing any `attr.` prefix from the attribute name.
-                    const meta = (_a = attrsMeta[attr.name]) !== null && _a !== void 0 ? _a : attrsMeta[attr.name.replace(ATTR_BINDING_MATCHER, '')];
+                    const meta = attrsMeta[attr.name];
                     // do not create translation for empty attributes
                     if (meta !== undefined && attr.value) {
                         attr.i18n = this._generateI18nMessage([attr], attr.i18n || meta);
@@ -20549,8 +20540,7 @@ class TemplateDefinitionBuilder {
         element.inputs.forEach(input => {
             const stylingInputWasSet = stylingBuilder.registerBoundInput(input);
             if (!stylingInputWasSet) {
-                if ((input.type === 0 /* Property */ || input.type === 1 /* Attribute */) &&
-                    input.i18n) {
+                if (input.type === 0 /* Property */ && input.i18n) {
                     boundI18nAttrs.push(input);
                 }
                 else {
@@ -22909,7 +22899,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('13.0.0-rc.0+20.sha-db57e39.with-local-changes');
+const VERSION = new Version('13.0.0-rc.0+25.sha-fc6519c.with-local-changes');
 
 /**
  * @license
@@ -32235,7 +32225,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('13.0.0-rc.0+20.sha-db57e39.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-rc.0+25.sha-fc6519c.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32275,7 +32265,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('13.0.0-rc.0+20.sha-db57e39.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-rc.0+25.sha-fc6519c.with-local-changes'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -32495,7 +32485,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('13.0.0-rc.0+20.sha-db57e39.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-rc.0+25.sha-fc6519c.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32537,7 +32527,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('13.0.0-rc.0+20.sha-db57e39.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-rc.0+25.sha-fc6519c.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -32616,7 +32606,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('13.0.0-rc.0+20.sha-db57e39.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-rc.0+25.sha-fc6519c.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -32653,7 +32643,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('13.0.0-rc.0+20.sha-db57e39.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-rc.0+25.sha-fc6519c.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -32711,7 +32701,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('13.0.0-rc.0+20.sha-db57e39.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-rc.0+25.sha-fc6519c.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
