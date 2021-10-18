@@ -5,6 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import { Message } from '../i18n/i18n_ast';
 import { ParseSourceSpan } from '../parse_util';
 import { I18nMeta } from '../render3/view/i18n/meta';
 export declare enum TypeModifier {
@@ -235,15 +236,27 @@ export declare class TemplateLiteralElement {
     rawText: string;
     constructor(text: string, sourceSpan?: ParseSourceSpan | undefined, rawText?: string);
 }
-export declare abstract class MessagePiece {
+export declare class LiteralPiece {
     text: string;
     sourceSpan: ParseSourceSpan;
     constructor(text: string, sourceSpan: ParseSourceSpan);
 }
-export declare class LiteralPiece extends MessagePiece {
+export declare class PlaceholderPiece {
+    text: string;
+    sourceSpan: ParseSourceSpan;
+    associatedMessage?: Message | undefined;
+    /**
+     * Create a new instance of a `PlaceholderPiece`.
+     *
+     * @param text the name of this placeholder (e.g. `PH_1`).
+     * @param sourceSpan the location of this placeholder in its localized message the source code.
+     * @param associatedMessage reference to another message that this placeholder is associated with.
+     * The `associatedMessage` is mainly used to provide a relationship to an ICU message that has
+     * been extracted out from the message containing the placeholder.
+     */
+    constructor(text: string, sourceSpan: ParseSourceSpan, associatedMessage?: Message | undefined);
 }
-export declare class PlaceholderPiece extends MessagePiece {
-}
+export declare type MessagePiece = LiteralPiece | PlaceholderPiece;
 export declare class LocalizedString extends Expression {
     readonly metaBlock: I18nMeta;
     readonly messageParts: LiteralPiece[];
@@ -268,8 +281,12 @@ export declare class LocalizedString extends Expression {
      * Serialize the given `placeholderName` and `messagePart` into "cooked" and "raw" strings that
      * can be used in a `$localize` tagged string.
      *
-     * @param placeholderName The placeholder name to serialize
-     * @param messagePart The following message string after this placeholder
+     * The format is `:<placeholder-name>[@@<associated-id>]:`.
+     *
+     * The `associated-id` is the message id of the (usually an ICU) message to which this placeholder
+     * refers.
+     *
+     * @param partIndex The index of the message part to serialize.
      */
     serializeI18nTemplatePart(partIndex: number): CookedRawString;
 }

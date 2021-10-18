@@ -33,7 +33,7 @@ export declare class I18nMetaVisitor implements html.Visitor {
     private _generateI18nMessage;
     visitAllWithErrors(nodes: html.Node[]): ParseTreeResult;
     visitElement(element: html.Element): any;
-    visitExpansion(expansion: html.Expansion, currentMessage: i18n.Message | undefined): any;
+    visitExpansion(expansion: html.Expansion, currentMessage: i18n.Message | null): any;
     visitText(text: html.Text): any;
     visitAttribute(attribute: html.Attribute): any;
     visitComment(comment: html.Comment): any;

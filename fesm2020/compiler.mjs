@@ -1,5 +1,5 @@
 /**
- * @license Angular v13.0.0-next.14+67.sha-efeb5ad.with-local-changes
+ * @license Angular v13.0.0-next.14+71.sha-25b9c8c.with-local-changes
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -735,6 +735,708 @@ var core = /*#__PURE__*/Object.freeze({
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+const DASH_CASE_REGEXP = /-+([a-z0-9])/g;
+function dashCaseToCamelCase(input) {
+    return input.replace(DASH_CASE_REGEXP, (...m) => m[1].toUpperCase());
+}
+function splitAtColon(input, defaultValues) {
+    return _splitAt(input, ':', defaultValues);
+}
+function splitAtPeriod(input, defaultValues) {
+    return _splitAt(input, '.', defaultValues);
+}
+function _splitAt(input, character, defaultValues) {
+    const characterIndex = input.indexOf(character);
+    if (characterIndex == -1)
+        return defaultValues;
+    return [input.slice(0, characterIndex).trim(), input.slice(characterIndex + 1).trim()];
+}
+function visitValue(value, visitor, context) {
+    if (Array.isArray(value)) {
+        return visitor.visitArray(value, context);
+    }
+    if (isStrictStringMap(value)) {
+        return visitor.visitStringMap(value, context);
+    }
+    if (value == null || typeof value == 'string' || typeof value == 'number' ||
+        typeof value == 'boolean') {
+        return visitor.visitPrimitive(value, context);
+    }
+    return visitor.visitOther(value, context);
+}
+function isDefined(val) {
+    return val !== null && val !== undefined;
+}
+function noUndefined(val) {
+    return val === undefined ? null : val;
+}
+class ValueTransformer {
+    visitArray(arr, context) {
+        return arr.map(value => visitValue(value, this, context));
+    }
+    visitStringMap(map, context) {
+        const result = {};
+        Object.keys(map).forEach(key => {
+            result[key] = visitValue(map[key], this, context);
+        });
+        return result;
+    }
+    visitPrimitive(value, context) {
+        return value;
+    }
+    visitOther(value, context) {
+        return value;
+    }
+}
+const SyncAsync = {
+    assertSync: (value) => {
+        if (isPromise(value)) {
+            throw new Error(`Illegal state: value cannot be a promise`);
+        }
+        return value;
+    },
+    then: (value, cb) => {
+        return isPromise(value) ? value.then(cb) : cb(value);
+    },
+    all: (syncAsyncValues) => {
+        return syncAsyncValues.some(isPromise) ? Promise.all(syncAsyncValues) : syncAsyncValues;
+    }
+};
+function error(msg) {
+    throw new Error(`Internal Error: ${msg}`);
+}
+// Escape characters that have a special meaning in Regular Expressions
+function escapeRegExp(s) {
+    return s.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
+}
+const STRING_MAP_PROTO = Object.getPrototypeOf({});
+function isStrictStringMap(obj) {
+    return typeof obj === 'object' && obj !== null && Object.getPrototypeOf(obj) === STRING_MAP_PROTO;
+}
+function utf8Encode(str) {
+    let encoded = [];
+    for (let index = 0; index < str.length; index++) {
+        let codePoint = str.charCodeAt(index);
+        // decode surrogate
+        // see https://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
+        if (codePoint >= 0xd800 && codePoint <= 0xdbff && str.length > (index + 1)) {
+            const low = str.charCodeAt(index + 1);
+            if (low >= 0xdc00 && low <= 0xdfff) {
+                index++;
+                codePoint = ((codePoint - 0xd800) << 10) + low - 0xdc00 + 0x10000;
+            }
+        }
+        if (codePoint <= 0x7f) {
+            encoded.push(codePoint);
+        }
+        else if (codePoint <= 0x7ff) {
+            encoded.push(((codePoint >> 6) & 0x1F) | 0xc0, (codePoint & 0x3f) | 0x80);
+        }
+        else if (codePoint <= 0xffff) {
+            encoded.push((codePoint >> 12) | 0xe0, ((codePoint >> 6) & 0x3f) | 0x80, (codePoint & 0x3f) | 0x80);
+        }
+        else if (codePoint <= 0x1fffff) {
+            encoded.push(((codePoint >> 18) & 0x07) | 0xf0, ((codePoint >> 12) & 0x3f) | 0x80, ((codePoint >> 6) & 0x3f) | 0x80, (codePoint & 0x3f) | 0x80);
+        }
+    }
+    return encoded;
+}
+function stringify(token) {
+    if (typeof token === 'string') {
+        return token;
+    }
+    if (Array.isArray(token)) {
+        return '[' + token.map(stringify).join(', ') + ']';
+    }
+    if (token == null) {
+        return '' + token;
+    }
+    if (token.overriddenName) {
+        return `${token.overriddenName}`;
+    }
+    if (token.name) {
+        return `${token.name}`;
+    }
+    if (!token.toString) {
+        return 'object';
+    }
+    // WARNING: do not try to `JSON.stringify(token)` here
+    // see https://github.com/angular/angular/issues/23440
+    const res = token.toString();
+    if (res == null) {
+        return '' + res;
+    }
+    const newLineIndex = res.indexOf('\n');
+    return newLineIndex === -1 ? res : res.substring(0, newLineIndex);
+}
+/**
+ * Lazily retrieves the reference value from a forwardRef.
+ */
+function resolveForwardRef(type) {
+    if (typeof type === 'function' && type.hasOwnProperty('__forward_ref__')) {
+        return type();
+    }
+    else {
+        return type;
+    }
+}
+/**
+ * Determine if the argument is shaped like a Promise
+ */
+function isPromise(obj) {
+    // allow any Promise/A+ compliant thenable.
+    // It's up to the caller to ensure that obj.then conforms to the spec
+    return !!obj && typeof obj.then === 'function';
+}
+class Version {
+    constructor(full) {
+        this.full = full;
+        const splits = full.split('.');
+        this.major = splits[0];
+        this.minor = splits[1];
+        this.patch = splits.slice(2).join('.');
+    }
+}
+const __window = typeof window !== 'undefined' && window;
+const __self = typeof self !== 'undefined' && typeof WorkerGlobalScope !== 'undefined' &&
+    self instanceof WorkerGlobalScope && self;
+const __global = typeof global !== 'undefined' && global;
+// Check __global first, because in Node tests both __global and __window may be defined and _global
+// should be __global in that case.
+const _global = __global || __window || __self;
+function newArray(size, value) {
+    const list = [];
+    for (let i = 0; i < size; i++) {
+        list.push(value);
+    }
+    return list;
+}
+/**
+ * Partitions a given array into 2 arrays, based on a boolean value returned by the condition
+ * function.
+ *
+ * @param arr Input array that should be partitioned
+ * @param conditionFn Condition function that is called for each item in a given array and returns a
+ * boolean value.
+ */
+function partitionArray(arr, conditionFn) {
+    const truthy = [];
+    const falsy = [];
+    for (const item of arr) {
+        (conditionFn(item) ? truthy : falsy).push(item);
+    }
+    return [truthy, falsy];
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Represents a big integer using a buffer of its individual digits, with the least significant
+ * digit stored at the beginning of the array (little endian).
+ *
+ * For performance reasons, each instance is mutable. The addition operation can be done in-place
+ * to reduce memory pressure of allocation for the digits array.
+ */
+class BigInteger {
+    /**
+     * Creates a big integer using its individual digits in little endian storage.
+     */
+    constructor(digits) {
+        this.digits = digits;
+    }
+    static zero() {
+        return new BigInteger([0]);
+    }
+    static one() {
+        return new BigInteger([1]);
+    }
+    /**
+     * Creates a clone of this instance.
+     */
+    clone() {
+        return new BigInteger(this.digits.slice());
+    }
+    /**
+     * Returns a new big integer with the sum of `this` and `other` as its value. This does not mutate
+     * `this` but instead returns a new instance, unlike `addToSelf`.
+     */
+    add(other) {
+        const result = this.clone();
+        result.addToSelf(other);
+        return result;
+    }
+    /**
+     * Adds `other` to the instance itself, thereby mutating its value.
+     */
+    addToSelf(other) {
+        const maxNrOfDigits = Math.max(this.digits.length, other.digits.length);
+        let carry = 0;
+        for (let i = 0; i < maxNrOfDigits; i++) {
+            let digitSum = carry;
+            if (i < this.digits.length) {
+                digitSum += this.digits[i];
+            }
+            if (i < other.digits.length) {
+                digitSum += other.digits[i];
+            }
+            if (digitSum >= 10) {
+                this.digits[i] = digitSum - 10;
+                carry = 1;
+            }
+            else {
+                this.digits[i] = digitSum;
+                carry = 0;
+            }
+        }
+        // Apply a remaining carry if needed.
+        if (carry > 0) {
+            this.digits[maxNrOfDigits] = 1;
+        }
+    }
+    /**
+     * Builds the decimal string representation of the big integer. As this is stored in
+     * little endian, the digits are concatenated in reverse order.
+     */
+    toString() {
+        let res = '';
+        for (let i = this.digits.length - 1; i >= 0; i--) {
+            res += this.digits[i];
+        }
+        return res;
+    }
+}
+/**
+ * Represents a big integer which is optimized for multiplication operations, as its power-of-twos
+ * are memoized. See `multiplyBy()` for details on the multiplication algorithm.
+ */
+class BigIntForMultiplication {
+    constructor(value) {
+        this.powerOfTwos = [value];
+    }
+    /**
+     * Returns the big integer itself.
+     */
+    getValue() {
+        return this.powerOfTwos[0];
+    }
+    /**
+     * Computes the value for `num * b`, where `num` is a JS number and `b` is a big integer. The
+     * value for `b` is represented by a storage model that is optimized for this computation.
+     *
+     * This operation is implemented in N(log2(num)) by continuous halving of the number, where the
+     * least-significant bit (LSB) is tested in each iteration. If the bit is set, the bit's index is
+     * used as exponent into the power-of-two multiplication of `b`.
+     *
+     * As an example, consider the multiplication num=42, b=1337. In binary 42 is 0b00101010 and the
+     * algorithm unrolls into the following iterations:
+     *
+     *  Iteration | num        | LSB  | b * 2^iter | Add? | product
+     * -----------|------------|------|------------|------|--------
+     *  0         | 0b00101010 | 0    | 1337       | No   | 0
+     *  1         | 0b00010101 | 1    | 2674       | Yes  | 2674
+     *  2         | 0b00001010 | 0    | 5348       | No   | 2674
+     *  3         | 0b00000101 | 1    | 10696      | Yes  | 13370
+     *  4         | 0b00000010 | 0    | 21392      | No   | 13370
+     *  5         | 0b00000001 | 1    | 42784      | Yes  | 56154
+     *  6         | 0b00000000 | 0    | 85568      | No   | 56154
+     *
+     * The computed product of 56154 is indeed the correct result.
+     *
+     * The `BigIntForMultiplication` representation for a big integer provides memoized access to the
+     * power-of-two values to reduce the workload in computing those values.
+     */
+    multiplyBy(num) {
+        const product = BigInteger.zero();
+        this.multiplyByAndAddTo(num, product);
+        return product;
+    }
+    /**
+     * See `multiplyBy()` for details. This function allows for the computed product to be added
+     * directly to the provided result big integer.
+     */
+    multiplyByAndAddTo(num, result) {
+        for (let exponent = 0; num !== 0; num = num >>> 1, exponent++) {
+            if (num & 1) {
+                const value = this.getMultipliedByPowerOfTwo(exponent);
+                result.addToSelf(value);
+            }
+        }
+    }
+    /**
+     * Computes and memoizes the big integer value for `this.number * 2^exponent`.
+     */
+    getMultipliedByPowerOfTwo(exponent) {
+        // Compute the powers up until the requested exponent, where each value is computed from its
+        // predecessor. This is simple as `this.number * 2^(exponent - 1)` only has to be doubled (i.e.
+        // added to itself) to reach `this.number * 2^exponent`.
+        for (let i = this.powerOfTwos.length; i <= exponent; i++) {
+            const previousPower = this.powerOfTwos[i - 1];
+            this.powerOfTwos[i] = previousPower.add(previousPower);
+        }
+        return this.powerOfTwos[exponent];
+    }
+}
+/**
+ * Represents an exponentiation operation for the provided base, of which exponents are computed and
+ * memoized. The results are represented by a `BigIntForMultiplication` which is tailored for
+ * multiplication operations by memoizing the power-of-twos. This effectively results in a matrix
+ * representation that is lazily computed upon request.
+ */
+class BigIntExponentiation {
+    constructor(base) {
+        this.base = base;
+        this.exponents = [new BigIntForMultiplication(BigInteger.one())];
+    }
+    /**
+     * Compute the value for `this.base^exponent`, resulting in a big integer that is optimized for
+     * further multiplication operations.
+     */
+    toThePowerOf(exponent) {
+        // Compute the results up until the requested exponent, where every value is computed from its
+        // predecessor. This is because `this.base^(exponent - 1)` only has to be multiplied by `base`
+        // to reach `this.base^exponent`.
+        for (let i = this.exponents.length; i <= exponent; i++) {
+            const value = this.exponents[i - 1].multiplyBy(this.base);
+            this.exponents[i] = new BigIntForMultiplication(value);
+        }
+        return this.exponents[exponent];
+    }
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Return the message id or compute it using the XLIFF1 digest.
+ */
+function digest$1(message) {
+    return message.id || computeDigest(message);
+}
+/**
+ * Compute the message id using the XLIFF1 digest.
+ */
+function computeDigest(message) {
+    return sha1(serializeNodes(message.nodes).join('') + `[${message.meaning}]`);
+}
+/**
+ * Return the message id or compute it using the XLIFF2/XMB/$localize digest.
+ */
+function decimalDigest(message) {
+    return message.id || computeDecimalDigest(message);
+}
+/**
+ * Compute the message id using the XLIFF2/XMB/$localize digest.
+ */
+function computeDecimalDigest(message) {
+    const visitor = new _SerializerIgnoreIcuExpVisitor();
+    const parts = message.nodes.map(a => a.visit(visitor, null));
+    return computeMsgId(parts.join(''), message.meaning);
+}
+/**
+ * Serialize the i18n ast to something xml-like in order to generate an UID.
+ *
+ * The visitor is also used in the i18n parser tests
+ *
+ * @internal
+ */
+class _SerializerVisitor {
+    visitText(text, context) {
+        return text.value;
+    }
+    visitContainer(container, context) {
+        return `[${container.children.map(child => child.visit(this)).join(', ')}]`;
+    }
+    visitIcu(icu, context) {
+        const strCases = Object.keys(icu.cases).map((k) => `${k} {${icu.cases[k].visit(this)}}`);
+        return `{${icu.expression}, ${icu.type}, ${strCases.join(', ')}}`;
+    }
+    visitTagPlaceholder(ph, context) {
+        return ph.isVoid ?
+            `<ph tag name="${ph.startName}"/>` :
+            `<ph tag name="${ph.startName}">${ph.children.map(child => child.visit(this)).join(', ')}</ph name="${ph.closeName}">`;
+    }
+    visitPlaceholder(ph, context) {
+        return ph.value ? `<ph name="${ph.name}">${ph.value}</ph>` : `<ph name="${ph.name}"/>`;
+    }
+    visitIcuPlaceholder(ph, context) {
+        return `<ph icu name="${ph.name}">${ph.value.visit(this)}</ph>`;
+    }
+}
+const serializerVisitor$1 = new _SerializerVisitor();
+function serializeNodes(nodes) {
+    return nodes.map(a => a.visit(serializerVisitor$1, null));
+}
+/**
+ * Serialize the i18n ast to something xml-like in order to generate an UID.
+ *
+ * Ignore the ICU expressions so that message IDs stays identical if only the expression changes.
+ *
+ * @internal
+ */
+class _SerializerIgnoreIcuExpVisitor extends _SerializerVisitor {
+    visitIcu(icu, context) {
+        let strCases = Object.keys(icu.cases).map((k) => `${k} {${icu.cases[k].visit(this)}}`);
+        // Do not take the expression into account
+        return `{${icu.type}, ${strCases.join(', ')}}`;
+    }
+}
+/**
+ * Compute the SHA1 of the given string
+ *
+ * see https://csrc.nist.gov/publications/fips/fips180-4/fips-180-4.pdf
+ *
+ * WARNING: this function has not been designed not tested with security in mind.
+ *          DO NOT USE IT IN A SECURITY SENSITIVE CONTEXT.
+ */
+function sha1(str) {
+    const utf8 = utf8Encode(str);
+    const words32 = bytesToWords32(utf8, Endian.Big);
+    const len = utf8.length * 8;
+    const w = newArray(80);
+    let a = 0x67452301, b = 0xefcdab89, c = 0x98badcfe, d = 0x10325476, e = 0xc3d2e1f0;
+    words32[len >> 5] |= 0x80 << (24 - len % 32);
+    words32[((len + 64 >> 9) << 4) + 15] = len;
+    for (let i = 0; i < words32.length; i += 16) {
+        const h0 = a, h1 = b, h2 = c, h3 = d, h4 = e;
+        for (let j = 0; j < 80; j++) {
+            if (j < 16) {
+                w[j] = words32[i + j];
+            }
+            else {
+                w[j] = rol32(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
+            }
+            const fkVal = fk(j, b, c, d);
+            const f = fkVal[0];
+            const k = fkVal[1];
+            const temp = [rol32(a, 5), f, e, k, w[j]].reduce(add32);
+            e = d;
+            d = c;
+            c = rol32(b, 30);
+            b = a;
+            a = temp;
+        }
+        a = add32(a, h0);
+        b = add32(b, h1);
+        c = add32(c, h2);
+        d = add32(d, h3);
+        e = add32(e, h4);
+    }
+    return bytesToHexString(words32ToByteString([a, b, c, d, e]));
+}
+function fk(index, b, c, d) {
+    if (index < 20) {
+        return [(b & c) | (~b & d), 0x5a827999];
+    }
+    if (index < 40) {
+        return [b ^ c ^ d, 0x6ed9eba1];
+    }
+    if (index < 60) {
+        return [(b & c) | (b & d) | (c & d), 0x8f1bbcdc];
+    }
+    return [b ^ c ^ d, 0xca62c1d6];
+}
+/**
+ * Compute the fingerprint of the given string
+ *
+ * The output is 64 bit number encoded as a decimal string
+ *
+ * based on:
+ * https://github.com/google/closure-compiler/blob/master/src/com/google/javascript/jscomp/GoogleJsMessageIdGenerator.java
+ */
+function fingerprint(str) {
+    const utf8 = utf8Encode(str);
+    let hi = hash32(utf8, 0);
+    let lo = hash32(utf8, 102072);
+    if (hi == 0 && (lo == 0 || lo == 1)) {
+        hi = hi ^ 0x130f9bef;
+        lo = lo ^ -0x6b5f56d8;
+    }
+    return [hi, lo];
+}
+function computeMsgId(msg, meaning = '') {
+    let msgFingerprint = fingerprint(msg);
+    if (meaning) {
+        const meaningFingerprint = fingerprint(meaning);
+        msgFingerprint = add64(rol64(msgFingerprint, 1), meaningFingerprint);
+    }
+    const hi = msgFingerprint[0];
+    const lo = msgFingerprint[1];
+    return wordsToDecimalString(hi & 0x7fffffff, lo);
+}
+function hash32(bytes, c) {
+    let a = 0x9e3779b9, b = 0x9e3779b9;
+    let i;
+    const len = bytes.length;
+    for (i = 0; i + 12 <= len; i += 12) {
+        a = add32(a, wordAt(bytes, i, Endian.Little));
+        b = add32(b, wordAt(bytes, i + 4, Endian.Little));
+        c = add32(c, wordAt(bytes, i + 8, Endian.Little));
+        const res = mix(a, b, c);
+        a = res[0], b = res[1], c = res[2];
+    }
+    a = add32(a, wordAt(bytes, i, Endian.Little));
+    b = add32(b, wordAt(bytes, i + 4, Endian.Little));
+    // the first byte of c is reserved for the length
+    c = add32(c, len);
+    c = add32(c, wordAt(bytes, i + 8, Endian.Little) << 8);
+    return mix(a, b, c)[2];
+}
+// clang-format off
+function mix(a, b, c) {
+    a = sub32(a, b);
+    a = sub32(a, c);
+    a ^= c >>> 13;
+    b = sub32(b, c);
+    b = sub32(b, a);
+    b ^= a << 8;
+    c = sub32(c, a);
+    c = sub32(c, b);
+    c ^= b >>> 13;
+    a = sub32(a, b);
+    a = sub32(a, c);
+    a ^= c >>> 12;
+    b = sub32(b, c);
+    b = sub32(b, a);
+    b ^= a << 16;
+    c = sub32(c, a);
+    c = sub32(c, b);
+    c ^= b >>> 5;
+    a = sub32(a, b);
+    a = sub32(a, c);
+    a ^= c >>> 3;
+    b = sub32(b, c);
+    b = sub32(b, a);
+    b ^= a << 10;
+    c = sub32(c, a);
+    c = sub32(c, b);
+    c ^= b >>> 15;
+    return [a, b, c];
+}
+// clang-format on
+// Utils
+var Endian;
+(function (Endian) {
+    Endian[Endian["Little"] = 0] = "Little";
+    Endian[Endian["Big"] = 1] = "Big";
+})(Endian || (Endian = {}));
+function add32(a, b) {
+    return add32to64(a, b)[1];
+}
+function add32to64(a, b) {
+    const low = (a & 0xffff) + (b & 0xffff);
+    const high = (a >>> 16) + (b >>> 16) + (low >>> 16);
+    return [high >>> 16, (high << 16) | (low & 0xffff)];
+}
+function add64(a, b) {
+    const ah = a[0], al = a[1];
+    const bh = b[0], bl = b[1];
+    const result = add32to64(al, bl);
+    const carry = result[0];
+    const l = result[1];
+    const h = add32(add32(ah, bh), carry);
+    return [h, l];
+}
+function sub32(a, b) {
+    const low = (a & 0xffff) - (b & 0xffff);
+    const high = (a >> 16) - (b >> 16) + (low >> 16);
+    return (high << 16) | (low & 0xffff);
+}
+// Rotate a 32b number left `count` position
+function rol32(a, count) {
+    return (a << count) | (a >>> (32 - count));
+}
+// Rotate a 64b number left `count` position
+function rol64(num, count) {
+    const hi = num[0], lo = num[1];
+    const h = (hi << count) | (lo >>> (32 - count));
+    const l = (lo << count) | (hi >>> (32 - count));
+    return [h, l];
+}
+function bytesToWords32(bytes, endian) {
+    const size = (bytes.length + 3) >>> 2;
+    const words32 = [];
+    for (let i = 0; i < size; i++) {
+        words32[i] = wordAt(bytes, i * 4, endian);
+    }
+    return words32;
+}
+function byteAt(bytes, index) {
+    return index >= bytes.length ? 0 : bytes[index];
+}
+function wordAt(bytes, index, endian) {
+    let word = 0;
+    if (endian === Endian.Big) {
+        for (let i = 0; i < 4; i++) {
+            word += byteAt(bytes, index + i) << (24 - 8 * i);
+        }
+    }
+    else {
+        for (let i = 0; i < 4; i++) {
+            word += byteAt(bytes, index + i) << 8 * i;
+        }
+    }
+    return word;
+}
+function words32ToByteString(words32) {
+    return words32.reduce((bytes, word) => bytes.concat(word32ToByteString(word)), []);
+}
+function word32ToByteString(word) {
+    let bytes = [];
+    for (let i = 0; i < 4; i++) {
+        bytes.push((word >>> 8 * (3 - i)) & 0xff);
+    }
+    return bytes;
+}
+function bytesToHexString(bytes) {
+    let hex = '';
+    for (let i = 0; i < bytes.length; i++) {
+        const b = byteAt(bytes, i);
+        hex += (b >>> 4).toString(16) + (b & 0x0f).toString(16);
+    }
+    return hex.toLowerCase();
+}
+/**
+ * Create a shared exponentiation pool for base-256 computations. This shared pool provides memoized
+ * power-of-256 results with memoized power-of-two computations for efficient multiplication.
+ *
+ * For our purposes, this can be safely stored as a global without memory concerns. The reason is
+ * that we encode two words, so only need the 0th (for the low word) and 4th (for the high word)
+ * exponent.
+ */
+const base256 = new BigIntExponentiation(256);
+/**
+ * Represents two 32-bit words as a single decimal number. This requires a big integer storage
+ * model as JS numbers are not accurate enough to represent the 64-bit number.
+ *
+ * Based on https://www.danvk.org/hex2dec.html
+ */
+function wordsToDecimalString(hi, lo) {
+    // Encode the four bytes in lo in the lower digits of the decimal number.
+    // Note: the multiplication results in lo itself but represented by a big integer using its
+    // decimal digits.
+    const decimal = base256.toThePowerOf(0).multiplyBy(lo);
+    // Encode the four bytes in hi above the four lo bytes. lo is a maximum of (2^8)^4, which is why
+    // this multiplication factor is applied.
+    base256.toThePowerOf(4).multiplyByAndAddTo(hi, decimal);
+    return decimal.toString();
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 //// Types
 var TypeModifier;
 (function (TypeModifier) {
@@ -1151,16 +1853,31 @@ class TemplateLiteralElement {
             rawText ?? sourceSpan?.toString() ?? escapeForTemplateLiteral(escapeSlashes(text));
     }
 }
-class MessagePiece {
+class LiteralPiece {
     constructor(text, sourceSpan) {
         this.text = text;
         this.sourceSpan = sourceSpan;
     }
 }
-class LiteralPiece extends MessagePiece {
+class PlaceholderPiece {
+    /**
+     * Create a new instance of a `PlaceholderPiece`.
+     *
+     * @param text the name of this placeholder (e.g. `PH_1`).
+     * @param sourceSpan the location of this placeholder in its localized message the source code.
+     * @param associatedMessage reference to another message that this placeholder is associated with.
+     * The `associatedMessage` is mainly used to provide a relationship to an ICU message that has
+     * been extracted out from the message containing the placeholder.
+     */
+    constructor(text, sourceSpan, associatedMessage) {
+        this.text = text;
+        this.sourceSpan = sourceSpan;
+        this.associatedMessage = associatedMessage;
+    }
 }
-class PlaceholderPiece extends MessagePiece {
-}
+const MEANING_SEPARATOR$1 = '|';
+const ID_SEPARATOR$1 = '@@';
+const LEGACY_ID_INDICATOR = '␟';
 class LocalizedString extends Expression {
     constructor(metaBlock, messageParts, placeHolderNames, expressions, sourceSpan) {
         super(STRING_TYPE, sourceSpan);
@@ -1188,15 +1905,12 @@ class LocalizedString extends Expression {
      * @param messagePart The first part of the tagged string
      */
     serializeI18nHead() {
-        const MEANING_SEPARATOR = '|';
-        const ID_SEPARATOR = '@@';
-        const LEGACY_ID_INDICATOR = '␟';
         let metaBlock = this.metaBlock.description || '';
         if (this.metaBlock.meaning) {
-            metaBlock = `${this.metaBlock.meaning}${MEANING_SEPARATOR}${metaBlock}`;
+            metaBlock = `${this.metaBlock.meaning}${MEANING_SEPARATOR$1}${metaBlock}`;
         }
         if (this.metaBlock.customId) {
-            metaBlock = `${metaBlock}${ID_SEPARATOR}${this.metaBlock.customId}`;
+            metaBlock = `${metaBlock}${ID_SEPARATOR$1}${this.metaBlock.customId}`;
         }
         if (this.metaBlock.legacyIds) {
             this.metaBlock.legacyIds.forEach(legacyId => {
@@ -1216,13 +1930,21 @@ class LocalizedString extends Expression {
      * Serialize the given `placeholderName` and `messagePart` into "cooked" and "raw" strings that
      * can be used in a `$localize` tagged string.
      *
-     * @param placeholderName The placeholder name to serialize
-     * @param messagePart The following message string after this placeholder
+     * The format is `:<placeholder-name>[@@<associated-id>]:`.
+     *
+     * The `associated-id` is the message id of the (usually an ICU) message to which this placeholder
+     * refers.
+     *
+     * @param partIndex The index of the message part to serialize.
      */
     serializeI18nTemplatePart(partIndex) {
-        const placeholderName = this.placeHolderNames[partIndex - 1].text;
+        const placeholder = this.placeHolderNames[partIndex - 1];
         const messagePart = this.messageParts[partIndex];
-        return createCookedRawString(placeholderName, messagePart.text, this.getMessagePartSourceSpan(partIndex));
+        let metaBlock = placeholder.text;
+        if (placeholder.associatedMessage?.legacyIds.length === 0) {
+            metaBlock += `${ID_SEPARATOR$1}${computeMsgId(placeholder.associatedMessage.messageString, placeholder.associatedMessage.meaning)}`;
+        }
+        return createCookedRawString(metaBlock, messagePart.text, this.getMessagePartSourceSpan(partIndex));
     }
 }
 const escapeSlashes = (str) => str.replace(/\\/g, '\\\\');
@@ -2226,7 +2948,6 @@ var output_ast = /*#__PURE__*/Object.freeze({
     LiteralExpr: LiteralExpr,
     TemplateLiteral: TemplateLiteral,
     TemplateLiteralElement: TemplateLiteralElement,
-    MessagePiece: MessagePiece,
     LiteralPiece: LiteralPiece,
     PlaceholderPiece: PlaceholderPiece,
     LocalizedString: LocalizedString,
@@ -2801,206 +3522,6 @@ Identifiers$1.trustConstantResourceUrl = { name: 'ɵɵtrustConstantResourceUrl',
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const DASH_CASE_REGEXP = /-+([a-z0-9])/g;
-function dashCaseToCamelCase(input) {
-    return input.replace(DASH_CASE_REGEXP, (...m) => m[1].toUpperCase());
-}
-function splitAtColon(input, defaultValues) {
-    return _splitAt(input, ':', defaultValues);
-}
-function splitAtPeriod(input, defaultValues) {
-    return _splitAt(input, '.', defaultValues);
-}
-function _splitAt(input, character, defaultValues) {
-    const characterIndex = input.indexOf(character);
-    if (characterIndex == -1)
-        return defaultValues;
-    return [input.slice(0, characterIndex).trim(), input.slice(characterIndex + 1).trim()];
-}
-function visitValue(value, visitor, context) {
-    if (Array.isArray(value)) {
-        return visitor.visitArray(value, context);
-    }
-    if (isStrictStringMap(value)) {
-        return visitor.visitStringMap(value, context);
-    }
-    if (value == null || typeof value == 'string' || typeof value == 'number' ||
-        typeof value == 'boolean') {
-        return visitor.visitPrimitive(value, context);
-    }
-    return visitor.visitOther(value, context);
-}
-function isDefined(val) {
-    return val !== null && val !== undefined;
-}
-function noUndefined(val) {
-    return val === undefined ? null : val;
-}
-class ValueTransformer {
-    visitArray(arr, context) {
-        return arr.map(value => visitValue(value, this, context));
-    }
-    visitStringMap(map, context) {
-        const result = {};
-        Object.keys(map).forEach(key => {
-            result[key] = visitValue(map[key], this, context);
-        });
-        return result;
-    }
-    visitPrimitive(value, context) {
-        return value;
-    }
-    visitOther(value, context) {
-        return value;
-    }
-}
-const SyncAsync = {
-    assertSync: (value) => {
-        if (isPromise(value)) {
-            throw new Error(`Illegal state: value cannot be a promise`);
-        }
-        return value;
-    },
-    then: (value, cb) => {
-        return isPromise(value) ? value.then(cb) : cb(value);
-    },
-    all: (syncAsyncValues) => {
-        return syncAsyncValues.some(isPromise) ? Promise.all(syncAsyncValues) : syncAsyncValues;
-    }
-};
-function error(msg) {
-    throw new Error(`Internal Error: ${msg}`);
-}
-// Escape characters that have a special meaning in Regular Expressions
-function escapeRegExp(s) {
-    return s.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
-}
-const STRING_MAP_PROTO = Object.getPrototypeOf({});
-function isStrictStringMap(obj) {
-    return typeof obj === 'object' && obj !== null && Object.getPrototypeOf(obj) === STRING_MAP_PROTO;
-}
-function utf8Encode(str) {
-    let encoded = [];
-    for (let index = 0; index < str.length; index++) {
-        let codePoint = str.charCodeAt(index);
-        // decode surrogate
-        // see https://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
-        if (codePoint >= 0xd800 && codePoint <= 0xdbff && str.length > (index + 1)) {
-            const low = str.charCodeAt(index + 1);
-            if (low >= 0xdc00 && low <= 0xdfff) {
-                index++;
-                codePoint = ((codePoint - 0xd800) << 10) + low - 0xdc00 + 0x10000;
-            }
-        }
-        if (codePoint <= 0x7f) {
-            encoded.push(codePoint);
-        }
-        else if (codePoint <= 0x7ff) {
-            encoded.push(((codePoint >> 6) & 0x1F) | 0xc0, (codePoint & 0x3f) | 0x80);
-        }
-        else if (codePoint <= 0xffff) {
-            encoded.push((codePoint >> 12) | 0xe0, ((codePoint >> 6) & 0x3f) | 0x80, (codePoint & 0x3f) | 0x80);
-        }
-        else if (codePoint <= 0x1fffff) {
-            encoded.push(((codePoint >> 18) & 0x07) | 0xf0, ((codePoint >> 12) & 0x3f) | 0x80, ((codePoint >> 6) & 0x3f) | 0x80, (codePoint & 0x3f) | 0x80);
-        }
-    }
-    return encoded;
-}
-function stringify(token) {
-    if (typeof token === 'string') {
-        return token;
-    }
-    if (Array.isArray(token)) {
-        return '[' + token.map(stringify).join(', ') + ']';
-    }
-    if (token == null) {
-        return '' + token;
-    }
-    if (token.overriddenName) {
-        return `${token.overriddenName}`;
-    }
-    if (token.name) {
-        return `${token.name}`;
-    }
-    if (!token.toString) {
-        return 'object';
-    }
-    // WARNING: do not try to `JSON.stringify(token)` here
-    // see https://github.com/angular/angular/issues/23440
-    const res = token.toString();
-    if (res == null) {
-        return '' + res;
-    }
-    const newLineIndex = res.indexOf('\n');
-    return newLineIndex === -1 ? res : res.substring(0, newLineIndex);
-}
-/**
- * Lazily retrieves the reference value from a forwardRef.
- */
-function resolveForwardRef(type) {
-    if (typeof type === 'function' && type.hasOwnProperty('__forward_ref__')) {
-        return type();
-    }
-    else {
-        return type;
-    }
-}
-/**
- * Determine if the argument is shaped like a Promise
- */
-function isPromise(obj) {
-    // allow any Promise/A+ compliant thenable.
-    // It's up to the caller to ensure that obj.then conforms to the spec
-    return !!obj && typeof obj.then === 'function';
-}
-class Version {
-    constructor(full) {
-        this.full = full;
-        const splits = full.split('.');
-        this.major = splits[0];
-        this.minor = splits[1];
-        this.patch = splits.slice(2).join('.');
-    }
-}
-const __window = typeof window !== 'undefined' && window;
-const __self = typeof self !== 'undefined' && typeof WorkerGlobalScope !== 'undefined' &&
-    self instanceof WorkerGlobalScope && self;
-const __global = typeof global !== 'undefined' && global;
-// Check __global first, because in Node tests both __global and __window may be defined and _global
-// should be __global in that case.
-const _global = __global || __window || __self;
-function newArray(size, value) {
-    const list = [];
-    for (let i = 0; i < size; i++) {
-        list.push(value);
-    }
-    return list;
-}
-/**
- * Partitions a given array into 2 arrays, based on a boolean value returned by the condition
- * function.
- *
- * @param arr Input array that should be partitioned
- * @param conditionFn Condition function that is called for each item in a given array and returns a
- * boolean value.
- */
-function partitionArray(arr, conditionFn) {
-    const truthy = [];
-    const falsy = [];
-    for (const item of arr) {
-        (conditionFn(item) ? truthy : falsy).push(item);
-    }
-    return [truthy, falsy];
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * This is an R3 `Node`-like wrapper for a raw `html.Comment` node. We do not currently
  * require the implementation of a visitor for Comments as they are only collected at
@@ -3335,6 +3856,7 @@ class Message {
         this.id = this.customId;
         /** The ids to use if there are no custom id and if `i18nLegacyMessageIdFormat` is not empty */
         this.legacyIds = [];
+        this.messageString = serializeMessage(this.nodes);
         if (nodes.length) {
             this.sources = [{
                     filePath: nodes[0].sourceSpan.start.file.url,
@@ -3461,507 +3983,35 @@ class RecurseVisitor {
     visitPlaceholder(ph, context) { }
     visitIcuPlaceholder(ph, context) { }
 }
-
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
+ * Serialize the message to the Localize backtick string format that would appear in compiled code.
  */
-/**
- * Represents a big integer using a buffer of its individual digits, with the least significant
- * digit stored at the beginning of the array (little endian).
- *
- * For performance reasons, each instance is mutable. The addition operation can be done in-place
- * to reduce memory pressure of allocation for the digits array.
- */
-class BigInteger {
-    /**
-     * Creates a big integer using its individual digits in little endian storage.
-     */
-    constructor(digits) {
-        this.digits = digits;
-    }
-    static zero() {
-        return new BigInteger([0]);
-    }
-    static one() {
-        return new BigInteger([1]);
-    }
-    /**
-     * Creates a clone of this instance.
-     */
-    clone() {
-        return new BigInteger(this.digits.slice());
-    }
-    /**
-     * Returns a new big integer with the sum of `this` and `other` as its value. This does not mutate
-     * `this` but instead returns a new instance, unlike `addToSelf`.
-     */
-    add(other) {
-        const result = this.clone();
-        result.addToSelf(other);
-        return result;
-    }
-    /**
-     * Adds `other` to the instance itself, thereby mutating its value.
-     */
-    addToSelf(other) {
-        const maxNrOfDigits = Math.max(this.digits.length, other.digits.length);
-        let carry = 0;
-        for (let i = 0; i < maxNrOfDigits; i++) {
-            let digitSum = carry;
-            if (i < this.digits.length) {
-                digitSum += this.digits[i];
-            }
-            if (i < other.digits.length) {
-                digitSum += other.digits[i];
-            }
-            if (digitSum >= 10) {
-                this.digits[i] = digitSum - 10;
-                carry = 1;
-            }
-            else {
-                this.digits[i] = digitSum;
-                carry = 0;
-            }
-        }
-        // Apply a remaining carry if needed.
-        if (carry > 0) {
-            this.digits[maxNrOfDigits] = 1;
-        }
-    }
-    /**
-     * Builds the decimal string representation of the big integer. As this is stored in
-     * little endian, the digits are concatenated in reverse order.
-     */
-    toString() {
-        let res = '';
-        for (let i = this.digits.length - 1; i >= 0; i--) {
-            res += this.digits[i];
-        }
-        return res;
-    }
+function serializeMessage(messageNodes) {
+    const visitor = new LocalizeMessageStringVisitor();
+    const str = messageNodes.map(n => n.visit(visitor)).join('');
+    return str;
 }
-/**
- * Represents a big integer which is optimized for multiplication operations, as its power-of-twos
- * are memoized. See `multiplyBy()` for details on the multiplication algorithm.
- */
-class BigIntForMultiplication {
-    constructor(value) {
-        this.powerOfTwos = [value];
-    }
-    /**
-     * Returns the big integer itself.
-     */
-    getValue() {
-        return this.powerOfTwos[0];
-    }
-    /**
-     * Computes the value for `num * b`, where `num` is a JS number and `b` is a big integer. The
-     * value for `b` is represented by a storage model that is optimized for this computation.
-     *
-     * This operation is implemented in N(log2(num)) by continuous halving of the number, where the
-     * least-significant bit (LSB) is tested in each iteration. If the bit is set, the bit's index is
-     * used as exponent into the power-of-two multiplication of `b`.
-     *
-     * As an example, consider the multiplication num=42, b=1337. In binary 42 is 0b00101010 and the
-     * algorithm unrolls into the following iterations:
-     *
-     *  Iteration | num        | LSB  | b * 2^iter | Add? | product
-     * -----------|------------|------|------------|------|--------
-     *  0         | 0b00101010 | 0    | 1337       | No   | 0
-     *  1         | 0b00010101 | 1    | 2674       | Yes  | 2674
-     *  2         | 0b00001010 | 0    | 5348       | No   | 2674
-     *  3         | 0b00000101 | 1    | 10696      | Yes  | 13370
-     *  4         | 0b00000010 | 0    | 21392      | No   | 13370
-     *  5         | 0b00000001 | 1    | 42784      | Yes  | 56154
-     *  6         | 0b00000000 | 0    | 85568      | No   | 56154
-     *
-     * The computed product of 56154 is indeed the correct result.
-     *
-     * The `BigIntForMultiplication` representation for a big integer provides memoized access to the
-     * power-of-two values to reduce the workload in computing those values.
-     */
-    multiplyBy(num) {
-        const product = BigInteger.zero();
-        this.multiplyByAndAddTo(num, product);
-        return product;
-    }
-    /**
-     * See `multiplyBy()` for details. This function allows for the computed product to be added
-     * directly to the provided result big integer.
-     */
-    multiplyByAndAddTo(num, result) {
-        for (let exponent = 0; num !== 0; num = num >>> 1, exponent++) {
-            if (num & 1) {
-                const value = this.getMultipliedByPowerOfTwo(exponent);
-                result.addToSelf(value);
-            }
-        }
-    }
-    /**
-     * Computes and memoizes the big integer value for `this.number * 2^exponent`.
-     */
-    getMultipliedByPowerOfTwo(exponent) {
-        // Compute the powers up until the requested exponent, where each value is computed from its
-        // predecessor. This is simple as `this.number * 2^(exponent - 1)` only has to be doubled (i.e.
-        // added to itself) to reach `this.number * 2^exponent`.
-        for (let i = this.powerOfTwos.length; i <= exponent; i++) {
-            const previousPower = this.powerOfTwos[i - 1];
-            this.powerOfTwos[i] = previousPower.add(previousPower);
-        }
-        return this.powerOfTwos[exponent];
-    }
-}
-/**
- * Represents an exponentiation operation for the provided base, of which exponents are computed and
- * memoized. The results are represented by a `BigIntForMultiplication` which is tailored for
- * multiplication operations by memoizing the power-of-twos. This effectively results in a matrix
- * representation that is lazily computed upon request.
- */
-class BigIntExponentiation {
-    constructor(base) {
-        this.base = base;
-        this.exponents = [new BigIntForMultiplication(BigInteger.one())];
-    }
-    /**
-     * Compute the value for `this.base^exponent`, resulting in a big integer that is optimized for
-     * further multiplication operations.
-     */
-    toThePowerOf(exponent) {
-        // Compute the results up until the requested exponent, where every value is computed from its
-        // predecessor. This is because `this.base^(exponent - 1)` only has to be multiplied by `base`
-        // to reach `this.base^exponent`.
-        for (let i = this.exponents.length; i <= exponent; i++) {
-            const value = this.exponents[i - 1].multiplyBy(this.base);
-            this.exponents[i] = new BigIntForMultiplication(value);
-        }
-        return this.exponents[exponent];
-    }
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * Return the message id or compute it using the XLIFF1 digest.
- */
-function digest$1(message) {
-    return message.id || computeDigest(message);
-}
-/**
- * Compute the message id using the XLIFF1 digest.
- */
-function computeDigest(message) {
-    return sha1(serializeNodes(message.nodes).join('') + `[${message.meaning}]`);
-}
-/**
- * Return the message id or compute it using the XLIFF2/XMB/$localize digest.
- */
-function decimalDigest(message) {
-    return message.id || computeDecimalDigest(message);
-}
-/**
- * Compute the message id using the XLIFF2/XMB/$localize digest.
- */
-function computeDecimalDigest(message) {
-    const visitor = new _SerializerIgnoreIcuExpVisitor();
-    const parts = message.nodes.map(a => a.visit(visitor, null));
-    return computeMsgId(parts.join(''), message.meaning);
-}
-/**
- * Serialize the i18n ast to something xml-like in order to generate an UID.
- *
- * The visitor is also used in the i18n parser tests
- *
- * @internal
- */
-class _SerializerVisitor {
-    visitText(text, context) {
+class LocalizeMessageStringVisitor {
+    visitText(text) {
         return text.value;
     }
-    visitContainer(container, context) {
-        return `[${container.children.map(child => child.visit(this)).join(', ')}]`;
+    visitContainer(container) {
+        return container.children.map(child => child.visit(this)).join('');
     }
-    visitIcu(icu, context) {
+    visitIcu(icu) {
         const strCases = Object.keys(icu.cases).map((k) => `${k} {${icu.cases[k].visit(this)}}`);
-        return `{${icu.expression}, ${icu.type}, ${strCases.join(', ')}}`;
+        return `{${icu.expressionPlaceholder}, ${icu.type}, ${strCases.join(' ')}}`;
     }
-    visitTagPlaceholder(ph, context) {
-        return ph.isVoid ?
-            `<ph tag name="${ph.startName}"/>` :
-            `<ph tag name="${ph.startName}">${ph.children.map(child => child.visit(this)).join(', ')}</ph name="${ph.closeName}">`;
+    visitTagPlaceholder(ph) {
+        const children = ph.children.map(child => child.visit(this)).join('');
+        return `{$${ph.startName}}${children}{$${ph.closeName}}`;
     }
-    visitPlaceholder(ph, context) {
-        return ph.value ? `<ph name="${ph.name}">${ph.value}</ph>` : `<ph name="${ph.name}"/>`;
+    visitPlaceholder(ph) {
+        return `{$${ph.name}}`;
     }
-    visitIcuPlaceholder(ph, context) {
-        return `<ph icu name="${ph.name}">${ph.value.visit(this)}</ph>`;
+    visitIcuPlaceholder(ph) {
+        return `{$${ph.name}}`;
     }
-}
-const serializerVisitor$2 = new _SerializerVisitor();
-function serializeNodes(nodes) {
-    return nodes.map(a => a.visit(serializerVisitor$2, null));
-}
-/**
- * Serialize the i18n ast to something xml-like in order to generate an UID.
- *
- * Ignore the ICU expressions so that message IDs stays identical if only the expression changes.
- *
- * @internal
- */
-class _SerializerIgnoreIcuExpVisitor extends _SerializerVisitor {
-    visitIcu(icu, context) {
-        let strCases = Object.keys(icu.cases).map((k) => `${k} {${icu.cases[k].visit(this)}}`);
-        // Do not take the expression into account
-        return `{${icu.type}, ${strCases.join(', ')}}`;
-    }
-}
-/**
- * Compute the SHA1 of the given string
- *
- * see https://csrc.nist.gov/publications/fips/fips180-4/fips-180-4.pdf
- *
- * WARNING: this function has not been designed not tested with security in mind.
- *          DO NOT USE IT IN A SECURITY SENSITIVE CONTEXT.
- */
-function sha1(str) {
-    const utf8 = utf8Encode(str);
-    const words32 = bytesToWords32(utf8, Endian.Big);
-    const len = utf8.length * 8;
-    const w = newArray(80);
-    let a = 0x67452301, b = 0xefcdab89, c = 0x98badcfe, d = 0x10325476, e = 0xc3d2e1f0;
-    words32[len >> 5] |= 0x80 << (24 - len % 32);
-    words32[((len + 64 >> 9) << 4) + 15] = len;
-    for (let i = 0; i < words32.length; i += 16) {
-        const h0 = a, h1 = b, h2 = c, h3 = d, h4 = e;
-        for (let j = 0; j < 80; j++) {
-            if (j < 16) {
-                w[j] = words32[i + j];
-            }
-            else {
-                w[j] = rol32(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
-            }
-            const fkVal = fk(j, b, c, d);
-            const f = fkVal[0];
-            const k = fkVal[1];
-            const temp = [rol32(a, 5), f, e, k, w[j]].reduce(add32);
-            e = d;
-            d = c;
-            c = rol32(b, 30);
-            b = a;
-            a = temp;
-        }
-        a = add32(a, h0);
-        b = add32(b, h1);
-        c = add32(c, h2);
-        d = add32(d, h3);
-        e = add32(e, h4);
-    }
-    return bytesToHexString(words32ToByteString([a, b, c, d, e]));
-}
-function fk(index, b, c, d) {
-    if (index < 20) {
-        return [(b & c) | (~b & d), 0x5a827999];
-    }
-    if (index < 40) {
-        return [b ^ c ^ d, 0x6ed9eba1];
-    }
-    if (index < 60) {
-        return [(b & c) | (b & d) | (c & d), 0x8f1bbcdc];
-    }
-    return [b ^ c ^ d, 0xca62c1d6];
-}
-/**
- * Compute the fingerprint of the given string
- *
- * The output is 64 bit number encoded as a decimal string
- *
- * based on:
- * https://github.com/google/closure-compiler/blob/master/src/com/google/javascript/jscomp/GoogleJsMessageIdGenerator.java
- */
-function fingerprint(str) {
-    const utf8 = utf8Encode(str);
-    let hi = hash32(utf8, 0);
-    let lo = hash32(utf8, 102072);
-    if (hi == 0 && (lo == 0 || lo == 1)) {
-        hi = hi ^ 0x130f9bef;
-        lo = lo ^ -0x6b5f56d8;
-    }
-    return [hi, lo];
-}
-function computeMsgId(msg, meaning = '') {
-    let msgFingerprint = fingerprint(msg);
-    if (meaning) {
-        const meaningFingerprint = fingerprint(meaning);
-        msgFingerprint = add64(rol64(msgFingerprint, 1), meaningFingerprint);
-    }
-    const hi = msgFingerprint[0];
-    const lo = msgFingerprint[1];
-    return wordsToDecimalString(hi & 0x7fffffff, lo);
-}
-function hash32(bytes, c) {
-    let a = 0x9e3779b9, b = 0x9e3779b9;
-    let i;
-    const len = bytes.length;
-    for (i = 0; i + 12 <= len; i += 12) {
-        a = add32(a, wordAt(bytes, i, Endian.Little));
-        b = add32(b, wordAt(bytes, i + 4, Endian.Little));
-        c = add32(c, wordAt(bytes, i + 8, Endian.Little));
-        const res = mix(a, b, c);
-        a = res[0], b = res[1], c = res[2];
-    }
-    a = add32(a, wordAt(bytes, i, Endian.Little));
-    b = add32(b, wordAt(bytes, i + 4, Endian.Little));
-    // the first byte of c is reserved for the length
-    c = add32(c, len);
-    c = add32(c, wordAt(bytes, i + 8, Endian.Little) << 8);
-    return mix(a, b, c)[2];
-}
-// clang-format off
-function mix(a, b, c) {
-    a = sub32(a, b);
-    a = sub32(a, c);
-    a ^= c >>> 13;
-    b = sub32(b, c);
-    b = sub32(b, a);
-    b ^= a << 8;
-    c = sub32(c, a);
-    c = sub32(c, b);
-    c ^= b >>> 13;
-    a = sub32(a, b);
-    a = sub32(a, c);
-    a ^= c >>> 12;
-    b = sub32(b, c);
-    b = sub32(b, a);
-    b ^= a << 16;
-    c = sub32(c, a);
-    c = sub32(c, b);
-    c ^= b >>> 5;
-    a = sub32(a, b);
-    a = sub32(a, c);
-    a ^= c >>> 3;
-    b = sub32(b, c);
-    b = sub32(b, a);
-    b ^= a << 10;
-    c = sub32(c, a);
-    c = sub32(c, b);
-    c ^= b >>> 15;
-    return [a, b, c];
-}
-// clang-format on
-// Utils
-var Endian;
-(function (Endian) {
-    Endian[Endian["Little"] = 0] = "Little";
-    Endian[Endian["Big"] = 1] = "Big";
-})(Endian || (Endian = {}));
-function add32(a, b) {
-    return add32to64(a, b)[1];
-}
-function add32to64(a, b) {
-    const low = (a & 0xffff) + (b & 0xffff);
-    const high = (a >>> 16) + (b >>> 16) + (low >>> 16);
-    return [high >>> 16, (high << 16) | (low & 0xffff)];
-}
-function add64(a, b) {
-    const ah = a[0], al = a[1];
-    const bh = b[0], bl = b[1];
-    const result = add32to64(al, bl);
-    const carry = result[0];
-    const l = result[1];
-    const h = add32(add32(ah, bh), carry);
-    return [h, l];
-}
-function sub32(a, b) {
-    const low = (a & 0xffff) - (b & 0xffff);
-    const high = (a >> 16) - (b >> 16) + (low >> 16);
-    return (high << 16) | (low & 0xffff);
-}
-// Rotate a 32b number left `count` position
-function rol32(a, count) {
-    return (a << count) | (a >>> (32 - count));
-}
-// Rotate a 64b number left `count` position
-function rol64(num, count) {
-    const hi = num[0], lo = num[1];
-    const h = (hi << count) | (lo >>> (32 - count));
-    const l = (lo << count) | (hi >>> (32 - count));
-    return [h, l];
-}
-function bytesToWords32(bytes, endian) {
-    const size = (bytes.length + 3) >>> 2;
-    const words32 = [];
-    for (let i = 0; i < size; i++) {
-        words32[i] = wordAt(bytes, i * 4, endian);
-    }
-    return words32;
-}
-function byteAt(bytes, index) {
-    return index >= bytes.length ? 0 : bytes[index];
-}
-function wordAt(bytes, index, endian) {
-    let word = 0;
-    if (endian === Endian.Big) {
-        for (let i = 0; i < 4; i++) {
-            word += byteAt(bytes, index + i) << (24 - 8 * i);
-        }
-    }
-    else {
-        for (let i = 0; i < 4; i++) {
-            word += byteAt(bytes, index + i) << 8 * i;
-        }
-    }
-    return word;
-}
-function words32ToByteString(words32) {
-    return words32.reduce((bytes, word) => bytes.concat(word32ToByteString(word)), []);
-}
-function word32ToByteString(word) {
-    let bytes = [];
-    for (let i = 0; i < 4; i++) {
-        bytes.push((word >>> 8 * (3 - i)) & 0xff);
-    }
-    return bytes;
-}
-function bytesToHexString(bytes) {
-    let hex = '';
-    for (let i = 0; i < bytes.length; i++) {
-        const b = byteAt(bytes, i);
-        hex += (b >>> 4).toString(16) + (b & 0x0f).toString(16);
-    }
-    return hex.toLowerCase();
-}
-/**
- * Create a shared exponentiation pool for base-256 computations. This shared pool provides memoized
- * power-of-256 results with memoized power-of-two computations for efficient multiplication.
- *
- * For our purposes, this can be safely stored as a global without memory concerns. The reason is
- * that we encode two words, so only need the 0th (for the low word) and 4th (for the high word)
- * exponent.
- */
-const base256 = new BigIntExponentiation(256);
-/**
- * Represents two 32-bit words as a single decimal number. This requires a big integer storage
- * model as JS numbers are not accurate enough to represent the 64-bit number.
- *
- * Based on https://www.danvk.org/hex2dec.html
- */
-function wordsToDecimalString(hi, lo) {
-    // Encode the four bytes in lo in the lower digits of the decimal number.
-    // Note: the multiplication results in lo itself but represented by a big integer using its
-    // decimal digits.
-    const decimal = base256.toThePowerOf(0).multiplyBy(lo);
-    // Encode the four bytes in hi above the four lo bytes. lo is a maximum of (2^8)^4, which is why
-    // this multiplication factor is applied.
-    base256.toThePowerOf(4).multiplyByAndAddTo(hi, decimal);
-    return decimal.toString();
 }
 
 /**
@@ -4299,6 +4349,12 @@ const TRANSLATION_VAR_PREFIX = 'i18n_';
 /** Name of the i18n attributes **/
 const I18N_ATTR = 'i18n';
 const I18N_ATTR_PREFIX = 'i18n-';
+/**
+ * Matches the prefix used when binding to an attribute rather than a property.
+ *
+ * For example: `[attr.title]="expression"`.
+ * */
+const ATTR_BINDING_MATCHER = /^attr\./i;
 /** Prefix of var expressions used in ICUs */
 const I18N_ICU_VAR_PREFIX = 'VAR_';
 /** Prefix of ICU expressions for post processing */
@@ -19719,19 +19775,22 @@ class I18nMetaVisitor {
         return new ParseTreeResult(result, this._errors);
     }
     visitElement(element) {
+        let message = undefined;
         if (hasI18nAttrs(element)) {
             this.hasI18nMeta = true;
             const attrs = [];
             const attrsMeta = {};
             for (const attr of element.attrs) {
                 if (attr.name === I18N_ATTR) {
-                    // root 'i18n' node attribute
+                    // 'i18n' attribute that marks the element contents as an i18n message
                     const i18n = element.i18n || attr.value;
-                    const message = this._generateI18nMessage(element.children, i18n, setI18nRefs);
-                    // do not assign empty i18n meta
-                    if (message.nodes.length) {
-                        element.i18n = message;
+                    message = this._generateI18nMessage(element.children, i18n, setI18nRefs);
+                    if (message.nodes.length === 0) {
+                        // Ignore the message if it is empty.
+                        message = undefined;
                     }
+                    // Store the message on the element
+                    element.i18n = message;
                 }
                 else if (attr.name.startsWith(I18N_ATTR_PREFIX)) {
                     // 'i18n-*' attributes
@@ -19751,7 +19810,9 @@ class I18nMetaVisitor {
             // set i18n meta for attributes
             if (Object.keys(attrsMeta).length) {
                 for (const attr of attrs) {
-                    const meta = attrsMeta[attr.name];
+                    // First try to match the metadata to the attribute name as-is.
+                    // If that cannot be found try removing any `attr.` prefix from the attribute name.
+                    const meta = attrsMeta[attr.name] ?? attrsMeta[attr.name.replace(ATTR_BINDING_MATCHER, '')];
                     // do not create translation for empty attributes
                     if (meta !== undefined && attr.value) {
                         attr.i18n = this._generateI18nMessage([attr], attr.i18n || meta);
@@ -19764,7 +19825,7 @@ class I18nMetaVisitor {
                 element.attrs = attrs;
             }
         }
-        visitAll(this, element.children, element.i18n);
+        visitAll(this, element.children, message);
         return element;
     }
     visitExpansion(expansion, currentMessage) {
@@ -19779,6 +19840,10 @@ class I18nMetaVisitor {
             message = this._generateI18nMessage([expansion], meta);
             const icu = icuFromI18nMessage(message);
             icu.name = name;
+            if (currentMessage !== null) {
+                // Also update the placeholderToMessage map with this new message
+                currentMessage.placeholderToMessage[name] = message;
+            }
         }
         else {
             // ICU is a top level message, try to use metadata from container element if provided via
@@ -19944,9 +20009,9 @@ class GetMsgSerializerVisitor {
         return this.formatPh(ph.name);
     }
 }
-const serializerVisitor$1 = new GetMsgSerializerVisitor();
+const serializerVisitor = new GetMsgSerializerVisitor();
 function serializeI18nMessageForGetMsg(message) {
-    return message.nodes.map(node => node.visit(serializerVisitor$1, null)).join('');
+    return message.nodes.map(node => node.visit(serializerVisitor, null)).join('');
 }
 
 function createLocalizeStatements(variable, message, params) {
@@ -19963,40 +20028,43 @@ function createLocalizeStatements(variable, message, params) {
  * The result can be used for generating the `$localize` tagged template literals.
  */
 class LocalizeSerializerVisitor {
-    visitText(text, context) {
-        if (context[context.length - 1] instanceof LiteralPiece) {
+    constructor(placeholderToMessage, pieces) {
+        this.placeholderToMessage = placeholderToMessage;
+        this.pieces = pieces;
+    }
+    visitText(text) {
+        if (this.pieces[this.pieces.length - 1] instanceof LiteralPiece) {
             // Two literal pieces in a row means that there was some comment node in-between.
-            context[context.length - 1].text += text.value;
+            this.pieces[this.pieces.length - 1].text += text.value;
         }
         else {
             const sourceSpan = new ParseSourceSpan(text.sourceSpan.fullStart, text.sourceSpan.end, text.sourceSpan.fullStart, text.sourceSpan.details);
-            context.push(new LiteralPiece(text.value, sourceSpan));
+            this.pieces.push(new LiteralPiece(text.value, sourceSpan));
         }
     }
-    visitContainer(container, context) {
-        container.children.forEach(child => child.visit(this, context));
+    visitContainer(container) {
+        container.children.forEach(child => child.visit(this));
     }
-    visitIcu(icu, context) {
-        context.push(new LiteralPiece(serializeIcuNode(icu), icu.sourceSpan));
+    visitIcu(icu) {
+        this.pieces.push(new LiteralPiece(serializeIcuNode(icu), icu.sourceSpan));
     }
-    visitTagPlaceholder(ph, context) {
-        context.push(this.createPlaceholderPiece(ph.startName, ph.startSourceSpan ?? ph.sourceSpan));
+    visitTagPlaceholder(ph) {
+        this.pieces.push(this.createPlaceholderPiece(ph.startName, ph.startSourceSpan ?? ph.sourceSpan));
         if (!ph.isVoid) {
-            ph.children.forEach(child => child.visit(this, context));
-            context.push(this.createPlaceholderPiece(ph.closeName, ph.endSourceSpan ?? ph.sourceSpan));
+            ph.children.forEach(child => child.visit(this));
+            this.pieces.push(this.createPlaceholderPiece(ph.closeName, ph.endSourceSpan ?? ph.sourceSpan));
         }
     }
-    visitPlaceholder(ph, context) {
-        context.push(this.createPlaceholderPiece(ph.name, ph.sourceSpan));
+    visitPlaceholder(ph) {
+        this.pieces.push(this.createPlaceholderPiece(ph.name, ph.sourceSpan));
     }
-    visitIcuPlaceholder(ph, context) {
-        context.push(this.createPlaceholderPiece(ph.name, ph.sourceSpan));
+    visitIcuPlaceholder(ph) {
+        this.pieces.push(this.createPlaceholderPiece(ph.name, ph.sourceSpan, this.placeholderToMessage[ph.name]));
     }
-    createPlaceholderPiece(name, sourceSpan) {
-        return new PlaceholderPiece(formatI18nPlaceholderName(name, /* useCamelCase */ false), sourceSpan);
+    createPlaceholderPiece(name, sourceSpan, associatedMessage) {
+        return new PlaceholderPiece(formatI18nPlaceholderName(name, /* useCamelCase */ false), sourceSpan, associatedMessage);
     }
 }
-const serializerVisitor = new LocalizeSerializerVisitor();
 /**
  * Serialize an i18n message into two arrays: messageParts and placeholders.
  *
@@ -20007,7 +20075,8 @@ const serializerVisitor = new LocalizeSerializerVisitor();
  */
 function serializeI18nMessageForLocalize(message) {
     const pieces = [];
-    message.nodes.forEach(node => node.visit(serializerVisitor, pieces));
+    const serializerVisitor = new LocalizeSerializerVisitor(message.placeholderToMessage, pieces);
+    message.nodes.forEach(node => node.visit(serializerVisitor));
     return processMessagePieces(pieces);
 }
 function getSourceSpan(message) {
@@ -20560,7 +20629,8 @@ class TemplateDefinitionBuilder {
         element.inputs.forEach(input => {
             const stylingInputWasSet = stylingBuilder.registerBoundInput(input);
             if (!stylingInputWasSet) {
-                if (input.type === 0 /* Property */ && input.i18n) {
+                if ((input.type === 0 /* Property */ || input.type === 1 /* Attribute */) &&
+                    input.i18n) {
                     boundI18nAttrs.push(input);
                 }
                 else {
@@ -22957,7 +23027,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('13.0.0-next.14+67.sha-efeb5ad.with-local-changes');
+const VERSION = new Version('13.0.0-next.14+71.sha-25b9c8c.with-local-changes');
 
 /**
  * @license
@@ -32319,7 +32389,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('13.0.0-next.14+67.sha-efeb5ad.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.14+71.sha-25b9c8c.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32359,7 +32429,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('13.0.0-next.14+67.sha-efeb5ad.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.14+71.sha-25b9c8c.with-local-changes'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -32579,7 +32649,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('13.0.0-next.14+67.sha-efeb5ad.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.14+71.sha-25b9c8c.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32621,7 +32691,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('13.0.0-next.14+67.sha-efeb5ad.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.14+71.sha-25b9c8c.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -32700,7 +32770,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('13.0.0-next.14+67.sha-efeb5ad.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.14+71.sha-25b9c8c.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -32737,7 +32807,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('13.0.0-next.14+67.sha-efeb5ad.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.14+71.sha-25b9c8c.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -32795,7 +32865,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('13.0.0-next.14+67.sha-efeb5ad.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0-next.14+71.sha-25b9c8c.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
