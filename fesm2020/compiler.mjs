@@ -1,5 +1,5 @@
 /**
- * @license Angular v13.0.0+68.sha-30a27ad.with-local-changes
+ * @license Angular v13.0.0+73.sha-ee2031d.with-local-changes
  * (c) 2010-2021 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3001,6 +3001,988 @@ function partitionArray(arr, conditionFn) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+// https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit
+const VERSION$1 = 3;
+const JS_B64_PREFIX = '# sourceMappingURL=data:application/json;base64,';
+class SourceMapGenerator {
+    constructor(file = null) {
+        this.file = file;
+        this.sourcesContent = new Map();
+        this.lines = [];
+        this.lastCol0 = 0;
+        this.hasMappings = false;
+    }
+    // The content is `null` when the content is expected to be loaded using the URL
+    addSource(url, content = null) {
+        if (!this.sourcesContent.has(url)) {
+            this.sourcesContent.set(url, content);
+        }
+        return this;
+    }
+    addLine() {
+        this.lines.push([]);
+        this.lastCol0 = 0;
+        return this;
+    }
+    addMapping(col0, sourceUrl, sourceLine0, sourceCol0) {
+        if (!this.currentLine) {
+            throw new Error(`A line must be added before mappings can be added`);
+        }
+        if (sourceUrl != null && !this.sourcesContent.has(sourceUrl)) {
+            throw new Error(`Unknown source file "${sourceUrl}"`);
+        }
+        if (col0 == null) {
+            throw new Error(`The column in the generated code must be provided`);
+        }
+        if (col0 < this.lastCol0) {
+            throw new Error(`Mapping should be added in output order`);
+        }
+        if (sourceUrl && (sourceLine0 == null || sourceCol0 == null)) {
+            throw new Error(`The source location must be provided when a source url is provided`);
+        }
+        this.hasMappings = true;
+        this.lastCol0 = col0;
+        this.currentLine.push({ col0, sourceUrl, sourceLine0, sourceCol0 });
+        return this;
+    }
+    /**
+     * @internal strip this from published d.ts files due to
+     * https://github.com/microsoft/TypeScript/issues/36216
+     */
+    get currentLine() {
+        return this.lines.slice(-1)[0];
+    }
+    toJSON() {
+        if (!this.hasMappings) {
+            return null;
+        }
+        const sourcesIndex = new Map();
+        const sources = [];
+        const sourcesContent = [];
+        Array.from(this.sourcesContent.keys()).forEach((url, i) => {
+            sourcesIndex.set(url, i);
+            sources.push(url);
+            sourcesContent.push(this.sourcesContent.get(url) || null);
+        });
+        let mappings = '';
+        let lastCol0 = 0;
+        let lastSourceIndex = 0;
+        let lastSourceLine0 = 0;
+        let lastSourceCol0 = 0;
+        this.lines.forEach(segments => {
+            lastCol0 = 0;
+            mappings += segments
+                .map(segment => {
+                // zero-based starting column of the line in the generated code
+                let segAsStr = toBase64VLQ(segment.col0 - lastCol0);
+                lastCol0 = segment.col0;
+                if (segment.sourceUrl != null) {
+                    // zero-based index into the “sources” list
+                    segAsStr +=
+                        toBase64VLQ(sourcesIndex.get(segment.sourceUrl) - lastSourceIndex);
+                    lastSourceIndex = sourcesIndex.get(segment.sourceUrl);
+                    // the zero-based starting line in the original source
+                    segAsStr += toBase64VLQ(segment.sourceLine0 - lastSourceLine0);
+                    lastSourceLine0 = segment.sourceLine0;
+                    // the zero-based starting column in the original source
+                    segAsStr += toBase64VLQ(segment.sourceCol0 - lastSourceCol0);
+                    lastSourceCol0 = segment.sourceCol0;
+                }
+                return segAsStr;
+            })
+                .join(',');
+            mappings += ';';
+        });
+        mappings = mappings.slice(0, -1);
+        return {
+            'file': this.file || '',
+            'version': VERSION$1,
+            'sourceRoot': '',
+            'sources': sources,
+            'sourcesContent': sourcesContent,
+            'mappings': mappings,
+        };
+    }
+    toJsComment() {
+        return this.hasMappings ? '//' + JS_B64_PREFIX + toBase64String(JSON.stringify(this, null, 0)) :
+            '';
+    }
+}
+function toBase64String(value) {
+    let b64 = '';
+    const encoded = utf8Encode(value);
+    for (let i = 0; i < encoded.length;) {
+        const i1 = encoded[i++];
+        const i2 = i < encoded.length ? encoded[i++] : null;
+        const i3 = i < encoded.length ? encoded[i++] : null;
+        b64 += toBase64Digit(i1 >> 2);
+        b64 += toBase64Digit(((i1 & 3) << 4) | (i2 === null ? 0 : i2 >> 4));
+        b64 += i2 === null ? '=' : toBase64Digit(((i2 & 15) << 2) | (i3 === null ? 0 : i3 >> 6));
+        b64 += i2 === null || i3 === null ? '=' : toBase64Digit(i3 & 63);
+    }
+    return b64;
+}
+function toBase64VLQ(value) {
+    value = value < 0 ? ((-value) << 1) + 1 : value << 1;
+    let out = '';
+    do {
+        let digit = value & 31;
+        value = value >> 5;
+        if (value > 0) {
+            digit = digit | 32;
+        }
+        out += toBase64Digit(digit);
+    } while (value > 0);
+    return out;
+}
+const B64_DIGITS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+function toBase64Digit(value) {
+    if (value < 0 || value >= 64) {
+        throw new Error(`Can only encode value in the range [0, 63]`);
+    }
+    return B64_DIGITS[value];
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
+const _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
+const _INDENT_WITH = '  ';
+const CATCH_ERROR_VAR$1 = variable('error', null, null);
+const CATCH_STACK_VAR$1 = variable('stack', null, null);
+class _EmittedLine {
+    constructor(indent) {
+        this.indent = indent;
+        this.partsLength = 0;
+        this.parts = [];
+        this.srcSpans = [];
+    }
+}
+class EmitterVisitorContext {
+    constructor(_indent) {
+        this._indent = _indent;
+        this._classes = [];
+        this._preambleLineCount = 0;
+        this._lines = [new _EmittedLine(_indent)];
+    }
+    static createRoot() {
+        return new EmitterVisitorContext(0);
+    }
+    /**
+     * @internal strip this from published d.ts files due to
+     * https://github.com/microsoft/TypeScript/issues/36216
+     */
+    get _currentLine() {
+        return this._lines[this._lines.length - 1];
+    }
+    println(from, lastPart = '') {
+        this.print(from || null, lastPart, true);
+    }
+    lineIsEmpty() {
+        return this._currentLine.parts.length === 0;
+    }
+    lineLength() {
+        return this._currentLine.indent * _INDENT_WITH.length + this._currentLine.partsLength;
+    }
+    print(from, part, newLine = false) {
+        if (part.length > 0) {
+            this._currentLine.parts.push(part);
+            this._currentLine.partsLength += part.length;
+            this._currentLine.srcSpans.push(from && from.sourceSpan || null);
+        }
+        if (newLine) {
+            this._lines.push(new _EmittedLine(this._indent));
+        }
+    }
+    removeEmptyLastLine() {
+        if (this.lineIsEmpty()) {
+            this._lines.pop();
+        }
+    }
+    incIndent() {
+        this._indent++;
+        if (this.lineIsEmpty()) {
+            this._currentLine.indent = this._indent;
+        }
+    }
+    decIndent() {
+        this._indent--;
+        if (this.lineIsEmpty()) {
+            this._currentLine.indent = this._indent;
+        }
+    }
+    pushClass(clazz) {
+        this._classes.push(clazz);
+    }
+    popClass() {
+        return this._classes.pop();
+    }
+    get currentClass() {
+        return this._classes.length > 0 ? this._classes[this._classes.length - 1] : null;
+    }
+    toSource() {
+        return this.sourceLines
+            .map(l => l.parts.length > 0 ? _createIndent(l.indent) + l.parts.join('') : '')
+            .join('\n');
+    }
+    toSourceMapGenerator(genFilePath, startsAtLine = 0) {
+        const map = new SourceMapGenerator(genFilePath);
+        let firstOffsetMapped = false;
+        const mapFirstOffsetIfNeeded = () => {
+            if (!firstOffsetMapped) {
+                // Add a single space so that tools won't try to load the file from disk.
+                // Note: We are using virtual urls like `ng:///`, so we have to
+                // provide a content here.
+                map.addSource(genFilePath, ' ').addMapping(0, genFilePath, 0, 0);
+                firstOffsetMapped = true;
+            }
+        };
+        for (let i = 0; i < startsAtLine; i++) {
+            map.addLine();
+            mapFirstOffsetIfNeeded();
+        }
+        this.sourceLines.forEach((line, lineIdx) => {
+            map.addLine();
+            const spans = line.srcSpans;
+            const parts = line.parts;
+            let col0 = line.indent * _INDENT_WITH.length;
+            let spanIdx = 0;
+            // skip leading parts without source spans
+            while (spanIdx < spans.length && !spans[spanIdx]) {
+                col0 += parts[spanIdx].length;
+                spanIdx++;
+            }
+            if (spanIdx < spans.length && lineIdx === 0 && col0 === 0) {
+                firstOffsetMapped = true;
+            }
+            else {
+                mapFirstOffsetIfNeeded();
+            }
+            while (spanIdx < spans.length) {
+                const span = spans[spanIdx];
+                const source = span.start.file;
+                const sourceLine = span.start.line;
+                const sourceCol = span.start.col;
+                map.addSource(source.url, source.content)
+                    .addMapping(col0, source.url, sourceLine, sourceCol);
+                col0 += parts[spanIdx].length;
+                spanIdx++;
+                // assign parts without span or the same span to the previous segment
+                while (spanIdx < spans.length && (span === spans[spanIdx] || !spans[spanIdx])) {
+                    col0 += parts[spanIdx].length;
+                    spanIdx++;
+                }
+            }
+        });
+        return map;
+    }
+    setPreambleLineCount(count) {
+        return this._preambleLineCount = count;
+    }
+    spanOf(line, column) {
+        const emittedLine = this._lines[line - this._preambleLineCount];
+        if (emittedLine) {
+            let columnsLeft = column - _createIndent(emittedLine.indent).length;
+            for (let partIndex = 0; partIndex < emittedLine.parts.length; partIndex++) {
+                const part = emittedLine.parts[partIndex];
+                if (part.length > columnsLeft) {
+                    return emittedLine.srcSpans[partIndex];
+                }
+                columnsLeft -= part.length;
+            }
+        }
+        return null;
+    }
+    /**
+     * @internal strip this from published d.ts files due to
+     * https://github.com/microsoft/TypeScript/issues/36216
+     */
+    get sourceLines() {
+        if (this._lines.length && this._lines[this._lines.length - 1].parts.length === 0) {
+            return this._lines.slice(0, -1);
+        }
+        return this._lines;
+    }
+}
+class AbstractEmitterVisitor {
+    constructor(_escapeDollarInStrings) {
+        this._escapeDollarInStrings = _escapeDollarInStrings;
+    }
+    printLeadingComments(stmt, ctx) {
+        if (stmt.leadingComments === undefined) {
+            return;
+        }
+        for (const comment of stmt.leadingComments) {
+            if (comment instanceof JSDocComment) {
+                ctx.print(stmt, `/*${comment.toString()}*/`, comment.trailingNewline);
+            }
+            else {
+                if (comment.multiline) {
+                    ctx.print(stmt, `/* ${comment.text} */`, comment.trailingNewline);
+                }
+                else {
+                    comment.text.split('\n').forEach((line) => {
+                        ctx.println(stmt, `// ${line}`);
+                    });
+                }
+            }
+        }
+    }
+    visitExpressionStmt(stmt, ctx) {
+        this.printLeadingComments(stmt, ctx);
+        stmt.expr.visitExpression(this, ctx);
+        ctx.println(stmt, ';');
+        return null;
+    }
+    visitReturnStmt(stmt, ctx) {
+        this.printLeadingComments(stmt, ctx);
+        ctx.print(stmt, `return `);
+        stmt.value.visitExpression(this, ctx);
+        ctx.println(stmt, ';');
+        return null;
+    }
+    visitIfStmt(stmt, ctx) {
+        this.printLeadingComments(stmt, ctx);
+        ctx.print(stmt, `if (`);
+        stmt.condition.visitExpression(this, ctx);
+        ctx.print(stmt, `) {`);
+        const hasElseCase = stmt.falseCase != null && stmt.falseCase.length > 0;
+        if (stmt.trueCase.length <= 1 && !hasElseCase) {
+            ctx.print(stmt, ` `);
+            this.visitAllStatements(stmt.trueCase, ctx);
+            ctx.removeEmptyLastLine();
+            ctx.print(stmt, ` `);
+        }
+        else {
+            ctx.println();
+            ctx.incIndent();
+            this.visitAllStatements(stmt.trueCase, ctx);
+            ctx.decIndent();
+            if (hasElseCase) {
+                ctx.println(stmt, `} else {`);
+                ctx.incIndent();
+                this.visitAllStatements(stmt.falseCase, ctx);
+                ctx.decIndent();
+            }
+        }
+        ctx.println(stmt, `}`);
+        return null;
+    }
+    visitThrowStmt(stmt, ctx) {
+        this.printLeadingComments(stmt, ctx);
+        ctx.print(stmt, `throw `);
+        stmt.error.visitExpression(this, ctx);
+        ctx.println(stmt, `;`);
+        return null;
+    }
+    visitWriteVarExpr(expr, ctx) {
+        const lineWasEmpty = ctx.lineIsEmpty();
+        if (!lineWasEmpty) {
+            ctx.print(expr, '(');
+        }
+        ctx.print(expr, `${expr.name} = `);
+        expr.value.visitExpression(this, ctx);
+        if (!lineWasEmpty) {
+            ctx.print(expr, ')');
+        }
+        return null;
+    }
+    visitWriteKeyExpr(expr, ctx) {
+        const lineWasEmpty = ctx.lineIsEmpty();
+        if (!lineWasEmpty) {
+            ctx.print(expr, '(');
+        }
+        expr.receiver.visitExpression(this, ctx);
+        ctx.print(expr, `[`);
+        expr.index.visitExpression(this, ctx);
+        ctx.print(expr, `] = `);
+        expr.value.visitExpression(this, ctx);
+        if (!lineWasEmpty) {
+            ctx.print(expr, ')');
+        }
+        return null;
+    }
+    visitWritePropExpr(expr, ctx) {
+        const lineWasEmpty = ctx.lineIsEmpty();
+        if (!lineWasEmpty) {
+            ctx.print(expr, '(');
+        }
+        expr.receiver.visitExpression(this, ctx);
+        ctx.print(expr, `.${expr.name} = `);
+        expr.value.visitExpression(this, ctx);
+        if (!lineWasEmpty) {
+            ctx.print(expr, ')');
+        }
+        return null;
+    }
+    visitInvokeFunctionExpr(expr, ctx) {
+        expr.fn.visitExpression(this, ctx);
+        ctx.print(expr, `(`);
+        this.visitAllExpressions(expr.args, ctx, ',');
+        ctx.print(expr, `)`);
+        return null;
+    }
+    visitTaggedTemplateExpr(expr, ctx) {
+        expr.tag.visitExpression(this, ctx);
+        ctx.print(expr, '`' + expr.template.elements[0].rawText);
+        for (let i = 1; i < expr.template.elements.length; i++) {
+            ctx.print(expr, '${');
+            expr.template.expressions[i - 1].visitExpression(this, ctx);
+            ctx.print(expr, `}${expr.template.elements[i].rawText}`);
+        }
+        ctx.print(expr, '`');
+        return null;
+    }
+    visitWrappedNodeExpr(ast, ctx) {
+        throw new Error('Abstract emitter cannot visit WrappedNodeExpr.');
+    }
+    visitTypeofExpr(expr, ctx) {
+        ctx.print(expr, 'typeof ');
+        expr.expr.visitExpression(this, ctx);
+    }
+    visitReadVarExpr(ast, ctx) {
+        let varName = ast.name;
+        if (ast.builtin != null) {
+            switch (ast.builtin) {
+                case BuiltinVar.Super:
+                    varName = 'super';
+                    break;
+                case BuiltinVar.This:
+                    varName = 'this';
+                    break;
+                case BuiltinVar.CatchError:
+                    varName = CATCH_ERROR_VAR$1.name;
+                    break;
+                case BuiltinVar.CatchStack:
+                    varName = CATCH_STACK_VAR$1.name;
+                    break;
+                default:
+                    throw new Error(`Unknown builtin variable ${ast.builtin}`);
+            }
+        }
+        ctx.print(ast, varName);
+        return null;
+    }
+    visitInstantiateExpr(ast, ctx) {
+        ctx.print(ast, `new `);
+        ast.classExpr.visitExpression(this, ctx);
+        ctx.print(ast, `(`);
+        this.visitAllExpressions(ast.args, ctx, ',');
+        ctx.print(ast, `)`);
+        return null;
+    }
+    visitLiteralExpr(ast, ctx) {
+        const value = ast.value;
+        if (typeof value === 'string') {
+            ctx.print(ast, escapeIdentifier(value, this._escapeDollarInStrings));
+        }
+        else {
+            ctx.print(ast, `${value}`);
+        }
+        return null;
+    }
+    visitLocalizedString(ast, ctx) {
+        const head = ast.serializeI18nHead();
+        ctx.print(ast, '$localize `' + head.raw);
+        for (let i = 1; i < ast.messageParts.length; i++) {
+            ctx.print(ast, '${');
+            ast.expressions[i - 1].visitExpression(this, ctx);
+            ctx.print(ast, `}${ast.serializeI18nTemplatePart(i).raw}`);
+        }
+        ctx.print(ast, '`');
+        return null;
+    }
+    visitConditionalExpr(ast, ctx) {
+        ctx.print(ast, `(`);
+        ast.condition.visitExpression(this, ctx);
+        ctx.print(ast, '? ');
+        ast.trueCase.visitExpression(this, ctx);
+        ctx.print(ast, ': ');
+        ast.falseCase.visitExpression(this, ctx);
+        ctx.print(ast, `)`);
+        return null;
+    }
+    visitNotExpr(ast, ctx) {
+        ctx.print(ast, '!');
+        ast.condition.visitExpression(this, ctx);
+        return null;
+    }
+    visitAssertNotNullExpr(ast, ctx) {
+        ast.condition.visitExpression(this, ctx);
+        return null;
+    }
+    visitUnaryOperatorExpr(ast, ctx) {
+        let opStr;
+        switch (ast.operator) {
+            case UnaryOperator.Plus:
+                opStr = '+';
+                break;
+            case UnaryOperator.Minus:
+                opStr = '-';
+                break;
+            default:
+                throw new Error(`Unknown operator ${ast.operator}`);
+        }
+        if (ast.parens)
+            ctx.print(ast, `(`);
+        ctx.print(ast, opStr);
+        ast.expr.visitExpression(this, ctx);
+        if (ast.parens)
+            ctx.print(ast, `)`);
+        return null;
+    }
+    visitBinaryOperatorExpr(ast, ctx) {
+        let opStr;
+        switch (ast.operator) {
+            case BinaryOperator.Equals:
+                opStr = '==';
+                break;
+            case BinaryOperator.Identical:
+                opStr = '===';
+                break;
+            case BinaryOperator.NotEquals:
+                opStr = '!=';
+                break;
+            case BinaryOperator.NotIdentical:
+                opStr = '!==';
+                break;
+            case BinaryOperator.And:
+                opStr = '&&';
+                break;
+            case BinaryOperator.BitwiseAnd:
+                opStr = '&';
+                break;
+            case BinaryOperator.Or:
+                opStr = '||';
+                break;
+            case BinaryOperator.Plus:
+                opStr = '+';
+                break;
+            case BinaryOperator.Minus:
+                opStr = '-';
+                break;
+            case BinaryOperator.Divide:
+                opStr = '/';
+                break;
+            case BinaryOperator.Multiply:
+                opStr = '*';
+                break;
+            case BinaryOperator.Modulo:
+                opStr = '%';
+                break;
+            case BinaryOperator.Lower:
+                opStr = '<';
+                break;
+            case BinaryOperator.LowerEquals:
+                opStr = '<=';
+                break;
+            case BinaryOperator.Bigger:
+                opStr = '>';
+                break;
+            case BinaryOperator.BiggerEquals:
+                opStr = '>=';
+                break;
+            case BinaryOperator.NullishCoalesce:
+                opStr = '??';
+                break;
+            default:
+                throw new Error(`Unknown operator ${ast.operator}`);
+        }
+        if (ast.parens)
+            ctx.print(ast, `(`);
+        ast.lhs.visitExpression(this, ctx);
+        ctx.print(ast, ` ${opStr} `);
+        ast.rhs.visitExpression(this, ctx);
+        if (ast.parens)
+            ctx.print(ast, `)`);
+        return null;
+    }
+    visitReadPropExpr(ast, ctx) {
+        ast.receiver.visitExpression(this, ctx);
+        ctx.print(ast, `.`);
+        ctx.print(ast, ast.name);
+        return null;
+    }
+    visitReadKeyExpr(ast, ctx) {
+        ast.receiver.visitExpression(this, ctx);
+        ctx.print(ast, `[`);
+        ast.index.visitExpression(this, ctx);
+        ctx.print(ast, `]`);
+        return null;
+    }
+    visitLiteralArrayExpr(ast, ctx) {
+        ctx.print(ast, `[`);
+        this.visitAllExpressions(ast.entries, ctx, ',');
+        ctx.print(ast, `]`);
+        return null;
+    }
+    visitLiteralMapExpr(ast, ctx) {
+        ctx.print(ast, `{`);
+        this.visitAllObjects(entry => {
+            ctx.print(ast, `${escapeIdentifier(entry.key, this._escapeDollarInStrings, entry.quoted)}:`);
+            entry.value.visitExpression(this, ctx);
+        }, ast.entries, ctx, ',');
+        ctx.print(ast, `}`);
+        return null;
+    }
+    visitCommaExpr(ast, ctx) {
+        ctx.print(ast, '(');
+        this.visitAllExpressions(ast.parts, ctx, ',');
+        ctx.print(ast, ')');
+        return null;
+    }
+    visitAllExpressions(expressions, ctx, separator) {
+        this.visitAllObjects(expr => expr.visitExpression(this, ctx), expressions, ctx, separator);
+    }
+    visitAllObjects(handler, expressions, ctx, separator) {
+        let incrementedIndent = false;
+        for (let i = 0; i < expressions.length; i++) {
+            if (i > 0) {
+                if (ctx.lineLength() > 80) {
+                    ctx.print(null, separator, true);
+                    if (!incrementedIndent) {
+                        // continuation are marked with double indent.
+                        ctx.incIndent();
+                        ctx.incIndent();
+                        incrementedIndent = true;
+                    }
+                }
+                else {
+                    ctx.print(null, separator, false);
+                }
+            }
+            handler(expressions[i]);
+        }
+        if (incrementedIndent) {
+            // continuation are marked with double indent.
+            ctx.decIndent();
+            ctx.decIndent();
+        }
+    }
+    visitAllStatements(statements, ctx) {
+        statements.forEach((stmt) => stmt.visitStatement(this, ctx));
+    }
+}
+function escapeIdentifier(input, escapeDollar, alwaysQuote = true) {
+    if (input == null) {
+        return null;
+    }
+    const body = input.replace(_SINGLE_QUOTE_ESCAPE_STRING_RE, (...match) => {
+        if (match[0] == '$') {
+            return escapeDollar ? '\\$' : '$';
+        }
+        else if (match[0] == '\n') {
+            return '\\n';
+        }
+        else if (match[0] == '\r') {
+            return '\\r';
+        }
+        else {
+            return `\\${match[0]}`;
+        }
+    });
+    const requiresQuotes = alwaysQuote || !_LEGAL_IDENTIFIER_RE.test(body);
+    return requiresQuotes ? `'${body}'` : body;
+}
+function _createIndent(count) {
+    let res = '';
+    for (let i = 0; i < count; i++) {
+        res += _INDENT_WITH;
+    }
+    return res;
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+function typeWithParameters(type, numParams) {
+    if (numParams === 0) {
+        return expressionType(type);
+    }
+    const params = [];
+    for (let i = 0; i < numParams; i++) {
+        params.push(DYNAMIC_TYPE);
+    }
+    return expressionType(type, undefined, params);
+}
+const ANIMATE_SYMBOL_PREFIX = '@';
+function prepareSyntheticPropertyName(name) {
+    return `${ANIMATE_SYMBOL_PREFIX}${name}`;
+}
+function prepareSyntheticListenerName(name, phase) {
+    return `${ANIMATE_SYMBOL_PREFIX}${name}.${phase}`;
+}
+function getSafePropertyAccessString(accessor, name) {
+    const escapedName = escapeIdentifier(name, false, false);
+    return escapedName !== name ? `${accessor}[${escapedName}]` : `${accessor}.${name}`;
+}
+function prepareSyntheticListenerFunctionName(name, phase) {
+    return `animation_${name}_${phase}`;
+}
+function jitOnlyGuardedExpression(expr) {
+    return guardedExpression('ngJitMode', expr);
+}
+function devOnlyGuardedExpression(expr) {
+    return guardedExpression('ngDevMode', expr);
+}
+function guardedExpression(guard, expr) {
+    const guardExpr = new ExternalExpr({ name: guard, moduleName: null });
+    const guardNotDefined = new BinaryOperatorExpr(BinaryOperator.Identical, new TypeofExpr(guardExpr), literal('undefined'));
+    const guardUndefinedOrTrue = new BinaryOperatorExpr(BinaryOperator.Or, guardNotDefined, guardExpr, /* type */ undefined, 
+    /* sourceSpan */ undefined, true);
+    return new BinaryOperatorExpr(BinaryOperator.And, guardUndefinedOrTrue, expr);
+}
+function wrapReference(value) {
+    const wrapped = new WrappedNodeExpr(value);
+    return { value: wrapped, type: wrapped };
+}
+function refsToArray(refs, shouldForwardDeclare) {
+    const values = literalArr(refs.map(ref => ref.value));
+    return shouldForwardDeclare ? fn([], [new ReturnStatement(values)]) : values;
+}
+function createMayBeForwardRefExpression(expression, forwardRef) {
+    return { expression, forwardRef };
+}
+/**
+ * Convert a `MaybeForwardRefExpression` to an `Expression`, possibly wrapping its expression in a
+ * `forwardRef()` call.
+ *
+ * If `MaybeForwardRefExpression.forwardRef` is `ForwardRefHandling.Unwrapped` then the expression
+ * was originally wrapped in a `forwardRef()` call to prevent the value from being eagerly evaluated
+ * in the code.
+ *
+ * See `packages/compiler-cli/src/ngtsc/annotations/src/injectable.ts` and
+ * `packages/compiler/src/jit_compiler_facade.ts` for more information.
+ */
+function convertFromMaybeForwardRefExpression({ expression, forwardRef }) {
+    switch (forwardRef) {
+        case 0 /* None */:
+        case 1 /* Wrapped */:
+            return expression;
+        case 2 /* Unwrapped */:
+            return generateForwardRef(expression);
+    }
+}
+/**
+ * Generate an expression that has the given `expr` wrapped in the following form:
+ *
+ * ```
+ * forwardRef(() => expr)
+ * ```
+ */
+function generateForwardRef(expr) {
+    return importExpr(Identifiers$1.forwardRef).callFn([fn([], [new ReturnStatement(expr)])]);
+}
+
+var R3FactoryDelegateType;
+(function (R3FactoryDelegateType) {
+    R3FactoryDelegateType[R3FactoryDelegateType["Class"] = 0] = "Class";
+    R3FactoryDelegateType[R3FactoryDelegateType["Function"] = 1] = "Function";
+})(R3FactoryDelegateType || (R3FactoryDelegateType = {}));
+var FactoryTarget$1;
+(function (FactoryTarget) {
+    FactoryTarget[FactoryTarget["Directive"] = 0] = "Directive";
+    FactoryTarget[FactoryTarget["Component"] = 1] = "Component";
+    FactoryTarget[FactoryTarget["Injectable"] = 2] = "Injectable";
+    FactoryTarget[FactoryTarget["Pipe"] = 3] = "Pipe";
+    FactoryTarget[FactoryTarget["NgModule"] = 4] = "NgModule";
+})(FactoryTarget$1 || (FactoryTarget$1 = {}));
+/**
+ * Construct a factory function expression for the given `R3FactoryMetadata`.
+ */
+function compileFactoryFunction(meta) {
+    const t = variable('t');
+    let baseFactoryVar = null;
+    // The type to instantiate via constructor invocation. If there is no delegated factory, meaning
+    // this type is always created by constructor invocation, then this is the type-to-create
+    // parameter provided by the user (t) if specified, or the current type if not. If there is a
+    // delegated factory (which is used to create the current type) then this is only the type-to-
+    // create parameter (t).
+    const typeForCtor = !isDelegatedFactoryMetadata(meta) ?
+        new BinaryOperatorExpr(BinaryOperator.Or, t, meta.internalType) :
+        t;
+    let ctorExpr = null;
+    if (meta.deps !== null) {
+        // There is a constructor (either explicitly or implicitly defined).
+        if (meta.deps !== 'invalid') {
+            ctorExpr = new InstantiateExpr(typeForCtor, injectDependencies(meta.deps, meta.target));
+        }
+    }
+    else {
+        // There is no constructor, use the base class' factory to construct typeForCtor.
+        baseFactoryVar = variable(`ɵ${meta.name}_BaseFactory`);
+        ctorExpr = baseFactoryVar.callFn([typeForCtor]);
+    }
+    const body = [];
+    let retExpr = null;
+    function makeConditionalFactory(nonCtorExpr) {
+        const r = variable('r');
+        body.push(r.set(NULL_EXPR).toDeclStmt());
+        const ctorStmt = ctorExpr !== null ? r.set(ctorExpr).toStmt() :
+            importExpr(Identifiers$1.invalidFactory).callFn([]).toStmt();
+        body.push(ifStmt(t, [ctorStmt], [r.set(nonCtorExpr).toStmt()]));
+        return r;
+    }
+    if (isDelegatedFactoryMetadata(meta)) {
+        // This type is created with a delegated factory. If a type parameter is not specified, call
+        // the factory instead.
+        const delegateArgs = injectDependencies(meta.delegateDeps, meta.target);
+        // Either call `new delegate(...)` or `delegate(...)` depending on meta.delegateType.
+        const factoryExpr = new (meta.delegateType === R3FactoryDelegateType.Class ?
+            InstantiateExpr :
+            InvokeFunctionExpr)(meta.delegate, delegateArgs);
+        retExpr = makeConditionalFactory(factoryExpr);
+    }
+    else if (isExpressionFactoryMetadata(meta)) {
+        // TODO(alxhub): decide whether to lower the value here or in the caller
+        retExpr = makeConditionalFactory(meta.expression);
+    }
+    else {
+        retExpr = ctorExpr;
+    }
+    if (retExpr === null) {
+        // The expression cannot be formed so render an `ɵɵinvalidFactory()` call.
+        body.push(importExpr(Identifiers$1.invalidFactory).callFn([]).toStmt());
+    }
+    else if (baseFactoryVar !== null) {
+        // This factory uses a base factory, so call `ɵɵgetInheritedFactory()` to compute it.
+        const getInheritedFactoryCall = importExpr(Identifiers$1.getInheritedFactory).callFn([meta.internalType]);
+        // Memoize the base factoryFn: `baseFactory || (baseFactory = ɵɵgetInheritedFactory(...))`
+        const baseFactory = new BinaryOperatorExpr(BinaryOperator.Or, baseFactoryVar, baseFactoryVar.set(getInheritedFactoryCall));
+        body.push(new ReturnStatement(baseFactory.callFn([typeForCtor])));
+    }
+    else {
+        // This is straightforward factory, just return it.
+        body.push(new ReturnStatement(retExpr));
+    }
+    let factoryFn = fn([new FnParam('t', DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, `${meta.name}_Factory`);
+    if (baseFactoryVar !== null) {
+        // There is a base factory variable so wrap its declaration along with the factory function into
+        // an IIFE.
+        factoryFn = fn([], [
+            new DeclareVarStmt(baseFactoryVar.name), new ReturnStatement(factoryFn)
+        ]).callFn([], /* sourceSpan */ undefined, /* pure */ true);
+    }
+    return {
+        expression: factoryFn,
+        statements: [],
+        type: createFactoryType(meta),
+    };
+}
+function createFactoryType(meta) {
+    const ctorDepsType = meta.deps !== null && meta.deps !== 'invalid' ? createCtorDepsType(meta.deps) : NONE_TYPE;
+    return expressionType(importExpr(Identifiers$1.FactoryDeclaration, [typeWithParameters(meta.type.type, meta.typeArgumentCount), ctorDepsType]));
+}
+function injectDependencies(deps, target) {
+    return deps.map((dep, index) => compileInjectDependency(dep, target, index));
+}
+function compileInjectDependency(dep, target, index) {
+    // Interpret the dependency according to its resolved type.
+    if (dep.token === null) {
+        return importExpr(Identifiers$1.invalidFactoryDep).callFn([literal(index)]);
+    }
+    else if (dep.attributeNameType === null) {
+        // Build up the injection flags according to the metadata.
+        const flags = 0 /* Default */ | (dep.self ? 2 /* Self */ : 0) |
+            (dep.skipSelf ? 4 /* SkipSelf */ : 0) | (dep.host ? 1 /* Host */ : 0) |
+            (dep.optional ? 8 /* Optional */ : 0) |
+            (target === FactoryTarget$1.Pipe ? 16 /* ForPipe */ : 0);
+        // If this dependency is optional or otherwise has non-default flags, then additional
+        // parameters describing how to inject the dependency must be passed to the inject function
+        // that's being used.
+        let flagsParam = (flags !== 0 /* Default */ || dep.optional) ? literal(flags) : null;
+        // Build up the arguments to the injectFn call.
+        const injectArgs = [dep.token];
+        if (flagsParam) {
+            injectArgs.push(flagsParam);
+        }
+        const injectFn = getInjectFn(target);
+        return importExpr(injectFn).callFn(injectArgs);
+    }
+    else {
+        // The `dep.attributeTypeName` value is defined, which indicates that this is an `@Attribute()`
+        // type dependency. For the generated JS we still want to use the `dep.token` value in case the
+        // name given for the attribute is not a string literal. For example given `@Attribute(foo())`,
+        // we want to generate `ɵɵinjectAttribute(foo())`.
+        //
+        // The `dep.attributeTypeName` is only actually used (in `createCtorDepType()`) to generate
+        // typings.
+        return importExpr(Identifiers$1.injectAttribute).callFn([dep.token]);
+    }
+}
+function createCtorDepsType(deps) {
+    let hasTypes = false;
+    const attributeTypes = deps.map(dep => {
+        const type = createCtorDepType(dep);
+        if (type !== null) {
+            hasTypes = true;
+            return type;
+        }
+        else {
+            return literal(null);
+        }
+    });
+    if (hasTypes) {
+        return expressionType(literalArr(attributeTypes));
+    }
+    else {
+        return NONE_TYPE;
+    }
+}
+function createCtorDepType(dep) {
+    const entries = [];
+    if (dep.attributeNameType !== null) {
+        entries.push({ key: 'attribute', value: dep.attributeNameType, quoted: false });
+    }
+    if (dep.optional) {
+        entries.push({ key: 'optional', value: literal(true), quoted: false });
+    }
+    if (dep.host) {
+        entries.push({ key: 'host', value: literal(true), quoted: false });
+    }
+    if (dep.self) {
+        entries.push({ key: 'self', value: literal(true), quoted: false });
+    }
+    if (dep.skipSelf) {
+        entries.push({ key: 'skipSelf', value: literal(true), quoted: false });
+    }
+    return entries.length > 0 ? literalMap(entries) : null;
+}
+function isDelegatedFactoryMetadata(meta) {
+    return meta.delegateType !== undefined;
+}
+function isExpressionFactoryMetadata(meta) {
+    return meta.expression !== undefined;
+}
+function getInjectFn(target) {
+    switch (target) {
+        case FactoryTarget$1.Component:
+        case FactoryTarget$1.Directive:
+        case FactoryTarget$1.Pipe:
+            return Identifiers$1.directiveInject;
+        case FactoryTarget$1.NgModule:
+        case FactoryTarget$1.Injectable:
+        default:
+            return Identifiers$1.inject;
+    }
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * This is an R3 `Node`-like wrapper for a raw `html.Comment` node. We do not currently
  * require the implementation of a visitor for Comments as they are only collected at
@@ -4552,7 +5534,14 @@ function getQueryPredicate(query, constantPool) {
         return constantPool.getConstLiteral(literalArr(predicate), true);
     }
     else {
-        return query.predicate;
+        // The original predicate may have been wrapped in a `forwardRef()` call.
+        switch (query.predicate.forwardRef) {
+            case 0 /* None */:
+            case 2 /* Unwrapped */:
+                return query.predicate.expression;
+            case 1 /* Wrapped */:
+                return importExpr(Identifiers$1.resolveForwardRef).callFn([query.predicate.expression]);
+        }
     }
 }
 /**
@@ -4641,1045 +5630,6 @@ function getInterpolationArgsLength(interpolation) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * Creates an array literal expression from the given array, mapping all values to an expression
- * using the provided mapping function. If the array is empty or null, then null is returned.
- *
- * @param values The array to transfer into literal array expression.
- * @param mapper The logic to use for creating an expression for the array's values.
- * @returns An array literal expression representing `values`, or null if `values` is empty or
- * is itself null.
- */
-function toOptionalLiteralArray(values, mapper) {
-    if (values === null || values.length === 0) {
-        return null;
-    }
-    return literalArr(values.map(value => mapper(value)));
-}
-/**
- * Creates an object literal expression from the given object, mapping all values to an expression
- * using the provided mapping function. If the object has no keys, then null is returned.
- *
- * @param object The object to transfer into an object literal expression.
- * @param mapper The logic to use for creating an expression for the object's values.
- * @returns An object literal expression representing `object`, or null if `object` does not have
- * any keys.
- */
-function toOptionalLiteralMap(object, mapper) {
-    const entries = Object.keys(object).map(key => {
-        const value = object[key];
-        return { key, value: mapper(value), quoted: true };
-    });
-    if (entries.length > 0) {
-        return literalMap(entries);
-    }
-    else {
-        return null;
-    }
-}
-function compileDependencies(deps) {
-    if (deps === 'invalid') {
-        // The `deps` can be set to the string "invalid"  by the `unwrapConstructorDependencies()`
-        // function, which tries to convert `ConstructorDeps` into `R3DependencyMetadata[]`.
-        return literal('invalid');
-    }
-    else if (deps === null) {
-        return literal(null);
-    }
-    else {
-        return literalArr(deps.map(compileDependency));
-    }
-}
-function compileDependency(dep) {
-    const depMeta = new DefinitionMap();
-    depMeta.set('token', dep.token);
-    if (dep.attributeNameType !== null) {
-        depMeta.set('attribute', literal(true));
-    }
-    if (dep.host) {
-        depMeta.set('host', literal(true));
-    }
-    if (dep.optional) {
-        depMeta.set('optional', literal(true));
-    }
-    if (dep.self) {
-        depMeta.set('self', literal(true));
-    }
-    if (dep.skipSelf) {
-        depMeta.set('skipSelf', literal(true));
-    }
-    return depMeta.toLiteralMap();
-}
-/**
- * Generate an expression that has the given `expr` wrapped in the following form:
- *
- * ```
- * forwardRef(() => expr)
- * ```
- */
-function generateForwardRef(expr) {
-    return importExpr(Identifiers$1.forwardRef).callFn([fn([], [new ReturnStatement(expr)])]);
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-// https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit
-const VERSION$1 = 3;
-const JS_B64_PREFIX = '# sourceMappingURL=data:application/json;base64,';
-class SourceMapGenerator {
-    constructor(file = null) {
-        this.file = file;
-        this.sourcesContent = new Map();
-        this.lines = [];
-        this.lastCol0 = 0;
-        this.hasMappings = false;
-    }
-    // The content is `null` when the content is expected to be loaded using the URL
-    addSource(url, content = null) {
-        if (!this.sourcesContent.has(url)) {
-            this.sourcesContent.set(url, content);
-        }
-        return this;
-    }
-    addLine() {
-        this.lines.push([]);
-        this.lastCol0 = 0;
-        return this;
-    }
-    addMapping(col0, sourceUrl, sourceLine0, sourceCol0) {
-        if (!this.currentLine) {
-            throw new Error(`A line must be added before mappings can be added`);
-        }
-        if (sourceUrl != null && !this.sourcesContent.has(sourceUrl)) {
-            throw new Error(`Unknown source file "${sourceUrl}"`);
-        }
-        if (col0 == null) {
-            throw new Error(`The column in the generated code must be provided`);
-        }
-        if (col0 < this.lastCol0) {
-            throw new Error(`Mapping should be added in output order`);
-        }
-        if (sourceUrl && (sourceLine0 == null || sourceCol0 == null)) {
-            throw new Error(`The source location must be provided when a source url is provided`);
-        }
-        this.hasMappings = true;
-        this.lastCol0 = col0;
-        this.currentLine.push({ col0, sourceUrl, sourceLine0, sourceCol0 });
-        return this;
-    }
-    /**
-     * @internal strip this from published d.ts files due to
-     * https://github.com/microsoft/TypeScript/issues/36216
-     */
-    get currentLine() {
-        return this.lines.slice(-1)[0];
-    }
-    toJSON() {
-        if (!this.hasMappings) {
-            return null;
-        }
-        const sourcesIndex = new Map();
-        const sources = [];
-        const sourcesContent = [];
-        Array.from(this.sourcesContent.keys()).forEach((url, i) => {
-            sourcesIndex.set(url, i);
-            sources.push(url);
-            sourcesContent.push(this.sourcesContent.get(url) || null);
-        });
-        let mappings = '';
-        let lastCol0 = 0;
-        let lastSourceIndex = 0;
-        let lastSourceLine0 = 0;
-        let lastSourceCol0 = 0;
-        this.lines.forEach(segments => {
-            lastCol0 = 0;
-            mappings += segments
-                .map(segment => {
-                // zero-based starting column of the line in the generated code
-                let segAsStr = toBase64VLQ(segment.col0 - lastCol0);
-                lastCol0 = segment.col0;
-                if (segment.sourceUrl != null) {
-                    // zero-based index into the “sources” list
-                    segAsStr +=
-                        toBase64VLQ(sourcesIndex.get(segment.sourceUrl) - lastSourceIndex);
-                    lastSourceIndex = sourcesIndex.get(segment.sourceUrl);
-                    // the zero-based starting line in the original source
-                    segAsStr += toBase64VLQ(segment.sourceLine0 - lastSourceLine0);
-                    lastSourceLine0 = segment.sourceLine0;
-                    // the zero-based starting column in the original source
-                    segAsStr += toBase64VLQ(segment.sourceCol0 - lastSourceCol0);
-                    lastSourceCol0 = segment.sourceCol0;
-                }
-                return segAsStr;
-            })
-                .join(',');
-            mappings += ';';
-        });
-        mappings = mappings.slice(0, -1);
-        return {
-            'file': this.file || '',
-            'version': VERSION$1,
-            'sourceRoot': '',
-            'sources': sources,
-            'sourcesContent': sourcesContent,
-            'mappings': mappings,
-        };
-    }
-    toJsComment() {
-        return this.hasMappings ? '//' + JS_B64_PREFIX + toBase64String(JSON.stringify(this, null, 0)) :
-            '';
-    }
-}
-function toBase64String(value) {
-    let b64 = '';
-    const encoded = utf8Encode(value);
-    for (let i = 0; i < encoded.length;) {
-        const i1 = encoded[i++];
-        const i2 = i < encoded.length ? encoded[i++] : null;
-        const i3 = i < encoded.length ? encoded[i++] : null;
-        b64 += toBase64Digit(i1 >> 2);
-        b64 += toBase64Digit(((i1 & 3) << 4) | (i2 === null ? 0 : i2 >> 4));
-        b64 += i2 === null ? '=' : toBase64Digit(((i2 & 15) << 2) | (i3 === null ? 0 : i3 >> 6));
-        b64 += i2 === null || i3 === null ? '=' : toBase64Digit(i3 & 63);
-    }
-    return b64;
-}
-function toBase64VLQ(value) {
-    value = value < 0 ? ((-value) << 1) + 1 : value << 1;
-    let out = '';
-    do {
-        let digit = value & 31;
-        value = value >> 5;
-        if (value > 0) {
-            digit = digit | 32;
-        }
-        out += toBase64Digit(digit);
-    } while (value > 0);
-    return out;
-}
-const B64_DIGITS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-function toBase64Digit(value) {
-    if (value < 0 || value >= 64) {
-        throw new Error(`Can only encode value in the range [0, 63]`);
-    }
-    return B64_DIGITS[value];
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-const _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
-const _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
-const _INDENT_WITH = '  ';
-const CATCH_ERROR_VAR$1 = variable('error', null, null);
-const CATCH_STACK_VAR$1 = variable('stack', null, null);
-class _EmittedLine {
-    constructor(indent) {
-        this.indent = indent;
-        this.partsLength = 0;
-        this.parts = [];
-        this.srcSpans = [];
-    }
-}
-class EmitterVisitorContext {
-    constructor(_indent) {
-        this._indent = _indent;
-        this._classes = [];
-        this._preambleLineCount = 0;
-        this._lines = [new _EmittedLine(_indent)];
-    }
-    static createRoot() {
-        return new EmitterVisitorContext(0);
-    }
-    /**
-     * @internal strip this from published d.ts files due to
-     * https://github.com/microsoft/TypeScript/issues/36216
-     */
-    get _currentLine() {
-        return this._lines[this._lines.length - 1];
-    }
-    println(from, lastPart = '') {
-        this.print(from || null, lastPart, true);
-    }
-    lineIsEmpty() {
-        return this._currentLine.parts.length === 0;
-    }
-    lineLength() {
-        return this._currentLine.indent * _INDENT_WITH.length + this._currentLine.partsLength;
-    }
-    print(from, part, newLine = false) {
-        if (part.length > 0) {
-            this._currentLine.parts.push(part);
-            this._currentLine.partsLength += part.length;
-            this._currentLine.srcSpans.push(from && from.sourceSpan || null);
-        }
-        if (newLine) {
-            this._lines.push(new _EmittedLine(this._indent));
-        }
-    }
-    removeEmptyLastLine() {
-        if (this.lineIsEmpty()) {
-            this._lines.pop();
-        }
-    }
-    incIndent() {
-        this._indent++;
-        if (this.lineIsEmpty()) {
-            this._currentLine.indent = this._indent;
-        }
-    }
-    decIndent() {
-        this._indent--;
-        if (this.lineIsEmpty()) {
-            this._currentLine.indent = this._indent;
-        }
-    }
-    pushClass(clazz) {
-        this._classes.push(clazz);
-    }
-    popClass() {
-        return this._classes.pop();
-    }
-    get currentClass() {
-        return this._classes.length > 0 ? this._classes[this._classes.length - 1] : null;
-    }
-    toSource() {
-        return this.sourceLines
-            .map(l => l.parts.length > 0 ? _createIndent(l.indent) + l.parts.join('') : '')
-            .join('\n');
-    }
-    toSourceMapGenerator(genFilePath, startsAtLine = 0) {
-        const map = new SourceMapGenerator(genFilePath);
-        let firstOffsetMapped = false;
-        const mapFirstOffsetIfNeeded = () => {
-            if (!firstOffsetMapped) {
-                // Add a single space so that tools won't try to load the file from disk.
-                // Note: We are using virtual urls like `ng:///`, so we have to
-                // provide a content here.
-                map.addSource(genFilePath, ' ').addMapping(0, genFilePath, 0, 0);
-                firstOffsetMapped = true;
-            }
-        };
-        for (let i = 0; i < startsAtLine; i++) {
-            map.addLine();
-            mapFirstOffsetIfNeeded();
-        }
-        this.sourceLines.forEach((line, lineIdx) => {
-            map.addLine();
-            const spans = line.srcSpans;
-            const parts = line.parts;
-            let col0 = line.indent * _INDENT_WITH.length;
-            let spanIdx = 0;
-            // skip leading parts without source spans
-            while (spanIdx < spans.length && !spans[spanIdx]) {
-                col0 += parts[spanIdx].length;
-                spanIdx++;
-            }
-            if (spanIdx < spans.length && lineIdx === 0 && col0 === 0) {
-                firstOffsetMapped = true;
-            }
-            else {
-                mapFirstOffsetIfNeeded();
-            }
-            while (spanIdx < spans.length) {
-                const span = spans[spanIdx];
-                const source = span.start.file;
-                const sourceLine = span.start.line;
-                const sourceCol = span.start.col;
-                map.addSource(source.url, source.content)
-                    .addMapping(col0, source.url, sourceLine, sourceCol);
-                col0 += parts[spanIdx].length;
-                spanIdx++;
-                // assign parts without span or the same span to the previous segment
-                while (spanIdx < spans.length && (span === spans[spanIdx] || !spans[spanIdx])) {
-                    col0 += parts[spanIdx].length;
-                    spanIdx++;
-                }
-            }
-        });
-        return map;
-    }
-    setPreambleLineCount(count) {
-        return this._preambleLineCount = count;
-    }
-    spanOf(line, column) {
-        const emittedLine = this._lines[line - this._preambleLineCount];
-        if (emittedLine) {
-            let columnsLeft = column - _createIndent(emittedLine.indent).length;
-            for (let partIndex = 0; partIndex < emittedLine.parts.length; partIndex++) {
-                const part = emittedLine.parts[partIndex];
-                if (part.length > columnsLeft) {
-                    return emittedLine.srcSpans[partIndex];
-                }
-                columnsLeft -= part.length;
-            }
-        }
-        return null;
-    }
-    /**
-     * @internal strip this from published d.ts files due to
-     * https://github.com/microsoft/TypeScript/issues/36216
-     */
-    get sourceLines() {
-        if (this._lines.length && this._lines[this._lines.length - 1].parts.length === 0) {
-            return this._lines.slice(0, -1);
-        }
-        return this._lines;
-    }
-}
-class AbstractEmitterVisitor {
-    constructor(_escapeDollarInStrings) {
-        this._escapeDollarInStrings = _escapeDollarInStrings;
-    }
-    printLeadingComments(stmt, ctx) {
-        if (stmt.leadingComments === undefined) {
-            return;
-        }
-        for (const comment of stmt.leadingComments) {
-            if (comment instanceof JSDocComment) {
-                ctx.print(stmt, `/*${comment.toString()}*/`, comment.trailingNewline);
-            }
-            else {
-                if (comment.multiline) {
-                    ctx.print(stmt, `/* ${comment.text} */`, comment.trailingNewline);
-                }
-                else {
-                    comment.text.split('\n').forEach((line) => {
-                        ctx.println(stmt, `// ${line}`);
-                    });
-                }
-            }
-        }
-    }
-    visitExpressionStmt(stmt, ctx) {
-        this.printLeadingComments(stmt, ctx);
-        stmt.expr.visitExpression(this, ctx);
-        ctx.println(stmt, ';');
-        return null;
-    }
-    visitReturnStmt(stmt, ctx) {
-        this.printLeadingComments(stmt, ctx);
-        ctx.print(stmt, `return `);
-        stmt.value.visitExpression(this, ctx);
-        ctx.println(stmt, ';');
-        return null;
-    }
-    visitIfStmt(stmt, ctx) {
-        this.printLeadingComments(stmt, ctx);
-        ctx.print(stmt, `if (`);
-        stmt.condition.visitExpression(this, ctx);
-        ctx.print(stmt, `) {`);
-        const hasElseCase = stmt.falseCase != null && stmt.falseCase.length > 0;
-        if (stmt.trueCase.length <= 1 && !hasElseCase) {
-            ctx.print(stmt, ` `);
-            this.visitAllStatements(stmt.trueCase, ctx);
-            ctx.removeEmptyLastLine();
-            ctx.print(stmt, ` `);
-        }
-        else {
-            ctx.println();
-            ctx.incIndent();
-            this.visitAllStatements(stmt.trueCase, ctx);
-            ctx.decIndent();
-            if (hasElseCase) {
-                ctx.println(stmt, `} else {`);
-                ctx.incIndent();
-                this.visitAllStatements(stmt.falseCase, ctx);
-                ctx.decIndent();
-            }
-        }
-        ctx.println(stmt, `}`);
-        return null;
-    }
-    visitThrowStmt(stmt, ctx) {
-        this.printLeadingComments(stmt, ctx);
-        ctx.print(stmt, `throw `);
-        stmt.error.visitExpression(this, ctx);
-        ctx.println(stmt, `;`);
-        return null;
-    }
-    visitWriteVarExpr(expr, ctx) {
-        const lineWasEmpty = ctx.lineIsEmpty();
-        if (!lineWasEmpty) {
-            ctx.print(expr, '(');
-        }
-        ctx.print(expr, `${expr.name} = `);
-        expr.value.visitExpression(this, ctx);
-        if (!lineWasEmpty) {
-            ctx.print(expr, ')');
-        }
-        return null;
-    }
-    visitWriteKeyExpr(expr, ctx) {
-        const lineWasEmpty = ctx.lineIsEmpty();
-        if (!lineWasEmpty) {
-            ctx.print(expr, '(');
-        }
-        expr.receiver.visitExpression(this, ctx);
-        ctx.print(expr, `[`);
-        expr.index.visitExpression(this, ctx);
-        ctx.print(expr, `] = `);
-        expr.value.visitExpression(this, ctx);
-        if (!lineWasEmpty) {
-            ctx.print(expr, ')');
-        }
-        return null;
-    }
-    visitWritePropExpr(expr, ctx) {
-        const lineWasEmpty = ctx.lineIsEmpty();
-        if (!lineWasEmpty) {
-            ctx.print(expr, '(');
-        }
-        expr.receiver.visitExpression(this, ctx);
-        ctx.print(expr, `.${expr.name} = `);
-        expr.value.visitExpression(this, ctx);
-        if (!lineWasEmpty) {
-            ctx.print(expr, ')');
-        }
-        return null;
-    }
-    visitInvokeFunctionExpr(expr, ctx) {
-        expr.fn.visitExpression(this, ctx);
-        ctx.print(expr, `(`);
-        this.visitAllExpressions(expr.args, ctx, ',');
-        ctx.print(expr, `)`);
-        return null;
-    }
-    visitTaggedTemplateExpr(expr, ctx) {
-        expr.tag.visitExpression(this, ctx);
-        ctx.print(expr, '`' + expr.template.elements[0].rawText);
-        for (let i = 1; i < expr.template.elements.length; i++) {
-            ctx.print(expr, '${');
-            expr.template.expressions[i - 1].visitExpression(this, ctx);
-            ctx.print(expr, `}${expr.template.elements[i].rawText}`);
-        }
-        ctx.print(expr, '`');
-        return null;
-    }
-    visitWrappedNodeExpr(ast, ctx) {
-        throw new Error('Abstract emitter cannot visit WrappedNodeExpr.');
-    }
-    visitTypeofExpr(expr, ctx) {
-        ctx.print(expr, 'typeof ');
-        expr.expr.visitExpression(this, ctx);
-    }
-    visitReadVarExpr(ast, ctx) {
-        let varName = ast.name;
-        if (ast.builtin != null) {
-            switch (ast.builtin) {
-                case BuiltinVar.Super:
-                    varName = 'super';
-                    break;
-                case BuiltinVar.This:
-                    varName = 'this';
-                    break;
-                case BuiltinVar.CatchError:
-                    varName = CATCH_ERROR_VAR$1.name;
-                    break;
-                case BuiltinVar.CatchStack:
-                    varName = CATCH_STACK_VAR$1.name;
-                    break;
-                default:
-                    throw new Error(`Unknown builtin variable ${ast.builtin}`);
-            }
-        }
-        ctx.print(ast, varName);
-        return null;
-    }
-    visitInstantiateExpr(ast, ctx) {
-        ctx.print(ast, `new `);
-        ast.classExpr.visitExpression(this, ctx);
-        ctx.print(ast, `(`);
-        this.visitAllExpressions(ast.args, ctx, ',');
-        ctx.print(ast, `)`);
-        return null;
-    }
-    visitLiteralExpr(ast, ctx) {
-        const value = ast.value;
-        if (typeof value === 'string') {
-            ctx.print(ast, escapeIdentifier(value, this._escapeDollarInStrings));
-        }
-        else {
-            ctx.print(ast, `${value}`);
-        }
-        return null;
-    }
-    visitLocalizedString(ast, ctx) {
-        const head = ast.serializeI18nHead();
-        ctx.print(ast, '$localize `' + head.raw);
-        for (let i = 1; i < ast.messageParts.length; i++) {
-            ctx.print(ast, '${');
-            ast.expressions[i - 1].visitExpression(this, ctx);
-            ctx.print(ast, `}${ast.serializeI18nTemplatePart(i).raw}`);
-        }
-        ctx.print(ast, '`');
-        return null;
-    }
-    visitConditionalExpr(ast, ctx) {
-        ctx.print(ast, `(`);
-        ast.condition.visitExpression(this, ctx);
-        ctx.print(ast, '? ');
-        ast.trueCase.visitExpression(this, ctx);
-        ctx.print(ast, ': ');
-        ast.falseCase.visitExpression(this, ctx);
-        ctx.print(ast, `)`);
-        return null;
-    }
-    visitNotExpr(ast, ctx) {
-        ctx.print(ast, '!');
-        ast.condition.visitExpression(this, ctx);
-        return null;
-    }
-    visitAssertNotNullExpr(ast, ctx) {
-        ast.condition.visitExpression(this, ctx);
-        return null;
-    }
-    visitUnaryOperatorExpr(ast, ctx) {
-        let opStr;
-        switch (ast.operator) {
-            case UnaryOperator.Plus:
-                opStr = '+';
-                break;
-            case UnaryOperator.Minus:
-                opStr = '-';
-                break;
-            default:
-                throw new Error(`Unknown operator ${ast.operator}`);
-        }
-        if (ast.parens)
-            ctx.print(ast, `(`);
-        ctx.print(ast, opStr);
-        ast.expr.visitExpression(this, ctx);
-        if (ast.parens)
-            ctx.print(ast, `)`);
-        return null;
-    }
-    visitBinaryOperatorExpr(ast, ctx) {
-        let opStr;
-        switch (ast.operator) {
-            case BinaryOperator.Equals:
-                opStr = '==';
-                break;
-            case BinaryOperator.Identical:
-                opStr = '===';
-                break;
-            case BinaryOperator.NotEquals:
-                opStr = '!=';
-                break;
-            case BinaryOperator.NotIdentical:
-                opStr = '!==';
-                break;
-            case BinaryOperator.And:
-                opStr = '&&';
-                break;
-            case BinaryOperator.BitwiseAnd:
-                opStr = '&';
-                break;
-            case BinaryOperator.Or:
-                opStr = '||';
-                break;
-            case BinaryOperator.Plus:
-                opStr = '+';
-                break;
-            case BinaryOperator.Minus:
-                opStr = '-';
-                break;
-            case BinaryOperator.Divide:
-                opStr = '/';
-                break;
-            case BinaryOperator.Multiply:
-                opStr = '*';
-                break;
-            case BinaryOperator.Modulo:
-                opStr = '%';
-                break;
-            case BinaryOperator.Lower:
-                opStr = '<';
-                break;
-            case BinaryOperator.LowerEquals:
-                opStr = '<=';
-                break;
-            case BinaryOperator.Bigger:
-                opStr = '>';
-                break;
-            case BinaryOperator.BiggerEquals:
-                opStr = '>=';
-                break;
-            case BinaryOperator.NullishCoalesce:
-                opStr = '??';
-                break;
-            default:
-                throw new Error(`Unknown operator ${ast.operator}`);
-        }
-        if (ast.parens)
-            ctx.print(ast, `(`);
-        ast.lhs.visitExpression(this, ctx);
-        ctx.print(ast, ` ${opStr} `);
-        ast.rhs.visitExpression(this, ctx);
-        if (ast.parens)
-            ctx.print(ast, `)`);
-        return null;
-    }
-    visitReadPropExpr(ast, ctx) {
-        ast.receiver.visitExpression(this, ctx);
-        ctx.print(ast, `.`);
-        ctx.print(ast, ast.name);
-        return null;
-    }
-    visitReadKeyExpr(ast, ctx) {
-        ast.receiver.visitExpression(this, ctx);
-        ctx.print(ast, `[`);
-        ast.index.visitExpression(this, ctx);
-        ctx.print(ast, `]`);
-        return null;
-    }
-    visitLiteralArrayExpr(ast, ctx) {
-        ctx.print(ast, `[`);
-        this.visitAllExpressions(ast.entries, ctx, ',');
-        ctx.print(ast, `]`);
-        return null;
-    }
-    visitLiteralMapExpr(ast, ctx) {
-        ctx.print(ast, `{`);
-        this.visitAllObjects(entry => {
-            ctx.print(ast, `${escapeIdentifier(entry.key, this._escapeDollarInStrings, entry.quoted)}:`);
-            entry.value.visitExpression(this, ctx);
-        }, ast.entries, ctx, ',');
-        ctx.print(ast, `}`);
-        return null;
-    }
-    visitCommaExpr(ast, ctx) {
-        ctx.print(ast, '(');
-        this.visitAllExpressions(ast.parts, ctx, ',');
-        ctx.print(ast, ')');
-        return null;
-    }
-    visitAllExpressions(expressions, ctx, separator) {
-        this.visitAllObjects(expr => expr.visitExpression(this, ctx), expressions, ctx, separator);
-    }
-    visitAllObjects(handler, expressions, ctx, separator) {
-        let incrementedIndent = false;
-        for (let i = 0; i < expressions.length; i++) {
-            if (i > 0) {
-                if (ctx.lineLength() > 80) {
-                    ctx.print(null, separator, true);
-                    if (!incrementedIndent) {
-                        // continuation are marked with double indent.
-                        ctx.incIndent();
-                        ctx.incIndent();
-                        incrementedIndent = true;
-                    }
-                }
-                else {
-                    ctx.print(null, separator, false);
-                }
-            }
-            handler(expressions[i]);
-        }
-        if (incrementedIndent) {
-            // continuation are marked with double indent.
-            ctx.decIndent();
-            ctx.decIndent();
-        }
-    }
-    visitAllStatements(statements, ctx) {
-        statements.forEach((stmt) => stmt.visitStatement(this, ctx));
-    }
-}
-function escapeIdentifier(input, escapeDollar, alwaysQuote = true) {
-    if (input == null) {
-        return null;
-    }
-    const body = input.replace(_SINGLE_QUOTE_ESCAPE_STRING_RE, (...match) => {
-        if (match[0] == '$') {
-            return escapeDollar ? '\\$' : '$';
-        }
-        else if (match[0] == '\n') {
-            return '\\n';
-        }
-        else if (match[0] == '\r') {
-            return '\\r';
-        }
-        else {
-            return `\\${match[0]}`;
-        }
-    });
-    const requiresQuotes = alwaysQuote || !_LEGAL_IDENTIFIER_RE.test(body);
-    return requiresQuotes ? `'${body}'` : body;
-}
-function _createIndent(count) {
-    let res = '';
-    for (let i = 0; i < count; i++) {
-        res += _INDENT_WITH;
-    }
-    return res;
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-function typeWithParameters(type, numParams) {
-    if (numParams === 0) {
-        return expressionType(type);
-    }
-    const params = [];
-    for (let i = 0; i < numParams; i++) {
-        params.push(DYNAMIC_TYPE);
-    }
-    return expressionType(type, undefined, params);
-}
-const ANIMATE_SYMBOL_PREFIX = '@';
-function prepareSyntheticPropertyName(name) {
-    return `${ANIMATE_SYMBOL_PREFIX}${name}`;
-}
-function prepareSyntheticListenerName(name, phase) {
-    return `${ANIMATE_SYMBOL_PREFIX}${name}.${phase}`;
-}
-function getSafePropertyAccessString(accessor, name) {
-    const escapedName = escapeIdentifier(name, false, false);
-    return escapedName !== name ? `${accessor}[${escapedName}]` : `${accessor}.${name}`;
-}
-function prepareSyntheticListenerFunctionName(name, phase) {
-    return `animation_${name}_${phase}`;
-}
-function jitOnlyGuardedExpression(expr) {
-    return guardedExpression('ngJitMode', expr);
-}
-function devOnlyGuardedExpression(expr) {
-    return guardedExpression('ngDevMode', expr);
-}
-function guardedExpression(guard, expr) {
-    const guardExpr = new ExternalExpr({ name: guard, moduleName: null });
-    const guardNotDefined = new BinaryOperatorExpr(BinaryOperator.Identical, new TypeofExpr(guardExpr), literal('undefined'));
-    const guardUndefinedOrTrue = new BinaryOperatorExpr(BinaryOperator.Or, guardNotDefined, guardExpr, /* type */ undefined, 
-    /* sourceSpan */ undefined, true);
-    return new BinaryOperatorExpr(BinaryOperator.And, guardUndefinedOrTrue, expr);
-}
-function wrapReference(value) {
-    const wrapped = new WrappedNodeExpr(value);
-    return { value: wrapped, type: wrapped };
-}
-function refsToArray(refs, shouldForwardDeclare) {
-    const values = literalArr(refs.map(ref => ref.value));
-    return shouldForwardDeclare ? fn([], [new ReturnStatement(values)]) : values;
-}
-
-var R3FactoryDelegateType;
-(function (R3FactoryDelegateType) {
-    R3FactoryDelegateType[R3FactoryDelegateType["Class"] = 0] = "Class";
-    R3FactoryDelegateType[R3FactoryDelegateType["Function"] = 1] = "Function";
-})(R3FactoryDelegateType || (R3FactoryDelegateType = {}));
-var FactoryTarget$1;
-(function (FactoryTarget) {
-    FactoryTarget[FactoryTarget["Directive"] = 0] = "Directive";
-    FactoryTarget[FactoryTarget["Component"] = 1] = "Component";
-    FactoryTarget[FactoryTarget["Injectable"] = 2] = "Injectable";
-    FactoryTarget[FactoryTarget["Pipe"] = 3] = "Pipe";
-    FactoryTarget[FactoryTarget["NgModule"] = 4] = "NgModule";
-})(FactoryTarget$1 || (FactoryTarget$1 = {}));
-/**
- * Construct a factory function expression for the given `R3FactoryMetadata`.
- */
-function compileFactoryFunction(meta) {
-    const t = variable('t');
-    let baseFactoryVar = null;
-    // The type to instantiate via constructor invocation. If there is no delegated factory, meaning
-    // this type is always created by constructor invocation, then this is the type-to-create
-    // parameter provided by the user (t) if specified, or the current type if not. If there is a
-    // delegated factory (which is used to create the current type) then this is only the type-to-
-    // create parameter (t).
-    const typeForCtor = !isDelegatedFactoryMetadata(meta) ?
-        new BinaryOperatorExpr(BinaryOperator.Or, t, meta.internalType) :
-        t;
-    let ctorExpr = null;
-    if (meta.deps !== null) {
-        // There is a constructor (either explicitly or implicitly defined).
-        if (meta.deps !== 'invalid') {
-            ctorExpr = new InstantiateExpr(typeForCtor, injectDependencies(meta.deps, meta.target));
-        }
-    }
-    else {
-        // There is no constructor, use the base class' factory to construct typeForCtor.
-        baseFactoryVar = variable(`ɵ${meta.name}_BaseFactory`);
-        ctorExpr = baseFactoryVar.callFn([typeForCtor]);
-    }
-    const body = [];
-    let retExpr = null;
-    function makeConditionalFactory(nonCtorExpr) {
-        const r = variable('r');
-        body.push(r.set(NULL_EXPR).toDeclStmt());
-        const ctorStmt = ctorExpr !== null ? r.set(ctorExpr).toStmt() :
-            importExpr(Identifiers$1.invalidFactory).callFn([]).toStmt();
-        body.push(ifStmt(t, [ctorStmt], [r.set(nonCtorExpr).toStmt()]));
-        return r;
-    }
-    if (isDelegatedFactoryMetadata(meta)) {
-        // This type is created with a delegated factory. If a type parameter is not specified, call
-        // the factory instead.
-        const delegateArgs = injectDependencies(meta.delegateDeps, meta.target);
-        // Either call `new delegate(...)` or `delegate(...)` depending on meta.delegateType.
-        const factoryExpr = new (meta.delegateType === R3FactoryDelegateType.Class ?
-            InstantiateExpr :
-            InvokeFunctionExpr)(meta.delegate, delegateArgs);
-        retExpr = makeConditionalFactory(factoryExpr);
-    }
-    else if (isExpressionFactoryMetadata(meta)) {
-        // TODO(alxhub): decide whether to lower the value here or in the caller
-        retExpr = makeConditionalFactory(meta.expression);
-    }
-    else {
-        retExpr = ctorExpr;
-    }
-    if (retExpr === null) {
-        // The expression cannot be formed so render an `ɵɵinvalidFactory()` call.
-        body.push(importExpr(Identifiers$1.invalidFactory).callFn([]).toStmt());
-    }
-    else if (baseFactoryVar !== null) {
-        // This factory uses a base factory, so call `ɵɵgetInheritedFactory()` to compute it.
-        const getInheritedFactoryCall = importExpr(Identifiers$1.getInheritedFactory).callFn([meta.internalType]);
-        // Memoize the base factoryFn: `baseFactory || (baseFactory = ɵɵgetInheritedFactory(...))`
-        const baseFactory = new BinaryOperatorExpr(BinaryOperator.Or, baseFactoryVar, baseFactoryVar.set(getInheritedFactoryCall));
-        body.push(new ReturnStatement(baseFactory.callFn([typeForCtor])));
-    }
-    else {
-        // This is straightforward factory, just return it.
-        body.push(new ReturnStatement(retExpr));
-    }
-    let factoryFn = fn([new FnParam('t', DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, `${meta.name}_Factory`);
-    if (baseFactoryVar !== null) {
-        // There is a base factory variable so wrap its declaration along with the factory function into
-        // an IIFE.
-        factoryFn = fn([], [
-            new DeclareVarStmt(baseFactoryVar.name), new ReturnStatement(factoryFn)
-        ]).callFn([], /* sourceSpan */ undefined, /* pure */ true);
-    }
-    return {
-        expression: factoryFn,
-        statements: [],
-        type: createFactoryType(meta),
-    };
-}
-function createFactoryType(meta) {
-    const ctorDepsType = meta.deps !== null && meta.deps !== 'invalid' ? createCtorDepsType(meta.deps) : NONE_TYPE;
-    return expressionType(importExpr(Identifiers$1.FactoryDeclaration, [typeWithParameters(meta.type.type, meta.typeArgumentCount), ctorDepsType]));
-}
-function injectDependencies(deps, target) {
-    return deps.map((dep, index) => compileInjectDependency(dep, target, index));
-}
-function compileInjectDependency(dep, target, index) {
-    // Interpret the dependency according to its resolved type.
-    if (dep.token === null) {
-        return importExpr(Identifiers$1.invalidFactoryDep).callFn([literal(index)]);
-    }
-    else if (dep.attributeNameType === null) {
-        // Build up the injection flags according to the metadata.
-        const flags = 0 /* Default */ | (dep.self ? 2 /* Self */ : 0) |
-            (dep.skipSelf ? 4 /* SkipSelf */ : 0) | (dep.host ? 1 /* Host */ : 0) |
-            (dep.optional ? 8 /* Optional */ : 0) |
-            (target === FactoryTarget$1.Pipe ? 16 /* ForPipe */ : 0);
-        // If this dependency is optional or otherwise has non-default flags, then additional
-        // parameters describing how to inject the dependency must be passed to the inject function
-        // that's being used.
-        let flagsParam = (flags !== 0 /* Default */ || dep.optional) ? literal(flags) : null;
-        // Build up the arguments to the injectFn call.
-        const injectArgs = [dep.token];
-        if (flagsParam) {
-            injectArgs.push(flagsParam);
-        }
-        const injectFn = getInjectFn(target);
-        return importExpr(injectFn).callFn(injectArgs);
-    }
-    else {
-        // The `dep.attributeTypeName` value is defined, which indicates that this is an `@Attribute()`
-        // type dependency. For the generated JS we still want to use the `dep.token` value in case the
-        // name given for the attribute is not a string literal. For example given `@Attribute(foo())`,
-        // we want to generate `ɵɵinjectAttribute(foo())`.
-        //
-        // The `dep.attributeTypeName` is only actually used (in `createCtorDepType()`) to generate
-        // typings.
-        return importExpr(Identifiers$1.injectAttribute).callFn([dep.token]);
-    }
-}
-function createCtorDepsType(deps) {
-    let hasTypes = false;
-    const attributeTypes = deps.map(dep => {
-        const type = createCtorDepType(dep);
-        if (type !== null) {
-            hasTypes = true;
-            return type;
-        }
-        else {
-            return literal(null);
-        }
-    });
-    if (hasTypes) {
-        return expressionType(literalArr(attributeTypes));
-    }
-    else {
-        return NONE_TYPE;
-    }
-}
-function createCtorDepType(dep) {
-    const entries = [];
-    if (dep.attributeNameType !== null) {
-        entries.push({ key: 'attribute', value: dep.attributeNameType, quoted: false });
-    }
-    if (dep.optional) {
-        entries.push({ key: 'optional', value: literal(true), quoted: false });
-    }
-    if (dep.host) {
-        entries.push({ key: 'host', value: literal(true), quoted: false });
-    }
-    if (dep.self) {
-        entries.push({ key: 'self', value: literal(true), quoted: false });
-    }
-    if (dep.skipSelf) {
-        entries.push({ key: 'skipSelf', value: literal(true), quoted: false });
-    }
-    return entries.length > 0 ? literalMap(entries) : null;
-}
-function isDelegatedFactoryMetadata(meta) {
-    return meta.delegateType !== undefined;
-}
-function isExpressionFactoryMetadata(meta) {
-    return meta.expression !== undefined;
-}
-function getInjectFn(target) {
-    switch (target) {
-        case FactoryTarget$1.Component:
-        case FactoryTarget$1.Directive:
-        case FactoryTarget$1.Pipe:
-            return Identifiers$1.directiveInject;
-        case FactoryTarget$1.NgModule:
-        case FactoryTarget$1.Injectable:
-        default:
-            return Identifiers$1.inject;
-    }
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-function createR3ProviderExpression(expression, isForwardRef) {
-    return { expression, isForwardRef };
-}
 function compileInjectable(meta, resolveForwardRefs) {
     let result = null;
     const factoryMeta = {
@@ -5765,8 +5715,7 @@ function compileInjectable(meta, resolveForwardRefs) {
     injectableProps.set('factory', result.expression);
     // Only generate providedIn property if it has a non-null value
     if (meta.providedIn.expression.value !== null) {
-        injectableProps.set('providedIn', meta.providedIn.isForwardRef ? generateForwardRef(meta.providedIn.expression) :
-            meta.providedIn.expression);
+        injectableProps.set('providedIn', convertFromMaybeForwardRefExpression(meta.providedIn));
     }
     const expression = importExpr(Identifiers$1.ɵɵdefineInjectable)
         .callFn([injectableProps.toLiteralMap()], undefined, true);
@@ -22675,8 +22624,7 @@ const USE_EXISTING = Object.keys({ useExisting: null })[0];
 function convertToR3QueryMetadata(facade) {
     return {
         ...facade,
-        predicate: Array.isArray(facade.predicate) ? facade.predicate :
-            new WrappedNodeExpr(facade.predicate),
+        predicate: convertQueryPredicate(facade.predicate),
         read: facade.read ? new WrappedNodeExpr(facade.read) : null,
         static: facade.static,
         emitDistinctChangesOnly: facade.emitDistinctChangesOnly,
@@ -22686,13 +22634,19 @@ function convertQueryDeclarationToMetadata(declaration) {
     return {
         propertyName: declaration.propertyName,
         first: declaration.first ?? false,
-        predicate: Array.isArray(declaration.predicate) ? declaration.predicate :
-            new WrappedNodeExpr(declaration.predicate),
+        predicate: convertQueryPredicate(declaration.predicate),
         descendants: declaration.descendants ?? false,
         read: declaration.read ? new WrappedNodeExpr(declaration.read) : null,
         static: declaration.static ?? false,
         emitDistinctChangesOnly: declaration.emitDistinctChangesOnly ?? true,
     };
+}
+function convertQueryPredicate(predicate) {
+    return Array.isArray(predicate) ?
+        // The predicate is an array of strings so pass it through.
+        predicate :
+        // The predicate is a type - assume that we will need to unwrap any `forwardRef()` calls.
+        createMayBeForwardRefExpression(new WrappedNodeExpr(predicate), 1 /* Wrapped */);
 }
 function convertDirectiveFacadeToMetadata(facade) {
     const inputsFromMetadata = parseInputOutputs(facade.inputs || []);
@@ -22828,11 +22782,11 @@ function parseJitTemplate(template, typeName, sourceMapUrl, preserveWhitespaces,
  * In JIT mode we do not want the compiler to wrap the expression in a `forwardRef()` call because,
  * if it is referencing a type that has not yet been defined, it will have already been wrapped in
  * a `forwardRef()` - either by the application developer or during partial-compilation. Thus we can
- * set `isForwardRef` to `false`.
+ * use `ForwardRefHandling.None`.
  */
 function convertToProviderExpression(obj, property) {
     if (obj.hasOwnProperty(property)) {
-        return createR3ProviderExpression(new WrappedNodeExpr(obj[property]), /* isForwardRef */ false);
+        return createMayBeForwardRefExpression(new WrappedNodeExpr(obj[property]), 0 /* None */);
     }
     else {
         return undefined;
@@ -22849,8 +22803,8 @@ function wrapExpression(obj, property) {
 function computeProvidedIn(providedIn) {
     const expression = typeof providedIn === 'function' ? new WrappedNodeExpr(providedIn) :
         new LiteralExpr(providedIn ?? null);
-    // See `convertToProviderExpression()` for why `isForwardRef` is false.
-    return createR3ProviderExpression(expression, /* isForwardRef */ false);
+    // See `convertToProviderExpression()` for why this uses `ForwardRefHandling.None`.
+    return createMayBeForwardRefExpression(expression, 0 /* None */);
 }
 function convertR3DependencyMetadataArray(facades) {
     return facades == null ? null : facades.map(convertR3DependencyMetadata);
@@ -22956,7 +22910,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('13.0.0+68.sha-30a27ad.with-local-changes');
+const VERSION = new Version('13.0.0+73.sha-ee2031d.with-local-changes');
 
 /**
  * @license
@@ -32318,13 +32272,90 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('13.0.0+68.sha-30a27ad.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0+73.sha-ee2031d.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
     definitionMap.set('ctorParameters', metadata.ctorParameters);
     definitionMap.set('propDecorators', metadata.propDecorators);
     return importExpr(Identifiers$1.declareClassMetadata).callFn([definitionMap.toLiteralMap()]);
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Creates an array literal expression from the given array, mapping all values to an expression
+ * using the provided mapping function. If the array is empty or null, then null is returned.
+ *
+ * @param values The array to transfer into literal array expression.
+ * @param mapper The logic to use for creating an expression for the array's values.
+ * @returns An array literal expression representing `values`, or null if `values` is empty or
+ * is itself null.
+ */
+function toOptionalLiteralArray(values, mapper) {
+    if (values === null || values.length === 0) {
+        return null;
+    }
+    return literalArr(values.map(value => mapper(value)));
+}
+/**
+ * Creates an object literal expression from the given object, mapping all values to an expression
+ * using the provided mapping function. If the object has no keys, then null is returned.
+ *
+ * @param object The object to transfer into an object literal expression.
+ * @param mapper The logic to use for creating an expression for the object's values.
+ * @returns An object literal expression representing `object`, or null if `object` does not have
+ * any keys.
+ */
+function toOptionalLiteralMap(object, mapper) {
+    const entries = Object.keys(object).map(key => {
+        const value = object[key];
+        return { key, value: mapper(value), quoted: true };
+    });
+    if (entries.length > 0) {
+        return literalMap(entries);
+    }
+    else {
+        return null;
+    }
+}
+function compileDependencies(deps) {
+    if (deps === 'invalid') {
+        // The `deps` can be set to the string "invalid"  by the `unwrapConstructorDependencies()`
+        // function, which tries to convert `ConstructorDeps` into `R3DependencyMetadata[]`.
+        return literal('invalid');
+    }
+    else if (deps === null) {
+        return literal(null);
+    }
+    else {
+        return literalArr(deps.map(compileDependency));
+    }
+}
+function compileDependency(dep) {
+    const depMeta = new DefinitionMap();
+    depMeta.set('token', dep.token);
+    if (dep.attributeNameType !== null) {
+        depMeta.set('attribute', literal(true));
+    }
+    if (dep.host) {
+        depMeta.set('host', literal(true));
+    }
+    if (dep.optional) {
+        depMeta.set('optional', literal(true));
+    }
+    if (dep.self) {
+        depMeta.set('self', literal(true));
+    }
+    if (dep.skipSelf) {
+        depMeta.set('skipSelf', literal(true));
+    }
+    return depMeta.toLiteralMap();
 }
 
 /**
@@ -32358,7 +32389,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('13.0.0+68.sha-30a27ad.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0+73.sha-ee2031d.with-local-changes'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -32397,7 +32428,8 @@ function compileQuery(query) {
     if (query.first) {
         meta.set('first', literal(true));
     }
-    meta.set('predicate', Array.isArray(query.predicate) ? asLiteral(query.predicate) : query.predicate);
+    meta.set('predicate', Array.isArray(query.predicate) ? asLiteral(query.predicate) :
+        convertFromMaybeForwardRefExpression(query.predicate));
     if (!query.emitDistinctChangesOnly) {
         // `emitDistinctChangesOnly` is special because we expect it to be `true`.
         // Therefore we explicitly emit the field, and explicitly place it only when it's `false`.
@@ -32578,7 +32610,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('13.0.0+68.sha-30a27ad.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0+73.sha-ee2031d.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32620,24 +32652,24 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('13.0.0+68.sha-30a27ad.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0+73.sha-ee2031d.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
     if (meta.providedIn !== undefined) {
-        const providedIn = convertFromProviderExpression(meta.providedIn);
+        const providedIn = convertFromMaybeForwardRefExpression(meta.providedIn);
         if (providedIn.value !== null) {
             definitionMap.set('providedIn', providedIn);
         }
     }
     if (meta.useClass !== undefined) {
-        definitionMap.set('useClass', convertFromProviderExpression(meta.useClass));
+        definitionMap.set('useClass', convertFromMaybeForwardRefExpression(meta.useClass));
     }
     if (meta.useExisting !== undefined) {
-        definitionMap.set('useExisting', convertFromProviderExpression(meta.useExisting));
+        definitionMap.set('useExisting', convertFromMaybeForwardRefExpression(meta.useExisting));
     }
     if (meta.useValue !== undefined) {
-        definitionMap.set('useValue', convertFromProviderExpression(meta.useValue));
+        definitionMap.set('useValue', convertFromMaybeForwardRefExpression(meta.useValue));
     }
     // Factories do not contain `ForwardRef`s since any types are already wrapped in a function call
     // so the types will not be eagerly evaluated. Therefore we do not need to process this expression
@@ -32649,27 +32681,6 @@ function createInjectableDefinitionMap(meta) {
         definitionMap.set('deps', literalArr(meta.deps.map(compileDependency)));
     }
     return definitionMap;
-}
-/**
- * Convert an `R3ProviderExpression` to an `Expression`, possibly wrapping its expression in a
- * `forwardRef()` call.
- *
- * If `R3ProviderExpression.isForwardRef` is true then the expression was originally wrapped in a
- * `forwardRef()` call to prevent the value from being eagerly evaluated in the code.
- *
- * Normally, the linker will statically process the code, putting the `expression` inside a factory
- * function so the `forwardRef()` wrapper is not evaluated before it has been defined. But if the
- * partial declaration is evaluated by the JIT compiler the `forwardRef()` call is still needed to
- * prevent eager evaluation of the `expression`.
- *
- * So in partial declarations, expressions that could be forward-refs are wrapped in `forwardRef()`
- * calls, and this is then unwrapped in the linker as necessary.
- *
- * See `packages/compiler-cli/src/ngtsc/annotations/src/injectable.ts` and
- * `packages/compiler/src/jit_compiler_facade.ts` for more information.
- */
-function convertFromProviderExpression({ expression, isForwardRef }) {
-    return isForwardRef ? generateForwardRef(expression) : expression;
 }
 
 /**
@@ -32699,7 +32710,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('13.0.0+68.sha-30a27ad.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0+73.sha-ee2031d.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -32736,7 +32747,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('13.0.0+68.sha-30a27ad.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0+73.sha-ee2031d.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -32794,7 +32805,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('13.0.0+68.sha-30a27ad.with-local-changes'));
+    definitionMap.set('version', literal('13.0.0+73.sha-ee2031d.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
@@ -32844,5 +32855,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, Call, CastExpr, Chain, ChangeDetectionStrategy, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FactoryTarget$1 as FactoryTarget, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, Identifiers$1 as R3Identifiers, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateParseError, TemplateParseResult, TemplateParser, Text, TextAst, ThisReceiver, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element$1 as TmplAstElement, Icu$1 as TmplAstIcu, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token, TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION, VariableAst, VariableBinding, Version, ViewCompiler, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createInjectableType, createLoweredSymbol, createOfflineCompileUrlResolver, createR3ProviderExpression, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, findNode, flatten, formattedError, getHtmlTagDefinition, getMissingNgModuleMetadataErrorData, getNsPrefix, getParseErrors, getSafePropertyAccessString, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AotCompiler, AotSummaryResolver, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer, AttrAst, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundDirectivePropertyAst, BoundElementProperty, BoundElementPropertyAst, BoundEventAst, BoundTextAst, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CONTENT_ATTR, CUSTOM_ELEMENTS_SCHEMA, Call, CastExpr, Chain, ChangeDetectionStrategy, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CompileDirectiveMetadata, CompileMetadataResolver, CompileNgModuleMetadata, CompilePipeMetadata, CompileReflector, CompileShallowModuleMetadata, CompileStylesheetMetadata, CompileSummaryKind, CompileTemplateMetadata, CompiledStylesheet, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DirectiveAst, DirectiveNormalizer, DirectiveResolver, DomElementSchemaRegistry, EOF, ERROR_COMPONENT_TYPE, Element, ElementAst, ElementSchemaRegistry, EmbeddedTemplateAst, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, Extractor, FactoryTarget$1 as FactoryTarget, FunctionExpr, GeneratedFile, HOST_ATTR, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, IvyParser, JSDocComment, JitCompiler, JitEvaluator, JitSummaryResolver, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NgContentAst, NgModuleCompiler, NgModuleResolver, NodeWithI18n, NonNullAssert, NotExpr, NullTemplateVisitor, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, ParserError, PipeResolver, PrefixNot, PropertyRead, PropertyWrite, ProviderAst, ProviderAstType, ProviderMeta, Quote, R3BoundTarget, Identifiers$1 as R3Identifiers, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveTemplateAstVisitor, RecursiveVisitor, ReferenceAst, ResolvedStaticSymbol, ResourceLoader, ReturnStatement, STRING_TYPE, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StaticReflector, StaticSymbol, StaticSymbolCache, StaticSymbolResolver, StmtModifier, StyleCompiler, StylesCompileDependency, SummaryResolver, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateParseError, TemplateParseResult, TemplateParser, Text, TextAst, ThisReceiver, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element$1 as TmplAstElement, Icu$1 as TmplAstIcu, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token, TokenType, TransitiveCompileNgModuleMetadata, TreeError, TryCatchStmt, Type, TypeScriptEmitter, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, UrlResolver, VERSION, VariableAst, VariableBinding, Version, ViewCompiler, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, analyzeNgModules, collectExternalReferences, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, componentFactoryName, computeMsgId, core, createAotCompiler, createAotUrlResolver, createElementCssSelector, createInjectableType, createLoweredSymbol, createMayBeForwardRefExpression, createOfflineCompileUrlResolver, createUrlResolverWithoutPackagePrefix, debugOutputAstAsTypeScript, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, findNode, flatten, formattedError, getHtmlTagDefinition, getMissingNgModuleMetadataErrorData, getNsPrefix, getParseErrors, getSafePropertyAccessString, getUrlScheme, hostViewClassName, identifierModuleUrl, identifierName, isEmptyExpression, isFormattedError, isIdentifier, isLoweredSymbol, isNgContainer, isNgContent, isNgTemplate, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeAnalyzedFiles, mergeNsAndName, ngModuleJitUrl, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, removeSummaryDuplicates, rendererTypeName, sanitizeIdentifier, sharedStylesheetJitUrl, splitClasses, splitNsName, syntaxError, templateJitUrl, templateSourceUrl, templateVisitAll, toTypeScript, tokenName, tokenReference, typeSourceSpan, unescapeIdentifier, unwrapResolvedMetadata, verifyHostBindings, viewClassName, visitAll };
 //# sourceMappingURL=compiler.mjs.map
