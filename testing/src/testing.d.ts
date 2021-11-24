@@ -20,8 +20,4 @@
  *   </p>
  * </div>
  */
-export * from './resource_loader_mock';
-export * from './schema_registry_mock';
-export * from './directive_resolver_mock';
-export * from './ng_module_resolver_mock';
-export * from './pipe_resolver_mock';
+export declare const unusedExport = true;
