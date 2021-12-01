@@ -31,11 +31,3 @@ export declare function toOptionalLiteralMap<T>(object: {
 }, mapper: (value: T) => o.Expression): o.LiteralMapExpr | null;
 export declare function compileDependencies(deps: R3DependencyMetadata[] | 'invalid' | null): o.LiteralExpr | o.LiteralArrayExpr;
 export declare function compileDependency(dep: R3DependencyMetadata): o.LiteralMapExpr;
-/**
- * Generate an expression that has the given `expr` wrapped in the following form:
- *
- * ```
- * forwardRef(() => expr)
- * ```
- */
-export declare function generateForwardRef(expr: o.Expression): o.Expression;
