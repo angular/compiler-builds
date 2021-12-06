@@ -59,7 +59,6 @@ export declare class ParseError {
     contextualMessage(): string;
     toString(): string;
 }
-export declare function typeSourceSpan(kind: string, type: CompileIdentifierMetadata): ParseSourceSpan;
 /**
  * Generates Source Span object for a given R3 Type for JIT mode.
  *
@@ -73,7 +72,6 @@ export declare function syntaxError(msg: string, parseErrors?: ParseError[]): Er
 export declare function isSyntaxError(error: Error): boolean;
 export declare function getParseErrors(error: Error): ParseError[];
 export declare function identifierName(compileIdentifier: CompileIdentifierMetadata | null | undefined): string | null;
-export declare function identifierModuleUrl(compileIdentifier: CompileIdentifierMetadata): string;
 export interface CompileIdentifierMetadata {
     reference: any;
 }

@@ -5,10 +5,12 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { CompileReflector } from '../compile_reflector';
 import { EmitterVisitorContext } from './abstract_emitter';
 import { AbstractJsEmitterVisitor } from './abstract_js_emitter';
 import * as o from './output_ast';
+export interface ExternalReferenceResolver {
+    resolveExternalReference(ref: o.ExternalReference): unknown;
+}
 /**
  * A helper class to manage the evaluation of JIT generated code.
  */
@@ -17,12 +19,12 @@ export declare class JitEvaluator {
      *
      * @param sourceUrl The URL of the generated code.
      * @param statements An array of Angular statement AST nodes to be evaluated.
-     * @param reflector A helper used when converting the statements to executable code.
+     * @param refResolver Resolves `o.ExternalReference`s into values.
      * @param createSourceMaps If true then create a source-map for the generated code and include it
      * inline as a source-map comment.
      * @returns A map of all the variables in the generated code.
      */
-    evaluateStatements(sourceUrl: string, statements: o.Statement[], reflector: CompileReflector, createSourceMaps: boolean): {
+    evaluateStatements(sourceUrl: string, statements: o.Statement[], refResolver: ExternalReferenceResolver, createSourceMaps: boolean): {
         [key: string]: any;
     };
     /**
@@ -54,11 +56,11 @@ export declare class JitEvaluator {
  * An Angular AST visitor that converts AST nodes into executable JavaScript code.
  */
 export declare class JitEmitterVisitor extends AbstractJsEmitterVisitor {
-    private reflector;
+    private refResolver;
     private _evalArgNames;
     private _evalArgValues;
     private _evalExportedVars;
-    constructor(reflector: CompileReflector);
+    constructor(refResolver: ExternalReferenceResolver);
     createReturnStmt(ctx: EmitterVisitorContext): void;
     getArgs(): {
         [key: string]: any;
