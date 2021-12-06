@@ -5,13 +5,18 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { CompileDirectiveSummary, CompilePipeSummary } from '../compile_metadata';
 import { SecurityContext } from '../core';
 import { ASTWithSource, BindingPipe, BoundElementProperty, ParsedEvent, ParsedProperty, ParsedVariable, RecursiveAstVisitor } from '../expression_parser/ast';
 import { Parser } from '../expression_parser/parser';
 import { InterpolationConfig } from '../ml_parser/interpolation_config';
 import { ParseError, ParseSourceSpan } from '../parse_util';
 import { ElementSchemaRegistry } from '../schema/element_schema_registry';
+export interface HostProperties {
+    [key: string]: string;
+}
+export interface HostListeners {
+    [key: string]: string;
+}
 /**
  * Parses bindings in templates and in the directive host area.
  */
@@ -20,14 +25,11 @@ export declare class BindingParser {
     private _interpolationConfig;
     private _schemaRegistry;
     errors: ParseError[];
-    pipesByName: Map<string, CompilePipeSummary> | null;
-    private _usedPipes;
-    constructor(_exprParser: Parser, _interpolationConfig: InterpolationConfig, _schemaRegistry: ElementSchemaRegistry, pipes: CompilePipeSummary[] | null, errors: ParseError[]);
+    constructor(_exprParser: Parser, _interpolationConfig: InterpolationConfig, _schemaRegistry: ElementSchemaRegistry, errors: ParseError[]);
     get interpolationConfig(): InterpolationConfig;
-    getUsedPipes(): CompilePipeSummary[];
-    createBoundHostProperties(dirMeta: CompileDirectiveSummary, sourceSpan: ParseSourceSpan): ParsedProperty[] | null;
-    createDirectiveHostPropertyAsts(dirMeta: CompileDirectiveSummary, elementSelector: string, sourceSpan: ParseSourceSpan): BoundElementProperty[] | null;
-    createDirectiveHostEventAsts(dirMeta: CompileDirectiveSummary, sourceSpan: ParseSourceSpan): ParsedEvent[] | null;
+    createBoundHostProperties(properties: HostProperties, sourceSpan: ParseSourceSpan): ParsedProperty[] | null;
+    createDirectiveHostPropertyAsts(hostProperties: HostProperties, elementSelector: string, sourceSpan: ParseSourceSpan): BoundElementProperty[] | null;
+    createDirectiveHostEventAsts(hostListeners: HostListeners, sourceSpan: ParseSourceSpan): ParsedEvent[] | null;
     parseInterpolation(value: string, sourceSpan: ParseSourceSpan): ASTWithSource;
     /**
      * Similar to `parseInterpolation`, but treats the provided string as a single expression
@@ -75,7 +77,6 @@ export declare class BindingParser {
     private _parseAction;
     private _reportError;
     private _reportExpressionParserErrors;
-    private _checkPipes;
     /**
      * @param propName the name of the property / attribute
      * @param sourceSpan
