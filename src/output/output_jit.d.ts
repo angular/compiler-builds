@@ -69,6 +69,5 @@ export declare class JitEmitterVisitor extends AbstractJsEmitterVisitor {
     visitWrappedNodeExpr(ast: o.WrappedNodeExpr<any>, ctx: EmitterVisitorContext): any;
     visitDeclareVarStmt(stmt: o.DeclareVarStmt, ctx: EmitterVisitorContext): any;
     visitDeclareFunctionStmt(stmt: o.DeclareFunctionStmt, ctx: EmitterVisitorContext): any;
-    visitDeclareClassStmt(stmt: o.ClassStmt, ctx: EmitterVisitorContext): any;
     private _emitReferenceToExternal;
 }

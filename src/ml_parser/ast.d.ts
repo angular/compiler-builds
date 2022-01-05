@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { AstPath } from '../ast_path';
 import { I18nMeta } from '../i18n/i18n_ast';
 import { ParseSourceSpan } from '../parse_util';
 import { InterpolatedAttributeToken, InterpolatedTextToken } from './tokens';
@@ -87,6 +86,4 @@ export declare class RecursiveVisitor implements Visitor {
     visitExpansionCase(ast: ExpansionCase, context: any): any;
     private visitChildren;
 }
-export declare type HtmlAstPath = AstPath<Node>;
-export declare function findNode(nodes: Node[], position: number): HtmlAstPath;
 export {};

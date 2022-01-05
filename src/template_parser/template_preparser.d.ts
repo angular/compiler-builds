@@ -17,8 +17,8 @@ export declare enum PreparsedElementType {
 export declare class PreparsedElement {
     type: PreparsedElementType;
     selectAttr: string;
-    hrefAttr: string;
+    hrefAttr: string | null;
     nonBindable: boolean;
     projectAs: string;
-    constructor(type: PreparsedElementType, selectAttr: string, hrefAttr: string, nonBindable: boolean, projectAs: string);
+    constructor(type: PreparsedElementType, selectAttr: string, hrefAttr: string | null, nonBindable: boolean, projectAs: string);
 }

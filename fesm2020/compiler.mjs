@@ -1,5 +1,5 @@
 /**
- * @license Angular v13.2.0-next.1+30.sha-d4015f7.with-local-changes
+ * @license Angular v13.2.0-next.1+49.sha-c7ac2df.with-local-changes
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -572,31 +572,9 @@ class SelectorContext {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const createInject = makeMetadataFactory('Inject', (token) => ({ token }));
-const createInjectionToken = makeMetadataFactory('InjectionToken', (desc) => ({ _desc: desc, ɵprov: undefined }));
-const createAttribute = makeMetadataFactory('Attribute', (attributeName) => ({ attributeName }));
 // Stores the default value of `emitDistinctChangesOnly` when the `emitDistinctChangesOnly` is not
 // explicitly set.
 const emitDistinctChangesOnlyDefaultValue = true;
-const createContentChildren = makeMetadataFactory('ContentChildren', (selector, data = {}) => ({
-    selector,
-    first: false,
-    isViewQuery: false,
-    descendants: false,
-    emitDistinctChangesOnly: emitDistinctChangesOnlyDefaultValue,
-    ...data
-}));
-const createContentChild = makeMetadataFactory('ContentChild', (selector, data = {}) => ({ selector, first: true, isViewQuery: false, descendants: true, ...data }));
-const createViewChildren = makeMetadataFactory('ViewChildren', (selector, data = {}) => ({
-    selector,
-    first: false,
-    isViewQuery: true,
-    descendants: true,
-    emitDistinctChangesOnly: emitDistinctChangesOnlyDefaultValue,
-    ...data
-}));
-const createViewChild = makeMetadataFactory('ViewChild', (selector, data) => ({ selector, first: true, isViewQuery: true, descendants: true, ...data }));
-const createDirective = makeMetadataFactory('Directive', (dir = {}) => dir);
 var ViewEncapsulation;
 (function (ViewEncapsulation) {
     ViewEncapsulation[ViewEncapsulation["Emulated"] = 0] = "Emulated";
@@ -609,24 +587,12 @@ var ChangeDetectionStrategy;
     ChangeDetectionStrategy[ChangeDetectionStrategy["OnPush"] = 0] = "OnPush";
     ChangeDetectionStrategy[ChangeDetectionStrategy["Default"] = 1] = "Default";
 })(ChangeDetectionStrategy || (ChangeDetectionStrategy = {}));
-const createComponent = makeMetadataFactory('Component', (c = {}) => ({ changeDetection: ChangeDetectionStrategy.Default, ...c }));
-const createPipe = makeMetadataFactory('Pipe', (p) => ({ pure: true, ...p }));
-const createInput = makeMetadataFactory('Input', (bindingPropertyName) => ({ bindingPropertyName }));
-const createOutput = makeMetadataFactory('Output', (bindingPropertyName) => ({ bindingPropertyName }));
-const createHostBinding = makeMetadataFactory('HostBinding', (hostPropertyName) => ({ hostPropertyName }));
-const createHostListener = makeMetadataFactory('HostListener', (eventName, args) => ({ eventName, args }));
-const createNgModule = makeMetadataFactory('NgModule', (ngModule) => ngModule);
-const createInjectable = makeMetadataFactory('Injectable', (injectable = {}) => injectable);
 const CUSTOM_ELEMENTS_SCHEMA = {
     name: 'custom-elements'
 };
 const NO_ERRORS_SCHEMA = {
     name: 'no-errors-schema'
 };
-const createOptional = makeMetadataFactory('Optional');
-const createSelf = makeMetadataFactory('Self');
-const createSkipSelf = makeMetadataFactory('SkipSelf');
-const createHost = makeMetadataFactory('Host');
 const Type$1 = Function;
 var SecurityContext;
 (function (SecurityContext) {
@@ -643,22 +609,6 @@ var MissingTranslationStrategy;
     MissingTranslationStrategy[MissingTranslationStrategy["Warning"] = 1] = "Warning";
     MissingTranslationStrategy[MissingTranslationStrategy["Ignore"] = 2] = "Ignore";
 })(MissingTranslationStrategy || (MissingTranslationStrategy = {}));
-function makeMetadataFactory(name, props) {
-    // This must be declared as a function, not a fat arrow, so that ES2015 devmode produces code
-    // that works with the static_reflector.ts in the ViewEngine compiler.
-    // In particular, `_registerDecoratorOrConstructor` assumes that the value returned here can be
-    // new'ed.
-    function factory(...args) {
-        const values = props ? props(...args) : {};
-        return {
-            ngMetadataName: name,
-            ...values,
-        };
-    }
-    factory.isTypeOf = (obj) => obj && obj.ngMetadataName === name;
-    factory.ngMetadataName = name;
-    return factory;
-}
 function parserSelectorToSimpleSelector(selector) {
     const classes = selector.classNames && selector.classNames.length ?
         [8 /* CLASS */, ...selector.classNames] :
@@ -697,31 +647,11 @@ function parseSelectorToR3Selector(selector) {
 
 var core = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    createInject: createInject,
-    createInjectionToken: createInjectionToken,
-    createAttribute: createAttribute,
     emitDistinctChangesOnlyDefaultValue: emitDistinctChangesOnlyDefaultValue,
-    createContentChildren: createContentChildren,
-    createContentChild: createContentChild,
-    createViewChildren: createViewChildren,
-    createViewChild: createViewChild,
-    createDirective: createDirective,
     get ViewEncapsulation () { return ViewEncapsulation; },
     get ChangeDetectionStrategy () { return ChangeDetectionStrategy; },
-    createComponent: createComponent,
-    createPipe: createPipe,
-    createInput: createInput,
-    createOutput: createOutput,
-    createHostBinding: createHostBinding,
-    createHostListener: createHostListener,
-    createNgModule: createNgModule,
-    createInjectable: createInjectable,
     CUSTOM_ELEMENTS_SCHEMA: CUSTOM_ELEMENTS_SCHEMA,
     NO_ERRORS_SCHEMA: NO_ERRORS_SCHEMA,
-    createOptional: createOptional,
-    createSelf: createSelf,
-    createSkipSelf: createSkipSelf,
-    createHost: createHost,
     Type: Type$1,
     get SecurityContext () { return SecurityContext; },
     get MissingTranslationStrategy () { return MissingTranslationStrategy; },
@@ -751,67 +681,15 @@ function _splitAt(input, character, defaultValues) {
         return defaultValues;
     return [input.slice(0, characterIndex).trim(), input.slice(characterIndex + 1).trim()];
 }
-function visitValue(value, visitor, context) {
-    if (Array.isArray(value)) {
-        return visitor.visitArray(value, context);
-    }
-    if (isStrictStringMap(value)) {
-        return visitor.visitStringMap(value, context);
-    }
-    if (value == null || typeof value == 'string' || typeof value == 'number' ||
-        typeof value == 'boolean') {
-        return visitor.visitPrimitive(value, context);
-    }
-    return visitor.visitOther(value, context);
-}
-function isDefined(val) {
-    return val !== null && val !== undefined;
-}
 function noUndefined(val) {
     return val === undefined ? null : val;
 }
-class ValueTransformer {
-    visitArray(arr, context) {
-        return arr.map(value => visitValue(value, this, context));
-    }
-    visitStringMap(map, context) {
-        const result = {};
-        Object.keys(map).forEach(key => {
-            result[key] = visitValue(map[key], this, context);
-        });
-        return result;
-    }
-    visitPrimitive(value, context) {
-        return value;
-    }
-    visitOther(value, context) {
-        return value;
-    }
-}
-const SyncAsync = {
-    assertSync: (value) => {
-        if (isPromise(value)) {
-            throw new Error(`Illegal state: value cannot be a promise`);
-        }
-        return value;
-    },
-    then: (value, cb) => {
-        return isPromise(value) ? value.then(cb) : cb(value);
-    },
-    all: (syncAsyncValues) => {
-        return syncAsyncValues.some(isPromise) ? Promise.all(syncAsyncValues) : syncAsyncValues;
-    }
-};
 function error(msg) {
     throw new Error(`Internal Error: ${msg}`);
 }
 // Escape characters that have a special meaning in Regular Expressions
 function escapeRegExp(s) {
     return s.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
-}
-const STRING_MAP_PROTO = Object.getPrototypeOf({});
-function isStrictStringMap(obj) {
-    return typeof obj === 'object' && obj !== null && Object.getPrototypeOf(obj) === STRING_MAP_PROTO;
 }
 function utf8Encode(str) {
     let encoded = [];
@@ -868,25 +746,6 @@ function stringify(token) {
     }
     const newLineIndex = res.indexOf('\n');
     return newLineIndex === -1 ? res : res.substring(0, newLineIndex);
-}
-/**
- * Lazily retrieves the reference value from a forwardRef.
- */
-function resolveForwardRef(type) {
-    if (typeof type === 'function' && type.hasOwnProperty('__forward_ref__')) {
-        return type();
-    }
-    else {
-        return type;
-    }
-}
-/**
- * Determine if the argument is shaped like a Promise
- */
-function isPromise(obj) {
-    // allow any Promise/A+ compliant thenable.
-    // It's up to the caller to ensure that obj.then conforms to the spec
-    return !!obj && typeof obj.then === 'function';
 }
 class Version {
     constructor(full) {
@@ -1626,9 +1485,6 @@ class Expression {
         // We use the typed null to allow strictNullChecks to narrow types.
         return this.equals(TYPED_NULL_EXPR, sourceSpan);
     }
-    cast(type, sourceSpan) {
-        return new CastExpr(this, type, sourceSpan);
-    }
     nullishCoalesce(rhs, sourceSpan) {
         return new BinaryOperatorExpr(BinaryOperator.NullishCoalesce, this, rhs, null, sourceSpan);
     }
@@ -1636,27 +1492,13 @@ class Expression {
         return new ExpressionStatement(this, null);
     }
 }
-var BuiltinVar;
-(function (BuiltinVar) {
-    BuiltinVar[BuiltinVar["This"] = 0] = "This";
-    BuiltinVar[BuiltinVar["Super"] = 1] = "Super";
-    BuiltinVar[BuiltinVar["CatchError"] = 2] = "CatchError";
-    BuiltinVar[BuiltinVar["CatchStack"] = 3] = "CatchStack";
-})(BuiltinVar || (BuiltinVar = {}));
 class ReadVarExpr extends Expression {
     constructor(name, type, sourceSpan) {
         super(type, sourceSpan);
-        if (typeof name === 'string') {
-            this.name = name;
-            this.builtin = null;
-        }
-        else {
-            this.name = null;
-            this.builtin = name;
-        }
+        this.name = name;
     }
     isEquivalent(e) {
-        return e instanceof ReadVarExpr && this.name === e.name && this.builtin === e.builtin;
+        return e instanceof ReadVarExpr && this.name === e.name;
     }
     isConstant() {
         return false;
@@ -1665,9 +1507,6 @@ class ReadVarExpr extends Expression {
         return visitor.visitReadVarExpr(this, context);
     }
     set(value) {
-        if (!this.name) {
-            throw new Error(`Built in variable ${this.builtin} can not be assigned to.`);
-        }
         return new WriteVarExpr(this.name, value, null, this.sourceSpan);
     }
 }
@@ -1759,12 +1598,6 @@ class WritePropExpr extends Expression {
         return visitor.visitWritePropExpr(this, context);
     }
 }
-var BuiltinMethod;
-(function (BuiltinMethod) {
-    BuiltinMethod[BuiltinMethod["ConcatArray"] = 0] = "ConcatArray";
-    BuiltinMethod[BuiltinMethod["SubscribeObservable"] = 1] = "SubscribeObservable";
-    BuiltinMethod[BuiltinMethod["Bind"] = 2] = "Bind";
-})(BuiltinMethod || (BuiltinMethod = {}));
 class InvokeFunctionExpr extends Expression {
     constructor(fn, args, type, sourceSpan, pure = false) {
         super(type, sourceSpan);
@@ -2038,36 +1871,6 @@ class NotExpr extends Expression {
         return visitor.visitNotExpr(this, context);
     }
 }
-class AssertNotNull extends Expression {
-    constructor(condition, sourceSpan) {
-        super(condition.type, sourceSpan);
-        this.condition = condition;
-    }
-    isEquivalent(e) {
-        return e instanceof AssertNotNull && this.condition.isEquivalent(e.condition);
-    }
-    isConstant() {
-        return false;
-    }
-    visitExpression(visitor, context) {
-        return visitor.visitAssertNotNullExpr(this, context);
-    }
-}
-class CastExpr extends Expression {
-    constructor(value, type, sourceSpan) {
-        super(type, sourceSpan);
-        this.value = value;
-    }
-    isEquivalent(e) {
-        return e instanceof CastExpr && this.value.isEquivalent(e.value);
-    }
-    isConstant() {
-        return false;
-    }
-    visitExpression(visitor, context) {
-        return visitor.visitCastExpr(this, context);
-    }
-}
 class FnParam {
     constructor(name, type = null) {
         this.name = name;
@@ -2234,10 +2037,6 @@ class CommaExpr extends Expression {
         return visitor.visitCommaExpr(this, context);
     }
 }
-const THIS_EXPR = new ReadVarExpr(BuiltinVar.This, null, null);
-const SUPER_EXPR = new ReadVarExpr(BuiltinVar.Super, null, null);
-const CATCH_ERROR_VAR$1 = new ReadVarExpr(BuiltinVar.CatchError, null, null);
-const CATCH_STACK_VAR$1 = new ReadVarExpr(BuiltinVar.CatchStack, null, null);
 const NULL_EXPR = new LiteralExpr(null, null, null);
 const TYPED_NULL_EXPR = new LiteralExpr(null, INFERRED_TYPE, null);
 //// Statements
@@ -2336,68 +2135,6 @@ class ReturnStatement extends Statement {
         return visitor.visitReturnStmt(this, context);
     }
 }
-class AbstractClassPart {
-    constructor(type = null, modifiers = []) {
-        this.type = type;
-        this.modifiers = modifiers;
-    }
-    hasModifier(modifier) {
-        return this.modifiers.indexOf(modifier) !== -1;
-    }
-}
-class ClassField extends AbstractClassPart {
-    constructor(name, type, modifiers, initializer) {
-        super(type, modifiers);
-        this.name = name;
-        this.initializer = initializer;
-    }
-    isEquivalent(f) {
-        return this.name === f.name;
-    }
-}
-class ClassMethod extends AbstractClassPart {
-    constructor(name, params, body, type, modifiers) {
-        super(type, modifiers);
-        this.name = name;
-        this.params = params;
-        this.body = body;
-    }
-    isEquivalent(m) {
-        return this.name === m.name && areAllEquivalent(this.body, m.body);
-    }
-}
-class ClassGetter extends AbstractClassPart {
-    constructor(name, body, type, modifiers) {
-        super(type, modifiers);
-        this.name = name;
-        this.body = body;
-    }
-    isEquivalent(m) {
-        return this.name === m.name && areAllEquivalent(this.body, m.body);
-    }
-}
-class ClassStmt extends Statement {
-    constructor(name, parent, fields, getters, constructorMethod, methods, modifiers, sourceSpan, leadingComments) {
-        super(modifiers, sourceSpan, leadingComments);
-        this.name = name;
-        this.parent = parent;
-        this.fields = fields;
-        this.getters = getters;
-        this.constructorMethod = constructorMethod;
-        this.methods = methods;
-    }
-    isEquivalent(stmt) {
-        return stmt instanceof ClassStmt && this.name === stmt.name &&
-            nullSafeIsEquivalent(this.parent, stmt.parent) &&
-            areAllEquivalent(this.fields, stmt.fields) &&
-            areAllEquivalent(this.getters, stmt.getters) &&
-            this.constructorMethod.isEquivalent(stmt.constructorMethod) &&
-            areAllEquivalent(this.methods, stmt.methods);
-    }
-    visitStatement(visitor, context) {
-        return visitor.visitDeclareClassStmt(this, context);
-    }
-}
 class IfStmt extends Statement {
     constructor(condition, trueCase, falseCase = [], sourceSpan, leadingComments) {
         super([], sourceSpan, leadingComments);
@@ -2412,150 +2149,6 @@ class IfStmt extends Statement {
     }
     visitStatement(visitor, context) {
         return visitor.visitIfStmt(this, context);
-    }
-}
-class TryCatchStmt extends Statement {
-    constructor(bodyStmts, catchStmts, sourceSpan = null, leadingComments) {
-        super([], sourceSpan, leadingComments);
-        this.bodyStmts = bodyStmts;
-        this.catchStmts = catchStmts;
-    }
-    isEquivalent(stmt) {
-        return stmt instanceof TryCatchStmt && areAllEquivalent(this.bodyStmts, stmt.bodyStmts) &&
-            areAllEquivalent(this.catchStmts, stmt.catchStmts);
-    }
-    visitStatement(visitor, context) {
-        return visitor.visitTryCatchStmt(this, context);
-    }
-}
-class ThrowStmt extends Statement {
-    constructor(error, sourceSpan = null, leadingComments) {
-        super([], sourceSpan, leadingComments);
-        this.error = error;
-    }
-    isEquivalent(stmt) {
-        return stmt instanceof TryCatchStmt && this.error.isEquivalent(stmt.error);
-    }
-    visitStatement(visitor, context) {
-        return visitor.visitThrowStmt(this, context);
-    }
-}
-class AstTransformer$1 {
-    transformExpr(expr, context) {
-        return expr;
-    }
-    transformStmt(stmt, context) {
-        return stmt;
-    }
-    visitReadVarExpr(ast, context) {
-        return this.transformExpr(ast, context);
-    }
-    visitWrappedNodeExpr(ast, context) {
-        return this.transformExpr(ast, context);
-    }
-    visitTypeofExpr(expr, context) {
-        return this.transformExpr(new TypeofExpr(expr.expr.visitExpression(this, context), expr.type, expr.sourceSpan), context);
-    }
-    visitWriteVarExpr(expr, context) {
-        return this.transformExpr(new WriteVarExpr(expr.name, expr.value.visitExpression(this, context), expr.type, expr.sourceSpan), context);
-    }
-    visitWriteKeyExpr(expr, context) {
-        return this.transformExpr(new WriteKeyExpr(expr.receiver.visitExpression(this, context), expr.index.visitExpression(this, context), expr.value.visitExpression(this, context), expr.type, expr.sourceSpan), context);
-    }
-    visitWritePropExpr(expr, context) {
-        return this.transformExpr(new WritePropExpr(expr.receiver.visitExpression(this, context), expr.name, expr.value.visitExpression(this, context), expr.type, expr.sourceSpan), context);
-    }
-    visitInvokeFunctionExpr(ast, context) {
-        return this.transformExpr(new InvokeFunctionExpr(ast.fn.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan), context);
-    }
-    visitTaggedTemplateExpr(ast, context) {
-        return this.transformExpr(new TaggedTemplateExpr(ast.tag.visitExpression(this, context), new TemplateLiteral(ast.template.elements, ast.template.expressions.map((e) => e.visitExpression(this, context))), ast.type, ast.sourceSpan), context);
-    }
-    visitInstantiateExpr(ast, context) {
-        return this.transformExpr(new InstantiateExpr(ast.classExpr.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan), context);
-    }
-    visitLiteralExpr(ast, context) {
-        return this.transformExpr(ast, context);
-    }
-    visitLocalizedString(ast, context) {
-        return this.transformExpr(new LocalizedString(ast.metaBlock, ast.messageParts, ast.placeHolderNames, this.visitAllExpressions(ast.expressions, context), ast.sourceSpan), context);
-    }
-    visitExternalExpr(ast, context) {
-        return this.transformExpr(ast, context);
-    }
-    visitConditionalExpr(ast, context) {
-        return this.transformExpr(new ConditionalExpr(ast.condition.visitExpression(this, context), ast.trueCase.visitExpression(this, context), ast.falseCase.visitExpression(this, context), ast.type, ast.sourceSpan), context);
-    }
-    visitNotExpr(ast, context) {
-        return this.transformExpr(new NotExpr(ast.condition.visitExpression(this, context), ast.sourceSpan), context);
-    }
-    visitAssertNotNullExpr(ast, context) {
-        return this.transformExpr(new AssertNotNull(ast.condition.visitExpression(this, context), ast.sourceSpan), context);
-    }
-    visitCastExpr(ast, context) {
-        return this.transformExpr(new CastExpr(ast.value.visitExpression(this, context), ast.type, ast.sourceSpan), context);
-    }
-    visitFunctionExpr(ast, context) {
-        return this.transformExpr(new FunctionExpr(ast.params, this.visitAllStatements(ast.statements, context), ast.type, ast.sourceSpan), context);
-    }
-    visitUnaryOperatorExpr(ast, context) {
-        return this.transformExpr(new UnaryOperatorExpr(ast.operator, ast.expr.visitExpression(this, context), ast.type, ast.sourceSpan), context);
-    }
-    visitBinaryOperatorExpr(ast, context) {
-        return this.transformExpr(new BinaryOperatorExpr(ast.operator, ast.lhs.visitExpression(this, context), ast.rhs.visitExpression(this, context), ast.type, ast.sourceSpan), context);
-    }
-    visitReadPropExpr(ast, context) {
-        return this.transformExpr(new ReadPropExpr(ast.receiver.visitExpression(this, context), ast.name, ast.type, ast.sourceSpan), context);
-    }
-    visitReadKeyExpr(ast, context) {
-        return this.transformExpr(new ReadKeyExpr(ast.receiver.visitExpression(this, context), ast.index.visitExpression(this, context), ast.type, ast.sourceSpan), context);
-    }
-    visitLiteralArrayExpr(ast, context) {
-        return this.transformExpr(new LiteralArrayExpr(this.visitAllExpressions(ast.entries, context), ast.type, ast.sourceSpan), context);
-    }
-    visitLiteralMapExpr(ast, context) {
-        const entries = ast.entries.map((entry) => new LiteralMapEntry(entry.key, entry.value.visitExpression(this, context), entry.quoted));
-        const mapType = new MapType(ast.valueType);
-        return this.transformExpr(new LiteralMapExpr(entries, mapType, ast.sourceSpan), context);
-    }
-    visitCommaExpr(ast, context) {
-        return this.transformExpr(new CommaExpr(this.visitAllExpressions(ast.parts, context), ast.sourceSpan), context);
-    }
-    visitAllExpressions(exprs, context) {
-        return exprs.map(expr => expr.visitExpression(this, context));
-    }
-    visitDeclareVarStmt(stmt, context) {
-        const value = stmt.value && stmt.value.visitExpression(this, context);
-        return this.transformStmt(new DeclareVarStmt(stmt.name, value, stmt.type, stmt.modifiers, stmt.sourceSpan, stmt.leadingComments), context);
-    }
-    visitDeclareFunctionStmt(stmt, context) {
-        return this.transformStmt(new DeclareFunctionStmt(stmt.name, stmt.params, this.visitAllStatements(stmt.statements, context), stmt.type, stmt.modifiers, stmt.sourceSpan, stmt.leadingComments), context);
-    }
-    visitExpressionStmt(stmt, context) {
-        return this.transformStmt(new ExpressionStatement(stmt.expr.visitExpression(this, context), stmt.sourceSpan, stmt.leadingComments), context);
-    }
-    visitReturnStmt(stmt, context) {
-        return this.transformStmt(new ReturnStatement(stmt.value.visitExpression(this, context), stmt.sourceSpan, stmt.leadingComments), context);
-    }
-    visitDeclareClassStmt(stmt, context) {
-        const parent = stmt.parent.visitExpression(this, context);
-        const getters = stmt.getters.map(getter => new ClassGetter(getter.name, this.visitAllStatements(getter.body, context), getter.type, getter.modifiers));
-        const ctorMethod = stmt.constructorMethod &&
-            new ClassMethod(stmt.constructorMethod.name, stmt.constructorMethod.params, this.visitAllStatements(stmt.constructorMethod.body, context), stmt.constructorMethod.type, stmt.constructorMethod.modifiers);
-        const methods = stmt.methods.map(method => new ClassMethod(method.name, method.params, this.visitAllStatements(method.body, context), method.type, method.modifiers));
-        return this.transformStmt(new ClassStmt(stmt.name, parent, stmt.fields, getters, ctorMethod, methods, stmt.modifiers, stmt.sourceSpan), context);
-    }
-    visitIfStmt(stmt, context) {
-        return this.transformStmt(new IfStmt(stmt.condition.visitExpression(this, context), this.visitAllStatements(stmt.trueCase, context), this.visitAllStatements(stmt.falseCase, context), stmt.sourceSpan, stmt.leadingComments), context);
-    }
-    visitTryCatchStmt(stmt, context) {
-        return this.transformStmt(new TryCatchStmt(this.visitAllStatements(stmt.bodyStmts, context), this.visitAllStatements(stmt.catchStmts, context), stmt.sourceSpan, stmt.leadingComments), context);
-    }
-    visitThrowStmt(stmt, context) {
-        return this.transformStmt(new ThrowStmt(stmt.error.visitExpression(this, context), stmt.sourceSpan, stmt.leadingComments), context);
-    }
-    visitAllStatements(stmts, context) {
-        return stmts.map(stmt => stmt.visitStatement(this, context));
     }
 }
 class RecursiveAstVisitor$1 {
@@ -2645,14 +2238,6 @@ class RecursiveAstVisitor$1 {
         ast.condition.visitExpression(this, context);
         return this.visitExpression(ast, context);
     }
-    visitAssertNotNullExpr(ast, context) {
-        ast.condition.visitExpression(this, context);
-        return this.visitExpression(ast, context);
-    }
-    visitCastExpr(ast, context) {
-        ast.value.visitExpression(this, context);
-        return this.visitExpression(ast, context);
-    }
     visitFunctionExpr(ast, context) {
         this.visitAllStatements(ast.statements, context);
         return this.visitExpression(ast, context);
@@ -2714,113 +2299,14 @@ class RecursiveAstVisitor$1 {
         stmt.value.visitExpression(this, context);
         return stmt;
     }
-    visitDeclareClassStmt(stmt, context) {
-        stmt.parent.visitExpression(this, context);
-        stmt.getters.forEach(getter => this.visitAllStatements(getter.body, context));
-        if (stmt.constructorMethod) {
-            this.visitAllStatements(stmt.constructorMethod.body, context);
-        }
-        stmt.methods.forEach(method => this.visitAllStatements(method.body, context));
-        return stmt;
-    }
     visitIfStmt(stmt, context) {
         stmt.condition.visitExpression(this, context);
         this.visitAllStatements(stmt.trueCase, context);
         this.visitAllStatements(stmt.falseCase, context);
         return stmt;
     }
-    visitTryCatchStmt(stmt, context) {
-        this.visitAllStatements(stmt.bodyStmts, context);
-        this.visitAllStatements(stmt.catchStmts, context);
-        return stmt;
-    }
-    visitThrowStmt(stmt, context) {
-        stmt.error.visitExpression(this, context);
-        return stmt;
-    }
     visitAllStatements(stmts, context) {
         stmts.forEach(stmt => stmt.visitStatement(this, context));
-    }
-}
-function findReadVarNames(stmts) {
-    const visitor = new _ReadVarVisitor();
-    visitor.visitAllStatements(stmts, null);
-    return visitor.varNames;
-}
-class _ReadVarVisitor extends RecursiveAstVisitor$1 {
-    constructor() {
-        super(...arguments);
-        this.varNames = new Set();
-    }
-    visitDeclareFunctionStmt(stmt, context) {
-        // Don't descend into nested functions
-        return stmt;
-    }
-    visitDeclareClassStmt(stmt, context) {
-        // Don't descend into nested classes
-        return stmt;
-    }
-    visitReadVarExpr(ast, context) {
-        if (ast.name) {
-            this.varNames.add(ast.name);
-        }
-        return null;
-    }
-}
-function collectExternalReferences(stmts) {
-    const visitor = new _FindExternalReferencesVisitor();
-    visitor.visitAllStatements(stmts, null);
-    return visitor.externalReferences;
-}
-class _FindExternalReferencesVisitor extends RecursiveAstVisitor$1 {
-    constructor() {
-        super(...arguments);
-        this.externalReferences = [];
-    }
-    visitExternalExpr(e, context) {
-        this.externalReferences.push(e.value);
-        return super.visitExternalExpr(e, context);
-    }
-}
-function applySourceSpanToStatementIfNeeded(stmt, sourceSpan) {
-    if (!sourceSpan) {
-        return stmt;
-    }
-    const transformer = new _ApplySourceSpanTransformer(sourceSpan);
-    return stmt.visitStatement(transformer, null);
-}
-function applySourceSpanToExpressionIfNeeded(expr, sourceSpan) {
-    if (!sourceSpan) {
-        return expr;
-    }
-    const transformer = new _ApplySourceSpanTransformer(sourceSpan);
-    return expr.visitExpression(transformer, null);
-}
-class _ApplySourceSpanTransformer extends AstTransformer$1 {
-    constructor(sourceSpan) {
-        super();
-        this.sourceSpan = sourceSpan;
-    }
-    _clone(obj) {
-        const clone = Object.create(obj.constructor.prototype);
-        for (let prop of Object.keys(obj)) {
-            clone[prop] = obj[prop];
-        }
-        return clone;
-    }
-    transformExpr(expr, context) {
-        if (!expr.sourceSpan) {
-            expr = this._clone(expr);
-            expr.sourceSpan = this.sourceSpan;
-        }
-        return expr;
-    }
-    transformStmt(stmt, context) {
-        if (!stmt.sourceSpan) {
-            stmt = this._clone(stmt);
-            stmt.sourceSpan = this.sourceSpan;
-        }
-        return stmt;
     }
 }
 function leadingComment(text, multiline = false, trailingNewline = true) {
@@ -2855,9 +2341,6 @@ function unary(operator, expr, type, sourceSpan) {
 }
 function not(expr, sourceSpan) {
     return new NotExpr(expr, sourceSpan);
-}
-function assertNotNull(expr, sourceSpan) {
-    return new AssertNotNull(expr, sourceSpan);
 }
 function fn(params, body, type, sourceSpan, name) {
     return new FunctionExpr(params, body, type, sourceSpan, name);
@@ -2934,14 +2417,12 @@ var output_ast = /*#__PURE__*/Object.freeze({
     nullSafeIsEquivalent: nullSafeIsEquivalent,
     areAllEquivalent: areAllEquivalent,
     Expression: Expression,
-    get BuiltinVar () { return BuiltinVar; },
     ReadVarExpr: ReadVarExpr,
     TypeofExpr: TypeofExpr,
     WrappedNodeExpr: WrappedNodeExpr,
     WriteVarExpr: WriteVarExpr,
     WriteKeyExpr: WriteKeyExpr,
     WritePropExpr: WritePropExpr,
-    get BuiltinMethod () { return BuiltinMethod; },
     InvokeFunctionExpr: InvokeFunctionExpr,
     TaggedTemplateExpr: TaggedTemplateExpr,
     InstantiateExpr: InstantiateExpr,
@@ -2955,8 +2436,6 @@ var output_ast = /*#__PURE__*/Object.freeze({
     ExternalReference: ExternalReference,
     ConditionalExpr: ConditionalExpr,
     NotExpr: NotExpr,
-    AssertNotNull: AssertNotNull,
-    CastExpr: CastExpr,
     FnParam: FnParam,
     FunctionExpr: FunctionExpr,
     UnaryOperatorExpr: UnaryOperatorExpr,
@@ -2967,10 +2446,6 @@ var output_ast = /*#__PURE__*/Object.freeze({
     LiteralMapEntry: LiteralMapEntry,
     LiteralMapExpr: LiteralMapExpr,
     CommaExpr: CommaExpr,
-    THIS_EXPR: THIS_EXPR,
-    SUPER_EXPR: SUPER_EXPR,
-    CATCH_ERROR_VAR: CATCH_ERROR_VAR$1,
-    CATCH_STACK_VAR: CATCH_STACK_VAR$1,
     NULL_EXPR: NULL_EXPR,
     TYPED_NULL_EXPR: TYPED_NULL_EXPR,
     get StmtModifier () { return StmtModifier; },
@@ -2981,20 +2456,8 @@ var output_ast = /*#__PURE__*/Object.freeze({
     DeclareFunctionStmt: DeclareFunctionStmt,
     ExpressionStatement: ExpressionStatement,
     ReturnStatement: ReturnStatement,
-    AbstractClassPart: AbstractClassPart,
-    ClassField: ClassField,
-    ClassMethod: ClassMethod,
-    ClassGetter: ClassGetter,
-    ClassStmt: ClassStmt,
     IfStmt: IfStmt,
-    TryCatchStmt: TryCatchStmt,
-    ThrowStmt: ThrowStmt,
-    AstTransformer: AstTransformer$1,
     RecursiveAstVisitor: RecursiveAstVisitor$1,
-    findReadVarNames: findReadVarNames,
-    collectExternalReferences: collectExternalReferences,
-    applySourceSpanToStatementIfNeeded: applySourceSpanToStatementIfNeeded,
-    applySourceSpanToExpressionIfNeeded: applySourceSpanToExpressionIfNeeded,
     leadingComment: leadingComment,
     jsDocComment: jsDocComment,
     variable: variable,
@@ -3006,7 +2469,6 @@ var output_ast = /*#__PURE__*/Object.freeze({
     literalMap: literalMap,
     unary: unary,
     not: not,
-    assertNotNull: assertNotNull,
     fn: fn,
     ifStmt: ifStmt,
     taggedTemplate: taggedTemplate,
@@ -3091,10 +2553,6 @@ class ConstantPool {
         this.statements = [];
         this.literals = new Map();
         this.literalFactories = new Map();
-        this.injectorDefinitions = new Map();
-        this.directiveDefinitions = new Map();
-        this.componentDefinitions = new Map();
-        this.pipeDefinitions = new Map();
         this.nextNameIndex = 0;
     }
     getConstLiteral(literal, forceShared) {
@@ -3149,23 +2607,6 @@ class ConstantPool {
         }
         return fixup;
     }
-    getDefinition(type, kind, ctx, forceShared = false) {
-        const definitions = this.definitionsOf(kind);
-        let fixup = definitions.get(type);
-        let newValue = false;
-        if (!fixup) {
-            const property = this.propertyNameOf(kind);
-            fixup = new FixupExpression(ctx.importExpr(type).prop(property));
-            definitions.set(type, fixup);
-            newValue = true;
-        }
-        if ((!newValue && !fixup.shared) || (newValue && forceShared)) {
-            const name = this.freshName();
-            this.statements.push(variable(name).set(fixup.resolved).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
-            fixup.fixup(variable(name));
-        }
-        return fixup;
-    }
     getLiteralFactory(literal) {
         // Create a pure function that builds an array of a mix of constant and variable expressions
         if (literal instanceof LiteralArrayExpr) {
@@ -3212,30 +2653,6 @@ class ConstantPool {
      */
     uniqueName(prefix) {
         return `${prefix}${this.nextNameIndex++}`;
-    }
-    definitionsOf(kind) {
-        switch (kind) {
-            case 2 /* Component */:
-                return this.componentDefinitions;
-            case 1 /* Directive */:
-                return this.directiveDefinitions;
-            case 0 /* Injector */:
-                return this.injectorDefinitions;
-            case 3 /* Pipe */:
-                return this.pipeDefinitions;
-        }
-    }
-    propertyNameOf(kind) {
-        switch (kind) {
-            case 2 /* Component */:
-                return 'ɵcmp';
-            case 1 /* Directive */:
-                return 'ɵdir';
-            case 0 /* Injector */:
-                return 'ɵinj';
-            case 3 /* Pipe */:
-                return 'ɵpipe';
-        }
     }
     freshName() {
         return this.uniqueName(CONSTANT_PREFIX);
@@ -3674,8 +3091,6 @@ function toBase64Digit(value) {
 const _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
 const _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
 const _INDENT_WITH = '  ';
-const CATCH_ERROR_VAR = variable('error', null, null);
-const CATCH_STACK_VAR = variable('stack', null, null);
 class _EmittedLine {
     constructor(indent) {
         this.indent = indent;
@@ -3687,8 +3102,6 @@ class _EmittedLine {
 class EmitterVisitorContext {
     constructor(_indent) {
         this._indent = _indent;
-        this._classes = [];
-        this._preambleLineCount = 0;
         this._lines = [new _EmittedLine(_indent)];
     }
     static createRoot() {
@@ -3736,15 +3149,6 @@ class EmitterVisitorContext {
         if (this.lineIsEmpty()) {
             this._currentLine.indent = this._indent;
         }
-    }
-    pushClass(clazz) {
-        this._classes.push(clazz);
-    }
-    popClass() {
-        return this._classes.pop();
-    }
-    get currentClass() {
-        return this._classes.length > 0 ? this._classes[this._classes.length - 1] : null;
     }
     toSource() {
         return this.sourceLines
@@ -3802,11 +3206,8 @@ class EmitterVisitorContext {
         });
         return map;
     }
-    setPreambleLineCount(count) {
-        return this._preambleLineCount = count;
-    }
     spanOf(line, column) {
-        const emittedLine = this._lines[line - this._preambleLineCount];
+        const emittedLine = this._lines[line];
         if (emittedLine) {
             let columnsLeft = column - _createIndent(emittedLine.indent).length;
             for (let partIndex = 0; partIndex < emittedLine.parts.length; partIndex++) {
@@ -3894,13 +3295,6 @@ class AbstractEmitterVisitor {
         ctx.println(stmt, `}`);
         return null;
     }
-    visitThrowStmt(stmt, ctx) {
-        this.printLeadingComments(stmt, ctx);
-        ctx.print(stmt, `throw `);
-        stmt.error.visitExpression(this, ctx);
-        ctx.println(stmt, `;`);
-        return null;
-    }
     visitWriteVarExpr(expr, ctx) {
         const lineWasEmpty = ctx.lineIsEmpty();
         if (!lineWasEmpty) {
@@ -3967,26 +3361,7 @@ class AbstractEmitterVisitor {
         expr.expr.visitExpression(this, ctx);
     }
     visitReadVarExpr(ast, ctx) {
-        let varName = ast.name;
-        if (ast.builtin != null) {
-            switch (ast.builtin) {
-                case BuiltinVar.Super:
-                    varName = 'super';
-                    break;
-                case BuiltinVar.This:
-                    varName = 'this';
-                    break;
-                case BuiltinVar.CatchError:
-                    varName = CATCH_ERROR_VAR.name;
-                    break;
-                case BuiltinVar.CatchStack:
-                    varName = CATCH_STACK_VAR.name;
-                    break;
-                default:
-                    throw new Error(`Unknown builtin variable ${ast.builtin}`);
-            }
-        }
-        ctx.print(ast, varName);
+        ctx.print(ast, ast.name);
         return null;
     }
     visitInstantiateExpr(ast, ctx) {
@@ -4030,10 +3405,6 @@ class AbstractEmitterVisitor {
     }
     visitNotExpr(ast, ctx) {
         ctx.print(ast, '!');
-        ast.condition.visitExpression(this, ctx);
-        return null;
-    }
-    visitAssertNotNullExpr(ast, ctx) {
         ast.condition.visitExpression(this, ctx);
         return null;
     }
@@ -5509,12 +4880,6 @@ function temporaryAllocator(statements, name) {
         return temp;
     };
 }
-function unsupported(feature) {
-    if (this) {
-        throw new Error(`Builder ${this.constructor.name} doesn't support ${feature} yet`);
-    }
-    throw new Error(`Feature ${feature} is not supported yet`);
-}
 function invalid(arg) {
     throw new Error(`Invalid state: Visitor ${this.constructor.name} doesn't handle ${arg.constructor.name}`);
 }
@@ -5813,19 +5178,6 @@ function createFactoryFunction(type) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-function assertArrayOfStrings(identifier, value) {
-    if (value == null) {
-        return;
-    }
-    if (!Array.isArray(value)) {
-        throw new Error(`Expected '${identifier}' to be an array of strings.`);
-    }
-    for (let i = 0; i < value.length; i += 1) {
-        if (typeof value[i] !== 'string') {
-            throw new Error(`Expected '${identifier}' to be an array of strings.`);
-        }
-    }
-}
 const UNUSABLE_INTERPOLATION_REGEXPS = [
     /^\s*$/,
     /[<>]/,
@@ -6125,21 +5477,6 @@ function r3JitTypeSourceSpan(kind, typeName, sourceUrl) {
     const sourceFile = new ParseSourceFile('', sourceFileName);
     return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
 }
-function syntaxError(msg, parseErrors) {
-    const error = Error(msg);
-    error[ERROR_SYNTAX_ERROR] = true;
-    if (parseErrors)
-        error[ERROR_PARSE_ERRORS] = parseErrors;
-    return error;
-}
-const ERROR_SYNTAX_ERROR = 'ngSyntaxError';
-const ERROR_PARSE_ERRORS = 'ngParseErrors';
-function isSyntaxError(error) {
-    return error[ERROR_SYNTAX_ERROR];
-}
-function getParseErrors(error) {
-    return error[ERROR_PARSE_ERRORS] || [];
-}
 let _anonymousTypeIndex = 0;
 function identifierName(compileIdentifier) {
     if (!compileIdentifier || !compileIdentifier.reference) {
@@ -6193,71 +5530,8 @@ class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
     constructor() {
         super(false);
     }
-    visitDeclareClassStmt(stmt, ctx) {
-        ctx.pushClass(stmt);
-        this._visitClassConstructor(stmt, ctx);
-        if (stmt.parent != null) {
-            ctx.print(stmt, `${stmt.name}.prototype = Object.create(`);
-            stmt.parent.visitExpression(this, ctx);
-            ctx.println(stmt, `.prototype);`);
-        }
-        stmt.getters.forEach((getter) => this._visitClassGetter(stmt, getter, ctx));
-        stmt.methods.forEach((method) => this._visitClassMethod(stmt, method, ctx));
-        ctx.popClass();
-        return null;
-    }
-    _visitClassConstructor(stmt, ctx) {
-        ctx.print(stmt, `function ${stmt.name}(`);
-        if (stmt.constructorMethod != null) {
-            this._visitParams(stmt.constructorMethod.params, ctx);
-        }
-        ctx.println(stmt, `) {`);
-        ctx.incIndent();
-        if (stmt.constructorMethod != null) {
-            if (stmt.constructorMethod.body.length > 0) {
-                ctx.println(stmt, `var self = this;`);
-                this.visitAllStatements(stmt.constructorMethod.body, ctx);
-            }
-        }
-        ctx.decIndent();
-        ctx.println(stmt, `}`);
-    }
-    _visitClassGetter(stmt, getter, ctx) {
-        ctx.println(stmt, `Object.defineProperty(${stmt.name}.prototype, '${getter.name}', { get: function() {`);
-        ctx.incIndent();
-        if (getter.body.length > 0) {
-            ctx.println(stmt, `var self = this;`);
-            this.visitAllStatements(getter.body, ctx);
-        }
-        ctx.decIndent();
-        ctx.println(stmt, `}});`);
-    }
-    _visitClassMethod(stmt, method, ctx) {
-        ctx.print(stmt, `${stmt.name}.prototype.${method.name} = function(`);
-        this._visitParams(method.params, ctx);
-        ctx.println(stmt, `) {`);
-        ctx.incIndent();
-        if (method.body.length > 0) {
-            ctx.println(stmt, `var self = this;`);
-            this.visitAllStatements(method.body, ctx);
-        }
-        ctx.decIndent();
-        ctx.println(stmt, `};`);
-    }
     visitWrappedNodeExpr(ast, ctx) {
         throw new Error('Cannot emit a WrappedNodeExpr in Javascript.');
-    }
-    visitReadVarExpr(ast, ctx) {
-        if (ast.builtin === BuiltinVar.This) {
-            ctx.print(ast, 'self');
-        }
-        else if (ast.builtin === BuiltinVar.Super) {
-            throw new Error(`'super' needs to be handled at a parent ast node, not at the variable level!`);
-        }
-        else {
-            super.visitReadVarExpr(ast, ctx);
-        }
-        return null;
     }
     visitDeclareVarStmt(stmt, ctx) {
         ctx.print(stmt, `var ${stmt.name}`);
@@ -6266,26 +5540,6 @@ class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
             stmt.value.visitExpression(this, ctx);
         }
         ctx.println(stmt, `;`);
-        return null;
-    }
-    visitCastExpr(ast, ctx) {
-        ast.value.visitExpression(this, ctx);
-        return null;
-    }
-    visitInvokeFunctionExpr(expr, ctx) {
-        const fnExpr = expr.fn;
-        if (fnExpr instanceof ReadVarExpr && fnExpr.builtin === BuiltinVar.Super) {
-            ctx.currentClass.parent.visitExpression(this, ctx);
-            ctx.print(expr, `.call(this`);
-            if (expr.args.length > 0) {
-                ctx.print(expr, `, `);
-                this.visitAllExpressions(expr.args, ctx, ',');
-            }
-            ctx.print(expr, `)`);
-        }
-        else {
-            super.visitInvokeFunctionExpr(expr, ctx);
-        }
         return null;
     }
     visitTaggedTemplateExpr(ast, ctx) {
@@ -6329,21 +5583,6 @@ class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
         ctx.println(stmt, `}`);
         return null;
     }
-    visitTryCatchStmt(stmt, ctx) {
-        ctx.println(stmt, `try {`);
-        ctx.incIndent();
-        this.visitAllStatements(stmt.bodyStmts, ctx);
-        ctx.decIndent();
-        ctx.println(stmt, `} catch (${CATCH_ERROR_VAR.name}) {`);
-        ctx.incIndent();
-        const catchStmts = [CATCH_STACK_VAR.set(CATCH_ERROR_VAR.prop('stack')).toDeclStmt(null, [
-                StmtModifier.Final
-            ])].concat(stmt.catchStmts);
-        this.visitAllStatements(catchStmts, ctx);
-        ctx.decIndent();
-        ctx.println(stmt, `}`);
-        return null;
-    }
     visitLocalizedString(ast, ctx) {
         // The following convoluted piece of code is effectively the downlevelled equivalent of
         // ```
@@ -6369,23 +5608,6 @@ class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
     }
     _visitParams(params, ctx) {
         this.visitAllObjects(param => ctx.print(null, param.name), params, ctx, ',');
-    }
-    getBuiltinMethodName(method) {
-        let name;
-        switch (method) {
-            case BuiltinMethod.ConcatArray:
-                name = 'concat';
-                break;
-            case BuiltinMethod.SubscribeObservable:
-                name = 'subscribe';
-                break;
-            case BuiltinMethod.Bind:
-                name = 'bind';
-                break;
-            default:
-                throw new Error(`Unknown builtin method: ${method}`);
-        }
-        return name;
     }
 }
 
@@ -6599,12 +5821,6 @@ class JitEmitterVisitor extends AbstractJsEmitterVisitor {
             this._evalExportedVars.push(stmt.name);
         }
         return super.visitDeclareFunctionStmt(stmt, ctx);
-    }
-    visitDeclareClassStmt(stmt, ctx) {
-        if (stmt.hasModifier(StmtModifier.Exported)) {
-            this._evalExportedVars.push(stmt.name);
-        }
-        return super.visitDeclareClassStmt(stmt, ctx);
     }
     _emitReferenceToExternal(ast, value, ctx) {
         let id = this._evalArgValues.indexOf(value);
@@ -7508,10 +6724,7 @@ class AstMemoryEfficientTransformer {
 }
 // Bindings
 class ParsedProperty {
-    constructor(name, expression, type, 
-    // TODO(FW-2095): `keySpan` should really be required but allows `undefined` so VE does
-    // not need to be updated. Make `keySpan` required when VE is removed.
-    sourceSpan, keySpan, valueSpan) {
+    constructor(name, expression, type, sourceSpan, keySpan, valueSpan) {
         this.name = name;
         this.expression = expression;
         this.type = type;
@@ -7531,9 +6744,7 @@ var ParsedPropertyType;
 class ParsedEvent {
     // Regular events have a target
     // Animation events have a phase
-    constructor(name, targetOrPhase, type, handler, sourceSpan, 
-    // TODO(FW-2095): keySpan should be required but was made optional to avoid changing VE
-    handlerSpan, keySpan) {
+    constructor(name, targetOrPhase, type, handler, sourceSpan, handlerSpan, keySpan) {
         this.name = name;
         this.targetOrPhase = targetOrPhase;
         this.type = type;
@@ -7670,46 +6881,6 @@ Identifiers.createComponentFactory = { name: 'ɵccf', moduleName: CORE };
 class EventHandlerVars {
 }
 EventHandlerVars.event = variable('$event');
-class ConvertActionBindingResult {
-    constructor(
-    /**
-     * Render2 compatible statements,
-     */
-    stmts, 
-    /**
-     * Variable name used with render2 compatible statements.
-     */
-    allowDefault) {
-        this.stmts = stmts;
-        this.allowDefault = allowDefault;
-        /**
-         * This is bit of a hack. It converts statements which render2 expects to statements which are
-         * expected by render3.
-         *
-         * Example: `<div click="doSomething($event)">` will generate:
-         *
-         * Render3:
-         * ```
-         * const pd_b:any = ((<any>ctx.doSomething($event)) !== false);
-         * return pd_b;
-         * ```
-         *
-         * but render2 expects:
-         * ```
-         * return ctx.doSomething($event);
-         * ```
-         */
-        // TODO(misko): remove this hack once we no longer support ViewEngine.
-        this.render3Stmts = stmts.map((statement) => {
-            if (statement instanceof DeclareVarStmt && statement.name == allowDefault.name &&
-                statement.value instanceof BinaryOperatorExpr) {
-                const lhs = statement.value.lhs;
-                return new ReturnStatement(lhs.value);
-            }
-            return statement;
-        });
-    }
-}
 /**
  * Converts the given expression AST into an executable output AST, assuming the expression is
  * used in an action binding (e.g. an event handler).
@@ -7746,20 +6917,14 @@ function convertActionBinding(localResolver, implicitReceiver, action, bindingId
         localResolver.notifyImplicitReceiverUse();
     }
     const lastIndex = actionStmts.length - 1;
-    let preventDefaultVar = null;
     if (lastIndex >= 0) {
         const lastStatement = actionStmts[lastIndex];
-        const returnExpr = convertStmtIntoExpression(lastStatement);
-        if (returnExpr) {
-            // Note: We need to cast the result of the method call to dynamic,
-            // as it might be a void method!
-            preventDefaultVar = createPreventDefaultVar(bindingId);
-            actionStmts[lastIndex] =
-                preventDefaultVar.set(returnExpr.cast(DYNAMIC_TYPE).notIdentical(literal(false)))
-                    .toDeclStmt(null, [StmtModifier.Final]);
+        // Ensure that the value of the last expression statement is returned
+        if (lastStatement instanceof ExpressionStatement) {
+            actionStmts[lastIndex] = new ReturnStatement(lastStatement.expr);
         }
     }
-    return new ConvertActionBindingResult(actionStmts, preventDefaultVar);
+    return actionStmts;
 }
 function convertPropertyBindingBuiltins(converterFactory, ast) {
     return convertBuiltins(converterFactory, ast);
@@ -7770,24 +6935,12 @@ class ConvertPropertyBindingResult {
         this.currValExpr = currValExpr;
     }
 }
-var BindingForm;
-(function (BindingForm) {
-    // The general form of binding expression, supports all expressions.
-    BindingForm[BindingForm["General"] = 0] = "General";
-    // Try to generate a simple binding (no temporaries or statements)
-    // otherwise generate a general binding
-    BindingForm[BindingForm["TrySimple"] = 1] = "TrySimple";
-    // Inlines assignment of temporaries into the generated expression. The result may still
-    // have statements attached for declarations of temporary variables.
-    // This is the only relevant form for Ivy, the other forms are only used in ViewEngine.
-    BindingForm[BindingForm["Expression"] = 2] = "Expression";
-})(BindingForm || (BindingForm = {}));
 /**
  * Converts the given expression AST into an executable output AST, assuming the expression
  * is used in property binding. The expression has to be preprocessed via
  * `convertPropertyBindingBuiltins`.
  */
-function convertPropertyBinding(localResolver, implicitReceiver, expressionWithoutBuiltins, bindingId, form, interpolationFunction) {
+function convertPropertyBinding(localResolver, implicitReceiver, expressionWithoutBuiltins, bindingId, interpolationFunction) {
     if (!localResolver) {
         localResolver = new DefaultLocalResolver();
     }
@@ -7797,15 +6950,7 @@ function convertPropertyBinding(localResolver, implicitReceiver, expressionWitho
     if (visitor.usesImplicitReceiver) {
         localResolver.notifyImplicitReceiverUse();
     }
-    if (visitor.temporaryCount === 0 && form == BindingForm.TrySimple) {
-        return new ConvertPropertyBindingResult([], outputExpr);
-    }
-    else if (form === BindingForm.Expression) {
-        return new ConvertPropertyBindingResult(stmts, outputExpr);
-    }
-    const currValExpr = createCurrValueExpr(bindingId);
-    stmts.push(currValExpr.set(outputExpr).toDeclStmt(DYNAMIC_TYPE, [StmtModifier.Final]));
-    return new ConvertPropertyBindingResult(stmts, currValExpr);
+    return new ConvertPropertyBindingResult(stmts, outputExpr);
 }
 /**
  * Given some expression, such as a binding or interpolation expression, and a context expression to
@@ -8072,7 +7217,7 @@ class _AstToIrVisitor {
         return convertToStatementIfNeeded(mode, not(this._visit(ast.expression, _Mode.Expression)));
     }
     visitNonNullAssert(ast, mode) {
-        return convertToStatementIfNeeded(mode, assertNotNull(this._visit(ast.expression, _Mode.Expression)));
+        return convertToStatementIfNeeded(mode, this._visit(ast.expression, _Mode.Expression));
     }
     visitPropertyRead(ast, mode) {
         const leftMostSafe = this.leftMostSafeNode(ast);
@@ -8159,8 +7304,7 @@ class _AstToIrVisitor {
             if (convertedArgs.length !== 1) {
                 throw new Error(`Invalid call to $any, expected 1 argument but received ${convertedArgs.length || 'none'}`);
             }
-            return convertToStatementIfNeeded(mode, convertedArgs[0]
-                .cast(DYNAMIC_TYPE, this.convertSourceSpan(ast.span)));
+            return convertToStatementIfNeeded(mode, convertedArgs[0]);
         }
         const call = this._visit(receiver, _Mode.Expression)
             .callFn(convertedArgs, this.convertSourceSpan(ast.span));
@@ -8467,21 +7611,6 @@ class DefaultLocalResolver {
         }
         return null;
     }
-}
-function createCurrValueExpr(bindingId) {
-    return variable(`currVal_${bindingId}`); // fix syntax highlighting: `
-}
-function createPreventDefaultVar(bindingId) {
-    return variable(`pd_${bindingId}`);
-}
-function convertStmtIntoExpression(stmt) {
-    if (stmt instanceof ExpressionStatement) {
-        return stmt.expr;
-    }
-    else if (stmt instanceof ReturnStatement) {
-        return stmt.value;
-    }
-    return null;
 }
 class BuiltinFunctionCall extends Call {
     constructor(span, sourceSpan, args, converter) {
@@ -10304,7 +9433,6 @@ class Parser$1 {
     constructor(_lexer) {
         this._lexer = _lexer;
         this.errors = [];
-        this.simpleExpressionChecker = SimpleExpressionChecker;
     }
     parseAction(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
         this._checkNoInterpolation(input, location, interpolationConfig);
@@ -10319,7 +9447,7 @@ class Parser$1 {
         return new ASTWithSource(ast, input, location, absoluteOffset, this.errors);
     }
     checkSimpleExpression(ast) {
-        const checker = new this.simpleExpressionChecker();
+        const checker = new SimpleExpressionChecker();
         ast.visit(checker);
         return checker.errors;
     }
@@ -10573,12 +9701,6 @@ class Parser$1 {
             }
             escapeCount = char === '\\' ? escapeCount + 1 : 0;
         }
-    }
-}
-class IvyParser extends Parser$1 {
-    constructor() {
-        super(...arguments);
-        this.simpleExpressionChecker = IvySimpleExpressionChecker;
     }
 }
 /** Describes a stateful context an expression parser is in. */
@@ -11463,114 +10585,13 @@ class _ParseAST {
         }
     }
 }
-class SimpleExpressionChecker {
-    constructor() {
-        this.errors = [];
-    }
-    visitImplicitReceiver(ast, context) { }
-    visitThisReceiver(ast, context) { }
-    visitInterpolation(ast, context) { }
-    visitLiteralPrimitive(ast, context) { }
-    visitPropertyRead(ast, context) { }
-    visitPropertyWrite(ast, context) { }
-    visitSafePropertyRead(ast, context) { }
-    visitCall(ast, context) { }
-    visitLiteralArray(ast, context) {
-        this.visitAll(ast.expressions, context);
-    }
-    visitLiteralMap(ast, context) {
-        this.visitAll(ast.values, context);
-    }
-    visitUnary(ast, context) { }
-    visitBinary(ast, context) { }
-    visitPrefixNot(ast, context) { }
-    visitNonNullAssert(ast, context) { }
-    visitConditional(ast, context) { }
-    visitPipe(ast, context) {
-        this.errors.push('pipes');
-    }
-    visitKeyedRead(ast, context) { }
-    visitKeyedWrite(ast, context) { }
-    visitAll(asts, context) {
-        return asts.map(node => node.visit(this, context));
-    }
-    visitChain(ast, context) { }
-    visitQuote(ast, context) { }
-    visitSafeKeyedRead(ast, context) { }
-}
-/**
- * This class implements SimpleExpressionChecker used in View Engine and performs more strict checks
- * to make sure host bindings do not contain pipes. In View Engine, having pipes in host bindings is
- * not supported as well, but in some cases (like `!(value | async)`) the error is not triggered at
- * compile time. In order to preserve View Engine behavior, more strict checks are introduced for
- * Ivy mode only.
- */
-class IvySimpleExpressionChecker extends RecursiveAstVisitor {
+class SimpleExpressionChecker extends RecursiveAstVisitor {
     constructor() {
         super(...arguments);
         this.errors = [];
     }
     visitPipe() {
         this.errors.push('pipes');
-    }
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * A path is an ordered set of elements. Typically a path is to  a
- * particular offset in a source file. The head of the list is the top
- * most node. The tail is the node that contains the offset directly.
- *
- * For example, the expression `a + b + c` might have an ast that looks
- * like:
- *     +
- *    / \
- *   a   +
- *      / \
- *     b   c
- *
- * The path to the node at offset 9 would be `['+' at 1-10, '+' at 7-10,
- * 'c' at 9-10]` and the path the node at offset 1 would be
- * `['+' at 1-10, 'a' at 1-2]`.
- */
-class AstPath {
-    constructor(path, position = -1) {
-        this.path = path;
-        this.position = position;
-    }
-    get empty() {
-        return !this.path || !this.path.length;
-    }
-    get head() {
-        return this.path[0];
-    }
-    get tail() {
-        return this.path[this.path.length - 1];
-    }
-    parentOf(node) {
-        return node && this.path[this.path.indexOf(node) - 1];
-    }
-    childOf(node) {
-        return this.path[this.path.indexOf(node) + 1];
-    }
-    first(ctor) {
-        for (let i = this.path.length - 1; i >= 0; i--) {
-            let item = this.path[i];
-            if (item instanceof ctor)
-                return item;
-        }
-    }
-    push(node) {
-        this.path.push(node);
-    }
-    pop() {
-        return this.path.pop();
     }
 }
 
@@ -11696,36 +10717,6 @@ class RecursiveVisitor {
         cb(visit);
         return Array.prototype.concat.apply([], results);
     }
-}
-function spanOf(ast) {
-    const start = ast.sourceSpan.start.offset;
-    let end = ast.sourceSpan.end.offset;
-    if (ast instanceof Element) {
-        if (ast.endSourceSpan) {
-            end = ast.endSourceSpan.end.offset;
-        }
-        else if (ast.children && ast.children.length) {
-            end = spanOf(ast.children[ast.children.length - 1]).end;
-        }
-    }
-    return { start, end };
-}
-function findNode(nodes, position) {
-    const path = [];
-    const visitor = new class extends RecursiveVisitor {
-        visit(ast, context) {
-            const span = spanOf(ast);
-            if (span.start <= position && position < span.end) {
-                path.push(ast);
-            }
-            else {
-                // Returning a value here will result in the children being skipped.
-                return true;
-            }
-        }
-    };
-    visitAll(visitor, nodes);
-    return new AstPath(path, position);
 }
 
 /**
@@ -15989,11 +14980,6 @@ class BindingParser {
         }
         return boundProps;
     }
-    createDirectiveHostPropertyAsts(hostProperties, elementSelector, sourceSpan) {
-        const boundProps = this.createBoundHostProperties(hostProperties, sourceSpan);
-        return boundProps &&
-            boundProps.map((prop) => this.createBoundElementProperty(elementSelector, prop));
-    }
     createDirectiveHostEventAsts(hostListeners, sourceSpan) {
         const targetEvents = [];
         for (const propName of Object.keys(hostListeners)) {
@@ -16112,10 +15098,7 @@ class BindingParser {
             return [];
         }
     }
-    parseLiteralAttr(name, value, sourceSpan, absoluteOffset, valueSpan, targetMatchableAttrs, 
-    // TODO(atscott): keySpan is only optional here so VE template parser implementation does not
-    // have to change This should be required when VE is removed.
-    targetProps, keySpan) {
+    parseLiteralAttr(name, value, sourceSpan, absoluteOffset, valueSpan, targetMatchableAttrs, targetProps, keySpan) {
         if (isAnimationLabel(name)) {
             name = name.substring(1);
             if (keySpan !== undefined) {
@@ -16131,10 +15114,7 @@ class BindingParser {
             targetProps.push(new ParsedProperty(name, this._exprParser.wrapLiteralPrimitive(value, '', absoluteOffset), ParsedPropertyType.LITERAL_ATTR, sourceSpan, keySpan, valueSpan));
         }
     }
-    parsePropertyBinding(name, expression, isHost, sourceSpan, absoluteOffset, valueSpan, 
-    // TODO(atscott): keySpan is only optional here so VE template parser implementation does not
-    // have to change This should be required when VE is removed.
-    targetMatchableAttrs, targetProps, keySpan) {
+    parsePropertyBinding(name, expression, isHost, sourceSpan, absoluteOffset, valueSpan, targetMatchableAttrs, targetProps, keySpan) {
         if (name.length === 0) {
             this._reportError(`Property name is missing in binding`, sourceSpan);
         }
@@ -16160,10 +15140,7 @@ class BindingParser {
             this._parsePropertyAst(name, this._parseBinding(expression, isHost, valueSpan || sourceSpan, absoluteOffset), sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
         }
     }
-    parsePropertyInterpolation(name, value, sourceSpan, valueSpan, targetMatchableAttrs, 
-    // TODO(atscott): keySpan is only optional here so VE template parser implementation does not
-    // have to change This should be required when VE is removed.
-    targetProps, keySpan) {
+    parsePropertyInterpolation(name, value, sourceSpan, valueSpan, targetMatchableAttrs, targetProps, keySpan) {
         const expr = this.parseInterpolation(value, valueSpan || sourceSpan);
         if (expr) {
             this._parsePropertyAst(name, expr, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
@@ -17907,7 +16884,7 @@ function prepareEventListenerParameters(eventAst, handlerName = null, scope = nu
     const implicitReceiverExpr = (scope === null || scope.bindingLevel === 0) ?
         variable(CONTEXT_NAME) :
         scope.getOrCreateSharedContextVar(0);
-    const bindingExpr = convertActionBinding(scope, implicitReceiverExpr, handler, 'b', () => error('Unexpected interpolation'), eventAst.handlerSpan, implicitReceiverAccesses, EVENT_BINDING_SCOPE_GLOBALS);
+    const bindingStatements = convertActionBinding(scope, implicitReceiverExpr, handler, 'b', () => error('Unexpected interpolation'), eventAst.handlerSpan, implicitReceiverAccesses, EVENT_BINDING_SCOPE_GLOBALS);
     const statements = [];
     if (scope) {
         // `variableDeclarations` needs to run first, because
@@ -17915,7 +16892,7 @@ function prepareEventListenerParameters(eventAst, handlerName = null, scope = nu
         statements.push(...scope.variableDeclarations());
         statements.unshift(...scope.restoreViewStatement());
     }
-    statements.push(...bindingExpr.render3Stmts);
+    statements.push(...bindingStatements);
     const eventName = type === 1 /* Animation */ ? prepareSyntheticListenerName(name, phase) : name;
     const fnName = handlerName && sanitizeIdentifier(handlerName);
     const fnArgs = [];
@@ -17978,7 +16955,6 @@ class TemplateDefinitionBuilder {
          * are defined after the template declaration.
          */
         this._nestedTemplateFns = [];
-        this._unsupported = unsupported;
         // i18n context local to this template
         this.i18n = null;
         // Number of slots to reserve for pureFunctions
@@ -18859,7 +17835,7 @@ class TemplateDefinitionBuilder {
             this._bindingScope.getOrCreateSharedContextVar(0);
     }
     convertPropertyBinding(value) {
-        const convertedPropertyBinding = convertPropertyBinding(this, this.getImplicitReceiverExpr(), value, this.bindingContext(), BindingForm.Expression, () => error('Unexpected interpolation'));
+        const convertedPropertyBinding = convertPropertyBinding(this, this.getImplicitReceiverExpr(), value, this.bindingContext(), () => error('Unexpected interpolation'));
         const valExpr = convertedPropertyBinding.currValExpr;
         this._tempVariables.push(...convertedPropertyBinding.stmts);
         return valExpr;
@@ -19566,7 +18542,7 @@ const elementRegistry = new DomElementSchemaRegistry();
  * Construct a `BindingParser` with a default configuration.
  */
 function makeBindingParser(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-    return new BindingParser(new IvyParser(new Lexer()), interpolationConfig, elementRegistry, []);
+    return new BindingParser(new Parser$1(new Lexer()), interpolationConfig, elementRegistry, []);
 }
 function resolveSanitizationFn(context, isAttribute) {
     switch (context) {
@@ -20141,7 +19117,7 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
     return null;
 }
 function bindingFn(implicit, value) {
-    return convertPropertyBinding(null, implicit, value, 'b', BindingForm.Expression, () => error('Unexpected interpolation'));
+    return convertPropertyBinding(null, implicit, value, 'b', () => error('Unexpected interpolation'));
 }
 function convertStylingCall(call, bindingContext, bindingFn) {
     return call.params(value => bindingFn(bindingContext, value).currValExpr);
@@ -20779,7 +19755,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('13.2.0-next.1+30.sha-d4015f7.with-local-changes');
+const VERSION = new Version('13.2.0-next.1+49.sha-c7ac2df.with-local-changes');
 
 /**
  * @license
@@ -22820,7 +21796,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('13.2.0-next.1+30.sha-d4015f7.with-local-changes'));
+    definitionMap.set('version', literal('13.2.0-next.1+49.sha-c7ac2df.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -22937,7 +21913,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('13.2.0-next.1+30.sha-d4015f7.with-local-changes'));
+    definitionMap.set('version', literal('13.2.0-next.1+49.sha-c7ac2df.with-local-changes'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -23158,7 +22134,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('13.2.0-next.1+30.sha-d4015f7.with-local-changes'));
+    definitionMap.set('version', literal('13.2.0-next.1+49.sha-c7ac2df.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -23200,7 +22176,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('13.2.0-next.1+30.sha-d4015f7.with-local-changes'));
+    definitionMap.set('version', literal('13.2.0-next.1+49.sha-c7ac2df.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -23258,7 +22234,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('13.2.0-next.1+30.sha-d4015f7.with-local-changes'));
+    definitionMap.set('version', literal('13.2.0-next.1+49.sha-c7ac2df.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -23295,7 +22271,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('13.2.0-next.1+30.sha-d4015f7.with-local-changes'));
+    definitionMap.set('version', literal('13.2.0-next.1+49.sha-c7ac2df.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -23353,7 +22329,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('13.2.0-next.1+30.sha-d4015f7.with-local-changes'));
+    definitionMap.set('version', literal('13.2.0-next.1+49.sha-c7ac2df.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
@@ -23403,5 +22379,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, AssertNotNull, AstMemoryEfficientTransformer, AstPath, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundElementProperty, BuiltinMethod, BuiltinType, BuiltinTypeName, BuiltinVar, CUSTOM_ELEMENTS_SCHEMA, Call, CastExpr, Chain, ChangeDetectionStrategy, ClassField, ClassMethod, ClassStmt, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, IvyParser, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, Quote, R3BoundTarget, Identifiers$1 as R3Identifiers, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, ThrowStmt, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element$1 as TmplAstElement, Icu$1 as TmplAstIcu, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token, TokenType, TreeError, TryCatchStmt, Type, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, collectExternalReferences, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, findNode, getHtmlTagDefinition, getNsPrefix, getParseErrors, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, isSyntaxError, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, syntaxError, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, Quote, R3BoundTarget, Identifiers$1 as R3Identifiers, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element$1 as TmplAstElement, Icu$1 as TmplAstIcu, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token, TokenType, TreeError, Type, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map

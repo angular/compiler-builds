@@ -17,35 +17,12 @@ export interface LocalResolver {
     globals?: Set<string>;
     maybeRestoreView(): void;
 }
-export declare class ConvertActionBindingResult {
-    /**
-     * Render2 compatible statements,
-     */
-    stmts: o.Statement[];
-    /**
-     * Variable name used with render2 compatible statements.
-     */
-    allowDefault: o.ReadVarExpr;
-    /**
-     * Store statements which are render3 compatible.
-     */
-    render3Stmts: o.Statement[];
-    constructor(
-    /**
-     * Render2 compatible statements,
-     */
-    stmts: o.Statement[], 
-    /**
-     * Variable name used with render2 compatible statements.
-     */
-    allowDefault: o.ReadVarExpr);
-}
 export declare type InterpolationFunction = (args: o.Expression[]) => o.Expression;
 /**
  * Converts the given expression AST into an executable output AST, assuming the expression is
  * used in an action binding (e.g. an event handler).
  */
-export declare function convertActionBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, action: cdAst.AST, bindingId: string, interpolationFunction?: InterpolationFunction, baseSourceSpan?: ParseSourceSpan, implicitReceiverAccesses?: Set<string>, globals?: Set<string>): ConvertActionBindingResult;
+export declare function convertActionBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, action: cdAst.AST, bindingId: string, interpolationFunction?: InterpolationFunction, baseSourceSpan?: ParseSourceSpan, implicitReceiverAccesses?: Set<string>, globals?: Set<string>): o.Statement[];
 export interface BuiltinConverter {
     (args: o.Expression[]): o.Expression;
 }
@@ -63,17 +40,12 @@ export declare class ConvertPropertyBindingResult {
     currValExpr: o.Expression;
     constructor(stmts: o.Statement[], currValExpr: o.Expression);
 }
-export declare enum BindingForm {
-    General = 0,
-    TrySimple = 1,
-    Expression = 2
-}
 /**
  * Converts the given expression AST into an executable output AST, assuming the expression
  * is used in property binding. The expression has to be preprocessed via
  * `convertPropertyBindingBuiltins`.
  */
-export declare function convertPropertyBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, expressionWithoutBuiltins: cdAst.AST, bindingId: string, form: BindingForm, interpolationFunction?: InterpolationFunction): ConvertPropertyBindingResult;
+export declare function convertPropertyBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, expressionWithoutBuiltins: cdAst.AST, bindingId: string, interpolationFunction?: InterpolationFunction): ConvertPropertyBindingResult;
 /**
  * Given some expression, such as a binding or interpolation expression, and a context expression to
  * look values up on, visit each facet of the given expression resolving values from the context

@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { InterpolationConfig } from '../ml_parser/interpolation_config';
-import { AbsoluteSourceSpan, AST, AstVisitor, ASTWithSource, Binary, BindingPipe, Call, Chain, Conditional, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, NonNullAssert, ParserError, ParseSpan, PrefixNot, PropertyRead, PropertyWrite, Quote, RecursiveAstVisitor, SafeKeyedRead, SafePropertyRead, TemplateBinding, TemplateBindingIdentifier, ThisReceiver, Unary } from './ast';
+import { AbsoluteSourceSpan, AST, ASTWithSource, BindingPipe, LiteralMap, ParserError, ParseSpan, TemplateBinding, TemplateBindingIdentifier } from './ast';
 import { Lexer, Token } from './lexer';
 export interface InterpolationPiece {
     text: string;
@@ -29,7 +29,6 @@ export declare class Parser {
     private _lexer;
     private errors;
     constructor(_lexer: Lexer);
-    simpleExpressionChecker: typeof SimpleExpressionChecker;
     parseAction(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
     parseBinding(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
     private checkSimpleExpression;
@@ -95,9 +94,6 @@ export declare class Parser {
      * @param start Index within the string at which to start.
      */
     private _forEachUnquotedChar;
-}
-export declare class IvyParser extends Parser {
-    simpleExpressionChecker: typeof IvySimpleExpressionChecker;
 }
 export declare class _ParseAST {
     input: string;
@@ -301,40 +297,3 @@ export declare class _ParseAST {
      */
     private skip;
 }
-declare class SimpleExpressionChecker implements AstVisitor {
-    errors: string[];
-    visitImplicitReceiver(ast: ImplicitReceiver, context: any): void;
-    visitThisReceiver(ast: ThisReceiver, context: any): void;
-    visitInterpolation(ast: Interpolation, context: any): void;
-    visitLiteralPrimitive(ast: LiteralPrimitive, context: any): void;
-    visitPropertyRead(ast: PropertyRead, context: any): void;
-    visitPropertyWrite(ast: PropertyWrite, context: any): void;
-    visitSafePropertyRead(ast: SafePropertyRead, context: any): void;
-    visitCall(ast: Call, context: any): void;
-    visitLiteralArray(ast: LiteralArray, context: any): void;
-    visitLiteralMap(ast: LiteralMap, context: any): void;
-    visitUnary(ast: Unary, context: any): void;
-    visitBinary(ast: Binary, context: any): void;
-    visitPrefixNot(ast: PrefixNot, context: any): void;
-    visitNonNullAssert(ast: NonNullAssert, context: any): void;
-    visitConditional(ast: Conditional, context: any): void;
-    visitPipe(ast: BindingPipe, context: any): void;
-    visitKeyedRead(ast: KeyedRead, context: any): void;
-    visitKeyedWrite(ast: KeyedWrite, context: any): void;
-    visitAll(asts: any[], context: any): any[];
-    visitChain(ast: Chain, context: any): void;
-    visitQuote(ast: Quote, context: any): void;
-    visitSafeKeyedRead(ast: SafeKeyedRead, context: any): void;
-}
-/**
- * This class implements SimpleExpressionChecker used in View Engine and performs more strict checks
- * to make sure host bindings do not contain pipes. In View Engine, having pipes in host bindings is
- * not supported as well, but in some cases (like `!(value | async)`) the error is not triggered at
- * compile time. In order to preserve View Engine behavior, more strict checks are introduced for
- * Ivy mode only.
- */
-declare class IvySimpleExpressionChecker extends RecursiveAstVisitor implements SimpleExpressionChecker {
-    errors: string[];
-    visitPipe(): void;
-}
-export {};

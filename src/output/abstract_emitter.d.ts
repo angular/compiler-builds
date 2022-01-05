@@ -8,17 +8,10 @@
 import { ParseSourceSpan } from '../parse_util';
 import * as o from './output_ast';
 import { SourceMapGenerator } from './source_map';
-export declare const CATCH_ERROR_VAR: o.ReadVarExpr;
-export declare const CATCH_STACK_VAR: o.ReadVarExpr;
-export interface OutputEmitter {
-    emitStatements(genFilePath: string, stmts: o.Statement[], preamble?: string | null): string;
-}
 export declare class EmitterVisitorContext {
     private _indent;
     static createRoot(): EmitterVisitorContext;
     private _lines;
-    private _classes;
-    private _preambleLineCount;
     constructor(_indent: number);
     println(from?: {
         sourceSpan: ParseSourceSpan | null;
@@ -31,12 +24,8 @@ export declare class EmitterVisitorContext {
     removeEmptyLastLine(): void;
     incIndent(): void;
     decIndent(): void;
-    pushClass(clazz: o.ClassStmt): void;
-    popClass(): o.ClassStmt;
-    get currentClass(): o.ClassStmt | null;
     toSource(): string;
     toSourceMapGenerator(genFilePath: string, startsAtLine?: number): SourceMapGenerator;
-    setPreambleLineCount(count: number): number;
     spanOf(line: number, column: number): ParseSourceSpan | null;
 }
 export declare abstract class AbstractEmitterVisitor implements o.StatementVisitor, o.ExpressionVisitor {
@@ -45,16 +34,11 @@ export declare abstract class AbstractEmitterVisitor implements o.StatementVisit
     protected printLeadingComments(stmt: o.Statement, ctx: EmitterVisitorContext): void;
     visitExpressionStmt(stmt: o.ExpressionStatement, ctx: EmitterVisitorContext): any;
     visitReturnStmt(stmt: o.ReturnStatement, ctx: EmitterVisitorContext): any;
-    abstract visitCastExpr(ast: o.CastExpr, context: any): any;
-    abstract visitDeclareClassStmt(stmt: o.ClassStmt, ctx: EmitterVisitorContext): any;
     visitIfStmt(stmt: o.IfStmt, ctx: EmitterVisitorContext): any;
-    abstract visitTryCatchStmt(stmt: o.TryCatchStmt, ctx: EmitterVisitorContext): any;
-    visitThrowStmt(stmt: o.ThrowStmt, ctx: EmitterVisitorContext): any;
     abstract visitDeclareVarStmt(stmt: o.DeclareVarStmt, ctx: EmitterVisitorContext): any;
     visitWriteVarExpr(expr: o.WriteVarExpr, ctx: EmitterVisitorContext): any;
     visitWriteKeyExpr(expr: o.WriteKeyExpr, ctx: EmitterVisitorContext): any;
     visitWritePropExpr(expr: o.WritePropExpr, ctx: EmitterVisitorContext): any;
-    abstract getBuiltinMethodName(method: o.BuiltinMethod): string;
     visitInvokeFunctionExpr(expr: o.InvokeFunctionExpr, ctx: EmitterVisitorContext): any;
     visitTaggedTemplateExpr(expr: o.TaggedTemplateExpr, ctx: EmitterVisitorContext): any;
     visitWrappedNodeExpr(ast: o.WrappedNodeExpr<any>, ctx: EmitterVisitorContext): any;
@@ -66,7 +50,6 @@ export declare abstract class AbstractEmitterVisitor implements o.StatementVisit
     abstract visitExternalExpr(ast: o.ExternalExpr, ctx: EmitterVisitorContext): any;
     visitConditionalExpr(ast: o.ConditionalExpr, ctx: EmitterVisitorContext): any;
     visitNotExpr(ast: o.NotExpr, ctx: EmitterVisitorContext): any;
-    visitAssertNotNullExpr(ast: o.AssertNotNull, ctx: EmitterVisitorContext): any;
     abstract visitFunctionExpr(ast: o.FunctionExpr, ctx: EmitterVisitorContext): any;
     abstract visitDeclareFunctionStmt(stmt: o.DeclareFunctionStmt, context: any): any;
     visitUnaryOperatorExpr(ast: o.UnaryOperatorExpr, ctx: EmitterVisitorContext): any;

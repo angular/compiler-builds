@@ -8,44 +8,12 @@
 export declare function dashCaseToCamelCase(input: string): string;
 export declare function splitAtColon(input: string, defaultValues: string[]): string[];
 export declare function splitAtPeriod(input: string, defaultValues: string[]): string[];
-export declare function visitValue(value: any, visitor: ValueVisitor, context: any): any;
-export declare function isDefined(val: any): boolean;
 export declare function noUndefined<T>(val: T | undefined): T;
-export interface ValueVisitor {
-    visitArray(arr: any[], context: any): any;
-    visitStringMap(map: {
-        [key: string]: any;
-    }, context: any): any;
-    visitPrimitive(value: any, context: any): any;
-    visitOther(value: any, context: any): any;
-}
-export declare class ValueTransformer implements ValueVisitor {
-    visitArray(arr: any[], context: any): any;
-    visitStringMap(map: {
-        [key: string]: any;
-    }, context: any): any;
-    visitPrimitive(value: any, context: any): any;
-    visitOther(value: any, context: any): any;
-}
-export declare type SyncAsync<T> = T | Promise<T>;
-export declare const SyncAsync: {
-    assertSync: <T>(value: SyncAsync<T>) => T;
-    then: <T_1, R>(value: SyncAsync<T_1>, cb: (value: T_1) => SyncAsync<R>) => SyncAsync<R>;
-    all: <T_2>(syncAsyncValues: SyncAsync<T_2>[]) => SyncAsync<T_2[]>;
-};
 export declare function error(msg: string): never;
 export declare function escapeRegExp(s: string): string;
 export declare type Byte = number;
 export declare function utf8Encode(str: string): Byte[];
 export declare function stringify(token: any): string;
-/**
- * Lazily retrieves the reference value from a forwardRef.
- */
-export declare function resolveForwardRef(type: any): any;
-/**
- * Determine if the argument is shaped like a Promise
- */
-export declare function isPromise<T = any>(obj: any): obj is Promise<T>;
 export declare class Version {
     full: string;
     readonly major: string;
