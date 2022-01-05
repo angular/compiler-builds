@@ -6,12 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import * as o from './output/output_ast';
-export declare const enum DefinitionKind {
-    Injector = 0,
-    Directive = 1,
-    Component = 2,
-    Pipe = 3
-}
 /**
  * A constant pool allows a code emitter to share constant in an output context.
  *
@@ -22,14 +16,9 @@ export declare class ConstantPool {
     statements: o.Statement[];
     private literals;
     private literalFactories;
-    private injectorDefinitions;
-    private directiveDefinitions;
-    private componentDefinitions;
-    private pipeDefinitions;
     private nextNameIndex;
     constructor(isClosureCompilerEnabled?: boolean);
     getConstLiteral(literal: o.Expression, forceShared?: boolean): o.Expression;
-    getDefinition(type: any, kind: DefinitionKind, ctx: OutputContext, forceShared?: boolean): o.Expression;
     getLiteralFactory(literal: o.LiteralArrayExpr | o.LiteralMapExpr): {
         literalFactory: o.Expression;
         literalFactoryArguments: o.Expression[];
@@ -43,14 +32,6 @@ export declare class ConstantPool {
      * must not end in a digit.
      */
     uniqueName(prefix: string): string;
-    private definitionsOf;
-    propertyNameOf(kind: DefinitionKind): string;
     private freshName;
     private keyOf;
-}
-export interface OutputContext {
-    genFilePath: string;
-    statements: o.Statement[];
-    constantPool: ConstantPool;
-    importExpr(reference: any, typeParams?: o.Type[] | null, useSummaries?: boolean): o.Expression;
 }

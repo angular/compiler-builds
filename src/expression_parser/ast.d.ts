@@ -398,11 +398,11 @@ export declare class ParsedProperty {
     expression: ASTWithSource;
     type: ParsedPropertyType;
     sourceSpan: ParseSourceSpan;
-    readonly keySpan: ParseSourceSpan | undefined;
+    readonly keySpan: ParseSourceSpan;
     valueSpan: ParseSourceSpan | undefined;
     readonly isLiteral: boolean;
     readonly isAnimation: boolean;
-    constructor(name: string, expression: ASTWithSource, type: ParsedPropertyType, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan | undefined, valueSpan: ParseSourceSpan | undefined);
+    constructor(name: string, expression: ASTWithSource, type: ParsedPropertyType, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan, valueSpan: ParseSourceSpan | undefined);
 }
 export declare enum ParsedPropertyType {
     DEFAULT = 0,
@@ -420,8 +420,8 @@ export declare class ParsedEvent {
     handler: ASTWithSource;
     sourceSpan: ParseSourceSpan;
     handlerSpan: ParseSourceSpan;
-    readonly keySpan: ParseSourceSpan | undefined;
-    constructor(name: string, targetOrPhase: string, type: ParsedEventType, handler: ASTWithSource, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan, keySpan: ParseSourceSpan | undefined);
+    readonly keySpan: ParseSourceSpan;
+    constructor(name: string, targetOrPhase: string, type: ParsedEventType, handler: ASTWithSource, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan, keySpan: ParseSourceSpan);
 }
 /**
  * ParsedVariable represents a variable declaration in a microsyntax expression.

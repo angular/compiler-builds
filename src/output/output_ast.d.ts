@@ -127,20 +127,12 @@ export declare abstract class Expression {
     bigger(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     biggerEquals(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     isBlank(sourceSpan?: ParseSourceSpan | null): Expression;
-    cast(type: Type, sourceSpan?: ParseSourceSpan | null): Expression;
     nullishCoalesce(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     toStmt(): Statement;
 }
-export declare enum BuiltinVar {
-    This = 0,
-    Super = 1,
-    CatchError = 2,
-    CatchStack = 3
-}
 export declare class ReadVarExpr extends Expression {
-    name: string | null;
-    builtin: BuiltinVar | null;
-    constructor(name: string | BuiltinVar, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    name: string;
+    constructor(name: string, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -187,11 +179,6 @@ export declare class WritePropExpr extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
-}
-export declare enum BuiltinMethod {
-    ConcatArray = 0,
-    SubscribeObservable = 1,
-    Bind = 2
 }
 export declare class InvokeFunctionExpr extends Expression {
     fn: Expression;
@@ -329,20 +316,6 @@ export declare class NotExpr extends Expression {
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
-export declare class AssertNotNull extends Expression {
-    condition: Expression;
-    constructor(condition: Expression, sourceSpan?: ParseSourceSpan | null);
-    isEquivalent(e: Expression): boolean;
-    isConstant(): boolean;
-    visitExpression(visitor: ExpressionVisitor, context: any): any;
-}
-export declare class CastExpr extends Expression {
-    value: Expression;
-    constructor(value: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
-    isEquivalent(e: Expression): boolean;
-    isConstant(): boolean;
-    visitExpression(visitor: ExpressionVisitor, context: any): any;
-}
 export declare class FnParam {
     name: string;
     type: Type | null;
@@ -438,8 +411,6 @@ export interface ExpressionVisitor {
     visitExternalExpr(ast: ExternalExpr, context: any): any;
     visitConditionalExpr(ast: ConditionalExpr, context: any): any;
     visitNotExpr(ast: NotExpr, context: any): any;
-    visitAssertNotNullExpr(ast: AssertNotNull, context: any): any;
-    visitCastExpr(ast: CastExpr, context: any): any;
     visitFunctionExpr(ast: FunctionExpr, context: any): any;
     visitUnaryOperatorExpr(ast: UnaryOperatorExpr, context: any): any;
     visitBinaryOperatorExpr(ast: BinaryOperatorExpr, context: any): any;
@@ -451,10 +422,6 @@ export interface ExpressionVisitor {
     visitWrappedNodeExpr(ast: WrappedNodeExpr<any>, context: any): any;
     visitTypeofExpr(ast: TypeofExpr, context: any): any;
 }
-export declare const THIS_EXPR: ReadVarExpr;
-export declare const SUPER_EXPR: ReadVarExpr;
-export declare const CATCH_ERROR_VAR: ReadVarExpr;
-export declare const CATCH_STACK_VAR: ReadVarExpr;
 export declare const NULL_EXPR: LiteralExpr;
 export declare const TYPED_NULL_EXPR: LiteralExpr;
 export declare enum StmtModifier {
@@ -518,42 +485,6 @@ export declare class ReturnStatement extends Statement {
     isEquivalent(stmt: Statement): boolean;
     visitStatement(visitor: StatementVisitor, context: any): any;
 }
-export declare class AbstractClassPart {
-    type: Type | null;
-    modifiers: StmtModifier[];
-    constructor(type?: Type | null, modifiers?: StmtModifier[]);
-    hasModifier(modifier: StmtModifier): boolean;
-}
-export declare class ClassField extends AbstractClassPart {
-    name: string;
-    initializer?: Expression | undefined;
-    constructor(name: string, type?: Type | null, modifiers?: StmtModifier[], initializer?: Expression | undefined);
-    isEquivalent(f: ClassField): boolean;
-}
-export declare class ClassMethod extends AbstractClassPart {
-    name: string | null;
-    params: FnParam[];
-    body: Statement[];
-    constructor(name: string | null, params: FnParam[], body: Statement[], type?: Type | null, modifiers?: StmtModifier[]);
-    isEquivalent(m: ClassMethod): boolean;
-}
-export declare class ClassGetter extends AbstractClassPart {
-    name: string;
-    body: Statement[];
-    constructor(name: string, body: Statement[], type?: Type | null, modifiers?: StmtModifier[]);
-    isEquivalent(m: ClassGetter): boolean;
-}
-export declare class ClassStmt extends Statement {
-    name: string;
-    parent: Expression | null;
-    fields: ClassField[];
-    getters: ClassGetter[];
-    constructorMethod: ClassMethod;
-    methods: ClassMethod[];
-    constructor(name: string, parent: Expression | null, fields: ClassField[], getters: ClassGetter[], constructorMethod: ClassMethod, methods: ClassMethod[], modifiers?: StmtModifier[], sourceSpan?: ParseSourceSpan | null, leadingComments?: LeadingComment[]);
-    isEquivalent(stmt: Statement): boolean;
-    visitStatement(visitor: StatementVisitor, context: any): any;
-}
 export declare class IfStmt extends Statement {
     condition: Expression;
     trueCase: Statement[];
@@ -562,66 +493,12 @@ export declare class IfStmt extends Statement {
     isEquivalent(stmt: Statement): boolean;
     visitStatement(visitor: StatementVisitor, context: any): any;
 }
-export declare class TryCatchStmt extends Statement {
-    bodyStmts: Statement[];
-    catchStmts: Statement[];
-    constructor(bodyStmts: Statement[], catchStmts: Statement[], sourceSpan?: ParseSourceSpan | null, leadingComments?: LeadingComment[]);
-    isEquivalent(stmt: Statement): boolean;
-    visitStatement(visitor: StatementVisitor, context: any): any;
-}
-export declare class ThrowStmt extends Statement {
-    error: Expression;
-    constructor(error: Expression, sourceSpan?: ParseSourceSpan | null, leadingComments?: LeadingComment[]);
-    isEquivalent(stmt: ThrowStmt): boolean;
-    visitStatement(visitor: StatementVisitor, context: any): any;
-}
 export interface StatementVisitor {
     visitDeclareVarStmt(stmt: DeclareVarStmt, context: any): any;
     visitDeclareFunctionStmt(stmt: DeclareFunctionStmt, context: any): any;
     visitExpressionStmt(stmt: ExpressionStatement, context: any): any;
     visitReturnStmt(stmt: ReturnStatement, context: any): any;
-    visitDeclareClassStmt(stmt: ClassStmt, context: any): any;
     visitIfStmt(stmt: IfStmt, context: any): any;
-    visitTryCatchStmt(stmt: TryCatchStmt, context: any): any;
-    visitThrowStmt(stmt: ThrowStmt, context: any): any;
-}
-export declare class AstTransformer implements StatementVisitor, ExpressionVisitor {
-    transformExpr(expr: Expression, context: any): Expression;
-    transformStmt(stmt: Statement, context: any): Statement;
-    visitReadVarExpr(ast: ReadVarExpr, context: any): any;
-    visitWrappedNodeExpr(ast: WrappedNodeExpr<any>, context: any): any;
-    visitTypeofExpr(expr: TypeofExpr, context: any): any;
-    visitWriteVarExpr(expr: WriteVarExpr, context: any): any;
-    visitWriteKeyExpr(expr: WriteKeyExpr, context: any): any;
-    visitWritePropExpr(expr: WritePropExpr, context: any): any;
-    visitInvokeFunctionExpr(ast: InvokeFunctionExpr, context: any): any;
-    visitTaggedTemplateExpr(ast: TaggedTemplateExpr, context: any): any;
-    visitInstantiateExpr(ast: InstantiateExpr, context: any): any;
-    visitLiteralExpr(ast: LiteralExpr, context: any): any;
-    visitLocalizedString(ast: LocalizedString, context: any): any;
-    visitExternalExpr(ast: ExternalExpr, context: any): any;
-    visitConditionalExpr(ast: ConditionalExpr, context: any): any;
-    visitNotExpr(ast: NotExpr, context: any): any;
-    visitAssertNotNullExpr(ast: AssertNotNull, context: any): any;
-    visitCastExpr(ast: CastExpr, context: any): any;
-    visitFunctionExpr(ast: FunctionExpr, context: any): any;
-    visitUnaryOperatorExpr(ast: UnaryOperatorExpr, context: any): any;
-    visitBinaryOperatorExpr(ast: BinaryOperatorExpr, context: any): any;
-    visitReadPropExpr(ast: ReadPropExpr, context: any): any;
-    visitReadKeyExpr(ast: ReadKeyExpr, context: any): any;
-    visitLiteralArrayExpr(ast: LiteralArrayExpr, context: any): any;
-    visitLiteralMapExpr(ast: LiteralMapExpr, context: any): any;
-    visitCommaExpr(ast: CommaExpr, context: any): any;
-    visitAllExpressions<T extends Expression>(exprs: T[], context: any): T[];
-    visitDeclareVarStmt(stmt: DeclareVarStmt, context: any): any;
-    visitDeclareFunctionStmt(stmt: DeclareFunctionStmt, context: any): any;
-    visitExpressionStmt(stmt: ExpressionStatement, context: any): any;
-    visitReturnStmt(stmt: ReturnStatement, context: any): any;
-    visitDeclareClassStmt(stmt: ClassStmt, context: any): any;
-    visitIfStmt(stmt: IfStmt, context: any): any;
-    visitTryCatchStmt(stmt: TryCatchStmt, context: any): any;
-    visitThrowStmt(stmt: ThrowStmt, context: any): any;
-    visitAllStatements(stmts: Statement[], context: any): Statement[];
 }
 export declare class RecursiveAstVisitor implements StatementVisitor, ExpressionVisitor {
     visitType(ast: Type, context: any): any;
@@ -644,8 +521,6 @@ export declare class RecursiveAstVisitor implements StatementVisitor, Expression
     visitExternalExpr(ast: ExternalExpr, context: any): any;
     visitConditionalExpr(ast: ConditionalExpr, context: any): any;
     visitNotExpr(ast: NotExpr, context: any): any;
-    visitAssertNotNullExpr(ast: AssertNotNull, context: any): any;
-    visitCastExpr(ast: CastExpr, context: any): any;
     visitFunctionExpr(ast: FunctionExpr, context: any): any;
     visitUnaryOperatorExpr(ast: UnaryOperatorExpr, context: any): any;
     visitBinaryOperatorExpr(ast: BinaryOperatorExpr, context: any): any;
@@ -659,16 +534,9 @@ export declare class RecursiveAstVisitor implements StatementVisitor, Expression
     visitDeclareFunctionStmt(stmt: DeclareFunctionStmt, context: any): any;
     visitExpressionStmt(stmt: ExpressionStatement, context: any): any;
     visitReturnStmt(stmt: ReturnStatement, context: any): any;
-    visitDeclareClassStmt(stmt: ClassStmt, context: any): any;
     visitIfStmt(stmt: IfStmt, context: any): any;
-    visitTryCatchStmt(stmt: TryCatchStmt, context: any): any;
-    visitThrowStmt(stmt: ThrowStmt, context: any): any;
     visitAllStatements(stmts: Statement[], context: any): void;
 }
-export declare function findReadVarNames(stmts: Statement[]): Set<string>;
-export declare function collectExternalReferences(stmts: Statement[]): ExternalReference[];
-export declare function applySourceSpanToStatementIfNeeded(stmt: Statement, sourceSpan: ParseSourceSpan | null): Statement;
-export declare function applySourceSpanToExpressionIfNeeded(expr: Expression, sourceSpan: ParseSourceSpan | null): Expression;
 export declare function leadingComment(text: string, multiline?: boolean, trailingNewline?: boolean): LeadingComment;
 export declare function jsDocComment(tags?: JSDocTag[]): JSDocComment;
 export declare function variable(name: string, type?: Type | null, sourceSpan?: ParseSourceSpan | null): ReadVarExpr;
@@ -684,7 +552,6 @@ export declare function literalMap(values: {
 }[], type?: MapType | null): LiteralMapExpr;
 export declare function unary(operator: UnaryOperator, expr: Expression, type?: Type, sourceSpan?: ParseSourceSpan | null): UnaryOperatorExpr;
 export declare function not(expr: Expression, sourceSpan?: ParseSourceSpan | null): NotExpr;
-export declare function assertNotNull(expr: Expression, sourceSpan?: ParseSourceSpan | null): AssertNotNull;
 export declare function fn(params: FnParam[], body: Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null, name?: string | null): FunctionExpr;
 export declare function ifStmt(condition: Expression, thenClause: Statement[], elseClause?: Statement[], sourceSpan?: ParseSourceSpan, leadingComments?: LeadingComment[]): IfStmt;
 export declare function taggedTemplate(tag: Expression, template: TemplateLiteral, type?: Type | null, sourceSpan?: ParseSourceSpan | null): TaggedTemplateExpr;

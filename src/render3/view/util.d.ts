@@ -31,7 +31,6 @@ export declare const RESTORED_VIEW_CONTEXT_NAME = "restoredCtx";
  * A variable declaration is added to the statements the first time the allocator is invoked.
  */
 export declare function temporaryAllocator(statements: o.Statement[], name: string): () => o.ReadVarExpr;
-export declare function unsupported(this: void | Function, feature: string): never;
 export declare function invalid<T>(this: t.Visitor, arg: o.Expression | o.Statement | t.Node): never;
 export declare function asLiteral(value: any): o.Expression;
 export declare function conditionallyCreateMapObjectLiteral(keys: {

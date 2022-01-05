@@ -68,9 +68,6 @@ export declare class ParseError {
  * @returns instance of ParseSourceSpan that represent a given Component or Directive.
  */
 export declare function r3JitTypeSourceSpan(kind: string, typeName: string, sourceUrl: string): ParseSourceSpan;
-export declare function syntaxError(msg: string, parseErrors?: ParseError[]): Error;
-export declare function isSyntaxError(error: Error): boolean;
-export declare function getParseErrors(error: Error): ParseError[];
 export declare function identifierName(compileIdentifier: CompileIdentifierMetadata | null | undefined): string | null;
 export interface CompileIdentifierMetadata {
     reference: any;

@@ -84,7 +84,6 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
      */
     private _bindingScope;
     private _valueConverter;
-    private _unsupported;
     private i18n;
     private _pureFunctionSlots;
     private _bindingSlots;
