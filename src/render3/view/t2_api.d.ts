@@ -23,6 +23,14 @@ export interface InputOutputPropertySet {
     hasBindingPropertyName(propertyName: string): boolean;
 }
 /**
+ * A data structure which captures the animation trigger names that are statically resolvable
+ * and whether some names could not be statically evaluated.
+ */
+export interface AnimationTriggerNames {
+    includesDynamicAnimations: boolean;
+    staticTriggerNames: string[];
+}
+/**
  * Metadata regarding a directive that's needed to match it against template elements. This is
  * provided by a consumer of the t2 APIs.
  */
@@ -56,6 +64,11 @@ export interface DirectiveMeta {
      */
     exportAs: string[] | null;
     isStructural: boolean;
+    /**
+     * The name of animations that the user defines in the component.
+     * Only includes the animation names.
+     */
+    animationTriggerNames: AnimationTriggerNames | null;
 }
 /**
  * Interface to the binding API, which processes a template and returns an object similar to the
