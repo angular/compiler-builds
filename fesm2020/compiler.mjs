@@ -1,5 +1,5 @@
 /**
- * @license Angular v13.2.0-next.1+94.sha-af2a131.with-local-changes
+ * @license Angular v13.2.0-next.1+95.sha-a4ab6d6.with-local-changes
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -6345,6 +6345,17 @@ class Call extends AST {
         return visitor.visitCall(this, context);
     }
 }
+class SafeCall extends AST {
+    constructor(span, sourceSpan, receiver, args, argumentSpan) {
+        super(span, sourceSpan);
+        this.receiver = receiver;
+        this.args = args;
+        this.argumentSpan = argumentSpan;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitSafeCall(this, context);
+    }
+}
 /**
  * Records the absolute position of a text span in a source file, where `start` and `end` are the
  * starting and ending byte offsets, respectively, of the text span in a source file.
@@ -6473,6 +6484,10 @@ class RecursiveAstVisitor {
         this.visit(ast.receiver, context);
         this.visitAll(ast.args, context);
     }
+    visitSafeCall(ast, context) {
+        this.visit(ast.receiver, context);
+        this.visitAll(ast.args, context);
+    }
     visitQuote(ast, context) { }
     // This is not part of the AstVisitor interface, just a helper method
     visitAll(asts, context) {
@@ -6542,6 +6557,9 @@ class AstTransformer {
     }
     visitCall(ast, context) {
         return new Call(ast.span, ast.sourceSpan, ast.receiver.visit(this), this.visitAll(ast.args), ast.argumentSpan);
+    }
+    visitSafeCall(ast, context) {
+        return new SafeCall(ast.span, ast.sourceSpan, ast.receiver.visit(this), this.visitAll(ast.args), ast.argumentSpan);
     }
     visitAll(asts) {
         const res = [];
@@ -6707,6 +6725,14 @@ class AstMemoryEfficientTransformer {
         const args = this.visitAll(ast.args);
         if (receiver !== ast.receiver || args !== ast.args) {
             return new Call(ast.span, ast.sourceSpan, receiver, args, ast.argumentSpan);
+        }
+        return ast;
+    }
+    visitSafeCall(ast, context) {
+        const receiver = ast.receiver.visit(this);
+        const args = this.visitAll(ast.args);
+        if (receiver !== ast.receiver || args !== ast.args) {
+            return new SafeCall(ast.span, ast.sourceSpan, receiver, args, ast.argumentSpan);
         }
         return ast;
     }
@@ -7310,6 +7336,9 @@ class _AstToIrVisitor {
             .callFn(convertedArgs, this.convertSourceSpan(ast.span));
         return convertToStatementIfNeeded(mode, call);
     }
+    visitSafeCall(ast, mode) {
+        return this.convertSafeAccess(ast, this.leftMostSafeNode(ast), mode);
+    }
     _visit(ast, mode) {
         const result = this._resultMap.get(ast);
         if (result)
@@ -7366,7 +7395,10 @@ class _AstToIrVisitor {
         const condition = guardedExpression.isBlank();
         // Convert the ast to an unguarded access to the receiver's member. The map will substitute
         // leftMostNode with its unguarded version in the call to `this.visit()`.
-        if (leftMostSafe instanceof SafeKeyedRead) {
+        if (leftMostSafe instanceof SafeCall) {
+            this._nodeMap.set(leftMostSafe, new Call(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.receiver, leftMostSafe.args, leftMostSafe.argumentSpan));
+        }
+        else if (leftMostSafe instanceof SafeKeyedRead) {
             this._nodeMap.set(leftMostSafe, new KeyedRead(leftMostSafe.span, leftMostSafe.sourceSpan, leftMostSafe.receiver, leftMostSafe.key));
         }
         else {
@@ -7424,6 +7456,9 @@ class _AstToIrVisitor {
             },
             visitCall(ast) {
                 return visit(this, ast.receiver);
+            },
+            visitSafeCall(ast) {
+                return visit(this, ast.receiver) || ast;
             },
             visitImplicitReceiver(ast) {
                 return null;
@@ -7499,6 +7534,9 @@ class _AstToIrVisitor {
                 return visit(this, ast.condition) || visit(this, ast.trueExp) || visit(this, ast.falseExp);
             },
             visitCall(ast) {
+                return true;
+            },
+            visitSafeCall(ast) {
                 return true;
             },
             visitImplicitReceiver(ast) {
@@ -10120,24 +10158,23 @@ class _ParseAST {
         let result = this.parsePrimary();
         while (true) {
             if (this.consumeOptionalCharacter($PERIOD)) {
-                result = this.parseAccessMemberOrCall(result, start, false);
+                result = this.parseAccessMember(result, start, false);
             }
             else if (this.consumeOptionalOperator('?.')) {
-                result = this.consumeOptionalCharacter($LBRACKET) ?
-                    this.parseKeyedReadOrWrite(result, start, true) :
-                    this.parseAccessMemberOrCall(result, start, true);
+                if (this.consumeOptionalCharacter($LPAREN)) {
+                    result = this.parseCall(result, start, true);
+                }
+                else {
+                    result = this.consumeOptionalCharacter($LBRACKET) ?
+                        this.parseKeyedReadOrWrite(result, start, true) :
+                        this.parseAccessMember(result, start, true);
+                }
             }
             else if (this.consumeOptionalCharacter($LBRACKET)) {
                 result = this.parseKeyedReadOrWrite(result, start, false);
             }
             else if (this.consumeOptionalCharacter($LPAREN)) {
-                const argumentStart = this.inputIndex;
-                this.rparensExpected++;
-                const args = this.parseCallArguments();
-                const argumentSpan = this.span(argumentStart, this.inputIndex).toAbsolute(this.absoluteOffset);
-                this.rparensExpected--;
-                this.expectCharacter($RPAREN);
-                result = new Call(this.span(start), this.sourceSpan(start), result, args, argumentSpan);
+                result = this.parseCall(result, start, false);
             }
             else if (this.consumeOptionalOperator('!')) {
                 result = new NonNullAssert(this.span(start), this.sourceSpan(start), result);
@@ -10187,7 +10224,7 @@ class _ParseAST {
             return this.parseLiteralMap();
         }
         else if (this.next.isIdentifier()) {
-            return this.parseAccessMemberOrCall(new ImplicitReceiver(this.span(start), this.sourceSpan(start)), start, false);
+            return this.parseAccessMember(new ImplicitReceiver(this.span(start), this.sourceSpan(start)), start, false);
         }
         else if (this.next.isNumber()) {
             const value = this.next.toNumber();
@@ -10255,7 +10292,7 @@ class _ParseAST {
         }
         return new LiteralMap(this.span(start), this.sourceSpan(start), keys, values);
     }
-    parseAccessMemberOrCall(readReceiver, start, isSafe) {
+    parseAccessMember(readReceiver, start, isSafe) {
         const nameStart = this.inputIndex;
         const id = this.withContext(ParseContextFlags.Writable, () => {
             const id = this.expectIdentifierOrKeyword() ?? '';
@@ -10289,18 +10326,19 @@ class _ParseAST {
                     new PropertyRead(this.span(start), this.sourceSpan(start), nameSpan, readReceiver, id);
             }
         }
-        if (this.consumeOptionalCharacter($LPAREN)) {
-            const argumentStart = this.inputIndex;
-            this.rparensExpected++;
-            const args = this.parseCallArguments();
-            const argumentSpan = this.span(argumentStart, this.inputIndex).toAbsolute(this.absoluteOffset);
-            this.expectCharacter($RPAREN);
-            this.rparensExpected--;
-            const span = this.span(start);
-            const sourceSpan = this.sourceSpan(start);
-            return new Call(span, sourceSpan, receiver, args, argumentSpan);
-        }
         return receiver;
+    }
+    parseCall(receiver, start, isSafe) {
+        const argumentStart = this.inputIndex;
+        this.rparensExpected++;
+        const args = this.parseCallArguments();
+        const argumentSpan = this.span(argumentStart, this.inputIndex).toAbsolute(this.absoluteOffset);
+        this.expectCharacter($RPAREN);
+        this.rparensExpected--;
+        const span = this.span(start);
+        const sourceSpan = this.sourceSpan(start);
+        return isSafe ? new SafeCall(span, sourceSpan, receiver, args, argumentSpan) :
+            new Call(span, sourceSpan, receiver, args, argumentSpan);
     }
     parseCallArguments() {
         if (this.next.isCharacter($RPAREN))
@@ -19755,7 +19793,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('13.2.0-next.1+94.sha-af2a131.with-local-changes');
+const VERSION = new Version('13.2.0-next.1+95.sha-a4ab6d6.with-local-changes');
 
 /**
  * @license
@@ -21796,7 +21834,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('13.2.0-next.1+94.sha-af2a131.with-local-changes'));
+    definitionMap.set('version', literal('13.2.0-next.1+95.sha-a4ab6d6.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -21913,7 +21951,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('13.2.0-next.1+94.sha-af2a131.with-local-changes'));
+    definitionMap.set('version', literal('13.2.0-next.1+95.sha-a4ab6d6.with-local-changes'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -22134,7 +22172,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('13.2.0-next.1+94.sha-af2a131.with-local-changes'));
+    definitionMap.set('version', literal('13.2.0-next.1+95.sha-a4ab6d6.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22176,7 +22214,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('13.2.0-next.1+94.sha-af2a131.with-local-changes'));
+    definitionMap.set('version', literal('13.2.0-next.1+95.sha-a4ab6d6.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22234,7 +22272,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('13.2.0-next.1+94.sha-af2a131.with-local-changes'));
+    definitionMap.set('version', literal('13.2.0-next.1+95.sha-a4ab6d6.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22271,7 +22309,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('13.2.0-next.1+94.sha-af2a131.with-local-changes'));
+    definitionMap.set('version', literal('13.2.0-next.1+95.sha-a4ab6d6.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22329,7 +22367,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('13.2.0-next.1+94.sha-af2a131.with-local-changes'));
+    definitionMap.set('version', literal('13.2.0-next.1+95.sha-a4ab6d6.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
@@ -22379,5 +22417,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, Quote, R3BoundTarget, Identifiers$1 as R3Identifiers, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element$1 as TmplAstElement, Icu$1 as TmplAstIcu, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token, TokenType, TreeError, Type, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, Identifiers, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, Quote, R3BoundTarget, Identifiers$1 as R3Identifiers, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element$1 as TmplAstElement, Icu$1 as TmplAstIcu, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token, TokenType, TreeError, Type, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map

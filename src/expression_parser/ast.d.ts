@@ -207,9 +207,16 @@ export declare class NonNullAssert extends AST {
 }
 export declare class Call extends AST {
     receiver: AST;
-    args: any[];
+    args: AST[];
     argumentSpan: AbsoluteSourceSpan;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, receiver: AST, args: any[], argumentSpan: AbsoluteSourceSpan);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, receiver: AST, args: AST[], argumentSpan: AbsoluteSourceSpan);
+    visit(visitor: AstVisitor, context?: any): any;
+}
+export declare class SafeCall extends AST {
+    receiver: AST;
+    args: AST[];
+    argumentSpan: AbsoluteSourceSpan;
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, receiver: AST, args: AST[], argumentSpan: AbsoluteSourceSpan);
     visit(visitor: AstVisitor, context?: any): any;
 }
 /**
@@ -311,6 +318,7 @@ export interface AstVisitor {
     visitSafePropertyRead(ast: SafePropertyRead, context: any): any;
     visitSafeKeyedRead(ast: SafeKeyedRead, context: any): any;
     visitCall(ast: Call, context: any): any;
+    visitSafeCall(ast: SafeCall, context: any): any;
     visitASTWithSource?(ast: ASTWithSource, context: any): any;
     /**
      * This function is optionally defined to allow classes that implement this
@@ -342,6 +350,7 @@ export declare class RecursiveAstVisitor implements AstVisitor {
     visitSafePropertyRead(ast: SafePropertyRead, context: any): any;
     visitSafeKeyedRead(ast: SafeKeyedRead, context: any): any;
     visitCall(ast: Call, context: any): any;
+    visitSafeCall(ast: SafeCall, context: any): any;
     visitQuote(ast: Quote, context: any): any;
     visitAll(asts: AST[], context: any): any;
 }
@@ -364,6 +373,7 @@ export declare class AstTransformer implements AstVisitor {
     visitKeyedRead(ast: KeyedRead, context: any): AST;
     visitKeyedWrite(ast: KeyedWrite, context: any): AST;
     visitCall(ast: Call, context: any): AST;
+    visitSafeCall(ast: SafeCall, context: any): AST;
     visitAll(asts: any[]): any[];
     visitChain(ast: Chain, context: any): AST;
     visitQuote(ast: Quote, context: any): AST;
@@ -390,6 +400,7 @@ export declare class AstMemoryEfficientTransformer implements AstVisitor {
     visitAll(asts: any[]): any[];
     visitChain(ast: Chain, context: any): AST;
     visitCall(ast: Call, context: any): AST;
+    visitSafeCall(ast: SafeCall, context: any): AST;
     visitQuote(ast: Quote, context: any): AST;
     visitSafeKeyedRead(ast: SafeKeyedRead, context: any): AST;
 }
