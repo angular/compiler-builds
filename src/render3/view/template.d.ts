@@ -14,7 +14,7 @@ import { InterpolationConfig } from '../../ml_parser/interpolation_config';
 import { LexerRange } from '../../ml_parser/lexer';
 import * as o from '../../output/output_ast';
 import { ParseError } from '../../parse_util';
-import { CssSelector, SelectorMatcher } from '../../selector';
+import { CssSelector } from '../../selector';
 import { BindingParser } from '../../template_parser/binding_parser';
 import * as t from '../r3_ast';
 import { I18nContext } from './i18n/context';
@@ -45,10 +45,6 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private i18nContext;
     private templateIndex;
     private templateName;
-    private directiveMatcher;
-    private directives;
-    private pipeTypeByName;
-    private pipes;
     private _namespace;
     private i18nUseExternalIds;
     private _constants;
@@ -91,7 +87,7 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
     private _ngContentReservedSlots;
     private _ngContentSelectorsOffset;
     private _implicitReceiverExpr;
-    constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, i18nContext: I18nContext | null, templateIndex: number | null, templateName: string | null, directiveMatcher: SelectorMatcher | null, directives: Set<o.Expression>, pipeTypeByName: Map<string, o.Expression>, pipes: Set<o.Expression>, _namespace: o.ExternalReference, relativeContextFilePath: string, i18nUseExternalIds: boolean, _constants?: ComponentDefConsts);
+    constructor(constantPool: ConstantPool, parentBindingScope: BindingScope, level: number, contextName: string | null, i18nContext: I18nContext | null, templateIndex: number | null, templateName: string | null, _namespace: o.ExternalReference, relativeContextFilePath: string, i18nUseExternalIds: boolean, _constants?: ComponentDefConsts);
     buildTemplateFunction(nodes: t.Node[], variables: t.Variable[], ngContentSelectorsOffset?: number, i18n?: i18n.I18nMeta): o.FunctionExpr;
     getLocal(name: string): o.Expression | null;
     notifyImplicitReceiverUse(): void;
@@ -155,7 +151,6 @@ export declare class TemplateDefinitionBuilder implements t.Visitor<void>, Local
      * @param value The original expression we will be resolving an arguments list from.
      */
     private getUpdateInstructionArguments;
-    private matchDirectives;
     /**
      * Prepares all attribute expression values for the `TAttributes` array.
      *

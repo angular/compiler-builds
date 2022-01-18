@@ -9,11 +9,12 @@ import { Message } from '../i18n/i18n_ast';
 import { ParseSourceSpan } from '../parse_util';
 import { I18nMeta } from '../render3/view/i18n/meta';
 export declare enum TypeModifier {
-    Const = 0
+    None = 0,
+    Const = 1
 }
 export declare abstract class Type {
-    modifiers: TypeModifier[];
-    constructor(modifiers?: TypeModifier[]);
+    modifiers: TypeModifier;
+    constructor(modifiers?: TypeModifier);
     abstract visitType(visitor: TypeVisitor, context: any): any;
     hasModifier(modifier: TypeModifier): boolean;
 }
@@ -29,23 +30,23 @@ export declare enum BuiltinTypeName {
 }
 export declare class BuiltinType extends Type {
     name: BuiltinTypeName;
-    constructor(name: BuiltinTypeName, modifiers?: TypeModifier[]);
+    constructor(name: BuiltinTypeName, modifiers?: TypeModifier);
     visitType(visitor: TypeVisitor, context: any): any;
 }
 export declare class ExpressionType extends Type {
     value: Expression;
     typeParams: Type[] | null;
-    constructor(value: Expression, modifiers?: TypeModifier[], typeParams?: Type[] | null);
+    constructor(value: Expression, modifiers?: TypeModifier, typeParams?: Type[] | null);
     visitType(visitor: TypeVisitor, context: any): any;
 }
 export declare class ArrayType extends Type {
     of: Type;
-    constructor(of: Type, modifiers?: TypeModifier[]);
+    constructor(of: Type, modifiers?: TypeModifier);
     visitType(visitor: TypeVisitor, context: any): any;
 }
 export declare class MapType extends Type {
     valueType: Type | null;
-    constructor(valueType: Type | null | undefined, modifiers?: TypeModifier[]);
+    constructor(valueType: Type | null | undefined, modifiers?: TypeModifier);
     visitType(visitor: TypeVisitor, context: any): any;
 }
 export declare const DYNAMIC_TYPE: BuiltinType;
@@ -159,7 +160,7 @@ export declare class WriteVarExpr extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
-    toDeclStmt(type?: Type | null, modifiers?: StmtModifier[]): DeclareVarStmt;
+    toDeclStmt(type?: Type | null, modifiers?: StmtModifier): DeclareVarStmt;
     toConstDecl(): DeclareVarStmt;
 }
 export declare class WriteKeyExpr extends Expression {
@@ -330,7 +331,7 @@ export declare class FunctionExpr extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
-    toDeclStmt(name: string, modifiers?: StmtModifier[]): DeclareFunctionStmt;
+    toDeclStmt(name: string, modifiers?: StmtModifier): DeclareFunctionStmt;
 }
 export declare class UnaryOperatorExpr extends Expression {
     operator: UnaryOperator;
@@ -425,10 +426,11 @@ export interface ExpressionVisitor {
 export declare const NULL_EXPR: LiteralExpr;
 export declare const TYPED_NULL_EXPR: LiteralExpr;
 export declare enum StmtModifier {
-    Final = 0,
-    Private = 1,
-    Exported = 2,
-    Static = 3
+    None = 0,
+    Final = 1,
+    Private = 2,
+    Exported = 4,
+    Static = 8
 }
 export declare class LeadingComment {
     text: string;
@@ -443,10 +445,10 @@ export declare class JSDocComment extends LeadingComment {
     toString(): string;
 }
 export declare abstract class Statement {
-    modifiers: StmtModifier[];
+    modifiers: StmtModifier;
     sourceSpan: ParseSourceSpan | null;
     leadingComments?: LeadingComment[] | undefined;
-    constructor(modifiers?: StmtModifier[], sourceSpan?: ParseSourceSpan | null, leadingComments?: LeadingComment[] | undefined);
+    constructor(modifiers?: StmtModifier, sourceSpan?: ParseSourceSpan | null, leadingComments?: LeadingComment[] | undefined);
     /**
      * Calculates whether this statement produces the same value as the given statement.
      * Note: We don't check Types nor ParseSourceSpans nor function arguments.
@@ -460,7 +462,7 @@ export declare class DeclareVarStmt extends Statement {
     name: string;
     value?: Expression | undefined;
     type: Type | null;
-    constructor(name: string, value?: Expression | undefined, type?: Type | null, modifiers?: StmtModifier[], sourceSpan?: ParseSourceSpan | null, leadingComments?: LeadingComment[]);
+    constructor(name: string, value?: Expression | undefined, type?: Type | null, modifiers?: StmtModifier, sourceSpan?: ParseSourceSpan | null, leadingComments?: LeadingComment[]);
     isEquivalent(stmt: Statement): boolean;
     visitStatement(visitor: StatementVisitor, context: any): any;
 }
@@ -469,7 +471,7 @@ export declare class DeclareFunctionStmt extends Statement {
     params: FnParam[];
     statements: Statement[];
     type: Type | null;
-    constructor(name: string, params: FnParam[], statements: Statement[], type?: Type | null, modifiers?: StmtModifier[], sourceSpan?: ParseSourceSpan | null, leadingComments?: LeadingComment[]);
+    constructor(name: string, params: FnParam[], statements: Statement[], type?: Type | null, modifiers?: StmtModifier, sourceSpan?: ParseSourceSpan | null, leadingComments?: LeadingComment[]);
     isEquivalent(stmt: Statement): boolean;
     visitStatement(visitor: StatementVisitor, context: any): any;
 }
@@ -541,8 +543,8 @@ export declare function leadingComment(text: string, multiline?: boolean, traili
 export declare function jsDocComment(tags?: JSDocTag[]): JSDocComment;
 export declare function variable(name: string, type?: Type | null, sourceSpan?: ParseSourceSpan | null): ReadVarExpr;
 export declare function importExpr(id: ExternalReference, typeParams?: Type[] | null, sourceSpan?: ParseSourceSpan | null): ExternalExpr;
-export declare function importType(id: ExternalReference, typeParams?: Type[] | null, typeModifiers?: TypeModifier[]): ExpressionType | null;
-export declare function expressionType(expr: Expression, typeModifiers?: TypeModifier[], typeParams?: Type[] | null): ExpressionType;
+export declare function importType(id: ExternalReference, typeParams?: Type[] | null, typeModifiers?: TypeModifier): ExpressionType | null;
+export declare function expressionType(expr: Expression, typeModifiers?: TypeModifier, typeParams?: Type[] | null): ExpressionType;
 export declare function typeofExpr(expr: Expression): TypeofExpr;
 export declare function literalArr(values: Expression[], type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralArrayExpr;
 export declare function literalMap(values: {
