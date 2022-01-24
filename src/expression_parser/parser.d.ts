@@ -100,7 +100,6 @@ export declare class _ParseAST {
     location: string;
     absoluteOffset: number;
     tokens: Token[];
-    inputLength: number;
     parseAction: boolean;
     private errors;
     private offset;
@@ -110,7 +109,7 @@ export declare class _ParseAST {
     private context;
     private sourceSpanCache;
     index: number;
-    constructor(input: string, location: string, absoluteOffset: number, tokens: Token[], inputLength: number, parseAction: boolean, errors: ParserError[], offset: number);
+    constructor(input: string, location: string, absoluteOffset: number, tokens: Token[], parseAction: boolean, errors: ParserError[], offset: number);
     peek(offset: number): Token;
     get next(): Token;
     /** Whether all the parser input has been processed. */

@@ -1,5 +1,5 @@
 /**
- * @license Angular v13.1.3+9.sha-45503b4.with-local-changes
+ * @license Angular v13.1.3+13.sha-a52685b.with-local-changes
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9440,8 +9440,7 @@ class Parser$1 {
         this._checkNoInterpolation(input, location, interpolationConfig);
         const sourceToLex = this._stripComments(input);
         const tokens = this._lexer.tokenize(sourceToLex);
-        const ast = new _ParseAST(input, location, absoluteOffset, tokens, sourceToLex.length, true, this.errors, 0)
-            .parseChain();
+        const ast = new _ParseAST(input, location, absoluteOffset, tokens, true, this.errors, 0).parseChain();
         return new ASTWithSource(ast, input, location, absoluteOffset, this.errors);
     }
     parseBinding(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
@@ -9474,7 +9473,7 @@ class Parser$1 {
         this._checkNoInterpolation(input, location, interpolationConfig);
         const sourceToLex = this._stripComments(input);
         const tokens = this._lexer.tokenize(sourceToLex);
-        return new _ParseAST(input, location, absoluteOffset, tokens, sourceToLex.length, false, this.errors, 0)
+        return new _ParseAST(input, location, absoluteOffset, tokens, false, this.errors, 0)
             .parseChain();
     }
     _parseQuote(input, location, absoluteOffset) {
@@ -9518,7 +9517,7 @@ class Parser$1 {
      */
     parseTemplateBindings(templateKey, templateValue, templateUrl, absoluteKeyOffset, absoluteValueOffset) {
         const tokens = this._lexer.tokenize(templateValue);
-        const parser = new _ParseAST(templateValue, templateUrl, absoluteValueOffset, tokens, templateValue.length, false /* parseAction */, this.errors, 0 /* relative offset */);
+        const parser = new _ParseAST(templateValue, templateUrl, absoluteValueOffset, tokens, false /* parseAction */, this.errors, 0 /* relative offset */);
         return parser.parseTemplateBindings({
             source: templateKey,
             span: new AbsoluteSourceSpan(absoluteKeyOffset, absoluteKeyOffset + templateKey.length),
@@ -9533,7 +9532,7 @@ class Parser$1 {
             const expressionText = expressions[i].text;
             const sourceToLex = this._stripComments(expressionText);
             const tokens = this._lexer.tokenize(sourceToLex);
-            const ast = new _ParseAST(input, location, absoluteOffset, tokens, sourceToLex.length, false, this.errors, offsets[i])
+            const ast = new _ParseAST(input, location, absoluteOffset, tokens, false, this.errors, offsets[i])
                 .parseChain();
             expressionNodes.push(ast);
         }
@@ -9547,7 +9546,7 @@ class Parser$1 {
     parseInterpolationExpression(expression, location, absoluteOffset) {
         const sourceToLex = this._stripComments(expression);
         const tokens = this._lexer.tokenize(sourceToLex);
-        const ast = new _ParseAST(expression, location, absoluteOffset, tokens, sourceToLex.length, 
+        const ast = new _ParseAST(expression, location, absoluteOffset, tokens, 
         /* parseAction */ false, this.errors, 0)
             .parseChain();
         const strings = ['', '']; // The prefix and suffix strings are both empty
@@ -9627,7 +9626,7 @@ class Parser$1 {
     }
     _stripComments(input) {
         const i = this._commentStart(input);
-        return i != null ? input.substring(0, i).trim() : input;
+        return i != null ? input.substring(0, i) : input;
     }
     _commentStart(input) {
         let outerQuote = null;
@@ -9719,12 +9718,11 @@ var ParseContextFlags;
     ParseContextFlags[ParseContextFlags["Writable"] = 1] = "Writable";
 })(ParseContextFlags || (ParseContextFlags = {}));
 class _ParseAST {
-    constructor(input, location, absoluteOffset, tokens, inputLength, parseAction, errors, offset) {
+    constructor(input, location, absoluteOffset, tokens, parseAction, errors, offset) {
         this.input = input;
         this.location = location;
         this.absoluteOffset = absoluteOffset;
         this.tokens = tokens;
-        this.inputLength = inputLength;
         this.parseAction = parseAction;
         this.errors = errors;
         this.offset = offset;
@@ -9769,7 +9767,7 @@ class _ParseAST {
         // No tokens have been processed yet; return the next token's start or the length of the input
         // if there is no token.
         if (this.tokens.length === 0) {
-            return this.inputLength + this.offset;
+            return this.input.length + this.offset;
         }
         return this.next.index + this.offset;
     }
@@ -9915,7 +9913,7 @@ class _ParseAST {
         if (exprs.length == 0) {
             // We have no expressions so create an empty expression that spans the entire input length
             const artificialStart = this.offset;
-            const artificialEnd = this.offset + this.inputLength;
+            const artificialEnd = this.offset + this.input.length;
             return new EmptyExpr(this.span(artificialStart, artificialEnd), this.sourceSpan(artificialStart, artificialEnd));
         }
         if (exprs.length == 1)
@@ -9948,7 +9946,7 @@ class _ParseAST {
                     //
                     // Therefore, we push the end of the `ParseSpan` for this pipe all the way up to the
                     // beginning of the next token, or until the end of input if the next token is EOF.
-                    fullSpanEnd = this.next.index !== -1 ? this.next.index : this.inputLength + this.offset;
+                    fullSpanEnd = this.next.index !== -1 ? this.next.index : this.input.length + this.offset;
                     // The `nameSpan` for an empty pipe name is zero-length at the end of any whitespace
                     // beyond the pipe character.
                     nameSpan = new ParseSpan(fullSpanEnd, fullSpanEnd).toAbsolute(this.absoluteOffset);
@@ -19726,7 +19724,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('13.1.3+9.sha-45503b4.with-local-changes');
+const VERSION = new Version('13.1.3+13.sha-a52685b.with-local-changes');
 
 /**
  * @license
@@ -21767,7 +21765,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('13.1.3+9.sha-45503b4.with-local-changes'));
+    definitionMap.set('version', literal('13.1.3+13.sha-a52685b.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -21884,7 +21882,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('13.1.3+9.sha-45503b4.with-local-changes'));
+    definitionMap.set('version', literal('13.1.3+13.sha-a52685b.with-local-changes'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -22105,7 +22103,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('13.1.3+9.sha-45503b4.with-local-changes'));
+    definitionMap.set('version', literal('13.1.3+13.sha-a52685b.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22147,7 +22145,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('13.1.3+9.sha-45503b4.with-local-changes'));
+    definitionMap.set('version', literal('13.1.3+13.sha-a52685b.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22205,7 +22203,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('13.1.3+9.sha-45503b4.with-local-changes'));
+    definitionMap.set('version', literal('13.1.3+13.sha-a52685b.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22242,7 +22240,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('13.1.3+9.sha-45503b4.with-local-changes'));
+    definitionMap.set('version', literal('13.1.3+13.sha-a52685b.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22300,7 +22298,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('13.1.3+9.sha-45503b4.with-local-changes'));
+    definitionMap.set('version', literal('13.1.3+13.sha-a52685b.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers$1.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
