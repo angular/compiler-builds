@@ -96,7 +96,7 @@ export declare class Element implements Node {
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 export declare class Template implements Node {
-    tagName: string;
+    tagName: string | null;
     attributes: TextAttribute[];
     inputs: BoundAttribute[];
     outputs: BoundEvent[];
@@ -108,7 +108,7 @@ export declare class Template implements Node {
     startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
     i18n?: I18nMeta | undefined;
-    constructor(tagName: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], templateAttrs: (BoundAttribute | TextAttribute)[], children: Node[], references: Reference[], variables: Variable[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta | undefined);
+    constructor(tagName: string | null, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], templateAttrs: (BoundAttribute | TextAttribute)[], children: Node[], references: Reference[], variables: Variable[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 export declare class Content implements Node {
