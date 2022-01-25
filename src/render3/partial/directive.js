@@ -48,7 +48,7 @@
     function createDirectiveDefinitionMap(meta) {
         var definitionMap = new util_2.DefinitionMap();
         definitionMap.set('minVersion', o.literal(MINIMUM_PARTIAL_LINKER_VERSION));
-        definitionMap.set('version', o.literal('12.2.14+3.sha-9616b08.with-local-changes'));
+        definitionMap.set('version', o.literal('12.2.15+1.sha-460befd.with-local-changes'));
         // e.g. `type: MyDirective`
         definitionMap.set('type', meta.internalType);
         // e.g. `selector: 'some-dir'`
