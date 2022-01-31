@@ -35,7 +35,6 @@ export declare class Parser {
     parseSimpleBinding(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
     private _reportError;
     private _parseBindingAst;
-    private _parseQuote;
     /**
      * Parse microsyntax template expression and return a list of bindings or
      * parsing errors in case the given expression is invalid.

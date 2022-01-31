@@ -38,27 +38,6 @@ export declare abstract class ASTWithName extends AST {
     nameSpan: AbsoluteSourceSpan;
     constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, nameSpan: AbsoluteSourceSpan);
 }
-/**
- * Represents a quoted expression of the form:
- *
- * quote = prefix `:` uninterpretedExpression
- * prefix = identifier
- * uninterpretedExpression = arbitrary string
- *
- * A quoted expression is meant to be pre-processed by an AST transformer that
- * converts it into another AST that no longer contains quoted expressions.
- * It is meant to allow third-party developers to extend Angular template
- * expression language. The `uninterpretedExpression` part of the quote is
- * therefore not interpreted by the Angular's own expression parser.
- */
-export declare class Quote extends AST {
-    prefix: string;
-    uninterpretedExpression: string;
-    location: any;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, prefix: string, uninterpretedExpression: string, location: any);
-    visit(visitor: AstVisitor, context?: any): any;
-    toString(): string;
-}
 export declare class EmptyExpr extends AST {
     visit(visitor: AstVisitor, context?: any): void;
 }
@@ -314,7 +293,6 @@ export interface AstVisitor {
     visitNonNullAssert(ast: NonNullAssert, context: any): any;
     visitPropertyRead(ast: PropertyRead, context: any): any;
     visitPropertyWrite(ast: PropertyWrite, context: any): any;
-    visitQuote(ast: Quote, context: any): any;
     visitSafePropertyRead(ast: SafePropertyRead, context: any): any;
     visitSafeKeyedRead(ast: SafeKeyedRead, context: any): any;
     visitCall(ast: Call, context: any): any;
@@ -351,7 +329,6 @@ export declare class RecursiveAstVisitor implements AstVisitor {
     visitSafeKeyedRead(ast: SafeKeyedRead, context: any): any;
     visitCall(ast: Call, context: any): any;
     visitSafeCall(ast: SafeCall, context: any): any;
-    visitQuote(ast: Quote, context: any): any;
     visitAll(asts: AST[], context: any): any;
 }
 export declare class AstTransformer implements AstVisitor {
@@ -376,7 +353,6 @@ export declare class AstTransformer implements AstVisitor {
     visitSafeCall(ast: SafeCall, context: any): AST;
     visitAll(asts: any[]): any[];
     visitChain(ast: Chain, context: any): AST;
-    visitQuote(ast: Quote, context: any): AST;
     visitSafeKeyedRead(ast: SafeKeyedRead, context: any): AST;
 }
 export declare class AstMemoryEfficientTransformer implements AstVisitor {
@@ -401,7 +377,6 @@ export declare class AstMemoryEfficientTransformer implements AstVisitor {
     visitChain(ast: Chain, context: any): AST;
     visitCall(ast: Call, context: any): AST;
     visitSafeCall(ast: SafeCall, context: any): AST;
-    visitQuote(ast: Quote, context: any): AST;
     visitSafeKeyedRead(ast: SafeKeyedRead, context: any): AST;
 }
 export declare class ParsedProperty {
