@@ -17,12 +17,11 @@ export interface LocalResolver {
     globals?: Set<string>;
     maybeRestoreView(): void;
 }
-export declare type InterpolationFunction = (args: o.Expression[]) => o.Expression;
 /**
  * Converts the given expression AST into an executable output AST, assuming the expression is
  * used in an action binding (e.g. an event handler).
  */
-export declare function convertActionBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, action: cdAst.AST, bindingId: string, interpolationFunction?: InterpolationFunction, baseSourceSpan?: ParseSourceSpan, implicitReceiverAccesses?: Set<string>, globals?: Set<string>): o.Statement[];
+export declare function convertActionBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, action: cdAst.AST, bindingId: string, baseSourceSpan?: ParseSourceSpan, implicitReceiverAccesses?: Set<string>, globals?: Set<string>): o.Statement[];
 export interface BuiltinConverter {
     (args: o.Expression[]): o.Expression;
 }
@@ -45,7 +44,7 @@ export declare class ConvertPropertyBindingResult {
  * is used in property binding. The expression has to be preprocessed via
  * `convertPropertyBindingBuiltins`.
  */
-export declare function convertPropertyBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, expressionWithoutBuiltins: cdAst.AST, bindingId: string, interpolationFunction?: InterpolationFunction): ConvertPropertyBindingResult;
+export declare function convertPropertyBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, expressionWithoutBuiltins: cdAst.AST, bindingId: string): ConvertPropertyBindingResult;
 /**
  * Given some expression, such as a binding or interpolation expression, and a context expression to
  * look values up on, visit each facet of the given expression resolving values from the context
@@ -62,7 +61,7 @@ export declare function convertPropertyBinding(localResolver: LocalResolver | nu
  * @returns An array of expressions that can be passed as arguments to instruction expressions like
  * `o.importExpr(R3.propertyInterpolate).callFn(result)`
  */
-export declare function convertUpdateArguments(localResolver: LocalResolver, contextVariableExpression: o.Expression, expressionWithArgumentsToExtract: cdAst.AST, bindingId: string): {
+export declare function convertUpdateArguments(localResolver: LocalResolver, contextVariableExpression: o.Expression, expressionWithArgumentsToExtract: cdAst.Interpolation, bindingId: string): {
     stmts: o.Statement[];
     args: o.Expression[];
 };
