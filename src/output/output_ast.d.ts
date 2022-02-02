@@ -563,7 +563,8 @@ export declare function isNull(exp: Expression): boolean;
 export declare const enum JSDocTagName {
     Desc = "desc",
     Id = "id",
-    Meaning = "meaning"
+    Meaning = "meaning",
+    Suppress = "suppress"
 }
 export declare type JSDocTag = {
     tagName: JSDocTagName | string;
