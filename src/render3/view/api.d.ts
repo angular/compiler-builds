@@ -102,6 +102,10 @@ export interface R3DirectiveMetadata {
      * The list of providers defined in the directive.
      */
     providers: o.Expression | null;
+    /**
+     * Whether or not the component or directive is standalone.
+     */
+    isStandalone: boolean;
 }
 /**
  * Specifies how a list of declaration type references should be emitted into the generated code.
