@@ -1,5 +1,5 @@
 /**
- * @license Angular v14.0.0-next.1+39.sha-638a2d5.with-local-changes
+ * @license Angular v14.0.0-next.1+40.sha-db6cf7e.with-local-changes
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9348,11 +9348,15 @@ class Parser$1 {
         this._lexer = _lexer;
         this.errors = [];
     }
-    parseAction(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+    parseAction(input, isAssignmentEvent, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
         this._checkNoInterpolation(input, location, interpolationConfig);
         const sourceToLex = this._stripComments(input);
         const tokens = this._lexer.tokenize(sourceToLex);
-        const ast = new _ParseAST(input, location, absoluteOffset, tokens, true, this.errors, 0).parseChain();
+        let flags = 1 /* Action */;
+        if (isAssignmentEvent) {
+            flags |= 2 /* AssignmentEvent */;
+        }
+        const ast = new _ParseAST(input, location, absoluteOffset, tokens, flags, this.errors, 0).parseChain();
         return new ASTWithSource(ast, input, location, absoluteOffset, this.errors);
     }
     parseBinding(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
@@ -9379,7 +9383,7 @@ class Parser$1 {
         this._checkNoInterpolation(input, location, interpolationConfig);
         const sourceToLex = this._stripComments(input);
         const tokens = this._lexer.tokenize(sourceToLex);
-        return new _ParseAST(input, location, absoluteOffset, tokens, false, this.errors, 0)
+        return new _ParseAST(input, location, absoluteOffset, tokens, 0 /* None */, this.errors, 0)
             .parseChain();
     }
     /**
@@ -9410,7 +9414,7 @@ class Parser$1 {
      */
     parseTemplateBindings(templateKey, templateValue, templateUrl, absoluteKeyOffset, absoluteValueOffset) {
         const tokens = this._lexer.tokenize(templateValue);
-        const parser = new _ParseAST(templateValue, templateUrl, absoluteValueOffset, tokens, false /* parseAction */, this.errors, 0 /* relative offset */);
+        const parser = new _ParseAST(templateValue, templateUrl, absoluteValueOffset, tokens, 0 /* None */, this.errors, 0 /* relative offset */);
         return parser.parseTemplateBindings({
             source: templateKey,
             span: new AbsoluteSourceSpan(absoluteKeyOffset, absoluteKeyOffset + templateKey.length),
@@ -9425,7 +9429,7 @@ class Parser$1 {
             const expressionText = expressions[i].text;
             const sourceToLex = this._stripComments(expressionText);
             const tokens = this._lexer.tokenize(sourceToLex);
-            const ast = new _ParseAST(input, location, absoluteOffset, tokens, false, this.errors, offsets[i])
+            const ast = new _ParseAST(input, location, absoluteOffset, tokens, 0 /* None */, this.errors, offsets[i])
                 .parseChain();
             expressionNodes.push(ast);
         }
@@ -9439,8 +9443,7 @@ class Parser$1 {
     parseInterpolationExpression(expression, location, absoluteOffset) {
         const sourceToLex = this._stripComments(expression);
         const tokens = this._lexer.tokenize(sourceToLex);
-        const ast = new _ParseAST(expression, location, absoluteOffset, tokens, 
-        /* parseAction */ false, this.errors, 0)
+        const ast = new _ParseAST(expression, location, absoluteOffset, tokens, 0 /* None */, this.errors, 0)
             .parseChain();
         const strings = ['', '']; // The prefix and suffix strings are both empty
         return this.createInterpolationAst(strings, [ast], expression, location, absoluteOffset);
@@ -9611,12 +9614,12 @@ var ParseContextFlags;
     ParseContextFlags[ParseContextFlags["Writable"] = 1] = "Writable";
 })(ParseContextFlags || (ParseContextFlags = {}));
 class _ParseAST {
-    constructor(input, location, absoluteOffset, tokens, parseAction, errors, offset) {
+    constructor(input, location, absoluteOffset, tokens, parseFlags, errors, offset) {
         this.input = input;
         this.location = location;
         this.absoluteOffset = absoluteOffset;
         this.tokens = tokens;
-        this.parseAction = parseAction;
+        this.parseFlags = parseFlags;
         this.errors = errors;
         this.offset = offset;
         this.rparensExpected = 0;
@@ -9793,7 +9796,7 @@ class _ParseAST {
             const expr = this.parsePipe();
             exprs.push(expr);
             if (this.consumeOptionalCharacter($SEMICOLON)) {
-                if (!this.parseAction) {
+                if (!(this.parseFlags & 1 /* Action */)) {
                     this.error('Binding expression cannot contain chained expression');
                 }
                 while (this.consumeOptionalCharacter($SEMICOLON)) {
@@ -9817,7 +9820,7 @@ class _ParseAST {
         const start = this.inputIndex;
         let result = this.parseExpression();
         if (this.consumeOptionalOperator('|')) {
-            if (this.parseAction) {
+            if (this.parseFlags & 1 /* Action */) {
                 this.error('Cannot have a pipe in an action expression');
             }
             do {
@@ -10159,7 +10162,7 @@ class _ParseAST {
         const nameSpan = this.sourceSpan(nameStart);
         let receiver;
         if (isSafe) {
-            if (this.consumeOptionalOperator('=')) {
+            if (this.consumeOptionalAssignment()) {
                 this.error('The \'?.\' operator cannot be used in the assignment');
                 receiver = new EmptyExpr(this.span(start), this.sourceSpan(start));
             }
@@ -10168,8 +10171,8 @@ class _ParseAST {
             }
         }
         else {
-            if (this.consumeOptionalOperator('=')) {
-                if (!this.parseAction) {
+            if (this.consumeOptionalAssignment()) {
+                if (!(this.parseFlags & 1 /* Action */)) {
                     this.error('Bindings cannot contain assignments');
                     return new EmptyExpr(this.span(start), this.sourceSpan(start));
                 }
@@ -10194,6 +10197,22 @@ class _ParseAST {
         const sourceSpan = this.sourceSpan(start);
         return isSafe ? new SafeCall(span, sourceSpan, receiver, args, argumentSpan) :
             new Call(span, sourceSpan, receiver, args, argumentSpan);
+    }
+    consumeOptionalAssignment() {
+        // When parsing assignment events (originating from two-way-binding aka banana-in-a-box syntax),
+        // it is valid for the primary expression to be terminated by the non-null operator. This
+        // primary expression is substituted as LHS of the assignment operator to achieve
+        // two-way-binding, such that the LHS could be the non-null operator. The grammar doesn't
+        // naturally allow for this syntax, so assignment events are parsed specially.
+        if ((this.parseFlags & 2 /* AssignmentEvent */) && this.next.isOperator('!') &&
+            this.peek(1).isOperator('=')) {
+            // First skip over the ! operator.
+            this.advance();
+            // Then skip over the = operator, to fully consume the optional assignment operator.
+            this.advance();
+            return true;
+        }
+        return this.consumeOptionalOperator('=');
     }
     parseCallArguments() {
         if (this.next.isCharacter($RPAREN))
@@ -14884,7 +14903,7 @@ class BindingParser {
                 // Regardless, neither of these values are used in Ivy but are only here to satisfy the
                 // function signature. This should likely be refactored in the future so that `sourceSpan`
                 // isn't being used inaccurately.
-                this.parseEvent(propName, expression, sourceSpan, sourceSpan, [], targetEvents, sourceSpan);
+                this.parseEvent(propName, expression, /* isAssignmentEvent */ false, sourceSpan, sourceSpan, [], targetEvents, sourceSpan);
             }
             else {
                 this._reportError(`Value of the host listener "${propName}" needs to be a string representing an expression but got "${expression}" (${typeof expression})`, sourceSpan);
@@ -15121,7 +15140,7 @@ class BindingParser {
         return new BoundElementProperty(boundPropertyName, bindingType, securityContexts[0], boundProp.expression, unit, boundProp.sourceSpan, boundProp.keySpan, boundProp.valueSpan);
     }
     // TODO: keySpan should be required but was made optional to avoid changing VE parser.
-    parseEvent(name, expression, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents, keySpan) {
+    parseEvent(name, expression, isAssignmentEvent, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents, keySpan) {
         if (name.length === 0) {
             this._reportError(`Event name is missing in binding`, sourceSpan);
         }
@@ -15130,21 +15149,21 @@ class BindingParser {
             if (keySpan !== undefined) {
                 keySpan = moveParseSourceSpan(keySpan, new AbsoluteSourceSpan(keySpan.start.offset + 1, keySpan.end.offset));
             }
-            this._parseAnimationEvent(name, expression, sourceSpan, handlerSpan, targetEvents, keySpan);
+            this._parseAnimationEvent(name, expression, isAssignmentEvent, sourceSpan, handlerSpan, targetEvents, keySpan);
         }
         else {
-            this._parseRegularEvent(name, expression, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents, keySpan);
+            this._parseRegularEvent(name, expression, isAssignmentEvent, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents, keySpan);
         }
     }
     calcPossibleSecurityContexts(selector, propName, isAttribute) {
         const prop = this._schemaRegistry.getMappedPropName(propName);
         return calcPossibleSecurityContexts(this._schemaRegistry, selector, prop, isAttribute);
     }
-    _parseAnimationEvent(name, expression, sourceSpan, handlerSpan, targetEvents, keySpan) {
+    _parseAnimationEvent(name, expression, isAssignmentEvent, sourceSpan, handlerSpan, targetEvents, keySpan) {
         const matches = splitAtPeriod(name, [name, '']);
         const eventName = matches[0];
         const phase = matches[1].toLowerCase();
-        const ast = this._parseAction(expression, handlerSpan);
+        const ast = this._parseAction(expression, isAssignmentEvent, handlerSpan);
         targetEvents.push(new ParsedEvent(eventName, phase, 1 /* Animation */, ast, sourceSpan, handlerSpan, keySpan));
         if (eventName.length === 0) {
             this._reportError(`Animation event name is missing in binding`, sourceSpan);
@@ -15158,20 +15177,20 @@ class BindingParser {
             this._reportError(`The animation trigger output event (@${eventName}) is missing its phase value name (start or done are currently supported)`, sourceSpan);
         }
     }
-    _parseRegularEvent(name, expression, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents, keySpan) {
+    _parseRegularEvent(name, expression, isAssignmentEvent, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents, keySpan) {
         // long format: 'target: eventName'
         const [target, eventName] = splitAtColon(name, [null, name]);
-        const ast = this._parseAction(expression, handlerSpan);
+        const ast = this._parseAction(expression, isAssignmentEvent, handlerSpan);
         targetMatchableAttrs.push([name, ast.source]);
         targetEvents.push(new ParsedEvent(eventName, target, 0 /* Regular */, ast, sourceSpan, handlerSpan, keySpan));
         // Don't detect directives for event names for now,
         // so don't add the event name to the matchableAttrs
     }
-    _parseAction(value, sourceSpan) {
+    _parseAction(value, isAssignmentEvent, sourceSpan) {
         const sourceInfo = (sourceSpan && sourceSpan.start || '(unknown').toString();
         const absoluteOffset = (sourceSpan && sourceSpan.start) ? sourceSpan.start.offset : 0;
         try {
-            const ast = this._exprParser.parseAction(value, sourceInfo, absoluteOffset, this._interpolationConfig);
+            const ast = this._exprParser.parseAction(value, isAssignmentEvent, sourceInfo, absoluteOffset, this._interpolationConfig);
             if (ast) {
                 this._reportExpressionParserErrors(ast.errors, sourceSpan);
             }
@@ -15633,7 +15652,7 @@ class HtmlAstToIvyAst {
                 const events = [];
                 const identifier = bindParts[IDENT_KW_IDX];
                 const keySpan = createKeySpan(srcSpan, bindParts[KW_ON_IDX], identifier);
-                this.bindingParser.parseEvent(identifier, value, srcSpan, attribute.valueSpan || srcSpan, matchableAttributes, events, keySpan);
+                this.bindingParser.parseEvent(identifier, value, /* isAssignmentEvent */ false, srcSpan, attribute.valueSpan || srcSpan, matchableAttributes, events, keySpan);
                 addEvents(events, boundEvents);
             }
             else if (bindParts[KW_BINDON_IDX]) {
@@ -15677,7 +15696,7 @@ class HtmlAstToIvyAst {
             }
             else {
                 const events = [];
-                this.bindingParser.parseEvent(identifier, value, srcSpan, attribute.valueSpan || srcSpan, matchableAttributes, events, keySpan);
+                this.bindingParser.parseEvent(identifier, value, /* isAssignmentEvent */ false, srcSpan, attribute.valueSpan || srcSpan, matchableAttributes, events, keySpan);
                 addEvents(events, boundEvents);
             }
             return true;
@@ -15715,7 +15734,7 @@ class HtmlAstToIvyAst {
     }
     parseAssignmentEvent(name, expression, sourceSpan, valueSpan, targetMatchableAttrs, boundEvents, keySpan) {
         const events = [];
-        this.bindingParser.parseEvent(`${name}Change`, `${expression}=$event`, sourceSpan, valueSpan || sourceSpan, targetMatchableAttrs, events, keySpan);
+        this.bindingParser.parseEvent(`${name}Change`, `${expression} =$event`, /* isAssignmentEvent */ true, sourceSpan, valueSpan || sourceSpan, targetMatchableAttrs, events, keySpan);
         addEvents(events, boundEvents);
     }
     reportError(message, sourceSpan, level = ParseErrorLevel.ERROR) {
@@ -19622,7 +19641,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('14.0.0-next.1+39.sha-638a2d5.with-local-changes');
+const VERSION = new Version('14.0.0-next.1+40.sha-db6cf7e.with-local-changes');
 
 /**
  * @license
@@ -21663,7 +21682,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('14.0.0-next.1+39.sha-638a2d5.with-local-changes'));
+    definitionMap.set('version', literal('14.0.0-next.1+40.sha-db6cf7e.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -21780,7 +21799,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('14.0.0-next.1+39.sha-638a2d5.with-local-changes'));
+    definitionMap.set('version', literal('14.0.0-next.1+40.sha-db6cf7e.with-local-changes'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -22001,7 +22020,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('14.0.0-next.1+39.sha-638a2d5.with-local-changes'));
+    definitionMap.set('version', literal('14.0.0-next.1+40.sha-db6cf7e.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22043,7 +22062,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('14.0.0-next.1+39.sha-638a2d5.with-local-changes'));
+    definitionMap.set('version', literal('14.0.0-next.1+40.sha-db6cf7e.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22101,7 +22120,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('14.0.0-next.1+39.sha-638a2d5.with-local-changes'));
+    definitionMap.set('version', literal('14.0.0-next.1+40.sha-db6cf7e.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22138,7 +22157,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('14.0.0-next.1+39.sha-638a2d5.with-local-changes'));
+    definitionMap.set('version', literal('14.0.0-next.1+40.sha-db6cf7e.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22196,7 +22215,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('14.0.0-next.1+39.sha-638a2d5.with-local-changes'));
+    definitionMap.set('version', literal('14.0.0-next.1+40.sha-db6cf7e.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);

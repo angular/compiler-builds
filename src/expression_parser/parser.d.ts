@@ -25,11 +25,26 @@ export declare class TemplateBindingParseResult {
     errors: ParserError[];
     constructor(templateBindings: TemplateBinding[], warnings: string[], errors: ParserError[]);
 }
+/**
+ * Represents the possible parse modes to be used as a bitmask.
+ */
+export declare const enum ParseFlags {
+    None = 0,
+    /**
+     * Whether an output binding is being parsed.
+     */
+    Action = 1,
+    /**
+     * Whether an assignment event is being parsed, i.e. an expression originating from
+     * two-way-binding aka banana-in-a-box syntax.
+     */
+    AssignmentEvent = 2
+}
 export declare class Parser {
     private _lexer;
     private errors;
     constructor(_lexer: Lexer);
-    parseAction(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
+    parseAction(input: string, isAssignmentEvent: boolean, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
     parseBinding(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
     private checkSimpleExpression;
     parseSimpleBinding(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
@@ -99,7 +114,7 @@ export declare class _ParseAST {
     location: string;
     absoluteOffset: number;
     tokens: Token[];
-    parseAction: boolean;
+    parseFlags: ParseFlags;
     private errors;
     private offset;
     private rparensExpected;
@@ -108,7 +123,7 @@ export declare class _ParseAST {
     private context;
     private sourceSpanCache;
     index: number;
-    constructor(input: string, location: string, absoluteOffset: number, tokens: Token[], parseAction: boolean, errors: ParserError[], offset: number);
+    constructor(input: string, location: string, absoluteOffset: number, tokens: Token[], parseFlags: ParseFlags, errors: ParserError[], offset: number);
     peek(offset: number): Token;
     get next(): Token;
     /** Whether all the parser input has been processed. */
@@ -175,6 +190,7 @@ export declare class _ParseAST {
     parseLiteralMap(): LiteralMap;
     parseAccessMember(readReceiver: AST, start: number, isSafe: boolean): AST;
     parseCall(receiver: AST, start: number, isSafe: boolean): AST;
+    private consumeOptionalAssignment;
     parseCallArguments(): BindingPipe[];
     /**
      * Parses an identifier, a keyword, a string with an optional `-` in between,
