@@ -26,6 +26,20 @@ export declare const NON_BINDABLE_ATTR = "ngNonBindable";
 /** Name for the variable keeping track of the context returned by `ɵɵrestoreView`. */
 export declare const RESTORED_VIEW_CONTEXT_NAME = "restoredCtx";
 /**
+ * Possible types that can be used to generate the parameters of an instruction call.
+ * If the parameters are a function, the function will be invoked at the time the instruction
+ * is generated.
+ */
+export declare type InstructionParams = (o.Expression | o.Expression[]) | (() => (o.Expression | o.Expression[]));
+/** Necessary information to generate a call to an instruction function. */
+export interface Instruction {
+    span: ParseSourceSpan | null;
+    reference: o.ExternalReference;
+    paramsOrFn?: InstructionParams;
+}
+/** Generates a call to a single instruction. */
+export declare function invokeInstruction(span: ParseSourceSpan | null, reference: o.ExternalReference, params: o.Expression[]): o.Expression;
+/**
  * Creates an allocator for a temporary variable.
  *
  * A variable declaration is added to the statements the first time the allocator is invoked.
@@ -67,11 +81,14 @@ export declare class DefinitionMap<T = any> {
 export declare function getAttrsForDirectiveMatching(elOrTpl: t.Element | t.Template): {
     [name: string]: string;
 };
-/** Returns a call expression to a chained instruction, e.g. `property(params[0])(params[1])`. */
-export declare function chainedInstruction(reference: o.ExternalReference, calls: o.Expression[][], span?: ParseSourceSpan | null): o.Expression;
 /**
  * Gets the number of arguments expected to be passed to a generated instruction in the case of
  * interpolation instructions.
  * @param interpolation An interpolation ast
  */
 export declare function getInterpolationArgsLength(interpolation: Interpolation): number;
+/**
+ * Generates the final instruction call statements based on the passed in configuration.
+ * Will try to chain instructions as much as possible, if chaining is supported.
+ */
+export declare function getInstructionStatements(instructions: Instruction[]): o.Statement[];
