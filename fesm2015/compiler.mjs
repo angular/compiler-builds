@@ -1,5 +1,5 @@
 /**
- * @license Angular v14.0.0-next.2+5.sha-635683a.with-local-changes
+ * @license Angular v14.0.0-next.2+7.sha-1b91e10.with-local-changes
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4876,6 +4876,65 @@ const IMPLICIT_REFERENCE = '$implicit';
 const NON_BINDABLE_ATTR = 'ngNonBindable';
 /** Name for the variable keeping track of the context returned by `ɵɵrestoreView`. */
 const RESTORED_VIEW_CONTEXT_NAME = 'restoredCtx';
+/** Instructions that support chaining. */
+const CHAINABLE_INSTRUCTIONS = new Set([
+    Identifiers.element,
+    Identifiers.elementStart,
+    Identifiers.elementEnd,
+    Identifiers.elementContainer,
+    Identifiers.elementContainerStart,
+    Identifiers.elementContainerEnd,
+    Identifiers.i18nExp,
+    Identifiers.listener,
+    Identifiers.classProp,
+    Identifiers.syntheticHostListener,
+    Identifiers.hostProperty,
+    Identifiers.syntheticHostProperty,
+    Identifiers.property,
+    Identifiers.propertyInterpolate1,
+    Identifiers.propertyInterpolate2,
+    Identifiers.propertyInterpolate3,
+    Identifiers.propertyInterpolate4,
+    Identifiers.propertyInterpolate5,
+    Identifiers.propertyInterpolate6,
+    Identifiers.propertyInterpolate7,
+    Identifiers.propertyInterpolate8,
+    Identifiers.propertyInterpolateV,
+    Identifiers.attribute,
+    Identifiers.attributeInterpolate1,
+    Identifiers.attributeInterpolate2,
+    Identifiers.attributeInterpolate3,
+    Identifiers.attributeInterpolate4,
+    Identifiers.attributeInterpolate5,
+    Identifiers.attributeInterpolate6,
+    Identifiers.attributeInterpolate7,
+    Identifiers.attributeInterpolate8,
+    Identifiers.attributeInterpolateV,
+    Identifiers.styleProp,
+    Identifiers.stylePropInterpolate1,
+    Identifiers.stylePropInterpolate2,
+    Identifiers.stylePropInterpolate3,
+    Identifiers.stylePropInterpolate4,
+    Identifiers.stylePropInterpolate5,
+    Identifiers.stylePropInterpolate6,
+    Identifiers.stylePropInterpolate7,
+    Identifiers.stylePropInterpolate8,
+    Identifiers.stylePropInterpolateV,
+    Identifiers.textInterpolate,
+    Identifiers.textInterpolate1,
+    Identifiers.textInterpolate2,
+    Identifiers.textInterpolate3,
+    Identifiers.textInterpolate4,
+    Identifiers.textInterpolate5,
+    Identifiers.textInterpolate6,
+    Identifiers.textInterpolate7,
+    Identifiers.textInterpolate8,
+    Identifiers.textInterpolateV,
+]);
+/** Generates a call to a single instruction. */
+function invokeInstruction(span, reference, params) {
+    return importExpr(reference, null, span).callFn(params, span);
+}
 /**
  * Creates an allocator for a temporary variable.
  *
@@ -5017,20 +5076,6 @@ function getAttrsForDirectiveMatching(elOrTpl) {
     }
     return attributesMap;
 }
-/** Returns a call expression to a chained instruction, e.g. `property(params[0])(params[1])`. */
-function chainedInstruction(reference, calls, span) {
-    let expression = importExpr(reference, null, span);
-    if (calls.length > 0) {
-        for (let i = 0; i < calls.length; i++) {
-            expression = expression.callFn(calls[i], span);
-        }
-    }
-    else {
-        // Add a blank invocation, in case the `calls` array is empty.
-        expression = expression.callFn([], span);
-    }
-    return expression;
-}
 /**
  * Gets the number of arguments expected to be passed to a generated instruction in the case of
  * interpolation instructions.
@@ -5047,6 +5092,40 @@ function getInterpolationArgsLength(interpolation) {
     else {
         return expressions.length + strings.length;
     }
+}
+/**
+ * Generates the final instruction call statements based on the passed in configuration.
+ * Will try to chain instructions as much as possible, if chaining is supported.
+ */
+function getInstructionStatements(instructions) {
+    var _a;
+    const statements = [];
+    let pendingExpression = null;
+    let pendingExpressionType = null;
+    for (const current of instructions) {
+        const resolvedParams = (_a = (typeof current.paramsOrFn === 'function' ? current.paramsOrFn() : current.paramsOrFn)) !== null && _a !== void 0 ? _a : [];
+        const params = Array.isArray(resolvedParams) ? resolvedParams : [resolvedParams];
+        // If the current instruction is the same as the previous one
+        // and it can be chained, add another call to the chain.
+        if (pendingExpressionType === current.reference &&
+            CHAINABLE_INSTRUCTIONS.has(pendingExpressionType)) {
+            // We'll always have a pending expression when there's a pending expression type.
+            pendingExpression = pendingExpression.callFn(params, pendingExpression.sourceSpan);
+        }
+        else {
+            if (pendingExpression !== null) {
+                statements.push(pendingExpression.toStmt());
+            }
+            pendingExpression = invokeInstruction(current.span, current.reference, params);
+            pendingExpressionType = current.reference;
+        }
+    }
+    // Since the current instruction adds the previous one to the statements,
+    // we may be left with the final one at the end that is still pending.
+    if (pendingExpression !== null) {
+        statements.push(pendingExpression.toStmt());
+    }
+    return statements;
 }
 
 /**
@@ -16946,9 +17025,9 @@ class TemplateDefinitionBuilder {
             this.i18nEnd(null, selfClosingI18nInstruction);
         }
         // Generate all the creation mode instructions (e.g. resolve bindings in listeners)
-        const creationStatements = this._creationCodeFns.map((fn) => fn());
+        const creationStatements = getInstructionStatements(this._creationCodeFns);
         // Generate all the update mode instructions (e.g. resolve property or text bindings)
-        const updateStatements = this._updateCodeFns.map((fn) => fn());
+        const updateStatements = getInstructionStatements(this._updateCodeFns);
         //  Variable declaration must occur after binding resolution so we can generate context
         //  instructions that build on each other.
         // e.g. const b = nextContext().$implicit(); const b = nextContext();
@@ -17101,7 +17180,7 @@ class TemplateDefinitionBuilder {
                     if (Object.keys(icuMapping).length) {
                         args.push(mapLiteral(icuMapping, true));
                     }
-                    return instruction(null, Identifiers.i18nPostprocess, args);
+                    return invokeInstruction(null, Identifiers.i18nPostprocess, args);
                 };
             }
             this.i18nTranslate(meta, params, context.ref, transformFn);
@@ -17136,14 +17215,12 @@ class TemplateDefinitionBuilder {
         // setup accumulated bindings
         const { index, bindings } = this.i18n;
         if (bindings.size) {
-            const chainBindings = [];
-            bindings.forEach(binding => {
-                chainBindings.push({ sourceSpan: span, value: () => this.convertPropertyBinding(binding) });
-            });
-            // for i18n block, advance to the most recent element index (by taking the current number of
-            // elements and subtracting one) before invoking `i18nExp` instructions, to make sure the
-            // necessary lifecycle hooks of components/directives are properly flushed.
-            this.updateInstructionChainWithAdvance(this.getConstCount() - 1, Identifiers.i18nExp, chainBindings);
+            for (const binding of bindings) {
+                // for i18n block, advance to the most recent element index (by taking the current number of
+                // elements and subtracting one) before invoking `i18nExp` instructions, to make sure the
+                // necessary lifecycle hooks of components/directives are properly flushed.
+                this.updateInstructionWithAdvance(this.getConstCount() - 1, span, Identifiers.i18nExp, () => this.convertPropertyBinding(binding));
+            }
             this.updateInstruction(span, Identifiers.i18nApply, [literal(index)]);
         }
         if (!selfClosing) {
@@ -17154,7 +17231,6 @@ class TemplateDefinitionBuilder {
     i18nAttributesInstruction(nodeIndex, attrs, sourceSpan) {
         let hasBindings = false;
         const i18nAttrArgs = [];
-        const bindings = [];
         attrs.forEach(attr => {
             const message = attr.i18n;
             const converted = attr.value.visit(this._valueConverter);
@@ -17165,16 +17241,10 @@ class TemplateDefinitionBuilder {
                 i18nAttrArgs.push(literal(attr.name), this.i18nTranslate(message, params));
                 converted.expressions.forEach(expression => {
                     hasBindings = true;
-                    bindings.push({
-                        sourceSpan,
-                        value: () => this.convertPropertyBinding(expression),
-                    });
+                    this.updateInstructionWithAdvance(nodeIndex, sourceSpan, Identifiers.i18nExp, () => this.convertPropertyBinding(expression));
                 });
             }
         });
-        if (bindings.length > 0) {
-            this.updateInstructionChainWithAdvance(nodeIndex, Identifiers.i18nExp, bindings);
-        }
         if (i18nAttrArgs.length > 0) {
             const index = literal(this.allocateDataSlot());
             const constIndex = this.addToConsts(literalArr(i18nAttrArgs));
@@ -17303,11 +17373,9 @@ class TemplateDefinitionBuilder {
             }
             // Generate Listeners (outputs)
             if (element.outputs.length > 0) {
-                const listeners = element.outputs.map((outputAst) => ({
-                    sourceSpan: outputAst.sourceSpan,
-                    params: this.prepareListenerParameter(element.name, outputAst, elementIndex)
-                }));
-                this.creationInstructionChain(Identifiers.listener, listeners);
+                for (const outputAst of element.outputs) {
+                    this.creationInstruction(outputAst.sourceSpan, Identifiers.listener, this.prepareListenerParameter(element.name, outputAst, elementIndex));
+                }
             }
             // Note: it's important to keep i18n/i18nStart instructions after i18nAttributes and
             // listeners, to make sure i18nAttributes instruction targets current element at runtime.
@@ -17348,9 +17416,8 @@ class TemplateDefinitionBuilder {
                 const hasValue = value instanceof LiteralPrimitive ? !!value.value : true;
                 this.allocateBindingSlots(value);
                 propertyBindings.push({
-                    name: prepareSyntheticPropertyName(input.name),
-                    sourceSpan: input.sourceSpan,
-                    value: () => hasValue ? this.convertPropertyBinding(value) : emptyValueBindInstruction
+                    span: input.sourceSpan,
+                    paramsOrFn: getBindingFunctionParams(() => hasValue ? this.convertPropertyBinding(value) : emptyValueBindInstruction, prepareSyntheticPropertyName(input.name))
                 });
             }
             else {
@@ -17387,10 +17454,8 @@ class TemplateDefinitionBuilder {
                             // [prop]="value"
                             // Collect all the properties so that we can chain into a single function at the end.
                             propertyBindings.push({
-                                name: attrName,
-                                sourceSpan: input.sourceSpan,
-                                value: () => this.convertPropertyBinding(value),
-                                params
+                                span: input.sourceSpan,
+                                paramsOrFn: getBindingFunctionParams(() => this.convertPropertyBinding(value), attrName, params)
                             });
                         }
                     }
@@ -17404,10 +17469,8 @@ class TemplateDefinitionBuilder {
                             // [attr.name]="value" or attr.name="{{value}}"
                             // Collect the attribute bindings so that they can be chained at the end.
                             attributeBindings.push({
-                                name: attrName,
-                                sourceSpan: input.sourceSpan,
-                                value: () => this.convertPropertyBinding(boundValue),
-                                params
+                                span: input.sourceSpan,
+                                paramsOrFn: getBindingFunctionParams(() => this.convertPropertyBinding(boundValue), attrName, params)
                             });
                         }
                     }
@@ -17423,11 +17486,11 @@ class TemplateDefinitionBuilder {
                 }
             }
         });
-        if (propertyBindings.length > 0) {
-            this.updateInstructionChainWithAdvance(elementIndex, Identifiers.property, propertyBindings);
+        for (const propertyBinding of propertyBindings) {
+            this.updateInstructionWithAdvance(elementIndex, propertyBinding.span, Identifiers.property, propertyBinding.paramsOrFn);
         }
-        if (attributeBindings.length > 0) {
-            this.updateInstructionChainWithAdvance(elementIndex, Identifiers.attribute, attributeBindings);
+        for (const attributeBinding of attributeBindings) {
+            this.updateInstructionWithAdvance(elementIndex, attributeBinding.span, Identifiers.attribute, attributeBinding.paramsOrFn);
         }
         // Traverse element child nodes
         visitAll$1(this, element.children);
@@ -17507,12 +17570,8 @@ class TemplateDefinitionBuilder {
                 this.templatePropertyBindings(templateIndex, inputs);
             }
             // Generate listeners for directive output
-            if (template.outputs.length > 0) {
-                const listeners = template.outputs.map((outputAst) => ({
-                    sourceSpan: outputAst.sourceSpan,
-                    params: this.prepareListenerParameter('ng_template', outputAst, templateIndex)
-                }));
-                this.creationInstructionChain(Identifiers.listener, listeners);
+            for (const outputAst of template.outputs) {
+                this.creationInstruction(outputAst.sourceSpan, Identifiers.listener, this.prepareListenerParameter('ng_template', outputAst, templateIndex));
             }
         }
     }
@@ -17567,7 +17626,7 @@ class TemplateDefinitionBuilder {
         const transformFn = (raw) => {
             const params = Object.assign(Object.assign({}, vars), placeholders);
             const formatted = i18nFormatPlaceholderNames(params, /* useCamelCase */ false);
-            return instruction(null, Identifiers.i18nPostprocess, [raw, mapLiteral(formatted, true)]);
+            return invokeInstruction(null, Identifiers.i18nPostprocess, [raw, mapLiteral(formatted, true)]);
         };
         // in case the whole i18n message is a single ICU - we do not need to
         // create a separate top-level translation, we can use the root ref instead
@@ -17609,32 +17668,33 @@ class TemplateDefinitionBuilder {
     }
     templatePropertyBindings(templateIndex, attrs) {
         const propertyBindings = [];
-        attrs.forEach(input => {
-            if (input instanceof BoundAttribute) {
-                const value = input.value.visit(this._valueConverter);
-                if (value !== undefined) {
-                    this.allocateBindingSlots(value);
-                    if (value instanceof Interpolation) {
-                        // Params typically contain attribute namespace and value sanitizer, which is applicable
-                        // for regular HTML elements, but not applicable for <ng-template> (since props act as
-                        // inputs to directives), so keep params array empty.
-                        const params = [];
-                        // prop="{{value}}" case
-                        this.interpolatedUpdateInstruction(getPropertyInterpolationExpression(value), templateIndex, input.name, input, value, params);
-                    }
-                    else {
-                        // [prop]="value" case
-                        propertyBindings.push({
-                            name: input.name,
-                            sourceSpan: input.sourceSpan,
-                            value: () => this.convertPropertyBinding(value)
-                        });
-                    }
-                }
+        for (const input of attrs) {
+            if (!(input instanceof BoundAttribute)) {
+                continue;
             }
-        });
-        if (propertyBindings.length > 0) {
-            this.updateInstructionChainWithAdvance(templateIndex, Identifiers.property, propertyBindings);
+            const value = input.value.visit(this._valueConverter);
+            if (value === undefined) {
+                continue;
+            }
+            this.allocateBindingSlots(value);
+            if (value instanceof Interpolation) {
+                // Params typically contain attribute namespace and value sanitizer, which is applicable
+                // for regular HTML elements, but not applicable for <ng-template> (since props act as
+                // inputs to directives), so keep params array empty.
+                const params = [];
+                // prop="{{value}}" case
+                this.interpolatedUpdateInstruction(getPropertyInterpolationExpression(value), templateIndex, input.name, input, value, params);
+            }
+            else {
+                // [prop]="value" case
+                propertyBindings.push({
+                    span: input.sourceSpan,
+                    paramsOrFn: getBindingFunctionParams(() => this.convertPropertyBinding(value), input.name)
+                });
+            }
+        }
+        for (const propertyBinding of propertyBindings) {
+            this.updateInstructionWithAdvance(templateIndex, propertyBinding.span, Identifiers.property, propertyBinding.paramsOrFn);
         }
     }
     // Bindings must only be resolved after all local refs have been visited, so all
@@ -17642,38 +17702,22 @@ class TemplateDefinitionBuilder {
     // Otherwise, we wouldn't be able to support local refs that are defined after their
     // bindings. e.g. {{ foo }} <div #foo></div>
     instructionFn(fns, span, reference, paramsOrFn, prepend = false) {
-        fns[prepend ? 'unshift' : 'push'](() => {
-            const params = Array.isArray(paramsOrFn) ? paramsOrFn : paramsOrFn();
-            return instruction(span, reference, params).toStmt();
-        });
+        fns[prepend ? 'unshift' : 'push']({ span, reference, paramsOrFn });
     }
     processStylingUpdateInstruction(elementIndex, instruction) {
         let allocateBindingSlots = 0;
         if (instruction) {
-            const calls = [];
-            instruction.calls.forEach(call => {
+            for (const call of instruction.calls) {
                 allocateBindingSlots += call.allocateBindingSlots;
-                calls.push({
-                    sourceSpan: call.sourceSpan,
-                    value: () => {
-                        return call.params(value => (call.supportsInterpolation && value instanceof Interpolation) ?
-                            this.getUpdateInstructionArguments(value) :
-                            this.convertPropertyBinding(value));
-                    }
-                });
-            });
-            this.updateInstructionChainWithAdvance(elementIndex, instruction.reference, calls);
+                this.updateInstructionWithAdvance(elementIndex, call.sourceSpan, instruction.reference, () => call.params(value => (call.supportsInterpolation && value instanceof Interpolation) ?
+                    this.getUpdateInstructionArguments(value) :
+                    this.convertPropertyBinding(value)));
+            }
         }
         return allocateBindingSlots;
     }
     creationInstruction(span, reference, paramsOrFn, prepend) {
         this.instructionFn(this._creationCodeFns, span, reference, paramsOrFn || [], prepend);
-    }
-    creationInstructionChain(reference, calls) {
-        const span = calls.length ? calls[0].sourceSpan : null;
-        this._creationCodeFns.push(() => {
-            return chainedInstruction(reference, calls.map(call => call.params()), span).toStmt();
-        });
     }
     updateInstructionWithAdvance(nodeIndex, span, reference, paramsOrFn) {
         this.addAdvanceInstructionIfNecessary(nodeIndex, span);
@@ -17681,28 +17725,6 @@ class TemplateDefinitionBuilder {
     }
     updateInstruction(span, reference, paramsOrFn) {
         this.instructionFn(this._updateCodeFns, span, reference, paramsOrFn || []);
-    }
-    updateInstructionChain(reference, bindings) {
-        const span = bindings.length ? bindings[0].sourceSpan : null;
-        this._updateCodeFns.push(() => {
-            const calls = bindings.map(property => {
-                const value = property.value();
-                const fnParams = Array.isArray(value) ? value : [value];
-                if (property.params) {
-                    fnParams.push(...property.params);
-                }
-                if (property.name) {
-                    // We want the property name to always be the first function parameter.
-                    fnParams.unshift(literal(property.name));
-                }
-                return fnParams;
-            });
-            return chainedInstruction(reference, calls, span).toStmt();
-        });
-    }
-    updateInstructionChainWithAdvance(nodeIndex, reference, bindings) {
-        this.addAdvanceInstructionIfNecessary(nodeIndex, bindings.length ? bindings[0].sourceSpan : null);
-        this.updateInstructionChain(reference, bindings);
     }
     addAdvanceInstructionIfNecessary(nodeIndex, span) {
         if (nodeIndex !== this._currentIndex) {
@@ -17989,9 +18011,6 @@ function pureFunctionCallInfo(args) {
         isVarLength: !identifier,
     };
 }
-function instruction(span, reference, params) {
-    return importExpr(reference, null, span).callFn(params, span);
-}
 // e.g. x(2);
 function generateNextContextExpr(relativeLevelDiff) {
     return importExpr(Identifiers.nextContext)
@@ -18196,7 +18215,7 @@ class BindingScope {
     restoreViewStatement() {
         const statements = [];
         if (this.restoreViewVariable) {
-            const restoreCall = instruction(null, Identifiers.restoreView, [this.restoreViewVariable]);
+            const restoreCall = invokeInstruction(null, Identifiers.restoreView, [this.restoreViewVariable]);
             // Either `const restoredCtx = restoreView($state$);` or `restoreView($state$);`
             // depending on whether it is being used.
             statements.push(this.usesRestoredViewContext ?
@@ -18208,7 +18227,9 @@ class BindingScope {
     viewSnapshotStatements() {
         // const $state$ = getCurrentView();
         return this.restoreViewVariable ?
-            [this.restoreViewVariable.set(instruction(null, Identifiers.getCurrentView, [])).toConstDecl()] :
+            [
+                this.restoreViewVariable.set(invokeInstruction(null, Identifiers.getCurrentView, [])).toConstDecl()
+            ] :
             [];
     }
     isListenerScope() {
@@ -18480,6 +18501,20 @@ function isTextNode(node) {
 }
 function hasTextChildrenOnly(children) {
     return children.every(isTextNode);
+}
+function getBindingFunctionParams(deferredParams, name, eagerParams) {
+    return () => {
+        const value = deferredParams();
+        const fnParams = Array.isArray(value) ? value : [value];
+        if (eagerParams) {
+            fnParams.push(...eagerParams);
+        }
+        if (name) {
+            // We want the property name to always be the first function parameter.
+            fnParams.unshift(literal(name));
+        }
+        return fnParams;
+    };
 }
 /** Name of the global variable that is used to determine if we use Closure translations or not */
 const NG_I18N_CLOSURE_MODE = 'ngI18nClosureMode';
@@ -18862,14 +18897,14 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
     if (classAttr !== undefined) {
         styleBuilder.registerClassAttr(classAttr);
     }
-    const createStatements = [];
-    const updateStatements = [];
+    const createInstructions = [];
+    const updateInstructions = [];
+    const updateVariables = [];
     const hostBindingSourceSpan = typeSourceSpan;
     // Calculate host event bindings
     const eventBindings = bindingParser.createDirectiveHostEventAsts(hostBindingsMetadata.listeners, hostBindingSourceSpan);
     if (eventBindings && eventBindings.length) {
-        const listeners = createHostListeners(eventBindings, name);
-        createStatements.push(...listeners);
+        createInstructions.push(...createHostListeners(eventBindings, name));
     }
     // Calculate the host property bindings
     const bindings = bindingParser.createBoundHostProperties(hostBindingsMetadata.properties, hostBindingSourceSpan);
@@ -18905,7 +18940,7 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
     const propertyBindings = [];
     const attributeBindings = [];
     const syntheticHostBindings = [];
-    allOtherBindings.forEach((binding) => {
+    for (const binding of allOtherBindings) {
         // resolve literal arrays and literal objects
         const value = binding.expression.visit(getValueConverter());
         const bindingExpr = bindingFn(bindingContext, value);
@@ -18931,7 +18966,7 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
         if (sanitizerFn) {
             instructionParams.push(sanitizerFn);
         }
-        updateStatements.push(...bindingExpr.stmts);
+        updateVariables.push(...bindingExpr.stmts);
         if (instruction === Identifiers.hostProperty) {
             propertyBindings.push(instructionParams);
         }
@@ -18942,17 +18977,17 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
             syntheticHostBindings.push(instructionParams);
         }
         else {
-            updateStatements.push(importExpr(instruction).callFn(instructionParams).toStmt());
+            updateInstructions.push({ reference: instruction, paramsOrFn: instructionParams, span: null });
         }
-    });
-    if (propertyBindings.length > 0) {
-        updateStatements.push(chainedInstruction(Identifiers.hostProperty, propertyBindings).toStmt());
     }
-    if (attributeBindings.length > 0) {
-        updateStatements.push(chainedInstruction(Identifiers.attribute, attributeBindings).toStmt());
+    for (const bindingParams of propertyBindings) {
+        updateInstructions.push({ reference: Identifiers.hostProperty, paramsOrFn: bindingParams, span: null });
     }
-    if (syntheticHostBindings.length > 0) {
-        updateStatements.push(chainedInstruction(Identifiers.syntheticHostProperty, syntheticHostBindings).toStmt());
+    for (const bindingParams of attributeBindings) {
+        updateInstructions.push({ reference: Identifiers.attribute, paramsOrFn: bindingParams, span: null });
+    }
+    for (const bindingParams of syntheticHostBindings) {
+        updateInstructions.push({ reference: Identifiers.syntheticHostProperty, paramsOrFn: bindingParams, span: null });
     }
     // since we're dealing with directives/components and both have hostBinding
     // functions, we need to generate a special hostAttrs instruction that deals
@@ -18968,30 +19003,30 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
         // the update block of a component/directive templateFn/hostBindingsFn so that the bindings
         // are evaluated and updated for the element.
         styleBuilder.buildUpdateLevelInstructions(getValueConverter()).forEach(instruction => {
-            if (instruction.calls.length > 0) {
-                const calls = [];
-                instruction.calls.forEach(call => {
-                    // we subtract a value of `1` here because the binding slot was already allocated
-                    // at the top of this method when all the input bindings were counted.
-                    totalHostVarsCount +=
-                        Math.max(call.allocateBindingSlots - MIN_STYLING_BINDING_SLOTS_REQUIRED, 0);
-                    calls.push(convertStylingCall(call, bindingContext, bindingFn));
+            for (const call of instruction.calls) {
+                // we subtract a value of `1` here because the binding slot was already allocated
+                // at the top of this method when all the input bindings were counted.
+                totalHostVarsCount +=
+                    Math.max(call.allocateBindingSlots - MIN_STYLING_BINDING_SLOTS_REQUIRED, 0);
+                updateInstructions.push({
+                    reference: instruction.reference,
+                    paramsOrFn: convertStylingCall(call, bindingContext, bindingFn),
+                    span: null
                 });
-                updateStatements.push(chainedInstruction(instruction.reference, calls).toStmt());
             }
         });
     }
     if (totalHostVarsCount) {
         definitionMap.set('hostVars', literal(totalHostVarsCount));
     }
-    if (createStatements.length > 0 || updateStatements.length > 0) {
+    if (createInstructions.length > 0 || updateInstructions.length > 0) {
         const hostBindingsFnName = name ? `${name}_HostBindings` : null;
         const statements = [];
-        if (createStatements.length > 0) {
-            statements.push(renderFlagCheckIfStmt(1 /* Create */, createStatements));
+        if (createInstructions.length > 0) {
+            statements.push(renderFlagCheckIfStmt(1 /* Create */, getInstructionStatements(createInstructions)));
         }
-        if (updateStatements.length > 0) {
-            statements.push(renderFlagCheckIfStmt(2 /* Update */, updateStatements));
+        if (updateInstructions.length > 0) {
+            statements.push(renderFlagCheckIfStmt(2 /* Update */, updateVariables.concat(getInstructionStatements(updateInstructions))));
         }
         return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null)], statements, INFERRED_TYPE, null, hostBindingsFnName);
     }
@@ -19027,10 +19062,10 @@ function getBindingNameAndInstruction(binding) {
     return { bindingName, instruction, isAttribute: !!attrMatches };
 }
 function createHostListeners(eventBindings, name) {
-    const listeners = [];
-    const syntheticListeners = [];
+    const listenerParams = [];
+    const syntheticListenerParams = [];
     const instructions = [];
-    eventBindings.forEach(binding => {
+    for (const binding of eventBindings) {
         let bindingName = binding.name && sanitizeIdentifier(binding.name);
         const bindingFnName = binding.type === 1 /* Animation */ ?
             prepareSyntheticListenerFunctionName(bindingName, binding.targetOrPhase) :
@@ -19038,17 +19073,17 @@ function createHostListeners(eventBindings, name) {
         const handlerName = name && bindingName ? `${name}_${bindingFnName}_HostBindingHandler` : null;
         const params = prepareEventListenerParameters(BoundEvent.fromParsedEvent(binding), handlerName);
         if (binding.type == 1 /* Animation */) {
-            syntheticListeners.push(params);
+            syntheticListenerParams.push(params);
         }
         else {
-            listeners.push(params);
+            listenerParams.push(params);
         }
-    });
-    if (syntheticListeners.length > 0) {
-        instructions.push(chainedInstruction(Identifiers.syntheticHostListener, syntheticListeners).toStmt());
     }
-    if (listeners.length > 0) {
-        instructions.push(chainedInstruction(Identifiers.listener, listeners).toStmt());
+    for (const params of syntheticListenerParams) {
+        instructions.push({ reference: Identifiers.syntheticHostListener, paramsOrFn: params, span: null });
+    }
+    for (const params of listenerParams) {
+        instructions.push({ reference: Identifiers.listener, paramsOrFn: params, span: null });
     }
     return instructions;
 }
@@ -19600,7 +19635,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('14.0.0-next.2+5.sha-635683a.with-local-changes');
+const VERSION = new Version('14.0.0-next.2+7.sha-1b91e10.with-local-changes');
 
 /**
  * @license
@@ -21627,7 +21662,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('14.0.0-next.2+5.sha-635683a.with-local-changes'));
+    definitionMap.set('version', literal('14.0.0-next.2+7.sha-1b91e10.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -21744,7 +21779,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('14.0.0-next.2+5.sha-635683a.with-local-changes'));
+    definitionMap.set('version', literal('14.0.0-next.2+7.sha-1b91e10.with-local-changes'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -21965,7 +22000,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('14.0.0-next.2+5.sha-635683a.with-local-changes'));
+    definitionMap.set('version', literal('14.0.0-next.2+7.sha-1b91e10.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22007,7 +22042,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('14.0.0-next.2+5.sha-635683a.with-local-changes'));
+    definitionMap.set('version', literal('14.0.0-next.2+7.sha-1b91e10.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22065,7 +22100,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('14.0.0-next.2+5.sha-635683a.with-local-changes'));
+    definitionMap.set('version', literal('14.0.0-next.2+7.sha-1b91e10.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22102,7 +22137,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('14.0.0-next.2+5.sha-635683a.with-local-changes'));
+    definitionMap.set('version', literal('14.0.0-next.2+7.sha-1b91e10.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22160,7 +22195,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('14.0.0-next.2+5.sha-635683a.with-local-changes'));
+    definitionMap.set('version', literal('14.0.0-next.2+7.sha-1b91e10.with-local-changes'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
