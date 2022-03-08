@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { InterpolationConfig } from '../ml_parser/interpolation_config';
+import { InterpolatedAttributeToken, InterpolatedTextToken } from '../ml_parser/tokens';
 import { AbsoluteSourceSpan, AST, ASTWithSource, BindingPipe, LiteralMap, ParserError, ParseSpan, TemplateBinding, TemplateBindingIdentifier } from './ast';
 import { Lexer, Token } from './lexer';
 export interface InterpolationPiece {
@@ -78,7 +79,7 @@ export declare class Parser {
      * @param absoluteValueOffset start of the `templateValue`
      */
     parseTemplateBindings(templateKey: string, templateValue: string, templateUrl: string, absoluteKeyOffset: number, absoluteValueOffset: number): TemplateBindingParseResult;
-    parseInterpolation(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource | null;
+    parseInterpolation(input: string, location: string, absoluteOffset: number, interpolatedTokens: InterpolatedAttributeToken[] | InterpolatedTextToken[] | null, interpolationConfig?: InterpolationConfig): ASTWithSource | null;
     /**
      * Similar to `parseInterpolation`, but treats the provided string as a single expression
      * element that would normally appear within the interpolation prefix and suffix (`{{` and `}}`).
@@ -93,7 +94,7 @@ export declare class Parser {
      * `SplitInterpolation` with splits that look like
      *   <raw text> <expression> <raw text> ... <raw text> <expression> <raw text>
      */
-    splitInterpolation(input: string, location: string, interpolationConfig?: InterpolationConfig): SplitInterpolation;
+    splitInterpolation(input: string, location: string, interpolatedTokens: InterpolatedAttributeToken[] | InterpolatedTextToken[] | null, interpolationConfig?: InterpolationConfig): SplitInterpolation;
     wrapLiteralPrimitive(input: string | null, location: string, absoluteOffset: number): ASTWithSource;
     private _stripComments;
     private _commentStart;

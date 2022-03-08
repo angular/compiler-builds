@@ -1,5 +1,5 @@
 /**
- * @license Angular v13.2.5+17.sha-ad9d981
+ * @license Angular v13.2.5+21.sha-23003f8
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9562,8 +9562,8 @@ class Parser$1 {
             span: new AbsoluteSourceSpan(absoluteKeyOffset, absoluteKeyOffset + templateKey.length),
         });
     }
-    parseInterpolation(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        const { strings, expressions, offsets } = this.splitInterpolation(input, location, interpolationConfig);
+    parseInterpolation(input, location, absoluteOffset, interpolatedTokens, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+        const { strings, expressions, offsets } = this.splitInterpolation(input, location, interpolatedTokens, interpolationConfig);
         if (expressions.length === 0)
             return null;
         const expressionNodes = [];
@@ -9602,10 +9602,11 @@ class Parser$1 {
      * `SplitInterpolation` with splits that look like
      *   <raw text> <expression> <raw text> ... <raw text> <expression> <raw text>
      */
-    splitInterpolation(input, location, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+    splitInterpolation(input, location, interpolatedTokens, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
         const strings = [];
         const expressions = [];
         const offsets = [];
+        const inputToTemplateIndexMap = interpolatedTokens ? getIndexMapForOriginalTemplate(interpolatedTokens) : null;
         let i = 0;
         let atInterpolation = false;
         let extendLastString = false;
@@ -9640,7 +9641,9 @@ class Parser$1 {
                     this._reportError('Blank expressions are not allowed in interpolated strings', input, `at column ${i} in`, location);
                 }
                 expressions.push({ text, start: fullStart, end: fullEnd });
-                offsets.push(exprStart);
+                const startInOriginalTemplate = inputToTemplateIndexMap?.get(fullStart) ?? fullStart;
+                const offset = startInOriginalTemplate + interpStart.length;
+                offsets.push(offset);
                 i = fullEnd;
                 atInterpolation = false;
             }
@@ -10647,6 +10650,41 @@ class SimpleExpressionChecker extends RecursiveAstVisitor {
     visitPipe() {
         this.errors.push('pipes');
     }
+}
+/**
+ * Computes the real offset in the original template for indexes in an interpolation.
+ *
+ * Because templates can have encoded HTML entities and the input passed to the parser at this stage
+ * of the compiler is the _decoded_ value, we need to compute the real offset using the original
+ * encoded values in the interpolated tokens. Note that this is only a special case handling for
+ * `MlParserTokenType.ENCODED_ENTITY` token types. All other interpolated tokens are expected to
+ * have parts which exactly match the input string for parsing the interpolation.
+ *
+ * @param interpolatedTokens The tokens for the interpolated value.
+ *
+ * @returns A map of index locations in the decoded template to indexes in the original template
+ */
+function getIndexMapForOriginalTemplate(interpolatedTokens) {
+    let offsetMap = new Map();
+    let consumedInOriginalTemplate = 0;
+    let consumedInInput = 0;
+    let tokenIndex = 0;
+    while (tokenIndex < interpolatedTokens.length) {
+        const currentToken = interpolatedTokens[tokenIndex];
+        if (currentToken.type === 9 /* ENCODED_ENTITY */) {
+            const [decoded, encoded] = currentToken.parts;
+            consumedInOriginalTemplate += encoded.length;
+            consumedInInput += decoded.length;
+        }
+        else {
+            const lengthOfParts = currentToken.parts.reduce((sum, current) => sum + current.length, 0);
+            consumedInInput += lengthOfParts;
+            consumedInOriginalTemplate += lengthOfParts;
+        }
+        offsetMap.set(consumedInInput, consumedInOriginalTemplate);
+        tokenIndex++;
+    }
+    return offsetMap;
 }
 
 /**
@@ -15053,11 +15091,11 @@ class BindingParser {
         }
         return targetEvents;
     }
-    parseInterpolation(value, sourceSpan) {
+    parseInterpolation(value, sourceSpan, interpolatedTokens) {
         const sourceInfo = sourceSpan.start.toString();
         const absoluteOffset = sourceSpan.fullStart.offset;
         try {
-            const ast = this._exprParser.parseInterpolation(value, sourceInfo, absoluteOffset, this._interpolationConfig);
+            const ast = this._exprParser.parseInterpolation(value, sourceInfo, absoluteOffset, interpolatedTokens, this._interpolationConfig);
             if (ast)
                 this._reportExpressionParserErrors(ast.errors, sourceSpan);
             return ast;
@@ -15194,8 +15232,8 @@ class BindingParser {
             this._parsePropertyAst(name, this._parseBinding(expression, isHost, valueSpan || sourceSpan, absoluteOffset), sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
         }
     }
-    parsePropertyInterpolation(name, value, sourceSpan, valueSpan, targetMatchableAttrs, targetProps, keySpan) {
-        const expr = this.parseInterpolation(value, valueSpan || sourceSpan);
+    parsePropertyInterpolation(name, value, sourceSpan, valueSpan, targetMatchableAttrs, targetProps, keySpan, interpolatedTokens) {
+        const expr = this.parseInterpolation(value, valueSpan || sourceSpan, interpolatedTokens);
         if (expr) {
             this._parsePropertyAst(name, expr, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
             return true;
@@ -15692,7 +15730,7 @@ class HtmlAstToIvyAst {
         return new TextAttribute(attribute.name, attribute.value, attribute.sourceSpan, attribute.keySpan, attribute.valueSpan, attribute.i18n);
     }
     visitText(text) {
-        return this._visitTextWithInterpolation(text.value, text.sourceSpan, text.i18n);
+        return this._visitTextWithInterpolation(text.value, text.sourceSpan, text.tokens, text.i18n);
     }
     visitExpansion(expansion) {
         if (!expansion.i18n) {
@@ -15722,7 +15760,7 @@ class HtmlAstToIvyAst {
                 vars[formattedKey] = new BoundText(ast, value.sourceSpan);
             }
             else {
-                placeholders[key] = this._visitTextWithInterpolation(value.text, value.sourceSpan);
+                placeholders[key] = this._visitTextWithInterpolation(value.text, value.sourceSpan, null);
             }
         });
         return new Icu$1(vars, placeholders, expansion.sourceSpan, message);
@@ -15845,12 +15883,12 @@ class HtmlAstToIvyAst {
         }
         // No explicit binding found.
         const keySpan = createKeySpan(srcSpan, '' /* prefix */, name);
-        const hasBinding = this.bindingParser.parsePropertyInterpolation(name, value, srcSpan, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
+        const hasBinding = this.bindingParser.parsePropertyInterpolation(name, value, srcSpan, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan, attribute.valueTokens ?? null);
         return hasBinding;
     }
-    _visitTextWithInterpolation(value, sourceSpan, i18n) {
+    _visitTextWithInterpolation(value, sourceSpan, interpolatedTokens, i18n) {
         const valueNoNgsp = replaceNgsp(value);
-        const expr = this.bindingParser.parseInterpolation(valueNoNgsp, sourceSpan);
+        const expr = this.bindingParser.parseInterpolation(valueNoNgsp, sourceSpan, interpolatedTokens);
         return expr ? new BoundText(expr, sourceSpan, i18n) : new Text$3(valueNoNgsp, sourceSpan);
     }
     parseVariable(identifier, value, sourceSpan, keySpan, valueSpan, variables) {
@@ -19736,7 +19774,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('13.2.5+17.sha-ad9d981');
+const VERSION = new Version('13.2.5+21.sha-23003f8');
 
 /**
  * @license
@@ -21777,7 +21815,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('13.2.5+17.sha-ad9d981'));
+    definitionMap.set('version', literal('13.2.5+21.sha-23003f8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -21894,7 +21932,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('13.2.5+17.sha-ad9d981'));
+    definitionMap.set('version', literal('13.2.5+21.sha-23003f8'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -22115,7 +22153,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('13.2.5+17.sha-ad9d981'));
+    definitionMap.set('version', literal('13.2.5+21.sha-23003f8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22157,7 +22195,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('13.2.5+17.sha-ad9d981'));
+    definitionMap.set('version', literal('13.2.5+21.sha-23003f8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22215,7 +22253,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('13.2.5+17.sha-ad9d981'));
+    definitionMap.set('version', literal('13.2.5+21.sha-23003f8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22252,7 +22290,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('13.2.5+17.sha-ad9d981'));
+    definitionMap.set('version', literal('13.2.5+21.sha-23003f8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22310,7 +22348,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('13.2.5+17.sha-ad9d981'));
+    definitionMap.set('version', literal('13.2.5+21.sha-23003f8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
