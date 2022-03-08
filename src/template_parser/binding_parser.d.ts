@@ -9,6 +9,7 @@ import { SecurityContext } from '../core';
 import { ASTWithSource, BindingPipe, BoundElementProperty, ParsedEvent, ParsedProperty, ParsedVariable, RecursiveAstVisitor } from '../expression_parser/ast';
 import { Parser } from '../expression_parser/parser';
 import { InterpolationConfig } from '../ml_parser/interpolation_config';
+import { InterpolatedAttributeToken, InterpolatedTextToken } from '../ml_parser/tokens';
 import { ParseError, ParseSourceSpan } from '../parse_util';
 import { ElementSchemaRegistry } from '../schema/element_schema_registry';
 export interface HostProperties {
@@ -29,7 +30,7 @@ export declare class BindingParser {
     get interpolationConfig(): InterpolationConfig;
     createBoundHostProperties(properties: HostProperties, sourceSpan: ParseSourceSpan): ParsedProperty[] | null;
     createDirectiveHostEventAsts(hostListeners: HostListeners, sourceSpan: ParseSourceSpan): ParsedEvent[] | null;
-    parseInterpolation(value: string, sourceSpan: ParseSourceSpan): ASTWithSource;
+    parseInterpolation(value: string, sourceSpan: ParseSourceSpan, interpolatedTokens: InterpolatedAttributeToken[] | InterpolatedTextToken[] | null): ASTWithSource;
     /**
      * Similar to `parseInterpolation`, but treats the provided string as a single expression
      * element that would normally appear within the interpolation prefix and suffix (`{{` and `}}`).
@@ -64,7 +65,7 @@ export declare class BindingParser {
     private _parseTemplateBindings;
     parseLiteralAttr(name: string, value: string | null, sourceSpan: ParseSourceSpan, absoluteOffset: number, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], keySpan: ParseSourceSpan): void;
     parsePropertyBinding(name: string, expression: string, isHost: boolean, sourceSpan: ParseSourceSpan, absoluteOffset: number, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], keySpan: ParseSourceSpan): void;
-    parsePropertyInterpolation(name: string, value: string, sourceSpan: ParseSourceSpan, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], keySpan: ParseSourceSpan): boolean;
+    parsePropertyInterpolation(name: string, value: string, sourceSpan: ParseSourceSpan, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], keySpan: ParseSourceSpan, interpolatedTokens: InterpolatedAttributeToken[] | InterpolatedTextToken[] | null): boolean;
     private _parsePropertyAst;
     private _parseAnimation;
     private _parseBinding;
