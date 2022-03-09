@@ -29,7 +29,7 @@ export function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', o.literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', o.literal('13.2.5+24.sha-6f1c941'));
+    definitionMap.set('version', o.literal('13.2.6+2.sha-6336b8e'));
     definitionMap.set('ngImport', o.importExpr(R3.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
