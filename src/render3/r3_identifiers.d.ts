@@ -154,6 +154,7 @@ export declare class Identifiers {
     static defineNgModule: o.ExternalReference;
     static declareNgModule: o.ExternalReference;
     static setNgModuleScope: o.ExternalReference;
+    static registerNgModuleType: o.ExternalReference;
     static PipeDeclaration: o.ExternalReference;
     static definePipe: o.ExternalReference;
     static declarePipe: o.ExternalReference;

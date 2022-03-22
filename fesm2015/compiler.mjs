@@ -1,5 +1,5 @@
 /**
- * @license Angular v14.0.0-next.7+13.sha-9d8ff5d
+ * @license Angular v14.0.0-next.7+18.sha-8155428
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2910,6 +2910,7 @@ Identifiers.ModuleWithProviders = {
 Identifiers.defineNgModule = { name: 'ɵɵdefineNgModule', moduleName: CORE };
 Identifiers.declareNgModule = { name: 'ɵɵngDeclareNgModule', moduleName: CORE };
 Identifiers.setNgModuleScope = { name: 'ɵɵsetNgModuleScope', moduleName: CORE };
+Identifiers.registerNgModuleType = { name: 'ɵɵregisterNgModuleType', moduleName: CORE };
 Identifiers.PipeDeclaration = { name: 'ɵɵPipeDeclaration', moduleName: CORE };
 Identifiers.definePipe = { name: 'ɵɵdefinePipe', moduleName: CORE };
 Identifiers.declarePipe = { name: 'ɵɵngDeclarePipe', moduleName: CORE };
@@ -5972,19 +5973,48 @@ class R3JitReflector {
  * found in the LICENSE file at https://angular.io/license
  */
 /**
+ * How the selector scope of an NgModule (its declarations, imports, and exports) should be emitted
+ * as a part of the NgModule definition.
+ */
+var R3SelectorScopeMode;
+(function (R3SelectorScopeMode) {
+    /**
+     * Emit the declarations inline into the module definition.
+     *
+     * This option is useful in certain contexts where it's known that JIT support is required. The
+     * tradeoff here is that this emit style prevents directives and pipes from being tree-shaken if
+     * they are unused, but the NgModule is used.
+     */
+    R3SelectorScopeMode[R3SelectorScopeMode["Inline"] = 0] = "Inline";
+    /**
+     * Emit the declarations using a side effectful function call, `ɵɵsetNgModuleScope`, that is
+     * guarded with the `ngJitMode` flag.
+     *
+     * This form of emit supports JIT and can be optimized away if the `ngJitMode` flag is set to
+     * false, which allows unused directives and pipes to be tree-shaken.
+     */
+    R3SelectorScopeMode[R3SelectorScopeMode["SideEffect"] = 1] = "SideEffect";
+    /**
+     * Don't generate selector scopes at all.
+     *
+     * This is useful for contexts where JIT support is known to be unnecessary.
+     */
+    R3SelectorScopeMode[R3SelectorScopeMode["Omit"] = 2] = "Omit";
+})(R3SelectorScopeMode || (R3SelectorScopeMode = {}));
+/**
  * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
  */
 function compileNgModule(meta) {
-    const { internalType, bootstrap, declarations, imports, exports, schemas, containsForwardDecls, emitInline, id } = meta;
+    const { adjacentType, internalType, bootstrap, declarations, imports, exports, schemas, containsForwardDecls, selectorScopeMode, id } = meta;
     const statements = [];
     const definitionMap = new DefinitionMap();
     definitionMap.set('type', internalType);
     if (bootstrap.length > 0) {
         definitionMap.set('bootstrap', refsToArray(bootstrap, containsForwardDecls));
     }
-    // If requested to emit scope information inline, pass the `declarations`, `imports` and `exports`
-    // to the `ɵɵdefineNgModule()` call. The JIT compilation uses this.
-    if (emitInline) {
+    if (selectorScopeMode === R3SelectorScopeMode.Inline) {
+        // If requested to emit scope information inline, pass the `declarations`, `imports` and
+        // `exports` to the `ɵɵdefineNgModule()` call directly.
         if (declarations.length > 0) {
             definitionMap.set('declarations', refsToArray(declarations, containsForwardDecls));
         }
@@ -5995,19 +6025,27 @@ function compileNgModule(meta) {
             definitionMap.set('exports', refsToArray(exports, containsForwardDecls));
         }
     }
-    // If not emitting inline, the scope information is not passed into `ɵɵdefineNgModule` as it would
-    // prevent tree-shaking of the declarations, imports and exports references.
-    else {
+    else if (selectorScopeMode === R3SelectorScopeMode.SideEffect) {
+        // In this mode, scope information is not passed into `ɵɵdefineNgModule` as it
+        // would prevent tree-shaking of the declarations, imports and exports references. Instead, it's
+        // patched onto the NgModule definition with a `ɵɵsetNgModuleScope` call that's guarded by the
+        // `ngJitMode` flag.
         const setNgModuleScopeCall = generateSetNgModuleScopeCall(meta);
         if (setNgModuleScopeCall !== null) {
             statements.push(setNgModuleScopeCall);
         }
+    }
+    else {
+        // Selector scope emit was not requested, so skip it.
     }
     if (schemas !== null && schemas.length > 0) {
         definitionMap.set('schemas', literalArr(schemas.map(ref => ref.value)));
     }
     if (id !== null) {
         definitionMap.set('id', id);
+        // Generate a side-effectful call to register this NgModule by its id, as per the semantics of
+        // NgModule ids.
+        statements.push(importExpr(Identifiers.registerNgModuleType).callFn([adjacentType, id]).toStmt());
     }
     const expression = importExpr(Identifiers.defineNgModule).callFn([definitionMap.toLiteralMap()], undefined, true);
     const type = createNgModuleType(meta);
@@ -19313,7 +19351,7 @@ class CompilerFacadeImpl {
             declarations: facade.declarations.map(wrapReference),
             imports: facade.imports.map(wrapReference),
             exports: facade.exports.map(wrapReference),
-            emitInline: true,
+            selectorScopeMode: R3SelectorScopeMode.Inline,
             containsForwardDecls: false,
             schemas: facade.schemas ? facade.schemas.map(wrapReference) : null,
             id: facade.id ? new WrappedNodeExpr(facade.id) : null,
@@ -19675,7 +19713,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('14.0.0-next.7+13.sha-9d8ff5d');
+const VERSION = new Version('14.0.0-next.7+18.sha-8155428');
 
 /**
  * @license
@@ -21702,7 +21740,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('14.0.0-next.7+13.sha-9d8ff5d'));
+    definitionMap.set('version', literal('14.0.0-next.7+18.sha-8155428'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -21819,7 +21857,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('14.0.0-next.7+13.sha-9d8ff5d'));
+    definitionMap.set('version', literal('14.0.0-next.7+18.sha-8155428'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -22040,7 +22078,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('14.0.0-next.7+13.sha-9d8ff5d'));
+    definitionMap.set('version', literal('14.0.0-next.7+18.sha-8155428'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22082,7 +22120,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('14.0.0-next.7+13.sha-9d8ff5d'));
+    definitionMap.set('version', literal('14.0.0-next.7+18.sha-8155428'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22140,7 +22178,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('14.0.0-next.7+13.sha-9d8ff5d'));
+    definitionMap.set('version', literal('14.0.0-next.7+18.sha-8155428'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22177,7 +22215,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('14.0.0-next.7+13.sha-9d8ff5d'));
+    definitionMap.set('version', literal('14.0.0-next.7+18.sha-8155428'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22235,7 +22273,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('14.0.0-next.7+13.sha-9d8ff5d'));
+    definitionMap.set('version', literal('14.0.0-next.7+18.sha-8155428'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
@@ -22285,5 +22323,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element$1 as TmplAstElement, Icu$1 as TmplAstIcu, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token, TokenType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3SelectorScopeMode, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element$1 as TmplAstElement, Icu$1 as TmplAstIcu, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token, TokenType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
