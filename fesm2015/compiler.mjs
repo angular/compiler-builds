@@ -1,5 +1,5 @@
 /**
- * @license Angular v14.0.0-next.7+31.sha-71ee417
+ * @license Angular v14.0.0-next.7+32.sha-be161be
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2800,6 +2800,7 @@ Identifiers.stylePropInterpolate7 = { name: 'ɵɵstylePropInterpolate7', moduleN
 Identifiers.stylePropInterpolate8 = { name: 'ɵɵstylePropInterpolate8', moduleName: CORE };
 Identifiers.stylePropInterpolateV = { name: 'ɵɵstylePropInterpolateV', moduleName: CORE };
 Identifiers.nextContext = { name: 'ɵɵnextContext', moduleName: CORE };
+Identifiers.resetView = { name: 'ɵɵresetView', moduleName: CORE };
 Identifiers.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE };
 Identifiers.text = { name: 'ɵɵtext', moduleName: CORE };
 Identifiers.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE };
@@ -16953,13 +16954,27 @@ function prepareEventListenerParameters(eventAst, handlerName = null, scope = nu
         scope.getOrCreateSharedContextVar(0);
     const bindingStatements = convertActionBinding(scope, implicitReceiverExpr, handler, 'b', eventAst.handlerSpan, implicitReceiverAccesses, EVENT_BINDING_SCOPE_GLOBALS);
     const statements = [];
-    if (scope) {
+    const variableDeclarations = scope === null || scope === void 0 ? void 0 : scope.variableDeclarations();
+    const restoreViewStatement = scope === null || scope === void 0 ? void 0 : scope.restoreViewStatement();
+    if (variableDeclarations) {
         // `variableDeclarations` needs to run first, because
         // `restoreViewStatement` depends on the result.
-        statements.push(...scope.variableDeclarations());
-        statements.unshift(...scope.restoreViewStatement());
+        statements.push(...variableDeclarations);
     }
     statements.push(...bindingStatements);
+    if (restoreViewStatement) {
+        statements.unshift(restoreViewStatement);
+        // If there's a `restoreView` call, we need to reset the view at the end of the listener
+        // in order to avoid a leak. If there's a `return` statement already, we wrap it in the
+        // call, e.g. `return resetView(ctx.foo())`. Otherwise we add the call as the last statement.
+        const lastStatement = statements[statements.length - 1];
+        if (lastStatement instanceof ReturnStatement) {
+            statements[statements.length - 1] = new ReturnStatement(invokeInstruction(lastStatement.value.sourceSpan, Identifiers.resetView, [lastStatement.value]));
+        }
+        else {
+            statements.push(new ExpressionStatement(invokeInstruction(null, Identifiers.resetView, [])));
+        }
+    }
     const eventName = type === 1 /* Animation */ ? prepareSyntheticListenerName(name, phase) : name;
     const fnName = handlerName && sanitizeIdentifier(handlerName);
     const fnArgs = [];
@@ -18291,16 +18306,15 @@ class BindingScope {
         }
     }
     restoreViewStatement() {
-        const statements = [];
         if (this.restoreViewVariable) {
             const restoreCall = invokeInstruction(null, Identifiers.restoreView, [this.restoreViewVariable]);
             // Either `const restoredCtx = restoreView($state$);` or `restoreView($state$);`
             // depending on whether it is being used.
-            statements.push(this.usesRestoredViewContext ?
+            return this.usesRestoredViewContext ?
                 variable(RESTORED_VIEW_CONTEXT_NAME).set(restoreCall).toConstDecl() :
-                restoreCall.toStmt());
+                restoreCall.toStmt();
         }
-        return statements;
+        return null;
     }
     viewSnapshotStatements() {
         // const $state$ = getCurrentView();
@@ -19713,7 +19727,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('14.0.0-next.7+31.sha-71ee417');
+const VERSION = new Version('14.0.0-next.7+32.sha-be161be');
 
 /**
  * @license
@@ -21740,7 +21754,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('14.0.0-next.7+31.sha-71ee417'));
+    definitionMap.set('version', literal('14.0.0-next.7+32.sha-be161be'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -21857,7 +21871,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('14.0.0-next.7+31.sha-71ee417'));
+    definitionMap.set('version', literal('14.0.0-next.7+32.sha-be161be'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -22078,7 +22092,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('14.0.0-next.7+31.sha-71ee417'));
+    definitionMap.set('version', literal('14.0.0-next.7+32.sha-be161be'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22120,7 +22134,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('14.0.0-next.7+31.sha-71ee417'));
+    definitionMap.set('version', literal('14.0.0-next.7+32.sha-be161be'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22178,7 +22192,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('14.0.0-next.7+31.sha-71ee417'));
+    definitionMap.set('version', literal('14.0.0-next.7+32.sha-be161be'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22215,7 +22229,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('14.0.0-next.7+31.sha-71ee417'));
+    definitionMap.set('version', literal('14.0.0-next.7+32.sha-be161be'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22273,7 +22287,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('14.0.0-next.7+31.sha-71ee417'));
+    definitionMap.set('version', literal('14.0.0-next.7+32.sha-be161be'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);

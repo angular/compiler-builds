@@ -65,6 +65,7 @@ export declare class Identifiers {
     static stylePropInterpolate8: o.ExternalReference;
     static stylePropInterpolateV: o.ExternalReference;
     static nextContext: o.ExternalReference;
+    static resetView: o.ExternalReference;
     static templateCreate: o.ExternalReference;
     static text: o.ExternalReference;
     static enableBindings: o.ExternalReference;

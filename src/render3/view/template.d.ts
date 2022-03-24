@@ -254,7 +254,7 @@ export declare class BindingScope implements LocalResolver {
     generateSharedContextVar(retrievalLevel: number): void;
     getComponentProperty(name: string): o.Expression;
     maybeRestoreView(): void;
-    restoreViewStatement(): o.Statement[];
+    restoreViewStatement(): o.Statement | null;
     viewSnapshotStatements(): o.Statement[];
     isListenerScope(): boolean | null;
     variableDeclarations(): o.Statement[];
