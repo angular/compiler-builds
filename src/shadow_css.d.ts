@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 /**
- * This file is a port of shadowCSS from webcomponents.js to TypeScript.
+ * The following class is a port of shadowCSS from webcomponents.js to TypeScript.
  *
  * Please make sure to keep to edits in sync with the source file.
  *
@@ -19,6 +19,125 @@ export declare class ShadowCss {
     strictStyling: boolean;
     shimCssText(cssText: string, selector: string, hostSelector?: string): string;
     private _insertDirectives;
+    /**
+     * Process styles to add scope to keyframes.
+     *
+     * Modify both the names of the keyframes defined in the component styles and also the css
+     * animation rules using them.
+     *
+     * Animation rules using keyframes defined elsewhere are not modified to allow for globally
+     * defined keyframes.
+     *
+     * For example, we convert this css:
+     *
+     * ```
+     * .box {
+     *   animation: box-animation 1s forwards;
+     * }
+     *
+     * @keyframes box-animation {
+     *   to {
+     *     background-color: green;
+     *   }
+     * }
+     * ```
+     *
+     * to this:
+     *
+     * ```
+     * .box {
+     *   animation: scopeName_box-animation 1s forwards;
+     * }
+     *
+     * @keyframes scopeName_box-animation {
+     *   to {
+     *     background-color: green;
+     *   }
+     * }
+     * ```
+     *
+     * @param cssText the component's css text that needs to be scoped.
+     * @param scopeSelector the component's scope selector.
+     *
+     * @returns the scoped css text.
+     */
+    private _scopeKeyframesRelatedCss;
+    /**
+     * Scopes local keyframes names, returning the updated css rule and it also
+     * adds the original keyframe name to a provided set to collect all keyframes names
+     * so that it can later be used to scope the animation rules.
+     *
+     * For example, it takes a rule such as:
+     *
+     * ```
+     * @keyframes box-animation {
+     *   to {
+     *     background-color: green;
+     *   }
+     * }
+     * ```
+     *
+     * and returns:
+     *
+     * ```
+     * @keyframes scopeName_box-animation {
+     *   to {
+     *     background-color: green;
+     *   }
+     * }
+     * ```
+     * and as a side effect it adds "box-animation" to the `unscopedKeyframesSet` set
+     *
+     * @param cssRule the css rule to process.
+     * @param scopeSelector the component's scope selector.
+     * @param unscopedKeyframesSet the set of unscoped keyframes names (which can be
+     * modified as a side effect)
+     *
+     * @returns the css rule modified with the scoped keyframes name.
+     */
+    private _scopeLocalKeyframeDeclarations;
+    /**
+     * Function used to scope a keyframes name (obtained from an animation declaration)
+     * using an existing set of unscopedKeyframes names to discern if the scoping needs to be
+     * performed (keyframes names of keyframes not defined in the component's css need not to be
+     * scoped).
+     *
+     * @param keyframe the keyframes name to check.
+     * @param scopeSelector the component's scope selector.
+     * @param unscopedKeyframesSet the set of unscoped keyframes names.
+     *
+     * @returns the scoped name of the keyframe, or the original name is the name need not to be
+     * scoped.
+     */
+    private _scopeAnimationKeyframe;
+    /**
+     * Regular expression used to extrapolate the possible keyframes from an
+     * animation declaration (with possibly multiple animation definitions)
+     *
+     * The regular expression can be divided in three parts
+     *  - (^|\s+)
+     *    simply captures how many (if any) leading whitespaces are present
+     *  - (?:(?:(['"])((?:\\\\|\\\2|(?!\2).)+)\2)|(-?[A-Za-z][\w\-]*))
+     *    captures two different possible keyframes, ones which are quoted or ones which are valid css
+     * idents (custom properties excluded)
+     *  - (?=[,\s;]|$)
+     *    simply matches the end of the possible keyframe, valid endings are: a comma, a space, a
+     * semicolon or the end of the string
+     */
+    private _animationDeclarationKeyframesRe;
+    /**
+     * Scope an animation rule so that the keyframes mentioned in such rule
+     * are scoped if defined in the component's css and left untouched otherwise.
+     *
+     * It can scope values of both the 'animation' and 'animation-name' properties.
+     *
+     * @param rule css rule to scope.
+     * @param scopeSelector the component's scope selector.
+     * @param unscopedKeyframesSet the set of unscoped keyframes names.
+     *
+     * @returns the updated css rule.
+     **/
+    private _scopeAnimationRule;
     private _insertPolyfillDirectivesInCssText;
     private _insertPolyfillRulesInCssText;
     private _scopeCssText;
