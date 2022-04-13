@@ -1,5 +1,5 @@
 /**
- * @license Angular v14.0.0-next.12+17.sha-7bf1cf4
+ * @license Angular v14.0.0-next.12+18.sha-598b759
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4874,6 +4874,12 @@ const IMPLICIT_REFERENCE = '$implicit';
 const NON_BINDABLE_ATTR = 'ngNonBindable';
 /** Name for the variable keeping track of the context returned by `ɵɵrestoreView`. */
 const RESTORED_VIEW_CONTEXT_NAME = 'restoredCtx';
+/**
+ * Maximum length of a single instruction chain. Because our output AST uses recursion, we're
+ * limited in how many expressions we can nest before we reach the call stack limit. This
+ * length is set very conservatively in order to reduce the chance of problems.
+ */
+const MAX_CHAIN_LENGTH = 500;
 /** Instructions that support chaining. */
 const CHAINABLE_INSTRUCTIONS = new Set([
     Identifiers.element,
@@ -5099,16 +5105,18 @@ function getInstructionStatements(instructions) {
     const statements = [];
     let pendingExpression = null;
     let pendingExpressionType = null;
+    let chainLength = 0;
     for (const current of instructions) {
         const resolvedParams = (typeof current.paramsOrFn === 'function' ? current.paramsOrFn() : current.paramsOrFn) ??
             [];
         const params = Array.isArray(resolvedParams) ? resolvedParams : [resolvedParams];
         // If the current instruction is the same as the previous one
         // and it can be chained, add another call to the chain.
-        if (pendingExpressionType === current.reference &&
+        if (chainLength < MAX_CHAIN_LENGTH && pendingExpressionType === current.reference &&
             CHAINABLE_INSTRUCTIONS.has(pendingExpressionType)) {
             // We'll always have a pending expression when there's a pending expression type.
             pendingExpression = pendingExpression.callFn(params, pendingExpression.sourceSpan);
+            chainLength++;
         }
         else {
             if (pendingExpression !== null) {
@@ -5116,6 +5124,7 @@ function getInstructionStatements(instructions) {
             }
             pendingExpression = invokeInstruction(current.span, current.reference, params);
             pendingExpressionType = current.reference;
+            chainLength = 0;
         }
     }
     // Since the current instruction adds the previous one to the statements,
@@ -19772,7 +19781,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('14.0.0-next.12+17.sha-7bf1cf4');
+const VERSION = new Version('14.0.0-next.12+18.sha-598b759');
 
 /**
  * @license
@@ -21813,7 +21822,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('14.0.0-next.12+17.sha-7bf1cf4'));
+    definitionMap.set('version', literal('14.0.0-next.12+18.sha-598b759'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -21930,7 +21939,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('14.0.0-next.12+17.sha-7bf1cf4'));
+    definitionMap.set('version', literal('14.0.0-next.12+18.sha-598b759'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -22151,7 +22160,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('14.0.0-next.12+17.sha-7bf1cf4'));
+    definitionMap.set('version', literal('14.0.0-next.12+18.sha-598b759'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22193,7 +22202,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('14.0.0-next.12+17.sha-7bf1cf4'));
+    definitionMap.set('version', literal('14.0.0-next.12+18.sha-598b759'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22251,7 +22260,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('14.0.0-next.12+17.sha-7bf1cf4'));
+    definitionMap.set('version', literal('14.0.0-next.12+18.sha-598b759'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22288,7 +22297,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('14.0.0-next.12+17.sha-7bf1cf4'));
+    definitionMap.set('version', literal('14.0.0-next.12+18.sha-598b759'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22346,7 +22355,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('14.0.0-next.12+17.sha-7bf1cf4'));
+    definitionMap.set('version', literal('14.0.0-next.12+18.sha-598b759'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
