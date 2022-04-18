@@ -1,5 +1,5 @@
 /**
- * @license Angular v14.0.0-next.13+22.sha-8c83f12
+ * @license Angular v14.0.0-next.13+23.sha-1fe255c
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4791,7 +4791,7 @@ function assembleBoundTextPlaceholders(meta, bindingStartIndex = 0, contextId = 
  * @param useCamelCase whether to camelCase the placeholder name when formatting.
  * @returns A new map of formatted placeholder names to expressions.
  */
-function i18nFormatPlaceholderNames(params = {}, useCamelCase) {
+function formatI18nPlaceholderNamesInMap(params = {}, useCamelCase) {
     const _params = {};
     if (params && Object.keys(params).length) {
         Object.keys(params).forEach(key => _params[formatI18nPlaceholderName(key, useCamelCase)] = params[key]);
@@ -16775,11 +16775,64 @@ function i18nMetaToJSDoc(meta) {
 
 /** Closure uses `goog.getMsg(message)` to lookup translations */
 const GOOG_GET_MSG = 'goog.getMsg';
-function createGoogleGetMsgStatements(variable$1, message, closureVar, params) {
+/**
+ * Generates a `goog.getMsg()` statement and reassignment. The template:
+ *
+ * ```html
+ * <div i18n>Sent from {{ sender }} to <span class="receiver">{{ receiver }}</span></div>
+ * ```
+ *
+ * Generates:
+ *
+ * ```typescript
+ * const MSG_FOO = goog.getMsg(
+ *   // Message template.
+ *   'Sent from {$interpolation} to {$startTagSpan}{$interpolation_1}{$closeTagSpan}.',
+ *   // Placeholder values, set to magic strings which get replaced by the Angular runtime.
+ *   {
+ *     'interpolation': '\uFFFD0\uFFFD',
+ *     'startTagSpan': '\uFFFD1\uFFFD',
+ *     'interpolation_1': '\uFFFD2\uFFFD',
+ *     'closeTagSpan': '\uFFFD3\uFFFD',
+ *   },
+ *   // Options bag.
+ *   {
+ *     // Maps each placeholder to the original Angular source code which generates it's value.
+ *     original_code: {
+ *       'interpolation': '{{ sender }}',
+ *       'startTagSpan': '<span class="receiver">',
+ *       'interploation_1': '{{ receiver }}',
+ *       'closeTagSpan': '</span>',
+ *     },
+ *   },
+ * );
+ * const I18N_0 = MSG_FOO;
+ * ```
+ */
+function createGoogleGetMsgStatements(variable$1, message, closureVar, placeholderValues) {
     const messageString = serializeI18nMessageForGetMsg(message);
     const args = [literal(messageString)];
-    if (Object.keys(params).length) {
-        args.push(mapLiteral(params, true));
+    if (Object.keys(placeholderValues).length) {
+        // Message template parameters containing the magic strings replaced by the Angular runtime with
+        // real data, e.g. `{'interpolation': '\uFFFD0\uFFFD'}`.
+        args.push(mapLiteral(formatI18nPlaceholderNamesInMap(placeholderValues, true /* useCamelCase */), true /* quoted */));
+        // Message options object, which contains original source code for placeholders (as they are
+        // present in a template, e.g.
+        // `{original_code: {'interpolation': '{{ name }}', 'startTagSpan': '<span>'}}`.
+        args.push(mapLiteral({
+            original_code: literalMap(Object.keys(placeholderValues)
+                .map((param) => ({
+                key: formatI18nPlaceholderName(param),
+                quoted: true,
+                value: message.placeholders[param] ?
+                    // Get source span for typical placeholder if it exists.
+                    literal(message.placeholders[param].sourceSpan.toString()) :
+                    // Otherwise must be an ICU expression, get it's source span.
+                    literal(message.placeholderToMessage[param]
+                        .nodes.map((node) => node.sourceSpan.toString())
+                        .join('')),
+            }))),
+        }));
     }
     // /**
     //  * @desc description of message
@@ -17730,7 +17783,7 @@ class TemplateDefinitionBuilder {
         // - all ICU vars (such as `VAR_SELECT` or `VAR_PLURAL`) are replaced with correct values
         const transformFn = (raw) => {
             const params = { ...vars, ...placeholders };
-            const formatted = i18nFormatPlaceholderNames(params, /* useCamelCase */ false);
+            const formatted = formatI18nPlaceholderNamesInMap(params, /* useCamelCase */ false);
             return invokeInstruction(null, Identifiers.i18nPostprocess, [raw, mapLiteral(formatted, true)]);
         };
         // in case the whole i18n message is a single ICU - we do not need to
@@ -18651,7 +18704,7 @@ const NG_I18N_CLOSURE_MODE = 'ngI18nClosureMode';
 function getTranslationDeclStmts(message, variable, closureVar, params = {}, transformFn) {
     const statements = [
         declareI18nVariable(variable),
-        ifStmt(createClosureModeGuard(), createGoogleGetMsgStatements(variable, message, closureVar, i18nFormatPlaceholderNames(params, /* useCamelCase */ true)), createLocalizeStatements(variable, message, i18nFormatPlaceholderNames(params, /* useCamelCase */ false))),
+        ifStmt(createClosureModeGuard(), createGoogleGetMsgStatements(variable, message, closureVar, params), createLocalizeStatements(variable, message, formatI18nPlaceholderNamesInMap(params, /* useCamelCase */ false))),
     ];
     if (transformFn) {
         statements.push(new ExpressionStatement(variable.set(transformFn(variable))));
@@ -19781,7 +19834,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('14.0.0-next.13+22.sha-8c83f12');
+const VERSION = new Version('14.0.0-next.13+23.sha-1fe255c');
 
 /**
  * @license
@@ -21822,7 +21875,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('14.0.0-next.13+22.sha-8c83f12'));
+    definitionMap.set('version', literal('14.0.0-next.13+23.sha-1fe255c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -21939,7 +21992,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('14.0.0-next.13+22.sha-8c83f12'));
+    definitionMap.set('version', literal('14.0.0-next.13+23.sha-1fe255c'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     // e.g. `selector: 'some-dir'`
@@ -22160,7 +22213,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('14.0.0-next.13+22.sha-8c83f12'));
+    definitionMap.set('version', literal('14.0.0-next.13+23.sha-1fe255c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22202,7 +22255,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('14.0.0-next.13+22.sha-8c83f12'));
+    definitionMap.set('version', literal('14.0.0-next.13+23.sha-1fe255c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22260,7 +22313,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('14.0.0-next.13+22.sha-8c83f12'));
+    definitionMap.set('version', literal('14.0.0-next.13+23.sha-1fe255c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22297,7 +22350,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('14.0.0-next.13+22.sha-8c83f12'));
+    definitionMap.set('version', literal('14.0.0-next.13+23.sha-1fe255c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22355,7 +22408,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('14.0.0-next.13+22.sha-8c83f12'));
+    definitionMap.set('version', literal('14.0.0-next.13+23.sha-1fe255c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);

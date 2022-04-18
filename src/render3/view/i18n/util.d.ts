@@ -50,7 +50,7 @@ export declare function assembleBoundTextPlaceholders(meta: i18n.I18nMeta, bindi
  * @param useCamelCase whether to camelCase the placeholder name when formatting.
  * @returns A new map of formatted placeholder names to expressions.
  */
-export declare function i18nFormatPlaceholderNames(params: {
+export declare function formatI18nPlaceholderNamesInMap(params: {
     [name: string]: o.Expression;
 } | undefined, useCamelCase: boolean): {
     [key: string]: o.Expression;
