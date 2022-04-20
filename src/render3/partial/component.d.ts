@@ -1,6 +1,6 @@
 import * as o from '../../output/output_ast';
 import { R3CompiledExpression } from '../util';
-import { R3ComponentMetadata } from '../view/api';
+import { R3ComponentMetadata, R3TemplateDependencyMetadata } from '../view/api';
 import { ParsedTemplate } from '../view/template';
 import { DefinitionMap } from '../view/util';
 import { R3DeclareComponentMetadata } from './api';
@@ -32,8 +32,8 @@ export interface DeclareComponentTemplateInfo {
 /**
  * Compile a component declaration defined by the `R3ComponentMetadata`.
  */
-export declare function compileDeclareComponentFromMetadata(meta: R3ComponentMetadata, template: ParsedTemplate, additionalTemplateInfo: DeclareComponentTemplateInfo): R3CompiledExpression;
+export declare function compileDeclareComponentFromMetadata(meta: R3ComponentMetadata<R3TemplateDependencyMetadata>, template: ParsedTemplate, additionalTemplateInfo: DeclareComponentTemplateInfo): R3CompiledExpression;
 /**
  * Gathers the declaration fields for a component into a `DefinitionMap`.
  */
-export declare function createComponentDefinitionMap(meta: R3ComponentMetadata, template: ParsedTemplate, templateInfo: DeclareComponentTemplateInfo): DefinitionMap<R3DeclareComponentMetadata>;
+export declare function createComponentDefinitionMap(meta: R3ComponentMetadata<R3TemplateDependencyMetadata>, template: ParsedTemplate, templateInfo: DeclareComponentTemplateInfo): DefinitionMap<R3DeclareComponentMetadata>;

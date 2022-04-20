@@ -143,8 +143,7 @@ export interface R3ComponentMetadataFacade extends R3DirectiveMetadataFacade {
     template: string;
     preserveWhitespaces: boolean;
     animations: OpaqueValue[] | undefined;
-    pipes: Map<string, any>;
-    directives: R3UsedDirectiveMetadata[];
+    declarations: R3TemplateDependencyFacade[];
     styles: string[];
     encapsulation: ViewEncapsulation;
     viewProviders: Provider[] | null;
@@ -185,8 +184,9 @@ export interface R3DeclareComponentFacade extends R3DeclareDirectiveFacade {
     template: string;
     isInline?: boolean;
     styles?: string[];
-    components?: R3DeclareUsedDirectiveFacade[];
-    directives?: R3DeclareUsedDirectiveFacade[];
+    dependencies?: R3DeclareTemplateDependencyFacade[];
+    components?: R3DeclareDirectiveDependencyFacade[];
+    directives?: R3DeclareDirectiveDependencyFacade[];
     pipes?: {
         [pipeName: string]: OpaqueValue | (() => OpaqueValue);
     };
@@ -197,19 +197,34 @@ export interface R3DeclareComponentFacade extends R3DeclareDirectiveFacade {
     interpolation?: [string, string];
     preserveWhitespaces?: boolean;
 }
-export interface R3DeclareUsedDirectiveFacade {
+export declare type R3DeclareTemplateDependencyFacade = {
+    kind: string;
+} & (R3DeclareDirectiveDependencyFacade | R3DeclarePipeDependencyFacade | R3DeclareNgModuleDependencyFacade);
+export interface R3DeclareDirectiveDependencyFacade {
+    kind?: 'directive' | 'component';
     selector: string;
     type: OpaqueValue | (() => OpaqueValue);
     inputs?: string[];
     outputs?: string[];
     exportAs?: string[];
 }
-export interface R3UsedDirectiveMetadata {
-    selector: string;
-    inputs: string[];
-    outputs: string[];
-    exportAs: string[] | null;
-    type: any;
+export interface R3DeclarePipeDependencyFacade {
+    kind?: 'pipe';
+    name: string;
+    type: OpaqueValue | (() => OpaqueValue);
+}
+export interface R3DeclareNgModuleDependencyFacade {
+    kind: 'ngmodule';
+    type: OpaqueValue | (() => OpaqueValue);
+}
+export declare enum R3TemplateDependencyKind {
+    Directive = 0,
+    Pipe = 1,
+    NgModule = 2
+}
+export interface R3TemplateDependencyFacade {
+    kind: R3TemplateDependencyKind;
+    type: OpaqueValue | (() => OpaqueValue);
 }
 export interface R3FactoryDefMetadataFacade {
     name: string;

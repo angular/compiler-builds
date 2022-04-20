@@ -136,14 +136,21 @@ export interface R3DeclareComponentMetadata extends R3DeclareDirectiveMetadata {
      * the template to each directive specifically, if the runtime instructions
      * support this.
      */
-    components?: R3DeclareUsedDirectiveMetadata[];
+    components?: R3DeclareDirectiveDependencyMetadata[];
     /**
      * List of directives which matched in the template, including sufficient
      * metadata for each directive to attribute bindings and references within
      * the template to each directive specifically, if the runtime instructions
      * support this.
      */
-    directives?: R3DeclareUsedDirectiveMetadata[];
+    directives?: R3DeclareDirectiveDependencyMetadata[];
+    /**
+     * List of dependencies which matched in the template, including sufficient
+     * metadata for each directive/pipe to attribute bindings and references within
+     * the template to each directive specifically, if the runtime instructions
+     * support this.
+     */
+    dependencies?: R3DeclareTemplateDependencyMetadata[];
     /**
      * A map of pipe names to an expression referencing the pipe type (possibly a forward reference
      * wrapped in a `forwardRef` invocation) which are used in the template.
@@ -178,7 +185,9 @@ export interface R3DeclareComponentMetadata extends R3DeclareDirectiveMetadata {
      */
     preserveWhitespaces?: boolean;
 }
-export interface R3DeclareUsedDirectiveMetadata {
+export declare type R3DeclareTemplateDependencyMetadata = R3DeclareDirectiveDependencyMetadata | R3DeclarePipeDependencyMetadata | R3DeclareNgModuleDependencyMetadata;
+export interface R3DeclareDirectiveDependencyMetadata {
+    kind: 'directive' | 'component';
     /**
      * Selector of the directive.
      */
@@ -200,6 +209,19 @@ export interface R3DeclareUsedDirectiveMetadata {
      * Names by which this directive exports itself for references.
      */
     exportAs?: string[];
+}
+export interface R3DeclarePipeDependencyMetadata {
+    kind: 'pipe';
+    name: string;
+    /**
+     * Reference to the pipe class (possibly a forward reference wrapped in a `forwardRef`
+     * invocation).
+     */
+    type: o.Expression | (() => o.Expression);
+}
+export interface R3DeclareNgModuleDependencyMetadata {
+    kind: 'ngmodule';
+    type: o.Expression | (() => o.Expression);
 }
 export interface R3DeclareQueryMetadata {
     /**

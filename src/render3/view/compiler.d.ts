@@ -10,7 +10,7 @@ import * as o from '../../output/output_ast';
 import { ParseError, ParseSourceSpan } from '../../parse_util';
 import { BindingParser } from '../../template_parser/binding_parser';
 import { R3CompiledExpression } from '../util';
-import { R3ComponentMetadata, R3DirectiveMetadata } from './api';
+import { R3ComponentMetadata, R3DirectiveMetadata, R3TemplateDependency } from './api';
 /**
  * Compile a directive for the render3 runtime as defined by the `R3DirectiveMetadata`.
  */
@@ -18,12 +18,12 @@ export declare function compileDirectiveFromMetadata(meta: R3DirectiveMetadata, 
 /**
  * Compile a component for the render3 runtime as defined by the `R3ComponentMetadata`.
  */
-export declare function compileComponentFromMetadata(meta: R3ComponentMetadata, constantPool: ConstantPool, bindingParser: BindingParser): R3CompiledExpression;
+export declare function compileComponentFromMetadata(meta: R3ComponentMetadata<R3TemplateDependency>, constantPool: ConstantPool, bindingParser: BindingParser): R3CompiledExpression;
 /**
  * Creates the type specification from the component meta. This type is inserted into .d.ts files
  * to be consumed by upstream compilations.
  */
-export declare function createComponentType(meta: R3ComponentMetadata): o.Type;
+export declare function createComponentType(meta: R3ComponentMetadata<R3TemplateDependency>): o.Type;
 /**
  * A set of flags to be used with Queries.
  *
@@ -51,7 +51,7 @@ export declare const enum QueryFlags {
      */
     emitDistinctChangesOnly = 4
 }
-export declare function createDirectiveTypeParams(meta: R3DirectiveMetadata): o.Type[];
+export declare function createBaseDirectiveTypeParams(meta: R3DirectiveMetadata): o.Type[];
 /**
  * Creates the type specification from the directive meta. This type is inserted into .d.ts files
  * to be consumed by upstream compilations.

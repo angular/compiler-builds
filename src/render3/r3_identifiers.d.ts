@@ -168,6 +168,7 @@ export declare class Identifiers {
     static NgOnChangesFeature: o.ExternalReference;
     static InheritDefinitionFeature: o.ExternalReference;
     static CopyDefinitionFeature: o.ExternalReference;
+    static StandaloneFeature: o.ExternalReference;
     static ProvidersFeature: o.ExternalReference;
     static listener: o.ExternalReference;
     static getInheritedFactory: o.ExternalReference;
