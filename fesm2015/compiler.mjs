@@ -1,5 +1,5 @@
 /**
- * @license Angular v14.0.0-next.14+9.sha-3dee3d1
+ * @license Angular v14.0.0-next.14+16.sha-612d6e0
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -756,13 +756,13 @@ class Version {
         this.patch = splits.slice(2).join('.');
     }
 }
-const __window = typeof window !== 'undefined' && window;
-const __self = typeof self !== 'undefined' && typeof WorkerGlobalScope !== 'undefined' &&
-    self instanceof WorkerGlobalScope && self;
-const __global = typeof global !== 'undefined' && global;
-// Check __global first, because in Node tests both __global and __window may be defined and _global
-// should be __global in that case.
-const _global = __global || __window || __self;
+// Check `global` first, because in Node tests both `global` and `window` may be defined and our
+// `_global` variable should point to the NodeJS `global` in that case. Note: Typeof/Instanceof
+// checks are considered side-effects in Terser. We explicitly mark this as side-effect free:
+// https://github.com/terser/terser/issues/250.
+const _global = ( /* @__PURE__ */(() => (typeof global !== 'undefined' && global) || (typeof window !== 'undefined' && window) ||
+    (typeof self !== 'undefined' && typeof WorkerGlobalScope !== 'undefined' &&
+        self instanceof WorkerGlobalScope && self))());
 function newArray(size, value) {
     const list = [];
     for (let i = 0; i < size; i++) {
@@ -19398,10 +19398,10 @@ class CompilerFacadeImpl {
             internalType: new WrappedNodeExpr(facade.type),
             typeArgumentCount: facade.typeArgumentCount,
             providedIn: computeProvidedIn(facade.providedIn),
-            useClass: convertToProviderExpression(facade, USE_CLASS),
-            useFactory: wrapExpression(facade, USE_FACTORY),
-            useValue: convertToProviderExpression(facade, USE_VALUE),
-            useExisting: convertToProviderExpression(facade, USE_EXISTING),
+            useClass: convertToProviderExpression(facade, 'useClass'),
+            useFactory: wrapExpression(facade, 'useFactory'),
+            useValue: convertToProviderExpression(facade, 'useValue'),
+            useExisting: convertToProviderExpression(facade, 'useExisting'),
             deps: (_a = facade.deps) === null || _a === void 0 ? void 0 : _a.map(convertR3DependencyMetadata),
         }, 
         /* resolveForwardRefs */ true);
@@ -19415,10 +19415,10 @@ class CompilerFacadeImpl {
             internalType: new WrappedNodeExpr(facade.type),
             typeArgumentCount: 0,
             providedIn: computeProvidedIn(facade.providedIn),
-            useClass: convertToProviderExpression(facade, USE_CLASS),
-            useFactory: wrapExpression(facade, USE_FACTORY),
-            useValue: convertToProviderExpression(facade, USE_VALUE),
-            useExisting: convertToProviderExpression(facade, USE_EXISTING),
+            useClass: convertToProviderExpression(facade, 'useClass'),
+            useFactory: wrapExpression(facade, 'useFactory'),
+            useValue: convertToProviderExpression(facade, 'useValue'),
+            useExisting: convertToProviderExpression(facade, 'useExisting'),
             deps: (_a = facade.deps) === null || _a === void 0 ? void 0 : _a.map(convertR3DeclareDependencyMetadata),
         }, 
         /* resolveForwardRefs */ true);
@@ -19543,10 +19543,6 @@ class CompilerFacadeImpl {
         return res['$def'];
     }
 }
-const USE_CLASS = Object.keys({ useClass: null })[0];
-const USE_FACTORY = Object.keys({ useFactory: null })[0];
-const USE_VALUE = Object.keys({ useValue: null })[0];
-const USE_EXISTING = Object.keys({ useExisting: null })[0];
 function convertToR3QueryMetadata(facade) {
     return Object.assign(Object.assign({}, facade), { predicate: convertQueryPredicate(facade.predicate), read: facade.read ? new WrappedNodeExpr(facade.read) : null, static: facade.static, emitDistinctChangesOnly: facade.emitDistinctChangesOnly });
 }
@@ -19843,7 +19839,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('14.0.0-next.14+9.sha-3dee3d1');
+const VERSION = new Version('14.0.0-next.14+16.sha-612d6e0');
 
 /**
  * @license
@@ -21870,7 +21866,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('14.0.0-next.14+9.sha-3dee3d1'));
+    definitionMap.set('version', literal('14.0.0-next.14+16.sha-612d6e0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -21987,7 +21983,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('14.0.0-next.14+9.sha-3dee3d1'));
+    definitionMap.set('version', literal('14.0.0-next.14+16.sha-612d6e0'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     if (meta.isStandalone) {
@@ -22201,7 +22197,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('14.0.0-next.14+9.sha-3dee3d1'));
+    definitionMap.set('version', literal('14.0.0-next.14+16.sha-612d6e0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22243,7 +22239,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('14.0.0-next.14+9.sha-3dee3d1'));
+    definitionMap.set('version', literal('14.0.0-next.14+16.sha-612d6e0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22301,7 +22297,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('14.0.0-next.14+9.sha-3dee3d1'));
+    definitionMap.set('version', literal('14.0.0-next.14+16.sha-612d6e0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22338,7 +22334,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('14.0.0-next.14+9.sha-3dee3d1'));
+    definitionMap.set('version', literal('14.0.0-next.14+16.sha-612d6e0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22396,7 +22392,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('14.0.0-next.14+9.sha-3dee3d1'));
+    definitionMap.set('version', literal('14.0.0-next.14+16.sha-612d6e0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);

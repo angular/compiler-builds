@@ -1,8 +1,25 @@
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
+ * @license Angular v14.0.0-next.14+16.sha-612d6e0
+ * (c) 2010-2022 Google LLC. https://angular.io/
+ * License: MIT
  */
-export * from './public_api';
+
+
+/**
+ * @module
+ * @description
+ * Entry point for all APIs of the compiler package.
+ *
+ * <div class="callout is-critical">
+ *   <header>Unstable APIs</header>
+ *   <p>
+ *     All compiler apis are currently considered experimental and private!
+ *   </p>
+ *   <p>
+ *     We expect the APIs in this package to keep on changing. Do not rely on them.
+ *   </p>
+ * </div>
+ */
+export declare const unusedExport = true;
+
+export { }
