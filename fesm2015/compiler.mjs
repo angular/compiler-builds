@@ -1,5 +1,5 @@
 /**
- * @license Angular v14.0.0-next.15+sha-fcc548a
+ * @license Angular v14.0.0-next.15+sha-e1454ae
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -211,7 +211,7 @@ class CssSelector {
         let inNot = false;
         _SELECTOR_REGEXP.lastIndex = 0;
         while (match = _SELECTOR_REGEXP.exec(selector)) {
-            if (match[1 /* NOT */]) {
+            if (match[1 /* SelectorRegexp.NOT */]) {
                 if (inNot) {
                     throw new Error('Nesting :not in a selector is not allowed');
                 }
@@ -219,9 +219,9 @@ class CssSelector {
                 current = new CssSelector();
                 cssSelector.notSelectors.push(current);
             }
-            const tag = match[2 /* TAG */];
+            const tag = match[2 /* SelectorRegexp.TAG */];
             if (tag) {
-                const prefix = match[3 /* PREFIX */];
+                const prefix = match[3 /* SelectorRegexp.PREFIX */];
                 if (prefix === '#') {
                     // #hash
                     current.addAttribute('id', tag.slice(1));
@@ -235,15 +235,15 @@ class CssSelector {
                     current.setElement(tag);
                 }
             }
-            const attribute = match[4 /* ATTRIBUTE */];
+            const attribute = match[4 /* SelectorRegexp.ATTRIBUTE */];
             if (attribute) {
-                current.addAttribute(current.unescapeAttribute(attribute), match[6 /* ATTRIBUTE_VALUE */]);
+                current.addAttribute(current.unescapeAttribute(attribute), match[6 /* SelectorRegexp.ATTRIBUTE_VALUE */]);
             }
-            if (match[7 /* NOT_END */]) {
+            if (match[7 /* SelectorRegexp.NOT_END */]) {
                 inNot = false;
                 current = cssSelector;
             }
-            if (match[8 /* SEPARATOR */]) {
+            if (match[8 /* SelectorRegexp.SEPARATOR */]) {
                 if (inNot) {
                     throw new Error('Multiple selectors in :not are not supported');
                 }
@@ -611,26 +611,26 @@ var MissingTranslationStrategy;
 })(MissingTranslationStrategy || (MissingTranslationStrategy = {}));
 function parserSelectorToSimpleSelector(selector) {
     const classes = selector.classNames && selector.classNames.length ?
-        [8 /* CLASS */, ...selector.classNames] :
+        [8 /* SelectorFlags.CLASS */, ...selector.classNames] :
         [];
     const elementName = selector.element && selector.element !== '*' ? selector.element : '';
     return [elementName, ...selector.attrs, ...classes];
 }
 function parserSelectorToNegativeSelector(selector) {
     const classes = selector.classNames && selector.classNames.length ?
-        [8 /* CLASS */, ...selector.classNames] :
+        [8 /* SelectorFlags.CLASS */, ...selector.classNames] :
         [];
     if (selector.element) {
         return [
-            1 /* NOT */ | 4 /* ELEMENT */, selector.element, ...selector.attrs, ...classes
+            1 /* SelectorFlags.NOT */ | 4 /* SelectorFlags.ELEMENT */, selector.element, ...selector.attrs, ...classes
         ];
     }
     else if (selector.attrs.length) {
-        return [1 /* NOT */ | 2 /* ATTRIBUTE */, ...selector.attrs, ...classes];
+        return [1 /* SelectorFlags.NOT */ | 2 /* SelectorFlags.ATTRIBUTE */, ...selector.attrs, ...classes];
     }
     else {
         return selector.classNames && selector.classNames.length ?
-            [1 /* NOT */ | 8 /* CLASS */, ...selector.classNames] :
+            [1 /* SelectorFlags.NOT */ | 8 /* SelectorFlags.CLASS */, ...selector.classNames] :
             [];
     }
 }
@@ -3666,10 +3666,10 @@ function createMayBeForwardRefExpression(expression, forwardRef) {
  */
 function convertFromMaybeForwardRefExpression({ expression, forwardRef }) {
     switch (forwardRef) {
-        case 0 /* None */:
-        case 1 /* Wrapped */:
+        case 0 /* ForwardRefHandling.None */:
+        case 1 /* ForwardRefHandling.Wrapped */:
             return expression;
-        case 2 /* Unwrapped */:
+        case 2 /* ForwardRefHandling.Unwrapped */:
             return generateForwardRef(expression);
     }
 }
@@ -3793,14 +3793,14 @@ function compileInjectDependency(dep, target, index) {
     }
     else if (dep.attributeNameType === null) {
         // Build up the injection flags according to the metadata.
-        const flags = 0 /* Default */ | (dep.self ? 2 /* Self */ : 0) |
-            (dep.skipSelf ? 4 /* SkipSelf */ : 0) | (dep.host ? 1 /* Host */ : 0) |
-            (dep.optional ? 8 /* Optional */ : 0) |
-            (target === FactoryTarget$1.Pipe ? 16 /* ForPipe */ : 0);
+        const flags = 0 /* InjectFlags.Default */ | (dep.self ? 2 /* InjectFlags.Self */ : 0) |
+            (dep.skipSelf ? 4 /* InjectFlags.SkipSelf */ : 0) | (dep.host ? 1 /* InjectFlags.Host */ : 0) |
+            (dep.optional ? 8 /* InjectFlags.Optional */ : 0) |
+            (target === FactoryTarget$1.Pipe ? 16 /* InjectFlags.ForPipe */ : 0);
         // If this dependency is optional or otherwise has non-default flags, then additional
         // parameters describing how to inject the dependency must be passed to the inject function
         // that's being used.
-        let flagsParam = (flags !== 0 /* Default */ || dep.optional) ? literal(flags) : null;
+        let flagsParam = (flags !== 0 /* InjectFlags.Default */ || dep.optional) ? literal(flags) : null;
         // Build up the arguments to the injectFn call.
         const injectArgs = [dep.token];
         if (flagsParam) {
@@ -3971,8 +3971,8 @@ class BoundEvent {
         this.keySpan = keySpan;
     }
     static fromParsedEvent(event) {
-        const target = event.type === 0 /* Regular */ ? event.targetOrPhase : null;
-        const phase = event.type === 1 /* Animation */ ? event.targetOrPhase : null;
+        const target = event.type === 0 /* ParsedEventType.Regular */ ? event.targetOrPhase : null;
+        const phase = event.type === 1 /* ParsedEventType.Animation */ ? event.targetOrPhase : null;
         if (event.keySpan === undefined) {
             throw new Error(`Unexpected state: keySpan must be defined for bound event but was not for ${event.name}: ${event.sourceSpan}`);
         }
@@ -5030,10 +5030,10 @@ function getQueryPredicate(query, constantPool) {
     else {
         // The original predicate may have been wrapped in a `forwardRef()` call.
         switch (query.predicate.forwardRef) {
-            case 0 /* None */:
-            case 2 /* Unwrapped */:
+            case 0 /* ForwardRefHandling.None */:
+            case 2 /* ForwardRefHandling.Unwrapped */:
                 return query.predicate.expression;
-            case 1 /* Wrapped */:
+            case 1 /* ForwardRefHandling.Wrapped */:
                 return importExpr(Identifiers.resolveForwardRef).callFn([query.predicate.expression]);
         }
     }
@@ -8433,7 +8433,7 @@ function parse(value) {
     const styles = [];
     let i = 0;
     let parenDepth = 0;
-    let quote = 0 /* QuoteNone */;
+    let quote = 0 /* Char.QuoteNone */;
     let valueStart = 0;
     let propStart = 0;
     let currentProp = null;
@@ -8441,41 +8441,41 @@ function parse(value) {
     while (i < value.length) {
         const token = value.charCodeAt(i++);
         switch (token) {
-            case 40 /* OpenParen */:
+            case 40 /* Char.OpenParen */:
                 parenDepth++;
                 break;
-            case 41 /* CloseParen */:
+            case 41 /* Char.CloseParen */:
                 parenDepth--;
                 break;
-            case 39 /* QuoteSingle */:
+            case 39 /* Char.QuoteSingle */:
                 // valueStart needs to be there since prop values don't
                 // have quotes in CSS
                 valueHasQuotes = valueHasQuotes || valueStart > 0;
-                if (quote === 0 /* QuoteNone */) {
-                    quote = 39 /* QuoteSingle */;
+                if (quote === 0 /* Char.QuoteNone */) {
+                    quote = 39 /* Char.QuoteSingle */;
                 }
-                else if (quote === 39 /* QuoteSingle */ && value.charCodeAt(i - 1) !== 92 /* BackSlash */) {
-                    quote = 0 /* QuoteNone */;
+                else if (quote === 39 /* Char.QuoteSingle */ && value.charCodeAt(i - 1) !== 92 /* Char.BackSlash */) {
+                    quote = 0 /* Char.QuoteNone */;
                 }
                 break;
-            case 34 /* QuoteDouble */:
+            case 34 /* Char.QuoteDouble */:
                 // same logic as above
                 valueHasQuotes = valueHasQuotes || valueStart > 0;
-                if (quote === 0 /* QuoteNone */) {
-                    quote = 34 /* QuoteDouble */;
+                if (quote === 0 /* Char.QuoteNone */) {
+                    quote = 34 /* Char.QuoteDouble */;
                 }
-                else if (quote === 34 /* QuoteDouble */ && value.charCodeAt(i - 1) !== 92 /* BackSlash */) {
-                    quote = 0 /* QuoteNone */;
+                else if (quote === 34 /* Char.QuoteDouble */ && value.charCodeAt(i - 1) !== 92 /* Char.BackSlash */) {
+                    quote = 0 /* Char.QuoteNone */;
                 }
                 break;
-            case 58 /* Colon */:
-                if (!currentProp && parenDepth === 0 && quote === 0 /* QuoteNone */) {
+            case 58 /* Char.Colon */:
+                if (!currentProp && parenDepth === 0 && quote === 0 /* Char.QuoteNone */) {
                     currentProp = hyphenate(value.substring(propStart, i - 1).trim());
                     valueStart = i;
                 }
                 break;
-            case 59 /* Semicolon */:
-                if (currentProp && valueStart > 0 && parenDepth === 0 && quote === 0 /* QuoteNone */) {
+            case 59 /* Char.Semicolon */:
+                if (currentProp && valueStart > 0 && parenDepth === 0 && quote === 0 /* Char.QuoteNone */) {
                     const styleVal = value.substring(valueStart, i - 1).trim();
                     styles.push(currentProp, valueHasQuotes ? stripUnnecessaryQuotes(styleVal) : styleVal);
                     propStart = i;
@@ -8495,7 +8495,7 @@ function parse(value) {
 function stripUnnecessaryQuotes(value) {
     const qS = value.charCodeAt(0);
     const qE = value.charCodeAt(value.length - 1);
-    if (qS == qE && (qS == 39 /* QuoteSingle */ || qS == 34 /* QuoteDouble */)) {
+    if (qS == qE && (qS == 39 /* Char.QuoteSingle */ || qS == 34 /* Char.QuoteDouble */)) {
         const tempValue = value.substring(1, value.length - 1);
         // special case to avoid using a multi-quoted string that was just chomped
         // (e.g. `font-family: "Verdana", "sans-serif"`)
@@ -8646,13 +8646,13 @@ class StylingBuilder {
         let binding = null;
         let name = input.name;
         switch (input.type) {
-            case 0 /* Property */:
+            case 0 /* BindingType.Property */:
                 binding = this.registerInputBasedOnName(name, input.value, input.sourceSpan);
                 break;
-            case 3 /* Style */:
+            case 3 /* BindingType.Style */:
                 binding = this.registerStyleInput(name, false, input.value, input.sourceSpan, input.unit);
                 break;
-            case 2 /* Class */:
+            case 2 /* BindingType.Class */:
                 binding = this.registerClassInput(name, false, input.value, input.sourceSpan);
                 break;
         }
@@ -8751,14 +8751,14 @@ class StylingBuilder {
     populateInitialStylingAttrs(attrs) {
         // [CLASS_MARKER, 'foo', 'bar', 'baz' ...]
         if (this._initialClassValues.length) {
-            attrs.push(literal(1 /* Classes */));
+            attrs.push(literal(1 /* AttributeMarker.Classes */));
             for (let i = 0; i < this._initialClassValues.length; i++) {
                 attrs.push(literal(this._initialClassValues[i]));
             }
         }
         // [STYLE_MARKER, 'width', '200px', 'height', '100px', ...]
         if (this._initialStyleValues.length) {
-            attrs.push(literal(2 /* Styles */));
+            attrs.push(literal(2 /* AttributeMarker.Styles */));
             for (let i = 0; i < this._initialStyleValues.length; i += 2) {
                 attrs.push(literal(this._initialStyleValues[i]), literal(this._initialStyleValues[i + 1]));
             }
@@ -9490,9 +9490,9 @@ class Parser$1 {
         this._checkNoInterpolation(input, location, interpolationConfig);
         const sourceToLex = this._stripComments(input);
         const tokens = this._lexer.tokenize(sourceToLex);
-        let flags = 1 /* Action */;
+        let flags = 1 /* ParseFlags.Action */;
         if (isAssignmentEvent) {
-            flags |= 2 /* AssignmentEvent */;
+            flags |= 2 /* ParseFlags.AssignmentEvent */;
         }
         const ast = new _ParseAST(input, location, absoluteOffset, tokens, flags, this.errors, 0).parseChain();
         return new ASTWithSource(ast, input, location, absoluteOffset, this.errors);
@@ -9521,7 +9521,7 @@ class Parser$1 {
         this._checkNoInterpolation(input, location, interpolationConfig);
         const sourceToLex = this._stripComments(input);
         const tokens = this._lexer.tokenize(sourceToLex);
-        return new _ParseAST(input, location, absoluteOffset, tokens, 0 /* None */, this.errors, 0)
+        return new _ParseAST(input, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, this.errors, 0)
             .parseChain();
     }
     /**
@@ -9552,7 +9552,7 @@ class Parser$1 {
      */
     parseTemplateBindings(templateKey, templateValue, templateUrl, absoluteKeyOffset, absoluteValueOffset) {
         const tokens = this._lexer.tokenize(templateValue);
-        const parser = new _ParseAST(templateValue, templateUrl, absoluteValueOffset, tokens, 0 /* None */, this.errors, 0 /* relative offset */);
+        const parser = new _ParseAST(templateValue, templateUrl, absoluteValueOffset, tokens, 0 /* ParseFlags.None */, this.errors, 0 /* relative offset */);
         return parser.parseTemplateBindings({
             source: templateKey,
             span: new AbsoluteSourceSpan(absoluteKeyOffset, absoluteKeyOffset + templateKey.length),
@@ -9567,7 +9567,7 @@ class Parser$1 {
             const expressionText = expressions[i].text;
             const sourceToLex = this._stripComments(expressionText);
             const tokens = this._lexer.tokenize(sourceToLex);
-            const ast = new _ParseAST(input, location, absoluteOffset, tokens, 0 /* None */, this.errors, offsets[i])
+            const ast = new _ParseAST(input, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, this.errors, offsets[i])
                 .parseChain();
             expressionNodes.push(ast);
         }
@@ -9581,7 +9581,7 @@ class Parser$1 {
     parseInterpolationExpression(expression, location, absoluteOffset) {
         const sourceToLex = this._stripComments(expression);
         const tokens = this._lexer.tokenize(sourceToLex);
-        const ast = new _ParseAST(expression, location, absoluteOffset, tokens, 0 /* None */, this.errors, 0)
+        const ast = new _ParseAST(expression, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, this.errors, 0)
             .parseChain();
         const strings = ['', '']; // The prefix and suffix strings are both empty
         return this.createInterpolationAst(strings, [ast], expression, location, absoluteOffset);
@@ -9938,7 +9938,7 @@ class _ParseAST {
             const expr = this.parsePipe();
             exprs.push(expr);
             if (this.consumeOptionalCharacter($SEMICOLON)) {
-                if (!(this.parseFlags & 1 /* Action */)) {
+                if (!(this.parseFlags & 1 /* ParseFlags.Action */)) {
                     this.error('Binding expression cannot contain chained expression');
                 }
                 while (this.consumeOptionalCharacter($SEMICOLON)) {
@@ -9962,7 +9962,7 @@ class _ParseAST {
         const start = this.inputIndex;
         let result = this.parseExpression();
         if (this.consumeOptionalOperator('|')) {
-            if (this.parseFlags & 1 /* Action */) {
+            if (this.parseFlags & 1 /* ParseFlags.Action */) {
                 this.error('Cannot have a pipe in an action expression');
             }
             do {
@@ -10315,7 +10315,7 @@ class _ParseAST {
         }
         else {
             if (this.consumeOptionalAssignment()) {
-                if (!(this.parseFlags & 1 /* Action */)) {
+                if (!(this.parseFlags & 1 /* ParseFlags.Action */)) {
                     this.error('Bindings cannot contain assignments');
                     return new EmptyExpr(this.span(start), this.sourceSpan(start));
                 }
@@ -10347,7 +10347,7 @@ class _ParseAST {
         // primary expression is substituted as LHS of the assignment operator to achieve
         // two-way-binding, such that the LHS could be the non-null operator. The grammar doesn't
         // naturally allow for this syntax, so assignment events are parsed specially.
-        if ((this.parseFlags & 2 /* AssignmentEvent */) && this.next.isOperator('!') &&
+        if ((this.parseFlags & 2 /* ParseFlags.AssignmentEvent */) && this.next.isOperator('!') &&
             this.peek(1).isOperator('=')) {
             // First skip over the ! operator.
             this.advance();
@@ -10669,7 +10669,7 @@ function getIndexMapForOriginalTemplate(interpolatedTokens) {
     let tokenIndex = 0;
     while (tokenIndex < interpolatedTokens.length) {
         const currentToken = interpolatedTokens[tokenIndex];
-        if (currentToken.type === 9 /* ENCODED_ENTITY */) {
+        if (currentToken.type === 9 /* MlParserTokenType.ENCODED_ENTITY */) {
             const [decoded, encoded] = currentToken.parts;
             consumedInOriginalTemplate += encoded.length;
             consumedInInput += decoded.length;
@@ -13067,14 +13067,14 @@ class _Tokenizer {
                 else if (!(this._tokenizeIcu && this._tokenizeExpansionForm())) {
                     // In (possibly interpolated) text the end of the text is given by `isTextEnd()`, while
                     // the premature end of an interpolation is given by the start of a new HTML element.
-                    this._consumeWithInterpolation(5 /* TEXT */, 8 /* INTERPOLATION */, () => this._isTextEnd(), () => this._isTagStart());
+                    this._consumeWithInterpolation(5 /* TokenType.TEXT */, 8 /* TokenType.INTERPOLATION */, () => this._isTextEnd(), () => this._isTagStart());
                 }
             }
             catch (e) {
                 this.handleError(e);
             }
         }
-        this._beginToken(24 /* EOF */);
+        this._beginToken(24 /* TokenType.EOF */);
         this._endToken([]);
     }
     /**
@@ -13218,7 +13218,7 @@ class _Tokenizer {
         return char;
     }
     _consumeEntity(textTokenType) {
-        this._beginToken(9 /* ENCODED_ENTITY */);
+        this._beginToken(9 /* TokenType.ENCODED_ENTITY */);
         const start = this._cursor.clone();
         this._cursor.advance();
         if (this._attemptCharCode($HASH)) {
@@ -13264,7 +13264,7 @@ class _Tokenizer {
         }
     }
     _consumeRawText(consumeEntities, endMarkerPredicate) {
-        this._beginToken(consumeEntities ? 6 /* ESCAPABLE_RAW_TEXT */ : 7 /* RAW_TEXT */);
+        this._beginToken(consumeEntities ? 6 /* TokenType.ESCAPABLE_RAW_TEXT */ : 7 /* TokenType.RAW_TEXT */);
         const parts = [];
         while (true) {
             const tagCloseStart = this._cursor.clone();
@@ -13276,8 +13276,8 @@ class _Tokenizer {
             if (consumeEntities && this._cursor.peek() === $AMPERSAND) {
                 this._endToken([this._processCarriageReturns(parts.join(''))]);
                 parts.length = 0;
-                this._consumeEntity(6 /* ESCAPABLE_RAW_TEXT */);
-                this._beginToken(6 /* ESCAPABLE_RAW_TEXT */);
+                this._consumeEntity(6 /* TokenType.ESCAPABLE_RAW_TEXT */);
+                this._beginToken(6 /* TokenType.ESCAPABLE_RAW_TEXT */);
             }
             else {
                 parts.push(this._readChar());
@@ -13286,25 +13286,25 @@ class _Tokenizer {
         this._endToken([this._processCarriageReturns(parts.join(''))]);
     }
     _consumeComment(start) {
-        this._beginToken(10 /* COMMENT_START */, start);
+        this._beginToken(10 /* TokenType.COMMENT_START */, start);
         this._requireCharCode($MINUS);
         this._endToken([]);
         this._consumeRawText(false, () => this._attemptStr('-->'));
-        this._beginToken(11 /* COMMENT_END */);
+        this._beginToken(11 /* TokenType.COMMENT_END */);
         this._requireStr('-->');
         this._endToken([]);
     }
     _consumeCdata(start) {
-        this._beginToken(12 /* CDATA_START */, start);
+        this._beginToken(12 /* TokenType.CDATA_START */, start);
         this._requireStr('CDATA[');
         this._endToken([]);
         this._consumeRawText(false, () => this._attemptStr(']]>'));
-        this._beginToken(13 /* CDATA_END */);
+        this._beginToken(13 /* TokenType.CDATA_END */);
         this._requireStr(']]>');
         this._endToken([]);
     }
     _consumeDocType(start) {
-        this._beginToken(18 /* DOC_TYPE */, start);
+        this._beginToken(18 /* TokenType.DOC_TYPE */, start);
         const contentStart = this._cursor.clone();
         this._attemptUntilChar($GT);
         const content = this._cursor.getChars(contentStart);
@@ -13358,12 +13358,12 @@ class _Tokenizer {
             if (e instanceof _ControlFlowError) {
                 if (openTagToken) {
                     // We errored before we could close the opening tag, so it is incomplete.
-                    openTagToken.type = 4 /* INCOMPLETE_TAG_OPEN */;
+                    openTagToken.type = 4 /* TokenType.INCOMPLETE_TAG_OPEN */;
                 }
                 else {
                     // When the start tag is invalid, assume we want a "<" as text.
                     // Back to back text tokens are merged at the end.
-                    this._beginToken(5 /* TEXT */, start);
+                    this._beginToken(5 /* TokenType.TEXT */, start);
                     this._endToken(['<']);
                 }
                 return;
@@ -13390,13 +13390,13 @@ class _Tokenizer {
             this._attemptCharCodeUntilFn(isNotWhitespace);
             return this._attemptCharCode($GT);
         });
-        this._beginToken(3 /* TAG_CLOSE */);
+        this._beginToken(3 /* TokenType.TAG_CLOSE */);
         this._requireCharCodeUntilFn(code => code === $GT, 3);
         this._cursor.advance(); // Consume the `>`
         this._endToken([prefix, tagName]);
     }
     _consumeTagOpenStart(start) {
-        this._beginToken(0 /* TAG_OPEN_START */, start);
+        this._beginToken(0 /* TokenType.TAG_OPEN_START */, start);
         const parts = this._consumePrefixAndName();
         return this._endToken(parts);
     }
@@ -13405,7 +13405,7 @@ class _Tokenizer {
         if (attrNameStart === $SQ || attrNameStart === $DQ) {
             throw this._createError(_unexpectedCharacterErrorMsg(attrNameStart), this._cursor.getSpan());
         }
-        this._beginToken(14 /* ATTR_NAME */);
+        this._beginToken(14 /* TokenType.ATTR_NAME */);
         const prefixAndName = this._consumePrefixAndName();
         this._endToken(prefixAndName);
     }
@@ -13417,27 +13417,27 @@ class _Tokenizer {
             // In an attribute then end of the attribute value and the premature end to an interpolation
             // are both triggered by the `quoteChar`.
             const endPredicate = () => this._cursor.peek() === quoteChar;
-            this._consumeWithInterpolation(16 /* ATTR_VALUE_TEXT */, 17 /* ATTR_VALUE_INTERPOLATION */, endPredicate, endPredicate);
+            this._consumeWithInterpolation(16 /* TokenType.ATTR_VALUE_TEXT */, 17 /* TokenType.ATTR_VALUE_INTERPOLATION */, endPredicate, endPredicate);
             this._consumeQuote(quoteChar);
         }
         else {
             const endPredicate = () => isNameEnd(this._cursor.peek());
-            this._consumeWithInterpolation(16 /* ATTR_VALUE_TEXT */, 17 /* ATTR_VALUE_INTERPOLATION */, endPredicate, endPredicate);
+            this._consumeWithInterpolation(16 /* TokenType.ATTR_VALUE_TEXT */, 17 /* TokenType.ATTR_VALUE_INTERPOLATION */, endPredicate, endPredicate);
         }
     }
     _consumeQuote(quoteChar) {
-        this._beginToken(15 /* ATTR_QUOTE */);
+        this._beginToken(15 /* TokenType.ATTR_QUOTE */);
         this._requireCharCode(quoteChar);
         this._endToken([String.fromCodePoint(quoteChar)]);
     }
     _consumeTagOpenEnd() {
-        const tokenType = this._attemptCharCode($SLASH) ? 2 /* TAG_OPEN_END_VOID */ : 1 /* TAG_OPEN_END */;
+        const tokenType = this._attemptCharCode($SLASH) ? 2 /* TokenType.TAG_OPEN_END_VOID */ : 1 /* TokenType.TAG_OPEN_END */;
         this._beginToken(tokenType);
         this._requireCharCode($GT);
         this._endToken([]);
     }
     _consumeTagClose(start) {
-        this._beginToken(3 /* TAG_CLOSE */, start);
+        this._beginToken(3 /* TokenType.TAG_CLOSE */, start);
         this._attemptCharCodeUntilFn(isNotWhitespace);
         const prefixAndName = this._consumePrefixAndName();
         this._attemptCharCodeUntilFn(isNotWhitespace);
@@ -13445,11 +13445,11 @@ class _Tokenizer {
         this._endToken(prefixAndName);
     }
     _consumeExpansionFormStart() {
-        this._beginToken(19 /* EXPANSION_FORM_START */);
+        this._beginToken(19 /* TokenType.EXPANSION_FORM_START */);
         this._requireCharCode($LBRACE);
         this._endToken([]);
-        this._expansionCaseStack.push(19 /* EXPANSION_FORM_START */);
-        this._beginToken(7 /* RAW_TEXT */);
+        this._expansionCaseStack.push(19 /* TokenType.EXPANSION_FORM_START */);
+        this._beginToken(7 /* TokenType.RAW_TEXT */);
         const condition = this._readUntil($COMMA);
         const normalizedCondition = this._processCarriageReturns(condition);
         if (this._i18nNormalizeLineEndingsInICUs) {
@@ -13465,32 +13465,32 @@ class _Tokenizer {
         }
         this._requireCharCode($COMMA);
         this._attemptCharCodeUntilFn(isNotWhitespace);
-        this._beginToken(7 /* RAW_TEXT */);
+        this._beginToken(7 /* TokenType.RAW_TEXT */);
         const type = this._readUntil($COMMA);
         this._endToken([type]);
         this._requireCharCode($COMMA);
         this._attemptCharCodeUntilFn(isNotWhitespace);
     }
     _consumeExpansionCaseStart() {
-        this._beginToken(20 /* EXPANSION_CASE_VALUE */);
+        this._beginToken(20 /* TokenType.EXPANSION_CASE_VALUE */);
         const value = this._readUntil($LBRACE).trim();
         this._endToken([value]);
         this._attemptCharCodeUntilFn(isNotWhitespace);
-        this._beginToken(21 /* EXPANSION_CASE_EXP_START */);
+        this._beginToken(21 /* TokenType.EXPANSION_CASE_EXP_START */);
         this._requireCharCode($LBRACE);
         this._endToken([]);
         this._attemptCharCodeUntilFn(isNotWhitespace);
-        this._expansionCaseStack.push(21 /* EXPANSION_CASE_EXP_START */);
+        this._expansionCaseStack.push(21 /* TokenType.EXPANSION_CASE_EXP_START */);
     }
     _consumeExpansionCaseEnd() {
-        this._beginToken(22 /* EXPANSION_CASE_EXP_END */);
+        this._beginToken(22 /* TokenType.EXPANSION_CASE_EXP_END */);
         this._requireCharCode($RBRACE);
         this._endToken([]);
         this._attemptCharCodeUntilFn(isNotWhitespace);
         this._expansionCaseStack.pop();
     }
     _consumeExpansionFormEnd() {
-        this._beginToken(23 /* EXPANSION_FORM_END */);
+        this._beginToken(23 /* TokenType.EXPANSION_FORM_END */);
         this._requireCharCode($RBRACE);
         this._endToken([]);
         this._expansionCaseStack.pop();
@@ -13640,12 +13640,12 @@ class _Tokenizer {
     _isInExpansionCase() {
         return this._expansionCaseStack.length > 0 &&
             this._expansionCaseStack[this._expansionCaseStack.length - 1] ===
-                21 /* EXPANSION_CASE_EXP_START */;
+                21 /* TokenType.EXPANSION_CASE_EXP_START */;
     }
     _isInExpansionForm() {
         return this._expansionCaseStack.length > 0 &&
             this._expansionCaseStack[this._expansionCaseStack.length - 1] ===
-                19 /* EXPANSION_FORM_START */;
+                19 /* TokenType.EXPANSION_FORM_START */;
     }
     isExpansionFormStart() {
         if (this._cursor.peek() !== $LBRACE) {
@@ -13692,9 +13692,9 @@ function mergeTextTokens(srcTokens) {
     let lastDstToken = undefined;
     for (let i = 0; i < srcTokens.length; i++) {
         const token = srcTokens[i];
-        if ((lastDstToken && lastDstToken.type === 5 /* TEXT */ && token.type === 5 /* TEXT */) ||
-            (lastDstToken && lastDstToken.type === 16 /* ATTR_VALUE_TEXT */ &&
-                token.type === 16 /* ATTR_VALUE_TEXT */)) {
+        if ((lastDstToken && lastDstToken.type === 5 /* TokenType.TEXT */ && token.type === 5 /* TokenType.TEXT */) ||
+            (lastDstToken && lastDstToken.type === 16 /* TokenType.ATTR_VALUE_TEXT */ &&
+                token.type === 16 /* TokenType.ATTR_VALUE_TEXT */)) {
             lastDstToken.parts[0] += token.parts[0];
             lastDstToken.sourceSpan.end = token.sourceSpan.end;
         }
@@ -13987,28 +13987,28 @@ class _TreeBuilder {
         this._advance();
     }
     build() {
-        while (this._peek.type !== 24 /* EOF */) {
-            if (this._peek.type === 0 /* TAG_OPEN_START */ ||
-                this._peek.type === 4 /* INCOMPLETE_TAG_OPEN */) {
+        while (this._peek.type !== 24 /* TokenType.EOF */) {
+            if (this._peek.type === 0 /* TokenType.TAG_OPEN_START */ ||
+                this._peek.type === 4 /* TokenType.INCOMPLETE_TAG_OPEN */) {
                 this._consumeStartTag(this._advance());
             }
-            else if (this._peek.type === 3 /* TAG_CLOSE */) {
+            else if (this._peek.type === 3 /* TokenType.TAG_CLOSE */) {
                 this._consumeEndTag(this._advance());
             }
-            else if (this._peek.type === 12 /* CDATA_START */) {
+            else if (this._peek.type === 12 /* TokenType.CDATA_START */) {
                 this._closeVoidElement();
                 this._consumeCdata(this._advance());
             }
-            else if (this._peek.type === 10 /* COMMENT_START */) {
+            else if (this._peek.type === 10 /* TokenType.COMMENT_START */) {
                 this._closeVoidElement();
                 this._consumeComment(this._advance());
             }
-            else if (this._peek.type === 5 /* TEXT */ || this._peek.type === 7 /* RAW_TEXT */ ||
-                this._peek.type === 6 /* ESCAPABLE_RAW_TEXT */) {
+            else if (this._peek.type === 5 /* TokenType.TEXT */ || this._peek.type === 7 /* TokenType.RAW_TEXT */ ||
+                this._peek.type === 6 /* TokenType.ESCAPABLE_RAW_TEXT */) {
                 this._closeVoidElement();
                 this._consumeText(this._advance());
             }
-            else if (this._peek.type === 19 /* EXPANSION_FORM_START */) {
+            else if (this._peek.type === 19 /* TokenType.EXPANSION_FORM_START */) {
                 this._consumeExpansion(this._advance());
             }
             else {
@@ -14034,11 +14034,11 @@ class _TreeBuilder {
     }
     _consumeCdata(_startToken) {
         this._consumeText(this._advance());
-        this._advanceIf(13 /* CDATA_END */);
+        this._advanceIf(13 /* TokenType.CDATA_END */);
     }
     _consumeComment(token) {
-        const text = this._advanceIf(7 /* RAW_TEXT */);
-        this._advanceIf(11 /* COMMENT_END */);
+        const text = this._advanceIf(7 /* TokenType.RAW_TEXT */);
+        this._advanceIf(11 /* TokenType.COMMENT_END */);
         const value = text != null ? text.parts[0].trim() : null;
         this._addToParent(new Comment(value, token.sourceSpan));
     }
@@ -14047,14 +14047,14 @@ class _TreeBuilder {
         const type = this._advance();
         const cases = [];
         // read =
-        while (this._peek.type === 20 /* EXPANSION_CASE_VALUE */) {
+        while (this._peek.type === 20 /* TokenType.EXPANSION_CASE_VALUE */) {
             const expCase = this._parseExpansionCase();
             if (!expCase)
                 return; // error
             cases.push(expCase);
         }
         // read the final }
-        if (this._peek.type !== 23 /* EXPANSION_FORM_END */) {
+        if (this._peek.type !== 23 /* TokenType.EXPANSION_FORM_END */) {
             this.errors.push(TreeError.create(null, this._peek.sourceSpan, `Invalid ICU message. Missing '}'.`));
             return;
         }
@@ -14065,7 +14065,7 @@ class _TreeBuilder {
     _parseExpansionCase() {
         const value = this._advance();
         // read {
-        if (this._peek.type !== 21 /* EXPANSION_CASE_EXP_START */) {
+        if (this._peek.type !== 21 /* TokenType.EXPANSION_CASE_EXP_START */) {
             this.errors.push(TreeError.create(null, this._peek.sourceSpan, `Invalid ICU message. Missing '{'.`));
             return null;
         }
@@ -14075,7 +14075,7 @@ class _TreeBuilder {
         if (!exp)
             return null;
         const end = this._advance();
-        exp.push({ type: 24 /* EOF */, parts: [], sourceSpan: end.sourceSpan });
+        exp.push({ type: 24 /* TokenType.EOF */, parts: [], sourceSpan: end.sourceSpan });
         // parse everything in between { and }
         const expansionCaseParser = new _TreeBuilder(exp, this.getTagDefinition);
         expansionCaseParser.build();
@@ -14089,14 +14089,14 @@ class _TreeBuilder {
     }
     _collectExpansionExpTokens(start) {
         const exp = [];
-        const expansionFormStack = [21 /* EXPANSION_CASE_EXP_START */];
+        const expansionFormStack = [21 /* TokenType.EXPANSION_CASE_EXP_START */];
         while (true) {
-            if (this._peek.type === 19 /* EXPANSION_FORM_START */ ||
-                this._peek.type === 21 /* EXPANSION_CASE_EXP_START */) {
+            if (this._peek.type === 19 /* TokenType.EXPANSION_FORM_START */ ||
+                this._peek.type === 21 /* TokenType.EXPANSION_CASE_EXP_START */) {
                 expansionFormStack.push(this._peek.type);
             }
-            if (this._peek.type === 22 /* EXPANSION_CASE_EXP_END */) {
-                if (lastOnStack(expansionFormStack, 21 /* EXPANSION_CASE_EXP_START */)) {
+            if (this._peek.type === 22 /* TokenType.EXPANSION_CASE_EXP_END */) {
+                if (lastOnStack(expansionFormStack, 21 /* TokenType.EXPANSION_CASE_EXP_START */)) {
                     expansionFormStack.pop();
                     if (expansionFormStack.length === 0)
                         return exp;
@@ -14106,8 +14106,8 @@ class _TreeBuilder {
                     return null;
                 }
             }
-            if (this._peek.type === 23 /* EXPANSION_FORM_END */) {
-                if (lastOnStack(expansionFormStack, 19 /* EXPANSION_FORM_START */)) {
+            if (this._peek.type === 23 /* TokenType.EXPANSION_FORM_END */) {
+                if (lastOnStack(expansionFormStack, 19 /* TokenType.EXPANSION_FORM_START */)) {
                     expansionFormStack.pop();
                 }
                 else {
@@ -14115,7 +14115,7 @@ class _TreeBuilder {
                     return null;
                 }
             }
-            if (this._peek.type === 24 /* EOF */) {
+            if (this._peek.type === 24 /* TokenType.EOF */) {
                 this.errors.push(TreeError.create(null, start.sourceSpan, `Invalid ICU message. Missing '}'.`));
                 return null;
             }
@@ -14134,18 +14134,18 @@ class _TreeBuilder {
                 tokens[0] = { type: token.type, sourceSpan: token.sourceSpan, parts: [text] };
             }
         }
-        while (this._peek.type === 8 /* INTERPOLATION */ || this._peek.type === 5 /* TEXT */ ||
-            this._peek.type === 9 /* ENCODED_ENTITY */) {
+        while (this._peek.type === 8 /* TokenType.INTERPOLATION */ || this._peek.type === 5 /* TokenType.TEXT */ ||
+            this._peek.type === 9 /* TokenType.ENCODED_ENTITY */) {
             token = this._advance();
             tokens.push(token);
-            if (token.type === 8 /* INTERPOLATION */) {
+            if (token.type === 8 /* TokenType.INTERPOLATION */) {
                 // For backward compatibility we decode HTML entities that appear in interpolation
                 // expressions. This is arguably a bug, but it could be a considerable breaking change to
                 // fix it. It should be addressed in a larger project to refactor the entire parser/lexer
                 // chain after View Engine has been removed.
                 text += token.parts.join('').replace(/&([^;]+);/g, decodeEntity);
             }
-            else if (token.type === 9 /* ENCODED_ENTITY */) {
+            else if (token.type === 9 /* TokenType.ENCODED_ENTITY */) {
                 text += token.parts[0];
             }
             else {
@@ -14166,14 +14166,14 @@ class _TreeBuilder {
     _consumeStartTag(startTagToken) {
         const [prefix, name] = startTagToken.parts;
         const attrs = [];
-        while (this._peek.type === 14 /* ATTR_NAME */) {
+        while (this._peek.type === 14 /* TokenType.ATTR_NAME */) {
             attrs.push(this._consumeAttr(this._advance()));
         }
         const fullName = this._getElementFullName(prefix, name, this._getParentElement());
         let selfClosing = false;
         // Note: There could have been a tokenizer error
         // so that we don't get a token for the end tag...
-        if (this._peek.type === 2 /* TAG_OPEN_END_VOID */) {
+        if (this._peek.type === 2 /* TokenType.TAG_OPEN_END_VOID */) {
             this._advance();
             selfClosing = true;
             const tagDef = this.getTagDefinition(fullName);
@@ -14181,7 +14181,7 @@ class _TreeBuilder {
                 this.errors.push(TreeError.create(fullName, startTagToken.sourceSpan, `Only void and foreign elements can be self closed "${startTagToken.parts[1]}"`));
             }
         }
-        else if (this._peek.type === 1 /* TAG_OPEN_END */) {
+        else if (this._peek.type === 1 /* TokenType.TAG_OPEN_END */) {
             this._advance();
             selfClosing = false;
         }
@@ -14196,7 +14196,7 @@ class _TreeBuilder {
             // element start tag also represents the end tag.
             this._popElement(fullName, span);
         }
-        else if (startTagToken.type === 4 /* INCOMPLETE_TAG_OPEN */) {
+        else if (startTagToken.type === 4 /* TokenType.INCOMPLETE_TAG_OPEN */) {
             // We already know the opening tag is not complete, so it is unlikely it has a corresponding
             // close tag. Let's optimistically parse it as a full element and emit an error.
             this._popElement(fullName, null);
@@ -14253,7 +14253,7 @@ class _TreeBuilder {
         const fullName = mergeNsAndName(attrName.parts[0], attrName.parts[1]);
         let attrEnd = attrName.sourceSpan.end;
         // Consume any quote
-        if (this._peek.type === 15 /* ATTR_QUOTE */) {
+        if (this._peek.type === 15 /* TokenType.ATTR_QUOTE */) {
             this._advance();
         }
         // Consume the attribute value
@@ -14266,22 +14266,22 @@ class _TreeBuilder {
         // being able to consider `ATTR_VALUE_INTERPOLATION` as an option. This is because TS is not
         // able to see that `_advance()` will actually mutate `_peek`.
         const nextTokenType = this._peek.type;
-        if (nextTokenType === 16 /* ATTR_VALUE_TEXT */) {
+        if (nextTokenType === 16 /* TokenType.ATTR_VALUE_TEXT */) {
             valueStartSpan = this._peek.sourceSpan;
             valueEnd = this._peek.sourceSpan.end;
-            while (this._peek.type === 16 /* ATTR_VALUE_TEXT */ ||
-                this._peek.type === 17 /* ATTR_VALUE_INTERPOLATION */ ||
-                this._peek.type === 9 /* ENCODED_ENTITY */) {
+            while (this._peek.type === 16 /* TokenType.ATTR_VALUE_TEXT */ ||
+                this._peek.type === 17 /* TokenType.ATTR_VALUE_INTERPOLATION */ ||
+                this._peek.type === 9 /* TokenType.ENCODED_ENTITY */) {
                 const valueToken = this._advance();
                 valueTokens.push(valueToken);
-                if (valueToken.type === 17 /* ATTR_VALUE_INTERPOLATION */) {
+                if (valueToken.type === 17 /* TokenType.ATTR_VALUE_INTERPOLATION */) {
                     // For backward compatibility we decode HTML entities that appear in interpolation
                     // expressions. This is arguably a bug, but it could be a considerable breaking change to
                     // fix it. It should be addressed in a larger project to refactor the entire parser/lexer
                     // chain after View Engine has been removed.
                     value += valueToken.parts.join('').replace(/&([^;]+);/g, decodeEntity);
                 }
-                else if (valueToken.type === 9 /* ENCODED_ENTITY */) {
+                else if (valueToken.type === 9 /* TokenType.ENCODED_ENTITY */) {
                     value += valueToken.parts[0];
                 }
                 else {
@@ -14291,7 +14291,7 @@ class _TreeBuilder {
             }
         }
         // Consume any quote
-        if (this._peek.type === 15 /* ATTR_QUOTE */) {
+        if (this._peek.type === 15 /* TokenType.ATTR_QUOTE */) {
             const quoteToken = this._advance();
             attrEnd = quoteToken.sourceSpan.end;
         }
@@ -14421,7 +14421,7 @@ class WhitespaceVisitor {
             (context.prev instanceof Expansion || context.next instanceof Expansion);
         if (isNotBlank || hasExpansionSibling) {
             // Process the whitespace in the tokens of this Text node
-            const tokens = text.tokens.map(token => token.type === 5 /* TEXT */ ? createWhitespaceProcessedTextToken(token) : token);
+            const tokens = text.tokens.map(token => token.type === 5 /* TokenType.TEXT */ ? createWhitespaceProcessedTextToken(token) : token);
             // Process the whitespace of the value of this Text node
             const value = processWhitespace(text.value);
             return new Text(value, text.sourceSpan, tokens, text.i18n);
@@ -15271,7 +15271,7 @@ class BindingParser {
     }
     createBoundElementProperty(elementSelector, boundProp, skipValidation = false, mapPropertyName = true) {
         if (boundProp.isAnimation) {
-            return new BoundElementProperty(boundProp.name, 4 /* Animation */, SecurityContext.NONE, boundProp.expression, null, boundProp.sourceSpan, boundProp.keySpan, boundProp.valueSpan);
+            return new BoundElementProperty(boundProp.name, 4 /* BindingType.Animation */, SecurityContext.NONE, boundProp.expression, null, boundProp.sourceSpan, boundProp.keySpan, boundProp.valueSpan);
         }
         let unit = null;
         let bindingType = undefined;
@@ -15292,17 +15292,17 @@ class BindingParser {
                     const name = boundPropertyName.substring(nsSeparatorIdx + 1);
                     boundPropertyName = mergeNsAndName(ns, name);
                 }
-                bindingType = 1 /* Attribute */;
+                bindingType = 1 /* BindingType.Attribute */;
             }
             else if (parts[0] == CLASS_PREFIX) {
                 boundPropertyName = parts[1];
-                bindingType = 2 /* Class */;
+                bindingType = 2 /* BindingType.Class */;
                 securityContexts = [SecurityContext.NONE];
             }
             else if (parts[0] == STYLE_PREFIX) {
                 unit = parts.length > 2 ? parts[2] : null;
                 boundPropertyName = parts[1];
-                bindingType = 3 /* Style */;
+                bindingType = 3 /* BindingType.Style */;
                 securityContexts = [SecurityContext.STYLE];
             }
         }
@@ -15311,7 +15311,7 @@ class BindingParser {
             const mappedPropName = this._schemaRegistry.getMappedPropName(boundProp.name);
             boundPropertyName = mapPropertyName ? mappedPropName : boundProp.name;
             securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, mappedPropName, false);
-            bindingType = 0 /* Property */;
+            bindingType = 0 /* BindingType.Property */;
             if (!skipValidation) {
                 this._validatePropertyOrAttributeName(mappedPropName, boundProp.sourceSpan, false);
             }
@@ -15343,7 +15343,7 @@ class BindingParser {
         const eventName = matches[0];
         const phase = matches[1].toLowerCase();
         const ast = this._parseAction(expression, isAssignmentEvent, handlerSpan);
-        targetEvents.push(new ParsedEvent(eventName, phase, 1 /* Animation */, ast, sourceSpan, handlerSpan, keySpan));
+        targetEvents.push(new ParsedEvent(eventName, phase, 1 /* ParsedEventType.Animation */, ast, sourceSpan, handlerSpan, keySpan));
         if (eventName.length === 0) {
             this._reportError(`Animation event name is missing in binding`, sourceSpan);
         }
@@ -15361,7 +15361,7 @@ class BindingParser {
         const [target, eventName] = splitAtColon(name, [null, name]);
         const ast = this._parseAction(expression, isAssignmentEvent, handlerSpan);
         targetMatchableAttrs.push([name, ast.source]);
-        targetEvents.push(new ParsedEvent(eventName, target, 0 /* Regular */, ast, sourceSpan, handlerSpan, keySpan));
+        targetEvents.push(new ParsedEvent(eventName, target, 0 /* ParsedEventType.Regular */, ast, sourceSpan, handlerSpan, keySpan));
         // Don't detect directives for event names for now,
         // so don't add the event name to the matchableAttrs
     }
@@ -16444,8 +16444,8 @@ class _I18nVisitor {
         let hasInterpolation = false;
         for (const token of tokens) {
             switch (token.type) {
-                case 8 /* INTERPOLATION */:
-                case 17 /* ATTR_VALUE_INTERPOLATION */:
+                case 8 /* TokenType.INTERPOLATION */:
+                case 17 /* TokenType.ATTR_VALUE_INTERPOLATION */:
                     hasInterpolation = true;
                     const expression = token.parts[1];
                     const baseName = extractPlaceholderName(expression) || 'INTERPOLATION';
@@ -16774,14 +16774,14 @@ function parseI18nMeta(meta = '') {
 function i18nMetaToJSDoc(meta) {
     const tags = [];
     if (meta.description) {
-        tags.push({ tagName: "desc" /* Desc */, text: meta.description });
+        tags.push({ tagName: "desc" /* o.JSDocTagName.Desc */, text: meta.description });
     }
     else {
         // Suppress the JSCompiler warning that a `@desc` was not given for this message.
-        tags.push({ tagName: "suppress" /* Suppress */, text: '{msgDescriptions}' });
+        tags.push({ tagName: "suppress" /* o.JSDocTagName.Suppress */, text: '{msgDescriptions}' });
     }
     if (meta.meaning) {
-        tags.push({ tagName: "meaning" /* Meaning */, text: meta.meaning });
+        tags.push({ tagName: "meaning" /* o.JSDocTagName.Meaning */, text: meta.meaning });
     }
     return jsDocComment(tags);
 }
@@ -17056,7 +17056,7 @@ function prepareEventListenerParameters(eventAst, handlerName = null, scope = nu
             statements.push(new ExpressionStatement(invokeInstruction(null, Identifiers.resetView, [])));
         }
     }
-    const eventName = type === 1 /* Animation */ ? prepareSyntheticListenerName(name, phase) : name;
+    const eventName = type === 1 /* ParsedEventType.Animation */ ? prepareSyntheticListenerName(name, phase) : name;
     const fnName = handlerName && sanitizeIdentifier(handlerName);
     const fnArgs = [];
     if (implicitReceiverAccesses.has(eventArgumentName)) {
@@ -17208,10 +17208,10 @@ class TemplateDefinitionBuilder {
         const creationVariables = this._bindingScope.viewSnapshotStatements();
         const updateVariables = this._bindingScope.variableDeclarations().concat(this._tempVariables);
         const creationBlock = creationStatements.length > 0 ?
-            [renderFlagCheckIfStmt(1 /* Create */, creationVariables.concat(creationStatements))] :
+            [renderFlagCheckIfStmt(1 /* core.RenderFlags.Create */, creationVariables.concat(creationStatements))] :
             [];
         const updateBlock = updateStatements.length > 0 ?
-            [renderFlagCheckIfStmt(2 /* Update */, updateVariables.concat(updateStatements))] :
+            [renderFlagCheckIfStmt(2 /* core.RenderFlags.Update */, updateVariables.concat(updateStatements))] :
             [];
         return fn(
         // i.e. (rf: RenderFlags, ctx: any)
@@ -17249,7 +17249,7 @@ class TemplateDefinitionBuilder {
         const scopedName = this._bindingScope.freshReferenceName();
         const retrievalLevel = this.level;
         const lhs = variable(variable$1.name + scopedName);
-        this._bindingScope.set(retrievalLevel, variable$1.name, lhs, 1 /* CONTEXT */, (scope, relativeLevel) => {
+        this._bindingScope.set(retrievalLevel, variable$1.name, lhs, 1 /* DeclarationPriority.CONTEXT */, (scope, relativeLevel) => {
             let rhs;
             if (scope.bindingLevel === retrievalLevel) {
                 if (scope.isListenerScope() && scope.hasRestoreViewVariable()) {
@@ -17503,7 +17503,7 @@ class TemplateDefinitionBuilder {
         element.inputs.forEach(input => {
             const stylingInputWasSet = stylingBuilder.registerBoundInput(input);
             if (!stylingInputWasSet) {
-                if (input.type === 0 /* Property */ && input.i18n) {
+                if (input.type === 0 /* BindingType.Property */ && input.i18n) {
                     boundI18nAttrs.push(input);
                 }
                 else {
@@ -17576,7 +17576,7 @@ class TemplateDefinitionBuilder {
         // Generate element input bindings
         allOtherInputs.forEach(input => {
             const inputType = input.type;
-            if (inputType === 4 /* Animation */) {
+            if (inputType === 4 /* BindingType.Animation */) {
                 const value = input.value.visit(this._valueConverter);
                 // animation bindings can be presented in the following formats:
                 // 1. [@binding]="fooExp"
@@ -17603,7 +17603,7 @@ class TemplateDefinitionBuilder {
                 if (value !== undefined) {
                     const params = [];
                     const [attrNamespace, attrName] = splitNsName(input.name);
-                    const isAttributeBinding = inputType === 1 /* Attribute */;
+                    const isAttributeBinding = inputType === 1 /* BindingType.Attribute */;
                     const sanitizationRef = resolveSanitizationFn(input.securityContext, isAttributeBinding);
                     if (sanitizationRef)
                         params.push(sanitizationRef);
@@ -17619,7 +17619,7 @@ class TemplateDefinitionBuilder {
                         }
                     }
                     this.allocateBindingSlots(value);
-                    if (inputType === 0 /* Property */) {
+                    if (inputType === 0 /* BindingType.Property */) {
                         if (value instanceof Interpolation) {
                             // prop="{{value}}" and friends
                             this.interpolatedUpdateInstruction(getPropertyInterpolationExpression(value), elementIndex, attrName, input, value, params);
@@ -17633,7 +17633,7 @@ class TemplateDefinitionBuilder {
                             });
                         }
                     }
-                    else if (inputType === 1 /* Attribute */) {
+                    else if (inputType === 1 /* BindingType.Attribute */) {
                         if (value instanceof Interpolation && getInterpolationArgsLength(value) > 1) {
                             // attr.name="text{{value}}" and friends
                             this.interpolatedUpdateInstruction(getAttributeInterpolationExpression(value), elementIndex, attrName, input, value, params);
@@ -18030,13 +18030,13 @@ class TemplateDefinitionBuilder {
                 const input = inputs[i];
                 // We don't want the animation and attribute bindings in the
                 // attributes array since they aren't used for directive matching.
-                if (input.type !== 4 /* Animation */ && input.type !== 1 /* Attribute */) {
+                if (input.type !== 4 /* BindingType.Animation */ && input.type !== 1 /* BindingType.Attribute */) {
                     addAttrExpr(input.name);
                 }
             }
             for (let i = 0; i < outputs.length; i++) {
                 const output = outputs[i];
-                if (output.type !== 1 /* Animation */) {
+                if (output.type !== 1 /* ParsedEventType.Animation */) {
                     addAttrExpr(output.name);
                 }
             }
@@ -18045,15 +18045,15 @@ class TemplateDefinitionBuilder {
             // to the expressions. The marker is important because it tells the runtime
             // code that this is where attributes without values start...
             if (attrExprs.length !== attrsLengthBeforeInputs) {
-                attrExprs.splice(attrsLengthBeforeInputs, 0, literal(3 /* Bindings */));
+                attrExprs.splice(attrsLengthBeforeInputs, 0, literal(3 /* core.AttributeMarker.Bindings */));
             }
         }
         if (templateAttrs.length) {
-            attrExprs.push(literal(4 /* Template */));
+            attrExprs.push(literal(4 /* core.AttributeMarker.Template */));
             templateAttrs.forEach(attr => addAttrExpr(attr.name));
         }
         if (boundI18nAttrs.length) {
-            attrExprs.push(literal(6 /* I18n */));
+            attrExprs.push(literal(6 /* core.AttributeMarker.I18n */));
             boundI18nAttrs.forEach(attr => addAttrExpr(attr.name));
         }
         return attrExprs;
@@ -18084,7 +18084,7 @@ class TemplateDefinitionBuilder {
             const variableName = this._bindingScope.freshReferenceName();
             const retrievalLevel = this.level;
             const lhs = variable(variableName);
-            this._bindingScope.set(retrievalLevel, reference.name, lhs, 0 /* DEFAULT */, (scope, relativeLevel) => {
+            this._bindingScope.set(retrievalLevel, reference.name, lhs, 0 /* DeclarationPriority.DEFAULT */, (scope, relativeLevel) => {
                 // e.g. nextContext(2);
                 const nextContextStmt = relativeLevel > 0 ? [generateNextContextExpr(relativeLevel).toStmt()] : [];
                 // e.g. const $foo$ = reference(1);
@@ -18098,7 +18098,7 @@ class TemplateDefinitionBuilder {
     prepareListenerParameter(tagName, outputAst, index) {
         return () => {
             const eventName = outputAst.name;
-            const bindingFnName = outputAst.type === 1 /* Animation */ ?
+            const bindingFnName = outputAst.type === 1 /* ParsedEventType.Animation */ ?
                 // synthetic @listener.foo values are treated the exact same as are standard listeners
                 prepareSyntheticListenerFunctionName(eventName, outputAst.phase) :
                 sanitizeIdentifier(eventName);
@@ -18218,7 +18218,7 @@ function getAttributeNameLiterals(name) {
     const nameLiteral = literal(attributeName);
     if (attributeNamespace) {
         return [
-            literal(0 /* NamespaceURI */), literal(attributeNamespace), nameLiteral
+            literal(0 /* core.AttributeMarker.NamespaceURI */), literal(attributeNamespace), nameLiteral
         ];
     }
     return [nameLiteral];
@@ -18287,7 +18287,7 @@ class BindingScope {
      * @param declareLocalCallback The callback to invoke when declaring this local var
      * @param localRef Whether or not this is a local ref
      */
-    set(retrievalLevel, name, lhs, priority = 0 /* DEFAULT */, declareLocalCallback, localRef) {
+    set(retrievalLevel, name, lhs, priority = 0 /* DeclarationPriority.DEFAULT */, declareLocalCallback, localRef) {
         if (this.map.has(name)) {
             if (localRef) {
                 // Do not throw an error if it's a local ref and do not update existing value,
@@ -18343,7 +18343,7 @@ class BindingScope {
         return sharedCtxObj && sharedCtxObj.declare ? sharedCtxObj.lhs : null;
     }
     maybeGenerateSharedContextVar(value) {
-        if (value.priority === 1 /* CONTEXT */ &&
+        if (value.priority === 1 /* DeclarationPriority.CONTEXT */ &&
             value.retrievalLevel < this.bindingLevel) {
             const sharedCtxObj = this.map.get(SHARED_CONTEXT_KEY + value.retrievalLevel);
             if (sharedCtxObj) {
@@ -18364,7 +18364,7 @@ class BindingScope {
                 return [lhs.set(generateNextContextExpr(relativeLevel)).toConstDecl()];
             },
             declare: false,
-            priority: 2 /* SHARED_CONTEXT */,
+            priority: 2 /* DeclarationPriority.SHARED_CONTEXT */,
         });
     }
     getComponentProperty(name) {
@@ -18461,7 +18461,7 @@ function getNgProjectAsLiteral(attribute) {
     // Parse the attribute value into a CssSelectorList. Note that we only take the
     // first selector, because we don't support multiple selectors in ngProjectAs.
     const parsedR3Selector = parseSelectorToR3Selector(attribute.value)[0];
-    return [literal(5 /* ProjectAs */), asLiteral(parsedR3Selector)];
+    return [literal(5 /* core.AttributeMarker.ProjectAs */), asLiteral(parsedR3Selector)];
 }
 /**
  * Gets the instruction to generate for an interpolated property
@@ -18931,13 +18931,13 @@ function createComponentType(meta) {
  */
 function compileDeclarationList(list, mode) {
     switch (mode) {
-        case 0 /* Direct */:
+        case 0 /* DeclarationListEmitMode.Direct */:
             // directives: [MyDir],
             return list;
-        case 1 /* Closure */:
+        case 1 /* DeclarationListEmitMode.Closure */:
             // directives: function () { return [MyDir]; }
             return fn([], [new ReturnStatement(list)]);
-        case 2 /* ClosureResolved */:
+        case 2 /* DeclarationListEmitMode.ClosureResolved */:
             // directives: function () { return [MyDir].map(ng.resolveForwardRef); }
             const resolvedList = list.prop('map').callFn([importExpr(Identifiers.resolveForwardRef)]);
             return fn([], [new ReturnStatement(resolvedList)]);
@@ -18955,9 +18955,9 @@ function prepareQueryParams(query, constantPool) {
  * @param query
  */
 function toQueryFlags(query) {
-    return (query.descendants ? 1 /* descendants */ : 0 /* none */) |
-        (query.static ? 2 /* isStatic */ : 0 /* none */) |
-        (query.emitDistinctChangesOnly ? 4 /* emitDistinctChangesOnly */ : 0 /* none */);
+    return (query.descendants ? 1 /* QueryFlags.descendants */ : 0 /* QueryFlags.none */) |
+        (query.static ? 2 /* QueryFlags.isStatic */ : 0 /* QueryFlags.none */) |
+        (query.emitDistinctChangesOnly ? 4 /* QueryFlags.emitDistinctChangesOnly */ : 0 /* QueryFlags.none */);
 }
 function convertAttributesToExpressions(attributes) {
     const values = [];
@@ -18991,8 +18991,8 @@ function createContentQueriesFunction(queries, constantPool, name) {
         new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null),
         new FnParam('dirIndex', null)
     ], [
-        renderFlagCheckIfStmt(1 /* Create */, createStatements),
-        renderFlagCheckIfStmt(2 /* Update */, updateStatements)
+        renderFlagCheckIfStmt(1 /* core.RenderFlags.Create */, createStatements),
+        renderFlagCheckIfStmt(2 /* core.RenderFlags.Update */, updateStatements)
     ], INFERRED_TYPE, null, contentQueriesFnName);
 }
 function stringAsType(str) {
@@ -19058,8 +19058,8 @@ function createViewQueriesFunction(viewQueries, constantPool, name) {
     });
     const viewQueryFnName = name ? `${name}_Query` : null;
     return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null)], [
-        renderFlagCheckIfStmt(1 /* Create */, createStatements),
-        renderFlagCheckIfStmt(2 /* Update */, updateStatements)
+        renderFlagCheckIfStmt(1 /* core.RenderFlags.Create */, createStatements),
+        renderFlagCheckIfStmt(2 /* core.RenderFlags.Update */, updateStatements)
     ], INFERRED_TYPE, null, viewQueryFnName);
 }
 // Return a host binding function or null if one is not necessary.
@@ -19199,10 +19199,10 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
         const hostBindingsFnName = name ? `${name}_HostBindings` : null;
         const statements = [];
         if (createInstructions.length > 0) {
-            statements.push(renderFlagCheckIfStmt(1 /* Create */, getInstructionStatements(createInstructions)));
+            statements.push(renderFlagCheckIfStmt(1 /* core.RenderFlags.Create */, getInstructionStatements(createInstructions)));
         }
         if (updateInstructions.length > 0) {
-            statements.push(renderFlagCheckIfStmt(2 /* Update */, updateVariables.concat(getInstructionStatements(updateInstructions))));
+            statements.push(renderFlagCheckIfStmt(2 /* core.RenderFlags.Update */, updateVariables.concat(getInstructionStatements(updateInstructions))));
         }
         return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null)], statements, INFERRED_TYPE, null, hostBindingsFnName);
     }
@@ -19243,12 +19243,12 @@ function createHostListeners(eventBindings, name) {
     const instructions = [];
     for (const binding of eventBindings) {
         let bindingName = binding.name && sanitizeIdentifier(binding.name);
-        const bindingFnName = binding.type === 1 /* Animation */ ?
+        const bindingFnName = binding.type === 1 /* ParsedEventType.Animation */ ?
             prepareSyntheticListenerFunctionName(bindingName, binding.targetOrPhase) :
             bindingName;
         const handlerName = name && bindingName ? `${name}_${bindingFnName}_HostBindingHandler` : null;
         const params = prepareEventListenerParameters(BoundEvent.fromParsedEvent(binding), handlerName);
-        if (binding.type == 1 /* Animation */) {
+        if (binding.type == 1 /* ParsedEventType.Animation */) {
             syntheticListenerParams.push(params);
         }
         else {
@@ -19297,7 +19297,7 @@ function parseHostBindings(host) {
                     }
             }
         }
-        else if (matches[1 /* Binding */] != null) {
+        else if (matches[1 /* HostBindingGroup.Binding */] != null) {
             if (typeof value !== 'string') {
                 // TODO(alxhub): make this a diagnostic.
                 throw new Error(`Property binding must be string`);
@@ -19305,14 +19305,14 @@ function parseHostBindings(host) {
             // synthetic properties (the ones that have a `@` as a prefix)
             // are still treated the same as regular properties. Therefore
             // there is no point in storing them in a separate map.
-            properties[matches[1 /* Binding */]] = value;
+            properties[matches[1 /* HostBindingGroup.Binding */]] = value;
         }
-        else if (matches[2 /* Event */] != null) {
+        else if (matches[2 /* HostBindingGroup.Event */] != null) {
             if (typeof value !== 'string') {
                 // TODO(alxhub): make this a diagnostic.
                 throw new Error(`Event binding must be string`);
             }
-            listeners[matches[2 /* Event */]] = value;
+            listeners[matches[2 /* HostBindingGroup.Event */]] = value;
         }
     }
     return { attributes, listeners, properties, specialAttributes };
@@ -19480,7 +19480,7 @@ class CompilerFacadeImpl {
         // Parse the template and check for errors.
         const { template, interpolation } = parseJitTemplate(facade.template, facade.name, sourceMapUrl, facade.preserveWhitespaces, facade.interpolation);
         // Compile the component metadata, including template, into an expression.
-        const meta = Object.assign(Object.assign(Object.assign({}, facade), convertDirectiveFacadeToMetadata(facade)), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template, declarations: facade.declarations.map(convertDeclarationFacadeToMetadata), declarationListEmitMode: 0 /* Direct */, styles: [...facade.styles, ...template.styles], encapsulation: facade.encapsulation, interpolation, changeDetection: facade.changeDetection, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
+        const meta = Object.assign(Object.assign(Object.assign({}, facade), convertDirectiveFacadeToMetadata(facade)), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template, declarations: facade.declarations.map(convertDeclarationFacadeToMetadata), declarationListEmitMode: 0 /* DeclarationListEmitMode.Direct */, styles: [...facade.styles, ...template.styles], encapsulation: facade.encapsulation, interpolation, changeDetection: facade.changeDetection, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
                 null, relativeContextFilePath: '', i18nUseExternalIds: true });
         const jitExpressionSourceMap = `ng:///${facade.name}.js`;
         return this.compileComponentFromMeta(angularCoreEnv, jitExpressionSourceMap, meta);
@@ -19563,7 +19563,7 @@ function convertQueryPredicate(predicate) {
         // The predicate is an array of strings so pass it through.
         predicate :
         // The predicate is a type - assume that we will need to unwrap any `forwardRef()` calls.
-        createMayBeForwardRefExpression(new WrappedNodeExpr(predicate), 1 /* Wrapped */);
+        createMayBeForwardRefExpression(new WrappedNodeExpr(predicate), 1 /* ForwardRefHandling.Wrapped */);
 }
 function convertDirectiveFacadeToMetadata(facade) {
     const inputsFromMetadata = parseInputOutputs(facade.inputs || []);
@@ -19656,7 +19656,7 @@ function convertDeclareComponentFacadeToMetadata(decl, typeSourceSpan, sourceMap
         decl.pipes && declarations.push(...convertPipeMapToMetadata(decl.pipes));
     }
     return Object.assign(Object.assign({}, convertDeclareDirectiveFacadeToMetadata(decl, typeSourceSpan)), { template, styles: (_b = decl.styles) !== null && _b !== void 0 ? _b : [], declarations, viewProviders: decl.viewProviders !== undefined ? new WrappedNodeExpr(decl.viewProviders) :
-            null, animations: decl.animations !== undefined ? new WrappedNodeExpr(decl.animations) : null, changeDetection: (_c = decl.changeDetection) !== null && _c !== void 0 ? _c : ChangeDetectionStrategy.Default, encapsulation: (_d = decl.encapsulation) !== null && _d !== void 0 ? _d : ViewEncapsulation.Emulated, interpolation, declarationListEmitMode: 2 /* ClosureResolved */, relativeContextFilePath: '', i18nUseExternalIds: true });
+            null, animations: decl.animations !== undefined ? new WrappedNodeExpr(decl.animations) : null, changeDetection: (_c = decl.changeDetection) !== null && _c !== void 0 ? _c : ChangeDetectionStrategy.Default, encapsulation: (_d = decl.encapsulation) !== null && _d !== void 0 ? _d : ViewEncapsulation.Emulated, interpolation, declarationListEmitMode: 2 /* DeclarationListEmitMode.ClosureResolved */, relativeContextFilePath: '', i18nUseExternalIds: true });
 }
 function convertDeclarationFacadeToMetadata(declaration) {
     return Object.assign(Object.assign({}, declaration), { type: new WrappedNodeExpr(declaration.type) });
@@ -19712,7 +19712,7 @@ function parseJitTemplate(template, typeName, sourceMapUrl, preserveWhitespaces,
  */
 function convertToProviderExpression(obj, property) {
     if (obj.hasOwnProperty(property)) {
-        return createMayBeForwardRefExpression(new WrappedNodeExpr(obj[property]), 0 /* None */);
+        return createMayBeForwardRefExpression(new WrappedNodeExpr(obj[property]), 0 /* ForwardRefHandling.None */);
     }
     else {
         return undefined;
@@ -19730,7 +19730,7 @@ function computeProvidedIn(providedIn) {
     const expression = typeof providedIn === 'function' ? new WrappedNodeExpr(providedIn) :
         new LiteralExpr(providedIn !== null && providedIn !== void 0 ? providedIn : null);
     // See `convertToProviderExpression()` for why this uses `ForwardRefHandling.None`.
-    return createMayBeForwardRefExpression(expression, 0 /* None */);
+    return createMayBeForwardRefExpression(expression, 0 /* ForwardRefHandling.None */);
 }
 function convertR3DependencyMetadataArray(facades) {
     return facades == null ? null : facades.map(convertR3DependencyMetadata);
@@ -19839,7 +19839,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('14.0.0-next.15+sha-fcc548a');
+const VERSION = new Version('14.0.0-next.15+sha-e1454ae');
 
 /**
  * @license
@@ -21866,7 +21866,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('14.0.0-next.15+sha-fcc548a'));
+    definitionMap.set('version', literal('14.0.0-next.15+sha-e1454ae'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -21983,7 +21983,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('14.0.0-next.15+sha-fcc548a'));
+    definitionMap.set('version', literal('14.0.0-next.15+sha-e1454ae'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     if (meta.isStandalone) {
@@ -22150,7 +22150,7 @@ function computeEndLocation(file, contents) {
     return new ParseLocation(file, length, line, length - lastLineStart);
 }
 function compileUsedDependenciesMetadata(meta) {
-    const wrapType = meta.declarationListEmitMode !== 0 /* Direct */ ?
+    const wrapType = meta.declarationListEmitMode !== 0 /* DeclarationListEmitMode.Direct */ ?
         generateForwardRef :
         (expr) => expr;
     return toOptionalLiteralArray(meta.declarations, decl => {
@@ -22197,7 +22197,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('14.0.0-next.15+sha-fcc548a'));
+    definitionMap.set('version', literal('14.0.0-next.15+sha-e1454ae'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22239,7 +22239,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('14.0.0-next.15+sha-fcc548a'));
+    definitionMap.set('version', literal('14.0.0-next.15+sha-e1454ae'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22297,7 +22297,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('14.0.0-next.15+sha-fcc548a'));
+    definitionMap.set('version', literal('14.0.0-next.15+sha-e1454ae'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22334,7 +22334,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('14.0.0-next.15+sha-fcc548a'));
+    definitionMap.set('version', literal('14.0.0-next.15+sha-e1454ae'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22392,7 +22392,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('14.0.0-next.15+sha-fcc548a'));
+    definitionMap.set('version', literal('14.0.0-next.15+sha-e1454ae'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
