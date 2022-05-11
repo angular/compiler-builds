@@ -19,7 +19,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION = '12.0.0';
 export function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', o.literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', o.literal('14.0.0-next.16+sha-f70b84f'));
+    definitionMap.set('version', o.literal('14.0.0-rc.0+sha-c3c82b6'));
     definitionMap.set('ngImport', o.importExpr(R3.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
