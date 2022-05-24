@@ -1,5 +1,5 @@
 /**
- * @license Angular v14.1.0-next.0+sha-8629f2d
+ * @license Angular v13.3.9+18.sha-3e3f8fc
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -211,7 +211,7 @@ class CssSelector {
         let inNot = false;
         _SELECTOR_REGEXP.lastIndex = 0;
         while (match = _SELECTOR_REGEXP.exec(selector)) {
-            if (match[1 /* SelectorRegexp.NOT */]) {
+            if (match[1 /* NOT */]) {
                 if (inNot) {
                     throw new Error('Nesting :not in a selector is not allowed');
                 }
@@ -219,31 +219,31 @@ class CssSelector {
                 current = new CssSelector();
                 cssSelector.notSelectors.push(current);
             }
-            const tag = match[2 /* SelectorRegexp.TAG */];
+            const tag = match[2 /* TAG */];
             if (tag) {
-                const prefix = match[3 /* SelectorRegexp.PREFIX */];
+                const prefix = match[3 /* PREFIX */];
                 if (prefix === '#') {
                     // #hash
-                    current.addAttribute('id', tag.slice(1));
+                    current.addAttribute('id', tag.substr(1));
                 }
                 else if (prefix === '.') {
                     // Class
-                    current.addClassName(tag.slice(1));
+                    current.addClassName(tag.substr(1));
                 }
                 else {
                     // Element
                     current.setElement(tag);
                 }
             }
-            const attribute = match[4 /* SelectorRegexp.ATTRIBUTE */];
+            const attribute = match[4 /* ATTRIBUTE */];
             if (attribute) {
-                current.addAttribute(current.unescapeAttribute(attribute), match[6 /* SelectorRegexp.ATTRIBUTE_VALUE */]);
+                current.addAttribute(current.unescapeAttribute(attribute), match[6 /* ATTRIBUTE_VALUE */]);
             }
-            if (match[7 /* SelectorRegexp.NOT_END */]) {
+            if (match[7 /* NOT_END */]) {
                 inNot = false;
                 current = cssSelector;
             }
-            if (match[8 /* SelectorRegexp.SEPARATOR */]) {
+            if (match[8 /* SEPARATOR */]) {
                 if (inNot) {
                     throw new Error('Multiple selectors in :not are not supported');
                 }
@@ -611,26 +611,26 @@ var MissingTranslationStrategy;
 })(MissingTranslationStrategy || (MissingTranslationStrategy = {}));
 function parserSelectorToSimpleSelector(selector) {
     const classes = selector.classNames && selector.classNames.length ?
-        [8 /* SelectorFlags.CLASS */, ...selector.classNames] :
+        [8 /* CLASS */, ...selector.classNames] :
         [];
     const elementName = selector.element && selector.element !== '*' ? selector.element : '';
     return [elementName, ...selector.attrs, ...classes];
 }
 function parserSelectorToNegativeSelector(selector) {
     const classes = selector.classNames && selector.classNames.length ?
-        [8 /* SelectorFlags.CLASS */, ...selector.classNames] :
+        [8 /* CLASS */, ...selector.classNames] :
         [];
     if (selector.element) {
         return [
-            1 /* SelectorFlags.NOT */ | 4 /* SelectorFlags.ELEMENT */, selector.element, ...selector.attrs, ...classes
+            1 /* NOT */ | 4 /* ELEMENT */, selector.element, ...selector.attrs, ...classes
         ];
     }
     else if (selector.attrs.length) {
-        return [1 /* SelectorFlags.NOT */ | 2 /* SelectorFlags.ATTRIBUTE */, ...selector.attrs, ...classes];
+        return [1 /* NOT */ | 2 /* ATTRIBUTE */, ...selector.attrs, ...classes];
     }
     else {
         return selector.classNames && selector.classNames.length ?
-            [1 /* SelectorFlags.NOT */ | 8 /* SelectorFlags.CLASS */, ...selector.classNames] :
+            [1 /* NOT */ | 8 /* CLASS */, ...selector.classNames] :
             [];
     }
 }
@@ -756,13 +756,13 @@ class Version {
         this.patch = splits.slice(2).join('.');
     }
 }
-// Check `global` first, because in Node tests both `global` and `window` may be defined and our
-// `_global` variable should point to the NodeJS `global` in that case. Note: Typeof/Instanceof
-// checks are considered side-effects in Terser. We explicitly mark this as side-effect free:
-// https://github.com/terser/terser/issues/250.
-const _global = ( /* @__PURE__ */(() => (typeof global !== 'undefined' && global) || (typeof window !== 'undefined' && window) ||
-    (typeof self !== 'undefined' && typeof WorkerGlobalScope !== 'undefined' &&
-        self instanceof WorkerGlobalScope && self))());
+const __window = typeof window !== 'undefined' && window;
+const __self = typeof self !== 'undefined' && typeof WorkerGlobalScope !== 'undefined' &&
+    self instanceof WorkerGlobalScope && self;
+const __global = typeof global !== 'undefined' && global;
+// Check __global first, because in Node tests both __global and __window may be defined and _global
+// should be __global in that case.
+const _global = __global || __window || __self;
 function newArray(size, value) {
     const list = [];
     for (let i = 0; i < size; i++) {
@@ -2796,7 +2796,6 @@ Identifiers.stylePropInterpolate7 = { name: 'ɵɵstylePropInterpolate7', moduleN
 Identifiers.stylePropInterpolate8 = { name: 'ɵɵstylePropInterpolate8', moduleName: CORE };
 Identifiers.stylePropInterpolateV = { name: 'ɵɵstylePropInterpolateV', moduleName: CORE };
 Identifiers.nextContext = { name: 'ɵɵnextContext', moduleName: CORE };
-Identifiers.resetView = { name: 'ɵɵresetView', moduleName: CORE };
 Identifiers.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE };
 Identifiers.text = { name: 'ɵɵtext', moduleName: CORE };
 Identifiers.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE };
@@ -2907,7 +2906,6 @@ Identifiers.ModuleWithProviders = {
 Identifiers.defineNgModule = { name: 'ɵɵdefineNgModule', moduleName: CORE };
 Identifiers.declareNgModule = { name: 'ɵɵngDeclareNgModule', moduleName: CORE };
 Identifiers.setNgModuleScope = { name: 'ɵɵsetNgModuleScope', moduleName: CORE };
-Identifiers.registerNgModuleType = { name: 'ɵɵregisterNgModuleType', moduleName: CORE };
 Identifiers.PipeDeclaration = { name: 'ɵɵPipeDeclaration', moduleName: CORE };
 Identifiers.definePipe = { name: 'ɵɵdefinePipe', moduleName: CORE };
 Identifiers.declarePipe = { name: 'ɵɵngDeclarePipe', moduleName: CORE };
@@ -2920,7 +2918,6 @@ Identifiers.contentQuery = { name: 'ɵɵcontentQuery', moduleName: CORE };
 Identifiers.NgOnChangesFeature = { name: 'ɵɵNgOnChangesFeature', moduleName: CORE };
 Identifiers.InheritDefinitionFeature = { name: 'ɵɵInheritDefinitionFeature', moduleName: CORE };
 Identifiers.CopyDefinitionFeature = { name: 'ɵɵCopyDefinitionFeature', moduleName: CORE };
-Identifiers.StandaloneFeature = { name: 'ɵɵStandaloneFeature', moduleName: CORE };
 Identifiers.ProvidersFeature = { name: 'ɵɵProvidersFeature', moduleName: CORE };
 Identifiers.listener = { name: 'ɵɵlistener', moduleName: CORE };
 Identifiers.getInheritedFactory = {
@@ -3662,10 +3659,10 @@ function createMayBeForwardRefExpression(expression, forwardRef) {
  */
 function convertFromMaybeForwardRefExpression({ expression, forwardRef }) {
     switch (forwardRef) {
-        case 0 /* ForwardRefHandling.None */:
-        case 1 /* ForwardRefHandling.Wrapped */:
+        case 0 /* None */:
+        case 1 /* Wrapped */:
             return expression;
-        case 2 /* ForwardRefHandling.Unwrapped */:
+        case 2 /* Unwrapped */:
             return generateForwardRef(expression);
     }
 }
@@ -3789,14 +3786,14 @@ function compileInjectDependency(dep, target, index) {
     }
     else if (dep.attributeNameType === null) {
         // Build up the injection flags according to the metadata.
-        const flags = 0 /* InjectFlags.Default */ | (dep.self ? 2 /* InjectFlags.Self */ : 0) |
-            (dep.skipSelf ? 4 /* InjectFlags.SkipSelf */ : 0) | (dep.host ? 1 /* InjectFlags.Host */ : 0) |
-            (dep.optional ? 8 /* InjectFlags.Optional */ : 0) |
-            (target === FactoryTarget$1.Pipe ? 16 /* InjectFlags.ForPipe */ : 0);
+        const flags = 0 /* Default */ | (dep.self ? 2 /* Self */ : 0) |
+            (dep.skipSelf ? 4 /* SkipSelf */ : 0) | (dep.host ? 1 /* Host */ : 0) |
+            (dep.optional ? 8 /* Optional */ : 0) |
+            (target === FactoryTarget$1.Pipe ? 16 /* ForPipe */ : 0);
         // If this dependency is optional or otherwise has non-default flags, then additional
         // parameters describing how to inject the dependency must be passed to the inject function
         // that's being used.
-        let flagsParam = (flags !== 0 /* InjectFlags.Default */ || dep.optional) ? literal(flags) : null;
+        let flagsParam = (flags !== 0 /* Default */ || dep.optional) ? literal(flags) : null;
         // Build up the arguments to the injectFn call.
         const injectArgs = [dep.token];
         if (flagsParam) {
@@ -3967,8 +3964,8 @@ class BoundEvent {
         this.keySpan = keySpan;
     }
     static fromParsedEvent(event) {
-        const target = event.type === 0 /* ParsedEventType.Regular */ ? event.targetOrPhase : null;
-        const phase = event.type === 1 /* ParsedEventType.Animation */ ? event.targetOrPhase : null;
+        const target = event.type === 0 /* Regular */ ? event.targetOrPhase : null;
+        const phase = event.type === 1 /* Animation */ ? event.targetOrPhase : null;
         if (event.keySpan === undefined) {
             throw new Error(`Unexpected state: keySpan must be defined for bound event but was not for ${event.name}: ${event.sourceSpan}`);
         }
@@ -4792,7 +4789,7 @@ function assembleBoundTextPlaceholders(meta, bindingStartIndex = 0, contextId = 
  * @param useCamelCase whether to camelCase the placeholder name when formatting.
  * @returns A new map of formatted placeholder names to expressions.
  */
-function formatI18nPlaceholderNamesInMap(params = {}, useCamelCase) {
+function i18nFormatPlaceholderNames(params = {}, useCamelCase) {
     const _params = {};
     if (params && Object.keys(params).length) {
         Object.keys(params).forEach(key => _params[formatI18nPlaceholderName(key, useCamelCase)] = params[key]);
@@ -5026,10 +5023,10 @@ function getQueryPredicate(query, constantPool) {
     else {
         // The original predicate may have been wrapped in a `forwardRef()` call.
         switch (query.predicate.forwardRef) {
-            case 0 /* ForwardRefHandling.None */:
-            case 2 /* ForwardRefHandling.Unwrapped */:
+            case 0 /* None */:
+            case 2 /* Unwrapped */:
                 return query.predicate.expression;
-            case 1 /* ForwardRefHandling.Wrapped */:
+            case 1 /* Wrapped */:
                 return importExpr(Identifiers.resolveForwardRef).callFn([query.predicate.expression]);
         }
     }
@@ -5440,7 +5437,7 @@ class ParseLocation {
             const ch = source.charCodeAt(offset);
             if (ch == $LF) {
                 line--;
-                const priorLine = source.substring(0, offset - 1).lastIndexOf(String.fromCharCode($LF));
+                const priorLine = source.substr(0, offset - 1).lastIndexOf(String.fromCharCode($LF));
                 col = priorLine > 0 ? offset - priorLine : offset;
             }
             else {
@@ -5995,48 +5992,19 @@ class R3JitReflector {
  * found in the LICENSE file at https://angular.io/license
  */
 /**
- * How the selector scope of an NgModule (its declarations, imports, and exports) should be emitted
- * as a part of the NgModule definition.
- */
-var R3SelectorScopeMode;
-(function (R3SelectorScopeMode) {
-    /**
-     * Emit the declarations inline into the module definition.
-     *
-     * This option is useful in certain contexts where it's known that JIT support is required. The
-     * tradeoff here is that this emit style prevents directives and pipes from being tree-shaken if
-     * they are unused, but the NgModule is used.
-     */
-    R3SelectorScopeMode[R3SelectorScopeMode["Inline"] = 0] = "Inline";
-    /**
-     * Emit the declarations using a side effectful function call, `ɵɵsetNgModuleScope`, that is
-     * guarded with the `ngJitMode` flag.
-     *
-     * This form of emit supports JIT and can be optimized away if the `ngJitMode` flag is set to
-     * false, which allows unused directives and pipes to be tree-shaken.
-     */
-    R3SelectorScopeMode[R3SelectorScopeMode["SideEffect"] = 1] = "SideEffect";
-    /**
-     * Don't generate selector scopes at all.
-     *
-     * This is useful for contexts where JIT support is known to be unnecessary.
-     */
-    R3SelectorScopeMode[R3SelectorScopeMode["Omit"] = 2] = "Omit";
-})(R3SelectorScopeMode || (R3SelectorScopeMode = {}));
-/**
  * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
  */
 function compileNgModule(meta) {
-    const { adjacentType, internalType, bootstrap, declarations, imports, exports, schemas, containsForwardDecls, selectorScopeMode, id } = meta;
+    const { internalType, bootstrap, declarations, imports, exports, schemas, containsForwardDecls, emitInline, id } = meta;
     const statements = [];
     const definitionMap = new DefinitionMap();
     definitionMap.set('type', internalType);
     if (bootstrap.length > 0) {
         definitionMap.set('bootstrap', refsToArray(bootstrap, containsForwardDecls));
     }
-    if (selectorScopeMode === R3SelectorScopeMode.Inline) {
-        // If requested to emit scope information inline, pass the `declarations`, `imports` and
-        // `exports` to the `ɵɵdefineNgModule()` call directly.
+    // If requested to emit scope information inline, pass the `declarations`, `imports` and `exports`
+    // to the `ɵɵdefineNgModule()` call. The JIT compilation uses this.
+    if (emitInline) {
         if (declarations.length > 0) {
             definitionMap.set('declarations', refsToArray(declarations, containsForwardDecls));
         }
@@ -6047,27 +6015,19 @@ function compileNgModule(meta) {
             definitionMap.set('exports', refsToArray(exports, containsForwardDecls));
         }
     }
-    else if (selectorScopeMode === R3SelectorScopeMode.SideEffect) {
-        // In this mode, scope information is not passed into `ɵɵdefineNgModule` as it
-        // would prevent tree-shaking of the declarations, imports and exports references. Instead, it's
-        // patched onto the NgModule definition with a `ɵɵsetNgModuleScope` call that's guarded by the
-        // `ngJitMode` flag.
+    // If not emitting inline, the scope information is not passed into `ɵɵdefineNgModule` as it would
+    // prevent tree-shaking of the declarations, imports and exports references.
+    else {
         const setNgModuleScopeCall = generateSetNgModuleScopeCall(meta);
         if (setNgModuleScopeCall !== null) {
             statements.push(setNgModuleScopeCall);
         }
-    }
-    else {
-        // Selector scope emit was not requested, so skip it.
     }
     if (schemas !== null && schemas.length > 0) {
         definitionMap.set('schemas', literalArr(schemas.map(ref => ref.value)));
     }
     if (id !== null) {
         definitionMap.set('id', id);
-        // Generate a side-effectful call to register this NgModule by its id, as per the semantics of
-        // NgModule ids.
-        statements.push(importExpr(Identifiers.registerNgModuleType).callFn([adjacentType, id]).toStmt());
     }
     const expression = importExpr(Identifiers.defineNgModule).callFn([definitionMap.toLiteralMap()], undefined, true);
     const type = createNgModuleType(meta);
@@ -6163,9 +6123,6 @@ function compilePipeFromMetadata(metadata) {
     definitionMapValues.push({ key: 'type', value: metadata.type.value, quoted: false });
     // e.g. `pure: true`
     definitionMapValues.push({ key: 'pure', value: literal(metadata.pure), quoted: false });
-    if (metadata.isStandalone) {
-        definitionMapValues.push({ key: 'standalone', value: literal(true), quoted: false });
-    }
     const expression = importExpr(Identifiers.definePipe).callFn([literalMap(definitionMapValues)], undefined, true);
     const type = createPipeType(metadata);
     return { expression, type, statements: [] };
@@ -6174,23 +6131,8 @@ function createPipeType(metadata) {
     return new ExpressionType(importExpr(Identifiers.PipeDeclaration, [
         typeWithParameters(metadata.type.type, metadata.typeArgumentCount),
         new ExpressionType(new LiteralExpr(metadata.pipeName)),
-        new ExpressionType(new LiteralExpr(metadata.isStandalone)),
     ]));
 }
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-var R3TemplateDependencyKind;
-(function (R3TemplateDependencyKind) {
-    R3TemplateDependencyKind[R3TemplateDependencyKind["Directive"] = 0] = "Directive";
-    R3TemplateDependencyKind[R3TemplateDependencyKind["Pipe"] = 1] = "Pipe";
-    R3TemplateDependencyKind[R3TemplateDependencyKind["NgModule"] = 2] = "NgModule";
-})(R3TemplateDependencyKind || (R3TemplateDependencyKind = {}));
 
 /**
  * @license
@@ -6233,6 +6175,33 @@ class ASTWithName extends AST {
     constructor(span, sourceSpan, nameSpan) {
         super(span, sourceSpan);
         this.nameSpan = nameSpan;
+    }
+}
+/**
+ * Represents a quoted expression of the form:
+ *
+ * quote = prefix `:` uninterpretedExpression
+ * prefix = identifier
+ * uninterpretedExpression = arbitrary string
+ *
+ * A quoted expression is meant to be pre-processed by an AST transformer that
+ * converts it into another AST that no longer contains quoted expressions.
+ * It is meant to allow third-party developers to extend Angular template
+ * expression language. The `uninterpretedExpression` part of the quote is
+ * therefore not interpreted by the Angular's own expression parser.
+ */
+class Quote extends AST {
+    constructor(span, sourceSpan, prefix, uninterpretedExpression, location) {
+        super(span, sourceSpan);
+        this.prefix = prefix;
+        this.uninterpretedExpression = uninterpretedExpression;
+        this.location = location;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitQuote(this, context);
+    }
+    toString() {
+        return 'Quote';
     }
 }
 class EmptyExpr extends AST {
@@ -6614,6 +6583,7 @@ class RecursiveAstVisitor {
         this.visit(ast.receiver, context);
         this.visitAll(ast.args, context);
     }
+    visitQuote(ast, context) { }
     // This is not part of the AstVisitor interface, just a helper method
     visitAll(asts, context) {
         for (const ast of asts) {
@@ -6695,6 +6665,9 @@ class AstTransformer {
     }
     visitChain(ast, context) {
         return new Chain(ast.span, ast.sourceSpan, this.visitAll(ast.expressions));
+    }
+    visitQuote(ast, context) {
+        return new Quote(ast.span, ast.sourceSpan, ast.prefix, ast.uninterpretedExpression, ast.location);
     }
     visitSafeKeyedRead(ast, context) {
         return new SafeKeyedRead(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.key.visit(this));
@@ -6856,6 +6829,9 @@ class AstMemoryEfficientTransformer {
         if (receiver !== ast.receiver || args !== ast.args) {
             return new SafeCall(ast.span, ast.sourceSpan, receiver, args, ast.argumentSpan);
         }
+        return ast;
+    }
+    visitQuote(ast, context) {
         return ast;
     }
     visitSafeKeyedRead(ast, context) {
@@ -7330,6 +7306,10 @@ class _AstToIrVisitor {
     visitAll(asts, mode) {
         return asts.map(ast => this._visit(ast, mode));
     }
+    visitQuote(ast, mode) {
+        throw new Error(`Quotes are not supported for evaluation!
+        Statement: ${ast.uninterpretedExpression} located at ${ast.location}`);
+    }
     visitCall(ast, mode) {
         const leftMostSafe = this.leftMostSafeNode(ast);
         if (leftMostSafe) {
@@ -7515,6 +7495,9 @@ class _AstToIrVisitor {
             visitPropertyWrite(ast) {
                 return null;
             },
+            visitQuote(ast) {
+                return null;
+            },
             visitSafePropertyRead(ast) {
                 return visit(this, ast.receiver) || ast;
             },
@@ -7589,6 +7572,9 @@ class _AstToIrVisitor {
                 return false;
             },
             visitPropertyWrite(ast) {
+                return false;
+            },
+            visitQuote(ast) {
                 return false;
             },
             visitSafePropertyRead(ast) {
@@ -8441,7 +8427,7 @@ function parse(value) {
     const styles = [];
     let i = 0;
     let parenDepth = 0;
-    let quote = 0 /* Char.QuoteNone */;
+    let quote = 0 /* QuoteNone */;
     let valueStart = 0;
     let propStart = 0;
     let currentProp = null;
@@ -8449,41 +8435,41 @@ function parse(value) {
     while (i < value.length) {
         const token = value.charCodeAt(i++);
         switch (token) {
-            case 40 /* Char.OpenParen */:
+            case 40 /* OpenParen */:
                 parenDepth++;
                 break;
-            case 41 /* Char.CloseParen */:
+            case 41 /* CloseParen */:
                 parenDepth--;
                 break;
-            case 39 /* Char.QuoteSingle */:
+            case 39 /* QuoteSingle */:
                 // valueStart needs to be there since prop values don't
                 // have quotes in CSS
                 valueHasQuotes = valueHasQuotes || valueStart > 0;
-                if (quote === 0 /* Char.QuoteNone */) {
-                    quote = 39 /* Char.QuoteSingle */;
+                if (quote === 0 /* QuoteNone */) {
+                    quote = 39 /* QuoteSingle */;
                 }
-                else if (quote === 39 /* Char.QuoteSingle */ && value.charCodeAt(i - 1) !== 92 /* Char.BackSlash */) {
-                    quote = 0 /* Char.QuoteNone */;
+                else if (quote === 39 /* QuoteSingle */ && value.charCodeAt(i - 1) !== 92 /* BackSlash */) {
+                    quote = 0 /* QuoteNone */;
                 }
                 break;
-            case 34 /* Char.QuoteDouble */:
+            case 34 /* QuoteDouble */:
                 // same logic as above
                 valueHasQuotes = valueHasQuotes || valueStart > 0;
-                if (quote === 0 /* Char.QuoteNone */) {
-                    quote = 34 /* Char.QuoteDouble */;
+                if (quote === 0 /* QuoteNone */) {
+                    quote = 34 /* QuoteDouble */;
                 }
-                else if (quote === 34 /* Char.QuoteDouble */ && value.charCodeAt(i - 1) !== 92 /* Char.BackSlash */) {
-                    quote = 0 /* Char.QuoteNone */;
+                else if (quote === 34 /* QuoteDouble */ && value.charCodeAt(i - 1) !== 92 /* BackSlash */) {
+                    quote = 0 /* QuoteNone */;
                 }
                 break;
-            case 58 /* Char.Colon */:
-                if (!currentProp && parenDepth === 0 && quote === 0 /* Char.QuoteNone */) {
+            case 58 /* Colon */:
+                if (!currentProp && parenDepth === 0 && quote === 0 /* QuoteNone */) {
                     currentProp = hyphenate(value.substring(propStart, i - 1).trim());
                     valueStart = i;
                 }
                 break;
-            case 59 /* Char.Semicolon */:
-                if (currentProp && valueStart > 0 && parenDepth === 0 && quote === 0 /* Char.QuoteNone */) {
+            case 59 /* Semicolon */:
+                if (currentProp && valueStart > 0 && parenDepth === 0 && quote === 0 /* QuoteNone */) {
                     const styleVal = value.substring(valueStart, i - 1).trim();
                     styles.push(currentProp, valueHasQuotes ? stripUnnecessaryQuotes(styleVal) : styleVal);
                     propStart = i;
@@ -8495,7 +8481,7 @@ function parse(value) {
         }
     }
     if (currentProp && valueStart) {
-        const styleVal = value.slice(valueStart).trim();
+        const styleVal = value.substr(valueStart).trim();
         styles.push(currentProp, valueHasQuotes ? stripUnnecessaryQuotes(styleVal) : styleVal);
     }
     return styles;
@@ -8503,7 +8489,7 @@ function parse(value) {
 function stripUnnecessaryQuotes(value) {
     const qS = value.charCodeAt(0);
     const qE = value.charCodeAt(value.length - 1);
-    if (qS == qE && (qS == 39 /* Char.QuoteSingle */ || qS == 34 /* Char.QuoteDouble */)) {
+    if (qS == qE && (qS == 39 /* QuoteSingle */ || qS == 34 /* QuoteDouble */)) {
         const tempValue = value.substring(1, value.length - 1);
         // special case to avoid using a multi-quoted string that was just chomped
         // (e.g. `font-family: "Verdana", "sans-serif"`)
@@ -8654,13 +8640,13 @@ class StylingBuilder {
         let binding = null;
         let name = input.name;
         switch (input.type) {
-            case 0 /* BindingType.Property */:
+            case 0 /* Property */:
                 binding = this.registerInputBasedOnName(name, input.value, input.sourceSpan);
                 break;
-            case 3 /* BindingType.Style */:
+            case 3 /* Style */:
                 binding = this.registerStyleInput(name, false, input.value, input.sourceSpan, input.unit);
                 break;
-            case 2 /* BindingType.Class */:
+            case 2 /* Class */:
                 binding = this.registerClassInput(name, false, input.value, input.sourceSpan);
                 break;
         }
@@ -8673,7 +8659,7 @@ class StylingBuilder {
         const isClass = !isStyle && (name === 'class' || prefix === 'class.' || prefix === 'class!');
         if (isStyle || isClass) {
             const isMapBased = name.charAt(5) !== '.'; // style.prop or class.prop makes this a no
-            const property = name.slice(isMapBased ? 5 : 6); // the dot explains why there's a +1
+            const property = name.substr(isMapBased ? 5 : 6); // the dot explains why there's a +1
             if (isStyle) {
                 binding = this.registerStyleInput(property, isMapBased, expression, sourceSpan);
             }
@@ -8759,14 +8745,14 @@ class StylingBuilder {
     populateInitialStylingAttrs(attrs) {
         // [CLASS_MARKER, 'foo', 'bar', 'baz' ...]
         if (this._initialClassValues.length) {
-            attrs.push(literal(1 /* AttributeMarker.Classes */));
+            attrs.push(literal(1 /* Classes */));
             for (let i = 0; i < this._initialClassValues.length; i++) {
                 attrs.push(literal(this._initialClassValues[i]));
             }
         }
         // [STYLE_MARKER, 'width', '200px', 'height', '100px', ...]
         if (this._initialStyleValues.length) {
-            attrs.push(literal(2 /* AttributeMarker.Styles */));
+            attrs.push(literal(2 /* Styles */));
             for (let i = 0; i < this._initialStyleValues.length; i += 2) {
                 attrs.push(literal(this._initialStyleValues[i]), literal(this._initialStyleValues[i + 1]));
             }
@@ -8947,7 +8933,7 @@ function parseProperty(name) {
     let property = name;
     const unitIndex = name.lastIndexOf('.');
     if (unitIndex > 0) {
-        suffix = name.slice(unitIndex + 1);
+        suffix = name.substr(unitIndex + 1);
         property = name.substring(0, unitIndex);
     }
     return { property, suffix, hasOverrideFlag };
@@ -9498,9 +9484,9 @@ class Parser$1 {
         this._checkNoInterpolation(input, location, interpolationConfig);
         const sourceToLex = this._stripComments(input);
         const tokens = this._lexer.tokenize(sourceToLex);
-        let flags = 1 /* ParseFlags.Action */;
+        let flags = 1 /* Action */;
         if (isAssignmentEvent) {
-            flags |= 2 /* ParseFlags.AssignmentEvent */;
+            flags |= 2 /* AssignmentEvent */;
         }
         const ast = new _ParseAST(input, location, absoluteOffset, tokens, flags, this.errors, 0).parseChain();
         return new ASTWithSource(ast, input, location, absoluteOffset, this.errors);
@@ -9526,11 +9512,30 @@ class Parser$1 {
         this.errors.push(new ParserError(message, input, errLocation, ctxLocation));
     }
     _parseBindingAst(input, location, absoluteOffset, interpolationConfig) {
+        // Quotes expressions use 3rd-party expression language. We don't want to use
+        // our lexer or parser for that, so we check for that ahead of time.
+        const quote = this._parseQuote(input, location, absoluteOffset);
+        if (quote != null) {
+            return quote;
+        }
         this._checkNoInterpolation(input, location, interpolationConfig);
         const sourceToLex = this._stripComments(input);
         const tokens = this._lexer.tokenize(sourceToLex);
-        return new _ParseAST(input, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, this.errors, 0)
+        return new _ParseAST(input, location, absoluteOffset, tokens, 0 /* None */, this.errors, 0)
             .parseChain();
+    }
+    _parseQuote(input, location, absoluteOffset) {
+        if (input == null)
+            return null;
+        const prefixSeparatorIndex = input.indexOf(':');
+        if (prefixSeparatorIndex == -1)
+            return null;
+        const prefix = input.substring(0, prefixSeparatorIndex).trim();
+        if (!isIdentifier(prefix))
+            return null;
+        const uninterpretedExpression = input.substring(prefixSeparatorIndex + 1);
+        const span = new ParseSpan(0, input.length);
+        return new Quote(span, span.toAbsolute(absoluteOffset), prefix, uninterpretedExpression, location);
     }
     /**
      * Parse microsyntax template expression and return a list of bindings or
@@ -9560,7 +9565,7 @@ class Parser$1 {
      */
     parseTemplateBindings(templateKey, templateValue, templateUrl, absoluteKeyOffset, absoluteValueOffset) {
         const tokens = this._lexer.tokenize(templateValue);
-        const parser = new _ParseAST(templateValue, templateUrl, absoluteValueOffset, tokens, 0 /* ParseFlags.None */, this.errors, 0 /* relative offset */);
+        const parser = new _ParseAST(templateValue, templateUrl, absoluteValueOffset, tokens, 0 /* None */, this.errors, 0 /* relative offset */);
         return parser.parseTemplateBindings({
             source: templateKey,
             span: new AbsoluteSourceSpan(absoluteKeyOffset, absoluteKeyOffset + templateKey.length),
@@ -9575,7 +9580,7 @@ class Parser$1 {
             const expressionText = expressions[i].text;
             const sourceToLex = this._stripComments(expressionText);
             const tokens = this._lexer.tokenize(sourceToLex);
-            const ast = new _ParseAST(input, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, this.errors, offsets[i])
+            const ast = new _ParseAST(input, location, absoluteOffset, tokens, 0 /* None */, this.errors, offsets[i])
                 .parseChain();
             expressionNodes.push(ast);
         }
@@ -9589,7 +9594,7 @@ class Parser$1 {
     parseInterpolationExpression(expression, location, absoluteOffset) {
         const sourceToLex = this._stripComments(expression);
         const tokens = this._lexer.tokenize(sourceToLex);
-        const ast = new _ParseAST(expression, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, this.errors, 0)
+        const ast = new _ParseAST(expression, location, absoluteOffset, tokens, 0 /* None */, this.errors, 0)
             .parseChain();
         const strings = ['', '']; // The prefix and suffix strings are both empty
         return this.createInterpolationAst(strings, [ast], expression, location, absoluteOffset);
@@ -9945,7 +9950,7 @@ class _ParseAST {
             const expr = this.parsePipe();
             exprs.push(expr);
             if (this.consumeOptionalCharacter($SEMICOLON)) {
-                if (!(this.parseFlags & 1 /* ParseFlags.Action */)) {
+                if (!(this.parseFlags & 1 /* Action */)) {
                     this.error('Binding expression cannot contain chained expression');
                 }
                 while (this.consumeOptionalCharacter($SEMICOLON)) {
@@ -9969,7 +9974,7 @@ class _ParseAST {
         const start = this.inputIndex;
         let result = this.parseExpression();
         if (this.consumeOptionalOperator('|')) {
-            if (this.parseFlags & 1 /* ParseFlags.Action */) {
+            if (this.parseFlags & 1 /* Action */) {
                 this.error('Cannot have a pipe in an action expression');
             }
             do {
@@ -10321,7 +10326,7 @@ class _ParseAST {
         }
         else {
             if (this.consumeOptionalAssignment()) {
-                if (!(this.parseFlags & 1 /* ParseFlags.Action */)) {
+                if (!(this.parseFlags & 1 /* Action */)) {
                     this.error('Bindings cannot contain assignments');
                     return new EmptyExpr(this.span(start), this.sourceSpan(start));
                 }
@@ -10353,7 +10358,7 @@ class _ParseAST {
         // primary expression is substituted as LHS of the assignment operator to achieve
         // two-way-binding, such that the LHS could be the non-null operator. The grammar doesn't
         // naturally allow for this syntax, so assignment events are parsed specially.
-        if ((this.parseFlags & 2 /* ParseFlags.AssignmentEvent */) && this.next.isOperator('!') &&
+        if ((this.parseFlags & 2 /* AssignmentEvent */) && this.next.isOperator('!') &&
             this.peek(1).isOperator('=')) {
             // First skip over the ! operator.
             this.advance();
@@ -10675,7 +10680,7 @@ function getIndexMapForOriginalTemplate(interpolatedTokens) {
     let tokenIndex = 0;
     while (tokenIndex < interpolatedTokens.length) {
         const currentToken = interpolatedTokens[tokenIndex];
-        if (currentToken.type === 9 /* MlParserTokenType.ENCODED_ENTITY */) {
+        if (currentToken.type === 9 /* ENCODED_ENTITY */) {
             const [decoded, encoded] = currentToken.parts;
             consumedInOriginalTemplate += encoded.length;
             consumedInInput += decoded.length;
@@ -13073,14 +13078,14 @@ class _Tokenizer {
                 else if (!(this._tokenizeIcu && this._tokenizeExpansionForm())) {
                     // In (possibly interpolated) text the end of the text is given by `isTextEnd()`, while
                     // the premature end of an interpolation is given by the start of a new HTML element.
-                    this._consumeWithInterpolation(5 /* TokenType.TEXT */, 8 /* TokenType.INTERPOLATION */, () => this._isTextEnd(), () => this._isTagStart());
+                    this._consumeWithInterpolation(5 /* TEXT */, 8 /* INTERPOLATION */, () => this._isTextEnd(), () => this._isTagStart());
                 }
             }
             catch (e) {
                 this.handleError(e);
             }
         }
-        this._beginToken(24 /* TokenType.EOF */);
+        this._beginToken(24 /* EOF */);
         this._endToken([]);
     }
     /**
@@ -13224,7 +13229,7 @@ class _Tokenizer {
         return char;
     }
     _consumeEntity(textTokenType) {
-        this._beginToken(9 /* TokenType.ENCODED_ENTITY */);
+        this._beginToken(9 /* ENCODED_ENTITY */);
         const start = this._cursor.clone();
         this._cursor.advance();
         if (this._attemptCharCode($HASH)) {
@@ -13270,7 +13275,7 @@ class _Tokenizer {
         }
     }
     _consumeRawText(consumeEntities, endMarkerPredicate) {
-        this._beginToken(consumeEntities ? 6 /* TokenType.ESCAPABLE_RAW_TEXT */ : 7 /* TokenType.RAW_TEXT */);
+        this._beginToken(consumeEntities ? 6 /* ESCAPABLE_RAW_TEXT */ : 7 /* RAW_TEXT */);
         const parts = [];
         while (true) {
             const tagCloseStart = this._cursor.clone();
@@ -13282,8 +13287,8 @@ class _Tokenizer {
             if (consumeEntities && this._cursor.peek() === $AMPERSAND) {
                 this._endToken([this._processCarriageReturns(parts.join(''))]);
                 parts.length = 0;
-                this._consumeEntity(6 /* TokenType.ESCAPABLE_RAW_TEXT */);
-                this._beginToken(6 /* TokenType.ESCAPABLE_RAW_TEXT */);
+                this._consumeEntity(6 /* ESCAPABLE_RAW_TEXT */);
+                this._beginToken(6 /* ESCAPABLE_RAW_TEXT */);
             }
             else {
                 parts.push(this._readChar());
@@ -13292,25 +13297,25 @@ class _Tokenizer {
         this._endToken([this._processCarriageReturns(parts.join(''))]);
     }
     _consumeComment(start) {
-        this._beginToken(10 /* TokenType.COMMENT_START */, start);
+        this._beginToken(10 /* COMMENT_START */, start);
         this._requireCharCode($MINUS);
         this._endToken([]);
         this._consumeRawText(false, () => this._attemptStr('-->'));
-        this._beginToken(11 /* TokenType.COMMENT_END */);
+        this._beginToken(11 /* COMMENT_END */);
         this._requireStr('-->');
         this._endToken([]);
     }
     _consumeCdata(start) {
-        this._beginToken(12 /* TokenType.CDATA_START */, start);
+        this._beginToken(12 /* CDATA_START */, start);
         this._requireStr('CDATA[');
         this._endToken([]);
         this._consumeRawText(false, () => this._attemptStr(']]>'));
-        this._beginToken(13 /* TokenType.CDATA_END */);
+        this._beginToken(13 /* CDATA_END */);
         this._requireStr(']]>');
         this._endToken([]);
     }
     _consumeDocType(start) {
-        this._beginToken(18 /* TokenType.DOC_TYPE */, start);
+        this._beginToken(18 /* DOC_TYPE */, start);
         const contentStart = this._cursor.clone();
         this._attemptUntilChar($GT);
         const content = this._cursor.getChars(contentStart);
@@ -13364,12 +13369,12 @@ class _Tokenizer {
             if (e instanceof _ControlFlowError) {
                 if (openTagToken) {
                     // We errored before we could close the opening tag, so it is incomplete.
-                    openTagToken.type = 4 /* TokenType.INCOMPLETE_TAG_OPEN */;
+                    openTagToken.type = 4 /* INCOMPLETE_TAG_OPEN */;
                 }
                 else {
                     // When the start tag is invalid, assume we want a "<" as text.
                     // Back to back text tokens are merged at the end.
-                    this._beginToken(5 /* TokenType.TEXT */, start);
+                    this._beginToken(5 /* TEXT */, start);
                     this._endToken(['<']);
                 }
                 return;
@@ -13396,13 +13401,13 @@ class _Tokenizer {
             this._attemptCharCodeUntilFn(isNotWhitespace);
             return this._attemptCharCode($GT);
         });
-        this._beginToken(3 /* TokenType.TAG_CLOSE */);
+        this._beginToken(3 /* TAG_CLOSE */);
         this._requireCharCodeUntilFn(code => code === $GT, 3);
         this._cursor.advance(); // Consume the `>`
         this._endToken([prefix, tagName]);
     }
     _consumeTagOpenStart(start) {
-        this._beginToken(0 /* TokenType.TAG_OPEN_START */, start);
+        this._beginToken(0 /* TAG_OPEN_START */, start);
         const parts = this._consumePrefixAndName();
         return this._endToken(parts);
     }
@@ -13411,7 +13416,7 @@ class _Tokenizer {
         if (attrNameStart === $SQ || attrNameStart === $DQ) {
             throw this._createError(_unexpectedCharacterErrorMsg(attrNameStart), this._cursor.getSpan());
         }
-        this._beginToken(14 /* TokenType.ATTR_NAME */);
+        this._beginToken(14 /* ATTR_NAME */);
         const prefixAndName = this._consumePrefixAndName();
         this._endToken(prefixAndName);
     }
@@ -13423,27 +13428,27 @@ class _Tokenizer {
             // In an attribute then end of the attribute value and the premature end to an interpolation
             // are both triggered by the `quoteChar`.
             const endPredicate = () => this._cursor.peek() === quoteChar;
-            this._consumeWithInterpolation(16 /* TokenType.ATTR_VALUE_TEXT */, 17 /* TokenType.ATTR_VALUE_INTERPOLATION */, endPredicate, endPredicate);
+            this._consumeWithInterpolation(16 /* ATTR_VALUE_TEXT */, 17 /* ATTR_VALUE_INTERPOLATION */, endPredicate, endPredicate);
             this._consumeQuote(quoteChar);
         }
         else {
             const endPredicate = () => isNameEnd(this._cursor.peek());
-            this._consumeWithInterpolation(16 /* TokenType.ATTR_VALUE_TEXT */, 17 /* TokenType.ATTR_VALUE_INTERPOLATION */, endPredicate, endPredicate);
+            this._consumeWithInterpolation(16 /* ATTR_VALUE_TEXT */, 17 /* ATTR_VALUE_INTERPOLATION */, endPredicate, endPredicate);
         }
     }
     _consumeQuote(quoteChar) {
-        this._beginToken(15 /* TokenType.ATTR_QUOTE */);
+        this._beginToken(15 /* ATTR_QUOTE */);
         this._requireCharCode(quoteChar);
         this._endToken([String.fromCodePoint(quoteChar)]);
     }
     _consumeTagOpenEnd() {
-        const tokenType = this._attemptCharCode($SLASH) ? 2 /* TokenType.TAG_OPEN_END_VOID */ : 1 /* TokenType.TAG_OPEN_END */;
+        const tokenType = this._attemptCharCode($SLASH) ? 2 /* TAG_OPEN_END_VOID */ : 1 /* TAG_OPEN_END */;
         this._beginToken(tokenType);
         this._requireCharCode($GT);
         this._endToken([]);
     }
     _consumeTagClose(start) {
-        this._beginToken(3 /* TokenType.TAG_CLOSE */, start);
+        this._beginToken(3 /* TAG_CLOSE */, start);
         this._attemptCharCodeUntilFn(isNotWhitespace);
         const prefixAndName = this._consumePrefixAndName();
         this._attemptCharCodeUntilFn(isNotWhitespace);
@@ -13451,11 +13456,11 @@ class _Tokenizer {
         this._endToken(prefixAndName);
     }
     _consumeExpansionFormStart() {
-        this._beginToken(19 /* TokenType.EXPANSION_FORM_START */);
+        this._beginToken(19 /* EXPANSION_FORM_START */);
         this._requireCharCode($LBRACE);
         this._endToken([]);
-        this._expansionCaseStack.push(19 /* TokenType.EXPANSION_FORM_START */);
-        this._beginToken(7 /* TokenType.RAW_TEXT */);
+        this._expansionCaseStack.push(19 /* EXPANSION_FORM_START */);
+        this._beginToken(7 /* RAW_TEXT */);
         const condition = this._readUntil($COMMA);
         const normalizedCondition = this._processCarriageReturns(condition);
         if (this._i18nNormalizeLineEndingsInICUs) {
@@ -13471,32 +13476,32 @@ class _Tokenizer {
         }
         this._requireCharCode($COMMA);
         this._attemptCharCodeUntilFn(isNotWhitespace);
-        this._beginToken(7 /* TokenType.RAW_TEXT */);
+        this._beginToken(7 /* RAW_TEXT */);
         const type = this._readUntil($COMMA);
         this._endToken([type]);
         this._requireCharCode($COMMA);
         this._attemptCharCodeUntilFn(isNotWhitespace);
     }
     _consumeExpansionCaseStart() {
-        this._beginToken(20 /* TokenType.EXPANSION_CASE_VALUE */);
+        this._beginToken(20 /* EXPANSION_CASE_VALUE */);
         const value = this._readUntil($LBRACE).trim();
         this._endToken([value]);
         this._attemptCharCodeUntilFn(isNotWhitespace);
-        this._beginToken(21 /* TokenType.EXPANSION_CASE_EXP_START */);
+        this._beginToken(21 /* EXPANSION_CASE_EXP_START */);
         this._requireCharCode($LBRACE);
         this._endToken([]);
         this._attemptCharCodeUntilFn(isNotWhitespace);
-        this._expansionCaseStack.push(21 /* TokenType.EXPANSION_CASE_EXP_START */);
+        this._expansionCaseStack.push(21 /* EXPANSION_CASE_EXP_START */);
     }
     _consumeExpansionCaseEnd() {
-        this._beginToken(22 /* TokenType.EXPANSION_CASE_EXP_END */);
+        this._beginToken(22 /* EXPANSION_CASE_EXP_END */);
         this._requireCharCode($RBRACE);
         this._endToken([]);
         this._attemptCharCodeUntilFn(isNotWhitespace);
         this._expansionCaseStack.pop();
     }
     _consumeExpansionFormEnd() {
-        this._beginToken(23 /* TokenType.EXPANSION_FORM_END */);
+        this._beginToken(23 /* EXPANSION_FORM_END */);
         this._requireCharCode($RBRACE);
         this._endToken([]);
         this._expansionCaseStack.pop();
@@ -13646,12 +13651,12 @@ class _Tokenizer {
     _isInExpansionCase() {
         return this._expansionCaseStack.length > 0 &&
             this._expansionCaseStack[this._expansionCaseStack.length - 1] ===
-                21 /* TokenType.EXPANSION_CASE_EXP_START */;
+                21 /* EXPANSION_CASE_EXP_START */;
     }
     _isInExpansionForm() {
         return this._expansionCaseStack.length > 0 &&
             this._expansionCaseStack[this._expansionCaseStack.length - 1] ===
-                19 /* TokenType.EXPANSION_FORM_START */;
+                19 /* EXPANSION_FORM_START */;
     }
     isExpansionFormStart() {
         if (this._cursor.peek() !== $LBRACE) {
@@ -13698,9 +13703,9 @@ function mergeTextTokens(srcTokens) {
     let lastDstToken = undefined;
     for (let i = 0; i < srcTokens.length; i++) {
         const token = srcTokens[i];
-        if ((lastDstToken && lastDstToken.type === 5 /* TokenType.TEXT */ && token.type === 5 /* TokenType.TEXT */) ||
-            (lastDstToken && lastDstToken.type === 16 /* TokenType.ATTR_VALUE_TEXT */ &&
-                token.type === 16 /* TokenType.ATTR_VALUE_TEXT */)) {
+        if ((lastDstToken && lastDstToken.type === 5 /* TEXT */ && token.type === 5 /* TEXT */) ||
+            (lastDstToken && lastDstToken.type === 16 /* ATTR_VALUE_TEXT */ &&
+                token.type === 16 /* ATTR_VALUE_TEXT */)) {
             lastDstToken.parts[0] += token.parts[0];
             lastDstToken.sourceSpan.end = token.sourceSpan.end;
         }
@@ -13931,7 +13936,7 @@ class EscapedCharacterCursor extends PlainCharacterCursor {
         }
     }
     decodeHexDigits(start, length) {
-        const hex = this.input.slice(start.internalState.offset, start.internalState.offset + length);
+        const hex = this.input.substr(start.internalState.offset, length);
         const charCode = parseInt(hex, 16);
         if (!isNaN(charCode)) {
             return charCode;
@@ -13993,28 +13998,28 @@ class _TreeBuilder {
         this._advance();
     }
     build() {
-        while (this._peek.type !== 24 /* TokenType.EOF */) {
-            if (this._peek.type === 0 /* TokenType.TAG_OPEN_START */ ||
-                this._peek.type === 4 /* TokenType.INCOMPLETE_TAG_OPEN */) {
+        while (this._peek.type !== 24 /* EOF */) {
+            if (this._peek.type === 0 /* TAG_OPEN_START */ ||
+                this._peek.type === 4 /* INCOMPLETE_TAG_OPEN */) {
                 this._consumeStartTag(this._advance());
             }
-            else if (this._peek.type === 3 /* TokenType.TAG_CLOSE */) {
+            else if (this._peek.type === 3 /* TAG_CLOSE */) {
                 this._consumeEndTag(this._advance());
             }
-            else if (this._peek.type === 12 /* TokenType.CDATA_START */) {
+            else if (this._peek.type === 12 /* CDATA_START */) {
                 this._closeVoidElement();
                 this._consumeCdata(this._advance());
             }
-            else if (this._peek.type === 10 /* TokenType.COMMENT_START */) {
+            else if (this._peek.type === 10 /* COMMENT_START */) {
                 this._closeVoidElement();
                 this._consumeComment(this._advance());
             }
-            else if (this._peek.type === 5 /* TokenType.TEXT */ || this._peek.type === 7 /* TokenType.RAW_TEXT */ ||
-                this._peek.type === 6 /* TokenType.ESCAPABLE_RAW_TEXT */) {
+            else if (this._peek.type === 5 /* TEXT */ || this._peek.type === 7 /* RAW_TEXT */ ||
+                this._peek.type === 6 /* ESCAPABLE_RAW_TEXT */) {
                 this._closeVoidElement();
                 this._consumeText(this._advance());
             }
-            else if (this._peek.type === 19 /* TokenType.EXPANSION_FORM_START */) {
+            else if (this._peek.type === 19 /* EXPANSION_FORM_START */) {
                 this._consumeExpansion(this._advance());
             }
             else {
@@ -14040,11 +14045,11 @@ class _TreeBuilder {
     }
     _consumeCdata(_startToken) {
         this._consumeText(this._advance());
-        this._advanceIf(13 /* TokenType.CDATA_END */);
+        this._advanceIf(13 /* CDATA_END */);
     }
     _consumeComment(token) {
-        const text = this._advanceIf(7 /* TokenType.RAW_TEXT */);
-        this._advanceIf(11 /* TokenType.COMMENT_END */);
+        const text = this._advanceIf(7 /* RAW_TEXT */);
+        this._advanceIf(11 /* COMMENT_END */);
         const value = text != null ? text.parts[0].trim() : null;
         this._addToParent(new Comment(value, token.sourceSpan));
     }
@@ -14053,14 +14058,14 @@ class _TreeBuilder {
         const type = this._advance();
         const cases = [];
         // read =
-        while (this._peek.type === 20 /* TokenType.EXPANSION_CASE_VALUE */) {
+        while (this._peek.type === 20 /* EXPANSION_CASE_VALUE */) {
             const expCase = this._parseExpansionCase();
             if (!expCase)
                 return; // error
             cases.push(expCase);
         }
         // read the final }
-        if (this._peek.type !== 23 /* TokenType.EXPANSION_FORM_END */) {
+        if (this._peek.type !== 23 /* EXPANSION_FORM_END */) {
             this.errors.push(TreeError.create(null, this._peek.sourceSpan, `Invalid ICU message. Missing '}'.`));
             return;
         }
@@ -14071,7 +14076,7 @@ class _TreeBuilder {
     _parseExpansionCase() {
         const value = this._advance();
         // read {
-        if (this._peek.type !== 21 /* TokenType.EXPANSION_CASE_EXP_START */) {
+        if (this._peek.type !== 21 /* EXPANSION_CASE_EXP_START */) {
             this.errors.push(TreeError.create(null, this._peek.sourceSpan, `Invalid ICU message. Missing '{'.`));
             return null;
         }
@@ -14081,7 +14086,7 @@ class _TreeBuilder {
         if (!exp)
             return null;
         const end = this._advance();
-        exp.push({ type: 24 /* TokenType.EOF */, parts: [], sourceSpan: end.sourceSpan });
+        exp.push({ type: 24 /* EOF */, parts: [], sourceSpan: end.sourceSpan });
         // parse everything in between { and }
         const expansionCaseParser = new _TreeBuilder(exp, this.getTagDefinition);
         expansionCaseParser.build();
@@ -14095,14 +14100,14 @@ class _TreeBuilder {
     }
     _collectExpansionExpTokens(start) {
         const exp = [];
-        const expansionFormStack = [21 /* TokenType.EXPANSION_CASE_EXP_START */];
+        const expansionFormStack = [21 /* EXPANSION_CASE_EXP_START */];
         while (true) {
-            if (this._peek.type === 19 /* TokenType.EXPANSION_FORM_START */ ||
-                this._peek.type === 21 /* TokenType.EXPANSION_CASE_EXP_START */) {
+            if (this._peek.type === 19 /* EXPANSION_FORM_START */ ||
+                this._peek.type === 21 /* EXPANSION_CASE_EXP_START */) {
                 expansionFormStack.push(this._peek.type);
             }
-            if (this._peek.type === 22 /* TokenType.EXPANSION_CASE_EXP_END */) {
-                if (lastOnStack(expansionFormStack, 21 /* TokenType.EXPANSION_CASE_EXP_START */)) {
+            if (this._peek.type === 22 /* EXPANSION_CASE_EXP_END */) {
+                if (lastOnStack(expansionFormStack, 21 /* EXPANSION_CASE_EXP_START */)) {
                     expansionFormStack.pop();
                     if (expansionFormStack.length === 0)
                         return exp;
@@ -14112,8 +14117,8 @@ class _TreeBuilder {
                     return null;
                 }
             }
-            if (this._peek.type === 23 /* TokenType.EXPANSION_FORM_END */) {
-                if (lastOnStack(expansionFormStack, 19 /* TokenType.EXPANSION_FORM_START */)) {
+            if (this._peek.type === 23 /* EXPANSION_FORM_END */) {
+                if (lastOnStack(expansionFormStack, 19 /* EXPANSION_FORM_START */)) {
                     expansionFormStack.pop();
                 }
                 else {
@@ -14121,7 +14126,7 @@ class _TreeBuilder {
                     return null;
                 }
             }
-            if (this._peek.type === 24 /* TokenType.EOF */) {
+            if (this._peek.type === 24 /* EOF */) {
                 this.errors.push(TreeError.create(null, start.sourceSpan, `Invalid ICU message. Missing '}'.`));
                 return null;
             }
@@ -14140,18 +14145,18 @@ class _TreeBuilder {
                 tokens[0] = { type: token.type, sourceSpan: token.sourceSpan, parts: [text] };
             }
         }
-        while (this._peek.type === 8 /* TokenType.INTERPOLATION */ || this._peek.type === 5 /* TokenType.TEXT */ ||
-            this._peek.type === 9 /* TokenType.ENCODED_ENTITY */) {
+        while (this._peek.type === 8 /* INTERPOLATION */ || this._peek.type === 5 /* TEXT */ ||
+            this._peek.type === 9 /* ENCODED_ENTITY */) {
             token = this._advance();
             tokens.push(token);
-            if (token.type === 8 /* TokenType.INTERPOLATION */) {
+            if (token.type === 8 /* INTERPOLATION */) {
                 // For backward compatibility we decode HTML entities that appear in interpolation
                 // expressions. This is arguably a bug, but it could be a considerable breaking change to
                 // fix it. It should be addressed in a larger project to refactor the entire parser/lexer
                 // chain after View Engine has been removed.
                 text += token.parts.join('').replace(/&([^;]+);/g, decodeEntity);
             }
-            else if (token.type === 9 /* TokenType.ENCODED_ENTITY */) {
+            else if (token.type === 9 /* ENCODED_ENTITY */) {
                 text += token.parts[0];
             }
             else {
@@ -14172,14 +14177,14 @@ class _TreeBuilder {
     _consumeStartTag(startTagToken) {
         const [prefix, name] = startTagToken.parts;
         const attrs = [];
-        while (this._peek.type === 14 /* TokenType.ATTR_NAME */) {
+        while (this._peek.type === 14 /* ATTR_NAME */) {
             attrs.push(this._consumeAttr(this._advance()));
         }
         const fullName = this._getElementFullName(prefix, name, this._getParentElement());
         let selfClosing = false;
         // Note: There could have been a tokenizer error
         // so that we don't get a token for the end tag...
-        if (this._peek.type === 2 /* TokenType.TAG_OPEN_END_VOID */) {
+        if (this._peek.type === 2 /* TAG_OPEN_END_VOID */) {
             this._advance();
             selfClosing = true;
             const tagDef = this.getTagDefinition(fullName);
@@ -14187,7 +14192,7 @@ class _TreeBuilder {
                 this.errors.push(TreeError.create(fullName, startTagToken.sourceSpan, `Only void and foreign elements can be self closed "${startTagToken.parts[1]}"`));
             }
         }
-        else if (this._peek.type === 1 /* TokenType.TAG_OPEN_END */) {
+        else if (this._peek.type === 1 /* TAG_OPEN_END */) {
             this._advance();
             selfClosing = false;
         }
@@ -14202,7 +14207,7 @@ class _TreeBuilder {
             // element start tag also represents the end tag.
             this._popElement(fullName, span);
         }
-        else if (startTagToken.type === 4 /* TokenType.INCOMPLETE_TAG_OPEN */) {
+        else if (startTagToken.type === 4 /* INCOMPLETE_TAG_OPEN */) {
             // We already know the opening tag is not complete, so it is unlikely it has a corresponding
             // close tag. Let's optimistically parse it as a full element and emit an error.
             this._popElement(fullName, null);
@@ -14259,7 +14264,7 @@ class _TreeBuilder {
         const fullName = mergeNsAndName(attrName.parts[0], attrName.parts[1]);
         let attrEnd = attrName.sourceSpan.end;
         // Consume any quote
-        if (this._peek.type === 15 /* TokenType.ATTR_QUOTE */) {
+        if (this._peek.type === 15 /* ATTR_QUOTE */) {
             this._advance();
         }
         // Consume the attribute value
@@ -14272,22 +14277,22 @@ class _TreeBuilder {
         // being able to consider `ATTR_VALUE_INTERPOLATION` as an option. This is because TS is not
         // able to see that `_advance()` will actually mutate `_peek`.
         const nextTokenType = this._peek.type;
-        if (nextTokenType === 16 /* TokenType.ATTR_VALUE_TEXT */) {
+        if (nextTokenType === 16 /* ATTR_VALUE_TEXT */) {
             valueStartSpan = this._peek.sourceSpan;
             valueEnd = this._peek.sourceSpan.end;
-            while (this._peek.type === 16 /* TokenType.ATTR_VALUE_TEXT */ ||
-                this._peek.type === 17 /* TokenType.ATTR_VALUE_INTERPOLATION */ ||
-                this._peek.type === 9 /* TokenType.ENCODED_ENTITY */) {
+            while (this._peek.type === 16 /* ATTR_VALUE_TEXT */ ||
+                this._peek.type === 17 /* ATTR_VALUE_INTERPOLATION */ ||
+                this._peek.type === 9 /* ENCODED_ENTITY */) {
                 const valueToken = this._advance();
                 valueTokens.push(valueToken);
-                if (valueToken.type === 17 /* TokenType.ATTR_VALUE_INTERPOLATION */) {
+                if (valueToken.type === 17 /* ATTR_VALUE_INTERPOLATION */) {
                     // For backward compatibility we decode HTML entities that appear in interpolation
                     // expressions. This is arguably a bug, but it could be a considerable breaking change to
                     // fix it. It should be addressed in a larger project to refactor the entire parser/lexer
                     // chain after View Engine has been removed.
                     value += valueToken.parts.join('').replace(/&([^;]+);/g, decodeEntity);
                 }
-                else if (valueToken.type === 9 /* TokenType.ENCODED_ENTITY */) {
+                else if (valueToken.type === 9 /* ENCODED_ENTITY */) {
                     value += valueToken.parts[0];
                 }
                 else {
@@ -14297,7 +14302,7 @@ class _TreeBuilder {
             }
         }
         // Consume any quote
-        if (this._peek.type === 15 /* TokenType.ATTR_QUOTE */) {
+        if (this._peek.type === 15 /* ATTR_QUOTE */) {
             const quoteToken = this._advance();
             attrEnd = quoteToken.sourceSpan.end;
         }
@@ -14427,7 +14432,7 @@ class WhitespaceVisitor {
             (context.prev instanceof Expansion || context.next instanceof Expansion);
         if (isNotBlank || hasExpansionSibling) {
             // Process the whitespace in the tokens of this Text node
-            const tokens = text.tokens.map(token => token.type === 5 /* TokenType.TEXT */ ? createWhitespaceProcessedTextToken(token) : token);
+            const tokens = text.tokens.map(token => token.type === 5 /* TEXT */ ? createWhitespaceProcessedTextToken(token) : token);
             // Process the whitespace of the value of this Text node
             const value = processWhitespace(text.value);
             return new Text(value, text.sourceSpan, tokens, text.i18n);
@@ -15276,7 +15281,7 @@ class BindingParser {
     }
     createBoundElementProperty(elementSelector, boundProp, skipValidation = false, mapPropertyName = true) {
         if (boundProp.isAnimation) {
-            return new BoundElementProperty(boundProp.name, 4 /* BindingType.Animation */, SecurityContext.NONE, boundProp.expression, null, boundProp.sourceSpan, boundProp.keySpan, boundProp.valueSpan);
+            return new BoundElementProperty(boundProp.name, 4 /* Animation */, SecurityContext.NONE, boundProp.expression, null, boundProp.sourceSpan, boundProp.keySpan, boundProp.valueSpan);
         }
         let unit = null;
         let bindingType = undefined;
@@ -15297,17 +15302,17 @@ class BindingParser {
                     const name = boundPropertyName.substring(nsSeparatorIdx + 1);
                     boundPropertyName = mergeNsAndName(ns, name);
                 }
-                bindingType = 1 /* BindingType.Attribute */;
+                bindingType = 1 /* Attribute */;
             }
             else if (parts[0] == CLASS_PREFIX) {
                 boundPropertyName = parts[1];
-                bindingType = 2 /* BindingType.Class */;
+                bindingType = 2 /* Class */;
                 securityContexts = [SecurityContext.NONE];
             }
             else if (parts[0] == STYLE_PREFIX) {
                 unit = parts.length > 2 ? parts[2] : null;
                 boundPropertyName = parts[1];
-                bindingType = 3 /* BindingType.Style */;
+                bindingType = 3 /* Style */;
                 securityContexts = [SecurityContext.STYLE];
             }
         }
@@ -15316,7 +15321,7 @@ class BindingParser {
             const mappedPropName = this._schemaRegistry.getMappedPropName(boundProp.name);
             boundPropertyName = mapPropertyName ? mappedPropName : boundProp.name;
             securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, mappedPropName, false);
-            bindingType = 0 /* BindingType.Property */;
+            bindingType = 0 /* Property */;
             if (!skipValidation) {
                 this._validatePropertyOrAttributeName(mappedPropName, boundProp.sourceSpan, false);
             }
@@ -15329,7 +15334,7 @@ class BindingParser {
             this._reportError(`Event name is missing in binding`, sourceSpan);
         }
         if (isAnimationLabel(name)) {
-            name = name.slice(1);
+            name = name.substr(1);
             if (keySpan !== undefined) {
                 keySpan = moveParseSourceSpan(keySpan, new AbsoluteSourceSpan(keySpan.start.offset + 1, keySpan.end.offset));
             }
@@ -15348,7 +15353,7 @@ class BindingParser {
         const eventName = matches[0];
         const phase = matches[1].toLowerCase();
         const ast = this._parseAction(expression, isAssignmentEvent, handlerSpan);
-        targetEvents.push(new ParsedEvent(eventName, phase, 1 /* ParsedEventType.Animation */, ast, sourceSpan, handlerSpan, keySpan));
+        targetEvents.push(new ParsedEvent(eventName, phase, 1 /* Animation */, ast, sourceSpan, handlerSpan, keySpan));
         if (eventName.length === 0) {
             this._reportError(`Animation event name is missing in binding`, sourceSpan);
         }
@@ -15366,7 +15371,7 @@ class BindingParser {
         const [target, eventName] = splitAtColon(name, [null, name]);
         const ast = this._parseAction(expression, isAssignmentEvent, handlerSpan);
         targetMatchableAttrs.push([name, ast.source]);
-        targetEvents.push(new ParsedEvent(eventName, target, 0 /* ParsedEventType.Regular */, ast, sourceSpan, handlerSpan, keySpan));
+        targetEvents.push(new ParsedEvent(eventName, target, 0 /* Regular */, ast, sourceSpan, handlerSpan, keySpan));
         // Don't detect directives for event names for now,
         // so don't add the event name to the matchableAttrs
     }
@@ -16447,8 +16452,8 @@ class _I18nVisitor {
         let hasInterpolation = false;
         for (const token of tokens) {
             switch (token.type) {
-                case 8 /* TokenType.INTERPOLATION */:
-                case 17 /* TokenType.ATTR_VALUE_INTERPOLATION */:
+                case 8 /* INTERPOLATION */:
+                case 17 /* ATTR_VALUE_INTERPOLATION */:
                     hasInterpolation = true;
                     const expression = token.parts[1];
                     const baseName = extractPlaceholderName(expression) || 'INTERPOLATION';
@@ -16777,78 +16782,25 @@ function parseI18nMeta(meta = '') {
 function i18nMetaToJSDoc(meta) {
     const tags = [];
     if (meta.description) {
-        tags.push({ tagName: "desc" /* o.JSDocTagName.Desc */, text: meta.description });
+        tags.push({ tagName: "desc" /* Desc */, text: meta.description });
     }
     else {
         // Suppress the JSCompiler warning that a `@desc` was not given for this message.
-        tags.push({ tagName: "suppress" /* o.JSDocTagName.Suppress */, text: '{msgDescriptions}' });
+        tags.push({ tagName: "suppress" /* Suppress */, text: '{msgDescriptions}' });
     }
     if (meta.meaning) {
-        tags.push({ tagName: "meaning" /* o.JSDocTagName.Meaning */, text: meta.meaning });
+        tags.push({ tagName: "meaning" /* Meaning */, text: meta.meaning });
     }
     return jsDocComment(tags);
 }
 
 /** Closure uses `goog.getMsg(message)` to lookup translations */
 const GOOG_GET_MSG = 'goog.getMsg';
-/**
- * Generates a `goog.getMsg()` statement and reassignment. The template:
- *
- * ```html
- * <div i18n>Sent from {{ sender }} to <span class="receiver">{{ receiver }}</span></div>
- * ```
- *
- * Generates:
- *
- * ```typescript
- * const MSG_FOO = goog.getMsg(
- *   // Message template.
- *   'Sent from {$interpolation} to {$startTagSpan}{$interpolation_1}{$closeTagSpan}.',
- *   // Placeholder values, set to magic strings which get replaced by the Angular runtime.
- *   {
- *     'interpolation': '\uFFFD0\uFFFD',
- *     'startTagSpan': '\uFFFD1\uFFFD',
- *     'interpolation_1': '\uFFFD2\uFFFD',
- *     'closeTagSpan': '\uFFFD3\uFFFD',
- *   },
- *   // Options bag.
- *   {
- *     // Maps each placeholder to the original Angular source code which generates it's value.
- *     original_code: {
- *       'interpolation': '{{ sender }}',
- *       'startTagSpan': '<span class="receiver">',
- *       'interploation_1': '{{ receiver }}',
- *       'closeTagSpan': '</span>',
- *     },
- *   },
- * );
- * const I18N_0 = MSG_FOO;
- * ```
- */
-function createGoogleGetMsgStatements(variable$1, message, closureVar, placeholderValues) {
+function createGoogleGetMsgStatements(variable$1, message, closureVar, params) {
     const messageString = serializeI18nMessageForGetMsg(message);
     const args = [literal(messageString)];
-    if (Object.keys(placeholderValues).length) {
-        // Message template parameters containing the magic strings replaced by the Angular runtime with
-        // real data, e.g. `{'interpolation': '\uFFFD0\uFFFD'}`.
-        args.push(mapLiteral(formatI18nPlaceholderNamesInMap(placeholderValues, true /* useCamelCase */), true /* quoted */));
-        // Message options object, which contains original source code for placeholders (as they are
-        // present in a template, e.g.
-        // `{original_code: {'interpolation': '{{ name }}', 'startTagSpan': '<span>'}}`.
-        args.push(mapLiteral({
-            original_code: literalMap(Object.keys(placeholderValues)
-                .map((param) => ({
-                key: formatI18nPlaceholderName(param),
-                quoted: true,
-                value: message.placeholders[param] ?
-                    // Get source span for typical placeholder if it exists.
-                    literal(message.placeholders[param].sourceSpan.toString()) :
-                    // Otherwise must be an ICU expression, get it's source span.
-                    literal(message.placeholderToMessage[param]
-                        .nodes.map((node) => node.sourceSpan.toString())
-                        .join('')),
-            }))),
-        }));
+    if (Object.keys(params).length) {
+        args.push(mapLiteral(params, true));
     }
     // /**
     //  * @desc description of message
@@ -17037,28 +16989,14 @@ function prepareEventListenerParameters(eventAst, handlerName = null, scope = nu
         scope.getOrCreateSharedContextVar(0);
     const bindingStatements = convertActionBinding(scope, implicitReceiverExpr, handler, 'b', eventAst.handlerSpan, implicitReceiverAccesses, EVENT_BINDING_SCOPE_GLOBALS);
     const statements = [];
-    const variableDeclarations = scope?.variableDeclarations();
-    const restoreViewStatement = scope?.restoreViewStatement();
-    if (variableDeclarations) {
+    if (scope) {
         // `variableDeclarations` needs to run first, because
         // `restoreViewStatement` depends on the result.
-        statements.push(...variableDeclarations);
+        statements.push(...scope.variableDeclarations());
+        statements.unshift(...scope.restoreViewStatement());
     }
     statements.push(...bindingStatements);
-    if (restoreViewStatement) {
-        statements.unshift(restoreViewStatement);
-        // If there's a `restoreView` call, we need to reset the view at the end of the listener
-        // in order to avoid a leak. If there's a `return` statement already, we wrap it in the
-        // call, e.g. `return resetView(ctx.foo())`. Otherwise we add the call as the last statement.
-        const lastStatement = statements[statements.length - 1];
-        if (lastStatement instanceof ReturnStatement) {
-            statements[statements.length - 1] = new ReturnStatement(invokeInstruction(lastStatement.value.sourceSpan, Identifiers.resetView, [lastStatement.value]));
-        }
-        else {
-            statements.push(new ExpressionStatement(invokeInstruction(null, Identifiers.resetView, [])));
-        }
-    }
-    const eventName = type === 1 /* ParsedEventType.Animation */ ? prepareSyntheticListenerName(name, phase) : name;
+    const eventName = type === 1 /* Animation */ ? prepareSyntheticListenerName(name, phase) : name;
     const fnName = handlerName && sanitizeIdentifier(handlerName);
     const fnArgs = [];
     if (implicitReceiverAccesses.has(eventArgumentName)) {
@@ -17210,10 +17148,10 @@ class TemplateDefinitionBuilder {
         const creationVariables = this._bindingScope.viewSnapshotStatements();
         const updateVariables = this._bindingScope.variableDeclarations().concat(this._tempVariables);
         const creationBlock = creationStatements.length > 0 ?
-            [renderFlagCheckIfStmt(1 /* core.RenderFlags.Create */, creationVariables.concat(creationStatements))] :
+            [renderFlagCheckIfStmt(1 /* Create */, creationVariables.concat(creationStatements))] :
             [];
         const updateBlock = updateStatements.length > 0 ?
-            [renderFlagCheckIfStmt(2 /* core.RenderFlags.Update */, updateVariables.concat(updateStatements))] :
+            [renderFlagCheckIfStmt(2 /* Update */, updateVariables.concat(updateStatements))] :
             [];
         return fn(
         // i.e. (rf: RenderFlags, ctx: any)
@@ -17251,7 +17189,7 @@ class TemplateDefinitionBuilder {
         const scopedName = this._bindingScope.freshReferenceName();
         const retrievalLevel = this.level;
         const lhs = variable(variable$1.name + scopedName);
-        this._bindingScope.set(retrievalLevel, variable$1.name, lhs, 1 /* DeclarationPriority.CONTEXT */, (scope, relativeLevel) => {
+        this._bindingScope.set(retrievalLevel, variable$1.name, lhs, 1 /* CONTEXT */, (scope, relativeLevel) => {
             let rhs;
             if (scope.bindingLevel === retrievalLevel) {
                 if (scope.isListenerScope() && scope.hasRestoreViewVariable()) {
@@ -17504,7 +17442,7 @@ class TemplateDefinitionBuilder {
         element.inputs.forEach(input => {
             const stylingInputWasSet = stylingBuilder.registerBoundInput(input);
             if (!stylingInputWasSet) {
-                if (input.type === 0 /* BindingType.Property */ && input.i18n) {
+                if (input.type === 0 /* Property */ && input.i18n) {
                     boundI18nAttrs.push(input);
                 }
                 else {
@@ -17577,7 +17515,7 @@ class TemplateDefinitionBuilder {
         // Generate element input bindings
         allOtherInputs.forEach(input => {
             const inputType = input.type;
-            if (inputType === 4 /* BindingType.Animation */) {
+            if (inputType === 4 /* Animation */) {
                 const value = input.value.visit(this._valueConverter);
                 // animation bindings can be presented in the following formats:
                 // 1. [@binding]="fooExp"
@@ -17604,7 +17542,7 @@ class TemplateDefinitionBuilder {
                 if (value !== undefined) {
                     const params = [];
                     const [attrNamespace, attrName] = splitNsName(input.name);
-                    const isAttributeBinding = inputType === 1 /* BindingType.Attribute */;
+                    const isAttributeBinding = inputType === 1 /* Attribute */;
                     const sanitizationRef = resolveSanitizationFn(input.securityContext, isAttributeBinding);
                     if (sanitizationRef)
                         params.push(sanitizationRef);
@@ -17620,7 +17558,7 @@ class TemplateDefinitionBuilder {
                         }
                     }
                     this.allocateBindingSlots(value);
-                    if (inputType === 0 /* BindingType.Property */) {
+                    if (inputType === 0 /* Property */) {
                         if (value instanceof Interpolation) {
                             // prop="{{value}}" and friends
                             this.interpolatedUpdateInstruction(getPropertyInterpolationExpression(value), elementIndex, attrName, input, value, params);
@@ -17634,7 +17572,7 @@ class TemplateDefinitionBuilder {
                             });
                         }
                     }
-                    else if (inputType === 1 /* BindingType.Attribute */) {
+                    else if (inputType === 1 /* Attribute */) {
                         if (value instanceof Interpolation && getInterpolationArgsLength(value) > 1) {
                             // attr.name="text{{value}}" and friends
                             this.interpolatedUpdateInstruction(getAttributeInterpolationExpression(value), elementIndex, attrName, input, value, params);
@@ -17799,7 +17737,7 @@ class TemplateDefinitionBuilder {
         // - all ICU vars (such as `VAR_SELECT` or `VAR_PLURAL`) are replaced with correct values
         const transformFn = (raw) => {
             const params = { ...vars, ...placeholders };
-            const formatted = formatI18nPlaceholderNamesInMap(params, /* useCamelCase */ false);
+            const formatted = i18nFormatPlaceholderNames(params, /* useCamelCase */ false);
             return invokeInstruction(null, Identifiers.i18nPostprocess, [raw, mapLiteral(formatted, true)]);
         };
         // in case the whole i18n message is a single ICU - we do not need to
@@ -18030,13 +17968,13 @@ class TemplateDefinitionBuilder {
                 const input = inputs[i];
                 // We don't want the animation and attribute bindings in the
                 // attributes array since they aren't used for directive matching.
-                if (input.type !== 4 /* BindingType.Animation */ && input.type !== 1 /* BindingType.Attribute */) {
+                if (input.type !== 4 /* Animation */ && input.type !== 1 /* Attribute */) {
                     addAttrExpr(input.name);
                 }
             }
             for (let i = 0; i < outputs.length; i++) {
                 const output = outputs[i];
-                if (output.type !== 1 /* ParsedEventType.Animation */) {
+                if (output.type !== 1 /* Animation */) {
                     addAttrExpr(output.name);
                 }
             }
@@ -18045,15 +17983,15 @@ class TemplateDefinitionBuilder {
             // to the expressions. The marker is important because it tells the runtime
             // code that this is where attributes without values start...
             if (attrExprs.length !== attrsLengthBeforeInputs) {
-                attrExprs.splice(attrsLengthBeforeInputs, 0, literal(3 /* core.AttributeMarker.Bindings */));
+                attrExprs.splice(attrsLengthBeforeInputs, 0, literal(3 /* Bindings */));
             }
         }
         if (templateAttrs.length) {
-            attrExprs.push(literal(4 /* core.AttributeMarker.Template */));
+            attrExprs.push(literal(4 /* Template */));
             templateAttrs.forEach(attr => addAttrExpr(attr.name));
         }
         if (boundI18nAttrs.length) {
-            attrExprs.push(literal(6 /* core.AttributeMarker.I18n */));
+            attrExprs.push(literal(6 /* I18n */));
             boundI18nAttrs.forEach(attr => addAttrExpr(attr.name));
         }
         return attrExprs;
@@ -18084,7 +18022,7 @@ class TemplateDefinitionBuilder {
             const variableName = this._bindingScope.freshReferenceName();
             const retrievalLevel = this.level;
             const lhs = variable(variableName);
-            this._bindingScope.set(retrievalLevel, reference.name, lhs, 0 /* DeclarationPriority.DEFAULT */, (scope, relativeLevel) => {
+            this._bindingScope.set(retrievalLevel, reference.name, lhs, 0 /* DEFAULT */, (scope, relativeLevel) => {
                 // e.g. nextContext(2);
                 const nextContextStmt = relativeLevel > 0 ? [generateNextContextExpr(relativeLevel).toStmt()] : [];
                 // e.g. const $foo$ = reference(1);
@@ -18098,7 +18036,7 @@ class TemplateDefinitionBuilder {
     prepareListenerParameter(tagName, outputAst, index) {
         return () => {
             const eventName = outputAst.name;
-            const bindingFnName = outputAst.type === 1 /* ParsedEventType.Animation */ ?
+            const bindingFnName = outputAst.type === 1 /* Animation */ ?
                 // synthetic @listener.foo values are treated the exact same as are standard listeners
                 prepareSyntheticListenerFunctionName(eventName, outputAst.phase) :
                 sanitizeIdentifier(eventName);
@@ -18218,7 +18156,7 @@ function getAttributeNameLiterals(name) {
     const nameLiteral = literal(attributeName);
     if (attributeNamespace) {
         return [
-            literal(0 /* core.AttributeMarker.NamespaceURI */), literal(attributeNamespace), nameLiteral
+            literal(0 /* NamespaceURI */), literal(attributeNamespace), nameLiteral
         ];
     }
     return [nameLiteral];
@@ -18287,7 +18225,7 @@ class BindingScope {
      * @param declareLocalCallback The callback to invoke when declaring this local var
      * @param localRef Whether or not this is a local ref
      */
-    set(retrievalLevel, name, lhs, priority = 0 /* DeclarationPriority.DEFAULT */, declareLocalCallback, localRef) {
+    set(retrievalLevel, name, lhs, priority = 0 /* DEFAULT */, declareLocalCallback, localRef) {
         if (this.map.has(name)) {
             if (localRef) {
                 // Do not throw an error if it's a local ref and do not update existing value,
@@ -18343,7 +18281,7 @@ class BindingScope {
         return sharedCtxObj && sharedCtxObj.declare ? sharedCtxObj.lhs : null;
     }
     maybeGenerateSharedContextVar(value) {
-        if (value.priority === 1 /* DeclarationPriority.CONTEXT */ &&
+        if (value.priority === 1 /* CONTEXT */ &&
             value.retrievalLevel < this.bindingLevel) {
             const sharedCtxObj = this.map.get(SHARED_CONTEXT_KEY + value.retrievalLevel);
             if (sharedCtxObj) {
@@ -18364,7 +18302,7 @@ class BindingScope {
                 return [lhs.set(generateNextContextExpr(relativeLevel)).toConstDecl()];
             },
             declare: false,
-            priority: 2 /* DeclarationPriority.SHARED_CONTEXT */,
+            priority: 2 /* SHARED_CONTEXT */,
         });
     }
     getComponentProperty(name) {
@@ -18387,15 +18325,16 @@ class BindingScope {
         }
     }
     restoreViewStatement() {
+        const statements = [];
         if (this.restoreViewVariable) {
             const restoreCall = invokeInstruction(null, Identifiers.restoreView, [this.restoreViewVariable]);
             // Either `const restoredCtx = restoreView($state$);` or `restoreView($state$);`
             // depending on whether it is being used.
-            return this.usesRestoredViewContext ?
+            statements.push(this.usesRestoredViewContext ?
                 variable(RESTORED_VIEW_CONTEXT_NAME).set(restoreCall).toConstDecl() :
-                restoreCall.toStmt();
+                restoreCall.toStmt());
         }
-        return null;
+        return statements;
     }
     viewSnapshotStatements() {
         // const $state$ = getCurrentView();
@@ -18461,7 +18400,7 @@ function getNgProjectAsLiteral(attribute) {
     // Parse the attribute value into a CssSelectorList. Note that we only take the
     // first selector, because we don't support multiple selectors in ngProjectAs.
     const parsedR3Selector = parseSelectorToR3Selector(attribute.value)[0];
-    return [literal(5 /* core.AttributeMarker.ProjectAs */), asLiteral(parsedR3Selector)];
+    return [literal(5 /* ProjectAs */), asLiteral(parsedR3Selector)];
 }
 /**
  * Gets the instruction to generate for an interpolated property
@@ -18720,7 +18659,7 @@ const NG_I18N_CLOSURE_MODE = 'ngI18nClosureMode';
 function getTranslationDeclStmts(message, variable, closureVar, params = {}, transformFn) {
     const statements = [
         declareI18nVariable(variable),
-        ifStmt(createClosureModeGuard(), createGoogleGetMsgStatements(variable, message, closureVar, params), createLocalizeStatements(variable, message, formatI18nPlaceholderNamesInMap(params, /* useCamelCase */ false))),
+        ifStmt(createClosureModeGuard(), createGoogleGetMsgStatements(variable, message, closureVar, i18nFormatPlaceholderNames(params, /* useCamelCase */ true)), createLocalizeStatements(variable, message, i18nFormatPlaceholderNames(params, /* useCamelCase */ false))),
     ];
     if (transformFn) {
         statements.push(new ExpressionStatement(variable.set(transformFn(variable))));
@@ -18785,9 +18724,6 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     if (meta.exportAs !== null) {
         definitionMap.set('exportAs', literalArr(meta.exportAs.map(e => literal(e))));
     }
-    if (meta.isStandalone) {
-        definitionMap.set('standalone', literal(true));
-    }
     return definitionMap;
 }
 /**
@@ -18813,10 +18749,6 @@ function addFeatures(definitionMap, meta) {
     }
     if (meta.lifecycle.usesOnChanges) {
         features.push(importExpr(Identifiers.NgOnChangesFeature));
-    }
-    // TODO: better way of differentiating component vs directive metadata.
-    if (meta.hasOwnProperty('template') && meta.isStandalone) {
-        features.push(importExpr(Identifiers.StandaloneFeature));
     }
     if (features.length) {
         definitionMap.set('features', literalArr(features));
@@ -18881,8 +18813,17 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
         definitionMap.set('consts', constsExpr);
     }
     definitionMap.set('template', templateFunctionExpression);
-    if (meta.declarations.length > 0) {
-        definitionMap.set('dependencies', compileDeclarationList(literalArr(meta.declarations.map(decl => decl.type)), meta.declarationListEmitMode));
+    // e.g. `directives: [MyDirective]`
+    if (meta.directives.length > 0) {
+        const directivesList = literalArr(meta.directives.map(dir => dir.type));
+        const directivesExpr = compileDeclarationList(directivesList, meta.declarationListEmitMode);
+        definitionMap.set('directives', directivesExpr);
+    }
+    // e.g. `pipes: [MyPipe]`
+    if (meta.pipes.size > 0) {
+        const pipesList = literalArr(Array.from(meta.pipes.values()));
+        const pipesExpr = compileDeclarationList(pipesList, meta.declarationListEmitMode);
+        definitionMap.set('pipes', pipesExpr);
     }
     if (meta.encapsulation === null) {
         meta.encapsulation = ViewEncapsulation.Emulated;
@@ -18892,15 +18833,8 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
         const styleValues = meta.encapsulation == ViewEncapsulation.Emulated ?
             compileStyles(meta.styles, CONTENT_ATTR, HOST_ATTR) :
             meta.styles;
-        const styleNodes = styleValues.reduce((result, style) => {
-            if (style.trim().length > 0) {
-                result.push(constantPool.getConstLiteral(literal(style)));
-            }
-            return result;
-        }, []);
-        if (styleNodes.length > 0) {
-            definitionMap.set('styles', literalArr(styleNodes));
-        }
+        const strings = styleValues.map(str => constantPool.getConstLiteral(literal(str)));
+        definitionMap.set('styles', literalArr(strings));
     }
     else if (meta.encapsulation === ViewEncapsulation.Emulated) {
         // If there is no style, don't generate css selectors on elements
@@ -18927,9 +18861,8 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
  * to be consumed by upstream compilations.
  */
 function createComponentType(meta) {
-    const typeParams = createBaseDirectiveTypeParams(meta);
+    const typeParams = createDirectiveTypeParams(meta);
     typeParams.push(stringArrayAsType(meta.template.ngContentSelectors));
-    typeParams.push(expressionType(literal(meta.isStandalone)));
     return expressionType(importExpr(Identifiers.ComponentDeclaration, typeParams));
 }
 /**
@@ -18938,13 +18871,13 @@ function createComponentType(meta) {
  */
 function compileDeclarationList(list, mode) {
     switch (mode) {
-        case 0 /* DeclarationListEmitMode.Direct */:
+        case 0 /* Direct */:
             // directives: [MyDir],
             return list;
-        case 1 /* DeclarationListEmitMode.Closure */:
+        case 1 /* Closure */:
             // directives: function () { return [MyDir]; }
             return fn([], [new ReturnStatement(list)]);
-        case 2 /* DeclarationListEmitMode.ClosureResolved */:
+        case 2 /* ClosureResolved */:
             // directives: function () { return [MyDir].map(ng.resolveForwardRef); }
             const resolvedList = list.prop('map').callFn([importExpr(Identifiers.resolveForwardRef)]);
             return fn([], [new ReturnStatement(resolvedList)]);
@@ -18962,9 +18895,9 @@ function prepareQueryParams(query, constantPool) {
  * @param query
  */
 function toQueryFlags(query) {
-    return (query.descendants ? 1 /* QueryFlags.descendants */ : 0 /* QueryFlags.none */) |
-        (query.static ? 2 /* QueryFlags.isStatic */ : 0 /* QueryFlags.none */) |
-        (query.emitDistinctChangesOnly ? 4 /* QueryFlags.emitDistinctChangesOnly */ : 0 /* QueryFlags.none */);
+    return (query.descendants ? 1 /* descendants */ : 0 /* none */) |
+        (query.static ? 2 /* isStatic */ : 0 /* none */) |
+        (query.emitDistinctChangesOnly ? 4 /* emitDistinctChangesOnly */ : 0 /* none */);
 }
 function convertAttributesToExpressions(attributes) {
     const values = [];
@@ -18998,8 +18931,8 @@ function createContentQueriesFunction(queries, constantPool, name) {
         new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null),
         new FnParam('dirIndex', null)
     ], [
-        renderFlagCheckIfStmt(1 /* core.RenderFlags.Create */, createStatements),
-        renderFlagCheckIfStmt(2 /* core.RenderFlags.Update */, updateStatements)
+        renderFlagCheckIfStmt(1 /* Create */, createStatements),
+        renderFlagCheckIfStmt(2 /* Update */, updateStatements)
     ], INFERRED_TYPE, null, contentQueriesFnName);
 }
 function stringAsType(str) {
@@ -19020,7 +18953,7 @@ function stringArrayAsType(arr) {
     return arr.length > 0 ? expressionType(literalArr(arr.map(value => literal(value)))) :
         NONE_TYPE;
 }
-function createBaseDirectiveTypeParams(meta) {
+function createDirectiveTypeParams(meta) {
     // On the type side, remove newlines from the selector as it will need to fit into a TypeScript
     // string literal, which must be on one line.
     const selectorForType = meta.selector !== null ? meta.selector.replace(/\n/g, '') : null;
@@ -19038,11 +18971,7 @@ function createBaseDirectiveTypeParams(meta) {
  * to be consumed by upstream compilations.
  */
 function createDirectiveType(meta) {
-    const typeParams = createBaseDirectiveTypeParams(meta);
-    // Directives have no NgContentSelectors slot, but instead express a `never` type
-    // so that future fields align.
-    typeParams.push(NONE_TYPE);
-    typeParams.push(expressionType(literal(meta.isStandalone)));
+    const typeParams = createDirectiveTypeParams(meta);
     return expressionType(importExpr(Identifiers.DirectiveDeclaration, typeParams));
 }
 // Define and update any view queries
@@ -19065,8 +18994,8 @@ function createViewQueriesFunction(viewQueries, constantPool, name) {
     });
     const viewQueryFnName = name ? `${name}_Query` : null;
     return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null)], [
-        renderFlagCheckIfStmt(1 /* core.RenderFlags.Create */, createStatements),
-        renderFlagCheckIfStmt(2 /* core.RenderFlags.Update */, updateStatements)
+        renderFlagCheckIfStmt(1 /* Create */, createStatements),
+        renderFlagCheckIfStmt(2 /* Update */, updateStatements)
     ], INFERRED_TYPE, null, viewQueryFnName);
 }
 // Return a host binding function or null if one is not necessary.
@@ -19206,10 +19135,10 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
         const hostBindingsFnName = name ? `${name}_HostBindings` : null;
         const statements = [];
         if (createInstructions.length > 0) {
-            statements.push(renderFlagCheckIfStmt(1 /* core.RenderFlags.Create */, getInstructionStatements(createInstructions)));
+            statements.push(renderFlagCheckIfStmt(1 /* Create */, getInstructionStatements(createInstructions)));
         }
         if (updateInstructions.length > 0) {
-            statements.push(renderFlagCheckIfStmt(2 /* core.RenderFlags.Update */, updateVariables.concat(getInstructionStatements(updateInstructions))));
+            statements.push(renderFlagCheckIfStmt(2 /* Update */, updateVariables.concat(getInstructionStatements(updateInstructions))));
         }
         return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null)], statements, INFERRED_TYPE, null, hostBindingsFnName);
     }
@@ -19250,12 +19179,12 @@ function createHostListeners(eventBindings, name) {
     const instructions = [];
     for (const binding of eventBindings) {
         let bindingName = binding.name && sanitizeIdentifier(binding.name);
-        const bindingFnName = binding.type === 1 /* ParsedEventType.Animation */ ?
+        const bindingFnName = binding.type === 1 /* Animation */ ?
             prepareSyntheticListenerFunctionName(bindingName, binding.targetOrPhase) :
             bindingName;
         const handlerName = name && bindingName ? `${name}_${bindingFnName}_HostBindingHandler` : null;
         const params = prepareEventListenerParameters(BoundEvent.fromParsedEvent(binding), handlerName);
-        if (binding.type == 1 /* ParsedEventType.Animation */) {
+        if (binding.type == 1 /* Animation */) {
             syntheticListenerParams.push(params);
         }
         else {
@@ -19304,7 +19233,7 @@ function parseHostBindings(host) {
                     }
             }
         }
-        else if (matches[1 /* HostBindingGroup.Binding */] != null) {
+        else if (matches[1 /* Binding */] != null) {
             if (typeof value !== 'string') {
                 // TODO(alxhub): make this a diagnostic.
                 throw new Error(`Property binding must be string`);
@@ -19312,14 +19241,14 @@ function parseHostBindings(host) {
             // synthetic properties (the ones that have a `@` as a prefix)
             // are still treated the same as regular properties. Therefore
             // there is no point in storing them in a separate map.
-            properties[matches[1 /* HostBindingGroup.Binding */]] = value;
+            properties[matches[1 /* Binding */]] = value;
         }
-        else if (matches[2 /* HostBindingGroup.Event */] != null) {
+        else if (matches[2 /* Event */] != null) {
             if (typeof value !== 'string') {
                 // TODO(alxhub): make this a diagnostic.
                 throw new Error(`Event binding must be string`);
             }
-            listeners[matches[2 /* HostBindingGroup.Event */]] = value;
+            listeners[matches[2 /* Event */]] = value;
         }
     }
     return { attributes, listeners, properties, specialAttributes };
@@ -19387,7 +19316,6 @@ class CompilerFacadeImpl {
             deps: null,
             pipeName: facade.pipeName,
             pure: facade.pure,
-            isStandalone: facade.isStandalone,
         };
         const res = compilePipeFromMetadata(metadata);
         return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, []);
@@ -19404,10 +19332,10 @@ class CompilerFacadeImpl {
             internalType: new WrappedNodeExpr(facade.type),
             typeArgumentCount: facade.typeArgumentCount,
             providedIn: computeProvidedIn(facade.providedIn),
-            useClass: convertToProviderExpression(facade, 'useClass'),
-            useFactory: wrapExpression(facade, 'useFactory'),
-            useValue: convertToProviderExpression(facade, 'useValue'),
-            useExisting: convertToProviderExpression(facade, 'useExisting'),
+            useClass: convertToProviderExpression(facade, USE_CLASS),
+            useFactory: wrapExpression(facade, USE_FACTORY),
+            useValue: convertToProviderExpression(facade, USE_VALUE),
+            useExisting: convertToProviderExpression(facade, USE_EXISTING),
             deps: facade.deps?.map(convertR3DependencyMetadata),
         }, 
         /* resolveForwardRefs */ true);
@@ -19420,10 +19348,10 @@ class CompilerFacadeImpl {
             internalType: new WrappedNodeExpr(facade.type),
             typeArgumentCount: 0,
             providedIn: computeProvidedIn(facade.providedIn),
-            useClass: convertToProviderExpression(facade, 'useClass'),
-            useFactory: wrapExpression(facade, 'useFactory'),
-            useValue: convertToProviderExpression(facade, 'useValue'),
-            useExisting: convertToProviderExpression(facade, 'useExisting'),
+            useClass: convertToProviderExpression(facade, USE_CLASS),
+            useFactory: wrapExpression(facade, USE_FACTORY),
+            useValue: convertToProviderExpression(facade, USE_VALUE),
+            useExisting: convertToProviderExpression(facade, USE_EXISTING),
             deps: facade.deps?.map(convertR3DeclareDependencyMetadata),
         }, 
         /* resolveForwardRefs */ true);
@@ -19454,7 +19382,7 @@ class CompilerFacadeImpl {
             declarations: facade.declarations.map(wrapReference),
             imports: facade.imports.map(wrapReference),
             exports: facade.exports.map(wrapReference),
-            selectorScopeMode: R3SelectorScopeMode.Inline,
+            emitInline: true,
             containsForwardDecls: false,
             schemas: facade.schemas ? facade.schemas.map(wrapReference) : null,
             id: facade.id ? new WrappedNodeExpr(facade.id) : null,
@@ -19490,8 +19418,7 @@ class CompilerFacadeImpl {
             ...convertDirectiveFacadeToMetadata(facade),
             selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(),
             template,
-            declarations: facade.declarations.map(convertDeclarationFacadeToMetadata),
-            declarationListEmitMode: 0 /* DeclarationListEmitMode.Direct */,
+            declarationListEmitMode: 0 /* Direct */,
             styles: [...facade.styles, ...template.styles],
             encapsulation: facade.encapsulation,
             interpolation,
@@ -19563,6 +19490,10 @@ class CompilerFacadeImpl {
         return res['$def'];
     }
 }
+const USE_CLASS = Object.keys({ useClass: null })[0];
+const USE_FACTORY = Object.keys({ useFactory: null })[0];
+const USE_VALUE = Object.keys({ useValue: null })[0];
+const USE_EXISTING = Object.keys({ useExisting: null })[0];
 function convertToR3QueryMetadata(facade) {
     return {
         ...facade,
@@ -19588,7 +19519,7 @@ function convertQueryPredicate(predicate) {
         // The predicate is an array of strings so pass it through.
         predicate :
         // The predicate is a type - assume that we will need to unwrap any `forwardRef()` calls.
-        createMayBeForwardRefExpression(new WrappedNodeExpr(predicate), 1 /* ForwardRefHandling.Wrapped */);
+        createMayBeForwardRefExpression(new WrappedNodeExpr(predicate), 1 /* Wrapped */);
 }
 function convertDirectiveFacadeToMetadata(facade) {
     const inputsFromMetadata = parseInputOutputs(facade.inputs || []);
@@ -19645,7 +19576,6 @@ function convertDeclareDirectiveFacadeToMetadata(declaration, typeSourceSpan) {
         deps: null,
         typeArgumentCount: 0,
         fullInheritance: false,
-        isStandalone: declaration.isStandalone ?? false,
     };
 }
 function convertHostDeclarationToMetadata(host = {}) {
@@ -19666,57 +19596,31 @@ function convertOpaqueValuesToExpressions(obj) {
     }
     return result;
 }
-function convertDeclareComponentFacadeToMetadata(decl, typeSourceSpan, sourceMapUrl) {
-    const { template, interpolation } = parseJitTemplate(decl.template, decl.type.name, sourceMapUrl, decl.preserveWhitespaces ?? false, decl.interpolation);
-    const declarations = [];
-    if (decl.dependencies) {
-        for (const innerDep of decl.dependencies) {
-            switch (innerDep.kind) {
-                case 'directive':
-                case 'component':
-                    declarations.push(convertDirectiveDeclarationToMetadata(innerDep));
-                    break;
-                case 'pipe':
-                    declarations.push(convertPipeDeclarationToMetadata(innerDep));
-                    break;
-            }
-        }
-    }
-    else if (decl.components || decl.directives || decl.pipes) {
-        // Existing declarations on NPM may not be using the new `dependencies` merged field, and may
-        // have separate fields for dependencies instead. Unify them for JIT compilation.
-        decl.components &&
-            declarations.push(...decl.components.map(dir => convertDirectiveDeclarationToMetadata(dir, /* isComponent */ true)));
-        decl.directives &&
-            declarations.push(...decl.directives.map(dir => convertDirectiveDeclarationToMetadata(dir)));
-        decl.pipes && declarations.push(...convertPipeMapToMetadata(decl.pipes));
-    }
+function convertDeclareComponentFacadeToMetadata(declaration, typeSourceSpan, sourceMapUrl) {
+    const { template, interpolation } = parseJitTemplate(declaration.template, declaration.type.name, sourceMapUrl, declaration.preserveWhitespaces ?? false, declaration.interpolation);
     return {
-        ...convertDeclareDirectiveFacadeToMetadata(decl, typeSourceSpan),
+        ...convertDeclareDirectiveFacadeToMetadata(declaration, typeSourceSpan),
         template,
-        styles: decl.styles ?? [],
-        declarations,
-        viewProviders: decl.viewProviders !== undefined ? new WrappedNodeExpr(decl.viewProviders) :
+        styles: declaration.styles ?? [],
+        directives: (declaration.components ?? [])
+            .concat(declaration.directives ?? [])
+            .map(convertUsedDirectiveDeclarationToMetadata),
+        pipes: convertUsedPipesToMetadata(declaration.pipes),
+        viewProviders: declaration.viewProviders !== undefined ?
+            new WrappedNodeExpr(declaration.viewProviders) :
             null,
-        animations: decl.animations !== undefined ? new WrappedNodeExpr(decl.animations) : null,
-        changeDetection: decl.changeDetection ?? ChangeDetectionStrategy.Default,
-        encapsulation: decl.encapsulation ?? ViewEncapsulation.Emulated,
+        animations: declaration.animations !== undefined ? new WrappedNodeExpr(declaration.animations) :
+            null,
+        changeDetection: declaration.changeDetection ?? ChangeDetectionStrategy.Default,
+        encapsulation: declaration.encapsulation ?? ViewEncapsulation.Emulated,
         interpolation,
-        declarationListEmitMode: 2 /* DeclarationListEmitMode.ClosureResolved */,
+        declarationListEmitMode: 2 /* ClosureResolved */,
         relativeContextFilePath: '',
         i18nUseExternalIds: true,
     };
 }
-function convertDeclarationFacadeToMetadata(declaration) {
+function convertUsedDirectiveDeclarationToMetadata(declaration) {
     return {
-        ...declaration,
-        type: new WrappedNodeExpr(declaration.type),
-    };
-}
-function convertDirectiveDeclarationToMetadata(declaration, isComponent = null) {
-    return {
-        kind: R3TemplateDependencyKind.Directive,
-        isComponent: isComponent || declaration.kind === 'component',
         selector: declaration.selector,
         type: new WrappedNodeExpr(declaration.type),
         inputs: declaration.inputs ?? [],
@@ -19724,24 +19628,16 @@ function convertDirectiveDeclarationToMetadata(declaration, isComponent = null) 
         exportAs: declaration.exportAs ?? null,
     };
 }
-function convertPipeMapToMetadata(pipes) {
-    if (!pipes) {
-        return [];
+function convertUsedPipesToMetadata(declaredPipes) {
+    const pipes = new Map();
+    if (declaredPipes === undefined) {
+        return pipes;
     }
-    return Object.keys(pipes).map(name => {
-        return {
-            kind: R3TemplateDependencyKind.Pipe,
-            name,
-            type: new WrappedNodeExpr(pipes[name]),
-        };
-    });
-}
-function convertPipeDeclarationToMetadata(pipe) {
-    return {
-        kind: R3TemplateDependencyKind.Pipe,
-        name: pipe.name,
-        type: new WrappedNodeExpr(pipe.type),
-    };
+    for (const pipeName of Object.keys(declaredPipes)) {
+        const pipeType = declaredPipes[pipeName];
+        pipes.set(pipeName, new WrappedNodeExpr(pipeType));
+    }
+    return pipes;
 }
 function parseJitTemplate(template, typeName, sourceMapUrl, preserveWhitespaces, interpolation) {
     const interpolationConfig = interpolation ? InterpolationConfig.fromArray(interpolation) : DEFAULT_INTERPOLATION_CONFIG;
@@ -19763,7 +19659,7 @@ function parseJitTemplate(template, typeName, sourceMapUrl, preserveWhitespaces,
  */
 function convertToProviderExpression(obj, property) {
     if (obj.hasOwnProperty(property)) {
-        return createMayBeForwardRefExpression(new WrappedNodeExpr(obj[property]), 0 /* ForwardRefHandling.None */);
+        return createMayBeForwardRefExpression(new WrappedNodeExpr(obj[property]), 0 /* None */);
     }
     else {
         return undefined;
@@ -19781,7 +19677,7 @@ function computeProvidedIn(providedIn) {
     const expression = typeof providedIn === 'function' ? new WrappedNodeExpr(providedIn) :
         new LiteralExpr(providedIn ?? null);
     // See `convertToProviderExpression()` for why this uses `ForwardRefHandling.None`.
-    return createMayBeForwardRefExpression(expression, 0 /* ForwardRefHandling.None */);
+    return createMayBeForwardRefExpression(expression, 0 /* None */);
 }
 function convertR3DependencyMetadataArray(facades) {
     return facades == null ? null : facades.map(convertR3DependencyMetadata);
@@ -19861,7 +19757,6 @@ function convertDeclarePipeFacadeToMetadata(declaration) {
         pipeName: declaration.name,
         deps: null,
         pure: declaration.pure ?? true,
-        isStandalone: declaration.isStandalone ?? false,
     };
 }
 function convertDeclareInjectorFacadeToMetadata(declaration) {
@@ -19888,7 +19783,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('14.1.0-next.0+sha-8629f2d');
+const VERSION = new Version('13.3.9+18.sha-3e3f8fc');
 
 /**
  * @license
@@ -21392,6 +21287,14 @@ var FactoryTarget;
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * Processes `Target`s with a given set of directives and performs a binding operation, which
  * returns an object similar to TypeScript's `ts.TypeChecker` that contains knowledge about the
@@ -21921,7 +21824,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('14.1.0-next.0+sha-8629f2d'));
+    definitionMap.set('version', literal('13.3.9+18.sha-3e3f8fc'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -22021,7 +21924,7 @@ function compileDependency(dep) {
  *
  * Do not include any prerelease in these versions as they are ignored.
  */
-const MINIMUM_PARTIAL_LINKER_VERSION$5 = '14.0.0';
+const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 /**
  * Compile a directive declaration defined by the `R3DirectiveMetadata`.
  */
@@ -22038,12 +21941,9 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('14.1.0-next.0+sha-8629f2d'));
+    definitionMap.set('version', literal('13.3.9+18.sha-3e3f8fc'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
-    if (meta.isStandalone) {
-        definitionMap.set('isStandalone', literal(meta.isStandalone));
-    }
     // e.g. `selector: 'some-dir'`
     if (meta.selector !== null) {
         definitionMap.set('selector', literal(meta.selector));
@@ -22148,7 +22048,9 @@ function createComponentDefinitionMap(meta, template, templateInfo) {
         definitionMap.set('isInline', literal(true));
     }
     definitionMap.set('styles', toOptionalLiteralArray(meta.styles, literal));
-    definitionMap.set('dependencies', compileUsedDependenciesMetadata(meta));
+    definitionMap.set('components', compileUsedDirectiveMetadata(meta, directive => directive.isComponent === true));
+    definitionMap.set('directives', compileUsedDirectiveMetadata(meta, directive => directive.isComponent !== true));
+    definitionMap.set('pipes', compileUsedPipeMetadata(meta));
     definitionMap.set('viewProviders', meta.viewProviders);
     definitionMap.set('animations', meta.animations);
     if (meta.changeDetection !== undefined) {
@@ -22204,34 +22106,42 @@ function computeEndLocation(file, contents) {
     } while (lineStart !== -1);
     return new ParseLocation(file, length, line, length - lastLineStart);
 }
-function compileUsedDependenciesMetadata(meta) {
-    const wrapType = meta.declarationListEmitMode !== 0 /* DeclarationListEmitMode.Direct */ ?
+/**
+ * Compiles the directives as registered in the component metadata into an array literal of the
+ * individual directives. If the component does not use any directives, then null is returned.
+ */
+function compileUsedDirectiveMetadata(meta, predicate) {
+    const wrapType = meta.declarationListEmitMode !== 0 /* Direct */ ?
         generateForwardRef :
         (expr) => expr;
-    return toOptionalLiteralArray(meta.declarations, decl => {
-        switch (decl.kind) {
-            case R3TemplateDependencyKind.Directive:
-                const dirMeta = new DefinitionMap();
-                dirMeta.set('kind', literal(decl.isComponent ? 'component' : 'directive'));
-                dirMeta.set('type', wrapType(decl.type));
-                dirMeta.set('selector', literal(decl.selector));
-                dirMeta.set('inputs', toOptionalLiteralArray(decl.inputs, literal));
-                dirMeta.set('outputs', toOptionalLiteralArray(decl.outputs, literal));
-                dirMeta.set('exportAs', toOptionalLiteralArray(decl.exportAs, literal));
-                return dirMeta.toLiteralMap();
-            case R3TemplateDependencyKind.Pipe:
-                const pipeMeta = new DefinitionMap();
-                pipeMeta.set('kind', literal('pipe'));
-                pipeMeta.set('type', wrapType(decl.type));
-                pipeMeta.set('name', literal(decl.name));
-                return pipeMeta.toLiteralMap();
-            case R3TemplateDependencyKind.NgModule:
-                const ngModuleMeta = new DefinitionMap();
-                ngModuleMeta.set('kind', literal('ngmodule'));
-                ngModuleMeta.set('type', wrapType(decl.type));
-                return ngModuleMeta.toLiteralMap();
-        }
+    const directives = meta.directives.filter(predicate);
+    return toOptionalLiteralArray(directives, directive => {
+        const dirMeta = new DefinitionMap();
+        dirMeta.set('type', wrapType(directive.type));
+        dirMeta.set('selector', literal(directive.selector));
+        dirMeta.set('inputs', toOptionalLiteralArray(directive.inputs, literal));
+        dirMeta.set('outputs', toOptionalLiteralArray(directive.outputs, literal));
+        dirMeta.set('exportAs', toOptionalLiteralArray(directive.exportAs, literal));
+        return dirMeta.toLiteralMap();
     });
+}
+/**
+ * Compiles the pipes as registered in the component metadata into an object literal, where the
+ * pipe's name is used as key and a reference to its type as value. If the component does not use
+ * any pipes, then null is returned.
+ */
+function compileUsedPipeMetadata(meta) {
+    if (meta.pipes.size === 0) {
+        return null;
+    }
+    const wrapType = meta.declarationListEmitMode !== 0 /* Direct */ ?
+        generateForwardRef :
+        (expr) => expr;
+    const entries = [];
+    for (const [name, pipe] of meta.pipes) {
+        entries.push({ key: name, value: wrapType(pipe), quoted: true });
+    }
+    return literalMap(entries);
 }
 
 /**
@@ -22252,7 +22162,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('14.1.0-next.0+sha-8629f2d'));
+    definitionMap.set('version', literal('13.3.9+18.sha-3e3f8fc'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22294,7 +22204,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('14.1.0-next.0+sha-8629f2d'));
+    definitionMap.set('version', literal('13.3.9+18.sha-3e3f8fc'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22352,7 +22262,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('14.1.0-next.0+sha-8629f2d'));
+    definitionMap.set('version', literal('13.3.9+18.sha-3e3f8fc'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22376,7 +22286,7 @@ function createInjectorDefinitionMap(meta) {
  *
  * Do not include any prerelease in these versions as they are ignored.
  */
-const MINIMUM_PARTIAL_LINKER_VERSION$1 = '14.0.0';
+const MINIMUM_PARTIAL_LINKER_VERSION$1 = '12.0.0';
 function compileDeclareNgModuleFromMetadata(meta) {
     const definitionMap = createNgModuleDefinitionMap(meta);
     const expression = importExpr(Identifiers.declareNgModule).callFn([definitionMap.toLiteralMap()]);
@@ -22389,7 +22299,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('14.1.0-next.0+sha-8629f2d'));
+    definitionMap.set('version', literal('13.3.9+18.sha-3e3f8fc'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22431,7 +22341,7 @@ function createNgModuleDefinitionMap(meta) {
  *
  * Do not include any prerelease in these versions as they are ignored.
  */
-const MINIMUM_PARTIAL_LINKER_VERSION = '14.0.0';
+const MINIMUM_PARTIAL_LINKER_VERSION = '12.0.0';
 /**
  * Compile a Pipe declaration defined by the `R3PipeMetadata`.
  */
@@ -22447,13 +22357,10 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('14.1.0-next.0+sha-8629f2d'));
+    definitionMap.set('version', literal('13.3.9+18.sha-3e3f8fc'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
-    if (meta.isStandalone) {
-        definitionMap.set('isStandalone', literal(meta.isStandalone));
-    }
     // e.g. `name: "myPipe"`
     definitionMap.set('name', literal(meta.pipeName));
     if (meta.pure === false) {
@@ -22500,5 +22407,5 @@ publishFacade(_global);
  * found in the LICENSE file at https://angular.io/license
  */
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element$1 as TmplAstElement, Icu$1 as TmplAstIcu, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token, TokenType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, Quote, R3BoundTarget, Identifiers as R3Identifiers, R3TargetBinder, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element$1 as TmplAstElement, Icu$1 as TmplAstIcu, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token, TokenType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
