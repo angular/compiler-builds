@@ -1,5 +1,5 @@
 /**
- * @license Angular v14.1.0-next.0+sha-7b9569d
+ * @license Angular v14.1.0-next.0+sha-7173711
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3709,9 +3709,18 @@ export declare interface R3NgModuleMetadata {
      */
     declarations: R3Reference[];
     /**
+     * Those declarations which should be visible to downstream consumers. If not specified, all
+     * declarations are made visible to downstream consumers.
+     */
+    publicDeclarationTypes: outputAst.Expression[] | null;
+    /**
      * An array of expressions representing the imports of the module.
      */
     imports: R3Reference[];
+    /**
+     * Whether or not to include `imports` in generated type declarations.
+     */
+    includeImportTypes: boolean;
     /**
      * An array of expressions representing the exports of the module.
      */
