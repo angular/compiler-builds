@@ -1,5 +1,5 @@
 /**
- * @license Angular v14.1.0-next.4+sha-cee207e
+ * @license Angular v14.1.0-next.4+sha-c14c701
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2604,7 +2604,7 @@ class ConstantPool {
             }
             else {
                 // Just declare and use the variable directly, without a function call
-                // indirection. This saves a few bytes and avoids an unncessary call.
+                // indirection. This saves a few bytes and avoids an unnecessary call.
                 definition = variable(name).set(literal);
                 usage = variable(name);
             }
@@ -16010,7 +16010,7 @@ function setupRegistry() {
  *
  * @param index Instruction index of i18nStart, which initiates this context
  * @param ref Reference to a translation const that represents the content if thus context
- * @param level Nestng level defined for child contexts
+ * @param level Nesting level defined for child contexts
  * @param templateIndex Instruction index of a template which this context belongs to
  * @param meta Meta information (id, meaning, description, etc) associated with this context
  */
@@ -16125,7 +16125,7 @@ class I18nContext {
                 const isTemplateTag = key.endsWith('NG-TEMPLATE');
                 if (isTemplateTag) {
                     // current template's content is placed before or after
-                    // parent template tag, depending on the open/close atrribute
+                    // parent template tag, depending on the open/close attribute
                     phs.splice(tmplIdx + (isCloseTag ? 0 : 1), 0, ...values);
                 }
                 else {
@@ -16821,7 +16821,7 @@ const GOOG_GET_MSG = 'goog.getMsg';
  *     original_code: {
  *       'interpolation': '{{ sender }}',
  *       'startTagSpan': '<span class="receiver">',
- *       'interploation_1': '{{ receiver }}',
+ *       'interpolation_1': '{{ receiver }}',
  *       'closeTagSpan': '</span>',
  *     },
  *   },
@@ -19858,7 +19858,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('14.1.0-next.4+sha-cee207e');
+const VERSION = new Version('14.1.0-next.4+sha-c14c701');
 
 /**
  * @license
@@ -21885,7 +21885,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('14.1.0-next.4+sha-cee207e'));
+    definitionMap.set('version', literal('14.1.0-next.4+sha-c14c701'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -22002,7 +22002,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('14.1.0-next.4+sha-cee207e'));
+    definitionMap.set('version', literal('14.1.0-next.4+sha-c14c701'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     if (meta.isStandalone) {
@@ -22216,7 +22216,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('14.1.0-next.4+sha-cee207e'));
+    definitionMap.set('version', literal('14.1.0-next.4+sha-c14c701'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22258,7 +22258,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('14.1.0-next.4+sha-cee207e'));
+    definitionMap.set('version', literal('14.1.0-next.4+sha-c14c701'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22316,7 +22316,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('14.1.0-next.4+sha-cee207e'));
+    definitionMap.set('version', literal('14.1.0-next.4+sha-c14c701'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22353,7 +22353,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('14.1.0-next.4+sha-cee207e'));
+    definitionMap.set('version', literal('14.1.0-next.4+sha-c14c701'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22411,7 +22411,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('14.1.0-next.4+sha-cee207e'));
+    definitionMap.set('version', literal('14.1.0-next.4+sha-c14c701'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
