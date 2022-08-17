@@ -1,5 +1,5 @@
 /**
- * @license Angular v14.2.0-next.1+sha-0ca5eb3
+ * @license Angular v14.2.0-next.1+sha-dc52cef
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9948,10 +9948,18 @@ class _ParseAST {
                 } // read all semicolons
             }
             else if (this.index < this.tokens.length) {
+                const errorIndex = this.index;
                 this.error(`Unexpected token '${this.next}'`);
+                // The `error` call above will skip ahead to the next recovery point in an attempt to
+                // recover part of the expression, but that might be the token we started from which will
+                // lead to an infinite loop. If that's the case, break the loop assuming that we can't
+                // parse further.
+                if (this.index === errorIndex) {
+                    break;
+                }
             }
         }
-        if (exprs.length == 0) {
+        if (exprs.length === 0) {
             // We have no expressions so create an empty expression that spans the entire input length
             const artificialStart = this.offset;
             const artificialEnd = this.offset + this.input.length;
@@ -19854,7 +19862,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('14.2.0-next.1+sha-0ca5eb3');
+const VERSION = new Version('14.2.0-next.1+sha-dc52cef');
 
 /**
  * @license
@@ -21881,7 +21889,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('14.2.0-next.1+sha-0ca5eb3'));
+    definitionMap.set('version', literal('14.2.0-next.1+sha-dc52cef'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -21998,7 +22006,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('14.2.0-next.1+sha-0ca5eb3'));
+    definitionMap.set('version', literal('14.2.0-next.1+sha-dc52cef'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     if (meta.isStandalone) {
@@ -22212,7 +22220,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('14.2.0-next.1+sha-0ca5eb3'));
+    definitionMap.set('version', literal('14.2.0-next.1+sha-dc52cef'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22254,7 +22262,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('14.2.0-next.1+sha-0ca5eb3'));
+    definitionMap.set('version', literal('14.2.0-next.1+sha-dc52cef'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22312,7 +22320,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('14.2.0-next.1+sha-0ca5eb3'));
+    definitionMap.set('version', literal('14.2.0-next.1+sha-dc52cef'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22349,7 +22357,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('14.2.0-next.1+sha-0ca5eb3'));
+    definitionMap.set('version', literal('14.2.0-next.1+sha-dc52cef'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22407,7 +22415,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('14.2.0-next.1+sha-0ca5eb3'));
+    definitionMap.set('version', literal('14.2.0-next.1+sha-dc52cef'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
