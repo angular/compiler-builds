@@ -1,5 +1,5 @@
 /**
- * @license Angular v14.3.0-next.0+sha-b6fbbea
+ * @license Angular v14.3.0-next.0+sha-54ceed5
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3069,6 +3069,10 @@ export declare interface R3DeclareDirectiveMetadata extends R3PartialDeclaration
      * Whether the directive is standalone. Defaults to false.
      */
     isStandalone?: boolean;
+    /**
+     * Additional directives applied to the directive host.
+     */
+    hostDirectives?: R3DeclareHostDirectiveMetadata[];
 }
 
 /**
@@ -3092,6 +3096,16 @@ export declare interface R3DeclareFactoryMetadata extends R3PartialDeclaration {
      * Type of the target being created by the factory.
      */
     target: FactoryTarget_2;
+}
+
+/**
+ * Describes the shape of the object literal that can be
+ * passed in as a part of the `hostDirectives` array.
+ */
+export declare interface R3DeclareHostDirectiveMetadata {
+    directive: outputAst.Expression;
+    inputs?: string[];
+    outputs?: string[];
 }
 
 /**
@@ -3423,6 +3437,10 @@ export declare interface R3DirectiveMetadata {
      * Whether or not the component or directive is standalone.
      */
     isStandalone: boolean;
+    /**
+     * Additional directives applied to the directive host.
+     */
+    hostDirectives: R3HostDirectiveMetadata[] | null;
 }
 
 declare interface R3ExpressionFactoryMetadata extends R3ConstructorFactoryMetadata {
@@ -3435,6 +3453,24 @@ declare enum R3FactoryDelegateType {
 }
 
 export declare type R3FactoryMetadata = R3ConstructorFactoryMetadata | R3DelegatedFnOrClassMetadata | R3ExpressionFactoryMetadata;
+
+/**
+ * Information needed to compile a host directive for the render3 runtime.
+ */
+export declare interface R3HostDirectiveMetadata {
+    /** An expression representing the host directive class itself. */
+    directive: R3Reference;
+    /** Whether the expression referring to the host directive is a forward reference. */
+    isForwardReference: boolean;
+    /** Inputs from the host directive that will be exposed on the host. */
+    inputs: {
+        [publicName: string]: string;
+    } | null;
+    /** Outputs from the host directive that will be exposed on the host. */
+    outputs: {
+        [publicName: string]: string;
+    } | null;
+}
 
 /**
  * Mappings indicating how the class interacts with its
@@ -3629,6 +3665,7 @@ export declare class R3Identifiers {
     static CopyDefinitionFeature: outputAst.ExternalReference;
     static StandaloneFeature: outputAst.ExternalReference;
     static ProvidersFeature: outputAst.ExternalReference;
+    static HostDirectivesFeature: outputAst.ExternalReference;
     static listener: outputAst.ExternalReference;
     static getInheritedFactory: outputAst.ExternalReference;
     static sanitizeHtml: outputAst.ExternalReference;
@@ -3895,7 +3932,7 @@ export declare enum R3SelectorScopeMode {
  */
 export declare class R3TargetBinder<DirectiveT extends DirectiveMeta> implements TargetBinder<DirectiveT> {
     private directiveMatcher;
-    constructor(directiveMatcher: SelectorMatcher<DirectiveT>);
+    constructor(directiveMatcher: SelectorMatcher<DirectiveT[]>);
     /**
      * Perform a binding operation on the given `Target` and return a `BoundTarget` which contains
      * metadata about the types referenced in the template.

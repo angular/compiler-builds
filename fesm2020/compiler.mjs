@@ -1,5 +1,5 @@
 /**
- * @license Angular v14.3.0-next.0+sha-b6fbbea
+ * @license Angular v14.3.0-next.0+sha-54ceed5
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2922,6 +2922,7 @@ Identifiers.InheritDefinitionFeature = { name: 'ɵɵInheritDefinitionFeature', m
 Identifiers.CopyDefinitionFeature = { name: 'ɵɵCopyDefinitionFeature', moduleName: CORE };
 Identifiers.StandaloneFeature = { name: 'ɵɵStandaloneFeature', moduleName: CORE };
 Identifiers.ProvidersFeature = { name: 'ɵɵProvidersFeature', moduleName: CORE };
+Identifiers.HostDirectivesFeature = { name: 'ɵɵHostDirectivesFeature', moduleName: CORE };
 Identifiers.listener = { name: 'ɵɵlistener', moduleName: CORE };
 Identifiers.getInheritedFactory = {
     name: 'ɵɵgetInheritedFactory',
@@ -18829,6 +18830,9 @@ function addFeatures(definitionMap, meta) {
     if (meta.hasOwnProperty('template') && meta.isStandalone) {
         features.push(importExpr(Identifiers.StandaloneFeature));
     }
+    if (meta.hostDirectives?.length) {
+        features.push(importExpr(Identifiers.HostDirectivesFeature).callFn([createHostDirectivesFeatureArg(meta.hostDirectives)]));
+    }
     if (features.length) {
         definitionMap.set('features', literalArr(features));
     }
@@ -18941,6 +18945,7 @@ function createComponentType(meta) {
     const typeParams = createBaseDirectiveTypeParams(meta);
     typeParams.push(stringArrayAsType(meta.template.ngContentSelectors));
     typeParams.push(expressionType(literal(meta.isStandalone)));
+    typeParams.push(createHostDirectivesType(meta));
     return expressionType(importExpr(Identifiers.ComponentDeclaration, typeParams));
 }
 /**
@@ -19016,7 +19021,7 @@ function createContentQueriesFunction(queries, constantPool, name) {
 function stringAsType(str) {
     return expressionType(literal(str));
 }
-function stringMapAsType(map) {
+function stringMapAsLiteralExpression(map) {
     const mapValues = Object.keys(map).map(key => {
         const value = Array.isArray(map[key]) ? map[key][0] : map[key];
         return {
@@ -19025,7 +19030,7 @@ function stringMapAsType(map) {
             quoted: true,
         };
     });
-    return expressionType(literalMap(mapValues));
+    return literalMap(mapValues);
 }
 function stringArrayAsType(arr) {
     return arr.length > 0 ? expressionType(literalArr(arr.map(value => literal(value)))) :
@@ -19039,8 +19044,8 @@ function createBaseDirectiveTypeParams(meta) {
         typeWithParameters(meta.type.type, meta.typeArgumentCount),
         selectorForType !== null ? stringAsType(selectorForType) : NONE_TYPE,
         meta.exportAs !== null ? stringArrayAsType(meta.exportAs) : NONE_TYPE,
-        stringMapAsType(meta.inputs),
-        stringMapAsType(meta.outputs),
+        expressionType(stringMapAsLiteralExpression(meta.inputs)),
+        expressionType(stringMapAsLiteralExpression(meta.outputs)),
         stringArrayAsType(meta.queries.map(q => q.propertyName)),
     ];
 }
@@ -19054,6 +19059,7 @@ function createDirectiveType(meta) {
     // so that future fields align.
     typeParams.push(NONE_TYPE);
     typeParams.push(expressionType(literal(meta.isStandalone)));
+    typeParams.push(createHostDirectivesType(meta));
     return expressionType(importExpr(Identifiers.DirectiveDeclaration, typeParams));
 }
 // Define and update any view queries
@@ -19357,6 +19363,68 @@ function compileStyles(styles, selector, hostSelector) {
         return shadowCss.shimCssText(style, selector, hostSelector);
     });
 }
+function createHostDirectivesType(meta) {
+    if (!meta.hostDirectives?.length) {
+        return NONE_TYPE;
+    }
+    return expressionType(literalArr(meta.hostDirectives.map(hostMeta => literalMap([
+        { key: 'directive', value: typeofExpr(hostMeta.directive.type), quoted: false },
+        { key: 'inputs', value: stringMapAsLiteralExpression(hostMeta.inputs || {}), quoted: false },
+        { key: 'outputs', value: stringMapAsLiteralExpression(hostMeta.outputs || {}), quoted: false },
+    ]))));
+}
+function createHostDirectivesFeatureArg(hostDirectives) {
+    const expressions = [];
+    let hasForwardRef = false;
+    for (const current of hostDirectives) {
+        // Use a shorthand if there are no inputs or outputs.
+        if (!current.inputs && !current.outputs) {
+            expressions.push(current.directive.type);
+        }
+        else {
+            const keys = [{ key: 'directive', value: current.directive.type, quoted: false }];
+            if (current.inputs) {
+                const inputsLiteral = createHostDirectivesMappingArray(current.inputs);
+                if (inputsLiteral) {
+                    keys.push({ key: 'inputs', value: inputsLiteral, quoted: false });
+                }
+            }
+            if (current.outputs) {
+                const outputsLiteral = createHostDirectivesMappingArray(current.outputs);
+                if (outputsLiteral) {
+                    keys.push({ key: 'outputs', value: outputsLiteral, quoted: false });
+                }
+            }
+            expressions.push(literalMap(keys));
+        }
+        if (current.isForwardReference) {
+            hasForwardRef = true;
+        }
+    }
+    // If there's a forward reference, we generate a `function() { return [HostDir] }`,
+    // otherwise we can save some bytes by using a plain array, e.g. `[HostDir]`.
+    return hasForwardRef ?
+        new FunctionExpr([], [new ReturnStatement(literalArr(expressions))]) :
+        literalArr(expressions);
+}
+/**
+ * Converts an input/output mapping object literal into an array where the even keys are the
+ * public name of the binding and the odd ones are the name it was aliased to. E.g.
+ * `{inputOne: 'aliasOne', inputTwo: 'aliasTwo'}` will become
+ * `['inputOne', 'aliasOne', 'inputTwo', 'aliasTwo']`.
+ *
+ * This conversion is necessary, because hosts bind to the public name of the host directive and
+ * keeping the mapping in an object literal will break for apps using property renaming.
+ */
+function createHostDirectivesMappingArray(mapping) {
+    const elements = [];
+    for (const publicName in mapping) {
+        if (mapping.hasOwnProperty(publicName)) {
+            elements.push(literal(publicName), literal(mapping[publicName]));
+        }
+    }
+    return elements.length > 0 ? literalArr(elements) : null;
+}
 
 /**
  * @license
@@ -19638,6 +19706,7 @@ function convertDirectiveFacadeToMetadata(facade) {
         providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null,
         viewQueries: facade.viewQueries.map(convertToR3QueryMetadata),
         fullInheritance: false,
+        hostDirectives: convertHostDirectivesToMetadata(facade),
     };
 }
 function convertDeclareDirectiveFacadeToMetadata(declaration, typeSourceSpan) {
@@ -19661,6 +19730,7 @@ function convertDeclareDirectiveFacadeToMetadata(declaration, typeSourceSpan) {
         typeArgumentCount: 0,
         fullInheritance: false,
         isStandalone: declaration.isStandalone ?? false,
+        hostDirectives: convertHostDirectivesToMetadata(declaration),
     };
 }
 function convertHostDeclarationToMetadata(host = {}) {
@@ -19673,6 +19743,26 @@ function convertHostDeclarationToMetadata(host = {}) {
             styleAttr: host.styleAttribute,
         },
     };
+}
+function convertHostDirectivesToMetadata(metadata) {
+    if (metadata.hostDirectives?.length) {
+        return metadata.hostDirectives.map(hostDirective => {
+            return typeof hostDirective === 'function' ?
+                {
+                    directive: wrapReference(hostDirective),
+                    inputs: null,
+                    outputs: null,
+                    isForwardReference: false
+                } :
+                {
+                    directive: wrapReference(hostDirective.directive),
+                    isForwardReference: false,
+                    inputs: hostDirective.inputs ? parseInputOutputs(hostDirective.inputs) : null,
+                    outputs: hostDirective.outputs ? parseInputOutputs(hostDirective.outputs) : null,
+                };
+        });
+    }
+    return null;
 }
 function convertOpaqueValuesToExpressions(obj) {
     const result = {};
@@ -19904,7 +19994,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('14.3.0-next.0+sha-b6fbbea');
+const VERSION = new Version('14.3.0-next.0+sha-54ceed5');
 
 /**
  * @license
@@ -21606,7 +21696,7 @@ class DirectiveBinder {
         const cssSelector = createCssSelector(elementName, getAttrsForDirectiveMatching(node));
         // Next, use the `SelectorMatcher` to get the list of directives on the node.
         const directives = [];
-        this.matcher.match(cssSelector, (_, directive) => directives.push(directive));
+        this.matcher.match(cssSelector, (_selector, results) => directives.push(...results));
         if (directives.length > 0) {
             this.directives.set(node, directives);
         }
@@ -21937,7 +22027,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('14.3.0-next.0+sha-b6fbbea'));
+    definitionMap.set('version', literal('14.3.0-next.0+sha-54ceed5'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -22054,7 +22144,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('14.3.0-next.0+sha-b6fbbea'));
+    definitionMap.set('version', literal('14.3.0-next.0+sha-54ceed5'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     if (meta.isStandalone) {
@@ -22082,6 +22172,9 @@ function createDirectiveDefinitionMap(meta) {
     }
     if (meta.lifecycle.usesOnChanges) {
         definitionMap.set('usesOnChanges', literal(true));
+    }
+    if (meta.hostDirectives?.length) {
+        definitionMap.set('hostDirectives', createHostDirectives(meta.hostDirectives));
     }
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     return definitionMap;
@@ -22136,6 +22229,28 @@ function compileHostMetadata(meta) {
     else {
         return null;
     }
+}
+function createHostDirectives(hostDirectives) {
+    const expressions = hostDirectives.map(current => {
+        const keys = [{
+                key: 'directive',
+                value: current.isForwardReference ? generateForwardRef(current.directive.type) :
+                    current.directive.type,
+                quoted: false
+            }];
+        const inputsLiteral = current.inputs ? createHostDirectivesMappingArray(current.inputs) : null;
+        const outputsLiteral = current.outputs ? createHostDirectivesMappingArray(current.outputs) : null;
+        if (inputsLiteral) {
+            keys.push({ key: 'inputs', value: inputsLiteral, quoted: false });
+        }
+        if (outputsLiteral) {
+            keys.push({ key: 'outputs', value: outputsLiteral, quoted: false });
+        }
+        return literalMap(keys);
+    });
+    // If there's a forward reference, we generate a `function() { return [{directive: HostDir}] }`,
+    // otherwise we can save some bytes by using a plain array, e.g. `[{directive: HostDir}]`.
+    return literalArr(expressions);
 }
 
 /**
@@ -22268,7 +22383,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('14.3.0-next.0+sha-b6fbbea'));
+    definitionMap.set('version', literal('14.3.0-next.0+sha-54ceed5'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22310,7 +22425,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('14.3.0-next.0+sha-b6fbbea'));
+    definitionMap.set('version', literal('14.3.0-next.0+sha-54ceed5'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22368,7 +22483,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('14.3.0-next.0+sha-b6fbbea'));
+    definitionMap.set('version', literal('14.3.0-next.0+sha-54ceed5'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22405,7 +22520,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('14.3.0-next.0+sha-b6fbbea'));
+    definitionMap.set('version', literal('14.3.0-next.0+sha-54ceed5'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22463,7 +22578,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('14.3.0-next.0+sha-b6fbbea'));
+    definitionMap.set('version', literal('14.3.0-next.0+sha-54ceed5'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
