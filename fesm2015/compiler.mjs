@@ -1,5 +1,5 @@
 /**
- * @license Angular v14.2.0+sha-6091786
+ * @license Angular v14.2.0+sha-0e35829
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -14778,42 +14778,42 @@ const SCHEMA = [
     'time^[HTMLElement]|dateTime',
     ':svg:cursor^:svg:|',
 ];
-const _ATTR_TO_PROP = {
+const _ATTR_TO_PROP = new Map(Object.entries({
     'class': 'className',
     'for': 'htmlFor',
     'formaction': 'formAction',
     'innerHtml': 'innerHTML',
     'readonly': 'readOnly',
     'tabindex': 'tabIndex',
-};
+}));
 // Invert _ATTR_TO_PROP.
-const _PROP_TO_ATTR = Object.keys(_ATTR_TO_PROP).reduce((inverted, attr) => {
-    inverted[_ATTR_TO_PROP[attr]] = attr;
+const _PROP_TO_ATTR = Array.from(_ATTR_TO_PROP).reduce((inverted, [propertyName, attributeName]) => {
+    inverted.set(propertyName, attributeName);
     return inverted;
-}, {});
+}, new Map());
 class DomElementSchemaRegistry extends ElementSchemaRegistry {
     constructor() {
         super();
-        this._schema = {};
+        this._schema = new Map();
         // We don't allow binding to events for security reasons. Allowing event bindings would almost
         // certainly introduce bad XSS vulnerabilities. Instead, we store events in a separate schema.
-        this._eventSchema = {};
+        this._eventSchema = new Map;
         SCHEMA.forEach(encodedType => {
-            const type = {};
+            const type = new Map();
             const events = new Set();
             const [strType, strProperties] = encodedType.split('|');
             const properties = strProperties.split(',');
             const [typeNames, superName] = strType.split('^');
             typeNames.split(',').forEach(tag => {
-                this._schema[tag.toLowerCase()] = type;
-                this._eventSchema[tag.toLowerCase()] = events;
+                this._schema.set(tag.toLowerCase(), type);
+                this._eventSchema.set(tag.toLowerCase(), events);
             });
-            const superType = superName && this._schema[superName.toLowerCase()];
+            const superType = superName && this._schema.get(superName.toLowerCase());
             if (superType) {
-                Object.keys(superType).forEach((prop) => {
-                    type[prop] = superType[prop];
-                });
-                for (const superEvent of this._eventSchema[superName.toLowerCase()]) {
+                for (const [prop, value] of superType) {
+                    type.set(prop, value);
+                }
+                for (const superEvent of this._eventSchema.get(superName.toLowerCase())) {
                     events.add(superEvent);
                 }
             }
@@ -14824,16 +14824,16 @@ class DomElementSchemaRegistry extends ElementSchemaRegistry {
                             events.add(property.substring(1));
                             break;
                         case '!':
-                            type[property.substring(1)] = BOOLEAN;
+                            type.set(property.substring(1), BOOLEAN);
                             break;
                         case '#':
-                            type[property.substring(1)] = NUMBER;
+                            type.set(property.substring(1), NUMBER);
                             break;
                         case '%':
-                            type[property.substring(1)] = OBJECT;
+                            type.set(property.substring(1), OBJECT);
                             break;
                         default:
-                            type[property] = STRING;
+                            type.set(property, STRING);
                     }
                 }
             });
@@ -14853,8 +14853,8 @@ class DomElementSchemaRegistry extends ElementSchemaRegistry {
                 return true;
             }
         }
-        const elementProperties = this._schema[tagName.toLowerCase()] || this._schema['unknown'];
-        return !!elementProperties[propName];
+        const elementProperties = this._schema.get(tagName.toLowerCase()) || this._schema.get('unknown');
+        return elementProperties.has(propName);
     }
     hasElement(tagName, schemaMetas) {
         if (schemaMetas.some((schema) => schema.name === NO_ERRORS_SCHEMA.name)) {
@@ -14869,7 +14869,7 @@ class DomElementSchemaRegistry extends ElementSchemaRegistry {
                 return true;
             }
         }
-        return !!this._schema[tagName.toLowerCase()];
+        return this._schema.has(tagName.toLowerCase());
     }
     /**
      * securityContext returns the security context for the given property on the given DOM tag.
@@ -14898,7 +14898,8 @@ class DomElementSchemaRegistry extends ElementSchemaRegistry {
         return ctx ? ctx : SecurityContext.NONE;
     }
     getMappedPropName(propName) {
-        return _ATTR_TO_PROP[propName] || propName;
+        var _a;
+        return (_a = _ATTR_TO_PROP.get(propName)) !== null && _a !== void 0 ? _a : propName;
     }
     getDefaultComponentElementName() {
         return 'ng-component';
@@ -14926,16 +14927,16 @@ class DomElementSchemaRegistry extends ElementSchemaRegistry {
         }
     }
     allKnownElementNames() {
-        return Object.keys(this._schema);
+        return Array.from(this._schema.keys());
     }
     allKnownAttributesOfElement(tagName) {
-        const elementProperties = this._schema[tagName.toLowerCase()] || this._schema['unknown'];
+        const elementProperties = this._schema.get(tagName.toLowerCase()) || this._schema.get('unknown');
         // Convert properties to attributes.
-        return Object.keys(elementProperties).map(prop => { var _a; return (_a = _PROP_TO_ATTR[prop]) !== null && _a !== void 0 ? _a : prop; });
+        return Array.from(elementProperties.keys()).map(prop => { var _a; return (_a = _PROP_TO_ATTR.get(prop)) !== null && _a !== void 0 ? _a : prop; });
     }
     allKnownEventsOfElement(tagName) {
         var _a;
-        return Array.from((_a = this._eventSchema[tagName.toLowerCase()]) !== null && _a !== void 0 ? _a : []);
+        return Array.from((_a = this._eventSchema.get(tagName.toLowerCase())) !== null && _a !== void 0 ? _a : []);
     }
     normalizeAnimationStyleProperty(propName) {
         return dashCaseToCamelCase(propName);
@@ -19862,7 +19863,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('14.2.0+sha-6091786');
+const VERSION = new Version('14.2.0+sha-0e35829');
 
 /**
  * @license
@@ -21889,7 +21890,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('14.2.0+sha-6091786'));
+    definitionMap.set('version', literal('14.2.0+sha-0e35829'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -22006,7 +22007,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('14.2.0+sha-6091786'));
+    definitionMap.set('version', literal('14.2.0+sha-0e35829'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     if (meta.isStandalone) {
@@ -22220,7 +22221,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('14.2.0+sha-6091786'));
+    definitionMap.set('version', literal('14.2.0+sha-0e35829'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22262,7 +22263,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('14.2.0+sha-6091786'));
+    definitionMap.set('version', literal('14.2.0+sha-0e35829'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22320,7 +22321,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('14.2.0+sha-6091786'));
+    definitionMap.set('version', literal('14.2.0+sha-0e35829'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22357,7 +22358,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('14.2.0+sha-6091786'));
+    definitionMap.set('version', literal('14.2.0+sha-0e35829'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22415,7 +22416,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('14.2.0+sha-6091786'));
+    definitionMap.set('version', literal('14.2.0+sha-0e35829'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
