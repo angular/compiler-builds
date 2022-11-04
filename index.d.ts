@@ -1,5 +1,5 @@
 /**
- * @license Angular v15.0.0-rc.1+sha-d4b3c0b
+ * @license Angular v15.0.0-rc.1+sha-173dde7
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3674,8 +3674,6 @@ export declare class R3Identifiers {
     static sanitizeUrlOrResourceUrl: outputAst.ExternalReference;
     static trustConstantHtml: outputAst.ExternalReference;
     static trustConstantResourceUrl: outputAst.ExternalReference;
-    static validateIframeAttribute: outputAst.ExternalReference;
-    static validateIframeStaticAttributes: outputAst.ExternalReference;
 }
 
 export declare interface R3InjectableMetadata {

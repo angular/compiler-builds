@@ -1,5 +1,5 @@
 /**
- * @license Angular v15.0.0-rc.1+sha-d4b3c0b
+ * @license Angular v15.0.0-rc.1+sha-173dde7
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2937,8 +2937,6 @@ Identifiers.sanitizeUrl = { name: 'ɵɵsanitizeUrl', moduleName: CORE };
 Identifiers.sanitizeUrlOrResourceUrl = { name: 'ɵɵsanitizeUrlOrResourceUrl', moduleName: CORE };
 Identifiers.trustConstantHtml = { name: 'ɵɵtrustConstantHtml', moduleName: CORE };
 Identifiers.trustConstantResourceUrl = { name: 'ɵɵtrustConstantResourceUrl', moduleName: CORE };
-Identifiers.validateIframeAttribute = { name: 'ɵɵvalidateIframeAttribute', moduleName: CORE };
-Identifiers.validateIframeStaticAttributes = { name: 'ɵɵvalidateIframeStaticAttributes', moduleName: CORE };
 
 /**
  * @license
@@ -7683,101 +7681,6 @@ class BuiltinFunctionCall extends Call {
         super(span, sourceSpan, new EmptyExpr(span, sourceSpan), args, null);
         this.converter = converter;
     }
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-// =================================================================================================
-// =================================================================================================
-// =========== S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P  ===========
-// =================================================================================================
-// =================================================================================================
-//
-//        DO NOT EDIT THIS LIST OF SECURITY SENSITIVE PROPERTIES WITHOUT A SECURITY REVIEW!
-//                               Reach out to mprobst for details.
-//
-// =================================================================================================
-/** Map from tagName|propertyName to SecurityContext. Properties applying to all tags use '*'. */
-let _SECURITY_SCHEMA;
-function SECURITY_SCHEMA() {
-    if (!_SECURITY_SCHEMA) {
-        _SECURITY_SCHEMA = {};
-        // Case is insignificant below, all element and attribute names are lower-cased for lookup.
-        registerContext(SecurityContext.HTML, [
-            'iframe|srcdoc',
-            '*|innerHTML',
-            '*|outerHTML',
-        ]);
-        registerContext(SecurityContext.STYLE, ['*|style']);
-        // NB: no SCRIPT contexts here, they are never allowed due to the parser stripping them.
-        registerContext(SecurityContext.URL, [
-            '*|formAction',
-            'area|href',
-            'area|ping',
-            'audio|src',
-            'a|href',
-            'a|ping',
-            'blockquote|cite',
-            'body|background',
-            'del|cite',
-            'form|action',
-            'img|src',
-            'input|src',
-            'ins|cite',
-            'q|cite',
-            'source|src',
-            'track|src',
-            'video|poster',
-            'video|src',
-        ]);
-        registerContext(SecurityContext.RESOURCE_URL, [
-            'applet|code',
-            'applet|codebase',
-            'base|href',
-            'embed|src',
-            'frame|src',
-            'head|profile',
-            'html|manifest',
-            'iframe|src',
-            'link|href',
-            'media|src',
-            'object|codebase',
-            'object|data',
-            'script|src',
-        ]);
-    }
-    return _SECURITY_SCHEMA;
-}
-function registerContext(ctx, specs) {
-    for (const spec of specs)
-        _SECURITY_SCHEMA[spec.toLowerCase()] = ctx;
-}
-/**
- * The set of security-sensitive attributes of an `<iframe>` that *must* be
- * applied before setting the `src` or `srcdoc` attribute value.
- * This ensures that all security-sensitive attributes are taken into account
- * while creating an instance of an `<iframe>` at runtime.
- *
- * Keep this list in sync with the `IFRAME_SECURITY_SENSITIVE_ATTRS` token
- * from the `packages/core/src/sanitization/iframe_attrs_validation.ts` script.
- *
- * Avoid using this set directly, use the `isIframeSecuritySensitiveAttr` function
- * in the code instead.
- */
-const IFRAME_SECURITY_SENSITIVE_ATTRS = new Set(['sandbox', 'allow', 'allowfullscreen', 'referrerpolicy', 'loading', 'csp', 'fetchpriority']);
-/**
- * Checks whether a given attribute name might represent a security-sensitive
- * attribute of an <iframe>.
- */
-function isIframeSecuritySensitiveAttr(attrName) {
-    // The `setAttribute` DOM API is case-insensitive, so we lowercase the value
-    // before checking it against a known security-sensitive attributes.
-    return IFRAME_SECURITY_SENSITIVE_ATTRS.has(attrName.toLowerCase());
 }
 
 /**
@@ -14878,6 +14781,79 @@ function mapLiteral(obj, quoted = false) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+// =================================================================================================
+// =================================================================================================
+// =========== S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P  ===========
+// =================================================================================================
+// =================================================================================================
+//
+//        DO NOT EDIT THIS LIST OF SECURITY SENSITIVE PROPERTIES WITHOUT A SECURITY REVIEW!
+//                               Reach out to mprobst for details.
+//
+// =================================================================================================
+/** Map from tagName|propertyName to SecurityContext. Properties applying to all tags use '*'. */
+let _SECURITY_SCHEMA;
+function SECURITY_SCHEMA() {
+    if (!_SECURITY_SCHEMA) {
+        _SECURITY_SCHEMA = {};
+        // Case is insignificant below, all element and attribute names are lower-cased for lookup.
+        registerContext(SecurityContext.HTML, [
+            'iframe|srcdoc',
+            '*|innerHTML',
+            '*|outerHTML',
+        ]);
+        registerContext(SecurityContext.STYLE, ['*|style']);
+        // NB: no SCRIPT contexts here, they are never allowed due to the parser stripping them.
+        registerContext(SecurityContext.URL, [
+            '*|formAction',
+            'area|href',
+            'area|ping',
+            'audio|src',
+            'a|href',
+            'a|ping',
+            'blockquote|cite',
+            'body|background',
+            'del|cite',
+            'form|action',
+            'img|src',
+            'input|src',
+            'ins|cite',
+            'q|cite',
+            'source|src',
+            'track|src',
+            'video|poster',
+            'video|src',
+        ]);
+        registerContext(SecurityContext.RESOURCE_URL, [
+            'applet|code',
+            'applet|codebase',
+            'base|href',
+            'embed|src',
+            'frame|src',
+            'head|profile',
+            'html|manifest',
+            'iframe|src',
+            'link|href',
+            'media|src',
+            'object|codebase',
+            'object|data',
+            'script|src',
+        ]);
+    }
+    return _SECURITY_SCHEMA;
+}
+function registerContext(ctx, specs) {
+    for (const spec of specs)
+        _SECURITY_SCHEMA[spec.toLowerCase()] = ctx;
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class ElementSchemaRegistry {
 }
 
@@ -17847,15 +17823,6 @@ class TemplateDefinitionBuilder {
         // local refs (ex.: <div #foo #bar="baz">)
         const refs = this.prepareRefsArray(element.references);
         parameters.push(this.addToConsts(refs));
-        // If this element is an <iframe>, append an extra validation
-        // function, which would be invoked at runtime to make sure that
-        // all security-sensitive attributes defined statically (both on
-        // the element itself as well as on all matched directives) are
-        // set on the underlying <iframe> *before* setting its `src` or
-        // `srcdoc` (otherwise they'd not be taken into account).
-        if (isIframeElement(element.name)) {
-            parameters.push(importExpr(Identifiers.validateIframeStaticAttributes));
-        }
         const wasInNamespace = this._namespace;
         const currentNamespace = this.getNamespaceInstruction(namespaceKey);
         // If the namespace is changing now, include an instruction to change it
@@ -17943,19 +17910,9 @@ class TemplateDefinitionBuilder {
                     const params = [];
                     const [attrNamespace, attrName] = splitNsName(input.name);
                     const isAttributeBinding = inputType === 1 /* BindingType.Attribute */;
-                    let sanitizationRef = resolveSanitizationFn(input.securityContext, isAttributeBinding);
-                    if (!sanitizationRef) {
-                        // If there was no sanitization function found based on the security context
-                        // of an attribute/property - check whether this attribute/property is
-                        // one of the security-sensitive <iframe> attributes (and that the current
-                        // element is actually an <iframe>).
-                        if (isIframeElement(element.name) && isIframeSecuritySensitiveAttr(input.name)) {
-                            sanitizationRef = importExpr(Identifiers.validateIframeAttribute);
-                        }
-                    }
-                    if (sanitizationRef) {
+                    const sanitizationRef = resolveSanitizationFn(input.securityContext, isAttributeBinding);
+                    if (sanitizationRef)
                         params.push(sanitizationRef);
-                    }
                     if (attrNamespace) {
                         const namespaceLiteral = literal(attrNamespace);
                         if (sanitizationRef) {
@@ -19020,9 +18977,6 @@ function isSingleElementTemplate(children) {
 function isTextNode(node) {
     return node instanceof Text$3 || node instanceof BoundText || node instanceof Icu$1;
 }
-function isIframeElement(tagName) {
-    return tagName.toLowerCase() === 'iframe';
-}
 function hasTextChildrenOnly(children) {
     return children.every(isTextNode);
 }
@@ -19504,20 +19458,6 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
         const instructionParams = [literal(bindingName), bindingExpr.currValExpr];
         if (sanitizerFn) {
             instructionParams.push(sanitizerFn);
-        }
-        else {
-            // If there was no sanitization function found based on the security context
-            // of an attribute/property binding - check whether this attribute/property is
-            // one of the security-sensitive <iframe> attributes.
-            // Note: for host bindings defined on a directive, we do not try to find all
-            // possible places where it can be matched, so we can not determine whether
-            // the host element is an <iframe>. In this case, if an attribute/binding
-            // name is in the `IFRAME_SECURITY_SENSITIVE_ATTRS` set - append a validation
-            // function, which would be invoked at runtime and would have access to the
-            // underlying DOM element, check if it's an <iframe> and if so - runs extra checks.
-            if (isIframeSecuritySensitiveAttr(bindingName)) {
-                instructionParams.push(importExpr(Identifiers.validateIframeAttribute));
-            }
         }
         updateVariables.push(...bindingExpr.stmts);
         if (instruction === Identifiers.hostProperty) {
@@ -20347,7 +20287,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('15.0.0-rc.1+sha-d4b3c0b');
+const VERSION = new Version('15.0.0-rc.1+sha-173dde7');
 
 /**
  * @license
@@ -22379,7 +22319,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('15.0.0-rc.1+sha-d4b3c0b'));
+    definitionMap.set('version', literal('15.0.0-rc.1+sha-173dde7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -22496,7 +22436,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('15.0.0-rc.1+sha-d4b3c0b'));
+    definitionMap.set('version', literal('15.0.0-rc.1+sha-173dde7'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     if (meta.isStandalone) {
@@ -22735,7 +22675,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('15.0.0-rc.1+sha-d4b3c0b'));
+    definitionMap.set('version', literal('15.0.0-rc.1+sha-173dde7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22777,7 +22717,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('15.0.0-rc.1+sha-d4b3c0b'));
+    definitionMap.set('version', literal('15.0.0-rc.1+sha-173dde7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22835,7 +22775,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('15.0.0-rc.1+sha-d4b3c0b'));
+    definitionMap.set('version', literal('15.0.0-rc.1+sha-173dde7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22872,7 +22812,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('15.0.0-rc.1+sha-d4b3c0b'));
+    definitionMap.set('version', literal('15.0.0-rc.1+sha-173dde7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22930,7 +22870,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('15.0.0-rc.1+sha-d4b3c0b'));
+    definitionMap.set('version', literal('15.0.0-rc.1+sha-173dde7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
