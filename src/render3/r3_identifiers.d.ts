@@ -177,4 +177,5 @@ export declare class Identifiers {
     static sanitizeUrlOrResourceUrl: o.ExternalReference;
     static trustConstantHtml: o.ExternalReference;
     static trustConstantResourceUrl: o.ExternalReference;
+    static validateIframeAttribute: o.ExternalReference;
 }
