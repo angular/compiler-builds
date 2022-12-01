@@ -1,5 +1,5 @@
 /**
- * @license Angular v15.1.0-next.1+sha-27eaded
+ * @license Angular v15.1.0-next.1+sha-7f36221
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -665,135 +665,6 @@ var core = /*#__PURE__*/Object.freeze({
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const DASH_CASE_REGEXP = /-+([a-z0-9])/g;
-function dashCaseToCamelCase(input) {
-    return input.replace(DASH_CASE_REGEXP, (...m) => m[1].toUpperCase());
-}
-function splitAtColon(input, defaultValues) {
-    return _splitAt(input, ':', defaultValues);
-}
-function splitAtPeriod(input, defaultValues) {
-    return _splitAt(input, '.', defaultValues);
-}
-function _splitAt(input, character, defaultValues) {
-    const characterIndex = input.indexOf(character);
-    if (characterIndex == -1)
-        return defaultValues;
-    return [input.slice(0, characterIndex).trim(), input.slice(characterIndex + 1).trim()];
-}
-function noUndefined(val) {
-    return val === undefined ? null : val;
-}
-function error(msg) {
-    throw new Error(`Internal Error: ${msg}`);
-}
-// Escape characters that have a special meaning in Regular Expressions
-function escapeRegExp(s) {
-    return s.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
-}
-function utf8Encode(str) {
-    let encoded = [];
-    for (let index = 0; index < str.length; index++) {
-        let codePoint = str.charCodeAt(index);
-        // decode surrogate
-        // see https://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
-        if (codePoint >= 0xd800 && codePoint <= 0xdbff && str.length > (index + 1)) {
-            const low = str.charCodeAt(index + 1);
-            if (low >= 0xdc00 && low <= 0xdfff) {
-                index++;
-                codePoint = ((codePoint - 0xd800) << 10) + low - 0xdc00 + 0x10000;
-            }
-        }
-        if (codePoint <= 0x7f) {
-            encoded.push(codePoint);
-        }
-        else if (codePoint <= 0x7ff) {
-            encoded.push(((codePoint >> 6) & 0x1F) | 0xc0, (codePoint & 0x3f) | 0x80);
-        }
-        else if (codePoint <= 0xffff) {
-            encoded.push((codePoint >> 12) | 0xe0, ((codePoint >> 6) & 0x3f) | 0x80, (codePoint & 0x3f) | 0x80);
-        }
-        else if (codePoint <= 0x1fffff) {
-            encoded.push(((codePoint >> 18) & 0x07) | 0xf0, ((codePoint >> 12) & 0x3f) | 0x80, ((codePoint >> 6) & 0x3f) | 0x80, (codePoint & 0x3f) | 0x80);
-        }
-    }
-    return encoded;
-}
-function stringify(token) {
-    if (typeof token === 'string') {
-        return token;
-    }
-    if (Array.isArray(token)) {
-        return '[' + token.map(stringify).join(', ') + ']';
-    }
-    if (token == null) {
-        return '' + token;
-    }
-    if (token.overriddenName) {
-        return `${token.overriddenName}`;
-    }
-    if (token.name) {
-        return `${token.name}`;
-    }
-    if (!token.toString) {
-        return 'object';
-    }
-    // WARNING: do not try to `JSON.stringify(token)` here
-    // see https://github.com/angular/angular/issues/23440
-    const res = token.toString();
-    if (res == null) {
-        return '' + res;
-    }
-    const newLineIndex = res.indexOf('\n');
-    return newLineIndex === -1 ? res : res.substring(0, newLineIndex);
-}
-class Version {
-    constructor(full) {
-        this.full = full;
-        const splits = full.split('.');
-        this.major = splits[0];
-        this.minor = splits[1];
-        this.patch = splits.slice(2).join('.');
-    }
-}
-// Check `global` first, because in Node tests both `global` and `window` may be defined and our
-// `_global` variable should point to the NodeJS `global` in that case. Note: Typeof/Instanceof
-// checks are considered side-effects in Terser. We explicitly mark this as side-effect free:
-// https://github.com/terser/terser/issues/250.
-const _global = ( /* @__PURE__ */(() => (typeof global !== 'undefined' && global) || (typeof window !== 'undefined' && window) ||
-    (typeof self !== 'undefined' && typeof WorkerGlobalScope !== 'undefined' &&
-        self instanceof WorkerGlobalScope && self))());
-function newArray(size, value) {
-    const list = [];
-    for (let i = 0; i < size; i++) {
-        list.push(value);
-    }
-    return list;
-}
-/**
- * Partitions a given array into 2 arrays, based on a boolean value returned by the condition
- * function.
- *
- * @param arr Input array that should be partitioned
- * @param conditionFn Condition function that is called for each item in a given array and returns a
- * boolean value.
- */
-function partitionArray(arr, conditionFn) {
-    const truthy = [];
-    const falsy = [];
-    for (const item of arr) {
-        (conditionFn(item) ? truthy : falsy).push(item);
-    }
-    return [truthy, falsy];
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * Represents a big integer using a buffer of its individual digits, with the least significant
  * digit stored at the beginning of the array (little endian).
@@ -975,6 +846,10 @@ class BigIntExponentiation {
  * found in the LICENSE file at https://angular.io/license
  */
 /**
+ * A lazily created TextEncoder instance for converting strings into UTF-8 bytes
+ */
+let textEncoder;
+/**
  * Return the message id or compute it using the XLIFF1 digest.
  */
 function digest$1(message) {
@@ -1057,10 +932,11 @@ class _SerializerIgnoreIcuExpVisitor extends _SerializerVisitor {
  *          DO NOT USE IT IN A SECURITY SENSITIVE CONTEXT.
  */
 function sha1(str) {
-    const utf8 = utf8Encode(str);
+    textEncoder ?? (textEncoder = new TextEncoder());
+    const utf8 = [...textEncoder.encode(str)];
     const words32 = bytesToWords32(utf8, Endian.Big);
     const len = utf8.length * 8;
-    const w = newArray(80);
+    const w = new Uint32Array(80);
     let a = 0x67452301, b = 0xefcdab89, c = 0x98badcfe, d = 0x10325476, e = 0xc3d2e1f0;
     words32[len >> 5] |= 0x80 << (24 - len % 32);
     words32[((len + 64 >> 9) << 4) + 15] = len;
@@ -1112,9 +988,11 @@ function fk(index, b, c, d) {
  * https://github.com/google/closure-compiler/blob/master/src/com/google/javascript/jscomp/GoogleJsMessageIdGenerator.java
  */
 function fingerprint(str) {
-    const utf8 = utf8Encode(str);
-    let hi = hash32(utf8, 0);
-    let lo = hash32(utf8, 102072);
+    textEncoder ?? (textEncoder = new TextEncoder());
+    const utf8 = textEncoder.encode(str);
+    const view = new DataView(utf8.buffer, utf8.byteOffset, utf8.byteLength);
+    let hi = hash32(view, utf8.length, 0);
+    let lo = hash32(view, utf8.length, 102072);
     if (hi == 0 && (lo == 0 || lo == 1)) {
         hi = hi ^ 0x130f9bef;
         lo = lo ^ -0x6b5f56d8;
@@ -1131,52 +1009,92 @@ function computeMsgId(msg, meaning = '') {
     const lo = msgFingerprint[1];
     return wordsToDecimalString(hi & 0x7fffffff, lo);
 }
-function hash32(bytes, c) {
+function hash32(view, length, c) {
     let a = 0x9e3779b9, b = 0x9e3779b9;
-    let i;
-    const len = bytes.length;
-    for (i = 0; i + 12 <= len; i += 12) {
-        a = add32(a, wordAt(bytes, i, Endian.Little));
-        b = add32(b, wordAt(bytes, i + 4, Endian.Little));
-        c = add32(c, wordAt(bytes, i + 8, Endian.Little));
+    let index = 0;
+    const end = length - 12;
+    for (; index <= end; index += 12) {
+        a += view.getUint32(index, true);
+        b += view.getUint32(index + 4, true);
+        c += view.getUint32(index + 8, true);
         const res = mix(a, b, c);
         a = res[0], b = res[1], c = res[2];
     }
-    a = add32(a, wordAt(bytes, i, Endian.Little));
-    b = add32(b, wordAt(bytes, i + 4, Endian.Little));
+    const remainder = length - index;
     // the first byte of c is reserved for the length
-    c = add32(c, len);
-    c = add32(c, wordAt(bytes, i + 8, Endian.Little) << 8);
+    c += length;
+    if (remainder >= 4) {
+        a += view.getUint32(index, true);
+        index += 4;
+        if (remainder >= 8) {
+            b += view.getUint32(index, true);
+            index += 4;
+            // Partial 32-bit word for c
+            if (remainder >= 9) {
+                c += view.getUint8(index++) << 8;
+            }
+            if (remainder >= 10) {
+                c += view.getUint8(index++) << 16;
+            }
+            if (remainder === 11) {
+                c += view.getUint8(index++) << 24;
+            }
+        }
+        else {
+            // Partial 32-bit word for b
+            if (remainder >= 5) {
+                b += view.getUint8(index++);
+            }
+            if (remainder >= 6) {
+                b += view.getUint8(index++) << 8;
+            }
+            if (remainder === 7) {
+                b += view.getUint8(index++) << 16;
+            }
+        }
+    }
+    else {
+        // Partial 32-bit word for a
+        if (remainder >= 1) {
+            a += view.getUint8(index++);
+        }
+        if (remainder >= 2) {
+            a += view.getUint8(index++) << 8;
+        }
+        if (remainder === 3) {
+            a += view.getUint8(index++) << 16;
+        }
+    }
     return mix(a, b, c)[2];
 }
 // clang-format off
 function mix(a, b, c) {
-    a = sub32(a, b);
-    a = sub32(a, c);
+    a -= b;
+    a -= c;
     a ^= c >>> 13;
-    b = sub32(b, c);
-    b = sub32(b, a);
+    b -= c;
+    b -= a;
     b ^= a << 8;
-    c = sub32(c, a);
-    c = sub32(c, b);
+    c -= a;
+    c -= b;
     c ^= b >>> 13;
-    a = sub32(a, b);
-    a = sub32(a, c);
+    a -= b;
+    a -= c;
     a ^= c >>> 12;
-    b = sub32(b, c);
-    b = sub32(b, a);
+    b -= c;
+    b -= a;
     b ^= a << 16;
-    c = sub32(c, a);
-    c = sub32(c, b);
+    c -= a;
+    c -= b;
     c ^= b >>> 5;
-    a = sub32(a, b);
-    a = sub32(a, c);
+    a -= b;
+    a -= c;
     a ^= c >>> 3;
-    b = sub32(b, c);
-    b = sub32(b, a);
+    b -= c;
+    b -= a;
     b ^= a << 10;
-    c = sub32(c, a);
-    c = sub32(c, b);
+    c -= a;
+    c -= b;
     c ^= b >>> 15;
     return [a, b, c];
 }
@@ -1203,11 +1121,6 @@ function add64(a, b) {
     const l = result[1];
     const h = add32(add32(ah, bh), carry);
     return [h, l];
-}
-function sub32(a, b) {
-    const low = (a & 0xffff) - (b & 0xffff);
-    const high = (a >> 16) - (b >> 16) + (low >> 16);
-    return (high << 16) | (low & 0xffff);
 }
 // Rotate a 32b number left `count` position
 function rol32(a, count) {
@@ -2938,6 +2851,135 @@ Identifiers.sanitizeUrlOrResourceUrl = { name: 'ɵɵsanitizeUrlOrResourceUrl', m
 Identifiers.trustConstantHtml = { name: 'ɵɵtrustConstantHtml', moduleName: CORE };
 Identifiers.trustConstantResourceUrl = { name: 'ɵɵtrustConstantResourceUrl', moduleName: CORE };
 Identifiers.validateIframeAttribute = { name: 'ɵɵvalidateIframeAttribute', moduleName: CORE };
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const DASH_CASE_REGEXP = /-+([a-z0-9])/g;
+function dashCaseToCamelCase(input) {
+    return input.replace(DASH_CASE_REGEXP, (...m) => m[1].toUpperCase());
+}
+function splitAtColon(input, defaultValues) {
+    return _splitAt(input, ':', defaultValues);
+}
+function splitAtPeriod(input, defaultValues) {
+    return _splitAt(input, '.', defaultValues);
+}
+function _splitAt(input, character, defaultValues) {
+    const characterIndex = input.indexOf(character);
+    if (characterIndex == -1)
+        return defaultValues;
+    return [input.slice(0, characterIndex).trim(), input.slice(characterIndex + 1).trim()];
+}
+function noUndefined(val) {
+    return val === undefined ? null : val;
+}
+function error(msg) {
+    throw new Error(`Internal Error: ${msg}`);
+}
+// Escape characters that have a special meaning in Regular Expressions
+function escapeRegExp(s) {
+    return s.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
+}
+function utf8Encode(str) {
+    let encoded = [];
+    for (let index = 0; index < str.length; index++) {
+        let codePoint = str.charCodeAt(index);
+        // decode surrogate
+        // see https://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
+        if (codePoint >= 0xd800 && codePoint <= 0xdbff && str.length > (index + 1)) {
+            const low = str.charCodeAt(index + 1);
+            if (low >= 0xdc00 && low <= 0xdfff) {
+                index++;
+                codePoint = ((codePoint - 0xd800) << 10) + low - 0xdc00 + 0x10000;
+            }
+        }
+        if (codePoint <= 0x7f) {
+            encoded.push(codePoint);
+        }
+        else if (codePoint <= 0x7ff) {
+            encoded.push(((codePoint >> 6) & 0x1F) | 0xc0, (codePoint & 0x3f) | 0x80);
+        }
+        else if (codePoint <= 0xffff) {
+            encoded.push((codePoint >> 12) | 0xe0, ((codePoint >> 6) & 0x3f) | 0x80, (codePoint & 0x3f) | 0x80);
+        }
+        else if (codePoint <= 0x1fffff) {
+            encoded.push(((codePoint >> 18) & 0x07) | 0xf0, ((codePoint >> 12) & 0x3f) | 0x80, ((codePoint >> 6) & 0x3f) | 0x80, (codePoint & 0x3f) | 0x80);
+        }
+    }
+    return encoded;
+}
+function stringify(token) {
+    if (typeof token === 'string') {
+        return token;
+    }
+    if (Array.isArray(token)) {
+        return '[' + token.map(stringify).join(', ') + ']';
+    }
+    if (token == null) {
+        return '' + token;
+    }
+    if (token.overriddenName) {
+        return `${token.overriddenName}`;
+    }
+    if (token.name) {
+        return `${token.name}`;
+    }
+    if (!token.toString) {
+        return 'object';
+    }
+    // WARNING: do not try to `JSON.stringify(token)` here
+    // see https://github.com/angular/angular/issues/23440
+    const res = token.toString();
+    if (res == null) {
+        return '' + res;
+    }
+    const newLineIndex = res.indexOf('\n');
+    return newLineIndex === -1 ? res : res.substring(0, newLineIndex);
+}
+class Version {
+    constructor(full) {
+        this.full = full;
+        const splits = full.split('.');
+        this.major = splits[0];
+        this.minor = splits[1];
+        this.patch = splits.slice(2).join('.');
+    }
+}
+// Check `global` first, because in Node tests both `global` and `window` may be defined and our
+// `_global` variable should point to the NodeJS `global` in that case. Note: Typeof/Instanceof
+// checks are considered side-effects in Terser. We explicitly mark this as side-effect free:
+// https://github.com/terser/terser/issues/250.
+const _global = ( /* @__PURE__ */(() => (typeof global !== 'undefined' && global) || (typeof window !== 'undefined' && window) ||
+    (typeof self !== 'undefined' && typeof WorkerGlobalScope !== 'undefined' &&
+        self instanceof WorkerGlobalScope && self))());
+function newArray(size, value) {
+    const list = [];
+    for (let i = 0; i < size; i++) {
+        list.push(value);
+    }
+    return list;
+}
+/**
+ * Partitions a given array into 2 arrays, based on a boolean value returned by the condition
+ * function.
+ *
+ * @param arr Input array that should be partitioned
+ * @param conditionFn Condition function that is called for each item in a given array and returns a
+ * boolean value.
+ */
+function partitionArray(arr, conditionFn) {
+    const truthy = [];
+    const falsy = [];
+    for (const item of arr) {
+        (conditionFn(item) ? truthy : falsy).push(item);
+    }
+    return [truthy, falsy];
+}
 
 /**
  * @license
@@ -20334,7 +20376,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('15.1.0-next.1+sha-27eaded');
+const VERSION = new Version('15.1.0-next.1+sha-7f36221');
 
 /**
  * @license
@@ -22366,7 +22408,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-27eaded'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-7f36221'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -22483,7 +22525,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-27eaded'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-7f36221'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     if (meta.isStandalone) {
@@ -22722,7 +22764,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-27eaded'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-7f36221'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22764,7 +22806,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-27eaded'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-7f36221'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22822,7 +22864,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-27eaded'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-7f36221'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22859,7 +22901,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-27eaded'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-7f36221'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22917,7 +22959,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-27eaded'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-7f36221'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
