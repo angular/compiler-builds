@@ -1,5 +1,5 @@
 /**
- * @license Angular v15.1.0-next.1+sha-8656ac0
+ * @license Angular v15.1.0-next.1+sha-dd42974
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -673,17 +673,17 @@ var core = /*#__PURE__*/Object.freeze({
  * to reduce memory pressure of allocation for the digits array.
  */
 class BigInteger {
-    /**
-     * Creates a big integer using its individual digits in little endian storage.
-     */
-    constructor(digits) {
-        this.digits = digits;
-    }
     static zero() {
         return new BigInteger([0]);
     }
     static one() {
         return new BigInteger([1]);
+    }
+    /**
+     * Creates a big integer using its individual digits in little endian storage.
+     */
+    constructor(digits) {
+        this.digits = digits;
     }
     /**
      * Creates a clone of this instance.
@@ -3153,12 +3153,12 @@ class _EmittedLine {
     }
 }
 class EmitterVisitorContext {
+    static createRoot() {
+        return new EmitterVisitorContext(0);
+    }
     constructor(_indent) {
         this._indent = _indent;
         this._lines = [new _EmittedLine(_indent)];
-    }
-    static createRoot() {
-        return new EmitterVisitorContext(0);
     }
     /**
      * @internal strip this from published d.ts files due to
@@ -5335,16 +5335,16 @@ function assertInterpolationSymbols(identifier, value) {
  * found in the LICENSE file at https://angular.io/license
  */
 class InterpolationConfig {
-    constructor(start, end) {
-        this.start = start;
-        this.end = end;
-    }
     static fromArray(markers) {
         if (!markers) {
             return DEFAULT_INTERPOLATION_CONFIG;
         }
         assertInterpolationSymbols('interpolation', markers);
         return new InterpolationConfig(markers[0], markers[1]);
+    }
+    constructor(start, end) {
+        this.start = start;
+        this.end = end;
     }
 }
 const DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
@@ -6447,6 +6447,18 @@ class Binary extends AST {
  */
 class Unary extends Binary {
     /**
+     * Creates a unary minus expression "-x", represented as `Binary` using "0 - x".
+     */
+    static createMinus(span, sourceSpan, expr) {
+        return new Unary(span, sourceSpan, '-', expr, '-', new LiteralPrimitive(span, sourceSpan, 0), expr);
+    }
+    /**
+     * Creates a unary plus expression "+x", represented as `Binary` using "x - 0".
+     */
+    static createPlus(span, sourceSpan, expr) {
+        return new Unary(span, sourceSpan, '+', expr, '-', expr, new LiteralPrimitive(span, sourceSpan, 0));
+    }
+    /**
      * During the deprecation period this constructor is private, to avoid consumers from creating
      * a `Unary` with the fallback properties for `Binary`.
      */
@@ -6459,18 +6471,6 @@ class Unary extends Binary {
         this.left = null;
         this.right = null;
         this.operation = null;
-    }
-    /**
-     * Creates a unary minus expression "-x", represented as `Binary` using "0 - x".
-     */
-    static createMinus(span, sourceSpan, expr) {
-        return new Unary(span, sourceSpan, '-', expr, '-', new LiteralPrimitive(span, sourceSpan, 0), expr);
-    }
-    /**
-     * Creates a unary plus expression "+x", represented as `Binary` using "x - 0".
-     */
-    static createPlus(span, sourceSpan, expr) {
-        return new Unary(span, sourceSpan, '+', expr, '-', expr, new LiteralPrimitive(span, sourceSpan, 0));
     }
     visit(visitor, context = null) {
         if (visitor.visitUnary !== undefined) {
@@ -14375,12 +14375,12 @@ class CursorError {
  * found in the LICENSE file at https://angular.io/license
  */
 class TreeError extends ParseError {
+    static create(elementName, span, msg) {
+        return new TreeError(elementName, span, msg);
+    }
     constructor(elementName, span, msg) {
         super(span, msg);
         this.elementName = elementName;
-    }
-    static create(elementName, span, msg) {
-        return new TreeError(elementName, span, msg);
     }
 }
 class ParseTreeResult {
@@ -18601,6 +18601,9 @@ function getAttributeNameLiterals(name) {
 /** The prefix used to get a shared context in BindingScope's map. */
 const SHARED_CONTEXT_KEY = '$$shared_ctx$$';
 class BindingScope {
+    static createRootScope() {
+        return new BindingScope();
+    }
     constructor(bindingLevel = 0, parent = null, globals) {
         this.bindingLevel = bindingLevel;
         this.parent = parent;
@@ -18615,9 +18618,6 @@ class BindingScope {
                 this.set(0, name, variable(name));
             }
         }
-    }
-    static createRootScope() {
-        return new BindingScope();
     }
     get(name) {
         let current = this;
@@ -20334,7 +20334,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('15.1.0-next.1+sha-8656ac0');
+const VERSION = new Version('15.1.0-next.1+sha-dd42974');
 
 /**
  * @license
@@ -22360,7 +22360,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-8656ac0'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-dd42974'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -22478,7 +22478,7 @@ function createDirectiveDefinitionMap(meta) {
     var _a;
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-8656ac0'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-dd42974'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     if (meta.isStandalone) {
@@ -22717,7 +22717,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-8656ac0'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-dd42974'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22759,7 +22759,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-8656ac0'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-dd42974'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22817,7 +22817,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-8656ac0'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-dd42974'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22854,7 +22854,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-8656ac0'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-dd42974'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22912,7 +22912,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-8656ac0'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-dd42974'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
