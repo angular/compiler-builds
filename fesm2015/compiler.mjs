@@ -1,5 +1,5 @@
 /**
- * @license Angular v15.1.0-next.1+sha-6533f42
+ * @license Angular v15.1.0-next.1+sha-a403286
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -965,7 +965,17 @@ function sha1(str) {
         d = add32(d, h3);
         e = add32(e, h4);
     }
-    return bytesToHexString(words32ToByteString([a, b, c, d, e]));
+    // Convert the output parts to a 160-bit hexadecimal string
+    return toHexU32(a) + toHexU32(b) + toHexU32(c) + toHexU32(d) + toHexU32(e);
+}
+/**
+ * Convert and format a number as a string representing a 32-bit unsigned hexadecimal number.
+ * @param value The value to format as a string.
+ * @returns A hexadecimal string representing the value.
+ */
+function toHexU32(value) {
+    // unsigned right shift of zero ensures an unsigned 32-bit number
+    return (value >>> 0).toString(16).padStart(8, '0');
 }
 function fk(index, b, c, d) {
     if (index < 20) {
@@ -1157,24 +1167,6 @@ function wordAt(bytes, index, endian) {
         }
     }
     return word;
-}
-function words32ToByteString(words32) {
-    return words32.reduce((bytes, word) => bytes.concat(word32ToByteString(word)), []);
-}
-function word32ToByteString(word) {
-    let bytes = [];
-    for (let i = 0; i < 4; i++) {
-        bytes.push((word >>> 8 * (3 - i)) & 0xff);
-    }
-    return bytes;
-}
-function bytesToHexString(bytes) {
-    let hex = '';
-    for (let i = 0; i < bytes.length; i++) {
-        const b = byteAt(bytes, i);
-        hex += (b >>> 4).toString(16) + (b & 0x0f).toString(16);
-    }
-    return hex.toLowerCase();
 }
 /**
  * Create a shared exponentiation pool for base-256 computations. This shared pool provides memoized
@@ -20334,7 +20326,7 @@ function publishFacade(global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const VERSION = new Version('15.1.0-next.1+sha-6533f42');
+const VERSION = new Version('15.1.0-next.1+sha-a403286');
 
 /**
  * @license
@@ -22360,7 +22352,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-6533f42'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-a403286'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -22478,7 +22470,7 @@ function createDirectiveDefinitionMap(meta) {
     var _a;
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-6533f42'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-a403286'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     if (meta.isStandalone) {
@@ -22717,7 +22709,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-6533f42'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-a403286'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22759,7 +22751,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-6533f42'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-a403286'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22817,7 +22809,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-6533f42'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-a403286'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22854,7 +22846,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-6533f42'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-a403286'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22912,7 +22904,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('15.1.0-next.1+sha-6533f42'));
+    definitionMap.set('version', literal('15.1.0-next.1+sha-a403286'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
