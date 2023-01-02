@@ -1,16 +1,9 @@
 /**
- * @license Angular v15.0.4+sha-125b3df
+ * @license Angular v15.0.4+sha-d7ff276
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 var TagContentType;
 (function (TagContentType) {
     TagContentType[TagContentType["RAW_TEXT"] = 0] = "RAW_TEXT";
@@ -46,13 +39,6 @@ function mergeNsAndName(prefix, localName) {
     return prefix ? `:${prefix}:${localName}` : localName;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class HtmlTagDefinition {
     constructor({ closedByChildren, implicitNamespacePrefix, contentType = TagContentType.PARSABLE_DATA, closedByParent = false, isVoid = false, ignoreFirstLf = false, preventNamespaceInheritance = false } = {}) {
         this.closedByChildren = {};
@@ -156,13 +142,6 @@ function getHtmlTagDefinition(tagName) {
         _DEFAULT_TAG_DEFINITION;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' + // 1: ":not("
     '(([\\.\\#]?)[-\\w]+)|' + // 2: "tag"; 3: "."/"#";
     // "-" should appear first in the regexp below as FF31 parses "[.-\w]" as a range
@@ -565,13 +544,7 @@ class SelectorContext {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
+// Attention:
 // Stores the default value of `emitDistinctChangesOnly` when the `emitDistinctChangesOnly` is not
 // explicitly set.
 const emitDistinctChangesOnlyDefaultValue = true;
@@ -658,13 +631,6 @@ var core = /*#__PURE__*/Object.freeze({
     parseSelectorToR3Selector: parseSelectorToR3Selector
 });
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const DASH_CASE_REGEXP = /-+([a-z0-9])/g;
 function dashCaseToCamelCase(input) {
     return input.replace(DASH_CASE_REGEXP, (...m) => m[1].toUpperCase());
@@ -787,13 +753,6 @@ function partitionArray(arr, conditionFn) {
     return [truthy, falsy];
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * Represents a big integer using a buffer of its individual digits, with the least significant
  * digit stored at the beginning of the array (little endian).
@@ -967,13 +926,6 @@ class BigIntExponentiation {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * Return the message id or compute it using the XLIFF1 digest.
  */
@@ -1289,13 +1241,6 @@ function wordsToDecimalString(hi, lo) {
     return decimal.toString();
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 //// Types
 var TypeModifier;
 (function (TypeModifier) {
@@ -2479,13 +2424,6 @@ var output_ast = /*#__PURE__*/Object.freeze({
     isNull: isNull
 });
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const CONSTANT_PREFIX = '_c';
 /**
  * `ConstantPool` tries to reuse literal factories when two or more literals are identical.
@@ -2726,13 +2664,6 @@ function isLongStringLiteral(expr) {
         expr.value.length >= POOL_INCLUSION_LENGTH_THRESHOLD_FOR_STRINGS;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const CORE = '@angular/core';
 class Identifiers {
 }
@@ -2939,13 +2870,6 @@ Identifiers.trustConstantHtml = { name: 'ɵɵtrustConstantHtml', moduleName: COR
 Identifiers.trustConstantResourceUrl = { name: 'ɵɵtrustConstantResourceUrl', moduleName: CORE };
 Identifiers.validateIframeAttribute = { name: 'ɵɵvalidateIframeAttribute', moduleName: CORE };
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 // https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit
 const VERSION$1 = 3;
 const JS_B64_PREFIX = '# sourceMappingURL=data:application/json;base64,';
@@ -3088,13 +3012,6 @@ function toBase64Digit(value) {
     return B64_DIGITS[value];
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
 const _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
 const _INDENT_WITH = '  ';
@@ -3596,13 +3513,6 @@ function _createIndent(count) {
     return res;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 function typeWithParameters(type, numParams) {
     if (numParams === 0) {
         return expressionType(type);
@@ -3875,13 +3785,6 @@ function getInjectFn(target) {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * This is an R3 `Node`-like wrapper for a raw `html.Comment` node. We do not currently
  * require the implementation of a visitor for Comments as they are only collected at
@@ -4195,13 +4098,6 @@ function transformAll(visitor, nodes) {
     return changed ? result : nodes;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class Message {
     /**
      * @param nodes message AST
@@ -4379,13 +4275,6 @@ class LocalizeMessageStringVisitor {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class Serializer {
     // Creates a name mapper, see `PlaceholderMapper`
     // Returning `null` means that no name mapping is used.
@@ -4449,13 +4338,6 @@ class SimplePlaceholderMapper extends RecurseVisitor {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class _Visitor$2 {
     visitTag(tag) {
         const strAttrs = this._serializeAttributes(tag.attrs);
@@ -4541,13 +4423,6 @@ function escapeXml(text) {
     return _ESCAPED_CHARS.reduce((text, entry) => text.replace(entry[0], entry[1]), text);
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const _MESSAGES_TAG = 'messagebundle';
 const _MESSAGE_TAG = 'msg';
 const _PLACEHOLDER_TAG$3 = 'ph';
@@ -4696,13 +4571,6 @@ function toPublicName(internalName) {
     return internalName.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /* Closure variables holding messages must be named `MSG_[A-Z0-9]+` */
 const CLOSURE_TRANSLATION_VAR_PREFIX = 'MSG_';
 /**
@@ -4847,13 +4715,6 @@ function declareI18nVariable(variable) {
     return new DeclareVarStmt(variable.name, undefined, INFERRED_TYPE, undefined, variable.sourceSpan);
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * Checks whether an object key contains potentially unsafe chars, thus the key should be wrapped in
  * quotes. Note: we do not wrap all keys into quotes, as it may have impact on minification and may
@@ -5134,13 +4995,6 @@ function getInstructionStatements(instructions) {
     return statements;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 function compileInjectable(meta, resolveForwardRefs) {
     let result = null;
     const factoryMeta = {
@@ -5267,13 +5121,6 @@ function createFactoryFunction(type) {
     return fn([new FnParam('t', DYNAMIC_TYPE)], [new ReturnStatement(type.prop('ɵfac').callFn([variable('t')]))]);
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const UNUSABLE_INTERPOLATION_REGEXPS = [
     /^\s*$/,
     /[<>]/,
@@ -5297,13 +5144,6 @@ function assertInterpolationSymbols(identifier, value) {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class InterpolationConfig {
     constructor(start, end) {
         this.start = start;
@@ -5319,13 +5159,6 @@ class InterpolationConfig {
 }
 const DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const $EOF = 0;
 const $BSPACE = 8;
 const $TAB = 9;
@@ -5409,13 +5242,6 @@ function isQuote(code) {
     return code === $SQ || code === $DQ || code === $BT;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class ParseLocation {
     constructor(file, offset, line, col) {
         this.file = file;
@@ -5603,13 +5429,6 @@ function sanitizeIdentifier(name) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * In TypeScript, tagged template functions expect a "template object", which is an array of
  * "cooked" strings plus a `raw` property that contains an array of "raw" strings. This is
  * typically constructed with a function called `__makeTemplateObject(cooked, raw)`, but it may not
@@ -5708,11 +5527,13 @@ class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
+ * @fileoverview
+ * A module to facilitate use of a Trusted Types policy within the JIT
+ * compiler. It lazily constructs the Trusted Types policy, providing helper
+ * utilities for promoting strings to Trusted Types. When Trusted Types are not
+ * available, strings are used as a fallback.
+ * @security All use of this module is security-sensitive and should go through
+ * security review.
  */
 /**
  * The Trusted Types policy, or null if Trusted Types are not
@@ -5797,13 +5618,6 @@ function newTrustedFunctionForJIT(...args) {
     // return new Function(...args.map(a => trustedScriptFromString(a)));
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * A helper class to manage the evaluation of JIT generated code.
  */
@@ -5933,13 +5747,6 @@ function isUseStrictStatement(statement) {
     return statement.isEquivalent(literal('use strict').toStmt());
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 function compileInjector(meta) {
     const definitionMap = new DefinitionMap();
     if (meta.providers !== null) {
@@ -5956,13 +5763,6 @@ function createInjectorType(meta) {
     return new ExpressionType(importExpr(Identifiers.InjectorDeclaration, [new ExpressionType(meta.type.type)]));
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * Implementation of `CompileReflector` which resolves references to @angular/core
  * symbols at runtime, according to a consumer-provided mapping.
@@ -5985,13 +5785,6 @@ class R3JitReflector {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * How the selector scope of an NgModule (its declarations, imports, and exports) should be emitted
  * as a part of the NgModule definition.
@@ -6153,13 +5946,6 @@ function tupleOfTypes(types) {
     return types.length > 0 ? expressionType(literalArr(typeofTypes)) : NONE_TYPE;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 function compilePipeFromMetadata(metadata) {
     const definitionMapValues = [];
     // e.g. `name: 'myPipe'`
@@ -6183,13 +5969,6 @@ function createPipeType(metadata) {
     ]));
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 var R3TemplateDependencyKind;
 (function (R3TemplateDependencyKind) {
     R3TemplateDependencyKind[R3TemplateDependencyKind["Directive"] = 0] = "Directive";
@@ -6197,13 +5976,6 @@ var R3TemplateDependencyKind;
     R3TemplateDependencyKind[R3TemplateDependencyKind["NgModule"] = 2] = "NgModule";
 })(R3TemplateDependencyKind || (R3TemplateDependencyKind = {}));
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class ParserError {
     constructor(message, input, errLocation, ctxLocation) {
         this.input = input;
@@ -6929,13 +6701,6 @@ class BoundElementProperty {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class EventHandlerVars {
 }
 EventHandlerVars.event = variable('$event');
@@ -7684,13 +7449,6 @@ class BuiltinFunctionCall extends Call {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 // =================================================================================================
 // =================================================================================================
 // =========== S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P  ===========
@@ -7776,13 +7534,6 @@ function isIframeSecuritySensitiveAttr(attrName) {
     return IFRAME_SECURITY_SENSITIVE_ATTRS.has(attrName.toLowerCase());
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * The following set contains all keywords that can be used in the animation css shorthand
  * property and is used during the scoping of keyframes to make sure such keywords
@@ -8796,13 +8547,6 @@ function repeatGroups(groups, multiples) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * Parses string representation of a style and converts it into object literal.
  *
  * @param value string representation of style as used in the `style` attribute in HTML.
@@ -9427,13 +9171,6 @@ function isEmptyExpression(ast) {
     return ast instanceof EmptyExpr;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 var TokenType;
 (function (TokenType) {
     TokenType[TokenType["Character"] = 0] = "Character";
@@ -9845,13 +9582,6 @@ function parseIntAutoRadix(text) {
     return result;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class SplitInterpolation {
     constructor(strings, expressions, offsets) {
         this.strings = strings;
@@ -11076,13 +10806,6 @@ function getIndexMapForOriginalTemplate(interpolatedTokens) {
     return offsetMap;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class NodeWithI18n {
     constructor(sourceSpan, i18n) {
         this.sourceSpan = sourceSpan;
@@ -11200,13 +10923,6 @@ class RecursiveVisitor {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 // Mapping between all HTML entity names and their unicode representation.
 // Generated from https://html.spec.whatwg.org/multipage/entities.json by stripping
 // the `&` and `;` from the keys and removing the duplicates.
@@ -13343,13 +13059,6 @@ const NAMED_ENTITIES = {
 const NGSP_UNICODE = '\uE500';
 NAMED_ENTITIES['ngsp'] = NGSP_UNICODE;
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class TokenError extends ParseError {
     constructor(errorMsg, tokenType, span) {
         super(span, errorMsg);
@@ -14334,13 +14043,6 @@ class CursorError {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class TreeError extends ParseError {
     constructor(elementName, span, msg) {
         super(span, msg);
@@ -14737,13 +14439,6 @@ function decodeEntity(match, entity) {
     return match;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class HtmlParser extends Parser {
     constructor() {
         super(getHtmlTagDefinition);
@@ -14753,13 +14448,6 @@ class HtmlParser extends Parser {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const PRESERVE_WS_ATTR_NAME = 'ngPreserveWhitespaces';
 const SKIP_WS_TRIM_TAGS = new Set(['pre', 'template', 'textarea', 'script', 'style']);
 // Equivalent to \s with \u00a0 (non-breaking space) excluded.
@@ -14850,13 +14538,6 @@ function visitAllWithSiblings(visitor, nodes) {
     return result;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 function mapEntry(key, value) {
     return { key, value, quoted: false };
 }
@@ -14868,23 +14549,9 @@ function mapLiteral(obj, quoted = false) {
     })));
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class ElementSchemaRegistry {
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const BOOLEAN = 'boolean';
 const NUMBER = 'number';
 const STRING = 'string';
@@ -15315,13 +14982,6 @@ function _isPixelDimensionStyle(prop) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * Set of tagName|propertyName corresponding to Trusted Types sinks. Properties applying to all
  * tags use '*'.
  *
@@ -15356,13 +15016,6 @@ function isTrustedTypesSink(tagName, propName) {
         TRUSTED_TYPES_SINKS.has('*|' + propName);
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const PROPERTY_PARTS_SEPARATOR = '.';
 const ATTRIBUTE_PREFIX = 'attr';
 const CLASS_PREFIX = 'class';
@@ -15776,13 +15429,6 @@ function moveParseSourceSpan(sourceSpan, absoluteSpan) {
     return new ParseSourceSpan(sourceSpan.start.moveBy(startDiff), sourceSpan.end.moveBy(endDiff), sourceSpan.fullStart.moveBy(startDiff), sourceSpan.details);
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 // Some of the code comes from WebComponents.JS
 // https://github.com/webcomponents/webcomponentsjs/blob/master/src/HTMLImports/path.js
 function isStyleUrlResolvable(url) {
@@ -15793,13 +15439,6 @@ function isStyleUrlResolvable(url) {
 }
 const URL_WITH_SCHEMA_REGEXP = /^([^:/?#]+):/;
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const NG_CONTENT_SELECT_ATTR$1 = 'select';
 const LINK_ELEMENT = 'link';
 const LINK_STYLE_REL_ATTR = 'rel';
@@ -15876,13 +15515,6 @@ function normalizeNgContentSelect(selectAttr) {
     return selectAttr;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const BIND_NAME_REGEXP = /^(?:(bind-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.*)$/;
 // Group 1 = "bind-"
 const KW_BIND_IDX = 1;
@@ -16304,13 +15936,6 @@ function textContents(node) {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 var TagType;
 (function (TagType) {
     TagType[TagType["ELEMENT"] = 0] = "ELEMENT";
@@ -16503,13 +16128,6 @@ function serializePlaceholderValue(value) {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class IcuSerializerVisitor {
     visitText(text) {
         return text.value;
@@ -16542,13 +16160,6 @@ function serializeIcuNode(icu) {
     return icu.visit(serializer);
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const TAG_TO_PLACEHOLDER_NAMES = {
     'A': 'LINK',
     'B': 'BOLD_TEXT',
@@ -16650,13 +16261,6 @@ class PlaceholderRegistry {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const _expParser = new Parser$1(new Lexer());
 /**
  * Returns a function converting html nodes to an i18n Message given an interpolationConfig
@@ -16865,13 +16469,6 @@ function extractPlaceholderName(input) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * An i18n error.
  */
 class I18nError extends ParseError {
@@ -16880,13 +16477,6 @@ class I18nError extends ParseError {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const setI18nRefs = (htmlNode, i18nNode) => {
     if (htmlNode instanceof NodeWithI18n) {
         if (i18nNode instanceof IcuPlaceholder && htmlNode.i18n instanceof Message) {
@@ -17329,13 +16919,6 @@ function createEmptyMessagePart(location) {
     return new LiteralPiece('', new ParseSourceSpan(location, location));
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 // Selector attribute name of `<ng-content>`
 const NG_CONTENT_SELECT_ATTR = 'select';
 // Attribute name of `ngProjectAs`.
@@ -19079,13 +18662,6 @@ function createClosureModeGuard() {
         .and(variable(NG_I18N_CLOSURE_MODE));
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 // This regex matches any binding names that contain the "attr." prefix, e.g. "attr.required"
 // If there is a match, the first matching group will contain the attribute name to bind.
 const ATTR_REGEX = /attr\.([^\]]+)/;
@@ -19761,13 +19337,6 @@ function createHostDirectivesMappingArray(mapping) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * An interface for retrieving documents by URL that the compiler uses to
  * load templates.
  *
@@ -19777,13 +19346,6 @@ function createHostDirectivesMappingArray(mapping) {
 class ResourceLoader {
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class CompilerFacadeImpl {
     constructor(jitEvaluator = new JitEvaluator()) {
         this.jitEvaluator = jitEvaluator;
@@ -20322,21 +19884,12 @@ function publishFacade(global) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
+ * @module
+ * @description
+ * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('15.0.4+sha-125b3df');
+const VERSION = new Version('15.0.4+sha-d7ff276');
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
         this.defaultEncapsulation = defaultEncapsulation;
@@ -20350,13 +19903,6 @@ function preserveWhitespacesDefault(preserveWhitespacesOption, defaultSetting = 
     return preserveWhitespacesOption === null ? defaultSetting : preserveWhitespacesOption;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const _I18N_ATTR = 'i18n';
 const _I18N_ATTR_PREFIX = 'i18n-';
 const _I18N_COMMENT_PREFIX_REGEXP = /^i18n:?/;
@@ -20747,13 +20293,6 @@ function _parseMessageMeta(i18n) {
     return { meaning, description, id: id.trim() };
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class XmlTagDefinition {
     constructor() {
         this.closedByParent = false;
@@ -20777,13 +20316,6 @@ function getXmlTagDefinition(tagName) {
     return _TAG_DEFINITION;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class XmlParser extends Parser {
     constructor() {
         super(getXmlTagDefinition);
@@ -20793,13 +20325,6 @@ class XmlParser extends Parser {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const _VERSION$1 = '1.2';
 const _XMLNS$1 = 'urn:oasis:names:tc:xliff:document:1.2';
 // TODO(vicb): make this a param (s/_/-/)
@@ -21045,13 +20570,6 @@ function getCtypeForTag(tag) {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const _VERSION = '2.0';
 const _XMLNS = 'urn:oasis:names:tc:xliff:document:2.0';
 // TODO(vicb): make this a param (s/_/-/)
@@ -21344,13 +20862,6 @@ function getTypeForTag(tag) {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const _TRANSLATIONS_TAG = 'translationbundle';
 const _TRANSLATION_TAG = 'translation';
 const _PLACEHOLDER_TAG = 'ph';
@@ -21519,13 +21030,6 @@ class XmlToI18n {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * A container for translated messages
  */
 class TranslationBundle {
@@ -21671,13 +21175,6 @@ class I18nToHtmlVisitor {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class I18NHtmlParser {
     constructor(_htmlParser, translations, translationsFormat, missingTranslation = MissingTranslationStrategy.Warning, console) {
         this._htmlParser = _htmlParser;
@@ -21717,13 +21214,6 @@ function createSerializer(format) {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * A container for message extracted from the templates.
  */
@@ -21799,14 +21289,6 @@ class MapPlaceholderNames extends CloneVisitor {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-
 var FactoryTarget;
 (function (FactoryTarget) {
     FactoryTarget[FactoryTarget["Directive"] = 0] = "Directive";
@@ -21816,21 +21298,6 @@ var FactoryTarget;
     FactoryTarget[FactoryTarget["NgModule"] = 4] = "NgModule";
 })(FactoryTarget || (FactoryTarget = {}));
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * Processes `Target`s with a given set of directives and performs a binding operation, which
  * returns an object similar to TypeScript's `ts.TypeChecker` that contains knowledge about the
@@ -22322,13 +21789,6 @@ function extractTemplateEntities(rootScope) {
     return templateEntities;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 function compileClassMetadata(metadata) {
     // Generate an ngDevMode guarded call to setClassMetadata with the class identifier and its
     // metadata.
@@ -22343,13 +21803,6 @@ function compileClassMetadata(metadata) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
  * must update this constant to prevent old partial-linkers from incorrectly processing the
  * declaration.
@@ -22360,7 +21813,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('15.0.4+sha-125b3df'));
+    definitionMap.set('version', literal('15.0.4+sha-d7ff276'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -22369,13 +21822,6 @@ function compileDeclareClassMetadata(metadata) {
     return importExpr(Identifiers.declareClassMetadata).callFn([definitionMap.toLiteralMap()]);
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * Creates an array literal expression from the given array, mapping all values to an expression
  * using the provided mapping function. If the array is empty or null, then null is returned.
@@ -22447,13 +21893,6 @@ function compileDependency(dep) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
  * must update this constant to prevent old partial-linkers from incorrectly processing the
  * declaration.
@@ -22477,7 +21916,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('15.0.4+sha-125b3df'));
+    definitionMap.set('version', literal('15.0.4+sha-d7ff276'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     if (meta.isStandalone) {
@@ -22587,13 +22026,6 @@ function createHostDirectives(hostDirectives) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * Compile a component declaration defined by the `R3ComponentMetadata`.
  */
 function compileDeclareComponentFromMetadata(meta, template, additionalTemplateInfo) {
@@ -22699,13 +22131,6 @@ function compileUsedDependenciesMetadata(meta) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
  * must update this constant to prevent old partial-linkers from incorrectly processing the
  * declaration.
@@ -22716,7 +22141,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('15.0.4+sha-125b3df'));
+    definitionMap.set('version', literal('15.0.4+sha-d7ff276'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22728,13 +22153,6 @@ function compileDeclareFactoryFunction(meta) {
     };
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
  * must update this constant to prevent old partial-linkers from incorrectly processing the
@@ -22758,7 +22176,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('15.0.4+sha-125b3df'));
+    definitionMap.set('version', literal('15.0.4+sha-d7ff276'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22790,13 +22208,6 @@ function createInjectableDefinitionMap(meta) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
  * must update this constant to prevent old partial-linkers from incorrectly processing the
  * declaration.
@@ -22816,7 +22227,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('15.0.4+sha-125b3df'));
+    definitionMap.set('version', literal('15.0.4+sha-d7ff276'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22826,13 +22237,6 @@ function createInjectorDefinitionMap(meta) {
     return definitionMap;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
  * must update this constant to prevent old partial-linkers from incorrectly processing the
@@ -22853,7 +22257,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('15.0.4+sha-125b3df'));
+    definitionMap.set('version', literal('15.0.4+sha-d7ff276'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22882,13 +22286,6 @@ function createNgModuleDefinitionMap(meta) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
  * must update this constant to prevent old partial-linkers from incorrectly processing the
  * declaration.
@@ -22911,7 +22308,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('15.0.4+sha-125b3df'));
+    definitionMap.set('version', literal('15.0.4+sha-d7ff276'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
@@ -22927,42 +22324,22 @@ function createPipeDefinitionMap(meta) {
     return definitionMap;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
+//////////////////////////////////////
 // This file only reexports content of the `src` folder. Keep it that way.
 // This function call has a global side effects and publishes the compiler into global namespace for
 // the late binding of the Compiler to the @angular/core for jit compilation.
 publishFacade(_global);
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
+ * @module
+ * @description
+ * Entry point for all public APIs of this package.
  */
 // This file only reexports content of the `src` folder. Keep it that way.
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
+// This file is not used to build this module. It is only used during editing
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
+// This file is not used to build this module. It is only used during editing
 
 export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element$1 as TmplAstElement, Icu$1 as TmplAstIcu, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token, TokenType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
