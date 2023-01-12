@@ -1,5 +1,5 @@
 /**
- * @license Angular v15.2.0-next.0+sha-8802b4a
+ * @license Angular v15.2.0-next.0+sha-f00bf71
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -813,8 +813,6 @@ export declare class CssSelector {
     isElementSelector(): boolean;
     hasElementSelector(): boolean;
     setElement(element?: string | null): void;
-    /** Gets a template string for an element that matches the selector. */
-    getMatchingElementTemplate(): string;
     getAttrs(): string[];
     addAttribute(name: string, value?: string): void;
     addClassName(name: string): void;
@@ -1304,7 +1302,7 @@ export declare class HtmlTagDefinition implements TagDefinition {
     ignoreFirstLf: boolean;
     canSelfClose: boolean;
     preventNamespaceInheritance: boolean;
-    constructor({ closedByChildren, implicitNamespacePrefix, contentType, closedByParent, isVoid, ignoreFirstLf, preventNamespaceInheritance }?: {
+    constructor({ closedByChildren, implicitNamespacePrefix, contentType, closedByParent, isVoid, ignoreFirstLf, preventNamespaceInheritance, canSelfClose, }?: {
         closedByChildren?: string[];
         closedByParent?: boolean;
         implicitNamespacePrefix?: string;
@@ -1315,6 +1313,7 @@ export declare class HtmlTagDefinition implements TagDefinition {
         isVoid?: boolean;
         ignoreFirstLf?: boolean;
         preventNamespaceInheritance?: boolean;
+        canSelfClose?: boolean;
     });
     isClosedByChild(name: string): boolean;
     getContentType(prefix?: string): TagContentType;

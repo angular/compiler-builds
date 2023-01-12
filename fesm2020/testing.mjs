@@ -1,16 +1,9 @@
 /**
- * @license Angular v15.2.0-next.0+sha-8802b4a
+ * @license Angular v15.2.0-next.0+sha-f00bf71
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * @module
  * @description
@@ -33,22 +26,10 @@
 // This export ensures this package is not empty.
 const unusedExport = true;
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
+/// <reference types="node" />
 // This file only reexports content of the `src` folder. Keep it that way.
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
+// This file is not used to build this module. It is only used during editing
 
 /**
  * Generated bundle index. Do not edit.
