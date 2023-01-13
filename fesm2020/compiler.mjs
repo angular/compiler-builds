@@ -1,168 +1,9 @@
 /**
- * @license Angular v15.1.0+sha-dd54f6b
+ * @license Angular v15.1.0+sha-5978eed
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-var TagContentType;
-(function (TagContentType) {
-    TagContentType[TagContentType["RAW_TEXT"] = 0] = "RAW_TEXT";
-    TagContentType[TagContentType["ESCAPABLE_RAW_TEXT"] = 1] = "ESCAPABLE_RAW_TEXT";
-    TagContentType[TagContentType["PARSABLE_DATA"] = 2] = "PARSABLE_DATA";
-})(TagContentType || (TagContentType = {}));
-function splitNsName(elementName) {
-    if (elementName[0] != ':') {
-        return [null, elementName];
-    }
-    const colonIndex = elementName.indexOf(':', 1);
-    if (colonIndex === -1) {
-        throw new Error(`Unsupported format "${elementName}" expecting ":namespace:name"`);
-    }
-    return [elementName.slice(1, colonIndex), elementName.slice(colonIndex + 1)];
-}
-// `<ng-container>` tags work the same regardless the namespace
-function isNgContainer(tagName) {
-    return splitNsName(tagName)[1] === 'ng-container';
-}
-// `<ng-content>` tags work the same regardless the namespace
-function isNgContent(tagName) {
-    return splitNsName(tagName)[1] === 'ng-content';
-}
-// `<ng-template>` tags work the same regardless the namespace
-function isNgTemplate(tagName) {
-    return splitNsName(tagName)[1] === 'ng-template';
-}
-function getNsPrefix(fullName) {
-    return fullName === null ? null : splitNsName(fullName)[0];
-}
-function mergeNsAndName(prefix, localName) {
-    return prefix ? `:${prefix}:${localName}` : localName;
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-class HtmlTagDefinition {
-    constructor({ closedByChildren, implicitNamespacePrefix, contentType = TagContentType.PARSABLE_DATA, closedByParent = false, isVoid = false, ignoreFirstLf = false, preventNamespaceInheritance = false } = {}) {
-        this.closedByChildren = {};
-        this.closedByParent = false;
-        this.canSelfClose = false;
-        if (closedByChildren && closedByChildren.length > 0) {
-            closedByChildren.forEach(tagName => this.closedByChildren[tagName] = true);
-        }
-        this.isVoid = isVoid;
-        this.closedByParent = closedByParent || isVoid;
-        this.implicitNamespacePrefix = implicitNamespacePrefix || null;
-        this.contentType = contentType;
-        this.ignoreFirstLf = ignoreFirstLf;
-        this.preventNamespaceInheritance = preventNamespaceInheritance;
-    }
-    isClosedByChild(name) {
-        return this.isVoid || name.toLowerCase() in this.closedByChildren;
-    }
-    getContentType(prefix) {
-        if (typeof this.contentType === 'object') {
-            const overrideType = prefix === undefined ? undefined : this.contentType[prefix];
-            return overrideType ?? this.contentType.default;
-        }
-        return this.contentType;
-    }
-}
-let _DEFAULT_TAG_DEFINITION;
-// see https://www.w3.org/TR/html51/syntax.html#optional-tags
-// This implementation does not fully conform to the HTML5 spec.
-let TAG_DEFINITIONS;
-function getHtmlTagDefinition(tagName) {
-    if (!TAG_DEFINITIONS) {
-        _DEFAULT_TAG_DEFINITION = new HtmlTagDefinition();
-        TAG_DEFINITIONS = {
-            'base': new HtmlTagDefinition({ isVoid: true }),
-            'meta': new HtmlTagDefinition({ isVoid: true }),
-            'area': new HtmlTagDefinition({ isVoid: true }),
-            'embed': new HtmlTagDefinition({ isVoid: true }),
-            'link': new HtmlTagDefinition({ isVoid: true }),
-            'img': new HtmlTagDefinition({ isVoid: true }),
-            'input': new HtmlTagDefinition({ isVoid: true }),
-            'param': new HtmlTagDefinition({ isVoid: true }),
-            'hr': new HtmlTagDefinition({ isVoid: true }),
-            'br': new HtmlTagDefinition({ isVoid: true }),
-            'source': new HtmlTagDefinition({ isVoid: true }),
-            'track': new HtmlTagDefinition({ isVoid: true }),
-            'wbr': new HtmlTagDefinition({ isVoid: true }),
-            'p': new HtmlTagDefinition({
-                closedByChildren: [
-                    'address', 'article', 'aside', 'blockquote', 'div', 'dl', 'fieldset',
-                    'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5',
-                    'h6', 'header', 'hgroup', 'hr', 'main', 'nav', 'ol',
-                    'p', 'pre', 'section', 'table', 'ul'
-                ],
-                closedByParent: true
-            }),
-            'thead': new HtmlTagDefinition({ closedByChildren: ['tbody', 'tfoot'] }),
-            'tbody': new HtmlTagDefinition({ closedByChildren: ['tbody', 'tfoot'], closedByParent: true }),
-            'tfoot': new HtmlTagDefinition({ closedByChildren: ['tbody'], closedByParent: true }),
-            'tr': new HtmlTagDefinition({ closedByChildren: ['tr'], closedByParent: true }),
-            'td': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
-            'th': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
-            'col': new HtmlTagDefinition({ isVoid: true }),
-            'svg': new HtmlTagDefinition({ implicitNamespacePrefix: 'svg' }),
-            'foreignObject': new HtmlTagDefinition({
-                // Usually the implicit namespace here would be redundant since it will be inherited from
-                // the parent `svg`, but we have to do it for `foreignObject`, because the way the parser
-                // works is that the parent node of an end tag is its own start tag which means that
-                // the `preventNamespaceInheritance` on `foreignObject` would have it default to the
-                // implicit namespace which is `html`, unless specified otherwise.
-                implicitNamespacePrefix: 'svg',
-                // We want to prevent children of foreignObject from inheriting its namespace, because
-                // the point of the element is to allow nodes from other namespaces to be inserted.
-                preventNamespaceInheritance: true,
-            }),
-            'math': new HtmlTagDefinition({ implicitNamespacePrefix: 'math' }),
-            'li': new HtmlTagDefinition({ closedByChildren: ['li'], closedByParent: true }),
-            'dt': new HtmlTagDefinition({ closedByChildren: ['dt', 'dd'] }),
-            'dd': new HtmlTagDefinition({ closedByChildren: ['dt', 'dd'], closedByParent: true }),
-            'rb': new HtmlTagDefinition({ closedByChildren: ['rb', 'rt', 'rtc', 'rp'], closedByParent: true }),
-            'rt': new HtmlTagDefinition({ closedByChildren: ['rb', 'rt', 'rtc', 'rp'], closedByParent: true }),
-            'rtc': new HtmlTagDefinition({ closedByChildren: ['rb', 'rtc', 'rp'], closedByParent: true }),
-            'rp': new HtmlTagDefinition({ closedByChildren: ['rb', 'rt', 'rtc', 'rp'], closedByParent: true }),
-            'optgroup': new HtmlTagDefinition({ closedByChildren: ['optgroup'], closedByParent: true }),
-            'option': new HtmlTagDefinition({ closedByChildren: ['option', 'optgroup'], closedByParent: true }),
-            'pre': new HtmlTagDefinition({ ignoreFirstLf: true }),
-            'listing': new HtmlTagDefinition({ ignoreFirstLf: true }),
-            'style': new HtmlTagDefinition({ contentType: TagContentType.RAW_TEXT }),
-            'script': new HtmlTagDefinition({ contentType: TagContentType.RAW_TEXT }),
-            'title': new HtmlTagDefinition({
-                // The browser supports two separate `title` tags which have to use
-                // a different content type: `HTMLTitleElement` and `SVGTitleElement`
-                contentType: { default: TagContentType.ESCAPABLE_RAW_TEXT, svg: TagContentType.PARSABLE_DATA }
-            }),
-            'textarea': new HtmlTagDefinition({ contentType: TagContentType.ESCAPABLE_RAW_TEXT, ignoreFirstLf: true }),
-        };
-    }
-    // We have to make both a case-sensitive and a case-insensitive lookup, because
-    // HTML tag names are case insensitive, whereas some SVG tags are case sensitive.
-    return TAG_DEFINITIONS[tagName] ?? TAG_DEFINITIONS[tagName.toLowerCase()] ??
-        _DEFAULT_TAG_DEFINITION;
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' + // 1: ":not("
     '(([\\.\\#]?)[-\\w]+)|' + // 2: "tag"; 3: "."/"#";
     // "-" should appear first in the regexp below as FF31 parses "[.-\w]" as a range
@@ -304,19 +145,6 @@ class CssSelector {
     }
     setElement(element = null) {
         this.element = element;
-    }
-    /** Gets a template string for an element that matches the selector. */
-    getMatchingElementTemplate() {
-        const tagName = this.element || 'div';
-        const classAttr = this.classNames.length > 0 ? ` class="${this.classNames.join(' ')}"` : '';
-        let attrs = '';
-        for (let i = 0; i < this.attrs.length; i += 2) {
-            const attrName = this.attrs[i];
-            const attrValue = this.attrs[i + 1] !== '' ? `="${this.attrs[i + 1]}"` : '';
-            attrs += ` ${attrName}${attrValue}`;
-        }
-        return getHtmlTagDefinition(tagName).isVoid ? `<${tagName}${classAttr}${attrs}/>` :
-            `<${tagName}${classAttr}${attrs}></${tagName}>`;
     }
     getAttrs() {
         const result = [];
@@ -565,13 +393,7 @@ class SelectorContext {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
+// Attention:
 // Stores the default value of `emitDistinctChangesOnly` when the `emitDistinctChangesOnly` is not
 // explicitly set.
 const emitDistinctChangesOnlyDefaultValue = true;
@@ -658,13 +480,6 @@ var core = /*#__PURE__*/Object.freeze({
     parseSelectorToR3Selector: parseSelectorToR3Selector
 });
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * Represents a big integer using a buffer of its individual digits, with the least significant
  * digit stored at the beginning of the array (little endian).
@@ -838,13 +653,6 @@ class BigIntExponentiation {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * A lazily created TextEncoder instance for converting strings into UTF-8 bytes
  */
@@ -1194,13 +1002,6 @@ function wordsToDecimalString(hi, lo) {
     return decimal.toString();
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 //// Types
 var TypeModifier;
 (function (TypeModifier) {
@@ -2384,13 +2185,6 @@ var output_ast = /*#__PURE__*/Object.freeze({
     isNull: isNull
 });
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const CONSTANT_PREFIX = '_c';
 /**
  * `ConstantPool` tries to reuse literal factories when two or more literals are identical.
@@ -2631,13 +2425,6 @@ function isLongStringLiteral(expr) {
         expr.value.length >= POOL_INCLUSION_LENGTH_THRESHOLD_FOR_STRINGS;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const CORE = '@angular/core';
 class Identifiers {
 }
@@ -2844,13 +2631,6 @@ Identifiers.trustConstantHtml = { name: 'ɵɵtrustConstantHtml', moduleName: COR
 Identifiers.trustConstantResourceUrl = { name: 'ɵɵtrustConstantResourceUrl', moduleName: CORE };
 Identifiers.validateIframeAttribute = { name: 'ɵɵvalidateIframeAttribute', moduleName: CORE };
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const DASH_CASE_REGEXP = /-+([a-z0-9])/g;
 function dashCaseToCamelCase(input) {
     return input.replace(DASH_CASE_REGEXP, (...m) => m[1].toUpperCase());
@@ -2973,13 +2753,6 @@ function partitionArray(arr, conditionFn) {
     return [truthy, falsy];
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 // https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit
 const VERSION$1 = 3;
 const JS_B64_PREFIX = '# sourceMappingURL=data:application/json;base64,';
@@ -3122,13 +2895,6 @@ function toBase64Digit(value) {
     return B64_DIGITS[value];
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
 const _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
 const _INDENT_WITH = '  ';
@@ -3630,13 +3396,6 @@ function _createIndent(count) {
     return res;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 function typeWithParameters(type, numParams) {
     if (numParams === 0) {
         return expressionType(type);
@@ -3909,13 +3668,6 @@ function getInjectFn(target) {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * This is an R3 `Node`-like wrapper for a raw `html.Comment` node. We do not currently
  * require the implementation of a visitor for Comments as they are only collected at
@@ -4229,13 +3981,6 @@ function transformAll(visitor, nodes) {
     return changed ? result : nodes;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class Message {
     /**
      * @param nodes message AST
@@ -4413,13 +4158,6 @@ class LocalizeMessageStringVisitor {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class Serializer {
     // Creates a name mapper, see `PlaceholderMapper`
     // Returning `null` means that no name mapping is used.
@@ -4483,13 +4221,6 @@ class SimplePlaceholderMapper extends RecurseVisitor {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class _Visitor$2 {
     visitTag(tag) {
         const strAttrs = this._serializeAttributes(tag.attrs);
@@ -4575,13 +4306,6 @@ function escapeXml(text) {
     return _ESCAPED_CHARS.reduce((text, entry) => text.replace(entry[0], entry[1]), text);
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const _MESSAGES_TAG = 'messagebundle';
 const _MESSAGE_TAG = 'msg';
 const _PLACEHOLDER_TAG$3 = 'ph';
@@ -4730,13 +4454,6 @@ function toPublicName(internalName) {
     return internalName.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /* Closure variables holding messages must be named `MSG_[A-Z0-9]+` */
 const CLOSURE_TRANSLATION_VAR_PREFIX = 'MSG_';
 /**
@@ -4881,13 +4598,6 @@ function declareI18nVariable(variable) {
     return new DeclareVarStmt(variable.name, undefined, INFERRED_TYPE, undefined, variable.sourceSpan);
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * Checks whether an object key contains potentially unsafe chars, thus the key should be wrapped in
  * quotes. Note: we do not wrap all keys into quotes, as it may have impact on minification and may
@@ -5168,13 +4878,6 @@ function getInstructionStatements(instructions) {
     return statements;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 function compileInjectable(meta, resolveForwardRefs) {
     let result = null;
     const factoryMeta = {
@@ -5301,13 +5004,6 @@ function createFactoryFunction(type) {
     return fn([new FnParam('t', DYNAMIC_TYPE)], [new ReturnStatement(type.prop('ɵfac').callFn([variable('t')]))]);
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const UNUSABLE_INTERPOLATION_REGEXPS = [
     /^\s*$/,
     /[<>]/,
@@ -5331,13 +5027,6 @@ function assertInterpolationSymbols(identifier, value) {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class InterpolationConfig {
     static fromArray(markers) {
         if (!markers) {
@@ -5353,13 +5042,6 @@ class InterpolationConfig {
 }
 const DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const $EOF = 0;
 const $BSPACE = 8;
 const $TAB = 9;
@@ -5443,13 +5125,6 @@ function isQuote(code) {
     return code === $SQ || code === $DQ || code === $BT;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class ParseLocation {
     constructor(file, offset, line, col) {
         this.file = file;
@@ -5637,13 +5312,6 @@ function sanitizeIdentifier(name) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * In TypeScript, tagged template functions expect a "template object", which is an array of
  * "cooked" strings plus a `raw` property that contains an array of "raw" strings. This is
  * typically constructed with a function called `__makeTemplateObject(cooked, raw)`, but it may not
@@ -5742,11 +5410,13 @@ class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
+ * @fileoverview
+ * A module to facilitate use of a Trusted Types policy within the JIT
+ * compiler. It lazily constructs the Trusted Types policy, providing helper
+ * utilities for promoting strings to Trusted Types. When Trusted Types are not
+ * available, strings are used as a fallback.
+ * @security All use of this module is security-sensitive and should go through
+ * security review.
  */
 /**
  * The Trusted Types policy, or null if Trusted Types are not
@@ -5831,13 +5501,6 @@ function newTrustedFunctionForJIT(...args) {
     // return new Function(...args.map(a => trustedScriptFromString(a)));
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * A helper class to manage the evaluation of JIT generated code.
  */
@@ -5967,13 +5630,6 @@ function isUseStrictStatement(statement) {
     return statement.isEquivalent(literal('use strict').toStmt());
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 function compileInjector(meta) {
     const definitionMap = new DefinitionMap();
     if (meta.providers !== null) {
@@ -5990,13 +5646,6 @@ function createInjectorType(meta) {
     return new ExpressionType(importExpr(Identifiers.InjectorDeclaration, [new ExpressionType(meta.type.type)]));
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * Implementation of `CompileReflector` which resolves references to @angular/core
  * symbols at runtime, according to a consumer-provided mapping.
@@ -6019,13 +5668,6 @@ class R3JitReflector {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * How the selector scope of an NgModule (its declarations, imports, and exports) should be emitted
  * as a part of the NgModule definition.
@@ -6187,13 +5829,6 @@ function tupleOfTypes(types) {
     return types.length > 0 ? expressionType(literalArr(typeofTypes)) : NONE_TYPE;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 function compilePipeFromMetadata(metadata) {
     const definitionMapValues = [];
     // e.g. `name: 'myPipe'`
@@ -6217,13 +5852,6 @@ function createPipeType(metadata) {
     ]));
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 var R3TemplateDependencyKind;
 (function (R3TemplateDependencyKind) {
     R3TemplateDependencyKind[R3TemplateDependencyKind["Directive"] = 0] = "Directive";
@@ -6231,13 +5859,6 @@ var R3TemplateDependencyKind;
     R3TemplateDependencyKind[R3TemplateDependencyKind["NgModule"] = 2] = "NgModule";
 })(R3TemplateDependencyKind || (R3TemplateDependencyKind = {}));
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class ParserError {
     constructor(message, input, errLocation, ctxLocation) {
         this.input = input;
@@ -6963,13 +6584,6 @@ class BoundElementProperty {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class EventHandlerVars {
 }
 EventHandlerVars.event = variable('$event');
@@ -7718,13 +7332,6 @@ class BuiltinFunctionCall extends Call {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 // =================================================================================================
 // =================================================================================================
 // =========== S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P  ===========
@@ -7810,13 +7417,6 @@ function isIframeSecuritySensitiveAttr(attrName) {
     return IFRAME_SECURITY_SENSITIVE_ATTRS.has(attrName.toLowerCase());
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * The following set contains all keywords that can be used in the animation css shorthand
  * property and is used during the scoping of keyframes to make sure such keywords
@@ -8830,13 +8430,6 @@ function repeatGroups(groups, multiples) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * Parses string representation of a style and converts it into object literal.
  *
  * @param value string representation of style as used in the `style` attribute in HTML.
@@ -9461,13 +9054,6 @@ function isEmptyExpression(ast) {
     return ast instanceof EmptyExpr;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 var TokenType;
 (function (TokenType) {
     TokenType[TokenType["Character"] = 0] = "Character";
@@ -9777,10 +9363,9 @@ class _Scanner {
         while (this.peek != quote) {
             if (this.peek == $BACKSLASH) {
                 buffer += input.substring(marker, this.index);
-                this.advance();
                 let unescapedCode;
-                // Workaround for TS2.1-introduced type strictness
-                this.peek = this.peek;
+                this.advance(); // mutates this.peek
+                // @ts-expect-error see microsoft/TypeScript#9998
                 if (this.peek == $u) {
                     // 4 character hex code for unicode character.
                     const hex = input.substring(this.index + 1, this.index + 5);
@@ -9879,13 +9464,6 @@ function parseIntAutoRadix(text) {
     return result;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class SplitInterpolation {
     constructor(strings, expressions, offsets) {
         this.strings = strings;
@@ -11110,13 +10688,6 @@ function getIndexMapForOriginalTemplate(interpolatedTokens) {
     return offsetMap;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class NodeWithI18n {
     constructor(sourceSpan, i18n) {
         this.sourceSpan = sourceSpan;
@@ -11234,13 +10805,581 @@ class RecursiveVisitor {
     }
 }
 
+var TagContentType;
+(function (TagContentType) {
+    TagContentType[TagContentType["RAW_TEXT"] = 0] = "RAW_TEXT";
+    TagContentType[TagContentType["ESCAPABLE_RAW_TEXT"] = 1] = "ESCAPABLE_RAW_TEXT";
+    TagContentType[TagContentType["PARSABLE_DATA"] = 2] = "PARSABLE_DATA";
+})(TagContentType || (TagContentType = {}));
+function splitNsName(elementName) {
+    if (elementName[0] != ':') {
+        return [null, elementName];
+    }
+    const colonIndex = elementName.indexOf(':', 1);
+    if (colonIndex === -1) {
+        throw new Error(`Unsupported format "${elementName}" expecting ":namespace:name"`);
+    }
+    return [elementName.slice(1, colonIndex), elementName.slice(colonIndex + 1)];
+}
+// `<ng-container>` tags work the same regardless the namespace
+function isNgContainer(tagName) {
+    return splitNsName(tagName)[1] === 'ng-container';
+}
+// `<ng-content>` tags work the same regardless the namespace
+function isNgContent(tagName) {
+    return splitNsName(tagName)[1] === 'ng-content';
+}
+// `<ng-template>` tags work the same regardless the namespace
+function isNgTemplate(tagName) {
+    return splitNsName(tagName)[1] === 'ng-template';
+}
+function getNsPrefix(fullName) {
+    return fullName === null ? null : splitNsName(fullName)[0];
+}
+function mergeNsAndName(prefix, localName) {
+    return prefix ? `:${prefix}:${localName}` : localName;
+}
+
+class ElementSchemaRegistry {
+}
+
+const BOOLEAN = 'boolean';
+const NUMBER = 'number';
+const STRING = 'string';
+const OBJECT = 'object';
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
+ * This array represents the DOM schema. It encodes inheritance, properties, and events.
  *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
+ * ## Overview
+ *
+ * Each line represents one kind of element. The `element_inheritance` and properties are joined
+ * using `element_inheritance|properties` syntax.
+ *
+ * ## Element Inheritance
+ *
+ * The `element_inheritance` can be further subdivided as `element1,element2,...^parentElement`.
+ * Here the individual elements are separated by `,` (commas). Every element in the list
+ * has identical properties.
+ *
+ * An `element` may inherit additional properties from `parentElement` If no `^parentElement` is
+ * specified then `""` (blank) element is assumed.
+ *
+ * NOTE: The blank element inherits from root `[Element]` element, the super element of all
+ * elements.
+ *
+ * NOTE an element prefix such as `:svg:` has no special meaning to the schema.
+ *
+ * ## Properties
+ *
+ * Each element has a set of properties separated by `,` (commas). Each property can be prefixed
+ * by a special character designating its type:
+ *
+ * - (no prefix): property is a string.
+ * - `*`: property represents an event.
+ * - `!`: property is a boolean.
+ * - `#`: property is a number.
+ * - `%`: property is an object.
+ *
+ * ## Query
+ *
+ * The class creates an internal squas representation which allows to easily answer the query of
+ * if a given property exist on a given element.
+ *
+ * NOTE: We don't yet support querying for types or events.
+ * NOTE: This schema is auto extracted from `schema_extractor.ts` located in the test folder,
+ *       see dom_element_schema_registry_spec.ts
  */
+// =================================================================================================
+// =================================================================================================
+// =========== S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P  ===========
+// =================================================================================================
+// =================================================================================================
+//
+//                       DO NOT EDIT THIS DOM SCHEMA WITHOUT A SECURITY REVIEW!
+//
+// Newly added properties must be security reviewed and assigned an appropriate SecurityContext in
+// dom_security_schema.ts. Reach out to mprobst & rjamet for details.
+//
+// =================================================================================================
+const SCHEMA = [
+    '[Element]|textContent,%ariaAtomic,%ariaAutoComplete,%ariaBusy,%ariaChecked,%ariaColCount,%ariaColIndex,%ariaColSpan,%ariaCurrent,%ariaDescription,%ariaDisabled,%ariaExpanded,%ariaHasPopup,%ariaHidden,%ariaKeyShortcuts,%ariaLabel,%ariaLevel,%ariaLive,%ariaModal,%ariaMultiLine,%ariaMultiSelectable,%ariaOrientation,%ariaPlaceholder,%ariaPosInSet,%ariaPressed,%ariaReadOnly,%ariaRelevant,%ariaRequired,%ariaRoleDescription,%ariaRowCount,%ariaRowIndex,%ariaRowSpan,%ariaSelected,%ariaSetSize,%ariaSort,%ariaValueMax,%ariaValueMin,%ariaValueNow,%ariaValueText,%classList,className,elementTiming,id,innerHTML,*beforecopy,*beforecut,*beforepaste,*fullscreenchange,*fullscreenerror,*search,*webkitfullscreenchange,*webkitfullscreenerror,outerHTML,%part,#scrollLeft,#scrollTop,slot' +
+        /* added manually to avoid breaking changes */
+        ',*message,*mozfullscreenchange,*mozfullscreenerror,*mozpointerlockchange,*mozpointerlockerror,*webglcontextcreationerror,*webglcontextlost,*webglcontextrestored',
+    '[HTMLElement]^[Element]|accessKey,autocapitalize,!autofocus,contentEditable,dir,!draggable,enterKeyHint,!hidden,innerText,inputMode,lang,nonce,*abort,*animationend,*animationiteration,*animationstart,*auxclick,*beforexrselect,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*formdata,*gotpointercapture,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*lostpointercapture,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*paste,*pause,*play,*playing,*pointercancel,*pointerdown,*pointerenter,*pointerleave,*pointermove,*pointerout,*pointerover,*pointerrawupdate,*pointerup,*progress,*ratechange,*reset,*resize,*scroll,*securitypolicyviolation,*seeked,*seeking,*select,*selectionchange,*selectstart,*slotchange,*stalled,*submit,*suspend,*timeupdate,*toggle,*transitioncancel,*transitionend,*transitionrun,*transitionstart,*volumechange,*waiting,*webkitanimationend,*webkitanimationiteration,*webkitanimationstart,*webkittransitionend,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate,virtualKeyboardPolicy',
+    'abbr,address,article,aside,b,bdi,bdo,cite,content,code,dd,dfn,dt,em,figcaption,figure,footer,header,hgroup,i,kbd,main,mark,nav,noscript,rb,rp,rt,rtc,ruby,s,samp,section,small,strong,sub,sup,u,var,wbr^[HTMLElement]|accessKey,autocapitalize,!autofocus,contentEditable,dir,!draggable,enterKeyHint,!hidden,innerText,inputMode,lang,nonce,*abort,*animationend,*animationiteration,*animationstart,*auxclick,*beforexrselect,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*formdata,*gotpointercapture,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*lostpointercapture,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*paste,*pause,*play,*playing,*pointercancel,*pointerdown,*pointerenter,*pointerleave,*pointermove,*pointerout,*pointerover,*pointerrawupdate,*pointerup,*progress,*ratechange,*reset,*resize,*scroll,*securitypolicyviolation,*seeked,*seeking,*select,*selectionchange,*selectstart,*slotchange,*stalled,*submit,*suspend,*timeupdate,*toggle,*transitioncancel,*transitionend,*transitionrun,*transitionstart,*volumechange,*waiting,*webkitanimationend,*webkitanimationiteration,*webkitanimationstart,*webkittransitionend,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate,virtualKeyboardPolicy',
+    'media^[HTMLElement]|!autoplay,!controls,%controlsList,%crossOrigin,#currentTime,!defaultMuted,#defaultPlaybackRate,!disableRemotePlayback,!loop,!muted,*encrypted,*waitingforkey,#playbackRate,preload,!preservesPitch,src,%srcObject,#volume',
+    ':svg:^[HTMLElement]|!autofocus,nonce,*abort,*animationend,*animationiteration,*animationstart,*auxclick,*beforexrselect,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*formdata,*gotpointercapture,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*lostpointercapture,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*paste,*pause,*play,*playing,*pointercancel,*pointerdown,*pointerenter,*pointerleave,*pointermove,*pointerout,*pointerover,*pointerrawupdate,*pointerup,*progress,*ratechange,*reset,*resize,*scroll,*securitypolicyviolation,*seeked,*seeking,*select,*selectionchange,*selectstart,*slotchange,*stalled,*submit,*suspend,*timeupdate,*toggle,*transitioncancel,*transitionend,*transitionrun,*transitionstart,*volumechange,*waiting,*webkitanimationend,*webkitanimationiteration,*webkitanimationstart,*webkittransitionend,*wheel,%style,#tabIndex',
+    ':svg:graphics^:svg:|',
+    ':svg:animation^:svg:|*begin,*end,*repeat',
+    ':svg:geometry^:svg:|',
+    ':svg:componentTransferFunction^:svg:|',
+    ':svg:gradient^:svg:|',
+    ':svg:textContent^:svg:graphics|',
+    ':svg:textPositioning^:svg:textContent|',
+    'a^[HTMLElement]|charset,coords,download,hash,host,hostname,href,hreflang,name,password,pathname,ping,port,protocol,referrerPolicy,rel,%relList,rev,search,shape,target,text,type,username',
+    'area^[HTMLElement]|alt,coords,download,hash,host,hostname,href,!noHref,password,pathname,ping,port,protocol,referrerPolicy,rel,%relList,search,shape,target,username',
+    'audio^media|',
+    'br^[HTMLElement]|clear',
+    'base^[HTMLElement]|href,target',
+    'body^[HTMLElement]|aLink,background,bgColor,link,*afterprint,*beforeprint,*beforeunload,*blur,*error,*focus,*hashchange,*languagechange,*load,*message,*messageerror,*offline,*online,*pagehide,*pageshow,*popstate,*rejectionhandled,*resize,*scroll,*storage,*unhandledrejection,*unload,text,vLink',
+    'button^[HTMLElement]|!disabled,formAction,formEnctype,formMethod,!formNoValidate,formTarget,name,type,value',
+    'canvas^[HTMLElement]|#height,#width',
+    'content^[HTMLElement]|select',
+    'dl^[HTMLElement]|!compact',
+    'data^[HTMLElement]|value',
+    'datalist^[HTMLElement]|',
+    'details^[HTMLElement]|!open',
+    'dialog^[HTMLElement]|!open,returnValue',
+    'dir^[HTMLElement]|!compact',
+    'div^[HTMLElement]|align',
+    'embed^[HTMLElement]|align,height,name,src,type,width',
+    'fieldset^[HTMLElement]|!disabled,name',
+    'font^[HTMLElement]|color,face,size',
+    'form^[HTMLElement]|acceptCharset,action,autocomplete,encoding,enctype,method,name,!noValidate,target',
+    'frame^[HTMLElement]|frameBorder,longDesc,marginHeight,marginWidth,name,!noResize,scrolling,src',
+    'frameset^[HTMLElement]|cols,*afterprint,*beforeprint,*beforeunload,*blur,*error,*focus,*hashchange,*languagechange,*load,*message,*messageerror,*offline,*online,*pagehide,*pageshow,*popstate,*rejectionhandled,*resize,*scroll,*storage,*unhandledrejection,*unload,rows',
+    'hr^[HTMLElement]|align,color,!noShade,size,width',
+    'head^[HTMLElement]|',
+    'h1,h2,h3,h4,h5,h6^[HTMLElement]|align',
+    'html^[HTMLElement]|version',
+    'iframe^[HTMLElement]|align,allow,!allowFullscreen,!allowPaymentRequest,csp,frameBorder,height,loading,longDesc,marginHeight,marginWidth,name,referrerPolicy,%sandbox,scrolling,src,srcdoc,width',
+    'img^[HTMLElement]|align,alt,border,%crossOrigin,decoding,#height,#hspace,!isMap,loading,longDesc,lowsrc,name,referrerPolicy,sizes,src,srcset,useMap,#vspace,#width',
+    'input^[HTMLElement]|accept,align,alt,autocomplete,!checked,!defaultChecked,defaultValue,dirName,!disabled,%files,formAction,formEnctype,formMethod,!formNoValidate,formTarget,#height,!incremental,!indeterminate,max,#maxLength,min,#minLength,!multiple,name,pattern,placeholder,!readOnly,!required,selectionDirection,#selectionEnd,#selectionStart,#size,src,step,type,useMap,value,%valueAsDate,#valueAsNumber,#width',
+    'li^[HTMLElement]|type,#value',
+    'label^[HTMLElement]|htmlFor',
+    'legend^[HTMLElement]|align',
+    'link^[HTMLElement]|as,charset,%crossOrigin,!disabled,href,hreflang,imageSizes,imageSrcset,integrity,media,referrerPolicy,rel,%relList,rev,%sizes,target,type',
+    'map^[HTMLElement]|name',
+    'marquee^[HTMLElement]|behavior,bgColor,direction,height,#hspace,#loop,#scrollAmount,#scrollDelay,!trueSpeed,#vspace,width',
+    'menu^[HTMLElement]|!compact',
+    'meta^[HTMLElement]|content,httpEquiv,media,name,scheme',
+    'meter^[HTMLElement]|#high,#low,#max,#min,#optimum,#value',
+    'ins,del^[HTMLElement]|cite,dateTime',
+    'ol^[HTMLElement]|!compact,!reversed,#start,type',
+    'object^[HTMLElement]|align,archive,border,code,codeBase,codeType,data,!declare,height,#hspace,name,standby,type,useMap,#vspace,width',
+    'optgroup^[HTMLElement]|!disabled,label',
+    'option^[HTMLElement]|!defaultSelected,!disabled,label,!selected,text,value',
+    'output^[HTMLElement]|defaultValue,%htmlFor,name,value',
+    'p^[HTMLElement]|align',
+    'param^[HTMLElement]|name,type,value,valueType',
+    'picture^[HTMLElement]|',
+    'pre^[HTMLElement]|#width',
+    'progress^[HTMLElement]|#max,#value',
+    'q,blockquote,cite^[HTMLElement]|',
+    'script^[HTMLElement]|!async,charset,%crossOrigin,!defer,event,htmlFor,integrity,!noModule,%referrerPolicy,src,text,type',
+    'select^[HTMLElement]|autocomplete,!disabled,#length,!multiple,name,!required,#selectedIndex,#size,value',
+    'slot^[HTMLElement]|name',
+    'source^[HTMLElement]|#height,media,sizes,src,srcset,type,#width',
+    'span^[HTMLElement]|',
+    'style^[HTMLElement]|!disabled,media,type',
+    'caption^[HTMLElement]|align',
+    'th,td^[HTMLElement]|abbr,align,axis,bgColor,ch,chOff,#colSpan,headers,height,!noWrap,#rowSpan,scope,vAlign,width',
+    'col,colgroup^[HTMLElement]|align,ch,chOff,#span,vAlign,width',
+    'table^[HTMLElement]|align,bgColor,border,%caption,cellPadding,cellSpacing,frame,rules,summary,%tFoot,%tHead,width',
+    'tr^[HTMLElement]|align,bgColor,ch,chOff,vAlign',
+    'tfoot,thead,tbody^[HTMLElement]|align,ch,chOff,vAlign',
+    'template^[HTMLElement]|',
+    'textarea^[HTMLElement]|autocomplete,#cols,defaultValue,dirName,!disabled,#maxLength,#minLength,name,placeholder,!readOnly,!required,#rows,selectionDirection,#selectionEnd,#selectionStart,value,wrap',
+    'time^[HTMLElement]|dateTime',
+    'title^[HTMLElement]|text',
+    'track^[HTMLElement]|!default,kind,label,src,srclang',
+    'ul^[HTMLElement]|!compact,type',
+    'unknown^[HTMLElement]|',
+    'video^media|!disablePictureInPicture,#height,*enterpictureinpicture,*leavepictureinpicture,!playsInline,poster,#width',
+    ':svg:a^:svg:graphics|',
+    ':svg:animate^:svg:animation|',
+    ':svg:animateMotion^:svg:animation|',
+    ':svg:animateTransform^:svg:animation|',
+    ':svg:circle^:svg:geometry|',
+    ':svg:clipPath^:svg:graphics|',
+    ':svg:defs^:svg:graphics|',
+    ':svg:desc^:svg:|',
+    ':svg:discard^:svg:|',
+    ':svg:ellipse^:svg:geometry|',
+    ':svg:feBlend^:svg:|',
+    ':svg:feColorMatrix^:svg:|',
+    ':svg:feComponentTransfer^:svg:|',
+    ':svg:feComposite^:svg:|',
+    ':svg:feConvolveMatrix^:svg:|',
+    ':svg:feDiffuseLighting^:svg:|',
+    ':svg:feDisplacementMap^:svg:|',
+    ':svg:feDistantLight^:svg:|',
+    ':svg:feDropShadow^:svg:|',
+    ':svg:feFlood^:svg:|',
+    ':svg:feFuncA^:svg:componentTransferFunction|',
+    ':svg:feFuncB^:svg:componentTransferFunction|',
+    ':svg:feFuncG^:svg:componentTransferFunction|',
+    ':svg:feFuncR^:svg:componentTransferFunction|',
+    ':svg:feGaussianBlur^:svg:|',
+    ':svg:feImage^:svg:|',
+    ':svg:feMerge^:svg:|',
+    ':svg:feMergeNode^:svg:|',
+    ':svg:feMorphology^:svg:|',
+    ':svg:feOffset^:svg:|',
+    ':svg:fePointLight^:svg:|',
+    ':svg:feSpecularLighting^:svg:|',
+    ':svg:feSpotLight^:svg:|',
+    ':svg:feTile^:svg:|',
+    ':svg:feTurbulence^:svg:|',
+    ':svg:filter^:svg:|',
+    ':svg:foreignObject^:svg:graphics|',
+    ':svg:g^:svg:graphics|',
+    ':svg:image^:svg:graphics|decoding',
+    ':svg:line^:svg:geometry|',
+    ':svg:linearGradient^:svg:gradient|',
+    ':svg:mpath^:svg:|',
+    ':svg:marker^:svg:|',
+    ':svg:mask^:svg:|',
+    ':svg:metadata^:svg:|',
+    ':svg:path^:svg:geometry|',
+    ':svg:pattern^:svg:|',
+    ':svg:polygon^:svg:geometry|',
+    ':svg:polyline^:svg:geometry|',
+    ':svg:radialGradient^:svg:gradient|',
+    ':svg:rect^:svg:geometry|',
+    ':svg:svg^:svg:graphics|#currentScale,#zoomAndPan',
+    ':svg:script^:svg:|type',
+    ':svg:set^:svg:animation|',
+    ':svg:stop^:svg:|',
+    ':svg:style^:svg:|!disabled,media,title,type',
+    ':svg:switch^:svg:graphics|',
+    ':svg:symbol^:svg:|',
+    ':svg:tspan^:svg:textPositioning|',
+    ':svg:text^:svg:textPositioning|',
+    ':svg:textPath^:svg:textContent|',
+    ':svg:title^:svg:|',
+    ':svg:use^:svg:graphics|',
+    ':svg:view^:svg:|#zoomAndPan',
+    'data^[HTMLElement]|value',
+    'keygen^[HTMLElement]|!autofocus,challenge,!disabled,form,keytype,name',
+    'menuitem^[HTMLElement]|type,label,icon,!disabled,!checked,radiogroup,!default',
+    'summary^[HTMLElement]|',
+    'time^[HTMLElement]|dateTime',
+    ':svg:cursor^:svg:|',
+];
+const _ATTR_TO_PROP = new Map(Object.entries({
+    'class': 'className',
+    'for': 'htmlFor',
+    'formaction': 'formAction',
+    'innerHtml': 'innerHTML',
+    'readonly': 'readOnly',
+    'tabindex': 'tabIndex',
+}));
+// Invert _ATTR_TO_PROP.
+const _PROP_TO_ATTR = Array.from(_ATTR_TO_PROP).reduce((inverted, [propertyName, attributeName]) => {
+    inverted.set(propertyName, attributeName);
+    return inverted;
+}, new Map());
+class DomElementSchemaRegistry extends ElementSchemaRegistry {
+    constructor() {
+        super();
+        this._schema = new Map();
+        // We don't allow binding to events for security reasons. Allowing event bindings would almost
+        // certainly introduce bad XSS vulnerabilities. Instead, we store events in a separate schema.
+        this._eventSchema = new Map;
+        SCHEMA.forEach(encodedType => {
+            const type = new Map();
+            const events = new Set();
+            const [strType, strProperties] = encodedType.split('|');
+            const properties = strProperties.split(',');
+            const [typeNames, superName] = strType.split('^');
+            typeNames.split(',').forEach(tag => {
+                this._schema.set(tag.toLowerCase(), type);
+                this._eventSchema.set(tag.toLowerCase(), events);
+            });
+            const superType = superName && this._schema.get(superName.toLowerCase());
+            if (superType) {
+                for (const [prop, value] of superType) {
+                    type.set(prop, value);
+                }
+                for (const superEvent of this._eventSchema.get(superName.toLowerCase())) {
+                    events.add(superEvent);
+                }
+            }
+            properties.forEach((property) => {
+                if (property.length > 0) {
+                    switch (property[0]) {
+                        case '*':
+                            events.add(property.substring(1));
+                            break;
+                        case '!':
+                            type.set(property.substring(1), BOOLEAN);
+                            break;
+                        case '#':
+                            type.set(property.substring(1), NUMBER);
+                            break;
+                        case '%':
+                            type.set(property.substring(1), OBJECT);
+                            break;
+                        default:
+                            type.set(property, STRING);
+                    }
+                }
+            });
+        });
+    }
+    hasProperty(tagName, propName, schemaMetas) {
+        if (schemaMetas.some((schema) => schema.name === NO_ERRORS_SCHEMA.name)) {
+            return true;
+        }
+        if (tagName.indexOf('-') > -1) {
+            if (isNgContainer(tagName) || isNgContent(tagName)) {
+                return false;
+            }
+            if (schemaMetas.some((schema) => schema.name === CUSTOM_ELEMENTS_SCHEMA.name)) {
+                // Can't tell now as we don't know which properties a custom element will get
+                // once it is instantiated
+                return true;
+            }
+        }
+        const elementProperties = this._schema.get(tagName.toLowerCase()) || this._schema.get('unknown');
+        return elementProperties.has(propName);
+    }
+    hasElement(tagName, schemaMetas) {
+        if (schemaMetas.some((schema) => schema.name === NO_ERRORS_SCHEMA.name)) {
+            return true;
+        }
+        if (tagName.indexOf('-') > -1) {
+            if (isNgContainer(tagName) || isNgContent(tagName)) {
+                return true;
+            }
+            if (schemaMetas.some((schema) => schema.name === CUSTOM_ELEMENTS_SCHEMA.name)) {
+                // Allow any custom elements
+                return true;
+            }
+        }
+        return this._schema.has(tagName.toLowerCase());
+    }
+    /**
+     * securityContext returns the security context for the given property on the given DOM tag.
+     *
+     * Tag and property name are statically known and cannot change at runtime, i.e. it is not
+     * possible to bind a value into a changing attribute or tag name.
+     *
+     * The filtering is based on a list of allowed tags|attributes. All attributes in the schema
+     * above are assumed to have the 'NONE' security context, i.e. that they are safe inert
+     * string values. Only specific well known attack vectors are assigned their appropriate context.
+     */
+    securityContext(tagName, propName, isAttribute) {
+        if (isAttribute) {
+            // NB: For security purposes, use the mapped property name, not the attribute name.
+            propName = this.getMappedPropName(propName);
+        }
+        // Make sure comparisons are case insensitive, so that case differences between attribute and
+        // property names do not have a security impact.
+        tagName = tagName.toLowerCase();
+        propName = propName.toLowerCase();
+        let ctx = SECURITY_SCHEMA()[tagName + '|' + propName];
+        if (ctx) {
+            return ctx;
+        }
+        ctx = SECURITY_SCHEMA()['*|' + propName];
+        return ctx ? ctx : SecurityContext.NONE;
+    }
+    getMappedPropName(propName) {
+        return _ATTR_TO_PROP.get(propName) ?? propName;
+    }
+    getDefaultComponentElementName() {
+        return 'ng-component';
+    }
+    validateProperty(name) {
+        if (name.toLowerCase().startsWith('on')) {
+            const msg = `Binding to event property '${name}' is disallowed for security reasons, ` +
+                `please use (${name.slice(2)})=...` +
+                `\nIf '${name}' is a directive input, make sure the directive is imported by the` +
+                ` current module.`;
+            return { error: true, msg: msg };
+        }
+        else {
+            return { error: false };
+        }
+    }
+    validateAttribute(name) {
+        if (name.toLowerCase().startsWith('on')) {
+            const msg = `Binding to event attribute '${name}' is disallowed for security reasons, ` +
+                `please use (${name.slice(2)})=...`;
+            return { error: true, msg: msg };
+        }
+        else {
+            return { error: false };
+        }
+    }
+    allKnownElementNames() {
+        return Array.from(this._schema.keys());
+    }
+    allKnownAttributesOfElement(tagName) {
+        const elementProperties = this._schema.get(tagName.toLowerCase()) || this._schema.get('unknown');
+        // Convert properties to attributes.
+        return Array.from(elementProperties.keys()).map(prop => _PROP_TO_ATTR.get(prop) ?? prop);
+    }
+    allKnownEventsOfElement(tagName) {
+        return Array.from(this._eventSchema.get(tagName.toLowerCase()) ?? []);
+    }
+    normalizeAnimationStyleProperty(propName) {
+        return dashCaseToCamelCase(propName);
+    }
+    normalizeAnimationStyleValue(camelCaseProp, userProvidedProp, val) {
+        let unit = '';
+        const strVal = val.toString().trim();
+        let errorMsg = null;
+        if (_isPixelDimensionStyle(camelCaseProp) && val !== 0 && val !== '0') {
+            if (typeof val === 'number') {
+                unit = 'px';
+            }
+            else {
+                const valAndSuffixMatch = val.match(/^[+-]?[\d\.]+([a-z]*)$/);
+                if (valAndSuffixMatch && valAndSuffixMatch[1].length == 0) {
+                    errorMsg = `Please provide a CSS unit value for ${userProvidedProp}:${val}`;
+                }
+            }
+        }
+        return { error: errorMsg, value: strVal + unit };
+    }
+}
+function _isPixelDimensionStyle(prop) {
+    switch (prop) {
+        case 'width':
+        case 'height':
+        case 'minWidth':
+        case 'minHeight':
+        case 'maxWidth':
+        case 'maxHeight':
+        case 'left':
+        case 'top':
+        case 'bottom':
+        case 'right':
+        case 'fontSize':
+        case 'outlineWidth':
+        case 'outlineOffset':
+        case 'paddingTop':
+        case 'paddingLeft':
+        case 'paddingBottom':
+        case 'paddingRight':
+        case 'marginTop':
+        case 'marginLeft':
+        case 'marginBottom':
+        case 'marginRight':
+        case 'borderRadius':
+        case 'borderWidth':
+        case 'borderTopWidth':
+        case 'borderLeftWidth':
+        case 'borderRightWidth':
+        case 'borderBottomWidth':
+        case 'textIndent':
+            return true;
+        default:
+            return false;
+    }
+}
+
+class HtmlTagDefinition {
+    constructor({ closedByChildren, implicitNamespacePrefix, contentType = TagContentType.PARSABLE_DATA, closedByParent = false, isVoid = false, ignoreFirstLf = false, preventNamespaceInheritance = false, canSelfClose = false, } = {}) {
+        this.closedByChildren = {};
+        this.closedByParent = false;
+        if (closedByChildren && closedByChildren.length > 0) {
+            closedByChildren.forEach(tagName => this.closedByChildren[tagName] = true);
+        }
+        this.isVoid = isVoid;
+        this.closedByParent = closedByParent || isVoid;
+        this.implicitNamespacePrefix = implicitNamespacePrefix || null;
+        this.contentType = contentType;
+        this.ignoreFirstLf = ignoreFirstLf;
+        this.preventNamespaceInheritance = preventNamespaceInheritance;
+        this.canSelfClose = canSelfClose ?? isVoid;
+    }
+    isClosedByChild(name) {
+        return this.isVoid || name.toLowerCase() in this.closedByChildren;
+    }
+    getContentType(prefix) {
+        if (typeof this.contentType === 'object') {
+            const overrideType = prefix === undefined ? undefined : this.contentType[prefix];
+            return overrideType ?? this.contentType.default;
+        }
+        return this.contentType;
+    }
+}
+let DEFAULT_TAG_DEFINITION;
+// see https://www.w3.org/TR/html51/syntax.html#optional-tags
+// This implementation does not fully conform to the HTML5 spec.
+let TAG_DEFINITIONS;
+function getHtmlTagDefinition(tagName) {
+    if (!TAG_DEFINITIONS) {
+        DEFAULT_TAG_DEFINITION = new HtmlTagDefinition({ canSelfClose: true });
+        TAG_DEFINITIONS = {
+            'base': new HtmlTagDefinition({ isVoid: true }),
+            'meta': new HtmlTagDefinition({ isVoid: true }),
+            'area': new HtmlTagDefinition({ isVoid: true }),
+            'embed': new HtmlTagDefinition({ isVoid: true }),
+            'link': new HtmlTagDefinition({ isVoid: true }),
+            'img': new HtmlTagDefinition({ isVoid: true }),
+            'input': new HtmlTagDefinition({ isVoid: true }),
+            'param': new HtmlTagDefinition({ isVoid: true }),
+            'hr': new HtmlTagDefinition({ isVoid: true }),
+            'br': new HtmlTagDefinition({ isVoid: true }),
+            'source': new HtmlTagDefinition({ isVoid: true }),
+            'track': new HtmlTagDefinition({ isVoid: true }),
+            'wbr': new HtmlTagDefinition({ isVoid: true }),
+            'p': new HtmlTagDefinition({
+                closedByChildren: [
+                    'address', 'article', 'aside', 'blockquote', 'div', 'dl', 'fieldset',
+                    'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5',
+                    'h6', 'header', 'hgroup', 'hr', 'main', 'nav', 'ol',
+                    'p', 'pre', 'section', 'table', 'ul'
+                ],
+                closedByParent: true
+            }),
+            'thead': new HtmlTagDefinition({ closedByChildren: ['tbody', 'tfoot'] }),
+            'tbody': new HtmlTagDefinition({ closedByChildren: ['tbody', 'tfoot'], closedByParent: true }),
+            'tfoot': new HtmlTagDefinition({ closedByChildren: ['tbody'], closedByParent: true }),
+            'tr': new HtmlTagDefinition({ closedByChildren: ['tr'], closedByParent: true }),
+            'td': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
+            'th': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
+            'col': new HtmlTagDefinition({ isVoid: true }),
+            'svg': new HtmlTagDefinition({ implicitNamespacePrefix: 'svg' }),
+            'foreignObject': new HtmlTagDefinition({
+                // Usually the implicit namespace here would be redundant since it will be inherited from
+                // the parent `svg`, but we have to do it for `foreignObject`, because the way the parser
+                // works is that the parent node of an end tag is its own start tag which means that
+                // the `preventNamespaceInheritance` on `foreignObject` would have it default to the
+                // implicit namespace which is `html`, unless specified otherwise.
+                implicitNamespacePrefix: 'svg',
+                // We want to prevent children of foreignObject from inheriting its namespace, because
+                // the point of the element is to allow nodes from other namespaces to be inserted.
+                preventNamespaceInheritance: true,
+            }),
+            'math': new HtmlTagDefinition({ implicitNamespacePrefix: 'math' }),
+            'li': new HtmlTagDefinition({ closedByChildren: ['li'], closedByParent: true }),
+            'dt': new HtmlTagDefinition({ closedByChildren: ['dt', 'dd'] }),
+            'dd': new HtmlTagDefinition({ closedByChildren: ['dt', 'dd'], closedByParent: true }),
+            'rb': new HtmlTagDefinition({ closedByChildren: ['rb', 'rt', 'rtc', 'rp'], closedByParent: true }),
+            'rt': new HtmlTagDefinition({ closedByChildren: ['rb', 'rt', 'rtc', 'rp'], closedByParent: true }),
+            'rtc': new HtmlTagDefinition({ closedByChildren: ['rb', 'rtc', 'rp'], closedByParent: true }),
+            'rp': new HtmlTagDefinition({ closedByChildren: ['rb', 'rt', 'rtc', 'rp'], closedByParent: true }),
+            'optgroup': new HtmlTagDefinition({ closedByChildren: ['optgroup'], closedByParent: true }),
+            'option': new HtmlTagDefinition({ closedByChildren: ['option', 'optgroup'], closedByParent: true }),
+            'pre': new HtmlTagDefinition({ ignoreFirstLf: true }),
+            'listing': new HtmlTagDefinition({ ignoreFirstLf: true }),
+            'style': new HtmlTagDefinition({ contentType: TagContentType.RAW_TEXT }),
+            'script': new HtmlTagDefinition({ contentType: TagContentType.RAW_TEXT }),
+            'title': new HtmlTagDefinition({
+                // The browser supports two separate `title` tags which have to use
+                // a different content type: `HTMLTitleElement` and `SVGTitleElement`
+                contentType: { default: TagContentType.ESCAPABLE_RAW_TEXT, svg: TagContentType.PARSABLE_DATA }
+            }),
+            'textarea': new HtmlTagDefinition({ contentType: TagContentType.ESCAPABLE_RAW_TEXT, ignoreFirstLf: true }),
+        };
+        new DomElementSchemaRegistry().allKnownElementNames().forEach(knownTagName => {
+            if (!TAG_DEFINITIONS.hasOwnProperty(knownTagName) && getNsPrefix(knownTagName) === null) {
+                TAG_DEFINITIONS[knownTagName] = new HtmlTagDefinition({ canSelfClose: false });
+            }
+        });
+    }
+    // We have to make both a case-sensitive and a case-insensitive lookup, because
+    // HTML tag names are case insensitive, whereas some SVG tags are case sensitive.
+    return TAG_DEFINITIONS[tagName] ?? TAG_DEFINITIONS[tagName.toLowerCase()] ??
+        DEFAULT_TAG_DEFINITION;
+}
+
 // Mapping between all HTML entity names and their unicode representation.
 // Generated from https://html.spec.whatwg.org/multipage/entities.json by stripping
 // the `&` and `;` from the keys and removing the duplicates.
@@ -13377,13 +13516,6 @@ const NAMED_ENTITIES = {
 const NGSP_UNICODE = '\uE500';
 NAMED_ENTITIES['ngsp'] = NGSP_UNICODE;
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class TokenError extends ParseError {
     constructor(errorMsg, tokenType, span) {
         super(span, errorMsg);
@@ -14368,13 +14500,6 @@ class CursorError {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class TreeError extends ParseError {
     static create(elementName, span, msg) {
         return new TreeError(elementName, span, msg);
@@ -14603,7 +14728,7 @@ class _TreeBuilder {
             selfClosing = true;
             const tagDef = this.getTagDefinition(fullName);
             if (!(tagDef.canSelfClose || getNsPrefix(fullName) !== null || tagDef.isVoid)) {
-                this.errors.push(TreeError.create(fullName, startTagToken.sourceSpan, `Only void and foreign elements can be self closed "${startTagToken.parts[1]}"`));
+                this.errors.push(TreeError.create(fullName, startTagToken.sourceSpan, `Only void, custom and foreign elements can be self closed "${startTagToken.parts[1]}"`));
             }
         }
         else if (this._peek.type === 1 /* TokenType.TAG_OPEN_END */) {
@@ -14771,13 +14896,6 @@ function decodeEntity(match, entity) {
     return match;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class HtmlParser extends Parser {
     constructor() {
         super(getHtmlTagDefinition);
@@ -14787,13 +14905,6 @@ class HtmlParser extends Parser {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const PRESERVE_WS_ATTR_NAME = 'ngPreserveWhitespaces';
 const SKIP_WS_TRIM_TAGS = new Set(['pre', 'template', 'textarea', 'script', 'style']);
 // Equivalent to \s with \u00a0 (non-breaking space) excluded.
@@ -14884,13 +14995,6 @@ function visitAllWithSiblings(visitor, nodes) {
     return result;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 function mapEntry(key, value) {
     return { key, value, quoted: false };
 }
@@ -14902,459 +15006,6 @@ function mapLiteral(obj, quoted = false) {
     })));
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-class ElementSchemaRegistry {
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-const BOOLEAN = 'boolean';
-const NUMBER = 'number';
-const STRING = 'string';
-const OBJECT = 'object';
-/**
- * This array represents the DOM schema. It encodes inheritance, properties, and events.
- *
- * ## Overview
- *
- * Each line represents one kind of element. The `element_inheritance` and properties are joined
- * using `element_inheritance|properties` syntax.
- *
- * ## Element Inheritance
- *
- * The `element_inheritance` can be further subdivided as `element1,element2,...^parentElement`.
- * Here the individual elements are separated by `,` (commas). Every element in the list
- * has identical properties.
- *
- * An `element` may inherit additional properties from `parentElement` If no `^parentElement` is
- * specified then `""` (blank) element is assumed.
- *
- * NOTE: The blank element inherits from root `[Element]` element, the super element of all
- * elements.
- *
- * NOTE an element prefix such as `:svg:` has no special meaning to the schema.
- *
- * ## Properties
- *
- * Each element has a set of properties separated by `,` (commas). Each property can be prefixed
- * by a special character designating its type:
- *
- * - (no prefix): property is a string.
- * - `*`: property represents an event.
- * - `!`: property is a boolean.
- * - `#`: property is a number.
- * - `%`: property is an object.
- *
- * ## Query
- *
- * The class creates an internal squas representation which allows to easily answer the query of
- * if a given property exist on a given element.
- *
- * NOTE: We don't yet support querying for types or events.
- * NOTE: This schema is auto extracted from `schema_extractor.ts` located in the test folder,
- *       see dom_element_schema_registry_spec.ts
- */
-// =================================================================================================
-// =================================================================================================
-// =========== S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P  ===========
-// =================================================================================================
-// =================================================================================================
-//
-//                       DO NOT EDIT THIS DOM SCHEMA WITHOUT A SECURITY REVIEW!
-//
-// Newly added properties must be security reviewed and assigned an appropriate SecurityContext in
-// dom_security_schema.ts. Reach out to mprobst & rjamet for details.
-//
-// =================================================================================================
-const SCHEMA = [
-    '[Element]|textContent,%ariaAtomic,%ariaAutoComplete,%ariaBusy,%ariaChecked,%ariaColCount,%ariaColIndex,%ariaColSpan,%ariaCurrent,%ariaDescription,%ariaDisabled,%ariaExpanded,%ariaHasPopup,%ariaHidden,%ariaKeyShortcuts,%ariaLabel,%ariaLevel,%ariaLive,%ariaModal,%ariaMultiLine,%ariaMultiSelectable,%ariaOrientation,%ariaPlaceholder,%ariaPosInSet,%ariaPressed,%ariaReadOnly,%ariaRelevant,%ariaRequired,%ariaRoleDescription,%ariaRowCount,%ariaRowIndex,%ariaRowSpan,%ariaSelected,%ariaSetSize,%ariaSort,%ariaValueMax,%ariaValueMin,%ariaValueNow,%ariaValueText,%classList,className,elementTiming,id,innerHTML,*beforecopy,*beforecut,*beforepaste,*fullscreenchange,*fullscreenerror,*search,*webkitfullscreenchange,*webkitfullscreenerror,outerHTML,%part,#scrollLeft,#scrollTop,slot' +
-        /* added manually to avoid breaking changes */
-        ',*message,*mozfullscreenchange,*mozfullscreenerror,*mozpointerlockchange,*mozpointerlockerror,*webglcontextcreationerror,*webglcontextlost,*webglcontextrestored',
-    '[HTMLElement]^[Element]|accessKey,autocapitalize,!autofocus,contentEditable,dir,!draggable,enterKeyHint,!hidden,innerText,inputMode,lang,nonce,*abort,*animationend,*animationiteration,*animationstart,*auxclick,*beforexrselect,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*formdata,*gotpointercapture,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*lostpointercapture,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*paste,*pause,*play,*playing,*pointercancel,*pointerdown,*pointerenter,*pointerleave,*pointermove,*pointerout,*pointerover,*pointerrawupdate,*pointerup,*progress,*ratechange,*reset,*resize,*scroll,*securitypolicyviolation,*seeked,*seeking,*select,*selectionchange,*selectstart,*slotchange,*stalled,*submit,*suspend,*timeupdate,*toggle,*transitioncancel,*transitionend,*transitionrun,*transitionstart,*volumechange,*waiting,*webkitanimationend,*webkitanimationiteration,*webkitanimationstart,*webkittransitionend,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate,virtualKeyboardPolicy',
-    'abbr,address,article,aside,b,bdi,bdo,cite,content,code,dd,dfn,dt,em,figcaption,figure,footer,header,hgroup,i,kbd,main,mark,nav,noscript,rb,rp,rt,rtc,ruby,s,samp,section,small,strong,sub,sup,u,var,wbr^[HTMLElement]|accessKey,autocapitalize,!autofocus,contentEditable,dir,!draggable,enterKeyHint,!hidden,innerText,inputMode,lang,nonce,*abort,*animationend,*animationiteration,*animationstart,*auxclick,*beforexrselect,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*formdata,*gotpointercapture,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*lostpointercapture,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*paste,*pause,*play,*playing,*pointercancel,*pointerdown,*pointerenter,*pointerleave,*pointermove,*pointerout,*pointerover,*pointerrawupdate,*pointerup,*progress,*ratechange,*reset,*resize,*scroll,*securitypolicyviolation,*seeked,*seeking,*select,*selectionchange,*selectstart,*slotchange,*stalled,*submit,*suspend,*timeupdate,*toggle,*transitioncancel,*transitionend,*transitionrun,*transitionstart,*volumechange,*waiting,*webkitanimationend,*webkitanimationiteration,*webkitanimationstart,*webkittransitionend,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate,virtualKeyboardPolicy',
-    'media^[HTMLElement]|!autoplay,!controls,%controlsList,%crossOrigin,#currentTime,!defaultMuted,#defaultPlaybackRate,!disableRemotePlayback,!loop,!muted,*encrypted,*waitingforkey,#playbackRate,preload,!preservesPitch,src,%srcObject,#volume',
-    ':svg:^[HTMLElement]|!autofocus,nonce,*abort,*animationend,*animationiteration,*animationstart,*auxclick,*beforexrselect,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*formdata,*gotpointercapture,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*lostpointercapture,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*paste,*pause,*play,*playing,*pointercancel,*pointerdown,*pointerenter,*pointerleave,*pointermove,*pointerout,*pointerover,*pointerrawupdate,*pointerup,*progress,*ratechange,*reset,*resize,*scroll,*securitypolicyviolation,*seeked,*seeking,*select,*selectionchange,*selectstart,*slotchange,*stalled,*submit,*suspend,*timeupdate,*toggle,*transitioncancel,*transitionend,*transitionrun,*transitionstart,*volumechange,*waiting,*webkitanimationend,*webkitanimationiteration,*webkitanimationstart,*webkittransitionend,*wheel,%style,#tabIndex',
-    ':svg:graphics^:svg:|',
-    ':svg:animation^:svg:|*begin,*end,*repeat',
-    ':svg:geometry^:svg:|',
-    ':svg:componentTransferFunction^:svg:|',
-    ':svg:gradient^:svg:|',
-    ':svg:textContent^:svg:graphics|',
-    ':svg:textPositioning^:svg:textContent|',
-    'a^[HTMLElement]|charset,coords,download,hash,host,hostname,href,hreflang,name,password,pathname,ping,port,protocol,referrerPolicy,rel,%relList,rev,search,shape,target,text,type,username',
-    'area^[HTMLElement]|alt,coords,download,hash,host,hostname,href,!noHref,password,pathname,ping,port,protocol,referrerPolicy,rel,%relList,search,shape,target,username',
-    'audio^media|',
-    'br^[HTMLElement]|clear',
-    'base^[HTMLElement]|href,target',
-    'body^[HTMLElement]|aLink,background,bgColor,link,*afterprint,*beforeprint,*beforeunload,*blur,*error,*focus,*hashchange,*languagechange,*load,*message,*messageerror,*offline,*online,*pagehide,*pageshow,*popstate,*rejectionhandled,*resize,*scroll,*storage,*unhandledrejection,*unload,text,vLink',
-    'button^[HTMLElement]|!disabled,formAction,formEnctype,formMethod,!formNoValidate,formTarget,name,type,value',
-    'canvas^[HTMLElement]|#height,#width',
-    'content^[HTMLElement]|select',
-    'dl^[HTMLElement]|!compact',
-    'data^[HTMLElement]|value',
-    'datalist^[HTMLElement]|',
-    'details^[HTMLElement]|!open',
-    'dialog^[HTMLElement]|!open,returnValue',
-    'dir^[HTMLElement]|!compact',
-    'div^[HTMLElement]|align',
-    'embed^[HTMLElement]|align,height,name,src,type,width',
-    'fieldset^[HTMLElement]|!disabled,name',
-    'font^[HTMLElement]|color,face,size',
-    'form^[HTMLElement]|acceptCharset,action,autocomplete,encoding,enctype,method,name,!noValidate,target',
-    'frame^[HTMLElement]|frameBorder,longDesc,marginHeight,marginWidth,name,!noResize,scrolling,src',
-    'frameset^[HTMLElement]|cols,*afterprint,*beforeprint,*beforeunload,*blur,*error,*focus,*hashchange,*languagechange,*load,*message,*messageerror,*offline,*online,*pagehide,*pageshow,*popstate,*rejectionhandled,*resize,*scroll,*storage,*unhandledrejection,*unload,rows',
-    'hr^[HTMLElement]|align,color,!noShade,size,width',
-    'head^[HTMLElement]|',
-    'h1,h2,h3,h4,h5,h6^[HTMLElement]|align',
-    'html^[HTMLElement]|version',
-    'iframe^[HTMLElement]|align,allow,!allowFullscreen,!allowPaymentRequest,csp,frameBorder,height,loading,longDesc,marginHeight,marginWidth,name,referrerPolicy,%sandbox,scrolling,src,srcdoc,width',
-    'img^[HTMLElement]|align,alt,border,%crossOrigin,decoding,#height,#hspace,!isMap,loading,longDesc,lowsrc,name,referrerPolicy,sizes,src,srcset,useMap,#vspace,#width',
-    'input^[HTMLElement]|accept,align,alt,autocomplete,!checked,!defaultChecked,defaultValue,dirName,!disabled,%files,formAction,formEnctype,formMethod,!formNoValidate,formTarget,#height,!incremental,!indeterminate,max,#maxLength,min,#minLength,!multiple,name,pattern,placeholder,!readOnly,!required,selectionDirection,#selectionEnd,#selectionStart,#size,src,step,type,useMap,value,%valueAsDate,#valueAsNumber,#width',
-    'li^[HTMLElement]|type,#value',
-    'label^[HTMLElement]|htmlFor',
-    'legend^[HTMLElement]|align',
-    'link^[HTMLElement]|as,charset,%crossOrigin,!disabled,href,hreflang,imageSizes,imageSrcset,integrity,media,referrerPolicy,rel,%relList,rev,%sizes,target,type',
-    'map^[HTMLElement]|name',
-    'marquee^[HTMLElement]|behavior,bgColor,direction,height,#hspace,#loop,#scrollAmount,#scrollDelay,!trueSpeed,#vspace,width',
-    'menu^[HTMLElement]|!compact',
-    'meta^[HTMLElement]|content,httpEquiv,media,name,scheme',
-    'meter^[HTMLElement]|#high,#low,#max,#min,#optimum,#value',
-    'ins,del^[HTMLElement]|cite,dateTime',
-    'ol^[HTMLElement]|!compact,!reversed,#start,type',
-    'object^[HTMLElement]|align,archive,border,code,codeBase,codeType,data,!declare,height,#hspace,name,standby,type,useMap,#vspace,width',
-    'optgroup^[HTMLElement]|!disabled,label',
-    'option^[HTMLElement]|!defaultSelected,!disabled,label,!selected,text,value',
-    'output^[HTMLElement]|defaultValue,%htmlFor,name,value',
-    'p^[HTMLElement]|align',
-    'param^[HTMLElement]|name,type,value,valueType',
-    'picture^[HTMLElement]|',
-    'pre^[HTMLElement]|#width',
-    'progress^[HTMLElement]|#max,#value',
-    'q,blockquote,cite^[HTMLElement]|',
-    'script^[HTMLElement]|!async,charset,%crossOrigin,!defer,event,htmlFor,integrity,!noModule,%referrerPolicy,src,text,type',
-    'select^[HTMLElement]|autocomplete,!disabled,#length,!multiple,name,!required,#selectedIndex,#size,value',
-    'slot^[HTMLElement]|name',
-    'source^[HTMLElement]|#height,media,sizes,src,srcset,type,#width',
-    'span^[HTMLElement]|',
-    'style^[HTMLElement]|!disabled,media,type',
-    'caption^[HTMLElement]|align',
-    'th,td^[HTMLElement]|abbr,align,axis,bgColor,ch,chOff,#colSpan,headers,height,!noWrap,#rowSpan,scope,vAlign,width',
-    'col,colgroup^[HTMLElement]|align,ch,chOff,#span,vAlign,width',
-    'table^[HTMLElement]|align,bgColor,border,%caption,cellPadding,cellSpacing,frame,rules,summary,%tFoot,%tHead,width',
-    'tr^[HTMLElement]|align,bgColor,ch,chOff,vAlign',
-    'tfoot,thead,tbody^[HTMLElement]|align,ch,chOff,vAlign',
-    'template^[HTMLElement]|',
-    'textarea^[HTMLElement]|autocomplete,#cols,defaultValue,dirName,!disabled,#maxLength,#minLength,name,placeholder,!readOnly,!required,#rows,selectionDirection,#selectionEnd,#selectionStart,value,wrap',
-    'time^[HTMLElement]|dateTime',
-    'title^[HTMLElement]|text',
-    'track^[HTMLElement]|!default,kind,label,src,srclang',
-    'ul^[HTMLElement]|!compact,type',
-    'unknown^[HTMLElement]|',
-    'video^media|!disablePictureInPicture,#height,*enterpictureinpicture,*leavepictureinpicture,!playsInline,poster,#width',
-    ':svg:a^:svg:graphics|',
-    ':svg:animate^:svg:animation|',
-    ':svg:animateMotion^:svg:animation|',
-    ':svg:animateTransform^:svg:animation|',
-    ':svg:circle^:svg:geometry|',
-    ':svg:clipPath^:svg:graphics|',
-    ':svg:defs^:svg:graphics|',
-    ':svg:desc^:svg:|',
-    ':svg:discard^:svg:|',
-    ':svg:ellipse^:svg:geometry|',
-    ':svg:feBlend^:svg:|',
-    ':svg:feColorMatrix^:svg:|',
-    ':svg:feComponentTransfer^:svg:|',
-    ':svg:feComposite^:svg:|',
-    ':svg:feConvolveMatrix^:svg:|',
-    ':svg:feDiffuseLighting^:svg:|',
-    ':svg:feDisplacementMap^:svg:|',
-    ':svg:feDistantLight^:svg:|',
-    ':svg:feDropShadow^:svg:|',
-    ':svg:feFlood^:svg:|',
-    ':svg:feFuncA^:svg:componentTransferFunction|',
-    ':svg:feFuncB^:svg:componentTransferFunction|',
-    ':svg:feFuncG^:svg:componentTransferFunction|',
-    ':svg:feFuncR^:svg:componentTransferFunction|',
-    ':svg:feGaussianBlur^:svg:|',
-    ':svg:feImage^:svg:|',
-    ':svg:feMerge^:svg:|',
-    ':svg:feMergeNode^:svg:|',
-    ':svg:feMorphology^:svg:|',
-    ':svg:feOffset^:svg:|',
-    ':svg:fePointLight^:svg:|',
-    ':svg:feSpecularLighting^:svg:|',
-    ':svg:feSpotLight^:svg:|',
-    ':svg:feTile^:svg:|',
-    ':svg:feTurbulence^:svg:|',
-    ':svg:filter^:svg:|',
-    ':svg:foreignObject^:svg:graphics|',
-    ':svg:g^:svg:graphics|',
-    ':svg:image^:svg:graphics|decoding',
-    ':svg:line^:svg:geometry|',
-    ':svg:linearGradient^:svg:gradient|',
-    ':svg:mpath^:svg:|',
-    ':svg:marker^:svg:|',
-    ':svg:mask^:svg:|',
-    ':svg:metadata^:svg:|',
-    ':svg:path^:svg:geometry|',
-    ':svg:pattern^:svg:|',
-    ':svg:polygon^:svg:geometry|',
-    ':svg:polyline^:svg:geometry|',
-    ':svg:radialGradient^:svg:gradient|',
-    ':svg:rect^:svg:geometry|',
-    ':svg:svg^:svg:graphics|#currentScale,#zoomAndPan',
-    ':svg:script^:svg:|type',
-    ':svg:set^:svg:animation|',
-    ':svg:stop^:svg:|',
-    ':svg:style^:svg:|!disabled,media,title,type',
-    ':svg:switch^:svg:graphics|',
-    ':svg:symbol^:svg:|',
-    ':svg:tspan^:svg:textPositioning|',
-    ':svg:text^:svg:textPositioning|',
-    ':svg:textPath^:svg:textContent|',
-    ':svg:title^:svg:|',
-    ':svg:use^:svg:graphics|',
-    ':svg:view^:svg:|#zoomAndPan',
-    'data^[HTMLElement]|value',
-    'keygen^[HTMLElement]|!autofocus,challenge,!disabled,form,keytype,name',
-    'menuitem^[HTMLElement]|type,label,icon,!disabled,!checked,radiogroup,!default',
-    'summary^[HTMLElement]|',
-    'time^[HTMLElement]|dateTime',
-    ':svg:cursor^:svg:|',
-];
-const _ATTR_TO_PROP = new Map(Object.entries({
-    'class': 'className',
-    'for': 'htmlFor',
-    'formaction': 'formAction',
-    'innerHtml': 'innerHTML',
-    'readonly': 'readOnly',
-    'tabindex': 'tabIndex',
-}));
-// Invert _ATTR_TO_PROP.
-const _PROP_TO_ATTR = Array.from(_ATTR_TO_PROP).reduce((inverted, [propertyName, attributeName]) => {
-    inverted.set(propertyName, attributeName);
-    return inverted;
-}, new Map());
-class DomElementSchemaRegistry extends ElementSchemaRegistry {
-    constructor() {
-        super();
-        this._schema = new Map();
-        // We don't allow binding to events for security reasons. Allowing event bindings would almost
-        // certainly introduce bad XSS vulnerabilities. Instead, we store events in a separate schema.
-        this._eventSchema = new Map;
-        SCHEMA.forEach(encodedType => {
-            const type = new Map();
-            const events = new Set();
-            const [strType, strProperties] = encodedType.split('|');
-            const properties = strProperties.split(',');
-            const [typeNames, superName] = strType.split('^');
-            typeNames.split(',').forEach(tag => {
-                this._schema.set(tag.toLowerCase(), type);
-                this._eventSchema.set(tag.toLowerCase(), events);
-            });
-            const superType = superName && this._schema.get(superName.toLowerCase());
-            if (superType) {
-                for (const [prop, value] of superType) {
-                    type.set(prop, value);
-                }
-                for (const superEvent of this._eventSchema.get(superName.toLowerCase())) {
-                    events.add(superEvent);
-                }
-            }
-            properties.forEach((property) => {
-                if (property.length > 0) {
-                    switch (property[0]) {
-                        case '*':
-                            events.add(property.substring(1));
-                            break;
-                        case '!':
-                            type.set(property.substring(1), BOOLEAN);
-                            break;
-                        case '#':
-                            type.set(property.substring(1), NUMBER);
-                            break;
-                        case '%':
-                            type.set(property.substring(1), OBJECT);
-                            break;
-                        default:
-                            type.set(property, STRING);
-                    }
-                }
-            });
-        });
-    }
-    hasProperty(tagName, propName, schemaMetas) {
-        if (schemaMetas.some((schema) => schema.name === NO_ERRORS_SCHEMA.name)) {
-            return true;
-        }
-        if (tagName.indexOf('-') > -1) {
-            if (isNgContainer(tagName) || isNgContent(tagName)) {
-                return false;
-            }
-            if (schemaMetas.some((schema) => schema.name === CUSTOM_ELEMENTS_SCHEMA.name)) {
-                // Can't tell now as we don't know which properties a custom element will get
-                // once it is instantiated
-                return true;
-            }
-        }
-        const elementProperties = this._schema.get(tagName.toLowerCase()) || this._schema.get('unknown');
-        return elementProperties.has(propName);
-    }
-    hasElement(tagName, schemaMetas) {
-        if (schemaMetas.some((schema) => schema.name === NO_ERRORS_SCHEMA.name)) {
-            return true;
-        }
-        if (tagName.indexOf('-') > -1) {
-            if (isNgContainer(tagName) || isNgContent(tagName)) {
-                return true;
-            }
-            if (schemaMetas.some((schema) => schema.name === CUSTOM_ELEMENTS_SCHEMA.name)) {
-                // Allow any custom elements
-                return true;
-            }
-        }
-        return this._schema.has(tagName.toLowerCase());
-    }
-    /**
-     * securityContext returns the security context for the given property on the given DOM tag.
-     *
-     * Tag and property name are statically known and cannot change at runtime, i.e. it is not
-     * possible to bind a value into a changing attribute or tag name.
-     *
-     * The filtering is based on a list of allowed tags|attributes. All attributes in the schema
-     * above are assumed to have the 'NONE' security context, i.e. that they are safe inert
-     * string values. Only specific well known attack vectors are assigned their appropriate context.
-     */
-    securityContext(tagName, propName, isAttribute) {
-        if (isAttribute) {
-            // NB: For security purposes, use the mapped property name, not the attribute name.
-            propName = this.getMappedPropName(propName);
-        }
-        // Make sure comparisons are case insensitive, so that case differences between attribute and
-        // property names do not have a security impact.
-        tagName = tagName.toLowerCase();
-        propName = propName.toLowerCase();
-        let ctx = SECURITY_SCHEMA()[tagName + '|' + propName];
-        if (ctx) {
-            return ctx;
-        }
-        ctx = SECURITY_SCHEMA()['*|' + propName];
-        return ctx ? ctx : SecurityContext.NONE;
-    }
-    getMappedPropName(propName) {
-        return _ATTR_TO_PROP.get(propName) ?? propName;
-    }
-    getDefaultComponentElementName() {
-        return 'ng-component';
-    }
-    validateProperty(name) {
-        if (name.toLowerCase().startsWith('on')) {
-            const msg = `Binding to event property '${name}' is disallowed for security reasons, ` +
-                `please use (${name.slice(2)})=...` +
-                `\nIf '${name}' is a directive input, make sure the directive is imported by the` +
-                ` current module.`;
-            return { error: true, msg: msg };
-        }
-        else {
-            return { error: false };
-        }
-    }
-    validateAttribute(name) {
-        if (name.toLowerCase().startsWith('on')) {
-            const msg = `Binding to event attribute '${name}' is disallowed for security reasons, ` +
-                `please use (${name.slice(2)})=...`;
-            return { error: true, msg: msg };
-        }
-        else {
-            return { error: false };
-        }
-    }
-    allKnownElementNames() {
-        return Array.from(this._schema.keys());
-    }
-    allKnownAttributesOfElement(tagName) {
-        const elementProperties = this._schema.get(tagName.toLowerCase()) || this._schema.get('unknown');
-        // Convert properties to attributes.
-        return Array.from(elementProperties.keys()).map(prop => _PROP_TO_ATTR.get(prop) ?? prop);
-    }
-    allKnownEventsOfElement(tagName) {
-        return Array.from(this._eventSchema.get(tagName.toLowerCase()) ?? []);
-    }
-    normalizeAnimationStyleProperty(propName) {
-        return dashCaseToCamelCase(propName);
-    }
-    normalizeAnimationStyleValue(camelCaseProp, userProvidedProp, val) {
-        let unit = '';
-        const strVal = val.toString().trim();
-        let errorMsg = null;
-        if (_isPixelDimensionStyle(camelCaseProp) && val !== 0 && val !== '0') {
-            if (typeof val === 'number') {
-                unit = 'px';
-            }
-            else {
-                const valAndSuffixMatch = val.match(/^[+-]?[\d\.]+([a-z]*)$/);
-                if (valAndSuffixMatch && valAndSuffixMatch[1].length == 0) {
-                    errorMsg = `Please provide a CSS unit value for ${userProvidedProp}:${val}`;
-                }
-            }
-        }
-        return { error: errorMsg, value: strVal + unit };
-    }
-}
-function _isPixelDimensionStyle(prop) {
-    switch (prop) {
-        case 'width':
-        case 'height':
-        case 'minWidth':
-        case 'minHeight':
-        case 'maxWidth':
-        case 'maxHeight':
-        case 'left':
-        case 'top':
-        case 'bottom':
-        case 'right':
-        case 'fontSize':
-        case 'outlineWidth':
-        case 'outlineOffset':
-        case 'paddingTop':
-        case 'paddingLeft':
-        case 'paddingBottom':
-        case 'paddingRight':
-        case 'marginTop':
-        case 'marginLeft':
-        case 'marginBottom':
-        case 'marginRight':
-        case 'borderRadius':
-        case 'borderWidth':
-        case 'borderTopWidth':
-        case 'borderLeftWidth':
-        case 'borderRightWidth':
-        case 'borderBottomWidth':
-        case 'textIndent':
-            return true;
-        default:
-            return false;
-    }
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * Set of tagName|propertyName corresponding to Trusted Types sinks. Properties applying to all
  * tags use '*'.
@@ -15390,13 +15041,6 @@ function isTrustedTypesSink(tagName, propName) {
         TRUSTED_TYPES_SINKS.has('*|' + propName);
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const PROPERTY_PARTS_SEPARATOR = '.';
 const ATTRIBUTE_PREFIX = 'attr';
 const CLASS_PREFIX = 'class';
@@ -15810,13 +15454,6 @@ function moveParseSourceSpan(sourceSpan, absoluteSpan) {
     return new ParseSourceSpan(sourceSpan.start.moveBy(startDiff), sourceSpan.end.moveBy(endDiff), sourceSpan.fullStart.moveBy(startDiff), sourceSpan.details);
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 // Some of the code comes from WebComponents.JS
 // https://github.com/webcomponents/webcomponentsjs/blob/master/src/HTMLImports/path.js
 function isStyleUrlResolvable(url) {
@@ -15827,13 +15464,6 @@ function isStyleUrlResolvable(url) {
 }
 const URL_WITH_SCHEMA_REGEXP = /^([^:/?#]+):/;
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const NG_CONTENT_SELECT_ATTR$1 = 'select';
 const LINK_ELEMENT = 'link';
 const LINK_STYLE_REL_ATTR = 'rel';
@@ -15910,13 +15540,6 @@ function normalizeNgContentSelect(selectAttr) {
     return selectAttr;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const BIND_NAME_REGEXP = /^(?:(bind-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.*)$/;
 // Group 1 = "bind-"
 const KW_BIND_IDX = 1;
@@ -16338,13 +15961,6 @@ function textContents(node) {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 var TagType;
 (function (TagType) {
     TagType[TagType["ELEMENT"] = 0] = "ELEMENT";
@@ -16537,13 +16153,6 @@ function serializePlaceholderValue(value) {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class IcuSerializerVisitor {
     visitText(text) {
         return text.value;
@@ -16576,13 +16185,6 @@ function serializeIcuNode(icu) {
     return icu.visit(serializer);
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const TAG_TO_PLACEHOLDER_NAMES = {
     'A': 'LINK',
     'B': 'BOLD_TEXT',
@@ -16684,13 +16286,6 @@ class PlaceholderRegistry {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const _expParser = new Parser$1(new Lexer());
 /**
  * Returns a function converting html nodes to an i18n Message given an interpolationConfig
@@ -16899,13 +16494,6 @@ function extractPlaceholderName(input) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * An i18n error.
  */
 class I18nError extends ParseError {
@@ -16914,13 +16502,6 @@ class I18nError extends ParseError {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const setI18nRefs = (htmlNode, i18nNode) => {
     if (htmlNode instanceof NodeWithI18n) {
         if (i18nNode instanceof IcuPlaceholder && htmlNode.i18n instanceof Message) {
@@ -17363,13 +16944,6 @@ function createEmptyMessagePart(location) {
     return new LiteralPiece('', new ParseSourceSpan(location, location));
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 // Selector attribute name of `<ng-content>`
 const NG_CONTENT_SELECT_ATTR = 'select';
 // Attribute name of `ngProjectAs`.
@@ -19113,13 +18687,6 @@ function createClosureModeGuard() {
         .and(variable(NG_I18N_CLOSURE_MODE));
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 // This regex matches any binding names that contain the "attr." prefix, e.g. "attr.required"
 // If there is a match, the first matching group will contain the attribute name to bind.
 const ATTR_REGEX = /attr\.([^\]]+)/;
@@ -19795,13 +19362,6 @@ function createHostDirectivesMappingArray(mapping) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * An interface for retrieving documents by URL that the compiler uses to
  * load templates.
  *
@@ -19811,13 +19371,6 @@ function createHostDirectivesMappingArray(mapping) {
 class ResourceLoader {
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class CompilerFacadeImpl {
     constructor(jitEvaluator = new JitEvaluator()) {
         this.jitEvaluator = jitEvaluator;
@@ -20356,21 +19909,12 @@ function publishFacade(global) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
+ * @module
+ * @description
+ * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('15.1.0+sha-dd54f6b');
+const VERSION = new Version('15.1.0+sha-5978eed');
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
         this.defaultEncapsulation = defaultEncapsulation;
@@ -20384,13 +19928,6 @@ function preserveWhitespacesDefault(preserveWhitespacesOption, defaultSetting = 
     return preserveWhitespacesOption === null ? defaultSetting : preserveWhitespacesOption;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const _I18N_ATTR = 'i18n';
 const _I18N_ATTR_PREFIX = 'i18n-';
 const _I18N_COMMENT_PREFIX_REGEXP = /^i18n:?/;
@@ -20781,13 +20318,6 @@ function _parseMessageMeta(i18n) {
     return { meaning, description, id: id.trim() };
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class XmlTagDefinition {
     constructor() {
         this.closedByParent = false;
@@ -20811,13 +20341,6 @@ function getXmlTagDefinition(tagName) {
     return _TAG_DEFINITION;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class XmlParser extends Parser {
     constructor() {
         super(getXmlTagDefinition);
@@ -20827,13 +20350,6 @@ class XmlParser extends Parser {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const _VERSION$1 = '1.2';
 const _XMLNS$1 = 'urn:oasis:names:tc:xliff:document:1.2';
 // TODO(vicb): make this a param (s/_/-/)
@@ -21079,13 +20595,6 @@ function getCtypeForTag(tag) {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const _VERSION = '2.0';
 const _XMLNS = 'urn:oasis:names:tc:xliff:document:2.0';
 // TODO(vicb): make this a param (s/_/-/)
@@ -21378,13 +20887,6 @@ function getTypeForTag(tag) {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 const _TRANSLATIONS_TAG = 'translationbundle';
 const _TRANSLATION_TAG = 'translation';
 const _PLACEHOLDER_TAG = 'ph';
@@ -21553,13 +21055,6 @@ class XmlToI18n {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * A container for translated messages
  */
 class TranslationBundle {
@@ -21705,13 +21200,6 @@ class I18nToHtmlVisitor {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class I18NHtmlParser {
     constructor(_htmlParser, translations, translationsFormat, missingTranslation = MissingTranslationStrategy.Warning, console) {
         this._htmlParser = _htmlParser;
@@ -21751,13 +21239,6 @@ function createSerializer(format) {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * A container for message extracted from the templates.
  */
@@ -21833,14 +21314,6 @@ class MapPlaceholderNames extends CloneVisitor {
     }
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-
 var FactoryTarget;
 (function (FactoryTarget) {
     FactoryTarget[FactoryTarget["Directive"] = 0] = "Directive";
@@ -21850,21 +21323,6 @@ var FactoryTarget;
     FactoryTarget[FactoryTarget["NgModule"] = 4] = "NgModule";
 })(FactoryTarget || (FactoryTarget = {}));
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * Processes `Target`s with a given set of directives and performs a binding operation, which
  * returns an object similar to TypeScript's `ts.TypeChecker` that contains knowledge about the
@@ -22356,13 +21814,6 @@ function extractTemplateEntities(rootScope) {
     return templateEntities;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 function compileClassMetadata(metadata) {
     // Generate an ngDevMode guarded call to setClassMetadata with the class identifier and its
     // metadata.
@@ -22377,13 +21828,6 @@ function compileClassMetadata(metadata) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
  * must update this constant to prevent old partial-linkers from incorrectly processing the
  * declaration.
@@ -22394,7 +21838,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('15.1.0+sha-dd54f6b'));
+    definitionMap.set('version', literal('15.1.0+sha-5978eed'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -22403,13 +21847,6 @@ function compileDeclareClassMetadata(metadata) {
     return importExpr(Identifiers.declareClassMetadata).callFn([definitionMap.toLiteralMap()]);
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * Creates an array literal expression from the given array, mapping all values to an expression
  * using the provided mapping function. If the array is empty or null, then null is returned.
@@ -22481,13 +21918,6 @@ function compileDependency(dep) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
  * must update this constant to prevent old partial-linkers from incorrectly processing the
  * declaration.
@@ -22511,7 +21941,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('15.1.0+sha-dd54f6b'));
+    definitionMap.set('version', literal('15.1.0+sha-5978eed'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     if (meta.isStandalone) {
@@ -22621,13 +22051,6 @@ function createHostDirectives(hostDirectives) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * Compile a component declaration defined by the `R3ComponentMetadata`.
  */
 function compileDeclareComponentFromMetadata(meta, template, additionalTemplateInfo) {
@@ -22733,13 +22156,6 @@ function compileUsedDependenciesMetadata(meta) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
  * must update this constant to prevent old partial-linkers from incorrectly processing the
  * declaration.
@@ -22750,7 +22166,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('15.1.0+sha-dd54f6b'));
+    definitionMap.set('version', literal('15.1.0+sha-5978eed'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22762,13 +22178,6 @@ function compileDeclareFactoryFunction(meta) {
     };
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
  * must update this constant to prevent old partial-linkers from incorrectly processing the
@@ -22792,7 +22201,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('15.1.0+sha-dd54f6b'));
+    definitionMap.set('version', literal('15.1.0+sha-5978eed'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22824,13 +22233,6 @@ function createInjectableDefinitionMap(meta) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
  * must update this constant to prevent old partial-linkers from incorrectly processing the
  * declaration.
@@ -22850,7 +22252,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('15.1.0+sha-dd54f6b'));
+    definitionMap.set('version', literal('15.1.0+sha-5978eed'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22860,13 +22262,6 @@ function createInjectorDefinitionMap(meta) {
     return definitionMap;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
  * must update this constant to prevent old partial-linkers from incorrectly processing the
@@ -22887,7 +22282,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('15.1.0+sha-dd54f6b'));
+    definitionMap.set('version', literal('15.1.0+sha-5978eed'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22916,13 +22311,6 @@ function createNgModuleDefinitionMap(meta) {
 }
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
  * must update this constant to prevent old partial-linkers from incorrectly processing the
  * declaration.
@@ -22945,7 +22333,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('15.1.0+sha-dd54f6b'));
+    definitionMap.set('version', literal('15.1.0+sha-5978eed'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
@@ -22961,42 +22349,22 @@ function createPipeDefinitionMap(meta) {
     return definitionMap;
 }
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
+//////////////////////////////////////
 // This file only reexports content of the `src` folder. Keep it that way.
 // This function call has a global side effects and publishes the compiler into global namespace for
 // the late binding of the Compiler to the @angular/core for jit compilation.
 publishFacade(_global);
 
 /**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
+ * @module
+ * @description
+ * Entry point for all public APIs of this package.
  */
 // This file only reexports content of the `src` folder. Keep it that way.
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
+// This file is not used to build this module. It is only used during editing
 
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
+// This file is not used to build this module. It is only used during editing
 
 export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element$1 as TmplAstElement, Icu$1 as TmplAstIcu, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token, TokenType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
