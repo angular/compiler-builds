@@ -1,5 +1,5 @@
 /**
- * @license Angular v15.1.2+sha-7f5d035
+ * @license Angular v15.1.3+sha-21b15e8
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7428,9 +7428,8 @@ const animationKeywords = new Set([
     'end', 'jump-both', 'jump-end', 'jump-none', 'jump-start', 'start'
 ]);
 /**
- * The following class is a port of shadowCSS from webcomponents.js to TypeScript.
- *
- * Please make sure to keep to edits in sync with the source file.
+ * The following class has its origin from a port of shadowCSS from webcomponents.js to TypeScript.
+ * It has since diverge in many ways to tailor Angular's needs.
  *
  * Source:
  * https://github.com/webcomponents/webcomponentsjs/blob/4efecd7e0e/src/ShadowCSS/ShadowCSS.js
@@ -7470,28 +7469,8 @@ const animationKeywords = new Set([
     }
 
   * encapsulation: Styles defined within ShadowDOM, apply only to
-  dom inside the ShadowDOM. Polymer uses one of two techniques to implement
-  this feature.
-
-  By default, rules are prefixed with the host element tag name
-  as a descendant selector. This ensures styling does not leak out of the 'top'
-  of the element's ShadowDOM. For example,
-
-  div {
-      font-weight: bold;
-    }
-
-  becomes:
-
-  x-foo div {
-      font-weight: bold;
-    }
-
-  becomes:
-
-
-  Alternatively, if WebComponents.ShadowCSS.strictStyling is set to true then
-  selectors are scoped by adding an attribute selector suffix to each
+  dom inside the ShadowDOM.
+  The selectors are scoped by adding an attribute selector suffix to each
   simple selector that contains the host element tag name. Each element
   in the element's ShadowDOM template is also given the scope attribute.
   Thus, these rules match only elements that have the scope attribute.
@@ -7553,8 +7532,6 @@ const animationKeywords = new Set([
 */
 class ShadowCss {
     constructor() {
-        // TODO: Is never re-assigned, could be removed.
-        this.strictStyling = true;
         /**
          * Regular expression used to extrapolate the possible keyframes from an
          * animation declaration (with possibly multiple animation definitions)
@@ -7572,12 +7549,10 @@ class ShadowCss {
         this._animationDeclarationKeyframesRe = /(^|\s+)(?:(?:(['"])((?:\\\\|\\\2|(?!\2).)+)\2)|(-?[A-Za-z][\w\-]*))(?=[,\s]|$)/g;
     }
     /*
-     * Shim some cssText with the given selector. Returns cssText that can
-     * be included in the document via WebComponents.ShadowCSS.addCssToDocument(css).
+     * Shim some cssText with the given selector. Returns cssText that can be included in the document
      *
-     * When strictStyling is true:
-     * - selector is the attribute added to all elements inside the host,
-     * - hostSelector is the attribute added to the host itself.
+     * The selector is the attribute added to all elements inside the host,
+     * The hostSelector is the attribute added to the host itself.
      */
     shimCssText(cssText, selector, hostSelector = '') {
         const commentsWithHash = extractCommentsWithHash(cssText);
@@ -7739,7 +7714,6 @@ class ShadowCss {
      *
      **/
     _insertPolyfillDirectivesInCssText(cssText) {
-        // Difference with webcomponents.js: does not handle comments
         return cssText.replace(_cssContentNextSelectorRe, function (...m) {
             return m[2] + '{';
         });
@@ -7760,7 +7734,6 @@ class ShadowCss {
      *
      **/
     _insertPolyfillRulesInCssText(cssText) {
-        // Difference with webcomponents.js: does not handle comments
         return cssText.replace(_cssContentRuleRe, (...m) => {
             const rule = m[0].replace(m[1], '').replace(m[2], '');
             return m[4] + rule;
@@ -7804,7 +7777,6 @@ class ShadowCss {
      *
      **/
     _extractUnscopedRulesFromCssText(cssText) {
-        // Difference with webcomponents.js: does not handle comments
         let r = '';
         let m;
         _cssContentUnscopedRuleRe.lastIndex = 0;
@@ -7921,8 +7893,7 @@ class ShadowCss {
             let selector = rule.selector;
             let content = rule.content;
             if (rule.selector[0] !== '@') {
-                selector =
-                    this._scopeSelector(rule.selector, scopeSelector, hostSelector, this.strictStyling);
+                selector = this._scopeSelector(rule.selector, scopeSelector, hostSelector);
             }
             else if (rule.selector.startsWith('@media') || rule.selector.startsWith('@supports') ||
                 rule.selector.startsWith('@document') || rule.selector.startsWith('@layer') ||
@@ -7963,16 +7934,14 @@ class ShadowCss {
             return new CssRule(selector, rule.content);
         });
     }
-    _scopeSelector(selector, scopeSelector, hostSelector, strict) {
+    _scopeSelector(selector, scopeSelector, hostSelector) {
         return selector.split(',')
             .map(part => part.trim().split(_shadowDeepSelectors))
             .map((deepParts) => {
             const [shallowPart, ...otherParts] = deepParts;
             const applyScope = (shallowPart) => {
                 if (this._selectorNeedsScoping(shallowPart, scopeSelector)) {
-                    return strict ?
-                        this._applyStrictSelectorScope(shallowPart, scopeSelector, hostSelector) :
-                        this._applySelectorScope(shallowPart, scopeSelector, hostSelector);
+                    return this._applySelectorScope(shallowPart, scopeSelector, hostSelector);
                 }
                 else {
                     return shallowPart;
@@ -7992,16 +7961,12 @@ class ShadowCss {
         scopeSelector = scopeSelector.replace(lre, '\\[').replace(rre, '\\]');
         return new RegExp('^(' + scopeSelector + ')' + _selectorReSuffix, 'm');
     }
-    _applySelectorScope(selector, scopeSelector, hostSelector) {
-        // Difference from webcomponents.js: scopeSelector could not be an array
-        return this._applySimpleSelectorScope(selector, scopeSelector, hostSelector);
-    }
     // scope via name and [is=name]
     _applySimpleSelectorScope(selector, scopeSelector, hostSelector) {
         // In Android browser, the lastIndex is not reset when the regex is used in String.replace()
         _polyfillHostRe.lastIndex = 0;
         if (_polyfillHostRe.test(selector)) {
-            const replaceBy = this.strictStyling ? `[${hostSelector}]` : scopeSelector;
+            const replaceBy = `[${hostSelector}]`;
             return selector
                 .replace(_polyfillHostNoCombinatorRe, (hnc, selector) => {
                 return selector.replace(/([^:]*)(:*)(.*)/, (_, before, colon, after) => {
@@ -8014,7 +7979,7 @@ class ShadowCss {
     }
     // return a selector with [name] suffix on each simple selector
     // e.g. .foo.bar > .zot becomes .foo[name].bar[name] > .zot[name]  /** @internal */
-    _applyStrictSelectorScope(selector, scopeSelector, hostSelector) {
+    _applySelectorScope(selector, scopeSelector, hostSelector) {
         var _a;
         const isRe = /\[is=([^\]]*)\]/g;
         scopeSelector = scopeSelector.replace(isRe, (_, ...parts) => parts[0]);
@@ -19881,7 +19846,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('15.1.2+sha-7f5d035');
+const VERSION = new Version('15.1.3+sha-21b15e8');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -21808,7 +21773,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('15.1.2+sha-7f5d035'));
+    definitionMap.set('version', literal('15.1.3+sha-21b15e8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -21912,7 +21877,7 @@ function createDirectiveDefinitionMap(meta) {
     var _a;
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('15.1.2+sha-7f5d035'));
+    definitionMap.set('version', literal('15.1.3+sha-21b15e8'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     if (meta.isStandalone) {
@@ -22137,7 +22102,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('15.1.2+sha-7f5d035'));
+    definitionMap.set('version', literal('15.1.3+sha-21b15e8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22172,7 +22137,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('15.1.2+sha-7f5d035'));
+    definitionMap.set('version', literal('15.1.3+sha-21b15e8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22223,7 +22188,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('15.1.2+sha-7f5d035'));
+    definitionMap.set('version', literal('15.1.3+sha-21b15e8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22253,7 +22218,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('15.1.2+sha-7f5d035'));
+    definitionMap.set('version', literal('15.1.3+sha-21b15e8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22304,7 +22269,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('15.1.2+sha-7f5d035'));
+    definitionMap.set('version', literal('15.1.3+sha-21b15e8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
