@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.0.0-next.2+sha-0814f20
+ * @license Angular v16.0.0-next.2+sha-be97c87
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3404,7 +3404,7 @@ export declare interface R3DirectiveMetadata {
      * binding property name and class property name if the names are different.
      */
     inputs: {
-        [field: string]: string | [string, string];
+        [field: string]: R3InputMetadata;
     };
     /**
      * A mapping of outputs from class property names to binding property names, or to a tuple of
@@ -3695,6 +3695,14 @@ export declare interface R3InjectorMetadata {
     internalType: outputAst.Expression;
     providers: outputAst.Expression | null;
     imports: outputAst.Expression[];
+}
+
+/**
+ * Metadata for an individual input on a directive.
+ */
+export declare interface R3InputMetadata {
+    classPropertyName: string;
+    bindingPropertyName: string;
 }
 
 /**

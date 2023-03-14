@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.0.0-next.2+sha-0814f20
+ * @license Angular v16.0.0-next.2+sha-be97c87
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4714,29 +4714,29 @@ function asLiteral(value) {
     }
     return literal(value, INFERRED_TYPE);
 }
-function conditionallyCreateMapObjectLiteral(keys, keepDeclared) {
-    if (Object.getOwnPropertyNames(keys).length > 0) {
-        return mapToExpression(keys, keepDeclared);
+function conditionallyCreateDirectiveBindingLiteral(map, keepDeclared) {
+    const keys = Object.getOwnPropertyNames(map);
+    if (keys.length === 0) {
+        return null;
     }
-    return null;
-}
-function mapToExpression(map, keepDeclared) {
-    return literalMap(Object.getOwnPropertyNames(map).map(key => {
-        // canonical syntax: `dirProp: publicProp`
+    return literalMap(keys.map(key => {
         const value = map[key];
         let declaredName;
         let publicName;
         let minifiedName;
         let needsDeclaredName;
-        if (Array.isArray(value)) {
-            [publicName, declaredName] = value;
+        if (typeof value === 'string') {
+            // canonical syntax: `dirProp: publicProp`
+            declaredName = key;
             minifiedName = key;
-            needsDeclaredName = publicName !== declaredName;
-        }
-        else {
-            minifiedName = declaredName = key;
             publicName = value;
             needsDeclaredName = false;
+        }
+        else {
+            minifiedName = key;
+            declaredName = value.classPropertyName;
+            publicName = value.bindingPropertyName;
+            needsDeclaredName = publicName !== declaredName;
         }
         return {
             key: minifiedName,
@@ -18685,9 +18685,9 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     // e.g. `hostBindings: (rf, ctx) => { ... }
     definitionMap.set('hostBindings', createHostBindingsFunction(meta.host, meta.typeSourceSpan, bindingParser, constantPool, meta.selector || '', meta.name, definitionMap));
     // e.g 'inputs: {a: 'a'}`
-    definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs, true));
+    definitionMap.set('inputs', conditionallyCreateDirectiveBindingLiteral(meta.inputs, true));
     // e.g 'outputs: {a: 'a'}`
-    definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
+    definitionMap.set('outputs', conditionallyCreateDirectiveBindingLiteral(meta.outputs));
     if (meta.exportAs !== null) {
         definitionMap.set('exportAs', literalArr(meta.exportAs.map(e => literal(e))));
     }
@@ -18939,10 +18939,16 @@ function createBaseDirectiveTypeParams(meta) {
         typeWithParameters(meta.type.type, meta.typeArgumentCount),
         selectorForType !== null ? stringAsType(selectorForType) : NONE_TYPE,
         meta.exportAs !== null ? stringArrayAsType(meta.exportAs) : NONE_TYPE,
-        expressionType(stringMapAsLiteralExpression(meta.inputs)),
+        expressionType(getInputsTypeExpression(meta)),
         expressionType(stringMapAsLiteralExpression(meta.outputs)),
         stringArrayAsType(meta.queries.map(q => q.propertyName)),
     ];
+}
+function getInputsTypeExpression(meta) {
+    // TODO(required-inputs): expand this to generate the new object literal syntax.
+    return literalMap(Object.keys(meta.inputs).map(key => {
+        return { key, value: literal(meta.inputs[key].bindingPropertyName), quoted: true };
+    }));
 }
 /**
  * Creates the type specification from the directive meta. This type is inserted into .d.ts files
@@ -19552,8 +19558,8 @@ function convertQueryPredicate(predicate) {
         createMayBeForwardRefExpression(new WrappedNodeExpr(predicate), 1 /* ForwardRefHandling.Wrapped */);
 }
 function convertDirectiveFacadeToMetadata(facade) {
-    const inputsFromMetadata = parseInputOutputs(facade.inputs || []);
-    const outputsFromMetadata = parseInputOutputs(facade.outputs || []);
+    const inputsFromMetadata = parseInputsArray(facade.inputs || []);
+    const outputsFromMetadata = parseMappingStringArray(facade.outputs || []);
     const propMetadata = facade.propMetadata;
     const inputsFromType = {};
     const outputsFromType = {};
@@ -19561,8 +19567,11 @@ function convertDirectiveFacadeToMetadata(facade) {
         if (propMetadata.hasOwnProperty(field)) {
             propMetadata[field].forEach(ann => {
                 if (isInput(ann)) {
-                    inputsFromType[field] =
-                        ann.bindingPropertyName ? [ann.bindingPropertyName, field] : field;
+                    // TODO(required-inputs): pass required flag
+                    inputsFromType[field] = {
+                        bindingPropertyName: ann.bindingPropertyName || field,
+                        classPropertyName: field
+                    };
                 }
                 else if (isOutput(ann)) {
                     outputsFromType[field] = ann.bindingPropertyName || field;
@@ -19573,27 +19582,27 @@ function convertDirectiveFacadeToMetadata(facade) {
     return Object.assign(Object.assign({}, facade), { typeArgumentCount: 0, typeSourceSpan: facade.typeSourceSpan, type: wrapReference(facade.type), internalType: new WrappedNodeExpr(facade.type), deps: null, host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: Object.assign(Object.assign({}, inputsFromMetadata), inputsFromType), outputs: Object.assign(Object.assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), fullInheritance: false, hostDirectives: convertHostDirectivesToMetadata(facade) });
 }
 function convertDeclareDirectiveFacadeToMetadata(declaration, typeSourceSpan) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+    var _a, _b, _c, _d, _e, _f, _g, _h;
     return {
         name: declaration.type.name,
         type: wrapReference(declaration.type),
         typeSourceSpan,
         internalType: new WrappedNodeExpr(declaration.type),
         selector: (_a = declaration.selector) !== null && _a !== void 0 ? _a : null,
-        inputs: (_b = declaration.inputs) !== null && _b !== void 0 ? _b : {},
-        outputs: (_c = declaration.outputs) !== null && _c !== void 0 ? _c : {},
+        inputs: declaration.inputs ? inputsMappingToInputMetadata(declaration.inputs) : {},
+        outputs: (_b = declaration.outputs) !== null && _b !== void 0 ? _b : {},
         host: convertHostDeclarationToMetadata(declaration.host),
-        queries: ((_d = declaration.queries) !== null && _d !== void 0 ? _d : []).map(convertQueryDeclarationToMetadata),
-        viewQueries: ((_e = declaration.viewQueries) !== null && _e !== void 0 ? _e : []).map(convertQueryDeclarationToMetadata),
+        queries: ((_c = declaration.queries) !== null && _c !== void 0 ? _c : []).map(convertQueryDeclarationToMetadata),
+        viewQueries: ((_d = declaration.viewQueries) !== null && _d !== void 0 ? _d : []).map(convertQueryDeclarationToMetadata),
         providers: declaration.providers !== undefined ? new WrappedNodeExpr(declaration.providers) :
             null,
-        exportAs: (_f = declaration.exportAs) !== null && _f !== void 0 ? _f : null,
-        usesInheritance: (_g = declaration.usesInheritance) !== null && _g !== void 0 ? _g : false,
-        lifecycle: { usesOnChanges: (_h = declaration.usesOnChanges) !== null && _h !== void 0 ? _h : false },
+        exportAs: (_e = declaration.exportAs) !== null && _e !== void 0 ? _e : null,
+        usesInheritance: (_f = declaration.usesInheritance) !== null && _f !== void 0 ? _f : false,
+        lifecycle: { usesOnChanges: (_g = declaration.usesOnChanges) !== null && _g !== void 0 ? _g : false },
         deps: null,
         typeArgumentCount: 0,
         fullInheritance: false,
-        isStandalone: (_j = declaration.isStandalone) !== null && _j !== void 0 ? _j : false,
+        isStandalone: (_h = declaration.isStandalone) !== null && _h !== void 0 ? _h : false,
         hostDirectives: convertHostDirectivesToMetadata(declaration),
     };
 }
@@ -19623,8 +19632,8 @@ function convertHostDirectivesToMetadata(metadata) {
                 {
                     directive: wrapReference(hostDirective.directive),
                     isForwardReference: false,
-                    inputs: hostDirective.inputs ? parseInputOutputs(hostDirective.inputs) : null,
-                    outputs: hostDirective.outputs ? parseInputOutputs(hostDirective.outputs) : null,
+                    inputs: hostDirective.inputs ? parseMappingStringArray(hostDirective.inputs) : null,
+                    outputs: hostDirective.outputs ? parseMappingStringArray(hostDirective.outputs) : null,
                 };
         });
     }
@@ -19803,12 +19812,43 @@ function isInput(value) {
 function isOutput(value) {
     return value.ngMetadataName === 'Output';
 }
-function parseInputOutputs(values) {
+function inputsMappingToInputMetadata(inputs) {
+    return Object.keys(inputs).reduce((result, key) => {
+        const value = inputs[key];
+        result[key] = typeof value === 'string' ?
+            { bindingPropertyName: value, classPropertyName: value } :
+            { bindingPropertyName: value[0], classPropertyName: value[1] };
+        return result;
+    }, {});
+}
+function parseInputsArray(values) {
     return values.reduce((results, value) => {
-        const [field, property] = value.split(':', 2).map(str => str.trim());
-        results[field] = property || field;
+        if (typeof value === 'string') {
+            const [bindingPropertyName, classPropertyName] = parseMappingString(value);
+            results[classPropertyName] = { bindingPropertyName, classPropertyName };
+        }
+        else {
+            // TODO(required-inputs): pass required flag
+            results[value.name] = {
+                bindingPropertyName: value.alias || value.name,
+                classPropertyName: value.name
+            };
+        }
         return results;
     }, {});
+}
+function parseMappingStringArray(values) {
+    return values.reduce((results, value) => {
+        const [publicName, fieldName] = parseMappingString(value);
+        results[fieldName] = publicName;
+        return results;
+    }, {});
+}
+function parseMappingString(value) {
+    // Either the value is 'field' or 'field: property'. In the first case, `property` will
+    // be undefined, in which case the field name should also be used as the property name.
+    const [fieldName, bindingPropertyName] = value.split(':', 2).map(str => str.trim());
+    return [bindingPropertyName !== null && bindingPropertyName !== void 0 ? bindingPropertyName : fieldName, fieldName];
 }
 function convertDeclarePipeFacadeToMetadata(declaration) {
     var _a, _b;
@@ -19846,7 +19886,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.0.0-next.2+sha-0814f20');
+const VERSION = new Version('16.0.0-next.2+sha-be97c87');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -21772,7 +21812,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.0.0-next.2+sha-0814f20'));
+    definitionMap.set('version', literal('16.0.0-next.2+sha-be97c87'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -21876,7 +21916,7 @@ function createDirectiveDefinitionMap(meta) {
     var _a;
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.0.0-next.2+sha-0814f20'));
+    definitionMap.set('version', literal('16.0.0-next.2+sha-be97c87'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     if (meta.isStandalone) {
@@ -21886,8 +21926,8 @@ function createDirectiveDefinitionMap(meta) {
     if (meta.selector !== null) {
         definitionMap.set('selector', literal(meta.selector));
     }
-    definitionMap.set('inputs', conditionallyCreateMapObjectLiteral(meta.inputs, true));
-    definitionMap.set('outputs', conditionallyCreateMapObjectLiteral(meta.outputs));
+    definitionMap.set('inputs', conditionallyCreateDirectiveBindingLiteral(meta.inputs, true));
+    definitionMap.set('outputs', conditionallyCreateDirectiveBindingLiteral(meta.outputs));
     definitionMap.set('host', compileHostMetadata(meta.host));
     definitionMap.set('providers', meta.providers);
     if (meta.queries.length > 0) {
@@ -22101,7 +22141,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.0.0-next.2+sha-0814f20'));
+    definitionMap.set('version', literal('16.0.0-next.2+sha-be97c87'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22136,7 +22176,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.0.0-next.2+sha-0814f20'));
+    definitionMap.set('version', literal('16.0.0-next.2+sha-be97c87'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22187,7 +22227,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.0.0-next.2+sha-0814f20'));
+    definitionMap.set('version', literal('16.0.0-next.2+sha-be97c87'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22217,7 +22257,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.0.0-next.2+sha-0814f20'));
+    definitionMap.set('version', literal('16.0.0-next.2+sha-be97c87'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22268,7 +22308,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.0.0-next.2+sha-0814f20'));
+    definitionMap.set('version', literal('16.0.0-next.2+sha-be97c87'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
