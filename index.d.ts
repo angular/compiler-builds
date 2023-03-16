@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.0.0-next.2+sha-92e41e9
+ * @license Angular v16.0.0-next.2+sha-e8ed065
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1428,8 +1428,7 @@ declare const enum InjectFlags {
 }
 
 declare interface Input {
-    alias?: string;
-    required?: boolean;
+    bindingPropertyName?: string;
 }
 
 /**
@@ -1895,7 +1894,7 @@ declare class NullVisitor implements Visitor_3<void> {
 declare const NUMBER_TYPE: BuiltinType;
 
 declare interface Output {
-    alias?: string;
+    bindingPropertyName?: string;
 }
 
 declare namespace outputAst {
@@ -3704,7 +3703,6 @@ export declare interface R3InjectorMetadata {
 export declare interface R3InputMetadata {
     classPropertyName: string;
     bindingPropertyName: string;
-    required: boolean;
 }
 
 /**
