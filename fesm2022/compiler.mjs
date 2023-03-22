@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.0.0-next.4+sha-0dd5c47
+ * @license Angular v16.0.0-next.4+sha-132c00c
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -740,7 +740,7 @@ class _SerializerIgnoreIcuExpVisitor extends _SerializerVisitor {
  *          DO NOT USE IT IN A SECURITY SENSITIVE CONTEXT.
  */
 function sha1(str) {
-    textEncoder ?? (textEncoder = new TextEncoder());
+    textEncoder ??= new TextEncoder();
     const utf8 = [...textEncoder.encode(str)];
     const words32 = bytesToWords32(utf8, Endian.Big);
     const len = utf8.length * 8;
@@ -806,7 +806,7 @@ function fk(index, b, c, d) {
  * https://github.com/google/closure-compiler/blob/master/src/com/google/javascript/jscomp/GoogleJsMessageIdGenerator.java
  */
 function fingerprint(str) {
-    textEncoder ?? (textEncoder = new TextEncoder());
+    textEncoder ??= new TextEncoder();
     const utf8 = textEncoder.encode(str);
     const view = new DataView(utf8.buffer, utf8.byteOffset, utf8.byteLength);
     let hi = hash32(view, utf8.length, 0);
@@ -2427,209 +2427,209 @@ function isLongStringLiteral(expr) {
 
 const CORE = '@angular/core';
 class Identifiers {
+    /* Methods */
+    static { this.NEW_METHOD = 'factory'; }
+    static { this.TRANSFORM_METHOD = 'transform'; }
+    static { this.PATCH_DEPS = 'patchedDeps'; }
+    static { this.core = { name: null, moduleName: CORE }; }
+    /* Instructions */
+    static { this.namespaceHTML = { name: 'ɵɵnamespaceHTML', moduleName: CORE }; }
+    static { this.namespaceMathML = { name: 'ɵɵnamespaceMathML', moduleName: CORE }; }
+    static { this.namespaceSVG = { name: 'ɵɵnamespaceSVG', moduleName: CORE }; }
+    static { this.element = { name: 'ɵɵelement', moduleName: CORE }; }
+    static { this.elementStart = { name: 'ɵɵelementStart', moduleName: CORE }; }
+    static { this.elementEnd = { name: 'ɵɵelementEnd', moduleName: CORE }; }
+    static { this.advance = { name: 'ɵɵadvance', moduleName: CORE }; }
+    static { this.syntheticHostProperty = { name: 'ɵɵsyntheticHostProperty', moduleName: CORE }; }
+    static { this.syntheticHostListener = { name: 'ɵɵsyntheticHostListener', moduleName: CORE }; }
+    static { this.attribute = { name: 'ɵɵattribute', moduleName: CORE }; }
+    static { this.attributeInterpolate1 = { name: 'ɵɵattributeInterpolate1', moduleName: CORE }; }
+    static { this.attributeInterpolate2 = { name: 'ɵɵattributeInterpolate2', moduleName: CORE }; }
+    static { this.attributeInterpolate3 = { name: 'ɵɵattributeInterpolate3', moduleName: CORE }; }
+    static { this.attributeInterpolate4 = { name: 'ɵɵattributeInterpolate4', moduleName: CORE }; }
+    static { this.attributeInterpolate5 = { name: 'ɵɵattributeInterpolate5', moduleName: CORE }; }
+    static { this.attributeInterpolate6 = { name: 'ɵɵattributeInterpolate6', moduleName: CORE }; }
+    static { this.attributeInterpolate7 = { name: 'ɵɵattributeInterpolate7', moduleName: CORE }; }
+    static { this.attributeInterpolate8 = { name: 'ɵɵattributeInterpolate8', moduleName: CORE }; }
+    static { this.attributeInterpolateV = { name: 'ɵɵattributeInterpolateV', moduleName: CORE }; }
+    static { this.classProp = { name: 'ɵɵclassProp', moduleName: CORE }; }
+    static { this.elementContainerStart = { name: 'ɵɵelementContainerStart', moduleName: CORE }; }
+    static { this.elementContainerEnd = { name: 'ɵɵelementContainerEnd', moduleName: CORE }; }
+    static { this.elementContainer = { name: 'ɵɵelementContainer', moduleName: CORE }; }
+    static { this.styleMap = { name: 'ɵɵstyleMap', moduleName: CORE }; }
+    static { this.styleMapInterpolate1 = { name: 'ɵɵstyleMapInterpolate1', moduleName: CORE }; }
+    static { this.styleMapInterpolate2 = { name: 'ɵɵstyleMapInterpolate2', moduleName: CORE }; }
+    static { this.styleMapInterpolate3 = { name: 'ɵɵstyleMapInterpolate3', moduleName: CORE }; }
+    static { this.styleMapInterpolate4 = { name: 'ɵɵstyleMapInterpolate4', moduleName: CORE }; }
+    static { this.styleMapInterpolate5 = { name: 'ɵɵstyleMapInterpolate5', moduleName: CORE }; }
+    static { this.styleMapInterpolate6 = { name: 'ɵɵstyleMapInterpolate6', moduleName: CORE }; }
+    static { this.styleMapInterpolate7 = { name: 'ɵɵstyleMapInterpolate7', moduleName: CORE }; }
+    static { this.styleMapInterpolate8 = { name: 'ɵɵstyleMapInterpolate8', moduleName: CORE }; }
+    static { this.styleMapInterpolateV = { name: 'ɵɵstyleMapInterpolateV', moduleName: CORE }; }
+    static { this.classMap = { name: 'ɵɵclassMap', moduleName: CORE }; }
+    static { this.classMapInterpolate1 = { name: 'ɵɵclassMapInterpolate1', moduleName: CORE }; }
+    static { this.classMapInterpolate2 = { name: 'ɵɵclassMapInterpolate2', moduleName: CORE }; }
+    static { this.classMapInterpolate3 = { name: 'ɵɵclassMapInterpolate3', moduleName: CORE }; }
+    static { this.classMapInterpolate4 = { name: 'ɵɵclassMapInterpolate4', moduleName: CORE }; }
+    static { this.classMapInterpolate5 = { name: 'ɵɵclassMapInterpolate5', moduleName: CORE }; }
+    static { this.classMapInterpolate6 = { name: 'ɵɵclassMapInterpolate6', moduleName: CORE }; }
+    static { this.classMapInterpolate7 = { name: 'ɵɵclassMapInterpolate7', moduleName: CORE }; }
+    static { this.classMapInterpolate8 = { name: 'ɵɵclassMapInterpolate8', moduleName: CORE }; }
+    static { this.classMapInterpolateV = { name: 'ɵɵclassMapInterpolateV', moduleName: CORE }; }
+    static { this.styleProp = { name: 'ɵɵstyleProp', moduleName: CORE }; }
+    static { this.stylePropInterpolate1 = { name: 'ɵɵstylePropInterpolate1', moduleName: CORE }; }
+    static { this.stylePropInterpolate2 = { name: 'ɵɵstylePropInterpolate2', moduleName: CORE }; }
+    static { this.stylePropInterpolate3 = { name: 'ɵɵstylePropInterpolate3', moduleName: CORE }; }
+    static { this.stylePropInterpolate4 = { name: 'ɵɵstylePropInterpolate4', moduleName: CORE }; }
+    static { this.stylePropInterpolate5 = { name: 'ɵɵstylePropInterpolate5', moduleName: CORE }; }
+    static { this.stylePropInterpolate6 = { name: 'ɵɵstylePropInterpolate6', moduleName: CORE }; }
+    static { this.stylePropInterpolate7 = { name: 'ɵɵstylePropInterpolate7', moduleName: CORE }; }
+    static { this.stylePropInterpolate8 = { name: 'ɵɵstylePropInterpolate8', moduleName: CORE }; }
+    static { this.stylePropInterpolateV = { name: 'ɵɵstylePropInterpolateV', moduleName: CORE }; }
+    static { this.nextContext = { name: 'ɵɵnextContext', moduleName: CORE }; }
+    static { this.resetView = { name: 'ɵɵresetView', moduleName: CORE }; }
+    static { this.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE }; }
+    static { this.text = { name: 'ɵɵtext', moduleName: CORE }; }
+    static { this.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE }; }
+    static { this.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE }; }
+    static { this.getCurrentView = { name: 'ɵɵgetCurrentView', moduleName: CORE }; }
+    static { this.textInterpolate = { name: 'ɵɵtextInterpolate', moduleName: CORE }; }
+    static { this.textInterpolate1 = { name: 'ɵɵtextInterpolate1', moduleName: CORE }; }
+    static { this.textInterpolate2 = { name: 'ɵɵtextInterpolate2', moduleName: CORE }; }
+    static { this.textInterpolate3 = { name: 'ɵɵtextInterpolate3', moduleName: CORE }; }
+    static { this.textInterpolate4 = { name: 'ɵɵtextInterpolate4', moduleName: CORE }; }
+    static { this.textInterpolate5 = { name: 'ɵɵtextInterpolate5', moduleName: CORE }; }
+    static { this.textInterpolate6 = { name: 'ɵɵtextInterpolate6', moduleName: CORE }; }
+    static { this.textInterpolate7 = { name: 'ɵɵtextInterpolate7', moduleName: CORE }; }
+    static { this.textInterpolate8 = { name: 'ɵɵtextInterpolate8', moduleName: CORE }; }
+    static { this.textInterpolateV = { name: 'ɵɵtextInterpolateV', moduleName: CORE }; }
+    static { this.restoreView = { name: 'ɵɵrestoreView', moduleName: CORE }; }
+    static { this.pureFunction0 = { name: 'ɵɵpureFunction0', moduleName: CORE }; }
+    static { this.pureFunction1 = { name: 'ɵɵpureFunction1', moduleName: CORE }; }
+    static { this.pureFunction2 = { name: 'ɵɵpureFunction2', moduleName: CORE }; }
+    static { this.pureFunction3 = { name: 'ɵɵpureFunction3', moduleName: CORE }; }
+    static { this.pureFunction4 = { name: 'ɵɵpureFunction4', moduleName: CORE }; }
+    static { this.pureFunction5 = { name: 'ɵɵpureFunction5', moduleName: CORE }; }
+    static { this.pureFunction6 = { name: 'ɵɵpureFunction6', moduleName: CORE }; }
+    static { this.pureFunction7 = { name: 'ɵɵpureFunction7', moduleName: CORE }; }
+    static { this.pureFunction8 = { name: 'ɵɵpureFunction8', moduleName: CORE }; }
+    static { this.pureFunctionV = { name: 'ɵɵpureFunctionV', moduleName: CORE }; }
+    static { this.pipeBind1 = { name: 'ɵɵpipeBind1', moduleName: CORE }; }
+    static { this.pipeBind2 = { name: 'ɵɵpipeBind2', moduleName: CORE }; }
+    static { this.pipeBind3 = { name: 'ɵɵpipeBind3', moduleName: CORE }; }
+    static { this.pipeBind4 = { name: 'ɵɵpipeBind4', moduleName: CORE }; }
+    static { this.pipeBindV = { name: 'ɵɵpipeBindV', moduleName: CORE }; }
+    static { this.hostProperty = { name: 'ɵɵhostProperty', moduleName: CORE }; }
+    static { this.property = { name: 'ɵɵproperty', moduleName: CORE }; }
+    static { this.propertyInterpolate = { name: 'ɵɵpropertyInterpolate', moduleName: CORE }; }
+    static { this.propertyInterpolate1 = { name: 'ɵɵpropertyInterpolate1', moduleName: CORE }; }
+    static { this.propertyInterpolate2 = { name: 'ɵɵpropertyInterpolate2', moduleName: CORE }; }
+    static { this.propertyInterpolate3 = { name: 'ɵɵpropertyInterpolate3', moduleName: CORE }; }
+    static { this.propertyInterpolate4 = { name: 'ɵɵpropertyInterpolate4', moduleName: CORE }; }
+    static { this.propertyInterpolate5 = { name: 'ɵɵpropertyInterpolate5', moduleName: CORE }; }
+    static { this.propertyInterpolate6 = { name: 'ɵɵpropertyInterpolate6', moduleName: CORE }; }
+    static { this.propertyInterpolate7 = { name: 'ɵɵpropertyInterpolate7', moduleName: CORE }; }
+    static { this.propertyInterpolate8 = { name: 'ɵɵpropertyInterpolate8', moduleName: CORE }; }
+    static { this.propertyInterpolateV = { name: 'ɵɵpropertyInterpolateV', moduleName: CORE }; }
+    static { this.i18n = { name: 'ɵɵi18n', moduleName: CORE }; }
+    static { this.i18nAttributes = { name: 'ɵɵi18nAttributes', moduleName: CORE }; }
+    static { this.i18nExp = { name: 'ɵɵi18nExp', moduleName: CORE }; }
+    static { this.i18nStart = { name: 'ɵɵi18nStart', moduleName: CORE }; }
+    static { this.i18nEnd = { name: 'ɵɵi18nEnd', moduleName: CORE }; }
+    static { this.i18nApply = { name: 'ɵɵi18nApply', moduleName: CORE }; }
+    static { this.i18nPostprocess = { name: 'ɵɵi18nPostprocess', moduleName: CORE }; }
+    static { this.pipe = { name: 'ɵɵpipe', moduleName: CORE }; }
+    static { this.projection = { name: 'ɵɵprojection', moduleName: CORE }; }
+    static { this.projectionDef = { name: 'ɵɵprojectionDef', moduleName: CORE }; }
+    static { this.reference = { name: 'ɵɵreference', moduleName: CORE }; }
+    static { this.inject = { name: 'ɵɵinject', moduleName: CORE }; }
+    static { this.injectAttribute = { name: 'ɵɵinjectAttribute', moduleName: CORE }; }
+    static { this.directiveInject = { name: 'ɵɵdirectiveInject', moduleName: CORE }; }
+    static { this.invalidFactory = { name: 'ɵɵinvalidFactory', moduleName: CORE }; }
+    static { this.invalidFactoryDep = { name: 'ɵɵinvalidFactoryDep', moduleName: CORE }; }
+    static { this.templateRefExtractor = { name: 'ɵɵtemplateRefExtractor', moduleName: CORE }; }
+    static { this.forwardRef = { name: 'forwardRef', moduleName: CORE }; }
+    static { this.resolveForwardRef = { name: 'resolveForwardRef', moduleName: CORE }; }
+    static { this.ɵɵdefineInjectable = { name: 'ɵɵdefineInjectable', moduleName: CORE }; }
+    static { this.declareInjectable = { name: 'ɵɵngDeclareInjectable', moduleName: CORE }; }
+    static { this.InjectableDeclaration = { name: 'ɵɵInjectableDeclaration', moduleName: CORE }; }
+    static { this.resolveWindow = { name: 'ɵɵresolveWindow', moduleName: CORE }; }
+    static { this.resolveDocument = { name: 'ɵɵresolveDocument', moduleName: CORE }; }
+    static { this.resolveBody = { name: 'ɵɵresolveBody', moduleName: CORE }; }
+    static { this.defineComponent = { name: 'ɵɵdefineComponent', moduleName: CORE }; }
+    static { this.declareComponent = { name: 'ɵɵngDeclareComponent', moduleName: CORE }; }
+    static { this.setComponentScope = { name: 'ɵɵsetComponentScope', moduleName: CORE }; }
+    static { this.ChangeDetectionStrategy = {
+        name: 'ChangeDetectionStrategy',
+        moduleName: CORE,
+    }; }
+    static { this.ViewEncapsulation = {
+        name: 'ViewEncapsulation',
+        moduleName: CORE,
+    }; }
+    static { this.ComponentDeclaration = {
+        name: 'ɵɵComponentDeclaration',
+        moduleName: CORE,
+    }; }
+    static { this.FactoryDeclaration = {
+        name: 'ɵɵFactoryDeclaration',
+        moduleName: CORE,
+    }; }
+    static { this.declareFactory = { name: 'ɵɵngDeclareFactory', moduleName: CORE }; }
+    static { this.FactoryTarget = { name: 'ɵɵFactoryTarget', moduleName: CORE }; }
+    static { this.defineDirective = { name: 'ɵɵdefineDirective', moduleName: CORE }; }
+    static { this.declareDirective = { name: 'ɵɵngDeclareDirective', moduleName: CORE }; }
+    static { this.DirectiveDeclaration = {
+        name: 'ɵɵDirectiveDeclaration',
+        moduleName: CORE,
+    }; }
+    static { this.InjectorDef = { name: 'ɵɵInjectorDef', moduleName: CORE }; }
+    static { this.InjectorDeclaration = { name: 'ɵɵInjectorDeclaration', moduleName: CORE }; }
+    static { this.defineInjector = { name: 'ɵɵdefineInjector', moduleName: CORE }; }
+    static { this.declareInjector = { name: 'ɵɵngDeclareInjector', moduleName: CORE }; }
+    static { this.NgModuleDeclaration = {
+        name: 'ɵɵNgModuleDeclaration',
+        moduleName: CORE,
+    }; }
+    static { this.ModuleWithProviders = {
+        name: 'ModuleWithProviders',
+        moduleName: CORE,
+    }; }
+    static { this.defineNgModule = { name: 'ɵɵdefineNgModule', moduleName: CORE }; }
+    static { this.declareNgModule = { name: 'ɵɵngDeclareNgModule', moduleName: CORE }; }
+    static { this.setNgModuleScope = { name: 'ɵɵsetNgModuleScope', moduleName: CORE }; }
+    static { this.registerNgModuleType = { name: 'ɵɵregisterNgModuleType', moduleName: CORE }; }
+    static { this.PipeDeclaration = { name: 'ɵɵPipeDeclaration', moduleName: CORE }; }
+    static { this.definePipe = { name: 'ɵɵdefinePipe', moduleName: CORE }; }
+    static { this.declarePipe = { name: 'ɵɵngDeclarePipe', moduleName: CORE }; }
+    static { this.declareClassMetadata = { name: 'ɵɵngDeclareClassMetadata', moduleName: CORE }; }
+    static { this.setClassMetadata = { name: 'ɵsetClassMetadata', moduleName: CORE }; }
+    static { this.queryRefresh = { name: 'ɵɵqueryRefresh', moduleName: CORE }; }
+    static { this.viewQuery = { name: 'ɵɵviewQuery', moduleName: CORE }; }
+    static { this.loadQuery = { name: 'ɵɵloadQuery', moduleName: CORE }; }
+    static { this.contentQuery = { name: 'ɵɵcontentQuery', moduleName: CORE }; }
+    static { this.NgOnChangesFeature = { name: 'ɵɵNgOnChangesFeature', moduleName: CORE }; }
+    static { this.InheritDefinitionFeature = { name: 'ɵɵInheritDefinitionFeature', moduleName: CORE }; }
+    static { this.CopyDefinitionFeature = { name: 'ɵɵCopyDefinitionFeature', moduleName: CORE }; }
+    static { this.StandaloneFeature = { name: 'ɵɵStandaloneFeature', moduleName: CORE }; }
+    static { this.ProvidersFeature = { name: 'ɵɵProvidersFeature', moduleName: CORE }; }
+    static { this.HostDirectivesFeature = { name: 'ɵɵHostDirectivesFeature', moduleName: CORE }; }
+    static { this.listener = { name: 'ɵɵlistener', moduleName: CORE }; }
+    static { this.getInheritedFactory = {
+        name: 'ɵɵgetInheritedFactory',
+        moduleName: CORE,
+    }; }
+    // sanitization-related functions
+    static { this.sanitizeHtml = { name: 'ɵɵsanitizeHtml', moduleName: CORE }; }
+    static { this.sanitizeStyle = { name: 'ɵɵsanitizeStyle', moduleName: CORE }; }
+    static { this.sanitizeResourceUrl = { name: 'ɵɵsanitizeResourceUrl', moduleName: CORE }; }
+    static { this.sanitizeScript = { name: 'ɵɵsanitizeScript', moduleName: CORE }; }
+    static { this.sanitizeUrl = { name: 'ɵɵsanitizeUrl', moduleName: CORE }; }
+    static { this.sanitizeUrlOrResourceUrl = { name: 'ɵɵsanitizeUrlOrResourceUrl', moduleName: CORE }; }
+    static { this.trustConstantHtml = { name: 'ɵɵtrustConstantHtml', moduleName: CORE }; }
+    static { this.trustConstantResourceUrl = { name: 'ɵɵtrustConstantResourceUrl', moduleName: CORE }; }
+    static { this.validateIframeAttribute = { name: 'ɵɵvalidateIframeAttribute', moduleName: CORE }; }
 }
-/* Methods */
-Identifiers.NEW_METHOD = 'factory';
-Identifiers.TRANSFORM_METHOD = 'transform';
-Identifiers.PATCH_DEPS = 'patchedDeps';
-Identifiers.core = { name: null, moduleName: CORE };
-/* Instructions */
-Identifiers.namespaceHTML = { name: 'ɵɵnamespaceHTML', moduleName: CORE };
-Identifiers.namespaceMathML = { name: 'ɵɵnamespaceMathML', moduleName: CORE };
-Identifiers.namespaceSVG = { name: 'ɵɵnamespaceSVG', moduleName: CORE };
-Identifiers.element = { name: 'ɵɵelement', moduleName: CORE };
-Identifiers.elementStart = { name: 'ɵɵelementStart', moduleName: CORE };
-Identifiers.elementEnd = { name: 'ɵɵelementEnd', moduleName: CORE };
-Identifiers.advance = { name: 'ɵɵadvance', moduleName: CORE };
-Identifiers.syntheticHostProperty = { name: 'ɵɵsyntheticHostProperty', moduleName: CORE };
-Identifiers.syntheticHostListener = { name: 'ɵɵsyntheticHostListener', moduleName: CORE };
-Identifiers.attribute = { name: 'ɵɵattribute', moduleName: CORE };
-Identifiers.attributeInterpolate1 = { name: 'ɵɵattributeInterpolate1', moduleName: CORE };
-Identifiers.attributeInterpolate2 = { name: 'ɵɵattributeInterpolate2', moduleName: CORE };
-Identifiers.attributeInterpolate3 = { name: 'ɵɵattributeInterpolate3', moduleName: CORE };
-Identifiers.attributeInterpolate4 = { name: 'ɵɵattributeInterpolate4', moduleName: CORE };
-Identifiers.attributeInterpolate5 = { name: 'ɵɵattributeInterpolate5', moduleName: CORE };
-Identifiers.attributeInterpolate6 = { name: 'ɵɵattributeInterpolate6', moduleName: CORE };
-Identifiers.attributeInterpolate7 = { name: 'ɵɵattributeInterpolate7', moduleName: CORE };
-Identifiers.attributeInterpolate8 = { name: 'ɵɵattributeInterpolate8', moduleName: CORE };
-Identifiers.attributeInterpolateV = { name: 'ɵɵattributeInterpolateV', moduleName: CORE };
-Identifiers.classProp = { name: 'ɵɵclassProp', moduleName: CORE };
-Identifiers.elementContainerStart = { name: 'ɵɵelementContainerStart', moduleName: CORE };
-Identifiers.elementContainerEnd = { name: 'ɵɵelementContainerEnd', moduleName: CORE };
-Identifiers.elementContainer = { name: 'ɵɵelementContainer', moduleName: CORE };
-Identifiers.styleMap = { name: 'ɵɵstyleMap', moduleName: CORE };
-Identifiers.styleMapInterpolate1 = { name: 'ɵɵstyleMapInterpolate1', moduleName: CORE };
-Identifiers.styleMapInterpolate2 = { name: 'ɵɵstyleMapInterpolate2', moduleName: CORE };
-Identifiers.styleMapInterpolate3 = { name: 'ɵɵstyleMapInterpolate3', moduleName: CORE };
-Identifiers.styleMapInterpolate4 = { name: 'ɵɵstyleMapInterpolate4', moduleName: CORE };
-Identifiers.styleMapInterpolate5 = { name: 'ɵɵstyleMapInterpolate5', moduleName: CORE };
-Identifiers.styleMapInterpolate6 = { name: 'ɵɵstyleMapInterpolate6', moduleName: CORE };
-Identifiers.styleMapInterpolate7 = { name: 'ɵɵstyleMapInterpolate7', moduleName: CORE };
-Identifiers.styleMapInterpolate8 = { name: 'ɵɵstyleMapInterpolate8', moduleName: CORE };
-Identifiers.styleMapInterpolateV = { name: 'ɵɵstyleMapInterpolateV', moduleName: CORE };
-Identifiers.classMap = { name: 'ɵɵclassMap', moduleName: CORE };
-Identifiers.classMapInterpolate1 = { name: 'ɵɵclassMapInterpolate1', moduleName: CORE };
-Identifiers.classMapInterpolate2 = { name: 'ɵɵclassMapInterpolate2', moduleName: CORE };
-Identifiers.classMapInterpolate3 = { name: 'ɵɵclassMapInterpolate3', moduleName: CORE };
-Identifiers.classMapInterpolate4 = { name: 'ɵɵclassMapInterpolate4', moduleName: CORE };
-Identifiers.classMapInterpolate5 = { name: 'ɵɵclassMapInterpolate5', moduleName: CORE };
-Identifiers.classMapInterpolate6 = { name: 'ɵɵclassMapInterpolate6', moduleName: CORE };
-Identifiers.classMapInterpolate7 = { name: 'ɵɵclassMapInterpolate7', moduleName: CORE };
-Identifiers.classMapInterpolate8 = { name: 'ɵɵclassMapInterpolate8', moduleName: CORE };
-Identifiers.classMapInterpolateV = { name: 'ɵɵclassMapInterpolateV', moduleName: CORE };
-Identifiers.styleProp = { name: 'ɵɵstyleProp', moduleName: CORE };
-Identifiers.stylePropInterpolate1 = { name: 'ɵɵstylePropInterpolate1', moduleName: CORE };
-Identifiers.stylePropInterpolate2 = { name: 'ɵɵstylePropInterpolate2', moduleName: CORE };
-Identifiers.stylePropInterpolate3 = { name: 'ɵɵstylePropInterpolate3', moduleName: CORE };
-Identifiers.stylePropInterpolate4 = { name: 'ɵɵstylePropInterpolate4', moduleName: CORE };
-Identifiers.stylePropInterpolate5 = { name: 'ɵɵstylePropInterpolate5', moduleName: CORE };
-Identifiers.stylePropInterpolate6 = { name: 'ɵɵstylePropInterpolate6', moduleName: CORE };
-Identifiers.stylePropInterpolate7 = { name: 'ɵɵstylePropInterpolate7', moduleName: CORE };
-Identifiers.stylePropInterpolate8 = { name: 'ɵɵstylePropInterpolate8', moduleName: CORE };
-Identifiers.stylePropInterpolateV = { name: 'ɵɵstylePropInterpolateV', moduleName: CORE };
-Identifiers.nextContext = { name: 'ɵɵnextContext', moduleName: CORE };
-Identifiers.resetView = { name: 'ɵɵresetView', moduleName: CORE };
-Identifiers.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE };
-Identifiers.text = { name: 'ɵɵtext', moduleName: CORE };
-Identifiers.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE };
-Identifiers.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE };
-Identifiers.getCurrentView = { name: 'ɵɵgetCurrentView', moduleName: CORE };
-Identifiers.textInterpolate = { name: 'ɵɵtextInterpolate', moduleName: CORE };
-Identifiers.textInterpolate1 = { name: 'ɵɵtextInterpolate1', moduleName: CORE };
-Identifiers.textInterpolate2 = { name: 'ɵɵtextInterpolate2', moduleName: CORE };
-Identifiers.textInterpolate3 = { name: 'ɵɵtextInterpolate3', moduleName: CORE };
-Identifiers.textInterpolate4 = { name: 'ɵɵtextInterpolate4', moduleName: CORE };
-Identifiers.textInterpolate5 = { name: 'ɵɵtextInterpolate5', moduleName: CORE };
-Identifiers.textInterpolate6 = { name: 'ɵɵtextInterpolate6', moduleName: CORE };
-Identifiers.textInterpolate7 = { name: 'ɵɵtextInterpolate7', moduleName: CORE };
-Identifiers.textInterpolate8 = { name: 'ɵɵtextInterpolate8', moduleName: CORE };
-Identifiers.textInterpolateV = { name: 'ɵɵtextInterpolateV', moduleName: CORE };
-Identifiers.restoreView = { name: 'ɵɵrestoreView', moduleName: CORE };
-Identifiers.pureFunction0 = { name: 'ɵɵpureFunction0', moduleName: CORE };
-Identifiers.pureFunction1 = { name: 'ɵɵpureFunction1', moduleName: CORE };
-Identifiers.pureFunction2 = { name: 'ɵɵpureFunction2', moduleName: CORE };
-Identifiers.pureFunction3 = { name: 'ɵɵpureFunction3', moduleName: CORE };
-Identifiers.pureFunction4 = { name: 'ɵɵpureFunction4', moduleName: CORE };
-Identifiers.pureFunction5 = { name: 'ɵɵpureFunction5', moduleName: CORE };
-Identifiers.pureFunction6 = { name: 'ɵɵpureFunction6', moduleName: CORE };
-Identifiers.pureFunction7 = { name: 'ɵɵpureFunction7', moduleName: CORE };
-Identifiers.pureFunction8 = { name: 'ɵɵpureFunction8', moduleName: CORE };
-Identifiers.pureFunctionV = { name: 'ɵɵpureFunctionV', moduleName: CORE };
-Identifiers.pipeBind1 = { name: 'ɵɵpipeBind1', moduleName: CORE };
-Identifiers.pipeBind2 = { name: 'ɵɵpipeBind2', moduleName: CORE };
-Identifiers.pipeBind3 = { name: 'ɵɵpipeBind3', moduleName: CORE };
-Identifiers.pipeBind4 = { name: 'ɵɵpipeBind4', moduleName: CORE };
-Identifiers.pipeBindV = { name: 'ɵɵpipeBindV', moduleName: CORE };
-Identifiers.hostProperty = { name: 'ɵɵhostProperty', moduleName: CORE };
-Identifiers.property = { name: 'ɵɵproperty', moduleName: CORE };
-Identifiers.propertyInterpolate = { name: 'ɵɵpropertyInterpolate', moduleName: CORE };
-Identifiers.propertyInterpolate1 = { name: 'ɵɵpropertyInterpolate1', moduleName: CORE };
-Identifiers.propertyInterpolate2 = { name: 'ɵɵpropertyInterpolate2', moduleName: CORE };
-Identifiers.propertyInterpolate3 = { name: 'ɵɵpropertyInterpolate3', moduleName: CORE };
-Identifiers.propertyInterpolate4 = { name: 'ɵɵpropertyInterpolate4', moduleName: CORE };
-Identifiers.propertyInterpolate5 = { name: 'ɵɵpropertyInterpolate5', moduleName: CORE };
-Identifiers.propertyInterpolate6 = { name: 'ɵɵpropertyInterpolate6', moduleName: CORE };
-Identifiers.propertyInterpolate7 = { name: 'ɵɵpropertyInterpolate7', moduleName: CORE };
-Identifiers.propertyInterpolate8 = { name: 'ɵɵpropertyInterpolate8', moduleName: CORE };
-Identifiers.propertyInterpolateV = { name: 'ɵɵpropertyInterpolateV', moduleName: CORE };
-Identifiers.i18n = { name: 'ɵɵi18n', moduleName: CORE };
-Identifiers.i18nAttributes = { name: 'ɵɵi18nAttributes', moduleName: CORE };
-Identifiers.i18nExp = { name: 'ɵɵi18nExp', moduleName: CORE };
-Identifiers.i18nStart = { name: 'ɵɵi18nStart', moduleName: CORE };
-Identifiers.i18nEnd = { name: 'ɵɵi18nEnd', moduleName: CORE };
-Identifiers.i18nApply = { name: 'ɵɵi18nApply', moduleName: CORE };
-Identifiers.i18nPostprocess = { name: 'ɵɵi18nPostprocess', moduleName: CORE };
-Identifiers.pipe = { name: 'ɵɵpipe', moduleName: CORE };
-Identifiers.projection = { name: 'ɵɵprojection', moduleName: CORE };
-Identifiers.projectionDef = { name: 'ɵɵprojectionDef', moduleName: CORE };
-Identifiers.reference = { name: 'ɵɵreference', moduleName: CORE };
-Identifiers.inject = { name: 'ɵɵinject', moduleName: CORE };
-Identifiers.injectAttribute = { name: 'ɵɵinjectAttribute', moduleName: CORE };
-Identifiers.directiveInject = { name: 'ɵɵdirectiveInject', moduleName: CORE };
-Identifiers.invalidFactory = { name: 'ɵɵinvalidFactory', moduleName: CORE };
-Identifiers.invalidFactoryDep = { name: 'ɵɵinvalidFactoryDep', moduleName: CORE };
-Identifiers.templateRefExtractor = { name: 'ɵɵtemplateRefExtractor', moduleName: CORE };
-Identifiers.forwardRef = { name: 'forwardRef', moduleName: CORE };
-Identifiers.resolveForwardRef = { name: 'resolveForwardRef', moduleName: CORE };
-Identifiers.ɵɵdefineInjectable = { name: 'ɵɵdefineInjectable', moduleName: CORE };
-Identifiers.declareInjectable = { name: 'ɵɵngDeclareInjectable', moduleName: CORE };
-Identifiers.InjectableDeclaration = { name: 'ɵɵInjectableDeclaration', moduleName: CORE };
-Identifiers.resolveWindow = { name: 'ɵɵresolveWindow', moduleName: CORE };
-Identifiers.resolveDocument = { name: 'ɵɵresolveDocument', moduleName: CORE };
-Identifiers.resolveBody = { name: 'ɵɵresolveBody', moduleName: CORE };
-Identifiers.defineComponent = { name: 'ɵɵdefineComponent', moduleName: CORE };
-Identifiers.declareComponent = { name: 'ɵɵngDeclareComponent', moduleName: CORE };
-Identifiers.setComponentScope = { name: 'ɵɵsetComponentScope', moduleName: CORE };
-Identifiers.ChangeDetectionStrategy = {
-    name: 'ChangeDetectionStrategy',
-    moduleName: CORE,
-};
-Identifiers.ViewEncapsulation = {
-    name: 'ViewEncapsulation',
-    moduleName: CORE,
-};
-Identifiers.ComponentDeclaration = {
-    name: 'ɵɵComponentDeclaration',
-    moduleName: CORE,
-};
-Identifiers.FactoryDeclaration = {
-    name: 'ɵɵFactoryDeclaration',
-    moduleName: CORE,
-};
-Identifiers.declareFactory = { name: 'ɵɵngDeclareFactory', moduleName: CORE };
-Identifiers.FactoryTarget = { name: 'ɵɵFactoryTarget', moduleName: CORE };
-Identifiers.defineDirective = { name: 'ɵɵdefineDirective', moduleName: CORE };
-Identifiers.declareDirective = { name: 'ɵɵngDeclareDirective', moduleName: CORE };
-Identifiers.DirectiveDeclaration = {
-    name: 'ɵɵDirectiveDeclaration',
-    moduleName: CORE,
-};
-Identifiers.InjectorDef = { name: 'ɵɵInjectorDef', moduleName: CORE };
-Identifiers.InjectorDeclaration = { name: 'ɵɵInjectorDeclaration', moduleName: CORE };
-Identifiers.defineInjector = { name: 'ɵɵdefineInjector', moduleName: CORE };
-Identifiers.declareInjector = { name: 'ɵɵngDeclareInjector', moduleName: CORE };
-Identifiers.NgModuleDeclaration = {
-    name: 'ɵɵNgModuleDeclaration',
-    moduleName: CORE,
-};
-Identifiers.ModuleWithProviders = {
-    name: 'ModuleWithProviders',
-    moduleName: CORE,
-};
-Identifiers.defineNgModule = { name: 'ɵɵdefineNgModule', moduleName: CORE };
-Identifiers.declareNgModule = { name: 'ɵɵngDeclareNgModule', moduleName: CORE };
-Identifiers.setNgModuleScope = { name: 'ɵɵsetNgModuleScope', moduleName: CORE };
-Identifiers.registerNgModuleType = { name: 'ɵɵregisterNgModuleType', moduleName: CORE };
-Identifiers.PipeDeclaration = { name: 'ɵɵPipeDeclaration', moduleName: CORE };
-Identifiers.definePipe = { name: 'ɵɵdefinePipe', moduleName: CORE };
-Identifiers.declarePipe = { name: 'ɵɵngDeclarePipe', moduleName: CORE };
-Identifiers.declareClassMetadata = { name: 'ɵɵngDeclareClassMetadata', moduleName: CORE };
-Identifiers.setClassMetadata = { name: 'ɵsetClassMetadata', moduleName: CORE };
-Identifiers.queryRefresh = { name: 'ɵɵqueryRefresh', moduleName: CORE };
-Identifiers.viewQuery = { name: 'ɵɵviewQuery', moduleName: CORE };
-Identifiers.loadQuery = { name: 'ɵɵloadQuery', moduleName: CORE };
-Identifiers.contentQuery = { name: 'ɵɵcontentQuery', moduleName: CORE };
-Identifiers.NgOnChangesFeature = { name: 'ɵɵNgOnChangesFeature', moduleName: CORE };
-Identifiers.InheritDefinitionFeature = { name: 'ɵɵInheritDefinitionFeature', moduleName: CORE };
-Identifiers.CopyDefinitionFeature = { name: 'ɵɵCopyDefinitionFeature', moduleName: CORE };
-Identifiers.StandaloneFeature = { name: 'ɵɵStandaloneFeature', moduleName: CORE };
-Identifiers.ProvidersFeature = { name: 'ɵɵProvidersFeature', moduleName: CORE };
-Identifiers.HostDirectivesFeature = { name: 'ɵɵHostDirectivesFeature', moduleName: CORE };
-Identifiers.listener = { name: 'ɵɵlistener', moduleName: CORE };
-Identifiers.getInheritedFactory = {
-    name: 'ɵɵgetInheritedFactory',
-    moduleName: CORE,
-};
-// sanitization-related functions
-Identifiers.sanitizeHtml = { name: 'ɵɵsanitizeHtml', moduleName: CORE };
-Identifiers.sanitizeStyle = { name: 'ɵɵsanitizeStyle', moduleName: CORE };
-Identifiers.sanitizeResourceUrl = { name: 'ɵɵsanitizeResourceUrl', moduleName: CORE };
-Identifiers.sanitizeScript = { name: 'ɵɵsanitizeScript', moduleName: CORE };
-Identifiers.sanitizeUrl = { name: 'ɵɵsanitizeUrl', moduleName: CORE };
-Identifiers.sanitizeUrlOrResourceUrl = { name: 'ɵɵsanitizeUrlOrResourceUrl', moduleName: CORE };
-Identifiers.trustConstantHtml = { name: 'ɵɵtrustConstantHtml', moduleName: CORE };
-Identifiers.trustConstantResourceUrl = { name: 'ɵɵtrustConstantResourceUrl', moduleName: CORE };
-Identifiers.validateIframeAttribute = { name: 'ɵɵvalidateIframeAttribute', moduleName: CORE };
 
 const DASH_CASE_REGEXP = /-+([a-z0-9])/g;
 function dashCaseToCamelCase(input) {
@@ -3997,9 +3997,9 @@ class Message {
         this.meaning = meaning;
         this.description = description;
         this.customId = customId;
-        this.id = this.customId;
         /** The ids to use if there are no custom id and if `i18nLegacyMessageIdFormat` is not empty */
         this.legacyIds = [];
+        this.id = this.customId;
         this.messageString = serializeMessage(this.nodes);
         if (nodes.length) {
             this.sources = [{
@@ -6585,8 +6585,8 @@ class BoundElementProperty {
 }
 
 class EventHandlerVars {
+    static { this.event = variable('$event'); }
 }
-EventHandlerVars.event = variable('$event');
 /**
  * Converts the given expression AST into an executable output AST, assuming the expression is
  * used in an action binding (e.g. an event handler).
@@ -16502,12 +16502,11 @@ class I18nMetaVisitor {
         // whether visited nodes contain i18n information
         this.hasI18nMeta = false;
         this._errors = [];
-        // i18n message generation factory
-        this._createI18nMessage = createI18nMessageFactory(this.interpolationConfig);
     }
     _generateI18nMessage(nodes, meta = '', visitNodeFn) {
         const { meaning, description, customId } = this._parseMetadata(meta);
-        const message = this._createI18nMessage(nodes, meaning, description, customId, visitNodeFn);
+        const createI18nMessage = createI18nMessageFactory(this.interpolationConfig);
+        const message = createI18nMessage(nodes, meaning, description, customId, visitNodeFn);
         this._setMessageId(message, meta);
         this._setLegacyIds(message, meta);
         return message;
@@ -19934,7 +19933,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.0.0-next.4+sha-0dd5c47');
+const VERSION = new Version('16.0.0-next.4+sha-132c00c');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -21858,7 +21857,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.0.0-next.4+sha-0dd5c47'));
+    definitionMap.set('version', literal('16.0.0-next.4+sha-132c00c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -21961,7 +21960,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.0.0-next.4+sha-0dd5c47'));
+    definitionMap.set('version', literal('16.0.0-next.4+sha-132c00c'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     if (meta.isStandalone) {
@@ -22186,7 +22185,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.0.0-next.4+sha-0dd5c47'));
+    definitionMap.set('version', literal('16.0.0-next.4+sha-132c00c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22221,7 +22220,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.0.0-next.4+sha-0dd5c47'));
+    definitionMap.set('version', literal('16.0.0-next.4+sha-132c00c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22272,7 +22271,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.0.0-next.4+sha-0dd5c47'));
+    definitionMap.set('version', literal('16.0.0-next.4+sha-132c00c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22302,7 +22301,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.0.0-next.4+sha-0dd5c47'));
+    definitionMap.set('version', literal('16.0.0-next.4+sha-132c00c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22353,7 +22352,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.0.0-next.4+sha-0dd5c47'));
+    definitionMap.set('version', literal('16.0.0-next.4+sha-132c00c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
