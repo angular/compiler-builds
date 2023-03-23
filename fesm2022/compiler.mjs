@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.0.0-next.4+sha-07cbaa3
+ * @license Angular v16.0.0-next.4+sha-6161c50
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -740,7 +740,7 @@ class _SerializerIgnoreIcuExpVisitor extends _SerializerVisitor {
  *          DO NOT USE IT IN A SECURITY SENSITIVE CONTEXT.
  */
 function sha1(str) {
-    textEncoder !== null && textEncoder !== void 0 ? textEncoder : (textEncoder = new TextEncoder());
+    textEncoder ??= new TextEncoder();
     const utf8 = [...textEncoder.encode(str)];
     const words32 = bytesToWords32(utf8, Endian.Big);
     const len = utf8.length * 8;
@@ -806,7 +806,7 @@ function fk(index, b, c, d) {
  * https://github.com/google/closure-compiler/blob/master/src/com/google/javascript/jscomp/GoogleJsMessageIdGenerator.java
  */
 function fingerprint(str) {
-    textEncoder !== null && textEncoder !== void 0 ? textEncoder : (textEncoder = new TextEncoder());
+    textEncoder ??= new TextEncoder();
     const utf8 = textEncoder.encode(str);
     const view = new DataView(utf8.buffer, utf8.byteOffset, utf8.byteLength);
     let hi = hash32(view, utf8.length, 0);
@@ -1381,7 +1381,6 @@ class TemplateLiteral {
 }
 class TemplateLiteralElement {
     constructor(text, sourceSpan, rawText) {
-        var _a;
         this.text = text;
         this.sourceSpan = sourceSpan;
         // If `rawText` is not provided, try to extract the raw string from its
@@ -1391,7 +1390,7 @@ class TemplateLiteralElement {
         // - "`" and "${" are template string control sequences that would otherwise prematurely
         // indicate the end of the template literal element.
         this.rawText =
-            (_a = rawText !== null && rawText !== void 0 ? rawText : sourceSpan === null || sourceSpan === void 0 ? void 0 : sourceSpan.toString()) !== null && _a !== void 0 ? _a : escapeForTemplateLiteral(escapeSlashes(text));
+            rawText ?? sourceSpan?.toString() ?? escapeForTemplateLiteral(escapeSlashes(text));
     }
 }
 class LiteralPiece {
@@ -1461,12 +1460,11 @@ class LocalizedString extends Expression {
         return createCookedRawString(metaBlock, this.messageParts[0].text, this.getMessagePartSourceSpan(0));
     }
     getMessagePartSourceSpan(i) {
-        var _a, _b;
-        return (_b = (_a = this.messageParts[i]) === null || _a === void 0 ? void 0 : _a.sourceSpan) !== null && _b !== void 0 ? _b : this.sourceSpan;
+        return this.messageParts[i]?.sourceSpan ?? this.sourceSpan;
     }
     getPlaceholderSourceSpan(i) {
-        var _a, _b, _c, _d;
-        return (_d = (_b = (_a = this.placeHolderNames[i]) === null || _a === void 0 ? void 0 : _a.sourceSpan) !== null && _b !== void 0 ? _b : (_c = this.expressions[i]) === null || _c === void 0 ? void 0 : _c.sourceSpan) !== null && _d !== void 0 ? _d : this.sourceSpan;
+        return this.placeHolderNames[i]?.sourceSpan ?? this.expressions[i]?.sourceSpan ??
+            this.sourceSpan;
     }
     /**
      * Serialize the given `placeholderName` and `messagePart` into "cooked" and "raw" strings that
@@ -1480,11 +1478,10 @@ class LocalizedString extends Expression {
      * @param partIndex The index of the message part to serialize.
      */
     serializeI18nTemplatePart(partIndex) {
-        var _a;
         const placeholder = this.placeHolderNames[partIndex - 1];
         const messagePart = this.messageParts[partIndex];
         let metaBlock = placeholder.text;
-        if (((_a = placeholder.associatedMessage) === null || _a === void 0 ? void 0 : _a.legacyIds.length) === 0) {
+        if (placeholder.associatedMessage?.legacyIds.length === 0) {
             metaBlock += `${ID_SEPARATOR$1}${computeMsgId(placeholder.associatedMessage.messageString, placeholder.associatedMessage.meaning)}`;
         }
         return createCookedRawString(metaBlock, messagePart.text, this.getMessagePartSourceSpan(partIndex));
@@ -1787,8 +1784,7 @@ class Statement {
         return (this.modifiers & modifier) !== 0;
     }
     addLeadingComment(leadingComment) {
-        var _a;
-        this.leadingComments = (_a = this.leadingComments) !== null && _a !== void 0 ? _a : [];
+        this.leadingComments = this.leadingComments ?? [];
         this.leadingComments.push(leadingComment);
     }
 }
@@ -2431,209 +2427,209 @@ function isLongStringLiteral(expr) {
 
 const CORE = '@angular/core';
 class Identifiers {
+    /* Methods */
+    static { this.NEW_METHOD = 'factory'; }
+    static { this.TRANSFORM_METHOD = 'transform'; }
+    static { this.PATCH_DEPS = 'patchedDeps'; }
+    static { this.core = { name: null, moduleName: CORE }; }
+    /* Instructions */
+    static { this.namespaceHTML = { name: 'ɵɵnamespaceHTML', moduleName: CORE }; }
+    static { this.namespaceMathML = { name: 'ɵɵnamespaceMathML', moduleName: CORE }; }
+    static { this.namespaceSVG = { name: 'ɵɵnamespaceSVG', moduleName: CORE }; }
+    static { this.element = { name: 'ɵɵelement', moduleName: CORE }; }
+    static { this.elementStart = { name: 'ɵɵelementStart', moduleName: CORE }; }
+    static { this.elementEnd = { name: 'ɵɵelementEnd', moduleName: CORE }; }
+    static { this.advance = { name: 'ɵɵadvance', moduleName: CORE }; }
+    static { this.syntheticHostProperty = { name: 'ɵɵsyntheticHostProperty', moduleName: CORE }; }
+    static { this.syntheticHostListener = { name: 'ɵɵsyntheticHostListener', moduleName: CORE }; }
+    static { this.attribute = { name: 'ɵɵattribute', moduleName: CORE }; }
+    static { this.attributeInterpolate1 = { name: 'ɵɵattributeInterpolate1', moduleName: CORE }; }
+    static { this.attributeInterpolate2 = { name: 'ɵɵattributeInterpolate2', moduleName: CORE }; }
+    static { this.attributeInterpolate3 = { name: 'ɵɵattributeInterpolate3', moduleName: CORE }; }
+    static { this.attributeInterpolate4 = { name: 'ɵɵattributeInterpolate4', moduleName: CORE }; }
+    static { this.attributeInterpolate5 = { name: 'ɵɵattributeInterpolate5', moduleName: CORE }; }
+    static { this.attributeInterpolate6 = { name: 'ɵɵattributeInterpolate6', moduleName: CORE }; }
+    static { this.attributeInterpolate7 = { name: 'ɵɵattributeInterpolate7', moduleName: CORE }; }
+    static { this.attributeInterpolate8 = { name: 'ɵɵattributeInterpolate8', moduleName: CORE }; }
+    static { this.attributeInterpolateV = { name: 'ɵɵattributeInterpolateV', moduleName: CORE }; }
+    static { this.classProp = { name: 'ɵɵclassProp', moduleName: CORE }; }
+    static { this.elementContainerStart = { name: 'ɵɵelementContainerStart', moduleName: CORE }; }
+    static { this.elementContainerEnd = { name: 'ɵɵelementContainerEnd', moduleName: CORE }; }
+    static { this.elementContainer = { name: 'ɵɵelementContainer', moduleName: CORE }; }
+    static { this.styleMap = { name: 'ɵɵstyleMap', moduleName: CORE }; }
+    static { this.styleMapInterpolate1 = { name: 'ɵɵstyleMapInterpolate1', moduleName: CORE }; }
+    static { this.styleMapInterpolate2 = { name: 'ɵɵstyleMapInterpolate2', moduleName: CORE }; }
+    static { this.styleMapInterpolate3 = { name: 'ɵɵstyleMapInterpolate3', moduleName: CORE }; }
+    static { this.styleMapInterpolate4 = { name: 'ɵɵstyleMapInterpolate4', moduleName: CORE }; }
+    static { this.styleMapInterpolate5 = { name: 'ɵɵstyleMapInterpolate5', moduleName: CORE }; }
+    static { this.styleMapInterpolate6 = { name: 'ɵɵstyleMapInterpolate6', moduleName: CORE }; }
+    static { this.styleMapInterpolate7 = { name: 'ɵɵstyleMapInterpolate7', moduleName: CORE }; }
+    static { this.styleMapInterpolate8 = { name: 'ɵɵstyleMapInterpolate8', moduleName: CORE }; }
+    static { this.styleMapInterpolateV = { name: 'ɵɵstyleMapInterpolateV', moduleName: CORE }; }
+    static { this.classMap = { name: 'ɵɵclassMap', moduleName: CORE }; }
+    static { this.classMapInterpolate1 = { name: 'ɵɵclassMapInterpolate1', moduleName: CORE }; }
+    static { this.classMapInterpolate2 = { name: 'ɵɵclassMapInterpolate2', moduleName: CORE }; }
+    static { this.classMapInterpolate3 = { name: 'ɵɵclassMapInterpolate3', moduleName: CORE }; }
+    static { this.classMapInterpolate4 = { name: 'ɵɵclassMapInterpolate4', moduleName: CORE }; }
+    static { this.classMapInterpolate5 = { name: 'ɵɵclassMapInterpolate5', moduleName: CORE }; }
+    static { this.classMapInterpolate6 = { name: 'ɵɵclassMapInterpolate6', moduleName: CORE }; }
+    static { this.classMapInterpolate7 = { name: 'ɵɵclassMapInterpolate7', moduleName: CORE }; }
+    static { this.classMapInterpolate8 = { name: 'ɵɵclassMapInterpolate8', moduleName: CORE }; }
+    static { this.classMapInterpolateV = { name: 'ɵɵclassMapInterpolateV', moduleName: CORE }; }
+    static { this.styleProp = { name: 'ɵɵstyleProp', moduleName: CORE }; }
+    static { this.stylePropInterpolate1 = { name: 'ɵɵstylePropInterpolate1', moduleName: CORE }; }
+    static { this.stylePropInterpolate2 = { name: 'ɵɵstylePropInterpolate2', moduleName: CORE }; }
+    static { this.stylePropInterpolate3 = { name: 'ɵɵstylePropInterpolate3', moduleName: CORE }; }
+    static { this.stylePropInterpolate4 = { name: 'ɵɵstylePropInterpolate4', moduleName: CORE }; }
+    static { this.stylePropInterpolate5 = { name: 'ɵɵstylePropInterpolate5', moduleName: CORE }; }
+    static { this.stylePropInterpolate6 = { name: 'ɵɵstylePropInterpolate6', moduleName: CORE }; }
+    static { this.stylePropInterpolate7 = { name: 'ɵɵstylePropInterpolate7', moduleName: CORE }; }
+    static { this.stylePropInterpolate8 = { name: 'ɵɵstylePropInterpolate8', moduleName: CORE }; }
+    static { this.stylePropInterpolateV = { name: 'ɵɵstylePropInterpolateV', moduleName: CORE }; }
+    static { this.nextContext = { name: 'ɵɵnextContext', moduleName: CORE }; }
+    static { this.resetView = { name: 'ɵɵresetView', moduleName: CORE }; }
+    static { this.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE }; }
+    static { this.text = { name: 'ɵɵtext', moduleName: CORE }; }
+    static { this.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE }; }
+    static { this.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE }; }
+    static { this.getCurrentView = { name: 'ɵɵgetCurrentView', moduleName: CORE }; }
+    static { this.textInterpolate = { name: 'ɵɵtextInterpolate', moduleName: CORE }; }
+    static { this.textInterpolate1 = { name: 'ɵɵtextInterpolate1', moduleName: CORE }; }
+    static { this.textInterpolate2 = { name: 'ɵɵtextInterpolate2', moduleName: CORE }; }
+    static { this.textInterpolate3 = { name: 'ɵɵtextInterpolate3', moduleName: CORE }; }
+    static { this.textInterpolate4 = { name: 'ɵɵtextInterpolate4', moduleName: CORE }; }
+    static { this.textInterpolate5 = { name: 'ɵɵtextInterpolate5', moduleName: CORE }; }
+    static { this.textInterpolate6 = { name: 'ɵɵtextInterpolate6', moduleName: CORE }; }
+    static { this.textInterpolate7 = { name: 'ɵɵtextInterpolate7', moduleName: CORE }; }
+    static { this.textInterpolate8 = { name: 'ɵɵtextInterpolate8', moduleName: CORE }; }
+    static { this.textInterpolateV = { name: 'ɵɵtextInterpolateV', moduleName: CORE }; }
+    static { this.restoreView = { name: 'ɵɵrestoreView', moduleName: CORE }; }
+    static { this.pureFunction0 = { name: 'ɵɵpureFunction0', moduleName: CORE }; }
+    static { this.pureFunction1 = { name: 'ɵɵpureFunction1', moduleName: CORE }; }
+    static { this.pureFunction2 = { name: 'ɵɵpureFunction2', moduleName: CORE }; }
+    static { this.pureFunction3 = { name: 'ɵɵpureFunction3', moduleName: CORE }; }
+    static { this.pureFunction4 = { name: 'ɵɵpureFunction4', moduleName: CORE }; }
+    static { this.pureFunction5 = { name: 'ɵɵpureFunction5', moduleName: CORE }; }
+    static { this.pureFunction6 = { name: 'ɵɵpureFunction6', moduleName: CORE }; }
+    static { this.pureFunction7 = { name: 'ɵɵpureFunction7', moduleName: CORE }; }
+    static { this.pureFunction8 = { name: 'ɵɵpureFunction8', moduleName: CORE }; }
+    static { this.pureFunctionV = { name: 'ɵɵpureFunctionV', moduleName: CORE }; }
+    static { this.pipeBind1 = { name: 'ɵɵpipeBind1', moduleName: CORE }; }
+    static { this.pipeBind2 = { name: 'ɵɵpipeBind2', moduleName: CORE }; }
+    static { this.pipeBind3 = { name: 'ɵɵpipeBind3', moduleName: CORE }; }
+    static { this.pipeBind4 = { name: 'ɵɵpipeBind4', moduleName: CORE }; }
+    static { this.pipeBindV = { name: 'ɵɵpipeBindV', moduleName: CORE }; }
+    static { this.hostProperty = { name: 'ɵɵhostProperty', moduleName: CORE }; }
+    static { this.property = { name: 'ɵɵproperty', moduleName: CORE }; }
+    static { this.propertyInterpolate = { name: 'ɵɵpropertyInterpolate', moduleName: CORE }; }
+    static { this.propertyInterpolate1 = { name: 'ɵɵpropertyInterpolate1', moduleName: CORE }; }
+    static { this.propertyInterpolate2 = { name: 'ɵɵpropertyInterpolate2', moduleName: CORE }; }
+    static { this.propertyInterpolate3 = { name: 'ɵɵpropertyInterpolate3', moduleName: CORE }; }
+    static { this.propertyInterpolate4 = { name: 'ɵɵpropertyInterpolate4', moduleName: CORE }; }
+    static { this.propertyInterpolate5 = { name: 'ɵɵpropertyInterpolate5', moduleName: CORE }; }
+    static { this.propertyInterpolate6 = { name: 'ɵɵpropertyInterpolate6', moduleName: CORE }; }
+    static { this.propertyInterpolate7 = { name: 'ɵɵpropertyInterpolate7', moduleName: CORE }; }
+    static { this.propertyInterpolate8 = { name: 'ɵɵpropertyInterpolate8', moduleName: CORE }; }
+    static { this.propertyInterpolateV = { name: 'ɵɵpropertyInterpolateV', moduleName: CORE }; }
+    static { this.i18n = { name: 'ɵɵi18n', moduleName: CORE }; }
+    static { this.i18nAttributes = { name: 'ɵɵi18nAttributes', moduleName: CORE }; }
+    static { this.i18nExp = { name: 'ɵɵi18nExp', moduleName: CORE }; }
+    static { this.i18nStart = { name: 'ɵɵi18nStart', moduleName: CORE }; }
+    static { this.i18nEnd = { name: 'ɵɵi18nEnd', moduleName: CORE }; }
+    static { this.i18nApply = { name: 'ɵɵi18nApply', moduleName: CORE }; }
+    static { this.i18nPostprocess = { name: 'ɵɵi18nPostprocess', moduleName: CORE }; }
+    static { this.pipe = { name: 'ɵɵpipe', moduleName: CORE }; }
+    static { this.projection = { name: 'ɵɵprojection', moduleName: CORE }; }
+    static { this.projectionDef = { name: 'ɵɵprojectionDef', moduleName: CORE }; }
+    static { this.reference = { name: 'ɵɵreference', moduleName: CORE }; }
+    static { this.inject = { name: 'ɵɵinject', moduleName: CORE }; }
+    static { this.injectAttribute = { name: 'ɵɵinjectAttribute', moduleName: CORE }; }
+    static { this.directiveInject = { name: 'ɵɵdirectiveInject', moduleName: CORE }; }
+    static { this.invalidFactory = { name: 'ɵɵinvalidFactory', moduleName: CORE }; }
+    static { this.invalidFactoryDep = { name: 'ɵɵinvalidFactoryDep', moduleName: CORE }; }
+    static { this.templateRefExtractor = { name: 'ɵɵtemplateRefExtractor', moduleName: CORE }; }
+    static { this.forwardRef = { name: 'forwardRef', moduleName: CORE }; }
+    static { this.resolveForwardRef = { name: 'resolveForwardRef', moduleName: CORE }; }
+    static { this.ɵɵdefineInjectable = { name: 'ɵɵdefineInjectable', moduleName: CORE }; }
+    static { this.declareInjectable = { name: 'ɵɵngDeclareInjectable', moduleName: CORE }; }
+    static { this.InjectableDeclaration = { name: 'ɵɵInjectableDeclaration', moduleName: CORE }; }
+    static { this.resolveWindow = { name: 'ɵɵresolveWindow', moduleName: CORE }; }
+    static { this.resolveDocument = { name: 'ɵɵresolveDocument', moduleName: CORE }; }
+    static { this.resolveBody = { name: 'ɵɵresolveBody', moduleName: CORE }; }
+    static { this.defineComponent = { name: 'ɵɵdefineComponent', moduleName: CORE }; }
+    static { this.declareComponent = { name: 'ɵɵngDeclareComponent', moduleName: CORE }; }
+    static { this.setComponentScope = { name: 'ɵɵsetComponentScope', moduleName: CORE }; }
+    static { this.ChangeDetectionStrategy = {
+        name: 'ChangeDetectionStrategy',
+        moduleName: CORE,
+    }; }
+    static { this.ViewEncapsulation = {
+        name: 'ViewEncapsulation',
+        moduleName: CORE,
+    }; }
+    static { this.ComponentDeclaration = {
+        name: 'ɵɵComponentDeclaration',
+        moduleName: CORE,
+    }; }
+    static { this.FactoryDeclaration = {
+        name: 'ɵɵFactoryDeclaration',
+        moduleName: CORE,
+    }; }
+    static { this.declareFactory = { name: 'ɵɵngDeclareFactory', moduleName: CORE }; }
+    static { this.FactoryTarget = { name: 'ɵɵFactoryTarget', moduleName: CORE }; }
+    static { this.defineDirective = { name: 'ɵɵdefineDirective', moduleName: CORE }; }
+    static { this.declareDirective = { name: 'ɵɵngDeclareDirective', moduleName: CORE }; }
+    static { this.DirectiveDeclaration = {
+        name: 'ɵɵDirectiveDeclaration',
+        moduleName: CORE,
+    }; }
+    static { this.InjectorDef = { name: 'ɵɵInjectorDef', moduleName: CORE }; }
+    static { this.InjectorDeclaration = { name: 'ɵɵInjectorDeclaration', moduleName: CORE }; }
+    static { this.defineInjector = { name: 'ɵɵdefineInjector', moduleName: CORE }; }
+    static { this.declareInjector = { name: 'ɵɵngDeclareInjector', moduleName: CORE }; }
+    static { this.NgModuleDeclaration = {
+        name: 'ɵɵNgModuleDeclaration',
+        moduleName: CORE,
+    }; }
+    static { this.ModuleWithProviders = {
+        name: 'ModuleWithProviders',
+        moduleName: CORE,
+    }; }
+    static { this.defineNgModule = { name: 'ɵɵdefineNgModule', moduleName: CORE }; }
+    static { this.declareNgModule = { name: 'ɵɵngDeclareNgModule', moduleName: CORE }; }
+    static { this.setNgModuleScope = { name: 'ɵɵsetNgModuleScope', moduleName: CORE }; }
+    static { this.registerNgModuleType = { name: 'ɵɵregisterNgModuleType', moduleName: CORE }; }
+    static { this.PipeDeclaration = { name: 'ɵɵPipeDeclaration', moduleName: CORE }; }
+    static { this.definePipe = { name: 'ɵɵdefinePipe', moduleName: CORE }; }
+    static { this.declarePipe = { name: 'ɵɵngDeclarePipe', moduleName: CORE }; }
+    static { this.declareClassMetadata = { name: 'ɵɵngDeclareClassMetadata', moduleName: CORE }; }
+    static { this.setClassMetadata = { name: 'ɵsetClassMetadata', moduleName: CORE }; }
+    static { this.queryRefresh = { name: 'ɵɵqueryRefresh', moduleName: CORE }; }
+    static { this.viewQuery = { name: 'ɵɵviewQuery', moduleName: CORE }; }
+    static { this.loadQuery = { name: 'ɵɵloadQuery', moduleName: CORE }; }
+    static { this.contentQuery = { name: 'ɵɵcontentQuery', moduleName: CORE }; }
+    static { this.NgOnChangesFeature = { name: 'ɵɵNgOnChangesFeature', moduleName: CORE }; }
+    static { this.InheritDefinitionFeature = { name: 'ɵɵInheritDefinitionFeature', moduleName: CORE }; }
+    static { this.CopyDefinitionFeature = { name: 'ɵɵCopyDefinitionFeature', moduleName: CORE }; }
+    static { this.StandaloneFeature = { name: 'ɵɵStandaloneFeature', moduleName: CORE }; }
+    static { this.ProvidersFeature = { name: 'ɵɵProvidersFeature', moduleName: CORE }; }
+    static { this.HostDirectivesFeature = { name: 'ɵɵHostDirectivesFeature', moduleName: CORE }; }
+    static { this.listener = { name: 'ɵɵlistener', moduleName: CORE }; }
+    static { this.getInheritedFactory = {
+        name: 'ɵɵgetInheritedFactory',
+        moduleName: CORE,
+    }; }
+    // sanitization-related functions
+    static { this.sanitizeHtml = { name: 'ɵɵsanitizeHtml', moduleName: CORE }; }
+    static { this.sanitizeStyle = { name: 'ɵɵsanitizeStyle', moduleName: CORE }; }
+    static { this.sanitizeResourceUrl = { name: 'ɵɵsanitizeResourceUrl', moduleName: CORE }; }
+    static { this.sanitizeScript = { name: 'ɵɵsanitizeScript', moduleName: CORE }; }
+    static { this.sanitizeUrl = { name: 'ɵɵsanitizeUrl', moduleName: CORE }; }
+    static { this.sanitizeUrlOrResourceUrl = { name: 'ɵɵsanitizeUrlOrResourceUrl', moduleName: CORE }; }
+    static { this.trustConstantHtml = { name: 'ɵɵtrustConstantHtml', moduleName: CORE }; }
+    static { this.trustConstantResourceUrl = { name: 'ɵɵtrustConstantResourceUrl', moduleName: CORE }; }
+    static { this.validateIframeAttribute = { name: 'ɵɵvalidateIframeAttribute', moduleName: CORE }; }
 }
-/* Methods */
-Identifiers.NEW_METHOD = 'factory';
-Identifiers.TRANSFORM_METHOD = 'transform';
-Identifiers.PATCH_DEPS = 'patchedDeps';
-Identifiers.core = { name: null, moduleName: CORE };
-/* Instructions */
-Identifiers.namespaceHTML = { name: 'ɵɵnamespaceHTML', moduleName: CORE };
-Identifiers.namespaceMathML = { name: 'ɵɵnamespaceMathML', moduleName: CORE };
-Identifiers.namespaceSVG = { name: 'ɵɵnamespaceSVG', moduleName: CORE };
-Identifiers.element = { name: 'ɵɵelement', moduleName: CORE };
-Identifiers.elementStart = { name: 'ɵɵelementStart', moduleName: CORE };
-Identifiers.elementEnd = { name: 'ɵɵelementEnd', moduleName: CORE };
-Identifiers.advance = { name: 'ɵɵadvance', moduleName: CORE };
-Identifiers.syntheticHostProperty = { name: 'ɵɵsyntheticHostProperty', moduleName: CORE };
-Identifiers.syntheticHostListener = { name: 'ɵɵsyntheticHostListener', moduleName: CORE };
-Identifiers.attribute = { name: 'ɵɵattribute', moduleName: CORE };
-Identifiers.attributeInterpolate1 = { name: 'ɵɵattributeInterpolate1', moduleName: CORE };
-Identifiers.attributeInterpolate2 = { name: 'ɵɵattributeInterpolate2', moduleName: CORE };
-Identifiers.attributeInterpolate3 = { name: 'ɵɵattributeInterpolate3', moduleName: CORE };
-Identifiers.attributeInterpolate4 = { name: 'ɵɵattributeInterpolate4', moduleName: CORE };
-Identifiers.attributeInterpolate5 = { name: 'ɵɵattributeInterpolate5', moduleName: CORE };
-Identifiers.attributeInterpolate6 = { name: 'ɵɵattributeInterpolate6', moduleName: CORE };
-Identifiers.attributeInterpolate7 = { name: 'ɵɵattributeInterpolate7', moduleName: CORE };
-Identifiers.attributeInterpolate8 = { name: 'ɵɵattributeInterpolate8', moduleName: CORE };
-Identifiers.attributeInterpolateV = { name: 'ɵɵattributeInterpolateV', moduleName: CORE };
-Identifiers.classProp = { name: 'ɵɵclassProp', moduleName: CORE };
-Identifiers.elementContainerStart = { name: 'ɵɵelementContainerStart', moduleName: CORE };
-Identifiers.elementContainerEnd = { name: 'ɵɵelementContainerEnd', moduleName: CORE };
-Identifiers.elementContainer = { name: 'ɵɵelementContainer', moduleName: CORE };
-Identifiers.styleMap = { name: 'ɵɵstyleMap', moduleName: CORE };
-Identifiers.styleMapInterpolate1 = { name: 'ɵɵstyleMapInterpolate1', moduleName: CORE };
-Identifiers.styleMapInterpolate2 = { name: 'ɵɵstyleMapInterpolate2', moduleName: CORE };
-Identifiers.styleMapInterpolate3 = { name: 'ɵɵstyleMapInterpolate3', moduleName: CORE };
-Identifiers.styleMapInterpolate4 = { name: 'ɵɵstyleMapInterpolate4', moduleName: CORE };
-Identifiers.styleMapInterpolate5 = { name: 'ɵɵstyleMapInterpolate5', moduleName: CORE };
-Identifiers.styleMapInterpolate6 = { name: 'ɵɵstyleMapInterpolate6', moduleName: CORE };
-Identifiers.styleMapInterpolate7 = { name: 'ɵɵstyleMapInterpolate7', moduleName: CORE };
-Identifiers.styleMapInterpolate8 = { name: 'ɵɵstyleMapInterpolate8', moduleName: CORE };
-Identifiers.styleMapInterpolateV = { name: 'ɵɵstyleMapInterpolateV', moduleName: CORE };
-Identifiers.classMap = { name: 'ɵɵclassMap', moduleName: CORE };
-Identifiers.classMapInterpolate1 = { name: 'ɵɵclassMapInterpolate1', moduleName: CORE };
-Identifiers.classMapInterpolate2 = { name: 'ɵɵclassMapInterpolate2', moduleName: CORE };
-Identifiers.classMapInterpolate3 = { name: 'ɵɵclassMapInterpolate3', moduleName: CORE };
-Identifiers.classMapInterpolate4 = { name: 'ɵɵclassMapInterpolate4', moduleName: CORE };
-Identifiers.classMapInterpolate5 = { name: 'ɵɵclassMapInterpolate5', moduleName: CORE };
-Identifiers.classMapInterpolate6 = { name: 'ɵɵclassMapInterpolate6', moduleName: CORE };
-Identifiers.classMapInterpolate7 = { name: 'ɵɵclassMapInterpolate7', moduleName: CORE };
-Identifiers.classMapInterpolate8 = { name: 'ɵɵclassMapInterpolate8', moduleName: CORE };
-Identifiers.classMapInterpolateV = { name: 'ɵɵclassMapInterpolateV', moduleName: CORE };
-Identifiers.styleProp = { name: 'ɵɵstyleProp', moduleName: CORE };
-Identifiers.stylePropInterpolate1 = { name: 'ɵɵstylePropInterpolate1', moduleName: CORE };
-Identifiers.stylePropInterpolate2 = { name: 'ɵɵstylePropInterpolate2', moduleName: CORE };
-Identifiers.stylePropInterpolate3 = { name: 'ɵɵstylePropInterpolate3', moduleName: CORE };
-Identifiers.stylePropInterpolate4 = { name: 'ɵɵstylePropInterpolate4', moduleName: CORE };
-Identifiers.stylePropInterpolate5 = { name: 'ɵɵstylePropInterpolate5', moduleName: CORE };
-Identifiers.stylePropInterpolate6 = { name: 'ɵɵstylePropInterpolate6', moduleName: CORE };
-Identifiers.stylePropInterpolate7 = { name: 'ɵɵstylePropInterpolate7', moduleName: CORE };
-Identifiers.stylePropInterpolate8 = { name: 'ɵɵstylePropInterpolate8', moduleName: CORE };
-Identifiers.stylePropInterpolateV = { name: 'ɵɵstylePropInterpolateV', moduleName: CORE };
-Identifiers.nextContext = { name: 'ɵɵnextContext', moduleName: CORE };
-Identifiers.resetView = { name: 'ɵɵresetView', moduleName: CORE };
-Identifiers.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE };
-Identifiers.text = { name: 'ɵɵtext', moduleName: CORE };
-Identifiers.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE };
-Identifiers.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE };
-Identifiers.getCurrentView = { name: 'ɵɵgetCurrentView', moduleName: CORE };
-Identifiers.textInterpolate = { name: 'ɵɵtextInterpolate', moduleName: CORE };
-Identifiers.textInterpolate1 = { name: 'ɵɵtextInterpolate1', moduleName: CORE };
-Identifiers.textInterpolate2 = { name: 'ɵɵtextInterpolate2', moduleName: CORE };
-Identifiers.textInterpolate3 = { name: 'ɵɵtextInterpolate3', moduleName: CORE };
-Identifiers.textInterpolate4 = { name: 'ɵɵtextInterpolate4', moduleName: CORE };
-Identifiers.textInterpolate5 = { name: 'ɵɵtextInterpolate5', moduleName: CORE };
-Identifiers.textInterpolate6 = { name: 'ɵɵtextInterpolate6', moduleName: CORE };
-Identifiers.textInterpolate7 = { name: 'ɵɵtextInterpolate7', moduleName: CORE };
-Identifiers.textInterpolate8 = { name: 'ɵɵtextInterpolate8', moduleName: CORE };
-Identifiers.textInterpolateV = { name: 'ɵɵtextInterpolateV', moduleName: CORE };
-Identifiers.restoreView = { name: 'ɵɵrestoreView', moduleName: CORE };
-Identifiers.pureFunction0 = { name: 'ɵɵpureFunction0', moduleName: CORE };
-Identifiers.pureFunction1 = { name: 'ɵɵpureFunction1', moduleName: CORE };
-Identifiers.pureFunction2 = { name: 'ɵɵpureFunction2', moduleName: CORE };
-Identifiers.pureFunction3 = { name: 'ɵɵpureFunction3', moduleName: CORE };
-Identifiers.pureFunction4 = { name: 'ɵɵpureFunction4', moduleName: CORE };
-Identifiers.pureFunction5 = { name: 'ɵɵpureFunction5', moduleName: CORE };
-Identifiers.pureFunction6 = { name: 'ɵɵpureFunction6', moduleName: CORE };
-Identifiers.pureFunction7 = { name: 'ɵɵpureFunction7', moduleName: CORE };
-Identifiers.pureFunction8 = { name: 'ɵɵpureFunction8', moduleName: CORE };
-Identifiers.pureFunctionV = { name: 'ɵɵpureFunctionV', moduleName: CORE };
-Identifiers.pipeBind1 = { name: 'ɵɵpipeBind1', moduleName: CORE };
-Identifiers.pipeBind2 = { name: 'ɵɵpipeBind2', moduleName: CORE };
-Identifiers.pipeBind3 = { name: 'ɵɵpipeBind3', moduleName: CORE };
-Identifiers.pipeBind4 = { name: 'ɵɵpipeBind4', moduleName: CORE };
-Identifiers.pipeBindV = { name: 'ɵɵpipeBindV', moduleName: CORE };
-Identifiers.hostProperty = { name: 'ɵɵhostProperty', moduleName: CORE };
-Identifiers.property = { name: 'ɵɵproperty', moduleName: CORE };
-Identifiers.propertyInterpolate = { name: 'ɵɵpropertyInterpolate', moduleName: CORE };
-Identifiers.propertyInterpolate1 = { name: 'ɵɵpropertyInterpolate1', moduleName: CORE };
-Identifiers.propertyInterpolate2 = { name: 'ɵɵpropertyInterpolate2', moduleName: CORE };
-Identifiers.propertyInterpolate3 = { name: 'ɵɵpropertyInterpolate3', moduleName: CORE };
-Identifiers.propertyInterpolate4 = { name: 'ɵɵpropertyInterpolate4', moduleName: CORE };
-Identifiers.propertyInterpolate5 = { name: 'ɵɵpropertyInterpolate5', moduleName: CORE };
-Identifiers.propertyInterpolate6 = { name: 'ɵɵpropertyInterpolate6', moduleName: CORE };
-Identifiers.propertyInterpolate7 = { name: 'ɵɵpropertyInterpolate7', moduleName: CORE };
-Identifiers.propertyInterpolate8 = { name: 'ɵɵpropertyInterpolate8', moduleName: CORE };
-Identifiers.propertyInterpolateV = { name: 'ɵɵpropertyInterpolateV', moduleName: CORE };
-Identifiers.i18n = { name: 'ɵɵi18n', moduleName: CORE };
-Identifiers.i18nAttributes = { name: 'ɵɵi18nAttributes', moduleName: CORE };
-Identifiers.i18nExp = { name: 'ɵɵi18nExp', moduleName: CORE };
-Identifiers.i18nStart = { name: 'ɵɵi18nStart', moduleName: CORE };
-Identifiers.i18nEnd = { name: 'ɵɵi18nEnd', moduleName: CORE };
-Identifiers.i18nApply = { name: 'ɵɵi18nApply', moduleName: CORE };
-Identifiers.i18nPostprocess = { name: 'ɵɵi18nPostprocess', moduleName: CORE };
-Identifiers.pipe = { name: 'ɵɵpipe', moduleName: CORE };
-Identifiers.projection = { name: 'ɵɵprojection', moduleName: CORE };
-Identifiers.projectionDef = { name: 'ɵɵprojectionDef', moduleName: CORE };
-Identifiers.reference = { name: 'ɵɵreference', moduleName: CORE };
-Identifiers.inject = { name: 'ɵɵinject', moduleName: CORE };
-Identifiers.injectAttribute = { name: 'ɵɵinjectAttribute', moduleName: CORE };
-Identifiers.directiveInject = { name: 'ɵɵdirectiveInject', moduleName: CORE };
-Identifiers.invalidFactory = { name: 'ɵɵinvalidFactory', moduleName: CORE };
-Identifiers.invalidFactoryDep = { name: 'ɵɵinvalidFactoryDep', moduleName: CORE };
-Identifiers.templateRefExtractor = { name: 'ɵɵtemplateRefExtractor', moduleName: CORE };
-Identifiers.forwardRef = { name: 'forwardRef', moduleName: CORE };
-Identifiers.resolveForwardRef = { name: 'resolveForwardRef', moduleName: CORE };
-Identifiers.ɵɵdefineInjectable = { name: 'ɵɵdefineInjectable', moduleName: CORE };
-Identifiers.declareInjectable = { name: 'ɵɵngDeclareInjectable', moduleName: CORE };
-Identifiers.InjectableDeclaration = { name: 'ɵɵInjectableDeclaration', moduleName: CORE };
-Identifiers.resolveWindow = { name: 'ɵɵresolveWindow', moduleName: CORE };
-Identifiers.resolveDocument = { name: 'ɵɵresolveDocument', moduleName: CORE };
-Identifiers.resolveBody = { name: 'ɵɵresolveBody', moduleName: CORE };
-Identifiers.defineComponent = { name: 'ɵɵdefineComponent', moduleName: CORE };
-Identifiers.declareComponent = { name: 'ɵɵngDeclareComponent', moduleName: CORE };
-Identifiers.setComponentScope = { name: 'ɵɵsetComponentScope', moduleName: CORE };
-Identifiers.ChangeDetectionStrategy = {
-    name: 'ChangeDetectionStrategy',
-    moduleName: CORE,
-};
-Identifiers.ViewEncapsulation = {
-    name: 'ViewEncapsulation',
-    moduleName: CORE,
-};
-Identifiers.ComponentDeclaration = {
-    name: 'ɵɵComponentDeclaration',
-    moduleName: CORE,
-};
-Identifiers.FactoryDeclaration = {
-    name: 'ɵɵFactoryDeclaration',
-    moduleName: CORE,
-};
-Identifiers.declareFactory = { name: 'ɵɵngDeclareFactory', moduleName: CORE };
-Identifiers.FactoryTarget = { name: 'ɵɵFactoryTarget', moduleName: CORE };
-Identifiers.defineDirective = { name: 'ɵɵdefineDirective', moduleName: CORE };
-Identifiers.declareDirective = { name: 'ɵɵngDeclareDirective', moduleName: CORE };
-Identifiers.DirectiveDeclaration = {
-    name: 'ɵɵDirectiveDeclaration',
-    moduleName: CORE,
-};
-Identifiers.InjectorDef = { name: 'ɵɵInjectorDef', moduleName: CORE };
-Identifiers.InjectorDeclaration = { name: 'ɵɵInjectorDeclaration', moduleName: CORE };
-Identifiers.defineInjector = { name: 'ɵɵdefineInjector', moduleName: CORE };
-Identifiers.declareInjector = { name: 'ɵɵngDeclareInjector', moduleName: CORE };
-Identifiers.NgModuleDeclaration = {
-    name: 'ɵɵNgModuleDeclaration',
-    moduleName: CORE,
-};
-Identifiers.ModuleWithProviders = {
-    name: 'ModuleWithProviders',
-    moduleName: CORE,
-};
-Identifiers.defineNgModule = { name: 'ɵɵdefineNgModule', moduleName: CORE };
-Identifiers.declareNgModule = { name: 'ɵɵngDeclareNgModule', moduleName: CORE };
-Identifiers.setNgModuleScope = { name: 'ɵɵsetNgModuleScope', moduleName: CORE };
-Identifiers.registerNgModuleType = { name: 'ɵɵregisterNgModuleType', moduleName: CORE };
-Identifiers.PipeDeclaration = { name: 'ɵɵPipeDeclaration', moduleName: CORE };
-Identifiers.definePipe = { name: 'ɵɵdefinePipe', moduleName: CORE };
-Identifiers.declarePipe = { name: 'ɵɵngDeclarePipe', moduleName: CORE };
-Identifiers.declareClassMetadata = { name: 'ɵɵngDeclareClassMetadata', moduleName: CORE };
-Identifiers.setClassMetadata = { name: 'ɵsetClassMetadata', moduleName: CORE };
-Identifiers.queryRefresh = { name: 'ɵɵqueryRefresh', moduleName: CORE };
-Identifiers.viewQuery = { name: 'ɵɵviewQuery', moduleName: CORE };
-Identifiers.loadQuery = { name: 'ɵɵloadQuery', moduleName: CORE };
-Identifiers.contentQuery = { name: 'ɵɵcontentQuery', moduleName: CORE };
-Identifiers.NgOnChangesFeature = { name: 'ɵɵNgOnChangesFeature', moduleName: CORE };
-Identifiers.InheritDefinitionFeature = { name: 'ɵɵInheritDefinitionFeature', moduleName: CORE };
-Identifiers.CopyDefinitionFeature = { name: 'ɵɵCopyDefinitionFeature', moduleName: CORE };
-Identifiers.StandaloneFeature = { name: 'ɵɵStandaloneFeature', moduleName: CORE };
-Identifiers.ProvidersFeature = { name: 'ɵɵProvidersFeature', moduleName: CORE };
-Identifiers.HostDirectivesFeature = { name: 'ɵɵHostDirectivesFeature', moduleName: CORE };
-Identifiers.listener = { name: 'ɵɵlistener', moduleName: CORE };
-Identifiers.getInheritedFactory = {
-    name: 'ɵɵgetInheritedFactory',
-    moduleName: CORE,
-};
-// sanitization-related functions
-Identifiers.sanitizeHtml = { name: 'ɵɵsanitizeHtml', moduleName: CORE };
-Identifiers.sanitizeStyle = { name: 'ɵɵsanitizeStyle', moduleName: CORE };
-Identifiers.sanitizeResourceUrl = { name: 'ɵɵsanitizeResourceUrl', moduleName: CORE };
-Identifiers.sanitizeScript = { name: 'ɵɵsanitizeScript', moduleName: CORE };
-Identifiers.sanitizeUrl = { name: 'ɵɵsanitizeUrl', moduleName: CORE };
-Identifiers.sanitizeUrlOrResourceUrl = { name: 'ɵɵsanitizeUrlOrResourceUrl', moduleName: CORE };
-Identifiers.trustConstantHtml = { name: 'ɵɵtrustConstantHtml', moduleName: CORE };
-Identifiers.trustConstantResourceUrl = { name: 'ɵɵtrustConstantResourceUrl', moduleName: CORE };
-Identifiers.validateIframeAttribute = { name: 'ɵɵvalidateIframeAttribute', moduleName: CORE };
 
 const DASH_CASE_REGEXP = /-+([a-z0-9])/g;
 function dashCaseToCamelCase(input) {
@@ -4001,9 +3997,9 @@ class Message {
         this.meaning = meaning;
         this.description = description;
         this.customId = customId;
-        this.id = this.customId;
         /** The ids to use if there are no custom id and if `i18nLegacyMessageIdFormat` is not empty */
         this.legacyIds = [];
+        this.id = this.customId;
         this.messageString = serializeMessage(this.nodes);
         if (nodes.length) {
             this.sources = [{
@@ -4849,13 +4845,13 @@ function getInterpolationArgsLength(interpolation) {
  * Will try to chain instructions as much as possible, if chaining is supported.
  */
 function getInstructionStatements(instructions) {
-    var _a;
     const statements = [];
     let pendingExpression = null;
     let pendingExpressionType = null;
     let chainLength = 0;
     for (const current of instructions) {
-        const resolvedParams = (_a = (typeof current.paramsOrFn === 'function' ? current.paramsOrFn() : current.paramsOrFn)) !== null && _a !== void 0 ? _a : [];
+        const resolvedParams = (typeof current.paramsOrFn === 'function' ? current.paramsOrFn() : current.paramsOrFn) ??
+            [];
         const params = Array.isArray(resolvedParams) ? resolvedParams : [resolvedParams];
         // If the current instruction is the same as the previous one
         // and it can be chained, add another call to the chain.
@@ -4906,7 +4902,12 @@ function compileInjectable(meta, resolveForwardRefs) {
         }
         if (deps !== undefined) {
             // factory: () => new meta.useClass(...deps)
-            result = compileFactoryFunction(Object.assign(Object.assign({}, factoryMeta), { delegate: meta.useClass.expression, delegateDeps: deps, delegateType: R3FactoryDelegateType.Class }));
+            result = compileFactoryFunction({
+                ...factoryMeta,
+                delegate: meta.useClass.expression,
+                delegateDeps: deps,
+                delegateType: R3FactoryDelegateType.Class,
+            });
         }
         else if (useClassOnSelf) {
             result = compileFactoryFunction(factoryMeta);
@@ -4920,7 +4921,12 @@ function compileInjectable(meta, resolveForwardRefs) {
     }
     else if (meta.useFactory !== undefined) {
         if (meta.deps !== undefined) {
-            result = compileFactoryFunction(Object.assign(Object.assign({}, factoryMeta), { delegate: meta.useFactory, delegateDeps: meta.deps || [], delegateType: R3FactoryDelegateType.Function }));
+            result = compileFactoryFunction({
+                ...factoryMeta,
+                delegate: meta.useFactory,
+                delegateDeps: meta.deps || [],
+                delegateType: R3FactoryDelegateType.Function,
+            });
         }
         else {
             result = {
@@ -4933,11 +4939,17 @@ function compileInjectable(meta, resolveForwardRefs) {
         // Note: it's safe to use `meta.useValue` instead of the `USE_VALUE in meta` check used for
         // client code because meta.useValue is an Expression which will be defined even if the actual
         // value is undefined.
-        result = compileFactoryFunction(Object.assign(Object.assign({}, factoryMeta), { expression: meta.useValue.expression }));
+        result = compileFactoryFunction({
+            ...factoryMeta,
+            expression: meta.useValue.expression,
+        });
     }
     else if (meta.useExisting !== undefined) {
         // useExisting is an `inject` call on the existing token.
-        result = compileFactoryFunction(Object.assign(Object.assign({}, factoryMeta), { expression: importExpr(Identifiers.inject).callFn([meta.useExisting.expression]) }));
+        result = compileFactoryFunction({
+            ...factoryMeta,
+            expression: importExpr(Identifiers.inject).callFn([meta.useExisting.expression]),
+        });
     }
     else {
         result = {
@@ -5425,7 +5437,7 @@ function getPolicy() {
                         createScript: (s) => s,
                     });
             }
-            catch (_a) {
+            catch {
                 // trustedTypes.createPolicy throws if called with a name that is
                 // already registered, even in report-only mode. Until the API changes,
                 // catch the error not to break the applications functionally. In such
@@ -5443,8 +5455,7 @@ function getPolicy() {
  * interpreted and executed as a script by a browser, e.g. when calling eval.
  */
 function trustedScriptFromString(script) {
-    var _a;
-    return ((_a = getPolicy()) === null || _a === void 0 ? void 0 : _a.createScript(script)) || script;
+    return getPolicy()?.createScript(script) || script;
 }
 /**
  * Unsafely call the Function constructor with the given string arguments.
@@ -5904,8 +5915,7 @@ class ImplicitReceiver extends AST {
  */
 class ThisReceiver extends ImplicitReceiver {
     visit(visitor, context = null) {
-        var _a;
-        return (_a = visitor.visitThisReceiver) === null || _a === void 0 ? void 0 : _a.call(visitor, this, context);
+        return visitor.visitThisReceiver?.(this, context);
     }
 }
 /**
@@ -6575,8 +6585,8 @@ class BoundElementProperty {
 }
 
 class EventHandlerVars {
+    static { this.event = variable('$event'); }
 }
-EventHandlerVars.event = variable('$event');
 /**
  * Converts the given expression AST into an executable output AST, assuming the expression is
  * used in an action binding (e.g. an event handler).
@@ -6897,8 +6907,7 @@ class _AstToIrVisitor {
         return convertToStatementIfNeeded(mode, literal(ast.value, type, this.convertSourceSpan(ast.span)));
     }
     _getLocal(name, receiver) {
-        var _a;
-        if (((_a = this._localResolver.globals) === null || _a === void 0 ? void 0 : _a.has(name)) && receiver instanceof ThisReceiver) {
+        if (this._localResolver.globals?.has(name) && receiver instanceof ThisReceiver) {
             return null;
         }
         return this._localResolver.getLocal(name);
@@ -7646,10 +7655,13 @@ class ShadowCss {
      * @returns the css rule modified with the scoped keyframes name.
      */
     _scopeLocalKeyframeDeclarations(rule, scopeSelector, unscopedKeyframesSet) {
-        return Object.assign(Object.assign({}, rule), { selector: rule.selector.replace(/(^@(?:-webkit-)?keyframes(?:\s+))(['"]?)(.+)\2(\s*)$/, (_, start, quote, keyframeName, endSpaces) => {
+        return {
+            ...rule,
+            selector: rule.selector.replace(/(^@(?:-webkit-)?keyframes(?:\s+))(['"]?)(.+)\2(\s*)$/, (_, start, quote, keyframeName, endSpaces) => {
                 unscopedKeyframesSet.add(unescapeQuotes(keyframeName, quote));
                 return `${start}${quote}${scopeSelector}_${keyframeName}${quote}${endSpaces}`;
-            }) });
+            }),
+        };
     }
     /**
      * Function used to scope a keyframes name (obtained from an animation declaration)
@@ -7697,7 +7709,7 @@ class ShadowCss {
         content = content.replace(/((?:^|\s+|;)(?:-webkit-)?animation-name(?:\s*):(?:\s*))([^;]+)/g, (_match, start, commaSeparatedKeyframes) => `${start}${commaSeparatedKeyframes.split(',')
             .map((keyframe) => this._scopeAnimationKeyframe(keyframe, scopeSelector, unscopedKeyframesSet))
             .join(',')}`);
-        return Object.assign(Object.assign({}, rule), { content });
+        return { ...rule, content };
     }
     /*
      * Process styles to convert native ShadowDOM rules that will trip
@@ -7828,7 +7840,6 @@ class ShadowCss {
      */
     _convertColonHostContext(cssText) {
         return cssText.replace(_cssColonHostContextReGlobal, selectorText => {
-            var _a;
             // We have captured a selector that contains a `:host-context` rule.
             // For backward compatibility `:host-context` may contain a comma separated list of selectors.
             // Each context selector group will contain a list of host-context selectors that must match
@@ -7843,7 +7854,7 @@ class ShadowCss {
             while (match = _cssColonHostContextRe.exec(selectorText)) {
                 // `match` = [':host-context(<selectors>)<rest>', <selectors>, <rest>]
                 // The `<selectors>` could actually be a comma separated list: `:host-context(.one, .two)`.
-                const newContextSelectors = ((_a = match[1]) !== null && _a !== void 0 ? _a : '').trim().split(',').map(m => m.trim()).filter(m => m !== '');
+                const newContextSelectors = (match[1] ?? '').trim().split(',').map(m => m.trim()).filter(m => m !== '');
                 // We must duplicate the current selector group for each of these new selectors.
                 // For example if the current groups are:
                 // ```
@@ -7980,7 +7991,6 @@ class ShadowCss {
     // return a selector with [name] suffix on each simple selector
     // e.g. .foo.bar > .zot becomes .foo[name].bar[name] > .zot[name]  /** @internal */
     _applySelectorScope(selector, scopeSelector, hostSelector) {
-        var _a;
         const isRe = /\[is=([^\]]*)\]/g;
         scopeSelector = scopeSelector.replace(isRe, (_, ...parts) => parts[0]);
         const attrName = '[' + scopeSelector + ']';
@@ -8031,7 +8041,7 @@ class ShadowCss {
             // (ie: ".\fc ber" for ".über") is not a separator between 2 selectors
             // also keep in mind that backslashes are replaced by a placeholder by SafeSelector
             // These escaped selectors happen for example when esbuild runs with optimization.minify.
-            if (part.match(_placeholderRe) && ((_a = selector[res.index + 1]) === null || _a === void 0 ? void 0 : _a.match(/[a-fA-F\d]/))) {
+            if (part.match(_placeholderRe) && selector[res.index + 1]?.match(/[a-fA-F\d]/)) {
                 continue;
             }
             shouldScope = shouldScope || part.indexOf(_polyfillHostNoCombinator) > -1;
@@ -9560,7 +9570,6 @@ class Parser$1 {
      *   <raw text> <expression> <raw text> ... <raw text> <expression> <raw text>
      */
     splitInterpolation(input, location, interpolatedTokens, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        var _a;
         const strings = [];
         const expressions = [];
         const offsets = [];
@@ -9599,7 +9608,7 @@ class Parser$1 {
                     this._reportError('Blank expressions are not allowed in interpolated strings', input, `at column ${i} in`, location);
                 }
                 expressions.push({ text, start: fullStart, end: fullEnd });
-                const startInOriginalTemplate = (_a = inputToTemplateIndexMap === null || inputToTemplateIndexMap === void 0 ? void 0 : inputToTemplateIndexMap.get(fullStart)) !== null && _a !== void 0 ? _a : fullStart;
+                const startInOriginalTemplate = inputToTemplateIndexMap?.get(fullStart) ?? fullStart;
                 const offset = startInOriginalTemplate + interpStart.length;
                 offsets.push(offset);
                 i = fullEnd;
@@ -10264,8 +10273,7 @@ class _ParseAST {
     parseAccessMember(readReceiver, start, isSafe) {
         const nameStart = this.inputIndex;
         const id = this.withContext(ParseContextFlags.Writable, () => {
-            var _a;
-            const id = (_a = this.expectIdentifierOrKeyword()) !== null && _a !== void 0 ? _a : '';
+            const id = this.expectIdentifierOrKeyword() ?? '';
             if (id.length === 0) {
                 this.error(`Expected identifier for property access`, readReceiver.span.end);
             }
@@ -11143,8 +11151,7 @@ class DomElementSchemaRegistry extends ElementSchemaRegistry {
         return ctx ? ctx : SecurityContext.NONE;
     }
     getMappedPropName(propName) {
-        var _a;
-        return (_a = _ATTR_TO_PROP.get(propName)) !== null && _a !== void 0 ? _a : propName;
+        return _ATTR_TO_PROP.get(propName) ?? propName;
     }
     getDefaultComponentElementName() {
         return 'ng-component';
@@ -11177,11 +11184,10 @@ class DomElementSchemaRegistry extends ElementSchemaRegistry {
     allKnownAttributesOfElement(tagName) {
         const elementProperties = this._schema.get(tagName.toLowerCase()) || this._schema.get('unknown');
         // Convert properties to attributes.
-        return Array.from(elementProperties.keys()).map(prop => { var _a; return (_a = _PROP_TO_ATTR.get(prop)) !== null && _a !== void 0 ? _a : prop; });
+        return Array.from(elementProperties.keys()).map(prop => _PROP_TO_ATTR.get(prop) ?? prop);
     }
     allKnownEventsOfElement(tagName) {
-        var _a;
-        return Array.from((_a = this._eventSchema.get(tagName.toLowerCase())) !== null && _a !== void 0 ? _a : []);
+        return Array.from(this._eventSchema.get(tagName.toLowerCase()) ?? []);
     }
     normalizeAnimationStyleProperty(propName) {
         return dashCaseToCamelCase(propName);
@@ -11253,7 +11259,7 @@ class HtmlTagDefinition {
         this.contentType = contentType;
         this.ignoreFirstLf = ignoreFirstLf;
         this.preventNamespaceInheritance = preventNamespaceInheritance;
-        this.canSelfClose = canSelfClose !== null && canSelfClose !== void 0 ? canSelfClose : isVoid;
+        this.canSelfClose = canSelfClose ?? isVoid;
     }
     isClosedByChild(name) {
         return this.isVoid || name.toLowerCase() in this.closedByChildren;
@@ -11261,7 +11267,7 @@ class HtmlTagDefinition {
     getContentType(prefix) {
         if (typeof this.contentType === 'object') {
             const overrideType = prefix === undefined ? undefined : this.contentType[prefix];
-            return overrideType !== null && overrideType !== void 0 ? overrideType : this.contentType.default;
+            return overrideType ?? this.contentType.default;
         }
         return this.contentType;
     }
@@ -11271,7 +11277,6 @@ let DEFAULT_TAG_DEFINITION;
 // This implementation does not fully conform to the HTML5 spec.
 let TAG_DEFINITIONS;
 function getHtmlTagDefinition(tagName) {
-    var _a, _b;
     if (!TAG_DEFINITIONS) {
         DEFAULT_TAG_DEFINITION = new HtmlTagDefinition({ canSelfClose: true });
         TAG_DEFINITIONS = {
@@ -11345,7 +11350,8 @@ function getHtmlTagDefinition(tagName) {
     }
     // We have to make both a case-sensitive and a case-insensitive lookup, because
     // HTML tag names are case insensitive, whereas some SVG tags are case sensitive.
-    return (_b = (_a = TAG_DEFINITIONS[tagName]) !== null && _a !== void 0 ? _a : TAG_DEFINITIONS[tagName.toLowerCase()]) !== null && _b !== void 0 ? _b : DEFAULT_TAG_DEFINITION;
+    return TAG_DEFINITIONS[tagName] ?? TAG_DEFINITIONS[tagName.toLowerCase()] ??
+        DEFAULT_TAG_DEFINITION;
 }
 
 // Mapping between all HTML entity names and their unicode representation.
@@ -13641,7 +13647,7 @@ class _Tokenizer {
         const token = {
             type: this._currentTokenType,
             parts,
-            sourceSpan: (end !== null && end !== void 0 ? end : this._cursor).getSpan(this._currentTokenStart, this._leadingTriviaCodePoints),
+            sourceSpan: (end ?? this._cursor).getSpan(this._currentTokenStart, this._leadingTriviaCodePoints),
         };
         this.tokens.push(token);
         this._currentTokenStart = null;
@@ -13763,7 +13769,7 @@ class _Tokenizer {
                 const charCode = parseInt(strNum, isHex ? 16 : 10);
                 this._endToken([String.fromCharCode(charCode), this._cursor.getChars(start)]);
             }
-            catch (_a) {
+            catch {
                 throw this._createError(_unknownEntityErrorMsg(this._cursor.getChars(start)), this._cursor.getSpan());
             }
         }
@@ -14330,7 +14336,7 @@ class EscapedCharacterCursor extends PlainCharacterCursor {
     constructor(fileOrCursor, range) {
         if (fileOrCursor instanceof EscapedCharacterCursor) {
             super(fileOrCursor);
-            this.internalState = Object.assign({}, fileOrCursor.internalState);
+            this.internalState = { ...fileOrCursor.internalState };
         }
         else {
             super(fileOrCursor, range);
@@ -14368,7 +14374,7 @@ class EscapedCharacterCursor extends PlainCharacterCursor {
         if (peek() === $BACKSLASH) {
             // We have hit an escape sequence so we need the internal state to become independent
             // of the external state.
-            this.internalState = Object.assign({}, this.state);
+            this.internalState = { ...this.state };
             // Move past the backslash
             this.advanceState(this.internalState);
             // First check for standard control char sequences
@@ -15749,7 +15755,6 @@ class HtmlAstToIvyAst {
         return { bound, literal };
     }
     parseAttribute(isTemplateElement, attribute, matchableAttributes, parsedProperties, boundEvents, variables, references) {
-        var _a;
         const name = normalizeAttributeName(attribute.name);
         const value = attribute.value;
         const srcSpan = attribute.sourceSpan;
@@ -15839,7 +15844,7 @@ class HtmlAstToIvyAst {
         }
         // No explicit binding found.
         const keySpan = createKeySpan(srcSpan, '' /* prefix */, name);
-        const hasBinding = this.bindingParser.parsePropertyInterpolation(name, value, srcSpan, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan, (_a = attribute.valueTokens) !== null && _a !== void 0 ? _a : null);
+        const hasBinding = this.bindingParser.parsePropertyInterpolation(name, value, srcSpan, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan, attribute.valueTokens ?? null);
         return hasBinding;
     }
     _visitTextWithInterpolation(value, sourceSpan, interpolatedTokens, i18n) {
@@ -16284,7 +16289,6 @@ class _I18nVisitor {
         return new Message(i18nodes, context.placeholderToContent, context.placeholderToMessage, meaning, description, customId);
     }
     visitElement(el, context) {
-        var _a;
         const children = visitAll(this, el.children, context);
         const attrs = {};
         el.attrs.forEach(attr => {
@@ -16302,7 +16306,7 @@ class _I18nVisitor {
             closePhName = context.placeholderRegistry.getCloseTagPlaceholderName(el.name);
             context.placeholderToContent[closePhName] = {
                 text: `</${el.name}>`,
-                sourceSpan: (_a = el.endSourceSpan) !== null && _a !== void 0 ? _a : el.sourceSpan,
+                sourceSpan: el.endSourceSpan ?? el.sourceSpan,
             };
         }
         const node = new TagPlaceholder(el.name, attrs, startPhName, closePhName, children, isVoid, el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
@@ -16498,12 +16502,11 @@ class I18nMetaVisitor {
         // whether visited nodes contain i18n information
         this.hasI18nMeta = false;
         this._errors = [];
-        // i18n message generation factory
-        this._createI18nMessage = createI18nMessageFactory(this.interpolationConfig);
     }
     _generateI18nMessage(nodes, meta = '', visitNodeFn) {
         const { meaning, description, customId } = this._parseMetadata(meta);
-        const message = this._createI18nMessage(nodes, meaning, description, customId, visitNodeFn);
+        const createI18nMessage = createI18nMessageFactory(this.interpolationConfig);
+        const message = createI18nMessage(nodes, meaning, description, customId, visitNodeFn);
         this._setMessageId(message, meta);
         this._setLegacyIds(message, meta);
         return message;
@@ -16840,11 +16843,10 @@ class LocalizeSerializerVisitor {
         this.pieces.push(new LiteralPiece(serializeIcuNode(icu), icu.sourceSpan));
     }
     visitTagPlaceholder(ph) {
-        var _a, _b;
-        this.pieces.push(this.createPlaceholderPiece(ph.startName, (_a = ph.startSourceSpan) !== null && _a !== void 0 ? _a : ph.sourceSpan));
+        this.pieces.push(this.createPlaceholderPiece(ph.startName, ph.startSourceSpan ?? ph.sourceSpan));
         if (!ph.isVoid) {
             ph.children.forEach(child => child.visit(this));
-            this.pieces.push(this.createPlaceholderPiece(ph.closeName, (_b = ph.endSourceSpan) !== null && _b !== void 0 ? _b : ph.sourceSpan));
+            this.pieces.push(this.createPlaceholderPiece(ph.closeName, ph.endSourceSpan ?? ph.sourceSpan));
         }
     }
     visitPlaceholder(ph) {
@@ -16941,8 +16943,8 @@ function prepareEventListenerParameters(eventAst, handlerName = null, scope = nu
         scope.getOrCreateSharedContextVar(0);
     const bindingStatements = convertActionBinding(scope, implicitReceiverExpr, handler, 'b', eventAst.handlerSpan, implicitReceiverAccesses, EVENT_BINDING_SCOPE_GLOBALS);
     const statements = [];
-    const variableDeclarations = scope === null || scope === void 0 ? void 0 : scope.variableDeclarations();
-    const restoreViewStatement = scope === null || scope === void 0 ? void 0 : scope.restoreViewStatement();
+    const variableDeclarations = scope?.variableDeclarations();
+    const restoreViewStatement = scope?.restoreViewStatement();
     if (variableDeclarations) {
         // `variableDeclarations` needs to run first, because
         // `restoreViewStatement` depends on the result.
@@ -17374,7 +17376,6 @@ class TemplateDefinitionBuilder {
         }
     }
     visitElement(element) {
-        var _a, _b;
         const elementIndex = this.allocateDataSlot();
         const stylingBuilder = new StylingBuilder(null);
         let isNonBindableMode = false;
@@ -17449,7 +17450,7 @@ class TemplateDefinitionBuilder {
                 this.creationInstruction(element.startSourceSpan, Identifiers.disableBindings);
             }
             if (boundI18nAttrs.length > 0) {
-                this.i18nAttributesInstruction(elementIndex, boundI18nAttrs, (_a = element.startSourceSpan) !== null && _a !== void 0 ? _a : element.sourceSpan);
+                this.i18nAttributesInstruction(elementIndex, boundI18nAttrs, element.startSourceSpan ?? element.sourceSpan);
             }
             // Generate Listeners (outputs)
             if (element.outputs.length > 0) {
@@ -17589,7 +17590,7 @@ class TemplateDefinitionBuilder {
         }
         if (!createSelfClosingInstruction) {
             // Finish element construction mode.
-            const span = (_b = element.endSourceSpan) !== null && _b !== void 0 ? _b : element.sourceSpan;
+            const span = element.endSourceSpan ?? element.sourceSpan;
             if (isI18nRootElement) {
                 this.i18nEnd(span, createSelfClosingI18nInstruction);
             }
@@ -17600,7 +17601,6 @@ class TemplateDefinitionBuilder {
         }
     }
     visitTemplate(template) {
-        var _a;
         const NG_TEMPLATE_TAG_NAME = 'ng-template';
         const templateIndex = this.allocateDataSlot();
         if (this.i18n) {
@@ -17653,7 +17653,7 @@ class TemplateDefinitionBuilder {
             // elements, in case of inline templates, corresponding instructions will be generated in the
             // nested template function.
             if (i18nInputs.length > 0) {
-                this.i18nAttributesInstruction(templateIndex, i18nInputs, (_a = template.startSourceSpan) !== null && _a !== void 0 ? _a : template.sourceSpan);
+                this.i18nAttributesInstruction(templateIndex, i18nInputs, template.startSourceSpan ?? template.sourceSpan);
             }
             // Add the input bindings
             if (inputs.length > 0) {
@@ -17714,7 +17714,7 @@ class TemplateDefinitionBuilder {
         // inside ICUs)
         // - all ICU vars (such as `VAR_SELECT` or `VAR_PLURAL`) are replaced with correct values
         const transformFn = (raw) => {
-            const params = Object.assign(Object.assign({}, vars), placeholders);
+            const params = { ...vars, ...placeholders };
             const formatted = formatI18nPlaceholderNamesInMap(params, /* useCamelCase */ false);
             return invokeInstruction(null, Identifiers.i18nPostprocess, [raw, mapLiteral(formatted, true)]);
         };
@@ -18472,7 +18472,7 @@ function parseTemplate(template, templateUrl, options = {}) {
     const { interpolationConfig, preserveWhitespaces, enableI18nLegacyMessageIdFormat } = options;
     const bindingParser = makeBindingParser(interpolationConfig);
     const htmlParser = new HtmlParser();
-    const parseResult = htmlParser.parse(template, templateUrl, Object.assign(Object.assign({ leadingTriviaChars: LEADING_TRIVIA_CHARS }, options), { tokenizeExpansionForms: true }));
+    const parseResult = htmlParser.parse(template, templateUrl, { leadingTriviaChars: LEADING_TRIVIA_CHARS, ...options, tokenizeExpansionForms: true });
     if (!options.alwaysAttemptHtmlToR3AstConversion && parseResult.errors &&
         parseResult.errors.length > 0) {
         const parsedTemplate = {
@@ -18700,7 +18700,6 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
  * Add features to the definition map.
  */
 function addFeatures(definitionMap, meta) {
-    var _a;
     // e.g. `features: [NgOnChangesFeature]`
     const features = [];
     const providers = meta.providers;
@@ -18725,7 +18724,7 @@ function addFeatures(definitionMap, meta) {
     if (meta.hasOwnProperty('template') && meta.isStandalone) {
         features.push(importExpr(Identifiers.StandaloneFeature));
     }
-    if ((_a = meta.hostDirectives) === null || _a === void 0 ? void 0 : _a.length) {
+    if (meta.hostDirectives?.length) {
         features.push(importExpr(Identifiers.HostDirectivesFeature).callFn([createHostDirectivesFeatureArg(meta.hostDirectives)]));
     }
     if (features.length) {
@@ -19286,8 +19285,7 @@ function compileStyles(styles, selector, hostSelector) {
     });
 }
 function createHostDirectivesType(meta) {
-    var _a;
-    if (!((_a = meta.hostDirectives) === null || _a === void 0 ? void 0 : _a.length)) {
+    if (!meta.hostDirectives?.length) {
         return NONE_TYPE;
     }
     return expressionType(literalArr(meta.hostDirectives.map(hostMeta => literalMap([
@@ -19386,7 +19384,6 @@ class CompilerFacadeImpl {
         return this.jitExpression(res.expression, angularCoreEnv, sourceMapUrl, []);
     }
     compileInjectable(angularCoreEnv, sourceMapUrl, facade) {
-        var _a;
         const { expression, statements } = compileInjectable({
             name: facade.name,
             type: wrapReference(facade.type),
@@ -19397,13 +19394,12 @@ class CompilerFacadeImpl {
             useFactory: wrapExpression(facade, 'useFactory'),
             useValue: convertToProviderExpression(facade, 'useValue'),
             useExisting: convertToProviderExpression(facade, 'useExisting'),
-            deps: (_a = facade.deps) === null || _a === void 0 ? void 0 : _a.map(convertR3DependencyMetadata),
+            deps: facade.deps?.map(convertR3DependencyMetadata),
         }, 
         /* resolveForwardRefs */ true);
         return this.jitExpression(expression, angularCoreEnv, sourceMapUrl, statements);
     }
     compileInjectableDeclaration(angularCoreEnv, sourceMapUrl, facade) {
-        var _a;
         const { expression, statements } = compileInjectable({
             name: facade.type.name,
             type: wrapReference(facade.type),
@@ -19414,7 +19410,7 @@ class CompilerFacadeImpl {
             useFactory: wrapExpression(facade, 'useFactory'),
             useValue: convertToProviderExpression(facade, 'useValue'),
             useExisting: convertToProviderExpression(facade, 'useExisting'),
-            deps: (_a = facade.deps) === null || _a === void 0 ? void 0 : _a.map(convertR3DeclareDependencyMetadata),
+            deps: facade.deps?.map(convertR3DeclareDependencyMetadata),
         }, 
         /* resolveForwardRefs */ true);
         return this.jitExpression(expression, angularCoreEnv, sourceMapUrl, statements);
@@ -19479,8 +19475,23 @@ class CompilerFacadeImpl {
         // Parse the template and check for errors.
         const { template, interpolation } = parseJitTemplate(facade.template, facade.name, sourceMapUrl, facade.preserveWhitespaces, facade.interpolation);
         // Compile the component metadata, including template, into an expression.
-        const meta = Object.assign(Object.assign(Object.assign({}, facade), convertDirectiveFacadeToMetadata(facade)), { selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(), template, declarations: facade.declarations.map(convertDeclarationFacadeToMetadata), declarationListEmitMode: 0 /* DeclarationListEmitMode.Direct */, styles: [...facade.styles, ...template.styles], encapsulation: facade.encapsulation, interpolation, changeDetection: facade.changeDetection, animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null, viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
-                null, relativeContextFilePath: '', i18nUseExternalIds: true });
+        const meta = {
+            ...facade,
+            ...convertDirectiveFacadeToMetadata(facade),
+            selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(),
+            template,
+            declarations: facade.declarations.map(convertDeclarationFacadeToMetadata),
+            declarationListEmitMode: 0 /* DeclarationListEmitMode.Direct */,
+            styles: [...facade.styles, ...template.styles],
+            encapsulation: facade.encapsulation,
+            interpolation,
+            changeDetection: facade.changeDetection,
+            animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null,
+            viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
+                null,
+            relativeContextFilePath: '',
+            i18nUseExternalIds: true,
+        };
         const jitExpressionSourceMap = `ng:///${facade.name}.js`;
         return this.compileComponentFromMeta(angularCoreEnv, jitExpressionSourceMap, meta);
     }
@@ -19543,18 +19554,23 @@ class CompilerFacadeImpl {
     }
 }
 function convertToR3QueryMetadata(facade) {
-    return Object.assign(Object.assign({}, facade), { predicate: convertQueryPredicate(facade.predicate), read: facade.read ? new WrappedNodeExpr(facade.read) : null, static: facade.static, emitDistinctChangesOnly: facade.emitDistinctChangesOnly });
+    return {
+        ...facade,
+        predicate: convertQueryPredicate(facade.predicate),
+        read: facade.read ? new WrappedNodeExpr(facade.read) : null,
+        static: facade.static,
+        emitDistinctChangesOnly: facade.emitDistinctChangesOnly,
+    };
 }
 function convertQueryDeclarationToMetadata(declaration) {
-    var _a, _b, _c, _d;
     return {
         propertyName: declaration.propertyName,
-        first: (_a = declaration.first) !== null && _a !== void 0 ? _a : false,
+        first: declaration.first ?? false,
         predicate: convertQueryPredicate(declaration.predicate),
-        descendants: (_b = declaration.descendants) !== null && _b !== void 0 ? _b : false,
+        descendants: declaration.descendants ?? false,
         read: declaration.read ? new WrappedNodeExpr(declaration.read) : null,
-        static: (_c = declaration.static) !== null && _c !== void 0 ? _c : false,
-        emitDistinctChangesOnly: (_d = declaration.emitDistinctChangesOnly) !== null && _d !== void 0 ? _d : true,
+        static: declaration.static ?? false,
+        emitDistinctChangesOnly: declaration.emitDistinctChangesOnly ?? true,
     };
 }
 function convertQueryPredicate(predicate) {
@@ -19586,39 +19602,52 @@ function convertDirectiveFacadeToMetadata(facade) {
             });
         }
     }
-    return Object.assign(Object.assign({}, facade), { typeArgumentCount: 0, typeSourceSpan: facade.typeSourceSpan, type: wrapReference(facade.type), internalType: new WrappedNodeExpr(facade.type), deps: null, host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host), inputs: Object.assign(Object.assign({}, inputsFromMetadata), inputsFromType), outputs: Object.assign(Object.assign({}, outputsFromMetadata), outputsFromType), queries: facade.queries.map(convertToR3QueryMetadata), providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null, viewQueries: facade.viewQueries.map(convertToR3QueryMetadata), fullInheritance: false, hostDirectives: convertHostDirectivesToMetadata(facade) });
+    return {
+        ...facade,
+        typeArgumentCount: 0,
+        typeSourceSpan: facade.typeSourceSpan,
+        type: wrapReference(facade.type),
+        internalType: new WrappedNodeExpr(facade.type),
+        deps: null,
+        host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host),
+        inputs: { ...inputsFromMetadata, ...inputsFromType },
+        outputs: { ...outputsFromMetadata, ...outputsFromType },
+        queries: facade.queries.map(convertToR3QueryMetadata),
+        providers: facade.providers != null ? new WrappedNodeExpr(facade.providers) : null,
+        viewQueries: facade.viewQueries.map(convertToR3QueryMetadata),
+        fullInheritance: false,
+        hostDirectives: convertHostDirectivesToMetadata(facade),
+    };
 }
 function convertDeclareDirectiveFacadeToMetadata(declaration, typeSourceSpan) {
-    var _a, _b, _c, _d, _e, _f, _g, _h;
     return {
         name: declaration.type.name,
         type: wrapReference(declaration.type),
         typeSourceSpan,
         internalType: new WrappedNodeExpr(declaration.type),
-        selector: (_a = declaration.selector) !== null && _a !== void 0 ? _a : null,
+        selector: declaration.selector ?? null,
         inputs: declaration.inputs ? inputsMappingToInputMetadata(declaration.inputs) : {},
-        outputs: (_b = declaration.outputs) !== null && _b !== void 0 ? _b : {},
+        outputs: declaration.outputs ?? {},
         host: convertHostDeclarationToMetadata(declaration.host),
-        queries: ((_c = declaration.queries) !== null && _c !== void 0 ? _c : []).map(convertQueryDeclarationToMetadata),
-        viewQueries: ((_d = declaration.viewQueries) !== null && _d !== void 0 ? _d : []).map(convertQueryDeclarationToMetadata),
+        queries: (declaration.queries ?? []).map(convertQueryDeclarationToMetadata),
+        viewQueries: (declaration.viewQueries ?? []).map(convertQueryDeclarationToMetadata),
         providers: declaration.providers !== undefined ? new WrappedNodeExpr(declaration.providers) :
             null,
-        exportAs: (_e = declaration.exportAs) !== null && _e !== void 0 ? _e : null,
-        usesInheritance: (_f = declaration.usesInheritance) !== null && _f !== void 0 ? _f : false,
-        lifecycle: { usesOnChanges: (_g = declaration.usesOnChanges) !== null && _g !== void 0 ? _g : false },
+        exportAs: declaration.exportAs ?? null,
+        usesInheritance: declaration.usesInheritance ?? false,
+        lifecycle: { usesOnChanges: declaration.usesOnChanges ?? false },
         deps: null,
         typeArgumentCount: 0,
         fullInheritance: false,
-        isStandalone: (_h = declaration.isStandalone) !== null && _h !== void 0 ? _h : false,
+        isStandalone: declaration.isStandalone ?? false,
         hostDirectives: convertHostDirectivesToMetadata(declaration),
     };
 }
 function convertHostDeclarationToMetadata(host = {}) {
-    var _a, _b, _c;
     return {
-        attributes: convertOpaqueValuesToExpressions((_a = host.attributes) !== null && _a !== void 0 ? _a : {}),
-        listeners: (_b = host.listeners) !== null && _b !== void 0 ? _b : {},
-        properties: (_c = host.properties) !== null && _c !== void 0 ? _c : {},
+        attributes: convertOpaqueValuesToExpressions(host.attributes ?? {}),
+        listeners: host.listeners ?? {},
+        properties: host.properties ?? {},
         specialAttributes: {
             classAttr: host.classAttribute,
             styleAttr: host.styleAttribute,
@@ -19626,8 +19655,7 @@ function convertHostDeclarationToMetadata(host = {}) {
     };
 }
 function convertHostDirectivesToMetadata(metadata) {
-    var _a;
-    if ((_a = metadata.hostDirectives) === null || _a === void 0 ? void 0 : _a.length) {
+    if (metadata.hostDirectives?.length) {
         return metadata.hostDirectives.map(hostDirective => {
             return typeof hostDirective === 'function' ?
                 {
@@ -19654,8 +19682,7 @@ function convertOpaqueValuesToExpressions(obj) {
     return result;
 }
 function convertDeclareComponentFacadeToMetadata(decl, typeSourceSpan, sourceMapUrl) {
-    var _a, _b, _c, _d;
-    const { template, interpolation } = parseJitTemplate(decl.template, decl.type.name, sourceMapUrl, (_a = decl.preserveWhitespaces) !== null && _a !== void 0 ? _a : false, decl.interpolation);
+    const { template, interpolation } = parseJitTemplate(decl.template, decl.type.name, sourceMapUrl, decl.preserveWhitespaces ?? false, decl.interpolation);
     const declarations = [];
     if (decl.dependencies) {
         for (const innerDep of decl.dependencies) {
@@ -19679,22 +19706,37 @@ function convertDeclareComponentFacadeToMetadata(decl, typeSourceSpan, sourceMap
             declarations.push(...decl.directives.map(dir => convertDirectiveDeclarationToMetadata(dir)));
         decl.pipes && declarations.push(...convertPipeMapToMetadata(decl.pipes));
     }
-    return Object.assign(Object.assign({}, convertDeclareDirectiveFacadeToMetadata(decl, typeSourceSpan)), { template, styles: (_b = decl.styles) !== null && _b !== void 0 ? _b : [], declarations, viewProviders: decl.viewProviders !== undefined ? new WrappedNodeExpr(decl.viewProviders) :
-            null, animations: decl.animations !== undefined ? new WrappedNodeExpr(decl.animations) : null, changeDetection: (_c = decl.changeDetection) !== null && _c !== void 0 ? _c : ChangeDetectionStrategy.Default, encapsulation: (_d = decl.encapsulation) !== null && _d !== void 0 ? _d : ViewEncapsulation.Emulated, interpolation, declarationListEmitMode: 2 /* DeclarationListEmitMode.ClosureResolved */, relativeContextFilePath: '', i18nUseExternalIds: true });
+    return {
+        ...convertDeclareDirectiveFacadeToMetadata(decl, typeSourceSpan),
+        template,
+        styles: decl.styles ?? [],
+        declarations,
+        viewProviders: decl.viewProviders !== undefined ? new WrappedNodeExpr(decl.viewProviders) :
+            null,
+        animations: decl.animations !== undefined ? new WrappedNodeExpr(decl.animations) : null,
+        changeDetection: decl.changeDetection ?? ChangeDetectionStrategy.Default,
+        encapsulation: decl.encapsulation ?? ViewEncapsulation.Emulated,
+        interpolation,
+        declarationListEmitMode: 2 /* DeclarationListEmitMode.ClosureResolved */,
+        relativeContextFilePath: '',
+        i18nUseExternalIds: true,
+    };
 }
 function convertDeclarationFacadeToMetadata(declaration) {
-    return Object.assign(Object.assign({}, declaration), { type: new WrappedNodeExpr(declaration.type) });
+    return {
+        ...declaration,
+        type: new WrappedNodeExpr(declaration.type),
+    };
 }
 function convertDirectiveDeclarationToMetadata(declaration, isComponent = null) {
-    var _a, _b, _c;
     return {
         kind: R3TemplateDependencyKind.Directive,
         isComponent: isComponent || declaration.kind === 'component',
         selector: declaration.selector,
         type: new WrappedNodeExpr(declaration.type),
-        inputs: (_a = declaration.inputs) !== null && _a !== void 0 ? _a : [],
-        outputs: (_b = declaration.outputs) !== null && _b !== void 0 ? _b : [],
-        exportAs: (_c = declaration.exportAs) !== null && _c !== void 0 ? _c : null,
+        inputs: declaration.inputs ?? [],
+        outputs: declaration.outputs ?? [],
+        exportAs: declaration.exportAs ?? null,
     };
 }
 function convertPipeMapToMetadata(pipes) {
@@ -19752,7 +19794,7 @@ function wrapExpression(obj, property) {
 }
 function computeProvidedIn(providedIn) {
     const expression = typeof providedIn === 'function' ? new WrappedNodeExpr(providedIn) :
-        new LiteralExpr(providedIn !== null && providedIn !== void 0 ? providedIn : null);
+        new LiteralExpr(providedIn ?? null);
     // See `convertToProviderExpression()` for why this uses `ForwardRefHandling.None`.
     return createMayBeForwardRefExpression(expression, 0 /* ForwardRefHandling.None */);
 }
@@ -19768,10 +19810,9 @@ function convertR3DependencyMetadata(facade) {
     return createR3DependencyMetadata(token, isAttributeDep, facade.host, facade.optional, facade.self, facade.skipSelf);
 }
 function convertR3DeclareDependencyMetadata(facade) {
-    var _a, _b, _c, _d, _e;
-    const isAttributeDep = (_a = facade.attribute) !== null && _a !== void 0 ? _a : false;
+    const isAttributeDep = facade.attribute ?? false;
     const token = facade.token === null ? null : new WrappedNodeExpr(facade.token);
-    return createR3DependencyMetadata(token, isAttributeDep, (_b = facade.host) !== null && _b !== void 0 ? _b : false, (_c = facade.optional) !== null && _c !== void 0 ? _c : false, (_d = facade.self) !== null && _d !== void 0 ? _d : false, (_e = facade.skipSelf) !== null && _e !== void 0 ? _e : false);
+    return createR3DependencyMetadata(token, isAttributeDep, facade.host ?? false, facade.optional ?? false, facade.self ?? false, facade.skipSelf ?? false);
 }
 function createR3DependencyMetadata(token, isAttributeDep, host, optional, self, skipSelf) {
     // If the dep is an `@Attribute()` the `attributeNameType` ought to be the `unknown` type.
@@ -19855,10 +19896,9 @@ function parseMappingString(value) {
     // Either the value is 'field' or 'field: property'. In the first case, `property` will
     // be undefined, in which case the field name should also be used as the property name.
     const [fieldName, bindingPropertyName] = value.split(':', 2).map(str => str.trim());
-    return [bindingPropertyName !== null && bindingPropertyName !== void 0 ? bindingPropertyName : fieldName, fieldName];
+    return [bindingPropertyName ?? fieldName, fieldName];
 }
 function convertDeclarePipeFacadeToMetadata(declaration) {
-    var _a, _b;
     return {
         name: declaration.type.name,
         type: wrapReference(declaration.type),
@@ -19866,8 +19906,8 @@ function convertDeclarePipeFacadeToMetadata(declaration) {
         typeArgumentCount: 0,
         pipeName: declaration.name,
         deps: null,
-        pure: (_a = declaration.pure) !== null && _a !== void 0 ? _a : true,
-        isStandalone: (_b = declaration.isStandalone) !== null && _b !== void 0 ? _b : false,
+        pure: declaration.pure ?? true,
+        isStandalone: declaration.isStandalone ?? false,
     };
 }
 function convertDeclareInjectorFacadeToMetadata(declaration) {
@@ -19893,7 +19933,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.0.0-next.4+sha-07cbaa3');
+const VERSION = new Version('16.0.0-next.4+sha-6161c50');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -21195,7 +21235,7 @@ class I18NHtmlParser {
     }
     parse(source, url, options = {}) {
         const interpolationConfig = options.interpolationConfig || DEFAULT_INTERPOLATION_CONFIG;
-        const parseResult = this._htmlParser.parse(source, url, Object.assign({ interpolationConfig }, options));
+        const parseResult = this._htmlParser.parse(source, url, { interpolationConfig, ...options });
         if (parseResult.errors.length) {
             return new ParseTreeResult(parseResult.rootNodes, parseResult.errors);
         }
@@ -21732,8 +21772,7 @@ class R3BoundTarget {
         this.usedPipes = usedPipes;
     }
     getEntitiesInTemplateScope(template) {
-        var _a;
-        return (_a = this.templateEntities.get(template)) !== null && _a !== void 0 ? _a : new Set();
+        return this.templateEntities.get(template) ?? new Set();
     }
     getDirectivesOfNode(node) {
         return this.directives.get(node) || null;
@@ -21795,14 +21834,13 @@ function extractTemplateEntities(rootScope) {
 }
 
 function compileClassMetadata(metadata) {
-    var _a, _b;
     // Generate an ngDevMode guarded call to setClassMetadata with the class identifier and its
     // metadata.
     const fnCall = importExpr(Identifiers.setClassMetadata).callFn([
         metadata.type,
         metadata.decorators,
-        (_a = metadata.ctorParameters) !== null && _a !== void 0 ? _a : literal(null),
-        (_b = metadata.propDecorators) !== null && _b !== void 0 ? _b : literal(null),
+        metadata.ctorParameters ?? literal(null),
+        metadata.propDecorators ?? literal(null),
     ]);
     const iife = fn([], [devOnlyGuardedExpression(fnCall).toStmt()]);
     return iife.callFn([]);
@@ -21819,7 +21857,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.0.0-next.4+sha-07cbaa3'));
+    definitionMap.set('version', literal('16.0.0-next.4+sha-6161c50'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -21920,10 +21958,9 @@ function compileDeclareDirectiveFromMetadata(meta) {
  * this logic for components, as they extend the directive metadata.
  */
 function createDirectiveDefinitionMap(meta) {
-    var _a;
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.0.0-next.4+sha-07cbaa3'));
+    definitionMap.set('version', literal('16.0.0-next.4+sha-6161c50'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     if (meta.isStandalone) {
@@ -21952,7 +21989,7 @@ function createDirectiveDefinitionMap(meta) {
     if (meta.lifecycle.usesOnChanges) {
         definitionMap.set('usesOnChanges', literal(true));
     }
-    if ((_a = meta.hostDirectives) === null || _a === void 0 ? void 0 : _a.length) {
+    if (meta.hostDirectives?.length) {
         definitionMap.set('hostDirectives', createHostDirectives(meta.hostDirectives));
     }
     definitionMap.set('ngImport', importExpr(Identifiers.core));
@@ -22148,7 +22185,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.0.0-next.4+sha-07cbaa3'));
+    definitionMap.set('version', literal('16.0.0-next.4+sha-6161c50'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22183,7 +22220,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.0.0-next.4+sha-07cbaa3'));
+    definitionMap.set('version', literal('16.0.0-next.4+sha-6161c50'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22234,7 +22271,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.0.0-next.4+sha-07cbaa3'));
+    definitionMap.set('version', literal('16.0.0-next.4+sha-6161c50'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22264,7 +22301,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.0.0-next.4+sha-07cbaa3'));
+    definitionMap.set('version', literal('16.0.0-next.4+sha-6161c50'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22315,7 +22352,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.0.0-next.4+sha-07cbaa3'));
+    definitionMap.set('version', literal('16.0.0-next.4+sha-6161c50'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);

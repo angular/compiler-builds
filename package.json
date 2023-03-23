@@ -1,6 +1,6 @@
 {
   "name": "@angular/compiler",
-  "version": "16.0.0-next.4+sha-07cbaa3",
+  "version": "16.0.0-next.4+sha-6161c50",
   "description": "Angular - the compiler library",
   "author": "angular",
   "license": "MIT",
@@ -11,7 +11,7 @@
     "tslib": "^2.3.0"
   },
   "peerDependencies": {
-    "@angular/core": "16.0.0-next.4+sha-07cbaa3"
+    "@angular/core": "16.0.0-next.4+sha-6161c50"
   },
   "peerDependenciesMeta": {
     "@angular/core": {
@@ -44,12 +44,8 @@
     ]
   },
   "sideEffects": true,
-  "fesm2020": "./fesm2020/compiler.mjs",
-  "fesm2015": "./fesm2015/compiler.mjs",
-  "esm2020": "./esm2020/index.mjs",
+  "module": "./fesm2022/compiler.mjs",
   "typings": "./index.d.ts",
-  "module": "./fesm2015/compiler.mjs",
-  "es2020": "./fesm2020/compiler.mjs",
   "type": "module",
   "exports": {
     "./package.json": {
@@ -57,19 +53,15 @@
     },
     ".": {
       "types": "./index.d.ts",
-      "esm2020": "./esm2020/index.mjs",
-      "es2020": "./fesm2020/compiler.mjs",
-      "es2015": "./fesm2015/compiler.mjs",
-      "node": "./fesm2015/compiler.mjs",
-      "default": "./fesm2020/compiler.mjs"
+      "esm2022": "./esm2022/index.mjs",
+      "esm": "./esm2022/index.mjs",
+      "default": "./fesm2022/compiler.mjs"
     },
     "./testing": {
       "types": "./testing/index.d.ts",
-      "esm2020": "./esm2020/testing/testing.mjs",
-      "es2020": "./fesm2020/testing.mjs",
-      "es2015": "./fesm2015/testing.mjs",
-      "node": "./fesm2015/testing.mjs",
-      "default": "./fesm2020/testing.mjs"
+      "esm2022": "./esm2022/testing/testing.mjs",
+      "esm": "./esm2022/testing/testing.mjs",
+      "default": "./fesm2022/testing.mjs"
     }
   }
 }
