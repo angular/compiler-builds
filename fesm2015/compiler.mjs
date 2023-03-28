@@ -1,5 +1,5 @@
 /**
- * @license Angular v15.2.4+sha-6d6fc12
+ * @license Angular v15.2.4+sha-077f6b4
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8413,7 +8413,6 @@ function parse(value) {
     let valueStart = 0;
     let propStart = 0;
     let currentProp = null;
-    let valueHasQuotes = false;
     while (i < value.length) {
         const token = value.charCodeAt(i++);
         switch (token) {
@@ -8426,7 +8425,6 @@ function parse(value) {
             case 39 /* Char.QuoteSingle */:
                 // valueStart needs to be there since prop values don't
                 // have quotes in CSS
-                valueHasQuotes = valueHasQuotes || valueStart > 0;
                 if (quote === 0 /* Char.QuoteNone */) {
                     quote = 39 /* Char.QuoteSingle */;
                 }
@@ -8436,7 +8434,6 @@ function parse(value) {
                 break;
             case 34 /* Char.QuoteDouble */:
                 // same logic as above
-                valueHasQuotes = valueHasQuotes || valueStart > 0;
                 if (quote === 0 /* Char.QuoteNone */) {
                     quote = 34 /* Char.QuoteDouble */;
                 }
@@ -8453,33 +8450,19 @@ function parse(value) {
             case 59 /* Char.Semicolon */:
                 if (currentProp && valueStart > 0 && parenDepth === 0 && quote === 0 /* Char.QuoteNone */) {
                     const styleVal = value.substring(valueStart, i - 1).trim();
-                    styles.push(currentProp, valueHasQuotes ? stripUnnecessaryQuotes(styleVal) : styleVal);
+                    styles.push(currentProp, styleVal);
                     propStart = i;
                     valueStart = 0;
                     currentProp = null;
-                    valueHasQuotes = false;
                 }
                 break;
         }
     }
     if (currentProp && valueStart) {
         const styleVal = value.slice(valueStart).trim();
-        styles.push(currentProp, valueHasQuotes ? stripUnnecessaryQuotes(styleVal) : styleVal);
+        styles.push(currentProp, styleVal);
     }
     return styles;
-}
-function stripUnnecessaryQuotes(value) {
-    const qS = value.charCodeAt(0);
-    const qE = value.charCodeAt(value.length - 1);
-    if (qS == qE && (qS == 39 /* Char.QuoteSingle */ || qS == 34 /* Char.QuoteDouble */)) {
-        const tempValue = value.substring(1, value.length - 1);
-        // special case to avoid using a multi-quoted string that was just chomped
-        // (e.g. `font-family: "Verdana", "sans-serif"`)
-        if (tempValue.indexOf('\'') == -1 && tempValue.indexOf('"') == -1) {
-            value = tempValue;
-        }
-    }
-    return value;
 }
 function hyphenate(value) {
     return value
@@ -19847,7 +19830,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('15.2.4+sha-6d6fc12');
+const VERSION = new Version('15.2.4+sha-077f6b4');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -21773,7 +21756,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('15.2.4+sha-6d6fc12'));
+    definitionMap.set('version', literal('15.2.4+sha-077f6b4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -21877,7 +21860,7 @@ function createDirectiveDefinitionMap(meta) {
     var _a;
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('15.2.4+sha-6d6fc12'));
+    definitionMap.set('version', literal('15.2.4+sha-077f6b4'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.internalType);
     if (meta.isStandalone) {
@@ -22102,7 +22085,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('15.2.4+sha-6d6fc12'));
+    definitionMap.set('version', literal('15.2.4+sha-077f6b4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22137,7 +22120,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('15.2.4+sha-6d6fc12'));
+    definitionMap.set('version', literal('15.2.4+sha-077f6b4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // Only generate providedIn property if it has a non-null value
@@ -22188,7 +22171,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('15.2.4+sha-6d6fc12'));
+    definitionMap.set('version', literal('15.2.4+sha-077f6b4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     definitionMap.set('providers', meta.providers);
@@ -22218,7 +22201,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('15.2.4+sha-6d6fc12'));
+    definitionMap.set('version', literal('15.2.4+sha-077f6b4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.internalType);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22269,7 +22252,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('15.2.4+sha-6d6fc12'));
+    definitionMap.set('version', literal('15.2.4+sha-077f6b4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.internalType);
