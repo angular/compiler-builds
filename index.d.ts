@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.0.0-next.6+sha-61bedaf
+ * @license Angular v16.0.0-next.6+sha-6ca1a53
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2793,14 +2793,6 @@ declare interface R3ConstructorFactoryMetadata {
      * An expression representing the interface type being constructed.
      */
     type: R3Reference;
-    /**
-     * An expression representing the constructor type, intended for use within a class definition
-     * itself.
-     *
-     * This can differ from the outer `type` if the class is being compiled by ngcc and is inside
-     * an IIFE structure that uses a different name internally.
-     */
-    internalType: outputAst.Expression;
     /** Number of arguments for the `type`. */
     typeArgumentCount: number;
     /**
@@ -3354,14 +3346,6 @@ export declare interface R3DirectiveMetadata {
      */
     type: R3Reference;
     /**
-     * An expression representing a reference to the directive being compiled, intended for use within
-     * a class definition itself.
-     *
-     * This can differ from the outer `type` if the class is being compiled by ngcc and is inside
-     * an IIFE structure that uses a different name internally.
-     */
-    internalType: outputAst.Expression;
-    /**
      * Number of generic type parameters of the type itself.
      */
     typeArgumentCount: number;
@@ -3680,7 +3664,6 @@ export declare class R3Identifiers {
 export declare interface R3InjectableMetadata {
     name: string;
     type: R3Reference;
-    internalType: outputAst.Expression;
     typeArgumentCount: number;
     providedIn: MaybeForwardRefExpression;
     useClass?: MaybeForwardRefExpression;
@@ -3693,7 +3676,6 @@ export declare interface R3InjectableMetadata {
 export declare interface R3InjectorMetadata {
     name: string;
     type: R3Reference;
-    internalType: outputAst.Expression;
     providers: outputAst.Expression | null;
     imports: outputAst.Expression[];
 }
@@ -3729,22 +3711,6 @@ export declare interface R3NgModuleMetadata {
      * An expression representing the module type being compiled.
      */
     type: R3Reference;
-    /**
-     * An expression representing the module type being compiled, intended for use within a class
-     * definition itself.
-     *
-     * This can differ from the outer `type` if the class is being compiled by ngcc and is inside
-     * an IIFE structure that uses a different name internally.
-     */
-    internalType: outputAst.Expression;
-    /**
-     * An expression intended for use by statements that are adjacent (i.e. tightly coupled) to but
-     * not internal to a class definition.
-     *
-     * This can differ from the outer `type` if the class is being compiled by ngcc and is inside
-     * an IIFE structure that uses a different name internally.
-     */
-    adjacentType: outputAst.Expression;
     /**
      * An array of expressions representing the bootstrap components specified by the module.
      */
@@ -3821,14 +3787,6 @@ export declare interface R3PipeMetadata {
      * An expression representing a reference to the pipe itself.
      */
     type: R3Reference;
-    /**
-     * An expression representing the pipe being compiled, intended for use within a class definition
-     * itself.
-     *
-     * This can differ from the outer `type` if the class is being compiled by ngcc and is inside an
-     * IIFE structure that uses a different name internally.
-     */
-    internalType: outputAst.Expression;
     /**
      * Number of generic type parameters of the type itself.
      */

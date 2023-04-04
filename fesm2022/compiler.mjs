@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.0.0-next.6+sha-61bedaf
+ * @license Angular v16.0.0-next.6+sha-6ca1a53
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3500,7 +3500,7 @@ function compileFactoryFunction(meta) {
     // delegated factory (which is used to create the current type) then this is only the type-to-
     // create parameter (t).
     const typeForCtor = !isDelegatedFactoryMetadata(meta) ?
-        new BinaryOperatorExpr(BinaryOperator.Or, t, meta.internalType) :
+        new BinaryOperatorExpr(BinaryOperator.Or, t, meta.type.value) :
         t;
     let ctorExpr = null;
     if (meta.deps !== null) {
@@ -3547,7 +3547,7 @@ function compileFactoryFunction(meta) {
     }
     else if (baseFactoryVar !== null) {
         // This factory uses a base factory, so call `ɵɵgetInheritedFactory()` to compute it.
-        const getInheritedFactoryCall = importExpr(Identifiers.getInheritedFactory).callFn([meta.internalType]);
+        const getInheritedFactoryCall = importExpr(Identifiers.getInheritedFactory).callFn([meta.type.value]);
         // Memoize the base factoryFn: `baseFactory || (baseFactory = ɵɵgetInheritedFactory(...))`
         const baseFactory = new BinaryOperatorExpr(BinaryOperator.Or, baseFactoryVar, baseFactoryVar.set(getInheritedFactoryCall));
         body.push(new ReturnStatement(baseFactory.callFn([typeForCtor])));
@@ -4883,7 +4883,6 @@ function compileInjectable(meta, resolveForwardRefs) {
     const factoryMeta = {
         name: meta.name,
         type: meta.type,
-        internalType: meta.internalType,
         typeArgumentCount: meta.typeArgumentCount,
         deps: [],
         target: FactoryTarget$1.Injectable,
@@ -4895,7 +4894,7 @@ function compileInjectable(meta, resolveForwardRefs) {
         //
         // A special case exists for useClass: Type where Type is the injectable type itself and no
         // deps are specified, in which case 'useClass' is effectively ignored.
-        const useClassOnSelf = meta.useClass.expression.isEquivalent(meta.internalType);
+        const useClassOnSelf = meta.useClass.expression.isEquivalent(meta.type.value);
         let deps = undefined;
         if (meta.deps !== undefined) {
             deps = meta.deps;
@@ -4954,10 +4953,10 @@ function compileInjectable(meta, resolveForwardRefs) {
     else {
         result = {
             statements: [],
-            expression: delegateToFactory(meta.type.value, meta.internalType, resolveForwardRefs)
+            expression: delegateToFactory(meta.type.value, meta.type.value, resolveForwardRefs)
         };
     }
-    const token = meta.internalType;
+    const token = meta.type.value;
     const injectableProps = new DefinitionMap();
     injectableProps.set('token', token);
     injectableProps.set('factory', result.expression);
@@ -4976,28 +4975,28 @@ function compileInjectable(meta, resolveForwardRefs) {
 function createInjectableType(meta) {
     return new ExpressionType(importExpr(Identifiers.InjectableDeclaration, [typeWithParameters(meta.type.type, meta.typeArgumentCount)]));
 }
-function delegateToFactory(type, internalType, unwrapForwardRefs) {
-    if (type.node === internalType.node) {
+function delegateToFactory(type, useType, unwrapForwardRefs) {
+    if (type.node === useType.node) {
         // The types are the same, so we can simply delegate directly to the type's factory.
         // ```
         // factory: type.ɵfac
         // ```
-        return internalType.prop('ɵfac');
+        return useType.prop('ɵfac');
     }
     if (!unwrapForwardRefs) {
         // The type is not wrapped in a `forwardRef()`, so we create a simple factory function that
         // accepts a sub-type as an argument.
         // ```
-        // factory: function(t) { return internalType.ɵfac(t); }
+        // factory: function(t) { return useType.ɵfac(t); }
         // ```
-        return createFactoryFunction(internalType);
+        return createFactoryFunction(useType);
     }
-    // The internalType is actually wrapped in a `forwardRef()` so we need to resolve that before
+    // The useType is actually wrapped in a `forwardRef()` so we need to resolve that before
     // calling its factory.
     // ```
     // factory: function(t) { return core.resolveForwardRef(type).ɵfac(t); }
     // ```
-    const unwrappedType = importExpr(Identifiers.resolveForwardRef).callFn([internalType]);
+    const unwrappedType = importExpr(Identifiers.resolveForwardRef).callFn([useType]);
     return createFactoryFunction(unwrappedType);
 }
 function createFactoryFunction(type) {
@@ -5701,10 +5700,10 @@ var R3SelectorScopeMode;
  * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
  */
 function compileNgModule(meta) {
-    const { adjacentType, internalType, bootstrap, declarations, imports, exports, schemas, containsForwardDecls, selectorScopeMode, id } = meta;
+    const { type: moduleType, bootstrap, declarations, imports, exports, schemas, containsForwardDecls, selectorScopeMode, id } = meta;
     const statements = [];
     const definitionMap = new DefinitionMap();
-    definitionMap.set('type', internalType);
+    definitionMap.set('type', moduleType.value);
     if (bootstrap.length > 0) {
         definitionMap.set('bootstrap', refsToArray(bootstrap, containsForwardDecls));
     }
@@ -5741,7 +5740,7 @@ function compileNgModule(meta) {
         definitionMap.set('id', id);
         // Generate a side-effectful call to register this NgModule by its id, as per the semantics of
         // NgModule ids.
-        statements.push(importExpr(Identifiers.registerNgModuleType).callFn([adjacentType, id]).toStmt());
+        statements.push(importExpr(Identifiers.registerNgModuleType).callFn([moduleType.value, id]).toStmt());
     }
     const expression = importExpr(Identifiers.defineNgModule).callFn([definitionMap.toLiteralMap()], undefined, true);
     const type = createNgModuleType(meta);
@@ -5790,7 +5789,7 @@ function createNgModuleType({ type: moduleType, declarations, exports, imports, 
  * symbols to become tree-shakeable.
  */
 function generateSetNgModuleScopeCall(meta) {
-    const { adjacentType: moduleType, declarations, imports, exports, containsForwardDecls } = meta;
+    const { type: moduleType, declarations, imports, exports, containsForwardDecls } = meta;
     const scopeMap = new DefinitionMap();
     if (declarations.length > 0) {
         scopeMap.set('declarations', refsToArray(declarations, containsForwardDecls));
@@ -5807,7 +5806,7 @@ function generateSetNgModuleScopeCall(meta) {
     // setNgModuleScope(...)
     const fnCall = new InvokeFunctionExpr(
     /* fn */ importExpr(Identifiers.setNgModuleScope), 
-    /* args */ [moduleType, scopeMap.toLiteralMap()]);
+    /* args */ [moduleType.value, scopeMap.toLiteralMap()]);
     // (ngJitMode guard) && setNgModuleScope(...)
     const guardedCall = jitOnlyGuardedExpression(fnCall);
     // function() { (ngJitMode guard) && setNgModuleScope(...); }
@@ -18654,7 +18653,7 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
     const definitionMap = new DefinitionMap();
     const selectors = parseSelectorToR3Selector(meta.selector);
     // e.g. `type: MyDirective`
-    definitionMap.set('type', meta.internalType);
+    definitionMap.set('type', meta.type.value);
     // e.g. `selectors: [['', 'someDir', '']]`
     if (selectors.length > 0) {
         definitionMap.set('selectors', asLiteral(selectors));
@@ -19352,7 +19351,6 @@ class CompilerFacadeImpl {
         const metadata = {
             name: facade.name,
             type: wrapReference(facade.type),
-            internalType: new WrappedNodeExpr(facade.type),
             typeArgumentCount: 0,
             deps: null,
             pipeName: facade.pipeName,
@@ -19371,7 +19369,6 @@ class CompilerFacadeImpl {
         const { expression, statements } = compileInjectable({
             name: facade.name,
             type: wrapReference(facade.type),
-            internalType: new WrappedNodeExpr(facade.type),
             typeArgumentCount: facade.typeArgumentCount,
             providedIn: computeProvidedIn(facade.providedIn),
             useClass: convertToProviderExpression(facade, 'useClass'),
@@ -19387,7 +19384,6 @@ class CompilerFacadeImpl {
         const { expression, statements } = compileInjectable({
             name: facade.type.name,
             type: wrapReference(facade.type),
-            internalType: new WrappedNodeExpr(facade.type),
             typeArgumentCount: 0,
             providedIn: computeProvidedIn(facade.providedIn),
             useClass: convertToProviderExpression(facade, 'useClass'),
@@ -19403,7 +19399,6 @@ class CompilerFacadeImpl {
         const meta = {
             name: facade.name,
             type: wrapReference(facade.type),
-            internalType: new WrappedNodeExpr(facade.type),
             providers: facade.providers && facade.providers.length > 0 ?
                 new WrappedNodeExpr(facade.providers) :
                 null,
@@ -19420,8 +19415,6 @@ class CompilerFacadeImpl {
     compileNgModule(angularCoreEnv, sourceMapUrl, facade) {
         const meta = {
             type: wrapReference(facade.type),
-            internalType: new WrappedNodeExpr(facade.type),
-            adjacentType: new WrappedNodeExpr(facade.type),
             bootstrap: facade.bootstrap.map(wrapReference),
             declarations: facade.declarations.map(wrapReference),
             publicDeclarationTypes: null,
@@ -19494,7 +19487,6 @@ class CompilerFacadeImpl {
         const factoryRes = compileFactoryFunction({
             name: meta.name,
             type: wrapReference(meta.type),
-            internalType: new WrappedNodeExpr(meta.type),
             typeArgumentCount: meta.typeArgumentCount,
             deps: convertR3DependencyMetadataArray(meta.deps),
             target: meta.target,
@@ -19505,7 +19497,6 @@ class CompilerFacadeImpl {
         const factoryRes = compileFactoryFunction({
             name: meta.type.name,
             type: wrapReference(meta.type),
-            internalType: new WrappedNodeExpr(meta.type),
             typeArgumentCount: 0,
             deps: Array.isArray(meta.deps) ? meta.deps.map(convertR3DeclareDependencyMetadata) :
                 meta.deps,
@@ -19591,7 +19582,6 @@ function convertDirectiveFacadeToMetadata(facade) {
         typeArgumentCount: 0,
         typeSourceSpan: facade.typeSourceSpan,
         type: wrapReference(facade.type),
-        internalType: new WrappedNodeExpr(facade.type),
         deps: null,
         host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host),
         inputs: { ...inputsFromMetadata, ...inputsFromType },
@@ -19608,7 +19598,6 @@ function convertDeclareDirectiveFacadeToMetadata(declaration, typeSourceSpan) {
         name: declaration.type.name,
         type: wrapReference(declaration.type),
         typeSourceSpan,
-        internalType: new WrappedNodeExpr(declaration.type),
         selector: declaration.selector ?? null,
         inputs: declaration.inputs ? inputsMappingToInputMetadata(declaration.inputs) : {},
         outputs: declaration.outputs ?? {},
@@ -19886,7 +19875,6 @@ function convertDeclarePipeFacadeToMetadata(declaration) {
     return {
         name: declaration.type.name,
         type: wrapReference(declaration.type),
-        internalType: new WrappedNodeExpr(declaration.type),
         typeArgumentCount: 0,
         pipeName: declaration.name,
         deps: null,
@@ -19898,7 +19886,6 @@ function convertDeclareInjectorFacadeToMetadata(declaration) {
     return {
         name: declaration.type.name,
         type: wrapReference(declaration.type),
-        internalType: new WrappedNodeExpr(declaration.type),
         providers: declaration.providers !== undefined && declaration.providers.length > 0 ?
             new WrappedNodeExpr(declaration.providers) :
             null,
@@ -19917,7 +19904,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.0.0-next.6+sha-61bedaf');
+const VERSION = new Version('16.0.0-next.6+sha-6ca1a53');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -21841,7 +21828,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.0.0-next.6+sha-61bedaf'));
+    definitionMap.set('version', literal('16.0.0-next.6+sha-6ca1a53'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -21944,9 +21931,9 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.0.0-next.6+sha-61bedaf'));
+    definitionMap.set('version', literal('16.0.0-next.6+sha-6ca1a53'));
     // e.g. `type: MyDirective`
-    definitionMap.set('type', meta.internalType);
+    definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
         definitionMap.set('isStandalone', literal(meta.isStandalone));
     }
@@ -22169,9 +22156,9 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.0.0-next.6+sha-61bedaf'));
+    definitionMap.set('version', literal('16.0.0-next.6+sha-6ca1a53'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
-    definitionMap.set('type', meta.internalType);
+    definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
     definitionMap.set('target', importExpr(Identifiers.FactoryTarget).prop(FactoryTarget$1[meta.target]));
     return {
@@ -22204,9 +22191,9 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.0.0-next.6+sha-61bedaf'));
+    definitionMap.set('version', literal('16.0.0-next.6+sha-6ca1a53'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
-    definitionMap.set('type', meta.internalType);
+    definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
     if (meta.providedIn !== undefined) {
         const providedIn = convertFromMaybeForwardRefExpression(meta.providedIn);
@@ -22255,9 +22242,9 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.0.0-next.6+sha-61bedaf'));
+    definitionMap.set('version', literal('16.0.0-next.6+sha-6ca1a53'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
-    definitionMap.set('type', meta.internalType);
+    definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
     if (meta.imports.length > 0) {
         definitionMap.set('imports', literalArr(meta.imports));
@@ -22285,9 +22272,9 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.0.0-next.6+sha-61bedaf'));
+    definitionMap.set('version', literal('16.0.0-next.6+sha-6ca1a53'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
-    definitionMap.set('type', meta.internalType);
+    definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
     // We must wrap the arrays inside a function if any of the values are a forward reference to a
     // not-yet-declared class. This is to support JIT execution of the `ɵɵngDeclareNgModule()` call.
@@ -22336,10 +22323,10 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.0.0-next.6+sha-61bedaf'));
+    definitionMap.set('version', literal('16.0.0-next.6+sha-6ca1a53'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
-    definitionMap.set('type', meta.internalType);
+    definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
         definitionMap.set('isStandalone', literal(meta.isStandalone));
     }
