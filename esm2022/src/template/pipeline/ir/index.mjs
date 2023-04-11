@@ -1,0 +1,17 @@
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+export * from './src/element';
+export * from './src/expression';
+export * from './src/enums';
+export * from './src/operations';
+export * from './src/ops/create';
+export * from './src/ops/shared';
+export * from './src/ops/update';
+export * from './src/traits';
+export * from './src/variable';
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW5kZXguanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi8uLi8uLi8uLi8uLi8uLi8uLi8uLi8uLi9wYWNrYWdlcy9jb21waWxlci9zcmMvdGVtcGxhdGUvcGlwZWxpbmUvaXIvaW5kZXgudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7Ozs7OztHQU1HO0FBRUgsY0FBYyxlQUFlLENBQUM7QUFDOUIsY0FBYyxrQkFBa0IsQ0FBQztBQUNqQyxjQUFjLGFBQWEsQ0FBQztBQUM1QixjQUFjLGtCQUFrQixDQUFDO0FBQ2pDLGNBQWMsa0JBQWtCLENBQUM7QUFDakMsY0FBYyxrQkFBa0IsQ0FBQztBQUNqQyxjQUFjLGtCQUFrQixDQUFDO0FBQ2pDLGNBQWMsY0FBYyxDQUFDO0FBQzdCLGNBQWMsZ0JBQWdCLENBQUMiLCJzb3VyY2VzQ29udGVudCI6WyIvKipcbiAqIEBsaWNlbnNlXG4gKiBDb3B5cmlnaHQgR29vZ2xlIExMQyBBbGwgUmlnaHRzIFJlc2VydmVkLlxuICpcbiAqIFVzZSBvZiB0aGlzIHNvdXJjZSBjb2RlIGlzIGdvdmVybmVkIGJ5IGFuIE1JVC1zdHlsZSBsaWNlbnNlIHRoYXQgY2FuIGJlXG4gKiBmb3VuZCBpbiB0aGUgTElDRU5TRSBmaWxlIGF0IGh0dHBzOi8vYW5ndWxhci5pby9saWNlbnNlXG4gKi9cblxuZXhwb3J0ICogZnJvbSAnLi9zcmMvZWxlbWVudCc7XG5leHBvcnQgKiBmcm9tICcuL3NyYy9leHByZXNzaW9uJztcbmV4cG9ydCAqIGZyb20gJy4vc3JjL2VudW1zJztcbmV4cG9ydCAqIGZyb20gJy4vc3JjL29wZXJhdGlvbnMnO1xuZXhwb3J0ICogZnJvbSAnLi9zcmMvb3BzL2NyZWF0ZSc7XG5leHBvcnQgKiBmcm9tICcuL3NyYy9vcHMvc2hhcmVkJztcbmV4cG9ydCAqIGZyb20gJy4vc3JjL29wcy91cGRhdGUnO1xuZXhwb3J0ICogZnJvbSAnLi9zcmMvdHJhaXRzJztcbmV4cG9ydCAqIGZyb20gJy4vc3JjL3ZhcmlhYmxlJztcbiJdfQ==

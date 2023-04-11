@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.0.0-next.7+sha-687f138
+ * @license Angular v16.0.0-next.7+sha-d980af6
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8402,6 +8402,2172 @@ function repeatGroups(groups, multiples) {
     }
 }
 
+var TagContentType;
+(function (TagContentType) {
+    TagContentType[TagContentType["RAW_TEXT"] = 0] = "RAW_TEXT";
+    TagContentType[TagContentType["ESCAPABLE_RAW_TEXT"] = 1] = "ESCAPABLE_RAW_TEXT";
+    TagContentType[TagContentType["PARSABLE_DATA"] = 2] = "PARSABLE_DATA";
+})(TagContentType || (TagContentType = {}));
+function splitNsName(elementName) {
+    if (elementName[0] != ':') {
+        return [null, elementName];
+    }
+    const colonIndex = elementName.indexOf(':', 1);
+    if (colonIndex === -1) {
+        throw new Error(`Unsupported format "${elementName}" expecting ":namespace:name"`);
+    }
+    return [elementName.slice(1, colonIndex), elementName.slice(colonIndex + 1)];
+}
+// `<ng-container>` tags work the same regardless the namespace
+function isNgContainer(tagName) {
+    return splitNsName(tagName)[1] === 'ng-container';
+}
+// `<ng-content>` tags work the same regardless the namespace
+function isNgContent(tagName) {
+    return splitNsName(tagName)[1] === 'ng-content';
+}
+// `<ng-template>` tags work the same regardless the namespace
+function isNgTemplate(tagName) {
+    return splitNsName(tagName)[1] === 'ng-template';
+}
+function getNsPrefix(fullName) {
+    return fullName === null ? null : splitNsName(fullName)[0];
+}
+function mergeNsAndName(prefix, localName) {
+    return prefix ? `:${prefix}:${localName}` : localName;
+}
+
+/**
+ * Enumeration of the types of attributes which can be applied to an element.
+ */
+var ElementAttributeKind;
+(function (ElementAttributeKind) {
+    /**
+     * Static attributes.
+     */
+    ElementAttributeKind[ElementAttributeKind["Attribute"] = 0] = "Attribute";
+    /**
+     * Class bindings.
+     */
+    ElementAttributeKind[ElementAttributeKind["Class"] = 1] = "Class";
+    /**
+     * Style bindings.
+     */
+    ElementAttributeKind[ElementAttributeKind["Style"] = 2] = "Style";
+    /**
+     * Dynamic property or attribute bindings.
+     */
+    ElementAttributeKind[ElementAttributeKind["Binding"] = 3] = "Binding";
+    /**
+     * Attributes on a template node.
+     */
+    ElementAttributeKind[ElementAttributeKind["Template"] = 4] = "Template";
+    /**
+     * Internationalized attributes.
+     */
+    ElementAttributeKind[ElementAttributeKind["I18n"] = 5] = "I18n";
+})(ElementAttributeKind || (ElementAttributeKind = {}));
+const FLYWEIGHT_ARRAY = Object.freeze([]);
+/**
+ * Container for all of the various kinds of attributes which are applied on an element.
+ */
+class ElementAttributes {
+    constructor() {
+        this.known = new Set();
+        this.byKind = new Map;
+        this.projectAs = null;
+    }
+    get attributes() {
+        return this.byKind.get(ElementAttributeKind.Attribute) ?? FLYWEIGHT_ARRAY;
+    }
+    get classes() {
+        return this.byKind.get(ElementAttributeKind.Class) ?? FLYWEIGHT_ARRAY;
+    }
+    get styles() {
+        return this.byKind.get(ElementAttributeKind.Style) ?? FLYWEIGHT_ARRAY;
+    }
+    get bindings() {
+        return this.byKind.get(ElementAttributeKind.Binding) ?? FLYWEIGHT_ARRAY;
+    }
+    get template() {
+        return this.byKind.get(ElementAttributeKind.Template) ?? FLYWEIGHT_ARRAY;
+    }
+    get i18n() {
+        return this.byKind.get(ElementAttributeKind.I18n) ?? FLYWEIGHT_ARRAY;
+    }
+    add(kind, name, value) {
+        if (this.known.has(name)) {
+            return;
+        }
+        this.known.add(name);
+        const array = this.arrayFor(kind);
+        array.push(...getAttributeNameLiterals$1(name));
+        if (value !== null) {
+            array.push(value);
+        }
+    }
+    arrayFor(kind) {
+        if (!this.byKind.has(kind)) {
+            this.byKind.set(kind, []);
+        }
+        return this.byKind.get(kind);
+    }
+}
+function getAttributeNameLiterals$1(name) {
+    const [attributeNamespace, attributeName] = splitNsName(name);
+    const nameLiteral = literal(attributeName);
+    if (attributeNamespace) {
+        return [
+            literal(0 /* core.AttributeMarker.NamespaceURI */), literal(attributeNamespace), nameLiteral
+        ];
+    }
+    return [nameLiteral];
+}
+function assertIsElementAttributes(attrs) {
+    if (!(attrs instanceof ElementAttributes)) {
+        throw new Error(`AssertionError: ElementAttributes has already been coalesced into the view constants`);
+    }
+}
+
+/**
+ * Distinguishes different kinds of IR operations.
+ *
+ * Includes both creation and update operations.
+ */
+var OpKind;
+(function (OpKind) {
+    /**
+     * A special operation type which is used to represent the beginning and end nodes of a linked
+     * list of operations.
+     */
+    OpKind[OpKind["ListEnd"] = 0] = "ListEnd";
+    /**
+     * An operation which wraps an output AST statement.
+     */
+    OpKind[OpKind["Statement"] = 1] = "Statement";
+    /**
+     * An operation which declares and initializes a `SemanticVariable`.
+     */
+    OpKind[OpKind["Variable"] = 2] = "Variable";
+    /**
+     * An operation to begin rendering of an element.
+     */
+    OpKind[OpKind["ElementStart"] = 3] = "ElementStart";
+    /**
+     * An operation to render an element with no children.
+     */
+    OpKind[OpKind["Element"] = 4] = "Element";
+    /**
+     * An operation which declares an embedded view.
+     */
+    OpKind[OpKind["Template"] = 5] = "Template";
+    /**
+     * An operation to end rendering of an element previously started with `ElementStart`.
+     */
+    OpKind[OpKind["ElementEnd"] = 6] = "ElementEnd";
+    /**
+     * An operation to render a text node.
+     */
+    OpKind[OpKind["Text"] = 7] = "Text";
+    /**
+     * An operation declaring an event listener for an element.
+     */
+    OpKind[OpKind["Listener"] = 8] = "Listener";
+    /**
+     * An operation to interpolate text into a text node.
+     */
+    OpKind[OpKind["InterpolateText"] = 9] = "InterpolateText";
+    /**
+     * An operation to bind an expression to a property of an element.
+     */
+    OpKind[OpKind["Property"] = 10] = "Property";
+    /**
+     * An operation to advance the runtime's implicit slot context during the update phase of a view.
+     */
+    OpKind[OpKind["Advance"] = 11] = "Advance";
+})(OpKind || (OpKind = {}));
+/**
+ * Distinguishes different kinds of IR expressions.
+ */
+var ExpressionKind;
+(function (ExpressionKind) {
+    /**
+     * Read of a variable in a lexical scope.
+     */
+    ExpressionKind[ExpressionKind["LexicalRead"] = 0] = "LexicalRead";
+    /**
+     * A reference to the current view context.
+     */
+    ExpressionKind[ExpressionKind["Context"] = 1] = "Context";
+    /**
+     * Read of a variable declared in a `VariableOp`.
+     */
+    ExpressionKind[ExpressionKind["ReadVariable"] = 2] = "ReadVariable";
+    /**
+     * Runtime operation to navigate to the next view context in the view hierarchy.
+     */
+    ExpressionKind[ExpressionKind["NextContext"] = 3] = "NextContext";
+    /**
+     * Runtime operation to retrieve the value of a local reference.
+     */
+    ExpressionKind[ExpressionKind["Reference"] = 4] = "Reference";
+    /**
+     * Runtime operation to snapshot the current view context.
+     */
+    ExpressionKind[ExpressionKind["GetCurrentView"] = 5] = "GetCurrentView";
+    /**
+     * Runtime operation to restore a snapshotted view.
+     */
+    ExpressionKind[ExpressionKind["RestoreView"] = 6] = "RestoreView";
+    /**
+     * Runtime operation to reset the current view context after `RestoreView`.
+     */
+    ExpressionKind[ExpressionKind["ResetView"] = 7] = "ResetView";
+})(ExpressionKind || (ExpressionKind = {}));
+/**
+ * Distinguishes between different kinds of `SemanticVariable`s.
+ */
+var SemanticVariableKind;
+(function (SemanticVariableKind) {
+    /**
+     * Represents the context of a particular view.
+     */
+    SemanticVariableKind[SemanticVariableKind["Context"] = 0] = "Context";
+    /**
+     * Represents an identifier declared in the lexical scope of a view.
+     */
+    SemanticVariableKind[SemanticVariableKind["Identifier"] = 1] = "Identifier";
+    /**
+     * Represents a saved state that can be used to restore a view in a listener handler function.
+     */
+    SemanticVariableKind[SemanticVariableKind["SavedView"] = 2] = "SavedView";
+})(SemanticVariableKind || (SemanticVariableKind = {}));
+
+/**
+ * Marker symbol for `ConsumesSlotOpTrait`.
+ */
+const ConsumesSlot = Symbol('ConsumesSlot');
+/**
+ * Marker symbol for `DependsOnSlotContextOpTrait`.
+ */
+const DependsOnSlotContext = Symbol('DependsOnSlotContext');
+/**
+ * Marker symbol for `UsesSlotIndex` trait.
+ */
+const UsesSlotIndex = Symbol('UsesSlotIndex');
+/**
+ * Marker symbol for `ConsumesVars` trait.
+ */
+const ConsumesVarsTrait = Symbol('UsesVars');
+/**
+ * Default values for most `ConsumesSlotOpTrait` fields (used with the spread operator to initialize
+ * implementors of the trait).
+ */
+const TRAIT_CONSUMES_SLOT = {
+    [ConsumesSlot]: true,
+    slot: null,
+    numSlotsUsed: 1,
+};
+/**
+ * Default values for most `DependsOnSlotContextOpTrait` fields (used with the spread operator to
+ * initialize implementors of the trait).
+ */
+const TRAIT_DEPENDS_ON_SLOT_CONTEXT = {
+    [DependsOnSlotContext]: true,
+};
+/**
+ * Default values for `UsesVars` fields (used with the spread operator to initialize
+ * implementors of the trait).
+ */
+const TRAIT_CONSUMES_VARS = {
+    [ConsumesVarsTrait]: true,
+};
+/**
+ * Test whether an operation implements `ConsumesSlotOpTrait`.
+ */
+function hasConsumesSlotTrait(op) {
+    return op[ConsumesSlot] === true;
+}
+/**
+ * Test whether an operation implements `DependsOnSlotContextOpTrait`.
+ */
+function hasDependsOnSlotContextTrait(op) {
+    return op[DependsOnSlotContext] === true;
+}
+function hasConsumesVarsTrait(value) {
+    return value[ConsumesVarsTrait] === true;
+}
+/**
+ * Test whether an expression implements `UsesSlotIndexExprTrait`.
+ */
+function hasUsesSlotIndexTrait(expr) {
+    return expr[UsesSlotIndex] === true;
+}
+
+var _a;
+/**
+ * Check whether a given `o.Expression` is a logical IR expression type.
+ */
+function isIrExpression(expr) {
+    return expr instanceof ExpressionBase;
+}
+/**
+ * Base type used for all logical IR expressions.
+ */
+class ExpressionBase extends Expression {
+    constructor(sourceSpan = null) {
+        super(null, sourceSpan);
+    }
+}
+/**
+ * Logical expression representing a lexical read of a variable name.
+ */
+class LexicalReadExpr extends ExpressionBase {
+    constructor(name) {
+        super();
+        this.name = name;
+        this.kind = ExpressionKind.LexicalRead;
+    }
+    visitExpression(visitor, context) { }
+    isEquivalent() {
+        return false;
+    }
+    isConstant() {
+        return false;
+    }
+    transformInternalExpressions() { }
+}
+/**
+ * Runtime operation to retrieve the value of a local reference.
+ */
+class ReferenceExpr extends ExpressionBase {
+    static { _a = UsesSlotIndex; }
+    constructor(target, offset) {
+        super();
+        this.target = target;
+        this.offset = offset;
+        this.kind = ExpressionKind.Reference;
+        this[_a] = true;
+        this.slot = null;
+    }
+    visitExpression() { }
+    isEquivalent(e) {
+        return e instanceof ReferenceExpr && e.target === this.target;
+    }
+    isConstant() {
+        return false;
+    }
+    transformInternalExpressions() { }
+}
+/**
+ * A reference to the current view context (usually the `ctx` variable in a template function).
+ */
+class ContextExpr extends ExpressionBase {
+    constructor(view) {
+        super();
+        this.view = view;
+        this.kind = ExpressionKind.Context;
+    }
+    visitExpression() { }
+    isEquivalent(e) {
+        return e instanceof ContextExpr && e.view === this.view;
+    }
+    isConstant() {
+        return false;
+    }
+    transformInternalExpressions() { }
+}
+/**
+ * Runtime operation to navigate to the next view context in the view hierarchy.
+ */
+class NextContextExpr extends ExpressionBase {
+    constructor() {
+        super();
+        this.kind = ExpressionKind.NextContext;
+    }
+    visitExpression() { }
+    isEquivalent(e) {
+        return e instanceof NextContextExpr;
+    }
+    isConstant() {
+        return false;
+    }
+    transformInternalExpressions() { }
+}
+/**
+ * Runtime operation to snapshot the current view context.
+ *
+ * The result of this operation can be stored in a variable and later used with the `RestoreView`
+ * operation.
+ */
+class GetCurrentViewExpr extends ExpressionBase {
+    constructor() {
+        super();
+        this.kind = ExpressionKind.GetCurrentView;
+    }
+    visitExpression() { }
+    isEquivalent(e) {
+        return e instanceof GetCurrentViewExpr;
+    }
+    isConstant() {
+        return false;
+    }
+    transformInternalExpressions() { }
+}
+/**
+ * Runtime operation to restore a snapshotted view.
+ */
+class RestoreViewExpr extends ExpressionBase {
+    constructor(view) {
+        super();
+        this.view = view;
+        this.kind = ExpressionKind.RestoreView;
+    }
+    visitExpression(visitor, context) {
+        if (typeof this.view !== 'number') {
+            this.view.visitExpression(visitor, context);
+        }
+    }
+    isEquivalent(e) {
+        if (!(e instanceof RestoreViewExpr) || typeof e.view !== typeof this.view) {
+            return false;
+        }
+        if (typeof this.view === 'number') {
+            return this.view === e.view;
+        }
+        else {
+            return this.view.isEquivalent(e.view);
+        }
+    }
+    isConstant() {
+        return false;
+    }
+    transformInternalExpressions(transform) {
+        if (typeof this.view !== 'number') {
+            this.view = transformExpressionsInExpression(this.view, transform);
+        }
+    }
+}
+/**
+ * Runtime operation to reset the current view context after `RestoreView`.
+ */
+class ResetViewExpr extends ExpressionBase {
+    constructor(expr) {
+        super();
+        this.expr = expr;
+        this.kind = ExpressionKind.ResetView;
+    }
+    visitExpression(visitor, context) {
+        this.expr.visitExpression(visitor, context);
+    }
+    isEquivalent(e) {
+        return e instanceof ResetViewExpr && this.expr.isEquivalent(e.expr);
+    }
+    isConstant() {
+        return false;
+    }
+    transformInternalExpressions(transform) {
+        this.expr = transformExpressionsInExpression(this.expr, transform);
+    }
+}
+/**
+ * Read of a variable declared as an `ir.VariableOp` and referenced through its `ir.XrefId`.
+ */
+class ReadVariableExpr extends ExpressionBase {
+    constructor(xref) {
+        super();
+        this.xref = xref;
+        this.kind = ExpressionKind.ReadVariable;
+        this.name = null;
+    }
+    visitExpression() { }
+    isEquivalent(other) {
+        return other instanceof ReadVariableExpr && other.xref === this.xref;
+    }
+    isConstant() {
+        return false;
+    }
+    transformInternalExpressions() { }
+}
+/**
+ * Visits all `Expression`s in the AST of `op` with the `visitor` function.
+ */
+function visitExpressionsInOp(op, visitor) {
+    transformExpressionsInOp(op, (expr) => {
+        visitor(expr);
+        return expr;
+    });
+}
+/**
+ * Transform all `Expression`s in the AST of `op` with the `transform` function.
+ *
+ * All such operations will be replaced with the result of applying `transform`, which may be an
+ * identity transformation.
+ */
+function transformExpressionsInOp(op, transform) {
+    switch (op.kind) {
+        case OpKind.Property:
+            op.expression = transformExpressionsInExpression(op.expression, transform);
+            break;
+        case OpKind.Statement:
+            transformExpressionsInStatement(op.statement, transform);
+            break;
+        case OpKind.Variable:
+            op.initializer = transformExpressionsInExpression(op.initializer, transform);
+            break;
+        case OpKind.InterpolateText:
+            for (let i = 0; i < op.expressions.length; i++) {
+                op.expressions[i] = transformExpressionsInExpression(op.expressions[i], transform);
+            }
+            break;
+        case OpKind.Listener:
+            for (const innerOp of op.handlerOps) {
+                transformExpressionsInOp(innerOp, transform);
+            }
+            break;
+        case OpKind.Element:
+        case OpKind.ElementStart:
+        case OpKind.ElementEnd:
+        case OpKind.Template:
+        case OpKind.Text:
+            // These operations contain no expressions.
+            break;
+        default:
+            throw new Error(`AssertionError: transformExpressionsInOp doesn't handle ${OpKind[op.kind]}`);
+    }
+}
+/**
+ * Transform all `Expression`s in the AST of `expr` with the `transform` function.
+ *
+ * All such operations will be replaced with the result of applying `transform`, which may be an
+ * identity transformation.
+ */
+function transformExpressionsInExpression(expr, transform) {
+    if (expr instanceof ExpressionBase) {
+        expr.transformInternalExpressions(transform);
+        return transform(expr);
+    }
+    else if (expr instanceof BinaryOperatorExpr) {
+        expr.lhs = transformExpressionsInExpression(expr.lhs, transform);
+        expr.rhs = transformExpressionsInExpression(expr.rhs, transform);
+    }
+    else if (expr instanceof ReadPropExpr) {
+        expr.receiver = transformExpressionsInExpression(expr.receiver, transform);
+    }
+    else if (expr instanceof InvokeFunctionExpr) {
+        expr.fn = transformExpressionsInExpression(expr.fn, transform);
+        for (let i = 0; i < expr.args.length; i++) {
+            expr.args[i] = transformExpressionsInExpression(expr.args[i], transform);
+        }
+    }
+    else if (expr instanceof ReadVarExpr || expr instanceof ExternalExpr ||
+        expr instanceof LiteralExpr) {
+        // No action for these types.
+    }
+    else {
+        throw new Error(`Unhandled expression kind: ${expr.constructor.name}`);
+    }
+    return expr;
+}
+/**
+ * Transform all `Expression`s in the AST of `stmt` with the `transform` function.
+ *
+ * All such operations will be replaced with the result of applying `transform`, which may be an
+ * identity transformation.
+ */
+function transformExpressionsInStatement(stmt, transform) {
+    if (stmt instanceof ExpressionStatement) {
+        stmt.expr = transformExpressionsInExpression(stmt.expr, transform);
+    }
+    else if (stmt instanceof ReturnStatement) {
+        stmt.value = transformExpressionsInExpression(stmt.value, transform);
+    }
+    else {
+        throw new Error(`Unhandled statement kind: ${stmt.constructor.name}`);
+    }
+}
+
+/**
+ * A linked list of `Op` nodes of a given subtype.
+ *
+ * @param OpT specific subtype of `Op` nodes which this list contains.
+ */
+class OpList {
+    static { this.nextListId = 0; }
+    constructor() {
+        /**
+         * Debug ID of this `OpList` instance.
+         */
+        this.debugListId = OpList.nextListId++;
+        // OpList uses static head/tail nodes of a special `ListEnd` type.
+        // This avoids the need for special casing of the first and last list
+        // elements in all list operations.
+        this.head = {
+            kind: OpKind.ListEnd,
+            next: null,
+            prev: null,
+            debugListId: this.debugListId,
+        };
+        this.tail = {
+            kind: OpKind.ListEnd,
+            next: null,
+            prev: null,
+            debugListId: this.debugListId,
+        };
+        // Link `head` and `tail` together at the start (list is empty).
+        this.head.next = this.tail;
+        this.tail.prev = this.head;
+    }
+    /**
+     * Push a new operation to the tail of the list.
+     */
+    push(op) {
+        OpList.assertIsNotEnd(op);
+        OpList.assertIsUnowned(op);
+        op.debugListId = this.debugListId;
+        // The old "previous" node (which might be the head, if the list is empty).
+        const oldLast = this.tail.prev;
+        // Insert `op` following the old last node.
+        op.prev = oldLast;
+        oldLast.next = op;
+        // Connect `op` with the list tail.
+        op.next = this.tail;
+        this.tail.prev = op;
+    }
+    /**
+     * Prepend one or more nodes to the start of the list.
+     */
+    prepend(ops) {
+        if (ops.length === 0) {
+            return;
+        }
+        for (const op of ops) {
+            OpList.assertIsNotEnd(op);
+            OpList.assertIsUnowned(op);
+            op.debugListId = this.debugListId;
+        }
+        const first = this.head.next;
+        let prev = this.head;
+        for (const op of ops) {
+            prev.next = op;
+            op.prev = prev;
+            prev = op;
+        }
+        prev.next = first;
+        first.prev = prev;
+    }
+    /**
+     * `OpList` is iterable via the iteration protocol.
+     *
+     * It's safe to mutate the part of the list that has already been returned by the iterator, up to
+     * and including the last operation returned. Mutations beyond that point _may_ be safe, but may
+     * also corrupt the iteration position and should be avoided.
+     */
+    *[Symbol.iterator]() {
+        let current = this.head.next;
+        while (current !== this.tail) {
+            // Guards against corruption of the iterator state by mutations to the tail of the list during
+            // iteration.
+            OpList.assertIsOwned(current);
+            const next = current.next;
+            yield current;
+            current = next;
+        }
+    }
+    /**
+     * Replace `oldOp` with `newOp` in the list.
+     */
+    static replace(oldOp, newOp) {
+        OpList.assertIsNotEnd(oldOp);
+        OpList.assertIsNotEnd(newOp);
+        OpList.assertIsOwned(oldOp);
+        OpList.assertIsUnowned(newOp);
+        newOp.debugListId = oldOp.debugListId;
+        if (oldOp.prev !== null) {
+            oldOp.prev.next = newOp;
+            newOp.prev = oldOp.prev;
+        }
+        if (oldOp.next !== null) {
+            oldOp.next.prev = newOp;
+            newOp.next = oldOp.next;
+        }
+        oldOp.debugListId = null;
+        oldOp.prev = null;
+        oldOp.next = null;
+    }
+    /**
+     * Replace `oldOp` with some number of new operations in the list (which may include `oldOp`).
+     */
+    static replaceWithMany(oldOp, newOps) {
+        if (newOps.length === 0) {
+            // Replacing with an empty list -> pure removal.
+            OpList.remove(oldOp);
+            return;
+        }
+        OpList.assertIsNotEnd(oldOp);
+        OpList.assertIsOwned(oldOp);
+        const listId = oldOp.debugListId;
+        oldOp.debugListId = null;
+        for (const newOp of newOps) {
+            OpList.assertIsNotEnd(newOp);
+            // `newOp` might be `oldOp`, but at this point it's been marked as unowned.
+            OpList.assertIsUnowned(newOp);
+        }
+        // It should be safe to reuse `oldOp` in the `newOps` list - maybe you want to sandwich an
+        // operation between two new ops.
+        const { prev: oldPrev, next: oldNext } = oldOp;
+        oldOp.prev = null;
+        oldOp.next = null;
+        let prev = oldPrev;
+        for (const newOp of newOps) {
+            this.assertIsUnowned(newOp);
+            newOp.debugListId = listId;
+            prev.next = newOp;
+            newOp.prev = prev;
+            // This _should_ be the case, but set it just in case.
+            newOp.next = null;
+            prev = newOp;
+        }
+        // At the end of iteration, `prev` holds the last node in the list.
+        const first = newOps[0];
+        const last = prev;
+        // Replace `oldOp` with the chain `first` -> `last`.
+        if (oldPrev !== null) {
+            oldPrev.next = first;
+            first.prev = oldOp.prev;
+        }
+        if (oldNext !== null) {
+            oldNext.prev = last;
+            last.next = oldNext;
+        }
+    }
+    /**
+     * Remove the given node from the list which contains it.
+     */
+    static remove(op) {
+        OpList.assertIsNotEnd(op);
+        OpList.assertIsOwned(op);
+        op.prev.next = op.next;
+        op.next.prev = op.prev;
+        // Break any link between the node and this list to safeguard against its usage in future
+        // operations.
+        op.debugListId = null;
+        op.prev = null;
+        op.next = null;
+    }
+    /**
+     * Insert `op` before `before`.
+     */
+    static insertBefore(op, before) {
+        OpList.assertIsNotEnd(before);
+        OpList.assertIsNotEnd(op);
+        OpList.assertIsUnowned(op);
+        OpList.assertIsOwned(before, op.debugListId);
+        op.debugListId = before.debugListId;
+        // Just in case.
+        op.prev = null;
+        before.prev.next = op;
+        op.prev = before.prev;
+        op.next = before;
+        before.prev = op;
+    }
+    /**
+     * Asserts that `op` does not currently belong to a list.
+     */
+    static assertIsUnowned(op) {
+        if (op.debugListId !== null) {
+            throw new Error(`AssertionError: illegal operation on owned node: ${OpKind[op.kind]}`);
+        }
+    }
+    /**
+     * Asserts that `op` currently belongs to a list. If `byList` is passed, `op` is asserted to
+     * specifically belong to that list.
+     */
+    static assertIsOwned(op, byList) {
+        if (op.debugListId === null) {
+            throw new Error(`AssertionError: illegal operation on unowned node: ${OpKind[op.kind]}`);
+        }
+        else if (byList !== undefined && op.debugListId !== byList) {
+            throw new Error(`AssertionError: node belongs to the wrong list (expected ${byList}, actual ${op.debugListId})`);
+        }
+    }
+    /**
+     * Asserts that `op` is not a special `ListEnd` node.
+     */
+    static assertIsNotEnd(op) {
+        if (op.kind === OpKind.ListEnd) {
+            throw new Error(`AssertionError: illegal operation on list head or tail`);
+        }
+    }
+}
+
+/**
+ * Create a `StatementOp`.
+ */
+function createStatementOp(statement) {
+    return {
+        kind: OpKind.Statement,
+        statement,
+        ...NEW_OP,
+    };
+}
+/**
+ * Create a `VariableOp`.
+ */
+function createVariableOp(xref, variable, initializer) {
+    return {
+        kind: OpKind.Variable,
+        xref,
+        name: null,
+        variable,
+        initializer,
+        ...NEW_OP,
+    };
+}
+/**
+ * Static structure shared by all operations.
+ *
+ * Used as a convenience via the spread operator (`...NEW_OP`) when creating new operations, and
+ * ensures the fields are always in the same order.
+ */
+const NEW_OP = {
+    debugListId: null,
+    prev: null,
+    next: null,
+};
+
+/**
+ * Create an `ElementStartOp`.
+ */
+function createElementStartOp(tag, xref) {
+    return {
+        kind: OpKind.ElementStart,
+        xref,
+        tag,
+        attributes: new ElementAttributes(),
+        localRefs: [],
+        ...TRAIT_CONSUMES_SLOT,
+        ...NEW_OP,
+    };
+}
+/**
+ * Create a `TemplateOp`.
+ */
+function createTemplateOp(xref, tag) {
+    return {
+        kind: OpKind.Template,
+        xref,
+        attributes: new ElementAttributes(),
+        tag,
+        decls: null,
+        vars: null,
+        localRefs: [],
+        ...TRAIT_CONSUMES_SLOT,
+        ...NEW_OP,
+    };
+}
+/**
+ * Create an `ElementEndOp`.
+ */
+function createElementEndOp(xref) {
+    return {
+        kind: OpKind.ElementEnd,
+        xref,
+        ...NEW_OP,
+    };
+}
+/**
+ * Create a `TextOp`.
+ */
+function createTextOp(xref, initialValue) {
+    return {
+        kind: OpKind.Text,
+        xref,
+        initialValue,
+        ...TRAIT_CONSUMES_SLOT,
+        ...NEW_OP,
+    };
+}
+/**
+ * Create a `ListenerOp`.
+ */
+function createListenerOp(xref, name) {
+    return {
+        kind: OpKind.Listener,
+        xref,
+        name,
+        handlerOps: new OpList(),
+        handlerFnName: null,
+        ...NEW_OP,
+    };
+}
+
+/**
+ * Create an `InterpolationTextOp`.
+ */
+function createInterpolateTextOp(xref, strings, expressions) {
+    return {
+        kind: OpKind.InterpolateText,
+        target: xref,
+        strings,
+        expressions,
+        ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
+        ...TRAIT_CONSUMES_VARS,
+        ...NEW_OP,
+    };
+}
+/**
+ * Create a `PropertyOp`.
+ */
+function createPropertyOp(xref, name, expression) {
+    return {
+        kind: OpKind.Property,
+        target: xref,
+        name,
+        expression,
+        ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
+        ...TRAIT_CONSUMES_VARS,
+        ...NEW_OP,
+    };
+}
+/**
+ * Create an `AdvanceOp`.
+ */
+function createAdvanceOp(delta) {
+    return {
+        kind: OpKind.Advance,
+        delta,
+        ...NEW_OP,
+    };
+}
+
+/**
+ * Converts the semantic attributes of element-like operations (elements, templates) into constant
+ * array expressions, and lifts them into the overall component `consts`.
+ */
+function phaseConstCollection(cpl) {
+    for (const [_, view] of cpl.views) {
+        for (const op of view.create) {
+            if (op.kind !== OpKind.ElementStart && op.kind !== OpKind.Element &&
+                op.kind !== OpKind.Template) {
+                continue;
+            }
+            else if (!(op.attributes instanceof ElementAttributes)) {
+                continue;
+            }
+            const attrArray = serializeAttributes(op.attributes);
+            if (attrArray.entries.length > 0) {
+                op.attributes = cpl.addConst(attrArray);
+            }
+            else {
+                op.attributes = null;
+            }
+        }
+    }
+}
+function serializeAttributes({ attributes, bindings, classes, i18n, projectAs, styles, template }) {
+    const attrArray = [...attributes];
+    if (projectAs !== null) {
+        attrArray.push(literal(5 /* core.AttributeMarker.ProjectAs */), literal(projectAs));
+    }
+    if (classes.length > 0) {
+        attrArray.push(literal(1 /* core.AttributeMarker.Classes */), ...classes);
+    }
+    if (styles.length > 0) {
+        attrArray.push(literal(2 /* core.AttributeMarker.Styles */), ...styles);
+    }
+    if (bindings.length > 0) {
+        attrArray.push(literal(3 /* core.AttributeMarker.Bindings */), ...bindings);
+    }
+    if (template.length > 0) {
+        attrArray.push(literal(4 /* core.AttributeMarker.Template */), ...template);
+    }
+    if (i18n.length > 0) {
+        attrArray.push(literal(6 /* core.AttributeMarker.I18n */), ...i18n);
+    }
+    return literalArr(attrArray);
+}
+
+/**
+ * Replace sequences of `ElementStart` followed by `ElementEnd` with a condensed `Element`
+ * instruction.
+ */
+function phaseEmptyElements(cpl) {
+    for (const [_, view] of cpl.views) {
+        for (const op of view.create) {
+            if (op.kind === OpKind.ElementEnd && op.prev !== null &&
+                op.prev.kind === OpKind.ElementStart) {
+                // Transmute the `ElementStart` instruction to `Element`. This is safe as they're designed
+                // to be identical apart from the `kind`.
+                op.prev.kind = OpKind.Element;
+                // Remove the `ElementEnd` instruction.
+                OpList.remove(op);
+            }
+        }
+    }
+}
+
+/**
+ * Generate `ir.AdvanceOp`s in between `ir.UpdateOp`s that ensure the runtime's implicit slot
+ * context will be advanced correctly.
+ */
+function phaseGenerateAdvance(cpl) {
+    for (const [_, view] of cpl.views) {
+        // First build a map of all of the declarations in the view that have assigned slots.
+        const slotMap = new Map();
+        for (const op of view.create) {
+            if (!hasConsumesSlotTrait(op)) {
+                continue;
+            }
+            else if (op.slot === null) {
+                throw new Error(`AssertionError: expected slots to have been allocated before generating advance() calls`);
+            }
+            slotMap.set(op.xref, op.slot);
+        }
+        // Next, step through the update operations and generate `ir.AdvanceOp`s as required to ensure
+        // the runtime's implicit slot counter will be set to the correct slot before executing each
+        // update operation which depends on it.
+        //
+        // To do that, we track what the runtime's slot counter will be through the update operations.
+        let slotContext = 0;
+        for (const op of view.update) {
+            if (!hasDependsOnSlotContextTrait(op)) {
+                // `op` doesn't depend on the slot counter, so it can be skipped.
+                continue;
+            }
+            else if (!slotMap.has(op.target)) {
+                // We expect ops that _do_ depend on the slot counter to point at declarations that exist in
+                // the `slotMap`.
+                throw new Error(`AssertionError: reference to unknown slot for var ${op.target}`);
+            }
+            const slot = slotMap.get(op.target);
+            // Does the slot counter need to be adjusted?
+            if (slotContext !== slot) {
+                // If so, generate an `ir.AdvanceOp` to advance the counter.
+                const delta = slot - slotContext;
+                if (delta < 0) {
+                    throw new Error(`AssertionError: slot counter should never need to move backwards`);
+                }
+                OpList.insertBefore(op, createAdvanceOp(delta));
+                slotContext = slot;
+            }
+        }
+    }
+}
+
+// This file contains helpers for generating calls to Ivy instructions. In particular, each
+// instruction type is represented as a function, which may select a specific instruction variant
+// depending on the exact arguments.
+function element(slot, tag, constIndex, localRefIndex) {
+    return elementStartBase(Identifiers.element, slot, tag, constIndex, localRefIndex);
+}
+function elementStart(slot, tag, constIndex, localRefIndex) {
+    return elementStartBase(Identifiers.elementStart, slot, tag, constIndex, localRefIndex);
+}
+function elementStartBase(instruction, slot, tag, constIndex, localRefIndex) {
+    const args = [
+        literal(slot),
+        literal(tag),
+    ];
+    if (localRefIndex !== null) {
+        args.push(literal(constIndex), // might be null, but that's okay.
+        literal(localRefIndex));
+    }
+    else if (constIndex !== null) {
+        args.push(literal(constIndex));
+    }
+    return call(instruction, args);
+}
+function elementEnd() {
+    return call(Identifiers.elementEnd, []);
+}
+function template(slot, templateFnRef, decls, vars, tag, constIndex) {
+    return call(Identifiers.templateCreate, [
+        literal(slot),
+        templateFnRef,
+        literal(decls),
+        literal(vars),
+        literal(tag),
+        literal(constIndex),
+    ]);
+}
+function listener(name, handlerFn) {
+    return call(Identifiers.listener, [
+        literal(name),
+        handlerFn,
+    ]);
+}
+function advance(delta) {
+    return call(Identifiers.advance, [
+        literal(delta),
+    ]);
+}
+function reference(slot) {
+    return importExpr(Identifiers.reference).callFn([
+        literal(slot),
+    ]);
+}
+function nextContext() {
+    return importExpr(Identifiers.nextContext).callFn([]);
+}
+function getCurrentView() {
+    return importExpr(Identifiers.getCurrentView).callFn([]);
+}
+function restoreView(savedView) {
+    return importExpr(Identifiers.restoreView).callFn([
+        savedView,
+    ]);
+}
+function resetView(returnValue) {
+    return importExpr(Identifiers.reference).callFn([
+        returnValue,
+    ]);
+}
+function text(slot, initialValue) {
+    const args = [literal(slot)];
+    if (initialValue !== '') {
+        args.push(literal(initialValue));
+    }
+    return call(Identifiers.text, args);
+}
+function property(name, expression) {
+    return call(Identifiers.property, [
+        literal(name),
+        expression,
+    ]);
+}
+function textInterpolate(strings, expressions) {
+    if (strings.length < 1 || expressions.length !== strings.length - 1) {
+        throw new Error(`AssertionError: expected specific shape of args for strings/expressions in interpolation`);
+    }
+    const interpolationArgs = [];
+    let idx;
+    for (idx = 0; idx < expressions.length; idx++) {
+        interpolationArgs.push(literal(strings[idx]), expressions[idx]);
+    }
+    // idx points at the last string.
+    interpolationArgs.push(literal(strings[idx]));
+    return callInterpolation(TEXT_INTERPOLATE_CONFIG, [], interpolationArgs);
+}
+function call(instruction, args) {
+    return createStatementOp(importExpr(instruction).callFn(args).toStmt());
+}
+/**
+ * `InterpolationConfig` for the `textInterpolate` instruction.
+ */
+const TEXT_INTERPOLATE_CONFIG = {
+    constant: [
+        Identifiers.textInterpolate,
+        Identifiers.textInterpolate1,
+        Identifiers.textInterpolate2,
+        Identifiers.textInterpolate3,
+        Identifiers.textInterpolate4,
+        Identifiers.textInterpolate5,
+        Identifiers.textInterpolate6,
+        Identifiers.textInterpolate7,
+        Identifiers.textInterpolate8,
+    ],
+    variable: Identifiers.textInterpolateV,
+};
+function callInterpolation(config, baseArgs, interpolationArgs) {
+    if (interpolationArgs.length % 2 === 0) {
+        throw new Error(`Expected odd number of interpolation arguments`);
+    }
+    const n = (interpolationArgs.length - 1) / 2;
+    if (n < config.constant.length) {
+        // Constant calling pattern.
+        return call(config.constant[n], [...baseArgs, ...interpolationArgs]);
+    }
+    else {
+        // Variable calling pattern.
+        return call(config.variable, [...baseArgs, literalArr(interpolationArgs)]);
+    }
+}
+
+/**
+ * Compiles semantic operations across all views and generates output `o.Statement`s with actual
+ * runtime calls in their place.
+ *
+ * Reification replaces semantic operations with selected Ivy instructions and other generated code
+ * structures. After reification, the create/update operation lists of all views should only contain
+ * `ir.StatementOp`s (which wrap generated `o.Statement`s).
+ */
+function phaseReify(cpl) {
+    for (const [_, view] of cpl.views) {
+        reifyCreateOperations(view, view.create);
+        reifyUpdateOperations(view, view.update);
+    }
+}
+function reifyCreateOperations(view, ops) {
+    for (const op of ops) {
+        transformExpressionsInOp(op, reifyIrExpression);
+        switch (op.kind) {
+            case OpKind.Text:
+                OpList.replace(op, text(op.slot, op.initialValue));
+                break;
+            case OpKind.ElementStart:
+                OpList.replace(op, elementStart(op.slot, op.tag, op.attributes, op.localRefs));
+                break;
+            case OpKind.Element:
+                OpList.replace(op, element(op.slot, op.tag, op.attributes, op.localRefs));
+                break;
+            case OpKind.ElementEnd:
+                OpList.replace(op, elementEnd());
+                break;
+            case OpKind.Template:
+                const childView = view.tpl.views.get(op.xref);
+                OpList.replace(op, template(op.slot, variable(childView.fnName), childView.decls, childView.vars, op.tag, op.localRefs));
+                break;
+            case OpKind.Listener:
+                const listenerFn = reifyListenerHandler(view, op.handlerFnName, op.handlerOps);
+                OpList.replace(op, listener(op.name, listenerFn));
+                break;
+            case OpKind.Variable:
+                if (op.name === null) {
+                    throw new Error(`AssertionError: unnamed variable ${op.xref}`);
+                }
+                OpList.replace(op, createStatementOp(new DeclareVarStmt(op.name, op.initializer)));
+                break;
+            case OpKind.Statement:
+                // Pass statement operations directly through.
+                break;
+            default:
+                throw new Error(`AssertionError: Unsupported reification of create op ${OpKind[op.kind]}`);
+        }
+    }
+}
+function reifyUpdateOperations(_view, ops) {
+    for (const op of ops) {
+        transformExpressionsInOp(op, reifyIrExpression);
+        switch (op.kind) {
+            case OpKind.Advance:
+                OpList.replace(op, advance(op.delta));
+                break;
+            case OpKind.Property:
+                OpList.replace(op, property(op.name, op.expression));
+                break;
+            case OpKind.InterpolateText:
+                OpList.replace(op, textInterpolate(op.strings, op.expressions));
+                break;
+            case OpKind.Variable:
+                if (op.name === null) {
+                    throw new Error(`AssertionError: unnamed variable ${op.xref}`);
+                }
+                OpList.replace(op, createStatementOp(new DeclareVarStmt(op.name, op.initializer)));
+                break;
+            case OpKind.Statement:
+                // Pass statement operations directly through.
+                break;
+            default:
+                throw new Error(`AssertionError: Unsupported reification of update op ${OpKind[op.kind]}`);
+        }
+    }
+}
+function reifyIrExpression(expr) {
+    switch (expr.kind) {
+        case ExpressionKind.NextContext:
+            return nextContext();
+        case ExpressionKind.Reference:
+            return reference(expr.slot + 1 + expr.offset);
+        case ExpressionKind.LexicalRead:
+            throw new Error(`AssertionError: unresolved LexicalRead of ${expr.name}`);
+        case ExpressionKind.RestoreView:
+            if (typeof expr.view === 'number') {
+                throw new Error(`AssertionError: unresolved RestoreView`);
+            }
+            return restoreView(expr.view);
+        case ExpressionKind.ResetView:
+            return resetView(expr.expr);
+        case ExpressionKind.GetCurrentView:
+            return getCurrentView();
+        case ExpressionKind.ReadVariable:
+            if (expr.name === null) {
+                throw new Error(`Read of unnamed variable ${expr.xref}`);
+            }
+            return variable(expr.name);
+        default:
+            throw new Error(`AssertionError: Unsupported reification of ir.Expression kind: ${ExpressionKind[expr.kind]}`);
+    }
+}
+/**
+ * Listeners get turned into a function expression, which may or may not have the `$event`
+ * parameter defined.
+ */
+function reifyListenerHandler(view, name, handlerOps) {
+    const lookForEvent = new LookForEventVisitor();
+    // First, reify all instruction calls within `handlerOps`.
+    reifyUpdateOperations(view, handlerOps);
+    // Next, extract all the `o.Statement`s from the reified operations. We can expect that at this
+    // point, all operations have been converted to statements.
+    const handlerStmts = [];
+    for (const op of handlerOps) {
+        if (op.kind !== OpKind.Statement) {
+            throw new Error(`AssertionError: expected reified statements, but found op ${OpKind[op.kind]}`);
+        }
+        handlerStmts.push(op.statement);
+    }
+    // Scan the statement list for usages of `$event`. If referenced, we need to generate it as a
+    // parameter.
+    lookForEvent.visitAllStatements(handlerStmts, null);
+    const params = [];
+    if (lookForEvent.seenEventRead) {
+        // We need the `$event` parameter.
+        params.push(new FnParam('$event'));
+    }
+    return fn(params, handlerStmts, undefined, undefined, name);
+}
+/**
+ * Visitor which scans for reads of the `$event` special variable.
+ */
+class LookForEventVisitor extends RecursiveAstVisitor$1 {
+    constructor() {
+        super(...arguments);
+        this.seenEventRead = false;
+    }
+    visitReadVarExpr(ast, context) {
+        if (ast.name === '$event') {
+            this.seenEventRead = true;
+        }
+    }
+}
+
+/**
+ * Assign data slots for all operations which implement `ConsumesSlotOpTrait`, and propagate the
+ * assigned data slots of those operations to any expressions which reference them via
+ * `UsesSlotIndexExprTrait`.
+ *
+ * This phase is also responsible for counting the number of slots used for each view (its `decls`)
+ * and propagating that number into the `Template` operations which declare embedded views.
+ */
+function phaseSlotAllocation(cpl) {
+    // Map of all declarations in all views within the component which require an assigned slot index.
+    // This map needs to be global (across all views within the component) since it's possible to
+    // reference a slot from one view from an expression within another (e.g. local references work
+    // this way).
+    const slotMap = new Map();
+    // Process all views in the component and assign slot indexes.
+    for (const [_, view] of cpl.views) {
+        // Slot indices start at 0 for each view (and are not unique between views).
+        let slotCount = 0;
+        for (const op of view.create) {
+            // Only consider declarations which consume data slots.
+            if (!hasConsumesSlotTrait(op)) {
+                continue;
+            }
+            // Assign slots to this declaration starting at the current `slotCount`.
+            op.slot = slotCount;
+            // And track its assigned slot in the `slotMap`.
+            slotMap.set(op.xref, op.slot);
+            // Each declaration may use more than 1 slot, so increment `slotCount` to reserve the number
+            // of slots required.
+            slotCount += op.numSlotsUsed;
+        }
+        // Record the total number of slots used on the view itself. This will later be propagated into
+        // `ir.TemplateOp`s which declare those views (except for the root view).
+        view.decls = slotCount;
+    }
+    // After slot assignment, `slotMap` now contains slot assignments for every declaration in the
+    // whole template, across all views. Next, look for expressions which implement
+    // `UsesSlotIndexExprTrait` and propagate the assigned slot indexes into them.
+    // Additionally, this second scan allows us to find `ir.TemplateOp`s which declare views and
+    // propagate the number of slots used for each view into the operation which declares it.
+    for (const [_, view] of cpl.views) {
+        for (const op of view.ops()) {
+            if (op.kind === OpKind.Template) {
+                // Record the number of slots used by the view this `ir.TemplateOp` declares in the
+                // operation itself, so it can be emitted later.
+                const childView = cpl.views.get(op.xref);
+                op.decls = childView.decls;
+            }
+            // Process all `ir.Expression`s within this view, and look for `usesSlotIndexExprTrait`.
+            visitExpressionsInOp(op, expr => {
+                if (!hasUsesSlotIndexTrait(expr) || expr.slot !== null) {
+                    return;
+                }
+                // The `UsesSlotIndexExprTrait` indicates that this expression references something declared
+                // in this component template by its slot index. Use the `target` `ir.XrefId` to find the
+                // allocated slot for that declaration in `slotMap`.
+                if (!slotMap.has(expr.target)) {
+                    // We do expect to find a slot allocated for everything which might be referenced.
+                    throw new Error(`AssertionError: no slot allocated for ${expr.constructor.name} target ${expr.target}`);
+                }
+                // Record the allocated slot on the expression.
+                expr.slot = slotMap.get(expr.target);
+            });
+        }
+    }
+}
+
+/**
+ * Counts the number of variable slots used within each view, and stores that on the view itself, as
+ * well as propagates it to the `ir.TemplateOp` for embedded views.
+ */
+function phaseVarCounting(cpl) {
+    // First, count the vars used in each view, and update the view-level counter.
+    for (const [_, view] of cpl.views) {
+        let varCount = 0;
+        for (const op of view.ops()) {
+            if (hasConsumesVarsTrait(op)) {
+                varCount += varsUsedByOp(op);
+            }
+            visitExpressionsInOp(op, expr => {
+                if (hasConsumesVarsTrait(expr)) {
+                    varCount += varsUsedByIrExpression(expr);
+                }
+            });
+        }
+        view.vars = varCount;
+    }
+    // Add var counts for each view to the `ir.TemplateOp` which declares that view (if the view is an
+    // embedded view).
+    for (const [_, view] of cpl.views) {
+        for (const op of view.create) {
+            if (op.kind !== OpKind.Template) {
+                continue;
+            }
+            const childView = cpl.views.get(op.xref);
+            op.vars = childView.vars;
+        }
+    }
+}
+/**
+ * Different operations that implement `ir.UsesVarsTrait` use different numbers of variables, so
+ * count the variables used by any particular `op`.
+ */
+function varsUsedByOp(op) {
+    switch (op.kind) {
+        case OpKind.Property:
+            // Property bindings use 1 variable slot.
+            return 1;
+        case OpKind.InterpolateText:
+            // `ir.InterpolateTextOp`s use a variable slot for each dynamic expression.
+            return op.expressions.length;
+        default:
+            throw new Error(`Unhandled op: ${OpKind[op.kind]}`);
+    }
+}
+function varsUsedByIrExpression(expr) {
+    return 0;
+}
+
+/**
+ * Generate names for functions and variables across all views.
+ *
+ * This includes propagating those names into any `ir.ReadVariableExpr`s of those variables, so that
+ * the reads can be emitted correctly.
+ */
+function phaseNaming(cpl) {
+    // TODO(alxhub): convert this temporary name to match how the `TemplateDefinitionBuilder`
+    // names the main component template function.
+    cpl.root.fnName = `${cpl.componentName}_Template`;
+    for (const [id, view] of cpl.views) {
+        let vIndex = 0;
+        if (view.fnName === null) {
+            // TODO(alxhub): convert this temporary name to match how the `TemplateDefinitionBuilder`
+            // names embedded view functions.
+            view.fnName = `${cpl.componentName}_EmbeddedView_${id}`;
+        }
+        // Keep track of the names we assign to variables in the view. We'll need to propagate these
+        // into reads of those variables afterwards.
+        const varNames = new Map();
+        for (const op of view.ops()) {
+            switch (op.kind) {
+                case OpKind.Listener:
+                    if (op.handlerFnName === null) {
+                        // TODO(alxhub): convert this temporary name to match how the
+                        // `TemplateDefinitionBuilder` names listener functions.
+                        op.handlerFnName = `${view.fnName}_${op.name}_listener`;
+                    }
+                    break;
+                case OpKind.Variable:
+                    if (op.name === null) {
+                        op.name = `_r${vIndex++}`;
+                        varNames.set(op.xref, op.name);
+                    }
+                    break;
+            }
+        }
+        // Having named all variables declared in the view, now we can push those names into the
+        // `ir.ReadVariableExpr` expressions which represent reads of those variables.
+        for (const op of view.ops()) {
+            visitExpressionsInOp(op, expr => {
+                if (!(expr instanceof ReadVariableExpr) || expr.name !== null) {
+                    return;
+                }
+                if (!varNames.has(expr.xref)) {
+                    throw new Error(`Variable ${expr.xref} not yet named`);
+                }
+                expr.name = varNames.get(expr.xref);
+            });
+        }
+    }
+}
+
+/**
+ * Lifts local reference declarations on element-like structures within each view into an entry in
+ * the `consts` array for the whole component.
+ */
+function phaseLocalRefs(cpl) {
+    for (const view of cpl.views.values()) {
+        for (const op of view.create) {
+            switch (op.kind) {
+                case OpKind.ElementStart:
+                case OpKind.Element:
+                case OpKind.Template:
+                    if (!Array.isArray(op.localRefs)) {
+                        throw new Error(`AssertionError: expected localRefs to be an array still`);
+                    }
+                    op.numSlotsUsed += op.localRefs.length;
+                    if (op.localRefs.length > 0) {
+                        const localRefs = serializeLocalRefs(op.localRefs);
+                        op.localRefs = cpl.addConst(localRefs);
+                    }
+                    else {
+                        op.localRefs = null;
+                    }
+                    break;
+            }
+        }
+    }
+}
+function serializeLocalRefs(refs) {
+    const constRefs = [];
+    for (const ref of refs) {
+        constRefs.push(literal(ref.name), literal(ref.target));
+    }
+    return literalArr(constRefs);
+}
+
+/**
+ * Generate a preamble sequence for each view creation block and listener function which declares
+ * any variables that be referenced in other operations in the block.
+ *
+ * Variables generated include:
+ *   * a saved view context to be used to restore the current view in event listeners.
+ *   * the context of the restored view within event listener handlers.
+ *   * context variables from the current view as well as all parent views (including the root
+ *     context if needed).
+ *   * local references from elements within the current view and any lexical parents.
+ *
+ * Variables are generated here unconditionally, and may optimized away in future operations if it
+ * turns out their values (and any side effects) are unused.
+ */
+function phaseGenerateVariables(cpl) {
+    recursivelyProcessView(cpl.root, /* there is no parent scope for the root view */ null);
+}
+/**
+ * Process the given `ViewCompilation` and generate preambles for it and any listeners that it
+ * declares.
+ *
+ * @param `parentScope` a scope extracted from the parent view which captures any variables which
+ *     should be inherited by this view. `null` if the current view is the root view.
+ */
+function recursivelyProcessView(view, parentScope) {
+    // Extract a `Scope` from this view.
+    const scope = getScopeForView(view, parentScope);
+    // Start the view creation block with an operation to save the current view context. This may be
+    // used to restore the view context in any listeners that may be present.
+    view.create.prepend([
+        createVariableOp(view.tpl.allocateXrefId(), {
+            kind: SemanticVariableKind.SavedView,
+            view: view.xref,
+        }, new GetCurrentViewExpr()),
+    ]);
+    for (const op of view.create) {
+        switch (op.kind) {
+            case OpKind.Template:
+                // Descend into child embedded views.
+                recursivelyProcessView(view.tpl.views.get(op.xref), scope);
+                break;
+            case OpKind.Listener:
+                // Listeners get a preamble which starts with a call to restore the view.
+                const preambleOps = [
+                    createVariableOp(view.tpl.allocateXrefId(), {
+                        kind: SemanticVariableKind.Context,
+                        view: view.xref,
+                    }, new RestoreViewExpr(view.xref)),
+                    // And includes all variables available to this view.
+                    ...generateVariablesInScopeForView(view, scope)
+                ];
+                op.handlerOps.prepend(preambleOps);
+                // The "restore view" operation in listeners requires a call to `resetView` to reset the
+                // context prior to returning from the listener operation. Find any `return` statements in
+                // the listener body and wrap them in a call to reset the view.
+                for (const handlerOp of op.handlerOps) {
+                    if (handlerOp.kind === OpKind.Statement &&
+                        handlerOp.statement instanceof ReturnStatement) {
+                        handlerOp.statement.value = new ResetViewExpr(handlerOp.statement.value);
+                    }
+                }
+                break;
+        }
+    }
+    // Prepend the declarations for all available variables in scope to the `update` block.
+    const preambleOps = generateVariablesInScopeForView(view, scope);
+    view.update.prepend(preambleOps);
+}
+/**
+ * Process a view and generate a `Scope` representing the variables available for reference within
+ * that view.
+ */
+function getScopeForView(view, parent) {
+    const scope = {
+        view: view.xref,
+        references: [],
+        parent,
+    };
+    for (const op of view.create) {
+        switch (op.kind) {
+            case OpKind.Element:
+            case OpKind.ElementStart:
+            case OpKind.Template:
+                if (!Array.isArray(op.localRefs)) {
+                    throw new Error(`AssertionError: expected localRefs to be an array`);
+                }
+                // Record available local references from this element.
+                for (let offset = 0; offset < op.localRefs.length; offset++) {
+                    scope.references.push({
+                        name: op.localRefs[offset].name,
+                        targetId: op.xref,
+                        offset,
+                    });
+                }
+                break;
+        }
+    }
+    return scope;
+}
+/**
+ * Generate declarations for all variables that are in scope for a given view.
+ *
+ * This is a recursive process, as views inherit variables available from their parent view, which
+ * itself may have inherited variables, etc.
+ */
+function generateVariablesInScopeForView(view, scope) {
+    const newOps = [];
+    if (scope.view !== view.xref) {
+        // Before generating variables for a parent view, we need to switch to the context of the parent
+        // view with a `nextContext` expression. This context switching operation itself declares a
+        // variable, because the context of the view may be referenced directly.
+        newOps.push(createVariableOp(view.tpl.allocateXrefId(), {
+            kind: SemanticVariableKind.Context,
+            view: scope.view,
+        }, new NextContextExpr()));
+    }
+    // Add variables for all context variables available in this scope's view.
+    for (const [name, value] of view.tpl.views.get(scope.view).contextVariables) {
+        newOps.push(createVariableOp(view.tpl.allocateXrefId(), {
+            kind: SemanticVariableKind.Identifier,
+            name,
+        }, new ReadPropExpr(new ContextExpr(view.xref), value)));
+    }
+    // Add variables for all local references declared for elements in this scope.
+    for (const ref of scope.references) {
+        newOps.push(createVariableOp(view.tpl.allocateXrefId(), {
+            kind: SemanticVariableKind.Identifier,
+            name: ref.name,
+        }, new ReferenceExpr(ref.targetId, ref.offset)));
+    }
+    if (scope.parent !== null) {
+        // Recursively add variables from the parent scope.
+        newOps.push(...generateVariablesInScopeForView(view, scope.parent));
+    }
+    return newOps;
+}
+
+/**
+ * Resolves lexical references in views (`ir.LexicalReadExpr`) to either a target variable or to
+ * property reads on the top-level component context.
+ *
+ * Also matches `ir.RestoreViewExpr` expressions with the variables of their corresponding saved
+ * views.
+ */
+function phaseResolveNames(cpl) {
+    for (const [_, view] of cpl.views) {
+        processLexicalScope$1(view, view.create, null);
+        processLexicalScope$1(view, view.update, null);
+    }
+}
+function processLexicalScope$1(view, ops, savedView) {
+    // Maps names defined in the lexical scope of this template to the `ir.XrefId`s of the variable
+    // declarations which represent those values.
+    //
+    // Since variables are generated in each view for the entire lexical scope (including any
+    // identifiers from parent templates) only local variables need be considered here.
+    const scope = new Map();
+    // First, step through the operations list and:
+    // 1) build up the `scope` mapping
+    // 2) recurse into any listener functions
+    for (const op of ops) {
+        switch (op.kind) {
+            case OpKind.Variable:
+                switch (op.variable.kind) {
+                    case SemanticVariableKind.Identifier:
+                        // This variable represents some kind of identifier which can be used in the template.
+                        if (scope.has(op.variable.name)) {
+                            continue;
+                        }
+                        scope.set(op.variable.name, op.xref);
+                        break;
+                    case SemanticVariableKind.SavedView:
+                        // This variable represents a snapshot of the current view context, and can be used to
+                        // restore that context within listener functions.
+                        savedView = {
+                            view: op.variable.view,
+                            variable: op.xref,
+                        };
+                        break;
+                }
+                break;
+            case OpKind.Listener:
+                // Listener functions have separate variable declarations, so process them as a separate
+                // lexical scope.
+                processLexicalScope$1(view, op.handlerOps, savedView);
+                break;
+        }
+    }
+    // Next, use the `scope` mapping to match `ir.LexicalReadExpr` with defined names in the lexical
+    // scope. Also, look for `ir.RestoreViewExpr`s and match them with the snapshotted view context
+    // variable.
+    for (const op of ops) {
+        transformExpressionsInOp(op, expr => {
+            if (expr instanceof LexicalReadExpr) {
+                // `expr` is a read of a name within the lexical scope of this view.
+                // Either that name is defined within the current view, or it represents a property from the
+                // main component context.
+                if (scope.has(expr.name)) {
+                    // This was a defined variable in the current scope.
+                    return new ReadVariableExpr(scope.get(expr.name));
+                }
+                else {
+                    // Reading from the component context.
+                    return new ReadPropExpr(new ContextExpr(view.tpl.root.xref), expr.name);
+                }
+            }
+            else if (expr instanceof RestoreViewExpr && typeof expr.view === 'number') {
+                // `ir.RestoreViewExpr` happens in listener functions and restores a saved view from the
+                // parent creation list. We expect to find that we captured the `savedView` previously, and
+                // that it matches the expected view to be restored.
+                if (savedView === null || savedView.view !== expr.view) {
+                    throw new Error(`AssertionError: no saved view ${expr.view} from view ${view.xref}`);
+                }
+                expr.view = new ReadVariableExpr(savedView.variable);
+                return expr;
+            }
+            else {
+                return expr;
+            }
+        });
+    }
+}
+
+/**
+ * Resolves `ir.ContextExpr` expressions (which represent embedded view or component contexts) to
+ * either the `ctx` parameter to component functions (for the current view context) or to variables
+ * that store those contexts (for contexts accessed via the `nextContext()` instruction).
+ */
+function phaseResolveContexts(cpl) {
+    for (const view of cpl.views.values()) {
+        processLexicalScope(view, view.create);
+        processLexicalScope(view, view.update);
+    }
+}
+function processLexicalScope(view, ops) {
+    // Track the expressions used to access all available contexts within the current view, by the
+    // view `ir.XrefId`.
+    const scope = new Map();
+    // The current view's context is accessible via the `ctx` parameter.
+    scope.set(view.xref, variable('ctx'));
+    for (const op of ops) {
+        switch (op.kind) {
+            case OpKind.Variable:
+                switch (op.variable.kind) {
+                    case SemanticVariableKind.Context:
+                        scope.set(op.variable.view, new ReadVariableExpr(op.xref));
+                        break;
+                }
+                break;
+            case OpKind.Listener:
+                processLexicalScope(view, op.handlerOps);
+                break;
+        }
+    }
+    for (const op of ops) {
+        transformExpressionsInOp(op, expr => {
+            if (expr instanceof ContextExpr) {
+                if (!scope.has(expr.view)) {
+                    throw new Error(`No context found for reference to view ${expr.view} from view ${view.xref}`);
+                }
+                return scope.get(expr.view);
+            }
+            else {
+                return expr;
+            }
+        });
+    }
+}
+
+/**
+ * Run all transformation phases in the correct order against a `ComponentCompilation`. After this
+ * processing, the compilation should be in a state where it can be emitted via `emitTemplateFn`.s
+ */
+function transformTemplate(cpl) {
+    phaseGenerateVariables(cpl);
+    phaseResolveNames(cpl);
+    phaseResolveContexts(cpl);
+    phaseLocalRefs(cpl);
+    phaseEmptyElements(cpl);
+    phaseConstCollection(cpl);
+    phaseSlotAllocation(cpl);
+    phaseVarCounting(cpl);
+    phaseGenerateAdvance(cpl);
+    phaseNaming(cpl);
+    phaseReify(cpl);
+}
+/**
+ * Compile all views in the given `ComponentCompilation` into the final template function, which may
+ * reference constants defined in a `ConstantPool`.
+ */
+function emitTemplateFn(tpl, pool) {
+    const rootFn = emitView(tpl.root);
+    for (const view of tpl.views.values()) {
+        if (view === tpl.root) {
+            continue;
+        }
+        const viewFn = emitView(view);
+        pool.statements.push(viewFn.toDeclStmt(viewFn.name));
+    }
+    return rootFn;
+}
+/**
+ * Emit a template function for an individual `ViewCompilation` (which may be either the root view
+ * or an embedded view).
+ */
+function emitView(view) {
+    if (view.fnName === null) {
+        throw new Error(`AssertionError: view ${view.xref} is unnamed`);
+    }
+    const createStatements = [];
+    for (const op of view.create) {
+        if (op.kind !== OpKind.Statement) {
+            throw new Error(`AssertionError: expected all create ops to have been compiled, but got ${OpKind[op.kind]}`);
+        }
+        createStatements.push(op.statement);
+    }
+    const updateStatements = [];
+    for (const op of view.update) {
+        if (op.kind !== OpKind.Statement) {
+            throw new Error(`AssertionError: expected all update ops to have been compiled, but got ${OpKind[op.kind]}`);
+        }
+        updateStatements.push(op.statement);
+    }
+    const rf = variable('rf');
+    const createCond = ifStmt(new BinaryOperatorExpr(BinaryOperator.BitwiseAnd, rf, literal(1)), createStatements);
+    const updateCond = ifStmt(new BinaryOperatorExpr(BinaryOperator.BitwiseAnd, rf, literal(2)), updateStatements);
+    return fn([
+        new FnParam('rf'),
+        new FnParam('ctx'),
+    ], [createCond, updateCond], /* type */ undefined, /* sourceSpan */ undefined, view.fnName);
+}
+
+/**
+ * Compilation-in-progress of a whole component's template, including the main template and any
+ * embedded views or host bindings.
+ */
+class ComponentCompilation {
+    constructor(componentName) {
+        this.componentName = componentName;
+        /**
+         * Tracks the next `ir.XrefId` which can be assigned as template structures are ingested.
+         */
+        this.nextXrefId = 0;
+        /**
+         * Map of view IDs to `ViewCompilation`s.
+         */
+        this.views = new Map();
+        /**
+         * Constant expressions used by operations within this component's compilation.
+         *
+         * This will eventually become the `consts` array in the component definition.
+         */
+        this.consts = [];
+        // Allocate the root view.
+        const root = new ViewCompilation(this, this.allocateXrefId(), null);
+        this.views.set(root.xref, root);
+        this.root = root;
+    }
+    /**
+     * Add a `ViewCompilation` for a new embedded view to this compilation.
+     */
+    allocateView(parent) {
+        const view = new ViewCompilation(this, this.allocateXrefId(), parent);
+        this.views.set(view.xref, view);
+        return view;
+    }
+    /**
+     * Generate a new unique `ir.XrefId`.
+     */
+    allocateXrefId() {
+        return this.nextXrefId++;
+    }
+    /**
+     * Add a constant `o.Expression` to the compilation and return its index in the `consts` array.
+     */
+    addConst(newConst) {
+        for (let idx = 0; idx < this.consts.length; idx++) {
+            if (this.consts[idx].isEquivalent(newConst)) {
+                return idx;
+            }
+        }
+        const idx = this.consts.length;
+        this.consts.push(newConst);
+        return idx;
+    }
+}
+/**
+ * Compilation-in-progress of an individual view within a template.
+ */
+class ViewCompilation {
+    constructor(tpl, xref, parent) {
+        this.tpl = tpl;
+        this.xref = xref;
+        this.parent = parent;
+        /**
+         * Name of the function which will be generated for this view.
+         *
+         * May be `null` if not yet determined.
+         */
+        this.fnName = null;
+        /**
+         * List of creation operations for this view.
+         *
+         * Creation operations may internally contain other operations, including update operations.
+         */
+        this.create = new OpList();
+        /**
+         * List of update operations for this view.
+         */
+        this.update = new OpList();
+        /**
+         * Map of declared variables available within this view to the property on the context object
+         * which they alias.
+         */
+        this.contextVariables = new Map();
+        /**
+         * Number of declaration slots used within this view, or `null` if slots have not yet been
+         * allocated.
+         */
+        this.decls = null;
+        /**
+         * Number of variable slots used within this view, or `null` if variables have not yet been
+         * counted.
+         */
+        this.vars = null;
+    }
+    /**
+     * Iterate over all `ir.Op`s within this view.
+     *
+     * Some operations may have child operations, which this iterator will visit.
+     */
+    *ops() {
+        for (const op of this.create) {
+            yield op;
+            if (op.kind === OpKind.Listener) {
+                for (const listenerOp of op.handlerOps) {
+                    yield listenerOp;
+                }
+            }
+        }
+        for (const op of this.update) {
+            yield op;
+        }
+    }
+}
+
+/**
+ * Process a template AST and convert it into a `ComponentCompilation` in the intermediate
+ * representation.
+ */
+function ingest(componentName, template) {
+    const cpl = new ComponentCompilation(componentName);
+    ingestNodes(cpl.root, template);
+    return cpl;
+}
+/**
+ * Ingest the nodes of a template AST into the given `ViewCompilation`.
+ */
+function ingestNodes(view, template) {
+    for (const node of template) {
+        if (node instanceof Element$1) {
+            ingestElement(view, node);
+        }
+        else if (node instanceof Template) {
+            ingestTemplate(view, node);
+        }
+        else if (node instanceof Text$3) {
+            ingestText(view, node);
+        }
+        else if (node instanceof BoundText) {
+            ingestBoundText(view, node);
+        }
+        else {
+            throw new Error(`Unsupported template node: ${node.constructor.name}`);
+        }
+    }
+}
+/**
+ * Ingest an element AST from the template into the given `ViewCompilation`.
+ */
+function ingestElement(view, element) {
+    const staticAttributes = {};
+    for (const attr of element.attributes) {
+        staticAttributes[attr.name] = attr.value;
+    }
+    const id = view.tpl.allocateXrefId();
+    const startOp = createElementStartOp(element.name, id);
+    view.create.push(startOp);
+    ingestAttributes(startOp, element);
+    ingestBindings(view, startOp, element);
+    ingestReferences(startOp, element);
+    ingestNodes(view, element.children);
+    view.create.push(createElementEndOp(id));
+}
+/**
+ * Ingest an `ng-template` node from the AST into the given `ViewCompilation`.
+ */
+function ingestTemplate(view, tmpl) {
+    const childView = view.tpl.allocateView(view.xref);
+    // TODO: validate the fallback tag name here.
+    const tplOp = createTemplateOp(childView.xref, tmpl.tagName ?? 'ng-template');
+    view.create.push(tplOp);
+    ingestAttributes(tplOp, tmpl);
+    ingestBindings(view, tplOp, tmpl);
+    ingestReferences(tplOp, tmpl);
+    ingestNodes(childView, tmpl.children);
+    for (const { name, value } of tmpl.variables) {
+        childView.contextVariables.set(name, value);
+    }
+}
+/**
+ * Ingest a literal text node from the AST into the given `ViewCompilation`.
+ */
+function ingestText(view, text) {
+    view.create.push(createTextOp(view.tpl.allocateXrefId(), text.value));
+}
+/**
+ * Ingest an interpolated text node from the AST into the given `ViewCompilation`.
+ */
+function ingestBoundText(view, text) {
+    let value = text.value;
+    if (value instanceof ASTWithSource) {
+        value = value.ast;
+    }
+    if (!(value instanceof Interpolation)) {
+        throw new Error(`AssertionError: expected Interpolation for BoundText node, got ${value.constructor.name}`);
+    }
+    const textXref = view.tpl.allocateXrefId();
+    view.create.push(createTextOp(textXref, ''));
+    view.update.push(createInterpolateTextOp(textXref, value.strings, value.expressions.map(expr => convertAst(expr))));
+}
+/**
+ * Convert a template AST expression into an output AST expression.
+ */
+function convertAst(ast) {
+    if (ast instanceof ASTWithSource) {
+        return convertAst(ast.ast);
+    }
+    else if (ast instanceof PropertyRead) {
+        if (ast.receiver instanceof ImplicitReceiver) {
+            return new LexicalReadExpr(ast.name);
+        }
+        else {
+            return new ReadPropExpr(convertAst(ast.receiver), ast.name);
+        }
+    }
+    else if (ast instanceof Call) {
+        if (ast.receiver instanceof ImplicitReceiver) {
+            throw new Error(`Unexpected ImplicitReceiver`);
+        }
+        else {
+            return new InvokeFunctionExpr(convertAst(ast.receiver), ast.args.map(arg => convertAst(arg)));
+        }
+    }
+    else {
+        throw new Error(`Unhandled expression type: ${ast.constructor.name}`);
+    }
+}
+/**
+ * Process all of the attributes on an element-like structure in the template AST and convert them
+ * to their IR representation.
+ */
+function ingestAttributes(op, element) {
+    assertIsElementAttributes(op.attributes);
+    for (const attr of element.attributes) {
+        op.attributes.add(ElementAttributeKind.Attribute, attr.name, literal(attr.value));
+    }
+    for (const input of element.inputs) {
+        op.attributes.add(ElementAttributeKind.Binding, input.name, null);
+    }
+    for (const output of element.outputs) {
+        op.attributes.add(ElementAttributeKind.Binding, output.name, null);
+    }
+    if (element instanceof Template) {
+        for (const attr of element.templateAttrs) {
+            // TODO: what do we do about the value here?
+            op.attributes.add(ElementAttributeKind.Template, attr.name, null);
+        }
+    }
+}
+/**
+ * Process all of the bindings on an element-like structure in the template AST and convert them
+ * to their IR representation.
+ */
+function ingestBindings(view, op, element) {
+    if (element instanceof Template) {
+        for (const attr of element.templateAttrs) {
+            if (typeof attr.value === 'string') {
+                throw new Error(`TODO: unhandled static attribute bindings (is this a thing?)`);
+            }
+            else {
+                view.update.push(createPropertyOp(op.xref, attr.name, convertAst(attr.value)));
+            }
+        }
+    }
+    else {
+        for (const input of element.inputs) {
+            view.update.push(createPropertyOp(op.xref, input.name, convertAst(input.value)));
+        }
+        for (const output of element.outputs) {
+            const listenerOp = createListenerOp(op.xref, output.name);
+            listenerOp.handlerOps.push(createStatementOp(new ReturnStatement(convertAst(output.handler))));
+            view.create.push(listenerOp);
+        }
+    }
+}
+/**
+ * Process all of the local references on an element-like structure in the template AST and convert
+ * them to their IR representation.
+ */
+function ingestReferences(op, element) {
+    assertIsArray(op.localRefs);
+    for (const { name, value } of element.references) {
+        op.localRefs.push({
+            name,
+            target: value,
+        });
+    }
+}
+/**
+ * Assert that the given value is an array.
+ */
+function assertIsArray(value) {
+    if (!Array.isArray(value)) {
+        throw new Error(`AssertionError: expected an array`);
+    }
+}
+
+const USE_TEMPLATE_PIPELINE = false;
+
 /**
  * Parses string representation of a style and converts it into object literal.
  *
@@ -10760,41 +12926,6 @@ class RecursiveVisitor {
         cb(visit);
         return Array.prototype.concat.apply([], results);
     }
-}
-
-var TagContentType;
-(function (TagContentType) {
-    TagContentType[TagContentType["RAW_TEXT"] = 0] = "RAW_TEXT";
-    TagContentType[TagContentType["ESCAPABLE_RAW_TEXT"] = 1] = "ESCAPABLE_RAW_TEXT";
-    TagContentType[TagContentType["PARSABLE_DATA"] = 2] = "PARSABLE_DATA";
-})(TagContentType || (TagContentType = {}));
-function splitNsName(elementName) {
-    if (elementName[0] != ':') {
-        return [null, elementName];
-    }
-    const colonIndex = elementName.indexOf(':', 1);
-    if (colonIndex === -1) {
-        throw new Error(`Unsupported format "${elementName}" expecting ":namespace:name"`);
-    }
-    return [elementName.slice(1, colonIndex), elementName.slice(colonIndex + 1)];
-}
-// `<ng-container>` tags work the same regardless the namespace
-function isNgContainer(tagName) {
-    return splitNsName(tagName)[1] === 'ng-container';
-}
-// `<ng-content>` tags work the same regardless the namespace
-function isNgContent(tagName) {
-    return splitNsName(tagName)[1] === 'ng-content';
-}
-// `<ng-template>` tags work the same regardless the namespace
-function isNgTemplate(tagName) {
-    return splitNsName(tagName)[1] === 'ng-template';
-}
-function getNsPrefix(fullName) {
-    return fullName === null ? null : splitNsName(fullName)[0];
-}
-function mergeNsAndName(prefix, localName) {
-    return prefix ? `:${prefix}:${localName}` : localName;
 }
 
 class ElementSchemaRegistry {
@@ -18745,34 +20876,56 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     const templateTypeName = meta.name;
     const templateName = templateTypeName ? `${templateTypeName}_Template` : null;
     const changeDetection = meta.changeDetection;
-    const template = meta.template;
-    const templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.createRootScope(), 0, templateTypeName, null, null, templateName, Identifiers.namespaceHTML, meta.relativeContextFilePath, meta.i18nUseExternalIds);
-    const templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, []);
-    // We need to provide this so that dynamically generated components know what
-    // projected content blocks to pass through to the component when it is instantiated.
-    const ngContentSelectors = templateBuilder.getNgContentSelectors();
-    if (ngContentSelectors) {
-        definitionMap.set('ngContentSelectors', ngContentSelectors);
-    }
-    // e.g. `decls: 2`
-    definitionMap.set('decls', literal(templateBuilder.getConstCount()));
-    // e.g. `vars: 2`
-    definitionMap.set('vars', literal(templateBuilder.getVarCount()));
-    // Generate `consts` section of ComponentDef:
-    // - either as an array:
-    //   `consts: [['one', 'two'], ['three', 'four']]`
-    // - or as a factory function in case additional statements are present (to support i18n):
-    //   `consts: function() { var i18n_0; if (ngI18nClosureMode) {...} else {...} return [i18n_0]; }`
-    const { constExpressions, prepareStatements } = templateBuilder.getConsts();
-    if (constExpressions.length > 0) {
-        let constsExpr = literalArr(constExpressions);
-        // Prepare statements are present - turn `consts` into a function.
-        if (prepareStatements.length > 0) {
-            constsExpr = fn([], [...prepareStatements, new ReturnStatement(constsExpr)]);
+    // Template compilation is currently conditional as we're in the process of rewriting it.
+    if (!USE_TEMPLATE_PIPELINE) {
+        // This is the main path currently used in compilation, which compiles the template with the
+        // legacy `TemplateDefinitionBuilder`.
+        const template = meta.template;
+        const templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.createRootScope(), 0, templateTypeName, null, null, templateName, Identifiers.namespaceHTML, meta.relativeContextFilePath, meta.i18nUseExternalIds);
+        const templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, []);
+        // We need to provide this so that dynamically generated components know what
+        // projected content blocks to pass through to the component when it is
+        //     instantiated.
+        const ngContentSelectors = templateBuilder.getNgContentSelectors();
+        if (ngContentSelectors) {
+            definitionMap.set('ngContentSelectors', ngContentSelectors);
         }
-        definitionMap.set('consts', constsExpr);
+        // e.g. `decls: 2`
+        // definitionMap.set('decls', o.literal(tpl.root.decls!));
+        definitionMap.set('decls', literal(templateBuilder.getConstCount()));
+        // e.g. `vars: 2`
+        // definitionMap.set('vars', o.literal(tpl.root.vars!));
+        definitionMap.set('vars', literal(templateBuilder.getVarCount()));
+        // Generate `consts` section of ComponentDef:
+        // - either as an array:
+        //   `consts: [['one', 'two'], ['three', 'four']]`
+        // - or as a factory function in case additional statements are present (to support i18n):
+        //   `consts: function() { var i18n_0; if (ngI18nClosureMode) {...} else {...} return [i18n_0];
+        //   }`
+        const { constExpressions, prepareStatements } = templateBuilder.getConsts();
+        if (constExpressions.length > 0) {
+            let constsExpr = literalArr(constExpressions);
+            // Prepare statements are present - turn `consts` into a function.
+            if (prepareStatements.length > 0) {
+                constsExpr = fn([], [...prepareStatements, new ReturnStatement(constsExpr)]);
+            }
+            definitionMap.set('consts', constsExpr);
+        }
+        definitionMap.set('template', templateFunctionExpression);
     }
-    definitionMap.set('template', templateFunctionExpression);
+    else {
+        // This path compiles the template using the prototype template pipeline. First the template is
+        // ingested into IR:
+        const tpl = ingest(meta.name, meta.template.nodes);
+        // Then the IR is transformed to prepare it for cod egeneration.
+        transformTemplate(tpl);
+        // Finally we emit the template function:
+        const templateFn = emitTemplateFn(tpl, constantPool);
+        definitionMap.set('template', templateFn);
+        definitionMap.set('decls', literal(tpl.root.decls));
+        definitionMap.set('vars', literal(tpl.root.vars));
+        definitionMap.set('consts', literalArr(tpl.consts));
+    }
     if (meta.declarations.length > 0) {
         definitionMap.set('dependencies', compileDeclarationList(literalArr(meta.declarations.map(decl => decl.type)), meta.declarationListEmitMode));
     }
@@ -19904,7 +22057,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.0.0-next.7+sha-687f138');
+const VERSION = new Version('16.0.0-next.7+sha-d980af6');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -21828,7 +23981,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.0.0-next.7+sha-687f138'));
+    definitionMap.set('version', literal('16.0.0-next.7+sha-d980af6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -21931,7 +24084,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.0.0-next.7+sha-687f138'));
+    definitionMap.set('version', literal('16.0.0-next.7+sha-d980af6'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -22156,7 +24309,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.0.0-next.7+sha-687f138'));
+    definitionMap.set('version', literal('16.0.0-next.7+sha-d980af6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -22191,7 +24344,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.0.0-next.7+sha-687f138'));
+    definitionMap.set('version', literal('16.0.0-next.7+sha-d980af6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -22242,7 +24395,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.0.0-next.7+sha-687f138'));
+    definitionMap.set('version', literal('16.0.0-next.7+sha-d980af6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -22272,7 +24425,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.0.0-next.7+sha-687f138'));
+    definitionMap.set('version', literal('16.0.0-next.7+sha-d980af6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -22323,7 +24476,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.0.0-next.7+sha-687f138'));
+    definitionMap.set('version', literal('16.0.0-next.7+sha-d980af6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
