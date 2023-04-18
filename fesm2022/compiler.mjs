@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.1.0-next.0+sha-c118569
+ * @license Angular v16.1.0-next.0+sha-0d9705b
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8672,6 +8672,14 @@ const TRAIT_CONSUMES_SLOT = {
     numSlotsUsed: 1,
 };
 /**
+ * Default values for most `UsesSlotIndexTrait` fields (used with the spread operator to initialize
+ * implementors of the trait).
+ */
+const TRAIT_USES_SLOT_INDEX = {
+    [UsesSlotIndex]: true,
+    slot: null,
+};
+/**
  * Default values for most `DependsOnSlotContextOpTrait` fields (used with the spread operator to
  * initialize implementors of the trait).
  */
@@ -8700,11 +8708,8 @@ function hasDependsOnSlotContextTrait(op) {
 function hasConsumesVarsTrait(value) {
     return value[ConsumesVarsTrait] === true;
 }
-/**
- * Test whether an expression implements `UsesSlotIndexExprTrait`.
- */
-function hasUsesSlotIndexTrait(expr) {
-    return expr[UsesSlotIndex] === true;
+function hasUsesSlotIndexTrait(value) {
+    return value[UsesSlotIndex] === true;
 }
 
 var _a;
@@ -8787,10 +8792,11 @@ class NextContextExpr extends ExpressionBase {
     constructor() {
         super();
         this.kind = ExpressionKind.NextContext;
+        this.steps = 1;
     }
     visitExpression() { }
     isEquivalent(e) {
-        return e instanceof NextContextExpr;
+        return e instanceof NextContextExpr && e.steps === this.steps;
     }
     isConstant() {
         return false;
@@ -8845,9 +8851,9 @@ class RestoreViewExpr extends ExpressionBase {
     isConstant() {
         return false;
     }
-    transformInternalExpressions(transform) {
+    transformInternalExpressions(transform, flags) {
         if (typeof this.view !== 'number') {
-            this.view = transformExpressionsInExpression(this.view, transform);
+            this.view = transformExpressionsInExpression(this.view, transform, flags);
         }
     }
 }
@@ -8869,8 +8875,8 @@ class ResetViewExpr extends ExpressionBase {
     isConstant() {
         return false;
     }
-    transformInternalExpressions(transform) {
-        this.expr = transformExpressionsInExpression(this.expr, transform);
+    transformInternalExpressions(transform, flags) {
+        this.expr = transformExpressionsInExpression(this.expr, transform, flags);
     }
 }
 /**
@@ -8896,36 +8902,41 @@ class ReadVariableExpr extends ExpressionBase {
  * Visits all `Expression`s in the AST of `op` with the `visitor` function.
  */
 function visitExpressionsInOp(op, visitor) {
-    transformExpressionsInOp(op, (expr) => {
-        visitor(expr);
+    transformExpressionsInOp(op, (expr, flags) => {
+        visitor(expr, flags);
         return expr;
-    });
+    }, VisitorContextFlag.None);
 }
+var VisitorContextFlag;
+(function (VisitorContextFlag) {
+    VisitorContextFlag[VisitorContextFlag["None"] = 0] = "None";
+    VisitorContextFlag[VisitorContextFlag["InChildOperation"] = 1] = "InChildOperation";
+})(VisitorContextFlag || (VisitorContextFlag = {}));
 /**
  * Transform all `Expression`s in the AST of `op` with the `transform` function.
  *
  * All such operations will be replaced with the result of applying `transform`, which may be an
  * identity transformation.
  */
-function transformExpressionsInOp(op, transform) {
+function transformExpressionsInOp(op, transform, flags) {
     switch (op.kind) {
         case OpKind.Property:
-            op.expression = transformExpressionsInExpression(op.expression, transform);
+            op.expression = transformExpressionsInExpression(op.expression, transform, flags);
             break;
         case OpKind.Statement:
-            transformExpressionsInStatement(op.statement, transform);
+            transformExpressionsInStatement(op.statement, transform, flags);
             break;
         case OpKind.Variable:
-            op.initializer = transformExpressionsInExpression(op.initializer, transform);
+            op.initializer = transformExpressionsInExpression(op.initializer, transform, flags);
             break;
         case OpKind.InterpolateText:
             for (let i = 0; i < op.expressions.length; i++) {
-                op.expressions[i] = transformExpressionsInExpression(op.expressions[i], transform);
+                op.expressions[i] = transformExpressionsInExpression(op.expressions[i], transform, flags);
             }
             break;
         case OpKind.Listener:
             for (const innerOp of op.handlerOps) {
-                transformExpressionsInOp(innerOp, transform);
+                transformExpressionsInOp(innerOp, transform, flags | VisitorContextFlag.InChildOperation);
             }
             break;
         case OpKind.Element:
@@ -8933,6 +8944,7 @@ function transformExpressionsInOp(op, transform) {
         case OpKind.ElementEnd:
         case OpKind.Template:
         case OpKind.Text:
+        case OpKind.Advance:
             // These operations contain no expressions.
             break;
         default:
@@ -8945,22 +8957,22 @@ function transformExpressionsInOp(op, transform) {
  * All such operations will be replaced with the result of applying `transform`, which may be an
  * identity transformation.
  */
-function transformExpressionsInExpression(expr, transform) {
+function transformExpressionsInExpression(expr, transform, flags) {
     if (expr instanceof ExpressionBase) {
-        expr.transformInternalExpressions(transform);
-        return transform(expr);
+        expr.transformInternalExpressions(transform, flags);
+        return transform(expr, flags);
     }
     else if (expr instanceof BinaryOperatorExpr) {
-        expr.lhs = transformExpressionsInExpression(expr.lhs, transform);
-        expr.rhs = transformExpressionsInExpression(expr.rhs, transform);
+        expr.lhs = transformExpressionsInExpression(expr.lhs, transform, flags);
+        expr.rhs = transformExpressionsInExpression(expr.rhs, transform, flags);
     }
     else if (expr instanceof ReadPropExpr) {
-        expr.receiver = transformExpressionsInExpression(expr.receiver, transform);
+        expr.receiver = transformExpressionsInExpression(expr.receiver, transform, flags);
     }
     else if (expr instanceof InvokeFunctionExpr) {
-        expr.fn = transformExpressionsInExpression(expr.fn, transform);
+        expr.fn = transformExpressionsInExpression(expr.fn, transform, flags);
         for (let i = 0; i < expr.args.length; i++) {
-            expr.args[i] = transformExpressionsInExpression(expr.args[i], transform);
+            expr.args[i] = transformExpressionsInExpression(expr.args[i], transform, flags);
         }
     }
     else if (expr instanceof ReadVarExpr || expr instanceof ExternalExpr ||
@@ -8978,12 +8990,12 @@ function transformExpressionsInExpression(expr, transform) {
  * All such operations will be replaced with the result of applying `transform`, which may be an
  * identity transformation.
  */
-function transformExpressionsInStatement(stmt, transform) {
+function transformExpressionsInStatement(stmt, transform, flags) {
     if (stmt instanceof ExpressionStatement) {
-        stmt.expr = transformExpressionsInExpression(stmt.expr, transform);
+        stmt.expr = transformExpressionsInExpression(stmt.expr, transform, flags);
     }
     else if (stmt instanceof ReturnStatement) {
-        stmt.value = transformExpressionsInExpression(stmt.value, transform);
+        stmt.value = transformExpressionsInExpression(stmt.value, transform, flags);
     }
     else {
         throw new Error(`Unhandled statement kind: ${stmt.constructor.name}`);
@@ -9071,10 +9083,19 @@ class OpList {
         while (current !== this.tail) {
             // Guards against corruption of the iterator state by mutations to the tail of the list during
             // iteration.
-            OpList.assertIsOwned(current);
+            OpList.assertIsOwned(current, this.debugListId);
             const next = current.next;
             yield current;
             current = next;
+        }
+    }
+    *reversed() {
+        let current = this.tail.prev;
+        while (current !== this.head) {
+            OpList.assertIsOwned(current, this.debugListId);
+            const prev = current.prev;
+            yield current;
+            current = prev;
         }
     }
     /**
@@ -9165,7 +9186,7 @@ class OpList {
         OpList.assertIsNotEnd(before);
         OpList.assertIsNotEnd(op);
         OpList.assertIsUnowned(op);
-        OpList.assertIsOwned(before, op.debugListId);
+        OpList.assertIsOwned(before);
         op.debugListId = before.debugListId;
         // Just in case.
         op.prev = null;
@@ -9221,7 +9242,6 @@ function createVariableOp(xref, variable, initializer) {
     return {
         kind: OpKind.Variable,
         xref,
-        name: null,
         variable,
         initializer,
         ...NEW_OP,
@@ -9294,14 +9314,16 @@ function createTextOp(xref, initialValue) {
 /**
  * Create a `ListenerOp`.
  */
-function createListenerOp(xref, name) {
+function createListenerOp(target, name, tag) {
     return {
         kind: OpKind.Listener,
-        xref,
+        target,
+        tag,
         name,
         handlerOps: new OpList(),
         handlerFnName: null,
         ...NEW_OP,
+        ...TRAIT_USES_SLOT_INDEX,
     };
 }
 
@@ -9451,7 +9473,7 @@ function phaseGenerateAdvance(cpl) {
                 if (delta < 0) {
                     throw new Error(`AssertionError: slot counter should never need to move backwards`);
                 }
-                OpList.insertBefore(op, createAdvanceOp(delta));
+                OpList.insertBefore(createAdvanceOp(delta), op);
                 slotContext = slot;
             }
         }
@@ -9510,8 +9532,8 @@ function reference(slot) {
         literal(slot),
     ]);
 }
-function nextContext() {
-    return importExpr(Identifiers.nextContext).callFn([]);
+function nextContext(steps) {
+    return importExpr(Identifiers.nextContext).callFn(steps === 1 ? [] : [literal(steps)]);
 }
 function getCurrentView() {
     return importExpr(Identifiers.getCurrentView).callFn([]);
@@ -9522,7 +9544,7 @@ function restoreView(savedView) {
     ]);
 }
 function resetView(returnValue) {
-    return importExpr(Identifiers.reference).callFn([
+    return importExpr(Identifiers.resetView).callFn([
         returnValue,
     ]);
 }
@@ -9544,12 +9566,17 @@ function textInterpolate(strings, expressions) {
         throw new Error(`AssertionError: expected specific shape of args for strings/expressions in interpolation`);
     }
     const interpolationArgs = [];
-    let idx;
-    for (idx = 0; idx < expressions.length; idx++) {
-        interpolationArgs.push(literal(strings[idx]), expressions[idx]);
+    if (expressions.length === 1 && strings[0] === '' && strings[1] === '') {
+        interpolationArgs.push(expressions[0]);
     }
-    // idx points at the last string.
-    interpolationArgs.push(literal(strings[idx]));
+    else {
+        let idx;
+        for (idx = 0; idx < expressions.length; idx++) {
+            interpolationArgs.push(literal(strings[idx]), expressions[idx]);
+        }
+        // idx points at the last string.
+        interpolationArgs.push(literal(strings[idx]));
+    }
     return callInterpolation(TEXT_INTERPOLATE_CONFIG, [], interpolationArgs);
 }
 function call(instruction, args) {
@@ -9603,7 +9630,7 @@ function phaseReify(cpl) {
 }
 function reifyCreateOperations(view, ops) {
     for (const op of ops) {
-        transformExpressionsInOp(op, reifyIrExpression);
+        transformExpressionsInOp(op, reifyIrExpression, VisitorContextFlag.None);
         switch (op.kind) {
             case OpKind.Text:
                 OpList.replace(op, text(op.slot, op.initialValue));
@@ -9619,17 +9646,17 @@ function reifyCreateOperations(view, ops) {
                 break;
             case OpKind.Template:
                 const childView = view.tpl.views.get(op.xref);
-                OpList.replace(op, template(op.slot, variable(childView.fnName), childView.decls, childView.vars, op.tag, op.localRefs));
+                OpList.replace(op, template(op.slot, variable(childView.fnName), childView.decls, childView.vars, op.tag, op.attributes));
                 break;
             case OpKind.Listener:
                 const listenerFn = reifyListenerHandler(view, op.handlerFnName, op.handlerOps);
                 OpList.replace(op, listener(op.name, listenerFn));
                 break;
             case OpKind.Variable:
-                if (op.name === null) {
+                if (op.variable.name === null) {
                     throw new Error(`AssertionError: unnamed variable ${op.xref}`);
                 }
-                OpList.replace(op, createStatementOp(new DeclareVarStmt(op.name, op.initializer)));
+                OpList.replace(op, createStatementOp(new DeclareVarStmt(op.variable.name, op.initializer, undefined, StmtModifier.Final)));
                 break;
             case OpKind.Statement:
                 // Pass statement operations directly through.
@@ -9641,7 +9668,7 @@ function reifyCreateOperations(view, ops) {
 }
 function reifyUpdateOperations(_view, ops) {
     for (const op of ops) {
-        transformExpressionsInOp(op, reifyIrExpression);
+        transformExpressionsInOp(op, reifyIrExpression, VisitorContextFlag.None);
         switch (op.kind) {
             case OpKind.Advance:
                 OpList.replace(op, advance(op.delta));
@@ -9653,10 +9680,10 @@ function reifyUpdateOperations(_view, ops) {
                 OpList.replace(op, textInterpolate(op.strings, op.expressions));
                 break;
             case OpKind.Variable:
-                if (op.name === null) {
+                if (op.variable.name === null) {
                     throw new Error(`AssertionError: unnamed variable ${op.xref}`);
                 }
-                OpList.replace(op, createStatementOp(new DeclareVarStmt(op.name, op.initializer)));
+                OpList.replace(op, createStatementOp(new DeclareVarStmt(op.variable.name, op.initializer, undefined, StmtModifier.Final)));
                 break;
             case OpKind.Statement:
                 // Pass statement operations directly through.
@@ -9669,7 +9696,7 @@ function reifyUpdateOperations(_view, ops) {
 function reifyIrExpression(expr) {
     switch (expr.kind) {
         case ExpressionKind.NextContext:
-            return nextContext();
+            return nextContext(expr.steps);
         case ExpressionKind.Reference:
             return reference(expr.slot + 1 + expr.offset);
         case ExpressionKind.LexicalRead:
@@ -9737,7 +9764,7 @@ class LookForEventVisitor extends RecursiveAstVisitor$1 {
 /**
  * Assign data slots for all operations which implement `ConsumesSlotOpTrait`, and propagate the
  * assigned data slots of those operations to any expressions which reference them via
- * `UsesSlotIndexExprTrait`.
+ * `UsesSlotIndexTrait`.
  *
  * This phase is also responsible for counting the number of slots used for each view (its `decls`)
  * and propagating that number into the `Template` operations which declare embedded views.
@@ -9781,6 +9808,13 @@ function phaseSlotAllocation(cpl) {
                 // operation itself, so it can be emitted later.
                 const childView = cpl.views.get(op.xref);
                 op.decls = childView.decls;
+            }
+            if (hasUsesSlotIndexTrait(op) && op.slot === null) {
+                if (!slotMap.has(op.target)) {
+                    // We do expect to find a slot allocated for everything which might be referenced.
+                    throw new Error(`AssertionError: no slot allocated for ${OpKind[op.kind]} target ${op.target}`);
+                }
+                op.slot = slotMap.get(op.target);
             }
             // Process all `ir.Expression`s within this view, and look for `usesSlotIndexExprTrait`.
             visitExpressionsInOp(op, expr => {
@@ -9860,50 +9894,67 @@ function varsUsedByIrExpression(expr) {
  * the reads can be emitted correctly.
  */
 function phaseNaming(cpl) {
-    // TODO(alxhub): convert this temporary name to match how the `TemplateDefinitionBuilder`
-    // names the main component template function.
-    cpl.root.fnName = `${cpl.componentName}_Template`;
-    for (const [id, view] of cpl.views) {
-        let vIndex = 0;
-        if (view.fnName === null) {
-            // TODO(alxhub): convert this temporary name to match how the `TemplateDefinitionBuilder`
-            // names embedded view functions.
-            view.fnName = `${cpl.componentName}_EmbeddedView_${id}`;
-        }
-        // Keep track of the names we assign to variables in the view. We'll need to propagate these
-        // into reads of those variables afterwards.
-        const varNames = new Map();
-        for (const op of view.ops()) {
-            switch (op.kind) {
-                case OpKind.Listener:
-                    if (op.handlerFnName === null) {
-                        // TODO(alxhub): convert this temporary name to match how the
-                        // `TemplateDefinitionBuilder` names listener functions.
-                        op.handlerFnName = `${view.fnName}_${op.name}_listener`;
+    addNamesToView(cpl.root, cpl.componentName, { index: 0 });
+}
+function addNamesToView(view, baseName, state) {
+    if (view.fnName === null) {
+        view.fnName = `${baseName}_Template`;
+    }
+    // Keep track of the names we assign to variables in the view. We'll need to propagate these
+    // into reads of those variables afterwards.
+    const varNames = new Map();
+    for (const op of view.ops()) {
+        switch (op.kind) {
+            case OpKind.Listener:
+                if (op.handlerFnName === null) {
+                    // TODO(alxhub): convert this temporary name to match how the
+                    // `TemplateDefinitionBuilder` names listener functions.
+                    if (op.slot === null) {
+                        throw new Error(`Expected a slot to be assigned`);
                     }
-                    break;
-                case OpKind.Variable:
-                    if (op.name === null) {
-                        op.name = `_r${vIndex++}`;
-                        varNames.set(op.xref, op.name);
-                    }
-                    break;
-            }
-        }
-        // Having named all variables declared in the view, now we can push those names into the
-        // `ir.ReadVariableExpr` expressions which represent reads of those variables.
-        for (const op of view.ops()) {
-            visitExpressionsInOp(op, expr => {
-                if (!(expr instanceof ReadVariableExpr) || expr.name !== null) {
-                    return;
+                    op.handlerFnName = `${view.fnName}_${op.tag}_${op.name}_${op.slot}_listener`;
                 }
-                if (!varNames.has(expr.xref)) {
-                    throw new Error(`Variable ${expr.xref} not yet named`);
+                break;
+            case OpKind.Variable:
+                varNames.set(op.xref, getVariableName(op.variable, state));
+                break;
+            case OpKind.Template:
+                const childView = view.tpl.views.get(op.xref);
+                if (op.slot === null) {
+                    throw new Error(`Expected slot to be assigned`);
                 }
-                expr.name = varNames.get(expr.xref);
-            });
+                // TODO: properly escape the tag name.
+                const safeTagName = op.tag.replace('-', '_');
+                addNamesToView(childView, `${baseName}_${safeTagName}_${op.slot}`, state);
+                break;
         }
     }
+    // Having named all variables declared in the view, now we can push those names into the
+    // `ir.ReadVariableExpr` expressions which represent reads of those variables.
+    for (const op of view.ops()) {
+        visitExpressionsInOp(op, expr => {
+            if (!(expr instanceof ReadVariableExpr) || expr.name !== null) {
+                return;
+            }
+            if (!varNames.has(expr.xref)) {
+                throw new Error(`Variable ${expr.xref} not yet named`);
+            }
+            expr.name = varNames.get(expr.xref);
+        });
+    }
+}
+function getVariableName(variable, state) {
+    if (variable.name === null) {
+        switch (variable.kind) {
+            case SemanticVariableKind.Identifier:
+                variable.name = `${variable.identifier}_${state.index++}`;
+                break;
+            default:
+                variable.name = `_r${state.index++}`;
+                break;
+        }
+    }
+    return variable.name;
 }
 
 /**
@@ -9971,10 +10022,7 @@ function recursivelyProcessView(view, parentScope) {
     // Start the view creation block with an operation to save the current view context. This may be
     // used to restore the view context in any listeners that may be present.
     view.create.prepend([
-        createVariableOp(view.tpl.allocateXrefId(), {
-            kind: SemanticVariableKind.SavedView,
-            view: view.xref,
-        }, new GetCurrentViewExpr()),
+        createVariableOp(view.tpl.allocateXrefId(), scope.savedViewVariable, new GetCurrentViewExpr()),
     ]);
     for (const op of view.create) {
         switch (op.kind) {
@@ -9985,10 +10033,7 @@ function recursivelyProcessView(view, parentScope) {
             case OpKind.Listener:
                 // Listeners get a preamble which starts with a call to restore the view.
                 const preambleOps = [
-                    createVariableOp(view.tpl.allocateXrefId(), {
-                        kind: SemanticVariableKind.Context,
-                        view: view.xref,
-                    }, new RestoreViewExpr(view.xref)),
+                    createVariableOp(view.tpl.allocateXrefId(), scope.viewContextVariable, new RestoreViewExpr(view.xref)),
                     // And includes all variables available to this view.
                     ...generateVariablesInScopeForView(view, scope)
                 ];
@@ -10016,9 +10061,27 @@ function recursivelyProcessView(view, parentScope) {
 function getScopeForView(view, parent) {
     const scope = {
         view: view.xref,
+        viewContextVariable: {
+            kind: SemanticVariableKind.Context,
+            name: null,
+            view: view.xref,
+        },
+        savedViewVariable: {
+            kind: SemanticVariableKind.SavedView,
+            name: null,
+            view: view.xref,
+        },
+        contextVariables: new Map(),
         references: [],
         parent,
     };
+    for (const identifier of view.contextVariables.keys()) {
+        scope.contextVariables.set(identifier, {
+            kind: SemanticVariableKind.Identifier,
+            name: null,
+            identifier,
+        });
+    }
     for (const op of view.create) {
         switch (op.kind) {
             case OpKind.Element:
@@ -10033,6 +10096,11 @@ function getScopeForView(view, parent) {
                         name: op.localRefs[offset].name,
                         targetId: op.xref,
                         offset,
+                        variable: {
+                            kind: SemanticVariableKind.Identifier,
+                            name: null,
+                            identifier: op.localRefs[offset].name,
+                        },
                     });
                 }
                 break;
@@ -10052,24 +10120,15 @@ function generateVariablesInScopeForView(view, scope) {
         // Before generating variables for a parent view, we need to switch to the context of the parent
         // view with a `nextContext` expression. This context switching operation itself declares a
         // variable, because the context of the view may be referenced directly.
-        newOps.push(createVariableOp(view.tpl.allocateXrefId(), {
-            kind: SemanticVariableKind.Context,
-            view: scope.view,
-        }, new NextContextExpr()));
+        newOps.push(createVariableOp(view.tpl.allocateXrefId(), scope.viewContextVariable, new NextContextExpr()));
     }
     // Add variables for all context variables available in this scope's view.
     for (const [name, value] of view.tpl.views.get(scope.view).contextVariables) {
-        newOps.push(createVariableOp(view.tpl.allocateXrefId(), {
-            kind: SemanticVariableKind.Identifier,
-            name,
-        }, new ReadPropExpr(new ContextExpr(view.xref), value)));
+        newOps.push(createVariableOp(view.tpl.allocateXrefId(), scope.contextVariables.get(name), new ReadPropExpr(new ContextExpr(scope.view), value)));
     }
     // Add variables for all local references declared for elements in this scope.
     for (const ref of scope.references) {
-        newOps.push(createVariableOp(view.tpl.allocateXrefId(), {
-            kind: SemanticVariableKind.Identifier,
-            name: ref.name,
-        }, new ReferenceExpr(ref.targetId, ref.offset)));
+        newOps.push(createVariableOp(view.tpl.allocateXrefId(), ref.variable, new ReferenceExpr(ref.targetId, ref.offset)));
     }
     if (scope.parent !== null) {
         // Recursively add variables from the parent scope.
@@ -10107,10 +10166,10 @@ function processLexicalScope$1(view, ops, savedView) {
                 switch (op.variable.kind) {
                     case SemanticVariableKind.Identifier:
                         // This variable represents some kind of identifier which can be used in the template.
-                        if (scope.has(op.variable.name)) {
+                        if (scope.has(op.variable.identifier)) {
                             continue;
                         }
-                        scope.set(op.variable.name, op.xref);
+                        scope.set(op.variable.identifier, op.xref);
                         break;
                     case SemanticVariableKind.SavedView:
                         // This variable represents a snapshot of the current view context, and can be used to
@@ -10160,7 +10219,7 @@ function processLexicalScope$1(view, ops, savedView) {
             else {
                 return expr;
             }
-        });
+        }, VisitorContextFlag.None);
     }
 }
 
@@ -10206,7 +10265,486 @@ function processLexicalScope(view, ops) {
             else {
                 return expr;
             }
-        });
+        }, VisitorContextFlag.None);
+    }
+}
+
+/**
+ * Optimize variables declared and used in the IR.
+ *
+ * Variables are eagerly generated by pipeline stages for all possible values that could be
+ * referenced. This stage processes the list of declared variables and all variable usages,
+ * and optimizes where possible. It performs 3 main optimizations:
+ *
+ *   * It transforms variable declarations to side effectful expressions when the
+ *     variable is not used, but its initializer has global effects which other
+ *     operations rely upon.
+ *   * It removes variable declarations if those variables are not referenced and
+ *     either they do not have global effects, or nothing relies on them.
+ *   * It inlines variable declarations when those variables are only used once
+ *     and the inlining is semantically safe.
+ *
+ * To guarantee correctness, analysis of "fences" in the instruction lists is used to determine
+ * which optimizations are safe to perform.
+ */
+function phaseVariableOptimization(cpl, options) {
+    for (const [_, view] of cpl.views) {
+        optimizeVariablesInOpList(view.create, options);
+        optimizeVariablesInOpList(view.update, options);
+        for (const op of view.create) {
+            if (op.kind === OpKind.Listener) {
+                optimizeVariablesInOpList(op.handlerOps, options);
+            }
+        }
+    }
+}
+/**
+ * A [fence](https://en.wikipedia.org/wiki/Memory_barrier) flag for an expression which indicates
+ * how that expression can be optimized in relation to other expressions or instructions.
+ *
+ * `Fence`s are a bitfield, so multiple flags may be set on a single expression.
+ */
+var Fence;
+(function (Fence) {
+    /**
+     * Empty flag (no fence exists).
+     */
+    Fence[Fence["None"] = 0] = "None";
+    /**
+     * A context read fence, meaning that the expression in question reads from the "current view"
+     * context of the runtime.
+     */
+    Fence[Fence["ViewContextRead"] = 1] = "ViewContextRead";
+    /**
+     * A context write fence, meaning that the expression in question writes to the "current view"
+     * context of the runtime.
+     *
+     * Note that all `ContextWrite` fences are implicitly `ContextRead` fences as operations which
+     * change the view context do so based on the current one.
+     */
+    Fence[Fence["ViewContextWrite"] = 3] = "ViewContextWrite";
+    /**
+     * Indicates that a call is required for its side-effects, even if nothing reads its result.
+     *
+     * This is also true of `ViewContextWrite` operations **if** they are followed by a
+     * `ViewContextRead`.
+     */
+    Fence[Fence["SideEffectful"] = 4] = "SideEffectful";
+})(Fence || (Fence = {}));
+/**
+ * Process a list of operations and optimize variables within that list.
+ */
+function optimizeVariablesInOpList(ops, options) {
+    const varDecls = new Map();
+    const varUsages = new Map();
+    // Track variables that are used outside of the immediate operation list. For example, within
+    // `ListenerOp` handler operations of listeners in the current operation list.
+    const varRemoteUsages = new Set();
+    const opMap = new Map();
+    // First, extract information about variables declared or used within the whole list.
+    for (const op of ops) {
+        if (op.kind === OpKind.Variable) {
+            if (varDecls.has(op.xref) || varUsages.has(op.xref)) {
+                throw new Error(`Should not see two declarations of the same variable: ${op.xref}`);
+            }
+            varDecls.set(op.xref, op);
+            varUsages.set(op.xref, 0);
+        }
+        opMap.set(op, collectOpInfo(op));
+        countVariableUsages(op, varUsages, varRemoteUsages);
+    }
+    // The next step is to remove any variable declarations for variables that aren't used. The
+    // variable initializer expressions may be side-effectful, so they may need to be retained as
+    // expression statements.
+    // Track whether we've seen an operation which reads from the view context yet. This is used to
+    // determine whether a write to the view context in a variable initializer can be observed.
+    let contextIsUsed = false;
+    // Note that iteration through the list happens in reverse, which guarantees that we'll process
+    // all reads of a variable prior to processing its declaration.
+    for (const op of ops.reversed()) {
+        const opInfo = opMap.get(op);
+        if (op.kind === OpKind.Variable && varUsages.get(op.xref) === 0) {
+            // This variable is unused and can be removed. We might need to keep the initializer around,
+            // though, if something depends on it running.
+            if ((contextIsUsed && opInfo.fences & Fence.ViewContextWrite) ||
+                (opInfo.fences & Fence.SideEffectful)) {
+                // This variable initializer has a side effect which must be retained. Either:
+                //  * it writes to the view context, and we know there is a future operation which depends
+                //    on that write, or
+                //  * it's an operation which is inherently side-effectful.
+                // We can't remove the initializer, but we can remove the variable declaration itself and
+                // replace it with a side-effectful statement.
+                const stmtOp = createStatementOp(op.initializer.toStmt());
+                opMap.set(stmtOp, opInfo);
+                OpList.replace(op, stmtOp);
+            }
+            else {
+                // It's safe to delete this entire variable declaration as nothing depends on it, even
+                // side-effectfully. Note that doing this might make other variables unused. Since we're
+                // iterating in reverse order, we should always be processing usages before declarations
+                // and therefore by the time we get to a declaration, all removable usages will have been
+                // removed.
+                uncountVariableUsages(op, varUsages);
+                OpList.remove(op);
+            }
+            opMap.delete(op);
+            varDecls.delete(op.xref);
+            varUsages.delete(op.xref);
+            continue;
+        }
+        // Does this operation depend on the view context?
+        if (opInfo.fences & Fence.ViewContextRead) {
+            contextIsUsed = true;
+        }
+    }
+    // Next, inline any remaining variables with exactly one usage.
+    const toInline = [];
+    for (const [id, count] of varUsages) {
+        // We can inline variables that:
+        //  - are used once
+        //  - are not used remotely
+        if (count !== 1) {
+            // We can't inline this variable as it's used more than once.
+            continue;
+        }
+        if (varRemoteUsages.has(id)) {
+            // This variable is used once, but across an operation boundary, so it can't be inlined.
+            continue;
+        }
+        toInline.push(id);
+    }
+    let candidate;
+    while (candidate = toInline.pop()) {
+        // We will attempt to inline this variable. If inlining fails (due to fences for example),
+        // no future operation will make inlining legal.
+        const decl = varDecls.get(candidate);
+        const varInfo = opMap.get(decl);
+        // Scan operations following the variable declaration and look for the point where that variable
+        // is used. There should only be one usage given the precondition above.
+        for (let targetOp = decl.next; targetOp.kind !== OpKind.ListEnd; targetOp = targetOp.next) {
+            const opInfo = opMap.get(targetOp);
+            // Is the variable used in this operation?
+            if (opInfo.variablesUsed.has(candidate)) {
+                if (options.conservative && !allowConservativeInlining(decl, targetOp)) {
+                    // We're in conservative mode, and this variable is not eligible for inlining into the
+                    // target operation in this mode.
+                    break;
+                }
+                // Yes, try to inline it. Inlining may not be successful if fences in this operation before
+                // the variable's usage cannot be safely crossed.
+                if (tryInlineVariableInitializer(candidate, decl.initializer, targetOp, varInfo.fences)) {
+                    // Inlining was successful! Update the tracking structures to reflect the inlined
+                    // variable.
+                    opInfo.variablesUsed.delete(candidate);
+                    // Add all variables used in the variable's initializer to its new usage site.
+                    for (const id of varInfo.variablesUsed) {
+                        opInfo.variablesUsed.add(id);
+                    }
+                    // Merge fences in the variable's initializer into its new usage site.
+                    opInfo.fences |= varInfo.fences;
+                    // Delete tracking info related to the declaration.
+                    varDecls.delete(candidate);
+                    varUsages.delete(candidate);
+                    opMap.delete(decl);
+                    // And finally, delete the original declaration from the operation list.
+                    OpList.remove(decl);
+                }
+                // Whether inlining succeeded or failed, we're done processing this variable.
+                break;
+            }
+            // If the variable is not used in this operation, then we'd need to inline across it. Check if
+            // that's safe to do.
+            if (!safeToInlinePastFences(opInfo.fences, varInfo.fences)) {
+                // We can't safely inline this variable beyond this operation, so don't proceed with
+                // inlining this variable.
+                break;
+            }
+        }
+    }
+}
+/**
+ * Given an `ir.Expression`, returns the `Fence` flags for that expression type.
+ */
+function fencesForIrExpression(expr) {
+    switch (expr.kind) {
+        case ExpressionKind.NextContext:
+            return Fence.ViewContextWrite;
+        case ExpressionKind.RestoreView:
+            return Fence.ViewContextWrite | Fence.SideEffectful;
+        case ExpressionKind.Reference:
+            return Fence.ViewContextRead;
+        default:
+            return Fence.None;
+    }
+}
+/**
+ * Build the `OpInfo` structure for the given `op`. This performs two operations:
+ *
+ *  * It tracks which variables are used in the operation's expressions.
+ *  * It rolls up fence flags for expressions within the operation.
+ */
+function collectOpInfo(op) {
+    let fences = Fence.None;
+    const variablesUsed = new Set();
+    visitExpressionsInOp(op, expr => {
+        switch (expr.kind) {
+            case ExpressionKind.ReadVariable:
+                variablesUsed.add(expr.xref);
+                break;
+            default:
+                fences |= fencesForIrExpression(expr);
+        }
+    });
+    return { fences, variablesUsed };
+}
+/**
+ * Count the number of usages of each variable, being careful to track whether those usages are
+ * local or remote.
+ */
+function countVariableUsages(op, varUsages, varRemoteUsage) {
+    visitExpressionsInOp(op, (expr, flags) => {
+        if (expr.kind !== ExpressionKind.ReadVariable) {
+            return;
+        }
+        const count = varUsages.get(expr.xref);
+        if (count === undefined) {
+            // This variable is declared outside the current scope of optimization.
+            return;
+        }
+        varUsages.set(expr.xref, count + 1);
+        if (flags & VisitorContextFlag.InChildOperation) {
+            varRemoteUsage.add(expr.xref);
+        }
+    });
+}
+/**
+ * Remove usages of a variable in `op` from the `varUsages` tracking.
+ */
+function uncountVariableUsages(op, varUsages) {
+    visitExpressionsInOp(op, expr => {
+        if (expr.kind !== ExpressionKind.ReadVariable) {
+            return;
+        }
+        const count = varUsages.get(expr.xref);
+        if (count === undefined) {
+            // This variable is declared outside the current scope of optimization.
+            return;
+        }
+        else if (count === 0) {
+            throw new Error(`Inaccurate variable count: ${expr.xref} - found another read but count is already 0`);
+        }
+        varUsages.set(expr.xref, count - 1);
+    });
+}
+/**
+ * Checks whether it's safe to inline a variable across a particular operation.
+ *
+ * @param fences the fences of the operation which the inlining will cross
+ * @param declFences the fences of the variable being inlined.
+ */
+function safeToInlinePastFences(fences, declFences) {
+    if (fences & Fence.ViewContextWrite) {
+        // It's not safe to inline context reads across context writes.
+        if (declFences & Fence.ViewContextRead) {
+            return false;
+        }
+    }
+    else if (fences & Fence.ViewContextRead) {
+        // It's not safe to inline context writes across context reads.
+        if (declFences & Fence.ViewContextWrite) {
+            return false;
+        }
+    }
+    return true;
+}
+/**
+ * Attempt to inline the initializer of a variable into a target operation's expressions.
+ *
+ * This may or may not be safe to do. For example, the variable could be read following the
+ * execution of an expression with fences that don't permit the variable to be inlined across them.
+ */
+function tryInlineVariableInitializer(id, initializer, target, declFences) {
+    // We use `ir.transformExpressionsInOp` to walk the expressions and inline the variable if
+    // possible. Since this operation is callback-based, once inlining succeeds or fails we can't
+    // "stop" the expression processing, and have to keep track of whether inlining has succeeded or
+    // is no longer allowed.
+    let inlined = false;
+    let inliningAllowed = true;
+    transformExpressionsInOp(target, (expr, flags) => {
+        if (inlined || !inliningAllowed) {
+            // Either the inlining has already succeeded, or we've passed a fence that disallows inlining
+            // at this point, so don't try.
+            return expr;
+        }
+        else if ((flags & VisitorContextFlag.InChildOperation) && (declFences & Fence.ViewContextRead)) {
+            // We cannot inline variables that are sensitive to the current context across operation
+            // boundaries.
+            return expr;
+        }
+        switch (expr.kind) {
+            case ExpressionKind.ReadVariable:
+                if (expr.xref === id) {
+                    // This is the usage site of the variable. Since nothing has disallowed inlining, it's
+                    // safe to inline the initializer here.
+                    inlined = true;
+                    return initializer;
+                }
+                break;
+            default:
+                // For other types of `ir.Expression`s, whether inlining is allowed depends on their fences.
+                const exprFences = fencesForIrExpression(expr);
+                inliningAllowed = inliningAllowed && safeToInlinePastFences(exprFences, declFences);
+                break;
+        }
+        return expr;
+    }, VisitorContextFlag.None);
+    return inlined;
+}
+/**
+ * Determines whether inlining of `decl` should be allowed in "conservative" mode.
+ *
+ * In conservative mode, inlining behavior is limited to those operations which the
+ * `TemplateDefinitionBuilder` supported, with the goal of producing equivalent output.
+ */
+function allowConservativeInlining(decl, target) {
+    // TODO(alxhub): understand exactly how TemplateDefinitionBuilder approaches inlining, and record
+    // that behavior here.
+    switch (decl.variable.kind) {
+        case SemanticVariableKind.Identifier:
+            return false;
+        case SemanticVariableKind.Context:
+            // Context can only be inlined into other variables.
+            return target.kind === OpKind.Variable;
+        default:
+            return true;
+    }
+}
+
+const CHAINABLE = new Set([
+    Identifiers.elementStart,
+    Identifiers.elementEnd,
+    Identifiers.property,
+]);
+/**
+ * Post-process a reified view compilation and convert sequential calls to chainable instructions
+ * into chain calls.
+ *
+ * For example, two `elementStart` operations in sequence:
+ *
+ * ```typescript
+ * elementStart(0, 'div');
+ * elementStart(1, 'span');
+ * ```
+ *
+ * Can be called as a chain instead:
+ *
+ * ```typescript
+ * elementStart(0, 'div')(1, 'span');
+ * ```
+ */
+function phaseChaining(cpl) {
+    for (const [_, view] of cpl.views) {
+        chainOperationsInList(view.create);
+        chainOperationsInList(view.update);
+    }
+}
+function chainOperationsInList(opList) {
+    let chain = null;
+    for (const op of opList) {
+        if (op.kind !== OpKind.Statement || !(op.statement instanceof ExpressionStatement)) {
+            // This type of statement isn't chainable.
+            chain = null;
+            continue;
+        }
+        if (!(op.statement.expr instanceof InvokeFunctionExpr) ||
+            !(op.statement.expr.fn instanceof ExternalExpr)) {
+            // This is a statement, but not an instruction-type call, so not chainable.
+            chain = null;
+            continue;
+        }
+        const instruction = op.statement.expr.fn.value;
+        if (!CHAINABLE.has(instruction)) {
+            // This instruction isn't chainable.
+            chain = null;
+            continue;
+        }
+        // This instruction can be chained. It can either be added on to the previous chain (if
+        // compatible) or it can be the start of a new chain.
+        if (chain !== null && chain.instruction === instruction) {
+            // This instruction can be added onto the previous chain.
+            const expression = chain.expression.callFn(op.statement.expr.args, op.statement.expr.sourceSpan, op.statement.expr.pure);
+            chain.expression = expression;
+            chain.op.statement = expression.toStmt();
+            OpList.remove(op);
+        }
+        else {
+            // Leave this instruction alone for now, but consider it the start of a new chain.
+            chain = {
+                op,
+                instruction,
+                expression: op.statement.expr,
+            };
+        }
+    }
+}
+
+/**
+ * Merges logically sequential `NextContextExpr` operations.
+ *
+ * `NextContextExpr` can be referenced repeatedly, "popping" the runtime's context stack each time.
+ * When two such expressions appear back-to-back, it's possible to merge them together into a single
+ * `NextContextExpr` that steps multiple contexts. This merging is possible if all conditions are
+ * met:
+ *
+ *   * The result of the `NextContextExpr` that's folded into the subsequent one is not stored (that
+ *     is, the call is purely side-effectful).
+ *   * No operations in between them uses the implicit context.
+ */
+function phaseMergeNextContext(cpl) {
+    for (const view of cpl.views.values()) {
+        for (const op of view.create) {
+            if (op.kind === OpKind.Listener) {
+                mergeNextContextsInOps(op.handlerOps);
+            }
+        }
+        mergeNextContextsInOps(view.update);
+    }
+}
+function mergeNextContextsInOps(ops) {
+    for (const op of ops) {
+        // Look for a candidate operation to maybe merge.
+        if (op.kind !== OpKind.Statement || !(op.statement instanceof ExpressionStatement) ||
+            !(op.statement.expr instanceof NextContextExpr)) {
+            continue;
+        }
+        const mergeSteps = op.statement.expr.steps;
+        // Try to merge this `ir.NextContextExpr`.
+        let tryToMerge = true;
+        for (let candidate = op.next; candidate.kind !== OpKind.ListEnd && tryToMerge; candidate = candidate.next) {
+            visitExpressionsInOp(candidate, (expr, flags) => {
+                if (!tryToMerge) {
+                    // Either we've already merged, or failed to merge.
+                    return;
+                }
+                if (flags & VisitorContextFlag.InChildOperation) {
+                    // We cannot merge into child operations.
+                    return;
+                }
+                switch (expr.kind) {
+                    case ExpressionKind.NextContext:
+                        // Merge the previous `ir.NextContextExpr` into this one.
+                        expr.steps += mergeSteps;
+                        OpList.remove(op);
+                        tryToMerge = false;
+                        break;
+                    case ExpressionKind.GetCurrentView:
+                    case ExpressionKind.Reference:
+                        // Can't merge past a dependency on the context.
+                        tryToMerge = false;
+                        break;
+                }
+            });
+        }
     }
 }
 
@@ -10225,7 +10763,10 @@ function transformTemplate(cpl) {
     phaseVarCounting(cpl);
     phaseGenerateAdvance(cpl);
     phaseNaming(cpl);
+    phaseVariableOptimization(cpl, { conservative: true });
+    phaseMergeNextContext(cpl);
     phaseReify(cpl);
+    phaseChaining(cpl);
 }
 /**
  * Compile all views in the given `ComponentCompilation` into the final template function, which may
@@ -10233,14 +10774,19 @@ function transformTemplate(cpl) {
  */
 function emitTemplateFn(tpl, pool) {
     const rootFn = emitView(tpl.root);
-    for (const view of tpl.views.values()) {
-        if (view === tpl.root) {
+    emitChildViews(tpl.root, pool);
+    return rootFn;
+}
+function emitChildViews(parent, pool) {
+    for (const view of parent.tpl.views.values()) {
+        if (view.parent !== parent.xref) {
             continue;
         }
+        // Child views are emitted depth-first.
+        emitChildViews(view, pool);
         const viewFn = emitView(view);
         pool.statements.push(viewFn.toDeclStmt(viewFn.name));
     }
-    return rootFn;
 }
 /**
  * Emit a template function for an individual `ViewCompilation` (which may be either the root view
@@ -10264,13 +10810,24 @@ function emitView(view) {
         }
         updateStatements.push(op.statement);
     }
-    const rf = variable('rf');
-    const createCond = ifStmt(new BinaryOperatorExpr(BinaryOperator.BitwiseAnd, rf, literal(1)), createStatements);
-    const updateCond = ifStmt(new BinaryOperatorExpr(BinaryOperator.BitwiseAnd, rf, literal(2)), updateStatements);
+    const createCond = maybeGenerateRfBlock(1, createStatements);
+    const updateCond = maybeGenerateRfBlock(2, updateStatements);
     return fn([
         new FnParam('rf'),
         new FnParam('ctx'),
-    ], [createCond, updateCond], /* type */ undefined, /* sourceSpan */ undefined, view.fnName);
+    ], [
+        ...createCond,
+        ...updateCond,
+    ], 
+    /* type */ undefined, /* sourceSpan */ undefined, view.fnName);
+}
+function maybeGenerateRfBlock(flag, statements) {
+    if (statements.length === 0) {
+        return [];
+    }
+    return [
+        ifStmt(new BinaryOperatorExpr(BinaryOperator.BitwiseAnd, variable('rf'), literal(flag)), statements),
+    ];
 }
 
 /**
@@ -10470,21 +11027,21 @@ function ingestBoundText(view, text) {
     }
     const textXref = view.tpl.allocateXrefId();
     view.create.push(createTextOp(textXref, ''));
-    view.update.push(createInterpolateTextOp(textXref, value.strings, value.expressions.map(expr => convertAst(expr))));
+    view.update.push(createInterpolateTextOp(textXref, value.strings, value.expressions.map(expr => convertAst(expr, view.tpl))));
 }
 /**
  * Convert a template AST expression into an output AST expression.
  */
-function convertAst(ast) {
+function convertAst(ast, cpl) {
     if (ast instanceof ASTWithSource) {
-        return convertAst(ast.ast);
+        return convertAst(ast.ast, cpl);
     }
     else if (ast instanceof PropertyRead) {
         if (ast.receiver instanceof ImplicitReceiver) {
             return new LexicalReadExpr(ast.name);
         }
         else {
-            return new ReadPropExpr(convertAst(ast.receiver), ast.name);
+            return new ReadPropExpr(convertAst(ast.receiver, cpl), ast.name);
         }
     }
     else if (ast instanceof Call) {
@@ -10492,8 +11049,14 @@ function convertAst(ast) {
             throw new Error(`Unexpected ImplicitReceiver`);
         }
         else {
-            return new InvokeFunctionExpr(convertAst(ast.receiver), ast.args.map(arg => convertAst(arg)));
+            return new InvokeFunctionExpr(convertAst(ast.receiver, cpl), ast.args.map(arg => convertAst(arg, cpl)));
         }
+    }
+    else if (ast instanceof LiteralPrimitive) {
+        return literal(ast.value);
+    }
+    else if (ast instanceof ThisReceiver) {
+        return new ContextExpr(cpl.root.xref);
     }
     else {
         throw new Error(`Unhandled expression type: ${ast.constructor.name}`);
@@ -10529,20 +11092,20 @@ function ingestBindings(view, op, element) {
     if (element instanceof Template) {
         for (const attr of element.templateAttrs) {
             if (typeof attr.value === 'string') {
-                throw new Error(`TODO: unhandled static attribute bindings (is this a thing?)`);
+                // TODO: do we need to handle static attribute bindings here?
             }
             else {
-                view.update.push(createPropertyOp(op.xref, attr.name, convertAst(attr.value)));
+                view.update.push(createPropertyOp(op.xref, attr.name, convertAst(attr.value, view.tpl)));
             }
         }
     }
     else {
         for (const input of element.inputs) {
-            view.update.push(createPropertyOp(op.xref, input.name, convertAst(input.value)));
+            view.update.push(createPropertyOp(op.xref, input.name, convertAst(input.value, view.tpl)));
         }
         for (const output of element.outputs) {
-            const listenerOp = createListenerOp(op.xref, output.name);
-            listenerOp.handlerOps.push(createStatementOp(new ReturnStatement(convertAst(output.handler))));
+            const listenerOp = createListenerOp(op.xref, output.name, op.tag);
+            listenerOp.handlerOps.push(createStatementOp(new ReturnStatement(convertAst(output.handler, view.tpl))));
             view.create.push(listenerOp);
         }
     }
@@ -20924,10 +21487,12 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
         transformTemplate(tpl);
         // Finally we emit the template function:
         const templateFn = emitTemplateFn(tpl, constantPool);
-        definitionMap.set('template', templateFn);
         definitionMap.set('decls', literal(tpl.root.decls));
         definitionMap.set('vars', literal(tpl.root.vars));
-        definitionMap.set('consts', literalArr(tpl.consts));
+        if (tpl.consts.length > 0) {
+            definitionMap.set('consts', literalArr(tpl.consts));
+        }
+        definitionMap.set('template', templateFn);
     }
     if (meta.declarations.length > 0) {
         definitionMap.set('dependencies', compileDeclarationList(literalArr(meta.declarations.map(decl => decl.type)), meta.declarationListEmitMode));
@@ -22060,7 +22625,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.1.0-next.0+sha-c118569');
+const VERSION = new Version('16.1.0-next.0+sha-0d9705b');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -23988,7 +24553,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-c118569'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-0d9705b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -24091,7 +24656,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-c118569'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-0d9705b'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -24316,7 +24881,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-c118569'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-0d9705b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -24351,7 +24916,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-c118569'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-0d9705b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -24402,7 +24967,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-c118569'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-0d9705b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -24432,7 +24997,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-c118569'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-0d9705b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -24483,7 +25048,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-c118569'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-0d9705b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
