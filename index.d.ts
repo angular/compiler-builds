@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.1.0-next.0+sha-34b796f
+ * @license Angular v16.1.0-next.0+sha-d4ef207
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1369,10 +1369,10 @@ declare class Icu implements Node_3 {
         [k: string]: Node_3;
     };
     sourceSpan: ParseSourceSpan;
-    expressionPlaceholder: string;
+    expressionPlaceholder?: string | undefined;
     constructor(expression: string, type: string, cases: {
         [k: string]: Node_3;
-    }, sourceSpan: ParseSourceSpan);
+    }, sourceSpan: ParseSourceSpan, expressionPlaceholder?: string | undefined);
     visit(visitor: Visitor_2, context?: any): any;
 }
 

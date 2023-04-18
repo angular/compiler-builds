@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.1.0-next.0+sha-34b796f
+ * @license Angular v16.1.0-next.0+sha-d4ef207
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2220,6 +2220,7 @@ class FixupExpression extends Expression {
     constructor(resolved) {
         super(resolved.type);
         this.resolved = resolved;
+        this.shared = false;
         this.original = resolved;
     }
     visitExpression(visitor, context) {
@@ -4035,11 +4036,12 @@ class Container {
     }
 }
 class Icu {
-    constructor(expression, type, cases, sourceSpan) {
+    constructor(expression, type, cases, sourceSpan, expressionPlaceholder) {
         this.expression = expression;
         this.type = type;
         this.cases = cases;
         this.sourceSpan = sourceSpan;
+        this.expressionPlaceholder = expressionPlaceholder;
     }
     visit(visitor, context) {
         return visitor.visitIcu(this, context);
@@ -4095,8 +4097,7 @@ class CloneVisitor {
     visitIcu(icu, context) {
         const cases = {};
         Object.keys(icu.cases).forEach(key => cases[key] = icu.cases[key].visit(this, context));
-        const msg = new Icu(icu.expression, icu.type, cases, icu.sourceSpan);
-        msg.expressionPlaceholder = icu.expressionPlaceholder;
+        const msg = new Icu(icu.expression, icu.type, cases, icu.sourceSpan, icu.expressionPlaceholder);
         return msg;
     }
     visitTagPlaceholder(ph, context) {
@@ -22059,7 +22060,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.1.0-next.0+sha-34b796f');
+const VERSION = new Version('16.1.0-next.0+sha-d4ef207');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -22467,6 +22468,7 @@ function _parseMessageMeta(i18n) {
 class XmlTagDefinition {
     constructor() {
         this.closedByParent = false;
+        this.implicitNamespacePrefix = null;
         this.isVoid = false;
         this.ignoreFirstLf = false;
         this.canSelfClose = true;
@@ -22808,6 +22810,9 @@ class Xliff2 extends Serializer {
     }
 }
 class _WriteVisitor {
+    constructor() {
+        this._nextPlaceholderId = 0;
+    }
     visitText(text, context) {
         return [new Text$1(text.value)];
     }
@@ -23237,8 +23242,8 @@ class I18nToHtmlVisitor {
         this._mapperFactory = _mapperFactory;
         this._missingTranslationStrategy = _missingTranslationStrategy;
         this._console = _console;
-        this._contextStack = [];
         this._errors = [];
+        this._contextStack = [];
     }
     convert(srcMsg) {
         this._contextStack.length = 0;
@@ -23983,7 +23988,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-34b796f'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-d4ef207'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -24086,7 +24091,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-34b796f'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-d4ef207'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -24311,7 +24316,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-34b796f'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-d4ef207'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -24346,7 +24351,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-34b796f'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-d4ef207'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -24397,7 +24402,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-34b796f'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-d4ef207'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -24427,7 +24432,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-34b796f'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-d4ef207'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -24478,7 +24483,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-34b796f'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-d4ef207'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
