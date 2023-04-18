@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.1.0-next.0+sha-b7392f9
+ * @license Angular v16.1.0-next.0+sha-1816c89
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15601,8 +15601,9 @@ const NAMED_ENTITIES = {
     'zwj': '\u200D',
     'zwnj': '\u200C'
 };
-// The &ngsp; pseudo-entity is denoting a space. see:
-// https://github.com/dart-lang/angular/blob/0bb611387d29d65b5af7f9d2515ab571fd3fbee4/_tests/test/compiler/preserve_whitespace_test.dart
+// The &ngsp; pseudo-entity is denoting a space.
+// 0xE500 is a PUA (Private Use Areas) unicode character
+// This is inspired by the Angular Dart implementation.
 const NGSP_UNICODE = '\uE500';
 NAMED_ENTITIES['ngsp'] = NGSP_UNICODE;
 
@@ -17006,10 +17007,9 @@ function hasPreserveWhitespacesAttr(attrs) {
     return attrs.some((attr) => attr.name === PRESERVE_WS_ATTR_NAME);
 }
 /**
- * Angular Dart introduced &ngsp; as a placeholder for non-removable space, see:
- * https://github.com/dart-lang/angular/blob/0bb611387d29d65b5af7f9d2515ab571fd3fbee4/_tests/test/compiler/preserve_whitespace_test.dart#L25-L32
- * In Angular Dart &ngsp; is converted to the 0xE500 PUA (Private Use Areas) unicode character
- * and later on replaced by a space. We are re-implementing the same idea here.
+ * &ngsp; is a placeholder for non-removable space
+ * &ngsp; is converted to the 0xE500 PUA (Private Use Areas) unicode character
+ * and later on replaced by a space.
  */
 function replaceNgsp(value) {
     // lexer is replacing the &ngsp; pseudo-entity with NGSP_UNICODE
@@ -22059,7 +22059,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.1.0-next.0+sha-b7392f9');
+const VERSION = new Version('16.1.0-next.0+sha-1816c89');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -23983,7 +23983,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-b7392f9'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-1816c89'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -24086,7 +24086,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-b7392f9'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-1816c89'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -24311,7 +24311,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-b7392f9'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-1816c89'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -24346,7 +24346,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-b7392f9'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-1816c89'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -24397,7 +24397,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-b7392f9'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-1816c89'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -24427,7 +24427,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-b7392f9'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-1816c89'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -24478,7 +24478,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-b7392f9'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-1816c89'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
