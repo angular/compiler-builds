@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.1.0-next.0+sha-f5dd3b4
+ * @license Angular v16.1.0-next.0+sha-5214df4
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3060,6 +3060,10 @@ export declare interface R3DeclareDirectiveMetadata extends R3PartialDeclaration
      */
     isStandalone?: boolean;
     /**
+     * Whether the directive is a signal-based directive. Defaults to false.
+     */
+    isSignal?: boolean;
+    /**
      * Additional directives applied to the directive host.
      */
     hostDirectives?: R3DeclareHostDirectiveMetadata[];
@@ -3419,6 +3423,10 @@ export declare interface R3DirectiveMetadata {
      * Whether or not the component or directive is standalone.
      */
     isStandalone: boolean;
+    /**
+     * Whether or not the component or directive is signal-based.
+     */
+    isSignal: boolean;
     /**
      * Additional directives applied to the directive host.
      */
