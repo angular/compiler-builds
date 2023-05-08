@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.1.0-next.0+sha-9d4842c
+ * @license Angular v16.1.0-next.0+sha-73fcf9f
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8569,25 +8569,37 @@ var OpKind;
      */
     OpKind[OpKind["ElementEnd"] = 6] = "ElementEnd";
     /**
+     * An operation to begin an `ng-container`.
+     */
+    OpKind[OpKind["ContainerStart"] = 7] = "ContainerStart";
+    /**
+     * An operation for an `ng-container` with no children.
+     */
+    OpKind[OpKind["Container"] = 8] = "Container";
+    /**
+     * An operation to end an `ng-container`.
+     */
+    OpKind[OpKind["ContainerEnd"] = 9] = "ContainerEnd";
+    /**
      * An operation to render a text node.
      */
-    OpKind[OpKind["Text"] = 7] = "Text";
+    OpKind[OpKind["Text"] = 10] = "Text";
     /**
      * An operation declaring an event listener for an element.
      */
-    OpKind[OpKind["Listener"] = 8] = "Listener";
+    OpKind[OpKind["Listener"] = 11] = "Listener";
     /**
      * An operation to interpolate text into a text node.
      */
-    OpKind[OpKind["InterpolateText"] = 9] = "InterpolateText";
+    OpKind[OpKind["InterpolateText"] = 12] = "InterpolateText";
     /**
      * An operation to bind an expression to a property of an element.
      */
-    OpKind[OpKind["Property"] = 10] = "Property";
+    OpKind[OpKind["Property"] = 13] = "Property";
     /**
      * An operation to advance the runtime's implicit slot context during the update phase of a view.
      */
-    OpKind[OpKind["Advance"] = 11] = "Advance";
+    OpKind[OpKind["Advance"] = 14] = "Advance";
 })(OpKind || (OpKind = {}));
 /**
  * Distinguishes different kinds of IR expressions.
@@ -8942,6 +8954,9 @@ function transformExpressionsInOp(op, transform, flags) {
         case OpKind.Element:
         case OpKind.ElementStart:
         case OpKind.ElementEnd:
+        case OpKind.Container:
+        case OpKind.ContainerStart:
+        case OpKind.ContainerEnd:
         case OpKind.Template:
         case OpKind.Text:
         case OpKind.Advance:
@@ -8968,6 +8983,10 @@ function transformExpressionsInExpression(expr, transform, flags) {
     }
     else if (expr instanceof ReadPropExpr) {
         expr.receiver = transformExpressionsInExpression(expr.receiver, transform, flags);
+    }
+    else if (expr instanceof ReadKeyExpr) {
+        expr.receiver = transformExpressionsInExpression(expr.receiver, transform, flags);
+        expr.index = transformExpressionsInExpression(expr.index, transform, flags);
     }
     else if (expr instanceof InvokeFunctionExpr) {
         expr.fn = transformExpressionsInExpression(expr.fn, transform, flags);
@@ -9413,19 +9432,27 @@ function serializeAttributes({ attributes, bindings, classes, i18n, projectAs, s
     return literalArr(attrArray);
 }
 
+const REPLACEMENTS = new Map([
+    [OpKind.ElementEnd, [OpKind.ElementStart, OpKind.Element]],
+    [OpKind.ContainerEnd, [OpKind.ContainerStart, OpKind.Container]],
+]);
 /**
- * Replace sequences of `ElementStart` followed by `ElementEnd` with a condensed `Element`
- * instruction.
+ * Replace sequences of mergable elements (e.g. `ElementStart` and `ElementEnd`) with a consolidated
+ * element (e.g. `Element`).
  */
 function phaseEmptyElements(cpl) {
     for (const [_, view] of cpl.views) {
         for (const op of view.create) {
-            if (op.kind === OpKind.ElementEnd && op.prev !== null &&
-                op.prev.kind === OpKind.ElementStart) {
-                // Transmute the `ElementStart` instruction to `Element`. This is safe as they're designed
+            const opReplacements = REPLACEMENTS.get(op.kind);
+            if (opReplacements === undefined) {
+                continue;
+            }
+            const [startKind, mergedKind] = opReplacements;
+            if (op.prev !== null && op.prev.kind === startKind) {
+                // Transmute the start instruction to the merged version. This is safe as they're designed
                 // to be identical apart from the `kind`.
-                op.prev.kind = OpKind.Element;
-                // Remove the `ElementEnd` instruction.
+                op.prev.kind = mergedKind;
+                // Remove the end instruction.
                 OpList.remove(op);
             }
         }
@@ -9484,16 +9511,16 @@ function phaseGenerateAdvance(cpl) {
 // instruction type is represented as a function, which may select a specific instruction variant
 // depending on the exact arguments.
 function element(slot, tag, constIndex, localRefIndex) {
-    return elementStartBase(Identifiers.element, slot, tag, constIndex, localRefIndex);
+    return elementOrContainerBase(Identifiers.element, slot, tag, constIndex, localRefIndex);
 }
 function elementStart(slot, tag, constIndex, localRefIndex) {
-    return elementStartBase(Identifiers.elementStart, slot, tag, constIndex, localRefIndex);
+    return elementOrContainerBase(Identifiers.elementStart, slot, tag, constIndex, localRefIndex);
 }
-function elementStartBase(instruction, slot, tag, constIndex, localRefIndex) {
-    const args = [
-        literal(slot),
-        literal(tag),
-    ];
+function elementOrContainerBase(instruction, slot, tag, constIndex, localRefIndex) {
+    const args = [literal(slot)];
+    if (tag !== null) {
+        args.push(literal(tag));
+    }
     if (localRefIndex !== null) {
         args.push(literal(constIndex), // might be null, but that's okay.
         literal(localRefIndex));
@@ -9505,6 +9532,15 @@ function elementStartBase(instruction, slot, tag, constIndex, localRefIndex) {
 }
 function elementEnd() {
     return call(Identifiers.elementEnd, []);
+}
+function elementContainerStart(slot, constIndex, localRefIndex) {
+    return elementOrContainerBase(Identifiers.elementContainerStart, slot, /* tag */ null, constIndex, localRefIndex);
+}
+function elementContainer(slot, constIndex, localRefIndex) {
+    return elementOrContainerBase(Identifiers.elementContainer, slot, /* tag */ null, constIndex, localRefIndex);
+}
+function elementContainerEnd() {
+    return call(Identifiers.elementContainerEnd, []);
 }
 function template(slot, templateFnRef, decls, vars, tag, constIndex) {
     return call(Identifiers.templateCreate, [
@@ -9643,6 +9679,15 @@ function reifyCreateOperations(view, ops) {
                 break;
             case OpKind.ElementEnd:
                 OpList.replace(op, elementEnd());
+                break;
+            case OpKind.ContainerStart:
+                OpList.replace(op, elementContainerStart(op.slot, op.attributes, op.localRefs));
+                break;
+            case OpKind.Container:
+                OpList.replace(op, elementContainer(op.slot, op.attributes, op.localRefs));
+                break;
+            case OpKind.ContainerEnd:
+                OpList.replace(op, elementContainerEnd());
                 break;
             case OpKind.Template:
                 const childView = view.tpl.views.get(op.xref);
@@ -10019,11 +10064,11 @@ function phaseGenerateVariables(cpl) {
 function recursivelyProcessView(view, parentScope) {
     // Extract a `Scope` from this view.
     const scope = getScopeForView(view, parentScope);
-    // Start the view creation block with an operation to save the current view context. This may be
-    // used to restore the view context in any listeners that may be present.
-    view.create.prepend([
-        createVariableOp(view.tpl.allocateXrefId(), scope.savedViewVariable, new GetCurrentViewExpr()),
-    ]);
+    // Embedded views require an operation to save/restore the view context.
+    if (view.parent !== null) {
+        // Start the view creation block with an operation to save the current view context. This may be
+        // used to restore the view context in any listeners that may be present.
+    }
     for (const op of view.create) {
         switch (op.kind) {
             case OpKind.Template:
@@ -10031,22 +10076,8 @@ function recursivelyProcessView(view, parentScope) {
                 recursivelyProcessView(view.tpl.views.get(op.xref), scope);
                 break;
             case OpKind.Listener:
-                // Listeners get a preamble which starts with a call to restore the view.
-                const preambleOps = [
-                    createVariableOp(view.tpl.allocateXrefId(), scope.viewContextVariable, new RestoreViewExpr(view.xref)),
-                    // And includes all variables available to this view.
-                    ...generateVariablesInScopeForView(view, scope)
-                ];
-                op.handlerOps.prepend(preambleOps);
-                // The "restore view" operation in listeners requires a call to `resetView` to reset the
-                // context prior to returning from the listener operation. Find any `return` statements in
-                // the listener body and wrap them in a call to reset the view.
-                for (const handlerOp of op.handlerOps) {
-                    if (handlerOp.kind === OpKind.Statement &&
-                        handlerOp.statement instanceof ReturnStatement) {
-                        handlerOp.statement.value = new ResetViewExpr(handlerOp.statement.value);
-                    }
-                }
+                // Prepend variables to listener handler functions.
+                op.handlerOps.prepend(generateVariablesInScopeForView(view, scope));
                 break;
         }
     }
@@ -10063,11 +10094,6 @@ function getScopeForView(view, parent) {
         view: view.xref,
         viewContextVariable: {
             kind: SemanticVariableKind.Context,
-            name: null,
-            view: view.xref,
-        },
-        savedViewVariable: {
-            kind: SemanticVariableKind.SavedView,
             name: null,
             view: view.xref,
         },
@@ -10624,6 +10650,9 @@ const CHAINABLE = new Set([
     Identifiers.elementStart,
     Identifiers.elementEnd,
     Identifiers.property,
+    Identifiers.elementContainerStart,
+    Identifiers.elementContainerEnd,
+    Identifiers.elementContainer,
 ]);
 /**
  * Post-process a reified view compilation and convert sequential calls to chainable instructions
@@ -10748,16 +10777,74 @@ function mergeNextContextsInOps(ops) {
     }
 }
 
+const CONTAINER_TAG = 'ng-container';
+/**
+ * Replace an `Element` or `ElementStart` whose tag is `ng-container` with a specific op.
+ */
+function phaseNgContainer(cpl) {
+    for (const [_, view] of cpl.views) {
+        const updatedElementXrefs = new Set();
+        for (const op of view.create) {
+            if (op.kind === OpKind.ElementStart && op.tag === CONTAINER_TAG) {
+                // Transmute the `ElementStart` instruction to `ContainerStart`.
+                op.kind = OpKind.ContainerStart;
+                updatedElementXrefs.add(op.xref);
+            }
+            if (op.kind === OpKind.ElementEnd && updatedElementXrefs.has(op.xref)) {
+                // This `ElementEnd` is associated with an `ElementStart` we already transmuted.
+                op.kind = OpKind.ContainerEnd;
+            }
+        }
+    }
+}
+
+function phaseSaveRestoreView(cpl) {
+    for (const view of cpl.views.values()) {
+        if (view === cpl.root) {
+            // Save/restore operations are not necessary for the root view.
+            continue;
+        }
+        view.create.prepend([
+            createVariableOp(view.tpl.allocateXrefId(), {
+                kind: SemanticVariableKind.SavedView,
+                name: null,
+                view: view.xref,
+            }, new GetCurrentViewExpr()),
+        ]);
+        for (const op of view.create) {
+            if (op.kind !== OpKind.Listener) {
+                continue;
+            }
+            op.handlerOps.prepend([
+                createVariableOp(view.tpl.allocateXrefId(), {
+                    kind: SemanticVariableKind.Context,
+                    name: null,
+                    view: view.xref,
+                }, new RestoreViewExpr(view.xref)),
+            ]);
+            // The "restore view" operation in listeners requires a call to `resetView` to reset the
+            // context prior to returning from the listener operation. Find any `return` statements in
+            // the listener body and wrap them in a call to reset the view.
+            for (const handlerOp of op.handlerOps) {
+                if (handlerOp.kind === OpKind.Statement &&
+                    handlerOp.statement instanceof ReturnStatement) {
+                    handlerOp.statement.value = new ResetViewExpr(handlerOp.statement.value);
+                }
+            }
+        }
+    }
+}
+
 /**
  * Run all transformation phases in the correct order against a `ComponentCompilation`. After this
  * processing, the compilation should be in a state where it can be emitted via `emitTemplateFn`.s
  */
 function transformTemplate(cpl) {
     phaseGenerateVariables(cpl);
+    phaseSaveRestoreView(cpl);
     phaseResolveNames(cpl);
     phaseResolveContexts(cpl);
     phaseLocalRefs(cpl);
-    phaseEmptyElements(cpl);
     phaseConstCollection(cpl);
     phaseSlotAllocation(cpl);
     phaseVarCounting(cpl);
@@ -10765,6 +10852,8 @@ function transformTemplate(cpl) {
     phaseNaming(cpl);
     phaseVariableOptimization(cpl, { conservative: true });
     phaseMergeNextContext(cpl);
+    phaseNgContainer(cpl);
+    phaseEmptyElements(cpl);
     phaseReify(cpl);
     phaseChaining(cpl);
 }
@@ -10944,6 +11033,26 @@ class ViewCompilation {
     }
 }
 
+const BINARY_OPERATORS = new Map([
+    ['&&', BinaryOperator.And],
+    ['>', BinaryOperator.Bigger],
+    ['>=', BinaryOperator.BiggerEquals],
+    ['&', BinaryOperator.BitwiseAnd],
+    ['/', BinaryOperator.Divide],
+    ['==', BinaryOperator.Equals],
+    ['===', BinaryOperator.Identical],
+    ['<', BinaryOperator.Lower],
+    ['<=', BinaryOperator.LowerEquals],
+    ['-', BinaryOperator.Minus],
+    ['%', BinaryOperator.Modulo],
+    ['*', BinaryOperator.Multiply],
+    ['!=', BinaryOperator.NotEquals],
+    ['!==', BinaryOperator.NotIdentical],
+    ['??', BinaryOperator.NullishCoalesce],
+    ['||', BinaryOperator.Or],
+    ['+', BinaryOperator.Plus],
+]);
+
 /**
  * Process a template AST and convert it into a `ComponentCompilation` in the intermediate
  * representation.
@@ -11055,8 +11164,21 @@ function convertAst(ast, cpl) {
     else if (ast instanceof LiteralPrimitive) {
         return literal(ast.value);
     }
+    else if (ast instanceof Binary) {
+        const operator = BINARY_OPERATORS.get(ast.operation);
+        if (operator === undefined) {
+            throw new Error(`AssertionError: unknown binary operator ${ast.operation}`);
+        }
+        return new BinaryOperatorExpr(operator, convertAst(ast.left, cpl), convertAst(ast.right, cpl));
+    }
     else if (ast instanceof ThisReceiver) {
         return new ContextExpr(cpl.root.xref);
+    }
+    else if (ast instanceof KeyedRead) {
+        return new ReadKeyExpr(convertAst(ast.receiver, cpl), convertAst(ast.key, cpl));
+    }
+    else if (ast instanceof Chain) {
+        throw new Error(`AssertionError: Chain in unknown context`);
     }
     else {
         throw new Error(`Unhandled expression type: ${ast.constructor.name}`);
@@ -11090,13 +11212,14 @@ function ingestAttributes(op, element) {
  */
 function ingestBindings(view, op, element) {
     if (element instanceof Template) {
-        for (const attr of element.templateAttrs) {
-            if (typeof attr.value === 'string') {
-                // TODO: do we need to handle static attribute bindings here?
+        // TODO: Are ng-template inputs handled differently from element inputs?
+        // <ng-template dir [foo]="...">
+        // <item-cmp *ngFor="let item of items" [item]="item">
+        for (const input of [...element.templateAttrs, ...element.inputs]) {
+            if (!(input instanceof BoundAttribute)) {
+                continue;
             }
-            else {
-                view.update.push(createPropertyOp(op.xref, attr.name, convertAst(attr.value, view.tpl)));
-            }
+            view.update.push(createPropertyOp(op.xref, input.name, convertAst(input.value, view.tpl)));
         }
     }
     else {
@@ -11105,7 +11228,29 @@ function ingestBindings(view, op, element) {
         }
         for (const output of element.outputs) {
             const listenerOp = createListenerOp(op.xref, output.name, op.tag);
-            listenerOp.handlerOps.push(createStatementOp(new ReturnStatement(convertAst(output.handler, view.tpl))));
+            // if output.handler is a chain, then push each statement from the chain separately, and
+            // return the last one?
+            let inputExprs;
+            let handler = output.handler;
+            if (handler instanceof ASTWithSource) {
+                handler = handler.ast;
+            }
+            if (handler instanceof Chain) {
+                inputExprs = handler.expressions;
+            }
+            else {
+                inputExprs = [handler];
+            }
+            if (inputExprs.length === 0) {
+                throw new Error('Expected listener to have non-empty expression list.');
+            }
+            const expressions = inputExprs.map(expr => convertAst(expr, view.tpl));
+            const returnExpr = expressions.pop();
+            for (const expr of expressions) {
+                const stmtOp = createStatementOp(new ExpressionStatement(expr));
+                listenerOp.handlerOps.push(stmtOp);
+            }
+            listenerOp.handlerOps.push(createStatementOp(new ReturnStatement(returnExpr)));
             view.create.push(listenerOp);
         }
     }
@@ -22631,7 +22776,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.1.0-next.0+sha-9d4842c');
+const VERSION = new Version('16.1.0-next.0+sha-73fcf9f');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -24559,7 +24704,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-9d4842c'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-73fcf9f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -24662,7 +24807,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-9d4842c'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-73fcf9f'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -24890,7 +25035,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-9d4842c'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-73fcf9f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -24925,7 +25070,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-9d4842c'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-73fcf9f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -24976,7 +25121,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-9d4842c'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-73fcf9f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -25006,7 +25151,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-9d4842c'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-73fcf9f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -25057,7 +25202,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-9d4842c'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-73fcf9f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
