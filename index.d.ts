@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.1.0-next.0+sha-f755853
+ * @license Angular v16.1.0-next.0+sha-0f40756
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1894,6 +1894,7 @@ declare namespace outputAst {
         importExpr,
         importType,
         expressionType,
+        transplantedType,
         typeofExpr,
         literalArr,
         literalMap,
@@ -1912,6 +1913,7 @@ declare namespace outputAst {
         ExpressionType,
         ArrayType,
         MapType,
+        TransplantedType,
         DYNAMIC_TYPE,
         INFERRED_TYPE,
         BOOL_TYPE,
@@ -3993,6 +3995,7 @@ declare class RecursiveAstVisitor_2 implements StatementVisitor, ExpressionVisit
     visitExpressionType(type: ExpressionType, context: any): any;
     visitArrayType(type: ArrayType, context: any): any;
     visitMapType(type: MapType, context: any): any;
+    visitTransplantedType(type: TransplantedType<unknown>, context: any): any;
     visitWrappedNodeExpr(ast: WrappedNodeExpr<any>, context: any): any;
     visitTypeofExpr(ast: TypeofExpr, context: any): any;
     visitReadVarExpr(ast: ReadVarExpr, context: any): any;
@@ -4696,6 +4699,14 @@ declare const enum TokenType_2 {
     EOF = 24
 }
 
+export declare class TransplantedType<T> extends Type {
+    readonly type: T;
+    constructor(type: T, modifiers?: TypeModifier);
+    visitType(visitor: TypeVisitor, context: any): any;
+}
+
+declare function transplantedType<T>(type: T, typeModifiers?: TypeModifier): TransplantedType<T>;
+
 export declare class TreeError extends ParseError {
     elementName: string | null;
     static create(elementName: string | null, span: ParseSourceSpan, msg: string): TreeError;
@@ -4737,6 +4748,7 @@ export declare interface TypeVisitor {
     visitExpressionType(type: ExpressionType, context: any): any;
     visitArrayType(type: ArrayType, context: any): any;
     visitMapType(type: MapType, context: any): any;
+    visitTransplantedType(type: TransplantedType<unknown>, context: any): any;
 }
 
 /**
