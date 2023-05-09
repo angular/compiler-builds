@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.1.0-next.0+sha-478c70c
+ * @license Angular v16.1.0-next.0+sha-dccfcb7
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1877,20 +1877,6 @@ declare const NULL_EXPR: LiteralExpr;
 declare function nullSafeIsEquivalent<T extends {
     isEquivalent(other: T): boolean;
 }>(base: T | null, other: T | null): boolean;
-
-declare class NullVisitor implements Visitor_3<void> {
-    visitElement(element: TmplAstElement): void;
-    visitTemplate(template: TmplAstTemplate): void;
-    visitContent(content: TmplAstContent): void;
-    visitVariable(variable: TmplAstVariable): void;
-    visitReference(reference: TmplAstReference): void;
-    visitTextAttribute(attribute: TmplAstTextAttribute): void;
-    visitBoundAttribute(attribute: TmplAstBoundAttribute): void;
-    visitBoundEvent(attribute: TmplAstBoundEvent): void;
-    visitText(text: TmplAstText): void;
-    visitBoundText(text: TmplAstBoundText): void;
-    visitIcu(icu: TmplAstIcu): void;
-}
 
 declare const NUMBER_TYPE: BuiltinType;
 
@@ -4261,7 +4247,6 @@ export declare const STRING_TYPE: BuiltinType;
 declare namespace t {
     export {
         visitAll_2 as visitAll,
-        transformAll,
         TmplAstNode as Node,
         Comment_3 as Comment,
         TmplAstText as Text,
@@ -4276,9 +4261,7 @@ declare namespace t {
         TmplAstReference as Reference,
         TmplAstIcu as Icu,
         Visitor_3 as Visitor,
-        NullVisitor,
-        TmplAstRecursiveVisitor as RecursiveVisitor,
-        TransformVisitor
+        TmplAstRecursiveVisitor as RecursiveVisitor
     }
 }
 
@@ -4711,22 +4694,6 @@ declare const enum TokenType_2 {
     EXPANSION_CASE_EXP_END = 22,
     EXPANSION_FORM_END = 23,
     EOF = 24
-}
-
-declare function transformAll<Result extends TmplAstNode>(visitor: Visitor_3<TmplAstNode>, nodes: Result[]): Result[];
-
-declare class TransformVisitor implements Visitor_3<TmplAstNode> {
-    visitElement(element: TmplAstElement): TmplAstNode;
-    visitTemplate(template: TmplAstTemplate): TmplAstNode;
-    visitContent(content: TmplAstContent): TmplAstNode;
-    visitVariable(variable: TmplAstVariable): TmplAstNode;
-    visitReference(reference: TmplAstReference): TmplAstNode;
-    visitTextAttribute(attribute: TmplAstTextAttribute): TmplAstNode;
-    visitBoundAttribute(attribute: TmplAstBoundAttribute): TmplAstNode;
-    visitBoundEvent(attribute: TmplAstBoundEvent): TmplAstNode;
-    visitText(text: TmplAstText): TmplAstNode;
-    visitBoundText(text: TmplAstBoundText): TmplAstNode;
-    visitIcu(icu: TmplAstIcu): TmplAstNode;
 }
 
 export declare class TreeError extends ParseError {

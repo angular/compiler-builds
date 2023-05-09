@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.1.0-next.0+sha-478c70c
+ * @license Angular v16.1.0-next.0+sha-dccfcb7
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3855,19 +3855,6 @@ class Icu$1 {
         return visitor.visitIcu(this);
     }
 }
-class NullVisitor {
-    visitElement(element) { }
-    visitTemplate(template) { }
-    visitContent(content) { }
-    visitVariable(variable) { }
-    visitReference(reference) { }
-    visitTextAttribute(attribute) { }
-    visitBoundAttribute(attribute) { }
-    visitBoundEvent(attribute) { }
-    visitText(text) { }
-    visitBoundText(text) { }
-    visitIcu(icu) { }
-}
 class RecursiveVisitor$1 {
     visitElement(element) {
         visitAll$1(this, element.attributes);
@@ -3894,69 +3881,11 @@ class RecursiveVisitor$1 {
     visitBoundText(text) { }
     visitIcu(icu) { }
 }
-class TransformVisitor {
-    visitElement(element) {
-        const newAttributes = transformAll(this, element.attributes);
-        const newInputs = transformAll(this, element.inputs);
-        const newOutputs = transformAll(this, element.outputs);
-        const newChildren = transformAll(this, element.children);
-        const newReferences = transformAll(this, element.references);
-        if (newAttributes != element.attributes || newInputs != element.inputs ||
-            newOutputs != element.outputs || newChildren != element.children ||
-            newReferences != element.references) {
-            return new Element$1(element.name, newAttributes, newInputs, newOutputs, newChildren, newReferences, element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
-        }
-        return element;
-    }
-    visitTemplate(template) {
-        const newAttributes = transformAll(this, template.attributes);
-        const newInputs = transformAll(this, template.inputs);
-        const newOutputs = transformAll(this, template.outputs);
-        const newTemplateAttrs = transformAll(this, template.templateAttrs);
-        const newChildren = transformAll(this, template.children);
-        const newReferences = transformAll(this, template.references);
-        const newVariables = transformAll(this, template.variables);
-        if (newAttributes != template.attributes || newInputs != template.inputs ||
-            newOutputs != template.outputs || newTemplateAttrs != template.templateAttrs ||
-            newChildren != template.children || newReferences != template.references ||
-            newVariables != template.variables) {
-            return new Template(template.tagName, newAttributes, newInputs, newOutputs, newTemplateAttrs, newChildren, newReferences, newVariables, template.sourceSpan, template.startSourceSpan, template.endSourceSpan);
-        }
-        return template;
-    }
-    visitContent(content) {
-        return content;
-    }
-    visitVariable(variable) {
-        return variable;
-    }
-    visitReference(reference) {
-        return reference;
-    }
-    visitTextAttribute(attribute) {
-        return attribute;
-    }
-    visitBoundAttribute(attribute) {
-        return attribute;
-    }
-    visitBoundEvent(attribute) {
-        return attribute;
-    }
-    visitText(text) {
-        return text;
-    }
-    visitBoundText(text) {
-        return text;
-    }
-    visitIcu(icu) {
-        return icu;
-    }
-}
 function visitAll$1(visitor, nodes) {
     const result = [];
     if (visitor.visit) {
         for (const node of nodes) {
-            const newNode = visitor.visit(node) || node.visit(visitor);
+            visitor.visit(node) || node.visit(visitor);
         }
     }
     else {
@@ -3968,18 +3897,6 @@ function visitAll$1(visitor, nodes) {
         }
     }
     return result;
-}
-function transformAll(visitor, nodes) {
-    const result = [];
-    let changed = false;
-    for (const node of nodes) {
-        const newNode = node.visit(visitor);
-        if (newNode) {
-            result.push(newNode);
-        }
-        changed = changed || newNode != node;
-    }
-    return changed ? result : nodes;
 }
 
 class Message {
@@ -22776,7 +22693,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.1.0-next.0+sha-478c70c');
+const VERSION = new Version('16.1.0-next.0+sha-dccfcb7');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -24704,7 +24621,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-478c70c'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-dccfcb7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -24807,7 +24724,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-478c70c'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-dccfcb7'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -25035,7 +24952,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-478c70c'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-dccfcb7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -25070,7 +24987,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-478c70c'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-dccfcb7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -25121,7 +25038,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-478c70c'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-dccfcb7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -25151,7 +25068,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-478c70c'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-dccfcb7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -25202,7 +25119,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.1.0-next.0+sha-478c70c'));
+    definitionMap.set('version', literal('16.1.0-next.0+sha-dccfcb7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
