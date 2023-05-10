@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.0.0+sha-fe653c2
+ * @license Angular v16.0.0+sha-c9657bd
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1878,20 +1878,6 @@ declare function nullSafeIsEquivalent<T extends {
     isEquivalent(other: T): boolean;
 }>(base: T | null, other: T | null): boolean;
 
-declare class NullVisitor implements Visitor_3<void> {
-    visitElement(element: TmplAstElement): void;
-    visitTemplate(template: TmplAstTemplate): void;
-    visitContent(content: TmplAstContent): void;
-    visitVariable(variable: TmplAstVariable): void;
-    visitReference(reference: TmplAstReference): void;
-    visitTextAttribute(attribute: TmplAstTextAttribute): void;
-    visitBoundAttribute(attribute: TmplAstBoundAttribute): void;
-    visitBoundEvent(attribute: TmplAstBoundEvent): void;
-    visitText(text: TmplAstText): void;
-    visitBoundText(text: TmplAstBoundText): void;
-    visitIcu(icu: TmplAstIcu): void;
-}
-
 declare const NUMBER_TYPE: BuiltinType;
 
 declare interface Output {
@@ -1908,6 +1894,7 @@ declare namespace outputAst {
         importExpr,
         importType,
         expressionType,
+        transplantedType,
         typeofExpr,
         literalArr,
         literalMap,
@@ -1926,6 +1913,7 @@ declare namespace outputAst {
         ExpressionType,
         ArrayType,
         MapType,
+        TransplantedType,
         DYNAMIC_TYPE,
         INFERRED_TYPE,
         BOOL_TYPE,
@@ -3999,6 +3987,7 @@ declare class RecursiveAstVisitor_2 implements StatementVisitor, ExpressionVisit
     visitExpressionType(type: ExpressionType, context: any): any;
     visitArrayType(type: ArrayType, context: any): any;
     visitMapType(type: MapType, context: any): any;
+    visitTransplantedType(type: TransplantedType<unknown>, context: any): any;
     visitWrappedNodeExpr(ast: WrappedNodeExpr<any>, context: any): any;
     visitTypeofExpr(ast: TypeofExpr, context: any): any;
     visitReadVarExpr(ast: ReadVarExpr, context: any): any;
@@ -4253,7 +4242,6 @@ export declare const STRING_TYPE: BuiltinType;
 declare namespace t {
     export {
         visitAll_2 as visitAll,
-        transformAll,
         TmplAstNode as Node,
         Comment_3 as Comment,
         TmplAstText as Text,
@@ -4268,9 +4256,7 @@ declare namespace t {
         TmplAstReference as Reference,
         TmplAstIcu as Icu,
         Visitor_3 as Visitor,
-        NullVisitor,
-        TmplAstRecursiveVisitor as RecursiveVisitor,
-        TransformVisitor
+        TmplAstRecursiveVisitor as RecursiveVisitor
     }
 }
 
@@ -4705,21 +4691,13 @@ declare const enum TokenType_2 {
     EOF = 24
 }
 
-declare function transformAll<Result extends TmplAstNode>(visitor: Visitor_3<TmplAstNode>, nodes: Result[]): Result[];
-
-declare class TransformVisitor implements Visitor_3<TmplAstNode> {
-    visitElement(element: TmplAstElement): TmplAstNode;
-    visitTemplate(template: TmplAstTemplate): TmplAstNode;
-    visitContent(content: TmplAstContent): TmplAstNode;
-    visitVariable(variable: TmplAstVariable): TmplAstNode;
-    visitReference(reference: TmplAstReference): TmplAstNode;
-    visitTextAttribute(attribute: TmplAstTextAttribute): TmplAstNode;
-    visitBoundAttribute(attribute: TmplAstBoundAttribute): TmplAstNode;
-    visitBoundEvent(attribute: TmplAstBoundEvent): TmplAstNode;
-    visitText(text: TmplAstText): TmplAstNode;
-    visitBoundText(text: TmplAstBoundText): TmplAstNode;
-    visitIcu(icu: TmplAstIcu): TmplAstNode;
+export declare class TransplantedType<T> extends Type {
+    readonly type: T;
+    constructor(type: T, modifiers?: TypeModifier);
+    visitType(visitor: TypeVisitor, context: any): any;
 }
+
+declare function transplantedType<T>(type: T, typeModifiers?: TypeModifier): TransplantedType<T>;
 
 export declare class TreeError extends ParseError {
     elementName: string | null;
@@ -4762,6 +4740,7 @@ export declare interface TypeVisitor {
     visitExpressionType(type: ExpressionType, context: any): any;
     visitArrayType(type: ArrayType, context: any): any;
     visitMapType(type: MapType, context: any): any;
+    visitTransplantedType(type: TransplantedType<unknown>, context: any): any;
 }
 
 /**
