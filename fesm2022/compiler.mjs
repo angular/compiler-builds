@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.1.0-next.1+sha-d0a5530
+ * @license Angular v16.1.0-next.1+sha-f6da091
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2632,6 +2632,7 @@ class Identifiers {
     static { this.StandaloneFeature = { name: 'ɵɵStandaloneFeature', moduleName: CORE }; }
     static { this.ProvidersFeature = { name: 'ɵɵProvidersFeature', moduleName: CORE }; }
     static { this.HostDirectivesFeature = { name: 'ɵɵHostDirectivesFeature', moduleName: CORE }; }
+    static { this.InputTransformsFeatureFeature = { name: 'ɵɵInputTransformsFeature', moduleName: CORE }; }
     static { this.listener = { name: 'ɵɵlistener', moduleName: CORE }; }
     static { this.getInheritedFactory = {
         name: 'ɵɵgetInheritedFactory',
@@ -4655,27 +4656,34 @@ function conditionallyCreateDirectiveBindingLiteral(map, keepDeclared) {
         let declaredName;
         let publicName;
         let minifiedName;
-        let needsDeclaredName;
+        let expressionValue;
         if (typeof value === 'string') {
             // canonical syntax: `dirProp: publicProp`
             declaredName = key;
             minifiedName = key;
             publicName = value;
-            needsDeclaredName = false;
+            expressionValue = asLiteral(publicName);
         }
         else {
             minifiedName = key;
             declaredName = value.classPropertyName;
             publicName = value.bindingPropertyName;
-            needsDeclaredName = publicName !== declaredName;
+            if (keepDeclared && (publicName !== declaredName || value.transformFunction != null)) {
+                const expressionKeys = [asLiteral(publicName), asLiteral(declaredName)];
+                if (value.transformFunction != null) {
+                    expressionKeys.push(value.transformFunction);
+                }
+                expressionValue = literalArr(expressionKeys);
+            }
+            else {
+                expressionValue = asLiteral(publicName);
+            }
         }
         return {
             key: minifiedName,
             // put quotes around keys that contain potentially unsafe characters
             quoted: UNSAFE_OBJECT_KEY_NAME_REGEXP.test(minifiedName),
-            value: (keepDeclared && needsDeclaredName) ?
-                literalArr([asLiteral(publicName), asLiteral(declaredName)]) :
-                asLiteral(publicName)
+            value: expressionValue,
         };
     }));
 }
@@ -21466,6 +21474,7 @@ function addFeatures(definitionMap, meta) {
     const features = [];
     const providers = meta.providers;
     const viewProviders = meta.viewProviders;
+    const inputKeys = Object.keys(meta.inputs);
     if (providers || viewProviders) {
         const args = [providers || new LiteralArrayExpr([])];
         if (viewProviders) {
@@ -21488,6 +21497,12 @@ function addFeatures(definitionMap, meta) {
     }
     if (meta.hostDirectives?.length) {
         features.push(importExpr(Identifiers.HostDirectivesFeature).callFn([createHostDirectivesFeatureArg(meta.hostDirectives)]));
+    }
+    for (const key of inputKeys) {
+        if (meta.inputs[key].transformFunction !== null) {
+            features.push(importExpr(Identifiers.InputTransformsFeatureFeature));
+            break;
+        }
     }
     if (features.length) {
         definitionMap.set('features', literalArr(features));
@@ -22373,7 +22388,9 @@ function convertDirectiveFacadeToMetadata(facade) {
                     inputsFromType[field] = {
                         bindingPropertyName: ann.alias || field,
                         classPropertyName: field,
-                        required: ann.required || false
+                        required: ann.required || false,
+                        // TODO(crisbeto): resolve transform function reference here.
+                        transformFunction: null,
                     };
                 }
                 else if (isOutput(ann)) {
@@ -22642,23 +22659,40 @@ function isOutput(value) {
 function inputsMappingToInputMetadata(inputs) {
     return Object.keys(inputs).reduce((result, key) => {
         const value = inputs[key];
-        result[key] = typeof value === 'string' ?
-            { bindingPropertyName: value, classPropertyName: value, required: false } :
-            { bindingPropertyName: value[0], classPropertyName: value[1], required: false };
+        // TODO(crisbeto): resolve transform function reference here.
+        if (typeof value === 'string') {
+            result[key] = {
+                bindingPropertyName: value,
+                classPropertyName: value,
+                required: false,
+                transformFunction: null
+            };
+        }
+        else {
+            result[key] = {
+                bindingPropertyName: value[0],
+                classPropertyName: value[1],
+                required: false,
+                transformFunction: null
+            };
+        }
         return result;
     }, {});
 }
 function parseInputsArray(values) {
     return values.reduce((results, value) => {
+        // TODO(crisbeto): resolve transform function reference here.
         if (typeof value === 'string') {
             const [bindingPropertyName, classPropertyName] = parseMappingString(value);
-            results[classPropertyName] = { bindingPropertyName, classPropertyName, required: false };
+            results[classPropertyName] =
+                { bindingPropertyName, classPropertyName, required: false, transformFunction: null };
         }
         else {
             results[value.name] = {
                 bindingPropertyName: value.alias || value.name,
                 classPropertyName: value.name,
-                required: value.required || false
+                required: value.required || false,
+                transformFunction: null
             };
         }
         return results;
@@ -22710,7 +22744,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.1.0-next.1+sha-d0a5530');
+const VERSION = new Version('16.1.0-next.1+sha-f6da091');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -24638,7 +24672,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.1.0-next.1+sha-d0a5530'));
+    definitionMap.set('version', literal('16.1.0-next.1+sha-f6da091'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -24741,7 +24775,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.1.0-next.1+sha-d0a5530'));
+    definitionMap.set('version', literal('16.1.0-next.1+sha-f6da091'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -24969,7 +25003,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.1.0-next.1+sha-d0a5530'));
+    definitionMap.set('version', literal('16.1.0-next.1+sha-f6da091'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -25004,7 +25038,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.1.0-next.1+sha-d0a5530'));
+    definitionMap.set('version', literal('16.1.0-next.1+sha-f6da091'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -25055,7 +25089,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.1.0-next.1+sha-d0a5530'));
+    definitionMap.set('version', literal('16.1.0-next.1+sha-f6da091'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -25085,7 +25119,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.1.0-next.1+sha-d0a5530'));
+    definitionMap.set('version', literal('16.1.0-next.1+sha-f6da091'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -25136,7 +25170,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.1.0-next.1+sha-d0a5530'));
+    definitionMap.set('version', literal('16.1.0-next.1+sha-f6da091'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);

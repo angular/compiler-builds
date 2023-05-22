@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.1.0-next.1+sha-d0a5530
+ * @license Angular v16.1.0-next.1+sha-f6da091
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1430,6 +1430,7 @@ declare const enum InjectFlags {
 declare interface Input {
     alias?: string;
     required?: boolean;
+    transform?: (value: any) => any;
 }
 
 /**
@@ -2978,7 +2979,11 @@ export declare interface R3DeclareDirectiveMetadata extends R3PartialDeclaration
      * binding property name and class property name if the names are different.
      */
     inputs?: {
-        [classPropertyName: string]: string | [string, string];
+        [classPropertyName: string]: string | [
+        bindingPropertyName: string,
+        classPropertyName: string,
+        transformFunction?: outputAst.Expression
+        ];
     };
     /**
      * A mapping of outputs from class property names to binding property names.
@@ -3644,6 +3649,7 @@ export declare class R3Identifiers {
     static StandaloneFeature: outputAst.ExternalReference;
     static ProvidersFeature: outputAst.ExternalReference;
     static HostDirectivesFeature: outputAst.ExternalReference;
+    static InputTransformsFeatureFeature: outputAst.ExternalReference;
     static listener: outputAst.ExternalReference;
     static getInheritedFactory: outputAst.ExternalReference;
     static sanitizeHtml: outputAst.ExternalReference;
@@ -3683,6 +3689,7 @@ export declare interface R3InputMetadata {
     classPropertyName: string;
     bindingPropertyName: string;
     required: boolean;
+    transformFunction: outputAst.Expression | null;
 }
 
 /**
