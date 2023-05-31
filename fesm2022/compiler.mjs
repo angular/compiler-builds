@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.1.0-next.2+sha-25b6b97
+ * @license Angular v16.1.0-next.2+sha-069498c
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -21482,6 +21482,12 @@ function addFeatures(definitionMap, meta) {
         }
         features.push(importExpr(Identifiers.ProvidersFeature).callFn(args));
     }
+    for (const key of inputKeys) {
+        if (meta.inputs[key].transformFunction !== null) {
+            features.push(importExpr(Identifiers.InputTransformsFeatureFeature));
+            break;
+        }
+    }
     if (meta.usesInheritance) {
         features.push(importExpr(Identifiers.InheritDefinitionFeature));
     }
@@ -21497,12 +21503,6 @@ function addFeatures(definitionMap, meta) {
     }
     if (meta.hostDirectives?.length) {
         features.push(importExpr(Identifiers.HostDirectivesFeature).callFn([createHostDirectivesFeatureArg(meta.hostDirectives)]));
-    }
-    for (const key of inputKeys) {
-        if (meta.inputs[key].transformFunction !== null) {
-            features.push(importExpr(Identifiers.InputTransformsFeatureFeature));
-            break;
-        }
     }
     if (features.length) {
         definitionMap.set('features', literalArr(features));
@@ -22389,8 +22389,7 @@ function convertDirectiveFacadeToMetadata(facade) {
                         bindingPropertyName: ann.alias || field,
                         classPropertyName: field,
                         required: ann.required || false,
-                        // TODO(crisbeto): resolve transform function reference here.
-                        transformFunction: null,
+                        transformFunction: ann.transform != null ? new WrappedNodeExpr(ann.transform) : null,
                     };
                 }
                 else if (isOutput(ann)) {
@@ -22659,21 +22658,20 @@ function isOutput(value) {
 function inputsMappingToInputMetadata(inputs) {
     return Object.keys(inputs).reduce((result, key) => {
         const value = inputs[key];
-        // TODO(crisbeto): resolve transform function reference here.
         if (typeof value === 'string') {
             result[key] = {
                 bindingPropertyName: value,
                 classPropertyName: value,
+                transformFunction: null,
                 required: false,
-                transformFunction: null
             };
         }
         else {
             result[key] = {
                 bindingPropertyName: value[0],
                 classPropertyName: value[1],
+                transformFunction: value[2] || null,
                 required: false,
-                transformFunction: null
             };
         }
         return result;
@@ -22681,18 +22679,21 @@ function inputsMappingToInputMetadata(inputs) {
 }
 function parseInputsArray(values) {
     return values.reduce((results, value) => {
-        // TODO(crisbeto): resolve transform function reference here.
         if (typeof value === 'string') {
             const [bindingPropertyName, classPropertyName] = parseMappingString(value);
-            results[classPropertyName] =
-                { bindingPropertyName, classPropertyName, required: false, transformFunction: null };
+            results[classPropertyName] = {
+                bindingPropertyName,
+                classPropertyName,
+                required: false,
+                transformFunction: null,
+            };
         }
         else {
             results[value.name] = {
                 bindingPropertyName: value.alias || value.name,
                 classPropertyName: value.name,
                 required: value.required || false,
-                transformFunction: null
+                transformFunction: value.transform != null ? new WrappedNodeExpr(value.transform) : null,
             };
         }
         return results;
@@ -22744,7 +22745,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.1.0-next.2+sha-25b6b97');
+const VERSION = new Version('16.1.0-next.2+sha-069498c');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -24672,7 +24673,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.1.0-next.2+sha-25b6b97'));
+    definitionMap.set('version', literal('16.1.0-next.2+sha-069498c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -24775,7 +24776,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.1.0-next.2+sha-25b6b97'));
+    definitionMap.set('version', literal('16.1.0-next.2+sha-069498c'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -25003,7 +25004,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.1.0-next.2+sha-25b6b97'));
+    definitionMap.set('version', literal('16.1.0-next.2+sha-069498c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -25038,7 +25039,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.1.0-next.2+sha-25b6b97'));
+    definitionMap.set('version', literal('16.1.0-next.2+sha-069498c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -25089,7 +25090,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.1.0-next.2+sha-25b6b97'));
+    definitionMap.set('version', literal('16.1.0-next.2+sha-069498c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -25119,7 +25120,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.1.0-next.2+sha-25b6b97'));
+    definitionMap.set('version', literal('16.1.0-next.2+sha-069498c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -25170,7 +25171,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.1.0-next.2+sha-25b6b97'));
+    definitionMap.set('version', literal('16.1.0-next.2+sha-069498c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
