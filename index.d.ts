@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.1.0-next.3+sha-9847085
+ * @license Angular v16.1.0-next.3+sha-540e643
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -698,11 +698,9 @@ export declare class ConstantPool {
     statements: outputAst.Statement[];
     private literals;
     private literalFactories;
-    private sharedConstants;
     private nextNameIndex;
     constructor(isClosureCompilerEnabled?: boolean);
     getConstLiteral(literal: outputAst.Expression, forceShared?: boolean): outputAst.Expression;
-    getSharedConstant(def: SharedConstantDefinition, expr: outputAst.Expression): outputAst.Expression;
     getLiteralFactory(literal: outputAst.LiteralArrayExpr | outputAst.LiteralMapExpr): {
         literalFactory: outputAst.Expression;
         literalFactoryArguments: outputAst.Expression[];
@@ -717,6 +715,7 @@ export declare class ConstantPool {
      */
     uniqueName(prefix: string): string;
     private freshName;
+    private keyOf;
 }
 
 declare class Container implements Node_3 {
@@ -1135,10 +1134,6 @@ export declare class ExpressionBinding {
      * @param value optional expression for the RHS.
      */
     constructor(sourceSpan: AbsoluteSourceSpan, key: TemplateBindingIdentifier, value: ASTWithSource | null);
-}
-
-declare interface ExpressionKeyFn {
-    keyOf(expr: outputAst.Expression): string;
 }
 
 export declare class ExpressionStatement extends Statement {
@@ -4191,10 +4186,6 @@ export declare abstract class Serializer {
     };
     abstract digest(message: i18n.Message): string;
     createNameMapper(message: i18n.Message): PlaceholderMapper | null;
-}
-
-declare interface SharedConstantDefinition extends ExpressionKeyFn {
-    toSharedConstantDeclaration(declName: string, keyExpr: outputAst.Expression): outputAst.Statement;
 }
 
 
