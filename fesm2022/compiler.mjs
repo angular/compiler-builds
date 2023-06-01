@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.0.3+sha-9e68a62
+ * @license Angular v16.0.4+sha-703b8fc
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7500,11 +7500,28 @@ class ShadowCss {
      * The hostSelector is the attribute added to the host itself.
      */
     shimCssText(cssText, selector, hostSelector = '') {
-        const commentsWithHash = extractCommentsWithHash(cssText);
-        cssText = stripComments(cssText);
+        // **NOTE**: Do not strip comments as this will cause component sourcemaps to break
+        // due to shift in lines.
+        // Collect comments and replace them with a placeholder, this is done to avoid complicating
+        // the rule parsing RegExp and keep it safer.
+        const comments = [];
+        cssText = cssText.replace(_commentRe, (m) => {
+            if (m.match(_commentWithHashRe)) {
+                comments.push(m);
+            }
+            else {
+                // Replace non hash comments with empty lines.
+                // This is done so that we do not leak any senstive data in comments.
+                const newLinesMatches = m.match(_newLinesRe);
+                comments.push((newLinesMatches?.join('') ?? '') + '\n');
+            }
+            return COMMENT_PLACEHOLDER;
+        });
         cssText = this._insertDirectives(cssText);
         const scopedCssText = this._scopeCssText(cssText, selector, hostSelector);
-        return [scopedCssText, ...commentsWithHash].join('\n');
+        // Add back comments at the original position.
+        let commentIdx = 0;
+        return scopedCssText.replace(_commentWithHashPlaceHolderRe, () => comments[commentIdx++]);
     }
     _insertDirectives(cssText) {
         cssText = this._insertPolyfillDirectivesInCssText(cssText);
@@ -7745,7 +7762,7 @@ class ShadowCss {
         return cssText.replace(_cssColonHostRe, (_, hostSelectors, otherSelectors) => {
             if (hostSelectors) {
                 const convertedSelectors = [];
-                const hostSelectorArray = hostSelectors.split(',').map(p => p.trim());
+                const hostSelectorArray = hostSelectors.split(',').map((p) => p.trim());
                 for (const hostSelector of hostSelectorArray) {
                     if (!hostSelector)
                         break;
@@ -7775,7 +7792,7 @@ class ShadowCss {
      * .foo<scopeName> .bar { ... }
      */
     _convertColonHostContext(cssText) {
-        return cssText.replace(_cssColonHostContextReGlobal, selectorText => {
+        return cssText.replace(_cssColonHostContextReGlobal, (selectorText) => {
             // We have captured a selector that contains a `:host-context` rule.
             // For backward compatibility `:host-context` may contain a comma separated list of selectors.
             // Each context selector group will contain a list of host-context selectors that must match
@@ -7787,10 +7804,10 @@ class ShadowCss {
             // Execute `_cssColonHostContextRe` over and over until we have extracted all the
             // `:host-context` selectors from this selector.
             let match;
-            while (match = _cssColonHostContextRe.exec(selectorText)) {
+            while ((match = _cssColonHostContextRe.exec(selectorText))) {
                 // `match` = [':host-context(<selectors>)<rest>', <selectors>, <rest>]
                 // The `<selectors>` could actually be a comma separated list: `:host-context(.one, .two)`.
-                const newContextSelectors = (match[1] ?? '').trim().split(',').map(m => m.trim()).filter(m => m !== '');
+                const newContextSelectors = (match[1] ?? '').trim().split(',').map((m) => m.trim()).filter((m) => m !== '');
                 // We must duplicate the current selector group for each of these new selectors.
                 // For example if the current groups are:
                 // ```
@@ -7813,7 +7830,7 @@ class ShadowCss {
                 repeatGroups(contextSelectorGroups, newContextSelectors.length);
                 for (let i = 0; i < newContextSelectors.length; i++) {
                     for (let j = 0; j < contextSelectorGroupsLength; j++) {
-                        contextSelectorGroups[j + (i * contextSelectorGroupsLength)].push(newContextSelectors[i]);
+                        contextSelectorGroups[j + i * contextSelectorGroupsLength].push(newContextSelectors[i]);
                     }
                 }
                 // Update the `selectorText` and see repeat to see if there are more `:host-context`s.
@@ -7823,7 +7840,7 @@ class ShadowCss {
             // selectors that `:host-context` can match. See `combineHostContextSelectors()` for more
             // info about how this is done.
             return contextSelectorGroups
-                .map(contextSelectors => combineHostContextSelectors(contextSelectors, selectorText))
+                .map((contextSelectors) => combineHostContextSelectors(contextSelectors, selectorText))
                 .join(', ');
         });
     }
@@ -7875,7 +7892,7 @@ class ShadowCss {
      * ```
      */
     _stripScopingSelectors(cssText) {
-        return processRules(cssText, rule => {
+        return processRules(cssText, (rule) => {
             const selector = rule.selector.replace(_shadowDeepSelectors, ' ')
                 .replace(_polyfillHostNoCombinatorRe, ' ');
             return new CssRule(selector, rule.content);
@@ -7883,7 +7900,7 @@ class ShadowCss {
     }
     _scopeSelector(selector, scopeSelector, hostSelector) {
         return selector.split(',')
-            .map(part => part.trim().split(_shadowDeepSelectors))
+            .map((part) => part.trim().split(_shadowDeepSelectors))
             .map((deepParts) => {
             const [shallowPart, ...otherParts] = deepParts;
             const applyScope = (shallowPart) => {
@@ -8066,17 +8083,14 @@ const _selectorReSuffix = '([>\\s~+[.,{:][\\s\\S]*)?$';
 const _polyfillHostRe = /-shadowcsshost/gim;
 const _colonHostRe = /:host/gim;
 const _colonHostContextRe = /:host-context/gim;
+const _newLinesRe = /\r?\n/g;
 const _commentRe = /\/\*[\s\S]*?\*\//g;
+const _commentWithHashRe = /\/\*\s*#\s*source(Mapping)?URL=/g;
+const COMMENT_PLACEHOLDER = '%COMMENT%';
+const _commentWithHashPlaceHolderRe = new RegExp(COMMENT_PLACEHOLDER, 'g');
 const _placeholderRe = /__ph-(\d+)__/g;
-function stripComments(input) {
-    return input.replace(_commentRe, '');
-}
-const _commentWithHashRe = /\/\*\s*#\s*source(Mapping)?URL=[\s\S]+?\*\//g;
-function extractCommentsWithHash(input) {
-    return input.match(_commentWithHashRe) || [];
-}
 const BLOCK_PLACEHOLDER = '%BLOCK%';
-const _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
+const _ruleRe = new RegExp(`(\\s*(?:${COMMENT_PLACEHOLDER}\\s*)*)([^;\\{\\}]+?)(\\s*)((?:{%BLOCK%}?\\s*;?)|(?:\\s*;))`, 'g');
 const CONTENT_PAIRS = new Map([['{', '}']]);
 const COMMA_IN_PLACEHOLDER = '%COMMA_IN_PLACEHOLDER%';
 const SEMI_IN_PLACEHOLDER = '%SEMI_IN_PLACEHOLDER%';
@@ -8285,7 +8299,6 @@ function unescapeQuotes(str, isQuoted) {
  *
  * And so on...
  *
- * @param hostMarker the string that selects the host element.
  * @param contextSelectors an array of context selectors that will be combined.
  * @param otherSelectors the rest of the selectors that are not context selectors.
  */
@@ -22559,7 +22572,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.0.3+sha-9e68a62');
+const VERSION = new Version('16.0.4+sha-703b8fc');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -24487,7 +24500,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.0.3+sha-9e68a62'));
+    definitionMap.set('version', literal('16.0.4+sha-703b8fc'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -24590,7 +24603,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.0.3+sha-9e68a62'));
+    definitionMap.set('version', literal('16.0.4+sha-703b8fc'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -24815,7 +24828,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.0.3+sha-9e68a62'));
+    definitionMap.set('version', literal('16.0.4+sha-703b8fc'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -24850,7 +24863,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.0.3+sha-9e68a62'));
+    definitionMap.set('version', literal('16.0.4+sha-703b8fc'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -24901,7 +24914,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.0.3+sha-9e68a62'));
+    definitionMap.set('version', literal('16.0.4+sha-703b8fc'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -24931,7 +24944,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.0.3+sha-9e68a62'));
+    definitionMap.set('version', literal('16.0.4+sha-703b8fc'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -24982,7 +24995,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.0.3+sha-9e68a62'));
+    definitionMap.set('version', literal('16.0.4+sha-703b8fc'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
