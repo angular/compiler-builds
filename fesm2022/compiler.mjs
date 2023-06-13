@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.0+sha-1f0d529
+ * @license Angular v16.2.0-next.0+sha-15ab146
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8453,7 +8453,10 @@ class ElementAttributes {
         this.known.add(name);
         const array = this.arrayFor(kind);
         array.push(...getAttributeNameLiterals$1(name));
-        if (value !== null) {
+        if (kind === ElementAttributeKind.Attribute || kind === ElementAttributeKind.Style) {
+            if (value === null) {
+                throw Error('Attribute & style element attributes must have a value');
+            }
             array.push(value);
         }
     }
@@ -8556,6 +8559,10 @@ var OpKind;
      * An operation to instantiate a pipe.
      */
     OpKind[OpKind["Pipe"] = 16] = "Pipe";
+    /**
+     * An operation to associate an attribute with an element.
+     */
+    OpKind[OpKind["Attribute"] = 17] = "Attribute";
 })(OpKind || (OpKind = {}));
 /**
  * Distinguishes different kinds of IR expressions.
@@ -9052,6 +9059,11 @@ function transformExpressionsInOp(op, transform, flags) {
         case OpKind.Statement:
             transformExpressionsInStatement(op.statement, transform, flags);
             break;
+        case OpKind.Attribute:
+            if (op.value) {
+                transformExpressionsInExpression(op.value, transform, flags);
+            }
+            break;
         case OpKind.Variable:
             op.initializer = transformExpressionsInExpression(op.initializer, transform, flags);
             break;
@@ -9422,6 +9434,18 @@ const NEW_OP = {
 };
 
 /**
+ * The set of OpKinds that represent the creation of an element or container
+ */
+const elementContainerOpKinds = new Set([
+    OpKind.Element, OpKind.ElementStart, OpKind.Container, OpKind.ContainerStart, OpKind.Template
+]);
+/**
+ * Checks whether the given operation represents the creation of an element or container.
+ */
+function isElementOrContainerOp(op) {
+    return elementContainerOpKinds.has(op.kind);
+}
+/**
  * Create an `ElementStartOp`.
  */
 function createElementStartOp(tag, xref) {
@@ -9515,10 +9539,11 @@ function createInterpolateTextOp(xref, strings, expressions) {
 /**
  * Create a `PropertyOp`.
  */
-function createPropertyOp(xref, name, expression) {
+function createPropertyOp(xref, bindingKind, name, expression) {
     return {
         kind: OpKind.Property,
         target: xref,
+        bindingKind,
         name,
         expression,
         ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
@@ -9527,12 +9552,26 @@ function createPropertyOp(xref, name, expression) {
     };
 }
 /**
+ * Create an `AttributeOp`.
+ */
+function createAttributeOp(target, attributeKind, name, value) {
+    return {
+        kind: OpKind.Attribute,
+        target,
+        attributeKind,
+        name,
+        value,
+        ...NEW_OP,
+    };
+}
+/**
  * Create a `InterpolateProperty`.
  */
-function createInterpolatePropertyOp(xref, name, strings, expressions) {
+function createInterpolatePropertyOp(xref, bindingKind, name, strings, expressions) {
     return {
         kind: OpKind.InterpolateProperty,
         target: xref,
+        bindingKind,
         name,
         strings,
         expressions,
@@ -9550,6 +9589,246 @@ function createAdvanceOp(delta) {
         delta,
         ...NEW_OP,
     };
+}
+
+/**
+ * Counts the number of variable slots used within each view, and stores that on the view itself, as
+ * well as propagates it to the `ir.TemplateOp` for embedded views.
+ */
+function phaseVarCounting(cpl) {
+    // First, count the vars used in each view, and update the view-level counter.
+    for (const [_, view] of cpl.views) {
+        let varCount = 0;
+        for (const op of view.ops()) {
+            if (hasConsumesVarsTrait(op)) {
+                varCount += varsUsedByOp(op);
+            }
+            visitExpressionsInOp(op, expr => {
+                if (!isIrExpression(expr)) {
+                    return;
+                }
+                // Some expressions require knowledge of the number of variable slots consumed.
+                if (hasUsesVarOffsetTrait(expr)) {
+                    expr.varOffset = varCount;
+                }
+                if (hasConsumesVarsTrait(expr)) {
+                    varCount += varsUsedByIrExpression(expr);
+                }
+            });
+        }
+        view.vars = varCount;
+    }
+    // Add var counts for each view to the `ir.TemplateOp` which declares that view (if the view is an
+    // embedded view).
+    for (const [_, view] of cpl.views) {
+        for (const op of view.create) {
+            if (op.kind !== OpKind.Template) {
+                continue;
+            }
+            const childView = cpl.views.get(op.xref);
+            op.vars = childView.vars;
+        }
+    }
+}
+/**
+ * Different operations that implement `ir.UsesVarsTrait` use different numbers of variables, so
+ * count the variables used by any particular `op`.
+ */
+function varsUsedByOp(op) {
+    switch (op.kind) {
+        case OpKind.Property:
+            // Property bindings use 1 variable slot.
+            return 1;
+        case OpKind.InterpolateText:
+            // `ir.InterpolateTextOp`s use a variable slot for each dynamic expression.
+            return op.expressions.length;
+        case OpKind.InterpolateProperty:
+            // `ir.InterpolatePropertyOp`s use a variable slot for each dynamic expression, plus one for
+            // the result.
+            return 1 + op.expressions.length;
+        default:
+            throw new Error(`Unhandled op: ${OpKind[op.kind]}`);
+    }
+}
+function varsUsedByIrExpression(expr) {
+    switch (expr.kind) {
+        case ExpressionKind.PureFunctionExpr:
+            return 1 + expr.args.length;
+        case ExpressionKind.PipeBinding:
+            return 1 + expr.args.length;
+        case ExpressionKind.PipeBindingVariadic:
+            return 1 + expr.numArgs;
+        default:
+            throw new Error(`AssertionError: unhandled ConsumesVarsTrait expression ${expr.constructor.name}`);
+    }
+}
+
+function phaseAlignPipeVariadicVarOffset(cpl) {
+    for (const view of cpl.views.values()) {
+        for (const op of view.update) {
+            visitExpressionsInOp(op, expr => {
+                if (!(expr instanceof PipeBindingVariadicExpr)) {
+                    return expr;
+                }
+                if (!(expr.args instanceof PureFunctionExpr)) {
+                    return expr;
+                }
+                if (expr.varOffset === null || expr.args.varOffset === null) {
+                    throw new Error(`Must run after variable counting`);
+                }
+                // The structure of this variadic pipe expression is:
+                // PipeBindingVariadic(#, Y, PureFunction(X, ...ARGS))
+                // Where X and Y are the slot offsets for the variables used by these operations, and Y > X.
+                // In `TemplateDefinitionBuilder` the PipeBindingVariadic variable slots are allocated
+                // before the PureFunction slots, which is unusually out-of-order.
+                //
+                // To maintain identical output for the tests in question, we adjust the variable offsets of
+                // these two calls to emulate TDB's behavior. This is not perfect, because the ARGS of the
+                // PureFunction call may also allocate slots which by TDB's ordering would come after X, and
+                // we don't account for that. Still, this should be enough to pass the existing pipe tests.
+                // Put the PipeBindingVariadic vars where the PureFunction vars were previously allocated.
+                expr.varOffset = expr.args.varOffset;
+                // Put the PureFunction vars following the PipeBindingVariadic vars.
+                expr.args.varOffset = expr.varOffset + varsUsedByIrExpression(expr);
+            });
+        }
+    }
+}
+
+/**
+ * Looks up an element in the given map by xref ID.
+ */
+function lookupElement(elements, xref) {
+    const el = elements.get(xref);
+    if (el === undefined) {
+        throw new Error('All attributes should have an element-like target.');
+    }
+    return el;
+}
+/**
+ * Find all attribute and binding ops, and collect them into the ElementAttribute structures.
+ * In cases where no instruction needs to be generated for the attribute or binding, it is removed.
+ */
+function phaseAttributeExtraction(cpl, compatibility) {
+    for (const [_, view] of cpl.views) {
+        populateElementAttributes(view, compatibility);
+    }
+}
+/**
+ * Populates the ElementAttributes map for the given view, and removes ops for any bindings that do
+ * not need further processing.
+ */
+function populateElementAttributes(view, compatibility) {
+    const elements = new Map();
+    for (const op of view.create) {
+        if (!isElementOrContainerOp(op)) {
+            continue;
+        }
+        elements.set(op.xref, op);
+    }
+    for (const op of view.ops()) {
+        let ownerOp;
+        switch (op.kind) {
+            case OpKind.Attribute:
+                ownerOp = lookupElement(elements, op.target);
+                assertIsElementAttributes(ownerOp.attributes);
+                let extractable = compatibility ?
+                    (op.value instanceof LiteralExpr && typeof op.value.value === 'string') :
+                    (op.value.isConstant());
+                // We don't need to generate instructions for attributes that can be extracted as consts.
+                if (extractable) {
+                    ownerOp.attributes.add(op.attributeKind, op.name, op.value);
+                    OpList.remove(op);
+                }
+                break;
+            case OpKind.Property:
+            case OpKind.InterpolateProperty:
+                ownerOp = lookupElement(elements, op.target);
+                assertIsElementAttributes(ownerOp.attributes);
+                ownerOp.attributes.add(op.bindingKind, op.name, null);
+                break;
+            case OpKind.Listener:
+                ownerOp = lookupElement(elements, op.target);
+                assertIsElementAttributes(ownerOp.attributes);
+                ownerOp.attributes.add(ElementAttributeKind.Binding, op.name, null);
+                // We don't need to generate instructions for listeners on templates.
+                if (ownerOp.kind === OpKind.Template) {
+                    OpList.remove(op);
+                }
+                break;
+        }
+    }
+}
+
+const CHAINABLE = new Set([
+    Identifiers.elementStart,
+    Identifiers.elementEnd,
+    Identifiers.property,
+    Identifiers.elementContainerStart,
+    Identifiers.elementContainerEnd,
+    Identifiers.elementContainer,
+]);
+/**
+ * Post-process a reified view compilation and convert sequential calls to chainable instructions
+ * into chain calls.
+ *
+ * For example, two `elementStart` operations in sequence:
+ *
+ * ```typescript
+ * elementStart(0, 'div');
+ * elementStart(1, 'span');
+ * ```
+ *
+ * Can be called as a chain instead:
+ *
+ * ```typescript
+ * elementStart(0, 'div')(1, 'span');
+ * ```
+ */
+function phaseChaining(cpl) {
+    for (const [_, view] of cpl.views) {
+        chainOperationsInList(view.create);
+        chainOperationsInList(view.update);
+    }
+}
+function chainOperationsInList(opList) {
+    let chain = null;
+    for (const op of opList) {
+        if (op.kind !== OpKind.Statement || !(op.statement instanceof ExpressionStatement)) {
+            // This type of statement isn't chainable.
+            chain = null;
+            continue;
+        }
+        if (!(op.statement.expr instanceof InvokeFunctionExpr) ||
+            !(op.statement.expr.fn instanceof ExternalExpr)) {
+            // This is a statement, but not an instruction-type call, so not chainable.
+            chain = null;
+            continue;
+        }
+        const instruction = op.statement.expr.fn.value;
+        if (!CHAINABLE.has(instruction)) {
+            // This instruction isn't chainable.
+            chain = null;
+            continue;
+        }
+        // This instruction can be chained. It can either be added on to the previous chain (if
+        // compatible) or it can be the start of a new chain.
+        if (chain !== null && chain.instruction === instruction) {
+            // This instruction can be added onto the previous chain.
+            const expression = chain.expression.callFn(op.statement.expr.args, op.statement.expr.sourceSpan, op.statement.expr.pure);
+            chain.expression = expression;
+            chain.op.statement = expression.toStmt();
+            OpList.remove(op);
+        }
+        else {
+            // Leave this instruction alone for now, but consider it the start of a new chain.
+            chain = {
+                op,
+                instruction,
+                expression: op.statement.expr,
+            };
+        }
+    }
 }
 
 /**
@@ -9672,6 +9951,480 @@ function phaseGenerateAdvance(cpl) {
             }
         }
     }
+}
+
+/**
+ * Generate a preamble sequence for each view creation block and listener function which declares
+ * any variables that be referenced in other operations in the block.
+ *
+ * Variables generated include:
+ *   * a saved view context to be used to restore the current view in event listeners.
+ *   * the context of the restored view within event listener handlers.
+ *   * context variables from the current view as well as all parent views (including the root
+ *     context if needed).
+ *   * local references from elements within the current view and any lexical parents.
+ *
+ * Variables are generated here unconditionally, and may optimized away in future operations if it
+ * turns out their values (and any side effects) are unused.
+ */
+function phaseGenerateVariables(cpl) {
+    recursivelyProcessView(cpl.root, /* there is no parent scope for the root view */ null);
+}
+/**
+ * Process the given `ViewCompilation` and generate preambles for it and any listeners that it
+ * declares.
+ *
+ * @param `parentScope` a scope extracted from the parent view which captures any variables which
+ *     should be inherited by this view. `null` if the current view is the root view.
+ */
+function recursivelyProcessView(view, parentScope) {
+    // Extract a `Scope` from this view.
+    const scope = getScopeForView(view, parentScope);
+    // Embedded views require an operation to save/restore the view context.
+    if (view.parent !== null) {
+        // Start the view creation block with an operation to save the current view context. This may be
+        // used to restore the view context in any listeners that may be present.
+    }
+    for (const op of view.create) {
+        switch (op.kind) {
+            case OpKind.Template:
+                // Descend into child embedded views.
+                recursivelyProcessView(view.tpl.views.get(op.xref), scope);
+                break;
+            case OpKind.Listener:
+                // Prepend variables to listener handler functions.
+                op.handlerOps.prepend(generateVariablesInScopeForView(view, scope));
+                break;
+        }
+    }
+    // Prepend the declarations for all available variables in scope to the `update` block.
+    const preambleOps = generateVariablesInScopeForView(view, scope);
+    view.update.prepend(preambleOps);
+}
+/**
+ * Process a view and generate a `Scope` representing the variables available for reference within
+ * that view.
+ */
+function getScopeForView(view, parent) {
+    const scope = {
+        view: view.xref,
+        viewContextVariable: {
+            kind: SemanticVariableKind.Context,
+            name: null,
+            view: view.xref,
+        },
+        contextVariables: new Map(),
+        references: [],
+        parent,
+    };
+    for (const identifier of view.contextVariables.keys()) {
+        scope.contextVariables.set(identifier, {
+            kind: SemanticVariableKind.Identifier,
+            name: null,
+            identifier,
+        });
+    }
+    for (const op of view.create) {
+        switch (op.kind) {
+            case OpKind.Element:
+            case OpKind.ElementStart:
+            case OpKind.Template:
+                if (!Array.isArray(op.localRefs)) {
+                    throw new Error(`AssertionError: expected localRefs to be an array`);
+                }
+                // Record available local references from this element.
+                for (let offset = 0; offset < op.localRefs.length; offset++) {
+                    scope.references.push({
+                        name: op.localRefs[offset].name,
+                        targetId: op.xref,
+                        offset,
+                        variable: {
+                            kind: SemanticVariableKind.Identifier,
+                            name: null,
+                            identifier: op.localRefs[offset].name,
+                        },
+                    });
+                }
+                break;
+        }
+    }
+    return scope;
+}
+/**
+ * Generate declarations for all variables that are in scope for a given view.
+ *
+ * This is a recursive process, as views inherit variables available from their parent view, which
+ * itself may have inherited variables, etc.
+ */
+function generateVariablesInScopeForView(view, scope) {
+    const newOps = [];
+    if (scope.view !== view.xref) {
+        // Before generating variables for a parent view, we need to switch to the context of the parent
+        // view with a `nextContext` expression. This context switching operation itself declares a
+        // variable, because the context of the view may be referenced directly.
+        newOps.push(createVariableOp(view.tpl.allocateXrefId(), scope.viewContextVariable, new NextContextExpr()));
+    }
+    // Add variables for all context variables available in this scope's view.
+    for (const [name, value] of view.tpl.views.get(scope.view).contextVariables) {
+        newOps.push(createVariableOp(view.tpl.allocateXrefId(), scope.contextVariables.get(name), new ReadPropExpr(new ContextExpr(scope.view), value)));
+    }
+    // Add variables for all local references declared for elements in this scope.
+    for (const ref of scope.references) {
+        newOps.push(createVariableOp(view.tpl.allocateXrefId(), ref.variable, new ReferenceExpr(ref.targetId, ref.offset)));
+    }
+    if (scope.parent !== null) {
+        // Recursively add variables from the parent scope.
+        newOps.push(...generateVariablesInScopeForView(view, scope.parent));
+    }
+    return newOps;
+}
+
+/**
+ * Lifts local reference declarations on element-like structures within each view into an entry in
+ * the `consts` array for the whole component.
+ */
+function phaseLocalRefs(cpl) {
+    for (const view of cpl.views.values()) {
+        for (const op of view.create) {
+            switch (op.kind) {
+                case OpKind.ElementStart:
+                case OpKind.Element:
+                case OpKind.Template:
+                    if (!Array.isArray(op.localRefs)) {
+                        throw new Error(`AssertionError: expected localRefs to be an array still`);
+                    }
+                    op.numSlotsUsed += op.localRefs.length;
+                    if (op.localRefs.length > 0) {
+                        const localRefs = serializeLocalRefs(op.localRefs);
+                        op.localRefs = cpl.addConst(localRefs);
+                    }
+                    else {
+                        op.localRefs = null;
+                    }
+                    break;
+            }
+        }
+    }
+}
+function serializeLocalRefs(refs) {
+    const constRefs = [];
+    for (const ref of refs) {
+        constRefs.push(literal(ref.name), literal(ref.target));
+    }
+    return literalArr(constRefs);
+}
+
+/**
+ * Generate names for functions and variables across all views.
+ *
+ * This includes propagating those names into any `ir.ReadVariableExpr`s of those variables, so that
+ * the reads can be emitted correctly.
+ */
+function phaseNaming(cpl) {
+    addNamesToView(cpl.root, cpl.componentName, { index: 0 });
+}
+function addNamesToView(view, baseName, state) {
+    if (view.fnName === null) {
+        view.fnName = `${baseName}_Template`;
+    }
+    // Keep track of the names we assign to variables in the view. We'll need to propagate these
+    // into reads of those variables afterwards.
+    const varNames = new Map();
+    for (const op of view.ops()) {
+        switch (op.kind) {
+            case OpKind.Listener:
+                if (op.handlerFnName === null) {
+                    // TODO(alxhub): convert this temporary name to match how the
+                    // `TemplateDefinitionBuilder` names listener functions.
+                    if (op.slot === null) {
+                        throw new Error(`Expected a slot to be assigned`);
+                    }
+                    op.handlerFnName = `${view.fnName}_${op.tag}_${op.name}_${op.slot}_listener`;
+                }
+                break;
+            case OpKind.Variable:
+                varNames.set(op.xref, getVariableName(op.variable, state));
+                break;
+            case OpKind.Template:
+                const childView = view.tpl.views.get(op.xref);
+                if (op.slot === null) {
+                    throw new Error(`Expected slot to be assigned`);
+                }
+                // TODO: properly escape the tag name.
+                const safeTagName = op.tag.replace('-', '_');
+                addNamesToView(childView, `${baseName}_${safeTagName}_${op.slot}`, state);
+                break;
+        }
+    }
+    // Having named all variables declared in the view, now we can push those names into the
+    // `ir.ReadVariableExpr` expressions which represent reads of those variables.
+    for (const op of view.ops()) {
+        visitExpressionsInOp(op, expr => {
+            if (!(expr instanceof ReadVariableExpr) || expr.name !== null) {
+                return;
+            }
+            if (!varNames.has(expr.xref)) {
+                throw new Error(`Variable ${expr.xref} not yet named`);
+            }
+            expr.name = varNames.get(expr.xref);
+        });
+    }
+}
+function getVariableName(variable, state) {
+    if (variable.name === null) {
+        switch (variable.kind) {
+            case SemanticVariableKind.Identifier:
+                variable.name = `${variable.identifier}_${state.index++}`;
+                break;
+            default:
+                variable.name = `_r${state.index++}`;
+                break;
+        }
+    }
+    return variable.name;
+}
+
+/**
+ * Merges logically sequential `NextContextExpr` operations.
+ *
+ * `NextContextExpr` can be referenced repeatedly, "popping" the runtime's context stack each time.
+ * When two such expressions appear back-to-back, it's possible to merge them together into a single
+ * `NextContextExpr` that steps multiple contexts. This merging is possible if all conditions are
+ * met:
+ *
+ *   * The result of the `NextContextExpr` that's folded into the subsequent one is not stored (that
+ *     is, the call is purely side-effectful).
+ *   * No operations in between them uses the implicit context.
+ */
+function phaseMergeNextContext(cpl) {
+    for (const view of cpl.views.values()) {
+        for (const op of view.create) {
+            if (op.kind === OpKind.Listener) {
+                mergeNextContextsInOps(op.handlerOps);
+            }
+        }
+        mergeNextContextsInOps(view.update);
+    }
+}
+function mergeNextContextsInOps(ops) {
+    for (const op of ops) {
+        // Look for a candidate operation to maybe merge.
+        if (op.kind !== OpKind.Statement || !(op.statement instanceof ExpressionStatement) ||
+            !(op.statement.expr instanceof NextContextExpr)) {
+            continue;
+        }
+        const mergeSteps = op.statement.expr.steps;
+        // Try to merge this `ir.NextContextExpr`.
+        let tryToMerge = true;
+        for (let candidate = op.next; candidate.kind !== OpKind.ListEnd && tryToMerge; candidate = candidate.next) {
+            visitExpressionsInOp(candidate, (expr, flags) => {
+                if (!isIrExpression(expr)) {
+                    return expr;
+                }
+                if (!tryToMerge) {
+                    // Either we've already merged, or failed to merge.
+                    return;
+                }
+                if (flags & VisitorContextFlag.InChildOperation) {
+                    // We cannot merge into child operations.
+                    return;
+                }
+                switch (expr.kind) {
+                    case ExpressionKind.NextContext:
+                        // Merge the previous `ir.NextContextExpr` into this one.
+                        expr.steps += mergeSteps;
+                        OpList.remove(op);
+                        tryToMerge = false;
+                        break;
+                    case ExpressionKind.GetCurrentView:
+                    case ExpressionKind.Reference:
+                        // Can't merge past a dependency on the context.
+                        tryToMerge = false;
+                        break;
+                }
+            });
+        }
+    }
+}
+
+const CONTAINER_TAG = 'ng-container';
+/**
+ * Replace an `Element` or `ElementStart` whose tag is `ng-container` with a specific op.
+ */
+function phaseNgContainer(cpl) {
+    for (const [_, view] of cpl.views) {
+        const updatedElementXrefs = new Set();
+        for (const op of view.create) {
+            if (op.kind === OpKind.ElementStart && op.tag === CONTAINER_TAG) {
+                // Transmute the `ElementStart` instruction to `ContainerStart`.
+                op.kind = OpKind.ContainerStart;
+                updatedElementXrefs.add(op.xref);
+            }
+            if (op.kind === OpKind.ElementEnd && updatedElementXrefs.has(op.xref)) {
+                // This `ElementEnd` is associated with an `ElementStart` we already transmuted.
+                op.kind = OpKind.ContainerEnd;
+            }
+        }
+    }
+}
+
+function phasePipeCreation(cpl) {
+    for (const view of cpl.views.values()) {
+        processPipeBindingsInView(view);
+    }
+}
+function processPipeBindingsInView(view) {
+    for (const updateOp of view.update) {
+        visitExpressionsInOp(updateOp, (expr, flags) => {
+            if (!isIrExpression(expr)) {
+                return;
+            }
+            if (expr.kind !== ExpressionKind.PipeBinding) {
+                return;
+            }
+            if (flags & VisitorContextFlag.InChildOperation) {
+                throw new Error(`AssertionError: pipe bindings should not appear in child expressions`);
+            }
+            if (!hasDependsOnSlotContextTrait(updateOp)) {
+                throw new Error(`AssertionError: pipe binding associated with non-slot operation ${OpKind[updateOp.kind]}`);
+            }
+            addPipeToCreationBlock(view, updateOp.target, expr);
+        });
+    }
+}
+function addPipeToCreationBlock(view, afterTargetXref, binding) {
+    // Find the appropriate point to insert the Pipe creation operation.
+    // We're looking for `afterTargetXref` (and also want to insert after any other pipe operations
+    // which might be beyond it).
+    for (let op = view.create.head.next; op.kind !== OpKind.ListEnd; op = op.next) {
+        if (!hasConsumesSlotTrait(op)) {
+            continue;
+        }
+        if (op.xref !== afterTargetXref) {
+            continue;
+        }
+        // We've found a tentative insertion point; however, we also want to skip past any _other_ pipe
+        // operations present.
+        while (op.next.kind === OpKind.Pipe) {
+            op = op.next;
+        }
+        const pipe = createPipeOp(binding.target, binding.name);
+        OpList.insertBefore(pipe, op.next);
+        // This completes adding the pipe to the creation block.
+        return;
+    }
+    // At this point, we've failed to add the pipe to the creation block.
+    throw new Error(`AssertionError: unable to find insertion point for pipe ${binding.name}`);
+}
+
+function phasePipeVariadic(cpl) {
+    for (const view of cpl.views.values()) {
+        for (const op of view.update) {
+            transformExpressionsInOp(op, expr => {
+                if (!(expr instanceof PipeBindingExpr)) {
+                    return expr;
+                }
+                // Pipes are variadic if they have more than 4 arguments.
+                if (expr.args.length <= 4) {
+                    return expr;
+                }
+                return new PipeBindingVariadicExpr(expr.target, expr.name, literalArr(expr.args), expr.args.length);
+            }, VisitorContextFlag.None);
+        }
+    }
+}
+
+function phasePureFunctionExtraction(cpl) {
+    for (const view of cpl.views.values()) {
+        for (const op of view.ops()) {
+            visitExpressionsInOp(op, expr => {
+                if (!(expr instanceof PureFunctionExpr) || expr.body === null) {
+                    return;
+                }
+                const constantDef = new PureFunctionConstant(expr.args.length);
+                expr.fn = cpl.pool.getSharedConstant(constantDef, expr.body);
+                expr.body = null;
+            });
+        }
+    }
+}
+class PureFunctionConstant extends GenericKeyFn {
+    constructor(numArgs) {
+        super();
+        this.numArgs = numArgs;
+    }
+    keyOf(expr) {
+        if (expr instanceof PureFunctionParameterExpr) {
+            return `param(${expr.index})`;
+        }
+        else {
+            return super.keyOf(expr);
+        }
+    }
+    toSharedConstantDeclaration(declName, keyExpr) {
+        const fnParams = [];
+        for (let idx = 0; idx < this.numArgs; idx++) {
+            fnParams.push(new FnParam('_p' + idx));
+        }
+        // We will never visit `ir.PureFunctionParameterExpr`s that don't belong to us, because this
+        // transform runs inside another visitor which will visit nested pure functions before this one.
+        const returnExpr = transformExpressionsInExpression(keyExpr, expr => {
+            if (!(expr instanceof PureFunctionParameterExpr)) {
+                return expr;
+            }
+            return variable('_p' + expr.index);
+        }, VisitorContextFlag.None);
+        return new DeclareFunctionStmt(declName, fnParams, [new ReturnStatement(returnExpr)]);
+    }
+}
+
+function phasePureLiteralStructures(cpl) {
+    for (const view of cpl.views.values()) {
+        for (const op of view.update) {
+            transformExpressionsInOp(op, (expr, flags) => {
+                if (flags & VisitorContextFlag.InChildOperation) {
+                    return expr;
+                }
+                if (expr instanceof LiteralArrayExpr) {
+                    return transformLiteralArray(expr);
+                }
+                else if (expr instanceof LiteralMapExpr) {
+                    return transformLiteralMap(expr);
+                }
+                return expr;
+            }, VisitorContextFlag.None);
+        }
+    }
+}
+function transformLiteralArray(expr) {
+    const derivedEntries = [];
+    const nonConstantArgs = [];
+    for (const entry of expr.entries) {
+        if (entry.isConstant()) {
+            derivedEntries.push(entry);
+        }
+        else {
+            const idx = nonConstantArgs.length;
+            nonConstantArgs.push(entry);
+            derivedEntries.push(new PureFunctionParameterExpr(idx));
+        }
+    }
+    return new PureFunctionExpr(literalArr(derivedEntries), nonConstantArgs);
+}
+function transformLiteralMap(expr) {
+    let derivedEntries = [];
+    const nonConstantArgs = [];
+    for (const entry of expr.entries) {
+        if (entry.value.isConstant()) {
+            derivedEntries.push(entry);
+        }
+        else {
+            const idx = nonConstantArgs.length;
+            nonConstantArgs.push(entry.value);
+            derivedEntries.push(new LiteralMapEntry(entry.key, new PureFunctionParameterExpr(idx), entry.quoted));
+        }
+    }
+    return new PureFunctionExpr(literalMap(derivedEntries), nonConstantArgs);
 }
 
 // This file contains helpers for generating calls to Ivy instructions. In particular, each
@@ -10095,6 +10848,175 @@ class LookForEventVisitor extends RecursiveAstVisitor$1 {
 }
 
 /**
+ * Resolves `ir.ContextExpr` expressions (which represent embedded view or component contexts) to
+ * either the `ctx` parameter to component functions (for the current view context) or to variables
+ * that store those contexts (for contexts accessed via the `nextContext()` instruction).
+ */
+function phaseResolveContexts(cpl) {
+    for (const view of cpl.views.values()) {
+        processLexicalScope$1(view, view.create);
+        processLexicalScope$1(view, view.update);
+    }
+}
+function processLexicalScope$1(view, ops) {
+    // Track the expressions used to access all available contexts within the current view, by the
+    // view `ir.XrefId`.
+    const scope = new Map();
+    // The current view's context is accessible via the `ctx` parameter.
+    scope.set(view.xref, variable('ctx'));
+    for (const op of ops) {
+        switch (op.kind) {
+            case OpKind.Variable:
+                switch (op.variable.kind) {
+                    case SemanticVariableKind.Context:
+                        scope.set(op.variable.view, new ReadVariableExpr(op.xref));
+                        break;
+                }
+                break;
+            case OpKind.Listener:
+                processLexicalScope$1(view, op.handlerOps);
+                break;
+        }
+    }
+    for (const op of ops) {
+        transformExpressionsInOp(op, expr => {
+            if (expr instanceof ContextExpr) {
+                if (!scope.has(expr.view)) {
+                    throw new Error(`No context found for reference to view ${expr.view} from view ${view.xref}`);
+                }
+                return scope.get(expr.view);
+            }
+            else {
+                return expr;
+            }
+        }, VisitorContextFlag.None);
+    }
+}
+
+/**
+ * Resolves lexical references in views (`ir.LexicalReadExpr`) to either a target variable or to
+ * property reads on the top-level component context.
+ *
+ * Also matches `ir.RestoreViewExpr` expressions with the variables of their corresponding saved
+ * views.
+ */
+function phaseResolveNames(cpl) {
+    for (const [_, view] of cpl.views) {
+        processLexicalScope(view, view.create, null);
+        processLexicalScope(view, view.update, null);
+    }
+}
+function processLexicalScope(view, ops, savedView) {
+    // Maps names defined in the lexical scope of this template to the `ir.XrefId`s of the variable
+    // declarations which represent those values.
+    //
+    // Since variables are generated in each view for the entire lexical scope (including any
+    // identifiers from parent templates) only local variables need be considered here.
+    const scope = new Map();
+    // First, step through the operations list and:
+    // 1) build up the `scope` mapping
+    // 2) recurse into any listener functions
+    for (const op of ops) {
+        switch (op.kind) {
+            case OpKind.Variable:
+                switch (op.variable.kind) {
+                    case SemanticVariableKind.Identifier:
+                        // This variable represents some kind of identifier which can be used in the template.
+                        if (scope.has(op.variable.identifier)) {
+                            continue;
+                        }
+                        scope.set(op.variable.identifier, op.xref);
+                        break;
+                    case SemanticVariableKind.SavedView:
+                        // This variable represents a snapshot of the current view context, and can be used to
+                        // restore that context within listener functions.
+                        savedView = {
+                            view: op.variable.view,
+                            variable: op.xref,
+                        };
+                        break;
+                }
+                break;
+            case OpKind.Listener:
+                // Listener functions have separate variable declarations, so process them as a separate
+                // lexical scope.
+                processLexicalScope(view, op.handlerOps, savedView);
+                break;
+        }
+    }
+    // Next, use the `scope` mapping to match `ir.LexicalReadExpr` with defined names in the lexical
+    // scope. Also, look for `ir.RestoreViewExpr`s and match them with the snapshotted view context
+    // variable.
+    for (const op of ops) {
+        transformExpressionsInOp(op, expr => {
+            if (expr instanceof LexicalReadExpr) {
+                // `expr` is a read of a name within the lexical scope of this view.
+                // Either that name is defined within the current view, or it represents a property from the
+                // main component context.
+                if (scope.has(expr.name)) {
+                    // This was a defined variable in the current scope.
+                    return new ReadVariableExpr(scope.get(expr.name));
+                }
+                else {
+                    // Reading from the component context.
+                    return new ReadPropExpr(new ContextExpr(view.tpl.root.xref), expr.name);
+                }
+            }
+            else if (expr instanceof RestoreViewExpr && typeof expr.view === 'number') {
+                // `ir.RestoreViewExpr` happens in listener functions and restores a saved view from the
+                // parent creation list. We expect to find that we captured the `savedView` previously, and
+                // that it matches the expected view to be restored.
+                if (savedView === null || savedView.view !== expr.view) {
+                    throw new Error(`AssertionError: no saved view ${expr.view} from view ${view.xref}`);
+                }
+                expr.view = new ReadVariableExpr(savedView.variable);
+                return expr;
+            }
+            else {
+                return expr;
+            }
+        }, VisitorContextFlag.None);
+    }
+}
+
+function phaseSaveRestoreView(cpl) {
+    for (const view of cpl.views.values()) {
+        if (view === cpl.root) {
+            // Save/restore operations are not necessary for the root view.
+            continue;
+        }
+        view.create.prepend([
+            createVariableOp(view.tpl.allocateXrefId(), {
+                kind: SemanticVariableKind.SavedView,
+                name: null,
+                view: view.xref,
+            }, new GetCurrentViewExpr()),
+        ]);
+        for (const op of view.create) {
+            if (op.kind !== OpKind.Listener) {
+                continue;
+            }
+            op.handlerOps.prepend([
+                createVariableOp(view.tpl.allocateXrefId(), {
+                    kind: SemanticVariableKind.Context,
+                    name: null,
+                    view: view.xref,
+                }, new RestoreViewExpr(view.xref)),
+            ]);
+            // The "restore view" operation in listeners requires a call to `resetView` to reset the
+            // context prior to returning from the listener operation. Find any `return` statements in
+            // the listener body and wrap them in a call to reset the view.
+            for (const handlerOp of op.handlerOps) {
+                if (handlerOp.kind === OpKind.Statement &&
+                    handlerOp.statement instanceof ReturnStatement) {
+                    handlerOp.statement.value = new ResetViewExpr(handlerOp.statement.value);
+                }
+            }
+        }
+    }
+}
+
+/**
  * Assign data slots for all operations which implement `ConsumesSlotOpTrait`, and propagate the
  * assigned data slots of those operations to any expressions which reference them via
  * `UsesSlotIndexTrait`.
@@ -10168,441 +11090,6 @@ function phaseSlotAllocation(cpl) {
                 expr.slot = slotMap.get(expr.target);
             });
         }
-    }
-}
-
-/**
- * Counts the number of variable slots used within each view, and stores that on the view itself, as
- * well as propagates it to the `ir.TemplateOp` for embedded views.
- */
-function phaseVarCounting(cpl) {
-    // First, count the vars used in each view, and update the view-level counter.
-    for (const [_, view] of cpl.views) {
-        let varCount = 0;
-        for (const op of view.ops()) {
-            if (hasConsumesVarsTrait(op)) {
-                varCount += varsUsedByOp(op);
-            }
-            visitExpressionsInOp(op, expr => {
-                if (!isIrExpression(expr)) {
-                    return;
-                }
-                // Some expressions require knowledge of the number of variable slots consumed.
-                if (hasUsesVarOffsetTrait(expr)) {
-                    expr.varOffset = varCount;
-                }
-                if (hasConsumesVarsTrait(expr)) {
-                    varCount += varsUsedByIrExpression(expr);
-                }
-            });
-        }
-        view.vars = varCount;
-    }
-    // Add var counts for each view to the `ir.TemplateOp` which declares that view (if the view is an
-    // embedded view).
-    for (const [_, view] of cpl.views) {
-        for (const op of view.create) {
-            if (op.kind !== OpKind.Template) {
-                continue;
-            }
-            const childView = cpl.views.get(op.xref);
-            op.vars = childView.vars;
-        }
-    }
-}
-/**
- * Different operations that implement `ir.UsesVarsTrait` use different numbers of variables, so
- * count the variables used by any particular `op`.
- */
-function varsUsedByOp(op) {
-    switch (op.kind) {
-        case OpKind.Property:
-            // Property bindings use 1 variable slot.
-            return 1;
-        case OpKind.InterpolateText:
-            // `ir.InterpolateTextOp`s use a variable slot for each dynamic expression.
-            return op.expressions.length;
-        case OpKind.InterpolateProperty:
-            // `ir.InterpolatePropertyOp`s use a variable slot for each dynamic expression, plus one for
-            // the result.
-            return 1 + op.expressions.length;
-        default:
-            throw new Error(`Unhandled op: ${OpKind[op.kind]}`);
-    }
-}
-function varsUsedByIrExpression(expr) {
-    switch (expr.kind) {
-        case ExpressionKind.PureFunctionExpr:
-            return 1 + expr.args.length;
-        case ExpressionKind.PipeBinding:
-            return 1 + expr.args.length;
-        case ExpressionKind.PipeBindingVariadic:
-            return 1 + expr.numArgs;
-        default:
-            throw new Error(`AssertionError: unhandled ConsumesVarsTrait expression ${expr.constructor.name}`);
-    }
-}
-
-/**
- * Generate names for functions and variables across all views.
- *
- * This includes propagating those names into any `ir.ReadVariableExpr`s of those variables, so that
- * the reads can be emitted correctly.
- */
-function phaseNaming(cpl) {
-    addNamesToView(cpl.root, cpl.componentName, { index: 0 });
-}
-function addNamesToView(view, baseName, state) {
-    if (view.fnName === null) {
-        view.fnName = `${baseName}_Template`;
-    }
-    // Keep track of the names we assign to variables in the view. We'll need to propagate these
-    // into reads of those variables afterwards.
-    const varNames = new Map();
-    for (const op of view.ops()) {
-        switch (op.kind) {
-            case OpKind.Listener:
-                if (op.handlerFnName === null) {
-                    // TODO(alxhub): convert this temporary name to match how the
-                    // `TemplateDefinitionBuilder` names listener functions.
-                    if (op.slot === null) {
-                        throw new Error(`Expected a slot to be assigned`);
-                    }
-                    op.handlerFnName = `${view.fnName}_${op.tag}_${op.name}_${op.slot}_listener`;
-                }
-                break;
-            case OpKind.Variable:
-                varNames.set(op.xref, getVariableName(op.variable, state));
-                break;
-            case OpKind.Template:
-                const childView = view.tpl.views.get(op.xref);
-                if (op.slot === null) {
-                    throw new Error(`Expected slot to be assigned`);
-                }
-                // TODO: properly escape the tag name.
-                const safeTagName = op.tag.replace('-', '_');
-                addNamesToView(childView, `${baseName}_${safeTagName}_${op.slot}`, state);
-                break;
-        }
-    }
-    // Having named all variables declared in the view, now we can push those names into the
-    // `ir.ReadVariableExpr` expressions which represent reads of those variables.
-    for (const op of view.ops()) {
-        visitExpressionsInOp(op, expr => {
-            if (!(expr instanceof ReadVariableExpr) || expr.name !== null) {
-                return;
-            }
-            if (!varNames.has(expr.xref)) {
-                throw new Error(`Variable ${expr.xref} not yet named`);
-            }
-            expr.name = varNames.get(expr.xref);
-        });
-    }
-}
-function getVariableName(variable, state) {
-    if (variable.name === null) {
-        switch (variable.kind) {
-            case SemanticVariableKind.Identifier:
-                variable.name = `${variable.identifier}_${state.index++}`;
-                break;
-            default:
-                variable.name = `_r${state.index++}`;
-                break;
-        }
-    }
-    return variable.name;
-}
-
-/**
- * Lifts local reference declarations on element-like structures within each view into an entry in
- * the `consts` array for the whole component.
- */
-function phaseLocalRefs(cpl) {
-    for (const view of cpl.views.values()) {
-        for (const op of view.create) {
-            switch (op.kind) {
-                case OpKind.ElementStart:
-                case OpKind.Element:
-                case OpKind.Template:
-                    if (!Array.isArray(op.localRefs)) {
-                        throw new Error(`AssertionError: expected localRefs to be an array still`);
-                    }
-                    op.numSlotsUsed += op.localRefs.length;
-                    if (op.localRefs.length > 0) {
-                        const localRefs = serializeLocalRefs(op.localRefs);
-                        op.localRefs = cpl.addConst(localRefs);
-                    }
-                    else {
-                        op.localRefs = null;
-                    }
-                    break;
-            }
-        }
-    }
-}
-function serializeLocalRefs(refs) {
-    const constRefs = [];
-    for (const ref of refs) {
-        constRefs.push(literal(ref.name), literal(ref.target));
-    }
-    return literalArr(constRefs);
-}
-
-/**
- * Generate a preamble sequence for each view creation block and listener function which declares
- * any variables that be referenced in other operations in the block.
- *
- * Variables generated include:
- *   * a saved view context to be used to restore the current view in event listeners.
- *   * the context of the restored view within event listener handlers.
- *   * context variables from the current view as well as all parent views (including the root
- *     context if needed).
- *   * local references from elements within the current view and any lexical parents.
- *
- * Variables are generated here unconditionally, and may optimized away in future operations if it
- * turns out their values (and any side effects) are unused.
- */
-function phaseGenerateVariables(cpl) {
-    recursivelyProcessView(cpl.root, /* there is no parent scope for the root view */ null);
-}
-/**
- * Process the given `ViewCompilation` and generate preambles for it and any listeners that it
- * declares.
- *
- * @param `parentScope` a scope extracted from the parent view which captures any variables which
- *     should be inherited by this view. `null` if the current view is the root view.
- */
-function recursivelyProcessView(view, parentScope) {
-    // Extract a `Scope` from this view.
-    const scope = getScopeForView(view, parentScope);
-    // Embedded views require an operation to save/restore the view context.
-    if (view.parent !== null) {
-        // Start the view creation block with an operation to save the current view context. This may be
-        // used to restore the view context in any listeners that may be present.
-    }
-    for (const op of view.create) {
-        switch (op.kind) {
-            case OpKind.Template:
-                // Descend into child embedded views.
-                recursivelyProcessView(view.tpl.views.get(op.xref), scope);
-                break;
-            case OpKind.Listener:
-                // Prepend variables to listener handler functions.
-                op.handlerOps.prepend(generateVariablesInScopeForView(view, scope));
-                break;
-        }
-    }
-    // Prepend the declarations for all available variables in scope to the `update` block.
-    const preambleOps = generateVariablesInScopeForView(view, scope);
-    view.update.prepend(preambleOps);
-}
-/**
- * Process a view and generate a `Scope` representing the variables available for reference within
- * that view.
- */
-function getScopeForView(view, parent) {
-    const scope = {
-        view: view.xref,
-        viewContextVariable: {
-            kind: SemanticVariableKind.Context,
-            name: null,
-            view: view.xref,
-        },
-        contextVariables: new Map(),
-        references: [],
-        parent,
-    };
-    for (const identifier of view.contextVariables.keys()) {
-        scope.contextVariables.set(identifier, {
-            kind: SemanticVariableKind.Identifier,
-            name: null,
-            identifier,
-        });
-    }
-    for (const op of view.create) {
-        switch (op.kind) {
-            case OpKind.Element:
-            case OpKind.ElementStart:
-            case OpKind.Template:
-                if (!Array.isArray(op.localRefs)) {
-                    throw new Error(`AssertionError: expected localRefs to be an array`);
-                }
-                // Record available local references from this element.
-                for (let offset = 0; offset < op.localRefs.length; offset++) {
-                    scope.references.push({
-                        name: op.localRefs[offset].name,
-                        targetId: op.xref,
-                        offset,
-                        variable: {
-                            kind: SemanticVariableKind.Identifier,
-                            name: null,
-                            identifier: op.localRefs[offset].name,
-                        },
-                    });
-                }
-                break;
-        }
-    }
-    return scope;
-}
-/**
- * Generate declarations for all variables that are in scope for a given view.
- *
- * This is a recursive process, as views inherit variables available from their parent view, which
- * itself may have inherited variables, etc.
- */
-function generateVariablesInScopeForView(view, scope) {
-    const newOps = [];
-    if (scope.view !== view.xref) {
-        // Before generating variables for a parent view, we need to switch to the context of the parent
-        // view with a `nextContext` expression. This context switching operation itself declares a
-        // variable, because the context of the view may be referenced directly.
-        newOps.push(createVariableOp(view.tpl.allocateXrefId(), scope.viewContextVariable, new NextContextExpr()));
-    }
-    // Add variables for all context variables available in this scope's view.
-    for (const [name, value] of view.tpl.views.get(scope.view).contextVariables) {
-        newOps.push(createVariableOp(view.tpl.allocateXrefId(), scope.contextVariables.get(name), new ReadPropExpr(new ContextExpr(scope.view), value)));
-    }
-    // Add variables for all local references declared for elements in this scope.
-    for (const ref of scope.references) {
-        newOps.push(createVariableOp(view.tpl.allocateXrefId(), ref.variable, new ReferenceExpr(ref.targetId, ref.offset)));
-    }
-    if (scope.parent !== null) {
-        // Recursively add variables from the parent scope.
-        newOps.push(...generateVariablesInScopeForView(view, scope.parent));
-    }
-    return newOps;
-}
-
-/**
- * Resolves lexical references in views (`ir.LexicalReadExpr`) to either a target variable or to
- * property reads on the top-level component context.
- *
- * Also matches `ir.RestoreViewExpr` expressions with the variables of their corresponding saved
- * views.
- */
-function phaseResolveNames(cpl) {
-    for (const [_, view] of cpl.views) {
-        processLexicalScope$1(view, view.create, null);
-        processLexicalScope$1(view, view.update, null);
-    }
-}
-function processLexicalScope$1(view, ops, savedView) {
-    // Maps names defined in the lexical scope of this template to the `ir.XrefId`s of the variable
-    // declarations which represent those values.
-    //
-    // Since variables are generated in each view for the entire lexical scope (including any
-    // identifiers from parent templates) only local variables need be considered here.
-    const scope = new Map();
-    // First, step through the operations list and:
-    // 1) build up the `scope` mapping
-    // 2) recurse into any listener functions
-    for (const op of ops) {
-        switch (op.kind) {
-            case OpKind.Variable:
-                switch (op.variable.kind) {
-                    case SemanticVariableKind.Identifier:
-                        // This variable represents some kind of identifier which can be used in the template.
-                        if (scope.has(op.variable.identifier)) {
-                            continue;
-                        }
-                        scope.set(op.variable.identifier, op.xref);
-                        break;
-                    case SemanticVariableKind.SavedView:
-                        // This variable represents a snapshot of the current view context, and can be used to
-                        // restore that context within listener functions.
-                        savedView = {
-                            view: op.variable.view,
-                            variable: op.xref,
-                        };
-                        break;
-                }
-                break;
-            case OpKind.Listener:
-                // Listener functions have separate variable declarations, so process them as a separate
-                // lexical scope.
-                processLexicalScope$1(view, op.handlerOps, savedView);
-                break;
-        }
-    }
-    // Next, use the `scope` mapping to match `ir.LexicalReadExpr` with defined names in the lexical
-    // scope. Also, look for `ir.RestoreViewExpr`s and match them with the snapshotted view context
-    // variable.
-    for (const op of ops) {
-        transformExpressionsInOp(op, expr => {
-            if (expr instanceof LexicalReadExpr) {
-                // `expr` is a read of a name within the lexical scope of this view.
-                // Either that name is defined within the current view, or it represents a property from the
-                // main component context.
-                if (scope.has(expr.name)) {
-                    // This was a defined variable in the current scope.
-                    return new ReadVariableExpr(scope.get(expr.name));
-                }
-                else {
-                    // Reading from the component context.
-                    return new ReadPropExpr(new ContextExpr(view.tpl.root.xref), expr.name);
-                }
-            }
-            else if (expr instanceof RestoreViewExpr && typeof expr.view === 'number') {
-                // `ir.RestoreViewExpr` happens in listener functions and restores a saved view from the
-                // parent creation list. We expect to find that we captured the `savedView` previously, and
-                // that it matches the expected view to be restored.
-                if (savedView === null || savedView.view !== expr.view) {
-                    throw new Error(`AssertionError: no saved view ${expr.view} from view ${view.xref}`);
-                }
-                expr.view = new ReadVariableExpr(savedView.variable);
-                return expr;
-            }
-            else {
-                return expr;
-            }
-        }, VisitorContextFlag.None);
-    }
-}
-
-/**
- * Resolves `ir.ContextExpr` expressions (which represent embedded view or component contexts) to
- * either the `ctx` parameter to component functions (for the current view context) or to variables
- * that store those contexts (for contexts accessed via the `nextContext()` instruction).
- */
-function phaseResolveContexts(cpl) {
-    for (const view of cpl.views.values()) {
-        processLexicalScope(view, view.create);
-        processLexicalScope(view, view.update);
-    }
-}
-function processLexicalScope(view, ops) {
-    // Track the expressions used to access all available contexts within the current view, by the
-    // view `ir.XrefId`.
-    const scope = new Map();
-    // The current view's context is accessible via the `ctx` parameter.
-    scope.set(view.xref, variable('ctx'));
-    for (const op of ops) {
-        switch (op.kind) {
-            case OpKind.Variable:
-                switch (op.variable.kind) {
-                    case SemanticVariableKind.Context:
-                        scope.set(op.variable.view, new ReadVariableExpr(op.xref));
-                        break;
-                }
-                break;
-            case OpKind.Listener:
-                processLexicalScope(view, op.handlerOps);
-                break;
-        }
-    }
-    for (const op of ops) {
-        transformExpressionsInOp(op, expr => {
-            if (expr instanceof ContextExpr) {
-                if (!scope.has(expr.view)) {
-                    throw new Error(`No context found for reference to view ${expr.view} from view ${view.xref}`);
-                }
-                return scope.get(expr.view);
-            }
-            else {
-                return expr;
-            }
-        }, VisitorContextFlag.None);
     }
 }
 
@@ -10969,394 +11456,12 @@ function allowConservativeInlining(decl, target) {
     }
 }
 
-const CHAINABLE = new Set([
-    Identifiers.elementStart,
-    Identifiers.elementEnd,
-    Identifiers.property,
-    Identifiers.elementContainerStart,
-    Identifiers.elementContainerEnd,
-    Identifiers.elementContainer,
-]);
-/**
- * Post-process a reified view compilation and convert sequential calls to chainable instructions
- * into chain calls.
- *
- * For example, two `elementStart` operations in sequence:
- *
- * ```typescript
- * elementStart(0, 'div');
- * elementStart(1, 'span');
- * ```
- *
- * Can be called as a chain instead:
- *
- * ```typescript
- * elementStart(0, 'div')(1, 'span');
- * ```
- */
-function phaseChaining(cpl) {
-    for (const [_, view] of cpl.views) {
-        chainOperationsInList(view.create);
-        chainOperationsInList(view.update);
-    }
-}
-function chainOperationsInList(opList) {
-    let chain = null;
-    for (const op of opList) {
-        if (op.kind !== OpKind.Statement || !(op.statement instanceof ExpressionStatement)) {
-            // This type of statement isn't chainable.
-            chain = null;
-            continue;
-        }
-        if (!(op.statement.expr instanceof InvokeFunctionExpr) ||
-            !(op.statement.expr.fn instanceof ExternalExpr)) {
-            // This is a statement, but not an instruction-type call, so not chainable.
-            chain = null;
-            continue;
-        }
-        const instruction = op.statement.expr.fn.value;
-        if (!CHAINABLE.has(instruction)) {
-            // This instruction isn't chainable.
-            chain = null;
-            continue;
-        }
-        // This instruction can be chained. It can either be added on to the previous chain (if
-        // compatible) or it can be the start of a new chain.
-        if (chain !== null && chain.instruction === instruction) {
-            // This instruction can be added onto the previous chain.
-            const expression = chain.expression.callFn(op.statement.expr.args, op.statement.expr.sourceSpan, op.statement.expr.pure);
-            chain.expression = expression;
-            chain.op.statement = expression.toStmt();
-            OpList.remove(op);
-        }
-        else {
-            // Leave this instruction alone for now, but consider it the start of a new chain.
-            chain = {
-                op,
-                instruction,
-                expression: op.statement.expr,
-            };
-        }
-    }
-}
-
-/**
- * Merges logically sequential `NextContextExpr` operations.
- *
- * `NextContextExpr` can be referenced repeatedly, "popping" the runtime's context stack each time.
- * When two such expressions appear back-to-back, it's possible to merge them together into a single
- * `NextContextExpr` that steps multiple contexts. This merging is possible if all conditions are
- * met:
- *
- *   * The result of the `NextContextExpr` that's folded into the subsequent one is not stored (that
- *     is, the call is purely side-effectful).
- *   * No operations in between them uses the implicit context.
- */
-function phaseMergeNextContext(cpl) {
-    for (const view of cpl.views.values()) {
-        for (const op of view.create) {
-            if (op.kind === OpKind.Listener) {
-                mergeNextContextsInOps(op.handlerOps);
-            }
-        }
-        mergeNextContextsInOps(view.update);
-    }
-}
-function mergeNextContextsInOps(ops) {
-    for (const op of ops) {
-        // Look for a candidate operation to maybe merge.
-        if (op.kind !== OpKind.Statement || !(op.statement instanceof ExpressionStatement) ||
-            !(op.statement.expr instanceof NextContextExpr)) {
-            continue;
-        }
-        const mergeSteps = op.statement.expr.steps;
-        // Try to merge this `ir.NextContextExpr`.
-        let tryToMerge = true;
-        for (let candidate = op.next; candidate.kind !== OpKind.ListEnd && tryToMerge; candidate = candidate.next) {
-            visitExpressionsInOp(candidate, (expr, flags) => {
-                if (!isIrExpression(expr)) {
-                    return expr;
-                }
-                if (!tryToMerge) {
-                    // Either we've already merged, or failed to merge.
-                    return;
-                }
-                if (flags & VisitorContextFlag.InChildOperation) {
-                    // We cannot merge into child operations.
-                    return;
-                }
-                switch (expr.kind) {
-                    case ExpressionKind.NextContext:
-                        // Merge the previous `ir.NextContextExpr` into this one.
-                        expr.steps += mergeSteps;
-                        OpList.remove(op);
-                        tryToMerge = false;
-                        break;
-                    case ExpressionKind.GetCurrentView:
-                    case ExpressionKind.Reference:
-                        // Can't merge past a dependency on the context.
-                        tryToMerge = false;
-                        break;
-                }
-            });
-        }
-    }
-}
-
-const CONTAINER_TAG = 'ng-container';
-/**
- * Replace an `Element` or `ElementStart` whose tag is `ng-container` with a specific op.
- */
-function phaseNgContainer(cpl) {
-    for (const [_, view] of cpl.views) {
-        const updatedElementXrefs = new Set();
-        for (const op of view.create) {
-            if (op.kind === OpKind.ElementStart && op.tag === CONTAINER_TAG) {
-                // Transmute the `ElementStart` instruction to `ContainerStart`.
-                op.kind = OpKind.ContainerStart;
-                updatedElementXrefs.add(op.xref);
-            }
-            if (op.kind === OpKind.ElementEnd && updatedElementXrefs.has(op.xref)) {
-                // This `ElementEnd` is associated with an `ElementStart` we already transmuted.
-                op.kind = OpKind.ContainerEnd;
-            }
-        }
-    }
-}
-
-function phaseSaveRestoreView(cpl) {
-    for (const view of cpl.views.values()) {
-        if (view === cpl.root) {
-            // Save/restore operations are not necessary for the root view.
-            continue;
-        }
-        view.create.prepend([
-            createVariableOp(view.tpl.allocateXrefId(), {
-                kind: SemanticVariableKind.SavedView,
-                name: null,
-                view: view.xref,
-            }, new GetCurrentViewExpr()),
-        ]);
-        for (const op of view.create) {
-            if (op.kind !== OpKind.Listener) {
-                continue;
-            }
-            op.handlerOps.prepend([
-                createVariableOp(view.tpl.allocateXrefId(), {
-                    kind: SemanticVariableKind.Context,
-                    name: null,
-                    view: view.xref,
-                }, new RestoreViewExpr(view.xref)),
-            ]);
-            // The "restore view" operation in listeners requires a call to `resetView` to reset the
-            // context prior to returning from the listener operation. Find any `return` statements in
-            // the listener body and wrap them in a call to reset the view.
-            for (const handlerOp of op.handlerOps) {
-                if (handlerOp.kind === OpKind.Statement &&
-                    handlerOp.statement instanceof ReturnStatement) {
-                    handlerOp.statement.value = new ResetViewExpr(handlerOp.statement.value);
-                }
-            }
-        }
-    }
-}
-
-function phasePureFunctionExtraction(cpl) {
-    for (const view of cpl.views.values()) {
-        for (const op of view.ops()) {
-            visitExpressionsInOp(op, expr => {
-                if (!(expr instanceof PureFunctionExpr) || expr.body === null) {
-                    return;
-                }
-                const constantDef = new PureFunctionConstant(expr.args.length);
-                expr.fn = cpl.pool.getSharedConstant(constantDef, expr.body);
-                expr.body = null;
-            });
-        }
-    }
-}
-class PureFunctionConstant extends GenericKeyFn {
-    constructor(numArgs) {
-        super();
-        this.numArgs = numArgs;
-    }
-    keyOf(expr) {
-        if (expr instanceof PureFunctionParameterExpr) {
-            return `param(${expr.index})`;
-        }
-        else {
-            return super.keyOf(expr);
-        }
-    }
-    toSharedConstantDeclaration(declName, keyExpr) {
-        const fnParams = [];
-        for (let idx = 0; idx < this.numArgs; idx++) {
-            fnParams.push(new FnParam('_p' + idx));
-        }
-        // We will never visit `ir.PureFunctionParameterExpr`s that don't belong to us, because this
-        // transform runs inside another visitor which will visit nested pure functions before this one.
-        const returnExpr = transformExpressionsInExpression(keyExpr, expr => {
-            if (!(expr instanceof PureFunctionParameterExpr)) {
-                return expr;
-            }
-            return variable('_p' + expr.index);
-        }, VisitorContextFlag.None);
-        return new DeclareFunctionStmt(declName, fnParams, [new ReturnStatement(returnExpr)]);
-    }
-}
-
-function phasePipeCreation(cpl) {
-    for (const view of cpl.views.values()) {
-        processPipeBindingsInView(view);
-    }
-}
-function processPipeBindingsInView(view) {
-    for (const updateOp of view.update) {
-        visitExpressionsInOp(updateOp, (expr, flags) => {
-            if (!isIrExpression(expr)) {
-                return;
-            }
-            if (expr.kind !== ExpressionKind.PipeBinding) {
-                return;
-            }
-            if (flags & VisitorContextFlag.InChildOperation) {
-                throw new Error(`AssertionError: pipe bindings should not appear in child expressions`);
-            }
-            if (!hasDependsOnSlotContextTrait(updateOp)) {
-                throw new Error(`AssertionError: pipe binding associated with non-slot operation ${OpKind[updateOp.kind]}`);
-            }
-            addPipeToCreationBlock(view, updateOp.target, expr);
-        });
-    }
-}
-function addPipeToCreationBlock(view, afterTargetXref, binding) {
-    // Find the appropriate point to insert the Pipe creation operation.
-    // We're looking for `afterTargetXref` (and also want to insert after any other pipe operations
-    // which might be beyond it).
-    for (let op = view.create.head.next; op.kind !== OpKind.ListEnd; op = op.next) {
-        if (!hasConsumesSlotTrait(op)) {
-            continue;
-        }
-        if (op.xref !== afterTargetXref) {
-            continue;
-        }
-        // We've found a tentative insertion point; however, we also want to skip past any _other_ pipe
-        // operations present.
-        while (op.next.kind === OpKind.Pipe) {
-            op = op.next;
-        }
-        const pipe = createPipeOp(binding.target, binding.name);
-        OpList.insertBefore(pipe, op.next);
-        // This completes adding the pipe to the creation block.
-        return;
-    }
-    // At this point, we've failed to add the pipe to the creation block.
-    throw new Error(`AssertionError: unable to find insertion point for pipe ${binding.name}`);
-}
-
-function phasePipeVariadic(cpl) {
-    for (const view of cpl.views.values()) {
-        for (const op of view.update) {
-            transformExpressionsInOp(op, expr => {
-                if (!(expr instanceof PipeBindingExpr)) {
-                    return expr;
-                }
-                // Pipes are variadic if they have more than 4 arguments.
-                if (expr.args.length <= 4) {
-                    return expr;
-                }
-                return new PipeBindingVariadicExpr(expr.target, expr.name, literalArr(expr.args), expr.args.length);
-            }, VisitorContextFlag.None);
-        }
-    }
-}
-
-function phasePureLiteralStructures(cpl) {
-    for (const view of cpl.views.values()) {
-        for (const op of view.update) {
-            transformExpressionsInOp(op, (expr, flags) => {
-                if (flags & VisitorContextFlag.InChildOperation) {
-                    return expr;
-                }
-                if (expr instanceof LiteralArrayExpr) {
-                    return transformLiteralArray(expr);
-                }
-                else if (expr instanceof LiteralMapExpr) {
-                    return transformLiteralMap(expr);
-                }
-                return expr;
-            }, VisitorContextFlag.None);
-        }
-    }
-}
-function transformLiteralArray(expr) {
-    const derivedEntries = [];
-    const nonConstantArgs = [];
-    for (const entry of expr.entries) {
-        if (entry.isConstant()) {
-            derivedEntries.push(entry);
-        }
-        else {
-            const idx = nonConstantArgs.length;
-            nonConstantArgs.push(entry);
-            derivedEntries.push(new PureFunctionParameterExpr(idx));
-        }
-    }
-    return new PureFunctionExpr(literalArr(derivedEntries), nonConstantArgs);
-}
-function transformLiteralMap(expr) {
-    let derivedEntries = [];
-    const nonConstantArgs = [];
-    for (const entry of expr.entries) {
-        if (entry.value.isConstant()) {
-            derivedEntries.push(entry);
-        }
-        else {
-            const idx = nonConstantArgs.length;
-            nonConstantArgs.push(entry.value);
-            derivedEntries.push(new LiteralMapEntry(entry.key, new PureFunctionParameterExpr(idx), entry.quoted));
-        }
-    }
-    return new PureFunctionExpr(literalMap(derivedEntries), nonConstantArgs);
-}
-
-function phaseAlignPipeVariadicVarOffset(cpl) {
-    for (const view of cpl.views.values()) {
-        for (const op of view.update) {
-            visitExpressionsInOp(op, expr => {
-                if (!(expr instanceof PipeBindingVariadicExpr)) {
-                    return expr;
-                }
-                if (!(expr.args instanceof PureFunctionExpr)) {
-                    return expr;
-                }
-                if (expr.varOffset === null || expr.args.varOffset === null) {
-                    throw new Error(`Must run after variable counting`);
-                }
-                // The structure of this variadic pipe expression is:
-                // PipeBindingVariadic(#, Y, PureFunction(X, ...ARGS))
-                // Where X and Y are the slot offsets for the variables used by these operations, and Y > X.
-                // In `TemplateDefinitionBuilder` the PipeBindingVariadic variable slots are allocated
-                // before the PureFunction slots, which is unusually out-of-order.
-                //
-                // To maintain identical output for the tests in question, we adjust the variable offsets of
-                // these two calls to emulate TDB's behavior. This is not perfect, because the ARGS of the
-                // PureFunction call may also allocate slots which by TDB's ordering would come after X, and
-                // we don't account for that. Still, this should be enough to pass the existing pipe tests.
-                // Put the PipeBindingVariadic vars where the PureFunction vars were previously allocated.
-                expr.varOffset = expr.args.varOffset;
-                // Put the PureFunction vars following the PipeBindingVariadic vars.
-                expr.args.varOffset = expr.varOffset + varsUsedByIrExpression(expr);
-            });
-        }
-    }
-}
-
 /**
  * Run all transformation phases in the correct order against a `ComponentCompilation`. After this
  * processing, the compilation should be in a state where it can be emitted via `emitTemplateFn`.s
  */
 function transformTemplate(cpl) {
+    phaseAttributeExtraction(cpl, true);
     phasePipeCreation(cpl);
     phasePipeVariadic(cpl);
     phasePureLiteralStructures(cpl);
@@ -11618,7 +11723,6 @@ function ingestElement(view, element) {
     const id = view.tpl.allocateXrefId();
     const startOp = createElementStartOp(element.name, id);
     view.create.push(startOp);
-    ingestAttributes(startOp, element);
     ingestBindings(view, startOp, element);
     ingestReferences(startOp, element);
     ingestNodes(view, element.children);
@@ -11632,7 +11736,6 @@ function ingestTemplate(view, tmpl) {
     // TODO: validate the fallback tag name here.
     const tplOp = createTemplateOp(childView.xref, tmpl.tagName ?? 'ng-template');
     view.create.push(tplOp);
-    ingestAttributes(tplOp, tmpl);
     ingestBindings(view, tplOp, tmpl);
     ingestReferences(tplOp, tmpl);
     ingestNodes(childView, tmpl.children);
@@ -11733,87 +11836,82 @@ function convertAst(ast, cpl) {
     }
 }
 /**
- * Process all of the attributes on an element-like structure in the template AST and convert them
- * to their IR representation.
- */
-function ingestAttributes(op, element) {
-    assertIsElementAttributes(op.attributes);
-    for (const attr of element.attributes) {
-        op.attributes.add(ElementAttributeKind.Attribute, attr.name, literal(attr.value));
-    }
-    for (const input of element.inputs) {
-        op.attributes.add(ElementAttributeKind.Binding, input.name, null);
-    }
-    for (const output of element.outputs) {
-        op.attributes.add(ElementAttributeKind.Binding, output.name, null);
-    }
-    if (element instanceof Template) {
-        for (const attr of element.templateAttrs) {
-            // TODO: what do we do about the value here?
-            op.attributes.add(ElementAttributeKind.Template, attr.name, null);
-        }
-    }
-}
-/**
  * Process all of the bindings on an element-like structure in the template AST and convert them
  * to their IR representation.
  */
 function ingestBindings(view, op, element) {
     if (element instanceof Template) {
-        for (const attr of [...element.templateAttrs, ...element.inputs]) {
-            if (!(attr instanceof BoundAttribute)) {
-                continue;
-            }
-            ingestPropertyBinding(view, op.xref, attr.name, attr.value);
-        }
-    }
-    else {
-        for (const input of element.inputs) {
-            ingestPropertyBinding(view, op.xref, input.name, input.value);
-        }
-        for (const output of element.outputs) {
-            const listenerOp = createListenerOp(op.xref, output.name, op.tag);
-            // if output.handler is a chain, then push each statement from the chain separately, and
-            // return the last one?
-            let inputExprs;
-            let handler = output.handler;
-            if (handler instanceof ASTWithSource) {
-                handler = handler.ast;
-            }
-            if (handler instanceof Chain) {
-                inputExprs = handler.expressions;
+        for (const attr of element.templateAttrs) {
+            if (attr instanceof TextAttribute) {
+                view.update.push(createAttributeOp(op.xref, ElementAttributeKind.Template, attr.name, literal(attr.value)));
             }
             else {
-                inputExprs = [handler];
+                ingestPropertyBinding(view, op.xref, ElementAttributeKind.Template, attr);
             }
-            if (inputExprs.length === 0) {
-                throw new Error('Expected listener to have non-empty expression list.');
-            }
-            const expressions = inputExprs.map(expr => convertAst(expr, view.tpl));
-            const returnExpr = expressions.pop();
-            for (const expr of expressions) {
-                const stmtOp = createStatementOp(new ExpressionStatement(expr));
-                listenerOp.handlerOps.push(stmtOp);
-            }
-            listenerOp.handlerOps.push(createStatementOp(new ReturnStatement(returnExpr)));
-            view.create.push(listenerOp);
         }
     }
+    for (const attr of element.attributes) {
+        view.update.push(createAttributeOp(op.xref, ElementAttributeKind.Attribute, attr.name, literal(attr.value)));
+    }
+    for (const input of element.inputs) {
+        ingestPropertyBinding(view, op.xref, ElementAttributeKind.Binding, input);
+    }
+    for (const output of element.outputs) {
+        const listenerOp = createListenerOp(op.xref, output.name, op.tag);
+        // if output.handler is a chain, then push each statement from the chain separately, and
+        // return the last one?
+        let inputExprs;
+        let handler = output.handler;
+        if (handler instanceof ASTWithSource) {
+            handler = handler.ast;
+        }
+        if (handler instanceof Chain) {
+            inputExprs = handler.expressions;
+        }
+        else {
+            inputExprs = [handler];
+        }
+        if (inputExprs.length === 0) {
+            throw new Error('Expected listener to have non-empty expression list.');
+        }
+        const expressions = inputExprs.map(expr => convertAst(expr, view.tpl));
+        const returnExpr = expressions.pop();
+        for (const expr of expressions) {
+            const stmtOp = createStatementOp(new ExpressionStatement(expr));
+            listenerOp.handlerOps.push(stmtOp);
+        }
+        listenerOp.handlerOps.push(createStatementOp(new ReturnStatement(returnExpr)));
+        view.create.push(listenerOp);
+    }
 }
-function ingestPropertyBinding(view, xref, name, value) {
+function ingestPropertyBinding(view, xref, bindingKind, { name, value, type }) {
     if (value instanceof ASTWithSource) {
         value = value.ast;
     }
     if (value instanceof Interpolation) {
-        view.update.push(createInterpolatePropertyOp(xref, name, value.strings, value.expressions.map(expr => convertAst(expr, view.tpl))));
+        switch (type) {
+            case 0 /* e.BindingType.Property */:
+                view.update.push(createInterpolatePropertyOp(xref, bindingKind, name, value.strings, value.expressions.map(expr => convertAst(expr, view.tpl))));
+                break;
+            default:
+                // TODO: implement remaining binding types.
+                throw Error(`Interpolated property binding type not handled: ${type}`);
+        }
     }
     else {
-        view.update.push(createPropertyOp(xref, name, convertAst(value, view.tpl)));
+        switch (type) {
+            case 0 /* e.BindingType.Property */:
+                view.update.push(createPropertyOp(xref, bindingKind, name, convertAst(value, view.tpl)));
+                break;
+            default:
+                // TODO: implement remaining binding types.
+                throw Error(`Property binding type not handled: ${type}`);
+        }
     }
 }
 /**
- * Process all of the local references on an element-like structure in the template AST and convert
- * them to their IR representation.
+ * Process all of the local references on an element-like structure in the template AST and
+ * convert them to their IR representation.
  */
 function ingestReferences(op, element) {
     assertIsArray(op.localRefs);
@@ -23359,7 +23457,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.2.0-next.0+sha-1f0d529');
+const VERSION = new Version('16.2.0-next.0+sha-15ab146');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -25287,7 +25385,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-1f0d529'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-15ab146'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -25390,7 +25488,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-1f0d529'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-15ab146'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -25618,7 +25716,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-1f0d529'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-15ab146'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -25653,7 +25751,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-1f0d529'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-15ab146'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -25704,7 +25802,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-1f0d529'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-15ab146'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -25734,7 +25832,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-1f0d529'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-15ab146'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -25785,7 +25883,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-1f0d529'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-15ab146'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
