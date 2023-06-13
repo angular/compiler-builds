@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.0+sha-15ab146
+ * @license Angular v16.2.0-next.0+sha-88962b7
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -338,6 +338,7 @@ export declare class BinaryOperatorExpr extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): BinaryOperatorExpr;
 }
 
 /**
@@ -563,6 +564,7 @@ export declare class CommaExpr extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): CommaExpr;
 }
 
 declare class Comment_2 implements BaseNode {
@@ -681,6 +683,7 @@ export declare class ConditionalExpr extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): ConditionalExpr;
 }
 
 declare interface Console_2 {
@@ -1094,6 +1097,7 @@ export declare abstract class Expression {
      * Return true if the expression is constant.
      */
     abstract isConstant(): boolean;
+    abstract clone(): Expression;
     prop(name: string, sourceSpan?: ParseSourceSpan | null): ReadPropExpr;
     key(index: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null): ReadKeyExpr;
     callFn(params: Expression[], sourceSpan?: ParseSourceSpan | null, pure?: boolean): InvokeFunctionExpr;
@@ -1189,6 +1193,7 @@ export declare class ExternalExpr extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): ExternalExpr;
 }
 
 export declare class ExternalReference {
@@ -1225,6 +1230,7 @@ declare class FnParam {
     type: Type | null;
     constructor(name: string, type?: Type | null);
     isEquivalent(param: FnParam): boolean;
+    clone(): FnParam;
 }
 
 /**
@@ -1250,6 +1256,7 @@ export declare class FunctionExpr extends Expression {
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     toDeclStmt(name: string, modifiers?: StmtModifier): DeclareFunctionStmt;
+    clone(): FunctionExpr;
 }
 
 export declare function getHtmlTagDefinition(tagName: string): HtmlTagDefinition;
@@ -1455,6 +1462,7 @@ export declare class InstantiateExpr extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): InstantiateExpr;
 }
 
 declare const INT_TYPE: BuiltinType;
@@ -1500,6 +1508,7 @@ export declare class InvokeFunctionExpr extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): InvokeFunctionExpr;
 }
 
 export declare function isIdentifier(input: string): boolean;
@@ -1629,6 +1638,7 @@ export declare class LiteralArrayExpr extends Expression {
     isConstant(): boolean;
     isEquivalent(e: Expression): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): LiteralArrayExpr;
 }
 
 export declare class LiteralExpr extends Expression {
@@ -1637,6 +1647,7 @@ export declare class LiteralExpr extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): LiteralExpr;
 }
 
 export declare class LiteralMap extends AST {
@@ -1658,6 +1669,7 @@ declare class LiteralMapEntry {
     quoted: boolean;
     constructor(key: string, value: Expression, quoted: boolean);
     isEquivalent(e: LiteralMapEntry): boolean;
+    clone(): LiteralMapEntry;
 }
 
 export declare class LiteralMapExpr extends Expression {
@@ -1667,6 +1679,7 @@ export declare class LiteralMapExpr extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): LiteralMapExpr;
 }
 
 export declare type LiteralMapKey = {
@@ -1695,6 +1708,7 @@ export declare class LocalizedString extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): LocalizedString;
     /**
      * Serialize the given `meta` and `messagePart` into "cooked" and "raw" strings that can be used
      * in a `$localize` tagged string. The format of the metadata is the same as that parsed by
@@ -1876,6 +1890,7 @@ export declare class NotExpr extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): NotExpr;
 }
 
 declare const NULL_EXPR: LiteralExpr;
@@ -3944,6 +3959,7 @@ export declare class ReadKeyExpr extends Expression {
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     set(value: Expression): WriteKeyExpr;
+    clone(): ReadKeyExpr;
 }
 
 export declare class ReadPropExpr extends Expression {
@@ -3954,6 +3970,7 @@ export declare class ReadPropExpr extends Expression {
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     set(value: Expression): WritePropExpr;
+    clone(): ReadPropExpr;
 }
 
 export declare class ReadVarExpr extends Expression {
@@ -3962,6 +3979,7 @@ export declare class ReadVarExpr extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): ReadVarExpr;
     set(value: Expression): WriteVarExpr;
 }
 
@@ -4311,6 +4329,7 @@ export declare class TaggedTemplateExpr extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): TaggedTemplateExpr;
 }
 
 declare class TagPlaceholder implements Node_3 {
@@ -4385,6 +4404,7 @@ export declare class TemplateLiteral {
     elements: TemplateLiteralElement[];
     expressions: Expression[];
     constructor(elements: TemplateLiteralElement[], expressions: Expression[]);
+    clone(): TemplateLiteral;
 }
 
 export declare class TemplateLiteralElement {
@@ -4392,6 +4412,7 @@ export declare class TemplateLiteralElement {
     sourceSpan?: ParseSourceSpan | undefined;
     rawText: string;
     constructor(text: string, sourceSpan?: ParseSourceSpan | undefined, rawText?: string);
+    clone(): TemplateLiteralElement;
 }
 
 declare class Text_2 extends NodeWithI18n {
@@ -4755,6 +4776,7 @@ export declare class TypeofExpr extends Expression {
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
+    clone(): TypeofExpr;
 }
 
 declare function typeofExpr(expr: Expression): TypeofExpr;
@@ -4809,6 +4831,7 @@ export declare class UnaryOperatorExpr extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): UnaryOperatorExpr;
 }
 
 declare function variable(name: string, type?: Type | null, sourceSpan?: ParseSourceSpan | null): ReadVarExpr;
@@ -4895,6 +4918,7 @@ export declare class WrappedNodeExpr<T> extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): WrappedNodeExpr<T>;
 }
 
 export declare class WriteKeyExpr extends Expression {
@@ -4905,6 +4929,7 @@ export declare class WriteKeyExpr extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): WriteKeyExpr;
 }
 
 export declare class WritePropExpr extends Expression {
@@ -4915,6 +4940,7 @@ export declare class WritePropExpr extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): WritePropExpr;
 }
 
 export declare class WriteVarExpr extends Expression {
@@ -4924,6 +4950,7 @@ export declare class WriteVarExpr extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): WriteVarExpr;
     toDeclStmt(type?: Type | null, modifiers?: StmtModifier): DeclareVarStmt;
     toConstDecl(): DeclareVarStmt;
 }

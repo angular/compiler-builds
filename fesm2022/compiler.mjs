@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.0+sha-15ab146
+ * @license Angular v16.2.0-next.0+sha-88962b7
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1222,6 +1222,9 @@ class ReadVarExpr extends Expression {
     visitExpression(visitor, context) {
         return visitor.visitReadVarExpr(this, context);
     }
+    clone() {
+        return new ReadVarExpr(this.name, this.type, this.sourceSpan);
+    }
     set(value) {
         return new WriteVarExpr(this.name, value, null, this.sourceSpan);
     }
@@ -1240,6 +1243,9 @@ class TypeofExpr extends Expression {
     isConstant() {
         return this.expr.isConstant();
     }
+    clone() {
+        return new TypeofExpr(this.expr.clone());
+    }
 }
 class WrappedNodeExpr extends Expression {
     constructor(node, type, sourceSpan) {
@@ -1254,6 +1260,9 @@ class WrappedNodeExpr extends Expression {
     }
     visitExpression(visitor, context) {
         return visitor.visitWrappedNodeExpr(this, context);
+    }
+    clone() {
+        return new WrappedNodeExpr(this.node, this.type, this.sourceSpan);
     }
 }
 class WriteVarExpr extends Expression {
@@ -1270,6 +1279,9 @@ class WriteVarExpr extends Expression {
     }
     visitExpression(visitor, context) {
         return visitor.visitWriteVarExpr(this, context);
+    }
+    clone() {
+        return new WriteVarExpr(this.name, this.value.clone(), this.type, this.sourceSpan);
     }
     toDeclStmt(type, modifiers) {
         return new DeclareVarStmt(this.name, this.value, type, modifiers, this.sourceSpan);
@@ -1295,6 +1307,9 @@ class WriteKeyExpr extends Expression {
     visitExpression(visitor, context) {
         return visitor.visitWriteKeyExpr(this, context);
     }
+    clone() {
+        return new WriteKeyExpr(this.receiver.clone(), this.index.clone(), this.value.clone(), this.type, this.sourceSpan);
+    }
 }
 class WritePropExpr extends Expression {
     constructor(receiver, name, value, type, sourceSpan) {
@@ -1312,6 +1327,9 @@ class WritePropExpr extends Expression {
     }
     visitExpression(visitor, context) {
         return visitor.visitWritePropExpr(this, context);
+    }
+    clone() {
+        return new WritePropExpr(this.receiver.clone(), this.name, this.value.clone(), this.type, this.sourceSpan);
     }
 }
 class InvokeFunctionExpr extends Expression {
@@ -1331,6 +1349,9 @@ class InvokeFunctionExpr extends Expression {
     visitExpression(visitor, context) {
         return visitor.visitInvokeFunctionExpr(this, context);
     }
+    clone() {
+        return new InvokeFunctionExpr(this.fn.clone(), this.args.map(arg => arg.clone()), this.type, this.sourceSpan, this.pure);
+    }
 }
 class TaggedTemplateExpr extends Expression {
     constructor(tag, template, type, sourceSpan) {
@@ -1349,6 +1370,9 @@ class TaggedTemplateExpr extends Expression {
     visitExpression(visitor, context) {
         return visitor.visitTaggedTemplateExpr(this, context);
     }
+    clone() {
+        return new TaggedTemplateExpr(this.tag.clone(), this.template.clone(), this.type, this.sourceSpan);
+    }
 }
 class InstantiateExpr extends Expression {
     constructor(classExpr, args, type, sourceSpan) {
@@ -1366,6 +1390,9 @@ class InstantiateExpr extends Expression {
     visitExpression(visitor, context) {
         return visitor.visitInstantiateExpr(this, context);
     }
+    clone() {
+        return new InstantiateExpr(this.classExpr.clone(), this.args.map(arg => arg.clone()), this.type, this.sourceSpan);
+    }
 }
 class LiteralExpr extends Expression {
     constructor(value, type, sourceSpan) {
@@ -1381,11 +1408,17 @@ class LiteralExpr extends Expression {
     visitExpression(visitor, context) {
         return visitor.visitLiteralExpr(this, context);
     }
+    clone() {
+        return new LiteralExpr(this.value, this.type, this.sourceSpan);
+    }
 }
 class TemplateLiteral {
     constructor(elements, expressions) {
         this.elements = elements;
         this.expressions = expressions;
+    }
+    clone() {
+        return new TemplateLiteral(this.elements.map(el => el.clone()), this.expressions.map(expr => expr.clone()));
     }
 }
 class TemplateLiteralElement {
@@ -1400,6 +1433,9 @@ class TemplateLiteralElement {
         // indicate the end of the template literal element.
         this.rawText =
             rawText ?? sourceSpan?.toString() ?? escapeForTemplateLiteral(escapeSlashes(text));
+    }
+    clone() {
+        return new TemplateLiteralElement(this.text, this.sourceSpan, this.rawText);
     }
 }
 class LiteralPiece {
@@ -1444,6 +1480,9 @@ class LocalizedString extends Expression {
     }
     visitExpression(visitor, context) {
         return visitor.visitLocalizedString(this, context);
+    }
+    clone() {
+        return new LocalizedString(this.metaBlock, this.messageParts, this.placeHolderNames, this.expressions.map(expr => expr.clone()), this.sourceSpan);
     }
     /**
      * Serialize the given `meta` and `messagePart` into "cooked" and "raw" strings that can be used
@@ -1546,6 +1585,9 @@ class ExternalExpr extends Expression {
     visitExpression(visitor, context) {
         return visitor.visitExternalExpr(this, context);
     }
+    clone() {
+        return new ExternalExpr(this.value, this.type, this.typeParams, this.sourceSpan);
+    }
 }
 class ExternalReference {
     constructor(moduleName, name, runtime) {
@@ -1571,6 +1613,9 @@ class ConditionalExpr extends Expression {
     visitExpression(visitor, context) {
         return visitor.visitConditionalExpr(this, context);
     }
+    clone() {
+        return new ConditionalExpr(this.condition.clone(), this.trueCase.clone(), this.falseCase?.clone(), this.type, this.sourceSpan);
+    }
 }
 class NotExpr extends Expression {
     constructor(condition, sourceSpan) {
@@ -1586,6 +1631,9 @@ class NotExpr extends Expression {
     visitExpression(visitor, context) {
         return visitor.visitNotExpr(this, context);
     }
+    clone() {
+        return new NotExpr(this.condition.clone(), this.sourceSpan);
+    }
 }
 class FnParam {
     constructor(name, type = null) {
@@ -1594,6 +1642,9 @@ class FnParam {
     }
     isEquivalent(param) {
         return this.name === param.name;
+    }
+    clone() {
+        return new FnParam(this.name, this.type);
     }
 }
 class FunctionExpr extends Expression {
@@ -1616,6 +1667,10 @@ class FunctionExpr extends Expression {
     toDeclStmt(name, modifiers) {
         return new DeclareFunctionStmt(name, this.params, this.statements, this.type, modifiers, this.sourceSpan);
     }
+    clone() {
+        // TODO: Should we deep clone statements?
+        return new FunctionExpr(this.params.map(p => p.clone()), this.statements, this.type, this.sourceSpan, this.name);
+    }
 }
 class UnaryOperatorExpr extends Expression {
     constructor(operator, expr, type, sourceSpan, parens = true) {
@@ -1633,6 +1688,9 @@ class UnaryOperatorExpr extends Expression {
     }
     visitExpression(visitor, context) {
         return visitor.visitUnaryOperatorExpr(this, context);
+    }
+    clone() {
+        return new UnaryOperatorExpr(this.operator, this.expr.clone(), this.type, this.sourceSpan, this.parens);
     }
 }
 class BinaryOperatorExpr extends Expression {
@@ -1652,6 +1710,9 @@ class BinaryOperatorExpr extends Expression {
     }
     visitExpression(visitor, context) {
         return visitor.visitBinaryOperatorExpr(this, context);
+    }
+    clone() {
+        return new BinaryOperatorExpr(this.operator, this.lhs.clone(), this.rhs.clone(), this.type, this.sourceSpan, this.parens);
     }
 }
 class ReadPropExpr extends Expression {
@@ -1673,6 +1734,9 @@ class ReadPropExpr extends Expression {
     set(value) {
         return new WritePropExpr(this.receiver, this.name, value, null, this.sourceSpan);
     }
+    clone() {
+        return new ReadPropExpr(this.receiver.clone(), this.name, this.type, this.sourceSpan);
+    }
 }
 class ReadKeyExpr extends Expression {
     constructor(receiver, index, type, sourceSpan) {
@@ -1693,6 +1757,9 @@ class ReadKeyExpr extends Expression {
     set(value) {
         return new WriteKeyExpr(this.receiver, this.index, value, null, this.sourceSpan);
     }
+    clone() {
+        return new ReadKeyExpr(this.receiver, this.index.clone(), this.type, this.sourceSpan);
+    }
 }
 class LiteralArrayExpr extends Expression {
     constructor(entries, type, sourceSpan) {
@@ -1708,6 +1775,9 @@ class LiteralArrayExpr extends Expression {
     visitExpression(visitor, context) {
         return visitor.visitLiteralArrayExpr(this, context);
     }
+    clone() {
+        return new LiteralArrayExpr(this.entries.map(e => e.clone()), this.type, this.sourceSpan);
+    }
 }
 class LiteralMapEntry {
     constructor(key, value, quoted) {
@@ -1717,6 +1787,9 @@ class LiteralMapEntry {
     }
     isEquivalent(e) {
         return this.key === e.key && this.value.isEquivalent(e.value);
+    }
+    clone() {
+        return new LiteralMapEntry(this.key, this.value.clone(), this.quoted);
     }
 }
 class LiteralMapExpr extends Expression {
@@ -1737,6 +1810,10 @@ class LiteralMapExpr extends Expression {
     visitExpression(visitor, context) {
         return visitor.visitLiteralMapExpr(this, context);
     }
+    clone() {
+        const entriesClone = this.entries.map(entry => entry.clone());
+        return new LiteralMapExpr(entriesClone, this.type, this.sourceSpan);
+    }
 }
 class CommaExpr extends Expression {
     constructor(parts, sourceSpan) {
@@ -1751,6 +1828,9 @@ class CommaExpr extends Expression {
     }
     visitExpression(visitor, context) {
         return visitor.visitCommaExpr(this, context);
+    }
+    clone() {
+        return new CommaExpr(this.parts.map(p => p.clone()));
     }
 }
 const NULL_EXPR = new LiteralExpr(null, null, null);
@@ -2255,6 +2335,9 @@ class FixupExpression extends Expression {
     }
     isConstant() {
         return true;
+    }
+    clone() {
+        throw new Error(`Not supported.`);
     }
     fixup(expression) {
         this.resolved = expression;
@@ -7247,6 +7330,7 @@ class InterpolationExpression extends Expression {
         this.isConstant = unsupported;
         this.isEquivalent = unsupported;
         this.visitExpression = unsupported;
+        this.clone = unsupported;
     }
 }
 class DefaultLocalResolver {
@@ -8617,6 +8701,22 @@ var ExpressionKind;
      * Binding to a pipe transformation with a variable number of arguments.
      */
     ExpressionKind[ExpressionKind["PipeBindingVariadic"] = 11] = "PipeBindingVariadic";
+    /*
+     * A safe property read requiring expansion into a null check.
+     */
+    ExpressionKind[ExpressionKind["SafePropertyRead"] = 12] = "SafePropertyRead";
+    /**
+     * A safe keyed read requiring expansion into a null check.
+     */
+    ExpressionKind[ExpressionKind["SafeKeyedRead"] = 13] = "SafeKeyedRead";
+    /**
+     * A safe function call requiring expansion into a null check.
+     */
+    ExpressionKind[ExpressionKind["SafeInvokeFunction"] = 14] = "SafeInvokeFunction";
+    /**
+     * An intermediate expression that will be expanded from a safe read into an explicit ternary.
+     */
+    ExpressionKind[ExpressionKind["SafeTernaryExpr"] = 15] = "SafeTernaryExpr";
 })(ExpressionKind || (ExpressionKind = {}));
 /**
  * Distinguishes between different kinds of `SemanticVariable`s.
@@ -8753,6 +8853,9 @@ class LexicalReadExpr extends ExpressionBase {
         return false;
     }
     transformInternalExpressions() { }
+    clone() {
+        return new LexicalReadExpr(this.name);
+    }
 }
 /**
  * Runtime operation to retrieve the value of a local reference.
@@ -8775,6 +8878,11 @@ class ReferenceExpr extends ExpressionBase {
         return false;
     }
     transformInternalExpressions() { }
+    clone() {
+        const expr = new ReferenceExpr(this.target, this.offset);
+        expr.slot = this.slot;
+        return expr;
+    }
 }
 /**
  * A reference to the current view context (usually the `ctx` variable in a template function).
@@ -8793,6 +8901,9 @@ class ContextExpr extends ExpressionBase {
         return false;
     }
     transformInternalExpressions() { }
+    clone() {
+        return new ContextExpr(this.view);
+    }
 }
 /**
  * Runtime operation to navigate to the next view context in the view hierarchy.
@@ -8811,6 +8922,11 @@ class NextContextExpr extends ExpressionBase {
         return false;
     }
     transformInternalExpressions() { }
+    clone() {
+        const expr = new NextContextExpr();
+        expr.steps = this.steps;
+        return expr;
+    }
 }
 /**
  * Runtime operation to snapshot the current view context.
@@ -8831,6 +8947,9 @@ class GetCurrentViewExpr extends ExpressionBase {
         return false;
     }
     transformInternalExpressions() { }
+    clone() {
+        return new GetCurrentViewExpr();
+    }
 }
 /**
  * Runtime operation to restore a snapshotted view.
@@ -8865,6 +8984,9 @@ class RestoreViewExpr extends ExpressionBase {
             this.view = transformExpressionsInExpression(this.view, transform, flags);
         }
     }
+    clone() {
+        return new RestoreViewExpr(this.view instanceof Expression ? this.view.clone() : this.view);
+    }
 }
 /**
  * Runtime operation to reset the current view context after `RestoreView`.
@@ -8887,6 +9009,9 @@ class ResetViewExpr extends ExpressionBase {
     transformInternalExpressions(transform, flags) {
         this.expr = transformExpressionsInExpression(this.expr, transform, flags);
     }
+    clone() {
+        return new ResetViewExpr(this.expr.clone());
+    }
 }
 /**
  * Read of a variable declared as an `ir.VariableOp` and referenced through its `ir.XrefId`.
@@ -8906,6 +9031,11 @@ class ReadVariableExpr extends ExpressionBase {
         return false;
     }
     transformInternalExpressions() { }
+    clone() {
+        const expr = new ReadVariableExpr(this.xref);
+        expr.name = this.name;
+        return expr;
+    }
 }
 class PureFunctionExpr extends ExpressionBase {
     static { _b = ConsumesVarsTrait, _c = UsesVarOffset; }
@@ -8951,6 +9081,12 @@ class PureFunctionExpr extends ExpressionBase {
             this.args[i] = transformExpressionsInExpression(this.args[i], transform, flags);
         }
     }
+    clone() {
+        const expr = new PureFunctionExpr(this.body?.clone() ?? null, this.args.map(arg => arg.clone()));
+        expr.fn = this.fn?.clone() ?? null;
+        expr.varOffset = this.varOffset;
+        return expr;
+    }
 }
 class PureFunctionParameterExpr extends ExpressionBase {
     constructor(index) {
@@ -8966,6 +9102,9 @@ class PureFunctionParameterExpr extends ExpressionBase {
         return true;
     }
     transformInternalExpressions() { }
+    clone() {
+        return new PureFunctionParameterExpr(this.index);
+    }
 }
 class PipeBindingExpr extends ExpressionBase {
     static { _d = UsesSlotIndex, _e = ConsumesVarsTrait, _f = UsesVarOffset; }
@@ -8997,6 +9136,12 @@ class PipeBindingExpr extends ExpressionBase {
             this.args[idx] = transformExpressionsInExpression(this.args[idx], transform, flags);
         }
     }
+    clone() {
+        const r = new PipeBindingExpr(this.target, this.name, this.args.map(a => a.clone()));
+        r.slot = this.slot;
+        r.varOffset = this.varOffset;
+        return r;
+    }
 }
 class PipeBindingVariadicExpr extends ExpressionBase {
     static { _g = UsesSlotIndex, _h = ConsumesVarsTrait, _j = UsesVarOffset; }
@@ -9024,6 +9169,101 @@ class PipeBindingVariadicExpr extends ExpressionBase {
     }
     transformInternalExpressions(transform, flags) {
         this.args = transformExpressionsInExpression(this.args, transform, flags);
+    }
+    clone() {
+        const r = new PipeBindingVariadicExpr(this.target, this.name, this.args.clone(), this.numArgs);
+        r.slot = this.slot;
+        r.varOffset = this.varOffset;
+        return r;
+    }
+}
+class SafePropertyReadExpr extends ExpressionBase {
+    constructor(receiver, name) {
+        super();
+        this.receiver = receiver;
+        this.name = name;
+        this.kind = ExpressionKind.SafePropertyRead;
+    }
+    visitExpression(visitor, context) { }
+    isEquivalent() {
+        return false;
+    }
+    isConstant() {
+        return false;
+    }
+    transformInternalExpressions(transform, flags) {
+        this.receiver = transformExpressionsInExpression(this.receiver, transform, flags);
+    }
+    clone() {
+        return new SafePropertyReadExpr(this.receiver.clone(), this.name);
+    }
+}
+class SafeKeyedReadExpr extends ExpressionBase {
+    constructor(receiver, index) {
+        super();
+        this.receiver = receiver;
+        this.index = index;
+        this.kind = ExpressionKind.SafeKeyedRead;
+    }
+    visitExpression(visitor, context) { }
+    isEquivalent() {
+        return false;
+    }
+    isConstant() {
+        return false;
+    }
+    transformInternalExpressions(transform, flags) {
+        this.receiver = transformExpressionsInExpression(this.receiver, transform, flags);
+        this.index = transformExpressionsInExpression(this.index, transform, flags);
+    }
+    clone() {
+        return new SafeKeyedReadExpr(this.receiver.clone(), this.index.clone());
+    }
+}
+class SafeInvokeFunctionExpr extends ExpressionBase {
+    constructor(receiver, args) {
+        super();
+        this.receiver = receiver;
+        this.args = args;
+        this.kind = ExpressionKind.SafeInvokeFunction;
+    }
+    visitExpression(visitor, context) { }
+    isEquivalent() {
+        return false;
+    }
+    isConstant() {
+        return false;
+    }
+    transformInternalExpressions(transform, flags) {
+        this.receiver = transformExpressionsInExpression(this.receiver, transform, flags);
+        for (let i = 0; i < this.args.length; i++) {
+            this.args[i] = transformExpressionsInExpression(this.args[i], transform, flags);
+        }
+    }
+    clone() {
+        return new SafeInvokeFunctionExpr(this.receiver.clone(), this.args.map(a => a.clone()));
+    }
+}
+class SafeTernaryExpr extends ExpressionBase {
+    constructor(guard, expr) {
+        super();
+        this.guard = guard;
+        this.expr = expr;
+        this.kind = ExpressionKind.SafeTernaryExpr;
+    }
+    visitExpression(visitor, context) { }
+    isEquivalent() {
+        return false;
+    }
+    isConstant() {
+        return false;
+    }
+    transformInternalExpressions(transform, flags) {
+        this.guard = transformExpressionsInExpression(this.guard, transform, flags);
+        this.expr = transformExpressionsInExpression(this.expr, transform, flags);
+    }
+    clone() {
+        return new SafeTernaryExpr(this.guard.clone(), this.expr.clone());
     }
 }
 /**
@@ -9949,6 +10189,23 @@ function phaseGenerateAdvance(cpl) {
                 OpList.insertBefore(createAdvanceOp(delta), op);
                 slotContext = slot;
             }
+        }
+    }
+}
+
+function phaseNullishCoalescing(cpl) {
+    for (const view of cpl.views.values()) {
+        for (const op of view.ops()) {
+            transformExpressionsInOp(op, expr => {
+                if (!(expr instanceof BinaryOperatorExpr) ||
+                    expr.operator !== BinaryOperator.NullishCoalesce) {
+                    return expr;
+                }
+                // TODO: We need to unconditionally emit a temporary variable to match
+                // TemplateDefinitionBuilder. (We could also emit one conditionally when not in
+                // compatibility mode.)
+                return new ConditionalExpr(new BinaryOperatorExpr(BinaryOperator.And, new BinaryOperatorExpr(BinaryOperator.NotIdentical, expr.lhs, NULL_EXPR), new BinaryOperatorExpr(BinaryOperator.NotIdentical, expr.lhs, new LiteralExpr(undefined))), expr.lhs, expr.rhs);
+            }, VisitorContextFlag.None);
         }
     }
 }
@@ -11457,6 +11714,83 @@ function allowConservativeInlining(decl, target) {
 }
 
 /**
+ * Finds all unresolved safe read expressions, and converts them into the appropriate output AST
+ * reads, guarded by null checks.
+ */
+function phaseExpandSafeReads(cpl) {
+    for (const [_, view] of cpl.views) {
+        for (const op of view.ops()) {
+            transformExpressionsInOp(op, safeTransform, VisitorContextFlag.None);
+            transformExpressionsInOp(op, ternaryTransform, VisitorContextFlag.None);
+        }
+    }
+}
+function isSafeAccessExpression(e) {
+    return e instanceof SafePropertyReadExpr || e instanceof SafeKeyedReadExpr;
+}
+function isUnsafeAccessExpression(e) {
+    return e instanceof ReadPropExpr || e instanceof ReadKeyExpr;
+}
+function isAccessExpression(e) {
+    return isSafeAccessExpression(e) || isUnsafeAccessExpression(e);
+}
+function deepestSafeTernary(e) {
+    if (isAccessExpression(e) && e.receiver instanceof SafeTernaryExpr) {
+        let st = e.receiver;
+        while (st.expr instanceof SafeTernaryExpr) {
+            st = st.expr;
+        }
+        return st;
+    }
+    return null;
+}
+// TODO: When strict compatibility with TemplateDefinitionBuilder is not required, we can use `&&`
+// instead.
+function safeTransform(e) {
+    if (e instanceof SafeInvokeFunctionExpr) {
+        // TODO: Implement safe function calls in a subsequent commit.
+        return new InvokeFunctionExpr(e.receiver, e.args);
+    }
+    if (!isAccessExpression(e)) {
+        return e;
+    }
+    const dst = deepestSafeTernary(e);
+    if (dst) {
+        if (e instanceof ReadPropExpr) {
+            dst.expr = dst.expr.prop(e.name);
+            return e.receiver;
+        }
+        if (e instanceof ReadKeyExpr) {
+            dst.expr = dst.expr.key(e.index);
+            return e.receiver;
+        }
+        if (e instanceof SafePropertyReadExpr) {
+            dst.expr = new SafeTernaryExpr(dst.expr.clone(), dst.expr.prop(e.name));
+            return e.receiver;
+        }
+        if (e instanceof SafeKeyedReadExpr) {
+            dst.expr = new SafeTernaryExpr(dst.expr.clone(), dst.expr.key(e.index));
+            return e.receiver;
+        }
+    }
+    else {
+        if (e instanceof SafePropertyReadExpr) {
+            return new SafeTernaryExpr(e.receiver.clone(), e.receiver.prop(e.name));
+        }
+        if (e instanceof SafeKeyedReadExpr) {
+            return new SafeTernaryExpr(e.receiver.clone(), e.receiver.key(e.index));
+        }
+    }
+    return e;
+}
+function ternaryTransform(e) {
+    if (!(e instanceof SafeTernaryExpr)) {
+        return e;
+    }
+    return new ConditionalExpr(new BinaryOperatorExpr(BinaryOperator.Equals, e.guard, NULL_EXPR), NULL_EXPR, e.expr);
+}
+
+/**
  * Run all transformation phases in the correct order against a `ComponentCompilation`. After this
  * processing, the compilation should be in a state where it can be emitted via `emitTemplateFn`.s
  */
@@ -11471,6 +11805,8 @@ function transformTemplate(cpl) {
     phaseResolveContexts(cpl);
     phaseLocalRefs(cpl);
     phaseConstCollection(cpl);
+    phaseNullishCoalescing(cpl);
+    phaseExpandSafeReads(cpl);
     phaseSlotAllocation(cpl);
     phaseVarCounting(cpl);
     phaseGenerateAdvance(cpl);
@@ -11825,11 +12161,24 @@ function convertAst(ast, cpl) {
     else if (ast instanceof Conditional) {
         return new ConditionalExpr(convertAst(ast.condition, cpl), convertAst(ast.trueExp, cpl), convertAst(ast.falseExp, cpl));
     }
+    else if (ast instanceof NonNullAssert) {
+        // A non-null assertion shouldn't impact generated instructions, so we can just drop it.
+        return convertAst(ast.expression, cpl);
+    }
     else if (ast instanceof BindingPipe) {
         return new PipeBindingExpr(cpl.allocateXrefId(), ast.name, [
             convertAst(ast.exp, cpl),
             ...ast.args.map(arg => convertAst(arg, cpl)),
         ]);
+    }
+    else if (ast instanceof SafeKeyedRead) {
+        return new SafeKeyedReadExpr(convertAst(ast.receiver, cpl), convertAst(ast.key, cpl));
+    }
+    else if (ast instanceof SafePropertyRead) {
+        return new SafePropertyReadExpr(convertAst(ast.receiver, cpl), ast.name);
+    }
+    else if (ast instanceof SafeCall) {
+        return new SafeInvokeFunctionExpr(convertAst(ast.receiver, cpl), ast.args.map(a => convertAst(a, cpl)));
     }
     else {
         throw new Error(`Unhandled expression type: ${ast.constructor.name}`);
@@ -23457,7 +23806,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.2.0-next.0+sha-15ab146');
+const VERSION = new Version('16.2.0-next.0+sha-88962b7');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -25385,7 +25734,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-15ab146'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-88962b7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -25488,7 +25837,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-15ab146'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-88962b7'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -25716,7 +26065,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-15ab146'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-88962b7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -25751,7 +26100,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-15ab146'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-88962b7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -25802,7 +26151,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-15ab146'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-88962b7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -25832,7 +26181,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-15ab146'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-88962b7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -25883,7 +26232,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-15ab146'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-88962b7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
