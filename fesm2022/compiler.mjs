@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.0+sha-452a3e9
+ * @license Angular v16.2.0-next.0+sha-060830e
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5915,7 +5915,7 @@ class ASTWithName extends AST {
         this.nameSpan = nameSpan;
     }
 }
-class EmptyExpr extends AST {
+class EmptyExpr$1 extends AST {
     visit(visitor, context = null) {
         // do nothing
     }
@@ -7348,7 +7348,7 @@ class DefaultLocalResolver {
 }
 class BuiltinFunctionCall extends Call {
     constructor(span, sourceSpan, args, converter) {
-        super(span, sourceSpan, new EmptyExpr(span, sourceSpan), args, null);
+        super(span, sourceSpan, new EmptyExpr$1(span, sourceSpan), args, null);
         this.converter = converter;
     }
 }
@@ -8632,21 +8632,37 @@ var OpKind;
      */
     OpKind[OpKind["Property"] = 13] = "Property";
     /**
+     * An operation to bind an expression to a style property of an element.
+     */
+    OpKind[OpKind["StyleProp"] = 14] = "StyleProp";
+    /**
+     * An operation to bind an expression to the styles of an element.
+     */
+    OpKind[OpKind["StyleMap"] = 15] = "StyleMap";
+    /**
      * An operation to interpolate text into a property binding.
      */
-    OpKind[OpKind["InterpolateProperty"] = 14] = "InterpolateProperty";
+    OpKind[OpKind["InterpolateProperty"] = 16] = "InterpolateProperty";
+    /**
+     * An operation to interpolate text into a style property binding.
+     */
+    OpKind[OpKind["InterpolateStyleProp"] = 17] = "InterpolateStyleProp";
+    /**
+     * An operation to interpolate text into a style mapping.
+     */
+    OpKind[OpKind["InterpolateStyleMap"] = 18] = "InterpolateStyleMap";
     /**
      * An operation to advance the runtime's implicit slot context during the update phase of a view.
      */
-    OpKind[OpKind["Advance"] = 15] = "Advance";
+    OpKind[OpKind["Advance"] = 19] = "Advance";
     /**
      * An operation to instantiate a pipe.
      */
-    OpKind[OpKind["Pipe"] = 16] = "Pipe";
+    OpKind[OpKind["Pipe"] = 20] = "Pipe";
     /**
      * An operation to associate an attribute with an element.
      */
-    OpKind[OpKind["Attribute"] = 17] = "Attribute";
+    OpKind[OpKind["Attribute"] = 21] = "Attribute";
 })(OpKind || (OpKind = {}));
 /**
  * Distinguishes different kinds of IR expressions.
@@ -8717,6 +8733,10 @@ var ExpressionKind;
      * An intermediate expression that will be expanded from a safe read into an explicit ternary.
      */
     ExpressionKind[ExpressionKind["SafeTernaryExpr"] = 15] = "SafeTernaryExpr";
+    /**
+     * An empty expression that will be stipped before generating the final output.
+     */
+    ExpressionKind[ExpressionKind["EmptyExpr"] = 16] = "EmptyExpr";
 })(ExpressionKind || (ExpressionKind = {}));
 /**
  * Distinguishes between different kinds of `SemanticVariable`s.
@@ -9266,6 +9286,23 @@ class SafeTernaryExpr extends ExpressionBase {
         return new SafeTernaryExpr(this.guard.clone(), this.expr.clone());
     }
 }
+class EmptyExpr extends ExpressionBase {
+    constructor() {
+        super(...arguments);
+        this.kind = ExpressionKind.EmptyExpr;
+    }
+    visitExpression(visitor, context) { }
+    isEquivalent(e) {
+        return e instanceof EmptyExpr;
+    }
+    isConstant() {
+        return true;
+    }
+    clone() {
+        return new EmptyExpr();
+    }
+    transformInternalExpressions() { }
+}
 /**
  * Visits all `Expression`s in the AST of `op` with the `visitor` function.
  */
@@ -9289,9 +9326,14 @@ var VisitorContextFlag;
 function transformExpressionsInOp(op, transform, flags) {
     switch (op.kind) {
         case OpKind.Property:
+        case OpKind.StyleProp:
+        case OpKind.StyleMap:
             op.expression = transformExpressionsInExpression(op.expression, transform, flags);
             break;
         case OpKind.InterpolateProperty:
+        case OpKind.InterpolateStyleProp:
+        case OpKind.InterpolateStyleMap:
+        case OpKind.InterpolateText:
             for (let i = 0; i < op.expressions.length; i++) {
                 op.expressions[i] = transformExpressionsInExpression(op.expressions[i], transform, flags);
             }
@@ -9306,11 +9348,6 @@ function transformExpressionsInOp(op, transform, flags) {
             break;
         case OpKind.Variable:
             op.initializer = transformExpressionsInExpression(op.initializer, transform, flags);
-            break;
-        case OpKind.InterpolateText:
-            for (let i = 0; i < op.expressions.length; i++) {
-                op.expressions[i] = transformExpressionsInExpression(op.expressions[i], transform, flags);
-            }
             break;
         case OpKind.Listener:
             for (const innerOp of op.handlerOps) {
@@ -9791,6 +9828,30 @@ function createPropertyOp(xref, bindingKind, name, expression) {
         ...NEW_OP,
     };
 }
+/** Create a `StylePropOp`. */
+function createStylePropOp(xref, name, expression, unit) {
+    return {
+        kind: OpKind.StyleProp,
+        target: xref,
+        name,
+        expression,
+        unit,
+        ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
+        ...TRAIT_CONSUMES_VARS,
+        ...NEW_OP,
+    };
+}
+/** Create a `StyleMapOp`. */
+function createStyleMapOp(xref, expression) {
+    return {
+        kind: OpKind.StyleMap,
+        target: xref,
+        expression,
+        ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
+        ...TRAIT_CONSUMES_VARS,
+        ...NEW_OP,
+    };
+}
 /**
  * Create an `AttributeOp`.
  */
@@ -9813,6 +9874,36 @@ function createInterpolatePropertyOp(xref, bindingKind, name, strings, expressio
         target: xref,
         bindingKind,
         name,
+        strings,
+        expressions,
+        ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
+        ...TRAIT_CONSUMES_VARS,
+        ...NEW_OP,
+    };
+}
+/**
+ * Create a `InterpolateStyleProp`.
+ */
+function createInterpolateStylePropOp(xref, name, strings, expressions, unit) {
+    return {
+        kind: OpKind.InterpolateStyleProp,
+        target: xref,
+        name,
+        strings,
+        expressions,
+        unit,
+        ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
+        ...TRAIT_CONSUMES_VARS,
+        ...NEW_OP,
+    };
+}
+/**
+ * Create a `InterpolateStyleMap`.
+ */
+function createInterpolateStyleMapOp(xref, strings, expressions) {
+    return {
+        kind: OpKind.InterpolateStyleMap,
+        target: xref,
         strings,
         expressions,
         ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
@@ -9877,12 +9968,16 @@ function phaseVarCounting(cpl) {
 function varsUsedByOp(op) {
     switch (op.kind) {
         case OpKind.Property:
+        case OpKind.StyleProp:
+        case OpKind.StyleMap:
             // Property bindings use 1 variable slot.
             return 1;
         case OpKind.InterpolateText:
             // `ir.InterpolateTextOp`s use a variable slot for each dynamic expression.
             return op.expressions.length;
         case OpKind.InterpolateProperty:
+        case OpKind.InterpolateStyleProp:
+        case OpKind.InterpolateStyleMap:
             // `ir.InterpolatePropertyOp`s use a variable slot for each dynamic expression, plus one for
             // the result.
             return 1 + op.expressions.length;
@@ -9936,6 +10031,15 @@ function phaseAlignPipeVariadicVarOffset(cpl) {
 }
 
 /**
+ * Find all attribute and binding ops, and collect them into the ElementAttribute structures.
+ * In cases where no instruction needs to be generated for the attribute or binding, it is removed.
+ */
+function phaseAttributeExtraction(cpl, compatibility) {
+    for (const [_, view] of cpl.views) {
+        populateElementAttributes(view, compatibility);
+    }
+}
+/**
  * Looks up an element in the given map by xref ID.
  */
 function lookupElement(elements, xref) {
@@ -9946,13 +10050,14 @@ function lookupElement(elements, xref) {
     return el;
 }
 /**
- * Find all attribute and binding ops, and collect them into the ElementAttribute structures.
- * In cases where no instruction needs to be generated for the attribute or binding, it is removed.
+ * Removes the op if its expression is empty.
  */
-function phaseAttributeExtraction(cpl, compatibility) {
-    for (const [_, view] of cpl.views) {
-        populateElementAttributes(view, compatibility);
+function removeIfExpressionIsEmpty(op, expression) {
+    if (expression instanceof EmptyExpr) {
+        OpList.remove(op);
+        return true;
     }
+    return false;
 }
 /**
  * Populates the ElementAttributes map for the given view, and removes ops for any bindings that do
@@ -9972,6 +10077,8 @@ function populateElementAttributes(view, compatibility) {
             case OpKind.Attribute:
                 ownerOp = lookupElement(elements, op.target);
                 assertIsElementAttributes(ownerOp.attributes);
+                // The old compiler only extracted string constants, so we emulate that behavior in
+                // compaitiblity mode, otherwise we optimize more aggressively.
                 let extractable = compatibility ?
                     (op.value instanceof LiteralExpr && typeof op.value.value === 'string') :
                     (op.value.isConstant());
@@ -9982,10 +10089,24 @@ function populateElementAttributes(view, compatibility) {
                 }
                 break;
             case OpKind.Property:
+                ownerOp = lookupElement(elements, op.target);
+                assertIsElementAttributes(ownerOp.attributes);
+                removeIfExpressionIsEmpty(op, op.expression);
+                ownerOp.attributes.add(op.bindingKind, op.name, null);
+                break;
             case OpKind.InterpolateProperty:
                 ownerOp = lookupElement(elements, op.target);
                 assertIsElementAttributes(ownerOp.attributes);
                 ownerOp.attributes.add(op.bindingKind, op.name, null);
+                break;
+            case OpKind.StyleProp:
+                ownerOp = lookupElement(elements, op.target);
+                assertIsElementAttributes(ownerOp.attributes);
+                // The old compiler treated empty style bindings as regular bindings for the purpose of
+                // directive matching. That behavior is incorrect, but we emulate it in compatibility mode.
+                if (removeIfExpressionIsEmpty(op, op.expression) && compatibility) {
+                    ownerOp.attributes.add(ElementAttributeKind.Binding, op.name, null);
+                }
                 break;
             case OpKind.Listener:
                 ownerOp = lookupElement(elements, op.target);
@@ -10004,6 +10125,7 @@ const CHAINABLE = new Set([
     Identifiers.elementStart,
     Identifiers.elementEnd,
     Identifiers.property,
+    Identifiers.styleProp,
     Identifiers.elementContainerStart,
     Identifiers.elementContainerEnd,
     Identifiers.elementContainer,
@@ -10780,6 +10902,16 @@ function property(name, expression) {
         expression,
     ]);
 }
+function styleProp(name, expression, unit) {
+    const args = [literal(name), expression];
+    if (unit !== null) {
+        args.push(literal(unit));
+    }
+    return call(Identifiers.styleProp, args);
+}
+function styleMap(expression) {
+    return call(Identifiers.styleMap, [expression]);
+}
 const PIPE_BINDINGS = [
     Identifiers.pipeBind1,
     Identifiers.pipeBind2,
@@ -10823,6 +10955,31 @@ function textInterpolate(strings, expressions) {
     return callVariadicInstruction(TEXT_INTERPOLATE_CONFIG, [], interpolationArgs);
 }
 function propertyInterpolate(name, strings, expressions) {
+    const interpolationArgs = collateInterpolationArgs(strings, expressions);
+    return callVariadicInstruction(PROPERTY_INTERPOLATE_CONFIG, [literal(name)], interpolationArgs);
+}
+function stylePropInterpolate(name, strings, expressions, unit) {
+    const interpolationArgs = collateInterpolationArgs(strings, expressions);
+    const extraArgs = [];
+    if (unit !== null) {
+        extraArgs.push(literal(unit));
+    }
+    return callVariadicInstruction(STYLE_PROP_INTERPOLATE_CONFIG, [literal(name)], interpolationArgs, extraArgs);
+}
+function styleMapInterpolate(strings, expressions) {
+    const interpolationArgs = collateInterpolationArgs(strings, expressions);
+    return callVariadicInstruction(STYLE_MAP_INTERPOLATE_CONFIG, [], interpolationArgs);
+}
+function pureFunction(varOffset, fn, args) {
+    return callVariadicInstructionExpr(PURE_FUNCTION_CONFIG, [
+        literal(varOffset),
+        fn,
+    ], args);
+}
+/**
+ * Collates the string an expression arguments for an interpolation instruction.
+ */
+function collateInterpolationArgs(strings, expressions) {
     if (strings.length < 1 || expressions.length !== strings.length - 1) {
         throw new Error(`AssertionError: expected specific shape of args for strings/expressions in interpolation`);
     }
@@ -10838,13 +10995,7 @@ function propertyInterpolate(name, strings, expressions) {
         // idx points at the last string.
         interpolationArgs.push(literal(strings[idx]));
     }
-    return callVariadicInstruction(PROPERTY_INTERPOLATE_CONFIG, [literal(name)], interpolationArgs);
-}
-function pureFunction(varOffset, fn, args) {
-    return callVariadicInstructionExpr(PURE_FUNCTION_CONFIG, [
-        literal(varOffset),
-        fn,
-    ], args);
+    return interpolationArgs;
 }
 function call(instruction, args) {
     return createStatementOp(importExpr(instruction).callFn(args).toStmt());
@@ -10895,6 +11046,58 @@ const PROPERTY_INTERPOLATE_CONFIG = {
         return (n - 1) / 2;
     },
 };
+/**
+ * `InterpolationConfig` for the `stylePropInterpolate` instruction.
+ */
+const STYLE_PROP_INTERPOLATE_CONFIG = {
+    constant: [
+        null,
+        Identifiers.stylePropInterpolate1,
+        Identifiers.stylePropInterpolate2,
+        Identifiers.stylePropInterpolate3,
+        Identifiers.stylePropInterpolate4,
+        Identifiers.stylePropInterpolate5,
+        Identifiers.stylePropInterpolate6,
+        Identifiers.stylePropInterpolate7,
+        Identifiers.stylePropInterpolate8,
+    ],
+    variable: Identifiers.stylePropInterpolateV,
+    mapping: n => {
+        if (n % 2 === 0) {
+            throw new Error(`Expected odd number of arguments`);
+        }
+        if (n < 3) {
+            throw new Error(`Expected at least 3 arguments`);
+        }
+        return (n - 1) / 2;
+    },
+};
+/**
+ * `InterpolationConfig` for the `styleMapInterpolate` instruction.
+ */
+const STYLE_MAP_INTERPOLATE_CONFIG = {
+    constant: [
+        null,
+        Identifiers.styleMapInterpolate1,
+        Identifiers.styleMapInterpolate2,
+        Identifiers.styleMapInterpolate3,
+        Identifiers.styleMapInterpolate4,
+        Identifiers.styleMapInterpolate5,
+        Identifiers.styleMapInterpolate6,
+        Identifiers.styleMapInterpolate7,
+        Identifiers.styleMapInterpolate8,
+    ],
+    variable: Identifiers.styleMapInterpolateV,
+    mapping: n => {
+        if (n % 2 === 0) {
+            throw new Error(`Expected odd number of arguments`);
+        }
+        if (n < 3) {
+            throw new Error(`Expected at least 3 arguments`);
+        }
+        return (n - 1) / 2;
+    },
+};
 const PURE_FUNCTION_CONFIG = {
     constant: [
         Identifiers.pureFunction0,
@@ -10910,22 +11113,26 @@ const PURE_FUNCTION_CONFIG = {
     variable: Identifiers.pureFunctionV,
     mapping: n => n,
 };
-function callVariadicInstructionExpr(config, baseArgs, interpolationArgs) {
+function callVariadicInstructionExpr(config, baseArgs, interpolationArgs, extraArgs = []) {
     const n = config.mapping(interpolationArgs.length);
     if (n < config.constant.length) {
         // Constant calling pattern.
-        return importExpr(config.constant[n]).callFn([...baseArgs, ...interpolationArgs]);
+        return importExpr(config.constant[n]).callFn([
+            ...baseArgs, ...interpolationArgs, ...extraArgs
+        ]);
     }
     else if (config.variable !== null) {
         // Variable calling pattern.
-        return importExpr(config.variable).callFn([...baseArgs, literalArr(interpolationArgs)]);
+        return importExpr(config.variable).callFn([
+            ...baseArgs, literalArr(interpolationArgs), ...extraArgs
+        ]);
     }
     else {
         throw new Error(`AssertionError: unable to call variadic function`);
     }
 }
-function callVariadicInstruction(config, baseArgs, interpolationArgs) {
-    return createStatementOp(callVariadicInstructionExpr(config, baseArgs, interpolationArgs).toStmt());
+function callVariadicInstruction(config, baseArgs, interpolationArgs, extraArgs = []) {
+    return createStatementOp(callVariadicInstructionExpr(config, baseArgs, interpolationArgs, extraArgs).toStmt());
 }
 
 /**
@@ -11002,8 +11209,20 @@ function reifyUpdateOperations(_view, ops) {
             case OpKind.Property:
                 OpList.replace(op, property(op.name, op.expression));
                 break;
+            case OpKind.StyleProp:
+                OpList.replace(op, styleProp(op.name, op.expression, op.unit));
+                break;
+            case OpKind.StyleMap:
+                OpList.replace(op, styleMap(op.expression));
+                break;
             case OpKind.InterpolateProperty:
                 OpList.replace(op, propertyInterpolate(op.name, op.strings, op.expressions));
+                break;
+            case OpKind.InterpolateStyleProp:
+                OpList.replace(op, stylePropInterpolate(op.name, op.strings, op.expressions, op.unit));
+                break;
+            case OpKind.InterpolateStyleMap:
+                OpList.replace(op, styleMapInterpolate(op.strings, op.expressions));
                 break;
             case OpKind.InterpolateText:
                 OpList.replace(op, textInterpolate(op.strings, op.expressions));
@@ -12180,6 +12399,9 @@ function convertAst(ast, cpl) {
     else if (ast instanceof SafeCall) {
         return new SafeInvokeFunctionExpr(convertAst(ast.receiver, cpl), ast.args.map(a => convertAst(a, cpl)));
     }
+    else if (ast instanceof EmptyExpr$1) {
+        return new EmptyExpr();
+    }
     else {
         throw new Error(`Unhandled expression type: ${ast.constructor.name}`);
     }
@@ -12233,14 +12455,28 @@ function ingestBindings(view, op, element) {
         view.create.push(listenerOp);
     }
 }
-function ingestPropertyBinding(view, xref, bindingKind, { name, value, type }) {
+function ingestPropertyBinding(view, xref, bindingKind, { name, value, type, unit }) {
     if (value instanceof ASTWithSource) {
         value = value.ast;
     }
     if (value instanceof Interpolation) {
         switch (type) {
             case 0 /* e.BindingType.Property */:
-                view.update.push(createInterpolatePropertyOp(xref, bindingKind, name, value.strings, value.expressions.map(expr => convertAst(expr, view.tpl))));
+                if (name === 'style') {
+                    if (bindingKind !== ElementAttributeKind.Binding) {
+                        throw Error('Unexpected style binding on ng-template');
+                    }
+                    view.update.push(createInterpolateStyleMapOp(xref, value.strings, value.expressions.map(expr => convertAst(expr, view.tpl))));
+                }
+                else {
+                    view.update.push(createInterpolatePropertyOp(xref, bindingKind, name, value.strings, value.expressions.map(expr => convertAst(expr, view.tpl))));
+                }
+                break;
+            case 3 /* e.BindingType.Style */:
+                if (bindingKind !== ElementAttributeKind.Binding) {
+                    throw Error('Unexpected style binding on ng-template');
+                }
+                view.update.push(createInterpolateStylePropOp(xref, name, value.strings, value.expressions.map(expr => convertAst(expr, view.tpl)), unit));
                 break;
             default:
                 // TODO: implement remaining binding types.
@@ -12250,7 +12486,22 @@ function ingestPropertyBinding(view, xref, bindingKind, { name, value, type }) {
     else {
         switch (type) {
             case 0 /* e.BindingType.Property */:
-                view.update.push(createPropertyOp(xref, bindingKind, name, convertAst(value, view.tpl)));
+                // Bindings to [style] are mapped to their own special instruction.
+                if (name === 'style') {
+                    if (bindingKind !== ElementAttributeKind.Binding) {
+                        throw Error('Unexpected style binding on ng-template');
+                    }
+                    view.update.push(createStyleMapOp(xref, convertAst(value, view.tpl)));
+                }
+                else {
+                    view.update.push(createPropertyOp(xref, bindingKind, name, convertAst(value, view.tpl)));
+                }
+                break;
+            case 3 /* e.BindingType.Style */:
+                if (bindingKind !== ElementAttributeKind.Binding) {
+                    throw Error('Unexpected style binding on ng-template');
+                }
+                view.update.push(createStylePropOp(xref, name, convertAst(value, view.tpl), unit));
                 break;
             default:
                 // TODO: implement remaining binding types.
@@ -12887,7 +13138,7 @@ function isEmptyExpression(ast) {
     if (ast instanceof ASTWithSource) {
         ast = ast.ast;
     }
-    return ast instanceof EmptyExpr;
+    return ast instanceof EmptyExpr$1;
 }
 
 var TokenType;
@@ -13792,7 +14043,7 @@ class _ParseAST {
             // We have no expressions so create an empty expression that spans the entire input length
             const artificialStart = this.offset;
             const artificialEnd = this.offset + this.input.length;
-            return new EmptyExpr(this.span(artificialStart, artificialEnd), this.sourceSpan(artificialStart, artificialEnd));
+            return new EmptyExpr$1(this.span(artificialStart, artificialEnd), this.sourceSpan(artificialStart, artificialEnd));
         }
         if (exprs.length == 1)
             return exprs[0];
@@ -13853,7 +14104,7 @@ class _ParseAST {
                 const end = this.inputIndex;
                 const expression = this.input.substring(start, end);
                 this.error(`Conditional expression ${expression} requires all 3 expressions`);
-                no = new EmptyExpr(this.span(start), this.sourceSpan(start));
+                no = new EmptyExpr$1(this.span(start), this.sourceSpan(start));
             }
             else {
                 no = this.parsePipe();
@@ -14078,15 +14329,15 @@ class _ParseAST {
         }
         else if (this.next.isPrivateIdentifier()) {
             this._reportErrorForPrivateIdentifier(this.next, null);
-            return new EmptyExpr(this.span(start), this.sourceSpan(start));
+            return new EmptyExpr$1(this.span(start), this.sourceSpan(start));
         }
         else if (this.index >= this.tokens.length) {
             this.error(`Unexpected end of expression: ${this.input}`);
-            return new EmptyExpr(this.span(start), this.sourceSpan(start));
+            return new EmptyExpr$1(this.span(start), this.sourceSpan(start));
         }
         else {
             this.error(`Unexpected token ${this.next}`);
-            return new EmptyExpr(this.span(start), this.sourceSpan(start));
+            return new EmptyExpr$1(this.span(start), this.sourceSpan(start));
         }
     }
     parseExpressionList(terminator) {
@@ -14147,7 +14398,7 @@ class _ParseAST {
         if (isSafe) {
             if (this.consumeOptionalAssignment()) {
                 this.error('The \'?.\' operator cannot be used in the assignment');
-                receiver = new EmptyExpr(this.span(start), this.sourceSpan(start));
+                receiver = new EmptyExpr$1(this.span(start), this.sourceSpan(start));
             }
             else {
                 receiver = new SafePropertyRead(this.span(start), this.sourceSpan(start), nameSpan, readReceiver, id);
@@ -14157,7 +14408,7 @@ class _ParseAST {
             if (this.consumeOptionalAssignment()) {
                 if (!(this.parseFlags & 1 /* ParseFlags.Action */)) {
                     this.error('Bindings cannot contain assignments');
-                    return new EmptyExpr(this.span(start), this.sourceSpan(start));
+                    return new EmptyExpr$1(this.span(start), this.sourceSpan(start));
                 }
                 const value = this.parseConditional();
                 receiver = new PropertyWrite(this.span(start), this.sourceSpan(start), nameSpan, readReceiver, id, value);
@@ -14287,7 +14538,7 @@ class _ParseAST {
         return this.withContext(ParseContextFlags.Writable, () => {
             this.rbracketsExpected++;
             const key = this.parsePipe();
-            if (key instanceof EmptyExpr) {
+            if (key instanceof EmptyExpr$1) {
                 this.error(`Key access cannot be empty`);
             }
             this.rbracketsExpected--;
@@ -14305,7 +14556,7 @@ class _ParseAST {
                 return isSafe ? new SafeKeyedRead(this.span(start), this.sourceSpan(start), receiver, key) :
                     new KeyedRead(this.span(start), this.sourceSpan(start), receiver, key);
             }
-            return new EmptyExpr(this.span(start), this.sourceSpan(start));
+            return new EmptyExpr$1(this.span(start), this.sourceSpan(start));
         });
     }
     /**
@@ -19184,7 +19435,7 @@ class BindingParser {
             if (ast) {
                 this._reportExpressionParserErrors(ast.errors, sourceSpan);
             }
-            if (!ast || ast.ast instanceof EmptyExpr) {
+            if (!ast || ast.ast instanceof EmptyExpr$1) {
                 this._reportError(`Empty expressions are not allowed`, sourceSpan);
                 return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, absoluteOffset);
             }
@@ -23816,7 +24067,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.2.0-next.0+sha-452a3e9');
+const VERSION = new Version('16.2.0-next.0+sha-060830e');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -25744,7 +25995,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-452a3e9'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-060830e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -25847,7 +26098,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-452a3e9'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-060830e'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -26075,7 +26326,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-452a3e9'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-060830e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -26110,7 +26361,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-452a3e9'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-060830e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -26161,7 +26412,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-452a3e9'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-060830e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -26191,7 +26442,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-452a3e9'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-060830e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -26242,7 +26493,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.2.0-next.0+sha-452a3e9'));
+    definitionMap.set('version', literal('16.2.0-next.0+sha-060830e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -26275,5 +26526,5 @@ publishFacade(_global);
 
 // This file is not used to build this module. It is only used during editing
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element$1 as TmplAstElement, Icu$1 as TmplAstIcu, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element$1 as TmplAstElement, Icu$1 as TmplAstIcu, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
