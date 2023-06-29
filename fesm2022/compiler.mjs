@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.1+sha-a5bd5dd
+ * @license Angular v16.2.0-next.1+sha-29bf476
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1339,6 +1339,10 @@ class InvokeFunctionExpr extends Expression {
         this.args = args;
         this.pure = pure;
     }
+    // An alias for fn, which allows other logic to handle calls and property reads together.
+    get receiver() {
+        return this.fn;
+    }
     isEquivalent(e) {
         return e instanceof InvokeFunctionExpr && this.fn.isEquivalent(e.fn) &&
             areAllEquivalent(this.args, e.args) && this.pure === e.pure;
@@ -1720,6 +1724,10 @@ class ReadPropExpr extends Expression {
         super(type, sourceSpan);
         this.receiver = receiver;
         this.name = name;
+    }
+    // An alias for name, which allows other logic to handle property reads and keyed reads together.
+    get index() {
+        return this.name;
     }
     isEquivalent(e) {
         return e instanceof ReadPropExpr && this.receiver.isEquivalent(e.receiver) &&
@@ -8737,6 +8745,14 @@ var ExpressionKind;
      * An empty expression that will be stipped before generating the final output.
      */
     ExpressionKind[ExpressionKind["EmptyExpr"] = 16] = "EmptyExpr";
+    /*
+     * An assignment to a temporary variable.
+     */
+    ExpressionKind[ExpressionKind["AssignTemporaryExpr"] = 17] = "AssignTemporaryExpr";
+    /**
+     * A reference to a temporary variable.
+     */
+    ExpressionKind[ExpressionKind["ReadTemporaryExpr"] = 18] = "ReadTemporaryExpr";
 })(ExpressionKind || (ExpressionKind = {}));
 /**
  * Distinguishes between different kinds of `SemanticVariable`s.
@@ -9204,7 +9220,13 @@ class SafePropertyReadExpr extends ExpressionBase {
         this.name = name;
         this.kind = ExpressionKind.SafePropertyRead;
     }
-    visitExpression(visitor, context) { }
+    // An alias for name, which allows other logic to handle property reads and keyed reads together.
+    get index() {
+        return this.name;
+    }
+    visitExpression(visitor, context) {
+        this.receiver.visitExpression(visitor, context);
+    }
     isEquivalent() {
         return false;
     }
@@ -9225,7 +9247,10 @@ class SafeKeyedReadExpr extends ExpressionBase {
         this.index = index;
         this.kind = ExpressionKind.SafeKeyedRead;
     }
-    visitExpression(visitor, context) { }
+    visitExpression(visitor, context) {
+        this.receiver.visitExpression(visitor, context);
+        this.index.visitExpression(visitor, context);
+    }
     isEquivalent() {
         return false;
     }
@@ -9247,7 +9272,12 @@ class SafeInvokeFunctionExpr extends ExpressionBase {
         this.args = args;
         this.kind = ExpressionKind.SafeInvokeFunction;
     }
-    visitExpression(visitor, context) { }
+    visitExpression(visitor, context) {
+        this.receiver.visitExpression(visitor, context);
+        for (const a of this.args) {
+            a.visitExpression(visitor, context);
+        }
+    }
     isEquivalent() {
         return false;
     }
@@ -9271,7 +9301,10 @@ class SafeTernaryExpr extends ExpressionBase {
         this.expr = expr;
         this.kind = ExpressionKind.SafeTernaryExpr;
     }
-    visitExpression(visitor, context) { }
+    visitExpression(visitor, context) {
+        this.guard.visitExpression(visitor, context);
+        this.expr.visitExpression(visitor, context);
+    }
     isEquivalent() {
         return false;
     }
@@ -9302,6 +9335,53 @@ class EmptyExpr extends ExpressionBase {
         return new EmptyExpr();
     }
     transformInternalExpressions() { }
+}
+class AssignTemporaryExpr extends ExpressionBase {
+    constructor(expr, xref) {
+        super();
+        this.expr = expr;
+        this.xref = xref;
+        this.kind = ExpressionKind.AssignTemporaryExpr;
+        this.name = null;
+    }
+    visitExpression(visitor, context) {
+        this.expr.visitExpression(visitor, context);
+    }
+    isEquivalent() {
+        return false;
+    }
+    isConstant() {
+        return false;
+    }
+    transformInternalExpressions(transform, flags) {
+        this.expr = transformExpressionsInExpression(this.expr, transform, flags);
+    }
+    clone() {
+        const a = new AssignTemporaryExpr(this.expr, this.xref);
+        a.name = this.name;
+        return a;
+    }
+}
+class ReadTemporaryExpr extends ExpressionBase {
+    constructor(xref) {
+        super();
+        this.xref = xref;
+        this.kind = ExpressionKind.ReadTemporaryExpr;
+        this.name = null;
+    }
+    visitExpression(visitor, context) { }
+    isEquivalent() {
+        return this.xref === this.xref;
+    }
+    isConstant() {
+        return false;
+    }
+    transformInternalExpressions(transform, flags) { }
+    clone() {
+        const r = new ReadTemporaryExpr(this.xref);
+        r.name = this.name;
+        return r;
+    }
 }
 /**
  * Visits all `Expression`s in the AST of `op` with the `visitor` function.
@@ -9445,6 +9525,11 @@ function transformExpressionsInStatement(stmt, transform, flags) {
     }
     else if (stmt instanceof ReturnStatement) {
         stmt.value = transformExpressionsInExpression(stmt.value, transform, flags);
+    }
+    else if (stmt instanceof DeclareVarStmt) {
+        if (stmt.value !== undefined) {
+            stmt.value = transformExpressionsInExpression(stmt.value, transform, flags);
+        }
     }
     else {
         throw new Error(`Unhandled statement kind: ${stmt.constructor.name}`);
@@ -10323,10 +10408,11 @@ function phaseNullishCoalescing(cpl) {
                     expr.operator !== BinaryOperator.NullishCoalesce) {
                     return expr;
                 }
-                // TODO: We need to unconditionally emit a temporary variable to match
-                // TemplateDefinitionBuilder. (We could also emit one conditionally when not in
-                // compatibility mode.)
-                return new ConditionalExpr(new BinaryOperatorExpr(BinaryOperator.And, new BinaryOperatorExpr(BinaryOperator.NotIdentical, expr.lhs, NULL_EXPR), new BinaryOperatorExpr(BinaryOperator.NotIdentical, expr.lhs, new LiteralExpr(undefined))), expr.lhs, expr.rhs);
+                const assignment = new AssignTemporaryExpr(expr.lhs.clone(), cpl.allocateXrefId());
+                const read = new ReadTemporaryExpr(assignment.xref);
+                // TODO: When not in compatibility mode for TemplateDefinitionBuilder, we can just emit
+                // `t != null` instead of including an undefined check as well.
+                return new ConditionalExpr(new BinaryOperatorExpr(BinaryOperator.And, new BinaryOperatorExpr(BinaryOperator.NotIdentical, assignment, NULL_EXPR), new BinaryOperatorExpr(BinaryOperator.NotIdentical, read, new LiteralExpr(undefined))), read.clone(), expr.rhs);
             }, VisitorContextFlag.None);
         }
     }
@@ -11266,6 +11352,16 @@ function reifyIrExpression(expr) {
                 throw new Error(`Read of unnamed variable ${expr.xref}`);
             }
             return variable(expr.name);
+        case ExpressionKind.ReadTemporaryExpr:
+            if (expr.name === null) {
+                throw new Error(`Read of unnamed temporary ${expr.xref}`);
+            }
+            return variable(expr.name);
+        case ExpressionKind.AssignTemporaryExpr:
+            if (expr.name === null) {
+                throw new Error(`Assign of unnamed temporary ${expr.xref}`);
+            }
+            return variable(expr.name).set(expr.expr);
         case ExpressionKind.PureFunctionExpr:
             if (expr.fn === null) {
                 throw new Error(`AssertionError: expected PureFunctions to have been extracted`);
@@ -11936,19 +12032,107 @@ function allowConservativeInlining(decl, target) {
  * Finds all unresolved safe read expressions, and converts them into the appropriate output AST
  * reads, guarded by null checks.
  */
-function phaseExpandSafeReads(cpl) {
+function phaseExpandSafeReads(cpl, compatibility) {
     for (const [_, view] of cpl.views) {
         for (const op of view.ops()) {
-            transformExpressionsInOp(op, safeTransform, VisitorContextFlag.None);
+            transformExpressionsInOp(op, e => safeTransform(e, { cpl, compatibility }), VisitorContextFlag.None);
             transformExpressionsInOp(op, ternaryTransform, VisitorContextFlag.None);
         }
     }
+}
+// A lookup set of all the expression kinds that require a temporary variable to be generated.
+const requiresTemporary = [
+    InvokeFunctionExpr, LiteralArrayExpr, LiteralMapExpr, SafeInvokeFunctionExpr,
+    PipeBindingExpr
+].map(e => e.constructor.name);
+function needsTemporaryInSafeAccess(e) {
+    // TODO: We probably want to use an expression visitor to recursively visit all descendents.
+    // However, that would potentially do a lot of extra work (because it cannot short circuit), so we
+    // implement the logic ourselves for now.
+    if (e instanceof UnaryOperatorExpr) {
+        return needsTemporaryInSafeAccess(e.expr);
+    }
+    else if (e instanceof BinaryOperatorExpr) {
+        return needsTemporaryInSafeAccess(e.lhs) || needsTemporaryInSafeAccess(e.rhs);
+    }
+    else if (e instanceof ConditionalExpr) {
+        if (e.falseCase && needsTemporaryInSafeAccess(e.falseCase))
+            return true;
+        return needsTemporaryInSafeAccess(e.condition) || needsTemporaryInSafeAccess(e.trueCase);
+    }
+    else if (e instanceof NotExpr) {
+        return needsTemporaryInSafeAccess(e.condition);
+    }
+    else if (e instanceof AssignTemporaryExpr) {
+        return needsTemporaryInSafeAccess(e.expr);
+    }
+    else if (e instanceof ReadPropExpr) {
+        return needsTemporaryInSafeAccess(e.receiver);
+    }
+    else if (e instanceof ReadKeyExpr) {
+        return needsTemporaryInSafeAccess(e.receiver) || needsTemporaryInSafeAccess(e.index);
+    }
+    // TODO: Switch to a method which is exhaustive of newly added expression subtypes.
+    return e instanceof InvokeFunctionExpr || e instanceof LiteralArrayExpr ||
+        e instanceof LiteralMapExpr || e instanceof SafeInvokeFunctionExpr ||
+        e instanceof PipeBindingExpr;
+}
+function temporariesIn(e) {
+    const temporaries = new Set();
+    // TODO: Although it's not currently supported by the transform helper, we should be able to
+    // short-circuit exploring the tree to do less work. In particular, we don't have to penetrate
+    // into the subexpressions of temporary assignments.
+    transformExpressionsInExpression(e, e => {
+        if (e instanceof AssignTemporaryExpr) {
+            temporaries.add(e.xref);
+        }
+        return e;
+    }, VisitorContextFlag.None);
+    return temporaries;
+}
+function eliminateTemporaryAssignments(e, tmps, ctx) {
+    // TODO: We can be more efficient than the transform helper here. We don't need to visit any
+    // descendents of temporary assignments.
+    transformExpressionsInExpression(e, e => {
+        if (e instanceof AssignTemporaryExpr && tmps.has(e.xref)) {
+            const read = new ReadTemporaryExpr(e.xref);
+            // `TemplateDefinitionBuilder` has the (accidental?) behavior of generating assignments of
+            // temporary variables to themselves. This happens because some subexpression that the
+            // temporary refers to, possibly through nested temporaries, has a function call. We copy that
+            // behavior here.
+            return ctx.compatibility ? new AssignTemporaryExpr(read, read.xref) : read;
+        }
+        return e;
+    }, VisitorContextFlag.None);
+    return e;
+}
+/**
+ * Creates a safe ternary guarded by the input expression, and with a body generated by the provided
+ * callback on the input expression. Generates a temporary variable assignment if needed, and
+ * deduplicates nested temporary assignments if needed.
+ */
+function safeTernaryWithTemporary(guard, body, ctx) {
+    let result;
+    if (needsTemporaryInSafeAccess(guard)) {
+        const xref = ctx.cpl.allocateXrefId();
+        result = [new AssignTemporaryExpr(guard, xref), new ReadTemporaryExpr(xref)];
+    }
+    else {
+        result = [guard, guard.clone()];
+        // Consider an expression like `a?.[b?.c()]?.d`. The `b?.c()` will be transformed first,
+        // introducing a temporary assignment into the key. Then, as part of expanding the `?.d`. That
+        // assignment will be duplicated into both the guard and expression sides. We de-duplicate it,
+        // by transforming it from an assignment into a read on the expression side.
+        eliminateTemporaryAssignments(result[1], temporariesIn(result[0]), ctx);
+    }
+    return new SafeTernaryExpr(result[0], body(result[1]));
 }
 function isSafeAccessExpression(e) {
     return e instanceof SafePropertyReadExpr || e instanceof SafeKeyedReadExpr;
 }
 function isUnsafeAccessExpression(e) {
-    return e instanceof ReadPropExpr || e instanceof ReadKeyExpr;
+    return e instanceof ReadPropExpr || e instanceof ReadKeyExpr ||
+        e instanceof InvokeFunctionExpr;
 }
 function isAccessExpression(e) {
     return isSafeAccessExpression(e) || isUnsafeAccessExpression(e);
@@ -11964,8 +12148,8 @@ function deepestSafeTernary(e) {
     return null;
 }
 // TODO: When strict compatibility with TemplateDefinitionBuilder is not required, we can use `&&`
-// instead.
-function safeTransform(e) {
+// instead to save some code size.
+function safeTransform(e, ctx) {
     if (e instanceof SafeInvokeFunctionExpr) {
         // TODO: Implement safe function calls in a subsequent commit.
         return new InvokeFunctionExpr(e.receiver, e.args);
@@ -11975,6 +12159,10 @@ function safeTransform(e) {
     }
     const dst = deepestSafeTernary(e);
     if (dst) {
+        if (e instanceof InvokeFunctionExpr) {
+            dst.expr = dst.expr.callFn(e.args);
+            return e.receiver;
+        }
         if (e instanceof ReadPropExpr) {
             dst.expr = dst.expr.prop(e.name);
             return e.receiver;
@@ -11984,20 +12172,20 @@ function safeTransform(e) {
             return e.receiver;
         }
         if (e instanceof SafePropertyReadExpr) {
-            dst.expr = new SafeTernaryExpr(dst.expr.clone(), dst.expr.prop(e.name));
+            dst.expr = safeTernaryWithTemporary(dst.expr, (r) => r.prop(e.name), ctx);
             return e.receiver;
         }
         if (e instanceof SafeKeyedReadExpr) {
-            dst.expr = new SafeTernaryExpr(dst.expr.clone(), dst.expr.key(e.index));
+            dst.expr = safeTernaryWithTemporary(dst.expr, (r) => r.key(e.index), ctx);
             return e.receiver;
         }
     }
     else {
         if (e instanceof SafePropertyReadExpr) {
-            return new SafeTernaryExpr(e.receiver.clone(), e.receiver.prop(e.name));
+            return safeTernaryWithTemporary(e.receiver, (r) => r.prop(e.name), ctx);
         }
         if (e instanceof SafeKeyedReadExpr) {
-            return new SafeTernaryExpr(e.receiver.clone(), e.receiver.key(e.index));
+            return safeTernaryWithTemporary(e.receiver, (r) => r.key(e.index), ctx);
         }
     }
     return e;
@@ -12007,6 +12195,50 @@ function ternaryTransform(e) {
         return e;
     }
     return new ConditionalExpr(new BinaryOperatorExpr(BinaryOperator.Equals, e.guard, NULL_EXPR), NULL_EXPR, e.expr);
+}
+
+/**
+ * Find all assignments and usages of temporary variables, which are linked to each other with cross
+ * references. Generate names for each cross-reference, and add a `DeclareVarStmt` to initialize
+ * them at the beginning of the update block.
+ *
+ * TODO: Sometimes, it will be possible to reuse names across different subexpressions. For example,
+ * in the double keyed read `a?.[f()]?.[f()]`, the two function calls have non-overlapping scopes.
+ * Implement an algorithm for reuse.
+ */
+function phaseTemporaryVariables(cpl) {
+    for (const view of cpl.views.values()) {
+        let opCount = 0;
+        let generatedStatements = [];
+        for (const op of view.ops()) {
+            let count = 0;
+            let xrefs = new Set();
+            let defs = new Map();
+            visitExpressionsInOp(op, expr => {
+                if (expr instanceof ReadTemporaryExpr || expr instanceof AssignTemporaryExpr) {
+                    xrefs.add(expr.xref);
+                }
+            });
+            for (const xref of xrefs) {
+                // TODO: Exactly replicate the naming scheme used by `TemplateDefinitionBuilder`. It seems
+                // to rely on an expression index instead of an op index.
+                defs.set(xref, `tmp_${opCount}_${count++}`);
+            }
+            visitExpressionsInOp(op, expr => {
+                if (expr instanceof ReadTemporaryExpr || expr instanceof AssignTemporaryExpr) {
+                    const name = defs.get(expr.xref);
+                    if (name === undefined) {
+                        throw new Error('Found xref with unassigned name');
+                    }
+                    expr.name = name;
+                }
+            });
+            generatedStatements.push(...Array.from(defs.values())
+                .map(name => createStatementOp(new DeclareVarStmt(name))));
+            opCount++;
+        }
+        view.update.prepend(generatedStatements);
+    }
 }
 
 /**
@@ -12025,7 +12257,8 @@ function transformTemplate(cpl) {
     phaseLocalRefs(cpl);
     phaseConstCollection(cpl);
     phaseNullishCoalescing(cpl);
-    phaseExpandSafeReads(cpl);
+    phaseExpandSafeReads(cpl, true);
+    phaseTemporaryVariables(cpl);
     phaseSlotAllocation(cpl);
     phaseVarCounting(cpl);
     phaseGenerateAdvance(cpl);
@@ -24067,7 +24300,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.2.0-next.1+sha-a5bd5dd');
+const VERSION = new Version('16.2.0-next.1+sha-29bf476');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -25995,7 +26228,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-a5bd5dd'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-29bf476'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -26098,7 +26331,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-a5bd5dd'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-29bf476'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -26326,7 +26559,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-a5bd5dd'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-29bf476'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -26361,7 +26594,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-a5bd5dd'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-29bf476'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -26412,7 +26645,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-a5bd5dd'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-29bf476'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -26442,7 +26675,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-a5bd5dd'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-29bf476'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -26493,7 +26726,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-a5bd5dd'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-29bf476'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);

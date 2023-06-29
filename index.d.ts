@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.1+sha-a5bd5dd
+ * @license Angular v16.2.0-next.1+sha-29bf476
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1505,6 +1505,7 @@ export declare class InvokeFunctionExpr extends Expression {
     args: Expression[];
     pure: boolean;
     constructor(fn: Expression, args: Expression[], type?: Type | null, sourceSpan?: ParseSourceSpan | null, pure?: boolean);
+    get receiver(): Expression;
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -3966,6 +3967,7 @@ export declare class ReadPropExpr extends Expression {
     receiver: Expression;
     name: string;
     constructor(receiver: Expression, name: string, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    get index(): string;
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
