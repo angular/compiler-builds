@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.1+sha-b66a16e
+ * @license Angular v16.2.0-next.1+sha-57c9399
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10445,11 +10445,6 @@ function phaseGenerateVariables(cpl) {
 function recursivelyProcessView(view, parentScope) {
     // Extract a `Scope` from this view.
     const scope = getScopeForView(view, parentScope);
-    // Embedded views require an operation to save/restore the view context.
-    if (view.parent !== null) {
-        // Start the view creation block with an operation to save the current view context. This may be
-        // used to restore the view context in any listeners that may be present.
-    }
     for (const op of view.create) {
         switch (op.kind) {
             case OpKind.Template:
@@ -11553,10 +11548,6 @@ function processLexicalScope(view, ops, savedView) {
 
 function phaseSaveRestoreView(cpl) {
     for (const view of cpl.views.values()) {
-        if (view === cpl.root) {
-            // Save/restore operations are not necessary for the root view.
-            continue;
-        }
         view.create.prepend([
             createVariableOp(view.tpl.allocateXrefId(), {
                 kind: SemanticVariableKind.SavedView,
@@ -11568,22 +11559,39 @@ function phaseSaveRestoreView(cpl) {
             if (op.kind !== OpKind.Listener) {
                 continue;
             }
-            op.handlerOps.prepend([
-                createVariableOp(view.tpl.allocateXrefId(), {
-                    kind: SemanticVariableKind.Context,
-                    name: null,
-                    view: view.xref,
-                }, new RestoreViewExpr(view.xref)),
-            ]);
-            // The "restore view" operation in listeners requires a call to `resetView` to reset the
-            // context prior to returning from the listener operation. Find any `return` statements in
-            // the listener body and wrap them in a call to reset the view.
-            for (const handlerOp of op.handlerOps) {
-                if (handlerOp.kind === OpKind.Statement &&
-                    handlerOp.statement instanceof ReturnStatement) {
-                    handlerOp.statement.value = new ResetViewExpr(handlerOp.statement.value);
+            // Embedded views always need the save/restore view operation.
+            let needsRestoreView = view !== cpl.root;
+            if (!needsRestoreView) {
+                for (const handlerOp of op.handlerOps) {
+                    visitExpressionsInOp(handlerOp, expr => {
+                        if (expr instanceof ReferenceExpr) {
+                            // Listeners that reference() a local ref need the save/restore view operation.
+                            needsRestoreView = true;
+                        }
+                    });
                 }
             }
+            if (needsRestoreView) {
+                addSaveRestoreViewOperationToListener(view, op);
+            }
+        }
+    }
+}
+function addSaveRestoreViewOperationToListener(view, op) {
+    op.handlerOps.prepend([
+        createVariableOp(view.tpl.allocateXrefId(), {
+            kind: SemanticVariableKind.Context,
+            name: null,
+            view: view.xref,
+        }, new RestoreViewExpr(view.xref)),
+    ]);
+    // The "restore view" operation in listeners requires a call to `resetView` to reset the
+    // context prior to returning from the listener operation. Find any `return` statements in
+    // the listener body and wrap them in a call to reset the view.
+    for (const handlerOp of op.handlerOps) {
+        if (handlerOp.kind === OpKind.Statement &&
+            handlerOp.statement instanceof ReturnStatement) {
+            handlerOp.statement.value = new ResetViewExpr(handlerOp.statement.value);
         }
     }
 }
@@ -24300,7 +24308,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.2.0-next.1+sha-b66a16e');
+const VERSION = new Version('16.2.0-next.1+sha-57c9399');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -26228,7 +26236,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-b66a16e'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-57c9399'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -26331,7 +26339,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-b66a16e'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-57c9399'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -26559,7 +26567,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-b66a16e'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-57c9399'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -26594,7 +26602,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-b66a16e'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-57c9399'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -26645,7 +26653,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-b66a16e'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-57c9399'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -26675,7 +26683,7 @@ function compileDeclareNgModuleFromMetadata(meta) {
 function createNgModuleDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-b66a16e'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-57c9399'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -26726,7 +26734,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-b66a16e'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-57c9399'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
