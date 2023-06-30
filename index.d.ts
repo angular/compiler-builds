@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.1.3+sha-4073cc0
+ * @license Angular v16.1.3+sha-b9c28ca
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3714,11 +3714,32 @@ export declare interface R3NgModuleDependencyMetadata extends R3TemplateDependen
 /**
  * Metadata required by the module compiler to generate a module def (`ɵmod`) for a type.
  */
-export declare interface R3NgModuleMetadata {
+export declare type R3NgModuleMetadata = R3NgModuleMetadataGlobal | R3NgModuleMetadataLocal;
+
+declare interface R3NgModuleMetadataCommon {
+    kind: R3NgModuleMetadataKind;
     /**
      * An expression representing the module type being compiled.
      */
     type: R3Reference;
+    /**
+     * How to emit the selector scope values (declarations, imports, exports).
+     */
+    selectorScopeMode: R3SelectorScopeMode;
+    /**
+     * The set of schemas that declare elements to be allowed in the NgModule.
+     */
+    schemas: R3Reference[] | null;
+    /** Unique ID or expression representing the unique ID of an NgModule. */
+    id: outputAst.Expression | null;
+}
+
+/**
+ * Metadata required by the module compiler in full/partial mode to generate a module def (`ɵmod`)
+ * for a type.
+ */
+export declare interface R3NgModuleMetadataGlobal extends R3NgModuleMetadataCommon {
+    kind: R3NgModuleMetadataKind.Global;
     /**
      * An array of expressions representing the bootstrap components specified by the module.
      */
@@ -3745,19 +3766,48 @@ export declare interface R3NgModuleMetadata {
      */
     exports: R3Reference[];
     /**
-     * How to emit the selector scope values (declarations, imports, exports).
-     */
-    selectorScopeMode: R3SelectorScopeMode;
-    /**
      * Whether to generate closure wrappers for bootstrap, declarations, imports, and exports.
      */
     containsForwardDecls: boolean;
+}
+
+/**
+ * The type of the NgModule meta data.
+ * - Global: Used for full and partial compilation modes which mainly includes R3References.
+ * - Local: Used for the local compilation mode which mainly includes the raw expressions as appears
+ * in the NgModule decorator.
+ */
+export declare enum R3NgModuleMetadataKind {
+    Global = 0,
+    Local = 1
+}
+
+/**
+ * Metadata required by the module compiler in local mode to generate a module def (`ɵmod`) for a
+ * type.
+ */
+declare interface R3NgModuleMetadataLocal extends R3NgModuleMetadataCommon {
+    kind: R3NgModuleMetadataKind.Local;
     /**
-     * The set of schemas that declare elements to be allowed in the NgModule.
+     * The output expression representing the bootstrap components specified by the module.
      */
-    schemas: R3Reference[] | null;
-    /** Unique ID or expression representing the unique ID of an NgModule. */
-    id: outputAst.Expression | null;
+    bootstrapExpression: outputAst.Expression | null;
+    /**
+     * The output expression representing the declarations of the module.
+     */
+    declarationsExpression: outputAst.Expression | null;
+    /**
+     * The output expression representing the imports of the module.
+     */
+    importsExpression: outputAst.Expression | null;
+    /**
+     * The output expression representing the exports of the module.
+     */
+    exportsExpression: outputAst.Expression | null;
+    /**
+     * Local compilation mode always requires scope to be handled using side effect function calls.
+     */
+    selectorScopeMode: R3SelectorScopeMode.SideEffect;
 }
 
 export declare interface R3PartialDeclaration {
