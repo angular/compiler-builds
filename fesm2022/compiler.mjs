@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.1+sha-daea7dc
+ * @license Angular v16.2.0-next.1+sha-8758517
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8713,6 +8713,10 @@ var OpKind;
      * An operation to associate an attribute with an element.
      */
     OpKind[OpKind["Attribute"] = 21] = "Attribute";
+    /**
+     * An operation to interpolate text into an attribute binding.
+     */
+    OpKind[OpKind["InterpolateAttribute"] = 22] = "InterpolateAttribute";
 })(OpKind || (OpKind = {}));
 /**
  * Distinguishes different kinds of IR expressions.
@@ -9465,7 +9469,12 @@ function transformExpressionsInOp(op, transform, flags) {
             break;
         case OpKind.Attribute:
             if (op.value) {
-                transformExpressionsInExpression(op.value, transform, flags);
+                op.value = transformExpressionsInExpression(op.value, transform, flags);
+            }
+            break;
+        case OpKind.InterpolateAttribute:
+            for (let i = 0; i < op.expressions.length; i++) {
+                op.expressions[i] = transformExpressionsInExpression(op.expressions[i], transform, flags);
             }
             break;
         case OpKind.Variable:
@@ -9989,6 +9998,8 @@ function createAttributeOp(target, attributeKind, name, value) {
         attributeKind,
         name,
         value,
+        ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
+        ...TRAIT_CONSUMES_VARS,
         ...NEW_OP,
     };
 }
@@ -10000,6 +10011,19 @@ function createInterpolatePropertyOp(xref, bindingKind, name, strings, expressio
         kind: OpKind.InterpolateProperty,
         target: xref,
         bindingKind,
+        name,
+        strings,
+        expressions,
+        ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
+        ...TRAIT_CONSUMES_VARS,
+        ...NEW_OP,
+    };
+}
+function createInterpolateAttributeOp(target, attributeKind, name, strings, expressions) {
+    return {
+        kind: OpKind.InterpolateAttribute,
+        target: target,
+        attributeKind,
         name,
         strings,
         expressions,
@@ -10099,6 +10123,9 @@ function varsUsedByOp(op) {
         case OpKind.StyleMap:
             // Property bindings use 1 variable slot.
             return 1;
+        case OpKind.Attribute:
+            // Attribute bindings use 1 variable slot.
+            return 1;
         case OpKind.InterpolateText:
             // `ir.InterpolateTextOp`s use a variable slot for each dynamic expression.
             return op.expressions.length;
@@ -10107,6 +10134,9 @@ function varsUsedByOp(op) {
         case OpKind.InterpolateStyleMap:
             // `ir.InterpolatePropertyOp`s use a variable slot for each dynamic expression, plus one for
             // the result.
+            return 1 + op.expressions.length;
+        case OpKind.InterpolateAttribute:
+            // One variable slot for each dynamic expression, plus one for the result.
             return 1 + op.expressions.length;
         default:
             throw new Error(`Unhandled op: ${OpKind[op.kind]}`);
@@ -10253,6 +10283,7 @@ const CHAINABLE = new Set([
     Identifiers.elementEnd,
     Identifiers.property,
     Identifiers.styleProp,
+    Identifiers.attribute,
     Identifiers.elementContainerStart,
     Identifiers.elementContainerEnd,
     Identifiers.elementContainer,
@@ -11025,6 +11056,9 @@ function property(name, expression) {
         expression,
     ]);
 }
+function attribute(name, expression) {
+    return call(Identifiers.attribute, [literal(name), expression]);
+}
 function styleProp(name, expression, unit) {
     const args = [literal(name), expression];
     if (unit !== null) {
@@ -11080,6 +11114,10 @@ function textInterpolate(strings, expressions) {
 function propertyInterpolate(name, strings, expressions) {
     const interpolationArgs = collateInterpolationArgs(strings, expressions);
     return callVariadicInstruction(PROPERTY_INTERPOLATE_CONFIG, [literal(name)], interpolationArgs);
+}
+function attributeInterpolate(name, strings, expressions) {
+    const interpolationArgs = collateInterpolationArgs(strings, expressions);
+    return callVariadicInstruction(ATTRIBUTE_INTERPOLATE_CONFIG, [literal(name)], interpolationArgs);
 }
 function stylePropInterpolate(name, strings, expressions, unit) {
     const interpolationArgs = collateInterpolationArgs(strings, expressions);
@@ -11191,6 +11229,29 @@ const STYLE_PROP_INTERPOLATE_CONFIG = {
         }
         if (n < 3) {
             throw new Error(`Expected at least 3 arguments`);
+        }
+        return (n - 1) / 2;
+    },
+};
+/**
+ * `InterpolationConfig` for the `attributeInterpolate` instruction.
+ */
+const ATTRIBUTE_INTERPOLATE_CONFIG = {
+    constant: [
+        Identifiers.attribute,
+        Identifiers.attributeInterpolate1,
+        Identifiers.attributeInterpolate2,
+        Identifiers.attributeInterpolate3,
+        Identifiers.attributeInterpolate4,
+        Identifiers.attributeInterpolate5,
+        Identifiers.attributeInterpolate6,
+        Identifiers.attributeInterpolate7,
+        Identifiers.attributeInterpolate8,
+    ],
+    variable: Identifiers.attributeInterpolateV,
+    mapping: n => {
+        if (n % 2 === 0) {
+            throw new Error(`Expected odd number of arguments`);
         }
         return (n - 1) / 2;
     },
@@ -11349,6 +11410,12 @@ function reifyUpdateOperations(_view, ops) {
                 break;
             case OpKind.InterpolateText:
                 OpList.replace(op, textInterpolate(op.strings, op.expressions));
+                break;
+            case OpKind.Attribute:
+                OpList.replace(op, attribute(op.name, op.value));
+                break;
+            case OpKind.InterpolateAttribute:
+                OpList.replace(op, attributeInterpolate(op.name, op.strings, op.expressions));
                 break;
             case OpKind.Variable:
                 if (op.variable.name === null) {
@@ -11585,6 +11652,13 @@ function processLexicalScope(view, ops, savedView) {
                 return expr;
             }
         }, VisitorContextFlag.None);
+    }
+    for (const op of ops) {
+        visitExpressionsInOp(op, expr => {
+            if (expr instanceof LexicalReadExpr) {
+                throw new Error(`AssertionError: no lexical reads should remain, but found read of ${expr.name}`);
+            }
+        });
     }
 }
 
@@ -12705,6 +12779,9 @@ function ingestBindings(view, op, element) {
         }
     }
     for (const attr of element.attributes) {
+        // This is only attribute TextLiteral bindings, such as `attr.foo="bar'`. This can never be
+        // `[attr.foo]="bar"` or `attr.foo="{{bar}}"`, both of which will be handled as inputs with
+        // `BindingType.Attribute`.
         view.update.push(createAttributeOp(op.xref, ElementAttributeKind.Attribute, attr.name, literal(attr.value)));
     }
     for (const input of element.inputs) {
@@ -12761,6 +12838,13 @@ function ingestPropertyBinding(view, xref, bindingKind, { name, value, type, uni
                 }
                 view.update.push(createInterpolateStylePropOp(xref, name, value.strings, value.expressions.map(expr => convertAst(expr, view.tpl)), unit));
                 break;
+            case 1 /* e.BindingType.Attribute */:
+                if (bindingKind !== ElementAttributeKind.Binding) {
+                    throw new Error('Attribute bindings on templates are not expected to be valid');
+                }
+                const attributeInterpolate = createInterpolateAttributeOp(xref, bindingKind, name, value.strings, value.expressions.map(expr => convertAst(expr, view.tpl)));
+                view.update.push(attributeInterpolate);
+                break;
             default:
                 // TODO: implement remaining binding types.
                 throw Error(`Interpolated property binding type not handled: ${type}`);
@@ -12785,6 +12869,13 @@ function ingestPropertyBinding(view, xref, bindingKind, { name, value, type, uni
                     throw Error('Unexpected style binding on ng-template');
                 }
                 view.update.push(createStylePropOp(xref, name, convertAst(value, view.tpl), unit));
+                break;
+            case 1 /* e.BindingType.Attribute */:
+                if (bindingKind !== ElementAttributeKind.Binding) {
+                    throw new Error('Attribute bindings on templates are not expected to be valid');
+                }
+                const attrOp = createAttributeOp(xref, bindingKind, name, convertAst(value, view.tpl));
+                view.update.push(attrOp);
                 break;
             default:
                 // TODO: implement remaining binding types.
@@ -24351,7 +24442,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.2.0-next.1+sha-daea7dc');
+const VERSION = new Version('16.2.0-next.1+sha-8758517');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -26279,7 +26370,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-daea7dc'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-8758517'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -26382,7 +26473,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-daea7dc'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-8758517'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -26610,7 +26701,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-daea7dc'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-8758517'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -26645,7 +26736,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-daea7dc'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-8758517'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -26696,7 +26787,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-daea7dc'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-8758517'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -26729,7 +26820,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-daea7dc'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-8758517'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -26780,7 +26871,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-daea7dc'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-8758517'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
