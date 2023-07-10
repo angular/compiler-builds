@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.1+sha-031b599
+ * @license Angular v16.2.0-next.1+sha-c4103cf
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1472,9 +1472,9 @@ declare type InterpolatedAttributeToken = AttributeValueTextToken | AttributeVal
 declare type InterpolatedTextToken = TextToken | InterpolationToken | EncodedEntityToken;
 
 export declare class Interpolation extends AST {
-    strings: any[];
-    expressions: any[];
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, strings: any[], expressions: any[]);
+    strings: string[];
+    expressions: AST[];
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, strings: string[], expressions: AST[]);
     visit(visitor: AstVisitor, context?: any): any;
 }
 
