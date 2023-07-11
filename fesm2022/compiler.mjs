@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.1+sha-8758517
+ * @license Angular v16.2.0-next.1+sha-253d756
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -18007,8 +18007,8 @@ class _Tokenizer {
         this._cursor = options.escapedString ? new EscapedCharacterCursor(_file, range) :
             new PlainCharacterCursor(_file, range);
         this._preserveLineEndings = options.preserveLineEndings || false;
-        this._escapedString = options.escapedString || false;
         this._i18nNormalizeLineEndingsInICUs = options.i18nNormalizeLineEndingsInICUs || false;
+        this._tokenizeBlocks = options.tokenizeBlocks || false;
         try {
             this._cursor.init();
         }
@@ -18049,6 +18049,15 @@ class _Tokenizer {
                         this._consumeTagOpen(start);
                     }
                 }
+                else if (this._tokenizeBlocks && this._attemptStr('{#')) {
+                    this._consumeBlockGroupOpen(start);
+                }
+                else if (this._tokenizeBlocks && this._attemptStr('{/')) {
+                    this._consumeBlockGroupClose(start);
+                }
+                else if (this._tokenizeBlocks && this._attemptStr('{:')) {
+                    this._consumeBlock(start);
+                }
                 else if (!(this._tokenizeIcu && this._tokenizeExpansionForm())) {
                     // In (possibly interpolated) text the end of the text is given by `isTextEnd()`, while
                     // the premature end of an interpolation is given by the start of a new HTML element.
@@ -18061,6 +18070,64 @@ class _Tokenizer {
         }
         this._beginToken(24 /* TokenType.EOF */);
         this._endToken([]);
+    }
+    _consumeBlockGroupOpen(start) {
+        this._beginToken(25 /* TokenType.BLOCK_GROUP_OPEN_START */, start);
+        const nameCursor = this._cursor.clone();
+        this._attemptCharCodeUntilFn(code => !isBlockNameChar(code));
+        this._endToken([this._cursor.getChars(nameCursor)]);
+        this._consumeBlockParameters();
+        this._beginToken(26 /* TokenType.BLOCK_GROUP_OPEN_END */);
+        this._requireCharCode($RBRACE);
+        this._endToken([]);
+    }
+    _consumeBlockGroupClose(start) {
+        this._beginToken(27 /* TokenType.BLOCK_GROUP_CLOSE */, start);
+        const nameCursor = this._cursor.clone();
+        this._attemptCharCodeUntilFn(code => !isBlockNameChar(code));
+        const name = this._cursor.getChars(nameCursor);
+        this._requireCharCode($RBRACE);
+        this._endToken([name]);
+    }
+    _consumeBlock(start) {
+        this._beginToken(29 /* TokenType.BLOCK_OPEN_START */, start);
+        const nameCursor = this._cursor.clone();
+        this._attemptCharCodeUntilFn(code => !isBlockNameChar(code));
+        this._endToken([this._cursor.getChars(nameCursor)]);
+        this._consumeBlockParameters();
+        this._beginToken(30 /* TokenType.BLOCK_OPEN_END */);
+        this._requireCharCode($RBRACE);
+        this._endToken([]);
+    }
+    _consumeBlockParameters() {
+        // Trim the whitespace until the first parameter.
+        this._attemptCharCodeUntilFn(isBlockParameterChar);
+        while (this._cursor.peek() !== $RBRACE && this._cursor.peek() !== $EOF) {
+            this._beginToken(28 /* TokenType.BLOCK_PARAMETER */);
+            const start = this._cursor.clone();
+            let inQuote = null;
+            // Consume the parameter until the next semicolon or brace.
+            // Note that we skip over semicolons/braces inside of strings.
+            while ((this._cursor.peek() !== $SEMICOLON && this._cursor.peek() !== $RBRACE &&
+                this._cursor.peek() !== $EOF) ||
+                inQuote !== null) {
+                const char = this._cursor.peek();
+                // Skip to the next character if it was escaped.
+                if (char === $BACKSLASH) {
+                    this._cursor.advance();
+                }
+                else if (char === inQuote) {
+                    inQuote = null;
+                }
+                else if (inQuote === null && isQuote(char)) {
+                    inQuote = char;
+                }
+                this._cursor.advance();
+            }
+            this._endToken([this._cursor.getChars(start)]);
+            // Skip to the next parameter.
+            this._attemptCharCodeUntilFn(isBlockParameterChar);
+        }
     }
     /**
      * @returns whether an ICU token has been created
@@ -18395,7 +18462,6 @@ class _Tokenizer {
         this._endToken(prefixAndName);
     }
     _consumeAttributeValue() {
-        let value;
         if (this._cursor.peek() === $SQ || this._cursor.peek() === $DQ) {
             const quoteChar = this._cursor.peek();
             this._consumeQuote(quoteChar);
@@ -18584,7 +18650,7 @@ class _Tokenizer {
         return this._processCarriageReturns(end.getChars(start));
     }
     _isTextEnd() {
-        if (this._isTagStart() || this._cursor.peek() === $EOF) {
+        if (this._isTagStart() || this._isBlockStart() || this._cursor.peek() === $EOF) {
             return true;
         }
         if (this._tokenizeIcu && !this._inInterpolation) {
@@ -18612,6 +18678,23 @@ class _Tokenizer {
             const code = tmp.peek();
             if (($a <= code && code <= $z) || ($A <= code && code <= $Z) ||
                 code === $SLASH || code === $BANG) {
+                return true;
+            }
+        }
+        return false;
+    }
+    _isBlockStart() {
+        if (this._tokenizeBlocks && this._cursor.peek() === $LBRACE) {
+            const tmp = this._cursor.clone();
+            // Check that the cursor is on a `{#`, `{/` or `{:`.
+            tmp.advance();
+            const next = tmp.peek();
+            if (next !== $BANG && next !== $SLASH && next !== $COLON) {
+                return false;
+            }
+            // If it is, also verify that the next character is a valid block identifier.
+            tmp.advance();
+            if (isBlockNameChar(tmp.peek())) {
                 return true;
             }
         }
@@ -18671,6 +18754,12 @@ function compareCharCodeCaseInsensitive(code1, code2) {
 }
 function toUpperCaseCharCode(code) {
     return code >= $a && code <= $z ? code - $a + $A : code;
+}
+function isBlockNameChar(code) {
+    return isAsciiLetter(code) || isDigit(code) || code === $_;
+}
+function isBlockParameterChar(code) {
+    return code !== $SEMICOLON && isNotWhitespace(code);
 }
 function mergeTextTokens(srcTokens) {
     const dstTokens = [];
@@ -24442,7 +24531,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.2.0-next.1+sha-8758517');
+const VERSION = new Version('16.2.0-next.1+sha-253d756');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -26370,7 +26459,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-8758517'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-253d756'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -26473,7 +26562,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-8758517'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-253d756'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -26701,7 +26790,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-8758517'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-253d756'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -26736,7 +26825,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-8758517'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-253d756'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -26787,7 +26876,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-8758517'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-253d756'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -26820,7 +26909,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-8758517'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-253d756'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -26871,7 +26960,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-8758517'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-253d756'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
