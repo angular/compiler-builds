@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.1+sha-8758517
+ * @license Angular v16.2.0-next.1+sha-61be62d
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4746,6 +4746,10 @@ declare interface TokenizeOptions {
      * If true, do not convert CRLF to LF.
      */
     preserveLineEndings?: boolean;
+    /**
+     * Whether the block syntax is enabled at the compiler level.
+     */
+    tokenizeBlocks?: boolean;
 }
 
 
@@ -4785,7 +4789,13 @@ declare const enum TokenType_2 {
     EXPANSION_CASE_EXP_START = 21,
     EXPANSION_CASE_EXP_END = 22,
     EXPANSION_FORM_END = 23,
-    EOF = 24
+    EOF = 24,
+    BLOCK_GROUP_OPEN_START = 25,
+    BLOCK_GROUP_OPEN_END = 26,
+    BLOCK_GROUP_CLOSE = 27,
+    BLOCK_PARAMETER = 28,
+    BLOCK_OPEN_START = 29,
+    BLOCK_OPEN_END = 30
 }
 
 export declare class TransplantedType<T> extends Type {
