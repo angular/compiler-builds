@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.1+sha-5bd530a
+ * @license Angular v16.2.0-next.1+sha-6cac41f
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15225,6 +15225,39 @@ class Comment {
         return visitor.visitComment(this, context);
     }
 }
+class BlockGroup {
+    constructor(blocks, sourceSpan, startSourceSpan, endSourceSpan = null) {
+        this.blocks = blocks;
+        this.sourceSpan = sourceSpan;
+        this.startSourceSpan = startSourceSpan;
+        this.endSourceSpan = endSourceSpan;
+    }
+    visit(visitor, context) {
+        return visitor.visitBlockGroup(this, context);
+    }
+}
+class Block {
+    constructor(name, parameters, children, sourceSpan, startSourceSpan, endSourceSpan = null) {
+        this.name = name;
+        this.parameters = parameters;
+        this.children = children;
+        this.sourceSpan = sourceSpan;
+        this.startSourceSpan = startSourceSpan;
+        this.endSourceSpan = endSourceSpan;
+    }
+    visit(visitor, context) {
+        return visitor.visitBlock(this, context);
+    }
+}
+class BlockParameter {
+    constructor(expression, sourceSpan) {
+        this.expression = expression;
+        this.sourceSpan = sourceSpan;
+    }
+    visit(visitor, context) {
+        return visitor.visitBlockParameter(this, context);
+    }
+}
 function visitAll(visitor, nodes, context = null) {
     const result = [];
     const visit = visitor.visit ?
@@ -15255,6 +15288,18 @@ class RecursiveVisitor {
         });
     }
     visitExpansionCase(ast, context) { }
+    visitBlockGroup(ast, context) {
+        this.visitChildren(context, visit => {
+            visit(ast.blocks);
+        });
+    }
+    visitBlock(block, context) {
+        this.visitChildren(context, visit => {
+            visit(block.parameters);
+            visit(block.children);
+        });
+    }
+    visitBlockParameter(ast, context) { }
     visitChildren(context, cb) {
         let results = [];
         let t = this;
@@ -19048,7 +19093,7 @@ class _TreeBuilder {
         this.tokens = tokens;
         this.getTagDefinition = getTagDefinition;
         this._index = -1;
-        this._elementStack = [];
+        this._containerStack = [];
         this.rootNodes = [];
         this.errors = [];
         this._advance();
@@ -19077,6 +19122,18 @@ class _TreeBuilder {
             }
             else if (this._peek.type === 19 /* TokenType.EXPANSION_FORM_START */) {
                 this._consumeExpansion(this._advance());
+            }
+            else if (this._peek.type === 25 /* TokenType.BLOCK_GROUP_OPEN_START */) {
+                this._closeVoidElement();
+                this._consumeBlockGroupOpen(this._advance());
+            }
+            else if (this._peek.type === 29 /* TokenType.BLOCK_OPEN_START */) {
+                this._closeVoidElement();
+                this._consumeBlock(this._advance(), 30 /* TokenType.BLOCK_OPEN_END */);
+            }
+            else if (this._peek.type === 27 /* TokenType.BLOCK_GROUP_CLOSE */) {
+                this._closeVoidElement();
+                this._consumeBlockGroupClose(this._advance());
             }
             else {
                 // Skip all other tokens...
@@ -19194,7 +19251,12 @@ class _TreeBuilder {
         const startSpan = token.sourceSpan;
         let text = token.parts[0];
         if (text.length > 0 && text[0] === '\n') {
-            const parent = this._getParentElement();
+            const parent = this._getContainer();
+            // This is unlikely to happen, but we have an assertion just in case.
+            if (parent instanceof BlockGroup) {
+                this.errors.push(TreeError.create(null, startSpan, 'Text cannot be placed directly inside of a block group.'));
+                return null;
+            }
             if (parent != null && parent.children.length === 0 &&
                 this.getTagDefinition(parent.name).ignoreFirstLf) {
                 text = text.substring(1);
@@ -19225,9 +19287,9 @@ class _TreeBuilder {
         }
     }
     _closeVoidElement() {
-        const el = this._getParentElement();
-        if (el && this.getTagDefinition(el.name).isVoid) {
-            this._elementStack.pop();
+        const el = this._getContainer();
+        if (el instanceof Element && this.getTagDefinition(el.name).isVoid) {
+            this._containerStack.pop();
         }
     }
     _consumeStartTag(startTagToken) {
@@ -19236,7 +19298,7 @@ class _TreeBuilder {
         while (this._peek.type === 14 /* TokenType.ATTR_NAME */) {
             attrs.push(this._consumeAttr(this._advance()));
         }
-        const fullName = this._getElementFullName(prefix, name, this._getParentElement());
+        const fullName = this._getElementFullName(prefix, name, this._getClosestParentElement());
         let selfClosing = false;
         // Note: There could have been a tokenizer error
         // so that we don't get a token for the end tag...
@@ -19257,33 +19319,34 @@ class _TreeBuilder {
         // Create a separate `startSpan` because `span` will be modified when there is an `end` span.
         const startSpan = new ParseSourceSpan(startTagToken.sourceSpan.start, end, startTagToken.sourceSpan.fullStart);
         const el = new Element(fullName, attrs, [], span, startSpan, undefined);
-        this._pushElement(el);
+        const parentEl = this._getContainer();
+        this._pushContainer(el, parentEl instanceof Element &&
+            this.getTagDefinition(parentEl.name).isClosedByChild(el.name));
         if (selfClosing) {
             // Elements that are self-closed have their `endSourceSpan` set to the full span, as the
             // element start tag also represents the end tag.
-            this._popElement(fullName, span);
+            this._popContainer(fullName, Element, span);
         }
         else if (startTagToken.type === 4 /* TokenType.INCOMPLETE_TAG_OPEN */) {
             // We already know the opening tag is not complete, so it is unlikely it has a corresponding
             // close tag. Let's optimistically parse it as a full element and emit an error.
-            this._popElement(fullName, null);
+            this._popContainer(fullName, Element, null);
             this.errors.push(TreeError.create(fullName, span, `Opening tag "${fullName}" not terminated.`));
         }
     }
-    _pushElement(el) {
-        const parentEl = this._getParentElement();
-        if (parentEl && this.getTagDefinition(parentEl.name).isClosedByChild(el.name)) {
-            this._elementStack.pop();
+    _pushContainer(node, isClosedByChild) {
+        if (isClosedByChild) {
+            this._containerStack.pop();
         }
-        this._addToParent(el);
-        this._elementStack.push(el);
+        this._addToParent(node);
+        this._containerStack.push(node);
     }
     _consumeEndTag(endTagToken) {
-        const fullName = this._getElementFullName(endTagToken.parts[0], endTagToken.parts[1], this._getParentElement());
+        const fullName = this._getElementFullName(endTagToken.parts[0], endTagToken.parts[1], this._getClosestParentElement());
         if (this.getTagDefinition(fullName).isVoid) {
             this.errors.push(TreeError.create(fullName, endTagToken.sourceSpan, `Void elements do not have end tags "${endTagToken.parts[1]}"`));
         }
-        else if (!this._popElement(fullName, endTagToken.sourceSpan)) {
+        else if (!this._popContainer(fullName, Element, endTagToken.sourceSpan)) {
             const errMsg = `Unexpected closing tag "${fullName}". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags`;
             this.errors.push(TreeError.create(fullName, endTagToken.sourceSpan, errMsg));
         }
@@ -19294,20 +19357,23 @@ class _TreeBuilder {
      * not have a closing tag (for example, this happens when an incomplete
      * opening tag is recovered).
      */
-    _popElement(fullName, endSourceSpan) {
+    _popContainer(fullName, expectedType, endSourceSpan) {
         let unexpectedCloseTagDetected = false;
-        for (let stackIndex = this._elementStack.length - 1; stackIndex >= 0; stackIndex--) {
-            const el = this._elementStack[stackIndex];
-            if (el.name === fullName) {
+        for (let stackIndex = this._containerStack.length - 1; stackIndex >= 0; stackIndex--) {
+            const node = this._containerStack[stackIndex];
+            const name = node instanceof BlockGroup ? node.blocks[0]?.name : node.name;
+            if (name === fullName && node instanceof expectedType) {
                 // Record the parse span with the element that is being closed. Any elements that are
                 // removed from the element stack at this point are closed implicitly, so they won't get
                 // an end source span (as there is no explicit closing element).
-                el.endSourceSpan = endSourceSpan;
-                el.sourceSpan.end = endSourceSpan !== null ? endSourceSpan.end : el.sourceSpan.end;
-                this._elementStack.splice(stackIndex, this._elementStack.length - stackIndex);
+                node.endSourceSpan = endSourceSpan;
+                node.sourceSpan.end = endSourceSpan !== null ? endSourceSpan.end : node.sourceSpan.end;
+                this._containerStack.splice(stackIndex, this._containerStack.length - stackIndex);
                 return !unexpectedCloseTagDetected;
             }
-            if (!this.getTagDefinition(el.name).closedByParent) {
+            // Blocks are self-closing while block groups and (most times) elements are not.
+            if (node instanceof BlockGroup ||
+                node instanceof Element && !this.getTagDefinition(node.name).closedByParent) {
                 // Note that we encountered an unexpected close tag but continue processing the element
                 // stack so we can assign an `endSourceSpan` if there is a corresponding start tag for this
                 // end tag in the stack.
@@ -19366,16 +19432,92 @@ class _TreeBuilder {
             new ParseSourceSpan(valueStartSpan.start, valueEnd, valueStartSpan.fullStart);
         return new Attribute(fullName, value, new ParseSourceSpan(attrName.sourceSpan.start, attrEnd, attrName.sourceSpan.fullStart), attrName.sourceSpan, valueSpan, valueTokens.length > 0 ? valueTokens : undefined, undefined);
     }
-    _getParentElement() {
-        return this._elementStack.length > 0 ? this._elementStack[this._elementStack.length - 1] : null;
+    _consumeBlockGroupOpen(token) {
+        const end = this._peek.sourceSpan.fullStart;
+        const span = new ParseSourceSpan(token.sourceSpan.start, end, token.sourceSpan.fullStart);
+        // Create a separate `startSpan` because `span` will be modified when there is an `end` span.
+        const startSpan = new ParseSourceSpan(token.sourceSpan.start, end, token.sourceSpan.fullStart);
+        const blockGroup = new BlockGroup([], span, startSpan, null);
+        this._pushContainer(blockGroup, false);
+        const implicitBlock = this._consumeBlock(token, 26 /* TokenType.BLOCK_GROUP_OPEN_END */);
+        // Block parameters are consumed as a part of the implicit block so we need to expand the
+        // start source span once the block is parsed to include the full opening tag.
+        startSpan.end = implicitBlock.startSourceSpan.end;
     }
-    _addToParent(node) {
-        const parent = this._getParentElement();
-        if (parent != null) {
-            parent.children.push(node);
+    _consumeBlock(token, closeToken) {
+        // The start of a block implicitly closes the previous block.
+        this._conditionallyClosePreviousBlock();
+        const parameters = [];
+        while (this._peek.type === 28 /* TokenType.BLOCK_PARAMETER */) {
+            const paramToken = this._advance();
+            parameters.push(new BlockParameter(paramToken.parts[0], paramToken.sourceSpan));
+        }
+        if (this._peek.type === closeToken) {
+            this._advance();
+        }
+        const end = this._peek.sourceSpan.fullStart;
+        const span = new ParseSourceSpan(token.sourceSpan.start, end, token.sourceSpan.fullStart);
+        // Create a separate `startSpan` because `span` will be modified when there is an `end` span.
+        const startSpan = new ParseSourceSpan(token.sourceSpan.start, end, token.sourceSpan.fullStart);
+        const block = new Block(token.parts[0], parameters, [], span, startSpan);
+        const parent = this._getContainer();
+        if (!(parent instanceof BlockGroup)) {
+            this.errors.push(TreeError.create(block.name, block.sourceSpan, 'Blocks can only be placed inside of block groups.'));
         }
         else {
+            parent.blocks.push(block);
+            this._containerStack.push(block);
+        }
+        return block;
+    }
+    _consumeBlockGroupClose(token) {
+        const name = token.parts[0];
+        const previousContainer = this._getContainer();
+        // Blocks are implcitly closed by the block group.
+        this._conditionallyClosePreviousBlock();
+        if (!this._popContainer(name, BlockGroup, token.sourceSpan)) {
+            const context = previousContainer instanceof Element ?
+                `There is an unclosed "${previousContainer.name}" HTML tag named that may have to be closed first.` :
+                `The block may have been closed earlier.`;
+            this.errors.push(TreeError.create(name, token.sourceSpan, `Unexpected closing block "${name}". ${context}`));
+        }
+    }
+    _conditionallyClosePreviousBlock() {
+        const container = this._getContainer();
+        if (container instanceof Block) {
+            // Blocks don't have an explicit closing tag, they're closed either by the next block or
+            // the end of the block group. Infer the end span from the last child node.
+            const lastChild = container.children.length ? container.children[container.children.length - 1] : null;
+            const endSpan = lastChild === null ?
+                null :
+                new ParseSourceSpan(lastChild.sourceSpan.end, lastChild.sourceSpan.end);
+            this._popContainer(container.name, Block, endSpan);
+        }
+    }
+    _getContainer() {
+        return this._containerStack.length > 0 ? this._containerStack[this._containerStack.length - 1] :
+            null;
+    }
+    _getClosestParentElement() {
+        for (let i = this._containerStack.length - 1; i > -1; i--) {
+            if (this._containerStack[i] instanceof Element) {
+                return this._containerStack[i];
+            }
+        }
+        return null;
+    }
+    _addToParent(node) {
+        const parent = this._getContainer();
+        if (parent === null) {
             this.rootNodes.push(node);
+        }
+        else if (parent instanceof BlockGroup) {
+            // Due to how parsing is set up, we're unlikely to hit this code path, but we
+            // have the assertion here just in case and to satisfy the type checker.
+            this.errors.push(TreeError.create(null, node.sourceSpan, 'Block groups can only contain blocks.'));
+        }
+        else {
+            parent.children.push(node);
         }
     }
     _getElementFullName(prefix, localName, parentElement) {
@@ -19488,6 +19630,15 @@ class WhitespaceVisitor {
     }
     visitExpansionCase(expansionCase, context) {
         return expansionCase;
+    }
+    visitBlockGroup(group, context) {
+        return new BlockGroup(visitAllWithSiblings(this, group.blocks), group.sourceSpan, group.startSourceSpan, group.endSourceSpan);
+    }
+    visitBlock(block, context) {
+        return new Block(block.name, block.parameters, visitAllWithSiblings(this, block.children), block.sourceSpan, block.startSourceSpan);
+    }
+    visitBlockParameter(parameter, context) {
+        return parameter;
     }
 }
 function createWhitespaceProcessedTextToken({ type, parts, sourceSpan }) {
@@ -20277,6 +20428,15 @@ class HtmlAstToIvyAst {
         }
         return null;
     }
+    visitBlockGroup(group, context) {
+        throw new Error('TODO');
+    }
+    visitBlock(block, context) {
+        throw new Error('TODO');
+    }
+    visitBlockParameter(parameter, context) {
+        throw new Error('TODO');
+    }
     // convert view engine `ParsedProperty` to a format suitable for IVY
     extractAttributes(elementName, properties, i18nPropsMeta) {
         const bound = [];
@@ -20453,6 +20613,15 @@ class NonBindableVisitor {
     }
     visitExpansionCase(expansionCase) {
         return null;
+    }
+    visitBlockGroup(group, context) {
+        throw new Error('TODO');
+    }
+    visitBlock(block, context) {
+        throw new Error('TODO');
+    }
+    visitBlockParameter(parameter, context) {
+        throw new Error('TODO');
     }
 }
 const NON_BINDABLE_VISITOR = new NonBindableVisitor();
@@ -20901,6 +21070,17 @@ class _I18nVisitor {
     visitExpansionCase(_icuCase, _context) {
         throw new Error('Unreachable code');
     }
+    visitBlockGroup(group, context) {
+        const children = visitAll(this, group.blocks, context);
+        const node = new Container(children, group.sourceSpan);
+        return context.visitNodeFn(group, node);
+    }
+    visitBlock(block, context) {
+        const children = visitAll(this, block.children, context);
+        const node = new Container(children, block.sourceSpan);
+        return context.visitNodeFn(block, node);
+    }
+    visitBlockParameter(_parameter, _context) { }
     /**
      * Convert, text and interpolated tokens up into text and placeholder pieces.
      *
@@ -21146,6 +21326,17 @@ class I18nMetaVisitor {
     }
     visitExpansionCase(expansionCase) {
         return expansionCase;
+    }
+    visitBlockGroup(group, context) {
+        visitAll(this, group.blocks, context);
+        return group;
+    }
+    visitBlock(block, context) {
+        visitAll(this, block.children, context);
+        return block;
+    }
+    visitBlockParameter(parameter, context) {
+        return parameter;
     }
     /**
      * Parse the general form `meta` passed into extract the explicit metadata needed to create a
@@ -24531,7 +24722,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.2.0-next.1+sha-5bd530a');
+const VERSION = new Version('16.2.0-next.1+sha-6cac41f');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -24752,6 +24943,13 @@ class _Visitor {
     visitAttribute(attribute, context) {
         throw new Error('unreachable code');
     }
+    visitBlockGroup(group, context) {
+        visitAll(this, group.blocks, context);
+    }
+    visitBlock(block, context) {
+        visitAll(this, block.children, context);
+    }
+    visitBlockParameter(parameter, context) { }
     _init(mode, interpolationConfig) {
         this._mode = mode;
         this._inI18nBlock = false;
@@ -24964,8 +25162,9 @@ class XmlParser extends Parser {
     constructor() {
         super(getXmlTagDefinition);
     }
-    parse(source, url, options) {
-        return super.parse(source, url, options);
+    parse(source, url, options = {}) {
+        // Blocks aren't supported in an XML context.
+        return super.parse(source, url, { ...options, tokenizeBlocks: false });
     }
 }
 
@@ -25149,6 +25348,9 @@ class XliffParser {
     visitComment(comment, context) { }
     visitExpansion(expansion, context) { }
     visitExpansionCase(expansionCase, context) { }
+    visitBlockGroup(group, context) { }
+    visitBlock(block, context) { }
+    visitBlockParameter(parameter, context) { }
     _addError(node, message) {
         this._errors.push(new I18nError(node.sourceSpan, message));
     }
@@ -25199,6 +25401,9 @@ class XmlToI18n$2 {
     }
     visitComment(comment, context) { }
     visitAttribute(attribute, context) { }
+    visitBlockGroup(group, context) { }
+    visitBlock(block, context) { }
+    visitBlockParameter(parameter, context) { }
     _addError(node, message) {
         this._errors.push(new I18nError(node.sourceSpan, message));
     }
@@ -25422,6 +25627,9 @@ class Xliff2Parser {
     visitComment(comment, context) { }
     visitExpansion(expansion, context) { }
     visitExpansionCase(expansionCase, context) { }
+    visitBlockGroup(group, context) { }
+    visitBlock(block, context) { }
+    visitBlockParameter(parameter, context) { }
     _addError(node, message) {
         this._errors.push(new I18nError(node.sourceSpan, message));
     }
@@ -25489,6 +25697,9 @@ class XmlToI18n$1 {
     }
     visitComment(comment, context) { }
     visitAttribute(attribute, context) { }
+    visitBlockGroup(group, context) { }
+    visitBlock(block, context) { }
+    visitBlockParameter(parameter, context) { }
     _addError(node, message) {
         this._errors.push(new I18nError(node.sourceSpan, message));
     }
@@ -25623,6 +25834,9 @@ class XtbParser {
     visitComment(comment, context) { }
     visitExpansion(expansion, context) { }
     visitExpansionCase(expansionCase, context) { }
+    visitBlockGroup(group, context) { }
+    visitBlock(block, context) { }
+    visitBlockParameter(block, context) { }
     _addError(node, message) {
         this._errors.push(new I18nError(node.sourceSpan, message));
     }
@@ -25671,6 +25885,9 @@ class XmlToI18n {
     }
     visitComment(comment, context) { }
     visitAttribute(attribute, context) { }
+    visitBlockGroup(group, context) { }
+    visitBlock(block, context) { }
+    visitBlockParameter(block, context) { }
     _addError(node, message) {
         this._errors.push(new I18nError(node.sourceSpan, message));
     }
@@ -26459,7 +26676,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-5bd530a'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-6cac41f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -26562,7 +26779,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-5bd530a'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-6cac41f'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -26790,7 +27007,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-5bd530a'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-6cac41f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -26825,7 +27042,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-5bd530a'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-6cac41f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -26876,7 +27093,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-5bd530a'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-6cac41f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -26909,7 +27126,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-5bd530a'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-6cac41f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -26960,7 +27177,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.2.0-next.1+sha-5bd530a'));
+    definitionMap.set('version', literal('16.2.0-next.1+sha-6cac41f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -26993,5 +27210,5 @@ publishFacade(_global);
 
 // This file is not used to build this module. It is only used during editing
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element$1 as TmplAstElement, Icu$1 as TmplAstIcu, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, Block, BlockGroup, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element$1 as TmplAstElement, Icu$1 as TmplAstIcu, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map

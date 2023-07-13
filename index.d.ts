@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.1+sha-5bd530a
+ * @license Angular v16.2.0-next.1+sha-6cac41f
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -422,6 +422,33 @@ export declare const enum BindingType {
     Class = 2,
     Style = 3,
     Animation = 4
+}
+
+export declare class Block implements BaseNode {
+    name: string;
+    parameters: BlockParameter[];
+    children: Node_2[];
+    sourceSpan: ParseSourceSpan;
+    startSourceSpan: ParseSourceSpan;
+    endSourceSpan: ParseSourceSpan | null;
+    constructor(name: string, parameters: BlockParameter[], children: Node_2[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan?: ParseSourceSpan | null);
+    visit(visitor: Visitor, context: any): any;
+}
+
+export declare class BlockGroup implements BaseNode {
+    blocks: Block[];
+    sourceSpan: ParseSourceSpan;
+    startSourceSpan: ParseSourceSpan;
+    endSourceSpan: ParseSourceSpan | null;
+    constructor(blocks: Block[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan?: ParseSourceSpan | null);
+    visit(visitor: Visitor, context: any): any;
+}
+
+export declare class BlockParameter implements BaseNode {
+    expression: string;
+    sourceSpan: ParseSourceSpan;
+    constructor(expression: string, sourceSpan: ParseSourceSpan);
+    visit(visitor: Visitor, context: any): any;
 }
 
 declare const BOOL_TYPE: BuiltinType;
@@ -1295,6 +1322,9 @@ declare namespace html {
         Attribute,
         Element_2 as Element,
         Comment_2 as Comment,
+        BlockGroup,
+        Block,
+        BlockParameter,
         Visitor,
         RecursiveVisitor
     }
@@ -1860,7 +1890,7 @@ declare enum MissingTranslationStrategy {
 
 export declare const NO_ERRORS_SCHEMA: SchemaMetadata;
 
-declare type Node_2 = Attribute | Comment_2 | Element_2 | Expansion | ExpansionCase | Text_2;
+declare type Node_2 = Attribute | Comment_2 | Element_2 | Expansion | ExpansionCase | Text_2 | BlockGroup | Block | BlockParameter;
 export { Node_2 as Node }
 
 declare interface Node_3 {
@@ -4117,6 +4147,9 @@ export declare class RecursiveVisitor implements Visitor {
     visitComment(ast: Comment_2, context: any): any;
     visitExpansion(ast: Expansion, context: any): any;
     visitExpansionCase(ast: ExpansionCase, context: any): any;
+    visitBlockGroup(ast: BlockGroup, context: any): any;
+    visitBlock(block: Block, context: any): any;
+    visitBlockParameter(ast: BlockParameter, context: any): any;
     private visitChildren;
 }
 
@@ -4948,6 +4981,9 @@ export declare interface Visitor {
     visitComment(comment: Comment_2, context: any): any;
     visitExpansion(expansion: Expansion, context: any): any;
     visitExpansionCase(expansionCase: ExpansionCase, context: any): any;
+    visitBlockGroup(group: BlockGroup, context: any): any;
+    visitBlock(block: Block, context: any): any;
+    visitBlockParameter(parameter: BlockParameter, context: any): any;
 }
 
 declare interface Visitor_2 {
