@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.2+sha-c5608e5
+ * @license Angular v16.2.0-next.2+sha-f1cb971
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8680,37 +8680,49 @@ var OpKind;
      */
     OpKind[OpKind["StyleProp"] = 14] = "StyleProp";
     /**
+     * An operation to bind an expression to a class property of an element.
+     */
+    OpKind[OpKind["ClassProp"] = 15] = "ClassProp";
+    /**
      * An operation to bind an expression to the styles of an element.
      */
-    OpKind[OpKind["StyleMap"] = 15] = "StyleMap";
+    OpKind[OpKind["StyleMap"] = 16] = "StyleMap";
+    /**
+     * An operation to bind an expression to the classes of an element.
+     */
+    OpKind[OpKind["ClassMap"] = 17] = "ClassMap";
     /**
      * An operation to interpolate text into a property binding.
      */
-    OpKind[OpKind["InterpolateProperty"] = 16] = "InterpolateProperty";
+    OpKind[OpKind["InterpolateProperty"] = 18] = "InterpolateProperty";
     /**
      * An operation to interpolate text into a style property binding.
      */
-    OpKind[OpKind["InterpolateStyleProp"] = 17] = "InterpolateStyleProp";
+    OpKind[OpKind["InterpolateStyleProp"] = 19] = "InterpolateStyleProp";
     /**
      * An operation to interpolate text into a style mapping.
      */
-    OpKind[OpKind["InterpolateStyleMap"] = 18] = "InterpolateStyleMap";
+    OpKind[OpKind["InterpolateStyleMap"] = 20] = "InterpolateStyleMap";
+    /**
+     * An operation to interpolate text into a class mapping.
+     */
+    OpKind[OpKind["InterpolateClassMap"] = 21] = "InterpolateClassMap";
     /**
      * An operation to advance the runtime's implicit slot context during the update phase of a view.
      */
-    OpKind[OpKind["Advance"] = 19] = "Advance";
+    OpKind[OpKind["Advance"] = 22] = "Advance";
     /**
      * An operation to instantiate a pipe.
      */
-    OpKind[OpKind["Pipe"] = 20] = "Pipe";
+    OpKind[OpKind["Pipe"] = 23] = "Pipe";
     /**
      * An operation to associate an attribute with an element.
      */
-    OpKind[OpKind["Attribute"] = 21] = "Attribute";
+    OpKind[OpKind["Attribute"] = 24] = "Attribute";
     /**
      * An operation to interpolate text into an attribute binding.
      */
-    OpKind[OpKind["InterpolateAttribute"] = 22] = "InterpolateAttribute";
+    OpKind[OpKind["InterpolateAttribute"] = 25] = "InterpolateAttribute";
 })(OpKind || (OpKind = {}));
 /**
  * Distinguishes different kinds of IR expressions.
@@ -9448,11 +9460,14 @@ function transformExpressionsInOp(op, transform, flags) {
         case OpKind.Property:
         case OpKind.StyleProp:
         case OpKind.StyleMap:
+        case OpKind.ClassProp:
+        case OpKind.ClassMap:
             op.expression = transformExpressionsInExpression(op.expression, transform, flags);
             break;
         case OpKind.InterpolateProperty:
         case OpKind.InterpolateStyleProp:
         case OpKind.InterpolateStyleMap:
+        case OpKind.InterpolateClassMap:
         case OpKind.InterpolateText:
             for (let i = 0; i < op.expressions.length; i++) {
                 op.expressions[i] = transformExpressionsInExpression(op.expressions[i], transform, flags);
@@ -9971,10 +9986,37 @@ function createStylePropOp(xref, name, expression, unit) {
         ...NEW_OP,
     };
 }
+/**
+ * Create a `ClassPropOp`.
+ */
+function createClassPropOp(xref, name, expression) {
+    return {
+        kind: OpKind.ClassProp,
+        target: xref,
+        name,
+        expression,
+        ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
+        ...TRAIT_CONSUMES_VARS,
+        ...NEW_OP,
+    };
+}
 /** Create a `StyleMapOp`. */
 function createStyleMapOp(xref, expression) {
     return {
         kind: OpKind.StyleMap,
+        target: xref,
+        expression,
+        ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
+        ...TRAIT_CONSUMES_VARS,
+        ...NEW_OP,
+    };
+}
+/**
+ * Create a `ClassMapOp`.
+ */
+function createClassMapOp(xref, expression) {
+    return {
+        kind: OpKind.ClassMap,
         target: xref,
         expression,
         ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
@@ -10057,6 +10099,20 @@ function createInterpolateStyleMapOp(xref, strings, expressions) {
     };
 }
 /**
+ * Create a `InterpolateStyleMap`.
+ */
+function createInterpolateClassMapOp(xref, strings, expressions) {
+    return {
+        kind: OpKind.InterpolateClassMap,
+        target: xref,
+        strings,
+        expressions,
+        ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
+        ...TRAIT_CONSUMES_VARS,
+        ...NEW_OP,
+    };
+}
+/**
  * Create an `AdvanceOp`.
  */
 function createAdvanceOp(delta) {
@@ -10113,25 +10169,30 @@ function phaseVarCounting(cpl) {
 function varsUsedByOp(op) {
     switch (op.kind) {
         case OpKind.Property:
-        case OpKind.StyleProp:
-        case OpKind.StyleMap:
-            // Property bindings use 1 variable slot.
-            return 1;
         case OpKind.Attribute:
-            // Attribute bindings use 1 variable slot.
+            // Property & attribute bindings use 1 variable slot.
             return 1;
+        case OpKind.StyleProp:
+        case OpKind.ClassProp:
+        case OpKind.StyleMap:
+        case OpKind.ClassMap:
+            // Style & class bindings use 2 variable slots.
+            return 2;
         case OpKind.InterpolateText:
             // `ir.InterpolateTextOp`s use a variable slot for each dynamic expression.
             return op.expressions.length;
         case OpKind.InterpolateProperty:
-        case OpKind.InterpolateStyleProp:
-        case OpKind.InterpolateStyleMap:
             // `ir.InterpolatePropertyOp`s use a variable slot for each dynamic expression, plus one for
             // the result.
             return 1 + op.expressions.length;
         case OpKind.InterpolateAttribute:
             // One variable slot for each dynamic expression, plus one for the result.
             return 1 + op.expressions.length;
+        case OpKind.InterpolateStyleProp:
+        case OpKind.InterpolateStyleMap:
+        case OpKind.InterpolateClassMap:
+            // One variable slot for each dynamic expression, plus two for binding the result.
+            return 2 + op.expressions.length;
         default:
             throw new Error(`Unhandled op: ${OpKind[op.kind]}`);
     }
@@ -10251,6 +10312,7 @@ function populateElementAttributes(view, compatibility) {
                 ownerOp.attributes.add(op.bindingKind, op.name, null);
                 break;
             case OpKind.StyleProp:
+            case OpKind.ClassProp:
                 ownerOp = lookupElement(elements, op.target);
                 assertIsElementAttributes(ownerOp.attributes);
                 // The old compiler treated empty style bindings as regular bindings for the purpose of
@@ -10278,6 +10340,16 @@ const CHAINABLE = new Set([
     Identifiers.property,
     Identifiers.styleProp,
     Identifiers.attribute,
+    Identifiers.stylePropInterpolate1,
+    Identifiers.stylePropInterpolate2,
+    Identifiers.stylePropInterpolate3,
+    Identifiers.stylePropInterpolate4,
+    Identifiers.stylePropInterpolate5,
+    Identifiers.stylePropInterpolate6,
+    Identifiers.stylePropInterpolate7,
+    Identifiers.stylePropInterpolate8,
+    Identifiers.stylePropInterpolateV,
+    Identifiers.classProp,
     Identifiers.elementContainerStart,
     Identifiers.elementContainerEnd,
     Identifiers.elementContainer,
@@ -10420,6 +10492,175 @@ function phaseEmptyElements(cpl) {
 }
 
 /**
+ * Finds all unresolved safe read expressions, and converts them into the appropriate output AST
+ * reads, guarded by null checks.
+ */
+function phaseExpandSafeReads(cpl, compatibility) {
+    for (const [_, view] of cpl.views) {
+        for (const op of view.ops()) {
+            transformExpressionsInOp(op, e => safeTransform(e, { cpl, compatibility }), VisitorContextFlag.None);
+            transformExpressionsInOp(op, ternaryTransform, VisitorContextFlag.None);
+        }
+    }
+}
+// A lookup set of all the expression kinds that require a temporary variable to be generated.
+const requiresTemporary = [
+    InvokeFunctionExpr, LiteralArrayExpr, LiteralMapExpr, SafeInvokeFunctionExpr,
+    PipeBindingExpr
+].map(e => e.constructor.name);
+function needsTemporaryInSafeAccess(e) {
+    // TODO: We probably want to use an expression visitor to recursively visit all descendents.
+    // However, that would potentially do a lot of extra work (because it cannot short circuit), so we
+    // implement the logic ourselves for now.
+    if (e instanceof UnaryOperatorExpr) {
+        return needsTemporaryInSafeAccess(e.expr);
+    }
+    else if (e instanceof BinaryOperatorExpr) {
+        return needsTemporaryInSafeAccess(e.lhs) || needsTemporaryInSafeAccess(e.rhs);
+    }
+    else if (e instanceof ConditionalExpr) {
+        if (e.falseCase && needsTemporaryInSafeAccess(e.falseCase))
+            return true;
+        return needsTemporaryInSafeAccess(e.condition) || needsTemporaryInSafeAccess(e.trueCase);
+    }
+    else if (e instanceof NotExpr) {
+        return needsTemporaryInSafeAccess(e.condition);
+    }
+    else if (e instanceof AssignTemporaryExpr) {
+        return needsTemporaryInSafeAccess(e.expr);
+    }
+    else if (e instanceof ReadPropExpr) {
+        return needsTemporaryInSafeAccess(e.receiver);
+    }
+    else if (e instanceof ReadKeyExpr) {
+        return needsTemporaryInSafeAccess(e.receiver) || needsTemporaryInSafeAccess(e.index);
+    }
+    // TODO: Switch to a method which is exhaustive of newly added expression subtypes.
+    return e instanceof InvokeFunctionExpr || e instanceof LiteralArrayExpr ||
+        e instanceof LiteralMapExpr || e instanceof SafeInvokeFunctionExpr ||
+        e instanceof PipeBindingExpr;
+}
+function temporariesIn(e) {
+    const temporaries = new Set();
+    // TODO: Although it's not currently supported by the transform helper, we should be able to
+    // short-circuit exploring the tree to do less work. In particular, we don't have to penetrate
+    // into the subexpressions of temporary assignments.
+    transformExpressionsInExpression(e, e => {
+        if (e instanceof AssignTemporaryExpr) {
+            temporaries.add(e.xref);
+        }
+        return e;
+    }, VisitorContextFlag.None);
+    return temporaries;
+}
+function eliminateTemporaryAssignments(e, tmps, ctx) {
+    // TODO: We can be more efficient than the transform helper here. We don't need to visit any
+    // descendents of temporary assignments.
+    transformExpressionsInExpression(e, e => {
+        if (e instanceof AssignTemporaryExpr && tmps.has(e.xref)) {
+            const read = new ReadTemporaryExpr(e.xref);
+            // `TemplateDefinitionBuilder` has the (accidental?) behavior of generating assignments of
+            // temporary variables to themselves. This happens because some subexpression that the
+            // temporary refers to, possibly through nested temporaries, has a function call. We copy that
+            // behavior here.
+            return ctx.compatibility ? new AssignTemporaryExpr(read, read.xref) : read;
+        }
+        return e;
+    }, VisitorContextFlag.None);
+    return e;
+}
+/**
+ * Creates a safe ternary guarded by the input expression, and with a body generated by the provided
+ * callback on the input expression. Generates a temporary variable assignment if needed, and
+ * deduplicates nested temporary assignments if needed.
+ */
+function safeTernaryWithTemporary(guard, body, ctx) {
+    let result;
+    if (needsTemporaryInSafeAccess(guard)) {
+        const xref = ctx.cpl.allocateXrefId();
+        result = [new AssignTemporaryExpr(guard, xref), new ReadTemporaryExpr(xref)];
+    }
+    else {
+        result = [guard, guard.clone()];
+        // Consider an expression like `a?.[b?.c()]?.d`. The `b?.c()` will be transformed first,
+        // introducing a temporary assignment into the key. Then, as part of expanding the `?.d`. That
+        // assignment will be duplicated into both the guard and expression sides. We de-duplicate it,
+        // by transforming it from an assignment into a read on the expression side.
+        eliminateTemporaryAssignments(result[1], temporariesIn(result[0]), ctx);
+    }
+    return new SafeTernaryExpr(result[0], body(result[1]));
+}
+function isSafeAccessExpression(e) {
+    return e instanceof SafePropertyReadExpr || e instanceof SafeKeyedReadExpr;
+}
+function isUnsafeAccessExpression(e) {
+    return e instanceof ReadPropExpr || e instanceof ReadKeyExpr ||
+        e instanceof InvokeFunctionExpr;
+}
+function isAccessExpression(e) {
+    return isSafeAccessExpression(e) || isUnsafeAccessExpression(e);
+}
+function deepestSafeTernary(e) {
+    if (isAccessExpression(e) && e.receiver instanceof SafeTernaryExpr) {
+        let st = e.receiver;
+        while (st.expr instanceof SafeTernaryExpr) {
+            st = st.expr;
+        }
+        return st;
+    }
+    return null;
+}
+// TODO: When strict compatibility with TemplateDefinitionBuilder is not required, we can use `&&`
+// instead to save some code size.
+function safeTransform(e, ctx) {
+    if (e instanceof SafeInvokeFunctionExpr) {
+        // TODO: Implement safe function calls in a subsequent commit.
+        return new InvokeFunctionExpr(e.receiver, e.args);
+    }
+    if (!isAccessExpression(e)) {
+        return e;
+    }
+    const dst = deepestSafeTernary(e);
+    if (dst) {
+        if (e instanceof InvokeFunctionExpr) {
+            dst.expr = dst.expr.callFn(e.args);
+            return e.receiver;
+        }
+        if (e instanceof ReadPropExpr) {
+            dst.expr = dst.expr.prop(e.name);
+            return e.receiver;
+        }
+        if (e instanceof ReadKeyExpr) {
+            dst.expr = dst.expr.key(e.index);
+            return e.receiver;
+        }
+        if (e instanceof SafePropertyReadExpr) {
+            dst.expr = safeTernaryWithTemporary(dst.expr, (r) => r.prop(e.name), ctx);
+            return e.receiver;
+        }
+        if (e instanceof SafeKeyedReadExpr) {
+            dst.expr = safeTernaryWithTemporary(dst.expr, (r) => r.key(e.index), ctx);
+            return e.receiver;
+        }
+    }
+    else {
+        if (e instanceof SafePropertyReadExpr) {
+            return safeTernaryWithTemporary(e.receiver, (r) => r.prop(e.name), ctx);
+        }
+        if (e instanceof SafeKeyedReadExpr) {
+            return safeTernaryWithTemporary(e.receiver, (r) => r.key(e.index), ctx);
+        }
+    }
+    return e;
+}
+function ternaryTransform(e) {
+    if (!(e instanceof SafeTernaryExpr)) {
+        return e;
+    }
+    return new ConditionalExpr(new BinaryOperatorExpr(BinaryOperator.Equals, e.guard, NULL_EXPR), NULL_EXPR, e.expr);
+}
+
+/**
  * Generate `ir.AdvanceOp`s in between `ir.UpdateOp`s that ensure the runtime's implicit slot
  * context will be advanced correctly.
  */
@@ -10463,24 +10704,6 @@ function phaseGenerateAdvance(cpl) {
                 OpList.insertBefore(createAdvanceOp(delta), op);
                 slotContext = slot;
             }
-        }
-    }
-}
-
-function phaseNullishCoalescing(cpl) {
-    for (const view of cpl.views.values()) {
-        for (const op of view.ops()) {
-            transformExpressionsInOp(op, expr => {
-                if (!(expr instanceof BinaryOperatorExpr) ||
-                    expr.operator !== BinaryOperator.NullishCoalesce) {
-                    return expr;
-                }
-                const assignment = new AssignTemporaryExpr(expr.lhs.clone(), cpl.allocateXrefId());
-                const read = new ReadTemporaryExpr(assignment.xref);
-                // TODO: When not in compatibility mode for TemplateDefinitionBuilder, we can just emit
-                // `t != null` instead of including an undefined check as well.
-                return new ConditionalExpr(new BinaryOperatorExpr(BinaryOperator.And, new BinaryOperatorExpr(BinaryOperator.NotIdentical, assignment, NULL_EXPR), new BinaryOperatorExpr(BinaryOperator.NotIdentical, read, new LiteralExpr(undefined))), read.clone(), expr.rhs);
-            }, VisitorContextFlag.None);
         }
     }
 }
@@ -10642,15 +10865,94 @@ function serializeLocalRefs(refs) {
 }
 
 /**
+ * Parses string representation of a style and converts it into object literal.
+ *
+ * @param value string representation of style as used in the `style` attribute in HTML.
+ *   Example: `color: red; height: auto`.
+ * @returns An array of style property name and value pairs, e.g. `['color', 'red', 'height',
+ * 'auto']`
+ */
+function parse(value) {
+    // we use a string array here instead of a string map
+    // because a string-map is not guaranteed to retain the
+    // order of the entries whereas a string array can be
+    // constructed in a [key, value, key, value] format.
+    const styles = [];
+    let i = 0;
+    let parenDepth = 0;
+    let quote = 0 /* Char.QuoteNone */;
+    let valueStart = 0;
+    let propStart = 0;
+    let currentProp = null;
+    while (i < value.length) {
+        const token = value.charCodeAt(i++);
+        switch (token) {
+            case 40 /* Char.OpenParen */:
+                parenDepth++;
+                break;
+            case 41 /* Char.CloseParen */:
+                parenDepth--;
+                break;
+            case 39 /* Char.QuoteSingle */:
+                // valueStart needs to be there since prop values don't
+                // have quotes in CSS
+                if (quote === 0 /* Char.QuoteNone */) {
+                    quote = 39 /* Char.QuoteSingle */;
+                }
+                else if (quote === 39 /* Char.QuoteSingle */ && value.charCodeAt(i - 1) !== 92 /* Char.BackSlash */) {
+                    quote = 0 /* Char.QuoteNone */;
+                }
+                break;
+            case 34 /* Char.QuoteDouble */:
+                // same logic as above
+                if (quote === 0 /* Char.QuoteNone */) {
+                    quote = 34 /* Char.QuoteDouble */;
+                }
+                else if (quote === 34 /* Char.QuoteDouble */ && value.charCodeAt(i - 1) !== 92 /* Char.BackSlash */) {
+                    quote = 0 /* Char.QuoteNone */;
+                }
+                break;
+            case 58 /* Char.Colon */:
+                if (!currentProp && parenDepth === 0 && quote === 0 /* Char.QuoteNone */) {
+                    currentProp = hyphenate(value.substring(propStart, i - 1).trim());
+                    valueStart = i;
+                }
+                break;
+            case 59 /* Char.Semicolon */:
+                if (currentProp && valueStart > 0 && parenDepth === 0 && quote === 0 /* Char.QuoteNone */) {
+                    const styleVal = value.substring(valueStart, i - 1).trim();
+                    styles.push(currentProp, styleVal);
+                    propStart = i;
+                    valueStart = 0;
+                    currentProp = null;
+                }
+                break;
+        }
+    }
+    if (currentProp && valueStart) {
+        const styleVal = value.slice(valueStart).trim();
+        styles.push(currentProp, styleVal);
+    }
+    return styles;
+}
+function hyphenate(value) {
+    return value
+        .replace(/[a-z][A-Z]/g, v => {
+        return v.charAt(0) + '-' + v.charAt(1);
+    })
+        .toLowerCase();
+}
+
+/**
  * Generate names for functions and variables across all views.
  *
  * This includes propagating those names into any `ir.ReadVariableExpr`s of those variables, so that
  * the reads can be emitted correctly.
  */
-function phaseNaming(cpl) {
-    addNamesToView(cpl.root, cpl.componentName, { index: 0 });
+function phaseNaming(cpl, compatibility) {
+    addNamesToView(cpl.root, cpl.componentName, { index: 0 }, compatibility);
 }
-function addNamesToView(view, baseName, state) {
+function addNamesToView(view, baseName, state, compatibility) {
     if (view.fnName === null) {
         view.fnName = sanitizeIdentifier(`${baseName}_Template`);
     }
@@ -10678,7 +10980,19 @@ function addNamesToView(view, baseName, state) {
                 if (op.slot === null) {
                     throw new Error(`Expected slot to be assigned`);
                 }
-                addNamesToView(childView, `${baseName}_${op.tag}_${op.slot}`, state);
+                addNamesToView(childView, `${baseName}_${op.tag}_${op.slot}`, state, compatibility);
+                break;
+            case OpKind.StyleProp:
+            case OpKind.InterpolateStyleProp:
+                op.name = normalizeStylePropName(op.name);
+                if (compatibility) {
+                    op.name = stripImportant(op.name);
+                }
+                break;
+            case OpKind.ClassProp:
+                if (compatibility) {
+                    op.name = stripImportant(op.name);
+                }
                 break;
         }
     }
@@ -10708,6 +11022,22 @@ function getVariableName(variable, state) {
         }
     }
     return variable.name;
+}
+/**
+ * Normalizes a style prop name by hyphenating it (unless its a CSS variable).
+ */
+function normalizeStylePropName(name) {
+    return name.startsWith('--') ? name : hyphenate(name);
+}
+/**
+ * Strips `!important` out of the given style or class name.
+ */
+function stripImportant(name) {
+    const importantIndex = name.indexOf('!important');
+    if (importantIndex > -1) {
+        return name.substring(0, importantIndex);
+    }
+    return name;
 }
 
 /**
@@ -10794,6 +11124,24 @@ function phaseNgContainer(cpl) {
     }
 }
 
+function phaseNullishCoalescing(cpl) {
+    for (const view of cpl.views.values()) {
+        for (const op of view.ops()) {
+            transformExpressionsInOp(op, expr => {
+                if (!(expr instanceof BinaryOperatorExpr) ||
+                    expr.operator !== BinaryOperator.NullishCoalesce) {
+                    return expr;
+                }
+                const assignment = new AssignTemporaryExpr(expr.lhs.clone(), cpl.allocateXrefId());
+                const read = new ReadTemporaryExpr(assignment.xref);
+                // TODO: When not in compatibility mode for TemplateDefinitionBuilder, we can just emit
+                // `t != null` instead of including an undefined check as well.
+                return new ConditionalExpr(new BinaryOperatorExpr(BinaryOperator.And, new BinaryOperatorExpr(BinaryOperator.NotIdentical, assignment, NULL_EXPR), new BinaryOperatorExpr(BinaryOperator.NotIdentical, read, new LiteralExpr(undefined))), read.clone(), expr.rhs);
+            }, VisitorContextFlag.None);
+        }
+    }
+}
+
 function phasePipeCreation(cpl) {
     for (const view of cpl.views.values()) {
         processPipeBindingsInView(view);
@@ -10858,6 +11206,80 @@ function phasePipeVariadic(cpl) {
             }, VisitorContextFlag.None);
         }
     }
+}
+
+/**
+ * Defines the groups based on `OpKind` that ops will be divided into. Ops will be collected into
+ * groups, then optionally transformed, before recombining the groups in the order defined here.
+ */
+const ORDERING = [
+    { kinds: new Set([OpKind.StyleMap, OpKind.InterpolateStyleMap]), transform: keepLast },
+    { kinds: new Set([OpKind.ClassMap, OpKind.InterpolateClassMap]), transform: keepLast },
+    { kinds: new Set([OpKind.StyleProp, OpKind.InterpolateStyleProp]) },
+    { kinds: new Set([OpKind.ClassProp]) },
+    { kinds: new Set([OpKind.InterpolateProperty]) },
+    { kinds: new Set([OpKind.Property]) },
+    { kinds: new Set([OpKind.Attribute, OpKind.InterpolateAttribute]) },
+];
+/**
+ * The set of all op kinds we handle in the reordering phase.
+ */
+const handledOpKinds = new Set(ORDERING.flatMap(group => [...group.kinds]));
+/**
+ * Reorders property and attribute ops according to the following ordering:
+ * 1. styleMap & styleMapInterpolate (drops all but the last op in the group)
+ * 2. classMap & classMapInterpolate (drops all but the last op in the group)
+ * 3. styleProp & stylePropInterpolate (ordering preserved within group)
+ * 4. classProp (ordering preserved within group)
+ * 5. propertyInterpolate (ordering preserved within group)
+ * 6. property (ordering preserved within group)
+ * 7. attribute & attributeInterpolate (ordering preserve within group)
+ */
+function phasePropertyOrdering(cpl) {
+    for (const [_, view] of cpl.views) {
+        let opsToOrder = [];
+        for (const op of view.update) {
+            if (handledOpKinds.has(op.kind)) {
+                // Pull out ops that need o be ordered.
+                opsToOrder.push(op);
+                OpList.remove(op);
+            }
+            else {
+                // When we encounter an op that shouldn't be reordered, put the ones we've pulled so far
+                // back in the correct order.
+                for (const orderedOp of reorder(opsToOrder)) {
+                    OpList.insertBefore(orderedOp, op);
+                }
+                opsToOrder = [];
+            }
+        }
+        // If we still have ops pulled at the end, put them back in the correct order.
+        for (const orderedOp of reorder(opsToOrder)) {
+            view.update.push(orderedOp);
+        }
+    }
+}
+/**
+ * Reorders the given list of ops according to the ordering defined by `ORDERING`.
+ */
+function reorder(ops) {
+    // Break the ops list into groups based on OpKind.
+    const groups = Array.from(ORDERING, () => new Array());
+    for (const op of ops) {
+        const groupIndex = ORDERING.findIndex(o => o.kinds.has(op.kind));
+        groups[groupIndex].push(op);
+    }
+    // Reassemble the groups into a single list, in the correct order.
+    return groups.flatMap((group, i) => {
+        const transform = ORDERING[i].transform;
+        return transform ? transform(group) : group;
+    });
+}
+/**
+ * Keeps only the last op in a list of ops.
+ */
+function keepLast(ops) {
+    return ops.slice(ops.length - 1);
 }
 
 function phasePureFunctionExtraction(cpl) {
@@ -11059,8 +11481,14 @@ function styleProp(name, expression, unit) {
     }
     return call(Identifiers.styleProp, args);
 }
+function classProp(name, expression) {
+    return call(Identifiers.classProp, [literal(name), expression]);
+}
 function styleMap(expression) {
     return call(Identifiers.styleMap, [expression]);
+}
+function classMap(expression) {
+    return call(Identifiers.classMap, [expression]);
 }
 const PIPE_BINDINGS = [
     Identifiers.pipeBind1,
@@ -11123,6 +11551,10 @@ function stylePropInterpolate(name, strings, expressions, unit) {
 function styleMapInterpolate(strings, expressions) {
     const interpolationArgs = collateInterpolationArgs(strings, expressions);
     return callVariadicInstruction(STYLE_MAP_INTERPOLATE_CONFIG, [], interpolationArgs);
+}
+function classMapInterpolate(strings, expressions) {
+    const interpolationArgs = collateInterpolationArgs(strings, expressions);
+    return callVariadicInstruction(CLASS_MAP_INTERPOLATE_CONFIG, [], interpolationArgs);
 }
 function pureFunction(varOffset, fn, args) {
     return callVariadicInstructionExpr(PURE_FUNCTION_CONFIG, [
@@ -11205,7 +11637,7 @@ const PROPERTY_INTERPOLATE_CONFIG = {
  */
 const STYLE_PROP_INTERPOLATE_CONFIG = {
     constant: [
-        null,
+        Identifiers.styleProp,
         Identifiers.stylePropInterpolate1,
         Identifiers.stylePropInterpolate2,
         Identifiers.stylePropInterpolate3,
@@ -11219,9 +11651,6 @@ const STYLE_PROP_INTERPOLATE_CONFIG = {
     mapping: n => {
         if (n % 2 === 0) {
             throw new Error(`Expected odd number of arguments`);
-        }
-        if (n < 3) {
-            throw new Error(`Expected at least 3 arguments`);
         }
         return (n - 1) / 2;
     },
@@ -11254,7 +11683,7 @@ const ATTRIBUTE_INTERPOLATE_CONFIG = {
  */
 const STYLE_MAP_INTERPOLATE_CONFIG = {
     constant: [
-        null,
+        Identifiers.styleMap,
         Identifiers.styleMapInterpolate1,
         Identifiers.styleMapInterpolate2,
         Identifiers.styleMapInterpolate3,
@@ -11269,8 +11698,28 @@ const STYLE_MAP_INTERPOLATE_CONFIG = {
         if (n % 2 === 0) {
             throw new Error(`Expected odd number of arguments`);
         }
-        if (n < 3) {
-            throw new Error(`Expected at least 3 arguments`);
+        return (n - 1) / 2;
+    },
+};
+/**
+ * `InterpolationConfig` for the `classMapInterpolate` instruction.
+ */
+const CLASS_MAP_INTERPOLATE_CONFIG = {
+    constant: [
+        Identifiers.classMap,
+        Identifiers.classMapInterpolate1,
+        Identifiers.classMapInterpolate2,
+        Identifiers.classMapInterpolate3,
+        Identifiers.classMapInterpolate4,
+        Identifiers.classMapInterpolate5,
+        Identifiers.classMapInterpolate6,
+        Identifiers.classMapInterpolate7,
+        Identifiers.classMapInterpolate8,
+    ],
+    variable: Identifiers.classMapInterpolateV,
+    mapping: n => {
+        if (n % 2 === 0) {
+            throw new Error(`Expected odd number of arguments`);
         }
         return (n - 1) / 2;
     },
@@ -11389,8 +11838,14 @@ function reifyUpdateOperations(_view, ops) {
             case OpKind.StyleProp:
                 OpList.replace(op, styleProp(op.name, op.expression, op.unit));
                 break;
+            case OpKind.ClassProp:
+                OpList.replace(op, classProp(op.name, op.expression));
+                break;
             case OpKind.StyleMap:
                 OpList.replace(op, styleMap(op.expression));
+                break;
+            case OpKind.ClassMap:
+                OpList.replace(op, classMap(op.expression));
                 break;
             case OpKind.InterpolateProperty:
                 OpList.replace(op, propertyInterpolate(op.name, op.strings, op.expressions));
@@ -11400,6 +11855,9 @@ function reifyUpdateOperations(_view, ops) {
                 break;
             case OpKind.InterpolateStyleMap:
                 OpList.replace(op, styleMapInterpolate(op.strings, op.expressions));
+                break;
+            case OpKind.InterpolateClassMap:
+                OpList.replace(op, classMapInterpolate(op.strings, op.expressions));
                 break;
             case OpKind.InterpolateText:
                 OpList.replace(op, textInterpolate(op.strings, op.expressions));
@@ -11783,6 +12241,50 @@ function phaseSlotAllocation(cpl) {
 }
 
 /**
+ * Find all assignments and usages of temporary variables, which are linked to each other with cross
+ * references. Generate names for each cross-reference, and add a `DeclareVarStmt` to initialize
+ * them at the beginning of the update block.
+ *
+ * TODO: Sometimes, it will be possible to reuse names across different subexpressions. For example,
+ * in the double keyed read `a?.[f()]?.[f()]`, the two function calls have non-overlapping scopes.
+ * Implement an algorithm for reuse.
+ */
+function phaseTemporaryVariables(cpl) {
+    for (const view of cpl.views.values()) {
+        let opCount = 0;
+        let generatedStatements = [];
+        for (const op of view.ops()) {
+            let count = 0;
+            let xrefs = new Set();
+            let defs = new Map();
+            visitExpressionsInOp(op, expr => {
+                if (expr instanceof ReadTemporaryExpr || expr instanceof AssignTemporaryExpr) {
+                    xrefs.add(expr.xref);
+                }
+            });
+            for (const xref of xrefs) {
+                // TODO: Exactly replicate the naming scheme used by `TemplateDefinitionBuilder`. It seems
+                // to rely on an expression index instead of an op index.
+                defs.set(xref, `tmp_${opCount}_${count++}`);
+            }
+            visitExpressionsInOp(op, expr => {
+                if (expr instanceof ReadTemporaryExpr || expr instanceof AssignTemporaryExpr) {
+                    const name = defs.get(expr.xref);
+                    if (name === undefined) {
+                        throw new Error('Found xref with unassigned name');
+                    }
+                    expr.name = name;
+                }
+            });
+            generatedStatements.push(...Array.from(defs.values())
+                .map(name => createStatementOp(new DeclareVarStmt(name))));
+            opCount++;
+        }
+        view.update.prepend(generatedStatements);
+    }
+}
+
+/**
  * Optimize variables declared and used in the IR.
  *
  * Variables are eagerly generated by pipeline stages for all possible values that could be
@@ -12146,224 +12648,11 @@ function allowConservativeInlining(decl, target) {
 }
 
 /**
- * Finds all unresolved safe read expressions, and converts them into the appropriate output AST
- * reads, guarded by null checks.
- */
-function phaseExpandSafeReads(cpl, compatibility) {
-    for (const [_, view] of cpl.views) {
-        for (const op of view.ops()) {
-            transformExpressionsInOp(op, e => safeTransform(e, { cpl, compatibility }), VisitorContextFlag.None);
-            transformExpressionsInOp(op, ternaryTransform, VisitorContextFlag.None);
-        }
-    }
-}
-// A lookup set of all the expression kinds that require a temporary variable to be generated.
-const requiresTemporary = [
-    InvokeFunctionExpr, LiteralArrayExpr, LiteralMapExpr, SafeInvokeFunctionExpr,
-    PipeBindingExpr
-].map(e => e.constructor.name);
-function needsTemporaryInSafeAccess(e) {
-    // TODO: We probably want to use an expression visitor to recursively visit all descendents.
-    // However, that would potentially do a lot of extra work (because it cannot short circuit), so we
-    // implement the logic ourselves for now.
-    if (e instanceof UnaryOperatorExpr) {
-        return needsTemporaryInSafeAccess(e.expr);
-    }
-    else if (e instanceof BinaryOperatorExpr) {
-        return needsTemporaryInSafeAccess(e.lhs) || needsTemporaryInSafeAccess(e.rhs);
-    }
-    else if (e instanceof ConditionalExpr) {
-        if (e.falseCase && needsTemporaryInSafeAccess(e.falseCase))
-            return true;
-        return needsTemporaryInSafeAccess(e.condition) || needsTemporaryInSafeAccess(e.trueCase);
-    }
-    else if (e instanceof NotExpr) {
-        return needsTemporaryInSafeAccess(e.condition);
-    }
-    else if (e instanceof AssignTemporaryExpr) {
-        return needsTemporaryInSafeAccess(e.expr);
-    }
-    else if (e instanceof ReadPropExpr) {
-        return needsTemporaryInSafeAccess(e.receiver);
-    }
-    else if (e instanceof ReadKeyExpr) {
-        return needsTemporaryInSafeAccess(e.receiver) || needsTemporaryInSafeAccess(e.index);
-    }
-    // TODO: Switch to a method which is exhaustive of newly added expression subtypes.
-    return e instanceof InvokeFunctionExpr || e instanceof LiteralArrayExpr ||
-        e instanceof LiteralMapExpr || e instanceof SafeInvokeFunctionExpr ||
-        e instanceof PipeBindingExpr;
-}
-function temporariesIn(e) {
-    const temporaries = new Set();
-    // TODO: Although it's not currently supported by the transform helper, we should be able to
-    // short-circuit exploring the tree to do less work. In particular, we don't have to penetrate
-    // into the subexpressions of temporary assignments.
-    transformExpressionsInExpression(e, e => {
-        if (e instanceof AssignTemporaryExpr) {
-            temporaries.add(e.xref);
-        }
-        return e;
-    }, VisitorContextFlag.None);
-    return temporaries;
-}
-function eliminateTemporaryAssignments(e, tmps, ctx) {
-    // TODO: We can be more efficient than the transform helper here. We don't need to visit any
-    // descendents of temporary assignments.
-    transformExpressionsInExpression(e, e => {
-        if (e instanceof AssignTemporaryExpr && tmps.has(e.xref)) {
-            const read = new ReadTemporaryExpr(e.xref);
-            // `TemplateDefinitionBuilder` has the (accidental?) behavior of generating assignments of
-            // temporary variables to themselves. This happens because some subexpression that the
-            // temporary refers to, possibly through nested temporaries, has a function call. We copy that
-            // behavior here.
-            return ctx.compatibility ? new AssignTemporaryExpr(read, read.xref) : read;
-        }
-        return e;
-    }, VisitorContextFlag.None);
-    return e;
-}
-/**
- * Creates a safe ternary guarded by the input expression, and with a body generated by the provided
- * callback on the input expression. Generates a temporary variable assignment if needed, and
- * deduplicates nested temporary assignments if needed.
- */
-function safeTernaryWithTemporary(guard, body, ctx) {
-    let result;
-    if (needsTemporaryInSafeAccess(guard)) {
-        const xref = ctx.cpl.allocateXrefId();
-        result = [new AssignTemporaryExpr(guard, xref), new ReadTemporaryExpr(xref)];
-    }
-    else {
-        result = [guard, guard.clone()];
-        // Consider an expression like `a?.[b?.c()]?.d`. The `b?.c()` will be transformed first,
-        // introducing a temporary assignment into the key. Then, as part of expanding the `?.d`. That
-        // assignment will be duplicated into both the guard and expression sides. We de-duplicate it,
-        // by transforming it from an assignment into a read on the expression side.
-        eliminateTemporaryAssignments(result[1], temporariesIn(result[0]), ctx);
-    }
-    return new SafeTernaryExpr(result[0], body(result[1]));
-}
-function isSafeAccessExpression(e) {
-    return e instanceof SafePropertyReadExpr || e instanceof SafeKeyedReadExpr;
-}
-function isUnsafeAccessExpression(e) {
-    return e instanceof ReadPropExpr || e instanceof ReadKeyExpr ||
-        e instanceof InvokeFunctionExpr;
-}
-function isAccessExpression(e) {
-    return isSafeAccessExpression(e) || isUnsafeAccessExpression(e);
-}
-function deepestSafeTernary(e) {
-    if (isAccessExpression(e) && e.receiver instanceof SafeTernaryExpr) {
-        let st = e.receiver;
-        while (st.expr instanceof SafeTernaryExpr) {
-            st = st.expr;
-        }
-        return st;
-    }
-    return null;
-}
-// TODO: When strict compatibility with TemplateDefinitionBuilder is not required, we can use `&&`
-// instead to save some code size.
-function safeTransform(e, ctx) {
-    if (e instanceof SafeInvokeFunctionExpr) {
-        // TODO: Implement safe function calls in a subsequent commit.
-        return new InvokeFunctionExpr(e.receiver, e.args);
-    }
-    if (!isAccessExpression(e)) {
-        return e;
-    }
-    const dst = deepestSafeTernary(e);
-    if (dst) {
-        if (e instanceof InvokeFunctionExpr) {
-            dst.expr = dst.expr.callFn(e.args);
-            return e.receiver;
-        }
-        if (e instanceof ReadPropExpr) {
-            dst.expr = dst.expr.prop(e.name);
-            return e.receiver;
-        }
-        if (e instanceof ReadKeyExpr) {
-            dst.expr = dst.expr.key(e.index);
-            return e.receiver;
-        }
-        if (e instanceof SafePropertyReadExpr) {
-            dst.expr = safeTernaryWithTemporary(dst.expr, (r) => r.prop(e.name), ctx);
-            return e.receiver;
-        }
-        if (e instanceof SafeKeyedReadExpr) {
-            dst.expr = safeTernaryWithTemporary(dst.expr, (r) => r.key(e.index), ctx);
-            return e.receiver;
-        }
-    }
-    else {
-        if (e instanceof SafePropertyReadExpr) {
-            return safeTernaryWithTemporary(e.receiver, (r) => r.prop(e.name), ctx);
-        }
-        if (e instanceof SafeKeyedReadExpr) {
-            return safeTernaryWithTemporary(e.receiver, (r) => r.key(e.index), ctx);
-        }
-    }
-    return e;
-}
-function ternaryTransform(e) {
-    if (!(e instanceof SafeTernaryExpr)) {
-        return e;
-    }
-    return new ConditionalExpr(new BinaryOperatorExpr(BinaryOperator.Equals, e.guard, NULL_EXPR), NULL_EXPR, e.expr);
-}
-
-/**
- * Find all assignments and usages of temporary variables, which are linked to each other with cross
- * references. Generate names for each cross-reference, and add a `DeclareVarStmt` to initialize
- * them at the beginning of the update block.
- *
- * TODO: Sometimes, it will be possible to reuse names across different subexpressions. For example,
- * in the double keyed read `a?.[f()]?.[f()]`, the two function calls have non-overlapping scopes.
- * Implement an algorithm for reuse.
- */
-function phaseTemporaryVariables(cpl) {
-    for (const view of cpl.views.values()) {
-        let opCount = 0;
-        let generatedStatements = [];
-        for (const op of view.ops()) {
-            let count = 0;
-            let xrefs = new Set();
-            let defs = new Map();
-            visitExpressionsInOp(op, expr => {
-                if (expr instanceof ReadTemporaryExpr || expr instanceof AssignTemporaryExpr) {
-                    xrefs.add(expr.xref);
-                }
-            });
-            for (const xref of xrefs) {
-                // TODO: Exactly replicate the naming scheme used by `TemplateDefinitionBuilder`. It seems
-                // to rely on an expression index instead of an op index.
-                defs.set(xref, `tmp_${opCount}_${count++}`);
-            }
-            visitExpressionsInOp(op, expr => {
-                if (expr instanceof ReadTemporaryExpr || expr instanceof AssignTemporaryExpr) {
-                    const name = defs.get(expr.xref);
-                    if (name === undefined) {
-                        throw new Error('Found xref with unassigned name');
-                    }
-                    expr.name = name;
-                }
-            });
-            generatedStatements.push(...Array.from(defs.values())
-                .map(name => createStatementOp(new DeclareVarStmt(name))));
-            opCount++;
-        }
-        view.update.prepend(generatedStatements);
-    }
-}
-
-/**
  * Run all transformation phases in the correct order against a `ComponentCompilation`. After this
  * processing, the compilation should be in a state where it can be emitted via `emitTemplateFn`.s
  */
 function transformTemplate(cpl) {
-    phaseAttributeExtraction(cpl, true);
+    phaseAttributeExtraction(cpl, /* compatibility */ true);
     phasePipeCreation(cpl);
     phasePipeVariadic(cpl);
     phasePureLiteralStructures(cpl);
@@ -12379,13 +12668,14 @@ function transformTemplate(cpl) {
     phaseSlotAllocation(cpl);
     phaseVarCounting(cpl);
     phaseGenerateAdvance(cpl);
-    phaseNaming(cpl);
+    phaseNaming(cpl, /* compatibility */ true);
     phaseVariableOptimization(cpl, { conservative: true });
     phaseMergeNextContext(cpl);
     phaseNgContainer(cpl);
     phaseEmptyElements(cpl);
     phasePureFunctionExtraction(cpl);
     phaseAlignPipeVariadicVarOffset(cpl);
+    phasePropertyOrdering(cpl);
     phaseReify(cpl);
     phaseChaining(cpl);
 }
@@ -12821,6 +13111,12 @@ function ingestPropertyBinding(view, xref, bindingKind, { name, value, type, uni
                     }
                     view.update.push(createInterpolateStyleMapOp(xref, value.strings, value.expressions.map(expr => convertAst(expr, view.tpl))));
                 }
+                else if (name === 'class') {
+                    if (bindingKind !== ElementAttributeKind.Binding) {
+                        throw Error('Unexpected class binding on ng-template');
+                    }
+                    view.update.push(createInterpolateClassMapOp(xref, value.strings, value.expressions.map(expr => convertAst(expr, view.tpl))));
+                }
                 else {
                     view.update.push(createInterpolatePropertyOp(xref, bindingKind, name, value.strings, value.expressions.map(expr => convertAst(expr, view.tpl))));
                 }
@@ -12838,8 +13134,11 @@ function ingestPropertyBinding(view, xref, bindingKind, { name, value, type, uni
                 const attributeInterpolate = createInterpolateAttributeOp(xref, bindingKind, name, value.strings, value.expressions.map(expr => convertAst(expr, view.tpl)));
                 view.update.push(attributeInterpolate);
                 break;
+            case 2 /* e.BindingType.Class */:
+                throw Error('Unexpected interpolation in class property binding');
+            // TODO: implement remaining binding types.
+            case 4 /* e.BindingType.Animation */:
             default:
-                // TODO: implement remaining binding types.
                 throw Error(`Interpolated property binding type not handled: ${type}`);
         }
     }
@@ -12852,6 +13151,12 @@ function ingestPropertyBinding(view, xref, bindingKind, { name, value, type, uni
                         throw Error('Unexpected style binding on ng-template');
                     }
                     view.update.push(createStyleMapOp(xref, convertAst(value, view.tpl)));
+                }
+                else if (name === 'class') {
+                    if (bindingKind !== ElementAttributeKind.Binding) {
+                        throw Error('Unexpected class binding on ng-template');
+                    }
+                    view.update.push(createClassMapOp(xref, convertAst(value, view.tpl)));
                 }
                 else {
                     view.update.push(createPropertyOp(xref, bindingKind, name, convertAst(value, view.tpl)));
@@ -12870,8 +13175,15 @@ function ingestPropertyBinding(view, xref, bindingKind, { name, value, type, uni
                 const attrOp = createAttributeOp(xref, bindingKind, name, convertAst(value, view.tpl));
                 view.update.push(attrOp);
                 break;
+            case 2 /* e.BindingType.Class */:
+                if (bindingKind !== ElementAttributeKind.Binding) {
+                    throw Error('Unexpected class binding on ng-template');
+                }
+                view.update.push(createClassPropOp(xref, name, convertAst(value, view.tpl)));
+                break;
+            // TODO: implement remaining binding types.
+            case 4 /* e.BindingType.Animation */:
             default:
-                // TODO: implement remaining binding types.
                 throw Error(`Property binding type not handled: ${type}`);
         }
     }
@@ -12899,85 +13211,6 @@ function assertIsArray(value) {
 }
 
 const USE_TEMPLATE_PIPELINE = false;
-
-/**
- * Parses string representation of a style and converts it into object literal.
- *
- * @param value string representation of style as used in the `style` attribute in HTML.
- *   Example: `color: red; height: auto`.
- * @returns An array of style property name and value pairs, e.g. `['color', 'red', 'height',
- * 'auto']`
- */
-function parse(value) {
-    // we use a string array here instead of a string map
-    // because a string-map is not guaranteed to retain the
-    // order of the entries whereas a string array can be
-    // constructed in a [key, value, key, value] format.
-    const styles = [];
-    let i = 0;
-    let parenDepth = 0;
-    let quote = 0 /* Char.QuoteNone */;
-    let valueStart = 0;
-    let propStart = 0;
-    let currentProp = null;
-    while (i < value.length) {
-        const token = value.charCodeAt(i++);
-        switch (token) {
-            case 40 /* Char.OpenParen */:
-                parenDepth++;
-                break;
-            case 41 /* Char.CloseParen */:
-                parenDepth--;
-                break;
-            case 39 /* Char.QuoteSingle */:
-                // valueStart needs to be there since prop values don't
-                // have quotes in CSS
-                if (quote === 0 /* Char.QuoteNone */) {
-                    quote = 39 /* Char.QuoteSingle */;
-                }
-                else if (quote === 39 /* Char.QuoteSingle */ && value.charCodeAt(i - 1) !== 92 /* Char.BackSlash */) {
-                    quote = 0 /* Char.QuoteNone */;
-                }
-                break;
-            case 34 /* Char.QuoteDouble */:
-                // same logic as above
-                if (quote === 0 /* Char.QuoteNone */) {
-                    quote = 34 /* Char.QuoteDouble */;
-                }
-                else if (quote === 34 /* Char.QuoteDouble */ && value.charCodeAt(i - 1) !== 92 /* Char.BackSlash */) {
-                    quote = 0 /* Char.QuoteNone */;
-                }
-                break;
-            case 58 /* Char.Colon */:
-                if (!currentProp && parenDepth === 0 && quote === 0 /* Char.QuoteNone */) {
-                    currentProp = hyphenate(value.substring(propStart, i - 1).trim());
-                    valueStart = i;
-                }
-                break;
-            case 59 /* Char.Semicolon */:
-                if (currentProp && valueStart > 0 && parenDepth === 0 && quote === 0 /* Char.QuoteNone */) {
-                    const styleVal = value.substring(valueStart, i - 1).trim();
-                    styles.push(currentProp, styleVal);
-                    propStart = i;
-                    valueStart = 0;
-                    currentProp = null;
-                }
-                break;
-        }
-    }
-    if (currentProp && valueStart) {
-        const styleVal = value.slice(valueStart).trim();
-        styles.push(currentProp, styleVal);
-    }
-    return styles;
-}
-function hyphenate(value) {
-    return value
-        .replace(/[a-z][A-Z]/g, v => {
-        return v.charAt(0) + '-' + v.charAt(1);
-    })
-        .toLowerCase();
-}
 
 const IMPORTANT_FLAG = '!important';
 /**
@@ -24715,7 +24948,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.2.0-next.2+sha-c5608e5');
+const VERSION = new Version('16.2.0-next.2+sha-f1cb971');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -26669,7 +26902,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-c5608e5'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-f1cb971'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -26772,7 +27005,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-c5608e5'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-f1cb971'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -27000,7 +27233,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-c5608e5'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-f1cb971'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -27035,7 +27268,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-c5608e5'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-f1cb971'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -27086,7 +27319,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-c5608e5'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-f1cb971'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -27119,7 +27352,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-c5608e5'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-f1cb971'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -27170,7 +27403,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-c5608e5'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-f1cb971'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
