@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.1.5+sha-9f914a8
+ * @license Angular v16.1.5+sha-78663e6
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10296,7 +10296,7 @@ function phaseNaming(cpl) {
 }
 function addNamesToView(view, baseName, state) {
     if (view.fnName === null) {
-        view.fnName = `${baseName}_Template`;
+        view.fnName = sanitizeIdentifier(`${baseName}_Template`);
     }
     // Keep track of the names we assign to variables in the view. We'll need to propagate these
     // into reads of those variables afterwards.
@@ -10310,7 +10310,8 @@ function addNamesToView(view, baseName, state) {
                     if (op.slot === null) {
                         throw new Error(`Expected a slot to be assigned`);
                     }
-                    op.handlerFnName = `${view.fnName}_${op.tag}_${op.name}_${op.slot}_listener`;
+                    op.handlerFnName =
+                        sanitizeIdentifier(`${view.fnName}_${op.tag}_${op.name}_${op.slot}_listener`);
                 }
                 break;
             case OpKind.Variable:
@@ -10321,9 +10322,7 @@ function addNamesToView(view, baseName, state) {
                 if (op.slot === null) {
                     throw new Error(`Expected slot to be assigned`);
                 }
-                // TODO: properly escape the tag name.
-                const safeTagName = op.tag.replace('-', '_');
-                addNamesToView(childView, `${baseName}_${safeTagName}_${op.slot}`, state);
+                addNamesToView(childView, `${baseName}_${op.tag}_${op.slot}`, state);
                 break;
         }
     }
@@ -23412,7 +23411,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.1.5+sha-9f914a8');
+const VERSION = new Version('16.1.5+sha-78663e6');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -25340,7 +25339,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.1.5+sha-9f914a8'));
+    definitionMap.set('version', literal('16.1.5+sha-78663e6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -25443,7 +25442,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.1.5+sha-9f914a8'));
+    definitionMap.set('version', literal('16.1.5+sha-78663e6'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -25671,7 +25670,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.1.5+sha-9f914a8'));
+    definitionMap.set('version', literal('16.1.5+sha-78663e6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -25706,7 +25705,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.1.5+sha-9f914a8'));
+    definitionMap.set('version', literal('16.1.5+sha-78663e6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -25757,7 +25756,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.1.5+sha-9f914a8'));
+    definitionMap.set('version', literal('16.1.5+sha-78663e6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -25790,7 +25789,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.1.5+sha-9f914a8'));
+    definitionMap.set('version', literal('16.1.5+sha-78663e6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -25841,7 +25840,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.1.5+sha-9f914a8'));
+    definitionMap.set('version', literal('16.1.5+sha-78663e6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
