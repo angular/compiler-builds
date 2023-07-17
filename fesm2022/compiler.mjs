@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.2+sha-0623158
+ * @license Angular v16.2.0-next.2+sha-76d22ae
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3880,6 +3880,96 @@ class Element$1 {
         return visitor.visitElement(this);
     }
 }
+class DeferredTrigger {
+    constructor(sourceSpan) {
+        this.sourceSpan = sourceSpan;
+    }
+    visit(visitor) {
+        return visitor.visitDeferredTrigger(this);
+    }
+}
+class BoundDeferredTrigger extends DeferredTrigger {
+    constructor(value, sourceSpan) {
+        super(sourceSpan);
+        this.value = value;
+    }
+}
+class IdleDeferredTrigger extends DeferredTrigger {
+}
+class ImmediateDeferredTrigger extends DeferredTrigger {
+}
+class HoverDeferredTrigger extends DeferredTrigger {
+}
+class TimerDeferredTrigger extends DeferredTrigger {
+    constructor(delay, sourceSpan) {
+        super(sourceSpan);
+        this.delay = delay;
+    }
+}
+class InteractionDeferredTrigger extends DeferredTrigger {
+    constructor(reference, sourceSpan) {
+        super(sourceSpan);
+        this.reference = reference;
+    }
+}
+class ViewportDeferredTrigger extends DeferredTrigger {
+    constructor(reference, sourceSpan) {
+        super(sourceSpan);
+        this.reference = reference;
+    }
+}
+class DeferredBlockPlaceholder {
+    constructor(children, minimumTime, sourceSpan, startSourceSpan, endSourceSpan) {
+        this.children = children;
+        this.minimumTime = minimumTime;
+        this.sourceSpan = sourceSpan;
+        this.startSourceSpan = startSourceSpan;
+        this.endSourceSpan = endSourceSpan;
+    }
+    visit(visitor) {
+        return visitor.visitDeferredBlockPlaceholder(this);
+    }
+}
+class DeferredBlockLoading {
+    constructor(children, afterTime, minimumTime, sourceSpan, startSourceSpan, endSourceSpan) {
+        this.children = children;
+        this.afterTime = afterTime;
+        this.minimumTime = minimumTime;
+        this.sourceSpan = sourceSpan;
+        this.startSourceSpan = startSourceSpan;
+        this.endSourceSpan = endSourceSpan;
+    }
+    visit(visitor) {
+        return visitor.visitDeferredBlockLoading(this);
+    }
+}
+class DeferredBlockError {
+    constructor(children, sourceSpan, startSourceSpan, endSourceSpan) {
+        this.children = children;
+        this.sourceSpan = sourceSpan;
+        this.startSourceSpan = startSourceSpan;
+        this.endSourceSpan = endSourceSpan;
+    }
+    visit(visitor) {
+        return visitor.visitDeferredBlockError(this);
+    }
+}
+class DeferredBlock {
+    constructor(children, triggers, prefetchTriggers, placeholder, loading, error, sourceSpan, startSourceSpan, endSourceSpan) {
+        this.children = children;
+        this.triggers = triggers;
+        this.prefetchTriggers = prefetchTriggers;
+        this.placeholder = placeholder;
+        this.loading = loading;
+        this.error = error;
+        this.sourceSpan = sourceSpan;
+        this.startSourceSpan = startSourceSpan;
+        this.endSourceSpan = endSourceSpan;
+    }
+    visit(visitor) {
+        return visitor.visitDeferredBlock(this);
+    }
+}
 class Template {
     constructor(
     // tagName is the name of the container element, if applicable.
@@ -3967,6 +4057,23 @@ class RecursiveVisitor$1 {
         visitAll$1(this, template.references);
         visitAll$1(this, template.variables);
     }
+    visitDeferredBlock(deferred) {
+        visitAll$1(this, deferred.triggers);
+        visitAll$1(this, deferred.prefetchTriggers);
+        visitAll$1(this, deferred.children);
+        deferred.placeholder?.visit(this);
+        deferred.loading?.visit(this);
+        deferred.error?.visit(this);
+    }
+    visitDeferredBlockPlaceholder(block) {
+        visitAll$1(this, block.children);
+    }
+    visitDeferredBlockError(block) {
+        visitAll$1(this, block.children);
+    }
+    visitDeferredBlockLoading(block) {
+        visitAll$1(this, block.children);
+    }
     visitContent(content) { }
     visitVariable(variable) { }
     visitReference(reference) { }
@@ -3976,6 +4083,7 @@ class RecursiveVisitor$1 {
     visitText(text) { }
     visitBoundText(text) { }
     visitIcu(icu) { }
+    visitDeferredTrigger(trigger) { }
 }
 function visitAll$1(visitor, nodes) {
     const result = [];
@@ -20130,7 +20238,7 @@ class BindingParser {
             this._parseAnimation(name, expression, sourceSpan, absoluteOffset, keySpan, valueSpan, targetMatchableAttrs, targetProps);
         }
         else {
-            this._parsePropertyAst(name, this._parseBinding(expression, isHost, valueSpan || sourceSpan, absoluteOffset), sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
+            this._parsePropertyAst(name, this.parseBinding(expression, isHost, valueSpan || sourceSpan, absoluteOffset), sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
         }
     }
     parsePropertyInterpolation(name, value, sourceSpan, valueSpan, targetMatchableAttrs, targetProps, keySpan, interpolatedTokens) {
@@ -20152,11 +20260,11 @@ class BindingParser {
         // This will occur when a @trigger is not paired with an expression.
         // For animations it is valid to not have an expression since */void
         // states will be applied by angular when the element is attached/detached
-        const ast = this._parseBinding(expression || 'undefined', false, valueSpan || sourceSpan, absoluteOffset);
+        const ast = this.parseBinding(expression || 'undefined', false, valueSpan || sourceSpan, absoluteOffset);
         targetMatchableAttrs.push([name, ast.source]);
         targetProps.push(new ParsedProperty(name, ast, ParsedPropertyType.ANIMATION, sourceSpan, keySpan, valueSpan));
     }
-    _parseBinding(value, isHostBinding, sourceSpan, absoluteOffset) {
+    parseBinding(value, isHostBinding, sourceSpan, absoluteOffset) {
         const sourceInfo = (sourceSpan && sourceSpan.start || '(unknown)').toString();
         try {
             const ast = isHostBinding ?
@@ -20433,6 +20541,415 @@ function normalizeNgContentSelect(selectAttr) {
     return selectAttr;
 }
 
+/** Pattern for a timing value in a trigger. */
+const TIME_PATTERN = /^\d+(ms|s)?$/;
+/** Pattern for a separator between keywords in a trigger expression. */
+const SEPARATOR_PATTERN = /^\s$/;
+/** Pairs of characters that form syntax that is comma-delimited. */
+const COMMA_DELIMITED_SYNTAX = new Map([
+    [$LBRACE, $RBRACE],
+    [$LBRACKET, $RBRACKET],
+    [$LPAREN, $RPAREN], // Function calls
+]);
+/** Possible types of `on` triggers. */
+var OnTriggerType;
+(function (OnTriggerType) {
+    OnTriggerType["IDLE"] = "idle";
+    OnTriggerType["TIMER"] = "timer";
+    OnTriggerType["INTERACTION"] = "interaction";
+    OnTriggerType["IMMEDIATE"] = "immediate";
+    OnTriggerType["HOVER"] = "hover";
+    OnTriggerType["VIEWPORT"] = "viewport";
+})(OnTriggerType || (OnTriggerType = {}));
+/** Parses a `when` deferred trigger. */
+function parseWhenTrigger({ expression, sourceSpan }, bindingParser, errors) {
+    const whenIndex = expression.indexOf('when');
+    // This is here just to be safe, we shouldn't enter this function
+    // in the first place if a block doesn't have the "when" keyword.
+    if (whenIndex === -1) {
+        errors.push(new ParseError(sourceSpan, `Could not find "when" keyword in expression`));
+        return null;
+    }
+    const start = getTriggerParametersStart(expression, whenIndex + 1);
+    const parsed = bindingParser.parseBinding(expression.slice(start), false, sourceSpan, sourceSpan.start.offset + start);
+    return new BoundDeferredTrigger(parsed, sourceSpan);
+}
+/** Parses an `on` trigger */
+function parseOnTrigger({ expression, sourceSpan }, errors) {
+    const onIndex = expression.indexOf('on');
+    // This is here just to be safe, we shouldn't enter this function
+    // in the first place if a block doesn't have the "on" keyword.
+    if (onIndex === -1) {
+        errors.push(new ParseError(sourceSpan, `Could not find "on" keyword in expression`));
+        return [];
+    }
+    const start = getTriggerParametersStart(expression, onIndex + 1);
+    return new OnTriggerParser(expression, start, sourceSpan, errors).parse();
+}
+class OnTriggerParser {
+    constructor(expression, start, span, errors) {
+        this.expression = expression;
+        this.start = start;
+        this.span = span;
+        this.errors = errors;
+        this.index = 0;
+        this.triggers = [];
+        this.tokens = new Lexer().tokenize(expression.slice(start));
+    }
+    parse() {
+        while (this.tokens.length > 0 && this.index < this.tokens.length) {
+            const token = this.token();
+            if (!token.isIdentifier()) {
+                this.unexpectedToken(token);
+                break;
+            }
+            // An identifier immediately followed by a comma or the end of
+            // the expression cannot have parameters so we can exit early.
+            if (this.isFollowedByOrLast($COMMA)) {
+                this.consumeTrigger(token, []);
+                this.advance();
+            }
+            else if (this.isFollowedByOrLast($LPAREN)) {
+                this.advance(); // Advance to the opening paren.
+                const prevErrors = this.errors.length;
+                const parameters = this.consumeParameters();
+                if (this.errors.length !== prevErrors) {
+                    break;
+                }
+                this.consumeTrigger(token, parameters);
+                this.advance(); // Advance past the closing paren.
+            }
+            else if (this.index < this.tokens.length - 1) {
+                this.unexpectedToken(this.tokens[this.index + 1]);
+            }
+            this.advance();
+        }
+        return this.triggers;
+    }
+    advance() {
+        this.index++;
+    }
+    isFollowedByOrLast(char) {
+        if (this.index === this.tokens.length - 1) {
+            return true;
+        }
+        return this.tokens[this.index + 1].isCharacter(char);
+    }
+    token() {
+        return this.tokens[Math.min(this.index, this.tokens.length - 1)];
+    }
+    consumeTrigger(identifier, parameters) {
+        const startSpan = this.span.start.moveBy(this.start + identifier.index - this.tokens[0].index);
+        const endSpan = startSpan.moveBy(this.token().end - identifier.index);
+        const sourceSpan = new ParseSourceSpan(startSpan, endSpan);
+        try {
+            switch (identifier.toString()) {
+                case OnTriggerType.IDLE:
+                    this.triggers.push(createIdleTrigger(parameters, sourceSpan));
+                    break;
+                case OnTriggerType.TIMER:
+                    this.triggers.push(createTimerTrigger(parameters, sourceSpan));
+                    break;
+                case OnTriggerType.INTERACTION:
+                    this.triggers.push(createInteractionTrigger(parameters, sourceSpan));
+                    break;
+                case OnTriggerType.IMMEDIATE:
+                    this.triggers.push(createImmediateTrigger(parameters, sourceSpan));
+                    break;
+                case OnTriggerType.HOVER:
+                    this.triggers.push(createHoverTrigger(parameters, sourceSpan));
+                    break;
+                case OnTriggerType.VIEWPORT:
+                    this.triggers.push(createViewportTrigger(parameters, sourceSpan));
+                    break;
+                default:
+                    throw new Error(`Unrecognized trigger type "${identifier}"`);
+            }
+        }
+        catch (e) {
+            this.error(identifier, e.message);
+        }
+    }
+    consumeParameters() {
+        const parameters = [];
+        if (!this.token().isCharacter($LPAREN)) {
+            this.unexpectedToken(this.token());
+            return parameters;
+        }
+        this.advance();
+        const commaDelimStack = [];
+        let current = '';
+        while (this.index < this.tokens.length) {
+            const token = this.token();
+            // Stop parsing if we've hit the end character and we're outside of a comma-delimited syntax.
+            // Note that we don't need to account for strings here since the lexer already parsed them
+            // into string tokens.
+            if (token.isCharacter($RPAREN) && commaDelimStack.length === 0) {
+                if (current.length) {
+                    parameters.push(current);
+                }
+                break;
+            }
+            // In the `on` microsyntax "top-level" commas (e.g. ones outside of an parameters) separate
+            // the different triggers (e.g. `on idle,timer(500)`). This is problematic, because the
+            // function-like syntax also implies that multiple parameters can be passed into the
+            // individual trigger (e.g. `on foo(a, b)`). To avoid tripping up the parser with commas that
+            // are part of other sorts of syntax (object literals, arrays), we treat anything inside
+            // a comma-delimited syntax block as plain text.
+            if (token.type === TokenType.Character && COMMA_DELIMITED_SYNTAX.has(token.numValue)) {
+                commaDelimStack.push(COMMA_DELIMITED_SYNTAX.get(token.numValue));
+            }
+            if (commaDelimStack.length > 0 &&
+                token.isCharacter(commaDelimStack[commaDelimStack.length - 1])) {
+                commaDelimStack.pop();
+            }
+            // If we hit a comma outside of a comma-delimited syntax, it means
+            // that we're at the top level and we're starting a new parameter.
+            if (commaDelimStack.length === 0 && token.isCharacter($COMMA) && current.length > 0) {
+                parameters.push(current);
+                current = '';
+                this.advance();
+                continue;
+            }
+            // Otherwise treat the token as a plain text character in the current parameter.
+            current += this.tokenText();
+            this.advance();
+        }
+        if (!this.token().isCharacter($RPAREN) || commaDelimStack.length > 0) {
+            this.error(this.token(), 'Unexpected end of expression');
+        }
+        if (this.index < this.tokens.length - 1 &&
+            !this.tokens[this.index + 1].isCharacter($COMMA)) {
+            this.unexpectedToken(this.tokens[this.index + 1]);
+        }
+        return parameters;
+    }
+    tokenText() {
+        // Tokens have a toString already which we could use, but for string tokens it omits the quotes.
+        // Eventually we could expose this information on the token directly.
+        return this.expression.slice(this.start + this.token().index, this.start + this.token().end);
+    }
+    error(token, message) {
+        const newStart = this.span.start.moveBy(this.start + token.index);
+        const newEnd = newStart.moveBy(token.end - token.index);
+        this.errors.push(new ParseError(new ParseSourceSpan(newStart, newEnd), message));
+    }
+    unexpectedToken(token) {
+        this.error(token, `Unexpected token "${token}"`);
+    }
+}
+function createIdleTrigger(parameters, sourceSpan) {
+    if (parameters.length > 0) {
+        throw new Error(`"${OnTriggerType.IDLE}" trigger cannot have parameters`);
+    }
+    return new IdleDeferredTrigger(sourceSpan);
+}
+function createTimerTrigger(parameters, sourceSpan) {
+    if (parameters.length !== 1) {
+        throw new Error(`"${OnTriggerType.TIMER}" trigger must have exactly one parameter`);
+    }
+    const delay = parseDeferredTime(parameters[0]);
+    if (delay === null) {
+        throw new Error(`Could not parse time value of trigger "${OnTriggerType.TIMER}"`);
+    }
+    return new TimerDeferredTrigger(delay, sourceSpan);
+}
+function createInteractionTrigger(parameters, sourceSpan) {
+    if (parameters.length > 1) {
+        throw new Error(`"${OnTriggerType.INTERACTION}" trigger can only have zero or one parameters`);
+    }
+    return new InteractionDeferredTrigger(parameters[0] ?? null, sourceSpan);
+}
+function createImmediateTrigger(parameters, sourceSpan) {
+    if (parameters.length > 0) {
+        throw new Error(`"${OnTriggerType.IMMEDIATE}" trigger cannot have parameters`);
+    }
+    return new ImmediateDeferredTrigger(sourceSpan);
+}
+function createHoverTrigger(parameters, sourceSpan) {
+    if (parameters.length > 0) {
+        throw new Error(`"${OnTriggerType.HOVER}" trigger cannot have parameters`);
+    }
+    return new HoverDeferredTrigger(sourceSpan);
+}
+function createViewportTrigger(parameters, sourceSpan) {
+    // TODO: the RFC has some more potential parameters for `viewport`.
+    if (parameters.length > 1) {
+        throw new Error(`"${OnTriggerType.VIEWPORT}" trigger can only have zero or one parameters`);
+    }
+    return new ViewportDeferredTrigger(parameters[0] ?? null, sourceSpan);
+}
+/** Gets the index within an expression at which the trigger parameters start. */
+function getTriggerParametersStart(value, startPosition = 0) {
+    let hasFoundSeparator = false;
+    for (let i = startPosition; i < value.length; i++) {
+        if (SEPARATOR_PATTERN.test(value[i])) {
+            hasFoundSeparator = true;
+        }
+        else if (hasFoundSeparator) {
+            return i;
+        }
+    }
+    return -1;
+}
+/**
+ * Parses a time expression from a deferred trigger to
+ * milliseconds. Returns null if it cannot be parsed.
+ */
+function parseDeferredTime(value) {
+    const match = value.match(TIME_PATTERN);
+    if (!match) {
+        return null;
+    }
+    const [time, units] = match;
+    return parseInt(time) * (units === 's' ? 1000 : 1);
+}
+
+/** Pattern to identify a `prefetch when` trigger. */
+const PREFETCH_WHEN_PATTERN = /^prefetch\s+when\s/;
+/** Pattern to identify a `prefetch on` trigger. */
+const PREFETCH_ON_PATTERN = /^prefetch\s+on\s/;
+/** Pattern to identify a `minimum` parameter in a block. */
+const MINIMUM_PARAMETER_PATTERN = /^minimum\s/;
+/** Pattern to identify a `after` parameter in a block. */
+const AFTER_PARAMETER_PATTERN = /^after\s/;
+/** Pattern to identify a `when` parameter in a block. */
+const WHEN_PARAMETER_PATTERN = /^when\s/;
+/** Pattern to identify a `on` parameter in a block. */
+const ON_PARAMETER_PATTERN = /^on\s/;
+/** Possible types of secondary deferred blocks. */
+var SecondaryDeferredBlockType;
+(function (SecondaryDeferredBlockType) {
+    SecondaryDeferredBlockType["PLACEHOLDER"] = "placeholder";
+    SecondaryDeferredBlockType["LOADING"] = "loading";
+    SecondaryDeferredBlockType["ERROR"] = "error";
+})(SecondaryDeferredBlockType || (SecondaryDeferredBlockType = {}));
+/** Creates a deferred block from an HTML AST node. */
+function createDeferredBlock(ast, visitor, bindingParser) {
+    const errors = [];
+    const [primaryBlock, ...secondaryBlocks] = ast.blocks;
+    const { triggers, prefetchTriggers } = parsePrimaryTriggers(primaryBlock.parameters, bindingParser, errors);
+    const { placeholder, loading, error } = parseSecondaryBlocks(secondaryBlocks, errors, visitor);
+    return {
+        node: new DeferredBlock(visitAll(visitor, primaryBlock.children), triggers, prefetchTriggers, placeholder, loading, error, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan),
+        errors,
+    };
+}
+function parseSecondaryBlocks(blocks, errors, visitor) {
+    let placeholder = null;
+    let loading = null;
+    let error = null;
+    for (const block of blocks) {
+        try {
+            switch (block.name) {
+                case SecondaryDeferredBlockType.PLACEHOLDER:
+                    if (placeholder !== null) {
+                        errors.push(new ParseError(block.startSourceSpan, `"defer" block can only have one "${SecondaryDeferredBlockType.PLACEHOLDER}" block`));
+                    }
+                    else {
+                        placeholder = parsePlaceholderBlock(block, visitor);
+                    }
+                    break;
+                case SecondaryDeferredBlockType.LOADING:
+                    if (loading !== null) {
+                        errors.push(new ParseError(block.startSourceSpan, `"defer" block can only have one "${SecondaryDeferredBlockType.LOADING}" block`));
+                    }
+                    else {
+                        loading = parseLoadingBlock(block, visitor);
+                    }
+                    break;
+                case SecondaryDeferredBlockType.ERROR:
+                    if (error !== null) {
+                        errors.push(new ParseError(block.startSourceSpan, `"defer" block can only have one "${SecondaryDeferredBlockType.ERROR}" block`));
+                    }
+                    else {
+                        error = parseErrorBlock(block, visitor);
+                    }
+                    break;
+                default:
+                    errors.push(new ParseError(block.startSourceSpan, `Unrecognized block "${block.name}"`));
+                    break;
+            }
+        }
+        catch (e) {
+            errors.push(new ParseError(block.startSourceSpan, e.message));
+        }
+    }
+    return { placeholder, loading, error };
+}
+function parsePlaceholderBlock(ast, visitor) {
+    let minimumTime = null;
+    for (const param of ast.parameters) {
+        if (MINIMUM_PARAMETER_PATTERN.test(param.expression)) {
+            const parsedTime = parseDeferredTime(param.expression.slice(getTriggerParametersStart(param.expression)));
+            if (parsedTime === null) {
+                throw new Error(`Could not parse time value of parameter "minimum"`);
+            }
+            minimumTime = parsedTime;
+        }
+        else {
+            throw new Error(`Unrecognized parameter in "${SecondaryDeferredBlockType.PLACEHOLDER}" block: "${param.expression}"`);
+        }
+    }
+    return new DeferredBlockPlaceholder(visitAll(visitor, ast.children), minimumTime, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
+}
+function parseLoadingBlock(ast, visitor) {
+    let afterTime = null;
+    let minimumTime = null;
+    for (const param of ast.parameters) {
+        if (AFTER_PARAMETER_PATTERN.test(param.expression)) {
+            const parsedTime = parseDeferredTime(param.expression.slice(getTriggerParametersStart(param.expression)));
+            if (parsedTime === null) {
+                throw new Error(`Could not parse time value of parameter "after"`);
+            }
+            afterTime = parsedTime;
+        }
+        else if (MINIMUM_PARAMETER_PATTERN.test(param.expression)) {
+            const parsedTime = parseDeferredTime(param.expression.slice(getTriggerParametersStart(param.expression)));
+            if (parsedTime === null) {
+                throw new Error(`Could not parse time value of parameter "minimum"`);
+            }
+            minimumTime = parsedTime;
+        }
+        else {
+            throw new Error(`Unrecognized parameter in "${SecondaryDeferredBlockType.LOADING}" block: "${param.expression}"`);
+        }
+    }
+    return new DeferredBlockLoading(visitAll(visitor, ast.children), afterTime, minimumTime, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
+}
+function parseErrorBlock(ast, visitor) {
+    if (ast.parameters.length > 0) {
+        throw new Error(`"${SecondaryDeferredBlockType.ERROR}" block cannot have parameters`);
+    }
+    return new DeferredBlockError(visitAll(visitor, ast.children), ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
+}
+function parsePrimaryTriggers(params, bindingParser, errors) {
+    const triggers = [];
+    const prefetchTriggers = [];
+    for (const param of params) {
+        // The lexer ignores the leading spaces so we can assume
+        // that the expression starts with a keyword.
+        if (WHEN_PARAMETER_PATTERN.test(param.expression)) {
+            const result = parseWhenTrigger(param, bindingParser, errors);
+            result !== null && triggers.push(result);
+        }
+        else if (ON_PARAMETER_PATTERN.test(param.expression)) {
+            triggers.push(...parseOnTrigger(param, errors));
+        }
+        else if (PREFETCH_WHEN_PATTERN.test(param.expression)) {
+            const result = parseWhenTrigger(param, bindingParser, errors);
+            result !== null && prefetchTriggers.push(result);
+        }
+        else if (PREFETCH_ON_PATTERN.test(param.expression)) {
+            prefetchTriggers.push(...parseOnTrigger(param, errors));
+        }
+        else {
+            errors.push(new ParseError(param.sourceSpan, 'Unrecognized trigger'));
+        }
+    }
+    return { triggers, prefetchTriggers };
+}
+
 const BIND_NAME_REGEXP = /^(?:(bind-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.*)$/;
 // Group 1 = "bind-"
 const KW_BIND_IDX = 1;
@@ -20556,7 +21073,16 @@ class HtmlAstToIvyAst {
                 attributes.push(this.visitAttribute(attribute));
             }
         }
-        const children = visitAll(preparsedElement.nonBindable ? NON_BINDABLE_VISITOR : this, element.children);
+        let children;
+        if (preparsedElement.nonBindable) {
+            // The `NonBindableVisitor` may need to return an array of nodes for block groups so we need
+            // to flatten the array here. Avoid doing this for the `HtmlAstToIvyAst` since `flat` creates
+            // a new array.
+            children = visitAll(NON_BINDABLE_VISITOR, element.children).flat(Infinity);
+        }
+        else {
+            children = visitAll(this, element.children);
+        }
         let parsedElement;
         if (preparsedElement.type === PreparsedElementType.NG_CONTENT) {
             // `<ng-content>`
@@ -20655,14 +21181,24 @@ class HtmlAstToIvyAst {
         return null;
     }
     visitBlockGroup(group, context) {
-        throw new Error('TODO');
+        const primaryBlock = group.blocks[0];
+        // The HTML parser ensures that we don't hit this case, but we have an assertion just in case.
+        if (!primaryBlock) {
+            this.reportError('Block group must have at least one block.', group.sourceSpan);
+            return null;
+        }
+        switch (primaryBlock.name) {
+            case 'defer':
+                const { node, errors } = createDeferredBlock(group, this, this.bindingParser);
+                this.errors.push(...errors);
+                return node;
+            default:
+                this.reportError(`Unrecognized block "${primaryBlock.name}".`, primaryBlock.sourceSpan);
+                return null;
+        }
     }
-    visitBlock(block, context) {
-        throw new Error('TODO');
-    }
-    visitBlockParameter(parameter, context) {
-        throw new Error('TODO');
-    }
+    visitBlock(block, context) { }
+    visitBlockParameter(parameter, context) { }
     // convert view engine `ParsedProperty` to a format suitable for IVY
     extractAttributes(elementName, properties, i18nPropsMeta) {
         const bound = [];
@@ -20841,13 +21377,23 @@ class NonBindableVisitor {
         return null;
     }
     visitBlockGroup(group, context) {
-        throw new Error('TODO');
+        const nodes = visitAll(this, group.blocks);
+        // We only need to do the end tag since the start will be added as a part of the primary block.
+        if (group.endSourceSpan !== null) {
+            nodes.push(new Text$3(group.endSourceSpan.toString(), group.endSourceSpan));
+        }
+        return nodes;
     }
     visitBlock(block, context) {
-        throw new Error('TODO');
+        return [
+            // In an ngNonBindable context we treat the opening/closing tags of block as plain text.
+            // This is the as if the `tokenizeBlocks` option was disabled.
+            new Text$3(block.startSourceSpan.toString(), block.startSourceSpan),
+            ...visitAll(this, block.children)
+        ];
     }
     visitBlockParameter(parameter, context) {
-        throw new Error('TODO');
+        return null;
     }
 }
 const NON_BINDABLE_VISITOR = new NonBindableVisitor();
@@ -22695,6 +23241,12 @@ class TemplateDefinitionBuilder {
         }
         return null;
     }
+    // TODO: implement deferred block instructions.
+    visitDeferredBlock(deferred) { }
+    visitDeferredTrigger(trigger) { }
+    visitDeferredBlockPlaceholder(block) { }
+    visitDeferredBlockError(block) { }
+    visitDeferredBlockLoading(block) { }
     allocateDataSlot() {
         return this._dataIndex++;
     }
@@ -24948,7 +25500,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.2.0-next.2+sha-0623158');
+const VERSION = new Version('16.2.0-next.2+sha-76d22ae');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -26493,6 +27045,21 @@ class Scope {
         // Declare the variable if it's not already.
         this.maybeDeclare(reference);
     }
+    visitDeferredBlock(deferred) {
+        deferred.children.forEach(node => node.visit(this));
+        deferred.placeholder?.visit(this);
+        deferred.loading?.visit(this);
+        deferred.error?.visit(this);
+    }
+    visitDeferredBlockPlaceholder(block) {
+        block.children.forEach(node => node.visit(this));
+    }
+    visitDeferredBlockError(block) {
+        block.children.forEach(node => node.visit(this));
+    }
+    visitDeferredBlockLoading(block) {
+        block.children.forEach(node => node.visit(this));
+    }
     // Unused visitors.
     visitContent(content) { }
     visitBoundAttribute(attr) { }
@@ -26501,6 +27068,7 @@ class Scope {
     visitText(text) { }
     visitTextAttribute(attr) { }
     visitIcu(icu) { }
+    visitDeferredTrigger(trigger) { }
     maybeDeclare(thing) {
         // Declare something with a name, as long as that name isn't taken.
         if (!this.namedEntities.has(thing.name)) {
@@ -26638,6 +27206,21 @@ class DirectiveBinder {
         // Recurse into the node's children.
         node.children.forEach(child => child.visit(this));
     }
+    visitDeferredBlock(deferred) {
+        deferred.children.forEach(child => child.visit(this));
+        deferred.placeholder?.visit(this);
+        deferred.loading?.visit(this);
+        deferred.error?.visit(this);
+    }
+    visitDeferredBlockPlaceholder(block) {
+        block.children.forEach(child => child.visit(this));
+    }
+    visitDeferredBlockError(block) {
+        block.children.forEach(child => child.visit(this));
+    }
+    visitDeferredBlockLoading(block) {
+        block.children.forEach(child => child.visit(this));
+    }
     // Unused visitors.
     visitContent(content) { }
     visitVariable(variable) { }
@@ -26649,6 +27232,7 @@ class DirectiveBinder {
     visitText(text) { }
     visitBoundText(text) { }
     visitIcu(icu) { }
+    visitDeferredTrigger(trigger) { }
 }
 /**
  * Processes a template and extract metadata about expressions and symbols within.
@@ -26686,7 +27270,7 @@ class TemplateBinder extends RecursiveAstVisitor {
     /**
      * Process a template and extract metadata about expressions and symbols within.
      *
-     * @param template the nodes of the template to process
+     * @param nodes the nodes of the template to process
      * @param scope the `Scope` of the template being processed.
      * @returns three maps which contain metadata about the template: `expressions` which interprets
      * special `AST` nodes in expressions as pointing to references or variables declared within the
@@ -26695,14 +27279,15 @@ class TemplateBinder extends RecursiveAstVisitor {
      * nesting level (how many levels deep within the template structure the `Template` is), starting
      * at 1.
      */
-    static applyWithScope(template, scope) {
+    static applyWithScope(nodes, scope) {
         const expressions = new Map();
         const symbols = new Map();
         const nestingLevel = new Map();
         const usedPipes = new Set();
+        const template = nodes instanceof Template ? nodes : null;
         // The top-level template has nesting level 0.
-        const binder = new TemplateBinder(expressions, symbols, usedPipes, nestingLevel, scope, template instanceof Template ? template : null, 0);
-        binder.ingest(template);
+        const binder = new TemplateBinder(expressions, symbols, usedPipes, nestingLevel, scope, template, 0);
+        binder.ingest(nodes);
         return { expressions, symbols, nestingLevel, usedPipes };
     }
     ingest(template) {
@@ -26763,6 +27348,28 @@ class TemplateBinder extends RecursiveAstVisitor {
     }
     visitBoundEvent(event) {
         event.handler.visit(this);
+    }
+    visitDeferredBlock(deferred) {
+        deferred.triggers.forEach(this.visitNode);
+        deferred.prefetchTriggers.forEach(this.visitNode);
+        deferred.children.forEach(this.visitNode);
+        deferred.placeholder && this.visitNode(deferred.placeholder);
+        deferred.loading && this.visitNode(deferred.loading);
+        deferred.error && this.visitNode(deferred.error);
+    }
+    visitDeferredTrigger(trigger) {
+        if (trigger instanceof BoundDeferredTrigger) {
+            trigger.value.visit(this);
+        }
+    }
+    visitDeferredBlockPlaceholder(block) {
+        block.children.forEach(this.visitNode);
+    }
+    visitDeferredBlockError(block) {
+        block.children.forEach(this.visitNode);
+    }
+    visitDeferredBlockLoading(block) {
+        block.children.forEach(this.visitNode);
     }
     visitBoundText(text) {
         text.value.visit(this);
@@ -26902,7 +27509,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-0623158'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-76d22ae'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -27005,7 +27612,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-0623158'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-76d22ae'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -27233,7 +27840,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-0623158'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-76d22ae'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -27268,7 +27875,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-0623158'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-76d22ae'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -27319,7 +27926,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-0623158'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-76d22ae'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -27352,7 +27959,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-0623158'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-76d22ae'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -27403,7 +28010,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-0623158'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-76d22ae'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -27436,5 +28043,5 @@ publishFacade(_global);
 
 // This file is not used to build this module. It is only used during editing
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, Block, BlockGroup, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, Element$1 as TmplAstElement, Icu$1 as TmplAstIcu, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, Block, BlockGroup, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map

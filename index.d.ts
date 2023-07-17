@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.2+sha-0623158
+ * @license Angular v16.2.0-next.2+sha-76d22ae
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -391,7 +391,7 @@ declare class BindingParser {
     parsePropertyInterpolation(name: string, value: string, sourceSpan: ParseSourceSpan, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], keySpan: ParseSourceSpan, interpolatedTokens: InterpolatedAttributeToken[] | InterpolatedTextToken[] | null): boolean;
     private _parsePropertyAst;
     private _parseAnimation;
-    private _parseBinding;
+    parseBinding(value: string, isHostBinding: boolean, sourceSpan: ParseSourceSpan, absoluteOffset: number): ASTWithSource;
     createBoundElementProperty(elementSelector: string, boundProp: ParsedProperty, skipValidation?: boolean, mapPropertyName?: boolean): BoundElementProperty;
     parseEvent(name: string, expression: string, isAssignmentEvent: boolean, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan, targetMatchableAttrs: string[][], targetEvents: ParsedEvent[], keySpan: ParseSourceSpan): void;
     calcPossibleSecurityContexts(selector: string, propName: string, isAttribute: boolean): SecurityContext[];
@@ -4377,6 +4377,18 @@ declare namespace t {
         TmplAstBoundAttribute as BoundAttribute,
         TmplAstBoundEvent as BoundEvent,
         TmplAstElement as Element,
+        TmplAstDeferredTrigger as DeferredTrigger,
+        TmplAstBoundDeferredTrigger as BoundDeferredTrigger,
+        TmplAstIdleDeferredTrigger as IdleDeferredTrigger,
+        TmplAstImmediateDeferredTrigger as ImmediateDeferredTrigger,
+        TmplAstHoverDeferredTrigger as HoverDeferredTrigger,
+        TmplAstTimerDeferredTrigger as TimerDeferredTrigger,
+        TmplAstInteractionDeferredTrigger as InteractionDeferredTrigger,
+        TmplAstViewportDeferredTrigger as ViewportDeferredTrigger,
+        TmplAstDeferredBlockPlaceholder as DeferredBlockPlaceholder,
+        TmplAstDeferredBlockLoading as DeferredBlockLoading,
+        TmplAstDeferredBlockError as DeferredBlockError,
+        TmplAstDeferredBlock as DeferredBlock,
         TmplAstTemplate as Template,
         TmplAstContent as Content,
         TmplAstVariable as Variable,
@@ -4547,6 +4559,11 @@ export declare class TmplAstBoundAttribute implements TmplAstNode {
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
+export declare class TmplAstBoundDeferredTrigger extends TmplAstDeferredTrigger {
+    value: AST;
+    constructor(value: AST, sourceSpan: ParseSourceSpan);
+}
+
 export declare class TmplAstBoundEvent implements TmplAstNode {
     name: string;
     type: ParsedEventType;
@@ -4579,6 +4596,56 @@ export declare class TmplAstContent implements TmplAstNode {
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
+export declare class TmplAstDeferredBlock implements TmplAstNode {
+    children: TmplAstNode[];
+    triggers: TmplAstDeferredTrigger[];
+    prefetchTriggers: TmplAstDeferredTrigger[];
+    placeholder: TmplAstDeferredBlockPlaceholder | null;
+    loading: TmplAstDeferredBlockLoading | null;
+    error: TmplAstDeferredBlockError | null;
+    sourceSpan: ParseSourceSpan;
+    startSourceSpan: ParseSourceSpan;
+    endSourceSpan: ParseSourceSpan | null;
+    constructor(children: TmplAstNode[], triggers: TmplAstDeferredTrigger[], prefetchTriggers: TmplAstDeferredTrigger[], placeholder: TmplAstDeferredBlockPlaceholder | null, loading: TmplAstDeferredBlockLoading | null, error: TmplAstDeferredBlockError | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
+    visit<Result>(visitor: Visitor_3<Result>): Result;
+}
+
+export declare class TmplAstDeferredBlockError implements TmplAstNode {
+    children: TmplAstNode[];
+    sourceSpan: ParseSourceSpan;
+    startSourceSpan: ParseSourceSpan;
+    endSourceSpan: ParseSourceSpan | null;
+    constructor(children: TmplAstNode[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
+    visit<Result>(visitor: Visitor_3<Result>): Result;
+}
+
+export declare class TmplAstDeferredBlockLoading implements TmplAstNode {
+    children: TmplAstNode[];
+    afterTime: number | null;
+    minimumTime: number | null;
+    sourceSpan: ParseSourceSpan;
+    startSourceSpan: ParseSourceSpan;
+    endSourceSpan: ParseSourceSpan | null;
+    constructor(children: TmplAstNode[], afterTime: number | null, minimumTime: number | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
+    visit<Result>(visitor: Visitor_3<Result>): Result;
+}
+
+export declare class TmplAstDeferredBlockPlaceholder implements TmplAstNode {
+    children: TmplAstNode[];
+    minimumTime: number | null;
+    sourceSpan: ParseSourceSpan;
+    startSourceSpan: ParseSourceSpan;
+    endSourceSpan: ParseSourceSpan | null;
+    constructor(children: TmplAstNode[], minimumTime: number | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
+    visit<Result>(visitor: Visitor_3<Result>): Result;
+}
+
+export declare abstract class TmplAstDeferredTrigger implements TmplAstNode {
+    sourceSpan: ParseSourceSpan;
+    constructor(sourceSpan: ParseSourceSpan);
+    visit<Result>(visitor: Visitor_3<Result>): Result;
+}
+
 export declare class TmplAstElement implements TmplAstNode {
     name: string;
     attributes: TmplAstTextAttribute[];
@@ -4592,6 +4659,9 @@ export declare class TmplAstElement implements TmplAstNode {
     i18n?: I18nMeta_2 | undefined;
     constructor(name: string, attributes: TmplAstTextAttribute[], inputs: TmplAstBoundAttribute[], outputs: TmplAstBoundEvent[], children: TmplAstNode[], references: TmplAstReference[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta_2 | undefined);
     visit<Result>(visitor: Visitor_3<Result>): Result;
+}
+
+export declare class TmplAstHoverDeferredTrigger extends TmplAstDeferredTrigger {
 }
 
 export declare class TmplAstIcu implements TmplAstNode {
@@ -4611,6 +4681,17 @@ export declare class TmplAstIcu implements TmplAstNode {
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
+export declare class TmplAstIdleDeferredTrigger extends TmplAstDeferredTrigger {
+}
+
+export declare class TmplAstImmediateDeferredTrigger extends TmplAstDeferredTrigger {
+}
+
+export declare class TmplAstInteractionDeferredTrigger extends TmplAstDeferredTrigger {
+    reference: string | null;
+    constructor(reference: string | null, sourceSpan: ParseSourceSpan);
+}
+
 export declare interface TmplAstNode {
     sourceSpan: ParseSourceSpan;
     visit<Result>(visitor: Visitor_3<Result>): Result;
@@ -4619,6 +4700,10 @@ export declare interface TmplAstNode {
 export declare class TmplAstRecursiveVisitor implements Visitor_3<void> {
     visitElement(element: TmplAstElement): void;
     visitTemplate(template: TmplAstTemplate): void;
+    visitDeferredBlock(deferred: TmplAstDeferredBlock): void;
+    visitDeferredBlockPlaceholder(block: TmplAstDeferredBlockPlaceholder): void;
+    visitDeferredBlockError(block: TmplAstDeferredBlockError): void;
+    visitDeferredBlockLoading(block: TmplAstDeferredBlockLoading): void;
     visitContent(content: TmplAstContent): void;
     visitVariable(variable: TmplAstVariable): void;
     visitReference(reference: TmplAstReference): void;
@@ -4628,6 +4713,7 @@ export declare class TmplAstRecursiveVisitor implements Visitor_3<void> {
     visitText(text: TmplAstText): void;
     visitBoundText(text: TmplAstBoundText): void;
     visitIcu(icu: TmplAstIcu): void;
+    visitDeferredTrigger(trigger: TmplAstDeferredTrigger): void;
 }
 
 export declare class TmplAstReference implements TmplAstNode {
@@ -4681,6 +4767,11 @@ export declare class TmplAstTextAttribute implements TmplAstNode {
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
+export declare class TmplAstTimerDeferredTrigger extends TmplAstDeferredTrigger {
+    delay: number;
+    constructor(delay: number, sourceSpan: ParseSourceSpan);
+}
+
 export declare class TmplAstVariable implements TmplAstNode {
     name: string;
     value: string;
@@ -4689,6 +4780,11 @@ export declare class TmplAstVariable implements TmplAstNode {
     valueSpan?: ParseSourceSpan | undefined;
     constructor(name: string, value: string, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined);
     visit<Result>(visitor: Visitor_3<Result>): Result;
+}
+
+export declare class TmplAstViewportDeferredTrigger extends TmplAstDeferredTrigger {
+    reference: string | null;
+    constructor(reference: string | null, sourceSpan: ParseSourceSpan);
 }
 
 export declare class Token {
@@ -5008,6 +5104,11 @@ declare interface Visitor_3<Result = any> {
     visitText(text: TmplAstText): Result;
     visitBoundText(text: TmplAstBoundText): Result;
     visitIcu(icu: TmplAstIcu): Result;
+    visitDeferredBlock(deferred: TmplAstDeferredBlock): Result;
+    visitDeferredBlockPlaceholder(block: TmplAstDeferredBlockPlaceholder): Result;
+    visitDeferredBlockError(block: TmplAstDeferredBlockError): Result;
+    visitDeferredBlockLoading(block: TmplAstDeferredBlockLoading): Result;
+    visitDeferredTrigger(trigger: TmplAstDeferredTrigger): Result;
 }
 
 export declare class WrappedNodeExpr<T> extends Expression {
