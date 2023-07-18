@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.2+sha-1ec3a2b
+ * @license Angular v16.2.0-next.2+sha-7410d68
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2620,6 +2620,11 @@ export declare interface ParseTemplateOptions {
      * rules on a case by case basis, instead of for their whole project within a configuration file.
      */
     collectCommentNodes?: boolean;
+    /**
+     * Names of the blocks that should be enabled. E.g. `enabledBlockTypes: new Set(['defer'])`
+     * would allow usages of `{#defer}{/defer}` in templates.
+     */
+    enabledBlockTypes?: Set<string>;
 }
 
 export declare class ParseTreeResult {

@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.2+sha-1ec3a2b
+ * @license Angular v16.2.0-next.2+sha-7410d68
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -21187,15 +21187,13 @@ class HtmlAstToIvyAst {
             this.reportError('Block group must have at least one block.', group.sourceSpan);
             return null;
         }
-        switch (primaryBlock.name) {
-            case 'defer':
-                const { node, errors } = createDeferredBlock(group, this, this.bindingParser);
-                this.errors.push(...errors);
-                return node;
-            default:
-                this.reportError(`Unrecognized block "${primaryBlock.name}".`, primaryBlock.sourceSpan);
-                return null;
+        if (primaryBlock.name === 'defer' && this.options.enabledBlockTypes.has(primaryBlock.name)) {
+            const { node, errors } = createDeferredBlock(group, this, this.bindingParser);
+            this.errors.push(...errors);
+            return node;
         }
+        this.reportError(`Unrecognized block "${primaryBlock.name}".`, primaryBlock.sourceSpan);
+        return null;
     }
     visitBlock(block, context) { }
     visitBlockParameter(parameter, context) { }
@@ -23983,7 +23981,12 @@ function parseTemplate(template, templateUrl, options = {}) {
     const { interpolationConfig, preserveWhitespaces, enableI18nLegacyMessageIdFormat } = options;
     const bindingParser = makeBindingParser(interpolationConfig);
     const htmlParser = new HtmlParser();
-    const parseResult = htmlParser.parse(template, templateUrl, { leadingTriviaChars: LEADING_TRIVIA_CHARS, ...options, tokenizeExpansionForms: true });
+    const parseResult = htmlParser.parse(template, templateUrl, {
+        leadingTriviaChars: LEADING_TRIVIA_CHARS,
+        ...options,
+        tokenizeExpansionForms: true,
+        tokenizeBlocks: options.enabledBlockTypes != null && options.enabledBlockTypes.size > 0,
+    });
     if (!options.alwaysAttemptHtmlToR3AstConversion && parseResult.errors &&
         parseResult.errors.length > 0) {
         const parsedTemplate = {
@@ -24034,7 +24037,10 @@ function parseTemplate(template, templateUrl, options = {}) {
             rootNodes = visitAll(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), rootNodes);
         }
     }
-    const { nodes, errors, styleUrls, styles, ngContentSelectors, commentNodes } = htmlAstToRender3Ast(rootNodes, bindingParser, { collectCommentNodes: !!options.collectCommentNodes });
+    const { nodes, errors, styleUrls, styles, ngContentSelectors, commentNodes } = htmlAstToRender3Ast(rootNodes, bindingParser, {
+        collectCommentNodes: !!options.collectCommentNodes,
+        enabledBlockTypes: options.enabledBlockTypes || new Set(),
+    });
     errors.push(...parseResult.errors, ...i18nMetaResult.errors);
     const parsedTemplate = {
         interpolationConfig,
@@ -25311,7 +25317,11 @@ function convertPipeDeclarationToMetadata(pipe) {
 function parseJitTemplate(template, typeName, sourceMapUrl, preserveWhitespaces, interpolation) {
     const interpolationConfig = interpolation ? InterpolationConfig.fromArray(interpolation) : DEFAULT_INTERPOLATION_CONFIG;
     // Parse the template and check for errors.
-    const parsed = parseTemplate(template, sourceMapUrl, { preserveWhitespaces, interpolationConfig });
+    const parsed = parseTemplate(template, sourceMapUrl, {
+        preserveWhitespaces,
+        interpolationConfig,
+        enabledBlockTypes: new Set(), // TODO: enable deferred blocks when testing in JIT mode.
+    });
     if (parsed.errors !== null) {
         const errors = parsed.errors.map(err => err.toString()).join(', ');
         throw new Error(`Errors during JIT compilation of template for ${typeName}: ${errors}`);
@@ -25500,7 +25510,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.2.0-next.2+sha-1ec3a2b');
+const VERSION = new Version('16.2.0-next.2+sha-7410d68');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -27509,7 +27519,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-1ec3a2b'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-7410d68'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -27612,7 +27622,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-1ec3a2b'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-7410d68'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -27840,7 +27850,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-1ec3a2b'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-7410d68'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -27875,7 +27885,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-1ec3a2b'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-7410d68'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -27926,7 +27936,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-1ec3a2b'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-7410d68'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -27959,7 +27969,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-1ec3a2b'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-7410d68'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -28010,7 +28020,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.2.0-next.2+sha-1ec3a2b'));
+    definitionMap.set('version', literal('16.2.0-next.2+sha-7410d68'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
