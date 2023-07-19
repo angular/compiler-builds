@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.2+sha-3ef8195
+ * @license Angular v16.2.0-next.2+sha-24bf133
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1023,6 +1023,15 @@ export declare class DomElementSchemaRegistry extends ElementSchemaRegistry {
 
 export declare const DYNAMIC_TYPE: BuiltinType;
 
+export declare class DynamicImportExpr extends Expression {
+    url: string;
+    constructor(url: string, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
+    visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): DynamicImportExpr;
+}
+
 declare class Element_2 extends NodeWithI18n {
     name: string;
     attrs: Attribute[];
@@ -1200,6 +1209,7 @@ export declare interface ExpressionVisitor {
     visitLocalizedString(ast: LocalizedString, context: any): any;
     visitExternalExpr(ast: ExternalExpr, context: any): any;
     visitConditionalExpr(ast: ConditionalExpr, context: any): any;
+    visitDynamicImportExpr(ast: DynamicImportExpr, context: any): any;
     visitNotExpr(ast: NotExpr, context: any): any;
     visitFunctionExpr(ast: FunctionExpr, context: any): any;
     visitUnaryOperatorExpr(ast: UnaryOperatorExpr, context: any): any;
@@ -1998,6 +2008,7 @@ declare namespace outputAst {
         ExternalExpr,
         ExternalReference,
         ConditionalExpr,
+        DynamicImportExpr,
         NotExpr,
         FnParam,
         FunctionExpr,
@@ -4119,6 +4130,7 @@ declare class RecursiveAstVisitor_2 implements StatementVisitor, ExpressionVisit
     visitWriteVarExpr(ast: WriteVarExpr, context: any): any;
     visitWriteKeyExpr(ast: WriteKeyExpr, context: any): any;
     visitWritePropExpr(ast: WritePropExpr, context: any): any;
+    visitDynamicImportExpr(ast: DynamicImportExpr, context: any): any;
     visitInvokeFunctionExpr(ast: InvokeFunctionExpr, context: any): any;
     visitTaggedTemplateExpr(ast: TaggedTemplateExpr, context: any): any;
     visitInstantiateExpr(ast: InstantiateExpr, context: any): any;
