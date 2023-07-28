@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.4+sha-1c553ee
+ * @license Angular v16.2.0-next.4+sha-5061311
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8797,58 +8797,71 @@ var OpKind;
      */
     OpKind[OpKind["ContainerEnd"] = 9] = "ContainerEnd";
     /**
+     * An operation disable binding for subsequent elements, which are descendants of a non-bindable
+     * node.
+     */
+    OpKind[OpKind["DisableBindings"] = 10] = "DisableBindings";
+    /**
+     * An operation to re-enable binding, after it was previously disabled.
+     */
+    OpKind[OpKind["EnableBindings"] = 11] = "EnableBindings";
+    /**
      * An operation to render a text node.
      */
-    OpKind[OpKind["Text"] = 10] = "Text";
+    OpKind[OpKind["Text"] = 12] = "Text";
     /**
      * An operation declaring an event listener for an element.
      */
-    OpKind[OpKind["Listener"] = 11] = "Listener";
+    OpKind[OpKind["Listener"] = 13] = "Listener";
     /**
      * An operation to interpolate text into a text node.
      */
-    OpKind[OpKind["InterpolateText"] = 12] = "InterpolateText";
+    OpKind[OpKind["InterpolateText"] = 14] = "InterpolateText";
     /**
      * An intermediate binding op, that has not yet been processed into an individual property,
      * attribute, style, etc.
      */
-    OpKind[OpKind["Binding"] = 13] = "Binding";
+    OpKind[OpKind["Binding"] = 15] = "Binding";
     /**
      * An operation to bind an expression to a property of an element.
      */
-    OpKind[OpKind["Property"] = 14] = "Property";
+    OpKind[OpKind["Property"] = 16] = "Property";
     /**
      * An operation to bind an expression to a style property of an element.
      */
-    OpKind[OpKind["StyleProp"] = 15] = "StyleProp";
+    OpKind[OpKind["StyleProp"] = 17] = "StyleProp";
     /**
      * An operation to bind an expression to a class property of an element.
      */
-    OpKind[OpKind["ClassProp"] = 16] = "ClassProp";
+    OpKind[OpKind["ClassProp"] = 18] = "ClassProp";
     /**
      * An operation to bind an expression to the styles of an element.
      */
-    OpKind[OpKind["StyleMap"] = 17] = "StyleMap";
+    OpKind[OpKind["StyleMap"] = 19] = "StyleMap";
     /**
      * An operation to bind an expression to the classes of an element.
      */
-    OpKind[OpKind["ClassMap"] = 18] = "ClassMap";
+    OpKind[OpKind["ClassMap"] = 20] = "ClassMap";
     /**
      * An operation to advance the runtime's implicit slot context during the update phase of a view.
      */
-    OpKind[OpKind["Advance"] = 19] = "Advance";
+    OpKind[OpKind["Advance"] = 21] = "Advance";
     /**
      * An operation to instantiate a pipe.
      */
-    OpKind[OpKind["Pipe"] = 20] = "Pipe";
+    OpKind[OpKind["Pipe"] = 22] = "Pipe";
     /**
      * An operation to associate an attribute with an element.
      */
-    OpKind[OpKind["Attribute"] = 21] = "Attribute";
+    OpKind[OpKind["Attribute"] = 23] = "Attribute";
     /**
      * A host binding property.
      */
-    OpKind[OpKind["HostProperty"] = 22] = "HostProperty";
+    OpKind[OpKind["HostProperty"] = 24] = "HostProperty";
+    /**
+     * A namespace change, which causes the subsequent elements to be processed as either HTML or SVG.
+     */
+    OpKind[OpKind["Namespace"] = 25] = "Namespace";
     // TODO: Add Host Listeners, and possibly other host ops also.
 })(OpKind || (OpKind = {}));
 /**
@@ -9805,9 +9818,12 @@ function transformExpressionsInOp(op, transform, flags) {
         case OpKind.ContainerStart:
         case OpKind.ContainerEnd:
         case OpKind.Template:
+        case OpKind.DisableBindings:
+        case OpKind.EnableBindings:
         case OpKind.Text:
         case OpKind.Pipe:
         case OpKind.Advance:
+        case OpKind.Namespace:
             // These operations contain no expressions.
             break;
         default:
@@ -10078,22 +10094,38 @@ class OpList {
         op.next = null;
     }
     /**
-     * Insert `op` before `before`.
+     * Insert `op` before `target`.
      */
-    static insertBefore(op, before) {
-        OpList.assertIsOwned(before);
-        if (before.prev === null) {
+    static insertBefore(op, target) {
+        OpList.assertIsOwned(target);
+        if (target.prev === null) {
             throw new Error(`AssertionError: illegal operation on list start`);
         }
         OpList.assertIsNotEnd(op);
         OpList.assertIsUnowned(op);
-        op.debugListId = before.debugListId;
+        op.debugListId = target.debugListId;
         // Just in case.
         op.prev = null;
-        before.prev.next = op;
-        op.prev = before.prev;
-        op.next = before;
-        before.prev = op;
+        target.prev.next = op;
+        op.prev = target.prev;
+        op.next = target;
+        target.prev = op;
+    }
+    /**
+     * Insert `op` after `target`.
+     */
+    static insertAfter(op, target) {
+        OpList.assertIsOwned(target);
+        if (target.next === null) {
+            throw new Error(`AssertionError: illegal operation on list end`);
+        }
+        OpList.assertIsNotEnd(op);
+        OpList.assertIsUnowned(op);
+        op.debugListId = target.debugListId;
+        target.next.prev = op;
+        op.next = target.next;
+        op.prev = target;
+        target.next = op;
     }
     /**
      * Asserts that `op` does not currently belong to a list.
@@ -10140,13 +10172,15 @@ function isElementOrContainerOp(op) {
 /**
  * Create an `ElementStartOp`.
  */
-function createElementStartOp(tag, xref, sourceSpan) {
+function createElementStartOp(tag, xref, namespace, sourceSpan) {
     return {
         kind: OpKind.ElementStart,
         xref,
         tag,
         attributes: new ElementAttributes(),
         localRefs: [],
+        nonBindable: false,
+        namespace,
         sourceSpan,
         ...TRAIT_CONSUMES_SLOT,
         ...NEW_OP,
@@ -10155,7 +10189,7 @@ function createElementStartOp(tag, xref, sourceSpan) {
 /**
  * Create a `TemplateOp`.
  */
-function createTemplateOp(xref, tag, sourceSpan) {
+function createTemplateOp(xref, tag, namespace, sourceSpan) {
     return {
         kind: OpKind.Template,
         xref,
@@ -10164,6 +10198,8 @@ function createTemplateOp(xref, tag, sourceSpan) {
         decls: null,
         vars: null,
         localRefs: [],
+        nonBindable: false,
+        namespace,
         sourceSpan,
         ...TRAIT_CONSUMES_SLOT,
         ...NEW_OP,
@@ -10177,6 +10213,20 @@ function createElementEndOp(xref, sourceSpan) {
         kind: OpKind.ElementEnd,
         xref,
         sourceSpan,
+        ...NEW_OP,
+    };
+}
+function createDisableBindingsOp(xref) {
+    return {
+        kind: OpKind.DisableBindings,
+        xref,
+        ...NEW_OP,
+    };
+}
+function createEnableBindingsOp(xref) {
+    return {
+        kind: OpKind.EnableBindings,
+        xref,
         ...NEW_OP,
     };
 }
@@ -10216,6 +10266,22 @@ function createPipeOp(xref, name) {
         name,
         ...NEW_OP,
         ...TRAIT_CONSUMES_SLOT,
+    };
+}
+/**
+ * Whether the active namespace is HTML, MathML, or SVG mode.
+ */
+var Namespace;
+(function (Namespace) {
+    Namespace[Namespace["HTML"] = 0] = "HTML";
+    Namespace[Namespace["SVG"] = 1] = "SVG";
+    Namespace[Namespace["Math"] = 2] = "Math";
+})(Namespace || (Namespace = {}));
+function createNamespaceOp(namespace) {
+    return {
+        kind: OpKind.Namespace,
+        active: namespace,
+        ...NEW_OP,
     };
 }
 
@@ -10517,7 +10583,7 @@ function phaseAttributeExtraction(cpl) {
 /**
  * Looks up an element in the given map by xref ID.
  */
-function lookupElement(elements, xref) {
+function lookupElement$2(elements, xref) {
     const el = elements.get(xref);
     if (el === undefined) {
         throw new Error('All attributes should have an element-like target.');
@@ -10540,7 +10606,7 @@ function populateElementAttributes(view) {
         let ownerOp;
         switch (op.kind) {
             case OpKind.Attribute:
-                ownerOp = lookupElement(elements, op.target);
+                ownerOp = lookupElement$2(elements, op.target);
                 assertIsElementAttributes(ownerOp.attributes);
                 if (op.expression instanceof Interpolation) {
                     continue;
@@ -10557,13 +10623,13 @@ function populateElementAttributes(view) {
                 }
                 break;
             case OpKind.Property:
-                ownerOp = lookupElement(elements, op.target);
+                ownerOp = lookupElement$2(elements, op.target);
                 assertIsElementAttributes(ownerOp.attributes);
                 ownerOp.attributes.add(op.isTemplate ? BindingKind.Template : BindingKind.Property, op.name, null);
                 break;
             case OpKind.StyleProp:
             case OpKind.ClassProp:
-                ownerOp = lookupElement(elements, op.target);
+                ownerOp = lookupElement$2(elements, op.target);
                 assertIsElementAttributes(ownerOp.attributes);
                 // Empty StyleProperty and ClassName expressions are treated differently depending on
                 // compatibility mode.
@@ -10576,7 +10642,7 @@ function populateElementAttributes(view) {
                 }
                 break;
             case OpKind.Listener:
-                ownerOp = lookupElement(elements, op.target);
+                ownerOp = lookupElement$2(elements, op.target);
                 assertIsElementAttributes(ownerOp.attributes);
                 ownerOp.attributes.add(BindingKind.Property, op.name, null);
                 break;
@@ -10604,6 +10670,7 @@ const CHAINABLE = new Set([
     Identifiers.elementContainerStart,
     Identifiers.elementContainerEnd,
     Identifiers.elementContainer,
+    Identifiers.listener,
 ]);
 /**
  * Post-process a reified view compilation and convert sequential calls to chainable instructions
@@ -11196,6 +11263,47 @@ function hyphenate$1(value) {
         .toLowerCase();
 }
 
+const BINARY_OPERATORS = new Map([
+    ['&&', BinaryOperator.And],
+    ['>', BinaryOperator.Bigger],
+    ['>=', BinaryOperator.BiggerEquals],
+    ['&', BinaryOperator.BitwiseAnd],
+    ['/', BinaryOperator.Divide],
+    ['==', BinaryOperator.Equals],
+    ['===', BinaryOperator.Identical],
+    ['<', BinaryOperator.Lower],
+    ['<=', BinaryOperator.LowerEquals],
+    ['-', BinaryOperator.Minus],
+    ['%', BinaryOperator.Modulo],
+    ['*', BinaryOperator.Multiply],
+    ['!=', BinaryOperator.NotEquals],
+    ['!==', BinaryOperator.NotIdentical],
+    ['??', BinaryOperator.NullishCoalesce],
+    ['||', BinaryOperator.Or],
+    ['+', BinaryOperator.Plus],
+]);
+const NAMESPACES = new Map([['svg', Namespace.SVG], ['math', Namespace.Math]]);
+function namespaceForKey(namespacePrefixKey) {
+    if (namespacePrefixKey === null) {
+        return Namespace.HTML;
+    }
+    return NAMESPACES.get(namespacePrefixKey) ?? Namespace.HTML;
+}
+function keyForNamespace(namespace) {
+    for (const [k, n] of NAMESPACES.entries()) {
+        if (n === namespace) {
+            return k;
+        }
+    }
+    return null; // No namespace prefix for HTML
+}
+function prefixWithNamespace(strippedTag, namespace) {
+    if (namespace === Namespace.HTML) {
+        return strippedTag;
+    }
+    return `:${keyForNamespace(namespace)}:${strippedTag}`;
+}
+
 /**
  * Generate names for functions and variables across all views.
  *
@@ -11237,7 +11345,7 @@ function addNamesToView(unit, baseName, state, compatibility) {
                 if (op.slot === null) {
                     throw new Error(`Expected slot to be assigned`);
                 }
-                addNamesToView(childView, `${baseName}_${op.tag}_${op.slot}`, state, compatibility);
+                addNamesToView(childView, `${baseName}_${prefixWithNamespace(op.tag, op.namespace)}_${op.slot}`, state, compatibility);
                 break;
             case OpKind.StyleProp:
                 op.name = normalizeStylePropName(op.name);
@@ -11696,6 +11804,12 @@ function template(slot, templateFnRef, decls, vars, tag, constIndex, sourceSpan)
         literal(constIndex),
     ], sourceSpan);
 }
+function disableBindings() {
+    return call(Identifiers.disableBindings, [], null);
+}
+function enableBindings() {
+    return call(Identifiers.enableBindings, [], null);
+}
 function listener(name, handlerFn) {
     return call(Identifiers.listener, [
         literal(name),
@@ -11707,6 +11821,15 @@ function pipe(slot, name) {
         literal(slot),
         literal(name),
     ], null);
+}
+function namespaceHTML() {
+    return call(Identifiers.namespaceHTML, [], null);
+}
+function namespaceSVG() {
+    return call(Identifiers.namespaceSVG, [], null);
+}
+function namespaceMath() {
+    return call(Identifiers.namespaceMathML, [], null);
 }
 function advance(delta, sourceSpan) {
     return call(Identifiers.advance, [
@@ -12086,6 +12209,12 @@ function reifyCreateOperations(unit, ops) {
                 const childView = unit.job.views.get(op.xref);
                 OpList.replace(op, template(op.slot, variable(childView.fnName), childView.decls, childView.vars, op.tag, op.attributes, op.sourceSpan));
                 break;
+            case OpKind.DisableBindings:
+                OpList.replace(op, disableBindings());
+                break;
+            case OpKind.EnableBindings:
+                OpList.replace(op, enableBindings());
+                break;
             case OpKind.Pipe:
                 OpList.replace(op, pipe(op.slot, op.name));
                 break;
@@ -12098,6 +12227,19 @@ function reifyCreateOperations(unit, ops) {
                     throw new Error(`AssertionError: unnamed variable ${op.xref}`);
                 }
                 OpList.replace(op, createStatementOp(new DeclareVarStmt(op.variable.name, op.initializer, undefined, StmtModifier.Final)));
+                break;
+            case OpKind.Namespace:
+                switch (op.active) {
+                    case Namespace.HTML:
+                        OpList.replace(op, namespaceHTML());
+                        break;
+                    case Namespace.SVG:
+                        OpList.replace(op, namespaceSVG());
+                        break;
+                    case Namespace.Math:
+                        OpList.replace(op, namespaceMath());
+                        break;
+                }
                 break;
             case OpKind.Statement:
                 // Pass statement operations directly through.
@@ -12537,10 +12679,10 @@ function phaseSlotAllocation(cpl) {
  * Implement an algorithm for reuse.
  */
 function phaseTemporaryVariables(cpl) {
-    for (const view of cpl.views.values()) {
+    for (const unit of cpl.units) {
         let opCount = 0;
         let generatedStatements = [];
-        for (const op of view.ops()) {
+        for (const op of unit.ops()) {
             let count = 0;
             let xrefs = new Set();
             let defs = new Map();
@@ -12567,7 +12709,7 @@ function phaseTemporaryVariables(cpl) {
                 .map(name => createStatementOp(new DeclareVarStmt(name))));
             opCount++;
         }
-        view.update.prepend(generatedStatements);
+        unit.update.prepend(generatedStatements);
     }
 }
 
@@ -12980,15 +13122,41 @@ function resolveDollarEvent(view, ops) {
     }
 }
 
+/**
+ * Looks up an element in the given map by xref ID.
+ */
+function lookupElement$1(elements, xref) {
+    const el = elements.get(xref);
+    if (el === undefined) {
+        throw new Error('All attributes should have an element-like target.');
+    }
+    return el;
+}
 function phaseBindingSpecialization(job) {
+    const elements = new Map();
     for (const unit of job.units) {
-        for (const op of unit.update) {
+        for (const op of unit.create) {
+            if (!isElementOrContainerOp(op)) {
+                continue;
+            }
+            elements.set(op.xref, op);
+        }
+    }
+    for (const unit of job.units) {
+        for (const op of unit.ops()) {
             if (op.kind !== OpKind.Binding) {
                 continue;
             }
             switch (op.bindingKind) {
                 case BindingKind.Attribute:
-                    OpList.replace(op, createAttributeOp(op.target, op.name, op.expression, op.isTemplate, op.sourceSpan));
+                    if (op.name === 'ngNonBindable') {
+                        OpList.remove(op);
+                        const target = lookupElement$1(elements, op.target);
+                        target.nonBindable = true;
+                    }
+                    else {
+                        OpList.replace(op, createAttributeOp(op.target, op.name, op.expression, op.isTemplate, op.sourceSpan));
+                    }
                     break;
                 case BindingKind.Property:
                     if (job instanceof HostBindingCompilationJob) {
@@ -13146,10 +13314,68 @@ function parseProperty$1(name) {
 }
 
 /**
+ * Looks up an element in the given map by xref ID.
+ */
+function lookupElement(elements, xref) {
+    const el = elements.get(xref);
+    if (el === undefined) {
+        throw new Error('All attributes should have an element-like target.');
+    }
+    return el;
+}
+/**
+ * When a container is marked with `ngNonBindable`, the non-bindable characteristic also applies to
+ * all descendants of that container. Therefore, we must emit `disableBindings` and `enableBindings`
+ * instructions for every such container.
+ */
+function phaseNonbindable(job) {
+    const elements = new Map();
+    for (const view of job.units) {
+        for (const op of view.create) {
+            if (!isElementOrContainerOp(op)) {
+                continue;
+            }
+            elements.set(op.xref, op);
+        }
+    }
+    for (const [_, view] of job.views) {
+        for (const op of view.create) {
+            if ((op.kind === OpKind.ElementStart || op.kind === OpKind.ContainerStart) &&
+                op.nonBindable) {
+                OpList.insertAfter(createDisableBindingsOp(op.xref), op);
+            }
+            if ((op.kind === OpKind.ElementEnd || op.kind === OpKind.ContainerEnd) &&
+                lookupElement(elements, op.xref).nonBindable) {
+                OpList.insertBefore(createEnableBindingsOp(op.xref), op);
+            }
+        }
+    }
+}
+
+/**
+ * Change namespaces between HTML, SVG and MathML, depending on the next element.
+ */
+function phaseNamespace(job) {
+    for (const [_, view] of job.views) {
+        let activeNamespace = Namespace.HTML;
+        for (const op of view.create) {
+            if (op.kind !== OpKind.Element && op.kind !== OpKind.ElementStart) {
+                continue;
+            }
+            if (op.namespace !== activeNamespace) {
+                OpList.insertBefore(createNamespaceOp(op.namespace), op);
+                activeNamespace = op.namespace;
+            }
+        }
+    }
+}
+
+/**
  * Run all transformation phases in the correct order against a `ComponentCompilation`. After this
  * processing, the compilation should be in a state where it can be emitted.
  */
 function transformTemplate(job) {
+    phaseNamespace(job);
     phaseStyleBindingSpecialization(job);
     phaseBindingSpecialization(job);
     phaseAttributeExtraction(job);
@@ -13177,6 +13403,7 @@ function transformTemplate(job) {
     phaseMergeNextContext(job);
     phaseNgContainer(job);
     phaseEmptyElements(job);
+    phaseNonbindable(job);
     phasePureFunctionExtraction(job);
     phaseAlignPipeVariadicVarOffset(job);
     phasePropertyOrdering(job);
@@ -13194,6 +13421,7 @@ function transformHostBinding(job) {
     phasePureLiteralStructures(job);
     phaseNullishCoalescing(job);
     phaseExpandSafeReads(job);
+    phaseTemporaryVariables(job);
     phaseVarCounting(job);
     phaseVariableOptimization(job);
     phaseResolveNames(job);
@@ -13298,26 +13526,6 @@ function emitHostBindingFunction(job) {
     /* type */ undefined, /* sourceSpan */ undefined, job.fnName);
 }
 
-const BINARY_OPERATORS = new Map([
-    ['&&', BinaryOperator.And],
-    ['>', BinaryOperator.Bigger],
-    ['>=', BinaryOperator.BiggerEquals],
-    ['&', BinaryOperator.BitwiseAnd],
-    ['/', BinaryOperator.Divide],
-    ['==', BinaryOperator.Equals],
-    ['===', BinaryOperator.Identical],
-    ['<', BinaryOperator.Lower],
-    ['<=', BinaryOperator.LowerEquals],
-    ['-', BinaryOperator.Minus],
-    ['%', BinaryOperator.Modulo],
-    ['*', BinaryOperator.Multiply],
-    ['!=', BinaryOperator.NotEquals],
-    ['!==', BinaryOperator.NotIdentical],
-    ['??', BinaryOperator.NullishCoalesce],
-    ['||', BinaryOperator.Or],
-    ['+', BinaryOperator.Plus],
-]);
-
 const compatibilityMode = CompatibilityMode.TemplateDefinitionBuilder;
 /**
  * Process a template AST and convert it into a `ComponentCompilation` in the intermediate
@@ -13342,6 +13550,8 @@ function ingestHostBinding(input, bindingParser, constantPool) {
     }
     return job;
 }
+// TODO: We should refactor the parser to use the same types and structures for host bindings as
+// with ordinary components. This would allow us to share a lot more ingestion code.
 function ingestHostProperty(job, property) {
     let expression;
     const ast = property.expression.ast;
@@ -13352,7 +13562,13 @@ function ingestHostProperty(job, property) {
     else {
         expression = convertAst(ast, job);
     }
-    job.update.push(createBindingOp(job.root.xref, BindingKind.Property, property.name, expression, null, false, property.sourceSpan));
+    let bindingKind = BindingKind.Property;
+    // TODO: this should really be handled in the parser.
+    if (property.name.startsWith('attr.')) {
+        property.name = property.name.substring('attr.'.length);
+        bindingKind = BindingKind.Attribute;
+    }
+    job.update.push(createBindingOp(job.root.xref, bindingKind, property.name, expression, null, false, property.sourceSpan));
 }
 function ingestHostEvent(job, event) { }
 /**
@@ -13386,7 +13602,8 @@ function ingestElement(view, element) {
         staticAttributes[attr.name] = attr.value;
     }
     const id = view.job.allocateXrefId();
-    const startOp = createElementStartOp(element.name, id, element.startSourceSpan);
+    const [namespaceKey, elementName] = splitNsName(element.name);
+    const startOp = createElementStartOp(elementName, id, namespaceForKey(namespaceKey), element.startSourceSpan);
     view.create.push(startOp);
     ingestBindings(view, startOp, element);
     ingestReferences(startOp, element);
@@ -13398,8 +13615,13 @@ function ingestElement(view, element) {
  */
 function ingestTemplate(view, tmpl) {
     const childView = view.job.allocateView(view.xref);
+    let tagNameWithoutNamespace = tmpl.tagName;
+    let namespacePrefix = '';
+    if (tmpl.tagName) {
+        [namespacePrefix, tagNameWithoutNamespace] = splitNsName(tmpl.tagName);
+    }
     // TODO: validate the fallback tag name here.
-    const tplOp = createTemplateOp(childView.xref, tmpl.tagName ?? 'ng-template', tmpl.startSourceSpan);
+    const tplOp = createTemplateOp(childView.xref, tagNameWithoutNamespace ?? 'ng-template', namespaceForKey(namespacePrefix), tmpl.startSourceSpan);
     view.create.push(tplOp);
     ingestBindings(view, tplOp, tmpl);
     ingestReferences(tplOp, tmpl);
@@ -25834,7 +26056,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.2.0-next.4+sha-1c553ee');
+const VERSION = new Version('16.2.0-next.4+sha-5061311');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -27843,7 +28065,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-1c553ee'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-5061311'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -27946,7 +28168,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-1c553ee'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-5061311'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -28174,7 +28396,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-1c553ee'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-5061311'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28209,7 +28431,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-1c553ee'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-5061311'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -28260,7 +28482,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-1c553ee'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-5061311'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -28293,7 +28515,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-1c553ee'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-5061311'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -28344,7 +28566,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-1c553ee'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-5061311'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
