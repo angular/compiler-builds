@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.4+sha-f71851a
+ * @license Angular v16.2.0-next.4+sha-c1052cf
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8945,6 +8945,10 @@ var ExpressionKind;
      * A reference to a temporary variable.
      */
     ExpressionKind[ExpressionKind["ReadTemporaryExpr"] = 18] = "ReadTemporaryExpr";
+    /**
+     * An expression representing a sanitizer function.
+     */
+    ExpressionKind[ExpressionKind["SanitizerExpr"] = 19] = "SanitizerExpr";
 })(ExpressionKind || (ExpressionKind = {}));
 /**
  * Distinguishes between different kinds of `SemanticVariable`s.
@@ -8974,6 +8978,18 @@ var CompatibilityMode;
     CompatibilityMode[CompatibilityMode["Normal"] = 0] = "Normal";
     CompatibilityMode[CompatibilityMode["TemplateDefinitionBuilder"] = 1] = "TemplateDefinitionBuilder";
 })(CompatibilityMode || (CompatibilityMode = {}));
+/**
+ * Represents functions used to sanitize different pieces of a template.
+ */
+var SanitizerFn;
+(function (SanitizerFn) {
+    SanitizerFn[SanitizerFn["Html"] = 0] = "Html";
+    SanitizerFn[SanitizerFn["Script"] = 1] = "Script";
+    SanitizerFn[SanitizerFn["Style"] = 2] = "Style";
+    SanitizerFn[SanitizerFn["Url"] = 3] = "Url";
+    SanitizerFn[SanitizerFn["ResourceUrl"] = 4] = "ResourceUrl";
+    SanitizerFn[SanitizerFn["IframeAttribute"] = 5] = "IframeAttribute";
+})(SanitizerFn || (SanitizerFn = {}));
 
 /**
  * Marker symbol for `ConsumesSlotOpTrait`.
@@ -9116,7 +9132,7 @@ class Interpolation {
 /**
  * Create a `BindingOp`, not yet transformed into a particular type of binding.
  */
-function createBindingOp(target, kind, name, expression, unit, isTemplate, sourceSpan) {
+function createBindingOp(target, kind, name, expression, unit, securityContext, isTemplate, sourceSpan) {
     return {
         kind: OpKind.Binding,
         bindingKind: kind,
@@ -9124,6 +9140,7 @@ function createBindingOp(target, kind, name, expression, unit, isTemplate, sourc
         name,
         expression,
         unit,
+        securityContext,
         isTemplate,
         sourceSpan,
         ...NEW_OP,
@@ -9132,13 +9149,15 @@ function createBindingOp(target, kind, name, expression, unit, isTemplate, sourc
 /**
  * Create a `PropertyOp`.
  */
-function createPropertyOp(target, name, expression, isAnimationTrigger, isTemplate, sourceSpan) {
+function createPropertyOp(target, name, expression, isAnimationTrigger, securityContext, isTemplate, sourceSpan) {
     return {
         kind: OpKind.Property,
         target,
         name,
         expression,
         isAnimationTrigger,
+        securityContext,
+        sanitizer: null,
         isTemplate,
         sourceSpan,
         ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
@@ -9204,12 +9223,14 @@ function createClassMapOp(xref, expression, sourceSpan) {
 /**
  * Create an `AttributeOp`.
  */
-function createAttributeOp(target, name, expression, isTemplate, sourceSpan) {
+function createAttributeOp(target, name, expression, securityContext, isTemplate, sourceSpan) {
     return {
         kind: OpKind.Attribute,
         target,
         name,
         expression,
+        securityContext,
+        sanitizer: null,
         isTemplate,
         sourceSpan,
         ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
@@ -9755,6 +9776,24 @@ class ReadTemporaryExpr extends ExpressionBase {
         return r;
     }
 }
+class SanitizerExpr extends ExpressionBase {
+    constructor(fn) {
+        super();
+        this.fn = fn;
+        this.kind = ExpressionKind.SanitizerExpr;
+    }
+    visitExpression(visitor, context) { }
+    isEquivalent(e) {
+        return e instanceof SanitizerExpr && e.fn === this.fn;
+    }
+    isConstant() {
+        return true;
+    }
+    clone() {
+        return new SanitizerExpr(this.fn);
+    }
+    transformInternalExpressions() { }
+}
 /**
  * Visits all `Expression`s in the AST of `op` with the `visitor` function.
  */
@@ -9783,12 +9822,10 @@ function transformExpressionsInInterpolation(interpolation, transform, flags) {
  */
 function transformExpressionsInOp(op, transform, flags) {
     switch (op.kind) {
-        case OpKind.Property:
         case OpKind.StyleProp:
         case OpKind.StyleMap:
         case OpKind.ClassProp:
         case OpKind.ClassMap:
-        case OpKind.Attribute:
         case OpKind.Binding:
         case OpKind.HostProperty:
             if (op.expression instanceof Interpolation) {
@@ -9797,6 +9834,17 @@ function transformExpressionsInOp(op, transform, flags) {
             else {
                 op.expression = transformExpressionsInExpression(op.expression, transform, flags);
             }
+            break;
+        case OpKind.Property:
+        case OpKind.Attribute:
+            if (op.expression instanceof Interpolation) {
+                transformExpressionsInInterpolation(op.expression, transform, flags);
+            }
+            else {
+                op.expression = transformExpressionsInExpression(op.expression, transform, flags);
+            }
+            op.sanitizer =
+                op.sanitizer && transformExpressionsInExpression(op.sanitizer, transform, flags);
             break;
         case OpKind.InterpolateText:
             transformExpressionsInInterpolation(op.interpolation, transform, flags);
@@ -10593,6 +10641,120 @@ function phaseAlignPipeVariadicVarOffset(cpl) {
 }
 
 /**
+ * Find any function calls to `$any`, excluding `this.$any`, and delete them.
+ */
+function phaseFindAnyCasts(cpl) {
+    for (const [_, view] of cpl.views) {
+        for (const op of view.ops()) {
+            transformExpressionsInOp(op, removeAnys, VisitorContextFlag.None);
+        }
+    }
+}
+function removeAnys(e) {
+    if (e instanceof InvokeFunctionExpr && e.fn instanceof LexicalReadExpr &&
+        e.fn.name === '$any') {
+        if (e.args.length !== 1) {
+            throw new Error('The $any builtin function expects exactly one argument.');
+        }
+        return e.args[0];
+    }
+    return e;
+}
+
+/**
+ * Parses string representation of a style and converts it into object literal.
+ *
+ * @param value string representation of style as used in the `style` attribute in HTML.
+ *   Example: `color: red; height: auto`.
+ * @returns An array of style property name and value pairs, e.g. `['color', 'red', 'height',
+ * 'auto']`
+ */
+function parse(value) {
+    // we use a string array here instead of a string map
+    // because a string-map is not guaranteed to retain the
+    // order of the entries whereas a string array can be
+    // constructed in a [key, value, key, value] format.
+    const styles = [];
+    let i = 0;
+    let parenDepth = 0;
+    let quote = 0 /* Char.QuoteNone */;
+    let valueStart = 0;
+    let propStart = 0;
+    let currentProp = null;
+    while (i < value.length) {
+        const token = value.charCodeAt(i++);
+        switch (token) {
+            case 40 /* Char.OpenParen */:
+                parenDepth++;
+                break;
+            case 41 /* Char.CloseParen */:
+                parenDepth--;
+                break;
+            case 39 /* Char.QuoteSingle */:
+                // valueStart needs to be there since prop values don't
+                // have quotes in CSS
+                if (quote === 0 /* Char.QuoteNone */) {
+                    quote = 39 /* Char.QuoteSingle */;
+                }
+                else if (quote === 39 /* Char.QuoteSingle */ && value.charCodeAt(i - 1) !== 92 /* Char.BackSlash */) {
+                    quote = 0 /* Char.QuoteNone */;
+                }
+                break;
+            case 34 /* Char.QuoteDouble */:
+                // same logic as above
+                if (quote === 0 /* Char.QuoteNone */) {
+                    quote = 34 /* Char.QuoteDouble */;
+                }
+                else if (quote === 34 /* Char.QuoteDouble */ && value.charCodeAt(i - 1) !== 92 /* Char.BackSlash */) {
+                    quote = 0 /* Char.QuoteNone */;
+                }
+                break;
+            case 58 /* Char.Colon */:
+                if (!currentProp && parenDepth === 0 && quote === 0 /* Char.QuoteNone */) {
+                    currentProp = hyphenate$1(value.substring(propStart, i - 1).trim());
+                    valueStart = i;
+                }
+                break;
+            case 59 /* Char.Semicolon */:
+                if (currentProp && valueStart > 0 && parenDepth === 0 && quote === 0 /* Char.QuoteNone */) {
+                    const styleVal = value.substring(valueStart, i - 1).trim();
+                    styles.push(currentProp, styleVal);
+                    propStart = i;
+                    valueStart = 0;
+                    currentProp = null;
+                }
+                break;
+        }
+    }
+    if (currentProp && valueStart) {
+        const styleVal = value.slice(valueStart).trim();
+        styles.push(currentProp, styleVal);
+    }
+    return styles;
+}
+function hyphenate$1(value) {
+    return value
+        .replace(/[a-z][A-Z]/g, v => {
+        return v.charAt(0) + '-' + v.charAt(1);
+    })
+        .toLowerCase();
+}
+
+/**
+ * Gets a map of all elements in the given view by their xref id.
+ */
+function getElementsByXrefId(view) {
+    const elements = new Map();
+    for (const op of view.create) {
+        if (!isElementOrContainerOp(op)) {
+            continue;
+        }
+        elements.set(op.xref, op);
+    }
+    return elements;
+}
+
+/**
  * Find all attribute and binding ops, and collect them into the ElementAttribute structures.
  * In cases where no instruction needs to be generated for the attribute or binding, it is removed.
  */
@@ -10616,32 +10778,12 @@ function lookupElement$2(elements, xref) {
  * not need further processing.
  */
 function populateElementAttributes(view) {
-    const elements = new Map();
-    for (const op of view.create) {
-        if (!isElementOrContainerOp(op)) {
-            continue;
-        }
-        elements.set(op.xref, op);
-    }
+    const elements = getElementsByXrefId(view);
     for (const op of view.ops()) {
         let ownerOp;
         switch (op.kind) {
             case OpKind.Attribute:
-                ownerOp = lookupElement$2(elements, op.target);
-                assertIsElementAttributes(ownerOp.attributes);
-                if (op.expression instanceof Interpolation) {
-                    continue;
-                }
-                // The old compiler only extracted string constants, so we emulate that behavior in
-                // compaitiblity mode, otherwise we optimize more aggressively.
-                let extractable = view.compatibility === CompatibilityMode.TemplateDefinitionBuilder ?
-                    (op.expression instanceof LiteralExpr && typeof op.expression.value === 'string') :
-                    op.expression.isConstant();
-                // We don't need to generate instructions for attributes that can be extracted as consts.
-                if (extractable) {
-                    ownerOp.attributes.add(op.isTemplate ? BindingKind.Template : BindingKind.Attribute, op.name, op.expression);
-                    OpList.remove(op);
-                }
+                extractAttributeOp(view, op, elements);
                 break;
             case OpKind.Property:
                 if (op.isAnimationTrigger) {
@@ -10673,6 +10815,96 @@ function populateElementAttributes(view) {
                 assertIsElementAttributes(ownerOp.attributes);
                 ownerOp.attributes.add(BindingKind.Property, op.name, null);
                 break;
+        }
+    }
+}
+function isStringLiteral(expr) {
+    return expr instanceof LiteralExpr && typeof expr.value === 'string';
+}
+function extractAttributeOp(view, op, elements) {
+    if (op.expression instanceof Interpolation) {
+        return;
+    }
+    const ownerOp = lookupElement$2(elements, op.target);
+    assertIsElementAttributes(ownerOp.attributes);
+    if (op.name === 'style' && isStringLiteral(op.expression)) {
+        // TemplateDefinitionBuilder did not extract style attributes that had a security context.
+        if (view.compatibility === CompatibilityMode.TemplateDefinitionBuilder &&
+            op.securityContext !== SecurityContext.NONE) {
+            return;
+        }
+        // Extract style attributes.
+        const parsedStyles = parse(op.expression.value);
+        for (let i = 0; i < parsedStyles.length - 1; i += 2) {
+            ownerOp.attributes.add(BindingKind.StyleProperty, parsedStyles[i], literal(parsedStyles[i + 1]));
+        }
+        OpList.remove(op);
+    }
+    else {
+        // The old compiler only extracted string constants, so we emulate that behavior in
+        // compaitiblity mode, otherwise we optimize more aggressively.
+        let extractable = view.compatibility === CompatibilityMode.TemplateDefinitionBuilder ?
+            (op.expression instanceof LiteralExpr && typeof op.expression.value === 'string') :
+            op.expression.isConstant();
+        // We don't need to generate instructions for attributes that can be extracted as consts.
+        if (extractable) {
+            ownerOp.attributes.add(op.isTemplate ? BindingKind.Template : BindingKind.Attribute, op.name, op.expression);
+            OpList.remove(op);
+        }
+    }
+}
+
+/**
+ * Looks up an element in the given map by xref ID.
+ */
+function lookupElement$1(elements, xref) {
+    const el = elements.get(xref);
+    if (el === undefined) {
+        throw new Error('All attributes should have an element-like target.');
+    }
+    return el;
+}
+function phaseBindingSpecialization(job) {
+    const elements = new Map();
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            if (!isElementOrContainerOp(op)) {
+                continue;
+            }
+            elements.set(op.xref, op);
+        }
+    }
+    for (const unit of job.units) {
+        for (const op of unit.ops()) {
+            if (op.kind !== OpKind.Binding) {
+                continue;
+            }
+            switch (op.bindingKind) {
+                case BindingKind.Attribute:
+                    if (op.name === 'ngNonBindable') {
+                        OpList.remove(op);
+                        const target = lookupElement$1(elements, op.target);
+                        target.nonBindable = true;
+                    }
+                    else {
+                        OpList.replace(op, createAttributeOp(op.target, op.name, op.expression, op.securityContext, op.isTemplate, op.sourceSpan));
+                    }
+                    break;
+                case BindingKind.Property:
+                case BindingKind.Animation:
+                    if (job instanceof HostBindingCompilationJob) {
+                        // TODO: host property animations
+                        OpList.replace(op, createHostPropertyOp(op.name, op.expression, op.sourceSpan));
+                    }
+                    else {
+                        OpList.replace(op, createPropertyOp(op.target, op.name, op.expression, op.bindingKind === BindingKind.Animation, op.securityContext, op.isTemplate, op.sourceSpan));
+                    }
+                    break;
+                case BindingKind.I18n:
+                case BindingKind.ClassName:
+                case BindingKind.StyleProperty:
+                    throw new Error(`Unhandled binding of kind ${BindingKind[op.bindingKind]}`);
+            }
         }
     }
 }
@@ -11178,6 +11410,62 @@ function generateVariablesInScopeForView(view, scope) {
     return newOps;
 }
 
+const STYLE_DOT = 'style.';
+const CLASS_DOT = 'class.';
+function phaseHostStylePropertyParsing(job) {
+    for (const op of job.update) {
+        if (op.kind !== OpKind.Binding) {
+            continue;
+        }
+        if (op.name.startsWith(STYLE_DOT)) {
+            op.bindingKind = BindingKind.StyleProperty;
+            op.name = op.name.substring(STYLE_DOT.length);
+            if (isCssCustomProperty$1(op.name)) {
+                op.name = hyphenate(op.name);
+            }
+            const { property, suffix } = parseProperty$1(op.name);
+            op.name = property;
+            op.unit = suffix;
+        }
+        else if (op.name.startsWith('style!')) {
+            // TODO: do we only transform !important?
+            op.name = 'style';
+        }
+        else if (op.name.startsWith(CLASS_DOT)) {
+            op.bindingKind = BindingKind.ClassName;
+            op.name = parseProperty$1(op.name.substring(CLASS_DOT.length)).property;
+        }
+    }
+}
+/**
+ * Checks whether property name is a custom CSS property.
+ * See: https://www.w3.org/TR/css-variables-1
+ */
+function isCssCustomProperty$1(name) {
+    return name.startsWith('--');
+}
+function hyphenate(value) {
+    return value
+        .replace(/[a-z][A-Z]/g, v => {
+        return v.charAt(0) + '-' + v.charAt(1);
+    })
+        .toLowerCase();
+}
+function parseProperty$1(name) {
+    const overrideIndex = name.indexOf('!important');
+    if (overrideIndex !== -1) {
+        name = overrideIndex > 0 ? name.substring(0, overrideIndex) : '';
+    }
+    let suffix = null;
+    let property = name;
+    const unitIndex = name.lastIndexOf('.');
+    if (unitIndex > 0) {
+        suffix = name.slice(unitIndex + 1);
+        property = name.substring(0, unitIndex);
+    }
+    return { property, suffix };
+}
+
 /**
  * Lifts local reference declarations on element-like structures within each view into an entry in
  * the `consts` array for the whole component.
@@ -11214,82 +11502,21 @@ function serializeLocalRefs(refs) {
 }
 
 /**
- * Parses string representation of a style and converts it into object literal.
- *
- * @param value string representation of style as used in the `style` attribute in HTML.
- *   Example: `color: red; height: auto`.
- * @returns An array of style property name and value pairs, e.g. `['color', 'red', 'height',
- * 'auto']`
+ * Change namespaces between HTML, SVG and MathML, depending on the next element.
  */
-function parse(value) {
-    // we use a string array here instead of a string map
-    // because a string-map is not guaranteed to retain the
-    // order of the entries whereas a string array can be
-    // constructed in a [key, value, key, value] format.
-    const styles = [];
-    let i = 0;
-    let parenDepth = 0;
-    let quote = 0 /* Char.QuoteNone */;
-    let valueStart = 0;
-    let propStart = 0;
-    let currentProp = null;
-    while (i < value.length) {
-        const token = value.charCodeAt(i++);
-        switch (token) {
-            case 40 /* Char.OpenParen */:
-                parenDepth++;
-                break;
-            case 41 /* Char.CloseParen */:
-                parenDepth--;
-                break;
-            case 39 /* Char.QuoteSingle */:
-                // valueStart needs to be there since prop values don't
-                // have quotes in CSS
-                if (quote === 0 /* Char.QuoteNone */) {
-                    quote = 39 /* Char.QuoteSingle */;
-                }
-                else if (quote === 39 /* Char.QuoteSingle */ && value.charCodeAt(i - 1) !== 92 /* Char.BackSlash */) {
-                    quote = 0 /* Char.QuoteNone */;
-                }
-                break;
-            case 34 /* Char.QuoteDouble */:
-                // same logic as above
-                if (quote === 0 /* Char.QuoteNone */) {
-                    quote = 34 /* Char.QuoteDouble */;
-                }
-                else if (quote === 34 /* Char.QuoteDouble */ && value.charCodeAt(i - 1) !== 92 /* Char.BackSlash */) {
-                    quote = 0 /* Char.QuoteNone */;
-                }
-                break;
-            case 58 /* Char.Colon */:
-                if (!currentProp && parenDepth === 0 && quote === 0 /* Char.QuoteNone */) {
-                    currentProp = hyphenate$1(value.substring(propStart, i - 1).trim());
-                    valueStart = i;
-                }
-                break;
-            case 59 /* Char.Semicolon */:
-                if (currentProp && valueStart > 0 && parenDepth === 0 && quote === 0 /* Char.QuoteNone */) {
-                    const styleVal = value.substring(valueStart, i - 1).trim();
-                    styles.push(currentProp, styleVal);
-                    propStart = i;
-                    valueStart = 0;
-                    currentProp = null;
-                }
-                break;
+function phaseNamespace(job) {
+    for (const [_, view] of job.views) {
+        let activeNamespace = Namespace.HTML;
+        for (const op of view.create) {
+            if (op.kind !== OpKind.Element && op.kind !== OpKind.ElementStart) {
+                continue;
+            }
+            if (op.namespace !== activeNamespace) {
+                OpList.insertBefore(createNamespaceOp(op.namespace), op);
+                activeNamespace = op.namespace;
+            }
         }
     }
-    if (currentProp && valueStart) {
-        const styleVal = value.slice(valueStart).trim();
-        styles.push(currentProp, styleVal);
-    }
-    return styles;
-}
-function hyphenate$1(value) {
-    return value
-        .replace(/[a-z][A-Z]/g, v => {
-        return v.charAt(0) + '-' + v.charAt(1);
-    })
-        .toLowerCase();
 }
 
 const BINARY_OPERATORS = new Map([
@@ -11524,6 +11751,73 @@ function phaseNgContainer(cpl) {
             if (op.kind === OpKind.ElementEnd && updatedElementXrefs.has(op.xref)) {
                 // This `ElementEnd` is associated with an `ElementStart` we already transmuted.
                 op.kind = OpKind.ContainerEnd;
+            }
+        }
+    }
+}
+
+/**
+ * Transforms special-case bindings with 'style' or 'class' in their names. Must run before the
+ * main binding specialization pass.
+ */
+function phaseNoListenersOnTemplates(job) {
+    for (const unit of job.units) {
+        let inTemplate = false;
+        for (const op of unit.create) {
+            switch (op.kind) {
+                case OpKind.Template:
+                    inTemplate = true;
+                    break;
+                case OpKind.ElementStart:
+                case OpKind.Element:
+                case OpKind.ContainerStart:
+                case OpKind.Container:
+                    inTemplate = false;
+                    break;
+                case OpKind.Listener:
+                    if (inTemplate) {
+                        OpList.remove(op);
+                    }
+                    break;
+            }
+        }
+    }
+}
+
+/**
+ * Looks up an element in the given map by xref ID.
+ */
+function lookupElement(elements, xref) {
+    const el = elements.get(xref);
+    if (el === undefined) {
+        throw new Error('All attributes should have an element-like target.');
+    }
+    return el;
+}
+/**
+ * When a container is marked with `ngNonBindable`, the non-bindable characteristic also applies to
+ * all descendants of that container. Therefore, we must emit `disableBindings` and `enableBindings`
+ * instructions for every such container.
+ */
+function phaseNonbindable(job) {
+    const elements = new Map();
+    for (const view of job.units) {
+        for (const op of view.create) {
+            if (!isElementOrContainerOp(op)) {
+                continue;
+            }
+            elements.set(op.xref, op);
+        }
+    }
+    for (const [_, view] of job.views) {
+        for (const op of view.create) {
+            if ((op.kind === OpKind.ElementStart || op.kind === OpKind.ContainerStart) &&
+                op.nonBindable) {
+                OpList.insertAfter(createDisableBindingsOp(op.xref), op);
+            }
+            if ((op.kind === OpKind.ElementEnd || op.kind === OpKind.ContainerEnd) &&
+                lookupElement(elements, op.xref).nonBindable) {
+                OpList.insertBefore(createEnableBindingsOp(op.xref), op);
             }
         }
     }
@@ -11902,14 +12196,19 @@ function text(slot, initialValue, sourceSpan) {
     }
     return call(Identifiers.text, args, sourceSpan);
 }
-function property(name, expression, sourceSpan) {
-    return call(Identifiers.property, [
-        literal(name),
-        expression,
-    ], sourceSpan);
+function property(name, expression, sanitizer, sourceSpan) {
+    const args = [literal(name), expression];
+    if (sanitizer !== null) {
+        args.push(sanitizer);
+    }
+    return call(Identifiers.property, args, sourceSpan);
 }
-function attribute(name, expression) {
-    return call(Identifiers.attribute, [literal(name), expression], null);
+function attribute(name, expression, sanitizer) {
+    const args = [literal(name), expression];
+    if (sanitizer !== null) {
+        args.push(sanitizer);
+    }
+    return call(Identifiers.attribute, args, null);
 }
 function styleProp(name, expression, unit) {
     const args = [literal(name), expression];
@@ -11969,13 +12268,21 @@ function textInterpolate(strings, expressions, sourceSpan) {
     }
     return callVariadicInstruction(TEXT_INTERPOLATE_CONFIG, [], interpolationArgs, [], sourceSpan);
 }
-function propertyInterpolate(name, strings, expressions, sourceSpan) {
+function propertyInterpolate(name, strings, expressions, sanitizer, sourceSpan) {
     const interpolationArgs = collateInterpolationArgs(strings, expressions);
-    return callVariadicInstruction(PROPERTY_INTERPOLATE_CONFIG, [literal(name)], interpolationArgs, [], sourceSpan);
+    const extraArgs = [];
+    if (sanitizer !== null) {
+        extraArgs.push(sanitizer);
+    }
+    return callVariadicInstruction(PROPERTY_INTERPOLATE_CONFIG, [literal(name)], interpolationArgs, extraArgs, sourceSpan);
 }
-function attributeInterpolate(name, strings, expressions) {
+function attributeInterpolate(name, strings, expressions, sanitizer) {
     const interpolationArgs = collateInterpolationArgs(strings, expressions);
-    return callVariadicInstruction(ATTRIBUTE_INTERPOLATE_CONFIG, [literal(name)], interpolationArgs, [], null);
+    const extraArgs = [];
+    if (sanitizer !== null) {
+        extraArgs.push(sanitizer);
+    }
+    return callVariadicInstruction(ATTRIBUTE_INTERPOLATE_CONFIG, [literal(name)], interpolationArgs, extraArgs, null);
 }
 function stylePropInterpolate(name, strings, expressions, unit) {
     const interpolationArgs = collateInterpolationArgs(strings, expressions);
@@ -12202,6 +12509,16 @@ function callVariadicInstruction(config, baseArgs, interpolationArgs, extraArgs,
 }
 
 /**
+ * Map of sanitizers to their identifier.
+ */
+const sanitizerIdentifierMap = new Map([
+    [SanitizerFn.Html, Identifiers.sanitizeHtml],
+    [SanitizerFn.IframeAttribute, Identifiers.validateIframeAttribute],
+    [SanitizerFn.ResourceUrl, Identifiers.sanitizeResourceUrl],
+    [SanitizerFn.Script, Identifiers.sanitizeScript],
+    [SanitizerFn.Style, Identifiers.sanitizeStyle], [SanitizerFn.Url, Identifiers.sanitizeUrl]
+]);
+/**
  * Compiles semantic operations across all views and generates output `o.Statement`s with actual
  * runtime calls in their place.
  *
@@ -12296,10 +12613,10 @@ function reifyUpdateOperations(_unit, ops) {
                 break;
             case OpKind.Property:
                 if (op.expression instanceof Interpolation) {
-                    OpList.replace(op, propertyInterpolate(op.name, op.expression.strings, op.expression.expressions, op.sourceSpan));
+                    OpList.replace(op, propertyInterpolate(op.name, op.expression.strings, op.expression.expressions, op.sanitizer, op.sourceSpan));
                 }
                 else {
-                    OpList.replace(op, property(op.name, op.expression, op.sourceSpan));
+                    OpList.replace(op, property(op.name, op.expression, op.sanitizer, op.sourceSpan));
                 }
                 break;
             case OpKind.StyleProp:
@@ -12334,10 +12651,10 @@ function reifyUpdateOperations(_unit, ops) {
                 break;
             case OpKind.Attribute:
                 if (op.expression instanceof Interpolation) {
-                    OpList.replace(op, attributeInterpolate(op.name, op.expression.strings, op.expression.expressions));
+                    OpList.replace(op, attributeInterpolate(op.name, op.expression.strings, op.expression.expressions, op.sanitizer));
                 }
                 else {
-                    OpList.replace(op, attribute(op.name, op.expression));
+                    OpList.replace(op, attribute(op.name, op.expression, op.sanitizer));
                 }
                 break;
             case OpKind.HostProperty:
@@ -12408,6 +12725,8 @@ function reifyIrExpression(expr) {
             return pipeBind(expr.slot, expr.varOffset, expr.args);
         case ExpressionKind.PipeBindingVariadic:
             return pipeBindV(expr.slot, expr.varOffset, expr.args);
+        case ExpressionKind.SanitizerExpr:
+            return importExpr(sanitizerIdentifierMap.get(expr.fn));
         default:
             throw new Error(`AssertionError: Unsupported reification of ir.Expression kind: ${ExpressionKind[expr.kind]}`);
     }
@@ -12435,6 +12754,26 @@ function reifyListenerHandler(unit, name, handlerOps, consumesDollarEvent) {
         params.push(new FnParam('$event'));
     }
     return fn(params, handlerStmts, undefined, undefined, name);
+}
+
+function phaseRemoveEmptyBindings(job) {
+    for (const unit of job.units) {
+        for (const op of unit.update) {
+            switch (op.kind) {
+                case OpKind.Attribute:
+                case OpKind.Binding:
+                case OpKind.ClassProp:
+                case OpKind.ClassMap:
+                case OpKind.Property:
+                case OpKind.StyleProp:
+                case OpKind.StyleMap:
+                    if (op.expression instanceof EmptyExpr) {
+                        OpList.remove(op);
+                    }
+                    break;
+            }
+        }
+    }
 }
 
 /**
@@ -12480,6 +12819,30 @@ function processLexicalScope$1(view, ops) {
                 return expr;
             }
         }, VisitorContextFlag.None);
+    }
+}
+
+/**
+ * Any variable inside a listener with the name `$event` will be transformed into a output lexical
+ * read immediately, and does not participate in any of the normal logic for handling variables.
+ */
+function phaseResolveDollarEvent(cpl) {
+    for (const [_, view] of cpl.views) {
+        resolveDollarEvent(view, view.create);
+        resolveDollarEvent(view, view.update);
+    }
+}
+function resolveDollarEvent(view, ops) {
+    for (const op of ops) {
+        if (op.kind === OpKind.Listener) {
+            transformExpressionsInOp(op, (expr) => {
+                if (expr instanceof LexicalReadExpr && expr.name === '$event') {
+                    op.consumesDollarEvent = true;
+                    return new ReadVarExpr(expr.name);
+                }
+                return expr;
+            }, VisitorContextFlag.InChildOperation);
+        }
     }
 }
 
@@ -12578,6 +12941,53 @@ function processLexicalScope(unit, ops, savedView) {
             }
         });
     }
+}
+
+/**
+ * Mapping of security contexts to sanitizer function for that context.
+ */
+const sanitizers = new Map([
+    [SecurityContext.HTML, SanitizerFn.Html], [SecurityContext.SCRIPT, SanitizerFn.Script],
+    [SecurityContext.STYLE, SanitizerFn.Style], [SecurityContext.URL, SanitizerFn.Url],
+    [SecurityContext.RESOURCE_URL, SanitizerFn.ResourceUrl]
+]);
+/**
+ * Resolves sanitization functions for ops that need them.
+ */
+function phaseResolveSanitizers(cpl) {
+    for (const [_, view] of cpl.views) {
+        const elements = getElementsByXrefId(view);
+        let sanitizerFn;
+        for (const op of view.update) {
+            switch (op.kind) {
+                case OpKind.Property:
+                case OpKind.Attribute:
+                    sanitizerFn = sanitizers.get(op.securityContext) || null;
+                    op.sanitizer = sanitizerFn ? new SanitizerExpr(sanitizerFn) : null;
+                    // If there was no sanitization function found based on the security context of an
+                    // attribute/property, check whether this attribute/property is one of the
+                    // security-sensitive <iframe> attributes (and that the current element is actually an
+                    // <iframe>).
+                    if (op.sanitizer === null) {
+                        const ownerOp = elements.get(op.target);
+                        if (ownerOp === undefined) {
+                            throw Error('Property should have an element-like owner');
+                        }
+                        if (isIframeElement$1(ownerOp) && isIframeSecuritySensitiveAttr(op.name)) {
+                            op.sanitizer = new SanitizerExpr(SanitizerFn.IframeAttribute);
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+}
+/**
+ * Checks whether the given op represents an iframe element.
+ */
+function isIframeElement$1(op) {
+    return (op.kind === OpKind.Element || op.kind === OpKind.ElementStart) &&
+        op.tag.toLowerCase() === 'iframe';
 }
 
 function phaseSaveRestoreView(cpl) {
@@ -12703,6 +13113,40 @@ function phaseSlotAllocation(cpl) {
                 // Record the allocated slot on the expression.
                 expr.slot = slotMap.get(expr.target);
             });
+        }
+    }
+}
+
+/**
+ * Transforms special-case bindings with 'style' or 'class' in their names. Must run before the
+ * main binding specialization pass.
+ */
+function phaseStyleBindingSpecialization(cpl) {
+    for (const unit of cpl.units) {
+        for (const op of unit.update) {
+            if (op.kind !== OpKind.Binding) {
+                continue;
+            }
+            switch (op.bindingKind) {
+                case BindingKind.ClassName:
+                    if (op.expression instanceof Interpolation) {
+                        throw new Error(`Unexpected interpolation in ClassName binding`);
+                    }
+                    OpList.replace(op, createClassPropOp(op.target, op.name, op.expression, op.sourceSpan));
+                    break;
+                case BindingKind.StyleProperty:
+                    OpList.replace(op, createStylePropOp(op.target, op.name, op.expression, op.unit, op.sourceSpan));
+                    break;
+                case BindingKind.Property:
+                case BindingKind.Template:
+                    if (op.name === 'style') {
+                        OpList.replace(op, createStyleMapOp(op.target, op.expression, op.sourceSpan));
+                    }
+                    else if (op.name === 'class') {
+                        OpList.replace(op, createClassMapOp(op.target, op.expression, op.sourceSpan));
+                    }
+                    break;
+            }
         }
     }
 }
@@ -13116,301 +13560,6 @@ function allowConservativeInlining(decl, target) {
 }
 
 /**
- * Find any function calls to `$any`, excluding `this.$any`, and delete them.
- */
-function phaseFindAnyCasts(cpl) {
-    for (const [_, view] of cpl.views) {
-        for (const op of view.ops()) {
-            transformExpressionsInOp(op, removeAnys, VisitorContextFlag.None);
-        }
-    }
-}
-function removeAnys(e) {
-    if (e instanceof InvokeFunctionExpr && e.fn instanceof LexicalReadExpr &&
-        e.fn.name === '$any') {
-        if (e.args.length !== 1) {
-            throw new Error('The $any builtin function expects exactly one argument.');
-        }
-        return e.args[0];
-    }
-    return e;
-}
-
-/**
- * Any variable inside a listener with the name `$event` will be transformed into a output lexical
- * read immediately, and does not participate in any of the normal logic for handling variables.
- */
-function phaseResolveDollarEvent(cpl) {
-    for (const [_, view] of cpl.views) {
-        resolveDollarEvent(view, view.create);
-        resolveDollarEvent(view, view.update);
-    }
-}
-function resolveDollarEvent(view, ops) {
-    for (const op of ops) {
-        if (op.kind === OpKind.Listener) {
-            transformExpressionsInOp(op, (expr) => {
-                if (expr instanceof LexicalReadExpr && expr.name === '$event') {
-                    op.consumesDollarEvent = true;
-                    return new ReadVarExpr(expr.name);
-                }
-                return expr;
-            }, VisitorContextFlag.InChildOperation);
-        }
-    }
-}
-
-/**
- * Looks up an element in the given map by xref ID.
- */
-function lookupElement$1(elements, xref) {
-    const el = elements.get(xref);
-    if (el === undefined) {
-        throw new Error('All attributes should have an element-like target.');
-    }
-    return el;
-}
-function phaseBindingSpecialization(job) {
-    const elements = new Map();
-    for (const unit of job.units) {
-        for (const op of unit.create) {
-            if (!isElementOrContainerOp(op)) {
-                continue;
-            }
-            elements.set(op.xref, op);
-        }
-    }
-    for (const unit of job.units) {
-        for (const op of unit.ops()) {
-            if (op.kind !== OpKind.Binding) {
-                continue;
-            }
-            switch (op.bindingKind) {
-                case BindingKind.Attribute:
-                    if (op.name === 'ngNonBindable') {
-                        OpList.remove(op);
-                        const target = lookupElement$1(elements, op.target);
-                        target.nonBindable = true;
-                    }
-                    else {
-                        OpList.replace(op, createAttributeOp(op.target, op.name, op.expression, op.isTemplate, op.sourceSpan));
-                    }
-                    break;
-                case BindingKind.Property:
-                case BindingKind.Animation:
-                    if (job instanceof HostBindingCompilationJob) {
-                        // TODO: host property animations
-                        OpList.replace(op, createHostPropertyOp(op.name, op.expression, op.sourceSpan));
-                    }
-                    else {
-                        OpList.replace(op, createPropertyOp(op.target, op.name, op.expression, op.bindingKind === BindingKind.Animation, op.isTemplate, op.sourceSpan));
-                    }
-                    break;
-                case BindingKind.I18n:
-                case BindingKind.ClassName:
-                case BindingKind.StyleProperty:
-                    throw new Error(`Unhandled binding of kind ${BindingKind[op.bindingKind]}`);
-            }
-        }
-    }
-}
-
-/**
- * Transforms special-case bindings with 'style' or 'class' in their names. Must run before the
- * main binding specialization pass.
- */
-function phaseStyleBindingSpecialization(cpl) {
-    for (const unit of cpl.units) {
-        for (const op of unit.update) {
-            if (op.kind !== OpKind.Binding) {
-                continue;
-            }
-            switch (op.bindingKind) {
-                case BindingKind.ClassName:
-                    if (op.expression instanceof Interpolation) {
-                        throw new Error(`Unexpected interpolation in ClassName binding`);
-                    }
-                    OpList.replace(op, createClassPropOp(op.target, op.name, op.expression, op.sourceSpan));
-                    break;
-                case BindingKind.StyleProperty:
-                    OpList.replace(op, createStylePropOp(op.target, op.name, op.expression, op.unit, op.sourceSpan));
-                    break;
-                case BindingKind.Property:
-                case BindingKind.Template:
-                    if (op.name === 'style') {
-                        OpList.replace(op, createStyleMapOp(op.target, op.expression, op.sourceSpan));
-                    }
-                    else if (op.name === 'class') {
-                        OpList.replace(op, createClassMapOp(op.target, op.expression, op.sourceSpan));
-                    }
-                    break;
-            }
-        }
-    }
-}
-
-function phaseRemoveEmptyBindings(job) {
-    for (const unit of job.units) {
-        for (const op of unit.update) {
-            switch (op.kind) {
-                case OpKind.Attribute:
-                case OpKind.Binding:
-                case OpKind.ClassProp:
-                case OpKind.ClassMap:
-                case OpKind.Property:
-                case OpKind.StyleProp:
-                case OpKind.StyleMap:
-                    if (op.expression instanceof EmptyExpr) {
-                        OpList.remove(op);
-                    }
-                    break;
-            }
-        }
-    }
-}
-
-/**
- * Transforms special-case bindings with 'style' or 'class' in their names. Must run before the
- * main binding specialization pass.
- */
-function phaseNoListenersOnTemplates(job) {
-    for (const unit of job.units) {
-        let inTemplate = false;
-        for (const op of unit.create) {
-            switch (op.kind) {
-                case OpKind.Template:
-                    inTemplate = true;
-                    break;
-                case OpKind.ElementStart:
-                case OpKind.Element:
-                case OpKind.ContainerStart:
-                case OpKind.Container:
-                    inTemplate = false;
-                    break;
-                case OpKind.Listener:
-                    if (inTemplate) {
-                        OpList.remove(op);
-                    }
-                    break;
-            }
-        }
-    }
-}
-
-const STYLE_DOT = 'style.';
-const CLASS_DOT = 'class.';
-function phaseHostStylePropertyParsing(job) {
-    for (const op of job.update) {
-        if (op.kind !== OpKind.Binding) {
-            continue;
-        }
-        if (op.name.startsWith(STYLE_DOT)) {
-            op.bindingKind = BindingKind.StyleProperty;
-            op.name = op.name.substring(STYLE_DOT.length);
-            if (isCssCustomProperty$1(op.name)) {
-                op.name = hyphenate(op.name);
-            }
-            const { property, suffix } = parseProperty$1(op.name);
-            op.name = property;
-            op.unit = suffix;
-        }
-        else if (op.name.startsWith('style!')) {
-            // TODO: do we only transform !important?
-            op.name = 'style';
-        }
-        else if (op.name.startsWith(CLASS_DOT)) {
-            op.bindingKind = BindingKind.ClassName;
-            op.name = parseProperty$1(op.name.substring(CLASS_DOT.length)).property;
-        }
-    }
-}
-/**
- * Checks whether property name is a custom CSS property.
- * See: https://www.w3.org/TR/css-variables-1
- */
-function isCssCustomProperty$1(name) {
-    return name.startsWith('--');
-}
-function hyphenate(value) {
-    return value
-        .replace(/[a-z][A-Z]/g, v => {
-        return v.charAt(0) + '-' + v.charAt(1);
-    })
-        .toLowerCase();
-}
-function parseProperty$1(name) {
-    const overrideIndex = name.indexOf('!important');
-    if (overrideIndex !== -1) {
-        name = overrideIndex > 0 ? name.substring(0, overrideIndex) : '';
-    }
-    let suffix = null;
-    let property = name;
-    const unitIndex = name.lastIndexOf('.');
-    if (unitIndex > 0) {
-        suffix = name.slice(unitIndex + 1);
-        property = name.substring(0, unitIndex);
-    }
-    return { property, suffix };
-}
-
-/**
- * Looks up an element in the given map by xref ID.
- */
-function lookupElement(elements, xref) {
-    const el = elements.get(xref);
-    if (el === undefined) {
-        throw new Error('All attributes should have an element-like target.');
-    }
-    return el;
-}
-/**
- * When a container is marked with `ngNonBindable`, the non-bindable characteristic also applies to
- * all descendants of that container. Therefore, we must emit `disableBindings` and `enableBindings`
- * instructions for every such container.
- */
-function phaseNonbindable(job) {
-    const elements = new Map();
-    for (const view of job.units) {
-        for (const op of view.create) {
-            if (!isElementOrContainerOp(op)) {
-                continue;
-            }
-            elements.set(op.xref, op);
-        }
-    }
-    for (const [_, view] of job.views) {
-        for (const op of view.create) {
-            if ((op.kind === OpKind.ElementStart || op.kind === OpKind.ContainerStart) &&
-                op.nonBindable) {
-                OpList.insertAfter(createDisableBindingsOp(op.xref), op);
-            }
-            if ((op.kind === OpKind.ElementEnd || op.kind === OpKind.ContainerEnd) &&
-                lookupElement(elements, op.xref).nonBindable) {
-                OpList.insertBefore(createEnableBindingsOp(op.xref), op);
-            }
-        }
-    }
-}
-
-/**
- * Change namespaces between HTML, SVG and MathML, depending on the next element.
- */
-function phaseNamespace(job) {
-    for (const [_, view] of job.views) {
-        let activeNamespace = Namespace.HTML;
-        for (const op of view.create) {
-            if (op.kind !== OpKind.Element && op.kind !== OpKind.ElementStart) {
-                continue;
-            }
-            if (op.namespace !== activeNamespace) {
-                OpList.insertBefore(createNamespaceOp(op.namespace), op);
-                activeNamespace = op.namespace;
-            }
-        }
-    }
-}
-
-/**
  * Run all transformation phases in the correct order against a `ComponentCompilation`. After this
  * processing, the compilation should be in a state where it can be emitted.
  */
@@ -13430,6 +13579,7 @@ function transformTemplate(job) {
     phaseResolveDollarEvent(job);
     phaseResolveNames(job);
     phaseResolveContexts(job);
+    phaseResolveSanitizers(job);
     phaseLocalRefs(job);
     phaseConstCollection(job);
     phaseNullishCoalescing(job);
@@ -13466,6 +13616,8 @@ function transformHostBinding(job) {
     phaseVariableOptimization(job);
     phaseResolveNames(job);
     phaseResolveContexts(job);
+    // TODO: Figure out how to make this work for host bindings.
+    // phaseResolveSanitizers(job);
     phaseNaming(job);
     phasePureFunctionExtraction(job);
     phasePropertyOrdering(job);
@@ -13608,7 +13760,8 @@ function ingestHostProperty(job, property) {
         property.name = property.name.substring('attr.'.length);
         bindingKind = BindingKind.Attribute;
     }
-    job.update.push(createBindingOp(job.root.xref, bindingKind, property.name, expression, null, false, property.sourceSpan));
+    job.update.push(createBindingOp(job.root.xref, bindingKind, property.name, expression, null, SecurityContext
+        .NONE /* TODO: what should we pass as security context? Passing NONE for now. */, false, property.sourceSpan));
 }
 function ingestHostEvent(job, event) { }
 /**
@@ -13786,10 +13939,10 @@ function ingestBindings(view, op, element) {
     if (element instanceof Template) {
         for (const attr of element.templateAttrs) {
             if (attr instanceof TextAttribute) {
-                ingestBinding(view, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, attr.sourceSpan, true);
+                ingestBinding(view, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, true);
             }
             else {
-                ingestBinding(view, op.xref, attr.name, attr.value, attr.type, attr.unit, attr.sourceSpan, true);
+                ingestBinding(view, op.xref, attr.name, attr.value, attr.type, attr.unit, attr.securityContext, attr.sourceSpan, true);
             }
         }
     }
@@ -13797,10 +13950,10 @@ function ingestBindings(view, op, element) {
         // This is only attribute TextLiteral bindings, such as `attr.foo="bar"`. This can never be
         // `[attr.foo]="bar"` or `attr.foo="{{bar}}"`, both of which will be handled as inputs with
         // `BindingType.Attribute`.
-        ingestBinding(view, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, attr.sourceSpan, false);
+        ingestBinding(view, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, false);
     }
     for (const input of element.inputs) {
-        ingestBinding(view, op.xref, input.name, input.value, input.type, input.unit, input.sourceSpan, false);
+        ingestBinding(view, op.xref, input.name, input.value, input.type, input.unit, input.securityContext, input.sourceSpan, false);
     }
     for (const output of element.outputs) {
         let listenerOp;
@@ -13846,7 +13999,7 @@ const BINDING_KINDS = new Map([
     [3 /* e.BindingType.Style */, BindingKind.StyleProperty],
     [4 /* e.BindingType.Animation */, BindingKind.Animation],
 ]);
-function ingestBinding(view, xref, name, value, type, unit, sourceSpan, isTemplateBinding) {
+function ingestBinding(view, xref, name, value, type, unit, securityContext, sourceSpan, isTemplateBinding) {
     if (value instanceof ASTWithSource) {
         value = value.ast;
     }
@@ -13861,7 +14014,7 @@ function ingestBinding(view, xref, name, value, type, unit, sourceSpan, isTempla
         expression = value;
     }
     const kind = BINDING_KINDS.get(type);
-    view.update.push(createBindingOp(xref, kind, name, expression, unit, isTemplateBinding, sourceSpan));
+    view.update.push(createBindingOp(xref, kind, name, expression, unit, securityContext, isTemplateBinding, sourceSpan));
 }
 /**
  * Process all of the local references on an element-like structure in the template AST and
@@ -26109,7 +26262,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.2.0-next.4+sha-f71851a');
+const VERSION = new Version('16.2.0-next.4+sha-c1052cf');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -28118,7 +28271,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-f71851a'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-c1052cf'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -28221,7 +28374,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-f71851a'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-c1052cf'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -28449,7 +28602,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-f71851a'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-c1052cf'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28484,7 +28637,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-f71851a'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-c1052cf'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -28535,7 +28688,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-f71851a'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-c1052cf'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -28568,7 +28721,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-f71851a'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-c1052cf'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -28619,7 +28772,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-f71851a'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-c1052cf'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
