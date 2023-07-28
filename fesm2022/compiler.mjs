@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.4+sha-09bf327
+ * @license Angular v16.2.0-next.4+sha-6755f53
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9132,13 +9132,12 @@ function createBindingOp(target, kind, name, expression, unit, isTemplate, sourc
 /**
  * Create a `PropertyOp`.
  */
-function createPropertyOp(target, name, expression, isAnimationTrigger, isTemplate, sourceSpan) {
+function createPropertyOp(target, name, expression, isTemplate, sourceSpan) {
     return {
         kind: OpKind.Property,
         target,
         name,
         expression,
-        isAnimationTrigger,
         isTemplate,
         sourceSpan,
         ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
@@ -10256,26 +10255,6 @@ function createListenerOp(target, name, tag) {
         handlerOps: new OpList(),
         handlerFnName: null,
         consumesDollarEvent: false,
-        isAnimationListener: false,
-        animationPhase: null,
-        ...NEW_OP,
-        ...TRAIT_USES_SLOT_INDEX,
-    };
-}
-/**
- * Create a `ListenerOp` for an animation.
- */
-function createListenerOpForAnimation(target, name, animationPhase, tag) {
-    return {
-        kind: OpKind.Listener,
-        target,
-        tag,
-        name,
-        handlerOps: new OpList(),
-        handlerFnName: null,
-        consumesDollarEvent: false,
-        isAnimationListener: true,
-        animationPhase,
         ...NEW_OP,
         ...TRAIT_USES_SLOT_INDEX,
     };
@@ -10644,9 +10623,6 @@ function populateElementAttributes(view) {
                 }
                 break;
             case OpKind.Property:
-                if (op.isAnimationTrigger) {
-                    continue; // Don't extract animation properties.
-                }
                 ownerOp = lookupElement$2(elements, op.target);
                 assertIsElementAttributes(ownerOp.attributes);
                 ownerOp.attributes.add(op.isTemplate ? BindingKind.Template : BindingKind.Property, op.name, null);
@@ -10666,9 +10642,6 @@ function populateElementAttributes(view) {
                 }
                 break;
             case OpKind.Listener:
-                if (op.isAnimationListener) {
-                    continue; // Don't extract animation listeners.
-                }
                 ownerOp = lookupElement$2(elements, op.target);
                 assertIsElementAttributes(ownerOp.attributes);
                 ownerOp.attributes.add(BindingKind.Property, op.name, null);
@@ -10680,7 +10653,6 @@ function populateElementAttributes(view) {
 const CHAINABLE = new Set([
     Identifiers.elementStart,
     Identifiers.elementEnd,
-    Identifiers.element,
     Identifiers.property,
     Identifiers.hostProperty,
     Identifiers.styleProp,
@@ -10695,7 +10667,6 @@ const CHAINABLE = new Set([
     Identifiers.stylePropInterpolate8,
     Identifiers.stylePropInterpolateV,
     Identifiers.classProp,
-    Identifiers.listener,
     Identifiers.elementContainerStart,
     Identifiers.elementContainerEnd,
     Identifiers.elementContainer,
@@ -11351,25 +11322,16 @@ function addNamesToView(unit, baseName, state, compatibility) {
     const varNames = new Map();
     for (const op of unit.ops()) {
         switch (op.kind) {
-            case OpKind.Property:
-                if (op.isAnimationTrigger) {
-                    op.name = '@' + op.name;
-                }
-                break;
             case OpKind.Listener:
                 if (op.handlerFnName === null) {
+                    // TODO(alxhub): convert this temporary name to match how the
+                    // `TemplateDefinitionBuilder` names listener functions.
                     if (op.slot === null) {
                         throw new Error(`Expected a slot to be assigned`);
                     }
                     const safeTagName = op.tag.replace('-', '_');
-                    if (op.isAnimationListener) {
-                        op.handlerFnName = sanitizeIdentifier(`${unit.fnName}_${safeTagName}_animation_${op.name}_${op.animationPhase}_${op.slot}_listener`);
-                        op.name = `@${op.name}.${op.animationPhase}`;
-                    }
-                    else {
-                        op.handlerFnName =
-                            sanitizeIdentifier(`${unit.fnName}_${safeTagName}_${op.name}_${op.slot}_listener`);
-                    }
+                    op.handlerFnName =
+                        sanitizeIdentifier(`${unit.fnName}_${safeTagName}_${op.name}_${op.slot}_listener`);
                 }
                 break;
             case OpKind.Variable:
@@ -13197,13 +13159,11 @@ function phaseBindingSpecialization(job) {
                     }
                     break;
                 case BindingKind.Property:
-                case BindingKind.Animation:
                     if (job instanceof HostBindingCompilationJob) {
-                        // TODO: host property animations
                         OpList.replace(op, createHostPropertyOp(op.name, op.expression, op.sourceSpan));
                     }
                     else {
-                        OpList.replace(op, createPropertyOp(op.target, op.name, op.expression, op.bindingKind === BindingKind.Animation, op.isTemplate, op.sourceSpan));
+                        OpList.replace(op, createPropertyOp(op.target, op.name, op.expression, op.isTemplate, op.sourceSpan));
                     }
                     break;
                 case BindingKind.I18n:
@@ -13803,16 +13763,7 @@ function ingestBindings(view, op, element) {
         ingestBinding(view, op.xref, input.name, input.value, input.type, input.unit, input.sourceSpan, false);
     }
     for (const output of element.outputs) {
-        let listenerOp;
-        if (output.type === 1 /* e.ParsedEventType.Animation */) {
-            if (output.phase === null) {
-                throw Error('Animation listener should have a phase');
-            }
-            listenerOp = createListenerOpForAnimation(op.xref, output.name, output.phase, op.tag);
-        }
-        else {
-            listenerOp = createListenerOp(op.xref, output.name, op.tag);
-        }
+        const listenerOp = createListenerOp(op.xref, output.name, op.tag);
         // if output.handler is a chain, then push each statement from the chain separately, and
         // return the last one?
         let inputExprs;
@@ -26108,7 +26059,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.2.0-next.4+sha-09bf327');
+const VERSION = new Version('16.2.0-next.4+sha-6755f53');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -28117,7 +28068,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-09bf327'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-6755f53'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -28220,7 +28171,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-09bf327'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-6755f53'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -28448,7 +28399,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-09bf327'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-6755f53'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28483,7 +28434,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-09bf327'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-6755f53'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -28534,7 +28485,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-09bf327'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-6755f53'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -28567,7 +28518,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-09bf327'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-6755f53'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -28618,7 +28569,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-09bf327'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-6755f53'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
