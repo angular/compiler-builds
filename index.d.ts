@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.4+sha-4d8cc70
+ * @license Angular v16.2.0-next.4+sha-efb486e
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -528,13 +528,29 @@ export declare interface BoundTarget<DirectiveT extends DirectiveMeta> {
      */
     getEntitiesInTemplateScope(template: TmplAstTemplate | null): ReadonlySet<TmplAstReference | TmplAstVariable>;
     /**
-     * Get a list of all the directives used by the target.
+     * Get a list of all the directives used by the target,
+     * including directives from `{#defer}` blocks.
      */
     getUsedDirectives(): DirectiveT[];
     /**
-     * Get a list of all the pipes used by the target.
+     * Get a list of eagerly used directives from the target.
+     * Note: this list *excludes* directives from `{#defer}` blocks.
+     */
+    getEagerlyUsedDirectives(): DirectiveT[];
+    /**
+     * Get a list of all the pipes used by the target,
+     * including pipes from `{#defer}` blocks.
      */
     getUsedPipes(): string[];
+    /**
+     * Get a list of eagerly used pipes from the target.
+     * Note: this list *excludes* pipes from `{#defer}` blocks.
+     */
+    getEagerlyUsedPipes(): string[];
+    /**
+     * Get a list of all {#defer} blocks used by the target.
+     */
+    getDeferBlocks(): TmplAstDeferredBlock[];
 }
 
 export declare class BuiltinType extends Type {
@@ -940,6 +956,28 @@ export declare class DeclareVarStmt extends Statement {
 }
 
 export declare const DEFAULT_INTERPOLATION_CONFIG: InterpolationConfig;
+
+/**
+ * Describes a dependency used within a `{#defer}` block.
+ */
+export declare interface DeferBlockTemplateDependency {
+    /**
+     * Reference to a dependency.
+     */
+    type: outputAst.WrappedNodeExpr<unknown>;
+    /**
+     * Dependency class name.
+     */
+    symbolName: string;
+    /**
+     * Whether this dependency can be defer-loaded.
+     */
+    isDeferrable: boolean;
+    /**
+     * Import path where this dependency is located.
+     */
+    importPath: string | null;
+}
 
 export declare function devOnlyGuardedExpression(expr: outputAst.Expression): outputAst.Expression;
 
@@ -2712,6 +2750,7 @@ export declare function publishFacade(global: any): void;
 export declare class R3BoundTarget<DirectiveT extends DirectiveMeta> implements BoundTarget<DirectiveT> {
     readonly target: Target;
     private directives;
+    private eagerDirectives;
     private bindings;
     private references;
     private exprTargets;
@@ -2719,10 +2758,12 @@ export declare class R3BoundTarget<DirectiveT extends DirectiveMeta> implements 
     private nestingLevel;
     private templateEntities;
     private usedPipes;
-    constructor(target: Target, directives: Map<TmplAstElement | TmplAstTemplate, DirectiveT[]>, bindings: Map<TmplAstBoundAttribute | TmplAstBoundEvent | TmplAstTextAttribute, DirectiveT | TmplAstElement | TmplAstTemplate>, references: Map<TmplAstBoundAttribute | TmplAstBoundEvent | TmplAstReference | TmplAstTextAttribute, {
+    private eagerPipes;
+    private deferredBlocks;
+    constructor(target: Target, directives: Map<TmplAstElement | TmplAstTemplate, DirectiveT[]>, eagerDirectives: DirectiveT[], bindings: Map<TmplAstBoundAttribute | TmplAstBoundEvent | TmplAstTextAttribute, DirectiveT | TmplAstElement | TmplAstTemplate>, references: Map<TmplAstBoundAttribute | TmplAstBoundEvent | TmplAstReference | TmplAstTextAttribute, {
         directive: DirectiveT;
         node: TmplAstElement | TmplAstTemplate;
-    } | TmplAstElement | TmplAstTemplate>, exprTargets: Map<AST, TmplAstReference | TmplAstVariable>, symbols: Map<TmplAstReference | TmplAstVariable, TmplAstTemplate>, nestingLevel: Map<TmplAstTemplate, number>, templateEntities: Map<TmplAstTemplate | null, ReadonlySet<TmplAstReference | TmplAstVariable>>, usedPipes: Set<string>);
+    } | TmplAstElement | TmplAstTemplate>, exprTargets: Map<AST, TmplAstReference | TmplAstVariable>, symbols: Map<TmplAstReference | TmplAstVariable, TmplAstTemplate>, nestingLevel: Map<TmplAstTemplate, number>, templateEntities: Map<TmplAstTemplate | null, ReadonlySet<TmplAstReference | TmplAstVariable>>, usedPipes: Set<string>, eagerPipes: Set<string>, deferredBlocks: Set<TmplAstDeferredBlock>);
     getEntitiesInTemplateScope(template: TmplAstTemplate | null): ReadonlySet<TmplAstReference | TmplAstVariable>;
     getDirectivesOfNode(node: TmplAstElement | TmplAstTemplate): DirectiveT[] | null;
     getReferenceTarget(ref: TmplAstReference): {
@@ -2734,7 +2775,10 @@ export declare class R3BoundTarget<DirectiveT extends DirectiveMeta> implements 
     getTemplateOfSymbol(symbol: TmplAstReference | TmplAstVariable): TmplAstTemplate | null;
     getNestingLevel(template: TmplAstTemplate): number;
     getUsedDirectives(): DirectiveT[];
+    getEagerlyUsedDirectives(): DirectiveT[];
     getUsedPipes(): string[];
+    getEagerlyUsedPipes(): string[];
+    getDeferBlocks(): TmplAstDeferredBlock[];
 }
 
 /**
@@ -2791,6 +2835,16 @@ export declare interface R3ComponentMetadata<DeclarationT extends R3TemplateDepe
         ngContentSelectors: string[];
     };
     declarations: DeclarationT[];
+    /**
+     * Map of all types that can be defer loaded (ts.ClassDeclaration) ->
+     * corresponding import declaration (ts.ImportDeclaration) within
+     * the current source file.
+     */
+    deferrableDeclToImportDecl: Map<outputAst.Expression, outputAst.Expression>;
+    /**
+     * Map of {#defer} blocks -> their corresponding dependencies.
+     */
+    deferBlocks: Map<t.DeferredBlock, Array<DeferBlockTemplateDependency>>;
     /**
      * Specifies how the 'directives' and/or `pipes` array, if generated, need to be emitted.
      */
@@ -3612,6 +3666,7 @@ export declare class R3Identifiers {
     static nextContext: outputAst.ExternalReference;
     static resetView: outputAst.ExternalReference;
     static templateCreate: outputAst.ExternalReference;
+    static defer: outputAst.ExternalReference;
     static text: outputAst.ExternalReference;
     static enableBindings: outputAst.ExternalReference;
     static disableBindings: outputAst.ExternalReference;

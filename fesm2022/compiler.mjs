@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.4+sha-4d8cc70
+ * @license Angular v16.2.0-next.4+sha-efb486e
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2613,6 +2613,7 @@ class Identifiers {
     static { this.nextContext = { name: 'ɵɵnextContext', moduleName: CORE }; }
     static { this.resetView = { name: 'ɵɵresetView', moduleName: CORE }; }
     static { this.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE }; }
+    static { this.defer = { name: 'ɵɵdefer', moduleName: CORE }; }
     static { this.text = { name: 'ɵɵtext', moduleName: CORE }; }
     static { this.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE }; }
     static { this.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE }; }
@@ -23224,7 +23225,7 @@ function createComponentDefConsts() {
     };
 }
 class TemplateDefinitionBuilder {
-    constructor(constantPool, parentBindingScope, level = 0, contextName, i18nContext, templateIndex, templateName, _namespace, relativeContextFilePath, i18nUseExternalIds, _constants = createComponentDefConsts()) {
+    constructor(constantPool, parentBindingScope, level = 0, contextName, i18nContext, templateIndex, templateName, _namespace, relativeContextFilePath, i18nUseExternalIds, deferBlocks, _constants = createComponentDefConsts()) {
         this.constantPool = constantPool;
         this.level = level;
         this.contextName = contextName;
@@ -23233,6 +23234,7 @@ class TemplateDefinitionBuilder {
         this.templateName = templateName;
         this._namespace = _namespace;
         this.i18nUseExternalIds = i18nUseExternalIds;
+        this.deferBlocks = deferBlocks;
         this._constants = _constants;
         this._dataIndex = 0;
         this._bindingContext = 0;
@@ -23864,7 +23866,7 @@ class TemplateDefinitionBuilder {
             parameters.push(importExpr(Identifiers.templateRefExtractor));
         }
         // Create the template function
-        const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, this._bindingScope, this.level + 1, contextName, this.i18n, templateIndex, templateName, this._namespace, this.fileBasedI18nSuffix, this.i18nUseExternalIds, this._constants);
+        const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, this._bindingScope, this.level + 1, contextName, this.i18n, templateIndex, templateName, this._namespace, this.fileBasedI18nSuffix, this.i18nUseExternalIds, this.deferBlocks, this._constants);
         // Nested templates must not be visited until after their parent templates have completed
         // processing, so they are queued here until after the initial pass. Otherwise, we wouldn't
         // be able to support bindings in nested templates to local refs that occur after the
@@ -23974,8 +23976,43 @@ class TemplateDefinitionBuilder {
         }
         return null;
     }
-    // TODO: implement deferred block instructions.
-    visitDeferredBlock(deferred) { }
+    visitDeferredBlock(deferred) {
+        const templateIndex = this.allocateDataSlot();
+        const deferredDeps = this.deferBlocks.get(deferred);
+        const contextName = `${this.contextName}_Defer_${templateIndex}`;
+        const depsFnName = `${contextName}_DepsFn`;
+        const parameters = [
+            literal(templateIndex),
+            deferredDeps ? variable(depsFnName) : TYPED_NULL_EXPR,
+        ];
+        if (deferredDeps) {
+            // This defer block has deps for which we need to generate dynamic imports.
+            const dependencyExp = [];
+            for (const deferredDep of deferredDeps) {
+                if (deferredDep.isDeferrable) {
+                    // Callback function, e.g. `function(m) { return m.MyCmp; }`.
+                    const innerFn = fn([new FnParam('m', DYNAMIC_TYPE)], [new ReturnStatement(variable('m').prop(deferredDep.symbolName))]);
+                    const fileName = deferredDep.importPath;
+                    // Dynamic import, e.g. `import('./a').then(...)`.
+                    const importExpr = (new DynamicImportExpr(fileName)).prop('then').callFn([innerFn]);
+                    dependencyExp.push(importExpr);
+                }
+                else {
+                    // Non-deferrable symbol, just use a reference to the type.
+                    dependencyExp.push(deferredDep.type);
+                }
+            }
+            const depsFnBody = [];
+            depsFnBody.push(new ReturnStatement(literalArr(dependencyExp)));
+            const depsFnExpr = fn([] /* args */, depsFnBody, INFERRED_TYPE, null, depsFnName);
+            this.constantPool.statements.push(depsFnExpr.toDeclStmt(depsFnName));
+        }
+        // e.g. `defer(1, MyComp_Defer_1_DepsFn, ...)`
+        this.creationInstruction(deferred.sourceSpan, Identifiers.defer, () => {
+            return trimTrailingNulls(parameters);
+        });
+    }
+    // TODO: implement nested deferred block instructions.
     visitDeferredTrigger(trigger) { }
     visitDeferredBlockPlaceholder(block) { }
     visitDeferredBlockError(block) { }
@@ -25029,7 +25066,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
         // This is the main path currently used in compilation, which compiles the template with the
         // legacy `TemplateDefinitionBuilder`.
         const template = meta.template;
-        const templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.createRootScope(), 0, templateTypeName, null, null, templateName, Identifiers.namespaceHTML, meta.relativeContextFilePath, meta.i18nUseExternalIds);
+        const templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.createRootScope(), 0, templateTypeName, null, null, templateName, Identifiers.namespaceHTML, meta.relativeContextFilePath, meta.i18nUseExternalIds, meta.deferBlocks);
         const templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, []);
         // We need to provide this so that dynamically generated components know what
         // projected content blocks to pass through to the component when it is
@@ -25796,6 +25833,10 @@ class CompilerFacadeImpl {
             template,
             declarations: facade.declarations.map(convertDeclarationFacadeToMetadata),
             declarationListEmitMode: 0 /* DeclarationListEmitMode.Direct */,
+            // TODO: leaving empty in JIT mode for now,
+            // to be implemented as one of the next steps.
+            deferBlocks: new Map(),
+            deferrableDeclToImportDecl: new Map(),
             styles: [...facade.styles, ...template.styles],
             encapsulation: facade.encapsulation,
             interpolation,
@@ -26026,6 +26067,10 @@ function convertDeclareComponentFacadeToMetadata(decl, typeSourceSpan, sourceMap
         viewProviders: decl.viewProviders !== undefined ? new WrappedNodeExpr(decl.viewProviders) :
             null,
         animations: decl.animations !== undefined ? new WrappedNodeExpr(decl.animations) : null,
+        // TODO: leaving empty in JIT mode for now,
+        // to be implemented as one of the next steps.
+        deferBlocks: new Map(),
+        deferrableDeclToImportDecl: new Map(),
         changeDetection: decl.changeDetection ?? ChangeDetectionStrategy.Default,
         encapsulation: decl.encapsulation ?? ViewEncapsulation.Emulated,
         interpolation,
@@ -26262,7 +26307,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.2.0-next.4+sha-4d8cc70');
+const VERSION = new Version('16.2.0-next.4+sha-efb486e');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -27730,11 +27775,11 @@ class R3TargetBinder {
         //   - bindings: Map of inputs, outputs, and attributes to the directive/element that claims
         //     them. TODO(alxhub): handle multiple directives claiming an input/output/etc.
         //   - references: Map of #references to their targets.
-        const { directives, bindings, references } = DirectiveBinder.apply(target.template, this.directiveMatcher);
+        const { directives, eagerDirectives, bindings, references } = DirectiveBinder.apply(target.template, this.directiveMatcher);
         // Finally, run the TemplateBinder to bind references, variables, and other entities within the
         // template. This extracts all the metadata that doesn't depend on directive matching.
-        const { expressions, symbols, nestingLevel, usedPipes } = TemplateBinder.applyWithScope(target.template, scope);
-        return new R3BoundTarget(target, directives, bindings, references, expressions, symbols, nestingLevel, templateEntities, usedPipes);
+        const { expressions, symbols, nestingLevel, usedPipes, eagerPipes, deferBlocks } = TemplateBinder.applyWithScope(target.template, scope);
+        return new R3BoundTarget(target, directives, eagerDirectives, bindings, references, expressions, symbols, nestingLevel, templateEntities, usedPipes, eagerPipes, deferBlocks);
     }
 }
 /**
@@ -27875,11 +27920,14 @@ class Scope {
  * Usually used via the static `apply()` method.
  */
 class DirectiveBinder {
-    constructor(matcher, directives, bindings, references) {
+    constructor(matcher, directives, eagerDirectives, bindings, references) {
         this.matcher = matcher;
         this.directives = directives;
+        this.eagerDirectives = eagerDirectives;
         this.bindings = bindings;
         this.references = references;
+        // Indicates whether we are visiting elements within a {#defer} block
+        this.isInDeferBlock = false;
     }
     /**
      * Process a template (list of `Node`s) and perform directive matching against each node.
@@ -27897,9 +27945,10 @@ class DirectiveBinder {
         const directives = new Map();
         const bindings = new Map();
         const references = new Map();
-        const matcher = new DirectiveBinder(selectorMatcher, directives, bindings, references);
+        const eagerDirectives = [];
+        const matcher = new DirectiveBinder(selectorMatcher, directives, eagerDirectives, bindings, references);
         matcher.ingest(template);
-        return { directives, bindings, references };
+        return { directives, eagerDirectives, bindings, references };
     }
     ingest(template) {
         template.forEach(node => node.visit(this));
@@ -27919,6 +27968,9 @@ class DirectiveBinder {
         this.matcher.match(cssSelector, (_selector, results) => directives.push(...results));
         if (directives.length > 0) {
             this.directives.set(node, directives);
+            if (!this.isInDeferBlock) {
+                this.eagerDirectives.push(...directives);
+            }
         }
         // Resolve any references that are created on this node.
         node.references.forEach(ref => {
@@ -27969,7 +28021,9 @@ class DirectiveBinder {
         node.children.forEach(child => child.visit(this));
     }
     visitDeferredBlock(deferred) {
+        this.isInDeferBlock = true;
         deferred.children.forEach(child => child.visit(this));
+        this.isInDeferBlock = false;
         deferred.placeholder?.visit(this);
         deferred.loading?.visit(this);
         deferred.error?.visit(this);
@@ -28006,15 +28060,19 @@ class DirectiveBinder {
  * by overridden methods from that visitor.
  */
 class TemplateBinder extends RecursiveAstVisitor {
-    constructor(bindings, symbols, usedPipes, nestingLevel, scope, template, level) {
+    constructor(bindings, symbols, usedPipes, eagerPipes, deferBlocks, nestingLevel, scope, template, level) {
         super();
         this.bindings = bindings;
         this.symbols = symbols;
         this.usedPipes = usedPipes;
+        this.eagerPipes = eagerPipes;
+        this.deferBlocks = deferBlocks;
         this.nestingLevel = nestingLevel;
         this.scope = scope;
         this.template = template;
         this.level = level;
+        // Indicates whether we are visiting elements within a {#defer} block
+        this.isInDeferBlock = false;
         // Save a bit of processing time by constructing this closure in advance.
         this.visitNode = (node) => node.visit(this);
     }
@@ -28046,11 +28104,13 @@ class TemplateBinder extends RecursiveAstVisitor {
         const symbols = new Map();
         const nestingLevel = new Map();
         const usedPipes = new Set();
+        const eagerPipes = new Set();
         const template = nodes instanceof Template ? nodes : null;
+        const deferBlocks = new Set();
         // The top-level template has nesting level 0.
-        const binder = new TemplateBinder(expressions, symbols, usedPipes, nestingLevel, scope, template, 0);
+        const binder = new TemplateBinder(expressions, symbols, usedPipes, eagerPipes, deferBlocks, nestingLevel, scope, template, 0);
         binder.ingest(nodes);
-        return { expressions, symbols, nestingLevel, usedPipes };
+        return { expressions, symbols, nestingLevel, usedPipes, eagerPipes, deferBlocks };
     }
     ingest(template) {
         if (template instanceof Template) {
@@ -28081,7 +28141,7 @@ class TemplateBinder extends RecursiveAstVisitor {
         template.references.forEach(this.visitNode);
         // Next, recurse into the template using its scope, and bumping the nesting level up by one.
         const childScope = this.scope.getChildScope(template);
-        const binder = new TemplateBinder(this.bindings, this.symbols, this.usedPipes, this.nestingLevel, childScope, template, this.level + 1);
+        const binder = new TemplateBinder(this.bindings, this.symbols, this.usedPipes, this.eagerPipes, this.deferBlocks, this.nestingLevel, childScope, template, this.level + 1);
         binder.ingest(template);
     }
     visitVariable(variable) {
@@ -28112,9 +28172,12 @@ class TemplateBinder extends RecursiveAstVisitor {
         event.handler.visit(this);
     }
     visitDeferredBlock(deferred) {
+        this.deferBlocks.add(deferred);
+        this.isInDeferBlock = true;
+        deferred.children.forEach(this.visitNode);
+        this.isInDeferBlock = false;
         deferred.triggers.forEach(this.visitNode);
         deferred.prefetchTriggers.forEach(this.visitNode);
-        deferred.children.forEach(this.visitNode);
         deferred.placeholder && this.visitNode(deferred.placeholder);
         deferred.loading && this.visitNode(deferred.loading);
         deferred.error && this.visitNode(deferred.error);
@@ -28138,6 +28201,9 @@ class TemplateBinder extends RecursiveAstVisitor {
     }
     visitPipe(ast, context) {
         this.usedPipes.add(ast.name);
+        if (!this.isInDeferBlock) {
+            this.eagerPipes.add(ast.name);
+        }
         return super.visitPipe(ast, context);
     }
     // These five types of AST expressions can refer to expression roots, which could be variables
@@ -28174,9 +28240,10 @@ class TemplateBinder extends RecursiveAstVisitor {
  * See `BoundTarget` for documentation on the individual methods.
  */
 class R3BoundTarget {
-    constructor(target, directives, bindings, references, exprTargets, symbols, nestingLevel, templateEntities, usedPipes) {
+    constructor(target, directives, eagerDirectives, bindings, references, exprTargets, symbols, nestingLevel, templateEntities, usedPipes, eagerPipes, deferredBlocks) {
         this.target = target;
         this.directives = directives;
+        this.eagerDirectives = eagerDirectives;
         this.bindings = bindings;
         this.references = references;
         this.exprTargets = exprTargets;
@@ -28184,6 +28251,8 @@ class R3BoundTarget {
         this.nestingLevel = nestingLevel;
         this.templateEntities = templateEntities;
         this.usedPipes = usedPipes;
+        this.eagerPipes = eagerPipes;
+        this.deferredBlocks = deferredBlocks;
     }
     getEntitiesInTemplateScope(template) {
         return this.templateEntities.get(template) ?? new Set();
@@ -28211,8 +28280,18 @@ class R3BoundTarget {
         this.directives.forEach(dirs => dirs.forEach(dir => set.add(dir)));
         return Array.from(set.values());
     }
+    getEagerlyUsedDirectives() {
+        const set = new Set(this.eagerDirectives);
+        return Array.from(set.values());
+    }
     getUsedPipes() {
         return Array.from(this.usedPipes);
+    }
+    getEagerlyUsedPipes() {
+        return Array.from(this.eagerPipes);
+    }
+    getDeferBlocks() {
+        return Array.from(this.deferredBlocks);
     }
 }
 function extractTemplateEntities(rootScope) {
@@ -28271,7 +28350,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-4d8cc70'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-efb486e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -28374,7 +28453,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-4d8cc70'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-efb486e'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -28602,7 +28681,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-4d8cc70'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-efb486e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28637,7 +28716,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-4d8cc70'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-efb486e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -28688,7 +28767,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-4d8cc70'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-efb486e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -28721,7 +28800,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-4d8cc70'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-efb486e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -28772,7 +28851,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-4d8cc70'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-efb486e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
