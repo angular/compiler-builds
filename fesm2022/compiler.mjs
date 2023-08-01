@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.0-next.4+sha-8913d3e
+ * @license Angular v16.2.0-next.4+sha-2d52d5e
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1784,7 +1784,7 @@ class ReadKeyExpr extends Expression {
         return new WriteKeyExpr(this.receiver, this.index, value, null, this.sourceSpan);
     }
     clone() {
-        return new ReadKeyExpr(this.receiver, this.index.clone(), this.type, this.sourceSpan);
+        return new ReadKeyExpr(this.receiver.clone(), this.index.clone(), this.type, this.sourceSpan);
     }
 }
 class LiteralArrayExpr extends Expression {
@@ -9751,7 +9751,7 @@ class AssignTemporaryExpr extends ExpressionBase {
         this.expr = transformExpressionsInExpression(this.expr, transform, flags);
     }
     clone() {
-        const a = new AssignTemporaryExpr(this.expr, this.xref);
+        const a = new AssignTemporaryExpr(this.expr.clone(), this.xref);
         a.name = this.name;
         return a;
     }
@@ -11173,7 +11173,8 @@ function safeTernaryWithTemporary(guard, body, ctx) {
     return new SafeTernaryExpr(result[0], body(result[1]));
 }
 function isSafeAccessExpression(e) {
-    return e instanceof SafePropertyReadExpr || e instanceof SafeKeyedReadExpr;
+    return e instanceof SafePropertyReadExpr || e instanceof SafeKeyedReadExpr ||
+        e instanceof SafeInvokeFunctionExpr;
 }
 function isUnsafeAccessExpression(e) {
     return e instanceof ReadPropExpr || e instanceof ReadKeyExpr ||
@@ -11195,10 +11196,6 @@ function deepestSafeTernary(e) {
 // TODO: When strict compatibility with TemplateDefinitionBuilder is not required, we can use `&&`
 // instead to save some code size.
 function safeTransform(e, ctx) {
-    if (e instanceof SafeInvokeFunctionExpr) {
-        // TODO: Implement safe function calls in a subsequent commit.
-        return new InvokeFunctionExpr(e.receiver, e.args);
-    }
     if (!isAccessExpression(e)) {
         return e;
     }
@@ -11216,6 +11213,10 @@ function safeTransform(e, ctx) {
             dst.expr = dst.expr.key(e.index);
             return e.receiver;
         }
+        if (e instanceof SafeInvokeFunctionExpr) {
+            dst.expr = safeTernaryWithTemporary(dst.expr, (r) => r.callFn(e.args), ctx);
+            return e.receiver;
+        }
         if (e instanceof SafePropertyReadExpr) {
             dst.expr = safeTernaryWithTemporary(dst.expr, (r) => r.prop(e.name), ctx);
             return e.receiver;
@@ -11226,6 +11227,9 @@ function safeTransform(e, ctx) {
         }
     }
     else {
+        if (e instanceof SafeInvokeFunctionExpr) {
+            return safeTernaryWithTemporary(e.receiver, (r) => r.callFn(e.args), ctx);
+        }
         if (e instanceof SafePropertyReadExpr) {
             return safeTernaryWithTemporary(e.receiver, (r) => r.prop(e.name), ctx);
         }
@@ -13166,34 +13170,54 @@ function phaseTemporaryVariables(cpl) {
         let opCount = 0;
         let generatedStatements = [];
         for (const op of unit.ops()) {
+            // Identify the final time each temp var is read.
+            const finalReads = new Map();
+            visitExpressionsInOp(op, expr => {
+                if (expr instanceof ReadTemporaryExpr) {
+                    finalReads.set(expr.xref, expr);
+                }
+            });
+            // Name the temp vars, accounting for the fact that a name can be reused after it has been
+            // read for the final time.
             let count = 0;
-            let xrefs = new Set();
-            let defs = new Map();
+            const assigned = new Set();
+            const released = new Set();
+            const defs = new Map();
             visitExpressionsInOp(op, expr => {
-                if (expr instanceof ReadTemporaryExpr || expr instanceof AssignTemporaryExpr) {
-                    xrefs.add(expr.xref);
-                }
-            });
-            for (const xref of xrefs) {
-                // TODO: Exactly replicate the naming scheme used by `TemplateDefinitionBuilder`. It seems
-                // to rely on an expression index instead of an op index.
-                defs.set(xref, `tmp_${opCount}_${count++}`);
-            }
-            visitExpressionsInOp(op, expr => {
-                if (expr instanceof ReadTemporaryExpr || expr instanceof AssignTemporaryExpr) {
-                    const name = defs.get(expr.xref);
-                    if (name === undefined) {
-                        throw new Error('Found xref with unassigned name');
+                if (expr instanceof AssignTemporaryExpr) {
+                    if (!assigned.has(expr.xref)) {
+                        assigned.add(expr.xref);
+                        // TODO: Exactly replicate the naming scheme used by `TemplateDefinitionBuilder`.
+                        // It seems to rely on an expression index instead of an op index.
+                        defs.set(expr.xref, `tmp_${opCount}_${count++}`);
                     }
-                    expr.name = name;
+                    assignName(defs, expr);
+                }
+                else if (expr instanceof ReadTemporaryExpr) {
+                    if (finalReads.get(expr.xref) === expr) {
+                        released.add(expr.xref);
+                        count--;
+                    }
+                    assignName(defs, expr);
                 }
             });
-            generatedStatements.push(...Array.from(defs.values())
+            // Add declarations for the temp vars.
+            generatedStatements.push(...Array.from(new Set(defs.values()))
                 .map(name => createStatementOp(new DeclareVarStmt(name))));
             opCount++;
         }
         unit.update.prepend(generatedStatements);
     }
+}
+/**
+ * Assigns a name to the temporary variable in the given temporary variable expression.
+ */
+function assignName(names, expr) {
+    const name = names.get(expr.xref);
+    if (name === undefined) {
+        throw new Error(`Found xref with unassigned name: ${expr.xref}`);
+    }
+    expr.name = name;
 }
 
 /**
@@ -26307,7 +26331,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.2.0-next.4+sha-8913d3e');
+const VERSION = new Version('16.2.0-next.4+sha-2d52d5e');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -28350,7 +28374,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-8913d3e'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-2d52d5e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -28453,7 +28477,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-8913d3e'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-2d52d5e'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -28681,7 +28705,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-8913d3e'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-2d52d5e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28716,7 +28740,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-8913d3e'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-2d52d5e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -28767,7 +28791,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-8913d3e'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-2d52d5e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -28800,7 +28824,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-8913d3e'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-2d52d5e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -28851,7 +28875,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.2.0-next.4+sha-8913d3e'));
+    definitionMap.set('version', literal('16.2.0-next.4+sha-2d52d5e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
