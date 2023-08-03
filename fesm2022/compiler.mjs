@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.3.0-next.0+sha-5aeed1f
+ * @license Angular v16.3.0-next.0+sha-74974f8
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8615,140 +8615,6 @@ function repeatGroups(groups, multiples) {
     }
 }
 
-var TagContentType;
-(function (TagContentType) {
-    TagContentType[TagContentType["RAW_TEXT"] = 0] = "RAW_TEXT";
-    TagContentType[TagContentType["ESCAPABLE_RAW_TEXT"] = 1] = "ESCAPABLE_RAW_TEXT";
-    TagContentType[TagContentType["PARSABLE_DATA"] = 2] = "PARSABLE_DATA";
-})(TagContentType || (TagContentType = {}));
-function splitNsName(elementName) {
-    if (elementName[0] != ':') {
-        return [null, elementName];
-    }
-    const colonIndex = elementName.indexOf(':', 1);
-    if (colonIndex === -1) {
-        throw new Error(`Unsupported format "${elementName}" expecting ":namespace:name"`);
-    }
-    return [elementName.slice(1, colonIndex), elementName.slice(colonIndex + 1)];
-}
-// `<ng-container>` tags work the same regardless the namespace
-function isNgContainer(tagName) {
-    return splitNsName(tagName)[1] === 'ng-container';
-}
-// `<ng-content>` tags work the same regardless the namespace
-function isNgContent(tagName) {
-    return splitNsName(tagName)[1] === 'ng-content';
-}
-// `<ng-template>` tags work the same regardless the namespace
-function isNgTemplate(tagName) {
-    return splitNsName(tagName)[1] === 'ng-template';
-}
-function getNsPrefix(fullName) {
-    return fullName === null ? null : splitNsName(fullName)[0];
-}
-function mergeNsAndName(prefix, localName) {
-    return prefix ? `:${prefix}:${localName}` : localName;
-}
-
-/**
- * Enumeration of the types of attributes which can be applied to an element.
- */
-var BindingKind;
-(function (BindingKind) {
-    /**
-     * Static attributes.
-     */
-    BindingKind[BindingKind["Attribute"] = 0] = "Attribute";
-    /**
-     * Class bindings.
-     */
-    BindingKind[BindingKind["ClassName"] = 1] = "ClassName";
-    /**
-     * Style bindings.
-     */
-    BindingKind[BindingKind["StyleProperty"] = 2] = "StyleProperty";
-    /**
-     * Dynamic property bindings.
-     */
-    BindingKind[BindingKind["Property"] = 3] = "Property";
-    /**
-     * Property or attribute bindings on a template.
-     */
-    BindingKind[BindingKind["Template"] = 4] = "Template";
-    /**
-     * Internationalized attributes.
-     */
-    BindingKind[BindingKind["I18n"] = 5] = "I18n";
-    /**
-     * TODO: Consider how Animations are handled, and if they should be a distinct BindingKind.
-     */
-    BindingKind[BindingKind["Animation"] = 6] = "Animation";
-})(BindingKind || (BindingKind = {}));
-const FLYWEIGHT_ARRAY = Object.freeze([]);
-/**
- * Container for all of the various kinds of attributes which are applied on an element.
- */
-class ElementAttributes {
-    constructor() {
-        this.known = new Set();
-        this.byKind = new Map;
-        this.projectAs = null;
-    }
-    get attributes() {
-        return this.byKind.get(BindingKind.Attribute) ?? FLYWEIGHT_ARRAY;
-    }
-    get classes() {
-        return this.byKind.get(BindingKind.ClassName) ?? FLYWEIGHT_ARRAY;
-    }
-    get styles() {
-        return this.byKind.get(BindingKind.StyleProperty) ?? FLYWEIGHT_ARRAY;
-    }
-    get bindings() {
-        return this.byKind.get(BindingKind.Property) ?? FLYWEIGHT_ARRAY;
-    }
-    get template() {
-        return this.byKind.get(BindingKind.Template) ?? FLYWEIGHT_ARRAY;
-    }
-    get i18n() {
-        return this.byKind.get(BindingKind.I18n) ?? FLYWEIGHT_ARRAY;
-    }
-    add(kind, name, value) {
-        if (this.known.has(name)) {
-            return;
-        }
-        this.known.add(name);
-        const array = this.arrayFor(kind);
-        array.push(...getAttributeNameLiterals$1(name));
-        if (kind === BindingKind.Attribute || kind === BindingKind.StyleProperty) {
-            if (value === null) {
-                throw Error('Attribute & style element attributes must have a value');
-            }
-            array.push(value);
-        }
-    }
-    arrayFor(kind) {
-        if (!this.byKind.has(kind)) {
-            this.byKind.set(kind, []);
-        }
-        return this.byKind.get(kind);
-    }
-}
-function getAttributeNameLiterals$1(name) {
-    const [attributeNamespace, attributeName] = splitNsName(name);
-    const nameLiteral = literal(attributeName);
-    if (attributeNamespace) {
-        return [
-            literal(0 /* core.AttributeMarker.NamespaceURI */), literal(attributeNamespace), nameLiteral
-        ];
-    }
-    return [nameLiteral];
-}
-function assertIsElementAttributes(attrs) {
-    if (!(attrs instanceof ElementAttributes)) {
-        throw new Error(`AssertionError: ElementAttributes has already been coalesced into the view constants`);
-    }
-}
-
 /**
  * Distinguishes different kinds of IR operations.
  *
@@ -8856,13 +8722,17 @@ var OpKind;
      */
     OpKind[OpKind["Attribute"] = 23] = "Attribute";
     /**
+     * An attribute that has been extracted for inclusion in the consts array.
+     */
+    OpKind[OpKind["ExtractedAttribute"] = 24] = "ExtractedAttribute";
+    /**
      * A host binding property.
      */
-    OpKind[OpKind["HostProperty"] = 24] = "HostProperty";
+    OpKind[OpKind["HostProperty"] = 25] = "HostProperty";
     /**
      * A namespace change, which causes the subsequent elements to be processed as either HTML or SVG.
      */
-    OpKind[OpKind["Namespace"] = 25] = "Namespace";
+    OpKind[OpKind["Namespace"] = 26] = "Namespace";
     // TODO: Add Host Listeners, and possibly other host ops also.
 })(OpKind || (OpKind = {}));
 /**
@@ -8991,6 +8861,40 @@ var SanitizerFn;
     SanitizerFn[SanitizerFn["ResourceUrl"] = 4] = "ResourceUrl";
     SanitizerFn[SanitizerFn["IframeAttribute"] = 5] = "IframeAttribute";
 })(SanitizerFn || (SanitizerFn = {}));
+/**
+ * Enumeration of the types of attributes which can be applied to an element.
+ */
+var BindingKind;
+(function (BindingKind) {
+    /**
+     * Static attributes.
+     */
+    BindingKind[BindingKind["Attribute"] = 0] = "Attribute";
+    /**
+     * Class bindings.
+     */
+    BindingKind[BindingKind["ClassName"] = 1] = "ClassName";
+    /**
+     * Style bindings.
+     */
+    BindingKind[BindingKind["StyleProperty"] = 2] = "StyleProperty";
+    /**
+     * Dynamic property bindings.
+     */
+    BindingKind[BindingKind["Property"] = 3] = "Property";
+    /**
+     * Property or attribute bindings on a template.
+     */
+    BindingKind[BindingKind["Template"] = 4] = "Template";
+    /**
+     * Internationalized attributes.
+     */
+    BindingKind[BindingKind["I18n"] = 5] = "I18n";
+    /**
+     * Animation property bindings.
+     */
+    BindingKind[BindingKind["Animation"] = 6] = "Animation";
+})(BindingKind || (BindingKind = {}));
 
 /**
  * Marker symbol for `ConsumesSlotOpTrait`.
@@ -9133,7 +9037,7 @@ class Interpolation {
 /**
  * Create a `BindingOp`, not yet transformed into a particular type of binding.
  */
-function createBindingOp(target, kind, name, expression, unit, securityContext, isTemplate, sourceSpan) {
+function createBindingOp(target, kind, name, expression, unit, securityContext, isTextAttribute, isTemplate, sourceSpan) {
     return {
         kind: OpKind.Binding,
         bindingKind: kind,
@@ -9142,6 +9046,7 @@ function createBindingOp(target, kind, name, expression, unit, securityContext, 
         expression,
         unit,
         securityContext,
+        isTextAttribute,
         isTemplate,
         sourceSpan,
         ...NEW_OP,
@@ -9224,7 +9129,7 @@ function createClassMapOp(xref, expression, sourceSpan) {
 /**
  * Create an `AttributeOp`.
  */
-function createAttributeOp(target, name, expression, securityContext, isTemplate, sourceSpan) {
+function createAttributeOp(target, name, expression, securityContext, isTextAttribute, isTemplate, sourceSpan) {
     return {
         kind: OpKind.Attribute,
         target,
@@ -9232,6 +9137,7 @@ function createAttributeOp(target, name, expression, securityContext, isTemplate
         expression,
         securityContext,
         sanitizer: null,
+        isTextAttribute,
         isTemplate,
         sourceSpan,
         ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
@@ -9861,6 +9767,10 @@ function transformExpressionsInOp(op, transform, flags) {
                 transformExpressionsInOp(innerOp, transform, flags | VisitorContextFlag.InChildOperation);
             }
             break;
+        case OpKind.ExtractedAttribute:
+            op.expression =
+                op.expression && transformExpressionsInExpression(op.expression, transform, flags);
+            break;
         case OpKind.Element:
         case OpKind.ElementStart:
         case OpKind.ElementEnd:
@@ -9964,6 +9874,12 @@ function transformExpressionsInStatement(stmt, transform, flags) {
     else {
         throw new Error(`Unhandled statement kind: ${stmt.constructor.name}`);
     }
+}
+/**
+ * Checks whether the given expression is a string literal.
+ */
+function isStringLiteral(expr) {
+    return expr instanceof LiteralExpr && typeof expr.value === 'string';
 }
 
 /**
@@ -10227,7 +10143,7 @@ function createElementStartOp(tag, xref, namespace, sourceSpan) {
         kind: OpKind.ElementStart,
         xref,
         tag,
-        attributes: new ElementAttributes(),
+        attributes: null,
         localRefs: [],
         nonBindable: false,
         namespace,
@@ -10243,7 +10159,7 @@ function createTemplateOp(xref, tag, namespace, sourceSpan) {
     return {
         kind: OpKind.Template,
         xref,
-        attributes: new ElementAttributes(),
+        attributes: null,
         tag,
         decls: null,
         vars: null,
@@ -10351,6 +10267,19 @@ function createNamespaceOp(namespace) {
     return {
         kind: OpKind.Namespace,
         active: namespace,
+        ...NEW_OP,
+    };
+}
+/**
+ * Create an `ExtractedAttributeOp`.
+ */
+function createExtractedAttributeOp(target, bindingKind, name, expression) {
+    return {
+        kind: OpKind.ExtractedAttribute,
+        target,
+        bindingKind,
+        name,
+        expression,
         ...NEW_OP,
     };
 }
@@ -10663,85 +10592,6 @@ function removeAnys(e) {
 }
 
 /**
- * Parses string representation of a style and converts it into object literal.
- *
- * @param value string representation of style as used in the `style` attribute in HTML.
- *   Example: `color: red; height: auto`.
- * @returns An array of style property name and value pairs, e.g. `['color', 'red', 'height',
- * 'auto']`
- */
-function parse(value) {
-    // we use a string array here instead of a string map
-    // because a string-map is not guaranteed to retain the
-    // order of the entries whereas a string array can be
-    // constructed in a [key, value, key, value] format.
-    const styles = [];
-    let i = 0;
-    let parenDepth = 0;
-    let quote = 0 /* Char.QuoteNone */;
-    let valueStart = 0;
-    let propStart = 0;
-    let currentProp = null;
-    while (i < value.length) {
-        const token = value.charCodeAt(i++);
-        switch (token) {
-            case 40 /* Char.OpenParen */:
-                parenDepth++;
-                break;
-            case 41 /* Char.CloseParen */:
-                parenDepth--;
-                break;
-            case 39 /* Char.QuoteSingle */:
-                // valueStart needs to be there since prop values don't
-                // have quotes in CSS
-                if (quote === 0 /* Char.QuoteNone */) {
-                    quote = 39 /* Char.QuoteSingle */;
-                }
-                else if (quote === 39 /* Char.QuoteSingle */ && value.charCodeAt(i - 1) !== 92 /* Char.BackSlash */) {
-                    quote = 0 /* Char.QuoteNone */;
-                }
-                break;
-            case 34 /* Char.QuoteDouble */:
-                // same logic as above
-                if (quote === 0 /* Char.QuoteNone */) {
-                    quote = 34 /* Char.QuoteDouble */;
-                }
-                else if (quote === 34 /* Char.QuoteDouble */ && value.charCodeAt(i - 1) !== 92 /* Char.BackSlash */) {
-                    quote = 0 /* Char.QuoteNone */;
-                }
-                break;
-            case 58 /* Char.Colon */:
-                if (!currentProp && parenDepth === 0 && quote === 0 /* Char.QuoteNone */) {
-                    currentProp = hyphenate$1(value.substring(propStart, i - 1).trim());
-                    valueStart = i;
-                }
-                break;
-            case 59 /* Char.Semicolon */:
-                if (currentProp && valueStart > 0 && parenDepth === 0 && quote === 0 /* Char.QuoteNone */) {
-                    const styleVal = value.substring(valueStart, i - 1).trim();
-                    styles.push(currentProp, styleVal);
-                    propStart = i;
-                    valueStart = 0;
-                    currentProp = null;
-                }
-                break;
-        }
-    }
-    if (currentProp && valueStart) {
-        const styleVal = value.slice(valueStart).trim();
-        styles.push(currentProp, styleVal);
-    }
-    return styles;
-}
-function hyphenate$1(value) {
-    return value
-        .replace(/[a-z][A-Z]/g, v => {
-        return v.charAt(0) + '-' + v.charAt(1);
-    })
-        .toLowerCase();
-}
-
-/**
  * Gets a map of all elements in the given view by their xref id.
  */
 function getElementsByXrefId(view) {
@@ -10756,12 +10606,39 @@ function getElementsByXrefId(view) {
 }
 
 /**
- * Find all attribute and binding ops, and collect them into the ElementAttribute structures.
+ * Find all extractable attribute and binding ops, and create ExtractedAttributeOps for them.
  * In cases where no instruction needs to be generated for the attribute or binding, it is removed.
  */
 function phaseAttributeExtraction(cpl) {
     for (const [_, view] of cpl.views) {
-        populateElementAttributes(view);
+        const elements = getElementsByXrefId(view);
+        for (const op of view.ops()) {
+            switch (op.kind) {
+                case OpKind.Attribute:
+                    extractAttributeOp(view, op, elements);
+                    break;
+                case OpKind.Property:
+                    if (!op.isAnimationTrigger) {
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, op.isTemplate ? BindingKind.Template : BindingKind.Property, op.name, null), lookupElement$2(elements, op.target));
+                    }
+                    break;
+                case OpKind.StyleProp:
+                case OpKind.ClassProp:
+                    // The old compiler treated empty style bindings as regular bindings for the purpose of
+                    // directive matching. That behavior is incorrect, but we emulate it in compatibility
+                    // mode.
+                    if (view.compatibility === CompatibilityMode.TemplateDefinitionBuilder &&
+                        op.expression instanceof EmptyExpr) {
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.Property, op.name, null), lookupElement$2(elements, op.target));
+                    }
+                    break;
+                case OpKind.Listener:
+                    if (!op.isAnimationListener) {
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.Property, op.name, null), lookupElement$2(elements, op.target));
+                    }
+                    break;
+            }
+        }
     }
 }
 /**
@@ -10775,83 +10652,27 @@ function lookupElement$2(elements, xref) {
     return el;
 }
 /**
- * Populates the ElementAttributes map for the given view, and removes ops for any bindings that do
- * not need further processing.
+ * Extracts an attribute binding.
  */
-function populateElementAttributes(view) {
-    const elements = getElementsByXrefId(view);
-    for (const op of view.ops()) {
-        let ownerOp;
-        switch (op.kind) {
-            case OpKind.Attribute:
-                extractAttributeOp(view, op, elements);
-                break;
-            case OpKind.Property:
-                if (op.isAnimationTrigger) {
-                    continue; // Don't extract animation properties.
-                }
-                ownerOp = lookupElement$2(elements, op.target);
-                assertIsElementAttributes(ownerOp.attributes);
-                ownerOp.attributes.add(op.isTemplate ? BindingKind.Template : BindingKind.Property, op.name, null);
-                break;
-            case OpKind.StyleProp:
-            case OpKind.ClassProp:
-                ownerOp = lookupElement$2(elements, op.target);
-                assertIsElementAttributes(ownerOp.attributes);
-                // Empty StyleProperty and ClassName expressions are treated differently depending on
-                // compatibility mode.
-                if (view.compatibility === CompatibilityMode.TemplateDefinitionBuilder &&
-                    op.expression instanceof EmptyExpr) {
-                    // The old compiler treated empty style bindings as regular bindings for the purpose of
-                    // directive matching. That behavior is incorrect, but we emulate it in compatibility
-                    // mode.
-                    ownerOp.attributes.add(BindingKind.Property, op.name, null);
-                }
-                break;
-            case OpKind.Listener:
-                if (op.isAnimationListener) {
-                    continue; // Don't extract animation listeners.
-                }
-                ownerOp = lookupElement$2(elements, op.target);
-                assertIsElementAttributes(ownerOp.attributes);
-                ownerOp.attributes.add(BindingKind.Property, op.name, null);
-                break;
-        }
-    }
-}
-function isStringLiteral(expr) {
-    return expr instanceof LiteralExpr && typeof expr.value === 'string';
-}
 function extractAttributeOp(view, op, elements) {
     if (op.expression instanceof Interpolation) {
         return;
     }
     const ownerOp = lookupElement$2(elements, op.target);
-    assertIsElementAttributes(ownerOp.attributes);
-    if (op.name === 'style' && isStringLiteral(op.expression)) {
-        // TemplateDefinitionBuilder did not extract style attributes that had a security context.
-        if (view.compatibility === CompatibilityMode.TemplateDefinitionBuilder &&
-            op.securityContext !== SecurityContext.NONE) {
-            return;
+    let extractable = op.expression.isConstant();
+    if (view.compatibility === CompatibilityMode.TemplateDefinitionBuilder) {
+        // TemplateDefinitionBuilder only extracted attributes that were string literals.
+        extractable = isStringLiteral(op.expression);
+        if (op.name === 'style' || op.name === 'class') {
+            // For style and class attributes, TemplateDefinitionBuilder only extracted them if they were
+            // text attributes. For example, `[attr.class]="'my-class'"` was not extracted despite being a
+            // string literal, because it is not a text attribute.
+            extractable &&= op.isTextAttribute;
         }
-        // Extract style attributes.
-        const parsedStyles = parse(op.expression.value);
-        for (let i = 0; i < parsedStyles.length - 1; i += 2) {
-            ownerOp.attributes.add(BindingKind.StyleProperty, parsedStyles[i], literal(parsedStyles[i + 1]));
-        }
-        OpList.remove(op);
     }
-    else {
-        // The old compiler only extracted string constants, so we emulate that behavior in
-        // compaitiblity mode, otherwise we optimize more aggressively.
-        let extractable = view.compatibility === CompatibilityMode.TemplateDefinitionBuilder ?
-            (op.expression instanceof LiteralExpr && typeof op.expression.value === 'string') :
-            op.expression.isConstant();
-        // We don't need to generate instructions for attributes that can be extracted as consts.
-        if (extractable) {
-            ownerOp.attributes.add(op.isTemplate ? BindingKind.Template : BindingKind.Attribute, op.name, op.expression);
-            OpList.remove(op);
-        }
+    if (extractable) {
+        OpList.insertBefore(createExtractedAttributeOp(op.target, op.isTemplate ? BindingKind.Template : BindingKind.Attribute, op.name, op.expression), ownerOp);
+        OpList.remove(op);
     }
 }
 
@@ -10888,7 +10709,7 @@ function phaseBindingSpecialization(job) {
                         target.nonBindable = true;
                     }
                     else {
-                        OpList.replace(op, createAttributeOp(op.target, op.name, op.expression, op.securityContext, op.isTemplate, op.sourceSpan));
+                        OpList.replace(op, createAttributeOp(op.target, op.name, op.expression, op.securityContext, op.isTextAttribute, op.isTemplate, op.sourceSpan));
                     }
                     break;
                 case BindingKind.Property:
@@ -10997,30 +10818,142 @@ function chainOperationsInList(opList) {
     }
 }
 
+var TagContentType;
+(function (TagContentType) {
+    TagContentType[TagContentType["RAW_TEXT"] = 0] = "RAW_TEXT";
+    TagContentType[TagContentType["ESCAPABLE_RAW_TEXT"] = 1] = "ESCAPABLE_RAW_TEXT";
+    TagContentType[TagContentType["PARSABLE_DATA"] = 2] = "PARSABLE_DATA";
+})(TagContentType || (TagContentType = {}));
+function splitNsName(elementName) {
+    if (elementName[0] != ':') {
+        return [null, elementName];
+    }
+    const colonIndex = elementName.indexOf(':', 1);
+    if (colonIndex === -1) {
+        throw new Error(`Unsupported format "${elementName}" expecting ":namespace:name"`);
+    }
+    return [elementName.slice(1, colonIndex), elementName.slice(colonIndex + 1)];
+}
+// `<ng-container>` tags work the same regardless the namespace
+function isNgContainer(tagName) {
+    return splitNsName(tagName)[1] === 'ng-container';
+}
+// `<ng-content>` tags work the same regardless the namespace
+function isNgContent(tagName) {
+    return splitNsName(tagName)[1] === 'ng-content';
+}
+// `<ng-template>` tags work the same regardless the namespace
+function isNgTemplate(tagName) {
+    return splitNsName(tagName)[1] === 'ng-template';
+}
+function getNsPrefix(fullName) {
+    return fullName === null ? null : splitNsName(fullName)[0];
+}
+function mergeNsAndName(prefix, localName) {
+    return prefix ? `:${prefix}:${localName}` : localName;
+}
+
 /**
  * Converts the semantic attributes of element-like operations (elements, templates) into constant
  * array expressions, and lifts them into the overall component `consts`.
  */
 function phaseConstCollection(cpl) {
+    // Collect all extracted attributes.
+    const elementAttributes = new Map();
     for (const [_, view] of cpl.views) {
         for (const op of view.create) {
-            if (op.kind !== OpKind.ElementStart && op.kind !== OpKind.Element &&
-                op.kind !== OpKind.Template) {
-                continue;
+            if (op.kind === OpKind.ExtractedAttribute) {
+                const attributes = elementAttributes.get(op.target) || new ElementAttributes();
+                elementAttributes.set(op.target, attributes);
+                attributes.add(op.bindingKind, op.name, op.expression);
+                OpList.remove(op);
             }
-            else if (!(op.attributes instanceof ElementAttributes)) {
-                continue;
-            }
-            const attrArray = serializeAttributes(op.attributes);
-            if (attrArray.entries.length > 0) {
-                op.attributes = cpl.addConst(attrArray);
-            }
-            else {
-                op.attributes = null;
+        }
+    }
+    // Serialize the extracted attributes into the const array.
+    for (const [_, view] of cpl.views) {
+        for (const op of view.create) {
+            if (op.kind === OpKind.Element || op.kind === OpKind.ElementStart ||
+                op.kind === OpKind.Template) {
+                const attributes = elementAttributes.get(op.xref);
+                if (attributes !== undefined) {
+                    const attrArray = serializeAttributes(attributes);
+                    if (attrArray.entries.length > 0) {
+                        op.attributes = cpl.addConst(attrArray);
+                    }
+                }
             }
         }
     }
 }
+/**
+ * Shared instance of an empty array to avoid unnecessary array allocations.
+ */
+const FLYWEIGHT_ARRAY = Object.freeze([]);
+/**
+ * Container for all of the various kinds of attributes which are applied on an element.
+ */
+class ElementAttributes {
+    constructor() {
+        this.known = new Set();
+        this.byKind = new Map;
+        this.projectAs = null;
+    }
+    get attributes() {
+        return this.byKind.get(BindingKind.Attribute) ?? FLYWEIGHT_ARRAY;
+    }
+    get classes() {
+        return this.byKind.get(BindingKind.ClassName) ?? FLYWEIGHT_ARRAY;
+    }
+    get styles() {
+        return this.byKind.get(BindingKind.StyleProperty) ?? FLYWEIGHT_ARRAY;
+    }
+    get bindings() {
+        return this.byKind.get(BindingKind.Property) ?? FLYWEIGHT_ARRAY;
+    }
+    get template() {
+        return this.byKind.get(BindingKind.Template) ?? FLYWEIGHT_ARRAY;
+    }
+    get i18n() {
+        return this.byKind.get(BindingKind.I18n) ?? FLYWEIGHT_ARRAY;
+    }
+    add(kind, name, value) {
+        if (this.known.has(name)) {
+            return;
+        }
+        this.known.add(name);
+        const array = this.arrayFor(kind);
+        array.push(...getAttributeNameLiterals$1(name));
+        if (kind === BindingKind.Attribute || kind === BindingKind.StyleProperty) {
+            if (value === null) {
+                throw Error('Attribute & style element attributes must have a value');
+            }
+            array.push(value);
+        }
+    }
+    arrayFor(kind) {
+        if (!this.byKind.has(kind)) {
+            this.byKind.set(kind, []);
+        }
+        return this.byKind.get(kind);
+    }
+}
+/**
+ * Gets an array of literal expressions representing the attribute's namespaced name.
+ */
+function getAttributeNameLiterals$1(name) {
+    const [attributeNamespace, attributeName] = splitNsName(name);
+    const nameLiteral = literal(attributeName);
+    if (attributeNamespace) {
+        return [
+            literal(0 /* core.AttributeMarker.NamespaceURI */), literal(attributeNamespace), nameLiteral
+        ];
+    }
+    return [nameLiteral];
+}
+/**
+ * Serializes an ElementAttributes object into an array expression.
+ */
 function serializeAttributes({ attributes, bindings, classes, i18n, projectAs, styles, template }) {
     const attrArray = [...attributes];
     if (projectAs !== null) {
@@ -11426,7 +11359,7 @@ function phaseHostStylePropertyParsing(job) {
             op.bindingKind = BindingKind.StyleProperty;
             op.name = op.name.substring(STYLE_DOT.length);
             if (isCssCustomProperty$1(op.name)) {
-                op.name = hyphenate(op.name);
+                op.name = hyphenate$1(op.name);
             }
             const { property, suffix } = parseProperty$1(op.name);
             op.name = property;
@@ -11449,7 +11382,7 @@ function phaseHostStylePropertyParsing(job) {
 function isCssCustomProperty$1(name) {
     return name.startsWith('--');
 }
-function hyphenate(value) {
+function hyphenate$1(value) {
     return value
         .replace(/[a-z][A-Z]/g, v => {
         return v.charAt(0) + '-' + v.charAt(1);
@@ -11522,6 +11455,85 @@ function phaseNamespace(job) {
             }
         }
     }
+}
+
+/**
+ * Parses string representation of a style and converts it into object literal.
+ *
+ * @param value string representation of style as used in the `style` attribute in HTML.
+ *   Example: `color: red; height: auto`.
+ * @returns An array of style property name and value pairs, e.g. `['color', 'red', 'height',
+ * 'auto']`
+ */
+function parse(value) {
+    // we use a string array here instead of a string map
+    // because a string-map is not guaranteed to retain the
+    // order of the entries whereas a string array can be
+    // constructed in a [key, value, key, value] format.
+    const styles = [];
+    let i = 0;
+    let parenDepth = 0;
+    let quote = 0 /* Char.QuoteNone */;
+    let valueStart = 0;
+    let propStart = 0;
+    let currentProp = null;
+    while (i < value.length) {
+        const token = value.charCodeAt(i++);
+        switch (token) {
+            case 40 /* Char.OpenParen */:
+                parenDepth++;
+                break;
+            case 41 /* Char.CloseParen */:
+                parenDepth--;
+                break;
+            case 39 /* Char.QuoteSingle */:
+                // valueStart needs to be there since prop values don't
+                // have quotes in CSS
+                if (quote === 0 /* Char.QuoteNone */) {
+                    quote = 39 /* Char.QuoteSingle */;
+                }
+                else if (quote === 39 /* Char.QuoteSingle */ && value.charCodeAt(i - 1) !== 92 /* Char.BackSlash */) {
+                    quote = 0 /* Char.QuoteNone */;
+                }
+                break;
+            case 34 /* Char.QuoteDouble */:
+                // same logic as above
+                if (quote === 0 /* Char.QuoteNone */) {
+                    quote = 34 /* Char.QuoteDouble */;
+                }
+                else if (quote === 34 /* Char.QuoteDouble */ && value.charCodeAt(i - 1) !== 92 /* Char.BackSlash */) {
+                    quote = 0 /* Char.QuoteNone */;
+                }
+                break;
+            case 58 /* Char.Colon */:
+                if (!currentProp && parenDepth === 0 && quote === 0 /* Char.QuoteNone */) {
+                    currentProp = hyphenate(value.substring(propStart, i - 1).trim());
+                    valueStart = i;
+                }
+                break;
+            case 59 /* Char.Semicolon */:
+                if (currentProp && valueStart > 0 && parenDepth === 0 && quote === 0 /* Char.QuoteNone */) {
+                    const styleVal = value.substring(valueStart, i - 1).trim();
+                    styles.push(currentProp, styleVal);
+                    propStart = i;
+                    valueStart = 0;
+                    currentProp = null;
+                }
+                break;
+        }
+    }
+    if (currentProp && valueStart) {
+        const styleVal = value.slice(valueStart).trim();
+        styles.push(currentProp, styleVal);
+    }
+    return styles;
+}
+function hyphenate(value) {
+    return value
+        .replace(/[a-z][A-Z]/g, v => {
+        return v.charAt(0) + '-' + v.charAt(1);
+    })
+        .toLowerCase();
 }
 
 const BINARY_OPERATORS = new Map([
@@ -11664,7 +11676,7 @@ function getVariableName(variable, state) {
  * Normalizes a style prop name by hyphenating it (unless its a CSS variable).
  */
 function normalizeStylePropName(name) {
-    return name.startsWith('--') ? name : hyphenate$1(name);
+    return name.startsWith('--') ? name : hyphenate(name);
 }
 /**
  * Strips `!important` out of the given style or class name.
@@ -11842,6 +11854,34 @@ function phaseNullishCoalescing(job) {
                 // `t != null` instead of including an undefined check as well.
                 return new ConditionalExpr(new BinaryOperatorExpr(BinaryOperator.And, new BinaryOperatorExpr(BinaryOperator.NotIdentical, assignment, NULL_EXPR), new BinaryOperatorExpr(BinaryOperator.NotIdentical, read, new LiteralExpr(undefined))), read.clone(), expr.rhs);
             }, VisitorContextFlag.None);
+        }
+    }
+}
+
+/**
+ * Parses extracted style and class attributes into separate ExtractedAttributeOps per style or
+ * class property.
+ */
+function phaseParseExtractedStyles(cpl) {
+    for (const [_, view] of cpl.views) {
+        for (const op of view.create) {
+            if (op.kind === OpKind.ExtractedAttribute && op.bindingKind === BindingKind.Attribute &&
+                isStringLiteral(op.expression)) {
+                if (op.name === 'style') {
+                    const parsedStyles = parse(op.expression.value);
+                    for (let i = 0; i < parsedStyles.length - 1; i += 2) {
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.StyleProperty, parsedStyles[i], literal(parsedStyles[i + 1])), op);
+                    }
+                    OpList.remove(op);
+                }
+                else if (op.name === 'class') {
+                    const parsedClasses = op.expression.value.trim().split(/\s+/g);
+                    for (const parsedClass of parsedClasses) {
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.ClassName, parsedClass, null), op);
+                    }
+                    OpList.remove(op);
+                }
+            }
         }
     }
 }
@@ -13593,6 +13633,7 @@ function transformTemplate(job) {
     phaseStyleBindingSpecialization(job);
     phaseBindingSpecialization(job);
     phaseAttributeExtraction(job);
+    phaseParseExtractedStyles(job);
     phaseRemoveEmptyBindings(job);
     phaseNoListenersOnTemplates(job);
     phasePipeCreation(job);
@@ -13760,7 +13801,7 @@ function ingestComponent(componentName, template, constantPool) {
 function ingestHostBinding(input, bindingParser, constantPool) {
     const job = new HostBindingCompilationJob(input.componentName, constantPool, compatibilityMode);
     for (const property of input.properties ?? []) {
-        ingestHostProperty(job, property);
+        ingestHostProperty(job, property, false);
     }
     for (const event of input.events ?? []) {
         ingestHostEvent(job, event);
@@ -13769,7 +13810,7 @@ function ingestHostBinding(input, bindingParser, constantPool) {
 }
 // TODO: We should refactor the parser to use the same types and structures for host bindings as
 // with ordinary components. This would allow us to share a lot more ingestion code.
-function ingestHostProperty(job, property) {
+function ingestHostProperty(job, property, isTextAttribute) {
     let expression;
     const ast = property.expression.ast;
     if (ast instanceof Interpolation$1) {
@@ -13786,7 +13827,7 @@ function ingestHostProperty(job, property) {
         bindingKind = BindingKind.Attribute;
     }
     job.update.push(createBindingOp(job.root.xref, bindingKind, property.name, expression, null, SecurityContext
-        .NONE /* TODO: what should we pass as security context? Passing NONE for now. */, false, property.sourceSpan));
+        .NONE /* TODO: what should we pass as security context? Passing NONE for now. */, isTextAttribute, false, property.sourceSpan));
 }
 function ingestHostEvent(job, event) { }
 /**
@@ -13964,10 +14005,10 @@ function ingestBindings(view, op, element) {
     if (element instanceof Template) {
         for (const attr of element.templateAttrs) {
             if (attr instanceof TextAttribute) {
-                ingestBinding(view, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, true);
+                ingestBinding(view, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, true, true);
             }
             else {
-                ingestBinding(view, op.xref, attr.name, attr.value, attr.type, attr.unit, attr.securityContext, attr.sourceSpan, true);
+                ingestBinding(view, op.xref, attr.name, attr.value, attr.type, attr.unit, attr.securityContext, attr.sourceSpan, false, true);
             }
         }
     }
@@ -13975,10 +14016,10 @@ function ingestBindings(view, op, element) {
         // This is only attribute TextLiteral bindings, such as `attr.foo="bar"`. This can never be
         // `[attr.foo]="bar"` or `attr.foo="{{bar}}"`, both of which will be handled as inputs with
         // `BindingType.Attribute`.
-        ingestBinding(view, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, false);
+        ingestBinding(view, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, true, false);
     }
     for (const input of element.inputs) {
-        ingestBinding(view, op.xref, input.name, input.value, input.type, input.unit, input.securityContext, input.sourceSpan, false);
+        ingestBinding(view, op.xref, input.name, input.value, input.type, input.unit, input.securityContext, input.sourceSpan, false, false);
     }
     for (const output of element.outputs) {
         let listenerOp;
@@ -14024,7 +14065,7 @@ const BINDING_KINDS = new Map([
     [3 /* e.BindingType.Style */, BindingKind.StyleProperty],
     [4 /* e.BindingType.Animation */, BindingKind.Animation],
 ]);
-function ingestBinding(view, xref, name, value, type, unit, securityContext, sourceSpan, isTemplateBinding) {
+function ingestBinding(view, xref, name, value, type, unit, securityContext, sourceSpan, isTextAttribute, isTemplateBinding) {
     if (value instanceof ASTWithSource) {
         value = value.ast;
     }
@@ -14039,7 +14080,7 @@ function ingestBinding(view, xref, name, value, type, unit, securityContext, sou
         expression = value;
     }
     const kind = BINDING_KINDS.get(type);
-    view.update.push(createBindingOp(xref, kind, name, expression, unit, securityContext, isTemplateBinding, sourceSpan));
+    view.update.push(createBindingOp(xref, kind, name, expression, unit, securityContext, isTextAttribute, isTemplateBinding, sourceSpan));
 }
 /**
  * Process all of the local references on an element-like structure in the template AST and
@@ -14234,7 +14275,7 @@ class StylingBuilder {
         // CSS custom properties are case-sensitive so we shouldn't normalize them.
         // See: https://www.w3.org/TR/css-variables-1/#defining-variables
         if (!isCssCustomProperty(name)) {
-            name = hyphenate$1(name);
+            name = hyphenate(name);
         }
         const { property, hasOverrideFlag, suffix: bindingSuffix } = parseProperty(name);
         suffix = typeof suffix === 'string' && suffix.length !== 0 ? suffix : bindingSuffix;
@@ -26331,7 +26372,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.3.0-next.0+sha-5aeed1f');
+const VERSION = new Version('16.3.0-next.0+sha-74974f8');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -28374,7 +28415,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.3.0-next.0+sha-5aeed1f'));
+    definitionMap.set('version', literal('16.3.0-next.0+sha-74974f8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -28477,7 +28518,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.3.0-next.0+sha-5aeed1f'));
+    definitionMap.set('version', literal('16.3.0-next.0+sha-74974f8'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -28705,7 +28746,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.3.0-next.0+sha-5aeed1f'));
+    definitionMap.set('version', literal('16.3.0-next.0+sha-74974f8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28740,7 +28781,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.3.0-next.0+sha-5aeed1f'));
+    definitionMap.set('version', literal('16.3.0-next.0+sha-74974f8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -28791,7 +28832,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.3.0-next.0+sha-5aeed1f'));
+    definitionMap.set('version', literal('16.3.0-next.0+sha-74974f8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -28824,7 +28865,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.3.0-next.0+sha-5aeed1f'));
+    definitionMap.set('version', literal('16.3.0-next.0+sha-74974f8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -28875,7 +28916,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.3.0-next.0+sha-5aeed1f'));
+    definitionMap.set('version', literal('16.3.0-next.0+sha-74974f8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
