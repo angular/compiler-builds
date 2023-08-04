@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.3.0-next.0+sha-74974f8
+ * @license Angular v16.3.0-next.0+sha-b1f9609
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -977,6 +977,16 @@ export declare interface DeferBlockTemplateDependency {
      * Import path where this dependency is located.
      */
     importPath: string | null;
+}
+
+declare interface DeferredBlockTriggers {
+    when?: TmplAstBoundDeferredTrigger;
+    idle?: TmplAstIdleDeferredTrigger;
+    immediate?: TmplAstImmediateDeferredTrigger;
+    hover?: TmplAstHoverDeferredTrigger;
+    timer?: TmplAstTimerDeferredTrigger;
+    interaction?: TmplAstInteractionDeferredTrigger;
+    viewport?: TmplAstViewportDeferredTrigger;
 }
 
 export declare function devOnlyGuardedExpression(expr: outputAst.Expression): outputAst.Expression;
@@ -4460,6 +4470,7 @@ declare namespace t {
         TmplAstDeferredBlockPlaceholder as DeferredBlockPlaceholder,
         TmplAstDeferredBlockLoading as DeferredBlockLoading,
         TmplAstDeferredBlockError as DeferredBlockError,
+        DeferredBlockTriggers,
         TmplAstDeferredBlock as DeferredBlock,
         TmplAstTemplate as Template,
         TmplAstContent as Content,
@@ -4670,16 +4681,20 @@ export declare class TmplAstContent implements TmplAstNode {
 
 export declare class TmplAstDeferredBlock implements TmplAstNode {
     children: TmplAstNode[];
-    triggers: TmplAstDeferredTrigger[];
-    prefetchTriggers: TmplAstDeferredTrigger[];
     placeholder: TmplAstDeferredBlockPlaceholder | null;
     loading: TmplAstDeferredBlockLoading | null;
     error: TmplAstDeferredBlockError | null;
     sourceSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
-    constructor(children: TmplAstNode[], triggers: TmplAstDeferredTrigger[], prefetchTriggers: TmplAstDeferredTrigger[], placeholder: TmplAstDeferredBlockPlaceholder | null, loading: TmplAstDeferredBlockLoading | null, error: TmplAstDeferredBlockError | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
+    readonly triggers: Readonly<DeferredBlockTriggers>;
+    readonly prefetchTriggers: Readonly<DeferredBlockTriggers>;
+    private readonly definedTriggers;
+    private readonly definedPrefetchTriggers;
+    constructor(children: TmplAstNode[], triggers: DeferredBlockTriggers, prefetchTriggers: DeferredBlockTriggers, placeholder: TmplAstDeferredBlockPlaceholder | null, loading: TmplAstDeferredBlockLoading | null, error: TmplAstDeferredBlockError | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
     visit<Result>(visitor: Visitor_3<Result>): Result;
+    visitAll(visitor: Visitor_3<unknown>): void;
+    private visitTriggers;
 }
 
 export declare class TmplAstDeferredBlockError implements TmplAstNode {
