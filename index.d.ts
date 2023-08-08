@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.3.0-next.0+sha-91ea1ba
+ * @license Angular v16.3.0-next.0+sha-1eda1bd
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -907,7 +907,8 @@ export declare const enum DeclarationListEmitMode {
      * directives: function () { return [dirA, dirB].map(ng.resolveForwardRef); },
      * ```
      */
-    ClosureResolved = 2
+    ClosureResolved = 2,
+    RuntimeResolved = 3
 }
 
 export declare interface DeclareComponentTemplateInfo {
@@ -2899,6 +2900,12 @@ export declare interface R3ComponentMetadata<DeclarationT extends R3TemplateDepe
      * Strategy used for detecting changes in the component.
      */
     changeDetection?: ChangeDetectionStrategy;
+    /**
+     * The imports expression as appears on the component decorate for standalone component. This
+     * field is currently needed only for local compilation, and so in other compilation modes it may
+     * not be set. If component has empty array imports then this field is not set.
+     */
+    rawImports?: outputAst.Expression;
 }
 
 /**
@@ -3744,6 +3751,7 @@ export declare class R3Identifiers {
     static resolveWindow: outputAst.ExternalReference;
     static resolveDocument: outputAst.ExternalReference;
     static resolveBody: outputAst.ExternalReference;
+    static getComponentDepsFactory: outputAst.ExternalReference;
     static defineComponent: outputAst.ExternalReference;
     static declareComponent: outputAst.ExternalReference;
     static setComponentScope: outputAst.ExternalReference;
