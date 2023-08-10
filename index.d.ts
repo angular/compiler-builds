@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.3.0-next.0+sha-4e22a39
+ * @license Angular v16.3.0-next.0+sha-36b180a
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4480,6 +4480,12 @@ declare namespace t {
         TmplAstDeferredBlockError as DeferredBlockError,
         DeferredBlockTriggers,
         TmplAstDeferredBlock as DeferredBlock,
+        TmplAstSwitchBlock as SwitchBlock,
+        TmplAstSwitchBlockCase as SwitchBlockCase,
+        TmplAstForLoopBlock as ForLoopBlock,
+        TmplAstForLoopBlockEmpty as ForLoopBlockEmpty,
+        TmplAstIfBlock as IfBlock,
+        TmplAstIfBlockBranch as IfBlockBranch,
         TmplAstTemplate as Template,
         TmplAstContent as Content,
         TmplAstVariable as Variable,
@@ -4756,6 +4762,27 @@ export declare class TmplAstElement implements TmplAstNode {
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
+export declare class TmplAstForLoopBlock implements TmplAstNode {
+    itemName: string;
+    expression: AST;
+    trackBy: string;
+    children: TmplAstNode[];
+    empty: TmplAstForLoopBlockEmpty | null;
+    sourceSpan: ParseSourceSpan;
+    startSourceSpan: ParseSourceSpan;
+    endSourceSpan: ParseSourceSpan | null;
+    constructor(itemName: string, expression: AST, trackBy: string, children: TmplAstNode[], empty: TmplAstForLoopBlockEmpty | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
+    visit<Result>(visitor: Visitor_3<Result>): Result;
+}
+
+export declare class TmplAstForLoopBlockEmpty implements TmplAstNode {
+    children: TmplAstNode[];
+    sourceSpan: ParseSourceSpan;
+    startSourceSpan: ParseSourceSpan;
+    constructor(children: TmplAstNode[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan);
+    visit<Result>(visitor: Visitor_3<Result>): Result;
+}
+
 export declare class TmplAstHoverDeferredTrigger extends TmplAstDeferredTrigger {
 }
 
@@ -4779,6 +4806,25 @@ export declare class TmplAstIcu implements TmplAstNode {
 export declare class TmplAstIdleDeferredTrigger extends TmplAstDeferredTrigger {
 }
 
+export declare class TmplAstIfBlock implements TmplAstNode {
+    branches: TmplAstIfBlockBranch[];
+    sourceSpan: ParseSourceSpan;
+    startSourceSpan: ParseSourceSpan;
+    endSourceSpan: ParseSourceSpan | null;
+    constructor(branches: TmplAstIfBlockBranch[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
+    visit<Result>(visitor: Visitor_3<Result>): Result;
+}
+
+export declare class TmplAstIfBlockBranch implements TmplAstNode {
+    expression: AST | null;
+    children: TmplAstNode[];
+    expressionAlias: string | null;
+    sourceSpan: ParseSourceSpan;
+    startSourceSpan: ParseSourceSpan;
+    constructor(expression: AST | null, children: TmplAstNode[], expressionAlias: string | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan);
+    visit<Result>(visitor: Visitor_3<Result>): Result;
+}
+
 export declare class TmplAstImmediateDeferredTrigger extends TmplAstDeferredTrigger {
 }
 
@@ -4799,6 +4845,12 @@ export declare class TmplAstRecursiveVisitor implements Visitor_3<void> {
     visitDeferredBlockPlaceholder(block: TmplAstDeferredBlockPlaceholder): void;
     visitDeferredBlockError(block: TmplAstDeferredBlockError): void;
     visitDeferredBlockLoading(block: TmplAstDeferredBlockLoading): void;
+    visitSwitchBlock(block: TmplAstSwitchBlock): void;
+    visitSwitchBlockCase(block: TmplAstSwitchBlockCase): void;
+    visitForLoopBlock(block: TmplAstForLoopBlock): void;
+    visitForLoopBlockEmpty(block: TmplAstForLoopBlockEmpty): void;
+    visitIfBlock(block: TmplAstIfBlock): void;
+    visitIfBlockBranch(block: TmplAstIfBlockBranch): void;
     visitContent(content: TmplAstContent): void;
     visitVariable(variable: TmplAstVariable): void;
     visitReference(reference: TmplAstReference): void;
@@ -4818,6 +4870,25 @@ export declare class TmplAstReference implements TmplAstNode {
     readonly keySpan: ParseSourceSpan;
     valueSpan?: ParseSourceSpan | undefined;
     constructor(name: string, value: string, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined);
+    visit<Result>(visitor: Visitor_3<Result>): Result;
+}
+
+export declare class TmplAstSwitchBlock implements TmplAstNode {
+    expression: AST;
+    cases: TmplAstSwitchBlockCase[];
+    sourceSpan: ParseSourceSpan;
+    startSourceSpan: ParseSourceSpan;
+    endSourceSpan: ParseSourceSpan | null;
+    constructor(expression: AST, cases: TmplAstSwitchBlockCase[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
+    visit<Result>(visitor: Visitor_3<Result>): Result;
+}
+
+export declare class TmplAstSwitchBlockCase implements TmplAstNode {
+    expression: AST | null;
+    children: TmplAstNode[];
+    sourceSpan: ParseSourceSpan;
+    startSourceSpan: ParseSourceSpan;
+    constructor(expression: AST | null, children: TmplAstNode[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan);
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
@@ -5204,6 +5275,12 @@ declare interface Visitor_3<Result = any> {
     visitDeferredBlockError(block: TmplAstDeferredBlockError): Result;
     visitDeferredBlockLoading(block: TmplAstDeferredBlockLoading): Result;
     visitDeferredTrigger(trigger: TmplAstDeferredTrigger): Result;
+    visitSwitchBlock(block: TmplAstSwitchBlock): Result;
+    visitSwitchBlockCase(block: TmplAstSwitchBlockCase): Result;
+    visitForLoopBlock(block: TmplAstForLoopBlock): Result;
+    visitForLoopBlockEmpty(block: TmplAstForLoopBlockEmpty): Result;
+    visitIfBlock(block: TmplAstIfBlock): Result;
+    visitIfBlockBranch(block: TmplAstIfBlockBranch): Result;
 }
 
 export declare class WrappedNodeExpr<T> extends Expression {

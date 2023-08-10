@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.3.0-next.0+sha-4e22a39
+ * @license Angular v16.3.0-next.0+sha-36b180a
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4014,6 +4014,79 @@ class DeferredBlock {
         }
     }
 }
+class SwitchBlock {
+    constructor(expression, cases, sourceSpan, startSourceSpan, endSourceSpan) {
+        this.expression = expression;
+        this.cases = cases;
+        this.sourceSpan = sourceSpan;
+        this.startSourceSpan = startSourceSpan;
+        this.endSourceSpan = endSourceSpan;
+    }
+    visit(visitor) {
+        return visitor.visitSwitchBlock(this);
+    }
+}
+class SwitchBlockCase {
+    constructor(expression, children, sourceSpan, startSourceSpan) {
+        this.expression = expression;
+        this.children = children;
+        this.sourceSpan = sourceSpan;
+        this.startSourceSpan = startSourceSpan;
+    }
+    visit(visitor) {
+        return visitor.visitSwitchBlockCase(this);
+    }
+}
+class ForLoopBlock {
+    constructor(itemName, expression, 
+    // TODO(crisbeto): figure out if trackBy should be an AST
+    trackBy, children, empty, sourceSpan, startSourceSpan, endSourceSpan) {
+        this.itemName = itemName;
+        this.expression = expression;
+        this.trackBy = trackBy;
+        this.children = children;
+        this.empty = empty;
+        this.sourceSpan = sourceSpan;
+        this.startSourceSpan = startSourceSpan;
+        this.endSourceSpan = endSourceSpan;
+    }
+    visit(visitor) {
+        return visitor.visitForLoopBlock(this);
+    }
+}
+class ForLoopBlockEmpty {
+    constructor(children, sourceSpan, startSourceSpan) {
+        this.children = children;
+        this.sourceSpan = sourceSpan;
+        this.startSourceSpan = startSourceSpan;
+    }
+    visit(visitor) {
+        return visitor.visitForLoopBlockEmpty(this);
+    }
+}
+class IfBlock {
+    constructor(branches, sourceSpan, startSourceSpan, endSourceSpan) {
+        this.branches = branches;
+        this.sourceSpan = sourceSpan;
+        this.startSourceSpan = startSourceSpan;
+        this.endSourceSpan = endSourceSpan;
+    }
+    visit(visitor) {
+        return visitor.visitIfBlock(this);
+    }
+}
+class IfBlockBranch {
+    constructor(expression, children, expressionAlias, sourceSpan, startSourceSpan) {
+        this.expression = expression;
+        this.children = children;
+        this.expressionAlias = expressionAlias;
+        this.sourceSpan = sourceSpan;
+        this.startSourceSpan = startSourceSpan;
+    }
+    visit(visitor) {
+        return visitor.visitIfBlockBranch(this);
+    }
+}
 class Template {
     constructor(
     // tagName is the name of the container element, if applicable.
@@ -4111,6 +4184,25 @@ class RecursiveVisitor$1 {
         visitAll$1(this, block.children);
     }
     visitDeferredBlockLoading(block) {
+        visitAll$1(this, block.children);
+    }
+    visitSwitchBlock(block) {
+        visitAll$1(this, block.cases);
+    }
+    visitSwitchBlockCase(block) {
+        visitAll$1(this, block.children);
+    }
+    visitForLoopBlock(block) {
+        visitAll$1(this, block.children);
+        block.empty?.visit(this);
+    }
+    visitForLoopBlockEmpty(block) {
+        visitAll$1(this, block.children);
+    }
+    visitIfBlock(block) {
+        visitAll$1(this, block.branches);
+    }
+    visitIfBlockBranch(block) {
         visitAll$1(this, block.children);
     }
     visitContent(content) { }
@@ -21355,6 +21447,285 @@ function normalizeNgContentSelect(selectAttr) {
     return selectAttr;
 }
 
+/** Pattern for the expression in a for loop block. */
+const FOR_LOOP_EXPRESSION_PATTERN = /^\s*([0-9A-Za-z_$]*)\s+of\s+(.*)/;
+/** Pattern for the tracking expression in a for loop block. */
+const FOR_LOOP_TRACK_PATTERN = /^track\s+(.*)/;
+/** Pattern for the `as` expression in a conditional block. */
+const CONDITIONAL_ALIAS_PATTERN = /^as\s+(.*)/;
+/** Pattern used to identify an `else if` block. */
+const ELSE_IF_PATTERN = /^if\s/;
+/** Creates an `if` loop block from an HTML AST node. */
+function createIfBlock(ast, visitor, bindingParser) {
+    const errors = validateIfBlock(ast);
+    const branches = [];
+    if (errors.length > 0) {
+        return { node: null, errors };
+    }
+    // Assumes that the structure is valid since we validated it above.
+    for (const block of ast.blocks) {
+        const children = visitAll(visitor, block.children);
+        // `{:else}` block.
+        if (block.name === 'else' && block.parameters.length === 0) {
+            branches.push(new IfBlockBranch(null, children, null, block.sourceSpan, block.startSourceSpan));
+            continue;
+        }
+        // Expressions for `{:else if}` blocks start at 2 to skip the `if` from the expression.
+        const expressionStart = block.name === 'if' ? 0 : 2;
+        const params = parseConditionalBlockParameters(block, errors, bindingParser, expressionStart);
+        if (params !== null) {
+            branches.push(new IfBlockBranch(params.expression, children, params.expressionAlias, block.sourceSpan, block.startSourceSpan));
+        }
+    }
+    return {
+        node: new IfBlock(branches, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan),
+        errors,
+    };
+}
+/** Creates a `for` loop block from an HTML AST node. */
+function createForLoop(ast, visitor, bindingParser) {
+    const [primaryBlock, ...secondaryBlocks] = ast.blocks;
+    const errors = [];
+    const params = parseForLoopParameters(primaryBlock, errors, bindingParser);
+    let node = null;
+    let empty = null;
+    for (const block of secondaryBlocks) {
+        if (block.name === 'empty') {
+            if (empty !== null) {
+                errors.push(new ParseError(block.sourceSpan, 'For loop can only have one "empty" block'));
+            }
+            else if (block.parameters.length > 0) {
+                errors.push(new ParseError(block.sourceSpan, 'Empty block cannot have parameters'));
+            }
+            else {
+                empty = new ForLoopBlockEmpty(visitAll(visitor, block.children), block.sourceSpan, block.startSourceSpan);
+            }
+        }
+        else {
+            errors.push(new ParseError(block.sourceSpan, `Unrecognized loop block "${block.name}"`));
+        }
+    }
+    if (params !== null) {
+        if (params.trackBy === null) {
+            errors.push(new ParseError(ast.sourceSpan, 'For loop must have a "track" expression'));
+        }
+        else {
+            node = new ForLoopBlock(params.itemName, params.expression, params.trackBy, visitAll(visitor, primaryBlock.children), empty, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
+        }
+    }
+    return { node, errors };
+}
+/** Creates a switch block from an HTML AST node. */
+function createSwitchBlock(ast, visitor, bindingParser) {
+    const [primaryBlock, ...secondaryBlocks] = ast.blocks;
+    const errors = validateSwitchBlock(ast);
+    if (errors.length > 0) {
+        return { node: null, errors };
+    }
+    const primaryExpression = parseBlockParameterToBinding(primaryBlock.parameters[0], bindingParser);
+    const cases = [];
+    let defaultCase = null;
+    // Here we assume that all the blocks are valid given that we validated them above.
+    for (const block of secondaryBlocks) {
+        const expression = block.name === 'case' ?
+            parseBlockParameterToBinding(block.parameters[0], bindingParser) :
+            null;
+        const ast = new SwitchBlockCase(expression, visitAll(visitor, block.children), block.sourceSpan, block.startSourceSpan);
+        if (expression === null) {
+            defaultCase = ast;
+        }
+        else {
+            cases.push(ast);
+        }
+    }
+    // Ensure that the default case is last in the array.
+    if (defaultCase !== null) {
+        cases.push(defaultCase);
+    }
+    return {
+        node: new SwitchBlock(primaryExpression, cases, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan),
+        errors
+    };
+}
+/** Parses the parameters of a `for` loop block. */
+function parseForLoopParameters(block, errors, bindingParser) {
+    if (block.parameters.length === 0) {
+        errors.push(new ParseError(block.sourceSpan, 'For loop does not have an expression'));
+        return null;
+    }
+    const [expressionParam, ...secondaryParams] = block.parameters;
+    const match = stripOptionalParentheses(expressionParam, errors)?.match(FOR_LOOP_EXPRESSION_PATTERN);
+    if (!match || match[2].trim().length === 0) {
+        errors.push(new ParseError(expressionParam.sourceSpan, 'Cannot parse expression. For loop expression must match the pattern "<identifier> of <expression>"'));
+        return null;
+    }
+    const [, itemName, rawExpression] = match;
+    const result = {
+        itemName,
+        trackBy: null,
+        expression: bindingParser.parseBinding(rawExpression, false, expressionParam.sourceSpan, 
+        // Note: `lastIndexOf` here should be enough to know the start index of the expression,
+        // because we know that it'll be the last matching group. Ideally we could use the `d`
+        // flag on the regex and get the index from `match.indices`, but it's unclear if we can
+        // use it yet since it's a relatively new feature. See:
+        // https://github.com/tc39/proposal-regexp-match-indices
+        Math.max(0, expressionParam.expression.lastIndexOf(rawExpression)))
+    };
+    for (const param of secondaryParams) {
+        const trackMatch = param.expression.match(FOR_LOOP_TRACK_PATTERN);
+        // For now loops can only have a `track` parameter.
+        // We may want to rework this later if we add more.
+        if (trackMatch === null) {
+            errors.push(new ParseError(param.sourceSpan, `Unrecognized loop paramater "${param.expression}"`));
+        }
+        else if (result.trackBy !== null) {
+            errors.push(new ParseError(param.sourceSpan, 'For loop can only have one "track" expression'));
+        }
+        else {
+            result.trackBy = trackMatch[1].trim();
+        }
+    }
+    return result;
+}
+/** Checks that the shape of a `if` block is valid. Returns an array of errors. */
+function validateIfBlock(ast) {
+    const errors = [];
+    let hasElse = false;
+    for (let i = 0; i < ast.blocks.length; i++) {
+        const block = ast.blocks[i];
+        // Conditional blocks only allow `if`, `else if` and `else` blocks.
+        if ((block.name !== 'if' || i > 0) && block.name !== 'else') {
+            errors.push(new ParseError(block.sourceSpan, `Unrecognized conditional block "${block.name}"`));
+            continue;
+        }
+        if (block.name === 'if') {
+            continue;
+        }
+        if (block.parameters.length === 0) {
+            if (hasElse) {
+                errors.push(new ParseError(block.sourceSpan, 'Conditional can only have one "else" block'));
+            }
+            else if (ast.blocks.length > 1 && i < ast.blocks.length - 1) {
+                errors.push(new ParseError(block.sourceSpan, 'Else block must be last inside the conditional'));
+            }
+            hasElse = true;
+            // `else if` is an edge case, because it has a space after the block name
+            // which means that the `if` is captured as a part of the parameters.
+        }
+        else if (block.parameters.length > 0 && !ELSE_IF_PATTERN.test(block.parameters[0].expression)) {
+            errors.push(new ParseError(block.sourceSpan, 'Else block cannot have parameters'));
+        }
+    }
+    return errors;
+}
+/** Checks that the shape of a `switch` block is valid. Returns an array of errors. */
+function validateSwitchBlock(ast) {
+    const [primaryBlock, ...secondaryBlocks] = ast.blocks;
+    const errors = [];
+    let hasDefault = false;
+    if (primaryBlock.children.length > 0) {
+        errors.push(new ParseError(primaryBlock.sourceSpan, 'Switch block can only contain "case" and "default" blocks'));
+    }
+    if (primaryBlock.parameters.length !== 1) {
+        errors.push(new ParseError(primaryBlock.sourceSpan, 'Switch block must have exactly one parameter'));
+    }
+    for (const block of secondaryBlocks) {
+        if (block.name === 'case') {
+            if (block.parameters.length !== 1) {
+                errors.push(new ParseError(block.sourceSpan, 'Case block must have exactly one parameter'));
+            }
+        }
+        else if (block.name === 'default') {
+            if (hasDefault) {
+                errors.push(new ParseError(block.sourceSpan, 'Switch block can only have one "default" block'));
+            }
+            else if (block.parameters.length > 0) {
+                errors.push(new ParseError(block.sourceSpan, 'Default block cannot have parameters'));
+            }
+            hasDefault = true;
+        }
+        else {
+            errors.push(new ParseError(block.sourceSpan, 'Switch block can only contain "case" and "default" blocks'));
+        }
+    }
+    return errors;
+}
+/** Parses a block parameter into a binding AST. */
+function parseBlockParameterToBinding(ast, bindingParser, start = 0) {
+    return bindingParser.parseBinding(ast.expression.slice(start), false, ast.sourceSpan, ast.sourceSpan.start.offset + start);
+}
+/** Parses the parameter of a conditional block (`if` or `else if`). */
+function parseConditionalBlockParameters(block, errors, bindingParser, primaryExpressionStart) {
+    if (block.parameters.length === 0) {
+        errors.push(new ParseError(block.sourceSpan, 'Conditional block does not have an expression'));
+        return null;
+    }
+    const expression = parseBlockParameterToBinding(block.parameters[0], bindingParser, primaryExpressionStart);
+    let expressionAlias = null;
+    // Start from 1 since we processed the first parameter already.
+    for (let i = 1; i < block.parameters.length; i++) {
+        const param = block.parameters[i];
+        const aliasMatch = param.expression.match(CONDITIONAL_ALIAS_PATTERN);
+        // For now conditionals can only have an `as` parameter.
+        // We may want to rework this later if we add more.
+        if (aliasMatch === null) {
+            errors.push(new ParseError(param.sourceSpan, `Unrecognized conditional paramater "${param.expression}"`));
+        }
+        else if (expressionAlias !== null) {
+            errors.push(new ParseError(param.sourceSpan, 'Conditional can only have one "as" expression'));
+        }
+        else {
+            expressionAlias = aliasMatch[1].trim();
+        }
+    }
+    return { expression, expressionAlias };
+}
+/** Strips optional parentheses around from a control from expression parameter. */
+function stripOptionalParentheses(param, errors) {
+    const expression = param.expression;
+    const spaceRegex = /^\s$/;
+    let openParens = 0;
+    let start = 0;
+    let end = expression.length - 1;
+    for (let i = 0; i < expression.length; i++) {
+        const char = expression[i];
+        if (char === '(') {
+            start = i + 1;
+            openParens++;
+        }
+        else if (spaceRegex.test(char)) {
+            continue;
+        }
+        else {
+            break;
+        }
+    }
+    if (openParens === 0) {
+        return expression;
+    }
+    for (let i = expression.length - 1; i > -1; i--) {
+        const char = expression[i];
+        if (char === ')') {
+            end = i;
+            openParens--;
+            if (openParens === 0) {
+                break;
+            }
+        }
+        else if (spaceRegex.test(char)) {
+            continue;
+        }
+        else {
+            break;
+        }
+    }
+    if (openParens !== 0) {
+        errors.push(new ParseError(param.sourceSpan, 'Unclosed parentheses in expression'));
+        return null;
+    }
+    return expression.slice(start, end);
+}
+
 /** Pattern for a timing value in a trigger. */
 const TIME_PATTERN = /^\d+(ms|s)?$/;
 /** Pattern for a separator between keywords in a trigger expression. */
@@ -22022,13 +22393,33 @@ class HtmlAstToIvyAst {
             this.reportError('Block group must have at least one block.', group.sourceSpan);
             return null;
         }
-        if (primaryBlock.name === 'defer' && this.options.enabledBlockTypes.has(primaryBlock.name)) {
-            const { node, errors } = createDeferredBlock(group, this, this.bindingParser);
-            this.errors.push(...errors);
-            return node;
+        if (!this.options.enabledBlockTypes.has(primaryBlock.name)) {
+            this.reportError(`Unrecognized block "${primaryBlock.name}".`, primaryBlock.sourceSpan);
+            return null;
         }
-        this.reportError(`Unrecognized block "${primaryBlock.name}".`, primaryBlock.sourceSpan);
-        return null;
+        let result = null;
+        switch (primaryBlock.name) {
+            case 'defer':
+                result = createDeferredBlock(group, this, this.bindingParser);
+                break;
+            case 'switch':
+                result = createSwitchBlock(group, this, this.bindingParser);
+                break;
+            case 'for':
+                result = createForLoop(group, this, this.bindingParser);
+                break;
+            case 'if':
+                result = createIfBlock(group, this, this.bindingParser);
+                break;
+            default:
+                result = {
+                    node: null,
+                    errors: [new ParseError(primaryBlock.sourceSpan, `Unrecognized block "${primaryBlock.name}".`)]
+                };
+                break;
+        }
+        this.errors.push(...result.errors);
+        return result.node;
     }
     visitBlock(block, context) { }
     visitBlockParameter(parameter, context) { }
@@ -24116,6 +24507,13 @@ class TemplateDefinitionBuilder {
     visitDeferredBlockPlaceholder(block) { }
     visitDeferredBlockError(block) { }
     visitDeferredBlockLoading(block) { }
+    // TODO: implement control flow instructions
+    visitSwitchBlock(block) { }
+    visitSwitchBlockCase(block) { }
+    visitForLoopBlock(block) { }
+    visitForLoopBlockEmpty(block) { }
+    visitIfBlock(block) { }
+    visitIfBlockBranch(block) { }
     allocateDataSlot() {
         return this._dataIndex++;
     }
@@ -26416,7 +26814,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.3.0-next.0+sha-4e22a39');
+const VERSION = new Version('16.3.0-next.0+sha-36b180a');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -27976,6 +28374,25 @@ class Scope {
     visitDeferredBlockLoading(block) {
         block.children.forEach(node => node.visit(this));
     }
+    visitSwitchBlock(block) {
+        block.cases.forEach(node => node.visit(this));
+    }
+    visitSwitchBlockCase(block) {
+        block.children.forEach(node => node.visit(this));
+    }
+    visitForLoopBlock(block) {
+        block.children.forEach(node => node.visit(this));
+        block.empty?.visit(this);
+    }
+    visitForLoopBlockEmpty(block) {
+        block.children.forEach(node => node.visit(this));
+    }
+    visitIfBlock(block) {
+        block.branches.forEach(node => node.visit(this));
+    }
+    visitIfBlockBranch(block) {
+        block.children.forEach(node => node.visit(this));
+    }
     // Unused visitors.
     visitContent(content) { }
     visitBoundAttribute(attr) { }
@@ -28147,6 +28564,25 @@ class DirectiveBinder {
     visitDeferredBlockLoading(block) {
         block.children.forEach(child => child.visit(this));
     }
+    visitSwitchBlock(block) {
+        block.cases.forEach(node => node.visit(this));
+    }
+    visitSwitchBlockCase(block) {
+        block.children.forEach(node => node.visit(this));
+    }
+    visitForLoopBlock(block) {
+        block.children.forEach(node => node.visit(this));
+        block.empty?.visit(this);
+    }
+    visitForLoopBlockEmpty(block) {
+        block.children.forEach(node => node.visit(this));
+    }
+    visitIfBlock(block) {
+        block.branches.forEach(node => node.visit(this));
+    }
+    visitIfBlockBranch(block) {
+        block.children.forEach(node => node.visit(this));
+    }
     // Unused visitors.
     visitContent(content) { }
     visitVariable(variable) { }
@@ -28305,6 +28741,29 @@ class TemplateBinder extends RecursiveAstVisitor {
     visitDeferredBlockLoading(block) {
         block.children.forEach(this.visitNode);
     }
+    visitSwitchBlock(block) {
+        block.expression.visit(this);
+        block.cases.forEach(this.visitNode);
+    }
+    visitSwitchBlockCase(block) {
+        block.expression?.visit(this);
+        block.children.forEach(this.visitNode);
+    }
+    visitForLoopBlock(block) {
+        block.expression.visit(this);
+        block.children.forEach(this.visitNode);
+        block.empty?.visit(this);
+    }
+    visitForLoopBlockEmpty(block) {
+        block.children.forEach(this.visitNode);
+    }
+    visitIfBlock(block) {
+        block.branches.forEach(node => node.visit(this));
+    }
+    visitIfBlockBranch(block) {
+        block.expression?.visit(this);
+        block.children.forEach(node => node.visit(this));
+    }
     visitBoundText(text) {
         text.value.visit(this);
     }
@@ -28459,7 +28918,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.3.0-next.0+sha-4e22a39'));
+    definitionMap.set('version', literal('16.3.0-next.0+sha-36b180a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -28562,7 +29021,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.3.0-next.0+sha-4e22a39'));
+    definitionMap.set('version', literal('16.3.0-next.0+sha-36b180a'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -28793,7 +29252,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.3.0-next.0+sha-4e22a39'));
+    definitionMap.set('version', literal('16.3.0-next.0+sha-36b180a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28828,7 +29287,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.3.0-next.0+sha-4e22a39'));
+    definitionMap.set('version', literal('16.3.0-next.0+sha-36b180a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -28879,7 +29338,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.3.0-next.0+sha-4e22a39'));
+    definitionMap.set('version', literal('16.3.0-next.0+sha-36b180a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -28912,7 +29371,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.3.0-next.0+sha-4e22a39'));
+    definitionMap.set('version', literal('16.3.0-next.0+sha-36b180a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -28963,7 +29422,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.3.0-next.0+sha-4e22a39'));
+    definitionMap.set('version', literal('16.3.0-next.0+sha-36b180a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -28996,5 +29455,5 @@ publishFacade(_global);
 
 // This file is not used to build this module. It is only used during editing
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, Block, BlockGroup, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, Block, BlockGroup, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
