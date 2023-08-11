@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.0+sha-f3f97f0
+ * @license Angular v17.0.0-next.0+sha-5212b47
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2614,6 +2614,20 @@ class Identifiers {
     static { this.resetView = { name: 'ɵɵresetView', moduleName: CORE }; }
     static { this.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE }; }
     static { this.defer = { name: 'ɵɵdefer', moduleName: CORE }; }
+    static { this.deferWhen = { name: 'ɵɵdeferWhen', moduleName: CORE }; }
+    static { this.deferOnIdle = { name: 'ɵɵdeferOnIdle', moduleName: CORE }; }
+    static { this.deferOnImmediate = { name: 'ɵɵdeferOnImmediate', moduleName: CORE }; }
+    static { this.deferOnTimer = { name: 'ɵɵdeferOnTimer', moduleName: CORE }; }
+    static { this.deferOnHover = { name: 'ɵɵdeferOnHover', moduleName: CORE }; }
+    static { this.deferOnInteraction = { name: 'ɵɵdeferOnInteraction', moduleName: CORE }; }
+    static { this.deferOnViewport = { name: 'ɵɵdeferOnViewport', moduleName: CORE }; }
+    static { this.deferPrefetchWhen = { name: 'ɵɵdeferPrefetchWhen', moduleName: CORE }; }
+    static { this.deferPrefetchOnIdle = { name: 'ɵɵdeferPrefetchOnIdle', moduleName: CORE }; }
+    static { this.deferPrefetchOnImmediate = { name: 'ɵɵdeferPrefetchOnImmediate', moduleName: CORE }; }
+    static { this.deferPrefetchOnTimer = { name: 'ɵɵdeferPrefetchOnTimer', moduleName: CORE }; }
+    static { this.deferPrefetchOnHover = { name: 'ɵɵdeferPrefetchOnHover', moduleName: CORE }; }
+    static { this.deferPrefetchOnInteraction = { name: 'ɵɵdeferPrefetchOnInteraction', moduleName: CORE }; }
+    static { this.deferPrefetchOnViewport = { name: 'ɵɵdeferPrefetchOnViewport', moduleName: CORE }; }
     static { this.text = { name: 'ɵɵtext', moduleName: CORE }; }
     static { this.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE }; }
     static { this.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE }; }
@@ -23774,6 +23788,10 @@ class TemplateDefinitionBuilder {
         this.visitTextAttribute = invalid;
         this.visitBoundAttribute = invalid;
         this.visitBoundEvent = invalid;
+        this.visitDeferredTrigger = invalid;
+        this.visitDeferredBlockError = invalid;
+        this.visitDeferredBlockLoading = invalid;
+        this.visitDeferredBlockPlaceholder = invalid;
         this._bindingScope = parentBindingScope.nestedScope(level);
         // Turn the relative context file path into an identifier by replacing non-alphanumeric
         // characters with underscores.
@@ -24330,28 +24348,22 @@ class TemplateDefinitionBuilder {
             this.creationInstruction(span, isNgContainer$1 ? Identifiers.elementContainerEnd : Identifiers.elementEnd);
         }
     }
-    visitTemplate(template) {
-        const NG_TEMPLATE_TAG_NAME = 'ng-template';
+    createEmbeddedTemplateFn(tagName, children, contextNameSuffix, sourceSpan, variables = [], attrsExprs, references, i18n) {
         const templateIndex = this.allocateDataSlot();
-        if (this.i18n) {
-            this.i18n.appendTemplate(template.i18n, templateIndex);
+        if (this.i18n && i18n) {
+            this.i18n.appendTemplate(i18n, templateIndex);
         }
-        const tagNameWithoutNamespace = template.tagName ? splitNsName(template.tagName)[1] : template.tagName;
-        const contextName = `${this.contextName}${template.tagName ? '_' + sanitizeIdentifier(template.tagName) : ''}_${templateIndex}`;
+        const contextName = `${this.contextName}${contextNameSuffix}_${templateIndex}`;
         const templateName = `${contextName}_Template`;
         const parameters = [
             literal(templateIndex),
             variable(templateName),
-            // We don't care about the tag's namespace here, because we infer
-            // it based on the parent nodes inside the template instruction.
-            literal(tagNameWithoutNamespace),
+            literal(tagName),
+            this.addAttrsToConsts(attrsExprs || null),
         ];
-        // prepare attributes parameter (including attributes used for directive matching)
-        const attrsExprs = this.getAttributeExpressions(NG_TEMPLATE_TAG_NAME, template.attributes, template.inputs, template.outputs, undefined /* styles */, template.templateAttrs);
-        parameters.push(this.addAttrsToConsts(attrsExprs));
         // local refs (ex.: <ng-template #foo>)
-        if (template.references && template.references.length) {
-            const refs = this.prepareRefsArray(template.references);
+        if (references && references.length > 0) {
+            const refs = this.prepareRefsArray(references);
             parameters.push(this.addToConsts(refs));
             parameters.push(importExpr(Identifiers.templateRefExtractor));
         }
@@ -24362,17 +24374,28 @@ class TemplateDefinitionBuilder {
         // be able to support bindings in nested templates to local refs that occur after the
         // template definition. e.g. <div *ngIf="showing">{{ foo }}</div>  <div #foo></div>
         this._nestedTemplateFns.push(() => {
-            const templateFunctionExpr = templateVisitor.buildTemplateFunction(template.children, template.variables, this._ngContentReservedSlots.length + this._ngContentSelectorsOffset, template.i18n);
+            const templateFunctionExpr = templateVisitor.buildTemplateFunction(children, variables, this._ngContentReservedSlots.length + this._ngContentSelectorsOffset, i18n);
             this.constantPool.statements.push(templateFunctionExpr.toDeclStmt(templateName));
             if (templateVisitor._ngContentReservedSlots.length) {
                 this._ngContentReservedSlots.push(...templateVisitor._ngContentReservedSlots);
             }
         });
         // e.g. template(1, MyComp_Template_1)
-        this.creationInstruction(template.sourceSpan, Identifiers.templateCreate, () => {
+        this.creationInstruction(sourceSpan, Identifiers.templateCreate, () => {
             parameters.splice(2, 0, literal(templateVisitor.getConstCount()), literal(templateVisitor.getVarCount()));
             return trimTrailingNulls(parameters);
         });
+        return templateIndex;
+    }
+    visitTemplate(template) {
+        // We don't care about the tag's namespace here, because we infer
+        // it based on the parent nodes inside the template instruction.
+        const tagNameWithoutNamespace = template.tagName ? splitNsName(template.tagName)[1] : template.tagName;
+        const contextNameSuffix = template.tagName ? '_' + sanitizeIdentifier(template.tagName) : '';
+        const NG_TEMPLATE_TAG_NAME = 'ng-template';
+        // prepare attributes parameter (including attributes used for directive matching)
+        const attrsExprs = this.getAttributeExpressions(NG_TEMPLATE_TAG_NAME, template.attributes, template.inputs, template.outputs, undefined /* styles */, template.templateAttrs);
+        const templateIndex = this.createEmbeddedTemplateFn(tagNameWithoutNamespace, template.children, contextNameSuffix, template.sourceSpan, template.variables, attrsExprs, template.references, template.i18n);
         // handle property bindings e.g. ɵɵproperty('ngForOf', ctx.items), et al;
         this.templatePropertyBindings(templateIndex, template.templateAttrs);
         // Only add normal input/output binding instructions on explicit <ng-template> elements.
@@ -24467,46 +24490,107 @@ class TemplateDefinitionBuilder {
         return null;
     }
     visitDeferredBlock(deferred) {
-        const templateIndex = this.allocateDataSlot();
-        const deferredDeps = this.deferBlocks.get(deferred);
-        const contextName = `${this.contextName}_Defer_${templateIndex}`;
-        const depsFnName = `${contextName}_DepsFn`;
-        const parameters = [
-            literal(templateIndex),
-            deferredDeps ? variable(depsFnName) : TYPED_NULL_EXPR,
-        ];
-        if (deferredDeps) {
-            // This defer block has deps for which we need to generate dynamic imports.
-            const dependencyExp = [];
-            for (const deferredDep of deferredDeps) {
-                if (deferredDep.isDeferrable) {
-                    // Callback function, e.g. `function(m) { return m.MyCmp; }`.
-                    const innerFn = fn([new FnParam('m', DYNAMIC_TYPE)], [new ReturnStatement(variable('m').prop(deferredDep.symbolName))]);
-                    const fileName = deferredDep.importPath;
-                    // Dynamic import, e.g. `import('./a').then(...)`.
-                    const importExpr = (new DynamicImportExpr(fileName)).prop('then').callFn([innerFn]);
-                    dependencyExp.push(importExpr);
-                }
-                else {
-                    // Non-deferrable symbol, just use a reference to the type.
-                    dependencyExp.push(deferredDep.type);
-                }
-            }
-            const depsFnBody = [];
-            depsFnBody.push(new ReturnStatement(literalArr(dependencyExp)));
-            const depsFnExpr = fn([] /* args */, depsFnBody, INFERRED_TYPE, null, depsFnName);
-            this.constantPool.statements.push(depsFnExpr.toDeclStmt(depsFnName));
-        }
-        // e.g. `defer(1, MyComp_Defer_1_DepsFn, ...)`
-        this.creationInstruction(deferred.sourceSpan, Identifiers.defer, () => {
-            return trimTrailingNulls(parameters);
-        });
+        const { loading, placeholder, error, triggers, prefetchTriggers } = deferred;
+        const primaryTemplateIndex = this.createEmbeddedTemplateFn(null, deferred.children, '_Defer', deferred.sourceSpan);
+        const loadingIndex = loading ?
+            this.createEmbeddedTemplateFn(null, loading.children, '_DeferLoading', loading.sourceSpan) :
+            null;
+        const loadingConsts = loading ?
+            trimTrailingNulls([literal(loading.minimumTime), literal(loading.afterTime)]) :
+            null;
+        const placeholderIndex = placeholder ?
+            this.createEmbeddedTemplateFn(null, placeholder.children, '_DeferPlaceholder', placeholder.sourceSpan) :
+            null;
+        const placeholderConsts = placeholder && placeholder.minimumTime !== null ?
+            // TODO(crisbeto): potentially pass the time directly instead of storing it in the `consts`
+            // since `{:placeholder}` can only have one parameter?
+            literalArr([literal(placeholder.minimumTime)]) :
+            null;
+        const errorIndex = error ?
+            this.createEmbeddedTemplateFn(null, error.children, '_DeferError', error.sourceSpan) :
+            null;
+        // Note: we generate this last so the index matches the instruction order.
+        const deferredIndex = this.allocateDataSlot();
+        const depsFnName = `${this.contextName}_Defer_${deferredIndex}_DepsFn`;
+        // e.g. `defer(1, 0, MyComp_Defer_1_DepsFn, ...)`
+        this.creationInstruction(deferred.sourceSpan, Identifiers.defer, trimTrailingNulls([
+            literal(deferredIndex),
+            literal(primaryTemplateIndex),
+            this.createDeferredDepsFunction(depsFnName, deferred),
+            literal(loadingIndex),
+            literal(placeholderIndex),
+            literal(errorIndex),
+            loadingConsts?.length ? this.addToConsts(literalArr(loadingConsts)) : TYPED_NULL_EXPR,
+            placeholderConsts ? this.addToConsts(placeholderConsts) : TYPED_NULL_EXPR,
+        ]));
+        this.createDeferTriggerInstructions(deferredIndex, triggers, false);
+        this.createDeferTriggerInstructions(deferredIndex, prefetchTriggers, true);
     }
-    // TODO: implement nested deferred block instructions.
-    visitDeferredTrigger(trigger) { }
-    visitDeferredBlockPlaceholder(block) { }
-    visitDeferredBlockError(block) { }
-    visitDeferredBlockLoading(block) { }
+    createDeferredDepsFunction(name, deferred) {
+        const deferredDeps = this.deferBlocks.get(deferred);
+        if (!deferredDeps || deferredDeps.length === 0) {
+            return TYPED_NULL_EXPR;
+        }
+        // This defer block has deps for which we need to generate dynamic imports.
+        const dependencyExp = [];
+        for (const deferredDep of deferredDeps) {
+            if (deferredDep.isDeferrable) {
+                // Callback function, e.g. `function(m) { return m.MyCmp; }`.
+                const innerFn = fn([new FnParam('m', DYNAMIC_TYPE)], [new ReturnStatement(variable('m').prop(deferredDep.symbolName))]);
+                // Dynamic import, e.g. `import('./a').then(...)`.
+                const importExpr = (new DynamicImportExpr(deferredDep.importPath)).prop('then').callFn([innerFn]);
+                dependencyExp.push(importExpr);
+            }
+            else {
+                // Non-deferrable symbol, just use a reference to the type.
+                dependencyExp.push(deferredDep.type);
+            }
+        }
+        const depsFnExpr = fn([], [new ReturnStatement(literalArr(dependencyExp))], INFERRED_TYPE, null, name);
+        this.constantPool.statements.push(depsFnExpr.toDeclStmt(name));
+        return variable(name);
+    }
+    createDeferTriggerInstructions(deferredIndex, triggers, prefetch) {
+        const { when, idle, immediate, timer, hover, interaction, viewport } = triggers;
+        // `deferWhen(ctx.someValue)`
+        if (when) {
+            this.allocateBindingSlots(null);
+            this.updateInstructionWithAdvance(deferredIndex, when.sourceSpan, prefetch ? Identifiers.deferPrefetchWhen : Identifiers.deferWhen, () => this.convertPropertyBinding(when.value));
+        }
+        // Note that we generate an implicit `on idle` if the `deferred` block has no triggers.
+        // TODO(crisbeto): decide if this should be baked into the `defer` instruction.
+        // `deferOnIdle()`
+        if (idle || (!prefetch && Object.keys(triggers).length === 0)) {
+            this.creationInstruction(idle?.sourceSpan || null, prefetch ? Identifiers.deferPrefetchOnIdle : Identifiers.deferOnIdle);
+        }
+        // `deferOnImmediate()`
+        if (immediate) {
+            this.creationInstruction(immediate.sourceSpan, prefetch ? Identifiers.deferPrefetchOnImmediate : Identifiers.deferOnImmediate);
+        }
+        // `deferOnTimer(1337)`
+        if (timer) {
+            this.creationInstruction(timer.sourceSpan, prefetch ? Identifiers.deferPrefetchOnTimer : Identifiers.deferOnTimer, [literal(timer.delay)]);
+        }
+        // `deferOnHover()`
+        if (hover) {
+            this.creationInstruction(hover.sourceSpan, prefetch ? Identifiers.deferPrefetchOnHover : Identifiers.deferOnHover);
+        }
+        // TODO(crisbeto): currently the reference is passed as a string.
+        // Update this once we figure out how we should refer to the target.
+        // `deferOnInteraction(target)`
+        if (interaction) {
+            this.creationInstruction(interaction.sourceSpan, prefetch ? Identifiers.deferPrefetchOnInteraction : Identifiers.deferOnInteraction, [literal(interaction.reference)]);
+        }
+        // TODO(crisbeto): currently the reference is passed as a string.
+        // Update this once we figure out how we should refer to the target.
+        // `deferOnViewport(target)`
+        if (viewport) {
+            this.creationInstruction(viewport.sourceSpan, prefetch ? Identifiers.deferPrefetchOnViewport : Identifiers.deferOnViewport, [literal(viewport.reference)]);
+        }
+    }
+    allocateDataSlot() {
+        return this._dataIndex++;
+    }
     // TODO: implement control flow instructions
     visitSwitchBlock(block) { }
     visitSwitchBlockCase(block) { }
@@ -24514,9 +24598,6 @@ class TemplateDefinitionBuilder {
     visitForLoopBlockEmpty(block) { }
     visitIfBlock(block) { }
     visitIfBlockBranch(block) { }
-    allocateDataSlot() {
-        return this._dataIndex++;
-    }
     getConstCount() {
         return this._dataIndex;
     }
@@ -24766,7 +24847,8 @@ class TemplateDefinitionBuilder {
         return literal(consts.push(expression) - 1);
     }
     addAttrsToConsts(attrs) {
-        return attrs.length > 0 ? this.addToConsts(literalArr(attrs)) : TYPED_NULL_EXPR;
+        return attrs !== null && attrs.length > 0 ? this.addToConsts(literalArr(attrs)) :
+            TYPED_NULL_EXPR;
     }
     prepareRefsArray(references) {
         if (!references || references.length === 0) {
@@ -26814,7 +26896,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.0+sha-f3f97f0');
+const VERSION = new Version('17.0.0-next.0+sha-5212b47');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -28918,7 +29000,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-f3f97f0'));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-5212b47'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -29021,7 +29103,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-f3f97f0'));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-5212b47'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -29252,7 +29334,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-f3f97f0'));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-5212b47'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -29287,7 +29369,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-f3f97f0'));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-5212b47'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -29338,7 +29420,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-f3f97f0'));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-5212b47'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -29371,7 +29453,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-f3f97f0'));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-5212b47'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -29422,7 +29504,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-f3f97f0'));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-5212b47'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);

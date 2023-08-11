@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.0+sha-f3f97f0
+ * @license Angular v17.0.0-next.0+sha-5212b47
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3684,6 +3684,20 @@ export declare class R3Identifiers {
     static resetView: outputAst.ExternalReference;
     static templateCreate: outputAst.ExternalReference;
     static defer: outputAst.ExternalReference;
+    static deferWhen: outputAst.ExternalReference;
+    static deferOnIdle: outputAst.ExternalReference;
+    static deferOnImmediate: outputAst.ExternalReference;
+    static deferOnTimer: outputAst.ExternalReference;
+    static deferOnHover: outputAst.ExternalReference;
+    static deferOnInteraction: outputAst.ExternalReference;
+    static deferOnViewport: outputAst.ExternalReference;
+    static deferPrefetchWhen: outputAst.ExternalReference;
+    static deferPrefetchOnIdle: outputAst.ExternalReference;
+    static deferPrefetchOnImmediate: outputAst.ExternalReference;
+    static deferPrefetchOnTimer: outputAst.ExternalReference;
+    static deferPrefetchOnHover: outputAst.ExternalReference;
+    static deferPrefetchOnInteraction: outputAst.ExternalReference;
+    static deferPrefetchOnViewport: outputAst.ExternalReference;
     static text: outputAst.ExternalReference;
     static enableBindings: outputAst.ExternalReference;
     static disableBindings: outputAst.ExternalReference;
