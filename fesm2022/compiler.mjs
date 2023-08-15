@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.0+sha-75561c9
+ * @license Angular v17.0.0-next.0+sha-bcc3c43
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2744,6 +2744,7 @@ class Identifiers {
     static { this.declarePipe = { name: 'ɵɵngDeclarePipe', moduleName: CORE }; }
     static { this.declareClassMetadata = { name: 'ɵɵngDeclareClassMetadata', moduleName: CORE }; }
     static { this.setClassMetadata = { name: 'ɵsetClassMetadata', moduleName: CORE }; }
+    static { this.setClassMetadataAsync = { name: 'ɵsetClassMetadataAsync', moduleName: CORE }; }
     static { this.queryRefresh = { name: 'ɵɵqueryRefresh', moduleName: CORE }; }
     static { this.viewQuery = { name: 'ɵɵviewQuery', moduleName: CORE }; }
     static { this.loadQuery = { name: 'ɵɵloadQuery', moduleName: CORE }; }
@@ -26897,7 +26898,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.0+sha-75561c9');
+const VERSION = new Version('17.0.0-next.0+sha-bcc3c43');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -28989,6 +28990,60 @@ function compileClassMetadata(metadata) {
     const iife = fn([], [devOnlyGuardedExpression(fnCall).toStmt()]);
     return iife.callFn([]);
 }
+/**
+ * Wraps the `setClassMetadata` function with extra logic that dynamically
+ * loads dependencies from `{#defer}` blocks.
+ *
+ * Generates a call like this:
+ * ```
+ * setClassMetadataAsync(type, () => {
+ *   return [
+ *     import('./cmp-a').then(m => m.CmpA);
+ *     import('./cmp-b').then(m => m.CmpB);
+ *   ];
+ * }, (CmpA, CmpB) => {
+ *   setClassMetadata(type, decorators, ctorParameters, propParameters);
+ * });
+ * ```
+ *
+ * Similar to the `setClassMetadata` call, it's wrapped into the `ngDevMode`
+ * check to tree-shake away this code in production mode.
+ */
+function compileComponentClassMetadata(metadata, deferrableTypes) {
+    if (deferrableTypes.size === 0) {
+        // If there are no deferrable symbols - just generate a regular `setClassMetadata` call.
+        return compileClassMetadata(metadata);
+    }
+    const dynamicImports = [];
+    const importedSymbols = [];
+    for (const [symbolName, importPath] of deferrableTypes) {
+        // e.g. `function(m) { return m.CmpA; }`
+        const innerFn = fn([new FnParam('m', DYNAMIC_TYPE)], [new ReturnStatement(variable('m').prop(symbolName))]);
+        // e.g. `import('./cmp-a').then(...)`
+        const importExpr = (new DynamicImportExpr(importPath)).prop('then').callFn([innerFn]);
+        dynamicImports.push(importExpr);
+        importedSymbols.push(new FnParam(symbolName, DYNAMIC_TYPE));
+    }
+    // e.g. `function() { return [ ... ]; }`
+    const dependencyLoadingFn = fn([], [new ReturnStatement(literalArr(dynamicImports))]);
+    // e.g. `setClassMetadata(...)`
+    const setClassMetadataCall = importExpr(Identifiers.setClassMetadata).callFn([
+        metadata.type,
+        metadata.decorators,
+        metadata.ctorParameters ?? literal(null),
+        metadata.propDecorators ?? literal(null),
+    ]);
+    // e.g. `function(CmpA) { setClassMetadata(...); }`
+    const setClassMetaWrapper = fn(importedSymbols, [setClassMetadataCall.toStmt()]);
+    // Final `setClassMetadataAsync()` call with all arguments
+    const setClassMetaAsync = importExpr(Identifiers.setClassMetadataAsync).callFn([
+        metadata.type, dependencyLoadingFn, setClassMetaWrapper
+    ]);
+    // Generate an ngDevMode guarded call to `setClassMetadataAsync` with
+    // the class identifier and its metadata, so that this call can be tree-shaken.
+    const iife = fn([], [devOnlyGuardedExpression(setClassMetaAsync).toStmt()]);
+    return iife.callFn([]);
+}
 
 /**
  * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
@@ -29001,7 +29056,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-75561c9'));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-bcc3c43'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -29104,7 +29159,7 @@ function compileDeclareDirectiveFromMetadata(meta) {
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-75561c9'));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-bcc3c43'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -29335,7 +29390,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-75561c9'));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-bcc3c43'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -29370,7 +29425,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-75561c9'));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-bcc3c43'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -29421,7 +29476,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-75561c9'));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-bcc3c43'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -29454,7 +29509,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-75561c9'));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-bcc3c43'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -29505,7 +29560,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-75561c9'));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-bcc3c43'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -29538,5 +29593,5 @@ publishFacade(_global);
 
 // This file is not used to build this module. It is only used during editing
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, Block, BlockGroup, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, Block, BlockGroup, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map

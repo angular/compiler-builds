@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.0+sha-75561c9
+ * @license Angular v17.0.0-next.0+sha-bcc3c43
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -634,6 +634,27 @@ declare class Comment_3 implements TmplAstNode {
 export declare function compileClassMetadata(metadata: R3ClassMetadata): outputAst.Expression;
 
 export declare type CompileClassMetadataFn = (metadata: R3ClassMetadata) => outputAst.Expression;
+
+/**
+ * Wraps the `setClassMetadata` function with extra logic that dynamically
+ * loads dependencies from `{#defer}` blocks.
+ *
+ * Generates a call like this:
+ * ```
+ * setClassMetadataAsync(type, () => {
+ *   return [
+ *     import('./cmp-a').then(m => m.CmpA);
+ *     import('./cmp-b').then(m => m.CmpB);
+ *   ];
+ * }, (CmpA, CmpB) => {
+ *   setClassMetadata(type, decorators, ctorParameters, propParameters);
+ * });
+ * ```
+ *
+ * Similar to the `setClassMetadata` call, it's wrapped into the `ngDevMode`
+ * check to tree-shake away this code in production mode.
+ */
+export declare function compileComponentClassMetadata(metadata: R3ClassMetadata, deferrableTypes: Map<string, string>): outputAst.Expression;
 
 /**
  * Compile a component for the render3 runtime as defined by the `R3ComponentMetadata`.
@@ -3793,6 +3814,7 @@ export declare class R3Identifiers {
     static declarePipe: outputAst.ExternalReference;
     static declareClassMetadata: outputAst.ExternalReference;
     static setClassMetadata: outputAst.ExternalReference;
+    static setClassMetadataAsync: outputAst.ExternalReference;
     static queryRefresh: outputAst.ExternalReference;
     static viewQuery: outputAst.ExternalReference;
     static loadQuery: outputAst.ExternalReference;
