@@ -1,5 +1,5 @@
 /**
- * @license Angular v16.2.1+sha-cf463a6
+ * @license Angular v16.2.1+sha-39ace86
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -26331,7 +26331,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('16.2.1+sha-cf463a6');
+const VERSION = new Version('16.2.1+sha-39ace86');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -28374,7 +28374,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('16.2.1+sha-cf463a6'));
+    definitionMap.set('version', literal('16.2.1+sha-39ace86'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -28460,7 +28460,7 @@ function compileDependency(dep) {
  *
  * Do not include any prerelease in these versions as they are ignored.
  */
-const MINIMUM_PARTIAL_LINKER_VERSION$5 = '14.0.0';
+const MINIMUM_PARTIAL_LINKER_VERSION$5 = '16.1.0';
 /**
  * Compile a directive declaration defined by the `R3DirectiveMetadata`.
  */
@@ -28476,8 +28476,13 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('16.2.1+sha-cf463a6'));
+    const hasTransformFunctions = Object.values(meta.inputs).some(input => input.transformFunction !== null);
+    // Note: in order to allow consuming Angular libraries that have been compiled with 16.1+ in
+    // Angular 16.0, we only force a minimum version of 16.1 if input transform feature as introduced
+    // in 16.1 is actually used.
+    const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
+    definitionMap.set('minVersion', literal(minVersion));
+    definitionMap.set('version', literal('16.2.1+sha-39ace86'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -28705,7 +28710,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('16.2.1+sha-cf463a6'));
+    definitionMap.set('version', literal('16.2.1+sha-39ace86'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28740,7 +28745,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('16.2.1+sha-cf463a6'));
+    definitionMap.set('version', literal('16.2.1+sha-39ace86'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -28791,7 +28796,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('16.2.1+sha-cf463a6'));
+    definitionMap.set('version', literal('16.2.1+sha-39ace86'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -28824,7 +28829,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('16.2.1+sha-cf463a6'));
+    definitionMap.set('version', literal('16.2.1+sha-39ace86'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -28875,7 +28880,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('16.2.1+sha-cf463a6'));
+    definitionMap.set('version', literal('16.2.1+sha-39ace86'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
