@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.0+sha-de3be98
+ * @license Angular v17.0.0-next.0+sha-9152de1
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2628,6 +2628,7 @@ class Identifiers {
     static { this.deferPrefetchOnHover = { name: 'ɵɵdeferPrefetchOnHover', moduleName: CORE }; }
     static { this.deferPrefetchOnInteraction = { name: 'ɵɵdeferPrefetchOnInteraction', moduleName: CORE }; }
     static { this.deferPrefetchOnViewport = { name: 'ɵɵdeferPrefetchOnViewport', moduleName: CORE }; }
+    static { this.conditional = { name: 'ɵɵconditional', moduleName: CORE }; }
     static { this.text = { name: 'ɵɵtext', moduleName: CORE }; }
     static { this.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE }; }
     static { this.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE }; }
@@ -4869,7 +4870,7 @@ function declareI18nVariable(variable) {
 /**
  * Checks whether an object key contains potentially unsafe chars, thus the key should be wrapped in
  * quotes. Note: we do not wrap all keys into quotes, as it may have impact on minification and may
- * bot work in some cases when object keys are mangled by minifier.
+ * not work in some cases when object keys are mangled by a minifier.
  *
  * TODO(FW-1136): this is a temporary solution, we need to come up with a better way of working with
  * inputs that contain potentially unsafe chars.
@@ -4889,6 +4890,8 @@ const IMPLICIT_REFERENCE = '$implicit';
 const NON_BINDABLE_ATTR = 'ngNonBindable';
 /** Name for the variable keeping track of the context returned by `ɵɵrestoreView`. */
 const RESTORED_VIEW_CONTEXT_NAME = 'restoredCtx';
+/** Special value representing a direct access to a template's context. */
+const DIRECT_CONTEXT_REFERENCE = '#context';
 /**
  * Maximum length of a single instruction chain. Because our output AST uses recursion, we're
  * limited in how many expressions we can nest before we reach the call stack limit. This
@@ -23761,6 +23764,11 @@ class TemplateDefinitionBuilder {
         /** Temporary variable declarations generated from visiting pipes, literals, etc. */
         this._tempVariables = [];
         /**
+         * Temporary variable used to store state between control flow instructions.
+         * Should be accessed via the `allocateControlFlowTempVariable` method.
+         */
+        this._controlFlowTempVariable = null;
+        /**
          * List of callbacks to build nested templates. Nested templates must not be visited until
          * after the parent template has finished visiting all of its nodes. This ensures that all
          * local ref bindings in nested templates are able to find local ref values if the refs
@@ -23793,6 +23801,8 @@ class TemplateDefinitionBuilder {
         this.visitDeferredBlockError = invalid;
         this.visitDeferredBlockLoading = invalid;
         this.visitDeferredBlockPlaceholder = invalid;
+        this.visitIfBlockBranch = invalid;
+        this.visitSwitchBlockCase = invalid;
         this._bindingScope = parentBindingScope.nestedScope(level);
         // Turn the relative context file path into an identifier by replacing non-alphanumeric
         // characters with underscores.
@@ -23905,8 +23915,16 @@ class TemplateDefinitionBuilder {
     registerContextVariables(variable$1) {
         const scopedName = this._bindingScope.freshReferenceName();
         const retrievalLevel = this.level;
+        const isDirect = variable$1.value === DIRECT_CONTEXT_REFERENCE;
         const lhs = variable(variable$1.name + scopedName);
-        this._bindingScope.set(retrievalLevel, variable$1.name, lhs, 1 /* DeclarationPriority.CONTEXT */, (scope, relativeLevel) => {
+        this._bindingScope.set(retrievalLevel, variable$1.name, scope => {
+            // If we're at the top level and we're referring to the context variable directly, we
+            // can do so through the implicit receiver, instead of renaming it. Note that this does
+            // not apply to listeners, because they need to restore the context.
+            return isDirect && scope.bindingLevel === retrievalLevel && !scope.isListenerScope() ?
+                variable(CONTEXT_NAME) :
+                lhs;
+        }, 1 /* DeclarationPriority.CONTEXT */, (scope, relativeLevel) => {
             let rhs;
             if (scope.bindingLevel === retrievalLevel) {
                 if (scope.isListenerScope() && scope.hasRestoreViewVariable()) {
@@ -23916,6 +23934,11 @@ class TemplateDefinitionBuilder {
                     // For more information see: https://github.com/angular/angular/pull/40360.
                     rhs = variable(RESTORED_VIEW_CONTEXT_NAME);
                     scope.notifyRestoredViewContextUse();
+                }
+                else if (isDirect) {
+                    // If we have a direct read of the context at the top level we don't need to
+                    // declare any variables and we can refer to it directly.
+                    return [];
                 }
                 else {
                     // e.g. ctx
@@ -23927,8 +23950,11 @@ class TemplateDefinitionBuilder {
                 // e.g. ctx_r0   OR  x(2);
                 rhs = sharedCtxVar ? sharedCtxVar : generateNextContextExpr(relativeLevel);
             }
-            // e.g. const $item$ = x(2).$implicit;
-            return [lhs.set(rhs.prop(variable$1.value || IMPLICIT_REFERENCE)).toConstDecl()];
+            return [
+                // e.g. const $items$ = x(2) for direct context references and
+                // const $item$ = x(2).$implicit for indirect ones.
+                lhs.set(isDirect ? rhs : rhs.prop(variable$1.value || IMPLICIT_REFERENCE)).toConstDecl()
+            ];
         });
     }
     i18nAppendBindings(expressions) {
@@ -24490,6 +24516,118 @@ class TemplateDefinitionBuilder {
         }
         return null;
     }
+    visitIfBlock(block) {
+        // We have to process the block in two steps: once here and again in the update instruction
+        // callback in order to generate the correct expressions when pipes or pure functions are
+        // used inside the branch expressions.
+        const branchData = block.branches.map(({ expression, expressionAlias, children, sourceSpan }) => {
+            let processedExpression = null;
+            if (expression !== null) {
+                processedExpression = expression.visit(this._valueConverter);
+                this.allocateBindingSlots(processedExpression);
+            }
+            // If the branch has an alias, it'll be assigned directly to the container's context.
+            // We define a variable referring directly to the context so that any nested usages can be
+            // rewritten to refer to it.
+            const variables = expressionAlias ?
+                [new Variable(expressionAlias, DIRECT_CONTEXT_REFERENCE, sourceSpan, sourceSpan)] :
+                undefined;
+            return {
+                index: this.createEmbeddedTemplateFn(null, children, '_Conditional', sourceSpan, variables),
+                expression: processedExpression,
+                alias: expressionAlias
+            };
+        });
+        // Use the index of the first block as the index for the entire container.
+        const containerIndex = branchData[0].index;
+        const paramsCallback = () => {
+            let contextVariable = null;
+            const generateBranch = (branchIndex) => {
+                // If we've gone beyond the last branch, return the special -1 value which means that no
+                // view will be rendered. Note that we don't need to reset the context here, because -1
+                // won't render a view so the passed-in context won't be captured.
+                if (branchIndex > branchData.length - 1) {
+                    return literal(-1);
+                }
+                const { index, expression, alias } = branchData[branchIndex];
+                // If the branch has no expression, it means that it's the final `else`.
+                // Return its index and stop the recursion. Assumes that there's only one
+                // `else` condition and that it's the last branch.
+                if (expression === null) {
+                    return literal(index);
+                }
+                let comparisonTarget;
+                if (alias) {
+                    // If the branch is aliased, we need to assign the expression value to the temporary
+                    // variable and then pass it into `conditional`. E.g. for the expression:
+                    // `{#if foo(); as alias}...{/if}` we have to generate:
+                    // ```
+                    // let temp;
+                    // conditional(0, (temp = ctx.foo()) ? 0 : -1, temp);
+                    // ```
+                    contextVariable = this.allocateControlFlowTempVariable();
+                    comparisonTarget = contextVariable.set(this.convertPropertyBinding(expression));
+                }
+                else {
+                    comparisonTarget = this.convertPropertyBinding(expression);
+                }
+                return comparisonTarget.conditional(literal(index), generateBranch(branchIndex + 1));
+            };
+            const params = [literal(containerIndex), generateBranch(0)];
+            if (contextVariable !== null) {
+                params.push(contextVariable);
+            }
+            return params;
+        };
+        this.updateInstructionWithAdvance(containerIndex, block.branches[0].sourceSpan, Identifiers.conditional, paramsCallback);
+    }
+    visitSwitchBlock(block) {
+        // Allocate slots for the primary block expression.
+        const blockExpression = block.expression.visit(this._valueConverter);
+        this.allocateBindingSlots(blockExpression);
+        // We have to process the block in two steps: once here and again in the update instruction
+        // callback in order to generate the correct expressions when pipes or pure functions are used.
+        const caseData = block.cases.map(currentCase => {
+            const index = this.createEmbeddedTemplateFn(null, currentCase.children, '_Case', currentCase.sourceSpan);
+            let expression = null;
+            if (currentCase.expression !== null) {
+                expression = currentCase.expression.visit(this._valueConverter);
+                this.allocateBindingSlots(expression);
+            }
+            return { index, expression };
+        });
+        // Use the index of the first block as the index for the entire container.
+        const containerIndex = caseData[0].index;
+        this.updateInstructionWithAdvance(containerIndex, block.sourceSpan, Identifiers.conditional, () => {
+            const generateCases = (caseIndex) => {
+                // If we've gone beyond the last branch, return the special -1
+                // value which means that no view will be rendered.
+                if (caseIndex > caseData.length - 1) {
+                    return literal(-1);
+                }
+                const { index, expression } = caseData[caseIndex];
+                // If the case has no expression, it means that it's the `default` case.
+                // Return its index and stop the recursion. Assumes that there's only one
+                // `default` condition and that it's defined last.
+                if (expression === null) {
+                    return literal(index);
+                }
+                // If this is the very first comparison, we need to assign the value of the primary
+                // expression as a part of the comparison so the remaining cases can reuse it. In practice
+                // this looks as follows:
+                // ```
+                // let temp;
+                // conditional(1, (temp = ctx.foo) === 1 ? 1 : temp === 2 ? 2 : temp === 3 ? 3 : 4);
+                // ```
+                const comparisonTarget = caseIndex === 0 ?
+                    this.allocateControlFlowTempVariable().set(this.convertPropertyBinding(blockExpression)) :
+                    this.allocateControlFlowTempVariable();
+                return comparisonTarget.identical(this.convertPropertyBinding(expression))
+                    .conditional(literal(index), generateCases(caseIndex + 1));
+            };
+            return [literal(containerIndex), generateCases(0)];
+        });
+    }
     visitDeferredBlock(deferred) {
         const { loading, placeholder, error, triggers, prefetchTriggers } = deferred;
         const primaryTemplateIndex = this.createEmbeddedTemplateFn(null, deferred.children, '_Defer', deferred.sourceSpan);
@@ -24593,13 +24731,9 @@ class TemplateDefinitionBuilder {
     allocateDataSlot() {
         return this._dataIndex++;
     }
-    // TODO: implement control flow instructions
-    visitSwitchBlock(block) { }
-    visitSwitchBlockCase(block) { }
+    // TODO: implement for loop instructions
     visitForLoopBlock(block) { }
     visitForLoopBlockEmpty(block) { }
-    visitIfBlock(block) { }
-    visitIfBlockBranch(block) { }
     getConstCount() {
         return this._dataIndex;
     }
@@ -24723,6 +24857,21 @@ class TemplateDefinitionBuilder {
         const { args, stmts } = convertUpdateArguments(this, this.getImplicitReceiverExpr(), value, this.bindingContext());
         this._tempVariables.push(...stmts);
         return args;
+    }
+    /**
+     * Creates and returns a variable that can be used to
+     * store the state between control flow instructions.
+     */
+    allocateControlFlowTempVariable() {
+        // Note: the assumption here is that we'll only need one temporary variable for all control
+        // flow instructions. It's expected that any instructions will overwrite it before passing it
+        // into the parameters.
+        if (this._controlFlowTempVariable === null) {
+            const name = `${this.contextName}_contFlowTmp`;
+            this._tempVariables.push(new DeclareVarStmt(name));
+            this._controlFlowTempVariable = variable(name);
+        }
+        return this._controlFlowTempVariable;
     }
     /**
      * Prepares all attribute expression values for the `TAttributes` array.
@@ -25045,7 +25194,7 @@ class BindingScope {
                 if (value.declareLocalCallback && !value.declare) {
                     value.declare = true;
                 }
-                return value.lhs;
+                return typeof value.lhs === 'function' ? value.lhs(this) : value.lhs;
             }
             current = current.parent;
         }
@@ -25149,7 +25298,8 @@ class BindingScope {
         const componentValue = this.map.get(SHARED_CONTEXT_KEY + 0);
         componentValue.declare = true;
         this.maybeRestoreView();
-        return componentValue.lhs.prop(name);
+        const lhs = typeof componentValue.lhs === 'function' ? componentValue.lhs(this) : componentValue.lhs;
+        return name === DIRECT_CONTEXT_REFERENCE ? lhs : lhs.prop(name);
     }
     maybeRestoreView() {
         // View restoration is required for listener instructions inside embedded views, because
@@ -26898,7 +27048,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.0+sha-de3be98');
+const VERSION = new Version('17.0.0-next.0+sha-9152de1');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -29056,7 +29206,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-de3be98'));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-9152de1'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -29142,7 +29292,7 @@ function compileDependency(dep) {
  *
  * Do not include any prerelease in these versions as they are ignored.
  */
-const MINIMUM_PARTIAL_LINKER_VERSION$5 = '14.0.0';
+const MINIMUM_PARTIAL_LINKER_VERSION$5 = '16.1.0';
 /**
  * Compile a directive declaration defined by the `R3DirectiveMetadata`.
  */
@@ -29158,8 +29308,13 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-de3be98'));
+    const hasTransformFunctions = Object.values(meta.inputs).some(input => input.transformFunction !== null);
+    // Note: in order to allow consuming Angular libraries that have been compiled with 16.1+ in
+    // Angular 16.0, we only force a minimum version of 16.1 if input transform feature as introduced
+    // in 16.1 is actually used.
+    const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
+    definitionMap.set('minVersion', literal(minVersion));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-9152de1'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -29390,7 +29545,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-de3be98'));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-9152de1'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -29425,7 +29580,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-de3be98'));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-9152de1'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -29476,7 +29631,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-de3be98'));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-9152de1'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -29509,7 +29664,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-de3be98'));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-9152de1'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -29560,7 +29715,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.0+sha-de3be98'));
+    definitionMap.set('version', literal('17.0.0-next.0+sha-9152de1'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);

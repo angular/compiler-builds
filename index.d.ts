@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.0+sha-de3be98
+ * @license Angular v17.0.0-next.0+sha-9152de1
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3719,6 +3719,7 @@ export declare class R3Identifiers {
     static deferPrefetchOnHover: outputAst.ExternalReference;
     static deferPrefetchOnInteraction: outputAst.ExternalReference;
     static deferPrefetchOnViewport: outputAst.ExternalReference;
+    static conditional: outputAst.ExternalReference;
     static text: outputAst.ExternalReference;
     static enableBindings: outputAst.ExternalReference;
     static disableBindings: outputAst.ExternalReference;
