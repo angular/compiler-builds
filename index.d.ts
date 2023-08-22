@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.0+sha-362e069
+ * @license Angular v17.0.0-next.0+sha-36663e6
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1338,6 +1338,15 @@ declare class FnParam {
     constructor(name: string, type?: Type | null);
     isEquivalent(param: FnParam): boolean;
     clone(): FnParam;
+}
+
+declare interface ForLoopBlockContext {
+    $index?: string;
+    $first?: string;
+    $last?: string;
+    $even?: string;
+    $odd?: string;
+    $count?: string;
 }
 
 /**
@@ -4519,6 +4528,7 @@ declare namespace t {
         TmplAstDeferredBlock as DeferredBlock,
         TmplAstSwitchBlock as SwitchBlock,
         TmplAstSwitchBlockCase as SwitchBlockCase,
+        ForLoopBlockContext,
         TmplAstForLoopBlock as ForLoopBlock,
         TmplAstForLoopBlockEmpty as ForLoopBlockEmpty,
         TmplAstIfBlock as IfBlock,
@@ -4802,13 +4812,14 @@ export declare class TmplAstElement implements TmplAstNode {
 export declare class TmplAstForLoopBlock implements TmplAstNode {
     itemName: string;
     expression: AST;
-    trackBy: string;
+    trackBy: AST;
+    contextVariables: ForLoopBlockContext | null;
     children: TmplAstNode[];
     empty: TmplAstForLoopBlockEmpty | null;
     sourceSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
-    constructor(itemName: string, expression: AST, trackBy: string, children: TmplAstNode[], empty: TmplAstForLoopBlockEmpty | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
+    constructor(itemName: string, expression: AST, trackBy: AST, contextVariables: ForLoopBlockContext | null, children: TmplAstNode[], empty: TmplAstForLoopBlockEmpty | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
