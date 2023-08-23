@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.1+sha-fd4e8b1
+ * @license Angular v17.0.0-next.1+sha-fa72384
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -32,6 +32,18 @@ export declare class ArrayType extends Type {
     of: Type;
     constructor(of: Type, modifiers?: TypeModifier);
     visitType(visitor: TypeVisitor, context: any): any;
+}
+
+declare function arrowFn(params: FnParam[], body: Expression | Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null): ArrowFunctionExpr;
+
+export declare class ArrowFunctionExpr extends Expression {
+    params: FnParam[];
+    body: Expression | Statement[];
+    constructor(params: FnParam[], body: Expression | Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
+    visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): Expression;
 }
 
 export declare abstract class AST {
@@ -1291,6 +1303,7 @@ export declare interface ExpressionVisitor {
     visitCommaExpr(ast: CommaExpr, context: any): any;
     visitWrappedNodeExpr(ast: WrappedNodeExpr<any>, context: any): any;
     visitTypeofExpr(ast: TypeofExpr, context: any): any;
+    visitArrowFunctionExpr(ast: ArrowFunctionExpr, context: any): any;
 }
 
 export declare class ExternalExpr extends Expression {
@@ -2042,6 +2055,7 @@ declare namespace outputAst {
         unary,
         not,
         fn,
+        arrowFn,
         ifStmt,
         taggedTemplate,
         literal,
@@ -2091,6 +2105,7 @@ declare namespace outputAst {
         NotExpr,
         FnParam,
         FunctionExpr,
+        ArrowFunctionExpr,
         UnaryOperatorExpr,
         BinaryOperatorExpr,
         ReadPropExpr,
@@ -4259,6 +4274,7 @@ declare class RecursiveAstVisitor_2 implements StatementVisitor, ExpressionVisit
     visitConditionalExpr(ast: ConditionalExpr, context: any): any;
     visitNotExpr(ast: NotExpr, context: any): any;
     visitFunctionExpr(ast: FunctionExpr, context: any): any;
+    visitArrowFunctionExpr(ast: ArrowFunctionExpr, context: any): any;
     visitUnaryOperatorExpr(ast: UnaryOperatorExpr, context: any): any;
     visitBinaryOperatorExpr(ast: BinaryOperatorExpr, context: any): any;
     visitReadPropExpr(ast: ReadPropExpr, context: any): any;
