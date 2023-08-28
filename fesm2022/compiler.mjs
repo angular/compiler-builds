@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.1+sha-cdcfa09
+ * @license Angular v17.0.0-next.1+sha-c2d8592
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10157,6 +10157,12 @@ class OpList {
      * Push a new operation to the tail of the list.
      */
     push(op) {
+        if (Array.isArray(op)) {
+            for (const o of op) {
+                this.push(o);
+            }
+            return;
+        }
         OpList.assertIsNotEnd(op);
         OpList.assertIsUnowned(op);
         op.debugListId = this.debugListId;
@@ -10303,6 +10309,12 @@ class OpList {
      * Insert `op` before `target`.
      */
     static insertBefore(op, target) {
+        if (Array.isArray(op)) {
+            for (const o of op) {
+                this.insertBefore(o, target);
+            }
+            return;
+        }
         OpList.assertIsOwned(target);
         if (target.prev === null) {
             throw new Error(`AssertionError: illegal operation on list start`);
@@ -10452,37 +10464,20 @@ function createTextOp(xref, initialValue, sourceSpan) {
     };
 }
 /**
- * Create a `ListenerOp`.
+ * Create a `ListenerOp`. Host bindings reuse all the listener logic.
  */
-function createListenerOp(target, name, tag) {
+function createListenerOp(target, name, tag, animationPhase, hostListener) {
     return {
         kind: OpKind.Listener,
         target,
         tag,
+        hostListener,
         name,
         handlerOps: new OpList(),
         handlerFnName: null,
         consumesDollarEvent: false,
-        isAnimationListener: false,
-        animationPhase: null,
-        ...NEW_OP,
-        ...TRAIT_USES_SLOT_INDEX,
-    };
-}
-/**
- * Create a `ListenerOp` for an animation.
- */
-function createListenerOpForAnimation(target, name, animationPhase, tag) {
-    return {
-        kind: OpKind.Listener,
-        target,
-        tag,
-        name,
-        handlerOps: new OpList(),
-        handlerFnName: null,
-        consumesDollarEvent: false,
-        isAnimationListener: true,
-        animationPhase,
+        isAnimationListener: animationPhase !== null,
+        animationPhase: animationPhase,
         ...NEW_OP,
         ...TRAIT_USES_SLOT_INDEX,
     };
@@ -10562,20 +10557,102 @@ function createI18nEndOp(xref) {
     };
 }
 
-function createHostPropertyOp(name, expression, sourceSpan) {
+function createHostPropertyOp(name, expression, isAnimationTrigger, sourceSpan) {
     return {
         kind: OpKind.HostProperty,
         name,
         expression,
+        isAnimationTrigger,
         sourceSpan,
         ...TRAIT_CONSUMES_VARS,
         ...NEW_OP,
     };
 }
 
+var CompilationJobKind;
+(function (CompilationJobKind) {
+    CompilationJobKind[CompilationJobKind["Tmpl"] = 0] = "Tmpl";
+    CompilationJobKind[CompilationJobKind["Host"] = 1] = "Host";
+    CompilationJobKind[CompilationJobKind["Both"] = 2] = "Both";
+})(CompilationJobKind || (CompilationJobKind = {}));
 /**
- * A compilation unit is compiled into a template function.
- * Some example units are views and host bindings.
+ * An entire ongoing compilation, which will result in one or more template functions when complete.
+ * Contains one or more corresponding compilation units.
+ */
+class CompilationJob {
+    constructor(componentName, pool, compatibility) {
+        this.componentName = componentName;
+        this.pool = pool;
+        this.compatibility = compatibility;
+        this.kind = CompilationJobKind.Both;
+        /**
+         * Tracks the next `ir.XrefId` which can be assigned as template structures are ingested.
+         */
+        this.nextXrefId = 0;
+    }
+    /**
+     * Generate a new unique `ir.XrefId` in this job.
+     */
+    allocateXrefId() {
+        return this.nextXrefId++;
+    }
+}
+/**
+ * Compilation-in-progress of a whole component's template, including the main template and any
+ * embedded views or host bindings.
+ */
+class ComponentCompilationJob extends CompilationJob {
+    constructor(componentName, pool, compatibility, relativeContextFilePath, i18nUseExternalIds) {
+        super(componentName, pool, compatibility);
+        this.relativeContextFilePath = relativeContextFilePath;
+        this.i18nUseExternalIds = i18nUseExternalIds;
+        this.kind = CompilationJobKind.Tmpl;
+        this.fnSuffix = 'Template';
+        this.views = new Map();
+        /**
+         * Constant expressions used by operations within this component's compilation.
+         *
+         * This will eventually become the `consts` array in the component definition.
+         */
+        this.consts = [];
+        /**
+         * Initialization statements needed to set up the consts.
+         */
+        this.constsInitializers = [];
+        this.root = new ViewCompilationUnit(this, this.allocateXrefId(), null);
+        this.views.set(this.root.xref, this.root);
+    }
+    /**
+     * Add a `ViewCompilation` for a new embedded view to this compilation.
+     */
+    allocateView(parent) {
+        const view = new ViewCompilationUnit(this, this.allocateXrefId(), parent);
+        this.views.set(view.xref, view);
+        return view;
+    }
+    get units() {
+        return this.views.values();
+    }
+    /**
+     * Add a constant `o.Expression` to the compilation and return its index in the `consts` array.
+     */
+    addConst(newConst, initializers) {
+        for (let idx = 0; idx < this.consts.length; idx++) {
+            if (this.consts[idx].isEquivalent(newConst)) {
+                return idx;
+            }
+        }
+        const idx = this.consts.length;
+        this.consts.push(newConst);
+        if (initializers) {
+            this.constsInitializers.push(...initializers);
+        }
+        return idx;
+    }
+}
+/**
+ * A compilation unit is compiled into a template function. Some example units are views and host
+ * bindings.
  */
 class CompilationUnit {
     constructor(xref) {
@@ -10621,97 +10698,6 @@ class CompilationUnit {
         }
     }
 }
-class HostBindingCompilationJob extends CompilationUnit {
-    // TODO: Perhaps we should accept a reference to the enclosing component, and get the name from
-    // there?
-    constructor(componentName, pool, compatibility) {
-        super(0);
-        this.componentName = componentName;
-        this.pool = pool;
-        this.compatibility = compatibility;
-        this.fnSuffix = 'HostBindings';
-        this.units = [this];
-        this.nextXrefId = 1;
-    }
-    get job() {
-        return this;
-    }
-    get root() {
-        return this;
-    }
-    allocateXrefId() {
-        return this.nextXrefId++;
-    }
-}
-/**
- * Compilation-in-progress of a whole component's template, including the main template and any
- * embedded views or host bindings.
- */
-class ComponentCompilationJob {
-    get units() {
-        return this.views.values();
-    }
-    constructor(componentName, pool, compatibility, relativeContextFilePath, i18nUseExternalIds) {
-        this.componentName = componentName;
-        this.pool = pool;
-        this.compatibility = compatibility;
-        this.relativeContextFilePath = relativeContextFilePath;
-        this.i18nUseExternalIds = i18nUseExternalIds;
-        this.fnSuffix = 'Template';
-        /**
-         * Tracks the next `ir.XrefId` which can be assigned as template structures are ingested.
-         */
-        this.nextXrefId = 0;
-        /**
-         * Map of view IDs to `ViewCompilation`s.
-         */
-        this.views = new Map();
-        /**
-         * Constant expressions used by operations within this component's compilation.
-         *
-         * This will eventually become the `consts` array in the component definition.
-         */
-        this.consts = [];
-        /**
-         * Initialization statements needed to set up the consts.
-         */
-        this.constsInitializers = [];
-        // Allocate the root view.
-        const root = new ViewCompilationUnit(this, this.allocateXrefId(), null);
-        this.views.set(root.xref, root);
-        this.root = root;
-    }
-    /**
-     * Add a `ViewCompilation` for a new embedded view to this compilation.
-     */
-    allocateView(parent) {
-        const view = new ViewCompilationUnit(this, this.allocateXrefId(), parent);
-        this.views.set(view.xref, view);
-        return view;
-    }
-    /**
-     * Generate a new unique `ir.XrefId` in this job.
-     */
-    allocateXrefId() {
-        return this.nextXrefId++;
-    }
-    /**
-     * Add a constant `o.Expression` to the compilation and return its index in the `consts` array.
-     */
-    addConst(newConst, initializers) {
-        for (let idx = 0; idx < this.consts.length; idx++) {
-            if (this.consts[idx].isEquivalent(newConst)) {
-                return idx;
-            }
-        }
-        const idx = this.consts.length;
-        this.consts.push(newConst);
-        if (initializers) {
-            this.constsInitializers.push(...initializers);
-        }
-        return idx;
-    }
-}
 /**
  * Compilation-in-progress of an individual view within a template.
  */
@@ -10731,8 +10717,29 @@ class ViewCompilationUnit extends CompilationUnit {
          */
         this.decls = null;
     }
-    get compatibility() {
-        return this.job.compatibility;
+}
+/**
+ * Compilation-in-progress of a host binding, which contains a single unit for that host binding.
+ */
+class HostBindingCompilationJob extends CompilationJob {
+    constructor(componentName, pool, compatibility) {
+        super(componentName, pool, compatibility);
+        this.kind = CompilationJobKind.Host;
+        this.fnSuffix = 'HostBindings';
+        this.root = new HostBindingCompilationUnit(this);
+    }
+    get units() {
+        return [this.root];
+    }
+}
+class HostBindingCompilationUnit extends CompilationUnit {
+    constructor(job) {
+        super(0);
+        this.job = job;
+        /**
+         * Much like an element can have attributes, so can a host binding function.
+         */
+        this.attributes = null;
     }
 }
 
@@ -10766,8 +10773,8 @@ function phaseVarCounting(job) {
     if (job instanceof ComponentCompilationJob) {
         // Add var counts for each view to the `ir.TemplateOp` which declares that view (if the view is
         // an embedded view).
-        for (const view of job.views.values()) {
-            for (const op of view.create) {
+        for (const unit of job.units) {
+            for (const op of unit.create) {
                 if (op.kind !== OpKind.Template) {
                     continue;
                 }
@@ -10825,9 +10832,9 @@ function varsUsedByIrExpression(expr) {
     }
 }
 
-function phaseAlignPipeVariadicVarOffset(cpl) {
-    for (const view of cpl.views.values()) {
-        for (const op of view.update) {
+function phaseAlignPipeVariadicVarOffset(job) {
+    for (const unit of job.units) {
+        for (const op of unit.update) {
             visitExpressionsInOp(op, expr => {
                 if (!(expr instanceof PipeBindingVariadicExpr)) {
                     return expr;
@@ -10860,9 +10867,9 @@ function phaseAlignPipeVariadicVarOffset(cpl) {
 /**
  * Find any function calls to `$any`, excluding `this.$any`, and delete them.
  */
-function phaseFindAnyCasts(cpl) {
-    for (const [_, view] of cpl.views) {
-        for (const op of view.ops()) {
+function phaseFindAnyCasts(job) {
+    for (const unit of job.units) {
+        for (const op of unit.ops()) {
             transformExpressionsInOp(op, removeAnys, VisitorContextFlag.None);
         }
     }
@@ -10881,9 +10888,9 @@ function removeAnys(e) {
 /**
  * Gets a map of all elements in the given view by their xref id.
  */
-function getElementsByXrefId(view) {
+function getElementsByXrefId(unit) {
     const elements = new Map();
-    for (const op of view.create) {
+    for (const op of unit.create) {
         if (!isElementOrContainerOp(op)) {
             continue;
         }
@@ -10896,13 +10903,13 @@ function getElementsByXrefId(view) {
  * Find all extractable attribute and binding ops, and create ExtractedAttributeOps for them.
  * In cases where no instruction needs to be generated for the attribute or binding, it is removed.
  */
-function phaseAttributeExtraction(cpl) {
-    for (const [_, view] of cpl.views) {
-        const elements = getElementsByXrefId(view);
-        for (const op of view.ops()) {
+function phaseAttributeExtraction(job) {
+    for (const unit of job.units) {
+        const elements = getElementsByXrefId(unit);
+        for (const op of unit.ops()) {
             switch (op.kind) {
                 case OpKind.Attribute:
-                    extractAttributeOp(view, op, elements);
+                    extractAttributeOp(unit, op, elements);
                     break;
                 case OpKind.Property:
                     if (!op.isAnimationTrigger) {
@@ -10914,14 +10921,22 @@ function phaseAttributeExtraction(cpl) {
                     // The old compiler treated empty style bindings as regular bindings for the purpose of
                     // directive matching. That behavior is incorrect, but we emulate it in compatibility
                     // mode.
-                    if (view.compatibility === CompatibilityMode.TemplateDefinitionBuilder &&
+                    if (unit.job.compatibility === CompatibilityMode.TemplateDefinitionBuilder &&
                         op.expression instanceof EmptyExpr) {
                         OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.Property, op.name, null), lookupElement$2(elements, op.target));
                     }
                     break;
                 case OpKind.Listener:
                     if (!op.isAnimationListener) {
-                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.Property, op.name, null), lookupElement$2(elements, op.target));
+                        const extractedAttributeOp = createExtractedAttributeOp(op.target, BindingKind.Property, op.name, null);
+                        if (job.kind === CompilationJobKind.Host) {
+                            // This attribute will apply to the enclosing host binding compilation unit, so order
+                            // doesn't matter.
+                            unit.create.push(extractedAttributeOp);
+                        }
+                        else {
+                            OpList.insertBefore(extractedAttributeOp, lookupElement$2(elements, op.target));
+                        }
                     }
                     break;
             }
@@ -10941,13 +10956,12 @@ function lookupElement$2(elements, xref) {
 /**
  * Extracts an attribute binding.
  */
-function extractAttributeOp(view, op, elements) {
+function extractAttributeOp(unit, op, elements) {
     if (op.expression instanceof Interpolation) {
         return;
     }
-    const ownerOp = lookupElement$2(elements, op.target);
     let extractable = op.expression.isConstant();
-    if (view.compatibility === CompatibilityMode.TemplateDefinitionBuilder) {
+    if (unit.job.compatibility === CompatibilityMode.TemplateDefinitionBuilder) {
         // TemplateDefinitionBuilder only extracted attributes that were string literals.
         extractable = isStringLiteral(op.expression);
         if (op.name === 'style' || op.name === 'class') {
@@ -10956,9 +10970,23 @@ function extractAttributeOp(view, op, elements) {
             // string literal, because it is not a text attribute.
             extractable &&= op.isTextAttribute;
         }
+        if (unit.job.kind === CompilationJobKind.Host) {
+            // TemplateDefinitionBuilder also does not seem to extract string literals if they are part of
+            // a host attribute.
+            extractable &&= op.isTextAttribute;
+        }
     }
     if (extractable) {
-        OpList.insertBefore(createExtractedAttributeOp(op.target, op.isTemplate ? BindingKind.Template : BindingKind.Attribute, op.name, op.expression), ownerOp);
+        const extractedAttributeOp = createExtractedAttributeOp(op.target, op.isTemplate ? BindingKind.Template : BindingKind.Attribute, op.name, op.expression);
+        if (unit.job.kind === CompilationJobKind.Host) {
+            // This attribute will apply to the enclosing host binding compilation unit, so order doesn't
+            // matter.
+            unit.create.push(extractedAttributeOp);
+        }
+        else {
+            const ownerOp = lookupElement$2(elements, op.target);
+            OpList.insertBefore(extractedAttributeOp, ownerOp);
+        }
         OpList.remove(op);
     }
 }
@@ -11001,9 +11029,8 @@ function phaseBindingSpecialization(job) {
                     break;
                 case BindingKind.Property:
                 case BindingKind.Animation:
-                    if (job instanceof HostBindingCompilationJob) {
-                        // TODO: host property animations
-                        OpList.replace(op, createHostPropertyOp(op.name, op.expression, op.sourceSpan));
+                    if (job.kind === CompilationJobKind.Host) {
+                        OpList.replace(op, createHostPropertyOp(op.name, op.expression, op.bindingKind === BindingKind.Animation, op.sourceSpan));
                     }
                     else {
                         OpList.replace(op, createPropertyOp(op.target, op.name, op.expression, op.bindingKind === BindingKind.Animation, op.securityContext, op.isTemplate, op.sourceSpan));
@@ -11024,6 +11051,7 @@ const CHAINABLE = new Set([
     Identifiers.element,
     Identifiers.property,
     Identifiers.hostProperty,
+    Identifiers.syntheticHostProperty,
     Identifiers.styleProp,
     Identifiers.attribute,
     Identifiers.stylePropInterpolate1,
@@ -11041,6 +11069,7 @@ const CHAINABLE = new Set([
     Identifiers.elementContainerEnd,
     Identifiers.elementContainer,
     Identifiers.listener,
+    Identifiers.syntheticHostListener,
 ]);
 /**
  * Post-process a reified view compilation and convert sequential calls to chainable instructions
@@ -11145,21 +11174,23 @@ function mergeNsAndName(prefix, localName) {
  * array expressions, and lifts them into the overall component `consts`.
  */
 function phaseConstCollection(job) {
-    // Serialize the extracted messages into the const array.
-    const messageConstIndices = {};
-    for (const unit of job.units) {
-        for (const op of unit.create) {
-            if (op.kind === OpKind.ExtractedMessage) {
-                messageConstIndices[op.owner] = job.addConst(op.expression, op.statements);
-                OpList.remove(op);
+    if (job instanceof ComponentCompilationJob) {
+        // Serialize the extracted messages into the const array.
+        const messageConstIndices = {};
+        for (const unit of job.units) {
+            for (const op of unit.create) {
+                if (op.kind === OpKind.ExtractedMessage) {
+                    messageConstIndices[op.owner] = job.addConst(op.expression, op.statements);
+                    OpList.remove(op);
+                }
             }
         }
-    }
-    // Assign const index to i18n ops that messages were extracted from.
-    for (const unit of job.units) {
-        for (const op of unit.create) {
-            if (op.kind === OpKind.I18nStart && messageConstIndices[op.xref] !== undefined) {
-                op.messageIndex = messageConstIndices[op.xref];
+        // Assign const index to i18n ops that messages were extracted from.
+        for (const unit of job.units) {
+            for (const op of unit.create) {
+                if (op.kind === OpKind.I18nStart && messageConstIndices[op.xref] !== undefined) {
+                    op.messageIndex = messageConstIndices[op.xref];
+                }
             }
         }
     }
@@ -11176,17 +11207,32 @@ function phaseConstCollection(job) {
         }
     }
     // Serialize the extracted attributes into the const array.
-    for (const unit of job.units) {
-        for (const op of unit.create) {
-            if (op.kind === OpKind.Element || op.kind === OpKind.ElementStart ||
-                op.kind === OpKind.Template) {
-                const attributes = elementAttributes.get(op.xref);
-                if (attributes !== undefined) {
-                    const attrArray = serializeAttributes(attributes);
-                    if (attrArray.entries.length > 0) {
-                        op.attributes = job.addConst(attrArray);
+    if (job instanceof ComponentCompilationJob) {
+        for (const unit of job.units) {
+            for (const op of unit.create) {
+                if (op.kind === OpKind.Element || op.kind === OpKind.ElementStart ||
+                    op.kind === OpKind.Template) {
+                    const attributes = elementAttributes.get(op.xref);
+                    if (attributes !== undefined) {
+                        const attrArray = serializeAttributes(attributes);
+                        if (attrArray.entries.length > 0) {
+                            op.attributes = job.addConst(attrArray);
+                        }
                     }
                 }
+            }
+        }
+    }
+    else if (job instanceof HostBindingCompilationJob) {
+        // TODO: If the host binding case further diverges, we may want to split it into its own
+        // phase.
+        for (const [xref, attributes] of elementAttributes.entries()) {
+            if (xref !== job.root.xref) {
+                throw new Error(`An attribute would be const collected into the host binding's template function, but is not associated with the root xref.`);
+            }
+            const attrArray = serializeAttributes(attributes);
+            if (attrArray.entries.length > 0) {
+                job.root.attributes = attrArray;
             }
         }
     }
@@ -11291,9 +11337,9 @@ const REPLACEMENTS = new Map([
  * Replace sequences of mergable elements (e.g. `ElementStart` and `ElementEnd`) with a consolidated
  * element (e.g. `Element`).
  */
-function phaseEmptyElements(cpl) {
-    for (const [_, view] of cpl.views) {
-        for (const op of view.create) {
+function phaseEmptyElements(job) {
+    for (const unit of job.units) {
+        for (const op of unit.create) {
             const opReplacements = REPLACEMENTS.get(op.kind);
             if (opReplacements === undefined) {
                 continue;
@@ -11489,11 +11535,11 @@ function ternaryTransform(e) {
  * Generate `ir.AdvanceOp`s in between `ir.UpdateOp`s that ensure the runtime's implicit slot
  * context will be advanced correctly.
  */
-function phaseGenerateAdvance(cpl) {
-    for (const [_, view] of cpl.views) {
+function phaseGenerateAdvance(job) {
+    for (const unit of job.units) {
         // First build a map of all of the declarations in the view that have assigned slots.
         const slotMap = new Map();
-        for (const op of view.create) {
+        for (const op of unit.create) {
             if (!hasConsumesSlotTrait(op)) {
                 continue;
             }
@@ -11508,7 +11554,7 @@ function phaseGenerateAdvance(cpl) {
         //
         // To do that, we track what the runtime's slot counter will be through the update operations.
         let slotContext = 0;
-        for (const op of view.update) {
+        for (const op of unit.update) {
             if (!hasDependsOnSlotContextTrait(op)) {
                 // `op` doesn't depend on the slot counter, so it can be skipped.
                 continue;
@@ -11575,8 +11621,8 @@ function phaseGenerateI18nBlocks(job) {
  * Variables are generated here unconditionally, and may optimized away in future operations if it
  * turns out their values (and any side effects) are unused.
  */
-function phaseGenerateVariables(cpl) {
-    recursivelyProcessView(cpl.root, /* there is no parent scope for the root view */ null);
+function phaseGenerateVariables(job) {
+    recursivelyProcessView(job.root, /* there is no parent scope for the root view */ null);
 }
 /**
  * Process the given `ViewCompilation` and generate preambles for it and any listeners that it
@@ -11684,8 +11730,10 @@ function generateVariablesInScopeForView(view, scope) {
 
 const STYLE_DOT = 'style.';
 const CLASS_DOT = 'class.';
+const STYLE_BANG = 'style!';
+const CLASS_BANG = 'class!';
 function phaseHostStylePropertyParsing(job) {
-    for (const op of job.update) {
+    for (const op of job.root.update) {
         if (op.kind !== OpKind.Binding) {
             continue;
         }
@@ -11699,13 +11747,17 @@ function phaseHostStylePropertyParsing(job) {
             op.name = property;
             op.unit = suffix;
         }
-        else if (op.name.startsWith('style!')) {
-            // TODO: do we only transform !important?
+        else if (op.name.startsWith(STYLE_BANG)) {
+            op.bindingKind = BindingKind.StyleProperty;
             op.name = 'style';
         }
         else if (op.name.startsWith(CLASS_DOT)) {
             op.bindingKind = BindingKind.ClassName;
             op.name = parseProperty$1(op.name.substring(CLASS_DOT.length)).property;
+        }
+        else if (op.name.startsWith(CLASS_BANG)) {
+            op.bindingKind = BindingKind.ClassName;
+            op.name = parseProperty$1(op.name.substring(CLASS_BANG.length)).property;
         }
     }
 }
@@ -18773,9 +18825,9 @@ function phaseI18nTextExtraction(job) {
  * Lifts local reference declarations on element-like structures within each view into an entry in
  * the `consts` array for the whole component.
  */
-function phaseLocalRefs(cpl) {
-    for (const view of cpl.views.values()) {
-        for (const op of view.create) {
+function phaseLocalRefs(job) {
+    for (const unit of job.units) {
+        for (const op of unit.create) {
             switch (op.kind) {
                 case OpKind.ElementStart:
                 case OpKind.Element:
@@ -18786,7 +18838,7 @@ function phaseLocalRefs(cpl) {
                     op.numSlotsUsed += op.localRefs.length;
                     if (op.localRefs.length > 0) {
                         const localRefs = serializeLocalRefs(op.localRefs);
-                        op.localRefs = cpl.addConst(localRefs);
+                        op.localRefs = job.addConst(localRefs);
                     }
                     else {
                         op.localRefs = null;
@@ -18808,9 +18860,9 @@ function serializeLocalRefs(refs) {
  * Change namespaces between HTML, SVG and MathML, depending on the next element.
  */
 function phaseNamespace(job) {
-    for (const [_, view] of job.views) {
+    for (const unit of job.units) {
         let activeNamespace = Namespace.HTML;
-        for (const op of view.create) {
+        for (const op of unit.create) {
             if (op.kind !== OpKind.Element && op.kind !== OpKind.ElementStart) {
                 continue;
             }
@@ -18961,25 +19013,30 @@ function addNamesToView(unit, baseName, state, compatibility) {
     for (const op of unit.ops()) {
         switch (op.kind) {
             case OpKind.Property:
+            case OpKind.HostProperty:
                 if (op.isAnimationTrigger) {
                     op.name = '@' + op.name;
                 }
                 break;
             case OpKind.Listener:
-                if (op.handlerFnName === null) {
-                    if (op.slot === null) {
-                        throw new Error(`Expected a slot to be assigned`);
-                    }
-                    const safeTagName = op.tag.replace('-', '_');
-                    if (op.isAnimationListener) {
-                        op.handlerFnName = sanitizeIdentifier(`${unit.fnName}_${safeTagName}_animation_${op.name}_${op.animationPhase}_${op.slot}_listener`);
-                        op.name = `@${op.name}.${op.animationPhase}`;
-                    }
-                    else {
-                        op.handlerFnName =
-                            sanitizeIdentifier(`${unit.fnName}_${safeTagName}_${op.name}_${op.slot}_listener`);
-                    }
+                if (op.handlerFnName !== null) {
+                    break;
                 }
+                if (!op.hostListener && op.slot === null) {
+                    throw new Error(`Expected a slot to be assigned`);
+                }
+                let animation = '';
+                if (op.isAnimationListener) {
+                    op.name = `@${op.name}.${op.animationPhase}`;
+                    animation = 'animation';
+                }
+                if (op.hostListener) {
+                    op.handlerFnName = `${baseName}_${animation}${op.name}_HostBindingHandler`;
+                }
+                else {
+                    op.handlerFnName = `${unit.fnName}_${op.tag.replace('-', '_')}_${animation}${op.name}_${op.slot}_listener`;
+                }
+                op.handlerFnName = sanitizeIdentifier(op.handlerFnName);
                 break;
             case OpKind.Variable:
                 varNames.set(op.xref, getVariableName(op.variable, state));
@@ -19066,14 +19123,14 @@ function stripImportant(name) {
  *     is, the call is purely side-effectful).
  *   * No operations in between them uses the implicit context.
  */
-function phaseMergeNextContext(cpl) {
-    for (const view of cpl.views.values()) {
-        for (const op of view.create) {
+function phaseMergeNextContext(job) {
+    for (const unit of job.units) {
+        for (const op of unit.create) {
             if (op.kind === OpKind.Listener) {
                 mergeNextContextsInOps(op.handlerOps);
             }
         }
-        mergeNextContextsInOps(view.update);
+        mergeNextContextsInOps(unit.update);
     }
 }
 function mergeNextContextsInOps(ops) {
@@ -19121,10 +19178,10 @@ const CONTAINER_TAG = 'ng-container';
 /**
  * Replace an `Element` or `ElementStart` whose tag is `ng-container` with a specific op.
  */
-function phaseNgContainer(cpl) {
-    for (const [_, view] of cpl.views) {
+function phaseNgContainer(job) {
+    for (const unit of job.units) {
         const updatedElementXrefs = new Set();
-        for (const op of view.create) {
+        for (const op of unit.create) {
             if (op.kind === OpKind.ElementStart && op.tag === CONTAINER_TAG) {
                 // Transmute the `ElementStart` instruction to `ContainerStart`.
                 op.kind = OpKind.ContainerStart;
@@ -19191,8 +19248,8 @@ function phaseNonbindable(job) {
             elements.set(op.xref, op);
         }
     }
-    for (const [_, view] of job.views) {
-        for (const op of view.create) {
+    for (const unit of job.units) {
+        for (const op of unit.create) {
             if ((op.kind === OpKind.ElementStart || op.kind === OpKind.ContainerStart) &&
                 op.nonBindable) {
                 OpList.insertAfter(createDisableBindingsOp(op.xref), op);
@@ -19228,8 +19285,8 @@ function phaseNullishCoalescing(job) {
  * class property.
  */
 function phaseParseExtractedStyles(cpl) {
-    for (const [_, view] of cpl.views) {
-        for (const op of view.create) {
+    for (const unit of cpl.units) {
+        for (const op of unit.create) {
             if (op.kind === OpKind.ExtractedAttribute && op.bindingKind === BindingKind.Attribute &&
                 isStringLiteral(op.expression)) {
                 if (op.name === 'style') {
@@ -19251,13 +19308,13 @@ function phaseParseExtractedStyles(cpl) {
     }
 }
 
-function phasePipeCreation(cpl) {
-    for (const view of cpl.views.values()) {
-        processPipeBindingsInView(view);
+function phasePipeCreation(job) {
+    for (const unit of job.units) {
+        processPipeBindingsInView(unit);
     }
 }
-function processPipeBindingsInView(view) {
-    for (const updateOp of view.update) {
+function processPipeBindingsInView(unit) {
+    for (const updateOp of unit.update) {
         visitExpressionsInOp(updateOp, (expr, flags) => {
             if (!isIrExpression(expr)) {
                 return;
@@ -19271,15 +19328,15 @@ function processPipeBindingsInView(view) {
             if (!hasDependsOnSlotContextTrait(updateOp)) {
                 throw new Error(`AssertionError: pipe binding associated with non-slot operation ${OpKind[updateOp.kind]}`);
             }
-            addPipeToCreationBlock(view, updateOp.target, expr);
+            addPipeToCreationBlock(unit, updateOp.target, expr);
         });
     }
 }
-function addPipeToCreationBlock(view, afterTargetXref, binding) {
+function addPipeToCreationBlock(unit, afterTargetXref, binding) {
     // Find the appropriate point to insert the Pipe creation operation.
     // We're looking for `afterTargetXref` (and also want to insert after any other pipe operations
     // which might be beyond it).
-    for (let op = view.create.head.next; op.kind !== OpKind.ListEnd; op = op.next) {
+    for (let op = unit.create.head.next; op.kind !== OpKind.ListEnd; op = op.next) {
         if (!hasConsumesSlotTrait(op)) {
             continue;
         }
@@ -19300,9 +19357,9 @@ function addPipeToCreationBlock(view, afterTargetXref, binding) {
     throw new Error(`AssertionError: unable to find insertion point for pipe ${binding.name}`);
 }
 
-function phasePipeVariadic(cpl) {
-    for (const view of cpl.views.values()) {
-        for (const op of view.update) {
+function phasePipeVariadic(job) {
+    for (const unit of job.units) {
+        for (const op of unit.update) {
             transformExpressionsInOp(op, expr => {
                 if (!(expr instanceof PipeBindingExpr)) {
                     return expr;
@@ -19321,83 +19378,81 @@ function kindTest(kind) {
     return (op) => op.kind === kind;
 }
 /**
- * Defines the groups based on `OpKind` that ops will be divided into. Ops will be collected into
- * groups, then optionally transformed, before recombining the groups in the order defined here.
+ * Defines the groups based on `OpKind` that ops will be divided into, for the various create
+ * binding kinds. Ops will be collected into groups, then optionally transformed, before recombining
+ * the groups in the order defined here.
  */
-const ORDERING = [
+const CREATE_ORDERING = [
+    { test: op => op.kind === OpKind.Listener && op.hostListener && op.isAnimationListener },
+    { test: op => op.kind === OpKind.Listener && !(op.hostListener && op.isAnimationListener) },
+];
+/**
+ * As above, but for update ops.
+ */
+const UPDATE_ORDERING = [
+    { test: op => op.kind === OpKind.HostProperty && op.expression instanceof Interpolation },
+    { test: op => op.kind === OpKind.HostProperty && !(op.expression instanceof Interpolation) },
     { test: kindTest(OpKind.StyleMap), transform: keepLast },
     { test: kindTest(OpKind.ClassMap), transform: keepLast },
     { test: kindTest(OpKind.StyleProp) },
     { test: kindTest(OpKind.ClassProp) },
-    {
-        test: (op) => (op.kind === OpKind.Property || op.kind === OpKind.HostProperty) &&
-            op.expression instanceof Interpolation
-    },
-    {
-        test: (op) => (op.kind === OpKind.Property || op.kind === OpKind.HostProperty) &&
-            !(op.expression instanceof Interpolation)
-    },
+    { test: op => op.kind === OpKind.Property && op.expression instanceof Interpolation },
+    { test: op => op.kind === OpKind.Property && !(op.expression instanceof Interpolation) },
     { test: kindTest(OpKind.Attribute) },
 ];
 /**
  * The set of all op kinds we handle in the reordering phase.
  */
 const handledOpKinds = new Set([
-    OpKind.StyleMap,
-    OpKind.ClassMap,
-    OpKind.StyleProp,
-    OpKind.ClassProp,
-    OpKind.Property,
-    OpKind.HostProperty,
-    OpKind.Attribute,
+    OpKind.Listener, OpKind.StyleMap, OpKind.ClassMap, OpKind.StyleProp,
+    OpKind.ClassProp, OpKind.Property, OpKind.HostProperty, OpKind.Attribute
 ]);
-/**
- * Reorders property and attribute ops according to the following ordering:
- * 1. styleMap & styleMapInterpolate (drops all but the last op in the group)
- * 2. classMap & classMapInterpolate (drops all but the last op in the group)
- * 3. styleProp & stylePropInterpolate (ordering preserved within group)
- * 4. classProp (ordering preserved within group)
- * 5. propertyInterpolate (ordering preserved within group)
- * 6. property (ordering preserved within group)
- * 7. attribute & attributeInterpolate (ordering preserve within group)
- */
-function phasePropertyOrdering(cpl) {
-    for (const unit of cpl.units) {
+function phaseOrdering(job) {
+    for (const unit of job.units) {
+        // First, we pull out ops that need to be ordered. Then, when we encounter an op that shouldn't
+        // be reordered, put the ones we've pulled so far back in the correct order. Finally, if we
+        // still have ops pulled at the end, put them back in the correct order.
+        // Create mode:
         let opsToOrder = [];
-        for (const op of unit.update) {
+        for (const op of unit.create) {
             if (handledOpKinds.has(op.kind)) {
-                // Pull out ops that need o be ordered.
                 opsToOrder.push(op);
                 OpList.remove(op);
             }
             else {
-                // When we encounter an op that shouldn't be reordered, put the ones we've pulled so far
-                // back in the correct order.
-                for (const orderedOp of reorder(opsToOrder)) {
-                    OpList.insertBefore(orderedOp, op);
-                }
+                OpList.insertBefore(reorder(opsToOrder, CREATE_ORDERING), op);
                 opsToOrder = [];
             }
         }
-        // If we still have ops pulled at the end, put them back in the correct order.
-        for (const orderedOp of reorder(opsToOrder)) {
-            unit.update.push(orderedOp);
+        unit.create.push(reorder(opsToOrder, CREATE_ORDERING));
+        // Update mode:
+        opsToOrder = [];
+        for (const op of unit.update) {
+            if (handledOpKinds.has(op.kind)) {
+                opsToOrder.push(op);
+                OpList.remove(op);
+            }
+            else {
+                OpList.insertBefore(reorder(opsToOrder, UPDATE_ORDERING), op);
+                opsToOrder = [];
+            }
         }
+        unit.update.push(reorder(opsToOrder, UPDATE_ORDERING));
     }
 }
 /**
  * Reorders the given list of ops according to the ordering defined by `ORDERING`.
  */
-function reorder(ops) {
+function reorder(ops, ordering) {
     // Break the ops list into groups based on OpKind.
-    const groups = Array.from(ORDERING, () => new Array());
+    const groups = Array.from(ordering, () => new Array());
     for (const op of ops) {
-        const groupIndex = ORDERING.findIndex(o => o.test(op));
+        const groupIndex = ordering.findIndex(o => o.test(op));
         groups[groupIndex].push(op);
     }
     // Reassemble the groups into a single list, in the correct order.
     return groups.flatMap((group, i) => {
-        const transform = ORDERING[i].transform;
+        const transform = ordering[i].transform;
         return transform ? transform(group) : group;
     });
 }
@@ -19554,6 +19609,12 @@ function enableBindings() {
 }
 function listener(name, handlerFn) {
     return call(Identifiers.listener, [
+        literal(name),
+        handlerFn,
+    ], null);
+}
+function syntheticHostListener(name, handlerFn) {
+    return call(Identifiers.syntheticHostListener, [
         literal(name),
         handlerFn,
     ], null);
@@ -19721,6 +19782,9 @@ function classMapInterpolate(strings, expressions) {
 }
 function hostProperty(name, expression) {
     return call(Identifiers.hostProperty, [literal(name), expression], null);
+}
+function syntheticHostProperty(name, expression) {
+    return call(Identifiers.syntheticHostProperty, [literal(name), expression], null);
 }
 function pureFunction(varOffset, fn, args) {
     return callVariadicInstructionExpr(PURE_FUNCTION_CONFIG, [
@@ -20003,7 +20067,10 @@ function reifyCreateOperations(unit, ops) {
                 break;
             case OpKind.Listener:
                 const listenerFn = reifyListenerHandler(unit, op.handlerFnName, op.handlerOps, op.consumesDollarEvent);
-                OpList.replace(op, listener(op.name, listenerFn));
+                const reified = op.hostListener && op.isAnimationListener ?
+                    syntheticHostListener(op.name, listenerFn) :
+                    listener(op.name, listenerFn);
+                OpList.replace(op, reified);
                 break;
             case OpKind.Variable:
                 if (op.variable.name === null) {
@@ -20090,7 +20157,12 @@ function reifyUpdateOperations(_unit, ops) {
                     throw new Error('not yet handled');
                 }
                 else {
-                    OpList.replace(op, hostProperty(op.name, op.expression));
+                    if (op.isAnimationTrigger) {
+                        OpList.replace(op, syntheticHostProperty(op.name, op.expression));
+                    }
+                    else {
+                        OpList.replace(op, hostProperty(op.name, op.expression));
+                    }
                 }
                 break;
             case OpKind.Variable:
@@ -20254,13 +20326,13 @@ function processLexicalScope$1(view, ops) {
  * Any variable inside a listener with the name `$event` will be transformed into a output lexical
  * read immediately, and does not participate in any of the normal logic for handling variables.
  */
-function phaseResolveDollarEvent(cpl) {
-    for (const [_, view] of cpl.views) {
-        resolveDollarEvent(view, view.create);
-        resolveDollarEvent(view, view.update);
+function phaseResolveDollarEvent(job) {
+    for (const unit of job.units) {
+        resolveDollarEvent(unit, unit.create);
+        resolveDollarEvent(unit, unit.update);
     }
 }
-function resolveDollarEvent(view, ops) {
+function resolveDollarEvent(unit, ops) {
     for (const op of ops) {
         if (op.kind === OpKind.Listener) {
             transformExpressionsInOp(op, (expr) => {
@@ -20435,11 +20507,11 @@ const sanitizers = new Map([
 /**
  * Resolves sanitization functions for ops that need them.
  */
-function phaseResolveSanitizers(cpl) {
-    for (const [_, view] of cpl.views) {
-        const elements = getElementsByXrefId(view);
+function phaseResolveSanitizers(job) {
+    for (const unit of job.units) {
+        const elements = getElementsByXrefId(unit);
         let sanitizerFn;
-        for (const op of view.update) {
+        for (const op of unit.update) {
             switch (op.kind) {
                 case OpKind.Property:
                 case OpKind.Attribute:
@@ -20471,8 +20543,8 @@ function isIframeElement$1(op) {
         op.tag.toLowerCase() === 'iframe';
 }
 
-function phaseSaveRestoreView(cpl) {
-    for (const view of cpl.views.values()) {
+function phaseSaveRestoreView(job) {
+    for (const view of job.views.values()) {
         view.create.prepend([
             createVariableOp(view.job.allocateXrefId(), {
                 kind: SemanticVariableKind.SavedView,
@@ -20485,7 +20557,7 @@ function phaseSaveRestoreView(cpl) {
                 continue;
             }
             // Embedded views always need the save/restore view operation.
-            let needsRestoreView = view !== cpl.root;
+            let needsRestoreView = view !== job.root;
             if (!needsRestoreView) {
                 for (const handlerOp of op.handlerOps) {
                     visitExpressionsInOp(handlerOp, expr => {
@@ -20502,13 +20574,13 @@ function phaseSaveRestoreView(cpl) {
         }
     }
 }
-function addSaveRestoreViewOperationToListener(view, op) {
+function addSaveRestoreViewOperationToListener(unit, op) {
     op.handlerOps.prepend([
-        createVariableOp(view.job.allocateXrefId(), {
+        createVariableOp(unit.job.allocateXrefId(), {
             kind: SemanticVariableKind.Context,
             name: null,
-            view: view.xref,
-        }, new RestoreViewExpr(view.xref)),
+            view: unit.xref,
+        }, new RestoreViewExpr(unit.xref)),
     ]);
     // The "restore view" operation in listeners requires a call to `resetView` to reset the
     // context prior to returning from the listener operation. Find any `return` statements in
@@ -20529,17 +20601,17 @@ function addSaveRestoreViewOperationToListener(view, op) {
  * This phase is also responsible for counting the number of slots used for each view (its `decls`)
  * and propagating that number into the `Template` operations which declare embedded views.
  */
-function phaseSlotAllocation(cpl) {
+function phaseSlotAllocation(job) {
     // Map of all declarations in all views within the component which require an assigned slot index.
     // This map needs to be global (across all views within the component) since it's possible to
     // reference a slot from one view from an expression within another (e.g. local references work
     // this way).
     const slotMap = new Map();
     // Process all views in the component and assign slot indexes.
-    for (const [_, view] of cpl.views) {
+    for (const unit of job.units) {
         // Slot indices start at 0 for each view (and are not unique between views).
         let slotCount = 0;
-        for (const op of view.create) {
+        for (const op of unit.create) {
             // Only consider declarations which consume data slots.
             if (!hasConsumesSlotTrait(op)) {
                 continue;
@@ -20554,19 +20626,19 @@ function phaseSlotAllocation(cpl) {
         }
         // Record the total number of slots used on the view itself. This will later be propagated into
         // `ir.TemplateOp`s which declare those views (except for the root view).
-        view.decls = slotCount;
+        unit.decls = slotCount;
     }
     // After slot assignment, `slotMap` now contains slot assignments for every declaration in the
     // whole template, across all views. Next, look for expressions which implement
     // `UsesSlotIndexExprTrait` and propagate the assigned slot indexes into them.
     // Additionally, this second scan allows us to find `ir.TemplateOp`s which declare views and
     // propagate the number of slots used for each view into the operation which declares it.
-    for (const [_, view] of cpl.views) {
-        for (const op of view.ops()) {
+    for (const unit of job.units) {
+        for (const op of unit.ops()) {
             if (op.kind === OpKind.Template) {
                 // Record the number of slots used by the view this `ir.TemplateOp` declares in the
                 // operation itself, so it can be emitted later.
-                const childView = cpl.views.get(op.xref);
+                const childView = job.views.get(op.xref);
                 op.decls = childView.decls;
             }
             if (hasUsesSlotIndexTrait(op) && op.slot === null) {
@@ -21060,75 +21132,61 @@ function allowConservativeInlining(decl, target) {
     }
 }
 
+const phases = [
+    { kind: CompilationJobKind.Tmpl, fn: phaseGenerateI18nBlocks },
+    { kind: CompilationJobKind.Tmpl, fn: phaseI18nTextExtraction },
+    { kind: CompilationJobKind.Host, fn: phaseHostStylePropertyParsing },
+    { kind: CompilationJobKind.Tmpl, fn: phaseNamespace },
+    { kind: CompilationJobKind.Both, fn: phaseStyleBindingSpecialization },
+    { kind: CompilationJobKind.Both, fn: phaseBindingSpecialization },
+    { kind: CompilationJobKind.Both, fn: phaseAttributeExtraction },
+    { kind: CompilationJobKind.Both, fn: phaseParseExtractedStyles },
+    { kind: CompilationJobKind.Tmpl, fn: phaseRemoveEmptyBindings },
+    { kind: CompilationJobKind.Tmpl, fn: phaseNoListenersOnTemplates },
+    { kind: CompilationJobKind.Tmpl, fn: phasePipeCreation },
+    { kind: CompilationJobKind.Tmpl, fn: phasePipeVariadic },
+    { kind: CompilationJobKind.Both, fn: phasePureLiteralStructures },
+    { kind: CompilationJobKind.Tmpl, fn: phaseGenerateVariables },
+    { kind: CompilationJobKind.Tmpl, fn: phaseSaveRestoreView },
+    { kind: CompilationJobKind.Tmpl, fn: phaseFindAnyCasts },
+    { kind: CompilationJobKind.Both, fn: phaseResolveDollarEvent },
+    { kind: CompilationJobKind.Both, fn: phaseResolveNames },
+    { kind: CompilationJobKind.Both, fn: phaseResolveContexts },
+    { kind: CompilationJobKind.Tmpl, fn: phaseResolveSanitizers },
+    { kind: CompilationJobKind.Tmpl, fn: phaseLocalRefs },
+    { kind: CompilationJobKind.Both, fn: phaseNullishCoalescing },
+    { kind: CompilationJobKind.Both, fn: phaseExpandSafeReads },
+    { kind: CompilationJobKind.Both, fn: phaseTemporaryVariables },
+    { kind: CompilationJobKind.Tmpl, fn: phaseSlotAllocation },
+    { kind: CompilationJobKind.Tmpl, fn: phaseResolveI18nPlaceholders },
+    { kind: CompilationJobKind.Tmpl, fn: phaseI18nMessageExtraction },
+    { kind: CompilationJobKind.Both, fn: phaseConstCollection },
+    { kind: CompilationJobKind.Both, fn: phaseVarCounting },
+    { kind: CompilationJobKind.Tmpl, fn: phaseGenerateAdvance },
+    { kind: CompilationJobKind.Both, fn: phaseVariableOptimization },
+    { kind: CompilationJobKind.Both, fn: phaseNaming },
+    { kind: CompilationJobKind.Tmpl, fn: phaseMergeNextContext },
+    { kind: CompilationJobKind.Tmpl, fn: phaseNgContainer },
+    { kind: CompilationJobKind.Tmpl, fn: phaseEmptyElements },
+    { kind: CompilationJobKind.Tmpl, fn: phaseNonbindable },
+    { kind: CompilationJobKind.Both, fn: phasePureFunctionExtraction },
+    { kind: CompilationJobKind.Tmpl, fn: phaseAlignPipeVariadicVarOffset },
+    { kind: CompilationJobKind.Both, fn: phaseOrdering },
+    { kind: CompilationJobKind.Both, fn: phaseReify },
+    { kind: CompilationJobKind.Both, fn: phaseChaining },
+];
 /**
- * Run all transformation phases in the correct order against a `ComponentCompilation`. After this
+ * Run all transformation phases in the correct order against a compilation job. After this
  * processing, the compilation should be in a state where it can be emitted.
  */
-function transformTemplate(job) {
-    phaseGenerateI18nBlocks(job);
-    phaseI18nTextExtraction(job);
-    phaseNamespace(job);
-    phaseStyleBindingSpecialization(job);
-    phaseBindingSpecialization(job);
-    phaseAttributeExtraction(job);
-    phaseParseExtractedStyles(job);
-    phaseRemoveEmptyBindings(job);
-    phaseNoListenersOnTemplates(job);
-    phasePipeCreation(job);
-    phasePipeVariadic(job);
-    phasePureLiteralStructures(job);
-    phaseGenerateVariables(job);
-    phaseSaveRestoreView(job);
-    phaseFindAnyCasts(job);
-    phaseResolveDollarEvent(job);
-    phaseResolveNames(job);
-    phaseResolveContexts(job);
-    phaseResolveSanitizers(job);
-    phaseLocalRefs(job);
-    phaseNullishCoalescing(job);
-    phaseExpandSafeReads(job);
-    phaseTemporaryVariables(job);
-    phaseSlotAllocation(job);
-    phaseResolveI18nPlaceholders(job);
-    phaseI18nMessageExtraction(job);
-    phaseConstCollection(job);
-    phaseVarCounting(job);
-    phaseGenerateAdvance(job);
-    phaseVariableOptimization(job);
-    phaseNaming(job);
-    phaseMergeNextContext(job);
-    phaseNgContainer(job);
-    phaseEmptyElements(job);
-    phaseNonbindable(job);
-    phasePureFunctionExtraction(job);
-    phaseAlignPipeVariadicVarOffset(job);
-    phasePropertyOrdering(job);
-    phaseReify(job);
-    phaseChaining(job);
-}
-/**
- * Run all transformation phases in the correct order against a `HostBindingCompilationJob`. After
- * this processing, the compilation should be in a state where it can be emitted.
- */
-function transformHostBinding(job) {
-    phaseHostStylePropertyParsing(job);
-    phaseStyleBindingSpecialization(job);
-    phaseBindingSpecialization(job);
-    phasePureLiteralStructures(job);
-    phaseNullishCoalescing(job);
-    phaseExpandSafeReads(job);
-    phaseTemporaryVariables(job);
-    phaseVarCounting(job);
-    phaseVariableOptimization(job);
-    phaseResolveNames(job);
-    phaseResolveContexts(job);
-    // TODO: Figure out how to make this work for host bindings.
-    // phaseResolveSanitizers(job);
-    phaseNaming(job);
-    phasePureFunctionExtraction(job);
-    phasePropertyOrdering(job);
-    phaseReify(job);
-    phaseChaining(job);
+function transform(job, kind) {
+    for (const phase of phases) {
+        if (phase.kind === kind || phase.kind === CompilationJobKind.Both) {
+            // The type of `Phase` above ensures it is impossible to call a phase that doesn't support the
+            // job kind.
+            phase.fn(job);
+        }
+    }
 }
 /**
  * Compile all views in the given `ComponentCompilation` into the final template function, which may
@@ -21140,13 +21198,13 @@ function emitTemplateFn(tpl, pool) {
     return rootFn;
 }
 function emitChildViews(parent, pool) {
-    for (const view of parent.job.views.values()) {
-        if (view.parent !== parent.xref) {
+    for (const unit of parent.job.units) {
+        if (unit.parent !== parent.xref) {
             continue;
         }
         // Child views are emitted depth-first.
-        emitChildViews(view, pool);
-        const viewFn = emitView(view);
+        emitChildViews(unit, pool);
+        const viewFn = emitView(unit);
         pool.statements.push(viewFn.toDeclStmt(viewFn.name));
     }
 }
@@ -21192,18 +21250,18 @@ function maybeGenerateRfBlock(flag, statements) {
     ];
 }
 function emitHostBindingFunction(job) {
-    if (job.fnName === null) {
+    if (job.root.fnName === null) {
         throw new Error(`AssertionError: host binding function is unnamed`);
     }
     const createStatements = [];
-    for (const op of job.create) {
+    for (const op of job.root.create) {
         if (op.kind !== OpKind.Statement) {
             throw new Error(`AssertionError: expected all create ops to have been compiled, but got ${OpKind[op.kind]}`);
         }
         createStatements.push(op.statement);
     }
     const updateStatements = [];
-    for (const op of job.update) {
+    for (const op of job.root.update) {
         if (op.kind !== OpKind.Statement) {
             throw new Error(`AssertionError: expected all update ops to have been compiled, but got ${OpKind[op.kind]}`);
         }
@@ -21221,7 +21279,7 @@ function emitHostBindingFunction(job) {
         ...createCond,
         ...updateCond,
     ], 
-    /* type */ undefined, /* sourceSpan */ undefined, job.fnName);
+    /* type */ undefined, /* sourceSpan */ undefined, job.root.fnName);
 }
 
 const compatibilityMode = CompatibilityMode.TemplateDefinitionBuilder;
@@ -21242,6 +21300,9 @@ function ingestHostBinding(input, bindingParser, constantPool) {
     const job = new HostBindingCompilationJob(input.componentName, constantPool, compatibilityMode);
     for (const property of input.properties ?? []) {
         ingestHostProperty(job, property, false);
+    }
+    for (const [name, expr] of Object.entries(input.attributes) ?? []) {
+        ingestHostAttribute(job, name, expr);
     }
     for (const event of input.events ?? []) {
         ingestHostEvent(job, event);
@@ -21266,10 +21327,23 @@ function ingestHostProperty(job, property, isTextAttribute) {
         property.name = property.name.substring('attr.'.length);
         bindingKind = BindingKind.Attribute;
     }
-    job.update.push(createBindingOp(job.root.xref, bindingKind, property.name, expression, null, SecurityContext
+    if (property.isAnimation) {
+        bindingKind = BindingKind.Animation;
+    }
+    job.root.update.push(createBindingOp(job.root.xref, bindingKind, property.name, expression, null, SecurityContext
         .NONE /* TODO: what should we pass as security context? Passing NONE for now. */, isTextAttribute, false, property.sourceSpan));
 }
-function ingestHostEvent(job, event) { }
+function ingestHostAttribute(job, name, value) {
+    const attrBinding = createBindingOp(job.root.xref, BindingKind.Attribute, name, value, null, SecurityContext.NONE, true, false, 
+    /* TODO: host attribute source spans */ null);
+    job.root.update.push(attrBinding);
+}
+function ingestHostEvent(job, event) {
+    const eventBinding = createListenerOp(job.root.xref, event.name, null, event.targetOrPhase, true);
+    // TODO: Can this be a chain?
+    eventBinding.handlerOps.push(createStatementOp(new ReturnStatement(convertAst(event.handler.ast, job))));
+    job.root.create.push(eventBinding);
+}
 /**
  * Ingest the nodes of a template AST into the given `ViewCompilation`.
  */
@@ -21467,11 +21541,8 @@ function ingestBindings(view, op, element) {
             if (output.phase === null) {
                 throw Error('Animation listener should have a phase');
             }
-            listenerOp = createListenerOpForAnimation(op.xref, output.name, output.phase, op.tag);
         }
-        else {
-            listenerOp = createListenerOp(op.xref, output.name, op.tag);
-        }
+        listenerOp = createListenerOp(op.xref, output.name, op.tag, output.phase, false);
         // if output.handler is a chain, then push each statement from the chain separately, and
         // return the last one?
         let inputExprs;
@@ -26284,7 +26355,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
         // ingested into IR:
         const tpl = ingestComponent(meta.name, meta.template.nodes, constantPool, meta.relativeContextFilePath, meta.i18nUseExternalIds);
         // Then the IR is transformed to prepare it for cod egeneration.
-        transformTemplate(tpl);
+        transform(tpl, CompilationJobKind.Tmpl);
         // Finally we emit the template function:
         const templateFn = emitTemplateFn(tpl, constantPool);
         definitionMap.set('decls', literal(tpl.root.decls));
@@ -26530,15 +26601,26 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
     // Calculate host event bindings
     const eventBindings = bindingParser.createDirectiveHostEventAsts(hostBindingsMetadata.listeners, typeSourceSpan);
     if (USE_TEMPLATE_PIPELINE) {
-        // TODO: host binding metadata is not yet parsed in the template pipeline, so we need to extract
-        // that code from below. Then, we will ingest a `HostBindingJob`, and run the template pipeline
-        // phases.
+        // The parser for host bindings treats class and style attributes specially -- they are
+        // extracted into these separate fields. This is not the case for templates, so the compiler can
+        // actually already handle these special attributes internally. Therefore, we just drop them
+        // into the attributes map.
+        if (hostBindingsMetadata.specialAttributes.styleAttr) {
+            hostBindingsMetadata.attributes.style =
+                literal(hostBindingsMetadata.specialAttributes.styleAttr);
+        }
+        if (hostBindingsMetadata.specialAttributes.classAttr) {
+            hostBindingsMetadata.attributes.class =
+                literal(hostBindingsMetadata.specialAttributes.classAttr);
+        }
         const hostJob = ingestHostBinding({
             componentName: name,
             properties: bindings,
             events: eventBindings,
+            attributes: hostBindingsMetadata.attributes,
         }, bindingParser, constantPool);
-        transformHostBinding(hostJob);
+        transform(hostJob, CompilationJobKind.Host);
+        definitionMap.set('hostAttrs', hostJob.root.attributes);
         const varCount = hostJob.root.vars;
         if (varCount !== null && varCount > 0) {
             definitionMap.set('hostVars', literal(varCount));
@@ -27503,7 +27585,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.1+sha-cdcfa09');
+const VERSION = new Version('17.0.0-next.1+sha-c2d8592');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -29661,7 +29743,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-cdcfa09'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-c2d8592'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -29769,7 +29851,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-cdcfa09'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-c2d8592'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30000,7 +30082,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-cdcfa09'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-c2d8592'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30035,7 +30117,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-cdcfa09'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-c2d8592'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30086,7 +30168,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-cdcfa09'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-c2d8592'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30119,7 +30201,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-cdcfa09'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-c2d8592'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30170,7 +30252,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-cdcfa09'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-c2d8592'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
