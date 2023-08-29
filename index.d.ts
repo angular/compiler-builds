@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.1+sha-006577f
+ * @license Angular v17.0.0-next.1+sha-c5daa6c
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3744,6 +3744,10 @@ export declare class R3Identifiers {
     static deferPrefetchOnInteraction: outputAst.ExternalReference;
     static deferPrefetchOnViewport: outputAst.ExternalReference;
     static conditional: outputAst.ExternalReference;
+    static repeater: outputAst.ExternalReference;
+    static repeaterCreate: outputAst.ExternalReference;
+    static repeaterTrackByIndex: outputAst.ExternalReference;
+    static repeaterTrackByIdentity: outputAst.ExternalReference;
     static text: outputAst.ExternalReference;
     static enableBindings: outputAst.ExternalReference;
     static disableBindings: outputAst.ExternalReference;
@@ -4827,15 +4831,15 @@ export declare class TmplAstElement implements TmplAstNode {
 
 export declare class TmplAstForLoopBlock implements TmplAstNode {
     itemName: string;
-    expression: AST;
-    trackBy: AST;
+    expression: ASTWithSource;
+    trackBy: ASTWithSource;
     contextVariables: ForLoopBlockContext | null;
     children: TmplAstNode[];
     empty: TmplAstForLoopBlockEmpty | null;
     sourceSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
-    constructor(itemName: string, expression: AST, trackBy: AST, contextVariables: ForLoopBlockContext | null, children: TmplAstNode[], empty: TmplAstForLoopBlockEmpty | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
+    constructor(itemName: string, expression: ASTWithSource, trackBy: ASTWithSource, contextVariables: ForLoopBlockContext | null, children: TmplAstNode[], empty: TmplAstForLoopBlockEmpty | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 

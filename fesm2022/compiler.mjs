@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.1+sha-006577f
+ * @license Angular v17.0.0-next.1+sha-c5daa6c
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2674,6 +2674,10 @@ class Identifiers {
     static { this.deferPrefetchOnInteraction = { name: 'ɵɵdeferPrefetchOnInteraction', moduleName: CORE }; }
     static { this.deferPrefetchOnViewport = { name: 'ɵɵdeferPrefetchOnViewport', moduleName: CORE }; }
     static { this.conditional = { name: 'ɵɵconditional', moduleName: CORE }; }
+    static { this.repeater = { name: 'ɵɵrepeater', moduleName: CORE }; }
+    static { this.repeaterCreate = { name: 'ɵɵrepeaterCreate', moduleName: CORE }; }
+    static { this.repeaterTrackByIndex = { name: 'ɵɵrepeaterTrackByIndex', moduleName: CORE }; }
+    static { this.repeaterTrackByIdentity = { name: 'ɵɵrepeaterTrackByIdentity', moduleName: CORE }; }
     static { this.text = { name: 'ɵɵtext', moduleName: CORE }; }
     static { this.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE }; }
     static { this.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE }; }
@@ -4996,6 +5000,7 @@ const CHAINABLE_INSTRUCTIONS = new Set([
     Identifiers.textInterpolate7,
     Identifiers.textInterpolate8,
     Identifiers.textInterpolateV,
+    Identifiers.templateCreate,
 ]);
 /** Generates a call to a single instruction. */
 function invokeInstruction(span, reference, params) {
@@ -11127,6 +11132,7 @@ const CHAINABLE = new Set([
     Identifiers.elementContainer,
     Identifiers.listener,
     Identifiers.syntheticHostListener,
+    Identifiers.templateCreate,
 ]);
 /**
  * Post-process a reified view compilation and convert sequential calls to chainable instructions
@@ -24376,6 +24382,19 @@ function createComponentDefConsts() {
         i18nVarRefsCache: new Map(),
     };
 }
+class TemplateData {
+    constructor(name, index, visitor) {
+        this.name = name;
+        this.index = index;
+        this.visitor = visitor;
+    }
+    getConstCount() {
+        return this.visitor.getConstCount();
+    }
+    getVarCount() {
+        return this.visitor.getVarCount();
+    }
+}
 class TemplateDefinitionBuilder {
     constructor(constantPool, parentBindingScope, level = 0, contextName, i18nContext, templateIndex, templateName, _namespace, relativeContextFilePath, i18nUseExternalIds, deferBlocks, _constants = createComponentDefConsts()) {
         this.constantPool = constantPool;
@@ -24447,6 +24466,7 @@ class TemplateDefinitionBuilder {
         this.visitDeferredBlockPlaceholder = invalid;
         this.visitIfBlockBranch = invalid;
         this.visitSwitchBlockCase = invalid;
+        this.visitForLoopBlockEmpty = invalid;
         this._bindingScope = parentBindingScope.nestedScope(level);
         // Turn the relative context file path into an identifier by replacing non-alphanumeric
         // characters with underscores.
@@ -25019,16 +25039,33 @@ class TemplateDefinitionBuilder {
             this.creationInstruction(span, isNgContainer$1 ? Identifiers.elementContainerEnd : Identifiers.elementEnd);
         }
     }
-    createEmbeddedTemplateFn(tagName, children, contextNameSuffix, sourceSpan, variables = [], attrsExprs, references, i18n) {
-        const templateIndex = this.allocateDataSlot();
+    prepareEmbeddedTemplateFn(children, contextNameSuffix, variables = [], i18n) {
+        const index = this.allocateDataSlot();
         if (this.i18n && i18n) {
-            this.i18n.appendTemplate(i18n, templateIndex);
+            this.i18n.appendTemplate(i18n, index);
         }
-        const contextName = `${this.contextName}${contextNameSuffix}_${templateIndex}`;
-        const templateName = `${contextName}_Template`;
+        const contextName = `${this.contextName}${contextNameSuffix}_${index}`;
+        const name = `${contextName}_Template`;
+        // Create the template function
+        const visitor = new TemplateDefinitionBuilder(this.constantPool, this._bindingScope, this.level + 1, contextName, this.i18n, index, name, this._namespace, this.fileBasedI18nSuffix, this.i18nUseExternalIds, this.deferBlocks, this._constants);
+        // Nested templates must not be visited until after their parent templates have completed
+        // processing, so they are queued here until after the initial pass. Otherwise, we wouldn't
+        // be able to support bindings in nested templates to local refs that occur after the
+        // template definition. e.g. <div *ngIf="showing">{{ foo }}</div>  <div #foo></div>
+        this._nestedTemplateFns.push(() => {
+            const templateFunctionExpr = visitor.buildTemplateFunction(children, variables, this._ngContentReservedSlots.length + this._ngContentSelectorsOffset, i18n);
+            this.constantPool.statements.push(templateFunctionExpr.toDeclStmt(name));
+            if (visitor._ngContentReservedSlots.length) {
+                this._ngContentReservedSlots.push(...visitor._ngContentReservedSlots);
+            }
+        });
+        return new TemplateData(name, index, visitor);
+    }
+    createEmbeddedTemplateFn(tagName, children, contextNameSuffix, sourceSpan, variables = [], attrsExprs, references, i18n) {
+        const data = this.prepareEmbeddedTemplateFn(children, contextNameSuffix, variables, i18n);
         const parameters = [
-            literal(templateIndex),
-            variable(templateName),
+            literal(data.index),
+            variable(data.name),
             literal(tagName),
             this.addAttrsToConsts(attrsExprs || null),
         ];
@@ -25038,25 +25075,12 @@ class TemplateDefinitionBuilder {
             parameters.push(this.addToConsts(refs));
             parameters.push(importExpr(Identifiers.templateRefExtractor));
         }
-        // Create the template function
-        const templateVisitor = new TemplateDefinitionBuilder(this.constantPool, this._bindingScope, this.level + 1, contextName, this.i18n, templateIndex, templateName, this._namespace, this.fileBasedI18nSuffix, this.i18nUseExternalIds, this.deferBlocks, this._constants);
-        // Nested templates must not be visited until after their parent templates have completed
-        // processing, so they are queued here until after the initial pass. Otherwise, we wouldn't
-        // be able to support bindings in nested templates to local refs that occur after the
-        // template definition. e.g. <div *ngIf="showing">{{ foo }}</div>  <div #foo></div>
-        this._nestedTemplateFns.push(() => {
-            const templateFunctionExpr = templateVisitor.buildTemplateFunction(children, variables, this._ngContentReservedSlots.length + this._ngContentSelectorsOffset, i18n);
-            this.constantPool.statements.push(templateFunctionExpr.toDeclStmt(templateName));
-            if (templateVisitor._ngContentReservedSlots.length) {
-                this._ngContentReservedSlots.push(...templateVisitor._ngContentReservedSlots);
-            }
-        });
         // e.g. template(1, MyComp_Template_1)
         this.creationInstruction(sourceSpan, Identifiers.templateCreate, () => {
-            parameters.splice(2, 0, literal(templateVisitor.getConstCount()), literal(templateVisitor.getVarCount()));
+            parameters.splice(2, 0, literal(data.getConstCount()), literal(data.getVarCount()));
             return trimTrailingNulls(parameters);
         });
-        return templateIndex;
+        return data.index;
     }
     visitTemplate(template) {
         // We don't care about the tag's namespace here, because we infer
@@ -25378,9 +25402,73 @@ class TemplateDefinitionBuilder {
     allocateDataSlot() {
         return this._dataIndex++;
     }
-    // TODO: implement for loop instructions
-    visitForLoopBlock(block) { }
-    visitForLoopBlockEmpty(block) { }
+    visitForLoopBlock(block) {
+        // Allocate one slot for the repeater metadata. The slots for the primary and empty block
+        // are implicitly inferred by the runtime to index + 1 and index + 2.
+        const blockIndex = this.allocateDataSlot();
+        const templateVariables = this.createForLoopVariables(block);
+        const primaryData = this.prepareEmbeddedTemplateFn(block.children, '_For', templateVariables);
+        const emptyData = block.empty === null ?
+            null :
+            this.prepareEmbeddedTemplateFn(block.empty.children, '_ForEmpty');
+        const trackByFn = this.createTrackByFunction(block);
+        const value = block.expression.visit(this._valueConverter);
+        this.allocateBindingSlots(value);
+        // `repeaterCreate(0, ...)`
+        this.creationInstruction(block.sourceSpan, Identifiers.repeaterCreate, () => {
+            const params = [
+                literal(blockIndex),
+                variable(primaryData.name),
+                literal(primaryData.getConstCount()),
+                literal(primaryData.getVarCount()),
+                trackByFn,
+            ];
+            if (emptyData !== null) {
+                params.push(variable(emptyData.name), literal(emptyData.getConstCount()), literal(emptyData.getVarCount()));
+            }
+            return params;
+        });
+        // `repeater(0, iterable)`
+        this.updateInstruction(block.sourceSpan, Identifiers.repeater, () => [literal(blockIndex), this.convertPropertyBinding(value)]);
+    }
+    createForLoopVariables(block) {
+        const indexLocalName = getLoopLocalName(block, '$index');
+        const countLocalName = getLoopLocalName(block, '$count');
+        this._bindingScope.set(this.level, getLoopLocalName(block, '$odd'), scope => scope.get(indexLocalName).modulo(literal(2)).notIdentical(literal(0)));
+        this._bindingScope.set(this.level, getLoopLocalName(block, '$even'), scope => scope.get(indexLocalName).modulo(literal(2)).identical(literal(0)));
+        this._bindingScope.set(this.level, getLoopLocalName(block, '$first'), scope => scope.get(indexLocalName).identical(literal(0)));
+        this._bindingScope.set(this.level, getLoopLocalName(block, '$last'), scope => scope.get(indexLocalName).identical(scope.get(countLocalName).minus(literal(1))));
+        return [
+            new Variable(block.itemName, '$implicit', block.sourceSpan, block.sourceSpan),
+            new Variable(indexLocalName, '$index', block.sourceSpan, block.sourceSpan),
+            new Variable(countLocalName, '$count', block.sourceSpan, block.sourceSpan),
+        ];
+    }
+    createTrackByFunction(block) {
+        const ast = block.trackBy.ast;
+        // Top-level access of `$index` uses the built in `repeaterTrackByIndex`.
+        if (ast instanceof PropertyRead && ast.receiver instanceof ImplicitReceiver &&
+            ast.name === getLoopLocalName(block, '$index')) {
+            return importExpr(Identifiers.repeaterTrackByIndex);
+        }
+        // Top-level access of the item uses the built in `repeaterTrackByIdentity`.
+        if (ast instanceof PropertyRead && ast.receiver instanceof ImplicitReceiver &&
+            ast.name === block.itemName) {
+            return importExpr(Identifiers.repeaterTrackByIdentity);
+        }
+        // Otherwise transpile to an inline arrow function.
+        if (ast instanceof PropertyRead && ast.receiver instanceof PropertyRead &&
+            ast.receiver.receiver instanceof ImplicitReceiver && ast.receiver.name === block.itemName) {
+            // TODO(crisbeto): support references outside the function scope.
+            const params = [getLoopLocalName(block, '$index'), block.itemName];
+            const scope = this._bindingScope.nestedScope(this.level + 1, new Set(params));
+            const binding = convertPropertyBinding(scope, variable(CONTEXT_NAME), block.trackBy, 'trackBy');
+            return arrowFn(params.map(param => new FnParam(param)), binding.currValExpr);
+        }
+        // TODO(crisbeto): this is a temporary restriction to land the initial implementation of the
+        // `for` blocks. A follow-up PR will introduce more flexibility to the `trackBy` expression.
+        throw new Error('Unsupported track expression');
+    }
     getConstCount() {
         return this._dataIndex;
     }
@@ -26325,6 +26413,10 @@ function createClosureModeGuard() {
     return typeofExpr(variable(NG_I18N_CLOSURE_MODE))
         .notIdentical(literal('undefined', STRING_TYPE))
         .and(variable(NG_I18N_CLOSURE_MODE));
+}
+/** Determines the name that a built in loop context variable is available under. */
+function getLoopLocalName(block, name) {
+    return block.contextVariables?.[name] || name;
 }
 
 // This regex matches any binding names that contain the "attr." prefix, e.g. "attr.required"
@@ -27711,7 +27803,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.1+sha-006577f');
+const VERSION = new Version('17.0.0-next.1+sha-c5daa6c');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -29869,7 +29961,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-006577f'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-c5daa6c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -29977,7 +30069,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-006577f'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-c5daa6c'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30208,7 +30300,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-006577f'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-c5daa6c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30243,7 +30335,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-006577f'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-c5daa6c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30294,7 +30386,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-006577f'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-c5daa6c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30327,7 +30419,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-006577f'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-c5daa6c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30378,7 +30470,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-006577f'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-c5daa6c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
