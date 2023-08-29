@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.1+sha-f7364ec
+ * @license Angular v17.0.0-next.1+sha-ab0f9ee
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8859,86 +8859,90 @@ var OpKind;
      */
     OpKind[OpKind["DisableBindings"] = 10] = "DisableBindings";
     /**
+     * An op to conditionally render a template.
+     */
+    OpKind[OpKind["Conditional"] = 11] = "Conditional";
+    /**
      * An operation to re-enable binding, after it was previously disabled.
      */
-    OpKind[OpKind["EnableBindings"] = 11] = "EnableBindings";
+    OpKind[OpKind["EnableBindings"] = 12] = "EnableBindings";
     /**
      * An operation to render a text node.
      */
-    OpKind[OpKind["Text"] = 12] = "Text";
+    OpKind[OpKind["Text"] = 13] = "Text";
     /**
      * An operation declaring an event listener for an element.
      */
-    OpKind[OpKind["Listener"] = 13] = "Listener";
+    OpKind[OpKind["Listener"] = 14] = "Listener";
     /**
      * An operation to interpolate text into a text node.
      */
-    OpKind[OpKind["InterpolateText"] = 14] = "InterpolateText";
+    OpKind[OpKind["InterpolateText"] = 15] = "InterpolateText";
     /**
      * An intermediate binding op, that has not yet been processed into an individual property,
      * attribute, style, etc.
      */
-    OpKind[OpKind["Binding"] = 15] = "Binding";
+    OpKind[OpKind["Binding"] = 16] = "Binding";
     /**
      * An operation to bind an expression to a property of an element.
      */
-    OpKind[OpKind["Property"] = 16] = "Property";
+    OpKind[OpKind["Property"] = 17] = "Property";
     /**
      * An operation to bind an expression to a style property of an element.
      */
-    OpKind[OpKind["StyleProp"] = 17] = "StyleProp";
+    OpKind[OpKind["StyleProp"] = 18] = "StyleProp";
     /**
      * An operation to bind an expression to a class property of an element.
      */
-    OpKind[OpKind["ClassProp"] = 18] = "ClassProp";
+    OpKind[OpKind["ClassProp"] = 19] = "ClassProp";
     /**
      * An operation to bind an expression to the styles of an element.
      */
-    OpKind[OpKind["StyleMap"] = 19] = "StyleMap";
+    OpKind[OpKind["StyleMap"] = 20] = "StyleMap";
     /**
      * An operation to bind an expression to the classes of an element.
      */
-    OpKind[OpKind["ClassMap"] = 20] = "ClassMap";
+    OpKind[OpKind["ClassMap"] = 21] = "ClassMap";
     /**
      * An operation to advance the runtime's implicit slot context during the update phase of a view.
      */
-    OpKind[OpKind["Advance"] = 21] = "Advance";
+    OpKind[OpKind["Advance"] = 22] = "Advance";
     /**
      * An operation to instantiate a pipe.
      */
-    OpKind[OpKind["Pipe"] = 22] = "Pipe";
+    OpKind[OpKind["Pipe"] = 23] = "Pipe";
     /**
      * An operation to associate an attribute with an element.
      */
-    OpKind[OpKind["Attribute"] = 23] = "Attribute";
+    OpKind[OpKind["Attribute"] = 24] = "Attribute";
     /**
      * An attribute that has been extracted for inclusion in the consts array.
      */
-    OpKind[OpKind["ExtractedAttribute"] = 24] = "ExtractedAttribute";
+    OpKind[OpKind["ExtractedAttribute"] = 25] = "ExtractedAttribute";
     /**
      * An i18n message that has been extracted for inclusion in the consts array.
      */
-    OpKind[OpKind["ExtractedMessage"] = 25] = "ExtractedMessage";
+    OpKind[OpKind["ExtractedMessage"] = 26] = "ExtractedMessage";
     /**
      * A host binding property.
      */
-    OpKind[OpKind["HostProperty"] = 26] = "HostProperty";
+    OpKind[OpKind["HostProperty"] = 27] = "HostProperty";
     /**
      * A namespace change, which causes the subsequent elements to be processed as either HTML or SVG.
      */
-    OpKind[OpKind["Namespace"] = 27] = "Namespace";
+    OpKind[OpKind["Namespace"] = 28] = "Namespace";
     /**
      * The start of an i18n block.
      */
-    OpKind[OpKind["I18nStart"] = 28] = "I18nStart";
+    OpKind[OpKind["I18nStart"] = 29] = "I18nStart";
     /**
      * A self-closing i18n on a single element.
      */
-    OpKind[OpKind["I18n"] = 29] = "I18n";
+    OpKind[OpKind["I18n"] = 30] = "I18n";
     /**
      * The end of an i18n block.
      */
-    OpKind[OpKind["I18nEnd"] = 30] = "I18nEnd";
+    OpKind[OpKind["I18nEnd"] = 31] = "I18nEnd";
     // TODO: Add Host Listeners, and possibly other host ops also.
 })(OpKind || (OpKind = {}));
 /**
@@ -9026,6 +9030,10 @@ var ExpressionKind;
      * An expression representing a sanitizer function.
      */
     ExpressionKind[ExpressionKind["SanitizerExpr"] = 19] = "SanitizerExpr";
+    /**
+     * An expression that will cause a literal slot index to be emitted.
+     */
+    ExpressionKind[ExpressionKind["SlotLiteralExpr"] = 20] = "SlotLiteralExpr";
 })(ExpressionKind || (ExpressionKind = {}));
 /**
  * Distinguishes between different kinds of `SemanticVariable`s.
@@ -9362,8 +9370,24 @@ function createAdvanceOp(delta, sourceSpan) {
         ...NEW_OP,
     };
 }
+/**
+ * Create a conditional op, which will display an embedded view according to a condtion.
+ */
+function createConditionalOp(target, test, sourceSpan) {
+    return {
+        kind: OpKind.Conditional,
+        target,
+        test,
+        conditions: [],
+        processed: null,
+        sourceSpan,
+        ...NEW_OP,
+        ...TRAIT_USES_SLOT_INDEX,
+        ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
+    };
+}
 
-var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
 /**
  * Check whether a given `o.Expression` is a logical IR expression type.
  */
@@ -9907,6 +9931,27 @@ class SanitizerExpr extends ExpressionBase {
     }
     transformInternalExpressions() { }
 }
+class SlotLiteralExpr extends ExpressionBase {
+    static { _k = UsesSlotIndex; }
+    constructor(target) {
+        super();
+        this.target = target;
+        this.kind = ExpressionKind.SlotLiteralExpr;
+        this[_k] = true;
+        this.slot = null;
+    }
+    visitExpression(visitor, context) { }
+    isEquivalent(e) {
+        return e instanceof SlotLiteralExpr && e.target === this.target && e.slot === this.slot;
+    }
+    isConstant() {
+        return true;
+    }
+    clone() {
+        return new SlotLiteralExpr(this.target);
+    }
+    transformInternalExpressions() { }
+}
 /**
  * Visits all `Expression`s in the AST of `op` with the `visitor` function.
  */
@@ -9967,6 +10012,18 @@ function transformExpressionsInOp(op, transform, flags) {
             break;
         case OpKind.Variable:
             op.initializer = transformExpressionsInExpression(op.initializer, transform, flags);
+            break;
+        case OpKind.Conditional:
+            for (const condition of op.conditions) {
+                if (condition[1] === null) {
+                    // This is a default case.
+                    continue;
+                }
+                condition[1] = transformExpressionsInExpression(condition[1], transform, flags);
+            }
+            if (op.processed !== null) {
+                op.processed = transformExpressionsInExpression(op.processed, transform, flags);
+            }
             break;
         case OpKind.Listener:
             for (const innerOp of op.handlerOps) {
@@ -11130,6 +11187,41 @@ function chainOperationsInList(opList) {
                 instruction,
                 expression: op.statement.expr,
             };
+        }
+    }
+}
+
+/**
+ * Collapse the various conditions of conditional ops into a single test expression.
+ */
+function phaseConditionals(job) {
+    for (const unit of job.units) {
+        for (const op of unit.ops()) {
+            if (op.kind !== OpKind.Conditional) {
+                continue;
+            }
+            let test;
+            // Any case with a `null` condition is `default`. If one exists, default to it instead.
+            const defaultCase = op.conditions.findIndex(([xref, cond]) => cond === null);
+            if (defaultCase >= 0) {
+                const [xref, cond] = op.conditions.splice(defaultCase, 1)[0];
+                test = new SlotLiteralExpr(xref);
+            }
+            else {
+                // By default, a switch evaluates to `-1`, causing no template to be displayed.
+                test = literal(-1);
+            }
+            // Switch expressions assign their main test to a temporary, to avoid re-executing it.
+            let tmp = new AssignTemporaryExpr(op.test, job.allocateXrefId());
+            // For each remaining condition, test whether the temporary satifies the check.
+            for (let i = op.conditions.length - 1; i >= 0; i--) {
+                const useTmp = i === 0 ? tmp : new ReadTemporaryExpr(tmp.xref);
+                const [xref, check] = op.conditions[i];
+                const comparison = new BinaryOperatorExpr(BinaryOperator.Identical, useTmp, check);
+                test = new ConditionalExpr(comparison, new SlotLiteralExpr(xref), test);
+            }
+            // Save the resulting aggregate Joost-expression.
+            op.processed = test;
         }
     }
 }
@@ -19592,14 +19684,11 @@ function elementContainerEnd() {
     return call(Identifiers.elementContainerEnd, [], null);
 }
 function template(slot, templateFnRef, decls, vars, tag, constIndex, sourceSpan) {
-    return call(Identifiers.templateCreate, [
-        literal(slot),
-        templateFnRef,
-        literal(decls),
-        literal(vars),
-        literal(tag),
-        literal(constIndex),
-    ], sourceSpan);
+    const args = [literal(slot), templateFnRef, literal(decls), literal(vars)];
+    if (tag != null && constIndex != null) {
+        args.push(literal(tag), literal(constIndex));
+    }
+    return call(Identifiers.templateCreate, args, sourceSpan);
 }
 function disableBindings() {
     return call(Identifiers.disableBindings, [], null);
@@ -19816,6 +19905,9 @@ function collateInterpolationArgs(strings, expressions) {
 function call(instruction, args, sourceSpan) {
     const expr = importExpr(instruction).callFn(args, sourceSpan);
     return createStatementOp(new ExpressionStatement(expr, sourceSpan));
+}
+function conditional(slot, condition) {
+    return call(Identifiers.conditional, [literal(slot), condition], null);
 }
 /**
  * `InterpolationConfig` for the `textInterpolate` instruction.
@@ -20171,6 +20263,15 @@ function reifyUpdateOperations(_unit, ops) {
                 }
                 OpList.replace(op, createStatementOp(new DeclareVarStmt(op.variable.name, op.initializer, undefined, StmtModifier.Final)));
                 break;
+            case OpKind.Conditional:
+                if (op.processed === null) {
+                    throw new Error(`Conditional test was not set.`);
+                }
+                if (op.slot === null) {
+                    throw new Error(`Conditional slot was not set.`);
+                }
+                OpList.replace(op, conditional(op.slot, op.processed));
+                break;
             case OpKind.Statement:
                 // Pass statement operations directly through.
                 break;
@@ -20227,6 +20328,8 @@ function reifyIrExpression(expr) {
             return pipeBindV(expr.slot, expr.varOffset, expr.args);
         case ExpressionKind.SanitizerExpr:
             return importExpr(sanitizerIdentifierMap.get(expr.fn));
+        case ExpressionKind.SlotLiteralExpr:
+            return literal(expr.slot);
         default:
             throw new Error(`AssertionError: Unsupported reification of ir.Expression kind: ${ExpressionKind[expr.kind]}`);
     }
@@ -21142,6 +21245,7 @@ const phases = [
     { kind: CompilationJobKind.Both, fn: phaseAttributeExtraction },
     { kind: CompilationJobKind.Both, fn: phaseParseExtractedStyles },
     { kind: CompilationJobKind.Tmpl, fn: phaseRemoveEmptyBindings },
+    { kind: CompilationJobKind.Tmpl, fn: phaseConditionals },
     { kind: CompilationJobKind.Tmpl, fn: phaseNoListenersOnTemplates },
     { kind: CompilationJobKind.Tmpl, fn: phasePipeCreation },
     { kind: CompilationJobKind.Tmpl, fn: phasePipeVariadic },
@@ -21347,19 +21451,22 @@ function ingestHostEvent(job, event) {
 /**
  * Ingest the nodes of a template AST into the given `ViewCompilation`.
  */
-function ingestNodes(view, template) {
+function ingestNodes(unit, template) {
     for (const node of template) {
         if (node instanceof Element$1) {
-            ingestElement(view, node);
+            ingestElement(unit, node);
         }
         else if (node instanceof Template) {
-            ingestTemplate(view, node);
+            ingestTemplate(unit, node);
         }
         else if (node instanceof Text$3) {
-            ingestText(view, node);
+            ingestText(unit, node);
         }
         else if (node instanceof BoundText) {
-            ingestBoundText(view, node);
+            ingestBoundText(unit, node);
+        }
+        else if (node instanceof SwitchBlock) {
+            ingestSwitchBlock(unit, node);
         }
         else {
             throw new Error(`Unsupported template node: ${node.constructor.name}`);
@@ -21369,25 +21476,25 @@ function ingestNodes(view, template) {
 /**
  * Ingest an element AST from the template into the given `ViewCompilation`.
  */
-function ingestElement(view, element) {
+function ingestElement(unit, element) {
     const staticAttributes = {};
     for (const attr of element.attributes) {
         staticAttributes[attr.name] = attr.value;
     }
-    const id = view.job.allocateXrefId();
+    const id = unit.job.allocateXrefId();
     const [namespaceKey, elementName] = splitNsName(element.name);
     const startOp = createElementStartOp(elementName, id, namespaceForKey(namespaceKey), element.i18n, element.startSourceSpan);
-    view.create.push(startOp);
-    ingestBindings(view, startOp, element);
+    unit.create.push(startOp);
+    ingestBindings(unit, startOp, element);
     ingestReferences(startOp, element);
-    ingestNodes(view, element.children);
-    view.create.push(createElementEndOp(id, element.endSourceSpan));
+    ingestNodes(unit, element.children);
+    unit.create.push(createElementEndOp(id, element.endSourceSpan));
 }
 /**
  * Ingest an `ng-template` node from the AST into the given `ViewCompilation`.
  */
-function ingestTemplate(view, tmpl) {
-    const childView = view.job.allocateView(view.xref);
+function ingestTemplate(unit, tmpl) {
+    const childView = unit.job.allocateView(unit.xref);
     let tagNameWithoutNamespace = tmpl.tagName;
     let namespacePrefix = '';
     if (tmpl.tagName) {
@@ -21395,8 +21502,8 @@ function ingestTemplate(view, tmpl) {
     }
     // TODO: validate the fallback tag name here.
     const tplOp = createTemplateOp(childView.xref, tagNameWithoutNamespace ?? 'ng-template', namespaceForKey(namespacePrefix), tmpl.i18n, tmpl.startSourceSpan);
-    view.create.push(tplOp);
-    ingestBindings(view, tplOp, tmpl);
+    unit.create.push(tplOp);
+    ingestBindings(unit, tplOp, tmpl);
     ingestReferences(tplOp, tmpl);
     ingestNodes(childView, tmpl.children);
     for (const { name, value } of tmpl.variables) {
@@ -21406,13 +21513,13 @@ function ingestTemplate(view, tmpl) {
 /**
  * Ingest a literal text node from the AST into the given `ViewCompilation`.
  */
-function ingestText(view, text) {
-    view.create.push(createTextOp(view.job.allocateXrefId(), text.value, text.sourceSpan));
+function ingestText(unit, text) {
+    unit.create.push(createTextOp(unit.job.allocateXrefId(), text.value, text.sourceSpan));
 }
 /**
  * Ingest an interpolated text node from the AST into the given `ViewCompilation`.
  */
-function ingestBoundText(view, text) {
+function ingestBoundText(unit, text) {
     let value = text.value;
     if (value instanceof ASTWithSource) {
         value = value.ast;
@@ -21420,37 +21527,56 @@ function ingestBoundText(view, text) {
     if (!(value instanceof Interpolation$1)) {
         throw new Error(`AssertionError: expected Interpolation for BoundText node, got ${value.constructor.name}`);
     }
-    const textXref = view.job.allocateXrefId();
-    view.create.push(createTextOp(textXref, '', text.sourceSpan));
-    view.update.push(createInterpolateTextOp(textXref, new Interpolation(value.strings, value.expressions.map(expr => convertAst(expr, view.job))), text.sourceSpan));
+    const textXref = unit.job.allocateXrefId();
+    unit.create.push(createTextOp(textXref, '', text.sourceSpan));
+    unit.update.push(createInterpolateTextOp(textXref, new Interpolation(value.strings, value.expressions.map(expr => convertAst(expr, unit.job))), text.sourceSpan));
+}
+/**
+ * Ingest a `{#switch}` block into the given `ViewCompilation`.
+ */
+function ingestSwitchBlock(unit, switchBlock) {
+    let firstXref = null;
+    let conditions = [];
+    for (const switchCase of switchBlock.cases) {
+        const cView = unit.job.allocateView(unit.xref);
+        if (!firstXref)
+            firstXref = cView.xref;
+        unit.create.push(createTemplateOp(cView.xref, 'Case', Namespace.HTML, undefined, null));
+        const caseExpr = switchCase.expression ? convertAst(switchCase.expression, unit.job) : null;
+        conditions.push([cView.xref, caseExpr]);
+        ingestNodes(cView, switchCase.children);
+    }
+    const conditional = createConditionalOp(firstXref, convertAst(switchBlock.expression, unit.job), null);
+    conditional.conditions = conditions;
+    unit.update.push(conditional);
 }
 /**
  * Convert a template AST expression into an output AST expression.
  */
-function convertAst(ast, cpl) {
+function convertAst(ast, job) {
     if (ast instanceof ASTWithSource) {
-        return convertAst(ast.ast, cpl);
+        return convertAst(ast.ast, job);
     }
     else if (ast instanceof PropertyRead) {
         if (ast.receiver instanceof ImplicitReceiver && !(ast.receiver instanceof ThisReceiver)) {
             return new LexicalReadExpr(ast.name);
         }
         else {
-            return new ReadPropExpr(convertAst(ast.receiver, cpl), ast.name);
+            return new ReadPropExpr(convertAst(ast.receiver, job), ast.name);
         }
     }
     else if (ast instanceof PropertyWrite) {
-        return new WritePropExpr(convertAst(ast.receiver, cpl), ast.name, convertAst(ast.value, cpl));
+        return new WritePropExpr(convertAst(ast.receiver, job), ast.name, convertAst(ast.value, job));
     }
     else if (ast instanceof KeyedWrite) {
-        return new WriteKeyExpr(convertAst(ast.receiver, cpl), convertAst(ast.key, cpl), convertAst(ast.value, cpl));
+        return new WriteKeyExpr(convertAst(ast.receiver, job), convertAst(ast.key, job), convertAst(ast.value, job));
     }
     else if (ast instanceof Call) {
         if (ast.receiver instanceof ImplicitReceiver) {
             throw new Error(`Unexpected ImplicitReceiver`);
         }
         else {
-            return new InvokeFunctionExpr(convertAst(ast.receiver, cpl), ast.args.map(arg => convertAst(arg, cpl)));
+            return new InvokeFunctionExpr(convertAst(ast.receiver, job), ast.args.map(arg => convertAst(arg, job)));
         }
     }
     else if (ast instanceof LiteralPrimitive) {
@@ -21461,13 +21587,13 @@ function convertAst(ast, cpl) {
         if (operator === undefined) {
             throw new Error(`AssertionError: unknown binary operator ${ast.operation}`);
         }
-        return new BinaryOperatorExpr(operator, convertAst(ast.left, cpl), convertAst(ast.right, cpl));
+        return new BinaryOperatorExpr(operator, convertAst(ast.left, job), convertAst(ast.right, job));
     }
     else if (ast instanceof ThisReceiver) {
-        return new ContextExpr(cpl.root.xref);
+        return new ContextExpr(job.root.xref);
     }
     else if (ast instanceof KeyedRead) {
-        return new ReadKeyExpr(convertAst(ast.receiver, cpl), convertAst(ast.key, cpl));
+        return new ReadKeyExpr(convertAst(ast.receiver, job), convertAst(ast.key, job));
     }
     else if (ast instanceof Chain) {
         throw new Error(`AssertionError: Chain in unknown context`);
@@ -21475,34 +21601,34 @@ function convertAst(ast, cpl) {
     else if (ast instanceof LiteralMap) {
         const entries = ast.keys.map((key, idx) => {
             const value = ast.values[idx];
-            return new LiteralMapEntry(key.key, convertAst(value, cpl), key.quoted);
+            return new LiteralMapEntry(key.key, convertAst(value, job), key.quoted);
         });
         return new LiteralMapExpr(entries);
     }
     else if (ast instanceof LiteralArray) {
-        return new LiteralArrayExpr(ast.expressions.map(expr => convertAst(expr, cpl)));
+        return new LiteralArrayExpr(ast.expressions.map(expr => convertAst(expr, job)));
     }
     else if (ast instanceof Conditional) {
-        return new ConditionalExpr(convertAst(ast.condition, cpl), convertAst(ast.trueExp, cpl), convertAst(ast.falseExp, cpl));
+        return new ConditionalExpr(convertAst(ast.condition, job), convertAst(ast.trueExp, job), convertAst(ast.falseExp, job));
     }
     else if (ast instanceof NonNullAssert) {
         // A non-null assertion shouldn't impact generated instructions, so we can just drop it.
-        return convertAst(ast.expression, cpl);
+        return convertAst(ast.expression, job);
     }
     else if (ast instanceof BindingPipe) {
-        return new PipeBindingExpr(cpl.allocateXrefId(), ast.name, [
-            convertAst(ast.exp, cpl),
-            ...ast.args.map(arg => convertAst(arg, cpl)),
+        return new PipeBindingExpr(job.allocateXrefId(), ast.name, [
+            convertAst(ast.exp, job),
+            ...ast.args.map(arg => convertAst(arg, job)),
         ]);
     }
     else if (ast instanceof SafeKeyedRead) {
-        return new SafeKeyedReadExpr(convertAst(ast.receiver, cpl), convertAst(ast.key, cpl));
+        return new SafeKeyedReadExpr(convertAst(ast.receiver, job), convertAst(ast.key, job));
     }
     else if (ast instanceof SafePropertyRead) {
-        return new SafePropertyReadExpr(convertAst(ast.receiver, cpl), ast.name);
+        return new SafePropertyReadExpr(convertAst(ast.receiver, job), ast.name);
     }
     else if (ast instanceof SafeCall) {
-        return new SafeInvokeFunctionExpr(convertAst(ast.receiver, cpl), ast.args.map(a => convertAst(a, cpl)));
+        return new SafeInvokeFunctionExpr(convertAst(ast.receiver, job), ast.args.map(a => convertAst(a, job)));
     }
     else if (ast instanceof EmptyExpr$1) {
         return new EmptyExpr();
@@ -21515,14 +21641,14 @@ function convertAst(ast, cpl) {
  * Process all of the bindings on an element-like structure in the template AST and convert them
  * to their IR representation.
  */
-function ingestBindings(view, op, element) {
+function ingestBindings(unit, op, element) {
     if (element instanceof Template) {
         for (const attr of element.templateAttrs) {
             if (attr instanceof TextAttribute) {
-                ingestBinding(view, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, true, true);
+                ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, true, true);
             }
             else {
-                ingestBinding(view, op.xref, attr.name, attr.value, attr.type, attr.unit, attr.securityContext, attr.sourceSpan, false, true);
+                ingestBinding(unit, op.xref, attr.name, attr.value, attr.type, attr.unit, attr.securityContext, attr.sourceSpan, false, true);
             }
         }
     }
@@ -21530,10 +21656,10 @@ function ingestBindings(view, op, element) {
         // This is only attribute TextLiteral bindings, such as `attr.foo="bar"`. This can never be
         // `[attr.foo]="bar"` or `attr.foo="{{bar}}"`, both of which will be handled as inputs with
         // `BindingType.Attribute`.
-        ingestBinding(view, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, true, false);
+        ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, true, false);
     }
     for (const input of element.inputs) {
-        ingestBinding(view, op.xref, input.name, input.value, input.type, input.unit, input.securityContext, input.sourceSpan, false, false);
+        ingestBinding(unit, op.xref, input.name, input.value, input.type, input.unit, input.securityContext, input.sourceSpan, false, false);
     }
     for (const output of element.outputs) {
         let listenerOp;
@@ -21559,14 +21685,14 @@ function ingestBindings(view, op, element) {
         if (inputExprs.length === 0) {
             throw new Error('Expected listener to have non-empty expression list.');
         }
-        const expressions = inputExprs.map(expr => convertAst(expr, view.job));
+        const expressions = inputExprs.map(expr => convertAst(expr, unit.job));
         const returnExpr = expressions.pop();
         for (const expr of expressions) {
             const stmtOp = createStatementOp(new ExpressionStatement(expr));
             listenerOp.handlerOps.push(stmtOp);
         }
         listenerOp.handlerOps.push(createStatementOp(new ReturnStatement(returnExpr)));
-        view.create.push(listenerOp);
+        unit.create.push(listenerOp);
     }
 }
 const BINDING_KINDS = new Map([
@@ -27585,7 +27711,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.1+sha-f7364ec');
+const VERSION = new Version('17.0.0-next.1+sha-ab0f9ee');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -29743,7 +29869,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-f7364ec'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-ab0f9ee'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -29851,7 +29977,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-f7364ec'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-ab0f9ee'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30082,7 +30208,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-f7364ec'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-ab0f9ee'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30117,7 +30243,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-f7364ec'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-ab0f9ee'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30168,7 +30294,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-f7364ec'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-ab0f9ee'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30201,7 +30327,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-f7364ec'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-ab0f9ee'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30252,7 +30378,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.1+sha-f7364ec'));
+    definitionMap.set('version', literal('17.0.0-next.1+sha-ab0f9ee'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
