@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.2+sha-75ab0bd
+ * @license Angular v17.0.0-next.2+sha-7fa17d0
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1677,8 +1677,8 @@ class FunctionExpr extends Expression {
         this.name = name;
     }
     isEquivalent(e) {
-        return e instanceof FunctionExpr && areAllEquivalent(this.params, e.params) &&
-            areAllEquivalent(this.statements, e.statements);
+        return (e instanceof FunctionExpr || e instanceof DeclareFunctionStmt) &&
+            areAllEquivalent(this.params, e.params) && areAllEquivalent(this.statements, e.statements);
     }
     isConstant() {
         return false;
@@ -1723,6 +1723,9 @@ class ArrowFunctionExpr extends Expression {
     clone() {
         // TODO: Should we deep clone statements?
         return new ArrowFunctionExpr(this.params.map(p => p.clone()), Array.isArray(this.body) ? this.body : this.body.clone(), this.type, this.sourceSpan);
+    }
+    toDeclStmt(name, modifiers) {
+        return new DeclareVarStmt(name, this, INFERRED_TYPE, modifiers, this.sourceSpan);
     }
 }
 class UnaryOperatorExpr extends Expression {
@@ -2515,6 +2518,25 @@ class ConstantPool {
             }))));
         }
     }
+    getSharedFunctionReference(fn, prefix) {
+        const isArrow = fn instanceof ArrowFunctionExpr;
+        for (const current of this.statements) {
+            // Arrow functions are saved as variables so we check if the
+            // value of the variable is the same as the arrow function.
+            if (isArrow && current instanceof DeclareVarStmt && current.value?.isEquivalent(fn)) {
+                return variable(current.name);
+            }
+            // Function declarations are saved as function statements
+            // so we compare them directly to the passed-in function.
+            if (!isArrow && current instanceof DeclareFunctionStmt && fn.isEquivalent(current)) {
+                return variable(current.name);
+            }
+        }
+        // Otherwise declare the function.
+        const name = this.uniqueName(prefix);
+        this.statements.push(fn.toDeclStmt(name, StmtModifier.Final));
+        return variable(name);
+    }
     _getLiteralFactory(key, values, resultMap) {
         let literalFactory = this.literalFactories.get(key);
         const literalFactoryArguments = values.filter((e => !e.isConstant()));
@@ -2678,6 +2700,7 @@ class Identifiers {
     static { this.repeaterCreate = { name: 'ɵɵrepeaterCreate', moduleName: CORE }; }
     static { this.repeaterTrackByIndex = { name: 'ɵɵrepeaterTrackByIndex', moduleName: CORE }; }
     static { this.repeaterTrackByIdentity = { name: 'ɵɵrepeaterTrackByIdentity', moduleName: CORE }; }
+    static { this.componentInstance = { name: 'ɵɵcomponentInstance', moduleName: CORE }; }
     static { this.text = { name: 'ɵɵtext', moduleName: CORE }; }
     static { this.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE }; }
     static { this.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE }; }
@@ -7050,6 +7073,26 @@ function convertPropertyBinding(localResolver, implicitReceiver, expressionWitho
         localResolver.notifyImplicitReceiverUse();
     }
     return new ConvertPropertyBindingResult(stmts, outputExpr);
+}
+/** Converts an AST to a pure function that may have access to the component scope. */
+function convertPureComponentScopeFunction(ast, localResolver, implicitReceiver, bindingId) {
+    const converted = convertPropertyBindingBuiltins({
+        createLiteralArrayConverter: () => args => literalArr(args),
+        createLiteralMapConverter: keys => values => literalMap(keys.map((key, index) => {
+            return ({
+                key: key.key,
+                value: values[index],
+                quoted: key.quoted,
+            });
+        })),
+        createPipeConverter: () => {
+            throw new Error('Illegal State: Pipes are not allowed in this context');
+        }
+    }, ast);
+    const visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId, false);
+    const statements = [];
+    flattenStatements(converted.visit(visitor, _Mode.Statement), statements);
+    return statements;
 }
 /**
  * Given some expression, such as a binding or interpolation expression, and a context expression to
@@ -24388,9 +24431,10 @@ function createComponentDefConsts() {
     };
 }
 class TemplateData {
-    constructor(name, index, visitor) {
+    constructor(name, index, scope, visitor) {
         this.name = name;
         this.index = index;
+        this.scope = scope;
         this.visitor = visitor;
     }
     getConstCount() {
@@ -25064,7 +25108,7 @@ class TemplateDefinitionBuilder {
                 this._ngContentReservedSlots.push(...visitor._ngContentReservedSlots);
             }
         });
-        return new TemplateData(name, index, visitor);
+        return new TemplateData(name, index, visitor._bindingScope, visitor);
     }
     createEmbeddedTemplateFn(tagName, children, contextNameSuffix, sourceSpan, variables = [], attrsExprs, references, i18n) {
         const data = this.prepareEmbeddedTemplateFn(children, contextNameSuffix, variables, i18n);
@@ -25411,14 +25455,18 @@ class TemplateDefinitionBuilder {
         // Allocate one slot for the repeater metadata. The slots for the primary and empty block
         // are implicitly inferred by the runtime to index + 1 and index + 2.
         const blockIndex = this.allocateDataSlot();
-        const templateVariables = this.createForLoopVariables(block);
-        const primaryData = this.prepareEmbeddedTemplateFn(block.children, '_For', templateVariables);
+        const primaryData = this.prepareEmbeddedTemplateFn(block.children, '_For', [
+            new Variable(block.itemName, '$implicit', block.sourceSpan, block.sourceSpan),
+            new Variable(getLoopLocalName(block, '$index'), '$index', block.sourceSpan, block.sourceSpan),
+            new Variable(getLoopLocalName(block, '$count'), '$count', block.sourceSpan, block.sourceSpan),
+        ]);
         const emptyData = block.empty === null ?
             null :
             this.prepareEmbeddedTemplateFn(block.empty.children, '_ForEmpty');
-        const trackByFn = this.createTrackByFunction(block);
+        const { expression: trackByExpression, usesComponentInstance: trackByUsesComponentInstance } = this.createTrackByFunction(block);
         const value = block.expression.visit(this._valueConverter);
         this.allocateBindingSlots(value);
+        this.registerComputedLoopVariables(block, primaryData.scope);
         // `repeaterCreate(0, ...)`
         this.creationInstruction(block.sourceSpan, Identifiers.repeaterCreate, () => {
             const params = [
@@ -25426,53 +25474,100 @@ class TemplateDefinitionBuilder {
                 variable(primaryData.name),
                 literal(primaryData.getConstCount()),
                 literal(primaryData.getVarCount()),
-                trackByFn,
+                trackByExpression,
             ];
             if (emptyData !== null) {
-                params.push(variable(emptyData.name), literal(emptyData.getConstCount()), literal(emptyData.getVarCount()));
+                params.push(literal(trackByUsesComponentInstance), variable(emptyData.name), literal(emptyData.getConstCount()), literal(emptyData.getVarCount()));
+            }
+            else if (trackByUsesComponentInstance) {
+                // If the tracking function doesn't use the component instance, we can omit the flag.
+                params.push(literal(trackByUsesComponentInstance));
             }
             return params;
         });
         // `repeater(0, iterable)`
         this.updateInstruction(block.sourceSpan, Identifiers.repeater, () => [literal(blockIndex), this.convertPropertyBinding(value)]);
     }
-    createForLoopVariables(block) {
+    registerComputedLoopVariables(block, bindingScope) {
         const indexLocalName = getLoopLocalName(block, '$index');
         const countLocalName = getLoopLocalName(block, '$count');
-        this._bindingScope.set(this.level, getLoopLocalName(block, '$odd'), scope => scope.get(indexLocalName).modulo(literal(2)).notIdentical(literal(0)));
-        this._bindingScope.set(this.level, getLoopLocalName(block, '$even'), scope => scope.get(indexLocalName).modulo(literal(2)).identical(literal(0)));
-        this._bindingScope.set(this.level, getLoopLocalName(block, '$first'), scope => scope.get(indexLocalName).identical(literal(0)));
-        this._bindingScope.set(this.level, getLoopLocalName(block, '$last'), scope => scope.get(indexLocalName).identical(scope.get(countLocalName).minus(literal(1))));
-        return [
-            new Variable(block.itemName, '$implicit', block.sourceSpan, block.sourceSpan),
-            new Variable(indexLocalName, '$index', block.sourceSpan, block.sourceSpan),
-            new Variable(countLocalName, '$count', block.sourceSpan, block.sourceSpan),
-        ];
+        const level = bindingScope.bindingLevel;
+        bindingScope.set(level, getLoopLocalName(block, '$odd'), scope => scope.get(indexLocalName).modulo(literal(2)).notIdentical(literal(0)));
+        bindingScope.set(level, getLoopLocalName(block, '$even'), scope => scope.get(indexLocalName).modulo(literal(2)).identical(literal(0)));
+        bindingScope.set(level, getLoopLocalName(block, '$first'), scope => scope.get(indexLocalName).identical(literal(0)));
+        bindingScope.set(level, getLoopLocalName(block, '$last'), scope => scope.get(indexLocalName).identical(scope.get(countLocalName).minus(literal(1))));
     }
-    createTrackByFunction(block) {
+    optimizeTrackByFunction(block) {
         const ast = block.trackBy.ast;
         // Top-level access of `$index` uses the built in `repeaterTrackByIndex`.
         if (ast instanceof PropertyRead && ast.receiver instanceof ImplicitReceiver &&
             ast.name === getLoopLocalName(block, '$index')) {
-            return importExpr(Identifiers.repeaterTrackByIndex);
+            return { expression: importExpr(Identifiers.repeaterTrackByIndex), usesComponentInstance: false };
         }
         // Top-level access of the item uses the built in `repeaterTrackByIdentity`.
         if (ast instanceof PropertyRead && ast.receiver instanceof ImplicitReceiver &&
             ast.name === block.itemName) {
-            return importExpr(Identifiers.repeaterTrackByIdentity);
+            return { expression: importExpr(Identifiers.repeaterTrackByIdentity), usesComponentInstance: false };
         }
-        // Otherwise transpile to an inline arrow function.
-        if (ast instanceof PropertyRead && ast.receiver instanceof PropertyRead &&
-            ast.receiver.receiver instanceof ImplicitReceiver && ast.receiver.name === block.itemName) {
-            // TODO(crisbeto): support references outside the function scope.
-            const params = [getLoopLocalName(block, '$index'), block.itemName];
-            const scope = this._bindingScope.nestedScope(this.level + 1, new Set(params));
-            const binding = convertPropertyBinding(scope, variable(CONTEXT_NAME), block.trackBy, 'trackBy');
-            return arrowFn(params.map(param => new FnParam(param)), binding.currValExpr);
+        // Top-level calls in the form of `fn($index, item)` can be passed in directly.
+        if (ast instanceof Call && ast.receiver instanceof PropertyRead &&
+            ast.receiver.receiver instanceof ImplicitReceiver && ast.args.length === 2) {
+            const firstIsIndex = ast.args[0] instanceof PropertyRead &&
+                ast.args[0].receiver instanceof ImplicitReceiver &&
+                ast.args[0].name === getLoopLocalName(block, '$index');
+            const secondIsItem = ast.args[1] instanceof PropertyRead &&
+                ast.args[1].receiver instanceof ImplicitReceiver && ast.args[1].name === block.itemName;
+            if (firstIsIndex && secondIsItem) {
+                // If we're in the top-level component, we can access directly through `ctx`,
+                // otherwise we have to get a hold of the component through `componentInstance()`.
+                const receiver = this.level === 0 ? variable(CONTEXT_NAME) :
+                    new ExternalExpr(Identifiers.componentInstance).callFn([]);
+                return { expression: receiver.prop(ast.receiver.name), usesComponentInstance: false };
+            }
         }
-        // TODO(crisbeto): this is a temporary restriction to land the initial implementation of the
-        // `for` blocks. A follow-up PR will introduce more flexibility to the `trackBy` expression.
-        throw new Error('Unsupported track expression');
+        return null;
+    }
+    createTrackByFunction(block) {
+        const optimizedFn = this.optimizeTrackByFunction(block);
+        // If the tracking function can be optimized, we don't need any further processing.
+        if (optimizedFn !== null) {
+            return optimizedFn;
+        }
+        // Referencing these requires access to the context which the tracking function
+        // might not have. `$index` is special because of backwards compatibility.
+        const bannedGlobals = new Set([
+            getLoopLocalName(block, '$count'), getLoopLocalName(block, '$first'),
+            getLoopLocalName(block, '$last'), getLoopLocalName(block, '$even'),
+            getLoopLocalName(block, '$odd')
+        ]);
+        const scope = new TrackByBindingScope(this._bindingScope, {
+            // Alias `$index` and the item name to `$index` and `$item` respectively.
+            // This allows us to reuse pure functions that may have different item names,
+            // but are otherwise identical.
+            [getLoopLocalName(block, '$index')]: '$index',
+            [block.itemName]: '$item',
+        }, bannedGlobals);
+        const params = [new FnParam('$index'), new FnParam('$item')];
+        const stmts = convertPureComponentScopeFunction(block.trackBy.ast, scope, variable(CONTEXT_NAME), 'track');
+        const usesComponentInstance = scope.getComponentAccessCount() > 0;
+        let fn$1;
+        if (!usesComponentInstance && stmts.length === 1 && stmts[0] instanceof ExpressionStatement) {
+            fn$1 = arrowFn(params, stmts[0].expr);
+        }
+        else {
+            // The last statement is returned implicitly.
+            if (stmts.length > 0) {
+                const lastStatement = stmts[stmts.length - 1];
+                if (lastStatement instanceof ExpressionStatement) {
+                    stmts[stmts.length - 1] = new ReturnStatement(lastStatement.expr);
+                }
+            }
+            fn$1 = fn(params, stmts);
+        }
+        return {
+            expression: this.constantPool.getSharedFunctionReference(fn$1, '_forTrack'),
+            usesComponentInstance,
+        };
     }
     getConstCount() {
         return this._dataIndex;
@@ -25944,6 +26039,10 @@ class BindingScope {
         // local var we used to store the component context, e.g. const $comp$ = x();
         return this.bindingLevel === 0 ? null : this.getComponentProperty(name);
     }
+    /** Checks whether a variable exists locally on the current scope. */
+    hasLocal(name) {
+        return this.map.has(name);
+    }
     /**
      * Create a local variable for later reference.
      *
@@ -26101,6 +26200,45 @@ class BindingScope {
     }
     notifyRestoredViewContextUse() {
         this.usesRestoredViewContext = true;
+    }
+}
+/** Binding scope of a `track` function inside a `for` loop block. */
+class TrackByBindingScope extends BindingScope {
+    constructor(parentScope, globalAliases, bannedGlobals) {
+        super(parentScope.bindingLevel + 1, parentScope);
+        this.globalAliases = globalAliases;
+        this.bannedGlobals = bannedGlobals;
+        this.componentAccessCount = 0;
+    }
+    get(name) {
+        let current = this.parent;
+        // Verify that the expression isn't trying to access a variable from a parent scope.
+        while (current) {
+            if (current.hasLocal(name)) {
+                this.forbiddenAccessError(name);
+            }
+            current = current.parent;
+        }
+        // If the variable is one of the banned globals, we have to throw.
+        if (this.bannedGlobals.has(name)) {
+            this.forbiddenAccessError(name);
+        }
+        // Intercept any aliased globals.
+        if (this.globalAliases[name]) {
+            return variable(this.globalAliases[name]);
+        }
+        // When the component scope is accessed, we redirect it through `this`.
+        this.componentAccessCount++;
+        return variable('this').prop(name);
+    }
+    /** Gets the number of times the host component has been accessed through the scope. */
+    getComponentAccessCount() {
+        return this.componentAccessCount;
+    }
+    forbiddenAccessError(propertyName) {
+        // TODO(crisbeto): this should be done through template type checking once it is available.
+        throw new Error(`Accessing ${propertyName} inside of a track expression is not allowed. ` +
+            `Tracking expressions can only access the item, $index and properties on the containing component.`);
     }
 }
 /**
@@ -27808,7 +27946,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.2+sha-75ab0bd');
+const VERSION = new Version('17.0.0-next.2+sha-7fa17d0');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -29966,7 +30104,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.2+sha-75ab0bd'));
+    definitionMap.set('version', literal('17.0.0-next.2+sha-7fa17d0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30074,7 +30212,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-next.2+sha-75ab0bd'));
+    definitionMap.set('version', literal('17.0.0-next.2+sha-7fa17d0'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30305,7 +30443,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.2+sha-75ab0bd'));
+    definitionMap.set('version', literal('17.0.0-next.2+sha-7fa17d0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30340,7 +30478,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.2+sha-75ab0bd'));
+    definitionMap.set('version', literal('17.0.0-next.2+sha-7fa17d0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30391,7 +30529,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.2+sha-75ab0bd'));
+    definitionMap.set('version', literal('17.0.0-next.2+sha-7fa17d0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30424,7 +30562,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.2+sha-75ab0bd'));
+    definitionMap.set('version', literal('17.0.0-next.2+sha-7fa17d0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30475,7 +30613,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.2+sha-75ab0bd'));
+    definitionMap.set('version', literal('17.0.0-next.2+sha-7fa17d0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);

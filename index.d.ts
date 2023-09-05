@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.2+sha-75ab0bd
+ * @license Angular v17.0.0-next.2+sha-7fa17d0
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -44,6 +44,7 @@ export declare class ArrowFunctionExpr extends Expression {
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     clone(): Expression;
+    toDeclStmt(name: string, modifiers?: StmtModifier): DeclareVarStmt;
 }
 
 export declare abstract class AST {
@@ -786,6 +787,7 @@ export declare class ConstantPool {
         literalFactory: outputAst.Expression;
         literalFactoryArguments: outputAst.Expression[];
     };
+    getSharedFunctionReference(fn: outputAst.FunctionExpr | outputAst.ArrowFunctionExpr, prefix: string): outputAst.Expression;
     private _getLiteralFactory;
     /**
      * Produce a unique name.
@@ -1381,7 +1383,7 @@ export declare class FunctionExpr extends Expression {
     statements: Statement[];
     name?: string | null | undefined;
     constructor(params: FnParam[], statements: Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null, name?: string | null | undefined);
-    isEquivalent(e: Expression): boolean;
+    isEquivalent(e: Expression | Statement): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     toDeclStmt(name: string, modifiers?: StmtModifier): DeclareFunctionStmt;
@@ -3748,6 +3750,7 @@ export declare class R3Identifiers {
     static repeaterCreate: outputAst.ExternalReference;
     static repeaterTrackByIndex: outputAst.ExternalReference;
     static repeaterTrackByIdentity: outputAst.ExternalReference;
+    static componentInstance: outputAst.ExternalReference;
     static text: outputAst.ExternalReference;
     static enableBindings: outputAst.ExternalReference;
     static disableBindings: outputAst.ExternalReference;
