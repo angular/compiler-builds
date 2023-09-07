@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.3+sha-d14560f
+ * @license Angular v17.0.0-next.3+sha-0f10d75
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -481,179 +481,6 @@ var core = /*#__PURE__*/Object.freeze({
 });
 
 /**
- * Represents a big integer using a buffer of its individual digits, with the least significant
- * digit stored at the beginning of the array (little endian).
- *
- * For performance reasons, each instance is mutable. The addition operation can be done in-place
- * to reduce memory pressure of allocation for the digits array.
- */
-class BigInteger {
-    static zero() {
-        return new BigInteger([0]);
-    }
-    static one() {
-        return new BigInteger([1]);
-    }
-    /**
-     * Creates a big integer using its individual digits in little endian storage.
-     */
-    constructor(digits) {
-        this.digits = digits;
-    }
-    /**
-     * Creates a clone of this instance.
-     */
-    clone() {
-        return new BigInteger(this.digits.slice());
-    }
-    /**
-     * Returns a new big integer with the sum of `this` and `other` as its value. This does not mutate
-     * `this` but instead returns a new instance, unlike `addToSelf`.
-     */
-    add(other) {
-        const result = this.clone();
-        result.addToSelf(other);
-        return result;
-    }
-    /**
-     * Adds `other` to the instance itself, thereby mutating its value.
-     */
-    addToSelf(other) {
-        const maxNrOfDigits = Math.max(this.digits.length, other.digits.length);
-        let carry = 0;
-        for (let i = 0; i < maxNrOfDigits; i++) {
-            let digitSum = carry;
-            if (i < this.digits.length) {
-                digitSum += this.digits[i];
-            }
-            if (i < other.digits.length) {
-                digitSum += other.digits[i];
-            }
-            if (digitSum >= 10) {
-                this.digits[i] = digitSum - 10;
-                carry = 1;
-            }
-            else {
-                this.digits[i] = digitSum;
-                carry = 0;
-            }
-        }
-        // Apply a remaining carry if needed.
-        if (carry > 0) {
-            this.digits[maxNrOfDigits] = 1;
-        }
-    }
-    /**
-     * Builds the decimal string representation of the big integer. As this is stored in
-     * little endian, the digits are concatenated in reverse order.
-     */
-    toString() {
-        let res = '';
-        for (let i = this.digits.length - 1; i >= 0; i--) {
-            res += this.digits[i];
-        }
-        return res;
-    }
-}
-/**
- * Represents a big integer which is optimized for multiplication operations, as its power-of-twos
- * are memoized. See `multiplyBy()` for details on the multiplication algorithm.
- */
-class BigIntForMultiplication {
-    constructor(value) {
-        this.powerOfTwos = [value];
-    }
-    /**
-     * Returns the big integer itself.
-     */
-    getValue() {
-        return this.powerOfTwos[0];
-    }
-    /**
-     * Computes the value for `num * b`, where `num` is a JS number and `b` is a big integer. The
-     * value for `b` is represented by a storage model that is optimized for this computation.
-     *
-     * This operation is implemented in N(log2(num)) by continuous halving of the number, where the
-     * least-significant bit (LSB) is tested in each iteration. If the bit is set, the bit's index is
-     * used as exponent into the power-of-two multiplication of `b`.
-     *
-     * As an example, consider the multiplication num=42, b=1337. In binary 42 is 0b00101010 and the
-     * algorithm unrolls into the following iterations:
-     *
-     *  Iteration | num        | LSB  | b * 2^iter | Add? | product
-     * -----------|------------|------|------------|------|--------
-     *  0         | 0b00101010 | 0    | 1337       | No   | 0
-     *  1         | 0b00010101 | 1    | 2674       | Yes  | 2674
-     *  2         | 0b00001010 | 0    | 5348       | No   | 2674
-     *  3         | 0b00000101 | 1    | 10696      | Yes  | 13370
-     *  4         | 0b00000010 | 0    | 21392      | No   | 13370
-     *  5         | 0b00000001 | 1    | 42784      | Yes  | 56154
-     *  6         | 0b00000000 | 0    | 85568      | No   | 56154
-     *
-     * The computed product of 56154 is indeed the correct result.
-     *
-     * The `BigIntForMultiplication` representation for a big integer provides memoized access to the
-     * power-of-two values to reduce the workload in computing those values.
-     */
-    multiplyBy(num) {
-        const product = BigInteger.zero();
-        this.multiplyByAndAddTo(num, product);
-        return product;
-    }
-    /**
-     * See `multiplyBy()` for details. This function allows for the computed product to be added
-     * directly to the provided result big integer.
-     */
-    multiplyByAndAddTo(num, result) {
-        for (let exponent = 0; num !== 0; num = num >>> 1, exponent++) {
-            if (num & 1) {
-                const value = this.getMultipliedByPowerOfTwo(exponent);
-                result.addToSelf(value);
-            }
-        }
-    }
-    /**
-     * Computes and memoizes the big integer value for `this.number * 2^exponent`.
-     */
-    getMultipliedByPowerOfTwo(exponent) {
-        // Compute the powers up until the requested exponent, where each value is computed from its
-        // predecessor. This is simple as `this.number * 2^(exponent - 1)` only has to be doubled (i.e.
-        // added to itself) to reach `this.number * 2^exponent`.
-        for (let i = this.powerOfTwos.length; i <= exponent; i++) {
-            const previousPower = this.powerOfTwos[i - 1];
-            this.powerOfTwos[i] = previousPower.add(previousPower);
-        }
-        return this.powerOfTwos[exponent];
-    }
-}
-/**
- * Represents an exponentiation operation for the provided base, of which exponents are computed and
- * memoized. The results are represented by a `BigIntForMultiplication` which is tailored for
- * multiplication operations by memoizing the power-of-twos. This effectively results in a matrix
- * representation that is lazily computed upon request.
- */
-class BigIntExponentiation {
-    constructor(base) {
-        this.base = base;
-        this.exponents = [new BigIntForMultiplication(BigInteger.one())];
-    }
-    /**
-     * Compute the value for `this.base^exponent`, resulting in a big integer that is optimized for
-     * further multiplication operations.
-     */
-    toThePowerOf(exponent) {
-        // Compute the results up until the requested exponent, where every value is computed from its
-        // predecessor. This is because `this.base^(exponent - 1)` only has to be multiplied by `base`
-        // to reach `this.base^exponent`.
-        for (let i = this.exponents.length; i <= exponent; i++) {
-            const value = this.exponents[i - 1].multiplyBy(this.base);
-            this.exponents[i] = new BigIntForMultiplication(value);
-        }
-        return this.exponents[exponent];
-    }
-}
-
-/**
  * A lazily created TextEncoder instance for converting strings into UTF-8 bytes
  */
 let textEncoder;
@@ -815,17 +642,18 @@ function fingerprint(str) {
         hi = hi ^ 0x130f9bef;
         lo = lo ^ -0x6b5f56d8;
     }
-    return [hi, lo];
+    return (BigInt.asUintN(32, BigInt(hi)) << BigInt(32)) | BigInt.asUintN(32, BigInt(lo));
 }
 function computeMsgId(msg, meaning = '') {
     let msgFingerprint = fingerprint(msg);
     if (meaning) {
-        const meaningFingerprint = fingerprint(meaning);
-        msgFingerprint = add64(rol64(msgFingerprint, 1), meaningFingerprint);
+        // Rotate the 64-bit message fingerprint one bit to the left and then add the meaning
+        // fingerprint.
+        msgFingerprint = BigInt.asUintN(64, msgFingerprint << BigInt(1)) |
+            ((msgFingerprint >> BigInt(63)) & BigInt(1));
+        msgFingerprint += fingerprint(meaning);
     }
-    const hi = msgFingerprint[0];
-    const lo = msgFingerprint[1];
-    return wordsToDecimalString(hi & 0x7fffffff, lo);
+    return BigInt.asUintN(63, msgFingerprint).toString();
 }
 function hash32(view, length, c) {
     let a = 0x9e3779b9, b = 0x9e3779b9;
@@ -931,25 +759,9 @@ function add32to64(a, b) {
     const high = (a >>> 16) + (b >>> 16) + (low >>> 16);
     return [high >>> 16, (high << 16) | (low & 0xffff)];
 }
-function add64(a, b) {
-    const ah = a[0], al = a[1];
-    const bh = b[0], bl = b[1];
-    const result = add32to64(al, bl);
-    const carry = result[0];
-    const l = result[1];
-    const h = add32(add32(ah, bh), carry);
-    return [h, l];
-}
 // Rotate a 32b number left `count` position
 function rol32(a, count) {
     return (a << count) | (a >>> (32 - count));
-}
-// Rotate a 64b number left `count` position
-function rol64(num, count) {
-    const hi = num[0], lo = num[1];
-    const h = (hi << count) | (lo >>> (32 - count));
-    const l = (lo << count) | (hi >>> (32 - count));
-    return [h, l];
 }
 function bytesToWords32(bytes, endian) {
     const size = (bytes.length + 3) >>> 2;
@@ -975,31 +787,6 @@ function wordAt(bytes, index, endian) {
         }
     }
     return word;
-}
-/**
- * Create a shared exponentiation pool for base-256 computations. This shared pool provides memoized
- * power-of-256 results with memoized power-of-two computations for efficient multiplication.
- *
- * For our purposes, this can be safely stored as a global without memory concerns. The reason is
- * that we encode two words, so only need the 0th (for the low word) and 4th (for the high word)
- * exponent.
- */
-const base256 = new BigIntExponentiation(256);
-/**
- * Represents two 32-bit words as a single decimal number. This requires a big integer storage
- * model as JS numbers are not accurate enough to represent the 64-bit number.
- *
- * Based on https://www.danvk.org/hex2dec.html
- */
-function wordsToDecimalString(hi, lo) {
-    // Encode the four bytes in lo in the lower digits of the decimal number.
-    // Note: the multiplication results in lo itself but represented by a big integer using its
-    // decimal digits.
-    const decimal = base256.toThePowerOf(0).multiplyBy(lo);
-    // Encode the four bytes in hi above the four lo bytes. lo is a maximum of (2^8)^4, which is why
-    // this multiplication factor is applied.
-    base256.toThePowerOf(4).multiplyByAndAddTo(hi, decimal);
-    return decimal.toString();
 }
 
 //// Types
@@ -27946,7 +27733,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.3+sha-d14560f');
+const VERSION = new Version('17.0.0-next.3+sha-0f10d75');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -30104,7 +29891,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.3+sha-d14560f'));
+    definitionMap.set('version', literal('17.0.0-next.3+sha-0f10d75'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30212,7 +29999,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-next.3+sha-d14560f'));
+    definitionMap.set('version', literal('17.0.0-next.3+sha-0f10d75'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30443,7 +30230,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.3+sha-d14560f'));
+    definitionMap.set('version', literal('17.0.0-next.3+sha-0f10d75'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30478,7 +30265,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.3+sha-d14560f'));
+    definitionMap.set('version', literal('17.0.0-next.3+sha-0f10d75'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30529,7 +30316,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.3+sha-d14560f'));
+    definitionMap.set('version', literal('17.0.0-next.3+sha-0f10d75'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30562,7 +30349,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.3+sha-d14560f'));
+    definitionMap.set('version', literal('17.0.0-next.3+sha-0f10d75'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30613,7 +30400,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.3+sha-d14560f'));
+    definitionMap.set('version', literal('17.0.0-next.3+sha-0f10d75'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
