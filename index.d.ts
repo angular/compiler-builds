@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.4+sha-8438e3e
+ * @license Angular v17.0.0-next.4+sha-e5a0116
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -500,10 +500,7 @@ export declare interface BoundTarget<DirectiveT extends DirectiveMeta> {
      * For a given `Reference`, get the reference's target - either an `Element`, a `Template`, or
      * a directive on a particular node.
      */
-    getReferenceTarget(ref: TmplAstReference): {
-        directive: DirectiveT;
-        node: TmplAstElement | TmplAstTemplate;
-    } | TmplAstElement | TmplAstTemplate | null;
+    getReferenceTarget(ref: TmplAstReference): ReferenceTarget<DirectiveT> | null;
     /**
      * For a given binding, get the entity to which the binding is being made.
      *
@@ -521,25 +518,24 @@ export declare interface BoundTarget<DirectiveT extends DirectiveMeta> {
      */
     getExpressionTarget(expr: AST): TmplAstReference | TmplAstVariable | null;
     /**
-     * Given a particular `Reference` or `Variable`, get the `Template` which created it.
+     * Given a particular `Reference` or `Variable`, get the `ScopedNode` which created it.
      *
-     * All `Variable`s are defined on templates, so this will always return a value for a `Variable`
-     * from the `Target`. For `Reference`s this only returns a value if the `Reference` points to a
-     * `Template`. Returns `null` otherwise.
+     * All `Variable`s are defined on node, so this will always return a value for a `Variable`
+     * from the `Target`. Returns `null` otherwise.
      */
-    getTemplateOfSymbol(symbol: TmplAstReference | TmplAstVariable): TmplAstTemplate | null;
+    getDefinitionNodeOfSymbol(symbol: TmplAstReference | TmplAstVariable): ScopedNode | null;
     /**
-     * Get the nesting level of a particular `Template`.
+     * Get the nesting level of a particular `ScopedNode`.
      *
-     * This starts at 1 for top-level `Template`s within the `Target` and increases for `Template`s
+     * This starts at 1 for top-level nodes within the `Target` and increases for nodes
      * nested at deeper levels.
      */
-    getNestingLevel(template: TmplAstTemplate): number;
+    getNestingLevel(node: ScopedNode): number;
     /**
-     * Get all `Reference`s and `Variables` visible within the given `Template` (or at the top level,
-     * if `null` is passed).
+     * Get all `Reference`s and `Variables` visible within the given `ScopedNode` (or at the top
+     * level, if `null` is passed).
      */
-    getEntitiesInTemplateScope(template: TmplAstTemplate | null): ReadonlySet<TmplAstReference | TmplAstVariable>;
+    getEntitiesInScope(node: ScopedNode | null): ReadonlySet<TmplAstReference | TmplAstVariable>;
     /**
      * Get a list of all the directives used by the target,
      * including directives from `{#defer}` blocks.
@@ -564,6 +560,12 @@ export declare interface BoundTarget<DirectiveT extends DirectiveMeta> {
      * Get a list of all {#defer} blocks used by the target.
      */
     getDeferBlocks(): TmplAstDeferredBlock[];
+    /**
+     * Gets the element that a specific deferred block trigger is targeting.
+     * @param block Block that the trigger belongs to.
+     * @param trigger Trigger whose target is being looked up.
+     */
+    getDeferredTriggerTarget(block: TmplAstDeferredTrigger, trigger: TmplAstDeferredTrigger): TmplAstElement | null;
 }
 
 export declare class BuiltinType extends Type {
@@ -2814,29 +2816,35 @@ export declare class R3BoundTarget<DirectiveT extends DirectiveMeta> implements 
     private exprTargets;
     private symbols;
     private nestingLevel;
-    private templateEntities;
+    private scopedNodeEntities;
     private usedPipes;
     private eagerPipes;
     private deferredBlocks;
     constructor(target: Target, directives: Map<TmplAstElement | TmplAstTemplate, DirectiveT[]>, eagerDirectives: DirectiveT[], bindings: Map<TmplAstBoundAttribute | TmplAstBoundEvent | TmplAstTextAttribute, DirectiveT | TmplAstElement | TmplAstTemplate>, references: Map<TmplAstBoundAttribute | TmplAstBoundEvent | TmplAstReference | TmplAstTextAttribute, {
         directive: DirectiveT;
         node: TmplAstElement | TmplAstTemplate;
-    } | TmplAstElement | TmplAstTemplate>, exprTargets: Map<AST, TmplAstReference | TmplAstVariable>, symbols: Map<TmplAstReference | TmplAstVariable, TmplAstTemplate>, nestingLevel: Map<TmplAstTemplate, number>, templateEntities: Map<TmplAstTemplate | null, ReadonlySet<TmplAstReference | TmplAstVariable>>, usedPipes: Set<string>, eagerPipes: Set<string>, deferredBlocks: Set<TmplAstDeferredBlock>);
-    getEntitiesInTemplateScope(template: TmplAstTemplate | null): ReadonlySet<TmplAstReference | TmplAstVariable>;
+    } | TmplAstElement | TmplAstTemplate>, exprTargets: Map<AST, TmplAstReference | TmplAstVariable>, symbols: Map<TmplAstReference | TmplAstVariable, TmplAstTemplate>, nestingLevel: Map<ScopedNode, number>, scopedNodeEntities: Map<ScopedNode | null, ReadonlySet<TmplAstReference | TmplAstVariable>>, usedPipes: Set<string>, eagerPipes: Set<string>, deferredBlocks: Set<TmplAstDeferredBlock>);
+    getEntitiesInScope(node: ScopedNode | null): ReadonlySet<TmplAstReference | TmplAstVariable>;
     getDirectivesOfNode(node: TmplAstElement | TmplAstTemplate): DirectiveT[] | null;
-    getReferenceTarget(ref: TmplAstReference): {
-        directive: DirectiveT;
-        node: TmplAstElement | TmplAstTemplate;
-    } | TmplAstElement | TmplAstTemplate | null;
+    getReferenceTarget(ref: TmplAstReference): ReferenceTarget<DirectiveT> | null;
     getConsumerOfBinding(binding: TmplAstBoundAttribute | TmplAstBoundEvent | TmplAstTextAttribute): DirectiveT | TmplAstElement | TmplAstTemplate | null;
     getExpressionTarget(expr: AST): TmplAstReference | TmplAstVariable | null;
-    getTemplateOfSymbol(symbol: TmplAstReference | TmplAstVariable): TmplAstTemplate | null;
-    getNestingLevel(template: TmplAstTemplate): number;
+    getDefinitionNodeOfSymbol(symbol: TmplAstReference | TmplAstVariable): ScopedNode | null;
+    getNestingLevel(node: ScopedNode): number;
     getUsedDirectives(): DirectiveT[];
     getEagerlyUsedDirectives(): DirectiveT[];
     getUsedPipes(): string[];
     getEagerlyUsedPipes(): string[];
     getDeferBlocks(): TmplAstDeferredBlock[];
+    getDeferredTriggerTarget(block: TmplAstDeferredBlock, trigger: TmplAstDeferredTrigger): TmplAstElement | null;
+    /**
+     * Finds an entity with a specific name in a scope.
+     * @param rootNode Root node of the scope.
+     * @param name Name of the entity.
+     */
+    private findEntityInScope;
+    /** Coerces a `ReferenceTarget` to an `Element`, if possible. */
+    private referenceTargetToElement;
 }
 
 /**
@@ -4312,6 +4320,12 @@ export declare class RecursiveVisitor implements Visitor {
     private visitChildren;
 }
 
+/** Possible values that a reference can be resolved to. */
+export declare type ReferenceTarget<DirectiveT> = {
+    directive: DirectiveT;
+    node: TmplAstElement | TmplAstTemplate;
+} | TmplAstElement | TmplAstTemplate;
+
 /**
  * Flags passed into template functions to determine which blocks (i.e. creation, update)
  * should be executed.
@@ -4371,6 +4385,9 @@ export declare function sanitizeIdentifier(name: string): string;
 export declare interface SchemaMetadata {
     name: string;
 }
+
+/** Node that has a `Scope` associated with it. */
+export declare type ScopedNode = TmplAstTemplate | TmplAstIfBlockBranch | TmplAstForLoopBlock | TmplAstDeferredBlock | TmplAstDeferredBlockError | TmplAstDeferredBlockLoading | TmplAstDeferredBlockPlaceholder;
 
 declare enum SecurityContext {
     NONE = 0,
@@ -4855,6 +4872,8 @@ export declare class TmplAstForLoopBlockEmpty implements TmplAstNode {
 }
 
 export declare class TmplAstHoverDeferredTrigger extends TmplAstDeferredTrigger {
+    reference: string;
+    constructor(reference: string, sourceSpan: ParseSourceSpan);
 }
 
 export declare class TmplAstIcu implements TmplAstNode {
@@ -4900,8 +4919,8 @@ export declare class TmplAstImmediateDeferredTrigger extends TmplAstDeferredTrig
 }
 
 export declare class TmplAstInteractionDeferredTrigger extends TmplAstDeferredTrigger {
-    reference: string | null;
-    constructor(reference: string | null, sourceSpan: ParseSourceSpan);
+    reference: string;
+    constructor(reference: string, sourceSpan: ParseSourceSpan);
 }
 
 export declare interface TmplAstNode {
